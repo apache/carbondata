@@ -803,4 +803,38 @@ public class QueryUtil {
     }
     //TODO need to handle expression
   }
+
+  /**
+   * Below method will be used to get the index of number type aggregator
+   *
+   * @param aggType
+   * @return index in aggregator
+   */
+  public static int[] getNumberTypeIndex(List<String> aggType) {
+    List<Integer> indexList = new ArrayList<Integer>();
+    for (int i = 0; i < aggType.size(); i++) {
+      if (CarbonCommonConstants.SUM.equals(aggType.get(i)) || CarbonCommonConstants.AVERAGE
+          .equals(aggType.get(i))) {
+        indexList.add(i);
+      }
+    }
+    return ArrayUtils.toPrimitive(indexList.toArray(new Integer[indexList.size()]));
+  }
+
+  /**
+   * below method will be used to get the actual type aggregator
+   *
+   * @param aggType
+   * @return index in aggrgetor
+   */
+  public static int[] getActualTypeIndex(List<String> aggType) {
+    List<Integer> indexList = new ArrayList<Integer>();
+    for (int i = 0; i < aggType.size(); i++) {
+      if (!CarbonCommonConstants.SUM.equals(aggType.get(i)) && !CarbonCommonConstants.AVERAGE
+          .equals(aggType.get(i))) {
+        indexList.add(i);
+      }
+    }
+    return ArrayUtils.toPrimitive(indexList.toArray(new Integer[indexList.size()]));
+  }
 }

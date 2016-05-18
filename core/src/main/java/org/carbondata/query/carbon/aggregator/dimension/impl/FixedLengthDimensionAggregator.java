@@ -21,10 +21,12 @@ package org.carbondata.query.carbon.aggregator.dimension.impl;
 import java.nio.ByteBuffer;
 
 import org.carbondata.core.cache.dictionary.Dictionary;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.carbon.aggregator.dimension.DimensionDataAggregator;
+import org.carbondata.query.carbon.executor.util.QueryUtil;
 import org.carbondata.query.carbon.model.DimensionAggregatorInfo;
 import org.carbondata.query.carbon.result.AbstractScannedResult;
 import org.carbondata.query.carbon.util.DataTypeUtil;
@@ -45,13 +47,37 @@ public class FixedLengthDimensionAggregator implements DimensionDataAggregator {
    */
   protected Object defaultValue;
 
+  /**
+   * start index of the aggregator for current dimension column
+   */
   private int aggregatorStartIndex;
 
+  /**
+   * buffer used to convert mdkey to surrogate key
+   */
   private ByteBuffer buffer;
 
+  /**
+   * dictionary to get the actual value of the column
+   */
   private Dictionary columnDictionary;
 
+  /**
+   * data index in the file
+   */
   private int blockIndex;
+
+  /**
+   * to store index which will be used to aggregate
+   * number type value like sum avg
+   */
+  private int[] numberTypeAggregatorIndex;
+
+  /**
+   * to store index which will be used to aggregate
+   * actual type value like max, min, dictinct count
+   */
+  private int[] actualTypeAggregatorIndex;
 
   public FixedLengthDimensionAggregator(DimensionAggregatorInfo dimensionAggeragtorInfo,
       Object defaultValue, Dictionary columnDictionary, int aggregatorStartIndex, int blockIndex) {
@@ -61,6 +87,9 @@ public class FixedLengthDimensionAggregator implements DimensionDataAggregator {
     this.blockIndex = blockIndex;
     buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE);
     this.columnDictionary = columnDictionary;
+    numberTypeAggregatorIndex = QueryUtil.getNumberTypeIndex(dimensionAggeragtorInfo.getAggList());
+    actualTypeAggregatorIndex = QueryUtil.getActualTypeIndex(dimensionAggeragtorInfo.getAggList());
+
   }
 
   /**
@@ -76,15 +105,32 @@ public class FixedLengthDimensionAggregator implements DimensionDataAggregator {
     if (surrogateKey == 1) {
       return;
     }
-    Object dataBasedOnDataType = DataTypeUtil
-        .getDataBasedOnDataType(columnDictionary.getDictionaryValueForKey(surrogateKey),
-            dimensionAggeragtorInfo.getDim().getDataType());
+    String actualValue = columnDictionary.getDictionaryValueForKey(surrogateKey);
+    Object dataBasedOnDataType = null;
+    dataBasedOnDataType = DataTypeUtil
+        .getDataBasedOnDataType(actualValue, dimensionAggeragtorInfo.getDim().getDataType());
+    // if data is null then no need to aggregate
     if (null == dataBasedOnDataType) {
       return;
     }
-
-    for (int j = 0; j < dimensionAggeragtorInfo.getAggList().size(); j++) {
-      aggeragtor[aggregatorStartIndex + j].agg(dataBasedOnDataType);
+    if (actualTypeAggregatorIndex.length > 0) {
+      for (int j = 0; j < actualTypeAggregatorIndex.length; j++) {
+        aggeragtor[aggregatorStartIndex + actualTypeAggregatorIndex[j]].agg(dataBasedOnDataType);
+      }
+    }
+    // if sum or avg aggregator is applied then first we need to check whether data type
+    // if data type is string then convert to double data type and then apply aggregate
+    // function
+    if (numberTypeAggregatorIndex.length > 0) {
+      if (dimensionAggeragtorInfo.getDim().getDataType().equals(DataType.STRING)) {
+        dataBasedOnDataType = DataTypeUtil.getDataBasedOnDataType(actualValue, DataType.DOUBLE);
+      }
+      if (null == dataBasedOnDataType) {
+        return;
+      }
+      for (int j = 0; j < numberTypeAggregatorIndex.length; j++) {
+        aggeragtor[aggregatorStartIndex + numberTypeAggregatorIndex[j]].agg(dataBasedOnDataType);
+      }
     }
   }
 
