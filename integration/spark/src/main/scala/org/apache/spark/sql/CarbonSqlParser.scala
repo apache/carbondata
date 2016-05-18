@@ -325,7 +325,6 @@ class CarbonSqlParser()
           nodeToPlan(node)
         } catch {
           case e: Exception =>
-            logError(e.getMessage)
             sys.error("Parsing error") // no need to do anything.
         }
     }
