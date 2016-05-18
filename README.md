@@ -25,6 +25,7 @@ Prerequisites for building CarbonData:
 * Apache Maven (we recommend version 3.0.4)
 * Java 7 or 8
 * Scala 2.10
+* Apache Thrift 0.9.3
 
 I. Clone and build CarbonData
 ```
