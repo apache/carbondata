@@ -74,7 +74,7 @@ public class AvgDoubleAggregator extends AbstractMeasureAggregatorBasic {
       }
       return;
     }
-    aggVal += (Double) newVal;
+    aggVal += ((Number) newVal).doubleValue();
     count++;
     firstTime = false;
   }

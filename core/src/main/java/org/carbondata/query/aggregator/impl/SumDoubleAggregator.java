@@ -56,7 +56,7 @@ public class SumDoubleAggregator extends AbstractMeasureAggregatorBasic {
    * @param newVal new value
    */
   @Override public void agg(Object newVal) {
-    aggVal += (Double) newVal;
+    aggVal += ((Number) newVal).doubleValue();
     firstTime = false;
   }
 
