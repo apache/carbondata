@@ -28,6 +28,9 @@
     <version>0.1.0-SNAPSHOT</version>
     <artifactId>carbondata-parent</artifactId>
   </parent>
+  <properties>
+    <dev.path>${basedir}/../dev</dev.path>
+  </properties>
   <pluginRepositories>
   </pluginRepositories>
   <dependencies>

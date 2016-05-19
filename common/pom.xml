@@ -29,6 +29,9 @@
     <artifactId>carbondata-parent</artifactId>
     <relativePath>../pom.xml</relativePath>
   </parent>
+  <properties>
+    <dev.path>${basedir}/../dev</dev.path>
+  </properties>
   <dependencies>
     <dependency>
       <groupId>log4j</groupId>

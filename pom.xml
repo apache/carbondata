@@ -34,6 +34,7 @@
     <hadoop.deps.scope>compile</hadoop.deps.scope>
     <spark.deps.scope>compile</spark.deps.scope>
     <scala.deps.scope>compile</scala.deps.scope>
+    <dev.path>${basedir}/dev</dev.path>
   </properties>
   <modules>
     <module>common</module>
@@ -52,7 +53,7 @@
         <artifactId>maven-checkstyle-plugin</artifactId>
         <version>2.17</version>
         <configuration>
-          <configLocation>dev/javastyle-config.xml</configLocation>
+          <configLocation>${dev.path}/javastyle-config.xml</configLocation>
           <consoleOutput>true</consoleOutput>
           <failsOnError>true</failsOnError>
           <linkXRef>false</linkXRef>
@@ -91,7 +92,7 @@
           <failOnWarning>false</failOnWarning>
           <sourceDirectory>${basedir}/src/main/scala</sourceDirectory>
           <testSourceDirectory>${basedir}/src/test/scala</testSourceDirectory>
-          <configLocation>dev/scalastyle-config.xml</configLocation>
+          <configLocation>${dev.path}/scalastyle-config.xml</configLocation>
           <outputFile>${basedir}/target/scalastyle-output.xml</outputFile>
           <outputEncoding>${project.build.sourceEncoding}</outputEncoding>
         </configuration>
