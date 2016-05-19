@@ -31,7 +31,7 @@ import org.apache.spark
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.cubemodel.{AggregateTableAttributes, Partitioner}
+import org.apache.spark.sql.execution.command.{AggregateTableAttributes, Partitioner}
 import org.apache.spark.sql.hive.client.ClientInterface
 import org.apache.spark.sql.types._
 import org.eigenbase.xom.XOMUtil
@@ -52,9 +52,9 @@ import org.carbondata.core.reader.ThriftReader
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.core.writer.ThriftWriter
 import org.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-import org.carbondata.integration.spark.load.CarbonLoaderUtil
-import org.carbondata.integration.spark.util.CarbonScalaUtil.CarbonSparkUtil
 import org.carbondata.processing.util.CarbonDataProcessorUtil
+import org.carbondata.spark.load.CarbonLoaderUtil
+import org.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
 
 case class MetaData(var cubesMeta: ArrayBuffer[TableMeta])
 
@@ -315,7 +315,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
                       .getCarbonTable(cubeUniqueName),
                     // TODO: Need to update schema thirft to hold partitioner
                     // information and reload when required.
-                    Partitioner("org.carbondata.integration.spark.partition.api.impl." +
+                    Partitioner("org.carbondata.spark.partition.api.impl." +
                       "SampleDataPartitionerImpl",
                       Array(""), 1, getNodeList()))
                 }
@@ -377,7 +377,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
       carbonTableIdentifier,
       storePath,
       CarbonMetadata.getInstance().getCarbonTable(dbName + "_" + tableName),
-      Partitioner("org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl",
+      Partitioner("org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
         Array(""), 1, getNodeList()))
 
     val fileType = FileFactory.getFileType(schemaMetadataPath)

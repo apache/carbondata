@@ -22,11 +22,11 @@ import scala.collection.mutable.MutableList
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
 import org.apache.spark.sql.catalyst.trees.TreeNodeRef
-import org.apache.spark.sql.cubemodel.tableModel
+import org.apache.spark.sql.execution.command.tableModel
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.types.{BooleanType, StringType, TimestampType}
 
-import org.carbondata.integration.spark.agg._
+import org.carbondata.spark.agg.{AverageCarbon, CountCarbon, CountDistinctCarbon, MaxCarbon, MeasureAggregatorUDT, MinCarbon, PositionLiteral, SumCarbon, SumDistinctCarbon}
 
 /**
  * Top command

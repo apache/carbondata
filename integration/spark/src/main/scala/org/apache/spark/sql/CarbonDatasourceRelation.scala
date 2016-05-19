@@ -31,7 +31,7 @@ import org.apache.spark.sql.hive.{CarbonMetaData, CarbonMetastoreTypes, TableMet
 import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, RelationProvider}
 import org.apache.spark.sql.types.{DataType, StructType}
 
-import org.carbondata.integration.spark.{CarbonOption, _}
+import org.carbondata.spark.{CarbonOption, _}
 
 /**
  * Carbon relation provider compliant to data source api.

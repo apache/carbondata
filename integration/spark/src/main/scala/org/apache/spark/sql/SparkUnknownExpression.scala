@@ -23,13 +23,11 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericMutableRow}
 
-import org.carbondata.integration.spark.util.CarbonScalaUtil
 import org.carbondata.query.carbonfilterinterface.{ExpressionType, RowIntf}
 import org.carbondata.query.expression.{ColumnExpression, Expression, ExpressionResult}
 import org.carbondata.query.expression.conditional.ConditionalExpression
 import org.carbondata.query.expression.exception.FilterUnsupportedException
-
-
+import org.carbondata.spark.util.CarbonScalaUtil
 
 class SparkUnknownExpression(sparkExp: SparkExpression)
   extends Expression with ConditionalExpression {

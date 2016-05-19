@@ -1,4 +1,4 @@
-package org.carbondata.integration.spark.testsuite.validation;
+package org.carbondata.spark.testsuite.validation;
 
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;

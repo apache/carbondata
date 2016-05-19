@@ -27,7 +27,7 @@ import org.apache.spark.sql.CarbonContext
 import org.apache.spark.{SparkConf, SparkContext}
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
-import org.carbondata.integration.spark.load.CarbonLoaderUtil
+import org.carbondata.spark.load.CarbonLoaderUtil
 
 class LocalSQLContext(val hdfsCarbonBasePath: String)
   extends CarbonContext(new SparkContext(new SparkConf()

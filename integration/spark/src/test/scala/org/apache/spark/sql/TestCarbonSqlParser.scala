@@ -1,7 +1,7 @@
 package org.apache.spark.sql
 
 import org.apache.spark.sql.common.util.QueryTest
-import org.apache.spark.sql.cubemodel.Field
+import org.apache.spark.sql.execution.command.Field
 
 /**
   * Stub class for calling the CarbonSqlParser

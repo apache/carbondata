@@ -22,12 +22,12 @@ import scala.language.implicitConversions
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.cubemodel.PartitionData
+import org.apache.spark.sql.execution.command.PartitionData
 import org.apache.spark.sql.hive._
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.util.CarbonProperties
-import org.carbondata.integration.spark.rdd.CarbonDataFrameRDD
+import org.carbondata.spark.rdd.CarbonDataFrameRDD
 
 class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveContext(sc) {
   self =>

@@ -1,4 +1,4 @@
-package org.carbondata.integration.spark.load;
+package org.carbondata.spark.load;
 
 import java.util.ArrayList;
 import java.util.Arrays;

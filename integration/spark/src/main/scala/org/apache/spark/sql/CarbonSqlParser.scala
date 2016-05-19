@@ -30,7 +30,7 @@ import org.apache.spark.sql.catalyst.{SqlLexical, _}
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
-import org.apache.spark.sql.cubemodel.{DimensionRelation, _}
+import org.apache.spark.sql.execution.command.{DimensionRelation, _}
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
 import scala.collection.mutable.LinkedHashSet

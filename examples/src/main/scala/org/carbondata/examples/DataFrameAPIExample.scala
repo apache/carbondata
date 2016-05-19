@@ -78,7 +78,7 @@ object DataFrameAPIExample {
     cc.sql("drop cube carbon1")
 
     // also support a implicit function for easier access
-    import org.carbondata.integration.spark._
+    import org.carbondata.spark._
     df.saveAsCarbonFile(Map("tableName" -> "carbon2"))
     cc.sql("select count(*) from carbon2 where c3 > 100").show
     cc.sql("drop cube carbon2")
