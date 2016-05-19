@@ -1159,10 +1159,6 @@ public final class CarbonLoaderUtil {
     Map<String, List<TableBlockInfo>> nodeBlocksMap =
         new HashMap<String, List<TableBlockInfo>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    Map<String, List<List<TableBlockInfo>>> outputMap =
-        new HashMap<String, List<List<TableBlockInfo>>>(
-            CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
     List<NodeBlockRelation> flattenedList =
         new ArrayList<NodeBlockRelation>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
