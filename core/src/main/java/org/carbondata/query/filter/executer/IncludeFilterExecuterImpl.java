@@ -172,36 +172,34 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
     if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
-      if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
-        FixedLengthDimensionDataChunk fixedDimensionChunk =
-            (FixedLengthDimensionDataChunk) dimensionColumnDataChunk;
-        int start = 0;
-        int last = 0;
-        int startIndex = 0;
-        byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-        for (int k = 0; k < filterValues.length; k++) {
-          start = CarbonUtil.getFirstIndexUsingBinarySearch(
-              (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-              filterValues[k]);
-          if (start == -1) {
-            continue;
-          }
-          bitSet.set(start);
-          last = start;
-          for (int j = start + 1; j < numerOfRows; j++) {
-            if (ByteUtil.UnsafeComparer.INSTANCE
-                .compareTo(fixedDimensionChunk.getCompleteDataChunk(), j * filterValues[k].length,
-                    filterValues[k].length, filterValues[k], 0, filterValues[k].length) == 0) {
-              bitSet.set(j);
-              last++;
-            } else {
-              break;
-            }
-          }
-          startIndex = last;
-          if (startIndex >= numerOfRows) {
+      FixedLengthDimensionDataChunk fixedDimensionChunk =
+          (FixedLengthDimensionDataChunk) dimensionColumnDataChunk;
+      int start = 0;
+      int last = 0;
+      int startIndex = 0;
+      byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+      for (int k = 0; k < filterValues.length; k++) {
+        start = CarbonUtil.getFirstIndexUsingBinarySearch(
+            (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, startIndex, numerOfRows - 1,
+            filterValues[k]);
+        if (start == -1) {
+          continue;
+        }
+        bitSet.set(start);
+        last = start;
+        for (int j = start + 1; j < numerOfRows; j++) {
+          if (ByteUtil.UnsafeComparer.INSTANCE
+              .compareTo(fixedDimensionChunk.getCompleteDataChunk(), j * filterValues[k].length,
+                  filterValues[k].length, filterValues[k], 0, filterValues[k].length) == 0) {
+            bitSet.set(j);
+            last++;
+          } else {
             break;
           }
+        }
+        startIndex = last;
+        if (startIndex >= numerOfRows) {
+          break;
         }
       }
     }
