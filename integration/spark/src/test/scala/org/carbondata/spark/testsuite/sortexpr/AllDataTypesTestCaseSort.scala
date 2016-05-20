@@ -33,7 +33,7 @@ import org.scalatest.BeforeAndAfterAll
 class AllDataTypesTestCaseSort extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("CREATE CUBE alldatatypescubeSort DIMENSIONS (empno Integer, empname String, designation String, doj Timestamp, workgroupcategory Integer, workgroupcategoryname String, deptno Integer, deptname String, projectcode Integer, projectjoindate Timestamp, projectenddate Timestamp) MEASURES (attendance Integer,utilization Integer,salary Integer) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
+    sql("CREATE CUBE alldatatypescubesort DIMENSIONS (empno Integer, empname String, designation String, doj Timestamp, workgroupcategory Integer, workgroupcategoryname String, deptno Integer, deptname String, projectcode Integer, projectjoindate Timestamp, projectenddate Timestamp) MEASURES (attendance Integer,utilization Integer,salary Integer) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
     sql("LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE alldatatypescubesort PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
   }
 

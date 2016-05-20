@@ -31,7 +31,7 @@ import java.sql.Timestamp
   * @author N00902756
   *
   */
-class FilterProcessor_FT extends QueryTest with BeforeAndAfterAll {
+class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop cube if exists filtertestTables")
