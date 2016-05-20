@@ -40,7 +40,6 @@ import org.carbondata.core.carbon.metadata.blocklet.index.BlockletBTreeIndex;
 import org.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex;
 import org.carbondata.core.carbon.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.carbondata.core.carbon.metadata.blocklet.sort.SortState;
-import org.carbondata.core.carbon.metadata.datatype.ConvertedType;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
@@ -162,8 +161,6 @@ public class DataFileFooterConverter {
       encoders.add(fromExternalToWrapperEncoding(encoder));
     }
     wrapperColumnSchema.setEncodingList(encoders);
-    wrapperColumnSchema.setConvertedType(thriftConvertedTypeToWrapperConvertedTypeConverter(
-        externalColumnSchema.getConverted_type()));
     wrapperColumnSchema.setNumberOfChild(externalColumnSchema.getNum_child());
     wrapperColumnSchema.setPrecision(externalColumnSchema.getPrecision());
     wrapperColumnSchema.setColumnGroup(externalColumnSchema.getColumn_group_id());
@@ -320,66 +317,6 @@ public class DataFileFooterConverter {
         return DataType.STRUCT;
       default:
         return DataType.STRING;
-    }
-  }
-
-  /**
-   * Below method is to convert the thrift converted type to wrapper converted
-   * type
-   *
-   * @param convertedType thrift
-   * @return wrapper converted type
-   */
-  private ConvertedType thriftConvertedTypeToWrapperConvertedTypeConverter(
-      org.carbondata.format.ConvertedType convertedType) {
-    if (null == convertedType) {
-      return null;
-    }
-    switch (convertedType) {
-      case UTF8:
-        return ConvertedType.UTF8;
-      case MAP:
-        return ConvertedType.MAP;
-      case MAP_KEY_VALUE:
-        return ConvertedType.MAP_KEY_VALUE;
-      case LIST:
-        return ConvertedType.LIST;
-      case ENUM:
-        return ConvertedType.ENUM;
-      case DECIMAL:
-        return ConvertedType.DECIMAL;
-      case DATE:
-        return ConvertedType.DATE;
-      case TIME_MILLIS:
-        return ConvertedType.TIME_MILLIS;
-      case TIMESTAMP_MILLIS:
-        return ConvertedType.TIMESTAMP_MILLIS;
-      case RESERVED:
-        return ConvertedType.RESERVED;
-      case UINT_8:
-        return ConvertedType.UINT_8;
-      case UINT_16:
-        return ConvertedType.UINT_16;
-      case UINT_32:
-        return ConvertedType.UINT_32;
-      case UINT_64:
-        return ConvertedType.UINT_64;
-      case INT_8:
-        return ConvertedType.INT_8;
-      case INT_16:
-        return ConvertedType.INT_16;
-      case INT_32:
-        return ConvertedType.INT_32;
-      case INT_64:
-        return ConvertedType.INT_64;
-      case JSON:
-        return ConvertedType.JSON;
-      case BSON:
-        return ConvertedType.BSON;
-      case INTERVAL:
-        return ConvertedType.INTERVAL;
-      default:
-        return ConvertedType.UTF8;
     }
   }
 

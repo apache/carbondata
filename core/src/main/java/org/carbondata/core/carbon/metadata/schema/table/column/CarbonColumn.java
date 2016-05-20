@@ -22,7 +22,6 @@ package org.carbondata.core.carbon.metadata.schema.table.column;
 import java.io.Serializable;
 import java.util.List;
 
-import org.carbondata.core.carbon.metadata.datatype.ConvertedType;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 
@@ -52,13 +51,6 @@ public class CarbonColumn implements Serializable {
   public CarbonColumn(ColumnSchema columnSchema, int ordinal) {
     this.columnSchema = columnSchema;
     this.ordinal = ordinal;
-  }
-
-  /**
-   * @return convertedType
-   */
-  public ConvertedType getConvertedType() {
-    return columnSchema.getConvertedType();
   }
 
   /**

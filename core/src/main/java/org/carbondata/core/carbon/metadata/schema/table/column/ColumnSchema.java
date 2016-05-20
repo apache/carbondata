@@ -21,7 +21,6 @@ package org.carbondata.core.carbon.metadata.schema.table.column;
 import java.io.Serializable;
 import java.util.List;
 
-import org.carbondata.core.carbon.metadata.datatype.ConvertedType;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 
@@ -74,12 +73,6 @@ public class ColumnSchema implements Serializable {
    * where in columns in each group are chunked together.
    */
   private int columnGroupId = -1;
-
-  /**
-   * Optional When the schema is the result of a conversion from another model
-   * Used to record the original type to help with cross conversion.
-   */
-  private ConvertedType convertedType;
 
   /**
    * Used when this column contains decimal data.
@@ -174,20 +167,6 @@ public class ColumnSchema implements Serializable {
    */
   public void setColumnGroup(int columnGroupId) {
     this.columnGroupId = columnGroupId;
-  }
-
-  /**
-   * @return the convertedType
-   */
-  public ConvertedType getConvertedType() {
-    return convertedType;
-  }
-
-  /**
-   * @param convertedType the convertedType to set
-   */
-  public void setConvertedType(ConvertedType convertedType) {
-    this.convertedType = convertedType;
   }
 
   /**
