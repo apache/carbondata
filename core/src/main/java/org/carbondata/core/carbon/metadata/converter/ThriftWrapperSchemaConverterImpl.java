@@ -21,7 +21,6 @@ package org.carbondata.core.carbon.metadata.converter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.carbondata.core.carbon.metadata.datatype.ConvertedType;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.SchemaEvolution;
@@ -77,65 +76,6 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     return new org.carbondata.format.SchemaEvolution(thriftSchemaEvolEntryList);
   }
 
-  /**
-   * converts wrapper to external converter type
-   *
-   * @param convertedType
-   * @return
-   */
-  private org.carbondata.format.ConvertedType fromWrapperToExternalConvertedType(
-      ConvertedType convertedType) {
-
-    if (null == convertedType) {
-      return null;
-    }
-    switch (convertedType) {
-      case UTF8:
-        return org.carbondata.format.ConvertedType.UTF8;
-      case MAP:
-        return org.carbondata.format.ConvertedType.MAP;
-      case MAP_KEY_VALUE:
-        return org.carbondata.format.ConvertedType.MAP_KEY_VALUE;
-      case LIST:
-        return org.carbondata.format.ConvertedType.LIST;
-      case ENUM:
-        return org.carbondata.format.ConvertedType.ENUM;
-      case DECIMAL:
-        return org.carbondata.format.ConvertedType.DECIMAL;
-      case DATE:
-        return org.carbondata.format.ConvertedType.DATE;
-      case TIME_MILLIS:
-        return org.carbondata.format.ConvertedType.TIME_MILLIS;
-      case TIMESTAMP_MILLIS:
-        return org.carbondata.format.ConvertedType.TIMESTAMP_MILLIS;
-      case RESERVED:
-        return org.carbondata.format.ConvertedType.RESERVED;
-      case UINT_8:
-        return org.carbondata.format.ConvertedType.UINT_8;
-      case UINT_16:
-        return org.carbondata.format.ConvertedType.UINT_16;
-      case UINT_32:
-        return org.carbondata.format.ConvertedType.UINT_32;
-      case UINT_64:
-        return org.carbondata.format.ConvertedType.UINT_64;
-      case INT_8:
-        return org.carbondata.format.ConvertedType.INT_8;
-      case INT_16:
-        return org.carbondata.format.ConvertedType.INT_16;
-      case INT_32:
-        return org.carbondata.format.ConvertedType.INT_32;
-      case INT_64:
-        return org.carbondata.format.ConvertedType.INT_64;
-      case JSON:
-        return org.carbondata.format.ConvertedType.JSON;
-      case BSON:
-        return org.carbondata.format.ConvertedType.BSON;
-      case INTERVAL:
-        return org.carbondata.format.ConvertedType.INTERVAL;
-      default:
-        return org.carbondata.format.ConvertedType.UTF8;
-    }
-  }
 
   /**
    * converts from wrapper to external encoding
@@ -212,8 +152,6 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         fromWrapperToExternalDataType(wrapperColumnSchema.getDataType()),
         wrapperColumnSchema.getColumnName(), wrapperColumnSchema.getColumnUniqueId(),
         wrapperColumnSchema.isColumnar(), encoders, wrapperColumnSchema.isDimensionColumn());
-    thriftColumnSchema.setConverted_type(
-        fromWrapperToExternalConvertedType(wrapperColumnSchema.getConvertedType()));
     thriftColumnSchema.setColumn_group_id(wrapperColumnSchema.getColumnGroupId());
     thriftColumnSchema.setScale(wrapperColumnSchema.getScale());
     thriftColumnSchema.setPrecision(wrapperColumnSchema.getPrecision());
@@ -359,65 +297,6 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     }
   }
 
-  /**
-   * convert from external to wrapper converter type
-   *
-   * @param convertedType
-   * @return
-   */
-  private ConvertedType fromExternalToWrapperConvertedType(
-      org.carbondata.format.ConvertedType convertedType) {
-    if (null == convertedType) {
-      return null;
-    }
-    switch (convertedType) {
-      case UTF8:
-        return ConvertedType.UTF8;
-      case MAP:
-        return ConvertedType.MAP;
-      case MAP_KEY_VALUE:
-        return ConvertedType.MAP_KEY_VALUE;
-      case LIST:
-        return ConvertedType.LIST;
-      case ENUM:
-        return ConvertedType.ENUM;
-      case DECIMAL:
-        return ConvertedType.DECIMAL;
-      case DATE:
-        return ConvertedType.DATE;
-      case TIME_MILLIS:
-        return ConvertedType.TIME_MILLIS;
-      case TIMESTAMP_MILLIS:
-        return ConvertedType.TIMESTAMP_MILLIS;
-      case RESERVED:
-        return ConvertedType.RESERVED;
-      case UINT_8:
-        return ConvertedType.UINT_8;
-      case UINT_16:
-        return ConvertedType.UINT_16;
-      case UINT_32:
-        return ConvertedType.UINT_32;
-      case UINT_64:
-        return ConvertedType.UINT_64;
-      case INT_8:
-        return ConvertedType.INT_8;
-      case INT_16:
-        return ConvertedType.INT_16;
-      case INT_32:
-        return ConvertedType.INT_32;
-      case INT_64:
-        return ConvertedType.INT_64;
-      case JSON:
-        return ConvertedType.JSON;
-      case BSON:
-        return ConvertedType.BSON;
-      case INTERVAL:
-        return ConvertedType.INTERVAL;
-      default:
-        return ConvertedType.UTF8;
-    }
-  }
-
   /* (non-Javadoc)
    * convert from external to wrapper columnschema
    */
@@ -434,8 +313,6 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       encoders.add(fromExternalToWrapperEncoding(encoder));
     }
     wrapperColumnSchema.setEncodingList(encoders);
-    wrapperColumnSchema.setConvertedType(
-        fromExternalToWrapperConvertedType(externalColumnSchema.getConverted_type()));
     wrapperColumnSchema.setNumberOfChild(externalColumnSchema.getNum_child());
     wrapperColumnSchema.setPrecision(externalColumnSchema.getPrecision());
     wrapperColumnSchema.setColumnGroup(externalColumnSchema.getColumn_group_id());
