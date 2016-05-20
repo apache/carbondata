@@ -100,7 +100,7 @@ struct SchemaEvolutionEntry{
 * History of schema evolution
 */
 struct SchemaEvolution{
-1: required list<SchemaEvolutionEntry> schema_evolution_history;
+    1: required list<SchemaEvolutionEntry> schema_evolution_history;
 }
 
 /**
@@ -115,5 +115,4 @@ struct TableSchema{
 struct TableInfo{
 	1: required TableSchema fact_table;
 	2: required list<TableSchema> aggregate_table_list;
-
 }
