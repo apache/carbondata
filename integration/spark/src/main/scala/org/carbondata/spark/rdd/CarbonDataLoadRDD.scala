@@ -31,15 +31,14 @@ import org.carbondata.common.logging.impl.StandardLogService
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
-import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.carbondata.core.util.CarbonProperties
 import org.carbondata.processing.constants.DataProcessorConstants
 import org.carbondata.processing.etl.DataLoadingException
 import org.carbondata.processing.graphgenerator.GraphGenerator
-import org.carbondata.query.datastorage.InMemoryTableStore
-import org.carbondata.spark.load._
-import org.carbondata.spark.util.CarbonQueryUtil
 import org.carbondata.spark.Result
+import org.carbondata.spark.load._
 import org.carbondata.spark.splits.TableSplit
+import org.carbondata.spark.util.CarbonQueryUtil
 
 /**
  * This partition class use to split by TableSplit
@@ -50,7 +49,7 @@ import org.carbondata.spark.splits.TableSplit
  * @param blocksDetails
  */
 class CarbonTableSplitPartition(rddId: Int, val idx: Int, @transient val tableSplit: TableSplit,
-                                val blocksDetails: Array[BlockDetails])
+    val blocksDetails: Array[BlockDetails])
   extends Partition {
 
   override val index: Int = idx
@@ -60,16 +59,16 @@ class CarbonTableSplitPartition(rddId: Int, val idx: Int, @transient val tableSp
   override def hashCode(): Int = 41 * (41 + rddId) + idx
 }
 
- /**
-  * This partition class use to split by Host
-  *
-  * @param rddId
-  * @param idx
-  * @param host
-  * @param blocksDetails
-  */
+/**
+ * This partition class use to split by Host
+ *
+ * @param rddId
+ * @param idx
+ * @param host
+ * @param blocksDetails
+ */
 class CarbonNodePartition(rddId: Int, val idx: Int, host: String,
-                          val blocksDetails: Array[BlockDetails])
+    val blocksDetails: Array[BlockDetails])
   extends Partition {
 
   override val index: Int = idx
@@ -79,26 +78,26 @@ class CarbonNodePartition(rddId: Int, val idx: Int, host: String,
   override def hashCode(): Int = 41 * (41 + rddId) + idx
 }
 
- /**
-  * Use this RDD class to load data
-  *
-  * @param sc The SparkContext to associate the RDD with.
-  * @param result Output result
-  * @param carbonLoadModel Carbon load model which contain the load info
-  * @param storeLocation Tmp store location
-  * @param hdfsStoreLocation The store location in hdfs
-  * @param kettleHomePath The kettle home path
-  * @param partitioner Partitioner which specify how to partition
-  * @param columinar whether it is columinar
-  * @param currentRestructNumber current restruct number
-  * @param loadCount Current load count
-  * @param cubeCreationTime Time of creating cube
-  * @param schemaLastUpdatedTime Time of last schema update
-  * @param blocksGroupBy Blocks Array which is group by partition or host
-  * @param isTableSplitPartition Whether using table split partition
-  * @tparam K Class of the key associated with the Result.
-  * @tparam V Class of the value associated with the Result.
-  */
+/**
+ * Use this RDD class to load data
+ *
+ * @param sc                    The SparkContext to associate the RDD with.
+ * @param result                Output result
+ * @param carbonLoadModel       Carbon load model which contain the load info
+ * @param storeLocation         Tmp store location
+ * @param hdfsStoreLocation     The store location in hdfs
+ * @param kettleHomePath        The kettle home path
+ * @param partitioner           Partitioner which specify how to partition
+ * @param columinar             whether it is columinar
+ * @param currentRestructNumber current restruct number
+ * @param loadCount             Current load count
+ * @param cubeCreationTime      Time of creating cube
+ * @param schemaLastUpdatedTime Time of last schema update
+ * @param blocksGroupBy         Blocks Array which is group by partition or host
+ * @param isTableSplitPartition Whether using table split partition
+ * @tparam K Class of the key associated with the Result.
+ * @tparam V Class of the value associated with the Result.
+ */
 class CarbonDataLoadRDD[K, V](
     sc: SparkContext,
     result: Result[K, V],
@@ -115,7 +114,7 @@ class CarbonDataLoadRDD[K, V](
     blocksGroupBy: Array[(String, Array[BlockDetails])],
     isTableSplitPartition: Boolean)
   extends RDD[(K, V)](sc, Nil)
-  with Logging {
+    with Logging {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
@@ -136,7 +135,7 @@ class CarbonDataLoadRDD[K, V](
         val result = new Array[Partition](splits.length)
         for (i <- 0 until result.length) {
           // filter the same partition unique id, because only one will match, so get 0 element
-          val blocksDetails : Array[BlockDetails] = blocksGroupBy.filter(p =>
+          val blocksDetails: Array[BlockDetails] = blocksGroupBy.filter(p =>
             p._1 == splits(i).getPartition.getUniqueID)(0)._2
           result(i) = new CarbonTableSplitPartition(id, i, splits(i), blocksDetails)
         }
@@ -162,7 +161,7 @@ class CarbonDataLoadRDD[K, V](
       var partitionID = "0"
       var model: CarbonLoadModel = _
 
-      try {
+      try { {
         val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
         if (null == carbonPropertiesFilePath) {
           System.setProperty("carbon.properties.filepath",
@@ -192,12 +191,13 @@ class CarbonDataLoadRDD[K, V](
           dataloadStatus = createManualAggregateTable
         }
         else {
-          try {
+          try { {
             CarbonLoaderUtil.executeGraph(model, storeLocation, hdfsStoreLocation, kettleHomePath,
-              currentRestructNumber);
+              currentRestructNumber)
+          };
           } catch {
             case e: DataLoadingException => if (e.getErrorCode ==
-              DataProcessorConstants.BAD_REC_FOUND) {
+                                                DataProcessorConstants.BAD_REC_FOUND) {
               dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
               logInfo("Bad Record Found")
             } else {
@@ -211,8 +211,9 @@ class CarbonDataLoadRDD[K, V](
             if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
               val newSlice = CarbonCommonConstants.LOAD_FOLDER + loadCount
               var isCopyFailed = false
-              try {
-                CarbonLoaderUtil.copyCurrentLoadToHDFS(model, newSlice, null);
+              try { {
+                CarbonLoaderUtil.copyCurrentLoadToHDFS(model, newSlice, null)
+              };
               } catch {
                 case e: Exception =>
                   isCopyFailed = true
@@ -233,6 +234,7 @@ class CarbonDataLoadRDD[K, V](
             }
           }
         }
+      }
 
       } catch {
         case e: Exception =>
@@ -240,7 +242,7 @@ class CarbonDataLoadRDD[K, V](
           logInfo("DataLoad failure")
       }
 
-      def setModelAndBlocksInfo() : Unit = {
+      def setModelAndBlocksInfo(): Unit = {
         isTableSplitPartition match {
           case true =>
             // for table split partition
@@ -296,11 +298,11 @@ class CarbonDataLoadRDD[K, V](
         isTableSplitPartition match {
           case true =>
             carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" +
-              theSplit.asInstanceOf[CarbonTableSplitPartition].serializableHadoopSplit.value
-                .getPartition.getUniqueID + "_" + UUID.randomUUID()
+            theSplit.asInstanceOf[CarbonTableSplitPartition].serializableHadoopSplit.value
+              .getPartition.getUniqueID + "_" + UUID.randomUUID()
           case false =>
             carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" +
-              UUID.randomUUID()
+            UUID.randomUUID()
         }
       }
 
@@ -342,14 +344,9 @@ class CarbonDataLoadRDD[K, V](
       }
 
       def loadCubeSlices(listOfAllLoadFolders: java.util.List[String],
-                         loadMetadataDetails: Array[LoadMetadataDetails]) = {
+          loadMetadataDetails: Array[LoadMetadataDetails]) = {
         CarbonProperties.getInstance().addProperty("carbon.cache.used", "false");
-        val cube = InMemoryTableStore.getInstance
-          .loadCubeMetadataIfRequired(model.getSchema, model.getSchema.cubes(0), null,
-            schemaLastUpdatedTime)
-        CarbonQueryUtil.createDataSource(currentRestructNumber, model.getSchema, cube, null,
-          listOfAllLoadFolders, model.getTableName, hdfsStoreLocation, cubeCreationTime,
-          loadMetadataDetails)
+        // TODO: Implement it
       }
 
       def createManualAggregateTable(): String = {
@@ -402,9 +399,9 @@ class CarbonDataLoadRDD[K, V](
 
       // TODO Aggregate table needs to be handled
       def iterateOverAggTables(aggTables: java.util.List[String],
-                               listOfLoadFolders: java.util.List[String],
-                               listOfUpdatedLoadFolders: java.util.List[String],
-                               loadFolders: Array[String]): String = {
+          listOfLoadFolders: java.util.List[String],
+          listOfUpdatedLoadFolders: java.util.List[String],
+          loadFolders: Array[String]): String = {
         model.setAggLoadRequest(true)
         aggTables.asScala.foreach { aggTable =>
           model.setAggTableName(aggTable)
@@ -419,59 +416,10 @@ class CarbonDataLoadRDD[K, V](
       }
 
       def loadAggregationTable(listOfLoadFolders: java.util.List[String],
-                               listOfUpdatedLoadFolders: java.util.List[String],
-                               loadFolders: Array[String]): String = {
-        var levelCacheKeys: scala.collection.immutable.List[String] = Nil
-        if (InMemoryTableStore.getInstance.isLevelCacheEnabled()) {
-          val columnList = CarbonLoaderUtil.getColumnListFromAggTable(model)
-          val details = model.getLoadMetadataDetails.asScala.toSeq.toArray
-          // levelCacheKeys = CarbonQueryUtil
-          //  .loadRequiredLevels(CarbonQueryUtil.getListOfSlices(details),
-          //     model.getDatabaseName + '_' + model.getTableName, columnList).asScala.toList
-        }
-        loadFolders.foreach { loadFolder =>
-          val restructNumber = CarbonUtil.getRestructureNumber(loadFolder, model.getTableName)
-          try {
-            if (CarbonLoaderUtil
-              .isSliceValid(loadFolder, listOfLoadFolders, listOfUpdatedLoadFolders,
-                model.getTableName)) {
-              model.setFactStoreLocation(loadFolder)
-              CarbonLoaderUtil.executeGraph(model, storeLocation, hdfsStoreLocation, kettleHomePath,
-                currentRestructNumber)
-            } else {
-              CarbonLoaderUtil
-                .createEmptyLoadFolder(model, loadFolder, hdfsStoreLocation, restructNumber)
-            }
-          } catch {
-            case e: Exception =>
-              LogServiceFactory.getLogService.error(e)
-              dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-          } finally {
-            updateLevelCacheStatus(levelCacheKeys)
-            if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
-              val loadName = loadFolder
-                .substring(loadFolder.indexOf(CarbonCommonConstants.LOAD_FOLDER))
-              try {
-                CarbonLoaderUtil.copyCurrentLoadToHDFS(model, loadName, listOfUpdatedLoadFolders)
-              }
-              catch {
-                case e: Exception =>
-                  LOGGER.error(e)
-                  return CarbonCommonConstants.STORE_LOADSTATUS_FAILURE;
-              }
-            } else {
-              logInfo(s"Load creation failed :: $loadFolder")
-              return dataloadStatus
-            }
-          }
-        }
+          listOfUpdatedLoadFolders: java.util.List[String],
+          loadFolders: Array[String]): String = {
+        // TODO: Implement it
         return dataloadStatus
-      }
-
-      def updateLevelCacheStatus(levelCacheKeys: scala.collection.immutable.List[String]) = {
-        levelCacheKeys.foreach { key =>
-          InMemoryTableStore.getInstance.updateLevelAccessCountInLRUCache(key)
-        }
       }
 
       var finished = false

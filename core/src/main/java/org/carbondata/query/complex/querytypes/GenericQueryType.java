@@ -25,9 +25,7 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
-import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.query.carbon.processor.BlocksChunkHolder;
-import org.carbondata.query.datastorage.InMemoryTable;
 
 import org.apache.spark.sql.types.DataType;
 
@@ -66,9 +64,6 @@ public interface GenericQueryType {
       DataOutputStream dataOutputStream) throws IOException;
 
   DataType getSchemaType();
-
-  Object getDataBasedOnDataTypeFromSurrogates(List<InMemoryTable> slices, ByteBuffer surrogateData,
-      Dimension[] dimensions);
 
   void parseAndGetResultBytes(ByteBuffer complexData, DataOutputStream dataOutput)
       throws IOException;

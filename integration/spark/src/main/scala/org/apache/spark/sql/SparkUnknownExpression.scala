@@ -23,6 +23,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericMutableRow}
 
+import org.carbondata.core.carbon.metadata.encoder.Encoding
 import org.carbondata.query.carbonfilterinterface.{ExpressionType, RowIntf}
 import org.carbondata.query.expression.{ColumnExpression, Expression, ExpressionResult}
 import org.carbondata.query.expression.conditional.ConditionalExpression
@@ -123,7 +124,7 @@ class SparkUnknownExpression(sparkExp: SparkExpression)
   def isDirectDictionaryColumns(): Boolean = {
     var lst = new ArrayList[ColumnExpression]()
     getAllColumnListFromExpressionTree(sparkExp, lst)
-    if (lst.get(0).getDim.isDirectDictionary()) {
+    if (lst.get(0).getCarbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
       true
     }
     else {

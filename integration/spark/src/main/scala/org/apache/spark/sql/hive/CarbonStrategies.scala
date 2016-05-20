@@ -162,11 +162,11 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         condition.map(Filter(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
 
       case ShowCubeCommand(schemaName) =>
-        ExecutedCommand(ShowAllCubesInSchema(schemaName, plan.output)) :: Nil
+        ExecutedCommand(ShowAllTablesInSchema(schemaName, plan.output)) :: Nil
       case c@ShowAllCubeCommand() =>
-        ExecutedCommand(ShowAllCubes(plan.output)) :: Nil
+        ExecutedCommand(ShowAllTables(plan.output)) :: Nil
       case ShowCreateCubeCommand(cm) =>
-        ExecutedCommand(ShowCreateCube(cm, plan.output)) :: Nil
+        ExecutedCommand(ShowCreateTable(cm, plan.output)) :: Nil
       case ShowTablesDetailedCommand(schemaName) =>
         ExecutedCommand(ShowAllTablesDetail(schemaName, plan.output)) :: Nil
       case DropTable(tableName, ifNotExists)

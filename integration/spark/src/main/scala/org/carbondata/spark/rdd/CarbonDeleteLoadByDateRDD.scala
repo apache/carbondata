@@ -26,25 +26,24 @@ import org.apache.spark.sql.execution.command.Partitioner
 
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.load.LoadMetadataDetails
-import org.carbondata.processing.dataprocessor.dataretention.DataRetentionHandler
 import org.carbondata.spark.DeletedLoadResult
 import org.carbondata.spark.load.DeletedLoadMetadata
 import org.carbondata.spark.util.CarbonQueryUtil
 
 class CarbonDeleteLoadByDateRDD[K, V](
-                                       sc: SparkContext,
-                                       result: DeletedLoadResult[K, V],
-                                       schemaName: String,
-                                       cubeName: String,
-                                       dateField: String,
-                                       dateFieldActualName: String,
-                                       dateValue: String,
-                                       partitioner: Partitioner,
-                                       factTableName: String,
-                                       dimTableName: String,
-                                       hdfsStoreLocation: String,
-                                       loadMetadataDetails: List[LoadMetadataDetails],
-                                       currentRestructFolder: Integer)
+    sc: SparkContext,
+    result: DeletedLoadResult[K, V],
+    schemaName: String,
+    cubeName: String,
+    dateField: String,
+    dateFieldActualName: String,
+    dateValue: String,
+    partitioner: Partitioner,
+    factTableName: String,
+    dimTableName: String,
+    hdfsStoreLocation: String,
+    loadMetadataDetails: List[LoadMetadataDetails],
+    currentRestructFolder: Integer)
   extends RDD[(K, V)](sc, Nil) with Logging {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
@@ -70,28 +69,22 @@ class CarbonDeleteLoadByDateRDD[K, V](
       // TODO call CARBON delete API
       logInfo("Applying data retention as per date value " + dateValue)
       var dateFormat = ""
-      try {
+      try { {
         val dateValueAsDate = DateTimeUtils.stringToTime(dateValue)
         dateFormat = CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
+      }
       } catch {
         case e: Exception => logInfo("Unable to parse with default time format " + dateValue)
       }
-      val dataRetentionInvoker = new
-          DataRetentionHandler(schemaName + '_' + partitionID, cubeName + '_' + partitionID,
-            factTableName, dimTableName, hdfsStoreLocation, dateField, dateFieldActualName,
-            dateValue, dateFormat, currentRestructFolder, loadMetadataDetails.asJava)
-      val mapOfRetentionValues = dataRetentionInvoker.updateFactFileBasedOnDataRetentionPolicy()
-        .asScala.toIterator
+      // TODO: Implement it
       var finished = false
 
       override def hasNext: Boolean = {
-        mapOfRetentionValues.hasNext
+        finished
       }
 
       override def next(): (K, V) = {
-        val (loadid, status) = mapOfRetentionValues.next
-        logInfo("loadid :" + loadid + "status :" + status)
-        result.getKey(loadid, status)
+        result.getKey(null, null)
       }
     }
   }

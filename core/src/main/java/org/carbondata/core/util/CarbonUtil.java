@@ -71,7 +71,6 @@ import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.metadata.BlockletInfo;
 import org.carbondata.core.metadata.BlockletInfoColumnar;
-import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.metadata.ValueEncoderMeta;
 import org.carbondata.core.reader.CarbonFooterReader;
@@ -79,10 +78,13 @@ import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.query.util.DataFileFooterConverter;
 
 import com.google.gson.Gson;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
+
 import org.pentaho.di.core.exception.KettleException;
+
 
 public final class CarbonUtil {
 
@@ -1379,25 +1381,6 @@ public final class CarbonUtil {
     FileFactory.FileType fileType = FileFactory.getFileType(filePath);
     CarbonFile carbonFile = FileFactory.getCarbonFile(filePath, fileType);
     return carbonFile.getSize();
-  }
-
-  /**
-   * This API will record the indexes of the dimension which doesnt have
-   * Dictionary values.
-   *
-   * @param currentDims .
-   * @return
-   */
-  public static int[] getNoDictionaryColIndex(Dimension[] currentDims) {
-    List<Integer> dirSurrogateList = new ArrayList<Integer>(currentDims.length);
-    for (Dimension dim : currentDims) {
-      if (dim.isNoDictionaryDim()) {
-        dirSurrogateList.add(dim.getOrdinal());
-      }
-    }
-    int[] noDictionaryValIndex =
-        ArrayUtils.toPrimitive(dirSurrogateList.toArray(new Integer[dirSurrogateList.size()]));
-    return noDictionaryValIndex;
   }
 
   /**

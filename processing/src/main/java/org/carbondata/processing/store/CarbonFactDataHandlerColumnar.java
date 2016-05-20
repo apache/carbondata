@@ -26,7 +26,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -63,9 +62,6 @@ import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.core.util.ValueCompressionUtil;
 import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.processing.datatypes.GenericDataType;
-import org.carbondata.processing.groupby.CarbonAutoAggGroupBy;
-import org.carbondata.processing.groupby.CarbonAutoAggGroupByExtended;
-import org.carbondata.processing.groupby.exception.CarbonGroupByException;
 import org.carbondata.processing.store.colgroup.ColumnDataHolder;
 import org.carbondata.processing.store.colgroup.DataHolder;
 import org.carbondata.processing.store.colgroup.RowBlockStorage;
@@ -73,9 +69,7 @@ import org.carbondata.processing.store.colgroup.RowStoreDataHolder;
 import org.carbondata.processing.store.writer.CarbonFactDataWriter;
 import org.carbondata.processing.store.writer.CarbonFactDataWriterImplForIntIndexAndAggBlock;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
-import org.carbondata.query.cache.QueryExecutorUtil;
 
 /**
  * Fact data handler class to handle the fact data
@@ -139,14 +133,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private int blockletSize;
   /**
-   * isGroupByEnabled
-   */
-  private boolean isGroupByEnabled;
-  /**
-   * groupBy
-   */
-  private CarbonAutoAggGroupBy groupBy;
-  /**
    * mdkeyLength
    */
   private int mdkeyLength;
@@ -163,27 +149,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private String tableName;
   /**
-   * aggregators
-   */
-  private String[] aggregators;
-  /**
-   * aggregatorClass
-   */
-  private String[] aggregatorClass;
-  /**
    * CarbonWriteDataHolder
    */
   private CarbonWriteDataHolder[] dataHolder;
-  /**
-   * factDimLens
-   */
-  private int[] factDimLens;
-  /**
-   * isMergingRequest
-   */
-  private boolean isMergingRequestForCustomAgg;
-
-  //    private boolean isUpdateMemberRequest;
   /**
    * otherMeasureIndex
    */
@@ -337,41 +305,15 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.databaseName = carbonFactDataHandlerModel.getDatabaseName();
     this.tableName = carbonFactDataHandlerModel.getTableName();
     this.storeLocation = carbonFactDataHandlerModel.getStoreLocation();
-    this.isGroupByEnabled = carbonFactDataHandlerModel.isGroupByEnabled();
     this.measureCount = carbonFactDataHandlerModel.getMeasureCount();
     this.mdkeyLength = carbonFactDataHandlerModel.getMdKeyLength();
     this.mdKeyIndex = carbonFactDataHandlerModel.getMdKeyIndex();
-    this.aggregators = carbonFactDataHandlerModel.getAggregators();
-    this.aggregatorClass = carbonFactDataHandlerModel.getAggregatorClass();
-    this.factDimLens = carbonFactDataHandlerModel.getFactDimLens();
     this.noDictionaryCount = carbonFactDataHandlerModel.getNoDictionaryCount();
-    this.isMergingRequestForCustomAgg = carbonFactDataHandlerModel.isMergingRequestForCustomAgg();
     this.colGrpModel = carbonFactDataHandlerModel.getColGrpModel();
     this.completeDimLens = carbonFactDataHandlerModel.getDimLens();
     this.dimLens = colGrpModel.getColumnGroupCardinality();
     this.carbonDataFileAttributes = carbonFactDataHandlerModel.getCarbonDataFileAttributes();
     this.type = carbonFactDataHandlerModel.getAggType();
-    if (this.isGroupByEnabled && carbonFactDataHandlerModel.isDataWritingRequest()
-        && !carbonFactDataHandlerModel.isUpdateMemberRequest()) {
-      surrogateIndex =
-          new int[carbonFactDataHandlerModel.getAggLevels().length - noDictionaryCount];
-      Arrays.fill(surrogateIndex, -1);
-      for (int k = 0; k < carbonFactDataHandlerModel.getAggLevels().length; k++) {
-        for (int j = 0; j < carbonFactDataHandlerModel.getFactLevels().length; j++) {
-          if (carbonFactDataHandlerModel.getAggLevels()[k]
-              .equals(carbonFactDataHandlerModel.getFactLevels()[j])) {
-            surrogateIndex[k] = j;
-            break;
-          }
-        }
-      }
-      this.factKeyGenerator = KeyGeneratorFactory.getKeyGenerator(factDimLens);
-      this.keyGenerator = KeyGeneratorFactory.getKeyGenerator(dimLens);
-      int[] maskedByteRanges =
-          CarbonDataProcessorUtil.getMaskedByte(surrogateIndex, factKeyGenerator);
-      this.maskedByte = new int[factKeyGenerator.getKeySizeInBytes()];
-      QueryExecutorUtil.updateMaskedKeyRanges(maskedByte, maskedByteRanges);
-    }
     LOGGER.info("Initializing writer executers");
     //TODO need to pass carbon table identifier to metadata
     CarbonTable carbonTable =
@@ -431,38 +373,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   public void initialise() throws CarbonDataWriterException {
     fileManager = new LoadFolderData();
     fileManager.setName(new File(this.storeLocation).getName());
-    if (!isGroupByEnabled) {
-      setWritingConfiguration();
-    } else if (isGroupByEnabled) {
-      setWritingConfiguration();
-    } else {
-      if (!isMergingRequestForCustomAgg) {
-        this.groupBy = new CarbonAutoAggGroupBy(aggregators, aggregatorClass, this.databaseName,
-            this.tableName, this.tableName, this.factDimLens,
-            CarbonCommonConstants.FILE_INPROGRESS_STATUS, 0);
-      } else {
-        this.groupBy =
-            new CarbonAutoAggGroupByExtended(aggregators, aggregatorClass, this.databaseName,
-                this.tableName, this.tableName, this.factDimLens,
-                CarbonCommonConstants.FILE_INPROGRESS_STATUS, 0);
-      }
-    }
-
-  }
-
-  /**
-   * This method will add mdkey and measure values to store
-   *
-   * @param rowData
-   * @throws CarbonDataWriterException
-   */
-  public void addDataToStore(Object[] rowData) throws CarbonDataWriterException {
-    if (isGroupByEnabled) {
-      rowData[mdKeyIndex] = getAggregateTableMdkey((byte[]) rowData[mdKeyIndex]);
-      addToStore(rowData);
-    } else {
-      addToStore(rowData);
-    }
+    setWritingConfiguration();
   }
 
   /**
@@ -471,7 +382,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @param row
    * @throws CarbonDataWriterException
    */
-  private void addToStore(Object[] row) throws CarbonDataWriterException {
+  public void addDataToStore(Object[] row) throws CarbonDataWriterException {
     byte[] mdkey = (byte[]) row[this.mdKeyIndex];
     byte[] noDictionaryKey = null;
     if (noDictionaryCount > 0 || complexIndexMap.size() > 0) {
@@ -811,15 +722,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         fileData.setName(changedFileName);
       }
     }
-    if (null != groupBy) {
-      try {
-        this.groupBy.finish();
-      } catch (CarbonGroupByException ex) {
-        LOGGER.info("Problem while closing the groupby file");
-      }
-    }
     this.dataWriter = null;
-    this.groupBy = null;
     this.keyBlockHolder = null;
   }
 

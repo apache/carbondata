@@ -55,6 +55,7 @@ import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
+import org.carbondata.query.carbon.util.DataTypeUtil;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.carbonfilterinterface.RowImpl;
 import org.carbondata.query.carbonfilterinterface.RowIntf;
@@ -74,7 +75,6 @@ import org.carbondata.query.filter.executer.RowLevelFilterExecuterImpl;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 import org.carbondata.query.filter.resolver.RowLevelFilterResolverImpl;
 import org.carbondata.query.schema.metadata.DimColumnFilterInfo;
-import org.carbondata.query.util.DataTypeConverter;
 
 public final class FilterUtil {
   private static final LogService LOGGER =
@@ -307,7 +307,7 @@ public final class FilterUtil {
         if (stringValue.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
           stringValue = null;
         }
-        row.setValues(new Object[] { DataTypeConverter.getDataBasedOnDataType(stringValue,
+        row.setValues(new Object[] { DataTypeUtil.getDataBasedOnDataType(stringValue,
             columnExpression.getCarbonColumn().getDataType()) });
         Boolean rslt = expression.evaluate(row).getBoolean();
         if (null != rslt && !(rslt ^ isIncludeFilter)) {
@@ -436,7 +436,7 @@ public final class FilterUtil {
       if (defaultValues.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
         defaultValues = null;
       }
-      row.setValues(new Object[] { DataTypeConverter.getDataBasedOnDataType(defaultValues,
+      row.setValues(new Object[] { DataTypeUtil.getDataBasedOnDataType(defaultValues,
           columnExpression.getCarbonColumn().getDataType()) });
       Boolean rslt = expression.evaluate(row).getBoolean();
       if (null != rslt && !(rslt ^ isIncludeFilter)) {

@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.carbondata.core.carbon.CarbonDef.Schema;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
@@ -39,19 +38,13 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.core.metadata.CarbonMetadata.Cube;
-import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.query.carbon.model.DimensionAggregatorInfo;
 import org.carbondata.query.carbon.model.QueryColumn;
 import org.carbondata.query.carbon.model.QueryDimension;
 import org.carbondata.query.carbon.model.QueryModel;
-import org.carbondata.query.datastorage.InMemoryTableStore;
-import org.carbondata.query.directinterface.impl.CarbonQueryParseUtil;
-import org.carbondata.query.executer.CarbonQueryExecutorModel;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.conditional.ConditionalExpression;
-import org.carbondata.query.scope.QueryScopeObject;
 import org.carbondata.spark.partition.api.Partition;
 import org.carbondata.spark.partition.api.impl.DefaultLoadBalancer;
 import org.carbondata.spark.partition.api.impl.PartitionMultiFileImpl;
@@ -69,34 +62,6 @@ public final class CarbonQueryUtil {
   private CarbonQueryUtil() {
 
   }
-
-  /**
-   * API will provide the slices
-   *
-   * @param executerModel
-   * @param basePath
-   * @param partitionID
-   * @return
-   */
-  public static List<String> getSliceLoads(CarbonQueryExecutorModel executerModel, String basePath,
-      String partitionID) {
-
-    List<String> listOfLoadPaths = new ArrayList<String>(20);
-    if (null != executerModel) {
-      List<String> listOfLoad = executerModel.getListValidSliceNumbers();
-
-      if (null != listOfLoad) {
-        for (String name : listOfLoad) {
-          String loadPath = CarbonCommonConstants.LOAD_FOLDER + name;
-          listOfLoadPaths.add(loadPath);
-        }
-      }
-    }
-
-    return listOfLoadPaths;
-
-  }
-
 
   public static QueryModel createQueryModel(AbsoluteTableIdentifier absoluteTableIdentifier,
       CarbonQueryPlan queryPlan, CarbonTable carbonTable) throws IOException {
@@ -216,7 +181,7 @@ public final class CarbonQueryUtil {
     CarbonMeasure msr;
     String columnName;
     columnName = col.getColumnName();
-    dim = CarbonQueryParseUtil.findDimension(dimensions, columnName);
+    dim = findDimension(dimensions, columnName);
     col.setCarbonColumn(dim);
     col.setDimension(dim);
     col.setDimension(true);
@@ -225,6 +190,26 @@ public final class CarbonQueryUtil {
       col.setCarbonColumn(msr);
       col.setDimension(false);
     }
+  }
+
+  /**
+   * Find the dimension from metadata by using unique name. As of now we are
+   * taking level name as unique name. But user needs to give one unique name
+   * for each level,that level he needs to mention in query.
+   *
+   * @param dimensions
+   * @param carbonDim
+   * @return
+   */
+  public static CarbonDimension findDimension(List<CarbonDimension> dimensions, String carbonDim) {
+    CarbonDimension findDim = null;
+    for (CarbonDimension dimension : dimensions) {
+      if (dimension.getColName().equalsIgnoreCase(carbonDim)) {
+        findDim = dimension;
+        break;
+      }
+    }
+    return findDim;
   }
 
   public static CarbonMeasure getCarbonMetadataMeasure(String name, List<CarbonMeasure> measures) {
@@ -397,24 +382,6 @@ public final class CarbonQueryUtil {
     return numberOfNodeToScan;
   }
 
-  public static QueryScopeObject createDataSource(int currentRestructNumber, Schema schema,
-      Cube cube, String partitionID, List<String> sliceLoadPaths, String factTableName,
-      String basePath, long cubeCreationTime, LoadMetadataDetails[] loadMetadataDetails) {
-    QueryScopeObject queryScopeObject = InMemoryTableStore.getInstance()
-        .loadCube(schema, cube, partitionID, sliceLoadPaths, factTableName, basePath,
-            currentRestructNumber, cubeCreationTime, loadMetadataDetails);
-    return queryScopeObject;
-  }
-
-  public static boolean isQuickFilter(QueryModel queryModel) {
-    return ("true".equals(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_ENABLE_QUICK_FILTER)) && null == queryModel
-        .getFilterExpressionResolverTree() && queryModel.getQueryDimension().size() == 1
-        && queryModel.getQueryMeasures().size() == 0
-        && queryModel.getDimAggregationInfo().size() == 0 && queryModel.getExpressions().size() == 0
-        && !queryModel.isDetailQuery());
-  }
-
   public static List<String> getListOfSlices(LoadMetadataDetails[] details) {
     List<String> slices = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     if (null != details) {
@@ -428,10 +395,4 @@ public final class CarbonQueryUtil {
     return slices;
   }
 
-  public static void clearLevelLRUCacheForDroppedColumns(List<String> listOfLoadFolders,
-      List<String> columns, String schemaName, String cubeName, int partitionCount) {
-    CarbonQueryParseUtil
-        .removeDroppedColumnsFromLevelLRUCache(listOfLoadFolders, columns, schemaName, cubeName,
-            partitionCount);
-  }
 }

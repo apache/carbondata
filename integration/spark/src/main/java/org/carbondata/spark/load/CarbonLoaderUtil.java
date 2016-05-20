@@ -28,7 +28,6 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -47,15 +46,9 @@ import org.carbondata.core.cache.CacheType;
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
-import org.carbondata.core.carbon.CarbonDef;
-import org.carbondata.core.carbon.CarbonDef.AggLevel;
-import org.carbondata.core.carbon.CarbonDef.AggMeasure;
-import org.carbondata.core.carbon.CarbonDef.AggName;
-import org.carbondata.core.carbon.CarbonDef.AggTable;
-import org.carbondata.core.carbon.CarbonDef.CubeDimension;
-import org.carbondata.core.carbon.CarbonDef.Schema;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
+import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
@@ -71,8 +64,6 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.core.metadata.CarbonMetadata;
-import org.carbondata.core.metadata.CarbonMetadata.Cube;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
@@ -81,14 +72,9 @@ import org.carbondata.processing.api.dataloader.SchemaInfo;
 import org.carbondata.processing.csvload.DataGraphExecuter;
 import org.carbondata.processing.dataprocessor.DataProcessTaskStatus;
 import org.carbondata.processing.dataprocessor.IDataProcessStatus;
-import org.carbondata.processing.globalsurrogategenerator.GlobalSurrogateGenerator;
-import org.carbondata.processing.globalsurrogategenerator.GlobalSurrogateGeneratorInfo;
 import org.carbondata.processing.graphgenerator.GraphGenerator;
 import org.carbondata.processing.graphgenerator.GraphGeneratorException;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
-import org.carbondata.processing.util.CarbonSchemaParser;
-import org.carbondata.query.datastorage.InMemoryTable;
-import org.carbondata.query.datastorage.InMemoryTableStore;
 import org.carbondata.spark.merger.NodeBlockRelation;
 
 import com.google.gson.Gson;
@@ -182,12 +168,7 @@ public final class CarbonLoaderUtil {
     SchemaInfo info = new SchemaInfo();
 
     info.setSchemaName(databaseName);
-    info.setSrcDriverName(loadModel.getDriverClass());
-    info.setSrcConUrl(loadModel.getJdbcUrl());
-    info.setSrcUserName(loadModel.getDbUserName());
-    info.setSrcPwd(loadModel.getDbPwd());
     info.setCubeName(tableName);
-    info.setSchemaPath(loadModel.getSchemaPath());
     info.setAutoAggregateRequest(loadModel.isAggLoadRequest());
     info.setComplexDelimiterLevel1(loadModel.getComplexDelimiterLevel1());
     info.setComplexDelimiterLevel2(loadModel.getComplexDelimiterLevel2());
@@ -410,80 +391,8 @@ public final class CarbonLoaderUtil {
     return updatedSlices;
   }
 
-  public static String getMetaDataFilePath(String schemaName, String cubeName,
-      String hdfsStoreLocation) {
-    String basePath = hdfsStoreLocation;
-    String schemaPath = basePath.substring(0, basePath.lastIndexOf("/"));
-    String metadataFilePath = schemaPath + "/schemas/" + schemaName + '/' + cubeName;
-    return metadataFilePath;
-  }
-
   public static void removeSliceFromMemory(String schemaName, String cubeName, String loadName) {
-    List<InMemoryTable> activeSlices =
-        InMemoryTableStore.getInstance().getActiveSlices(schemaName + '_' + cubeName);
-    Iterator<InMemoryTable> sliceItr = activeSlices.iterator();
-    InMemoryTable slice = null;
-    while (sliceItr.hasNext()) {
-      slice = sliceItr.next();
-      if (loadName.equals(slice.getLoadName())) {
-        sliceItr.remove();
-      }
-    }
-  }
-
-  public static boolean aggTableAlreadyExistWithSameMeasuresndLevels(AggName aggName,
-      AggTable[] aggTables) {
-    AggMeasure[] aggMeasures = null;
-    AggLevel[] aggLevels = null;
-    for (int i = 0; i < aggTables.length; i++) {
-      aggLevels = aggTables[i].levels;
-      aggMeasures = aggTables[i].measures;
-      if (aggLevels.length == aggName.levels.length
-          && aggMeasures.length == aggName.measures.length) {
-        if (checkforLevels(aggLevels, aggName.levels) && checkforMeasures(aggMeasures,
-            aggName.measures)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  private static boolean checkforLevels(AggLevel[] aggTableLevels, AggLevel[] newTableLevels) {
-    int count = 0;
-    for (int i = 0; i < aggTableLevels.length; i++) {
-      for (int j = 0; j < newTableLevels.length; j++) {
-        if (aggTableLevels[i].name.equals(newTableLevels[j].name)) {
-          count++;
-          break;
-        }
-      }
-    }
-    if (count == aggTableLevels.length) {
-      return true;
-    }
-    return false;
-  }
-
-  private static boolean checkforMeasures(AggMeasure[] aggMeasures, AggMeasure[] newTableMeasures) {
-    int count = 0;
-    for (int i = 0; i < aggMeasures.length; i++) {
-      for (int j = 0; j < newTableMeasures.length; j++) {
-        if (aggMeasures[i].name.equals(newTableMeasures[j].name) && aggMeasures[i].aggregator
-            .equals(newTableMeasures[j].aggregator)) {
-          count++;
-          break;
-        }
-      }
-    }
-    if (count == aggMeasures.length) {
-      return true;
-    }
-    return false;
-  }
-
-  public static String getAggregateTableName(AggTable table) {
-    return ((CarbonDef.AggName) table).getNameAttribute();
+    // TODO: Remove from memory
   }
 
   public static void createEmptyLoadFolder(CarbonLoadModel model, String factLoadFolderLocation,
@@ -498,8 +407,8 @@ public final class CarbonLoaderUtil {
     try {
       FileFactory.mkdirs(aggLoadFolderLocation, fileType);
     } catch (IOException e) {
-      LOGGER.error("Problem creating empty folder created for aggregation table: "
-          + e.getMessage());
+      LOGGER
+          .error("Problem creating empty folder created for aggregation table: " + e.getMessage());
     }
     LOGGER.info("Empty folder created for aggregation table");
   }
@@ -632,6 +541,7 @@ public final class CarbonLoaderUtil {
 
   /**
    * This method will return the block size for file to be copied in HDFS
+   *
    * @return
    */
   private static long getBlockSize() {
@@ -669,21 +579,6 @@ public final class CarbonLoaderUtil {
     } finally {
       CarbonUtil.closeStreams(dataInputStream, dataOutputStream);
     }
-  }
-
-  public static void generateGlobalSurrogates(CarbonLoadModel loadModel, String storeLocation,
-      int numberOfPartiiton, String[] partitionColumn, CubeDimension[] dims,
-      int currentRestructNumber) {
-    GlobalSurrogateGeneratorInfo generatorInfo = new GlobalSurrogateGeneratorInfo();
-    generatorInfo.setCubeName(loadModel.getTableName());
-    generatorInfo.setSchema(loadModel.getSchema());
-    generatorInfo.setStoreLocation(storeLocation);
-    generatorInfo.setTableName(loadModel.getTableName());
-    generatorInfo.setNumberOfPartition(numberOfPartiiton);
-    generatorInfo.setPartiontionColumnName(partitionColumn[0]);
-    generatorInfo.setCubeDimensions(dims);
-    GlobalSurrogateGenerator generator = new GlobalSurrogateGenerator(generatorInfo);
-    generator.generateGlobalSurrogates(currentRestructNumber);
   }
 
   private static void renameFactFile(String localStoreLocation) {
@@ -863,19 +758,6 @@ public final class CarbonLoaderUtil {
 
   }
 
-  public static String extractLoadMetadataFileLocation(Schema schema, String schemaName,
-      String cubeName) {
-    Cube cube = CarbonMetadata.getInstance().getCube(schemaName + '_' + cubeName);
-    if (null == cube) {
-      //Schema schema = loadModel.getSchema();
-      CarbonDef.Cube mondrianCube = CarbonSchemaParser.getMondrianCube(schema, cubeName);
-      CarbonMetadata.getInstance().loadCube(schema, schema.name, mondrianCube.name, mondrianCube);
-      cube = CarbonMetadata.getInstance().getCube(schemaName + '_' + cubeName);
-    }
-
-    return cube.getMetaDataFilepath();
-  }
-
   public static String readCurrentTime() {
     SimpleDateFormat sdf = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
     String date = null;
@@ -885,86 +767,10 @@ public final class CarbonLoaderUtil {
     return date;
   }
 
-  public static CarbonDimension[][] getDimensionSplit(CarbonDataLoadSchema schema, String cubeName,
-      int numberOfPartition) {
-
-    List<CarbonDimension> allDims = schema.getCarbonTable().getDimensionByTableName(cubeName);
-    List<CarbonMeasure> msrs = schema.getCarbonTable().getMeasureByTableName(cubeName);
-    List<CarbonDimension> selectedDims =
-        new ArrayList<CarbonDimension>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    for (int i = 0; i < allDims.size(); i++) {
-      for (int j = 0; j < msrs.size(); j++) {
-        if (selectedDims.get(j).getColName().equals(msrs.get(j).getColName())) {
-          selectedDims.add(allDims.get(i));
-        }
-      }
-    }
-    CarbonDimension[] allDimsArr = selectedDims.toArray(new CarbonDimension[selectedDims.size()]);
-    if (allDimsArr.length < 1) {
-      return new CarbonDimension[0][0];
-    }
-    int[] numberOfNodeToScanForEachThread =
-        getNumberOfNodeToScanForEachThread(allDimsArr.length, numberOfPartition);
-    CarbonDimension[][] out = new CarbonDimension[numberOfNodeToScanForEachThread.length][];
-    int counter = 0;
-
-    for (int i = 0; i < numberOfNodeToScanForEachThread.length; i++) {
-      out[i] = new CarbonDimension[numberOfNodeToScanForEachThread[i]];
-      for (int j = 0; j < numberOfNodeToScanForEachThread[i]; j++) {
-        out[i][j] = allDimsArr[counter++];
-      }
-    }
-
-    return out;
-  }
-
-  private static int[] getNumberOfNodeToScanForEachThread(int numberOfNodes, int numberOfCores) {
-    int div = numberOfNodes / numberOfCores;
-    int mod = numberOfNodes % numberOfCores;
-    int[] numberOfNodeToScan = null;
-    if (div > 0) {
-      numberOfNodeToScan = new int[numberOfCores];
-      Arrays.fill(numberOfNodeToScan, div);
-    } else if (mod > 0) {
-      numberOfNodeToScan = new int[(int) mod];
-    }
-    for (int i = 0; i < mod; i++) {
-      numberOfNodeToScan[i] = numberOfNodeToScan[i] + 1;
-    }
-    return numberOfNodeToScan;
-  }
-
   public static String extractLoadMetadataFileLocation(CarbonLoadModel loadModel) {
-    Cube cube = CarbonMetadata.getInstance()
-        .getCube(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
-    if (null == cube) {
-      Schema schema = loadModel.getSchema();
-      CarbonDef.Cube mondrianCube =
-          CarbonSchemaParser.getMondrianCube(schema, loadModel.getTableName());
-      CarbonMetadata.getInstance().loadCube(schema, schema.name, mondrianCube.name, mondrianCube);
-      cube = CarbonMetadata.getInstance()
-          .getCube(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
-    }
-
-    return cube.getMetaDataFilepath();
-  }
-
-  public static int getCurrentRestructFolder(String schemaName, String cubeName, Schema schema) {
-    Cube cube = CarbonMetadata.getInstance().getCube(schemaName + '_' + cubeName);
-    if (null == cube) {
-      CarbonDef.Cube mondrianCube = CarbonSchemaParser.getMondrianCube(schema, cubeName);
-      CarbonMetadata.getInstance().loadCube(schema, schema.name, mondrianCube.name, mondrianCube);
-      cube = CarbonMetadata.getInstance().getCube(schemaName + '_' + cubeName);
-    }
-
-    String metaDataPath = cube.getMetaDataFilepath();
-    int currentRestructNumber =
-        CarbonUtil.checkAndReturnCurrentRestructFolderNumber(metaDataPath, "RS_", false);
-    if (-1 == currentRestructNumber) {
-      currentRestructNumber = 0;
-    }
-
-    return currentRestructNumber;
+    CarbonTable carbonTable = CarbonMetadata.getInstance()
+        .getCarbonTable(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
+    return carbonTable.getMetaDataFilepath();
   }
 
   /**
@@ -1117,17 +923,17 @@ public final class CarbonLoaderUtil {
    * This method will divide the blocks among the tasks of the nodes as per the data locality
    *
    * @param blockInfos
-   * @param noOfNodesInput   -1 if number of nodes has to be decided
-   *                         based on block location information
-   * @param parallelism total no of tasks to execute in parallel
+   * @param noOfNodesInput -1 if number of nodes has to be decided
+   *                       based on block location information
+   * @param parallelism    total no of tasks to execute in parallel
    * @return
    */
   public static Map<String, List<List<TableBlockInfo>>> nodeBlockTaskMapping(
       List<TableBlockInfo> blockInfos, int noOfNodesInput, int parallelism) {
 
-    Map<String, List<TableBlockInfo>> mapOfNodes = CarbonLoaderUtil.nodeBlockMapping(
-        blockInfos, noOfNodesInput);
-    int noOfTasksPerNode = parallelism/mapOfNodes.size();
+    Map<String, List<TableBlockInfo>> mapOfNodes =
+        CarbonLoaderUtil.nodeBlockMapping(blockInfos, noOfNodesInput);
+    int noOfTasksPerNode = parallelism / mapOfNodes.size();
     // divide the blocks of a node among the tasks of the node.
     return assignBlocksToTasksPerNode(mapOfNodes, noOfTasksPerNode);
   }
@@ -1137,7 +943,6 @@ public final class CarbonLoaderUtil {
    *
    * @param blockInfos
    * @return
-   *
    */
   public static Map<String, List<TableBlockInfo>> nodeBlockMapping(
       List<TableBlockInfo> blockInfos) {
@@ -1153,8 +958,8 @@ public final class CarbonLoaderUtil {
    *                       based on block location information
    * @return
    */
-  public static Map<String, List<TableBlockInfo>> nodeBlockMapping(
-      List<TableBlockInfo> blockInfos, int noOfNodesInput) {
+  public static Map<String, List<TableBlockInfo>> nodeBlockMapping(List<TableBlockInfo> blockInfos,
+      int noOfNodesInput) {
 
     Map<String, List<TableBlockInfo>> nodeBlocksMap =
         new HashMap<String, List<TableBlockInfo>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -1191,27 +996,28 @@ public final class CarbonLoaderUtil {
   }
 
   /**
-   *  Assigning the blocks of a node to tasks.
+   * Assigning the blocks of a node to tasks.
+   *
    * @param nodeBlocksMap
-   * @param outputMap
    * @param noOfTasksPerNode
    * @return
    */
   private static Map<String, List<List<TableBlockInfo>>> assignBlocksToTasksPerNode(
       Map<String, List<TableBlockInfo>> nodeBlocksMap, int noOfTasksPerNode) {
-    Map<String, List<List<TableBlockInfo>>> outputMap = new HashMap
-        <String, List<List<TableBlockInfo>>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    Map<String, List<List<TableBlockInfo>>> outputMap =
+        new HashMap<String, List<List<TableBlockInfo>>>(
+            CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     // for each node
-    for(Map.Entry<String,List<TableBlockInfo>> eachNode : nodeBlocksMap.entrySet()){
+    for (Map.Entry<String, List<TableBlockInfo>> eachNode : nodeBlocksMap.entrySet()) {
 
       List<TableBlockInfo> blockOfEachNode = eachNode.getValue();
 
       // create the task list for each node.
-      createTaskListForNode(outputMap,noOfTasksPerNode,eachNode.getKey());
+      createTaskListForNode(outputMap, noOfTasksPerNode, eachNode.getKey());
 
       // take all the block of node and divide it among the tasks of a node.
-      divideBlockToTasks(outputMap,eachNode.getKey(),blockOfEachNode);
+      divideBlockToTasks(outputMap, eachNode.getKey(), blockOfEachNode);
     }
 
     return outputMap;
@@ -1219,6 +1025,7 @@ public final class CarbonLoaderUtil {
 
   /**
    * This will divide the blocks of a node to tasks of the node.
+   *
    * @param outputMap
    * @param key
    * @param blockOfEachNode
@@ -1229,9 +1036,9 @@ public final class CarbonLoaderUtil {
     List<List<TableBlockInfo>> taskLists = outputMap.get(key);
     int tasksOfNode = taskLists.size();
     int i = 0;
-    for(TableBlockInfo block : blockOfEachNode){
+    for (TableBlockInfo block : blockOfEachNode) {
 
-      taskLists.get(i%tasksOfNode).add(block);
+      taskLists.get(i % tasksOfNode).add(block);
       i++;
     }
 
@@ -1239,6 +1046,7 @@ public final class CarbonLoaderUtil {
 
   /**
    * This will create the empty list for each task of a node.
+   *
    * @param outputMap
    * @param noOfTasksPerNode
    * @param key
@@ -1247,13 +1055,13 @@ public final class CarbonLoaderUtil {
       int noOfTasksPerNode, String key) {
     List<List<TableBlockInfo>> nodeTaskList =
         new ArrayList<List<TableBlockInfo>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    for(int i = 0 ; i < noOfTasksPerNode; i++){
-      List<TableBlockInfo> eachTask = new ArrayList<TableBlockInfo>(
-          CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    for (int i = 0; i < noOfTasksPerNode; i++) {
+      List<TableBlockInfo> eachTask =
+          new ArrayList<TableBlockInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
       nodeTaskList.add(eachTask);
 
     }
-    outputMap.put(key,nodeTaskList);
+    outputMap.put(key, nodeTaskList);
 
   }
 
@@ -1266,7 +1074,6 @@ public final class CarbonLoaderUtil {
   private static void assignLeftOverBlocks(Map<String, List<TableBlockInfo>> outputMap,
       Set<TableBlockInfo> uniqueBlocks, int noOfBlocksPerNode) {
 
-
     for (Map.Entry<String, List<TableBlockInfo>> entry : outputMap.entrySet()) {
       Iterator<TableBlockInfo> blocks = uniqueBlocks.iterator();
       List<TableBlockInfo> blockLst = entry.getValue();
@@ -1274,7 +1081,7 @@ public final class CarbonLoaderUtil {
         TableBlockInfo block = blocks.next();
         blockLst.add(block);
         blocks.remove();
-        if(blockLst.size() >= noOfBlocksPerNode){
+        if (blockLst.size() >= noOfBlocksPerNode) {
           break;
         }
       }
@@ -1362,7 +1169,8 @@ public final class CarbonLoaderUtil {
 
   /**
    * Create the flat List i.e flattening of the Map.
-   *  @param blockInfos
+   *
+   * @param blockInfos
    * @param flattenedList
    * @param uniqueBlocks
    */

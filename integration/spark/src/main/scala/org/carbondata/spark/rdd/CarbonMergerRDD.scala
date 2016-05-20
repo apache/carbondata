@@ -26,29 +26,28 @@ import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext,
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
 
-import org.carbondata.core.carbon.CarbonDef
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.load.LoadMetadataDetails
-import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.carbondata.spark.load._
+import org.carbondata.core.util.CarbonUtil
 import org.carbondata.spark.MergeResult
+import org.carbondata.spark.load._
 import org.carbondata.spark.merger.CarbonDataMergerUtil
 import org.carbondata.spark.splits.TableSplit
 import org.carbondata.spark.util.CarbonQueryUtil
 
 class CarbonMergerRDD[K, V](
-                             sc: SparkContext,
-                             result: MergeResult[K, V],
-                             carbonLoadModel: CarbonLoadModel,
-                             storeLocation: String,
-                             hdfsStoreLocation: String,
-                             partitioner: Partitioner,
-                             currentRestructNumber: Integer,
-                             metadataFilePath: String,
-                             loadsToMerge: List[String],
-                             mergedLoadName: String,
-                             kettleHomePath: String,
-                             cubeCreationTime: Long)
+    sc: SparkContext,
+    result: MergeResult[K, V],
+    carbonLoadModel: CarbonLoadModel,
+    storeLocation: String,
+    hdfsStoreLocation: String,
+    partitioner: Partitioner,
+    currentRestructNumber: Integer,
+    metadataFilePath: String,
+    loadsToMerge: List[String],
+    mergedLoadName: String,
+    kettleHomePath: String,
+    cubeCreationTime: Long)
   extends RDD[(K, V)](sc, Nil) with Logging {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
@@ -102,8 +101,8 @@ class CarbonMergerRDD[K, V](
 
       def checkAndLoadAggregationTable(): String = {
         var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
-        val schema = model.getSchema
-        val aggTables = schema.cubes(0).fact.asInstanceOf[CarbonDef.Table].aggTables
+        val carbonTable = model.getCarbonDataLoadSchema.getCarbonTable
+        val aggTables = carbonTable.getAggregateTablesName
         if (null != aggTables && !aggTables.isEmpty) {
           val details = model.getLoadMetadataDetails.asScala.toSeq.toArray
           val newSlice = CarbonCommonConstants.LOAD_FOLDER + mergedLoadName
@@ -123,8 +122,10 @@ class CarbonMergerRDD[K, V](
           if (null != loadFolder) {
             loadFolders :+= loadFolder
           }
-          dataloadStatus = iterateOverAggTables(aggTables, copyListOfLoadFolders.asJava,
-            copyListOfUpdatedLoadFolders.asJava, loadFolders)
+          dataloadStatus = iterateOverAggTables(aggTables.asScala.toArray,
+            copyListOfLoadFolders.asJava,
+            copyListOfUpdatedLoadFolders.asJava,
+            loadFolders)
           if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
             // remove the current slice from memory not the cube
             CarbonLoaderUtil
@@ -139,19 +140,17 @@ class CarbonMergerRDD[K, V](
 
 
       def loadCubeSlices(listOfLoadFolders: java.util.List[String],
-                         deatails: Array[LoadMetadataDetails]) = {
-        CarbonProperties.getInstance().addProperty("carbon.cache.used", "false");
-        CarbonQueryUtil.createDataSource(currentRestructNumber, model.getSchema, null, partitionId,
-          listOfLoadFolders, model.getTableName, hdfsStoreLocation, cubeCreationTime, deatails)
+          deatails: Array[LoadMetadataDetails]) = {
+
+        // TODO: Implement it
       }
 
-      def iterateOverAggTables(aggTables: Array[CarbonDef.AggTable],
-                               listOfLoadFolders: java.util.List[String],
-                               listOfUpdatedLoadFolders: java.util.List[String],
-                               loadFolders: Array[String]): String = {
+      def iterateOverAggTables(aggTables: Array[String],
+          listOfLoadFolders: java.util.List[String],
+          listOfUpdatedLoadFolders: java.util.List[String],
+          loadFolders: Array[String]): String = {
         model.setAggLoadRequest(true)
-        aggTables.foreach { aggTable =>
-          val aggTableName = CarbonLoaderUtil.getAggregateTableName(aggTable)
+        aggTables.foreach { aggTableName =>
           model.setAggTableName(aggTableName)
           dataloadStatus = loadAggregationTable(listOfLoadFolders, listOfUpdatedLoadFolders,
             loadFolders)
@@ -164,11 +163,11 @@ class CarbonMergerRDD[K, V](
       }
 
       def loadAggregationTable(listOfLoadFolders: java.util.List[String],
-                               listOfUpdatedLoadFolders: java.util.List[String],
-                               loadFolders: Array[String]): String = {
+          listOfUpdatedLoadFolders: java.util.List[String],
+          loadFolders: Array[String]): String = {
         loadFolders.foreach { loadFolder =>
           val restructNumber = CarbonUtil.getRestructureNumber(loadFolder, model.getTableName)
-          try {
+          try { {
             if (CarbonLoaderUtil
               .isSliceValid(loadFolder, listOfLoadFolders, listOfUpdatedLoadFolders,
                 model.getTableName)) {
@@ -180,6 +179,7 @@ class CarbonMergerRDD[K, V](
               CarbonLoaderUtil
                 .createEmptyLoadFolder(model, loadFolder, hdfsStoreLocation, restructNumber)
             }
+          }
           } catch {
             case e: Exception => dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
           } finally {

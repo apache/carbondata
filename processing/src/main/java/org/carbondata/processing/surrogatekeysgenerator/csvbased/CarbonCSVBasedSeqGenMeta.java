@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.carbondata.core.carbon.SqlStatement;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.processing.datatypes.ArrayDataType;
@@ -355,7 +355,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    * maintains the array of columns datatype
    * only fill direct columns remaining fill with null
    */
-  private SqlStatement.Type[] columnDataType;
+  private DataType[] columnDataType;
   /**
    * task id, each spark task has a unique id
    */
@@ -1568,12 +1568,12 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    */
   private void updateDirectDictionaryColumnsInfo() {
     isDirectDictionary = new boolean[dimColNames.length];
-    columnDataType = new SqlStatement.Type[dimColNames.length];
+    columnDataType = new DataType[dimColNames.length];
     if (null != directDictionaryColumns) {
       String[] str = directDictionaryColumns.split(CarbonCommonConstants.COLON_SPC_CHARACTER);
       for (int i = 0; i < str.length - 1; i++) {
         int colIndex = Integer.valueOf(str[i]);
-        SqlStatement.Type dataType = DataTypeUtil.getDataType(str[++i]);
+        DataType dataType = DataTypeUtil.getDataType(str[++i]);
         isDirectDictionary[colIndex] = true;
         columnDataType[colIndex] = dataType;
       }
@@ -1585,7 +1585,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    *
    * @return
    */
-  public SqlStatement.Type[] getColumnDataType() {
+  public DataType[] getColumnDataType() {
     return columnDataType;
   }
 

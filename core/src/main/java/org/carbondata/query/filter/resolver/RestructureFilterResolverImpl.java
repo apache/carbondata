@@ -127,7 +127,7 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
     if (this.isExpressionResolve && exp instanceof ConditionalExpression) {
       ConditionalExpression conditionalExpression = (ConditionalExpression) exp;
       List<ColumnExpression> columnList = conditionalExpression.getColumnList();
-      dimColumnResolvedFilterInfo.setColumnIndex(columnList.get(0).getDim().getOrdinal());
+      dimColumnResolvedFilterInfo.setColumnIndex(columnList.get(0).getDimension().getOrdinal());
       dimColumnResolvedFilterInfo.setFilterValues(FilterUtil
           .getFilterListForAllMembersRS(exp, columnList.get(0), defaultValue, surrogate,
               isIncludeFilter));

@@ -31,14 +31,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +42,6 @@ import java.util.TreeSet;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.carbon.CarbonDef;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
@@ -80,9 +74,6 @@ import org.carbondata.query.aggregator.impl.SumDistinctDoubleAggregator;
 import org.carbondata.query.aggregator.impl.SumDistinctLongAggregator;
 import org.carbondata.query.aggregator.impl.SumDoubleAggregator;
 import org.carbondata.query.aggregator.impl.SumLongAggregator;
-import org.carbondata.query.datastorage.InMemoryLoadTableUtil;
-import org.carbondata.query.datastorage.InMemoryTable;
-import org.carbondata.query.datastorage.InMemoryTableStore;
 
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
@@ -382,191 +373,6 @@ public final class CarbonDataProcessorUtil {
   }
 
   /**
-   * This method will be used to for sending the new slice signal to engine
-   *
-   * @throws CarbonDataProcessorException
-   * @throws KettleException              if any problem while informing the engine
-   */
-  public static void sendLoadSignalToEngine(String storeLocation)
-      throws CarbonDataProcessorException {
-    if (!Boolean
-        .parseBoolean(CarbonProperties.getInstance().getProperty("send.signal.load", "true"))) {
-      return;
-    }
-    try {
-      // inform engine to load new slice
-      Class<?> c = Class.forName("com.huawei.unibi.carbon.engine.datastorage.CubeSliceLoader");
-      Class[] argTypes = new Class[] {};
-      // get the instance of CubeSliceLoader
-      Method main = c.getDeclaredMethod("getInstance", argTypes);
-      Object invoke = main.invoke(null, null);
-      Class[] argTypes1 = new Class[] { String.class };
-
-      // ionvoke loadSliceFromFile
-      Method declaredMethod = c.getDeclaredMethod("loadSliceFromFiles", argTypes1);
-      // pass cube name and store location
-      String[] a = { storeLocation };
-      declaredMethod.invoke(invoke, a);
-    } catch (ClassNotFoundException classNotFoundException) {
-      throw new CarbonDataProcessorException("Problem While informing BI Server",
-          classNotFoundException);
-    } catch (NoSuchMethodException noSuchMethodException) {
-      throw new CarbonDataProcessorException("Problem While informing BI Server",
-          noSuchMethodException);
-    } catch (IllegalAccessException illegalAccessException) {
-      throw new CarbonDataProcessorException("Problem While informing BI Server",
-          illegalAccessException);
-    } catch (InvocationTargetException invocationTargetException) {
-      throw new CarbonDataProcessorException("Problem While informing BI Server",
-          invocationTargetException);
-    }
-  }
-
-  public static void sendUpdateSignaltoEngine(String storeLocation)
-      throws CarbonDataProcessorException {
-    if (!Boolean
-        .parseBoolean(CarbonProperties.getInstance().getProperty("send.signal.load", "true"))) {
-      return;
-    }
-    try {
-      // inform engine to load new slice
-      Class<?> sliceLoaderClass =
-          Class.forName("com.huawei.unibi.carbon.engine.datastorage.CubeSliceLoader");
-      Class[] argTypes = new Class[] {};
-      // get the instance of CubeSliceLoader
-      Method instanceMethod = sliceLoaderClass.getDeclaredMethod("getInstance", argTypes);
-      Object invoke = instanceMethod.invoke(null, null);
-      Class[] argTypes1 = new Class[] { String.class };
-
-      // ionvoke loadSliceFromFile
-      Method updateMethod = sliceLoaderClass.getDeclaredMethod("updateSchemaHierarchy", argTypes1);
-      // pass cube name and store location
-      String[] a = { storeLocation };
-      updateMethod.invoke(invoke, a);
-    } catch (ClassNotFoundException classNotFoundException) {
-      throw new CarbonDataProcessorException("Problem While informing BI Server",
-          classNotFoundException);
-    } catch (NoSuchMethodException noSuchMethodException) {
-      throw new CarbonDataProcessorException("Problem While informing BI Server",
-          noSuchMethodException);
-    } catch (IllegalAccessException illegalAccessException) {
-      throw new CarbonDataProcessorException("Problem While informing BI Server",
-          illegalAccessException);
-    } catch (InvocationTargetException invocationTargetException) {
-      throw new CarbonDataProcessorException("Problem While informing BI Server",
-          invocationTargetException);
-    }
-  }
-
-  /**
-   * This method will be used to for sending the new slice signal to engine
-   *
-   * @throws CarbonDataProcessorException
-   * @throws KettleException              if any problem while informing the engine
-   */
-  public static void sendDeleteSignalToEngine(String[] storeLocation)
-      throws CarbonDataProcessorException {
-    if (!Boolean
-        .parseBoolean(CarbonProperties.getInstance().getProperty("send.signal.load", "true"))) {
-      return;
-    }
-    try {
-      // inform engine to load new slice
-      Class<?> c = Class.forName("com.huawei.unibi.carbon.engine.datastorage.CubeSliceLoader");
-      Class[] argTypes = new Class[] {};
-      // get the instance of CubeSliceLoader
-      Method main = c.getDeclaredMethod("getInstance", argTypes);
-      Object invoke = main.invoke(null, null);
-      Class[] argTypes1 = new Class[] { String[].class };
-
-      // ionvoke loadSliceFromFile
-      Method declaredMethod = c.getDeclaredMethod("deleteSlices", argTypes1);
-      Object[] objectStoreLocation = { storeLocation };
-      declaredMethod.invoke(invoke, objectStoreLocation);
-    } catch (ClassNotFoundException classNotFoundException) {
-      throw new CarbonDataProcessorException("Problem While informing BI Server",
-          classNotFoundException);
-    } catch (NoSuchMethodException noSuchMethodException) {
-      throw new CarbonDataProcessorException("Problem While informing BI Server",
-          noSuchMethodException);
-    } catch (IllegalAccessException illegalAccessException) {
-      throw new CarbonDataProcessorException("Problem While informing BI Server",
-          illegalAccessException);
-    } catch (InvocationTargetException invocationTargetException) {
-      throw new CarbonDataProcessorException("Problem While informing BI Server",
-          invocationTargetException);
-    }
-  }
-
-  /**
-   * @param schemaName
-   * @param cubeName
-   * @Description : clearCubeCache
-   */
-  public static boolean clearCubeCache(String schemaName, String cubeName) {
-    try {
-      Class<?> c = Class.forName("mondrian.carbon.CacheControlImpl");
-      // get the instance of CubeSliceLoader
-      Object newInstance = c.newInstance();
-      Class<?> argTypes1 = String.class;
-      Class<?> argTypes2 = String.class;
-      Method declaredMethod =
-          newInstance.getClass().getMethod("flushCubeCache", argTypes1, argTypes2);
-      Object value = declaredMethod.invoke(newInstance, schemaName, cubeName);
-      return ((Boolean) value).booleanValue();
-    } catch (ClassNotFoundException classNotFoundException) {
-      LOGGER.error("Error while clearing the cache " + classNotFoundException);
-    } catch (NoSuchMethodException noSuchMethodException) {
-      LOGGER.error("Error while clearing the cache " + noSuchMethodException);
-    } catch (IllegalAccessException illegalAccessException) {
-      LOGGER.error("Error while clearing the cache " + illegalAccessException);
-    } catch (InvocationTargetException invocationTargetException) {
-      LOGGER.error("Error while clearing the cache " + invocationTargetException);
-    } catch (InstantiationException e) {
-      LOGGER.error("Error while clearing the cache " + e);
-    }
-    return false;
-  }
-
-  /**
-   * This method will be used to for sending the new slice signal to engine
-   *
-   * @throws KettleException if any problem while informing the engine
-   */
-  public static void sendUpdateSignalToEngine(String newSliceLocation, String[] oldSliceLocation,
-      boolean isUpdateMemberCall) throws CarbonDataProcessorException {
-    if (!Boolean
-        .parseBoolean(CarbonProperties.getInstance().getProperty("send.signal.load", "true"))) {
-      return;
-    }
-    try {
-      // inform engine to load new slice
-      Class<?> c = Class.forName("com.huawei.unibi.carbon.engine.datastorage.CubeSliceLoader");
-      Class[] argTypes = new Class[] {};
-      // get the instance of CubeSliceLoader
-      Method main = c.getDeclaredMethod("getInstance", argTypes);
-      Object invoke = main.invoke(null, null);
-      Class[] argTypes1 = new Class[] { String.class, String[].class, Boolean.TYPE, Boolean.TYPE };
-
-      // ionvoke loadSliceFromFile
-      Method declaredMethod = c.getDeclaredMethod("updateSlices", argTypes1);
-      declaredMethod.invoke(invoke, newSliceLocation, oldSliceLocation, true, isUpdateMemberCall);
-    } catch (ClassNotFoundException classNotFoundException) {
-      throw new CarbonDataProcessorException("Problem While informing BI Server",
-          classNotFoundException);
-    } catch (NoSuchMethodException noSuchMethodException) {
-      throw new CarbonDataProcessorException("Problem While informing BI Server",
-          noSuchMethodException);
-    } catch (IllegalAccessException illegalAccessException) {
-      throw new CarbonDataProcessorException("Problem While informing BI Server",
-          illegalAccessException);
-    } catch (InvocationTargetException invocationTargetException) {
-      throw new CarbonDataProcessorException("Problem While informing BI Server",
-          invocationTargetException);
-    }
-  }
-
-  /**
    * @param fileToBeDeleted
    */
   public static String recordFilesNeedsToDeleted(Set<String> fileToBeDeleted) {
@@ -599,8 +405,7 @@ public final class CarbonDataProcessorUtil {
 
       }
     } catch (Exception e) {
-      LOGGER.error(e,
-          "recordFilesNeedsToDeleted");
+      LOGGER.error(e, "recordFilesNeedsToDeleted");
     } finally {
       CarbonUtil.closeStreams(writer);
     }
@@ -779,30 +584,6 @@ public final class CarbonDataProcessorUtil {
       }
     }
     return aggregator;
-  }
-
-  /**
-   * Below method will be used to get the all the slices loaded in the memory
-   * if there is no slice present then this method will load the slice first
-   * and return all the slice which will be used to for reading
-   *
-   * @param cubeUniqueName
-   * @param tableName
-   * @return List<InMemoryCube>
-   */
-  public static List<InMemoryTable> getAllLoadedSlices(String cubeUniqueName, String tableName) {
-    List<InMemoryTable> activeSlices =
-        InMemoryTableStore.getInstance().getActiveSlices(cubeUniqueName);
-    List<InMemoryTable> requiredSlices =
-        new ArrayList<InMemoryTable>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    InMemoryTable inMemoryTable = null;
-    for (int i = 0; i < activeSlices.size(); i++) {
-      inMemoryTable = activeSlices.get(i);
-      if (null != inMemoryTable.getDataCache(tableName)) {
-        requiredSlices.add(inMemoryTable);
-      }
-    }
-    return requiredSlices;
   }
 
   /**
@@ -1115,31 +896,6 @@ public final class CarbonDataProcessorUtil {
     return null;
   }
 
-  public static String[] getReorderedLevels(CarbonDef.Schema schema, CarbonDef.Cube cube,
-      String[] aggreateLevels, String factTableName) {
-    String[] factDimensions = CarbonSchemaParser.getAllCubeDimensions(cube, schema);
-    String[] reorderedAggregateLevels = new String[aggreateLevels.length];
-    int[] reorderIndex = new int[aggreateLevels.length];
-    String aggLevel = null;
-    String factName = factTableName + '_';
-    for (int i = 0; i < aggreateLevels.length; i++) {
-      aggLevel = factName + aggreateLevels[i];
-      for (int j = 0; j < factDimensions.length; j++) {
-        if (aggLevel.equals(factDimensions[j])) {
-          reorderIndex[i] = j;
-          break;
-        }
-      }
-    }
-    Arrays.sort(reorderIndex);
-    for (int i = 0; i < reorderIndex.length; i++) {
-      aggLevel = factDimensions[reorderIndex[i]];
-      aggLevel = aggLevel.substring(factName.length());
-      reorderedAggregateLevels[i] = aggLevel;
-    }
-    return reorderedAggregateLevels;
-  }
-
   /**
    * This method will provide the updated cardinality based on newly added
    * dimensions
@@ -1208,24 +964,6 @@ public final class CarbonDataProcessorUtil {
 
       }
     }
-  }
-
-  /**
-   * return loadName and modification timestamp map
-   */
-  public static Map<String, Long> getLoadNameAndModificationTimeMap(String[] loadNames,
-      String[] modOrDelTimes) {
-    Map<String, Long> loadNameAndModifiedOrDeletionTimeMap =
-        new HashMap<String, Long>(loadNames.length);
-    for (int i = 0; i < loadNames.length; i++) {
-      String modOrDelTimeStamp = modOrDelTimes[i];
-      Long modOrDelTimeValue = 0L;
-      if (null != modOrDelTimeStamp) {
-        modOrDelTimeValue = InMemoryLoadTableUtil.parseDeletionTime(modOrDelTimeStamp);
-      }
-      loadNameAndModifiedOrDeletionTimeMap.put(loadNames[i], modOrDelTimeValue);
-    }
-    return loadNameAndModifiedOrDeletionTimeMap;
   }
 
   /**

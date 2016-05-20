@@ -26,16 +26,16 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.carbondata.core.carbon.SqlStatement;
 import org.carbondata.core.carbon.datastore.chunk.impl.VariableLengthDimensionDataChunk;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.aggregator.util.AggUtil;
+import org.carbondata.query.aggregator.util.MeasureAggregatorFactory;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.processor.BlocksChunkHolder;
+import org.carbondata.query.carbon.util.DataTypeUtil;
 import org.carbondata.query.carbonfilterinterface.RowImpl;
 import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
@@ -44,7 +44,6 @@ import org.carbondata.query.evaluators.MeasureColumnResolvedFilterInfo;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
-import org.carbondata.query.util.DataTypeConverter;
 
 public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
@@ -153,7 +152,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
                 memberString = null;
               }
             }
-            record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeConverter
+            record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
                 .getDataBasedOnDataType(memberString,
                     dimColumnEvaluatorInfo.getDimension().getDataType());
           } else {
@@ -178,7 +177,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
               memberString = null;
             }
           }
-          record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeConverter
+          record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
               .getDataBasedOnDataType(memberString,
                   dimColumnEvaluatorInfo.getDimension().getDataType());
         }
@@ -188,27 +187,27 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       }
     }
 
-    SqlStatement.Type msrType;
+    DataType msrType;
 
     for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
       switch (msrColumnEvalutorInfo.getType()) {
         case LONG:
-          msrType = SqlStatement.Type.LONG;
+          msrType = DataType.LONG;
           break;
         case DECIMAL:
-          msrType = SqlStatement.Type.DECIMAL;
+          msrType = DataType.DECIMAL;
           break;
         default:
-          msrType = SqlStatement.Type.DOUBLE;
+          msrType = DataType.DOUBLE;
       }
       // if measure doesnt exist then set the default value.
       if (!msrColumnEvalutorInfo.isMeasureExistsInCurrentSlice()) {
         record[msrColumnEvalutorInfo.getRowIndex()] = msrColumnEvalutorInfo.getDefaultValue();
       } else {
         if (msrColumnEvalutorInfo.isCustomMeasureValue()) {
-          MeasureAggregator aggregator = AggUtil
-              .getAggregator(msrColumnEvalutorInfo.getAggregator(), false, false, null, false, 0,
-                  msrType);
+          MeasureAggregator aggregator = MeasureAggregatorFactory
+              .getAggregator(msrColumnEvalutorInfo.getAggregator(),
+                  msrColumnEvalutorInfo.getType());
           aggregator.merge(
               blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
                   .getMeasureDataHolder().getReadableByteArrayValueByIndex(index));

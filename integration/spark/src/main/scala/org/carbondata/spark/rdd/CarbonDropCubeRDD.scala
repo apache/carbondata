@@ -17,24 +17,21 @@
 
 package org.carbondata.spark.rdd
 
-import scala.collection.JavaConverters._
-
 import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
 
-import org.carbondata.core.metadata.CarbonMetadata
-import org.carbondata.query.datastorage.InMemoryTableStore
+import org.carbondata.core.carbon.metadata.CarbonMetadata
 import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
 import org.carbondata.spark.KeyVal
 import org.carbondata.spark.util.CarbonQueryUtil
 
 class CarbonDropCubeRDD[K, V](
-                               sc: SparkContext,
-                               keyClass: KeyVal[K, V],
-                               schemaName: String,
-                               cubeName: String,
-                               partitioner: Partitioner)
+    sc: SparkContext,
+    keyClass: KeyVal[K, V],
+    schemaName: String,
+    cubeName: String,
+    partitioner: Partitioner)
   extends RDD[(K, V)](sc, Nil) with Logging {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
@@ -56,15 +53,8 @@ class CarbonDropCubeRDD[K, V](
       val partitionCount = partitioner.partitionCount
       for (a <- 0 until partitionCount) {
         val cubeUniqueName = schemaName + "_" + a + "_" + cubeName + "_" + a
-        val cube = CarbonMetadata.getInstance().getCube(cubeUniqueName)
-        if (InMemoryTableStore.getInstance().getCubeNames().contains(cubeUniqueName)) {
-          InMemoryTableStore.getInstance().clearCache(cubeUniqueName)
-          val tables = cube.getMetaTableNames()
-          tables.asScala.foreach { tableName =>
-            val tabelUniqueName = cubeUniqueName + '_' + tableName
-            InMemoryTableStore.getInstance().clearTableAndCurrentRSMap(tabelUniqueName)
-          }
-        }
+        val carbonTable = CarbonMetadata.getInstance().getCarbonTable(cubeUniqueName)
+        // TODO: Clear Btree from memory
       }
 
       var havePair = false

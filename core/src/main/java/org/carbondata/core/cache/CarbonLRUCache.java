@@ -29,7 +29,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.query.datastorage.InMemoryTableStore;
 
 /**
  * class which manages the lru cache
@@ -43,7 +42,7 @@ public final class CarbonLRUCache {
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(InMemoryTableStore.class.getName());
+      LogServiceFactory.getLogService(CarbonLRUCache.class.getName());
   /**
    * Map that will contain key as cube unique name and value as cache Holder
    * object

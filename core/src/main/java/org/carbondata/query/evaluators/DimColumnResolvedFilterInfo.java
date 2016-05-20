@@ -28,7 +28,6 @@ import java.util.Map;
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
-import org.carbondata.core.metadata.CarbonMetadata.Dimension;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.schema.metadata.DimColumnFilterInfo;
 
@@ -47,10 +46,6 @@ public class DimColumnResolvedFilterInfo implements Serializable {
    * need compressed data from file
    */
   private boolean needCompressedData;
-
-  private Dimension dims;
-
-  private Dimension[] dimensions;
 
   /**
    * rowIndex
@@ -141,14 +136,6 @@ public class DimColumnResolvedFilterInfo implements Serializable {
     this.dimension = dimension;
   }
 
-  public Dimension[] getDimensions() {
-    return dimensions;
-  }
-
-  public void setDimensions(Dimension[] dimensions) {
-    this.dimensions = dimensions;
-  }
-
   public int getColumnIndex() {
     return columnIndex;
   }
@@ -179,14 +166,6 @@ public class DimColumnResolvedFilterInfo implements Serializable {
 
   public void setRowIndex(int rowIndex) {
     this.rowIndex = rowIndex;
-  }
-
-  public Dimension getDims() {
-    return dims;
-  }
-
-  public void setDims(Dimension dims) {
-    this.dims = dims;
   }
 
   public boolean isDimensionExistsInCurrentSilce() {

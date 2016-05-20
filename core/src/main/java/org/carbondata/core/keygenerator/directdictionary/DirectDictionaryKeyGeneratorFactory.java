@@ -18,7 +18,7 @@
  */
 package org.carbondata.core.keygenerator.directdictionary;
 
-import org.carbondata.core.carbon.SqlStatement;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampDirectDictionaryGenerator;
 
 /**
@@ -39,7 +39,7 @@ public final class DirectDictionaryKeyGeneratorFactory {
    * @param dataType SqlStatement.Type
    * @return the generator instance
    */
-  public static DirectDictionaryGenerator getDirectDictionaryGenerator(SqlStatement.Type dataType) {
+  public static DirectDictionaryGenerator getDirectDictionaryGenerator(DataType dataType) {
     DirectDictionaryGenerator directDictionaryGenerator = null;
     switch (dataType) {
       case TIMESTAMP:

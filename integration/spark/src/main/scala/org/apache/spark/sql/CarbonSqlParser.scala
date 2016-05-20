@@ -187,7 +187,7 @@ class CarbonSqlParser()
       case aggregates ~ cube =>
         cube match {
           case schemaName ~ cubeName =>
-            AddAggregatesToCube(schemaName, cubeName, aggregates)
+            AddAggregatesToTable(schemaName, cubeName, aggregates)
         }
     }
 
@@ -783,7 +783,7 @@ class CarbonSqlParser()
           case _ => (Seq())
         }
 
-        AlterCube(tableModel(false, schemaName.getOrElse("default"), schemaName, cubeName,
+        AlterTable(tableModel(false, schemaName.getOrElse("default"), schemaName, cubeName,
           dimCols.map(f => normalizeType(f)),
           msrCols.map(f => normalizeType(f)), "", withKeyword, "",
           None, Seq(), simpleDimRelations, noDictionary, aggregation, None, null),

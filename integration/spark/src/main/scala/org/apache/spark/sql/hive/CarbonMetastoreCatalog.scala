@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.hive
 
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream, EOFException, File, ObjectInputStream}
+import java.io.{ByteArrayInputStream, EOFException, File, ObjectInputStream}
 import java.net.{InetAddress, InterfaceAddress, NetworkInterface}
 import java.util.{GregorianCalendar, HashMap}
 
@@ -34,88 +34,33 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{AggregateTableAttributes, Partitioner}
 import org.apache.spark.sql.hive.client.ClientInterface
 import org.apache.spark.sql.types._
-import org.eigenbase.xom.XOMUtil
 
 import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.{CarbonDef, CarbonTableIdentifier}
+import org.carbondata.core.carbon.CarbonTableIdentifier
 import org.carbondata.core.carbon.metadata.CarbonMetadata
 import org.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.datastorage.store.fileperations.{AtomicFileOperationsImpl, FileWriteOperation}
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile
 import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType
-import org.carbondata.core.metadata.CarbonMetadata.Cube
 import org.carbondata.core.reader.ThriftReader
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.core.writer.ThriftWriter
 import org.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-import org.carbondata.processing.util.CarbonDataProcessorUtil
-import org.carbondata.spark.load.CarbonLoaderUtil
 import org.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
 
 case class MetaData(var cubesMeta: ArrayBuffer[TableMeta])
 
-case class CarbonMetaData(dims: Seq[String], msrs: Seq[String], carbonTable: CarbonTable,
-                          cube: Cube = null)
+case class CarbonMetaData(dims: Seq[String], msrs: Seq[String], carbonTable: CarbonTable)
 
 case class TableMeta(carbonTableIdentifier: CarbonTableIdentifier, dataPath: String,
-                     carbonTable: CarbonTable, partitioner: Partitioner,
-                     schema: CarbonDef.Schema = null, var cube: Cube = null)
-
-object CarbonMetastoreCatalog {
-
-
-  def parseStringToSchema(schema: String): CarbonDef.Schema = {
-    val xmlParser = XOMUtil.createDefaultParser()
-    val baoi = new ByteArrayInputStream(schema.getBytes())
-    val defin = xmlParser.parse(baoi)
-    new CarbonDef.Schema(defin)
-  }
-
-  /**
-   * Gets content via Apache VFS and decrypt the content.
-   * File must exist and have content.
-   *
-   * @param url String
-   * @return Apache VFS FileContent for further processing
-   */
-  def readSchema(url: String, encrypted: Boolean): CarbonDef.Schema = {
-    val fileType = FileFactory.getFileType(url)
-    val out = FileFactory.getDataInputStream(url, fileType)
-    val baos = new ByteArrayOutputStream();
-    var bais: ByteArrayInputStream = null;
-    var decryptedStream: ByteArrayInputStream = null;
-    val buffer = new Array[Byte](1024);
-    var read = 0;
-    try {
-      read = out.read(buffer, 0, buffer.length)
-      while (read != -1) {
-        baos.write(buffer, 0, read);
-        read = out.read(buffer, 0, buffer.length)
-      }
-      baos.flush();
-      bais = new ByteArrayInputStream(baos.toByteArray())
-      decryptedStream = bais
-      val xmlParser = XOMUtil.createDefaultParser()
-      val defin = xmlParser.parse(decryptedStream)
-      out.close
-      baos.close
-      decryptedStream.close
-      return new CarbonDef.Schema(defin);
-    }
-    catch {
-      case s: Exception =>
-        throw s
-    }
-  }
-}
+    carbonTable: CarbonTable, partitioner: Partitioner)
 
 class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: ClientInterface)
   extends HiveMetastoreCatalog(client, hive)
-  with spark.Logging {
+    with spark.Logging {
 
   @transient val LOGGER = LogServiceFactory
     .getLogService("org.apache.spark.sql.CarbonMetastoreCatalog");
@@ -135,9 +80,9 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   }
 
   def lookupRelation1(
-                       databaseName: Option[String],
-                       tableName: String,
-                       alias: Option[String] = None)(sqlContext: SQLContext): LogicalPlan = {
+      databaseName: Option[String],
+      tableName: String,
+      alias: Option[String] = None)(sqlContext: SQLContext): LogicalPlan = {
     val db = databaseName match {
       case Some(name) => name
       case _ => null
@@ -150,9 +95,10 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   }
 
   override def lookupRelation(tableIdentifier: Seq[String],
-                              alias: Option[String] = None): LogicalPlan = {
-    try {
+      alias: Option[String] = None): LogicalPlan = {
+    try { {
       super.lookupRelation(tableIdentifier, alias)
+    }
     } catch {
       case s: java.lang.Exception =>
         lookupRelation2(tableIdentifier, alias)(hive.asInstanceOf[SQLContext])
@@ -162,20 +108,20 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   def getCubeCreationTime(schemaName: String, cubeName: String): Long = {
     val cubeMeta = metadata.cubesMeta.filter(
       c => (c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(schemaName) &&
-        (c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))))
+            (c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))))
     val cubeCreationTime = cubeMeta.head.carbonTable.getTableLastUpdatedTime
     cubeCreationTime
   }
 
 
   def lookupRelation2(tableIdentifier: Seq[String],
-                      alias: Option[String] = None)(sqlContext: SQLContext): LogicalPlan = {
+      alias: Option[String] = None)(sqlContext: SQLContext): LogicalPlan = {
     checkSchemasModifiedTimeAndReloadCubes()
     tableIdentifier match {
       case Seq(schemaName, cubeName) =>
         val cubes = metadata.cubesMeta.filter(
           c => (c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(schemaName) &&
-            (c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))))
+                (c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))))
         if (cubes.length > 0) {
           CarbonRelation(schemaName, cubeName,
             CarbonSparkUtil.createSparkMeta(cubes.head.carbonTable), cubes.head, alias)(sqlContext)
@@ -187,7 +133,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
         val currentDatabase = getDB.getDatabaseName(None, sqlContext)
         val cubes = metadata.cubesMeta.filter(
           c => (c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(currentDatabase) &&
-            (c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))))
+                (c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))))
         if (cubes.length > 0) {
           CarbonRelation(currentDatabase, cubeName,
             CarbonSparkUtil.createSparkMeta(cubes.head.carbonTable), cubes.head, alias)(sqlContext)
@@ -215,20 +161,22 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
       case Seq(schemaName, cubeName) =>
         val cubes = metadata.cubesMeta.filter(
           c => (c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(schemaName) &&
-            (c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))))
+                (c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))))
         cubes.length > 0
       case Seq(cubeName) =>
         val currentDatabase = getDB.getDatabaseName(None, sqlContext)
         val cubes = metadata.cubesMeta.filter(
           c => (c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(currentDatabase) &&
-            (c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))))
+                (c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))))
         cubes.length > 0
       case _ => false
     }
   }
 
   def loadMetadata(metadataPath: String): MetaData = {
-    if (metadataPath == null) return null
+    if (metadataPath == null) {
+      return null
+    }
     val fileType = FileFactory.getFileType(metadataPath)
     val metaDataBuffer = new ArrayBuffer[TableMeta]
     if (useUniquePath) {
@@ -242,9 +190,10 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
 
             cubeFolders.foreach(cubeFolder => {
               val schemaPath = metadataPath + "/" + schemaFolder.getName + "/" + cubeFolder.getName
-              try {
+              try { {
                 fillMetaData(schemaPath, fileType, metaDataBuffer)
                 updateSchemasUpdatedTime(schemaFolder.getName, cubeFolder.getName)
+              }
               } catch {
                 case ex: org.apache.hadoop.security.AccessControlException =>
                 // Ingnore Access control exception and get only accessible cube details
@@ -265,10 +214,9 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   }
 
   private def fillMetaData(basePath: String, fileType: FileType,
-                           metaDataBuffer: ArrayBuffer[TableMeta]): Unit = {
+      metaDataBuffer: ArrayBuffer[TableMeta]): Unit = {
     val schemasPath = basePath // + "/schemas"
-    try {
-
+    try { {
       if (FileFactory.isFileExist(schemasPath, fileType)) {
         val file = FileFactory.getCarbonFile(schemasPath, fileType)
         val schemaFolders = file.listFiles();
@@ -316,7 +264,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
                     // TODO: Need to update schema thirft to hold partitioner
                     // information and reload when required.
                     Partitioner("org.carbondata.spark.partition.api.impl." +
-                      "SampleDataPartitionerImpl",
+                                "SampleDataPartitionerImpl",
                       Array(""), 1, getNodeList()))
                 }
               }
@@ -329,6 +277,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
         FileFactory.mkdirs(schemasPath, fileType)
 
       }
+    }
     }
     catch {
       case s: java.io.FileNotFoundException =>
@@ -352,8 +301,8 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
    * @return
    */
   def createCubeFromThrift(tableInfo: org.carbondata.core.carbon.metadata.schema.table.TableInfo,
-                           dbName: String, tableName: String, partitioner: Partitioner)
-                          (sqlContext: SQLContext): String = {
+      dbName: String, tableName: String, partitioner: Partitioner)
+    (sqlContext: SQLContext): String = {
 
     if (cubeExists(Seq(dbName, tableName))(sqlContext)) {
       sys.error(s"Table [$tableName] already exists under schema [$dbName]")
@@ -446,67 +395,38 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     inets
   }
 
-/*
- * This method will remove the first occurance of any of the ips  mentioned in the predicate.
- * Eg: l = List(Master,slave1,Master,slave2,slave3) is the list of nodes where first Master is
- * the Driver  node.
- * this method withoutFirst (l)(x=> x == 'Master') will remove the first occurance of Master.
- * The resulting List containt List(slave1,Master,slave2,slave3)
- */
-  def withoutDriverIP[A](xs: List[A])(p: A => Boolean): List[A] = xs.toList match {
-    case x :: rest => if (p(x)) rest else x :: withoutDriverIP(rest)(p)
-    case _ => Nil
-  }
-
-
-  def updateCube(schemaPath: String, encrypted: Boolean, aggTablesGen: Boolean)
-                (sqlContext: SQLContext) {
-    val schema = CarbonMetastoreCatalog.readSchema(schemaPath, encrypted)
-    updateCube(schema, aggTablesGen)(sqlContext)
-  }
-
-  def validateAndGetNewAggregateColsList(schema: CarbonDef.Schema,
-                                         aggregateAttributes: List[AggregateTableAttributes]):
-                                        List[AggregateTableAttributes] = {
-    val dimensions = schema.cubes(0).dimensions
-    val measures = schema.cubes(0).measures
-    var aggColsArray = Array[AggregateTableAttributes]()
-    aggregateAttributes.foreach { aggCol =>
-      var found = false
-      val colName = aggCol.colName
-      dimensions.foreach { dimension =>
-        if (dimension.name.toLowerCase().equals(colName.toLowerCase())) {
-          aggColsArray :+= AggregateTableAttributes(dimension.name, aggCol.aggType)
-          found = true
-        }
+  /*
+   * This method will remove the first occurance of any of the ips  mentioned in the predicate.
+   * Eg: l = List(Master,slave1,Master,slave2,slave3) is the list of nodes where first Master is
+   * the Driver  node.
+   * this method withoutFirst (l)(x=> x == 'Master') will remove the first occurance of Master.
+   * The resulting List containt List(slave1,Master,slave2,slave3)
+   */
+  def withoutDriverIP[A](xs: List[A])(p: A => Boolean): List[A] = {
+    xs.toList match {
+      case x :: rest => if (p(x)) {
+        rest
+      } else {
+        x :: withoutDriverIP(rest)(p)
       }
-      if (!found) {
-        measures.foreach { measure =>
-          if (measure.name.toLowerCase().equals(colName.toLowerCase())) {
-            aggColsArray :+= AggregateTableAttributes(measure.name, aggCol.aggType)
-            found = true
-          }
-        }
-        if (!found) {
-          LOGGER.audit(
-            s"Failed to create the aggregate table. " +
-              s"Provided column does not exist in the cube :: $colName")
-          sys.error(s"Provided column does not exist in the cube :: $colName")
-        }
-      }
+      case _ => Nil
     }
-    aggColsArray.toList
   }
+
 
   def getDimensions(carbonTable: CarbonTable,
-                    aggregateAttributes: List[AggregateTableAttributes]): Array[String] = {
+      aggregateAttributes: List[AggregateTableAttributes]): Array[String] = {
     var dimArray = Array[String]()
     aggregateAttributes.filter { agg => null == agg.aggType }.map { agg =>
       val colName = agg.colName
-      if (null != carbonTable.getMeasureByName(carbonTable.getFactTableName(), colName)) sys
-        .error(s"Measure must be provided along with aggregate function :: $colName")
-      if (null == carbonTable.getDimensionByName(carbonTable.getFactTableName(), colName)) sys
-        .error(s"Invalid column name. Cannot create an aggregate table :: $colName")
+      if (null != carbonTable.getMeasureByName(carbonTable.getFactTableName(), colName)) {
+        sys
+          .error(s"Measure must be provided along with aggregate function :: $colName")
+      }
+      if (null == carbonTable.getDimensionByName(carbonTable.getFactTableName(), colName)) {
+        sys
+          .error(s"Invalid column name. Cannot create an aggregate table :: $colName")
+      }
       if (dimArray.contains(colName)) {
         sys.error(s"Duplicate column name. Cannot create an aggregate table :: $colName")
       }
@@ -515,162 +435,8 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     return dimArray;
   }
 
-  private def updateCubeWithAggregatesDetail(schema: CarbonDef.Schema,
-                                             updatedSchema: CarbonDef.Schema) = {
-    schema.cubes(0).autoAggregationType = "auto"
-    schema.cubes(0).fact.asInstanceOf[CarbonDef.Table].aggTables = updatedSchema.cubes(0).fact
-      .asInstanceOf[CarbonDef.Table].aggTables
-  }
-
-  def updateCubeWithAggregates(schema: CarbonDef.Schema, schemaName: String = null,
-                               cubeName: String, aggTableName: String,
-                               aggColsList: List[AggregateTableAttributes]): CarbonDef.Schema = {
-    var cube = org.carbondata.core.metadata.CarbonMetadata.getInstance()
-      .getCube(schemaName + "_" + cubeName)
-    if (null == cube) {
-      throw new Exception("Missing metadata for the aggregate table: " + aggTableName)
-    }
-    val aggregateAttributes = validateAndGetNewAggregateColsList(schema, aggColsList)
-    var aggTableColumns = getDimensions(
-      CarbonMetadata.getInstance().getCarbonTable(schemaName + "_" + cubeName), aggregateAttributes)
-    if (aggTableColumns.length == 0) {
-      LOGGER.audit(
-        s"Failed to create the aggregate table $aggTableName for cube $schemaName.$cubeName. " +
-          s"Please provide at least one valid dimension name to " +
-          s"create aggregate table successfully.")
-      sys.error(
-        s"Please provide at least one valid dimension name to create aggregate table successfully")
-    }
-    aggTableColumns = CarbonDataProcessorUtil
-      .getReorderedLevels(schema, schema.cubes(0), aggTableColumns, cube.getFactTableName)
-    schema.cubes(0).autoAggregationType = "auto"
-    var aggDims = Array[CarbonDef.AggMeasure]()
-    var msrs = Array[CarbonDef.AggMeasure]()
-    aggregateAttributes.filter(agg => null != agg.aggType).foreach { measure =>
-      val mondAggMsr = new CarbonDef.AggMeasure
-      val name = measure.colName
-      if (null != cube.getMeasure(cube.getFactTableName(), name)) {
-        mondAggMsr.name = s"[Measures].[$name]"
-        mondAggMsr.column = name
-        val aggType = measure.aggType
-        mondAggMsr.aggregator = aggType
-        if (msrs.contains(mondAggMsr)) {
-          LOGGER.audit(
-            s"Failed to create the aggregate table $aggTableName for cube $schemaName.$cubeName. " +
-              s"Duplicate column with same aggregate function.")
-          sys.error(
-            s"Duplicate column with same aggregate function. " +
-              s"Cannot create an aggregate table :: $name :: $aggType")
-        }
-        msrs :+= mondAggMsr
-      }
-      else {
-        val dimension = cube.getDimension(name, cube.getFactTableName())
-        if (null == dimension) sys
-          .error(s"Invalid column name. Cannot create an aggregate table :: $name")
-        val dimName = dimension.getDimName()
-        val hierName = dimension.getHierName()
-        val levelName = dimension.getName()
-        mondAggMsr.name = s"[$dimName].[$hierName].[$levelName]"
-        mondAggMsr.column = name
-        val aggType = measure.aggType
-        mondAggMsr.aggregator = aggType
-        if (aggDims.contains(mondAggMsr)) {
-          LOGGER.audit(
-            s"Failed to create the aggregate table $aggTableName for cube $schemaName.$cubeName. " +
-              s"Duplicate column with same aggregate function.")
-          sys.error(
-            s"Duplicate column with same aggregate function. " +
-              s"Cannot create an aggregate table :: $name :: $aggType")
-        }
-        aggDims :+= mondAggMsr
-      }
-    }
-
-    val aggMsrs = aggDims ++ msrs
-
-    val mondAgg = new CarbonDef.AggName()
-    mondAgg.name = aggTableName
-    val bufferOfCarbonAggName = new ArrayBuffer[CarbonDef.AggName]
-    val list = org.carbondata.core.metadata.CarbonMetadata.getInstance()
-      .getAggLevelsForAggTable(cube, aggTableName, aggTableColumns.toList.asJava)
-    val array = list.asScala;
-    mondAgg.levels = array.toArray
-    mondAgg.measures = aggMsrs
-    val factCount = new CarbonDef.AggFactCount
-    factCount.column = schema.cubes(0).fact.asInstanceOf[CarbonDef.Table].name + "_count"
-    mondAgg.factcount = factCount
-    if (CarbonLoaderUtil.aggTableAlreadyExistWithSameMeasuresndLevels(mondAgg,
-      schema.cubes(0).fact.asInstanceOf[CarbonDef.Table].aggTables)) {
-      LOGGER.audit(
-        s"Failed to create the aggregate table $aggTableName for cube $schemaName.$cubeName. " +
-          s"Already an aggregate table exists with same columns")
-      sys.error(s"Already an aggregate table exists with same columns")
-    }
-    bufferOfCarbonAggName += mondAgg
-    schema.cubes(0).fact.asInstanceOf[CarbonDef.Table].aggTables = (
-      schema.cubes(0).fact.asInstanceOf[CarbonDef.Table].aggTables.toSeq ++ bufferOfCarbonAggName)
-      .toArray
-    return schema
-  }
-
   def getAggregateTableName(carbonTable: CarbonTable, factTableName: String): String = {
     return CarbonUtil.getNewAggregateTableName(carbonTable.getAggregateTablesName, factTableName)
-  }
-
-  def updateCube(schema: CarbonDef.Schema, aggTablesGen: Boolean)(sqlContext: SQLContext) {
-    val schemaName = schema.name
-    val cubeName = schema.cubes(0).name
-    val schemaXML: String = schema.toXML
-    if (!cubeExists(Seq(schemaName, cubeName))(sqlContext)) {
-      sys.error(s"Cube does not exist with $schemaName and $cubeName to update")
-    }
-    val schemaNew = CarbonMetastoreCatalog.parseStringToSchema(schemaXML)
-    // Remove the cube and load again for aggregates.
-    org.carbondata.core.metadata.CarbonMetadata.getInstance().loadSchema(schemaNew)
-    val cube = org.carbondata.core.metadata.CarbonMetadata.getInstance()
-      .getCube(schemaName + "_" + cubeName)
-    val fileType = FileFactory.getFileType(storePath)
-
-    val carbonTableIdentifier = new CarbonTableIdentifier(schemaName, cubeName)
-    val metadataFilePath = if (useUniquePath) {
-      val carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(storePath + '/' + schemaName + "/" + cubeName, carbonTableIdentifier)
-      carbonTablePath.getSchemaFilePath
-    } else {
-      val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier)
-      carbonTablePath.getSchemaFilePath
-    }
-    val oldMetadataFile = FileFactory.getCarbonFile(metadataFilePath, fileType)
-
-    val fileOperation = new
-        AtomicFileOperationsImpl(metadataFilePath, FileFactory.getFileType(metadataFilePath))
-    val tempMetadataFilePath = metadataFilePath + CarbonCommonConstants.UPDATING_METADATA
-
-    if (FileFactory.isFileExist(tempMetadataFilePath, fileType)) {
-      FileFactory.getCarbonFile(tempMetadataFilePath, fileType).delete()
-    }
-
-    FileFactory.createNewFile(tempMetadataFilePath, fileType)
-
-    val tempMetadataFile = FileFactory.getCarbonFile(tempMetadataFilePath, fileType)
-
-    metadata.cubesMeta.map { c =>
-      if (c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(schemaName) &&
-        c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName)) {
-        val cubeMeta = TableMeta(new CarbonTableIdentifier(schemaName, cubeName), storePath,
-          c.carbonTable, c.partitioner)
-        val out = fileOperation.openForWrite(FileWriteOperation.OVERWRITE)
-
-        // Need to be handled as per new thrift object while alter cube or
-        // adding new aggregate table
-        fileOperation.close()
-      }
-
-
-    }
-    refreshCache
-    updateSchemasUpdatedTime(schemaName, cubeName)
   }
 
   /**
@@ -681,9 +447,13 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     metadata.cubesMeta.map { c =>
       schemaLike match {
         case Some(name) =>
-          if (c.carbonTableIdentifier.getDatabaseName.contains(name)) c.carbonTableIdentifier
-            .getDatabaseName
-          else null
+          if (c.carbonTableIdentifier.getDatabaseName.contains(name)) {
+            c.carbonTableIdentifier
+              .getDatabaseName
+          }
+          else {
+            null
+          }
         case _ => c.carbonTableIdentifier.getDatabaseName
       }
     }.filter(f => f != null)
@@ -712,7 +482,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   }
 
   def dropCube(partitionCount: Int, tableStorePath: String, schemaName: String, cubeName: String)
-              (sqlContext: SQLContext) {
+    (sqlContext: SQLContext) {
     if (!cubeExists(Seq(schemaName, cubeName))((sqlContext))) {
       LOGGER.audit(s"Drop cube failed. Cube with $schemaName.$cubeName does not exist");
       sys.error(s"Cube with $schemaName.$cubeName does not exist")
@@ -732,7 +502,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
       }
 
       val partitionLocation = tableStorePath + File.separator + "partition" + File.separator +
-        schemaName + File.separator + cubeName
+                              schemaName + File.separator + cubeName
       val partitionFileType = FileFactory.getFileType(partitionLocation)
       if (FileFactory.isFileExist(partitionLocation, partitionFileType)) {
         CarbonUtil
@@ -740,8 +510,9 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
       }
     }
 
-    try {
+    try { {
       sqlContext.sql(s"DROP TABLE $schemaName.$cubeName").collect()
+    }
     } catch {
       case e: Exception =>
         LOGGER.audit(
@@ -750,7 +521,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
 
     metadata.cubesMeta -= metadata.cubesMeta.filter(
       c => (c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(schemaName) &&
-        (c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))))(0)
+            (c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))))(0)
     org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .removeTable(schemaName + "_" + cubeName)
     logInfo(s"Cube $cubeName of $schemaName schema dropped syccessfully.")
@@ -762,7 +533,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
 
     var timestampFile = if (useUniquePath) {
       storePath + "/" + schemaName + "/" + cubeName + "/" +
-        CarbonCommonConstants.SCHEMAS_MODIFIED_TIME_FILE
+      CarbonCommonConstants.SCHEMAS_MODIFIED_TIME_FILE
     }
     else {
       storePath + "/" + CarbonCommonConstants.SCHEMAS_MODIFIED_TIME_FILE
@@ -807,8 +578,8 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
 
         if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
           if (!(FileFactory.getCarbonFile(timestampFile, timestampFileType).getLastModifiedTime() ==
-            cubeModifiedTimeStore.get(c.carbonTableIdentifier.getDatabaseName + "_" +
-              c.carbonTableIdentifier.getTableName))) {
+                cubeModifiedTimeStore.get(c.carbonTableIdentifier.getDatabaseName + "_" +
+                                          c.carbonTableIdentifier.getTableName))) {
             refreshCache
           }
         }
@@ -839,8 +610,8 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   }
 
   def readCubeMetaDataFile(cubeFolder: CarbonFile,
-                           fileType: FileFactory.FileType):
-                          (String, String, String, String, Partitioner, Long) = {
+      fileType: FileFactory.FileType):
+  (String, String, String, String, Partitioner, Long) = {
     val cubeMetadataFile = cubeFolder.getAbsolutePath() + "/metadata"
 
     var schema: String = ""
@@ -855,8 +626,9 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
       // load metadata
       val in = FileFactory.getDataInputStream(cubeMetadataFile, fileType)
       var len = 0
-      try {
+      try { {
         len = in.readInt()
+      }
       } catch {
         case others: EOFException => len = 0
       }
@@ -894,9 +666,10 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
         partitioner = objStream.readObject().asInstanceOf[Partitioner]
         objStream.close
 
-        try {
+        try { {
           cubeCreationTime = in.readLong()
           len = in.readInt()
+        }
         } catch {
           case others: EOFException => len = 0
         }
@@ -915,17 +688,17 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
 object CarbonMetastoreTypes extends RegexParsers {
   protected lazy val primitiveType: Parser[DataType] =
     "string" ^^^ StringType |
-      "float" ^^^ FloatType |
-      "int" ^^^ IntegerType |
-      "tinyint" ^^^ ShortType |
-      "double" ^^^ DoubleType |
-      "long" ^^^ LongType |
-      "binary" ^^^ BinaryType |
-      "boolean" ^^^ BooleanType |
-      //      "decimal" ^^^ DecimalType() |
-      "decimal" ^^^ "decimal" ^^^ DecimalType(18, 2) |
-      "varchar\\((\\d+)\\)".r ^^^ StringType |
-      "timestamp" ^^^ TimestampType
+    "float" ^^^ FloatType |
+    "int" ^^^ IntegerType |
+    "tinyint" ^^^ ShortType |
+    "double" ^^^ DoubleType |
+    "long" ^^^ LongType |
+    "binary" ^^^ BinaryType |
+    "boolean" ^^^ BooleanType |
+    //      "decimal" ^^^ DecimalType() |
+    "decimal" ^^^ "decimal" ^^^ DecimalType(18, 2) |
+    "varchar\\((\\d+)\\)".r ^^^ StringType |
+    "timestamp" ^^^ TimestampType
 
   protected lazy val arrayType: Parser[DataType] =
     "array" ~> "<" ~> dataType <~ ">" ^^ {
@@ -949,29 +722,33 @@ object CarbonMetastoreTypes extends RegexParsers {
 
   protected lazy val dataType: Parser[DataType] =
     arrayType |
-      mapType |
-      structType |
-      primitiveType
+    mapType |
+    structType |
+    primitiveType
 
-  def toDataType(metastoreType: String): DataType = parseAll(dataType, metastoreType) match {
-    case Success(result, _) => result
-    case failure: NoSuccess => sys.error(s"Unsupported dataType: $metastoreType")
+  def toDataType(metastoreType: String): DataType = {
+    parseAll(dataType, metastoreType) match {
+      case Success(result, _) => result
+      case failure: NoSuccess => sys.error(s"Unsupported dataType: $metastoreType")
+    }
   }
 
-  def toMetastoreType(dt: DataType): String = dt match {
-    case ArrayType(elementType, _) => s"array<${toMetastoreType(elementType)}>"
-    case StructType(fields) =>
-      s"struct<${fields.map(f => s"${f.name}:${toMetastoreType(f.dataType)}").mkString(",")}>"
-    case StringType => "string"
-    case FloatType => "float"
-    case IntegerType => "int"
-    case ShortType => "tinyint"
-    case DoubleType => "double"
-    case LongType => "bigint"
-    case BinaryType => "binary"
-    case BooleanType => "boolean"
-    case DecimalType() => "decimal"
-    case TimestampType => "timestamp"
+  def toMetastoreType(dt: DataType): String = {
+    dt match {
+      case ArrayType(elementType, _) => s"array<${toMetastoreType(elementType)}>"
+      case StructType(fields) =>
+        s"struct<${fields.map(f => s"${f.name}:${toMetastoreType(f.dataType)}").mkString(",")}>"
+      case StringType => "string"
+      case FloatType => "float"
+      case IntegerType => "int"
+      case ShortType => "tinyint"
+      case DoubleType => "double"
+      case LongType => "bigint"
+      case BinaryType => "binary"
+      case BooleanType => "boolean"
+      case DecimalType() => "decimal"
+      case TimestampType => "timestamp"
+    }
   }
 
 }

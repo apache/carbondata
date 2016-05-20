@@ -26,7 +26,6 @@ import java.io.Serializable;
 import java.util.List;
 
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
-import org.carbondata.core.carbon.CarbonDef.Schema;
 import org.carbondata.core.load.LoadMetadataDetails;
 
 public class CarbonLoadModel implements Serializable {
@@ -43,19 +42,7 @@ public class CarbonLoadModel implements Serializable {
 
   private String dimFolderPath;
 
-  private String jdbcUrl;
-
-  private String dbUserName;
-
-  private String dbPwd;
-
-  private String schemaPath;
-
-  private String driverClass;
-
   private String partitionId;
-
-  private Schema schema;
 
   private CarbonDataLoadSchema carbonDataLoadSchema;
 
@@ -160,20 +147,6 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * @return the schemaPath
-   */
-  public Schema getSchema() {
-    return schema;
-  }
-
-  /**
-   * @param schema the schemaPath to set
-   */
-  public void setSchema(Schema schema) {
-    this.schema = schema;
-  }
-
-  /**
    * @return carbon dataload schema
    */
   public CarbonDataLoadSchema getCarbonDataLoadSchema() {
@@ -246,76 +219,6 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * @return the jdbcUrl
-   */
-  public String getJdbcUrl() {
-    return jdbcUrl;
-  }
-
-  /**
-   * @param jdbcUrl the jdbcUrl to set
-   */
-  public void setJdbcUrl(String jdbcUrl) {
-    this.jdbcUrl = jdbcUrl;
-  }
-
-  /**
-   * @return the dbUserName
-   */
-  public String getDbUserName() {
-    return dbUserName;
-  }
-
-  /**
-   * @param dbUserName the dbUserName to set
-   */
-  public void setDbUserName(String dbUserName) {
-    this.dbUserName = dbUserName;
-  }
-
-  /**
-   * @return the dbPwd
-   */
-  public String getDbPwd() {
-    return dbPwd;
-  }
-
-  /**
-   * @param dbPwd the dbPwd to set
-   */
-  public void setDbPwd(String dbPwd) {
-    this.dbPwd = dbPwd;
-  }
-
-  /**
-   * @return the schemaPath
-   */
-  public String getSchemaPath() {
-    return schemaPath;
-  }
-
-  /**
-   * @param schemaPath the schemaPath to set
-   */
-  public void setSchemaPath(String schemaPath) {
-    this.schemaPath = schemaPath;
-  }
-
-  /**
-   * @return the driverClass
-   */
-  public String getDriverClass() {
-    return driverClass;
-  }
-
-  /**
-   * @param driverClass the driverClass to set
-   */
-  public void setDriverClass(String driverClass) {
-    this.driverClass = driverClass;
-  }
-
-  /**
    * get copy with parition
    *
    * @param uniqueId
@@ -324,18 +227,12 @@ public class CarbonLoadModel implements Serializable {
   public CarbonLoadModel getCopyWithPartition(String uniqueId) {
     CarbonLoadModel copy = new CarbonLoadModel();
     copy.tableName = tableName;
-    copy.dbPwd = dbPwd;
-    copy.dbUserName = dbUserName;
     copy.dimFolderPath = dimFolderPath;
-    copy.driverClass = driverClass;
     copy.factFilePath = factFilePath + '/' + uniqueId;
-    copy.jdbcUrl = jdbcUrl;
     copy.databaseName = databaseName;
-    copy.schemaPath = schemaPath;
     copy.partitionId = uniqueId;
     copy.aggTables = aggTables;
     copy.aggTableName = aggTableName;
-    copy.schema = schema;
     copy.aggLoadRequest = aggLoadRequest;
     copy.loadMetadataDetails = loadMetadataDetails;
     copy.isRetentionRequest = isRetentionRequest;
@@ -362,18 +259,12 @@ public class CarbonLoadModel implements Serializable {
       String header, String delimiter) {
     CarbonLoadModel copyObj = new CarbonLoadModel();
     copyObj.tableName = tableName;
-    copyObj.dbPwd = dbPwd;
-    copyObj.dbUserName = dbUserName;
     copyObj.dimFolderPath = dimFolderPath;
-    copyObj.driverClass = driverClass;
     copyObj.factFilePath = null;
-    copyObj.jdbcUrl = jdbcUrl;
     copyObj.databaseName = databaseName;
-    copyObj.schemaPath = schemaPath;
     copyObj.partitionId = uniqueId;
     copyObj.aggTables = aggTables;
     copyObj.aggTableName = aggTableName;
-    copyObj.schema = schema;
     copyObj.aggLoadRequest = aggLoadRequest;
     copyObj.loadMetadataDetails = loadMetadataDetails;
     copyObj.isRetentionRequest = isRetentionRequest;
@@ -523,8 +414,8 @@ public class CarbonLoadModel implements Serializable {
     this.factTimeStamp = factTimeStamp;
   }
 
-  public String[] getDelimiters(){
-    return new String[]{complexDelimiterLevel1, complexDelimiterLevel2};
+  public String[] getDelimiters() {
+    return new String[] { complexDelimiterLevel1, complexDelimiterLevel2 };
   }
 
   /**

@@ -3,7 +3,7 @@ package org.carbondata.core.util;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import org.carbondata.core.carbon.SqlStatement;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.constants.CarbonCommonConstants;
 
 public final class DataTypeUtil {
@@ -35,21 +35,6 @@ public final class DataTypeUtil {
     }
   }
 
-  public static char getAggType(SqlStatement.Type dataType, String agg) {
-    if (CarbonCommonConstants.SUM.equals(agg) || CarbonCommonConstants.COUNT.equals(agg)) {
-      switch (dataType) {
-        case DECIMAL:
-          return CarbonCommonConstants.BIG_DECIMAL_MEASURE;
-        case LONG:
-          return CarbonCommonConstants.BIG_INT_MEASURE;
-        default:
-          return CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE;
-      }
-    } else {
-      return CarbonCommonConstants.BYTE_VALUE_MEASURE;
-    }
-  }
-
   public static byte[] bigDecimalToByte(BigDecimal num) {
     BigInteger sig = new BigInteger(num.unscaledValue().toString());
     int scale = num.scale();
@@ -75,36 +60,36 @@ public final class DataTypeUtil {
    * @param dataTypeStr
    * @return return the SqlStatement.Type
    */
-  public static SqlStatement.Type getDataType(String dataTypeStr) {
-    SqlStatement.Type dataType = null;
+  public static DataType getDataType(String dataTypeStr) {
+    DataType dataType = null;
     switch (dataTypeStr) {
       case "TIMESTAMP":
-        dataType = SqlStatement.Type.TIMESTAMP;
+        dataType = DataType.TIMESTAMP;
         break;
       case "STRING":
-        dataType = SqlStatement.Type.STRING;
+        dataType = DataType.STRING;
         break;
       case "INT":
-        dataType = SqlStatement.Type.INT;
+        dataType = DataType.INT;
         break;
       case "LONG":
-        dataType = SqlStatement.Type.LONG;
+        dataType = DataType.LONG;
         break;
       case "DOUBLE":
-        dataType = SqlStatement.Type.DOUBLE;
+        dataType = DataType.DOUBLE;
         break;
       case "DECIMAL":
-        dataType = SqlStatement.Type.DECIMAL;
+        dataType = DataType.DECIMAL;
         break;
       case "ARRAY":
-        dataType = SqlStatement.Type.ARRAY;
+        dataType = DataType.ARRAY;
         break;
       case "STRUCT":
-        dataType = SqlStatement.Type.STRUCT;
+        dataType = DataType.STRUCT;
         break;
       case "MAP":
       default:
-        dataType = SqlStatement.Type.STRING;
+        dataType = DataType.STRING;
     }
     return dataType;
   }

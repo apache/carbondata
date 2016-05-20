@@ -82,7 +82,7 @@ public class MeasureAggregatorFactory {
    * @param dataType       data type
    * @return aggregator
    */
-  private static MeasureAggregator getAggregator(String aggregatorType, DataType dataType) {
+  public static MeasureAggregator getAggregator(String aggregatorType, DataType dataType) {
 
     // get the MeasureAggregator based on aggregate type
     if (CarbonCommonConstants.MIN.equalsIgnoreCase(aggregatorType)) {

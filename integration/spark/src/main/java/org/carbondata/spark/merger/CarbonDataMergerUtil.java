@@ -36,8 +36,6 @@ import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.processing.merger.CarbonColumnarSliceMerger;
-import org.carbondata.processing.merger.CarbonSliceMergerInfo;
 import org.carbondata.spark.load.CarbonLoadModel;
 import org.carbondata.spark.load.CarbonLoaderUtil;
 import org.carbondata.spark.load.DeleteLoadFolders;
@@ -57,23 +55,8 @@ public final class CarbonDataMergerUtil {
   public static boolean executeMerging(CarbonLoadModel carbonLoadModel, String storeLocation,
       String hdfsStoreLocation, int currentRestructNumber, String metadataFilePath,
       List<String> loadsToMerge, String mergedLoadName) throws Exception {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION, storeLocation);
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, hdfsStoreLocation);
-    CarbonSliceMergerInfo carbonSliceMergerInfo = new CarbonSliceMergerInfo();
-
-    carbonSliceMergerInfo.setCubeName(carbonLoadModel.getTableName());
-    carbonSliceMergerInfo.setPartitionID(carbonLoadModel.getPartitionId());
-    carbonSliceMergerInfo.setSchema(carbonLoadModel.getSchema());
-    carbonSliceMergerInfo.setSchemaName(carbonLoadModel.getDatabaseName());
-    carbonSliceMergerInfo.setSchemaPath(carbonLoadModel.getSchemaPath());
-    carbonSliceMergerInfo.setTableName(carbonLoadModel.getTableName());
-    carbonSliceMergerInfo.setMetadataPath(metadataFilePath);
-    carbonSliceMergerInfo.setLoadsToBeMerged(loadsToMerge);
-    carbonSliceMergerInfo.setMergedLoadName(mergedLoadName);
-
-    CarbonColumnarSliceMerger merger = new CarbonColumnarSliceMerger(carbonSliceMergerInfo);
-    return merger.fullMerge(currentRestructNumber);
+    // TODO: Implement it
+    return false;
 
   }
 
