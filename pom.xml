@@ -43,6 +43,7 @@
     <module>processing</module>
     <module>hadoop</module>
     <module>integration/spark</module>
+	<module>integration-testcases</module>
     <module>assembly</module>
     <module>examples</module>
   </modules>

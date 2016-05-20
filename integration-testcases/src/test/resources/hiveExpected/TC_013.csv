@@ -1,0 +1,2 @@
+col_name StringType,data_type StringType,comment StringType
+imei,string,null

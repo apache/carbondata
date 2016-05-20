@@ -1,0 +1,109 @@
+<!--
+ ~ Licensed to the Apache Software Foundation (ASF) under one
+ ~ or more contributor license agreements.  See the NOTICE file
+ ~ distributed with this work for additional information
+ ~ regarding copyright ownership.  The ASF licenses this file
+ ~ to you under the Apache License, Version 2.0 (the
+ ~ "License"); you may not use this file except in compliance
+ ~ with the License.  You may obtain a copy of the License at
+ ~
+ ~    http://www.apache.org/licenses/LICENSE-2.0
+ ~
+ ~ Unless required by applicable law or agreed to in writing,
+ ~ software distributed under the License is distributed on an
+ ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ ~ KIND, either express or implied.  See the License for the
+ ~ specific language governing permissions and limitations
+ ~ under the License.
+ -->
+
+<Schema name="default">
+    <Cube name="alldatatypescube" visible="true" cache="true" enabled="true">
+        <Table name="alldatatypescube" alias="">
+        </Table>
+        <Dimension type="StandardDimension" visible="true" highCardinality="false" name="empno">
+            <Hierarchy name="empno" hasAll="true" normalized="false">
+                <Level name="empno" column="empno" type="Integer" levelType="Regular">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+        <Dimension type="StandardDimension" visible="true" highCardinality="false" name="empname">
+            <Hierarchy name="empname" hasAll="true" normalized="false">
+                <Level name="empname" column="empname" type="String" levelType="Regular">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+        <Dimension type="StandardDimension" visible="true" highCardinality="false"
+                   name="designation">
+            <Hierarchy name="designation" hasAll="true" normalized="false">
+                <Level name="designation" column="designation" type="String" levelType="Regular">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+        <Dimension type="StandardDimension" visible="true" highCardinality="false" name="doj">
+            <Hierarchy name="doj" hasAll="true" normalized="false">
+                <Level name="doj" column="doj" type="Timestamp" levelType="Regular">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+        <Dimension type="StandardDimension" visible="true" highCardinality="false"
+                   name="workgroupcategory">
+            <Hierarchy name="workgroupcategory" hasAll="true" normalized="false">
+                <Level name="workgroupcategory" column="workgroupcategory" type="Integer"
+                       levelType="Regular">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+        <Dimension type="StandardDimension" visible="true" highCardinality="false"
+                   name="workgroupcategoryname">
+            <Hierarchy name="workgroupcategoryname" hasAll="true" normalized="false">
+                <Level name="workgroupcategoryname" column="workgroupcategoryname" type="String"
+                       levelType="Regular">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+        <Dimension type="StandardDimension" visible="true" highCardinality="false" name="deptno">
+            <Hierarchy name="deptno" hasAll="true" normalized="false">
+                <Level name="deptno" column="deptno" type="Integer" levelType="Regular">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+        <Dimension type="StandardDimension" visible="true" highCardinality="false" name="deptname">
+            <Hierarchy name="deptname" hasAll="true" normalized="false">
+                <Level name="deptname" column="deptname" type="String" levelType="Regular">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+        <Dimension type="StandardDimension" visible="true" highCardinality="false"
+                   name="projectcode">
+            <Hierarchy name="projectcode" hasAll="true" normalized="false">
+                <Level name="projectcode" column="projectcode" type="Integer" levelType="Regular">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+        <Dimension type="StandardDimension" visible="true" highCardinality="false"
+                   name="projectjoindate">
+            <Hierarchy name="projectjoindate" hasAll="true" normalized="false">
+                <Level name="projectjoindate" column="projectjoindate" type="Timestamp"
+                       levelType="Regular">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+        <Dimension type="StandardDimension" visible="true" highCardinality="false"
+                   name="projectenddate">
+            <Hierarchy name="projectenddate" hasAll="true" normalized="false">
+                <Level name="projectenddate" column="projectenddate" type="Timestamp"
+                       levelType="Regular">
+                </Level>
+            </Hierarchy>
+        </Dimension>
+        <Measure name="attendance" column="attendance" datatype="Integer" aggregator="sum"
+                 visible="true">
+        </Measure>
+        <Measure name="utilization" column="utilization" datatype="Integer" aggregator="sum"
+                 visible="true">
+        </Measure>
+        <Measure name="salary" column="salary" datatype="Integer" aggregator="sum" visible="true">
+        </Measure>
+    </Cube>
+</Schema>
