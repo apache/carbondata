@@ -5,7 +5,7 @@ and encoding techniques to improve computing efficiency, in turn it will
 help speedup queries an order of magnitude faster over PetaBytes of data. 
 
 ### Why CarbonData
-Based on the below requirements, we investigated existing file formats in the Hadoop eco-system, but we could not find a suitable solution that satisfying requirements all at the same time, so we start designing CarbonData. 
+Based on the below requirements, we investigated existing file formats in the Hadoop eco-system, but we could not find a suitable solution that can satisfy all the requirements at the same time,so we start designing CarbonData. 
 * Requirement1:Support big scan & only fetch a few columns 
 * Requirement2:Support primary key lookup response in sub-second. 
 * Requirement3:Support interactive OLAP-style query over big data which involve many filters in a query, this type of workload should response in seconds. 
@@ -14,9 +14,9 @@ Based on the below requirements, we investigated existing file formats in the Ha
 
 ### Features
 CarbonData file format is a columnar store in HDFS, it has many features that a modern columnar format has, such as splittable, compression schema ,complex data type etc. And CarbonData has following unique features:
-* Stores data along with index: it can significantly accelerate query performance and reduces the I/O scans and CPU resources, where there are filters in the query.  CarbonData index is consisted of multiple level, a processing framework can leverage this index to reduce the task it needs to schedule and process, and it can also do skip scan in more finer grain unit (called blocklet) in task side scanning instead of scanning the whole file. 
+* Stores data along with index: it can significantly accelerate query performance and reduces the I/O scans and CPU resources, where there are filters in the query.  CarbonData index consists of multiple level of indices, a processing framework can leverage this index to reduce the task it needs to schedule and process, and it can also do skip scan in more finer grain unit (called blocklet) in task side scanning instead of scanning the whole file. 
 * Operable encoded data :Through supporting efficient compression and global encoding schemes, can query on compressed/encoded data, the data can be converted just before returning the results to the users, which is "late materialized". 
-* Column group: Allow multiple columns form a column group to store as row format, thus cost of column reconstructing is reduced. 
+* Column group: Allow multiple columns to form a column group that would be stored as row format. This reduces the row reconstruction cost at query time.
 * Supports for various use cases with one single Data format : like interactive OLAP-style query, Sequential Access (big scan), Random Access (narrow scan). 
 
 ### CarbonData File Structure and Format
