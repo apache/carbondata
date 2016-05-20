@@ -81,8 +81,7 @@ public class GlobalSurrogateGenerator {
       storeLocation.append(generatorInfo.getTableName());
 
       partitionLocation[i] = CarbonUtil
-          .getSlices(storeLocation.toString(), generatorInfo.getTableName(),
-              FileFactory.getFileType(storeLocation.toString()));
+          .getSlices(storeLocation.toString(), FileFactory.getFileType(storeLocation.toString()));
     }
     ExecutorService writerExecutorService = Executors.newFixedThreadPool(20);
     LevelGlobalSurrogateGeneratorThread generatorThread = null;

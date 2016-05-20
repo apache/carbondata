@@ -24,7 +24,6 @@ import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -34,8 +33,6 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.PrivilegedExceptionAction;
@@ -294,46 +291,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * This method copy the file from source to destination.
-   *
-   * @param sourceFile
-   * @param fileDestination
-   * @throws CarbonUtilException
-   */
-  public static void copySchemaFile(String sourceFile, String fileDestination)
-      throws CarbonUtilException {
-    FileInputStream fileInputStream = null;
-    FileOutputStream fileOutputStream = null;
-
-    File inputFile = new File(sourceFile);
-    File outFile = new File(fileDestination);
-
-    try {
-      fileInputStream = new FileInputStream(inputFile);
-      fileOutputStream = new FileOutputStream(outFile);
-
-      byte[] buffer = new byte[1024];
-
-      int length = 0;
-
-      while ((length = fileInputStream.read(buffer)) > 0) {
-        fileOutputStream.write(buffer, 0, length);
-      }
-
-    } catch (FileNotFoundException e) {
-      LOGGER.error(e);
-      throw new CarbonUtilException(
-          "Proble while copying the file from: " + sourceFile + ": To" + fileDestination, e);
-    } catch (IOException e) {
-      LOGGER.error(e);
-      throw new CarbonUtilException(
-          "Proble while copying the file from: " + sourceFile + ": To" + fileDestination, e);
-    } finally {
-      closeStreams(fileInputStream, fileOutputStream);
-    }
-  }
-
-  /**
    * This method will be used to update the dimension cardinality
    *
    * @param dimCardinality
@@ -466,61 +423,6 @@ public final class CarbonUtil {
     } else {
       return bitsLength;
     }
-  }
-
-  /**
-   * This method will return bit length required for each dimension based on splits
-   *
-   * @param dimCardinality
-   * @param dimPartitioner : this will partition few dimension to be stored
-   *                       at row level. If it is row level than data is store in bits
-   * @return
-   */
-  public static int[] getDimensionBitLength(int[] dimCardinality, int[][] dimPartitioner) {
-    int[] newdims = new int[dimCardinality.length];
-    int dimCounter = 0;
-    for (int i = 0; i < dimPartitioner.length; i++) {
-      if (dimCardinality[i] == 0) {
-        //Array or struct type may have higher value
-        newdims[i] = 64;
-      } else if (dimPartitioner[i].length == 1) {
-        //for columnar store
-        newdims[dimCounter] = getBitLengthFullyFilled(dimCardinality[dimCounter]);
-        dimCounter++;
-      } else {
-        // for row store
-        int totalSize = 0;
-        for (int j = 0; j < dimPartitioner[i].length; j++) {
-          newdims[dimCounter] = getIncrementedCardinality(dimCardinality[dimCounter]);
-          totalSize += newdims[dimCounter];
-          dimCounter++;
-        }
-        //need to check if its required
-        int mod = totalSize % 8;
-        if (mod > 0) {
-          newdims[dimCounter - 1] = newdims[dimCounter - 1] + (8 - mod);
-        }
-      }
-    }
-    return newdims;
-  }
-
-  /**
-   * This method will be used to update the dimension cardinality
-   *
-   * @param dimCardinality
-   * @return new increment cardinality
-   */
-  public static int getIncrementedFullyFilledRCDCardinalityFullyFilled(int dimCardinality) {
-    int bitsLength = Long.toBinaryString(dimCardinality).length();
-    int div = bitsLength / 8;
-    int mod = bitsLength % 8;
-    if (mod > 0) {
-      dimCardinality = 8 * (div + 1);
-    } else {
-      dimCardinality = bitsLength;
-    }
-    return dimCardinality;
   }
 
   /**
@@ -794,52 +696,28 @@ public final class CarbonUtil {
   }
 
   /**
-   * This method will be used to read leaf meta data format of meta data will
-   * be <entrycount><keylength><keyoffset><measure1length><measure1offset>
-   *
-   * @param file
-   * @param measureCount
-   * @param mdKeySize
-   * @return will return blocklet info which will have all the meta data
-   * related to data file
-   */
-  public static List<BlockletInfoColumnar> getBlockletInfoColumnar(File file, int measureCount,
-      int mdKeySize) {
-    List<BlockletInfoColumnar> listOfBlockletInfo =
-        new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    String filesLocation = file.getAbsolutePath();
-    long fileSize = file.length();
-    return getBlockletInfo(measureCount, mdKeySize, listOfBlockletInfo, filesLocation, fileSize);
-  }
-
-  /**
    * This method will be used to read blocklet meta data format of meta data will
    * be <entrycount><keylength><keyoffset><measure1length><measure1offset>
    *
    * @param file
-   * @param measureCount
-   * @param mdKeySize
    * @return will return blocklet info which will have all the meta data
    * related to leaf file
    */
-  public static List<BlockletInfoColumnar> getBlockletInfoColumnar(CarbonFile file,
-      int measureCount, int mdKeySize) {
+  public static List<BlockletInfoColumnar> getBlockletInfoColumnar(CarbonFile file) {
     List<BlockletInfoColumnar> listOfBlockletInfo =
         new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     String filesLocation = file.getAbsolutePath();
     long fileSize = file.getSize();
-    return getBlockletInfo(measureCount, mdKeySize, listOfBlockletInfo, filesLocation, fileSize);
+    return getBlockletInfo(listOfBlockletInfo, filesLocation, fileSize);
   }
 
   /**
-   * @param measureCount
-   * @param mdKeySize
    * @param listOfBlockletInfo
    * @param filesLocation
    * @param fileSize
    * @return
    */
-  private static List<BlockletInfoColumnar> getBlockletInfo(int measureCount, int mdKeySize,
+  private static List<BlockletInfoColumnar> getBlockletInfo(
       List<BlockletInfoColumnar> listOfBlockletInfo, String filesLocation, long fileSize) {
     long offset = fileSize - CarbonCommonConstants.LONG_SIZE_IN_BYTE;
     FileHolder fileHolder = FileFactory.getFileHolder(FileFactory.getFileType(filesLocation));
@@ -907,98 +785,12 @@ public final class CarbonUtil {
     }
   }
 
-  public static File[] listFile(String location, final String fileNameInitial,
-      final String fileNameExt) {
-    File file = new File(location);
-    File[] listFiles = file.listFiles(new FileFilter() {
-      @Override public boolean accept(File pathname) {
-        String name = pathname.getName();
-
-        return name.startsWith(fileNameInitial) && name.endsWith(fileNameExt);
-      }
-    });
-    return listFiles;
-  }
-
   public static void deleteFiles(File[] intermediateFiles) throws CarbonUtilException {
     for (int i = 0; i < intermediateFiles.length; i++) {
       if (!intermediateFiles[i].delete()) {
         throw new CarbonUtilException("Problem while deleting intermediate file");
       }
     }
-  }
-
-  /**
-   * Below method will be used to get the fact file present in slice
-   *
-   * @param sliceLocation slice location
-   * @return fact files array
-   */
-  public static File[] getAllFactFiles(String sliceLocation, final String tableName) {
-    File file = new File(sliceLocation);
-    File[] files = null;
-    if (file.isDirectory()) {
-      files = file.listFiles(new FileFilter() {
-        public boolean accept(File pathname) {
-          return ((!pathname.isDirectory()) && (pathname.getName().startsWith(tableName))
-              && pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT));
-
-        }
-      });
-    }
-    return files;
-  }
-
-  /**
-   * This method will be used to for sending the new slice signal to engine
-   */
-  public static void flushSEQGenLruCache(String key) throws CarbonUtilException {
-    try {
-      // inform engine to load new slice
-      Class<?> c = Class.forName("com.huawei.unibi.carbon.surrogatekeysgenerator.lru.LRUCache");
-      Class[] argTypes = new Class[] {};
-      // get the instance of CubeSliceLoader
-      Method main = c.getDeclaredMethod("getInstance", argTypes);
-      Object invoke = main.invoke(null, null);
-      Class[] argTypes1 = new Class[] { String.class };
-
-      // ionvoke loadSliceFromFile
-      Method declaredMethod = c.getDeclaredMethod("remove", argTypes1);
-      // pass cube name and store location
-      String[] a = { key };
-      declaredMethod.invoke(invoke, a);
-    } catch (ClassNotFoundException classNotFoundException) {
-      throw new CarbonUtilException("Problem while flushin the seqgen lru cache",
-          classNotFoundException);
-    } catch (NoSuchMethodException noSuchMethodException) {
-      throw new CarbonUtilException("Problem while flushin the seqgen lru cache",
-          noSuchMethodException);
-    } catch (IllegalAccessException illegalAccessException) {
-      throw new CarbonUtilException("Problem while flushin the seqgen lru cache",
-          illegalAccessException);
-    } catch (InvocationTargetException invocationTargetException) {
-      throw new CarbonUtilException("Problem while flushin the seqgen lru cache",
-          invocationTargetException);
-    }
-  }
-
-  public static short[] getUnCompressColumnIndex(int totalLength, byte[] columnIndexData) {
-    ByteBuffer buffer = ByteBuffer.wrap(columnIndexData);
-    buffer.rewind();
-    int indexDataLength = buffer.getInt();
-    short[] indexData = new short[indexDataLength / 2];
-    short[] indexMap =
-        new short[(totalLength - indexDataLength - CarbonCommonConstants.INT_SIZE_IN_BYTE) / 2];
-    int counter = 0;
-    while (counter < indexData.length) {
-      indexData[counter] = buffer.getShort();
-      counter++;
-    }
-    counter = 0;
-    while (buffer.hasRemaining()) {
-      indexMap[counter++] = buffer.getShort();
-    }
-    return UnBlockIndexer.uncompressIndex(indexData, indexMap);
   }
 
   public static ColumnarKeyStoreInfo getColumnarKeyStoreInfo(BlockletInfoColumnar blockletInfo,
@@ -1070,28 +862,6 @@ public final class CarbonUtil {
     return completeKeyArray;
   }
 
-  public static int getLastIndexUsingBinarySearch(ColumnarKeyStoreDataHolder keyBlockArray, int low,
-      int high, byte[] compareValue, int numberOfRows) {
-    int cmpResult = 0;
-    while (high >= low) {
-      int mid = (low + high) / 2;
-      cmpResult = ByteUtil.UnsafeComparer.INSTANCE
-          .compareTo(keyBlockArray.getKeyBlockData(), mid * compareValue.length,
-              compareValue.length, compareValue, 0, compareValue.length);
-      if (cmpResult == 0 && (mid == numberOfRows - 1 || ByteUtil.UnsafeComparer.INSTANCE
-          .compareTo(keyBlockArray.getKeyBlockData(), (mid + 1) * compareValue.length,
-              compareValue.length, compareValue, 0, compareValue.length) > 0)) {
-        return mid;
-      } else if (cmpResult > 0) {
-        high = mid - 1;
-      } else {
-        low = mid + 1;
-      }
-    }
-
-    return -1;
-  }
-
   public static int getFirstIndexUsingBinarySearch(FixedLengthDimensionDataChunk dimColumnDataChunk,
       int low, int high, byte[] compareValue) {
     int cmpResult = 0;
@@ -1118,87 +888,6 @@ public final class CarbonUtil {
     return -1;
   }
 
-  public static int getFirstIndexUsingBinarySearch(ColumnarKeyStoreDataHolder keyBlockArray,
-      int low, int high, byte[] compareValue, int numberOfRows, int length, int offset) {
-    int cmpResult = 0;
-    while (high >= low) {
-      int mid = (low + high) / 2;
-      cmpResult = ByteUtil.UnsafeComparer.INSTANCE
-          .compareTo(keyBlockArray.getKeyBlockData(), mid * compareValue.length,
-              compareValue.length, compareValue, 0, compareValue.length);
-      if (cmpResult == 0 && (mid == 0 || ByteUtil.UnsafeComparer.INSTANCE
-          .compareTo(keyBlockArray.getKeyBlockData(), (mid - 1) * length, length, compareValue,
-              offset, length) < 0)) {
-        return mid;
-      } else if (cmpResult < 0) {
-        low = mid + 1;
-      } else {
-        high = mid - 1;
-      }
-    }
-    return -1;
-  }
-
-  public static int getIndexUsingBinarySearch(ColumnarKeyStoreDataHolder keyBlockArray, int low,
-      int high, byte[] compareValue) {
-    int cmpResult = 0;
-    while (high >= low) {
-      int mid = (low + high) / 2;
-      cmpResult = ByteUtil.UnsafeComparer.INSTANCE
-          .compareTo(keyBlockArray.getKeyBlockData(), mid * compareValue.length,
-              compareValue.length, compareValue, 0, compareValue.length);
-      if (cmpResult == 0) {
-        return mid;
-      } else if (cmpResult < 0) {
-        low = mid + 1;
-      } else {
-        high = mid - 1;
-      }
-    }
-    return -1;
-  }
-
-  public static int getIndexUsingBinarySearch(ColumnarKeyStoreDataHolder keyBlockArray, int low,
-      int high, byte[] compareValue, int lenghtToCompare, int offset) {
-    int cmpResult = 0;
-    while (high >= low) {
-      int mid = (low + high) / 2;
-      cmpResult = ByteUtil.UnsafeComparer.INSTANCE
-          .compareTo(keyBlockArray.getKeyBlockData(), mid * lenghtToCompare, lenghtToCompare,
-              compareValue, offset, lenghtToCompare);
-      if (cmpResult == 0) {
-        return mid;
-      } else if (cmpResult < 0) {
-        low = mid + 1;
-      } else {
-        high = mid - 1;
-      }
-    }
-    return -1;
-  }
-
-  public static int byteArrayBinarySearch(byte[][] filter, ColumnarKeyStoreDataHolder keyBlockArray,
-      int index) {
-    int low = 0;
-    int high = filter.length - 1;
-    int mid = 0;
-    int cmp = 0;
-    while (high >= low) {
-      mid = (low + high) >>> 1;
-      cmp = ByteUtil.UnsafeComparer.INSTANCE
-          .compareTo(keyBlockArray.getKeyBlockData(), index * filter[mid].length,
-              filter[mid].length, filter[mid], 0, filter[mid].length);
-      if (cmp == 0) {
-        return 0;
-      } else if (cmp < 0) {
-        low = mid + 1;
-      } else {
-        high = mid - 1;
-      }
-    }
-    return -1;
-  }
-
   public static int[] getUnCompressColumnIndex(int totalLength, byte[] columnIndexData,
       NumberCompressor numberCompressor) {
     byte[] indexData = null;
@@ -1218,22 +907,6 @@ public final class CarbonUtil {
         numberCompressor.unCompress(indexMap));
   }
 
-  public static boolean[] convertToBooleanArray(List<Boolean> needCompressedDataList) {
-    boolean[] needCompressedData = new boolean[needCompressedDataList.size()];
-    for (int i = 0; i < needCompressedData.length; i++) {
-      needCompressedData[i] = needCompressedDataList.get(i);
-    }
-    return needCompressedData;
-  }
-
-  public static int[] convertToIntArray(List<Integer> list) {
-    int[] array = new int[list.size()];
-    for (int i = 0; i < array.length; i++) {
-      array[i] = list.get(i);
-    }
-    return array;
-  }
-
   /**
    * Convert int array to Integer list
    *
@@ -1248,7 +921,7 @@ public final class CarbonUtil {
     return integers;
   }
 
-  public static String[] getSlices(String storeLocation, String tableName,
+  public static String[] getSlices(String storeLocation,
       FileFactory.FileType fileType) {
     try {
       if (!FileFactory.isFileExist(storeLocation, fileType)) {
@@ -1531,21 +1204,6 @@ public final class CarbonUtil {
   public static SliceMetaData readSliceMetaDataFile(String folderPath, int currentRestructNumber) {
     String path = folderPath + '/' + getSliceMetaDataFileName(currentRestructNumber);
     return readSliceMetaDataFile(path);
-  }
-
-  public static SliceMetaData readSliceMetaDataFile(CarbonFile folderPath) {
-    CarbonFile[] sliceMetaDataPath = folderPath.listFiles(new CarbonFileFilter() {
-
-      @Override public boolean accept(CarbonFile file) {
-        return file.getName().startsWith("sliceMetaData");
-      }
-    });
-
-    if (null == sliceMetaDataPath || sliceMetaDataPath.length < 1) {
-      return null;
-    }
-    Arrays.sort(sliceMetaDataPath, new SliceMetaDataFileComparator());
-    return readSliceMetaDataFile(sliceMetaDataPath[sliceMetaDataPath.length - 1].getAbsolutePath());
   }
 
   /**
@@ -1837,7 +1495,6 @@ public final class CarbonUtil {
    * Below method will be used to check whether particular encoding is present
    * in the dimension or not
    *
-   * @param dimension
    * @param encoding  encoding to search
    * @return if encoding is present in dimension
    */
@@ -1865,7 +1522,7 @@ public final class CarbonUtil {
    * Below method will be used to read the data file matadata
    *
    * @param filePath file path
-   * @param offset   offset in the file
+   * @param blockOffset   offset in the file
    * @return Data file metadata instance
    * @throws CarbonUtilException
    */
@@ -1962,16 +1619,6 @@ public final class CarbonUtil {
         return 0;
       }
     }
-  }
-
-  private static class SliceMetaDataFileComparator implements Comparator<CarbonFile> {
-
-    @Override public int compare(CarbonFile o1, CarbonFile o2) {
-      int firstSliceNumber = Integer.parseInt(o1.getName().split("\\.")[1]);
-      int secondSliceNumber = Integer.parseInt(o2.getName().split("\\.")[1]);
-      return firstSliceNumber - secondSliceNumber;
-    }
-
   }
 
   /**

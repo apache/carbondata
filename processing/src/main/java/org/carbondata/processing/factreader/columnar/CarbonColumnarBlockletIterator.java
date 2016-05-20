@@ -191,7 +191,7 @@ public class CarbonColumnarBlockletIterator implements CarbonIterator<AbstractCo
     } else {
       List<BlockletInfoColumnar> blockletInfo = null;
       for (int i = 0; i < factFiles.length; i++) {
-        blockletInfo = CarbonUtil.getBlockletInfoColumnar(factFiles[i], measureCount, mdKeyLength);
+        blockletInfo = CarbonUtil.getBlockletInfoColumnar(factFiles[i]);
         for (BlockletInfoColumnar leafInfo : blockletInfo) {
           leafInfo.setAggKeyBlock(isUniqueBlock);
         }

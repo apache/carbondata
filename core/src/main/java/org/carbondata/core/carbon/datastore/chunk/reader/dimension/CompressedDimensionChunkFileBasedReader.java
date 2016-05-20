@@ -45,7 +45,7 @@ public class CompressedDimensionChunkFileBasedReader extends AbstractChunkReader
    */
   public CompressedDimensionChunkFileBasedReader(List<DataChunk> dimensionColumnChunk,
       int[] eachColumnValueSize, String filePath) {
-    super(dimensionColumnChunk, false, eachColumnValueSize, filePath);
+    super(dimensionColumnChunk, eachColumnValueSize, filePath);
   }
 
   /**

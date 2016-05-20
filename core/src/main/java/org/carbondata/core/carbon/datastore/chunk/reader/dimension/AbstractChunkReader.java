@@ -76,13 +76,11 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
    * instance of this class
    *
    * @param dimensionColumnChunk dimension chunk metadata
-   * @param isInMemory           in case of in memory it will read and holds the data
-   *                             and when query request will come it will uncompress and the data
    * @param eachColumnValueSize  size of the each column value
    * @param filePath             file from which data will be read
    */
-  public AbstractChunkReader(List<DataChunk> dimensionColumnChunk, boolean isInMemory,
-      int[] eachColumnValueSize, String filePath) {
+  public AbstractChunkReader(List<DataChunk> dimensionColumnChunk, int[] eachColumnValueSize,
+      String filePath) {
     this.dimensionColumnChunk = dimensionColumnChunk;
     this.eachColumnValueSize = eachColumnValueSize;
     this.filePath = filePath;

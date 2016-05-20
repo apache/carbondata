@@ -171,21 +171,6 @@ public class CarbonDictionaryWriterImplTest {
   }
 
   /**
-   * this method will prepare the list which contains the meta
-   * chunk data expected read form file
-   */
-  private List<ColumnDictionaryChunkMeta> getMetadataChunksExpectedList(
-      List<TBase> metadataChunks) {
-    List<ColumnDictionaryChunkMeta> chunks =
-        new ArrayList<ColumnDictionaryChunkMeta>(metadataChunks.size());
-    for (TBase thriftObject : metadataChunks) {
-      ColumnDictionaryChunkMeta chunkMeta = (ColumnDictionaryChunkMeta) thriftObject;
-      chunks.add(chunkMeta);
-    }
-    return chunks;
-  }
-
-  /**
    * prepare the dictionary writer object
    */
   private CarbonDictionaryWriterImpl prepareWriter() throws IOException {
@@ -260,18 +245,6 @@ public class CarbonDictionaryWriterImplTest {
     thriftMetaChunkWriter.open();
     thriftMetaChunkWriter.write(firstDictionaryChunkMeta);
     thriftMetaChunkWriter.close();
-  }
-
-  /**
-   * this method will create the directory path for dictionary file
-   */
-  private String createDictionaryDirectory() {
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
-    carbonTablePath.getDictionaryFilePath(columnIdentifier);
-    String folderToCreate = dictionaryFilePath.substring(0, dictionaryFilePath.lastIndexOf('/'));
-    CarbonUtil.checkAndCreateFolder(folderToCreate);
-    return dictionaryFilePath;
   }
 
   /**

@@ -24,7 +24,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
-import java.util.Set;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
@@ -576,16 +575,6 @@ public final class CarbonProperties {
       return defaultValue;
     }
     return value;
-  }
-
-  public String[] getAllProperties() {
-    Set<Object> set = carbonProperties.keySet();
-    String[] allProps = new String[set.size()];
-    int i = 0;
-    for (Object obj : set) {
-      allProps[i++] = obj.toString();
-    }
-    return allProps;
   }
 
   /**

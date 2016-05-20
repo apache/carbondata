@@ -24,14 +24,10 @@ import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.HDFSCarbonFile;
@@ -41,7 +37,6 @@ import org.carbondata.core.util.CarbonUtil;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
@@ -269,55 +264,6 @@ public final class FileFactory {
         return new DataOutputStream(
             new BufferedOutputStream(new FileOutputStream(path), bufferSize));
     }
-  }
-
-  public static List<String> getFileNames(final String extn, String folderPath, FileType fileType)
-      throws IOException {
-    folderPath = folderPath.replace("\\", "/");
-    List<String> fileNames = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    switch (fileType) {
-      case HDFS:
-        Path pt = new Path(folderPath);
-        FileSystem fs = pt.getFileSystem(configuration);
-        FileStatus[] hdfsFiles = fs.listStatus(pt);
-        for (FileStatus fileStatus : hdfsFiles) {
-          if (extn != null) {
-            if (!fileStatus.isDir() && fileStatus.getPath().getName().endsWith(extn)) {
-              fileNames.add(fileStatus.getPath().getName().replace(extn, ""));
-            }
-          } else {
-            if (!fileStatus.isDir()) {
-              fileNames.add(fileStatus.getPath().getName());
-            }
-          }
-
-        }
-        break;
-      case LOCAL:
-      default:
-        File[] files = new File(folderPath).listFiles(new FileFilter() {
-          @Override public boolean accept(File pathname) {
-            if (pathname.isDirectory()) {
-              return false;
-            }
-
-            if (extn != null) {
-              return pathname.getName().endsWith(extn);
-            }
-            return true;
-          }
-        });
-
-        for (File oneFile : files) {
-          if (extn != null) {
-            fileNames.add(oneFile.getName().replace(extn, ""));
-          } else {
-            fileNames.add(oneFile.getName());
-          }
-        }
-    }
-
-    return fileNames;
   }
 
   /**

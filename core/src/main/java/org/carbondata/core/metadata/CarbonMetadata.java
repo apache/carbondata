@@ -166,26 +166,6 @@ public final class CarbonMetadata {
   }
 
   /**
-   * Method gets the cubes list starts with schema name
-   *
-   * @return Cube
-   */
-  public List<Cube> getCubesStartWith(String schemaName) {
-    List<Cube> cubes = new ArrayList<Cube>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    try {
-      readLock.lock();
-      for (Cube cube : metaData) {
-        if (cube.cubeName.startsWith(schemaName)) {
-          cubes.add(cube);
-        }
-      }
-    } finally {
-      readLock.unlock();
-    }
-    return cubes;
-  }
-
-  /**
    * Method removes the Cube from metadata.
    */
   public void removeCube(String cubeUniqueName) {

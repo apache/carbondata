@@ -37,13 +37,5 @@ public class LoadFolderData extends AbstractFileManager {
     this.folderName = name;
 
   }
-
-  /**
-   * @return Returns the folderName.
-   */
-  public String getFolderName() {
-    return folderName;
-  }
-
 }
 

@@ -31,7 +31,6 @@ import java.security.PrivilegedAction;
 public final class ByteUtil {
 
   private static final int SIZEOF_LONG = 8;
-  private static final int SIZEOF_INT = 4;
 
   private ByteUtil() {
 

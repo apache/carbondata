@@ -42,10 +42,6 @@ public class DoubleArrayDataFileStore extends AbstractDoubleArrayDataStore {
     this.measuresOffsetsArray = measuresOffsetsArray;
   }
 
-  public DoubleArrayDataFileStore(ValueCompressionModel compressionModel) {
-    super(compressionModel);
-  }
-
   @Override public MeasureDataWrapper getBackData(int[] cols, FileHolder fileHolder) {
     if (null == compressionModel) {
       return null;

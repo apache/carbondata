@@ -60,13 +60,6 @@ public final class CarbonMetadata {
   }
 
   /**
-   * clear all the tables
-   */
-  public void removeAll() {
-    tableInfoMap.clear();
-  }
-
-  /**
    * Below method will be used to set the carbon table
    * This method will be used in executor side as driver will always have
    * updated table so from driver during query execution and data loading

@@ -76,32 +76,12 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
   }
 
   /**
-   * @param filePath the filePath to set
-   */
-  public void setFilePath(String filePath) {
-    this.filePath = filePath;
-  }
-
-  /**
    * @return the blockOffset
    */
   public long getBlockOffset() {
     return blockOffset;
   }
 
-  /**
-   * @param blockOffset the blockOffset to set
-   */
-  public void setBlockOffset(long blockOffset) {
-    this.blockOffset = blockOffset;
-  }
-
-  /**
-   * @return the segmentId
-   */
-  public int getSegmentId() {
-    return segmentId;
-  }
 
   /**
    * @return the locations
@@ -115,13 +95,6 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
    */
   public long getBlockLength() {
     return blockLength;
-  }
-
-  /**
-   * @param blockLength the blockLength to set
-   */
-  public void setBlockLength(long blockLength) {
-    this.blockLength = blockLength;
   }
 
   /*

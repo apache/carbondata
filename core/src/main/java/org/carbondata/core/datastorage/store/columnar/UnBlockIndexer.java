@@ -73,54 +73,6 @@ public final class UnBlockIndexer {
     return indexes;
   }
 
-  public static byte[][] uncompressData(byte[][] data, int[] indexMap) {
-    int actualSize = data.length;
-    for (int i = 1; i < indexMap.length; i += 2) {
-      actualSize += indexMap[i] - 1;
-    }
-    byte[][] uncompressedData = new byte[actualSize][];
-    int k = 0;
-    int l = 0;
-    int mapLength = indexMap.length;
-    for (int i = 0; i < data.length; i++) {
-      if (l < mapLength && indexMap[l] == i) {
-        for (int j = 0; j < indexMap[l + 1]; j++) {
-          uncompressedData[k] = data[i];
-          k++;
-        }
-        l += 2;
-      } else {
-        uncompressedData[k] = data[i];
-        k++;
-      }
-    }
-    return uncompressedData;
-  }
-
-  public static byte[][] uncompressData(byte[][] data, short[] indexMap) {
-    int actualSize = data.length;
-    for (int i = 1; i < indexMap.length; i += 2) {
-      actualSize += indexMap[i] - 1;
-    }
-    byte[][] uncompressedData = new byte[actualSize][];
-    int k = 0;
-    int l = 0;
-    int mapLength = indexMap.length;
-    for (short i = 0; i < data.length; i++) {
-      if (l < mapLength && indexMap[l] == i) {
-        for (short j = 0; j < indexMap[l + 1]; j++) {
-          uncompressedData[k] = data[i];
-          k++;
-        }
-        l += 2;
-      } else {
-        uncompressedData[k] = data[i];
-        k++;
-      }
-    }
-    return uncompressedData;
-  }
-
   public static byte[] uncompressData(byte[] data, int[] index, int keyLen) {
     if (index.length < 1) {
       return data;
@@ -138,29 +90,6 @@ public final class UnBlockIndexer {
       numberOfCopy = index[picIndex * 2 + 1];
       picIndex++;
       for (int j = 0; j < numberOfCopy; j++) {
-        System.arraycopy(data, srcPos, uncompressedData, destPos, keyLen);
-        destPos += keyLen;
-      }
-      srcPos += keyLen;
-    }
-    return uncompressedData;
-  }
-
-  public static byte[] uncompressData(byte[] data, short[] index, int keyLen) {
-    if (index.length < 1) {
-      return data;
-    }
-    short numberOfCopy = 0;
-    int actualSize = 0;
-    int srcPos = 0;
-    int destPos = 0;
-    for (int i = 1; i < index.length; i += 2) {
-      actualSize += index[i];
-    }
-    byte[] uncompressedData = new byte[actualSize * keyLen];
-    for (short i = 0; i < data.length; i += keyLen) {
-      numberOfCopy = index[i * 2 + 1];
-      for (short j = 0; j < numberOfCopy; j++) {
         System.arraycopy(data, srcPos, uncompressedData, destPos, keyLen);
         destPos += keyLen;
       }

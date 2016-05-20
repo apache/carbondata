@@ -40,18 +40,8 @@ public class NumberCompressor {
 
   private byte bitsLength;
 
-  private byte oldBitsLength;
-
-  private int roundedBytesLength;
-
   public NumberCompressor(int cardinaity) {
     bitsLength = (byte) Long.toBinaryString(cardinaity).length();
-  }
-
-  public NumberCompressor(int newBitsLenth, int oldBitsLength) {
-    bitsLength = (byte) newBitsLenth;
-    this.oldBitsLength = (byte) oldBitsLength;
-    roundedBytesLength = getRoundedBytesSize(oldBitsLength);
   }
 
   public byte[] compress(int[] keys) {
@@ -77,13 +67,6 @@ public class NumberCompressor {
       l--;
     }
     return bytes;
-  }
-
-  public byte[] compressBytes(byte[] keys) {
-    int[] sizes = getWordsAndByteSizeForByteArray(oldBitsLength, bitsLength, keys.length);
-    long[] words = get(keys, sizes[0]);
-
-    return getByteValues(sizes, words);
   }
 
   protected long[] get(int[] keys, int wsize) {
@@ -130,7 +113,7 @@ public class NumberCompressor {
 
       int size = i;
       val = 0L;
-      for (int j = i - roundedBytesLength + 1; j <= size; ) {
+      for (int j = i + 1; j <= size; ) {
         val <<= BYTE_LENGTH;
         val ^= keys[j++] & 0xFF;
         i--;
@@ -183,15 +166,6 @@ public class NumberCompressor {
     }
   }
 
-  public byte[] unCompressBytes(byte[] key) {
-    int ls = key.length;
-    int actualLength = (ls * BYTE_LENGTH) / bitsLength;
-    int arrayLength = (actualLength * oldBitsLength) / BYTE_LENGTH;
-    long[] words = new long[getWordsSizeFromBytesSize(ls)];
-    unCompressVal(key, ls, words);
-    return getArrayBytes(words, arrayLength, roundedBytesLength);
-  }
-
   private int[] getArray(long[] words, int arrayLength) {
     int[] vals = new int[arrayLength];
     int ll = 0;
@@ -220,39 +194,6 @@ public class NumberCompressor {
     return vals;
   }
 
-  private byte[] getArrayBytes(long[] words, int arrayLength, int eachColLen) {
-    byte[] vals = new byte[arrayLength];
-    int ll = 0;
-    long globalMask = LONG_MAX >>> (MAX_LENGTH - bitsLength);
-    for (int i = arrayLength - 1; i >= 0; ) {
-      int index = ll >> 6;
-      int pos = ll & 0x3f;
-      long val = words[index];
-      long mask = globalMask;
-      mask = mask << pos;
-      long value = (val & mask);
-      value >>>= pos;
-      ll += bitsLength;
-
-      int nextIndex = ll >> 6;
-      if (nextIndex != index) {
-        pos = ll & 0x3f;
-        if (pos != 0) // Number of bits pending for current key is zero, no spill over
-        {
-          mask = (LONG_MAX >>> (MAX_LENGTH - pos));
-          val = words[nextIndex];
-          value = value | ((val & mask) << (bitsLength - pos));
-        }
-      }
-      for (int j = 0; j < eachColLen - 1; j++) {
-        vals[i--] = (byte) value;
-        value >>>= 8;
-      }
-      vals[i--] = (byte) value;
-    }
-    return vals;
-  }
-
   private int[] getWordsAndByteSize(int arrayLength) {
     int length = arrayLength * bitsLength;
     int wsize = length / LONG_LENGTH;
@@ -266,32 +207,6 @@ public class NumberCompressor {
       byteSize++;
     }
     return new int[] { wsize, byteSize };
-  }
-
-  private int[] getWordsAndByteSizeForByteArray(int oldCardinality, int newCardinality,
-      int arrayLength) {
-    int oldLen = (arrayLength * BYTE_LENGTH) / oldCardinality;
-
-    int length = oldLen * newCardinality;
-    int wsize = length / LONG_LENGTH;
-    int byteSize = length / BYTE_LENGTH;
-
-    if (length % LONG_LENGTH != 0) {
-      wsize++;
-    }
-
-    if (length % BYTE_LENGTH != 0) {
-      byteSize++;
-    }
-    return new int[] { wsize, byteSize };
-  }
-
-  private int getRoundedBytesSize(int oldBitsLength) {
-    int length = oldBitsLength / BYTE_LENGTH;
-    if (oldBitsLength % BYTE_LENGTH != 0) {
-      length++;
-    }
-    return length;
   }
 
   private int getWordsSizeFromBytesSize(int byteSize) {

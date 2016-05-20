@@ -49,8 +49,6 @@ public interface CarbonFile {
 
   boolean createNewFile();
 
-  boolean mkdirs();
-
   long getLastModifiedTime();
 
   boolean setLastModifiedTime(long timestamp);

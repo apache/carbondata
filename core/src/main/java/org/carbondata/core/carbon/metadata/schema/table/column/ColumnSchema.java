@@ -240,7 +240,7 @@ public class ColumnSchema implements Serializable {
   }
 
   /**
-   * @param aggregator the aggregator to set
+   * @param aggregateFunction the aggregator to set
    */
   public void setAggregateFunction(String aggregateFunction) {
     this.aggregateFunction = aggregateFunction;

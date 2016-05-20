@@ -19,7 +19,6 @@
 
 package org.carbondata.core.datastorage.store;
 
-import java.nio.ByteBuffer;
 
 public interface FileHolder {
   /**
@@ -41,17 +40,6 @@ public interface FileHolder {
    * @return read byte array
    */
   byte[] readByteArray(String filePath, int length);
-
-  /**
-   * This method will be used to read the bytebuffer from file based on offset
-   * and length(number of bytes) need to read
-   *
-   * @param filePath fully qualified file path
-   * @param offset   reading start position,
-   * @param length   number of bytes to be read
-   * @return read byte array
-   */
-  ByteBuffer readByteBuffer(String filePath, long offset, int length);
 
   /**
    * This method will be used to read int from file from postion(offset), here
@@ -96,12 +84,4 @@ public interface FileHolder {
    * This method will be used to close all the streams currently present in the cache
    */
   void finish();
-
-  /**
-   * This method will return the size of the file
-   *
-   * @param filePath fully qualified file path
-   * @return filesize
-   */
-  long getFileSize(String filePath);
 }

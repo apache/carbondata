@@ -313,7 +313,7 @@ public class DataRetentionHandler {
     String fileToBeUpdated = null;
     for (int i = 0; i < factFiles.length; i++) {
 
-      blockletInfoList = CarbonUtil.getBlockletInfoColumnar(factFiles[i], measureLength, mdKeySize);
+      blockletInfoList = CarbonUtil.getBlockletInfoColumnar(factFiles[i]);
 
       fileToBeUpdated = factFiles[i].getAbsolutePath();
       if (null != fileToBeUpdated) {

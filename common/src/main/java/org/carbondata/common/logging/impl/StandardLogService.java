@@ -33,7 +33,6 @@ import org.apache.log4j.MDC;
  */
 public final class StandardLogService implements LogService {
 
-  private static final String QUERY_ID = "queryID:";
   private static final String PARTITION_ID = "[partitionID:";
   private static final String CARBON_AUDIT_LOG_PATH = "carbon.auditlog.file.path";
   private static final String AUDIT_LOG_DEFAULT_PATH = "logs/CarbonAudit.log";
@@ -296,23 +295,6 @@ public final class StandardLogService implements LogService {
      * @param level
      */
     Level(final int level) {
-
-    }
-
-    /**
-     * Returns an Instance for the specified type.
-     *
-     * @param name instance type needed.
-     * @return {@link Level}
-     */
-    public static Level getInstance(String name) {
-      for (Level logLevel : Level.values()) {
-        if (logLevel.name().equalsIgnoreCase(name)) {
-          return logLevel;
-        }
-      }
-      return null;
     }
   }
-
 }

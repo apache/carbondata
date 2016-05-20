@@ -49,13 +49,6 @@ public class CarbonStorePath extends Path {
   }
 
   /**
-   * gets store path
-   */
-  public String getPath() {
-    return storePath;
-  }
-
-  /**
    * gets CarbonTablePath object to manage table paths
    */
   public CarbonTablePath getCarbonTablePath(CarbonTableIdentifier tableIdentifier) {

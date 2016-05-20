@@ -20,7 +20,6 @@
 package org.carbondata.core.datastorage.store.impl;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -155,29 +154,10 @@ public class HDFSFileHolderImpl implements FileHolder {
 
   }
 
-  @Override public long getFileSize(String filePath) {
-    long size = 0;
-
-    try {
-      FSDataInputStream fileChannel = updateCache(filePath);
-      size = fileChannel.available();
-    } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
-    }
-    return size;
-  }
-
   @Override public byte[] readByteArray(String filePath, int length) {
     FSDataInputStream fileChannel = updateCache(filePath);
     byte[] byteBffer = read(fileChannel, length);
     return byteBffer;
-  }
-
-  @Override public ByteBuffer readByteBuffer(String filePath, long offset, int length) {
-    FSDataInputStream fileChannel = updateCache(filePath);
-    ByteBuffer buffer = ByteBuffer.wrap(read(fileChannel, length, offset));
-    buffer.rewind();
-    return buffer;
   }
 
   @Override public long readLong(String filePath, long offset) {

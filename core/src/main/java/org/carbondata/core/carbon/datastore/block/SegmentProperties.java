@@ -463,13 +463,6 @@ public class SegmentProperties {
   }
 
   /**
-   * @return the complexDimensionKeyGenerator
-   */
-  public KeyGenerator getComplexDimensionKeyGenerator() {
-    return complexDimensionKeyGenerator;
-  }
-
-  /**
    * @return the dimensions
    */
   public List<CarbonDimension> getDimensions() {

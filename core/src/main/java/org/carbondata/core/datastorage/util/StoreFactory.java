@@ -54,10 +54,6 @@ public final class StoreFactory {
    */
   private static final String COMPRESSED_DOUBLE_ARRAY = "COMPRESSED_DOUBLE_ARRAY";
   /**
-   * Compressed double array data store.
-   */
-  private static final String HEAVY_VALUE_COMPRESSION = "HEAVY_VALUE_COMPRESSION";
-  /**
    * key type.
    */
   private static StoreType keyType;

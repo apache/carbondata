@@ -151,7 +151,6 @@ public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
    * startMerge
    *
    * @throws SliceMergerException
-   * @throws CarbonDataProcessorException
    */
   public void startMerge(List<CarbonSliceAndFiles> slicesFromHDFS, SliceMetaData sliceMetaData,
       String destinationLocation, int currentRestructNumber) throws SliceMergerException {
@@ -235,8 +234,7 @@ public class CarbonColumnarSliceMerger implements CarbonSliceMerger {
       }
       for (int j = 0; j < factFiles.length; j++) {
         blockletInfoList.addAll(CarbonUtil
-            .getBlockletInfoColumnar(factFiles[j], sliceMetaData.getMeasures().length,
-                sliceMetaData.getKeyGenerator().getKeySizeInBytes()));
+            .getBlockletInfoColumnar(factFiles[j]));
       }
 
       int[] cardinality =

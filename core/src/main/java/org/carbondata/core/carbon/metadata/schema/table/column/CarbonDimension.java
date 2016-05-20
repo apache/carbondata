@@ -77,13 +77,6 @@ public class CarbonDimension extends CarbonColumn {
   }
 
   /**
-   * @param listOfChildDimensions
-   */
-  public void setListOfChildDimensions(List<CarbonDimension> listOfChildDimensions) {
-    this.listOfChildDimensions = listOfChildDimensions;
-  }
-
-  /**
    * @return return the number of child present in case of complex type
    */
   public int numberOfChild() {

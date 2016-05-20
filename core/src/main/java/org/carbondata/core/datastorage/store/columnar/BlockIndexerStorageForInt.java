@@ -39,22 +39,6 @@ public class BlockIndexerStorageForInt implements IndexStorage<int[]> {
 
   private int totalSize;
 
-  public BlockIndexerStorageForInt(byte[][] keyBlock) {
-    this(keyBlock, false, false);
-  }
-
-  public BlockIndexerStorageForInt(byte[][] keyBlock, boolean compressData,
-      boolean isSortRequired) {
-    ColumnWithIntIndex[] columnWithIndexs = createColumnWithIndexArray(keyBlock, false);
-    if (isSortRequired) {
-      Arrays.sort(columnWithIndexs);
-    }
-    compressMyOwnWay(extractDataAndReturnIndexes(columnWithIndexs, keyBlock));
-    if (compressData) {
-      compressDataMyOwnWay(columnWithIndexs);
-    }
-  }
-
   public BlockIndexerStorageForInt(byte[][] keyBlock, boolean compressData, boolean isNoDictionary,
       boolean isSortRequired) {
     ColumnWithIntIndex[] columnWithIndexs = createColumnWithIndexArray(keyBlock, isNoDictionary);

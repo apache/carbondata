@@ -20,17 +20,10 @@
 package org.carbondata.core.keygenerator.mdkey;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
-
-import org.carbondata.common.logging.LogService;
-import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.CarbonCommonConstants;
 
 public class Bits implements Serializable {
 
-  public static final int SIZEOF_LONG = Long.SIZE / Byte.SIZE;
   /**
    * Bits MAX_LENGTH
    */
@@ -44,10 +37,6 @@ public class Bits implements Serializable {
    * LONG_MAX.
    */
   private static final long LONG_MAX = 0x7fffffffffffffffL;
-  /**
-   * Attribute for Carbon LOGGER
-   */
-  private static final LogService LOGGER = LogServiceFactory.getLogService(Bits.class.getName());
   /**
    * length.
    */
@@ -91,37 +80,6 @@ public class Bits implements Serializable {
       tLen += len;
     }
     return tLen;
-  }
-
-  /**
-   * Return the start and end Byte offsets of dimension in the MDKey. int []
-   * {start, end}
-   */
-  public int[] getKeyByteOffsetsOld(int index) {
-    int priorLen = 0;
-    int start = 0;
-    int end = 0;
-    for (int i = 0; i < index; i++) {
-      priorLen += lens[i];
-    }
-    start = priorLen / 8;
-    int rem = priorLen % 8;
-    end = start;
-    if (rem >= 0) {
-      start++;
-    }
-    int endrem = lens[index] - (8 - rem);
-    if (endrem > 0) {
-      end++;
-      end += endrem / 8;
-      if (endrem % 8 > 0) {
-        end++;
-      }
-    }
-    if (end < start) {
-      end = start;
-    }
-    return new int[] { start == 0 ? start : start - 1, end == 0 ? end : end - 1 };
   }
 
   public int getDimCount() {
@@ -294,32 +252,6 @@ public class Bits implements Serializable {
     return getBytesVal(words);
   }
 
-  public List<List<Long>> getMasks() {
-    List<List<Long>> masks = new ArrayList<List<Long>>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-
-    int ll = 0;
-    for (int i = 0; i < lens.length; i++) {
-      List<Long> list = new ArrayList<Long>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-      masks.add(list);
-      int index = ll >> 6;
-      int pos = ll & 0x3f;
-      long mask = LONG_MAX >> (MAX_LENGTH - lens[i]);
-      mask <<= pos;
-      list.add(mask);
-      LOGGER.info("mask1 : " + Long.toBinaryString(mask));
-      ll += lens[i];
-
-      int nextIndex = ll >> 6;
-
-      if (nextIndex != index) {
-        list.add((LONG_MAX >> (lens[i] - (ll & 0x3f))));
-      }
-
-    }
-    return masks;
-
-  }
-
   public long[] getKeyArray(byte[] key) {
 
     int length = 8;
@@ -336,32 +268,6 @@ public class Bits implements Serializable {
         m = ls + 8;
       }
       for (int j = ls; j < m; j++) {
-        l <<= 8;
-        l ^= key[j] & 0xFF;
-      }
-      words[i] = l;
-    }
-
-    return getArray(words);
-
-  }
-
-  public long[] getKeyArray(byte[] key, int start, int end) {
-
-    int length = 8;
-    int ls = byteSize;
-    long[] words = new long[wsize];
-    for (int i = 0; i < words.length; i++) {
-      long l = 0;
-      ls -= 8;
-      int m1 = 0;
-      if (ls < 0) {
-        m1 = ls + length;
-        ls = 0;
-      } else {
-        m1 = ls + 8;
-      }
-      for (int j = ls + start; j < m1 + end; j++) {
         l <<= 8;
         l ^= key[j] & 0xFF;
       }
@@ -407,10 +313,6 @@ public class Bits implements Serializable {
 
     return getArray(words);
 
-  }
-
-  public int getKeySize() {
-    return byteSize;
   }
 
   @Override public boolean equals(Object obj) {

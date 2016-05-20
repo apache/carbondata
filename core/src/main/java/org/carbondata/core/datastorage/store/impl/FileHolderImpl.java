@@ -73,21 +73,6 @@ public class FileHolderImpl implements FileHolder {
   }
 
   /**
-   * This method will be used to read the bytebuffer from file based on offset
-   * and length(number of bytes) need to read
-   *
-   * @param filePath fully qualified file path
-   * @param offset   reading start position,
-   * @param length   number of bytes to be read
-   * @return read byte array
-   */
-  @Override public ByteBuffer readByteBuffer(String filePath, long offset, int length) {
-    FileChannel fileChannel = updateCache(filePath);
-    ByteBuffer byteBffer = read(fileChannel, length, offset);
-    return byteBffer;
-  }
-
-  /**
    * This method will be used to close all the streams currently present in the cache
    */
   @Override public void finish() {
@@ -207,20 +192,6 @@ public class FileHolderImpl implements FileHolder {
     return byteBffer;
   }
 
-  /**
-   * @see FileHolder#getFileSize(String)
-   */
-  @Override public long getFileSize(String filePath) {
-    long size = 0;
-
-    try {
-      FileChannel fileChannel = updateCache(filePath);
-      size = fileChannel.size();
-    } catch (IOException e) {
-      LOGGER.error(e, e.getMessage());
-    }
-    return size;
-  }
 
   /**
    * This method will be used to read the byte array from file based on length(number of bytes)

@@ -145,10 +145,6 @@ public class LocalCarbonFile implements CarbonFile {
     }
   }
 
-  @Override public boolean mkdirs() {
-    return file.mkdirs();
-  }
-
   @Override public long getLastModifiedTime() {
     return file.lastModified();
   }
@@ -164,10 +160,6 @@ public class LocalCarbonFile implements CarbonFile {
     FileChannel source = null;
     FileChannel destination = null;
     boolean fileTruncatedSuccessfully = false;
-    // if bytes to read less than 1024 then buffer size should be equal to the given offset
-    int bufferSize = validDataEndOffset > CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR ?
-        CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR :
-        (int) validDataEndOffset;
     // temporary file name
     String tempWriteFilePath = fileName + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
     FileFactory.FileType fileType = FileFactory.getFileType(fileName);

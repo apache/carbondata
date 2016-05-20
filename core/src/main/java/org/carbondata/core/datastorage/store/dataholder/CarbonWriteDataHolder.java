@@ -172,15 +172,6 @@ public class CarbonWriteDataHolder {
     return byteValues;
   }
 
-  public byte[][][] getColumnByteArrayValues() {
-    if (size < columnByteValues.length) {
-      byte[][][] temp = new byte[size][][];
-      System.arraycopy(columnByteValues, 0, temp, 0, size);
-      columnByteValues = temp;
-    }
-    return columnByteValues;
-  }
-
   /**
    * Get Writable Double Values
    *

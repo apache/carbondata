@@ -199,15 +199,6 @@ public class HDFSCarbonFile implements CarbonFile {
     return files;
   }
 
-  @Override public boolean mkdirs() {
-    Path path = fileStatus.getPath();
-    try {
-      return fs.mkdirs(path);
-    } catch (IOException e) {
-      return false;
-    }
-  }
-
   @Override public long getLastModifiedTime() {
     return fileStatus.getModificationTime();
   }
