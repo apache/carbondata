@@ -248,7 +248,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
   /**
    * checkPointFileExits
    */
-  private String checkPointFileExits;
   private String complexDelimiterLevel1;
   private String complexDelimiterLevel2;
   private String complexTypeString;
@@ -606,7 +605,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     heirNadDimsLensString = "";
     measureDataType = "";
     columnAndTableNameColumnMapForAggString = "";
-    checkPointFileExits = "";
     denormColumNames = "";
     currentRestructNumber = -1;
     partitionID = "";
@@ -667,8 +665,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
         columnAndTableNameColumnMapForAggString));
     retval.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
     retval.append("    ").append(XMLHandler.addTagValue("cubeName", cubeName));
-    retval.append("    ")
-        .append(XMLHandler.addTagValue("checkPointFileExits", checkPointFileExits));
     retval.append("    ").append(XMLHandler.addTagValue("denormColumNames", denormColumNames));
     retval.append("    ")
         .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
@@ -717,7 +713,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       tableName = XMLHandler.getTagValue(stepnode, "factOrAggTable");
       cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
       schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
-      checkPointFileExits = XMLHandler.getTagValue(stepnode, "checkPointFileExits");
       denormColumNames = XMLHandler.getTagValue(stepnode, "denormColumNames");
       currentRestructNumber =
           Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
@@ -1258,7 +1253,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       schemaName = rep.getStepAttributeString(idStep, "schemaName");
 
       cubeName = rep.getStepAttributeString(idStep, "cubeName");
-      checkPointFileExits = rep.getStepAttributeString(idStep, "checkPointFileExits");
       denormColumNames = rep.getStepAttributeString(idStep, "denormColumNames");
       currentRestructNumber = (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
       partitionID = rep.getStepAttributeString(idStep, "partitionID");
@@ -1311,7 +1305,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       rep.saveStepAttribute(idTransformation, idStep, "measureDataType", measureDataType);
       rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName);
       rep.saveStepAttribute(idTransformation, idStep, "cubeName", cubeName);
-      rep.saveStepAttribute(idTransformation, idStep, "checkPointFileExits", checkPointFileExits);
       rep.saveStepAttribute(idTransformation, idStep, "denormColumNames", denormColumNames);
       rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
           currentRestructNumber);
@@ -1494,14 +1487,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
   public void setColumnAndTableNameColumnMapForAggString(
       String columnAndTableNameColumnMapForAggString) {
     this.columnAndTableNameColumnMapForAggString = columnAndTableNameColumnMapForAggString;
-  }
-
-  public String getCheckPointFileExits() {
-    return checkPointFileExits;
-  }
-
-  public void setCheckPointFileExits(String checkPointFileExits) {
-    this.checkPointFileExits = checkPointFileExits;
   }
 
   public String getCubeName() {

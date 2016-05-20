@@ -27,7 +27,6 @@ import java.util.Arrays;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
@@ -117,25 +116,12 @@ public class CarbonAutoAggregateSliceMergerStep extends BaseStep {
         if (!isInitialise) {
           meta.initialise();
         }
-        if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
-          if (!(getTrans().getErrors() > 0) && !(getTrans().isStopped())) {
-            renameFolders();
-          }
-        } else {
-          renameFolders();
-        }
+        renameFolders();
 
         LOGGER.info("Record Procerssed For Auto Aggregation");
         String logMessage =
             "Summary: Carbon Slice Merger Step: Read: " + readCounter + ": Write: " + writeCounter;
         LOGGER.info(logMessage);
-        //Delete the checkpoint and msrmetadata files from the sort
-        //tmp folder as the processing is finished.
-        if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
-          if (!(getTrans().getErrors() > 0) && !(getTrans().isStopped())) {
-            deleteCheckPointFiles(meta.getTableNames()[0]);
-          }
-        }
         // step processing is finished
         setOutputDone();
         // return false
@@ -247,18 +233,6 @@ public class CarbonAutoAggregateSliceMergerStep extends BaseStep {
     baseStorelocation =
         baseStorelocation + File.separator + CarbonCommonConstants.LOAD_FOLDER + counter
             + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-
-    //With Checkpoint case can be there when while loading the data to memory.
-    // It throws Outofmemory exception. and because of that it got restared , so in that case the
-    // in progress
-    // folder will be renamed to normal folders. So In that case we need to return false here if
-    // the inprogress folder is not present.
-
-    if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
-      if (!(new File(baseStorelocation)).exists()) {
-        return true;
-      }
-    }
 
     // Merge the level files and hierarchy files before send the files
     // for final merge as the load is completed and now we are at the

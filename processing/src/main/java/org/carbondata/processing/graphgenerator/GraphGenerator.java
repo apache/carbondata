@@ -44,7 +44,6 @@ import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.load.BlockDetails;
@@ -1097,16 +1096,6 @@ public class GraphGenerator {
     seqMeta.setDenormColumNames(graphConfiguration.getDenormColumns());
     seqMeta.setAggregate(graphConfiguration.isAGG());
     seqMeta.setTableNames(graphConfiguration.getDimensionTableNames());
-    seqMeta.setCheckPointFileExits("false");
-    String checkPointFile =
-        outputLocation + File.separator + graphConfiguration.getStoreLocation() + File.separator
-            + CarbonCommonConstants.CHECKPOINT_FILE_NAME + CarbonCommonConstants.CHECKPOINT_EXT;
-    File file = new File(checkPointFile);
-    if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
-      if (file.exists()) {
-        seqMeta.setCheckPointFileExits("true");
-      }
-    }
     StepMeta mdkeyStepMeta = new StepMeta(GraphGeneratorConstants.CARBON_SURROGATE_KEY_GENERATOR,
         (StepMetaInterface) seqMeta);
     mdkeyStepMeta.setStepID(GraphGeneratorConstants.CARBON_CSV_BASED_SURROAGATEGEN_ID);

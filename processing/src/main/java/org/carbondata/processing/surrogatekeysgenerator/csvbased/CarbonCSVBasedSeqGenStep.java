@@ -36,12 +36,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.PriorityBlockingQueue;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
@@ -51,8 +49,6 @@ import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
-import org.carbondata.core.csvreader.checkpoint.CheckPointInterface;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.file.manager.composite.LoadFolderData;
@@ -66,21 +62,13 @@ import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.core.writer.ByteArrayHolder;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
 import org.carbondata.processing.dataprocessor.manager.CarbonDataProcessorManager;
-import org.carbondata.processing.dataprocessor.queue.impl.DataProcessorQueue;
-import org.carbondata.processing.dataprocessor.queue.impl.RecordComparator;
-import org.carbondata.processing.dataprocessor.record.holder.DataProcessorRecordHolder;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.schema.metadata.ColumnsInfo;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import org.pentaho.di.core.Const;
-import org.pentaho.di.core.database.ConnectionPoolUtil;
-import org.pentaho.di.core.database.Database;
-import org.pentaho.di.core.database.map.DatabaseConnectionMap;
 import org.pentaho.di.core.exception.KettleException;
-import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
 import org.pentaho.di.core.row.ValueMetaInterface;
@@ -126,10 +114,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
    */
   private final Object getRowLock = new Object();
   /**
-   * seqGenLock
-   */
-  private final Object seqGenLock = new Object();
-  /**
    * ReentrantLock putRowLock
    */
   private final Object putRowLock = new Object();
@@ -144,7 +128,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
   /**
    * Map of Connection
    */
-  private Map<String, Connection> cons = new HashMap<String, Connection>(16);
+  private Map<String, Connection> cons = new HashMap<>(16);
   /**
    * Csv file path
    */
@@ -161,10 +145,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
    * badRecordslogger
    */
   private BadRecordslogger badRecordslogger;
-  /**
-   * executorService
-   */
-  private ExecutorService putRowExecutorService;
   /**
    * Normalized Hier and HierWriter map
    */
@@ -200,29 +180,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
    */
   private Future[] resultArray;
   /**
-   * putRowFuture
-   */
-  private Future<Void> putRowFuture;
-  /**
-   * seqNumber
-   */
-  private int seqNumber = 1;
-  /**
-   * checkPointSize
-   */
-  private int checkPointSize = 500;
-  /**
    * initialCapacity
    */
   private int initialCapacity = 25;
-  /**
-   * threshold
-   */
-  private int threshold = 20;
-  /**
-   * toCopy
-   */
-  private int toCopy = 10;
   private int outSize;
   /**
    * denormHierarchies
@@ -274,15 +234,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
    */
   private ThreadStatusObserver threadStatusObserver;
   /**
-   * checkpoint
-   */
-  private CheckPointInterface checkPoint;
-  /**
    * CarbonCSVBasedDimSurrogateKeyGen
    */
   private CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen;
-  private DataProcessorQueue localQueue;
-  private BlockingQueue<DataProcessorRecordHolder> dataQueue;
   private int buffer;
   private int processed;
 
@@ -316,7 +270,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       data = (CarbonCSVBasedSeqGenData) sdi;
 
       Object[] r = getRow();  // get row, blocks when needed!
-      checkPoint = CheckPointHanlder.getCheckpoint(new File(getTrans().getFilename()).getName());
       if (first) {
         first = false;
         meta.initialize();
@@ -325,9 +278,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         synchronized (dataProcessingLockObject) {
           // observer of writing file in thread
           this.threadStatusObserver = new ThreadStatusObserver();
-
-          dataQueue = new PriorityBlockingQueue<DataProcessorRecordHolder>(initialCapacity,
-              new RecordComparator());
           if (csvFilepath == null) {
             //                    isDBFactLoad = true;
             csvFilepath = meta.getTableName();
@@ -336,18 +286,11 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           if (null == measureCol) {
             measureCol = Arrays.asList(meta.measureColumn);
           }
-
           buffer = Integer.parseInt(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.SORT_SIZE,
                   CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
-
-          checkPointSize = buffer / Integer.parseInt(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
-                  CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
-
           // Update the Null value comparer and update the String against which we need
           // to check the values coming from the previous step.
-
           logCounter =
               Integer.parseInt(CarbonCommonConstants.DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER);
           if (null != getInputRowMeta()) {
@@ -437,8 +380,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             // timeIndex = -1
 
             ValueMetaInterface[] out = null;
-            out = new ValueMetaInterface[meta.normLength + meta.msrMapping.length + checkPoint
-                .getCheckPointInfoFieldCount()];
+            out = new ValueMetaInterface[meta.normLength + meta.msrMapping.length];
             this.outSize = out.length;
             int outCounter = 0;
             for (int i = 0; i < meta.actualDimArray.length; i++) {
@@ -473,18 +415,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                 }
               }
             }
-
-            if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
-
-              out[outCounter++] =
-                  data.getOutputRowMeta().getValueMeta(data.getOutputRowMeta().size() - 2);
-              out[outCounter++] =
-                  data.getOutputRowMeta().getValueMeta(data.getOutputRowMeta().size() - 1);
-
-            }
-
             data.getOutputRowMeta().setValueMetaList(Arrays.asList(out));
-
           }
         }
       }
@@ -500,8 +431,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         writeCounter++;
         putRow(data.getOutputRowMeta(), out);
       }
-      localQueue = new DataProcessorQueue(initialCapacity);
-
       // start multi-thread to process
       int numberOfNodes;
       try {
@@ -514,7 +443,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
       startReadingProcess(numberOfNodes);
       CarbonUtil.writeLevelCardinalityFile(loadFolderLoc, meta.getTableName(),
-          getUpdatedCardinality(data.getSurrogateKeyGen().max));
+          getUpdatedCardinality());
       badRecordslogger.closeStreams();
       if (!meta.isAggregate()) {
         closeNormalizedHierFiles();
@@ -537,46 +466,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
   }
 
   private void startReadingProcess(int numberOfNodes) throws KettleException, InterruptedException {
-    if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
-      this.putRowExecutorService = Executors.newFixedThreadPool(1);
-
-      startProcess(numberOfNodes);
-
-      if (resultArray != null) {
-        int futureTaskSize = resultArray.length;
-        boolean done = false;
-        while (!done) {
-          done = true;
-          for (int i = 0; i < futureTaskSize; i++) {
-
-            if (!resultArray[i].isDone()) {
-              done = false;
-            }
-
-          }
-          Thread.sleep(200);
-        }
-      }
-
-      if (!localQueue.isEmpty()) {
-        while (!localQueue.isEmpty()) {
-          dataQueue.offer(localQueue.poll());
-        }
-        putRowInSeqence();
-      }
-
-      while (true) {
-        if (putRowFuture.isDone()) {
-          break;
-        }
-      }
-
-      this.putRowExecutorService.shutdown();
-
-    } else {
-
-      startProcess(numberOfNodes);
-    }
+    startProcess(numberOfNodes);
   }
 
   private boolean processWhenRowIsNull() throws KettleException {
@@ -793,11 +683,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         StandardLogService
             .setThreadName(StandardLogService.getPartitionID(meta.getCubeName()), null);
         try {
-          if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
-            doProcessWithCheckPoint();
-          } else {
             doProcess();
-          }
         } catch (Throwable e) {
           LOGGER.error(e,
               "Thread is terminated due to error");
@@ -811,13 +697,13 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       results.add(exec.submit(callable));
     }
 
-    resultArray = results.toArray(new Future[results.size()]);
+    this.resultArray = results.toArray(new Future[results.size()]);
     boolean completed = false;
     try {
       while (!completed) {
         completed = true;
-        for (int j = 0; j < resultArray.length; j++) {
-          if (!resultArray[j].isDone()) {
+        for (int j = 0; j < this.resultArray.length; j++) {
+          if (!this.resultArray[j].isDone()) {
             completed = false;
           }
 
@@ -847,33 +733,10 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     return integers;
   }
 
-  private String[] getUpdatedDims(String[] dims, String[] NoDictionaryCols, boolean[] presentDims) {
-    int k = 0;
-    String[] normDims = null;
-    if (null != meta.noDictionaryCols) {
-      normDims = new String[meta.normLength + meta.noDictionaryCols.length];
-    } else {
-      normDims = new String[meta.normLength];
-    }
-    for (int i = 0; i < dims.length; i++) {
-      if (presentDims[i]) {
-        normDims[k] = dims[i];
-        k++;
-      }
-    }
-    if (null != NoDictionaryCols) {
-      for (int j = 0; j < NoDictionaryCols.length; j++) {
-        normDims[k++] = NoDictionaryCols[j];
-      }
-    }
-    return normDims;
-  }
-
   /**
-   * @param dimCardinality
    * @return
    */
-  private int[] getUpdatedCardinality(int[] dimCardinality) {
+  private int[] getUpdatedCardinality() {
     int[] maxSurrogateKeyArray = data.getSurrogateKeyGen().max;
 
     List<Integer> dimCardWithComplex = new ArrayList<Integer>();
@@ -936,116 +799,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     }
   }
 
-  private void doProcessWithCheckPoint() throws RuntimeException {
-    try {
-
-      while (true) {
-        Object[] r = null;
-        DataProcessorRecordHolder oriRecords = null;
-        synchronized (getRowLock) {
-          oriRecords = new DataProcessorRecordHolder(checkPointSize, seqNumber++);
-          for (int i = 0; i < checkPointSize; i++) {
-            r = getRow();
-            if (r == null) {
-              break;
-            }
-
-            oriRecords.addRow(r);
-            readCounter++;
-          }
-        }
-
-        processRows(oriRecords);
-
-        // no more input to be expected...
-        if (r == null) {
-          readCounter--;
-          break;
-        }
-
-        if (localQueue.size() > threshold) {
-          synchronized (putRowLock) {
-            if (localQueue.size() > threshold) {
-              for (int i = 0; i < toCopy; i++) {
-                dataQueue.offer(localQueue.poll());
-              }
-              putRowInSeqence();
-            }
-
-          }
-        }
-
-      }
-    } catch (RuntimeException e) {
-      LOGGER.error("Exception happened while processing rows in Do Process");
-      throw e;
-    } catch (Exception e) {
-      LOGGER.error("Exception happened while processing rows in Do Process");
-      throw new RuntimeException(e);
-    } catch (Throwable t) {
-      LOGGER.error("Exception happened while processing rows in Do Process");
-      throw new RuntimeException(t);
-    }
-
-  }
-
-  private void processRows(DataProcessorRecordHolder oriRecordHolders) throws KettleStepException {
-    Object[][] originalRow = oriRecordHolders.getOriginalRow();
-
-    for (int i = 0; i < checkPointSize; i++) {
-      if (null == originalRow[i]) {
-        break;
-      }
-      Object[] process = process(originalRow[i]);
-      originalRow[i] = null;
-      if (process == null) {
-        continue;
-      }
-      oriRecordHolders.addProcessedRows(process);
-    }
-
-    synchronized (putRowLock) {
-      while (!localQueue.offer(oriRecordHolders)) {
-        putRowInSeqence();
-      }
-    }
-  }
-
-  private void putRowInSeqence() throws KettleStepException {
-
-    putRowFuture = putRowExecutorService.submit(new Callable<Void>() {
-
-      @Override public Void call() throws Exception {
-        try {
-          while (!dataQueue.isEmpty()) {
-            DataProcessorRecordHolder recordHolders = dataQueue.poll();
-            if (null == recordHolders) {
-              return null;
-            }
-
-            Object[][] processedRow = recordHolders.getProcessedRow();
-            // while(!processedRecords.isEmpty())
-            for (int i = 0; i < checkPointSize; i++) {
-              if (processedRow[i] == null) {
-                break;
-              }
-
-              putRow(data.getOutputRowMeta(), processedRow[i]);
-              processedRow[i] = null;
-              processRecord();
-              writeCounter++;
-            }
-          }
-
-        } catch (Throwable t) {
-          LOGGER.error("Not able to process rows to next step");
-          throw new KettleException(t);
-        }
-        return null;
-      }
-    });
-  }
-
   private String getCarbonLocalBaseStoreLocation() {
     String tempLocationKey = meta.getSchemaName() + '_' + meta.getCubeName();
     String strLoc = CarbonProperties.getInstance()
@@ -1060,15 +813,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       r = changeNullValueToNullString(r);
       Object[] out = populateOutputRow(r);
       if (out != null) {
-        checkPoint.updateInfoFields(r, out);
-        if (CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
-          synchronized (seqGenLock) {
-            if (processed++ % buffer == 0) {
-              data.getSurrogateKeyGen().writeDataToFileAndCloseStreams();
-            }
-          }
-        }
-
         for (int i = 0; i < meta.normLength - meta.complexTypes.size(); i++) {
           if (null == RemoveDictionaryUtil.getDimension(i, out)) {
             RemoveDictionaryUtil.setDimension(i, 1, out);
@@ -1121,8 +865,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
     Map<String, Dictionary> dictionaryCaches = surrogateKeyGen.getDictionaryCaches();
     Object[] out =
-        new Object[meta.normLength + meta.msrs.length - meta.complexTypes.size() + checkPoint
-            .getCheckPointInfoFieldCount()];
+        new Object[meta.normLength + meta.msrs.length - meta.complexTypes.size()];
     int dimLen = meta.dims.length;
 
     Object[] newArray = new Object[CarbonCommonConstants.ARRAYSIZE];
@@ -1167,7 +910,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             // If foreignKeyColumnName is null till here that means this
             // measure column is of type count and data type may be string
             // so we have to create the surrogate key for the values.
-            surrogate = createSurrogateForMeasure(msr, columnName, presentColumnMapIndex[j]);
+            surrogate = createSurrogateForMeasure(msr, columnName);
             if (presentColumnMapIndex[j] > -1) {
               isGenerated = true;
               generatedSurrogate = surrogate;
@@ -1538,12 +1281,10 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     }
   }
 
-  private int createSurrogateForMeasure(String member, String columnName, int index)
+  private int createSurrogateForMeasure(String member, String columnName)
       throws KettleException {
     String colName = meta.getTableName() + '_' + columnName;
-
     return data.getSurrogateKeyGen().getSurrogateForMeasure(member, colName);
-
   }
 
   private void insertHierarichies(Object[] rowWithKeys) throws KettleException {
@@ -1833,45 +1574,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     }
   }
 
-  public synchronized void connect(String group, String partitionId, Database database)
-      throws Exception {
-    // Before anything else, let's see if we already have a connection
-    // defined for this group/partition!
-    // The group is called after the thread-name of the transformation or
-    // job that is running
-    // The name of that threadname is expected to be unique (it is in
-    // Kettle)
-    // So the deal is that if there is another thread using that, we go for
-    // it.
-    //
-    Connection conn = null;
-    if (!Const.isEmpty(group)) {
-
-      DatabaseConnectionMap map = DatabaseConnectionMap.getInstance();
-
-      // Try to find the connection for the group
-      Database lookup = map.getDatabase(group, partitionId, database);
-      if (lookup == null) // We already opened this connection for the
-      // partition & database in this group
-      {
-        // Do a normal connect and then store this database object for
-        // later re-use.
-        conn = ConnectionPoolUtil.getConnection(log, database.getDatabaseMeta(), partitionId);
-
-        map.storeDatabase(group, partitionId, database);
-      } else {
-        conn = lookup.getConnection();
-        lookup.setOpened(lookup.getOpened() + 1); // if this counter
-        // hits 0 again, close
-        // the connection.
-      }
-    } else {
-      // Proceed with a normal connect
-      conn = ConnectionPoolUtil.getConnection(log, database.getDatabaseMeta(), partitionId);
-    }
-    database.setConnection(conn);
-  }
-
   /**
    * According to the hierarchies,generate the varLengthKeyGenerator
    *
@@ -2081,7 +1783,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
      * Below method will be called if any thread fails during execution
      *
      * @param exception
-     * @throws CarbonSortKeyAndGroupByException
      */
     public void notifyFailed(Throwable exception) throws RuntimeException {
       exec.shutdownNow();

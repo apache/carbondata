@@ -30,7 +30,6 @@ import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
@@ -110,25 +109,12 @@ public class CarbonSliceMergerStep extends BaseStep {
       Object[] row = getRow();
       // if row is null then there is no more incoming data
       if (null == row) {
-        if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !meta.isGroupByEnabled()) {
-          if (!(getTrans().getErrors() > 0) && !(getTrans().isStopped())) {
-            renameFolders();
-          }
-        } else {
-          renameFolders();
-        }
+        renameFolders();
 
         LOGGER.info("Record Procerssed For table: " + meta.getTabelName());
         String logMessage =
             "Summary: Carbon Slice Merger Step: Read: " + readCounter + ": Write: " + writeCounter;
         LOGGER.info(logMessage);
-        //Delete the checkpoint and msrmetadata files from the sort
-        //tmp folder as the processing is finished.
-        if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !meta.isGroupByEnabled()) {
-          if (!(getTrans().getErrors() > 0) && !(getTrans().isStopped())) {
-            deleteCheckPointFiles();
-          }
-        }
         // step processing is finished
         setOutputDone();
         // return false

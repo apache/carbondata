@@ -27,9 +27,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -38,9 +36,6 @@ import java.util.concurrent.TimeUnit;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
-import org.carbondata.core.csvreader.checkpoint.CheckPointInterface;
-import org.carbondata.core.csvreader.checkpoint.exception.CheckPointException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.util.CarbonProperties;
@@ -125,16 +120,6 @@ public class CarbonSortKeys {
    */
   private List<File> procFiles;
   /**
-   * checkpoint
-   */
-  private CheckPointInterface checkpoint;
-
-  /**
-   * map for maintaining the map
-   */
-  private Map<String, Long> checkPointMap;
-
-  /**
    * observer
    */
   private SortObserver observer;
@@ -216,7 +201,7 @@ public class CarbonSortKeys {
   private Object[] mergedMinValue;
 
   public CarbonSortKeys(String tabelName, int measureCount, int mdkeyIndex, int mdkeylength,
-      CheckPointInterface checkpoint, SortObserver observer, boolean autoAggRequest,
+      SortObserver observer, boolean autoAggRequest,
       boolean isFactMdkeyInInputRow, int factMdkeyLength, String[] aggregators,
       String[] aggregatorClass, int[] factDims, String schemaName, String cubeName,
       boolean isUpdateMemberRequest, int noDictionaryCount, char[] type) {
@@ -232,8 +217,6 @@ public class CarbonSortKeys {
     this.mdKeyLength = mdkeylength;
     // processed file list
     this.procFiles = new ArrayList<File>(CONSTANT_SIZE_TEN);
-    // check point
-    this.checkpoint = checkpoint;
     // observer for main sorting
     this.observer = observer;
     // observer of writing file in thread
@@ -241,10 +224,6 @@ public class CarbonSortKeys {
     this.isFactMdkeyInInputRow = isFactMdkeyInInputRow;
     this.isAutoAggRequest = autoAggRequest;
     this.factMdkeyLength = factMdkeyLength;
-    if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !isAutoAggRequest) {
-      checkPointMap = new HashMap<String, Long>(1);
-    }
-
     this.aggregators = aggregators;
     this.type = type;
     this.aggregatorClass = aggregatorClass;
@@ -355,16 +334,10 @@ public class CarbonSortKeys {
     // array in list array
     this.recordHolderList = new Object[this.sortBufferSize][];
     updateSortTempFileLocation(schemaName, cubeName, carbonProperties);
-    if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !(isAutoAggRequest || isUpdateMemberRequest)) {
-      // else resume the sorting
-      resumeSortingForCheckPoint();
-    } else {
-      // if check point is not enabled then delete if any older file exists in sort temp folder
-      deleteSortLocationIfExists();
-      // create new sort temp directory
-      if (!new File(this.tempFileLocation).mkdirs()) {
-        SORTKEYLOGGER.info("Sort Temp Location Already Exists");
-      }
+    deleteSortLocationIfExists();
+    // create new sort temp directory
+    if (!new File(this.tempFileLocation).mkdirs()) {
+      SORTKEYLOGGER.info("Sort Temp Location Already Exists");
     }
     this.writerExecutorService = Executors.newFixedThreadPool(3);
     this.executorService = Executors.newFixedThreadPool(10);
@@ -465,59 +438,6 @@ public class CarbonSortKeys {
   }
 
   /**
-   * This method will be called if check point is enabled and will be used to restore the state
-   */
-  private void resumeSortingForCheckPoint() {
-    // first delete all the file with check point extension
-    File file = new File(tempFileLocation);
-    // if directory not present then there were not failure in previous run
-    if (!file.exists()) {
-      // create new sort temp directory
-      if (!file.mkdirs()) {
-        SORTKEYLOGGER.info("Sort Temp Location Already Exists");
-      }
-      return;
-    }
-    deleteAllBakFile();
-    // get the all the files with only ".sorttemp" extension which are not merger by intermediate
-    // merger
-    File[] listFiles = file.listFiles(new FileFilter() {
-      @Override public boolean accept(File pathname) {
-        return pathname.getName().startsWith(tableName) && pathname.getAbsolutePath()
-            .endsWith(CarbonCommonConstants.SORT_TEMP_FILE_EXT);
-      }
-    });
-    if (null != listFiles) {
-      this.procFiles = new ArrayList<File>(Arrays.asList(listFiles));
-    } else {
-      this.procFiles = new ArrayList<File>(1);
-    }
-  }
-
-  /**
-   * Below method will be used to delete all the files is sort temp folder with check point
-   * extension
-   */
-  private void deleteAllBakFile() {
-    File file = new File(tempFileLocation);
-    // get all the check point files
-    File[] checkPointFiles = file.listFiles(new FileFilter() {
-      @Override public boolean accept(File pathname) {
-        return pathname.getName().startsWith(tableName) && pathname.getName()
-            .endsWith(CarbonCommonConstants.BAK_EXT);
-      }
-    });
-    // if check point files are present the delete
-    if (null != checkPointFiles) {
-      try {
-        CarbonUtil.deleteFiles(checkPointFiles);
-      } catch (CarbonUtilException e) {
-        SORTKEYLOGGER.error("Problem while deleting the check point files");
-      }
-    }
-  }
-
-  /**
    * This method will be used to get the sort configuration
    *
    * @param instance
@@ -594,21 +514,6 @@ public class CarbonSortKeys {
           getFileName(this.tempFileLocation + File.separator + this.tableName + System.nanoTime(),
               CarbonCommonConstants.SORT_TEMP_FILE_EXT));
       writeDataTofile(recordHolderList, this.entryCount, file);
-
-      if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !(isAutoAggRequest || isUpdateMemberRequest)) {
-        String destFileName = file.getAbsolutePath();
-        String[] split = destFileName.split(CarbonCommonConstants.BAK_EXT);
-        if (!file.renameTo(new File(split[0]))) {
-          SORTKEYLOGGER.error("Problem while renaming the checkpoint file");
-        }
-
-        try {
-          checkpoint.saveCheckPointCache(checkPointMap);
-        } catch (CheckPointException e) {
-          SORTKEYLOGGER.error(e);
-        }
-
-      }
     }
     procFiles = null;
     this.recordHolderList = null;
@@ -667,12 +572,7 @@ public class CarbonSortKeys {
       Object[][] recordHolderListLocal = recordHolderList;
       // / create the new holder Array
       this.recordHolderList = new Object[this.sortBufferSize][];
-      Map<String, Long> localCheckPointMap = null;
-      if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !(isAutoAggRequest || isUpdateMemberRequest)) {
-        localCheckPointMap = new HashMap<String, Long>(checkPointMap);
-      }
-      sortAndWriteToFile(destFile, recordHolderListLocal, sortBufferSize, mdKeyIndex,
-          localCheckPointMap);
+      sortAndWriteToFile(destFile, recordHolderListLocal, sortBufferSize, mdKeyIndex);
       this.entryCount = 0;
     }
     addRecord(row);
@@ -685,26 +585,6 @@ public class CarbonSortKeys {
     } else {
       recordHolderList[entryCount++] = row;
     }
-    if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !isAutoAggRequest) {
-      updateCheckPointInfo(row);
-    }
-  }
-
-  /**
-   * Below method will be used to save the checkpoint details to check point map
-   *
-   * @param row
-   */
-  private void updateCheckPointInfo(Object row) {
-    Object[] actualRow = (Object[]) row;
-    String filename = (String) actualRow[actualRow.length - 2];
-    Long newValue = (Long) actualRow[actualRow.length - 1];
-    Long value = checkPointMap.get(filename);
-    if (null == value || value < newValue) {
-      checkPointMap.put(filename, newValue);
-    } else {
-      SORTKEYLOGGER.debug("False means data in wrong order also coming:" + newValue);
-    }
   }
 
   /**
@@ -714,8 +594,8 @@ public class CarbonSortKeys {
    * @throws CarbonSortKeyAndGroupByException
    */
   private void sortAndWriteToFile(final File destFile, final Object[][] recordHolderListLocal,
-      final int entryCountLocal, final int mdKeyIndexLocal,
-      final Map<String, Long> checkPointMapLocal) throws CarbonSortKeyAndGroupByException {
+      final int entryCountLocal, final int mdKeyIndexLocal)
+      throws CarbonSortKeyAndGroupByException {
     writerExecutorService.submit(new Callable<Void>() {
       @Override public Void call() throws Exception {
         String newFileName = "";
@@ -726,16 +606,6 @@ public class CarbonSortKeys {
           // write data to file
           writeDataTofile(recordHolderListLocal, entryCountLocal, destFile);
           newFileName = destFile.getAbsolutePath();
-          if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !(isAutoAggRequest
-              || isUpdateMemberRequest)) {
-            String destFileName = destFile.getAbsolutePath();
-            String[] split = destFileName.split(CarbonCommonConstants.BAK_EXT);
-            newFileName = split[0];
-            checkpoint.saveCheckPointCache(checkPointMapLocal);
-            if (!destFile.renameTo(new File(newFileName))) {
-              SORTKEYLOGGER.error("Problem while renaming the checkpoint file");
-            }
-          }
           finalFile = new File(newFileName);
         } catch (Throwable e) {
           threadStatusObserver.notifyFailed(e);
@@ -746,15 +616,6 @@ public class CarbonSortKeys {
         return null;
       }
     });
-  }
-
-  /**
-   * Below method will be used to get the sort buffer size
-   *
-   * @return
-   */
-  public int getSortBufferSize() {
-    return sortBufferSize;
   }
 
   /**
@@ -769,7 +630,6 @@ public class CarbonSortKeys {
     IntermediateFileMerger merger =
         new IntermediateFileMerger(intermediateFiles, fileBufferSize, measureCount, mdKeyLength,
             file, mdKeyIndex, this.fileBufferSize,
-            CheckPointHanlder.IS_CHECK_POINT_NEEDED && !(isAutoAggRequest || isUpdateMemberRequest),
             this.isFactMdkeyInInputRow, this.factMdkeyLength, sortTempFileNoOFRecordsInCompression,
             isSortTempFileCompressionEnabled, type, prefetch, bufferSize, this.aggregators,
             this.noDictionaryCount);
@@ -785,14 +645,8 @@ public class CarbonSortKeys {
    */
   private String getFileName(String prefix, String ext) {
     StringBuilder fileName = new StringBuilder();
-    if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !(isAutoAggRequest || isUpdateMemberRequest)) {
-      fileName.append(prefix);
-      fileName.append(ext);
-      fileName.append(CarbonCommonConstants.BAK_EXT);
-    } else {
-      fileName.append(prefix);
-      fileName.append(ext);
-    }
+    fileName.append(prefix);
+    fileName.append(ext);
     return fileName.toString();
   }
 
@@ -818,7 +672,7 @@ public class CarbonSortKeys {
     }
     // stream
     if (isSortTempFileCompressionEnabled || prefetch) {
-      writeSortTempFile(recordHolderList, entryCountLocal, file, type);
+      writeSortTempFile(recordHolderList, entryCountLocal, file);
       return;
     }
     writeData(recordHolderList, entryCountLocal, file, type);
@@ -866,8 +720,8 @@ public class CarbonSortKeys {
     }
   }
 
-  private void writeSortTempFile(Object[][] recordHolderList, int entryCountLocal, File file,
-      char[] type) throws CarbonSortKeyAndGroupByException {
+  private void writeSortTempFile(Object[][] recordHolderList, int entryCountLocal, File file)
+      throws CarbonSortKeyAndGroupByException {
     CarbonSortTempFileWriter writer = null;
 
     try {
@@ -875,8 +729,7 @@ public class CarbonSortKeys {
       writer.initiaize(file, entryCountLocal);
       writer.writeSortTempFile(recordHolderList);
     } catch (CarbonSortKeyAndGroupByException e) {
-      SORTKEYLOGGER.error(e,
-          "Problem while writing the sort temp file");
+      SORTKEYLOGGER.error(e, "Problem while writing the sort temp file");
       throw e;
     } finally {
       writer.finish();
@@ -897,18 +750,6 @@ public class CarbonSortKeys {
     }
 
     return writer;
-  }
-
-  /**
-   * Below method will be used to delete the
-   * temp files and folder
-   */
-  public void deleteTmpFiles() {
-    try {
-      deleteSortLocationIfExists();
-    } catch (CarbonSortKeyAndGroupByException e) {
-      SORTKEYLOGGER.error("Problem while deleting the temp folder and files");
-    }
   }
 
   /**

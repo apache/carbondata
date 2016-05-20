@@ -32,7 +32,6 @@ import java.util.concurrent.Callable;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
@@ -101,11 +100,6 @@ public class IntermediateFileMerger implements Callable<Void> {
    * totalNumberOfRecords
    */
   private int totalNumberOfRecords;
-
-  /**
-   * isRenamingRequired
-   */
-  private boolean isRenamingRequired;
 
   /**
    * isFactMdkeyInInputRow
@@ -179,7 +173,7 @@ public class IntermediateFileMerger implements Callable<Void> {
    */
   public IntermediateFileMerger(File[] intermediateFiles, int fileReadBufferSize, int measureCount,
       int mdKeyLength, File outFile, int mdkeyIndex, int fileWriteBufferSize,
-      boolean isRenamingRequired, boolean isFactMdkeyInInputRow, int factMdkeyLength,
+      boolean isFactMdkeyInInputRow, int factMdkeyLength,
       int sortTempFileNoOFRecordsInCompression, boolean isSortTempFileCompressionEnabled,
       char[] type, boolean prefetch, int prefetchBufferSize, String[] aggregator,
       int noDictionaryCount) {
@@ -191,7 +185,6 @@ public class IntermediateFileMerger implements Callable<Void> {
     this.mdKeyIndex = mdkeyIndex;
     this.fileReadBufferSize = fileReadBufferSize;
     this.fileWriteBufferSize = fileWriteBufferSize;
-    this.isRenamingRequired = isRenamingRequired;
     this.isFactMdkeyInInputRow = isFactMdkeyInInputRow;
     this.factMdkeyLength = factMdkeyLength;
     this.sortTempFileNoOFRecordsInCompression = sortTempFileNoOFRecordsInCompression;
@@ -246,15 +239,6 @@ public class IntermediateFileMerger implements Callable<Void> {
         }
       }
 
-    }
-
-    if (this.isRenamingRequired) {
-      String destFileName = this.outFile.getAbsolutePath();
-      String[] split = destFileName.split(CarbonCommonConstants.BAK_EXT);
-      File renamed = new File(split[0]);
-      if (!this.outFile.renameTo(renamed)) {
-        FILEMERGERLOGGER.error("Problem while renaming the checkpoint file");
-      }
     }
     return null;
   }

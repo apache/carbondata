@@ -19,7 +19,6 @@
 
 package org.carbondata.processing.csvload;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -32,13 +31,10 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
-import org.carbondata.core.csvreader.checkpoint.CheckPointType;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
-import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.api.dataloader.SchemaInfo;
 import org.carbondata.processing.constants.DataProcessorConstants;
 import org.carbondata.processing.csvreaderstep.CsvInputMeta;
@@ -183,7 +179,6 @@ public class DataGraphExecuter {
 
     //This Method will validate the both fact and dimension csv files.
 
-    isCheckPointNeeded(graphFilePath, schemaInfo);
     initKettleEnv();
     TransMeta transMeta = null;
     try {
@@ -450,36 +445,9 @@ public class DataGraphExecuter {
     }
   }
 
-  /**
-   * @param graphFilePath
-   * @param schemaInfo
-   */
-  private void isCheckPointNeeded(String graphFilePath, SchemaInfo schemaInfo) {
-    if (!schemaInfo.isAutoAggregateRequest() && CheckPointHanlder.IS_CHECK_POINT_NEEDED) {
-      String checkPointFileLocation =
-          getCheckPointFileLocation(schemaInfo.getSchemaName(), schemaInfo.getCubeName());
-      String name = new File(graphFilePath).getName();
-
-      CheckPointHanlder.initializeCheckpoint(name, CheckPointType.CSV, checkPointFileLocation,
-          name.split(".ktr")[0]);
-    }
-  }
 
   private void setGraphLogLevel() {
     trans.setLogLevel(LogLevel.NOTHING);
-  }
-
-  /**
-   * This will be used to get the sort temp location
-   */
-  private String getCheckPointFileLocation(String schemaName, String cubeName) {
-    // get the base location
-    String tempLocationKey = schemaName + '_' + cubeName;
-    String baseLocation = CarbonProperties.getInstance()
-        .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    // get the temp file location
-    return baseLocation + File.separator + schemaName + File.separator + cubeName + File.separator
-        + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION + File.separator + model.getTableName();
   }
 
   private void validateHeader(SchemaInfo schemaInfo, String partitionId,

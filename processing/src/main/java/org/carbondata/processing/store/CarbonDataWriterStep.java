@@ -31,7 +31,6 @@ import java.util.concurrent.TimeUnit;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.util.CarbonProperties;
@@ -344,16 +343,6 @@ public class CarbonDataWriterStep extends BaseStep implements StepInterface {
     meta = (CarbonDataWriterStepMeta) smi;
     data = (CarbonDataWriterStepData) sdi;
     super.dispose(smi, sdi);
-    try {
-      // if sort by step is not null then delete temp files and folder
-      if (!CheckPointHanlder.IS_CHECK_POINT_NEEDED || meta.isGroupByEnabled()) {
-        if (null != tempFileLocation) {
-          CarbonUtil.deleteFoldersAndFiles(tempFileLocation);
-        }
-      }
-    } catch (CarbonUtilException e) {
-      LOGGER.error(e, "Problem while deleting the temp files");
-    }
     this.meta = null;
     this.data = null;
   }

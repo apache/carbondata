@@ -30,8 +30,6 @@ import java.util.Arrays;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.csvreader.checkpoint.CheckPointHanlder;
-import org.carbondata.core.csvreader.checkpoint.CheckPointInterface;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.metadata.CarbonMetadata;
 import org.carbondata.core.metadata.CarbonMetadata.Cube;
@@ -107,10 +105,6 @@ public class CarbonSortKeyAndGroupByStep extends BaseStep {
    */
   private int mdkeylength;
   /**
-   * checkpoint
-   */
-  private CheckPointInterface checkpoint;
-  /**
    * observer
    */
   private SortObserver observer;
@@ -175,14 +169,6 @@ public class CarbonSortKeyAndGroupByStep extends BaseStep {
     this.data = ((CarbonSortKeyAndGroupByStepData) sdi);
     // get row
     Object[] row = getRow();
-
-    // check point
-    if (!meta.isAutoAggRequest() || !meta.isUpdateMemberRequest()) {
-      checkpoint = CheckPointHanlder.getCheckpoint(new File(getTrans().getFilename()).getName());
-    } else {
-      checkpoint = CheckPointHanlder.getDummyCheckPoint();
-    }
-
     // create sort observer
     this.observer = new SortObserver();
 
@@ -194,11 +180,6 @@ public class CarbonSortKeyAndGroupByStep extends BaseStep {
     else if (CarbonDataProcessorUtil.checkAllValuesAreNull(row)) {
       // create empty row out size
       int outSize = Integer.parseInt(meta.getOutputRowSize());
-
-      if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && !(meta.isAutoAggRequest() || meta
-          .isUpdateMemberRequest())) {
-        outSize = outSize - 2;
-      }
       Object[] outRow = new Object[outSize];
       // clone out row meta
       this.data.setOutputRowMeta((RowMetaInterface) getInputRowMeta().clone());
@@ -237,7 +218,7 @@ public class CarbonSortKeyAndGroupByStep extends BaseStep {
       this.mdkeylength = meta.getMdkeyLength();
       this.carbonSortKeys =
           new CarbonSortKeys(meta.getTabelName(), aggregators.length, mdkeyIndex, mdkeylength,
-              this.checkpoint, this.observer, meta.isAutoAggRequest(), meta.isFactMdKeyInInputRow(),
+              this.observer, meta.isAutoAggRequest(), meta.isFactMdKeyInInputRow(),
               factMDkeySize, this.aggregators, meta.getAggregatorClass(),
               CarbonDataProcessorUtil.getDimLens(meta.getFactDimLensString()), meta.getSchemaName(),
               meta.getCubeName(), meta.isUpdateMemberRequest(), meta.getNoDictionaryCount(),
@@ -300,17 +281,6 @@ public class CarbonSortKeyAndGroupByStep extends BaseStep {
     // all the temp file writing so in that case from csv step we will first
     // row as null but as sort temp files are present we can start stroing
     // form there
-    if (CheckPointHanlder.IS_CHECK_POINT_NEEDED && null == this.carbonSortKeys && !(
-        meta.isAutoAggRequest() || meta.isUpdateMemberRequest())) {
-      // check if sorting resume is required
-      if (CarbonSortKeys
-          .isSortingResumeRequired(meta.getSchemaName(), meta.getCubeName(), meta.getTabelName(),
-              meta.getCurrentRestructNumber())) {
-        putRow(data.getOutputRowMeta(), new Object[0]);
-        setOutputDone();
-        return false;
-      }
-    }
     if (null == this.carbonSortKeys) {
 
       SORTKEYSTEPLOGGER.info("Record Procerssed For table: " + meta.getTabelName());
