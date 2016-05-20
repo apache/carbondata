@@ -41,7 +41,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube_restructure444 DIMENSIONS (a0 STRING,a STRING) MEASURES(b0 INTEGER) " +
-          "OPTIONS (AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "OPTIONS (AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ," +
           "PARTITION_COUNT=1] )"
 
@@ -101,7 +101,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, " +
         "Latest_phonePADPartitionedVersions string, Latest_operatorId string, " +
         "gamePointDescription string)  measures(gamePointId numeric,contractNumber numeric) " +
-        "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+        "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
         ".SampleDataPartitionerImpl' ,columns= (imei) ,PARTITION_COUNT=2] )"
     )
     sql("drop cube cube1")
@@ -130,7 +130,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, " +
         "Latest_phonePADPartitionedVersions string, Latest_operatorId string, " +
         "gamePointDescription string)  measures(gamePointId numeric,contractNumber numeric) " +
-        "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+        "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
         ".SampleDataPartitionerImpl' ,columns= (imei) ,PARTITION_COUNT=2] )"
     )
     sql("drop cube myschema.cube2")
@@ -140,7 +140,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1061") {
     sql(
       "CREATE CUBE cube3 DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) OPTIONS " +
-        "(AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube3")
@@ -151,7 +151,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE CUBE myschema.cube4 DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) " +
         "OPTIONS (AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata" +
-        ".integration.spark.partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ," +
+        ".spark.partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ," +
         "PARTITION_COUNT=1] )"
     )
     sql("drop cube myschema.cube4")
@@ -179,7 +179,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1069") {
     sql(
       "CREATE CUBE cube27 DIMENSIONS (AMSize STRING) OPTIONS (AGGREGATION [Latest_Day = count] " +
-        "PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+        "PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
         ".SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube27")
@@ -189,7 +189,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1070") {
     sql(
       "CREATE CUBE myschema.cube28 DIMENSIONS (AMSize STRING) OPTIONS (AGGREGATION [Latest_Day = " +
-        "count] PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+        "count] PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
         ".SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube myschema.cube28")
@@ -200,7 +200,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube31 MEASURES (Latest_Day INTEGER) OPTIONS (AGGREGATION [Latest_Day = " +
-          "count] PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+          "count] PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
           ".SampleDataPartitionerImpl', COLUMNS= (Latest_Day), PARTITION_COUNT=1] )"
       )
     }
@@ -215,7 +215,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube32 MEASURES (Latest_Day INTEGER as col2) OPTIONS (AGGREGATION " +
-          "[Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition" +
+          "[Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata.spark.partition" +
           ".api.impl.SampleDataPartitionerImpl', COLUMNS= (col2), PARTITION_COUNT=1] )"
       )
     }
@@ -247,7 +247,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, " +
         "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
         "Latest_operatorId string, gamePointDescription string) MEASURES (gamePointId numeric) " +
-        "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+        "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
         ".SampleDataPartitionerImpl', COLUMNS= (imei) ,PARTITION_COUNT=2] )"
     )
     sql("drop cube cube33")
@@ -258,7 +258,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE CUBE cube34 DIMENSIONS (AMSize STRING,deviceInformationId STRING) MEASURES " +
         "(Latest_Day INTEGER) OPTIONS (AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = 'org" +
-        ".carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl', COLUMNS= " +
+        ".carbondata.spark.partition.api.impl.SampleDataPartitionerImpl', COLUMNS= " +
         "(AMSize,deviceInformationId) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube34")
@@ -269,7 +269,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE CUBE myschema.cube35 DIMENSIONS (AMSize STRING,deviceInformationId STRING) MEASURES" +
         " (Latest_Day INTEGER) OPTIONS (AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = " +
-        "'org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl', " +
+        "'org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl', " +
         "COLUMNS= (AMSize,deviceInformationId) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube myschema.cube35")
@@ -280,7 +280,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE CUBE myschema.cube38 DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) " +
         "OPTIONS (AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata" +
-        ".integration.spark.partition.api.impl.SampleDataPartitionerImpl',COLUMNS= (AMSize) ," +
+        ".spark.partition.api.impl.SampleDataPartitionerImpl',COLUMNS= (AMSize) ," +
         "PARTITION_COUNT=10] )"
     )
     sql("drop cube myschema.cube38")
@@ -290,7 +290,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1081") {
     sql(
       "CREATE CUBE cube39 DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) OPTIONS " +
-        "(AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl',COLUMNS= (AMSize) ,PARTITION_COUNT=10] )"
     )
     sql("drop cube cube39")
@@ -403,7 +403,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1098") {
     sql(
       "CREATE CUBE cube106 DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) OPTIONS " +
-        "(AGGREGATION [Latest_Day = sum] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [Latest_Day = sum] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube106")
@@ -413,7 +413,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1099") {
     sql(
       "CREATE CUBE cube107 DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) OPTIONS " +
-        "(AGGREGATION [Latest_Day = avg] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [Latest_Day = avg] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube107")
@@ -423,7 +423,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1100") {
     sql(
       "CREATE CUBE cube108 DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) OPTIONS " +
-        "(AGGREGATION [Latest_Day = min] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [Latest_Day = min] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube108")
@@ -433,7 +433,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1101") {
     sql(
       "CREATE CUBE cube109 DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) OPTIONS " +
-        "(AGGREGATION [Latest_Day = max] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [Latest_Day = max] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube109")
@@ -546,7 +546,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1110") {
     sql(
       "create cube cube118 dimensions (AMSize STRING) measures (Latest_Day INTEGER) options " +
-        "(aggregation [Latest_Day = count] partitioner [class = 'org.carbondata.integration.spark" +
+        "(aggregation [Latest_Day = count] partitioner [class = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', columns= (AMSize) ,partition_count=1] )"
     )
     sql("drop cube cube118")
@@ -558,7 +558,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "create cube cube119 dimensions () measures () options (aggregation [] partitioner [class" +
-          " = 'org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl', " +
+          " = 'org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl', " +
           "columns= () ,partition_count=1] )"
       )
       sql("drop cube cube119")
@@ -611,7 +611,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("DTS2015103009506") {
     sql(
       "CREATE CUBE cube_restructure1 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-        "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube_restructure1")
@@ -649,7 +649,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, " +
         "Latest_phonePADPartitionedVersions string, Latest_operatorId string, " +
         "gamePointDescription string)  measures(gamePointId numeric,contractNumber numeric) " +
-        "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+        "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
         ".SampleDataPartitionerImpl' ,columns= (imei) ,PARTITION_COUNT=2] )"
     )
     sql("drop cube cube1_drop")
@@ -678,7 +678,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, " +
         "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
         "Latest_operatorId string, gamePointDescription string)  measures(gamePointId numeric," +
-        "contractNumber numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "contractNumber numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ,PARTITION_COUNT=2] )"
     )
     sql("drop cube myschema.cube2_drop")
@@ -688,7 +688,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1116") {
     sql(
       "CREATE CUBE cube3_drop DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) OPTIONS " +
-        "(AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube3_drop")
@@ -699,7 +699,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE CUBE myschema.cube4_drop DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) " +
         "OPTIONS (AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata" +
-        ".integration.spark.partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ," +
+        ".spark.partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ," +
         "PARTITION_COUNT=1] )"
     )
     sql("drop cube myschema.cube4_drop")
@@ -727,7 +727,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1124") {
     sql(
       "CREATE CUBE cube27_drop DIMENSIONS (AMSize STRING) OPTIONS (AGGREGATION [Latest_Day = " +
-        "count] PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+        "count] PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
         ".SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube27_drop")
@@ -737,7 +737,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1125") {
     sql(
       "CREATE CUBE myschema.cube28_drop DIMENSIONS (AMSize STRING) OPTIONS (AGGREGATION " +
-        "[Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition" +
+        "[Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata.spark.partition" +
         ".api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube myschema.cube28_drop")
@@ -766,7 +766,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, " +
         "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
         "Latest_operatorId string, gamePointDescription string) MEASURES (gamePointId numeric) " +
-        "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+        "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
         ".SampleDataPartitionerImpl', COLUMNS= (imei) ,PARTITION_COUNT=2] )"
     )
     sql("drop cube cube33_drop")
@@ -777,7 +777,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE CUBE cube34_drop DIMENSIONS (AMSize STRING,deviceInformationId STRING) MEASURES " +
         "(Latest_Day INTEGER) OPTIONS (AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = 'org" +
-        ".carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl', COLUMNS= " +
+        ".carbondata.spark.partition.api.impl.SampleDataPartitionerImpl', COLUMNS= " +
         "(AMSize,deviceInformationId) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube34_drop")
@@ -788,7 +788,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE CUBE myschema.cube35_drop DIMENSIONS (AMSize STRING,deviceInformationId STRING) " +
         "MEASURES (Latest_Day INTEGER) OPTIONS (AGGREGATION [Latest_Day = count] PARTITIONER " +
-        "[CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+        "[CLASS = 'org.carbondata.spark.partition.api.impl" +
         ".SampleDataPartitionerImpl', COLUMNS= (AMSize,deviceInformationId) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube myschema.cube35_drop")
@@ -799,7 +799,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE CUBE myschema.cube38_drop DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) " +
         "OPTIONS (AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata" +
-        ".integration.spark.partition.api.impl.SampleDataPartitionerImpl',COLUMNS= (AMSize) ," +
+        ".spark.partition.api.impl.SampleDataPartitionerImpl',COLUMNS= (AMSize) ," +
         "PARTITION_COUNT=10] )"
     )
     sql("drop cube myschema.cube38_drop")
@@ -809,7 +809,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1134") {
     sql(
       "CREATE CUBE cube39_drop DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) OPTIONS " +
-        "(AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl',COLUMNS= (AMSize) ,PARTITION_COUNT=10] )"
     )
     sql("drop cube cube39_drop")
@@ -855,7 +855,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1143") {
     sql(
       "CREATE CUBE cube106_drop DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) OPTIONS " +
-        "(AGGREGATION [Latest_Day = sum] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [Latest_Day = sum] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube106_drop")
@@ -865,7 +865,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1144") {
     sql(
       "CREATE CUBE cube107_drop DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) OPTIONS " +
-        "(AGGREGATION [Latest_Day = avg] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [Latest_Day = avg] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube107_drop")
@@ -875,7 +875,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1145") {
     sql(
       "CREATE CUBE cube108_drop DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) OPTIONS " +
-        "(AGGREGATION [Latest_Day = min] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [Latest_Day = min] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube108_drop")
@@ -885,7 +885,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1146") {
     sql(
       "CREATE CUBE cube109_drop DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) OPTIONS " +
-        "(AGGREGATION [Latest_Day = max] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [Latest_Day = max] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube109_drop")
@@ -895,7 +895,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1147") {
     sql(
       "CREATE CUBE cube110_drop DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) OPTIONS " +
-        "(AGGREGATION [Latest_Day = max] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [Latest_Day = max] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube110_drop")
@@ -905,7 +905,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1148") {
     sql(
       "CREATE CUBE cube111_drop DIMENSIONS (AMSize STRING) MEASURES (Latest_Day INTEGER) OPTIONS " +
-        "(AGGREGATION [Latest_Day = max] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [Latest_Day = max] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
     )
     sql("drop cube cube111_drop")
@@ -935,7 +935,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1151") {
     sql(
       "create cube cube118_drop dimensions (AMSize STRING) measures (Latest_Day INTEGER) options " +
-        "(aggregation [Latest_Day = count] partitioner [class = 'org.carbondata.integration.spark" +
+        "(aggregation [Latest_Day = count] partitioner [class = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', columns= (AMSize) ,partition_count=1] )"
     )
     sql("drop cube cube118_drop")
@@ -946,7 +946,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       //sql("create cube cube118_drop dimensions (AMSize STRING) measures (Latest_Day INTEGER)
       // options (aggregation [Latest_Day = count] partitioner [class = 'org.carbondata
-      // .integration.spark.partition.api.impl.SampleDataPartitionerImpl', columns= (AMSize) ,
+      // .spark.partition.api.impl.SampleDataPartitionerImpl', columns= (AMSize) ,
       // partition_count=1] )")
 
       fail("Unexpected behavior")
@@ -964,7 +964,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
 
       //sql("create cube cube118_drop dimensions (AMSize STRING) measures (Latest_Day INTEGER)
       // options (aggregation [Latest_Day = count] partitioner [class = 'org.carbondata
-      // .integration.spark.partition.api.impl.SampleDataPartitionerImpl', columns= (AMSize) ,
+      // .spark.partition.api.impl.SampleDataPartitionerImpl', columns= (AMSize) ,
       // partition_count=1] )")
 
       fail("Unexpected behavior")
@@ -978,7 +978,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("TC_1154") {
     sql(
       "create cube cube119_drop dimensions (AMSize STRING) measures (Latest_Day INTEGER) options " +
-        "(aggregation [Latest_Day = count] partitioner [class = 'org.carbondata.integration.spark" +
+        "(aggregation [Latest_Day = count] partitioner [class = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', columns= (AMSize) ,partition_count=1] )"
     )
     sql("drop cube cube119_drop")
@@ -1000,7 +1000,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "gamePointId Integer, contractNumber Integer) MEASURES (deviceInformationId Integer) WITH" +
         " table4 RELATION (FACT.imei=imei) INCLUDE (imei, productdate, updatetime, gamePointId, " +
         "contractNumber)OPTIONS ( AGGREGATION[ deviceInformationId=count ] , PARTITIONER [ " +
-        "CLASS='org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl', " +
+        "CLASS='org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl', " +
         "COLUMNS=(imei), PARTITION_COUNT=5 ] )"
     )
     sql("select * from t3")
@@ -1013,7 +1013,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan12 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1040,7 +1040,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan13 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1067,7 +1067,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan3 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1094,7 +1094,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan100 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1120,7 +1120,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan12 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1147,7 +1147,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan13 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1174,7 +1174,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan3 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1201,7 +1201,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan100 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1226,7 +1226,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "create cube vardhan200 dimensions(imei string,AMSize string,channelsId string," +
         "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-        "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+        "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
         ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei,AMSize) " +
         "PARTITION_COUNT=2] )"
     )
@@ -1248,7 +1248,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       "create cube vardhan500 dimensions(imei string,AMSize string,channelsId string," +
         "ActiveCountry string, Activecity string, productionDate TIMESTAMP)  measures(gamePointId" +
         " numeric,deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-        ".integration.spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
+        ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
         "PARTITION_COUNT=2] )"
     )
     sql(
@@ -1268,7 +1268,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "create cube vardhan1000 dimensions(imei string,AMSize string,channelsId string," +
         "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-        "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+        "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
         ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) PARTITION_COUNT=2] )"
     )
     sql(
@@ -1288,7 +1288,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "create cube vardhan9 dimensions(imei string,AMSize string,channelsId string,ActiveCountry " +
         "string, Activecity string)  measures(gamePointId numeric,deviceInformationId integer) " +
-        "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+        "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
         ".SampleDataPartitionerImpl' columns= (imei) PARTITION_COUNT=2] )"
     )
     sql(
@@ -1343,7 +1343,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("DTS2015111808892") {
     sql(
       "CREATE CUBE cube_restructure DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-        "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
     )
     sql(
@@ -1379,7 +1379,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("DTS2015112006803_01") {
     sql(
       "CREATE CUBE incloading_DTS2015112006803_01 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) " +
-        "OPTIONS (AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "OPTIONS (AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
     )
     sql(
@@ -1421,7 +1421,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "create cube single dimensions(imei string,deviceInformationId integer,mac string," +
         "productdate timestamp,updatetime timestamp) measures(gamePointId numeric,contractNumber " +
-        "numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api" +
+        "numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api" +
         ".impl.SampleDataPartitionerImpl' ,columns= (imei) ,PARTITION_COUNT=2] )"
     )
     sql(
@@ -1441,7 +1441,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "create cube vard970 dimensions(imei string,productionDate timestamp,AMSize string," +
         "channelsId string,ActiveCountry string, Activecity string) measures(gamePointId numeric," +
-        "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+        "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
         ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
         "PARTITION_COUNT=2] )"
     )
@@ -1462,7 +1462,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "create cube vard971 dimensions(imei string,productionDate timestamp,AMSize string," +
         "channelsId string,ActiveCountry string, Activecity string) measures(gamePointId numeric," +
-        "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+        "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
         ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
         "PARTITION_COUNT=2] )"
     )
@@ -1483,7 +1483,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "create cube vardhanincomp dimensions(imei string,AMSize string,channelsId string," +
         "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-        "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+        "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
         ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) PARTITION_COUNT=2] )"
     )
     sql(
@@ -1540,7 +1540,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "CREATE CUBE cube_restructure60 DIMENSIONS (AMSize STRING) MEASURES (Latest_DAY INTEGER) " +
         "OPTIONS (AGGREGATION [Latest_DAY = count] PARTITIONER [CLASS = 'org.carbondata" +
-        ".integration.spark.partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ," +
+        ".spark.partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ," +
         "PARTITION_COUNT=1] )"
     )
     sql(
@@ -1561,7 +1561,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("DTS2015120304016") {
     sql(
       "CREATE CUBE incloading1 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS (AGGREGATION " +
-        "[b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+        "[b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
         ".SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
     )
     sql(
@@ -1571,7 +1571,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql("drop cube incloading1")
     sql(
       "CREATE CUBE incloading1 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS (AGGREGATION " +
-        "[b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+        "[b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
         ".SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
     )
     sql(
@@ -1590,7 +1590,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(
       "create cube vardhan dimensions(imei string,AMSize string,channelsId string,ActiveCountry " +
         "string, Activecity string)  measures(gamePointId numeric,deviceInformationId integer) " +
-        "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+        "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
         ".SampleDataPartitionerImpl' columns= (imei) PARTITION_COUNT=2] )"
     )
     sql(
@@ -1616,7 +1616,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("DTS2015121511752") {
     sql(
       "CREATE CUBE cube_restructure68 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-        "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
     )
     sql(
@@ -1630,7 +1630,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql(" drop cube cube_restructure68")
     sql(
       "CREATE CUBE cube_restructure68 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-        "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+        "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
         ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
     )
     sql(
@@ -1753,7 +1753,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan4 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1776,7 +1776,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan5 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1799,7 +1799,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan1 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1822,7 +1822,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan1 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1845,7 +1845,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan10 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1868,7 +1868,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan4 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1891,7 +1891,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan5 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1914,7 +1914,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan1 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1937,7 +1937,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan1 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1960,7 +1960,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube vardhan10 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -1982,7 +1982,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE testwithout_measure DIMENSIONS (AMSize STRING) OPTIONS (AGGREGATION " +
-          "[Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition" +
+          "[Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata.spark.partition" +
           ".api.impl.SampleDataPartitionerImpl', COLUMNS= (AMSize) ,PARTITION_COUNT=1] )"
       )
       sql(
@@ -2002,7 +2002,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube_restructure4 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql(
@@ -2023,7 +2023,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube_restructure6 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql(
@@ -2047,7 +2047,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube_restructure7 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql(
@@ -2068,7 +2068,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube_restructure8 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql(
@@ -2089,7 +2089,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube_restructure20 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql(
@@ -2114,7 +2114,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube_restructure21 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql(
@@ -2139,7 +2139,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube_restructure26 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql(
@@ -2179,7 +2179,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube_restructure47 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql("alter cube cube_restructure47 add dimensions(a0 string) measures(b0 integer)")
@@ -2196,7 +2196,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube_restructure49 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql("alter cube cube_restructure49 drop(a1,b1)")
@@ -2213,7 +2213,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube_restructure50 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql("alter cube cube_restructure50 drop()")
@@ -2230,7 +2230,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube_restructure51 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql("alter cube cube_restructure51 DROP (b0)")
@@ -2248,7 +2248,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube_restructure52 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql("alter cube cube_restructure52 DROP (b1)")
@@ -2265,7 +2265,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube_restructure53 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql("alter cube cube_restructure53 DROP ()")
@@ -2282,7 +2282,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube_restructure54 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql("alter cube cube_restructure54 DROP (a0)")
@@ -2321,7 +2321,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
           "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
           "Latest_operatorId string, gamePointDescription string) MEASURES (gamePointId numeric," +
           "contractNumber numeric) OPTIONS (AGGREGATION [Latest_Day = count] PARTITIONER [CLASS =" +
-          " 'org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl', " +
+          " 'org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl', " +
           "COLUMNS= (imei) ,PARTITION_COUNT=2] )"
       )
       sql(
@@ -2360,7 +2360,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube cube10 dimensions(imei string,AMSize string,channelsId string,ActiveCountry " +
           "string, Activecity string)  measures(gamePointId numeric,deviceInformationId integer) " +
-          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
           ".SampleDataPartitionerImpl' columns= (imei) PARTITION_COUNT=2] )"
       )
       checkAnswer(
@@ -2381,7 +2381,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube cube11 dimensions(imei string,AMSize string,channelsId string,ActiveCountry " +
           "string, Activecity string)  measures(gamePointId numeric,deviceInformationId integer) " +
-          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
           ".SampleDataPartitionerImpl' columns= (imei) PARTITION_COUNT=2] )"
       )
       checkAnswer(
@@ -2422,7 +2422,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
           "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
           "Latest_operatorId string, gamePointDescription string) MEASURES (gamePointId numeric," +
           "contractNumber numeric) OPTIONS (AGGREGATION [Latest_Day = count] PARTITIONER [CLASS =" +
-          " 'org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl', " +
+          " 'org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl', " +
           "COLUMNS= (imei) ,PARTITION_COUNT=2] )"
       )
       sql(
@@ -2462,7 +2462,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube cube3 dimensions(imei string,AMSize string,channelsId string,ActiveCountry " +
           "string, Activecity string)  measures(gamePointId numeric,deviceInformationId integer) " +
-          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
           ".SampleDataPartitionerImpl' columns= (imei) PARTITION_COUNT=2] )"
       )
       sql(
@@ -2489,7 +2489,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube myschema1.cube4 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
           "PARTITION_COUNT=2] )"
       )
@@ -2514,7 +2514,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube cube17 dimensions(imei string,AMSize string,channelsId string,ActiveCountry " +
           "string, Activecity string)  measures(gamePointId numeric,deviceInformationId integer) " +
-          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
           ".SampleDataPartitionerImpl' columns= (imei) PARTITION_COUNT=2] )"
       )
       sql(
@@ -2541,7 +2541,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube cube20 dimensions(imei string,AMSize string,channelsId string,ActiveCountry " +
           "string, Activecity string)  measures(gamePointId numeric,deviceInformationId integer) " +
-          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
           ".SampleDataPartitionerImpl' columns= (imei) PARTITION_COUNT=2] )"
       )
       sql("create aggregatetable ActiveCountry,max(gamePointId)from cube20")
@@ -2582,7 +2582,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
           "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
           "Latest_operatorId string, gamePointDescription string) MEASURES (gamePointId numeric," +
           "contractNumber numeric) OPTIONS (AGGREGATION [Latest_Day = count] PARTITIONER [CLASS =" +
-          " 'org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl', " +
+          " 'org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl', " +
           "COLUMNS= (imei) ,PARTITION_COUNT=2] )"
       )
       sql(
@@ -2622,7 +2622,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube cube17 dimensions(imei string,AMSize string,channelsId string,ActiveCountry " +
           "string, Activecity string)  measures(gamePointId numeric,deviceInformationId integer) " +
-          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
           ".SampleDataPartitionerImpl' columns= (imei) PARTITION_COUNT=2] )"
       )
       sql(
@@ -2649,7 +2649,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube cube20 dimensions(imei string,AMSize string,channelsId string,ActiveCountry " +
           "string, Activecity string)  measures(gamePointId numeric,deviceInformationId integer) " +
-          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
           ".SampleDataPartitionerImpl' columns= (imei) PARTITION_COUNT=2] )"
       )
       sql("delete load 1 from cube cube20")
@@ -2672,7 +2672,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "create cube vardhanretention2 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string,productionDate timestamp) measures(gamePointId" +
           " numeric,deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-          ".integration.spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
+          ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
           "PARTITION_COUNT=2] )"
       )
       sql(
@@ -2705,7 +2705,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "create cube vardhanretention4 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string,productionDate timestamp) measures(gamePointId" +
           " numeric,deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-          ".integration.spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
+          ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
           "PARTITION_COUNT=2] )"
       )
       sql("delete load 0 from cube vardhanretention4")
@@ -2728,7 +2728,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "create cube vardhanretention14 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string,productionDate timestamp) measures(gamePointId" +
           " numeric,deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-          ".integration.spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
+          ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
           "PARTITION_COUNT=2] )"
       )
       sql(
@@ -2757,7 +2757,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "create cube vardhanretention15 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string,productionDate timestamp) measures(gamePointId" +
           " numeric,deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-          ".integration.spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
+          ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
           "PARTITION_COUNT=2] )"
       )
       sql(
@@ -2785,7 +2785,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "create cube vardhanretention7 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string,productionDate timestamp) measures(gamePointId" +
           " numeric,deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-          ".integration.spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
+          ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
           "PARTITION_COUNT=2] )"
       )
       sql(
@@ -2813,7 +2813,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "create cube vardhanretention8 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string,productionDate timestamp) measures(gamePointId" +
           " numeric,deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-          ".integration.spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
+          ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
           "PARTITION_COUNT=2] )"
       )
       sql("delete from cube vardhanretention8 where productionDate before '2015-07-05 '")
@@ -2836,7 +2836,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "create cube vardhanretention10 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string,productionDate timestamp) measures(gamePointId" +
           " numeric,deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-          ".integration.spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
+          ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
           "PARTITION_COUNT=2] )"
       )
       sql(
@@ -2864,7 +2864,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "create cube vardhanretention12 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string,productionDate timestamp) measures(gamePointId" +
           " numeric,deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-          ".integration.spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
+          ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
           "PARTITION_COUNT=2] )"
       )
       sql(
@@ -2892,7 +2892,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "create cube vardhanretention13 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string,productionDate timestamp) measures(gamePointId" +
           " numeric,deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-          ".integration.spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
+          ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
           "PARTITION_COUNT=2] )"
       )
       sql(
@@ -2919,7 +2919,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql(
         "create cube babu_67 dimensions(imei string,deviceInformationId integer,mac string," +
           "productdate timestamp,updatetime timestamp) measures(gamePointId numeric," +
-          "contractNumber numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "contractNumber numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
           "PARTITION_COUNT=2] )"
       )
@@ -2941,7 +2941,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "create CUBE cube_restructure62 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql(
@@ -2967,7 +2967,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "create CUBE cube_restructure64 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql(
@@ -2995,7 +2995,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE CUBE cube_restructure65 DIMENSIONS (a0 STRING) MEASURES (b0 INTEGER) OPTIONS " +
-          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark" +
+          "(AGGREGATION [b0 = count] PARTITIONER [CLASS = 'org.carbondata.spark" +
           ".partition.api.impl.SampleDataPartitionerImpl', COLUMNS= (a0) ,PARTITION_COUNT=1] )"
       )
       sql("delete load 1 from cube cube_restructure65")
@@ -3018,7 +3018,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "create cube vardhanretention13 dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string,productionDate timestamp) measures(gamePointId" +
           " numeric,deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-          ".integration.spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
+          ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
           "PARTITION_COUNT=2] )"
       )
       sql("delete from cube vardhanretention13 where productionDate before '2013-13-13 12:07:28 '")
@@ -3041,7 +3041,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "create cube vardhanretention dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string,productionDate timestamp) measures(gamePointId" +
           " numeric,deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-          ".integration.spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
+          ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
           "PARTITION_COUNT=2] )"
       )
       sql("delete load 0 from cube vardhanretention")
@@ -3064,7 +3064,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "create cube vardhanretention dimensions(imei string,AMSize string,channelsId string," +
           "ActiveCountry string, Activecity string,productionDate timestamp) measures(gamePointId" +
           " numeric,deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-          ".integration.spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
+          ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
           "PARTITION_COUNT=2] )"
       )
       sql("alter cube vardhanretention drop(AMSize) add dimensions(AMSize string)")
@@ -3106,7 +3106,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
           "string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, " +
           "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
           "Latest_operatorId string, gamePointDescription string) measures(gamePointId numeric," +
-          "contractNumber numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "contractNumber numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' ,COLUMNS= (imei) , " +
           "PARTITION_COUNT=2] )"
       )
@@ -3146,7 +3146,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
           "string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, " +
           "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
           "Latest_operatorId string, gamePointDescription string) measures(gamePointId numeric," +
-          "contractNumber numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "contractNumber numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' ,COLUMNS= (imei) , " +
           "PARTITION_COUNT=2] )"
       )
@@ -3176,7 +3176,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   test("DTS2015112010240") {
     try {
       sql(
-        "create cube twinkles DIMENSIONS (imei String,uuid String,MAC String,device_color String,device_shell_color String,device_name String,product_name String,ram String,rom String,cpu_clock String,series String,check_date String,check_year String,check_month String,check_day String,check_hour String,bom String,inside_name String,packing_date String,packing_year String,packing_month String,packing_day String,packing_hour String,customer_name String,deliveryAreaId String,deliveryCountry String,deliveryProvince String,deliveryCity String,deliveryDistrict String,packing_list_no String,order_no String,Active_check_time String,Active_check_year String,Active_check_month String,Active_check_day String,Active_check_hour String,ActiveAreaId String,ActiveCountry String,ActiveProvince String,Activecity String,ActiveDistrict String,Active_network String,Active_firmware_version String,Active_emui_version String,Active_os_version String,Latest_check_time String,Latest_check_year String,Latest_check_month String,Latest_check_day String,Latest_check_hour String,Latest_areaId String,Latest_country String,Latest_province String,Latest_city String,Latest_district String,Latest_firmware_version String,Latest_emui_version String,Latest_os_version String,Latest_network String,site String,site_desc String,product String,product_desc String) OPTIONS (AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl.SampleDataPartitionerImpl' COLUMNS= (imei) PARTITION_COUNT=1] )"
+        "create cube twinkles DIMENSIONS (imei String,uuid String,MAC String,device_color String,device_shell_color String,device_name String,product_name String,ram String,rom String,cpu_clock String,series String,check_date String,check_year String,check_month String,check_day String,check_hour String,bom String,inside_name String,packing_date String,packing_year String,packing_month String,packing_day String,packing_hour String,customer_name String,deliveryAreaId String,deliveryCountry String,deliveryProvince String,deliveryCity String,deliveryDistrict String,packing_list_no String,order_no String,Active_check_time String,Active_check_year String,Active_check_month String,Active_check_day String,Active_check_hour String,ActiveAreaId String,ActiveCountry String,ActiveProvince String,Activecity String,ActiveDistrict String,Active_network String,Active_firmware_version String,Active_emui_version String,Active_os_version String,Latest_check_time String,Latest_check_year String,Latest_check_month String,Latest_check_day String,Latest_check_hour String,Latest_areaId String,Latest_country String,Latest_province String,Latest_city String,Latest_district String,Latest_firmware_version String,Latest_emui_version String,Latest_os_version String,Latest_network String,site String,site_desc String,product String,product_desc String) OPTIONS (AGGREGATION [Latest_Day = count] PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl' COLUMNS= (imei) PARTITION_COUNT=1] )"
       )
       checkAnswer(
         sql("SUGGEST AGGREGATE WITH SCRIPTS USING DATA_STATS FOR cube twinkles"),

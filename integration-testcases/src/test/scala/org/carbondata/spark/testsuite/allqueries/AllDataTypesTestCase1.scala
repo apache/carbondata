@@ -60,7 +60,7 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
           "string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, " +
           "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
           "Latest_operatorId string, gamePointDescription string)  measures(gamePointId numeric," +
-          "contractNumber numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "contractNumber numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' ,COLUMNS= (imei) , " +
           "PARTITION_COUNT=2] )"
 

@@ -60,7 +60,7 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
           "string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, " +
           "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
           "Latest_operatorId string, gamePointDescription string)  measures(gamePointId numeric," +
-          "contractNumber numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration" +
+          "contractNumber numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
           ".spark.partition.api.impl.SampleDataPartitionerImpl' ,COLUMNS= (imei) , " +
           "PARTITION_COUNT=2] )"
 
@@ -99,7 +99,7 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
           "String,Latest_city String,Latest_district String,Latest_firmware_version String," +
           "Latest_emui_version String,Latest_os_version String,Latest_network String,site String," +
           "site_desc String,product String,product_desc String) MEASURES(check_year Integer) " +
-          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.integration.spark.partition.api.impl" +
+          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
           ".SampleDataPartitionerImpl' ,columns= (imei) ,PARTITION_COUNT=3] )"
       )
       sql("LOAD DATA fact from '" + currentDirectory +
@@ -137,7 +137,7 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
           "numeric,PKT_NUM_LEN_64_128 numeric,PKT_NUM_LEN_128_256 numeric,PKT_NUM_LEN_256_512 " +
           "numeric,PKT_NUM_LEN_512_768 numeric,PKT_NUM_LEN_768_1024 numeric,PKT_NUM_LEN_1024_ALL " +
           "numeric,IP_FLOW_MARK numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-          ".integration.spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (MSISDN) ," +
+          ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (MSISDN) ," +
           "PARTITION_COUNT=3] )"
       )
       sql("LOAD DATA fact from '" + currentDirectory +
