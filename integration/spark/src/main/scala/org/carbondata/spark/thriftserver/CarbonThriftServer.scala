@@ -36,7 +36,7 @@ object CarbonThriftServer {
         sparkHome + '/' + "conf" + '/' + "carbon.properties")
     }
     val sc = new SparkContext(conf)
-    val warmUpTime = CarbonProperties.getInstance().getProperty("carbon.spark.warmUpTime", "5000");
+    val warmUpTime = CarbonProperties.getInstance().getProperty("carbon.spark.warmUpTime", "5000")
     try {
       Thread.sleep(Integer.parseInt(warmUpTime))
     } catch {
@@ -44,7 +44,7 @@ object CarbonThriftServer {
         val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
         LOG.error("Wrong value for carbon.spark.warmUpTime " + warmUpTime +
           "Using default Value and proceeding")
-        Thread.sleep(30000);
+        Thread.sleep(30000)
     }
 
     val carbonContext = new CarbonContext(sc, args(0))

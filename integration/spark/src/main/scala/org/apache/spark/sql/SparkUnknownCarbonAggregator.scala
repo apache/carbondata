@@ -47,34 +47,34 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
 
   override def agg(newVal: Double): Unit = {
 
-    throw new UnsupportedOperationException("agg(double) is not a valid method for aggregation");
+    throw new UnsupportedOperationException("agg(double) is not a valid method for aggregation")
   }
 
   override def agg(newVal: Any): Unit = {
-    throw new UnsupportedOperationException("agg(Object) is not a valid method for aggregation");
+    throw new UnsupportedOperationException("agg(Object) is not a valid method for aggregation")
   }
 
   override def agg(newVal: MeasureColumnDataChunk, index: Int): Unit = {
     throw new UnsupportedOperationException(
       "agg(CarbonReadDataHolder, int) is not a valid method for aggregation"
-    );
+    )
   }
 
   override def getByteArray(): Array[Byte] = {
-    throw new UnsupportedOperationException("getByteArray  is not implemented yet");
+    throw new UnsupportedOperationException("getByteArray  is not implemented yet")
   }
 
   override def getDoubleValue(): java.lang.Double = {
-    throw new UnsupportedOperationException("getValue() is not a valid method for result");
+    throw new UnsupportedOperationException("getValue() is not a valid method for result")
   }
 
   override def getLongValue(): java.lang.Long = {
-    throw new UnsupportedOperationException("getLongValue() is not a valid method for result");
+    throw new UnsupportedOperationException("getLongValue() is not a valid method for result")
   }
 
   override def getBigDecimalValue(): java.math.BigDecimal = {
     throw new
-        UnsupportedOperationException("getBigDecimalValue() is not a valid method for result");
+        UnsupportedOperationException("getBigDecimalValue() is not a valid method for result")
   }
 
   override def getValueObject(): Object = {
@@ -83,7 +83,7 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
 
     val output = getPartialFunction.eval(null)
 
-    output.asInstanceOf[Object];
+    output.asInstanceOf[Object]
   }
 
   override def merge(aggregator: MeasureAggregator): Unit = {
@@ -105,7 +105,7 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
 
       aggregator.asInstanceOf[SparkUnknownCarbonAggregator].result.clear
     } else {
-      throw new Exception("Invalid merge expected type is" + this.getClass().getName());
+      throw new Exception("Invalid merge expected type is" + this.getClass().getName())
     }
   }
 
@@ -121,16 +121,16 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
   }
 
   override def writeData(output: DataOutput): Unit = {
-    throw new UnsupportedOperationException();
+    throw new UnsupportedOperationException()
   }
 
   override def readData(inPut: DataInput): Unit = {
-    throw new UnsupportedOperationException();
+    throw new UnsupportedOperationException()
   }
 
   override def merge(value: Array[Byte]): Unit = {
 
-    throw new UnsupportedOperationException();
+    throw new UnsupportedOperationException()
   }
 
   override def get(): MeasureAggregator = {

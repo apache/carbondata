@@ -147,7 +147,7 @@ class CarbonBlockDistinctValuesCombineRDD(
 
   override def compute(split: Partition, context: TaskContext
       ): Iterator[(Int, Array[String])] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
+    val LOGGER = LogServiceFactory.getLogService(this.getClass().getName())
 
     val distinctValuesList = new ArrayBuffer[(Int, HashSet[String])]
     try {
@@ -206,7 +206,7 @@ class CarbonGlobalDictionaryGenerateRDD(
   override def getPartitions: Array[Partition] = firstParent[(Int, Array[String])].partitions
 
   override def compute(split: Partition, context: TaskContext): Iterator[(String, String)] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
+    val LOGGER = LogServiceFactory.getLogService(this.getClass().getName())
     var status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
     val iter = new Iterator[(String, String)] {
       // generate distinct value list

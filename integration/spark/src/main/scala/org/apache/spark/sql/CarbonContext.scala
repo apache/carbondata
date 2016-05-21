@@ -37,7 +37,7 @@ class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveCon
 
   @transient
   override lazy val catalog = {
-    CarbonProperties.getInstance().addProperty("carbon.storelocation", storePath);
+    CarbonProperties.getInstance().addProperty("carbon.storelocation", storePath)
     new CarbonMetastoreCatalog(this, storePath, metadataHive) with OverrideCatalog
   }
 
@@ -112,7 +112,7 @@ object CarbonContext {
 
   final def updateCarbonPorpertiesPath(hiveContext: HiveContext) {
     val carbonPropertiesFilePath = hiveContext.getConf("carbon.properties.filepath", null)
-    val systemcarbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null);
+    val systemcarbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
     if (null != carbonPropertiesFilePath && null == systemcarbonPropertiesFilePath) {
       System.setProperty("carbon.properties.filepath",
         carbonPropertiesFilePath + "/" + "carbon.properties")

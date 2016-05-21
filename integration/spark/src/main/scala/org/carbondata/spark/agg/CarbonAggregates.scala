@@ -483,9 +483,9 @@ case class MaxFunctionCarbon(expr: Expression, base: AggregateExpression1, final
     val agg = resolution match {
       case s: MeasureAggregator => s
       case s =>
-        val dc = new MaxAggregator;
+        val dc = new MaxAggregato
         if (s != null) {
-          dc.agg(s.toString.toDouble);
+          dc.agg(s.toString.toDouble)
           dc.setNewValue(s.toString.toDouble)
       }
       dc
@@ -526,9 +526,9 @@ case class MinFunctionCarbon(expr: Expression, base: AggregateExpression1, final
     val agg = resolution match {
       case s: MeasureAggregator => s
       case s =>
-        val dc: MeasureAggregator = new MinAggregator;
+        val dc: MeasureAggregator = new MinAggregator
         if (s != null) {
-          dc.agg(s.toString.toDouble);
+          dc.agg(s.toString.toDouble)
           dc.setNewValue(s.toString.toDouble)
       }
       dc
@@ -625,8 +625,8 @@ case class CountDistinctFunctionCarbon(expr: Expression, base: AggregateExpressi
       case s: MeasureAggregator => s
       case null => null
       case s =>
-        val dc = new DistinctCountAggregatorObjectSet;
-        dc.setNewValue(s.toString);
+        val dc = new DistinctCountAggregatorObjectSet
+        dc.setNewValue(s.toString)
         dc
     }
     if (agg == null) {
@@ -660,8 +660,8 @@ case class CountDistinctFunctionCarbonFinal(expr: Expression, base: AggregateExp
       case s: MeasureAggregator => s
       case null => null
       case s =>
-        val dc = new DistinctCountAggregatorObjectSet;
-        dc.setNewValue(s.toString);
+        val dc = new DistinctCountAggregatorObjectSet
+        dc.setNewValue(s.toString)
         dc
     }
     if (agg == null) {
@@ -765,11 +765,11 @@ case class PositionLiteral(expr: Expression, intermediateDataType: DataType)
   override def nullable: Boolean = false
 
   type EvaluatedType = Any
-  var position = -1;
+  var position = -1
 
   def setPosition(pos: Int): Unit = position = pos
 
-  override def toString: String = s"PositionLiteral($position : $expr)";
+  override def toString: String = s"PositionLiteral($position : $expr)"
 
   override def eval(input: InternalRow): Any = {
     if (position != -1) {

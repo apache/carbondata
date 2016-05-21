@@ -63,7 +63,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     with spark.Logging {
 
   @transient val LOGGER = LogServiceFactory
-    .getLogService("org.apache.spark.sql.CarbonMetastoreCatalog");
+    .getLogService("org.apache.spark.sql.CarbonMetastoreCatalog")
 
   val cubeModifiedTimeStore = new HashMap[String, Long]()
   cubeModifiedTimeStore.put("default", System.currentTimeMillis())
@@ -182,11 +182,11 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     if (useUniquePath) {
       if (FileFactory.isFileExist(metadataPath, fileType)) {
         val file = FileFactory.getCarbonFile(metadataPath, fileType)
-        val schemaFolders = file.listFiles();
+        val schemaFolders = file.listFiles()
 
         schemaFolders.foreach(schemaFolder => {
           if (schemaFolder.isDirectory()) {
-            val cubeFolders = schemaFolder.listFiles();
+            val cubeFolders = schemaFolder.listFiles()
 
             cubeFolders.foreach(cubeFolder => {
               val schemaPath = metadataPath + "/" + schemaFolder.getName + "/" + cubeFolder.getName
@@ -219,12 +219,12 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     try { {
       if (FileFactory.isFileExist(schemasPath, fileType)) {
         val file = FileFactory.getCarbonFile(schemasPath, fileType)
-        val schemaFolders = file.listFiles();
+        val schemaFolders = file.listFiles()
 
         schemaFolders.foreach(schemaFolder => {
           if (schemaFolder.isDirectory()) {
             val dbName = schemaFolder.getName
-            val cubeFolders = schemaFolder.listFiles();
+            val cubeFolders = schemaFolder.listFiles()
 
             cubeFolders.foreach(cubeFolder => {
               if (cubeFolder.isDirectory()) {
@@ -239,7 +239,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
 
                   val createTBase = new ThriftReader.TBaseCreator() {
                     override def create(): org.apache.thrift.TBase[TableInfo, TableInfo._Fields] = {
-                      return new TableInfo();
+                      return new TableInfo()
                     }
                   }
                   val thriftReader = new ThriftReader(cubeMetadataFile, createTBase)
@@ -335,9 +335,9 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     }
 
     val thriftWriter = new ThriftWriter(schemaFilePath, false)
-    thriftWriter.open();
-    thriftWriter.write(thriftTableInfo);
-    thriftWriter.close();
+    thriftWriter.open()
+    thriftWriter.write(thriftTableInfo)
+    thriftWriter.close()
 
     metadata.cubesMeta += cubeMeta
     logInfo(s"Cube $tableName for schema $dbName created successfully.")
@@ -432,7 +432,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
       }
       dimArray :+= colName
     }
-    return dimArray;
+    return dimArray
   }
 
   def getAggregateTableName(carbonTable: CarbonTable, factTableName: String): String = {
@@ -484,7 +484,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   def dropCube(partitionCount: Int, tableStorePath: String, schemaName: String, cubeName: String)
     (sqlContext: SQLContext) {
     if (!cubeExists(Seq(schemaName, cubeName))((sqlContext))) {
-      LOGGER.audit(s"Drop cube failed. Cube with $schemaName.$cubeName does not exist");
+      LOGGER.audit(s"Drop cube failed. Cube with $schemaName.$cubeName does not exist")
       sys.error(s"Cube with $schemaName.$cubeName does not exist")
     }
 
@@ -525,7 +525,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .removeTable(schemaName + "_" + cubeName)
     logInfo(s"Cube $cubeName of $schemaName schema dropped syccessfully.")
-    LOGGER.info("Cube " + cubeName + " of " + schemaName + " schema dropped syccessfully.");
+    LOGGER.info("Cube " + cubeName + " of " + schemaName + " schema dropped syccessfully.")
 
   }
 

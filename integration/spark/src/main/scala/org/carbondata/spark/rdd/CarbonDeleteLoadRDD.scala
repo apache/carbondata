@@ -74,7 +74,7 @@ class CarbonDeleteLoadRDD[K, V](
       }
 
     }
-    logInfo("********Deleting***************");
+    logInfo("********Deleting***************")
     iter
   }
 
