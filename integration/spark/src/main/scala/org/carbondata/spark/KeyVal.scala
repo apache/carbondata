@@ -43,8 +43,9 @@ trait Result[K, V] extends Serializable {
 }
 
 class ResultImpl extends Result[Int, LoadMetadataDetails] {
-  override def getKey(key: Int, value: LoadMetadataDetails): (Int, LoadMetadataDetails) =
+  override def getKey(key: Int, value: LoadMetadataDetails): (Int, LoadMetadataDetails) = {
     (key, value)
+  }
 }
 
 

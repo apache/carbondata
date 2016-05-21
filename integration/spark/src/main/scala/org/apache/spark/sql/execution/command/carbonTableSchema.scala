@@ -313,9 +313,8 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
         }
         else {
 
-          try { {
+          try {
             Class.forName(part.partitionClass).newInstance()
-          }
           } catch {
             case e: Exception =>
               val cl = part.partitionClass
@@ -656,9 +655,8 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
         }
         else {
 
-          try { {
+          try {
             Class.forName(part.partitionClass).newInstance()
-          }
           } catch {
             case e: Exception =>
               val cl = part.partitionClass
@@ -1047,9 +1045,8 @@ private[sql] case class ShowCreateTable(cm: tableModel, override val output: Seq
           }
         }
 
-        try { {
+        try {
           Class.forName(part.partitionClass).newInstance()
-        }
         } catch {
           case e: Exception =>
             val cl = part.partitionClass
@@ -1176,11 +1173,10 @@ private[sql] case class CreateCube(cm: tableModel) extends RunnableCommand {
       val catalog = CarbonEnv.getInstance(sqlContext).carbonCatalog
       // Need to fill partitioner class when we support partition
       val cubePath = catalog.createCubeFromThrift(tableInfo, dbName, cubeName, null)(sqlContext)
-      try { {
+      try {
         sqlContext.sql(
           s"""CREATE TABLE $dbName.$cubeName USING org.apache.spark.sql.CarbonSource""" +
           s""" OPTIONS (cubename "$dbName.$cubeName", path "$cubePath") """).collect
-      }
       } catch {
         case e: Exception =>
 
@@ -1302,7 +1298,7 @@ private[sql] case class LoadCube(
     val carbonLock = CarbonLockFactory.getCarbonLockObj(org.carbondata.core.
       carbon.metadata.CarbonMetadata.getInstance().getCarbonTable(schemaName + "_" + cubeName).
       getMetaDataFilepath, LockUsage.METADATA_LOCK)
-    try { {
+    try {
       if (carbonLock.lockWithRetries()) {
         logInfo("Successfully able to get the cube metadata file lock")
       }
@@ -1382,44 +1378,42 @@ private[sql] case class LoadCube(
       var partitionStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
       try {
         // First system has to partition the data first and then call the load data
-        {
-          if (null == relation.cubeMeta.partitioner.partitionColumn ||
-              relation.cubeMeta.partitioner.partitionColumn(0).isEmpty) {
-            LOGGER.info("Initiating Direct Load for the Cube : (" +
-                        schemaName + "." + cubeName + ")")
-            carbonLoadModel.setFactFilePath(factPath)
-            carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimiter))
-            carbonLoadModel.setCsvHeader(fileHeader)
-            carbonLoadModel.setDirectLoad(true)
-          }
-          else {
-            val fileType = FileFactory.getFileType(partitionLocation)
-            if (FileFactory.isFileExist(partitionLocation, fileType)) {
-              val file = FileFactory.getCarbonFile(partitionLocation, fileType)
-              CarbonUtil.deleteFoldersAndFiles(file)
-            }
-            partitionLocation += System.currentTimeMillis()
-            FileFactory.mkdirs(partitionLocation, fileType)
-            LOGGER.info("Initiating Data Partitioning for the Cube : (" +
-                        schemaName + "." + cubeName + ")")
-            carbonLoadModel.setFactFilePath(partitionLocation)
-            partitionStatus = CarbonContext.partitionData(
-              schemaName,
-              cubeName,
-              factPath,
-              partitionLocation,
-              delimiter,
-              quoteChar,
-              fileHeader,
-              escapeChar, booleanValForMultiLine)(sqlContext.asInstanceOf[HiveContext])
-          }
-          GlobalDictionaryUtil
-            .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.cubeMeta.dataPath)
-          CarbonDataRDDFactory
-            .loadCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.cubeMeta.dataPath,
-              kettleHomePath,
-              relation.cubeMeta.partitioner, columinar, isAgg = false, partitionStatus)
+        if (null == relation.cubeMeta.partitioner.partitionColumn ||
+            relation.cubeMeta.partitioner.partitionColumn(0).isEmpty) {
+          LOGGER.info("Initiating Direct Load for the Cube : (" +
+                      schemaName + "." + cubeName + ")")
+          carbonLoadModel.setFactFilePath(factPath)
+          carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimiter))
+          carbonLoadModel.setCsvHeader(fileHeader)
+          carbonLoadModel.setDirectLoad(true)
         }
+        else {
+          val fileType = FileFactory.getFileType(partitionLocation)
+          if (FileFactory.isFileExist(partitionLocation, fileType)) {
+            val file = FileFactory.getCarbonFile(partitionLocation, fileType)
+            CarbonUtil.deleteFoldersAndFiles(file)
+          }
+          partitionLocation += System.currentTimeMillis()
+          FileFactory.mkdirs(partitionLocation, fileType)
+          LOGGER.info("Initiating Data Partitioning for the Cube : (" +
+                      schemaName + "." + cubeName + ")")
+          carbonLoadModel.setFactFilePath(partitionLocation)
+          partitionStatus = CarbonContext.partitionData(
+            schemaName,
+            cubeName,
+            factPath,
+            partitionLocation,
+            delimiter,
+            quoteChar,
+            fileHeader,
+            escapeChar, booleanValForMultiLine)(sqlContext.asInstanceOf[HiveContext])
+        }
+        GlobalDictionaryUtil
+          .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.cubeMeta.dataPath)
+        CarbonDataRDDFactory
+          .loadCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.cubeMeta.dataPath,
+            kettleHomePath,
+            relation.cubeMeta.partitioner, columinar, isAgg = false, partitionStatus)
       }
       catch {
         case ex: Exception =>
@@ -1429,14 +1423,13 @@ private[sql] case class LoadCube(
       }
       finally {
         // Once the data load is successful delete the unwanted partition files
-        try { {
+        try {
           val fileType = FileFactory.getFileType(partitionLocation)
           if (FileFactory.isFileExist(partitionLocation, fileType)) {
             val file = FileFactory
               .getCarbonFile(partitionLocation, fileType)
             CarbonUtil.deleteFoldersAndFiles(file)
           }
-        }
         } catch {
           case ex: Exception =>
             LOGGER.error(ex)
@@ -1445,7 +1438,6 @@ private[sql] case class LoadCube(
         }
 
       }
-    }
     } finally {
       if (carbonLock != null) {
         if (carbonLock.unlock()) {
@@ -1644,10 +1636,9 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
       }
       if (sqlContext.tableNames(schemaName).map(x => x.toLowerCase())
         .contains(cubeName.toLowerCase())) {
-        try { {
+        try {
           sqlContext.asInstanceOf[HiveContext].catalog.client.
             runSqlHive(s"DROP TABLE IF EXISTS $schemaName.$cubeName")
-        }
         } catch {
           case e: RuntimeException =>
             LOGGER.audit(
@@ -1661,7 +1652,7 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
       CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
       val carbonLock = CarbonLockFactory
         .getCarbonLockObj(tmpCube.getMetaDataFilepath, LockUsage.METADATA_LOCK)
-      try { {
+      try {
         if (carbonLock.lockWithRetries()) {
           logInfo("Successfully able to get the cube metadata file lock")
         } else {
@@ -1693,7 +1684,6 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
 
           LOGGER.audit(s"Deleted cube [$cubeName] under schema [$schemaName]")
         }
-      }
       }
       finally {
         if (carbonLock != null) {
@@ -1768,10 +1758,9 @@ private[sql] case class ShowLoads(
         loadMetadataDetailsSortedArray = loadMetadataDetailsSortedArray
           .filter(load => load.getVisibility.equalsIgnoreCase("true"))
         val limitLoads = limit.get
-        try { {
+        try {
           val lim = Integer.parseInt(limitLoads)
           loadMetadataDetailsSortedArray = loadMetadataDetailsSortedArray.slice(0, lim)
-        }
         }
         catch {
           case ex: NumberFormatException => sys.error(s" Entered limit is not a valid Number")

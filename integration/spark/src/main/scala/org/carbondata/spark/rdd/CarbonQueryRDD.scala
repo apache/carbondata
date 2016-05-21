@@ -18,9 +18,7 @@
 
 package org.carbondata.spark.rdd
 
-import java.text.SimpleDateFormat
 import java.util
-import java.util.Date
 
 import scala.collection.JavaConverters._
 
@@ -43,36 +41,34 @@ import org.carbondata.spark.load.CarbonLoaderUtil
 import org.carbondata.spark.util.QueryPlanUtil
 
 class CarbonSparkPartition(rddId: Int, val idx: Int,
-   val locations: Array[String],
-   val tableBlockInfos: util.List[TableBlockInfo])
+    val locations: Array[String],
+    val tableBlockInfos: util.List[TableBlockInfo])
   extends Partition {
 
   override val index: Int = idx
+
   // val serializableHadoopSplit = new SerializableWritable[Array[String]](locations)
-  override def hashCode(): Int = 41 * (41 + rddId) + idx
+  override def hashCode(): Int = {
+    41 * (41 + rddId) + idx
+  }
 }
 
 
- /**
-  * This RDD is used to perform query.
-  */
-  class CarbonQueryRDD[K, V](
-  sc: SparkContext,
-  queryModel: QueryModel,
-  filterExpression: Expression,
-  keyClass: KeyVal[K, V],
-  @transient conf: Configuration,
-  cubeCreationTime: Long,
-  schemaLastUpdatedTime: Long,
-  baseStoreLocation: String)
+/**
+ * This RDD is used to perform query.
+ */
+class CarbonQueryRDD[K, V](
+    sc: SparkContext,
+    queryModel: QueryModel,
+    filterExpression: Expression,
+    keyClass: KeyVal[K, V],
+    @transient conf: Configuration,
+    cubeCreationTime: Long,
+    schemaLastUpdatedTime: Long,
+    baseStoreLocation: String)
   extends RDD[(K, V)](sc, Nil) with Logging {
 
   val defaultParallelism = sc.defaultParallelism
-
-  private val jobtrackerId: String = {
-    val formatter = new SimpleDateFormat("yyyyMMddHHmm")
-    formatter.format(new Date())
-  }
 
   override def getPartitions: Array[Partition] = {
     val startTime = System.currentTimeMillis()
@@ -81,7 +77,7 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
 
     val result = new util.ArrayList[Partition](defaultParallelism)
     val validSegments = job.getConfiguration.get(CarbonInputFormat.INPUT_SEGMENT_NUMBERS)
-    if(!validSegments.isEmpty) {
+    if (!validSegments.isEmpty) {
       var filterResolver: FilterResolverIntf = null
       if (filterExpression != null) {
         // set filter resolver tree
@@ -98,7 +94,7 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
           inputSplit.getLocations, inputSplit.getLength
         )
       )
-      if(!blockList.isEmpty) {
+      if (blockList.nonEmpty) {
         // group blocks to nodes, tasks
         val nodeBlockMapping =
           CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism)
@@ -117,16 +113,15 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
         val noOfNodes = nodeBlockMapping.size
         val noOfTasks = result.size()
         logInfo(s"Identified  no.of.Blocks: $noOfBlocks,"
-          + s"parallelism: $defaultParallelism , no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks"
+                + s"parallelism: $defaultParallelism , no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks"
         )
         logInfo("Time taken to identify Blocks to scan : " + (System
-          .currentTimeMillis() - startTime)
+                                                                .currentTimeMillis() - startTime)
         )
-        for (j <- 0 to result.size()-1)
-        {
+        for (j <- 0 until result.size()) {
           val cp = result.get(j).asInstanceOf[CarbonSparkPartition]
           logInfo(s"Node : " + cp.locations.toSeq.mkString(",")
-            + ", No.Of Blocks : " + cp.tableBlockInfos.size())
+                  + ", No.Of Blocks : " + cp.tableBlockInfos.size())
         }
       } else {
         logInfo("No blocks identified to scan")
@@ -143,15 +138,15 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
   }
 
 
-   override def compute(thepartition: Partition, context: TaskContext): Iterator[(K, V)] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass().getName())
+  override def compute(thepartition: Partition, context: TaskContext): Iterator[(K, V)] = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
       var rowIterator: CarbonIterator[RowResult] = _
       var queryStartTime: Long = 0
       try {
         val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
-        if(!carbonSparkPartition.tableBlockInfos.isEmpty) {
-          queryModel.setQueryId(queryModel.getQueryId() + "_" + carbonSparkPartition.idx)
+        if (!carbonSparkPartition.tableBlockInfos.isEmpty) {
+          queryModel.setQueryId(queryModel.getQueryId + "_" + carbonSparkPartition.idx)
           // fill table block info
           queryModel.setTableBlockInfos(carbonSparkPartition.tableBlockInfos)
           queryStartTime = System.currentTimeMillis
@@ -160,7 +155,7 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
           logInfo("*************************" + carbonPropertiesFilePath)
           if (null == carbonPropertiesFilePath) {
             System.setProperty("carbon.properties.filepath", System.getProperty("user.dir")
-              + '/' + "conf" + '/' + "carbon.properties"
+                                                             + '/' + "conf" + '/' + "carbon.properties"
             )
           }
           // execute query
@@ -184,7 +179,7 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
 
       override def hasNext: Boolean = {
         if (!finished && !havePair) {
-          finished = (null == rowIterator) || (!rowIterator.hasNext())
+          finished = (null == rowIterator) || (!rowIterator.hasNext)
           havePair = !finished
         }
         if (finished) {
@@ -199,22 +194,22 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
         }
         havePair = false
         val row = rowIterator.next()
-        val key = row.getKey()
-        val value = row.getValue()
+        val key = row.getKey
+        val value = row.getValue
         keyClass.getKey(key, value)
       }
 
       logInfo("*************************** Total Time Taken to execute the query in Carbon Side: " +
-        (System.currentTimeMillis - queryStartTime)
+              (System.currentTimeMillis - queryStartTime)
       )
     }
     iter
   }
 
 
-   /**
-    * Get the preferred locations where to launch this task.
-    */
+  /**
+   * Get the preferred locations where to launch this task.
+   */
   override def getPreferredLocations(partition: Partition): Seq[String] = {
     val theSplit = partition.asInstanceOf[CarbonSparkPartition]
     theSplit.locations.filter(_ != "localhost")

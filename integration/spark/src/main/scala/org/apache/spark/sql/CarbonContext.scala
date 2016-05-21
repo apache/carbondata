@@ -48,6 +48,8 @@ class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveCon
 
   experimental.extraStrategies = CarbonStrategy.getStrategy(self) :: Nil
 
+  val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)
+
   override def sql(sql: String): SchemaRDD = {
     // queryId will be unique for each query, creting query detail holder
     val queryId: String = System.nanoTime() + ""
@@ -55,9 +57,7 @@ class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveCon
 
     CarbonContext.updateCarbonPorpertiesPath(this)
     val sqlString = sql.toUpperCase
-    val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass().getName())
-    LOGGER
-          .info(s"Query [$sqlString]")
+    LOGGER.info(s"Query [$sqlString]")
     val logicPlan: LogicalPlan = parseSql(sql)
     val result = new CarbonDataFrameRDD(sql: String, this, logicPlan)
 
@@ -83,22 +83,22 @@ object CarbonContext {
    * @param escapeChar - This parameter by default will be null, there wont be any validation if
    *                   default escape character(\) is found on the RawCSV file
    * @param multiLine  - This parameter will be check for end of quote character if escape character
-   *                     & quote character is set.
+   *                   & quote character is set.
    *                   if set as false, it will check for end of quote character within the line
    *                   and skips only 1 line if end of quote not found
    *                   if set as true, By default it will check for 10000 characters in multiple
    *                   lines for end of quote & skip all lines if end of quote not found.
    */
   final def partitionData(
-                           schemaName: String = null,
-                           cubeName: String,
-                           factPath: String,
-                           targetPath: String,
-                           delimiter: String = ",",
-                           quoteChar: String = "\"",
-                           fileHeader: String = null,
-                           escapeChar: String = null,
-                           multiLine: Boolean = false)(hiveContext: HiveContext): String = {
+      schemaName: String = null,
+      cubeName: String,
+      factPath: String,
+      targetPath: String,
+      delimiter: String = ",",
+      quoteChar: String = "\"",
+      fileHeader: String = null,
+      escapeChar: String = null,
+      multiLine: Boolean = false)(hiveContext: HiveContext): String = {
     updateCarbonPorpertiesPath(hiveContext)
     var schemaNameLocal = schemaName
     if (schemaNameLocal == null) {
@@ -118,7 +118,7 @@ object CarbonContext {
         carbonPropertiesFilePath + "/" + "carbon.properties")
     }
     // configuring the zookeeper URl .
-    var zooKeeperUrl = hiveContext.getConf("spark.deploy.zookeeper.url", "127.0.0.1:2181")
+    val zooKeeperUrl = hiveContext.getConf("spark.deploy.zookeeper.url", "127.0.0.1:2181")
 
     CarbonProperties.getInstance().addProperty("spark.deploy.zookeeper.url", zooKeeperUrl)
 
@@ -133,8 +133,10 @@ object CarbonContext {
   }
 
   def addInstance(sc: SparkContext, cc: CarbonContext): Unit = {
-    if (cache.contains(sc)) sys.error("creating multiple instances of CarbonContext is not " +
-        "allowed using the same SparkContext instance")
+    if (cache.contains(sc)) {
+      sys.error("creating multiple instances of CarbonContext is not " +
+                "allowed using the same SparkContext instance")
+    }
     cache(sc) = cc
   }
 

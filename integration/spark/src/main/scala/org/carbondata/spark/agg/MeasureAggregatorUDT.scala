@@ -29,7 +29,9 @@ import org.carbondata.query.aggregator.MeasureAggregator
 class MeasureAggregatorUDT extends UserDefinedType[MeasureAggregator] {
   // the default DoubleType is Ok as we are not going to pass to spark sql to
   // evaluate,need to add this for compilation errors
-  override def sqlType: DataType = ArrayType(DoubleType, false)
+  override def sqlType: DataType = {
+    ArrayType(DoubleType, containsNull = false)
+  }
 
   override def serialize(obj: Any): Any = {
     obj match {

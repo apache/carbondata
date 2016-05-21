@@ -51,7 +51,7 @@ class CarbonDeleteLoadByDateRDD[K, V](
   override def getPartitions: Array[Partition] = {
     val splits = CarbonQueryUtil.getTableSplits(schemaName, cubeName, null, partitioner)
     val result = new Array[Partition](splits.length)
-    for (i <- 0 until result.length) {
+    for (i <- result.indices) {
       result(i) = new CarbonLoadPartition(id, i, splits(i))
     }
     result
@@ -64,15 +64,13 @@ class CarbonDeleteLoadByDateRDD[K, V](
       logInfo("Input split: " + split.serializableHadoopSplit.value)
 
       logInfo("Input split: " + split.serializableHadoopSplit.value)
-      val partitionID = split.serializableHadoopSplit.value.getPartition().getUniqueID()
+      val partitionID = split.serializableHadoopSplit.value.getPartition.getUniqueID
 
       // TODO call CARBON delete API
       logInfo("Applying data retention as per date value " + dateValue)
       var dateFormat = ""
-      try { {
-        val dateValueAsDate = DateTimeUtils.stringToTime(dateValue)
+      try {
         dateFormat = CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
-      }
       } catch {
         case e: Exception => logInfo("Unable to parse with default time format " + dateValue)
       }
@@ -92,7 +90,7 @@ class CarbonDeleteLoadByDateRDD[K, V](
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val theSplit = split.asInstanceOf[CarbonLoadPartition]
     val s = theSplit.serializableHadoopSplit.value.getLocations.asScala
-    logInfo("Host Name : " + s(0) + s.length)
+    logInfo("Host Name : " + s.head + s.length)
     s
   }
 }

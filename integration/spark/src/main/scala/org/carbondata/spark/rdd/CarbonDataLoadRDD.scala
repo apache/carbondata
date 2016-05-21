@@ -43,10 +43,6 @@ import org.carbondata.spark.util.CarbonQueryUtil
 /**
  * This partition class use to split by TableSplit
  *
- * @param rddId
- * @param idx
- * @param tableSplit
- * @param blocksDetails
  */
 class CarbonTableSplitPartition(rddId: Int, val idx: Int, @transient val tableSplit: TableSplit,
     val blocksDetails: Array[BlockDetails])
@@ -62,10 +58,6 @@ class CarbonTableSplitPartition(rddId: Int, val idx: Int, @transient val tableSp
 /**
  * This partition class use to split by Host
  *
- * @param rddId
- * @param idx
- * @param host
- * @param blocksDetails
  */
 class CarbonNodePartition(rddId: Int, val idx: Int, host: String,
     val blocksDetails: Array[BlockDetails])
@@ -123,17 +115,17 @@ class CarbonDataLoadRDD[K, V](
       case true =>
         // for table split partition
         var splits = Array[TableSplit]()
-        if (carbonLoadModel.isDirectLoad()) {
-          splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath(),
+        if (carbonLoadModel.isDirectLoad) {
+          splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath,
             partitioner.nodeList, partitioner.partitionCount)
         }
         else {
-          splits = CarbonQueryUtil.getTableSplits(carbonLoadModel.getDatabaseName(),
-            carbonLoadModel.getTableName(), null, partitioner)
+          splits = CarbonQueryUtil.getTableSplits(carbonLoadModel.getDatabaseName,
+            carbonLoadModel.getTableName, null, partitioner)
         }
 
         val result = new Array[Partition](splits.length)
-        for (i <- 0 until result.length) {
+        for (i <- result.indices) {
           // filter the same partition unique id, because only one will match, so get 0 element
           val blocksDetails: Array[BlockDetails] = blocksGroupBy.filter(p =>
             p._1 == splits(i).getPartition.getUniqueID)(0)._2
@@ -143,7 +135,7 @@ class CarbonDataLoadRDD[K, V](
       case false =>
         // for node partition
         val result = new Array[Partition](blocksGroupBy.length)
-        for (i <- 0 until result.length) {
+        for (i <- result.indices) {
           result(i) = new CarbonNodePartition(id, i, blocksGroupBy(i)._1, blocksGroupBy(i)._2)
         }
         result
@@ -155,13 +147,13 @@ class CarbonDataLoadRDD[K, V](
   }
 
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass().getName())
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
       var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
       var partitionID = "0"
       var model: CarbonLoadModel = _
 
-      try { {
+      try {
         val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
         if (null == carbonPropertiesFilePath) {
           System.setProperty("carbon.properties.filepath",
@@ -184,17 +176,16 @@ class CarbonDataLoadRDD[K, V](
 
         dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
 
-        if (model.isRetentionRequest()) {
+        if (model.isRetentionRequest) {
           recreateAggregationTableForRetention
         }
-        else if (model.isAggLoadRequest()) {
+        else if (model.isAggLoadRequest) {
           dataloadStatus = createManualAggregateTable
         }
         else {
-          try { {
+          try {
             CarbonLoaderUtil.executeGraph(model, storeLocation, hdfsStoreLocation, kettleHomePath,
               currentRestructNumber)
-          }
           } catch {
             case e: DataLoadingException => if (e.getErrorCode ==
                                                 DataProcessorConstants.BAD_REC_FOUND) {
@@ -228,8 +219,6 @@ class CarbonDataLoadRDD[K, V](
             }
           }
         }
-      }
-
       } catch {
         case e: Exception =>
           dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
@@ -245,16 +234,16 @@ class CarbonDataLoadRDD[K, V](
             val blocksID = gernerateBlocksID
             carbonLoadModel.setBlocksID(blocksID)
             carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
-            if (carbonLoadModel.isDirectLoad()) {
+            if (carbonLoadModel.isDirectLoad) {
               model = carbonLoadModel.getCopyWithPartition(
-                split.serializableHadoopSplit.value.getPartition().getUniqueID(),
-                split.serializableHadoopSplit.value.getPartition().getFilesPath,
-                carbonLoadModel.getCsvHeader(), carbonLoadModel.getCsvDelimiter())
+                split.serializableHadoopSplit.value.getPartition.getUniqueID,
+                split.serializableHadoopSplit.value.getPartition.getFilesPath,
+                carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
             } else {
               model = carbonLoadModel.getCopyWithPartition(
-                split.serializableHadoopSplit.value.getPartition().getUniqueID())
+                split.serializableHadoopSplit.value.getPartition.getUniqueID)
             }
-            partitionID = split.serializableHadoopSplit.value.getPartition().getUniqueID()
+            partitionID = split.serializableHadoopSplit.value.getPartition.getUniqueID
             // get this partition data blocks and put it to global static map
             GraphGenerator.blockInfo.put(blocksID, split.partitionBlocksDetail)
             StandardLogService.setThreadName(partitionID, null)
@@ -268,13 +257,13 @@ class CarbonDataLoadRDD[K, V](
             carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
             // set this node blocks info to global static map
             GraphGenerator.blockInfo.put(blocksID, split.nodeBlocksDetail)
-            if (carbonLoadModel.isDirectLoad()) {
+            if (carbonLoadModel.isDirectLoad) {
               val filelist: java.util.List[String] = new java.util.ArrayList[String](
                 CarbonCommonConstants.CONSTANT_SIZE_TEN)
               CarbonQueryUtil.getAllFiles(carbonLoadModel.getFactFilePath, filelist,
                 FileFactory.getFileType(carbonLoadModel.getFactFilePath))
               model = carbonLoadModel.getCopyWithPartition(partitionID, filelist,
-                carbonLoadModel.getCsvHeader(), carbonLoadModel.getCsvDelimiter())
+                carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
             }
             else {
               model = carbonLoadModel.getCopyWithPartition(partitionID)
@@ -288,7 +277,7 @@ class CarbonDataLoadRDD[K, V](
        *
        * @return
        */
-      def gernerateBlocksID(): String = {
+      def gernerateBlocksID: String = {
         isTableSplitPartition match {
           case true =>
             carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" +
@@ -300,11 +289,11 @@ class CarbonDataLoadRDD[K, V](
         }
       }
 
-      def checkAndLoadAggregationTable(): String = {
+      def checkAndLoadAggregationTable: String = {
         val schema = model.getCarbonDataLoadSchema
         val aggTables = schema.getCarbonTable.getAggregateTablesName
         if (null != aggTables && !aggTables.isEmpty) {
-          val details = model.getLoadMetadataDetails.asScala.toSeq.toArray
+          val details = model.getLoadMetadataDetails.asScala.toArray
           val newSlice = CarbonCommonConstants.LOAD_FOLDER + loadCount
           var listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
           listOfLoadFolders = CarbonLoaderUtil.addNewSliceNameToList(newSlice, listOfLoadFolders)
@@ -334,7 +323,7 @@ class CarbonDataLoadRDD[K, V](
             logInfo("Aggregate tables creation successfull")
           }
         }
-        return dataloadStatus
+        dataloadStatus
       }
 
       def loadCubeSlices(listOfAllLoadFolders: java.util.List[String],
@@ -343,8 +332,8 @@ class CarbonDataLoadRDD[K, V](
         // TODO: Implement it
       }
 
-      def createManualAggregateTable(): String = {
-        val details = model.getLoadMetadataDetails.asScala.toSeq.toArray
+      def createManualAggregateTable: String = {
+        val details = model.getLoadMetadataDetails.asScala.toArray
         val listOfAllLoadFolders = CarbonQueryUtil.getListOfSlices(details)
         val listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
         val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
@@ -368,11 +357,11 @@ class CarbonDataLoadRDD[K, V](
         dataloadStatus
       }
 
-      def recreateAggregationTableForRetention() = {
+      def recreateAggregationTableForRetention = {
         val schema = model.getCarbonDataLoadSchema
         val aggTables = schema.getCarbonTable.getAggregateTablesName
         if (null != aggTables && !aggTables.isEmpty) {
-          val details = model.getLoadMetadataDetails.asScala.toSeq.toArray
+          val details = model.getLoadMetadataDetails.asScala.toArray
           val listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
           val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
           val listOfAllLoadFolder = CarbonQueryUtil.getListOfSlices(details)
@@ -406,14 +395,14 @@ class CarbonDataLoadRDD[K, V](
             return dataloadStatus
           }
         }
-        return dataloadStatus
+        dataloadStatus
       }
 
       def loadAggregationTable(listOfLoadFolders: java.util.List[String],
           listOfUpdatedLoadFolders: java.util.List[String],
           loadFolders: Array[String]): String = {
         // TODO: Implement it
-        return dataloadStatus
+        dataloadStatus
       }
 
       var finished = false
@@ -432,7 +421,7 @@ class CarbonDataLoadRDD[K, V](
       override def next(): (K, V) = {
         val loadMetadataDetails = new LoadMetadataDetails()
         loadMetadataDetails.setPartitionCount(partitionID)
-        loadMetadataDetails.setLoadStatus(dataloadStatus.toString())
+        loadMetadataDetails.setLoadStatus(dataloadStatus)
         result.getKey(loadCount, loadMetadataDetails)
       }
     }

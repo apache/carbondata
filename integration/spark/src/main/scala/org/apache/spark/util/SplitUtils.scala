@@ -34,9 +34,6 @@ object SplitUtils {
   /**
    * get file splits,return Array[BlockDetails], if file path is empty,then return empty Array
    *
-   * @param path
-   * @param sc
-   * @return
    */
   def getSplits(path: String, sc: SparkContext): Array[BlockDetails] = {
     val filePath = FileUtils.getPaths(path)

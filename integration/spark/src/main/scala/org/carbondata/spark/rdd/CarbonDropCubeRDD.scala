@@ -21,7 +21,6 @@ import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
 
-import org.carbondata.core.carbon.metadata.CarbonMetadata
 import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
 import org.carbondata.spark.KeyVal
 import org.carbondata.spark.util.CarbonQueryUtil
@@ -39,7 +38,7 @@ class CarbonDropCubeRDD[K, V](
   override def getPartitions: Array[Partition] = {
     val splits = CarbonQueryUtil.getTableSplits(schemaName, cubeName, null, partitioner)
     val result = new Array[Partition](splits.length)
-    for (i <- 0 until result.length) {
+    for (i <- result.indices) {
       result(i) = new CarbonLoadPartition(id, i, splits(i))
     }
     result
@@ -52,8 +51,6 @@ class CarbonDropCubeRDD[K, V](
 
       val partitionCount = partitioner.partitionCount
       for (a <- 0 until partitionCount) {
-        val cubeUniqueName = schemaName + "_" + a + "_" + cubeName + "_" + a
-        val carbonTable = CarbonMetadata.getInstance().getCarbonTable(cubeUniqueName)
         // TODO: Clear Btree from memory
       }
 
@@ -62,7 +59,7 @@ class CarbonDropCubeRDD[K, V](
 
       override def hasNext: Boolean = {
         if (!finished && !havePair) {
-          finished = !false
+          finished = true
           havePair = !finished
         }
         !finished

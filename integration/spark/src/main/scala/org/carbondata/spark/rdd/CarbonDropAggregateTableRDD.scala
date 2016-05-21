@@ -29,11 +29,11 @@ import org.carbondata.spark.util.CarbonQueryUtil
 
 
 class CarbonDropAggregateTableRDD[K, V](
-                                         sc: SparkContext,
-                                         keyClass: KeyVal[K, V],
-                                         schemaName: String,
-                                         cubeName: String,
-                                         partitioner: Partitioner)
+    sc: SparkContext,
+    keyClass: KeyVal[K, V],
+    schemaName: String,
+    cubeName: String,
+    partitioner: Partitioner)
   extends RDD[(K, V)](sc, Nil) with Logging {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
@@ -41,7 +41,7 @@ class CarbonDropAggregateTableRDD[K, V](
   override def getPartitions: Array[Partition] = {
     val splits = CarbonQueryUtil.getTableSplits(schemaName, cubeName, null, partitioner)
     val result = new Array[Partition](splits.length)
-    for (i <- 0 until result.length) {
+    for (i <- result.indices) {
       result(i) = new CarbonLoadPartition(id, i, splits(i))
     }
     result
@@ -53,14 +53,12 @@ class CarbonDropAggregateTableRDD[K, V](
       logInfo("Input split: " + split.serializableHadoopSplit.value)
       // TODO call CARBON delete API
 
-      // Register an on-task-completion callback to close the input stream.
-      context.addOnCompleteCallback(() => close())
       var havePair = false
       var finished = false
 
       override def hasNext: Boolean = {
         if (!finished && !havePair) {
-          finished = !false
+          finished = true
           havePair = !finished
         }
         !finished
@@ -75,14 +73,6 @@ class CarbonDropAggregateTableRDD[K, V](
         val value = new CarbonValue(null)
         keyClass.getKey(row, value)
       }
-
-      private def close() {
-        try {
-          //          reader.close()
-        } catch {
-          case e: Exception => logWarning("Exception in RecordReader.close()", e)
-        }
-      }
     }
     iter
   }
@@ -90,7 +80,7 @@ class CarbonDropAggregateTableRDD[K, V](
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val theSplit = split.asInstanceOf[CarbonLoadPartition]
     val s = theSplit.serializableHadoopSplit.value.getLocations.asScala
-    logInfo("Host Name : " + s(0) + s.length)
+    logInfo("Host Name : " + s.head + s.length)
     s
   }
 }

@@ -54,15 +54,14 @@ import org.carbondata.spark.rdd.CarbonQueryRDD
 import org.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil, QueryPlanUtil}
 
 case class CarbonCubeScan(
-
-                           var attributes: Seq[Attribute],
-                           relation: CarbonRelation,
-                           dimensionPredicates: Seq[Expression],
-                           aggExprs: Option[Seq[Expression]],
-                           sortExprs: Option[Seq[SortOrder]],
-                           limitExpr: Option[Expression],
-                           isGroupByPresent: Boolean,
-                           detailQuery: Boolean = false)(@transient val oc: SQLContext)
+    var attributes: Seq[Attribute],
+    relation: CarbonRelation,
+    dimensionPredicates: Seq[Expression],
+    aggExprs: Option[Seq[Expression]],
+    sortExprs: Option[Seq[SortOrder]],
+    limitExpr: Option[Expression],
+    isGroupByPresent: Boolean,
+    detailQuery: Boolean = false)(@transient val oc: SQLContext)
   extends LeafNode {
 
   val cubeName = relation.cubeName
@@ -76,19 +75,19 @@ case class CarbonCubeScan(
   @transient val carbonCatalog = sqlContext.catalog.asInstanceOf[CarbonMetastoreCatalog]
 
   def processAggregateExpr(plan: CarbonQueryPlan, currentAggregate: AggregateExpression1,
-                           queryOrder: Int): Int = {
+      queryOrder: Int): Int = {
 
     currentAggregate match {
       case SumCarbon(posLiteral@PositionLiteral(attr: AttributeReference, _), _) =>
         val msrs = selectedMsrs.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
-        if (msrs.length > 0) {
+        if (msrs.nonEmpty) {
           val m1 = new QueryMeasure(attr.name)
           m1.setAggregateFunction(CarbonCommonConstants.SUM)
           m1.setQueryOrder(queryOrder)
           plan.addMeasure(m1)
         } else {
           val dims = selectedDims.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
-          if (dims.length > 0) {
+          if (dims.nonEmpty) {
             val d1 = new QueryDimension(attr.name)
             d1.setQueryOrder(queryOrder)
             plan.addAggDimAggInfo(d1.getColumnName, "sum", d1.getQueryOrder)
@@ -99,14 +98,14 @@ case class CarbonCubeScan(
 
       case CountCarbon(posLiteral@PositionLiteral(attr: AttributeReference, _)) =>
         val msrs = selectedMsrs.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
-        if (msrs.length > 0) {
+        if (msrs.nonEmpty) {
           val m1 = new QueryMeasure(attr.name)
           m1.setAggregateFunction(CarbonCommonConstants.COUNT)
           m1.setQueryOrder(queryOrder)
           plan.addMeasure(m1)
         } else {
           val dims = selectedDims.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
-          if (dims.length > 0) {
+          if (dims.nonEmpty) {
             val d1 = new QueryDimension(attr.name)
             d1.setQueryOrder(queryOrder)
             plan.addAggDimAggInfo(d1.getColumnName, "count", d1.getQueryOrder)
@@ -136,14 +135,14 @@ case class CarbonCubeScan(
         queryOrder + 1
       case CountDistinctCarbon(posLiteral@PositionLiteral(attr: AttributeReference, _)) =>
         val msrs = selectedMsrs.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
-        if (msrs.length > 0) {
+        if (msrs.nonEmpty) {
           val m1 = new QueryMeasure(attr.name)
           m1.setAggregateFunction(CarbonCommonConstants.DISTINCT_COUNT)
           m1.setQueryOrder(queryOrder)
           plan.addMeasure(m1)
         } else {
           val dims = selectedDims.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
-          if (dims.length > 0) {
+          if (dims.nonEmpty) {
             val d1 = new QueryDimension(attr.name)
             d1.setQueryOrder(queryOrder)
             plan.addAggDimAggInfo(d1.getColumnName, "distinct-count", d1.getQueryOrder)
@@ -154,14 +153,14 @@ case class CarbonCubeScan(
 
       case AverageCarbon(posLiteral@PositionLiteral(attr: AttributeReference, _), _) =>
         val msrs = selectedMsrs.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
-        if (msrs.length > 0) {
+        if (msrs.nonEmpty) {
           val m1 = new QueryMeasure(attr.name)
           m1.setAggregateFunction(CarbonCommonConstants.AVERAGE)
           m1.setQueryOrder(queryOrder)
           plan.addMeasure(m1)
         } else {
           val dims = selectedDims.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
-          if (dims.length > 0) {
+          if (dims.nonEmpty) {
             val d1 = new QueryDimension(attr.name)
             d1.setQueryOrder(queryOrder)
             plan.addAggDimAggInfo(d1.getColumnName, "avg", d1.getQueryOrder)
@@ -172,7 +171,7 @@ case class CarbonCubeScan(
 
       case MinCarbon(posLiteral@PositionLiteral(attr: AttributeReference, _), _) =>
         val msrs = selectedMsrs.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
-        if (msrs.length > 0) {
+        if (msrs.nonEmpty) {
           val m1 = new QueryMeasure(attr.name)
           m1.setAggregateFunction(CarbonCommonConstants.MIN)
           m1.setQueryOrder(queryOrder)
@@ -190,14 +189,14 @@ case class CarbonCubeScan(
 
       case MaxCarbon(posLiteral@PositionLiteral(attr: AttributeReference, _), _) =>
         val msrs = selectedMsrs.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
-        if (msrs.length > 0) {
+        if (msrs.nonEmpty) {
           val m1 = new QueryMeasure(attr.name)
           m1.setAggregateFunction(CarbonCommonConstants.MAX)
           m1.setQueryOrder(queryOrder)
           plan.addMeasure(m1)
         } else {
           val dims = selectedDims.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
-          if (dims.length > 0) {
+          if (dims.nonEmpty) {
             val d1 = new QueryDimension(attr.name)
             d1.setQueryOrder(queryOrder)
             plan.addAggDimAggInfo(d1.getColumnName, "max", d1.getQueryOrder)
@@ -208,7 +207,7 @@ case class CarbonCubeScan(
 
       case SumDistinctCarbon(posLiteral@PositionLiteral(attr: AttributeReference, _), _) =>
         val msrs = selectedMsrs.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
-        if (msrs.length > 0) {
+        if (msrs.nonEmpty) {
           val m1 = new QueryMeasure(attr.name)
           m1.setAggregateFunction(CarbonCommonConstants.SUM_DISTINCT)
           m1.setQueryOrder(queryOrder)
@@ -239,7 +238,7 @@ case class CarbonCubeScan(
     attributes.map(
       attr => {
         val carbonDimension = carbonTable.getDimensionByName(carbonTable.getFactTableName
-            , attr.name)
+          , attr.name)
         if (carbonDimension != null) {
           // TODO if we can add ordina in carbonDimension, it will be good
           allDims += attr.name
@@ -248,8 +247,8 @@ case class CarbonCubeScan(
           queryOrder = queryOrder + 1
           selectedDims += dim
         } else {
-          val carbonMeasure = carbonTable.getMeasureByName(carbonTable.getFactTableName()
-              , attr.name)
+          val carbonMeasure = carbonTable.getMeasureByName(carbonTable.getFactTableName
+            , attr.name)
           if (carbonMeasure != null) {
             val m1 = new QueryMeasure(attr.name)
             m1.setQueryOrder(queryOrder)
@@ -264,12 +263,12 @@ case class CarbonCubeScan(
     // measure and dimensions
     // Unknown aggregates & Expressions will use custom aggregator
     aggExprs match {
-      case Some(a: Seq[Expression]) if (!forceDetailedQuery) =>
+      case Some(a: Seq[Expression]) if !forceDetailedQuery =>
         a.foreach {
           case attr@AttributeReference(_, _, _, _) => // Add all the references to carbon query
             val carbonDimension = selectedDims
               .filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
-            if (carbonDimension.size > 0) {
+            if (carbonDimension.nonEmpty) {
               val dim = new QueryDimension(attr.name)
               dim.setQueryOrder(queryOrder)
               plan.addDimension(dim)
@@ -277,7 +276,7 @@ case class CarbonCubeScan(
             } else {
               val carbonMeasure = selectedMsrs
                 .filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
-              if (carbonMeasure.size > 0) {
+              if (carbonMeasure.nonEmpty) {
                 // added by vishal as we are adding for dimension so need to add to measure list
                 // Carbon does not support group by on measure column so throwing exception to
                 // make it detail query
@@ -289,14 +288,14 @@ case class CarbonCubeScan(
                 // So, let's fall back to detailed query flow
                 throw new Exception(
                   "Some attributes referred looks derived columns. So, force to detailequery " +
-                    attr.name)
+                  attr.name)
               }
             }
             outputColumns += attr
-          case par: Alias if par.children(0).isInstanceOf[AggregateExpression1] =>
+          case par: Alias if par.children.head.isInstanceOf[AggregateExpression1] =>
             outputColumns += par.toAttribute
             queryOrder = processAggregateExpr(plan,
-              par.children(0).asInstanceOf[AggregateExpression1], queryOrder)
+              par.children.head.asInstanceOf[AggregateExpression1], queryOrder)
 
           case _ => forceDetailedQuery = true
         }
@@ -305,18 +304,18 @@ case class CarbonCubeScan(
 
     if (forceDetailedQuery) {
       // First clear the model if Msrs, Expressions and AggDimAggInfo filled
-      plan.getDimensions().clear()
-      plan.getMeasures().clear()
-      plan.getDimAggregatorInfos().clear()
-      plan.getExpressions().clear()
+      plan.getDimensions.clear()
+      plan.getMeasures.clear()
+      plan.getDimAggregatorInfos.clear()
+      plan.getExpressions.clear()
 
       // Fill the selected dimensions & measures obtained from
       // attributes to query plan  for detailed query
-      selectedDims.foreach(plan.addDimension(_))
-      selectedMsrs.foreach(plan.addMeasure(_))
+      selectedDims.foreach(plan.addDimension)
+      selectedMsrs.foreach(plan.addMeasure)
     }
     else {
-      attributes = outputColumns.toSeq
+      attributes = outputColumns
     }
 
     val orderList = new ArrayList[QueryDimension]()
@@ -325,28 +324,28 @@ case class CarbonCubeScan(
     sortExprs match {
       case Some(a: Seq[SortOrder]) =>
         a.foreach {
-          case SortOrder(SumCarbon(attr: AttributeReference, _), order) => plan.getMeasures()
-            .asScala.filter(m => m.getColumnName().equalsIgnoreCase(attr.name))(0)
+          case SortOrder(SumCarbon(attr: AttributeReference, _), order) => plan.getMeasures
+            .asScala.filter(m => m.getColumnName.equalsIgnoreCase(attr.name)).head
             .setSortOrder(getSortDirection(order))
-          case SortOrder(CountCarbon(attr: AttributeReference), order) => plan.getMeasures()
-            .asScala.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))(0)
+          case SortOrder(CountCarbon(attr: AttributeReference), order) => plan.getMeasures
+            .asScala.filter(m => m.getColumnName.equalsIgnoreCase(attr.name)).head
             .setSortOrder(getSortDirection(order))
-          case SortOrder(CountDistinctCarbon(attr: AttributeReference), order) => plan.getMeasures()
-            .asScala.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))(0)
+          case SortOrder(CountDistinctCarbon(attr: AttributeReference), order) => plan.getMeasures
+            .asScala.filter(m => m.getColumnName.equalsIgnoreCase(attr.name)).head
             .setSortOrder(getSortDirection(order))
-          case SortOrder(AverageCarbon(attr: AttributeReference, _), order) => plan.getMeasures()
-            .asScala.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))(0)
+          case SortOrder(AverageCarbon(attr: AttributeReference, _), order) => plan.getMeasures
+            .asScala.filter(m => m.getColumnName.equalsIgnoreCase(attr.name)).head
             .setSortOrder(getSortDirection(order))
           case SortOrder(attr: AttributeReference, order) =>
             val dim = plan.getDimensions
               .asScala.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
-            if (!dim.isEmpty) {
-              dim(0).setSortOrder(getSortDirection(order))
-              orderList.add(dim(0))
+            if (dim.nonEmpty) {
+              dim.head.setSortOrder(getSortDirection(order))
+              orderList.add(dim.head)
             } else {
               allSortExprPushed = false
             }
-          case _ => allSortExprPushed = false
+          case _ => allSortExprPushed = false;
         }
       case _ =>
     }
@@ -354,18 +353,20 @@ case class CarbonCubeScan(
     plan.setSortedDimemsions(orderList)
 
     // limit can be pushed down only if sort is not present or all sort expressions are pushed
-    if (sortExprs.isEmpty && forceDetailedQuery) limitExpr match {
-      case Some(IntegerLiteral(limit)) =>
-        // if (plan.getMeasures.size() == 0 && plan.getDimAggregatorInfos.size() == 0) {
-        plan.setLimit(limit)
+    if (sortExprs.isEmpty && forceDetailedQuery) {
+      limitExpr match {
+        case Some(IntegerLiteral(limit)) =>
+          // if (plan.getMeasures.size() == 0 && plan.getDimAggregatorInfos.size() == 0) {
+          plan.setLimit(limit)
         // }
-      case _ =>
+        case _ =>
+      }
     }
     plan.setDetailQuery(forceDetailedQuery)
     plan.setOutLocationPath(
       CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS))
     plan.setQueryId(System.nanoTime() + "")
-    if (!dimensionPredicates.isEmpty) {
+    if (dimensionPredicates.nonEmpty) {
       val exps = preProcessExpressions(dimensionPredicates)
       val expressionVal = transformExpression(exps.head)
       // adding dimension used in expression in querystats
@@ -421,7 +422,7 @@ case class CarbonCubeScan(
         CarbonScalaUtil.convertSparkToCarbonDataType(dataType))
       case Literal(name, dataType) => new
           CarbonLiteralExpression(name, CarbonScalaUtil.convertSparkToCarbonDataType(dataType))
-      case Cast(left, right) if (!left.isInstanceOf[Literal]) => transformExpression(left)
+      case Cast(left, right) if !left.isInstanceOf[Literal] => transformExpression(left)
       case _ =>
         new SparkUnknownExpression(expr.transform {
           case AttributeReference(name, dataType, _, _) =>
@@ -440,7 +441,7 @@ case class CarbonCubeScan(
 
 
   def addPushdownFilters(keys: Seq[Expression], filters: Array[Array[Expression]],
-                         conditions: Option[Expression]) {
+      conditions: Option[Expression]) {
 
     // TODO Values in the IN filter is duplicate. replace the list with set
     val buffer = new ArrayBuffer[Expression]
@@ -463,10 +464,10 @@ case class CarbonCubeScan(
   def inputRdd: CarbonQueryRDD[CarbonKey, CarbonValue] = {
     val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     // Update the FilterExpressions with extra conditions added through join pushdown
-    if (!extraPreds.isEmpty) {
-      val exps = preProcessExpressions(extraPreds.toSeq)
+    if (extraPreds.nonEmpty) {
+      val exps = preProcessExpressions(extraPreds)
       val expressionVal = transformExpression(exps.head)
-      val oldExpressionVal = buildCarbonPlan.getFilterExpression()
+      val oldExpressionVal = buildCarbonPlan.getFilterExpression
       if (null == oldExpressionVal) {
         buildCarbonPlan.setFilterExpression(expressionVal)
       } else {
@@ -485,27 +486,29 @@ case class CarbonCubeScan(
     buildCarbonPlan.setQueryId(oc.getConf("queryId", System.nanoTime() + ""))
 
     LOG.info("Selected Table to Query ****** "
-        + model.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
+             + model.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
 
     val cubeCreationTime = carbonCatalog.getCubeCreationTime(relation.schemaName, cubeName)
     val schemaLastUpdatedTime =
       carbonCatalog.getSchemaLastUpdatedTime(relation.schemaName, cubeName)
     val big = new CarbonQueryRDD(
-        oc.sparkContext,
-        model,
-        buildCarbonPlan.getFilterExpression,
-        kv,
-        conf,
-        cubeCreationTime,
-        schemaLastUpdatedTime,
-        carbonCatalog.storePath)
+      oc.sparkContext,
+      model,
+      buildCarbonPlan.getFilterExpression,
+      kv,
+      conf,
+      cubeCreationTime,
+      schemaLastUpdatedTime,
+      carbonCatalog.storePath)
     big
   }
 
   def doExecute(): RDD[InternalRow] = {
-    def toType(obj: Any): Any = obj match {
-      case s: String => UTF8String.fromString(s)
-      case _ => obj
+    def toType(obj: Any): Any = {
+      obj match {
+        case s: String => UTF8String.fromString(s)
+        case _ => obj
+      }
     }
     // count(*) query executed in driver by querying from Btree
     if (buildCarbonPlan.isCountStarQuery && null == buildCarbonPlan.getFilterExpression) {
@@ -524,7 +527,7 @@ case class CarbonCubeScan(
     } else {
       // all the other queries are sent to executor
       inputRdd.map { row =>
-        val dims = row._1.getKey.map(toType).toArray
+        val dims = row._1.getKey.map(toType)
         val values = dims
         new GenericMutableRow(values.asInstanceOf[Array[Any]])
       }

@@ -17,8 +17,7 @@
 
 package org.carbondata.spark.rdd
 
-import java.text.SimpleDateFormat
-import java.util.{Date, List}
+import java.util.List
 
 import scala.collection.JavaConverters._
 
@@ -52,19 +51,14 @@ class CarbonMergerRDD[K, V](
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
-  private val jobtrackerId: String = {
-    val formatter = new SimpleDateFormat("yyyyMMddHHmm")
-    formatter.format(new Date())
-  }
-
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val iter = new Iterator[(K, V)] {
       var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
       val split = theSplit.asInstanceOf[CarbonLoadPartition]
       logInfo("Input split: " + split.serializableHadoopSplit.value)
-      val partitionId = split.serializableHadoopSplit.value.getPartition().getUniqueID()
+      val partitionId = split.serializableHadoopSplit.value.getPartition.getUniqueID
       val model = carbonLoadModel
-        .getCopyWithPartition(split.serializableHadoopSplit.value.getPartition().getUniqueID())
+        .getCopyWithPartition(split.serializableHadoopSplit.value.getPartition.getUniqueID)
 
       val mergedLoadMetadataDetails = CarbonDataMergerUtil
         .executeMerging(model, storeLocation, hdfsStoreLocation, currentRestructNumber,
@@ -73,7 +67,7 @@ class CarbonMergerRDD[K, V](
       model.setLoadMetadataDetails(CarbonUtil
         .readLoadMetadata(metadataFilePath).toList.asJava)
 
-      if (mergedLoadMetadataDetails == true) {
+      if (mergedLoadMetadataDetails) {
         CarbonLoaderUtil.copyMergedLoadToHDFS(model, currentRestructNumber, mergedLoadName)
         dataloadStatus = checkAndLoadAggregationTable
 
@@ -84,7 +78,7 @@ class CarbonMergerRDD[K, V](
 
       override def hasNext: Boolean = {
         if (!finished && !havePair) {
-          finished = !false
+          finished = true
           havePair = !finished
         }
         !finished
@@ -99,12 +93,12 @@ class CarbonMergerRDD[K, V](
       }
 
 
-      def checkAndLoadAggregationTable(): String = {
+      def checkAndLoadAggregationTable: String = {
         var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
         val carbonTable = model.getCarbonDataLoadSchema.getCarbonTable
         val aggTables = carbonTable.getAggregateTablesName
         if (null != aggTables && !aggTables.isEmpty) {
-          val details = model.getLoadMetadataDetails.asScala.toSeq.toArray
+          val details = model.getLoadMetadataDetails.asScala.toArray
           val newSlice = CarbonCommonConstants.LOAD_FOLDER + mergedLoadName
           var listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
           listOfLoadFolders = CarbonLoaderUtil.addNewSliceNameToList(newSlice, listOfLoadFolders)
@@ -167,7 +161,7 @@ class CarbonMergerRDD[K, V](
           loadFolders: Array[String]): String = {
         loadFolders.foreach { loadFolder =>
           val restructNumber = CarbonUtil.getRestructureNumber(loadFolder, model.getTableName)
-          try { {
+          try {
             if (CarbonLoaderUtil
               .isSliceValid(loadFolder, listOfLoadFolders, listOfUpdatedLoadFolders,
                 model.getTableName)) {
@@ -179,7 +173,6 @@ class CarbonMergerRDD[K, V](
               CarbonLoaderUtil
                 .createEmptyLoadFolder(model, loadFolder, hdfsStoreLocation, restructNumber)
             }
-          }
           } catch {
             case e: Exception => dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
           } finally {
@@ -193,7 +186,7 @@ class CarbonMergerRDD[K, V](
             }
           }
         }
-        return CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
+        CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
       }
 
 
@@ -204,16 +197,16 @@ class CarbonMergerRDD[K, V](
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val theSplit = split.asInstanceOf[CarbonLoadPartition]
     val s = theSplit.serializableHadoopSplit.value.getLocations.asScala
-    logInfo("Host Name : " + s(0) + s.length)
+    logInfo("Host Name : " + s.head + s.length)
     s
   }
 
   override def getPartitions: Array[Partition] = {
     val splits = CarbonQueryUtil
-      .getTableSplits(carbonLoadModel.getDatabaseName(), carbonLoadModel.getTableName(), null,
+      .getTableSplits(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName, null,
         partitioner)
     val result = new Array[Partition](splits.length)
-    for (i <- 0 until result.length) {
+    for (i <- result.indices) {
       result(i) = new CarbonLoadPartition(id, i, splits(i))
     }
     result
