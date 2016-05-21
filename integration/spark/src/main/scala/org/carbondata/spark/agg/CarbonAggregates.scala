@@ -483,7 +483,7 @@ case class MaxFunctionCarbon(expr: Expression, base: AggregateExpression1, final
     val agg = resolution match {
       case s: MeasureAggregator => s
       case s =>
-        val dc = new MaxAggregato
+        val dc = new MaxAggregator;
         if (s != null) {
           dc.agg(s.toString.toDouble)
           dc.setNewValue(s.toString.toDouble)
@@ -526,7 +526,7 @@ case class MinFunctionCarbon(expr: Expression, base: AggregateExpression1, final
     val agg = resolution match {
       case s: MeasureAggregator => s
       case s =>
-        val dc: MeasureAggregator = new MinAggregator
+        val dc: MeasureAggregator = new MinAggregator;
         if (s != null) {
           dc.agg(s.toString.toDouble)
           dc.setNewValue(s.toString.toDouble)
@@ -625,7 +625,7 @@ case class CountDistinctFunctionCarbon(expr: Expression, base: AggregateExpressi
       case s: MeasureAggregator => s
       case null => null
       case s =>
-        val dc = new DistinctCountAggregatorObjectSet
+        val dc = new DistinctCountAggregatorObjectSet;
         dc.setNewValue(s.toString)
         dc
     }
@@ -660,7 +660,7 @@ case class CountDistinctFunctionCarbonFinal(expr: Expression, base: AggregateExp
       case s: MeasureAggregator => s
       case null => null
       case s =>
-        val dc = new DistinctCountAggregatorObjectSet
+        val dc = new DistinctCountAggregatorObjectSet;
         dc.setNewValue(s.toString)
         dc
     }
