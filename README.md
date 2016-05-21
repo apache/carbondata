@@ -1,22 +1,26 @@
 # CarbonData
-CarbonData is a fully indexed columnar and hadoop native datastore designed for fast analytics and multi-dimension query on big data.In customer benchmarks, CarbonData has been shown to manage Petabyte of data running on extraordinarily low-cost hardware and answers queries around 10 times faster than the current open source solutions (column-oriented SQL on Hadoop data-stores). 
+CarbonData is a new Apache Hadoop native file format for faster 
+interactive query using advanced columnar storage, index, compression 
+and encoding techniques to improve computing efficiency, in turn it will 
+help speedup queries an order of magnitude faster over PetaBytes of data. 
 
 ### Why CarbonData
-The CaronData file format provides a highly efficient way to store structured data,it was designed to overcome limitations of the other Hadoop file formats. 
-* CarbonData stores data along with index,the index is not stored separately but the carbondata itself is the index.Indexing helps to accelerate query performance and reduces the I/O scans to the minimum and reduces the CPU required for computation on the data.
-* CarbonData is designed to support very efficient compression and global encoding schemes,CarbonData can support actionable compression across data files for query engines to perform all processing on compressed/encoded data without having to convert the data. This improves the processing speed, especially for analytical queries. The data can be converted back to the user readable format just before returning the results to the user.
-* CarbonData is designed with various types of usecases in mind and provides flexible storage options. Data can be stored in completely columnar or row based formats or even in a mix of columnar and row based hybrid format.
-* CarbonData is designed to integrate into big data ecosystem, leverages Apache Hadoop,Apache Spark etc. for distributed query processing.
+Based on the below requirements, we investigated existing file formats in the Hadoop eco-system, but we could not find a suitable solution that can satisfy all the requirements at the same time,so we start designing CarbonData. 
+* Requirement1:Support big scan & only fetch a few columns 
+* Requirement2:Support primary key lookup response in sub-second. 
+* Requirement3:Support interactive OLAP-style query over big data which involve many filters in a query, this type of workload should response in seconds. 
+* Requirement4:Support fast individual record extraction which fetch all columns of the record. 
+* Requirement5:Support HDFS so that customer can leverage existing Hadoop cluster. 
 
 ### Features
-* Fast analytic queries in seconds using built-in index, optimized for interactive OLAP-style query, high through put scan query, low latency point query. 
-* Fast data loading speed and support incremental load in period of minutes. 5 mins near realtime loading should be supported
-* Support concurrent query.
-* Support time based data retention. 
-* Supports SQL based query interface.
+CarbonData file format is a columnar store in HDFS, it has many features that a modern columnar format has, such as splittable, compression schema ,complex data type etc. And CarbonData has following unique features:
+* Stores data along with index: it can significantly accelerate query performance and reduces the I/O scans and CPU resources, where there are filters in the query.  CarbonData index consists of multiple level of indices, a processing framework can leverage this index to reduce the task it needs to schedule and process, and it can also do skip scan in more finer grain unit (called blocklet) in task side scanning instead of scanning the whole file. 
+* Operable encoded data :Through supporting efficient compression and global encoding schemes, can query on compressed/encoded data, the data can be converted just before returning the results to the users, which is "late materialized". 
+* Column group: Allow multiple columns to form a column group that would be stored as row format. This reduces the row reconstruction cost at query time.
+* Supports for various use cases with one single Data format : like interactive OLAP-style query, Sequential Access (big scan), Random Access (narrow scan). 
 
 ### CarbonData File Structure and Format
-The online document at [CarbonData File Structure and Format](https://github.com/HuaweiBigData/carbondata/wiki/CarbonData-File-Structure-and-Format)
+The online document at [CarbonData File Format](https://github.com/HuaweiBigData/carbondata/wiki/CarbonData-File-Structure-and-Format)
 
 ### Building CarbonData
 Prerequisites for building CarbonData:
@@ -62,6 +66,9 @@ You can also make those setting to be the default by setting to the "Defaults ->
 #### Eclipse
 * Download the Scala IDE (preferred) or install the scala plugin to Eclipse.
 * Import the CarbonData Maven projects ("File" -> "Import" -> "Maven" -> "Existing Maven Projects" -> locate the CarbonData source directory).
+
+### Getting Started
+Read the [quick start](https://github.com/HuaweiBigData/carbondata/wiki/Quick-Start).
 
 ### Fork and Contribute
 This is an open source project for everyone, and we are always open to people who want to use this system or contribute to it. 
