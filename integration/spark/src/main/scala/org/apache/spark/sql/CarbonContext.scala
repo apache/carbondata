@@ -48,6 +48,7 @@ class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveCon
 
   experimental.extraStrategies = CarbonStrategy.getStrategy(self) :: Nil
 
+  @transient
   val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)
 
   override def sql(sql: String): SchemaRDD = {

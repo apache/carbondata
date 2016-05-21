@@ -358,9 +358,9 @@ case class AverageFunctionCarbon(expr: Expression, base: AggregateExpression1, f
         null
       } else {
         avg match {
-          case AvgBigDecimalAggregator =>
+          case avg: AvgBigDecimalAggregator =>
             Cast(Literal(avg.getBigDecimalValue), base.dataType).eval(null)
-          case AvgLongAggregator =>
+          case avg: AvgLongAggregator =>
             Cast(Literal(avg.getLongValue), base.dataType).eval(null)
           case _ =>
             Cast(Literal(avg.getDoubleValue), base.dataType).eval(null)
@@ -437,11 +437,11 @@ case class SumFunctionCarbon(expr: Expression, base: AggregateExpression1, final
         var dc: MeasureAggregator = null
         if (s != null) {
           s match {
-            case java.math.BigDecimal =>
+            case bd: java.math.BigDecimal =>
               dc = new SumBigDecimalAggregator
               dc.agg(new java.math.BigDecimal(s.toString))
               dc.setNewValue(new java.math.BigDecimal(s.toString))
-            case Long =>
+            case l: Long =>
               dc = new SumLongAggregator
               dc.agg(s.toString.toLong)
               dc.setNewValue(s.toString.toLong)
@@ -469,9 +469,9 @@ case class SumFunctionCarbon(expr: Expression, base: AggregateExpression1, final
         null
       } else {
         sum match {
-          case SumBigDecimalAggregator =>
+          case s: SumBigDecimalAggregator =>
             Cast(Literal(sum.getBigDecimalValue), base.dataType).eval(input)
-          case SumLongAggregator =>
+          case s: SumLongAggregator =>
             Cast(Literal(sum.getLongValue), base.dataType).eval(input)
           case _ =>
             Cast(Literal(sum.getDoubleValue), base.dataType).eval(input)
@@ -600,7 +600,7 @@ case class SumDisctinctFunctionCarbon(expr: Expression, base: AggregateExpressio
           case Int =>
             dc = new SumDistinctLongAggregator
             dc.setNewValue(s.toString.toLong)
-          case java.math.BigDecimal =>
+          case bd: java.math.BigDecimal =>
             dc = new SumDistinctBigDecimalAggregator
             dc.setNewValue(new java.math.BigDecimal(s.toString))
           case _ =>

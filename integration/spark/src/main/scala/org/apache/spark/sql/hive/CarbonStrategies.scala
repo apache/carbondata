@@ -211,7 +211,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
             val resolvedTable = sqlContext.executePlan(CarbonHiveSyntax.parse(d.sql)).analyzed
             planLater(resolvedTable) :: Nil
           } catch {
-            case Exception => ExecutedCommand(d) :: Nil
+            case e: Exception => ExecutedCommand(d) :: Nil
           }
         case DescribeFormattedCommand(sql, tblIdentifier) =>
           val isCube = CarbonEnv.getInstance(sqlContext).carbonCatalog
@@ -258,7 +258,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           carbonScan(projectList, predicates, carbonRelation.carbonRelation,
             Some(partialComputation), substitutesortExprs, limitExpr, groupingExpressions.nonEmpty)
         } catch {
-          case Exception => null
+          case e: Exception => null
         }
 
       if (s != null) {

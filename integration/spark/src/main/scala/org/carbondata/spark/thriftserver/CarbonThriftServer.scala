@@ -40,7 +40,7 @@ object CarbonThriftServer {
     try {
       Thread.sleep(Integer.parseInt(warmUpTime))
     } catch {
-      case Exception =>
+      case e: Exception =>
         val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
         LOG.error("Wrong value for carbon.spark.warmUpTime " + warmUpTime +
                   "Using default Value and proceeding")
