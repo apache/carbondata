@@ -485,7 +485,7 @@ case class MaxFunctionCarbon(expr: Expression, base: AggregateExpression1, final
       case s =>
         val dc = new MaxAggregator;
         if (s != null) {
-          dc.agg(s.toString.toDouble)
+          dc.agg(s.toString.toDouble);
           dc.setNewValue(s.toString.toDouble)
       }
       dc
@@ -528,7 +528,7 @@ case class MinFunctionCarbon(expr: Expression, base: AggregateExpression1, final
       case s =>
         val dc: MeasureAggregator = new MinAggregator;
         if (s != null) {
-          dc.agg(s.toString.toDouble)
+          dc.agg(s.toString.toDouble);
           dc.setNewValue(s.toString.toDouble)
       }
       dc
@@ -626,7 +626,7 @@ case class CountDistinctFunctionCarbon(expr: Expression, base: AggregateExpressi
       case null => null
       case s =>
         val dc = new DistinctCountAggregatorObjectSet;
-        dc.setNewValue(s.toString)
+        dc.setNewValue(s.toString);
         dc
     }
     if (agg == null) {
@@ -661,7 +661,7 @@ case class CountDistinctFunctionCarbonFinal(expr: Expression, base: AggregateExp
       case null => null
       case s =>
         val dc = new DistinctCountAggregatorObjectSet;
-        dc.setNewValue(s.toString)
+        dc.setNewValue(s.toString);
         dc
     }
     if (agg == null) {
@@ -765,11 +765,11 @@ case class PositionLiteral(expr: Expression, intermediateDataType: DataType)
   override def nullable: Boolean = false
 
   type EvaluatedType = Any
-  var position = -1
+  var position = -1;
 
   def setPosition(pos: Int): Unit = position = pos
 
-  override def toString: String = s"PositionLiteral($position : $expr)"
+  override def toString: String = s"PositionLiteral($position : $expr)";
 
   override def eval(input: InternalRow): Any = {
     if (position != -1) {
