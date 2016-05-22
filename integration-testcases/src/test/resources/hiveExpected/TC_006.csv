@@ -1,0 +1,2 @@
+tableName StringType,isTemporary BooleanType
+bandwidth_1,false
