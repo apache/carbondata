@@ -43,7 +43,6 @@
     <module>processing</module>
     <module>hadoop</module>
     <module>integration/spark</module>
-	<module>integration-testcases</module>
     <module>assembly</module>
     <module>examples</module>
   </modules>
@@ -113,6 +112,12 @@
       <properties>
         <hadoop.version>2.7.2</hadoop.version>
       </properties>
+    </profile>
+    <profile>
+      <id>integration-test</id>
+      <modules>
+        <module>integration-testcases</module>
+      </modules>
     </profile>
   </profiles>
 </project>
