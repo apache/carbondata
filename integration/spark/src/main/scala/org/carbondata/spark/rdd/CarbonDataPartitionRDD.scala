@@ -67,12 +67,9 @@ class CarbonDataPartitionRDD[K, V](
   override def getPartitions: Array[Partition] = {
     val splits = CarbonQueryUtil
       .getPartitionSplits(sourcePath, partitioner.nodeList, partitioner.partitionCount)
-    //
-    val result = new Array[Partition](splits.length)
-    for (i <- result.indices) {
-      result(i) = new CarbonSparkRawDataPartition(id, i, splits(i))
+    splits.zipWithIndex.map {s =>
+      new CarbonSparkRawDataPartition(id, s._2, s._1)
     }
-    result
   }
 
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {

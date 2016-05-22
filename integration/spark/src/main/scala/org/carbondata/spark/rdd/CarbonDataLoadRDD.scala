@@ -124,21 +124,17 @@ class CarbonDataLoadRDD[K, V](
             carbonLoadModel.getTableName, null, partitioner)
         }
 
-        val result = new Array[Partition](splits.length)
-        for (i <- result.indices) {
+        splits.zipWithIndex.map {s =>
           // filter the same partition unique id, because only one will match, so get 0 element
           val blocksDetails: Array[BlockDetails] = blocksGroupBy.filter(p =>
-            p._1 == splits(i).getPartition.getUniqueID)(0)._2
-          result(i) = new CarbonTableSplitPartition(id, i, splits(i), blocksDetails)
+            p._1 == s._1.getPartition.getUniqueID)(0)._2
+          new CarbonTableSplitPartition(id, s._2, s._1, blocksDetails)
         }
-        result
       case false =>
         // for node partition
-        val result = new Array[Partition](blocksGroupBy.length)
-        for (i <- result.indices) {
-          result(i) = new CarbonNodePartition(id, i, blocksGroupBy(i)._1, blocksGroupBy(i)._2)
+        blocksGroupBy.zipWithIndex.map{b =>
+          new CarbonNodePartition(id, b._2, b._1._1, b._1._2)
         }
-        result
     }
   }
 

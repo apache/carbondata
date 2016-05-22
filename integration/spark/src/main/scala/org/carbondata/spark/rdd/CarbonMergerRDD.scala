@@ -205,11 +205,9 @@ class CarbonMergerRDD[K, V](
     val splits = CarbonQueryUtil
       .getTableSplits(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName, null,
         partitioner)
-    val result = new Array[Partition](splits.length)
-    for (i <- result.indices) {
-      result(i) = new CarbonLoadPartition(id, i, splits(i))
+    splits.zipWithIndex.map { s=>
+      new CarbonLoadPartition(id, s._2, s._1)
     }
-    result
   }
 
   override def checkpoint() {

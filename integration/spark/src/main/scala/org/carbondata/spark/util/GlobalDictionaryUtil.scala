@@ -257,12 +257,11 @@ object GlobalDictionaryUtil extends Logging {
 
   def createDataFormat(delimiters: Array[String]): DataFormat = {
     if (ArrayUtils.isNotEmpty(delimiters)) {
-      val patterns = new Array[Pattern](delimiters.length)
-      for (i <- patterns.indices) {
-        patterns(i) = Pattern.compile(if (delimiters(i) == null) {
+      val patterns = delimiters.map { d =>
+        Pattern.compile(if (d == null) {
           ""
         } else {
-          delimiters(i)
+          d
         })
       }
       DataFormat(delimiters, 0, patterns)
