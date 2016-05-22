@@ -40,7 +40,7 @@ class CarbonDropAggregateTableRDD[K, V](
 
   override def getPartitions: Array[Partition] = {
     val splits = CarbonQueryUtil.getTableSplits(schemaName, cubeName, null, partitioner)
-    splits.zipWithIndex.map { s=>
+    splits.zipWithIndex.map { s =>
       new CarbonLoadPartition(id, s._2, s._1)
     }
   }

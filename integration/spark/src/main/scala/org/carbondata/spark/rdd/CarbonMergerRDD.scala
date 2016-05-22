@@ -205,7 +205,7 @@ class CarbonMergerRDD[K, V](
     val splits = CarbonQueryUtil
       .getTableSplits(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName, null,
         partitioner)
-    splits.zipWithIndex.map { s=>
+    splits.zipWithIndex.map { s =>
       new CarbonLoadPartition(id, s._2, s._1)
     }
   }
