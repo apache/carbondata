@@ -23,7 +23,8 @@ import java.io.File
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.{NonRunningTests, QueryTest}
+
 import org.carbondata.core.util.CarbonProperties
 import org.scalatest.BeforeAndAfterAll
 
@@ -1358,7 +1359,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   }
 
   //DTS2015111809054
-  test("DTS2015111809054") {
+  test("DTS2015111809054", NonRunningTests) {
     sql(
       "create cube cubeDTS2015111809054 dimensions(key string,name string) measures(gamepointid " +
         "numeric,price numeric) with dimFile RELATION (FACT.deviceid=key) INCLUDE ( key,name)"
@@ -1399,7 +1400,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
 
 
   //DTS2015112710336
-  test("DTS2015112710336") {
+  test("DTS2015112710336", NonRunningTests) {
     sql(
       "create cube rock dimensions(key string as col1,name string as col3) measures(gamepointid " +
         "numeric,price numeric) with dimFile RELATION (FACT.deviceid=col1) INCLUDE ( col1,col3)"
@@ -1417,7 +1418,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   }
 
   //DTS2015111810813
-  test("DTS2015111810813") {
+  test("DTS2015111810813", NonRunningTests) {
     sql(
       "create cube single dimensions(imei string,deviceInformationId integer,mac string," +
         "productdate timestamp,updatetime timestamp) measures(gamePointId numeric,contractNumber " +
@@ -1437,7 +1438,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   }
 
   //DTS2015101504861
-  test("DTS2015101504861") {
+  test("DTS2015101504861", NonRunningTests) {
     sql(
       "create cube vard970 dimensions(imei string,productionDate timestamp,AMSize string," +
         "channelsId string,ActiveCountry string, Activecity string) measures(gamePointId numeric," +
@@ -1479,7 +1480,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   }
 
   //TC_1326
-  test("TC_1326") {
+  test("TC_1326", NonRunningTests) {
     sql(
       "create cube vardhanincomp dimensions(imei string,AMSize string,channelsId string," +
         "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
@@ -1499,7 +1500,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   }
 
   //TC_1327
-  test("TC_1327") {
+  test("TC_1327", NonRunningTests) {
     sql(
       "create cube vardhan01 dimensions(key string,name string) measures(gamepointid numeric," +
         "price numeric) with dimFile RELATION (FACT.deviceid=key) INCLUDE ( key,name)"
@@ -1517,7 +1518,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   }
 
   //TC_1328
-  test("TC_1328") {
+  test("TC_1328", NonRunningTests) {
     sql(
       "create cube vardhan01 dimensions(key string,name string as col1) measures(gamepointid " +
         "numeric,price numeric) with dimFile RELATION (FACT.deviceid=key) INCLUDE ( key,col1)"
@@ -1536,7 +1537,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
 
 
   //DTS2015112009008
-  test("DTS2015112009008") {
+  test("DTS2015112009008", NonRunningTests) {
     sql(
       "CREATE CUBE cube_restructure60 DIMENSIONS (AMSize STRING) MEASURES (Latest_DAY INTEGER) " +
         "OPTIONS (AGGREGATION [Latest_DAY = count] PARTITIONER [CLASS = 'org.carbondata" +
@@ -1586,7 +1587,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   }
 
   //DTS2015110311277
-  test("DTS2015110311277") {
+  test("DTS2015110311277", NonRunningTests) {
     sql(
       "create cube vardhan dimensions(imei string,AMSize string,channelsId string,ActiveCountry " +
         "string, Activecity string)  measures(gamePointId numeric,deviceInformationId integer) " +
@@ -1645,7 +1646,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   }
 
   //TC_1329
-  test("TC_1329") {
+  test("TC_1329", NonRunningTests) {
     sql(
       "create cube vardhan01 dimensions(key string,name string) measures(gamepointid numeric," +
         "price numeric) with dimFile RELATION (FACT.deviceid=key) INCLUDE ( key,name)"
@@ -1667,7 +1668,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   }
 
   //TC_1330
-  test("TC_1330") {
+  test("TC_1330", NonRunningTests) {
     sql(
       "create cube vardhan01 dimensions(key string,name string) measures(gamepointid numeric," +
         "price numeric) with dimFile RELATION (FACT.deviceid=key) INCLUDE ( key,name)"
@@ -1694,7 +1695,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
   }
 
   //TC_1331
-  test("TC_1331") {
+  test("TC_1331", NonRunningTests) {
     sql(
       "create cube vardhan01 dimensions(key string,name string) measures(gamepointid numeric," +
         "price numeric) with dimFile RELATION (FACT.deviceid=key) INCLUDE ( key,name)"

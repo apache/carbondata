@@ -23,7 +23,8 @@ import java.io.File
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.{NonRunningTests, QueryTest}
+
 import org.carbondata.core.util.CarbonProperties
 import org.scalatest.BeforeAndAfterAll
 
@@ -353,7 +354,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
 
   //TC_112
   test(
-    "select percentile(deviceInformationId,array(0,0.2,0.3,1))  as  a from Carbon_automation_test31"
+    "select percentile(deviceInformationId,array(0,0.2,0.3,1))  as  a from Carbon_automation_test31",
+    NonRunningTests
   )({
     validateResult(
       sql(
@@ -368,7 +370,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   //TC_115
   test(
     "select percentile_approx(deviceInformationId,array(0.2,0.3,0.99))  as a from " +
-      "Carbon_automation_test3"
+      "Carbon_automation_test3",
+    NonRunningTests
   )({
     validateResult(
       sql(
@@ -383,7 +386,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   //TC_116
   test(
     "select percentile_approx(deviceInformationId,array(0.2,0.3,0.99),5) as a from " +
-      "Carbon_automation_test3"
+      "Carbon_automation_test3",
+    NonRunningTests
   )({
     validateResult(
       sql(
@@ -396,7 +400,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_117
-  test("select histogram_numeric(deviceInformationId,2)  as a from Carbon_automation_test3")({
+  test("select histogram_numeric(deviceInformationId,2)  as a from Carbon_automation_test3",
+    NonRunningTests)({
     validateResult(
       sql("select histogram_numeric(deviceInformationId,2)  as a from Carbon_automation_test3"),
       "TC_117.csv"
@@ -406,7 +411,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
 
   //TC_128
   test(
-    "select percentile(deviceInformationId,array(0,0.2,0.3,1))  as  a from Carbon_automation_test3"
+    "select percentile(deviceInformationId,array(0,0.2,0.3,1))  as  a from Carbon_automation_test3",
+    NonRunningTests
   )({
     validateResult(
       sql(
@@ -420,7 +426,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
 
   //TC_131
   test(
-    "select percentile_approx(gamePointId,array(0.2,0.3,0.99))  as a from Carbon_automation_test3"
+    "select percentile_approx(gamePointId,array(0.2,0.3,0.99))  as a from Carbon_automation_test3",
+    NonRunningTests
   )({
     validateResult(
       sql(
@@ -434,7 +441,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
 
   //TC_132
   test(
-    "select percentile_approx(gamePointId,array(0.2,0.3,0.99),5) as a from Carbon_automation_test3"
+    "select percentile_approx(gamePointId,array(0.2,0.3,0.99),5) as a from Carbon_automation_test3",
+    NonRunningTests
   )({
     validateResult(
       sql(
@@ -447,7 +455,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_133
-  test("select histogram_numeric(gamePointId,2)  as a from Carbon_automation_test3")({
+  test("select histogram_numeric(gamePointId,2)  as a from Carbon_automation_test3",
+    NonRunningTests)({
     validateResult(
       sql("select histogram_numeric(gamePointId,2)  as a from Carbon_automation_test3"),
       "TC_133.csv"
@@ -456,7 +465,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_477
-  test("select percentile(1,array(1)) from Carbon_automation_test3")({
+  test("select percentile(1,array(1)) from Carbon_automation_test3",
+    NonRunningTests)({
     validateResult(
       sql("select percentile(1,array(1)) from Carbon_automation_test3"),
       "TC_477.csv"
@@ -465,7 +475,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_479
-  test("select percentile(1,array('0.5')) from Carbon_automation_test3")({
+  test("select percentile(1,array('0.5')) from Carbon_automation_test3",
+    NonRunningTests)({
     validateResult(
       sql("select percentile(1,array('0.5')) from Carbon_automation_test3"),
       "TC_479.csv"
@@ -474,7 +485,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_480
-  test("select percentile(1,array('1')) from Carbon_automation_test3")({
+  test("select percentile(1,array('1')) from Carbon_automation_test3",
+    NonRunningTests)({
     validateResult(
       sql("select percentile(1,array('1')) from Carbon_automation_test3"),
       "TC_480.csv"
@@ -483,7 +495,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_485
-  test("select percentile_approx(1,array(0.5),5000) from Carbon_automation_test311")({
+  test("select percentile_approx(1,array(0.5),5000) from Carbon_automation_test311",
+    NonRunningTests)({
     validateResult(
       sql("select percentile_approx(1,array(0.5),5000) from Carbon_automation_test3"),
       "TC_485.csv"
@@ -492,7 +505,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_486
-  test("select percentile_approx(1,array(0.5),5000) from Carbon_automation_test32")({
+  test("select percentile_approx(1,array(0.5),5000) from Carbon_automation_test32",
+    NonRunningTests)({
     validateResult(
       sql("select percentile_approx(1,array(0.5),5000) from Carbon_automation_test3"),
       "TC_486.csv"
@@ -501,7 +515,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_487
-  test("select histogram_numeric(1, 5000)from Carbon_automation_test3")({
+  test("select histogram_numeric(1, 5000)from Carbon_automation_test3",
+    NonRunningTests)({
     validateResult(
       sql("select histogram_numeric(1, 5000)from Carbon_automation_test3"),
       "TC_487.csv"
@@ -510,7 +525,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_488
-  test("select histogram_numeric(1, 1000)from Carbon_automation_test3")({
+  test("select histogram_numeric(1, 1000)from Carbon_automation_test3",
+    NonRunningTests)({
     validateResult(
       sql("select histogram_numeric(1, 1000)from Carbon_automation_test3"),
       "TC_488.csv"
@@ -519,7 +535,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_489
-  test("select histogram_numeric(1, 500)from Carbon_automation_test31")({
+  test("select histogram_numeric(1, 500)from Carbon_automation_test31",
+    NonRunningTests)({
     validateResult(
       sql("select histogram_numeric(1, 500)from Carbon_automation_test3"),
       "TC_489.csv"
@@ -528,7 +545,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_490
-  test("select histogram_numeric(1, 500)from Carbon_automation_test3")({
+  test("select histogram_numeric(1, 500)from Carbon_automation_test3",
+    NonRunningTests)({
     validateResult(
       sql("select histogram_numeric(1, 500)from Carbon_automation_test3"),
       "TC_490.csv"
@@ -537,7 +555,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_491
-  test("select collect_set(gamePointId) from Carbon_automation_test3")({
+  test("select collect_set(gamePointId) from Carbon_automation_test3",
+    NonRunningTests)({
     validateResult(
       sql("select collect_set(gamePointId) from Carbon_automation_test3"),
       "TC_491.csv"
@@ -546,7 +565,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_492
-  test("select collect_set(AMSIZE) from Carbon_automation_test31")({
+  test("select collect_set(AMSIZE) from Carbon_automation_test31",
+    NonRunningTests)({
     validateResult(
       sql("select collect_set(AMSIZE) from Carbon_automation_test3"),
       "TC_492.csv"
@@ -555,7 +575,7 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_493
-  test("select collect_set(bomcode) from Carbon_automation_test3")({
+  test("select collect_set(bomcode) from Carbon_automation_test3", NonRunningTests)({
     validateResult(
       sql("select collect_set(bomcode) from Carbon_automation_test3"),
       "TC_493.csv"
@@ -564,7 +584,7 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_494
-  test("select collect_set(imei) from Carbon_automation_test3")({
+  test("select collect_set(imei) from Carbon_automation_test3", NonRunningTests)({
     validateResult(
       sql("select collect_set(imei) from Carbon_automation_test3"),
       "TC_494.csv"
@@ -573,7 +593,7 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_500
-  test("select percentile(1,array('0.5')) from Carbon_automation_test31")({
+  test("select percentile(1,array('0.5')) from Carbon_automation_test31", NonRunningTests)({
     validateResult(
       sql("select percentile(1,array('0.5')) from Carbon_automation_test3"),
       "TC_500.csv"
@@ -582,7 +602,8 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_501
-  test("select percentile_approx(1,array(0.5),5000) from Carbon_automation_test31")({
+  test("select percentile_approx(1,array(0.5),5000) from Carbon_automation_test31",
+    NonRunningTests)({
     validateResult(
       sql("select percentile_approx(1,array(0.5),5000) from Carbon_automation_test3"),
       "TC_501.csv"
@@ -591,7 +612,7 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_502
-  test("select collect_set(AMSIZE) from Carbon_automation_test3")({
+  test("select collect_set(AMSIZE) from Carbon_automation_test3", NonRunningTests)({
     validateResult(
       sql("select collect_set(AMSIZE) from Carbon_automation_test3"),
       "TC_502.csv"
@@ -677,7 +698,7 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
       "\"8RAM size\") GROUP BY Carbon_automation_test3.AMSize, Carbon_automation_test3" +
       ".ActiveCountry, Carbon_automation_test3.Activecity ,Carbon_automation_test3.gamePointId " +
       "ORDER BY Carbon_automation_test3.AMSize ASC, Carbon_automation_test3.ActiveCountry ASC, " +
-      "Carbon_automation_test3.Activecity ASC"
+      "Carbon_automation_test3.Activecity ASC", NonRunningTests
   )({
     validateResult(sql(
       "SELECT Carbon_automation_test3.gamePointId AS gamePointId,Carbon_automation_test3.AMSize " +

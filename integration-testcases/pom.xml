@@ -220,8 +220,10 @@
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <junitxml>.</junitxml>
                     <filereports>CarbonTestSuite.txt</filereports>
-                    <argLine>-ea -Xmx20g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m
+                    <argLine>-ea -Xmx6g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m
                     </argLine>
+                    <tagsToInclude>NonRunningTests</tagsToInclude>
+                    <!--<tagsToExclude>NonRunningTests</tagsToExclude>-->
                     <stderr/>
                     <environmentVariables>
                     </environmentVariables>
