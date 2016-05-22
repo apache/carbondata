@@ -71,7 +71,7 @@ class CarbonMergerRDD[K, V](
           metadataFilePath, loadsToMerge, mergedLoadName)
 
       model.setLoadMetadataDetails(CarbonUtil
-        .readLoadMetadata(metadataFilePath).toList.asJava);
+        .readLoadMetadata(metadataFilePath).toList.asJava)
 
       if (mergedLoadMetadataDetails == true) {
         CarbonLoaderUtil.copyMergedLoadToHDFS(model, currentRestructNumber, mergedLoadName)
@@ -107,10 +107,10 @@ class CarbonMergerRDD[K, V](
           val details = model.getLoadMetadataDetails.asScala.toSeq.toArray
           val newSlice = CarbonCommonConstants.LOAD_FOLDER + mergedLoadName
           var listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
-          listOfLoadFolders = CarbonLoaderUtil.addNewSliceNameToList(newSlice, listOfLoadFolders);
+          listOfLoadFolders = CarbonLoaderUtil.addNewSliceNameToList(newSlice, listOfLoadFolders)
           var listOfAllLoadFolders = CarbonQueryUtil.getListOfSlices(details)
           listOfAllLoadFolders = CarbonLoaderUtil
-            .addNewSliceNameToList(newSlice, listOfAllLoadFolders);
+            .addNewSliceNameToList(newSlice, listOfAllLoadFolders)
           val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
           val copyListOfLoadFolders = listOfLoadFolders.asScala.toList
           val copyListOfUpdatedLoadFolders = listOfUpdatedLoadFolders.asScala.toList

@@ -155,7 +155,7 @@ class CarbonDataLoadRDD[K, V](
   }
 
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
+    val LOGGER = LogServiceFactory.getLogService(this.getClass().getName())
     val iter = new Iterator[(K, V)] {
       var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
       var partitionID = "0"
@@ -165,7 +165,7 @@ class CarbonDataLoadRDD[K, V](
         val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
         if (null == carbonPropertiesFilePath) {
           System.setProperty("carbon.properties.filepath",
-            System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties");
+            System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties")
         }
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         setModelAndBlocksInfo()
@@ -194,7 +194,7 @@ class CarbonDataLoadRDD[K, V](
           try { {
             CarbonLoaderUtil.executeGraph(model, storeLocation, hdfsStoreLocation, kettleHomePath,
               currentRestructNumber)
-          };
+          }
           } catch {
             case e: DataLoadingException => if (e.getErrorCode ==
                                                 DataProcessorConstants.BAD_REC_FOUND) {
@@ -213,7 +213,7 @@ class CarbonDataLoadRDD[K, V](
               var isCopyFailed = false
               try { {
                 CarbonLoaderUtil.copyCurrentLoadToHDFS(model, newSlice, null)
-              };
+              }
               } catch {
                 case e: Exception =>
                   isCopyFailed = true
@@ -345,7 +345,7 @@ class CarbonDataLoadRDD[K, V](
 
       def loadCubeSlices(listOfAllLoadFolders: java.util.List[String],
           loadMetadataDetails: Array[LoadMetadataDetails]) = {
-        CarbonProperties.getInstance().addProperty("carbon.cache.used", "false");
+        CarbonProperties.getInstance().addProperty("carbon.cache.used", "false")
         // TODO: Implement it
       }
 

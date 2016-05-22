@@ -92,9 +92,9 @@ object GlobalDictionaryUtil extends Logging {
       var children = dimension.getListOfChildDimensions
       breakable {
         for (i <- 0 until children.size) {
-          has = has || hasEncoding(children.get(i), encoding, excludeEncoding);
+          has = has || hasEncoding(children.get(i), encoding, excludeEncoding)
           if (has) {
-            break;
+            break
           }
         }
       }
@@ -417,7 +417,7 @@ object GlobalDictionaryUtil extends Logging {
       val created = CarbonUtil.checkAndCreateFolder(dictfolderPath)
       if (!created) {
         logError("Dictionary Folder creation status :: " + created)
-        throw new IOException("Failed to created dictionary folder");
+        throw new IOException("Failed to created dictionary folder")
       }
       // load data by using dataSource com.databricks.spark.csv
       var df = loadDataFrame(sqlContext, carbonLoadModel)

@@ -55,10 +55,10 @@ class SparkUnknownExpression(sparkExp: SparkExpression)
 
       new ExpressionResult(CarbonScalaUtil.convertSparkToCarbonDataType(sparkExp.dataType),
         sparkRes
-      );
+      )
     }
     catch {
-      case e: Exception => throw new FilterUnsupportedException(e.getMessage());
+      case e: Exception => throw new FilterUnsupportedException(e.getMessage())
     }
   }
 

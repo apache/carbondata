@@ -40,13 +40,13 @@ object QueryPlanUtil {
    */
   def createCarbonInputFormat(absoluteTableIdentifier: AbsoluteTableIdentifier) :
   (CarbonInputFormat[RowResult], Job) = {
-    val carbonInputFormat = new CarbonInputFormat[RowResult]();
+    val carbonInputFormat = new CarbonInputFormat[RowResult]()
     val jobConf: JobConf = new JobConf(new Configuration)
     val job: Job = new Job(jobConf)
     FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getStorePath))
     CarbonInputFormat.setTableToAccess(job, absoluteTableIdentifier.getCarbonTableIdentifier)
 
-    val validSegments = new SegmentStatusManager(absoluteTableIdentifier).getValidSegments;
+    val validSegments = new SegmentStatusManager(absoluteTableIdentifier).getValidSegments
     val validSegmentNos =
       validSegments.listOfValidSegments.asScala.map(x => new Integer(Integer.parseInt(x)))
     CarbonInputFormat.setSegmentsToAccess(job, validSegmentNos.asJava)

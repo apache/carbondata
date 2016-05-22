@@ -40,7 +40,7 @@ class DummyLoadRDD(prev: NewHadoopRDD[LongWritable, Text])
       var finished = false
       // added to make sure spark distributes tasks not to single node
       // giving sufficient time for spark to schedule
-      Thread.sleep(5000);
+      Thread.sleep(5000)
       override def hasNext: Boolean = {
         if (!finished) {
           finished = true

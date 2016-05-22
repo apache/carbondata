@@ -79,7 +79,7 @@ class CarbonDataPartitionRDD[K, V](
     new Iterator[(K, V)] {
       val split = theSplit.asInstanceOf[CarbonSparkRawDataPartition]
       StandardLogService
-        .setThreadName(split.serializableHadoopSplit.value.getPartition().getUniqueID(), null);
+        .setThreadName(split.serializableHadoopSplit.value.getPartition().getUniqueID(), null)
       logInfo("Input split: " + split.serializableHadoopSplit.value)
 
       val csvPart = new CSVFilePartitioner(partitioner.partitionClass, sourcePath)

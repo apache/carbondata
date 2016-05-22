@@ -244,7 +244,7 @@ case class CarbonCubeScan(
           // TODO if we can add ordina in carbonDimension, it will be good
           allDims += attr.name
           val dim = new QueryDimension(attr.name)
-          dim.setQueryOrder(queryOrder);
+          dim.setQueryOrder(queryOrder)
           queryOrder = queryOrder + 1
           selectedDims += dim
         } else {
@@ -252,7 +252,7 @@ case class CarbonCubeScan(
               , attr.name)
           if (carbonMeasure != null) {
             val m1 = new QueryMeasure(attr.name)
-            m1.setQueryOrder(queryOrder);
+            m1.setQueryOrder(queryOrder)
             queryOrder = queryOrder + 1
             selectedMsrs += m1
           }
@@ -271,8 +271,8 @@ case class CarbonCubeScan(
               .filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
             if (carbonDimension.size > 0) {
               val dim = new QueryDimension(attr.name)
-              dim.setQueryOrder(queryOrder);
-              plan.addDimension(dim);
+              dim.setQueryOrder(queryOrder)
+              plan.addDimension(dim)
               queryOrder = queryOrder + 1
             } else {
               val carbonMeasure = selectedMsrs
@@ -305,9 +305,9 @@ case class CarbonCubeScan(
 
     if (forceDetailedQuery) {
       // First clear the model if Msrs, Expressions and AggDimAggInfo filled
-      plan.getDimensions().clear();
-      plan.getMeasures().clear();
-      plan.getDimAggregatorInfos().clear();
+      plan.getDimensions().clear()
+      plan.getMeasures().clear()
+      plan.getDimAggregatorInfos().clear()
       plan.getExpressions().clear()
 
       // Fill the selected dimensions & measures obtained from
@@ -316,12 +316,12 @@ case class CarbonCubeScan(
       selectedMsrs.foreach(plan.addMeasure(_))
     }
     else {
-      attributes = outputColumns.toSeq;
+      attributes = outputColumns.toSeq
     }
 
     val orderList = new ArrayList[QueryDimension]()
 
-    var allSortExprPushed = true;
+    var allSortExprPushed = true
     sortExprs match {
       case Some(a: Seq[SortOrder]) =>
         a.foreach {
@@ -344,9 +344,9 @@ case class CarbonCubeScan(
               dim(0).setSortOrder(getSortDirection(order))
               orderList.add(dim(0))
             } else {
-              allSortExprPushed = false;
+              allSortExprPushed = false
             }
-          case _ => allSortExprPushed = false;
+          case _ => allSortExprPushed = false
         }
       case _ =>
     }
@@ -361,10 +361,10 @@ case class CarbonCubeScan(
         // }
       case _ =>
     }
-    plan.setDetailQuery(forceDetailedQuery);
+    plan.setDetailQuery(forceDetailedQuery)
     plan.setOutLocationPath(
-      CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS));
-    plan.setQueryId(System.nanoTime() + "");
+      CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS))
+    plan.setQueryId(System.nanoTime() + "")
     if (!dimensionPredicates.isEmpty) {
       val exps = preProcessExpressions(dimensionPredicates)
       val expressionVal = transformExpression(exps.head)
@@ -468,13 +468,13 @@ case class CarbonCubeScan(
       val expressionVal = transformExpression(exps.head)
       val oldExpressionVal = buildCarbonPlan.getFilterExpression()
       if (null == oldExpressionVal) {
-        buildCarbonPlan.setFilterExpression(expressionVal);
+        buildCarbonPlan.setFilterExpression(expressionVal)
       } else {
-        buildCarbonPlan.setFilterExpression(new AndExpression(oldExpressionVal, expressionVal));
+        buildCarbonPlan.setFilterExpression(new AndExpression(oldExpressionVal, expressionVal))
       }
     }
 
-    val conf = new Configuration();
+    val conf = new Configuration()
     val absoluteTableIdentifier = new AbsoluteTableIdentifier(carbonCatalog.storePath,
       new CarbonTableIdentifier(carbonTable.getDatabaseName, carbonTable.getFactTableName))
 

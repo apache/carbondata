@@ -180,7 +180,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       case LoadCube(schemaNameOp, cubeName, factPathFromUser, dimFilesPath,
         partionValues, isOverwriteExist, inputSqlString) =>
         val isCarbonTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
-          .cubeExists(schemaNameOp, cubeName)(sqlContext);
+          .cubeExists(schemaNameOp, cubeName)(sqlContext)
         if (isCarbonTable) {
           ExecutedCommand(LoadCube(schemaNameOp, cubeName, factPathFromUser,
             dimFilesPath, partionValues, isOverwriteExist, inputSqlString)) :: Nil
@@ -196,7 +196,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         }
       case DescribeFormattedCommand(sql, tblIdentifier) =>
         val isCube = CarbonEnv.getInstance(sqlContext).carbonCatalog
-          .cubeExists(tblIdentifier)(sqlContext);
+          .cubeExists(tblIdentifier)(sqlContext)
         if (isCube) {
           val describe = LogicalDescribeCommand(UnresolvedRelation(tblIdentifier, None), false)
           val resolvedTable = sqlContext.executePlan(describe.table).analyzed

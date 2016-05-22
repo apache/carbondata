@@ -75,7 +75,7 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
   }
 
   override def getPartitions: Array[Partition] = {
-    val startTime = System.currentTimeMillis();
+    val startTime = System.currentTimeMillis()
     val (carbonInputFormat: CarbonInputFormat[RowResult], job: Job) =
       QueryPlanUtil.createCarbonInputFormat(queryModel.getAbsoluteTableIdentifier)
 
@@ -89,7 +89,7 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
         queryModel.setFilterExpressionResolverTree(filterResolver)
       }
       // get splits
-      val splits = carbonInputFormat.getSplits(job, filterResolver);
+      val splits = carbonInputFormat.getSplits(job, filterResolver)
       val carbonInputSplits = splits.asScala.map(_.asInstanceOf[CarbonInputSplit])
 
       val blockList = carbonInputSplits.map(inputSplit =>
@@ -109,7 +109,7 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
           entry._2.asScala.foreach { blocksPerTask =>
             if (blocksPerTask.size() != 0) {
               result.add(new CarbonSparkPartition(id, i, Seq(entry._1).toArray, blocksPerTask))
-              i += 1;
+              i += 1
             }
           }
         }
@@ -144,7 +144,7 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
 
 
    override def compute(thepartition: Partition, context: TaskContext): Iterator[(K, V)] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
+    val LOGGER = LogServiceFactory.getLogService(this.getClass().getName())
     val iter = new Iterator[(K, V)] {
       var rowIterator: CarbonIterator[RowResult] = _
       var queryStartTime: Long = 0
@@ -161,7 +161,7 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
           if (null == carbonPropertiesFilePath) {
             System.setProperty("carbon.properties.filepath", System.getProperty("user.dir")
               + '/' + "conf" + '/' + "carbon.properties"
-            );
+            )
           }
           // execute query
           rowIterator = QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel)
