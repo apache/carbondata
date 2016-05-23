@@ -24,8 +24,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.List;
 
-import org.carbondata.common.logging.LogService;
-import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.columnar.IndexStorage;
@@ -34,16 +32,12 @@ import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.carbondata.core.metadata.BlockletInfoColumnar;
-import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.core.writer.CarbonFooterWriter;
-import org.carbondata.format.FileFooter;
 import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
 public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactDataWriter<int[]> {
-  private static final LogService LOGGER = LogServiceFactory
-      .getLogService(CarbonFactDataWriterImplForIntIndexAndAggBlock.class.getName());
+
   protected boolean[] aggBlocks;
   private NumberCompressor numberCompressor;
   private boolean[] isComplexType;
@@ -51,33 +45,25 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
   private boolean[] isDictionaryColumn;
 
   public CarbonFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
-      int mdKeyLength, String tableName, boolean isNodeHolder, IFileManagerComposite fileManager,
-      int[] keyBlockSize, boolean[] aggBlocks, boolean isUpdateFact, boolean[] isComplexType,
-      int NoDictionaryCount, CarbonDataFileAttributes carbonDataFileAttributes, String databaseName,
+      int mdKeyLength, String tableName, IFileManagerComposite fileManager, int[] keyBlockSize,
+      boolean[] aggBlocks, boolean[] isComplexType, int NoDictionaryCount,
+      CarbonDataFileAttributes carbonDataFileAttributes, String databaseName,
       List<ColumnSchema> wrapperColumnSchemaList, int numberOfNoDictionaryColumn,
-      boolean[] isDictionaryColumn) {
-    this(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
-        keyBlockSize, aggBlocks, isUpdateFact, carbonDataFileAttributes, wrapperColumnSchemaList);
+      boolean[] isDictionaryColumn, String carbonDataDirectoryPath) {
+    super(storeLocation, measureCount, mdKeyLength, tableName, fileManager, keyBlockSize,
+        carbonDataFileAttributes, wrapperColumnSchemaList, carbonDataDirectoryPath);
     this.isComplexType = isComplexType;
     this.databaseName = databaseName;
     this.numberOfNoDictionaryColumn = numberOfNoDictionaryColumn;
     this.isDictionaryColumn = isDictionaryColumn;
-  }
-
-  public CarbonFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
-      int mdKeyLength, String tableName, boolean isNodeHolder, IFileManagerComposite fileManager,
-      int[] keyBlockSize, boolean[] aggBlocks, boolean isUpdateFact,
-      CarbonDataFileAttributes carbonDataFileAttributes,
-      List<ColumnSchema> wrapperColumnSchemaList) {
-    super(storeLocation, measureCount, mdKeyLength, tableName, isNodeHolder, fileManager,
-        keyBlockSize, isUpdateFact, carbonDataFileAttributes, wrapperColumnSchemaList);
     this.aggBlocks = aggBlocks;
     this.numberCompressor = new NumberCompressor(Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)));
   }
 
-  @Override public void writeDataToFile(IndexStorage<int[]>[] keyStorageArray, byte[][] dataArray,
+  @Override
+  public NodeHolder buildDataNodeHolder(IndexStorage<int[]>[] keyStorageArray, byte[][] dataArray,
       int entryCount, byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel,
       byte[] noDictionaryStartKey, byte[] noDictionaryEndKey) throws CarbonDataWriterException {
     // if there are no NO-Dictionary column present in the table then
@@ -157,7 +143,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
           dataIndexMapLength[idx] = compressedDataIndex[idx].length;
           idx++;
         } catch (Exception e) {
-          LOGGER.error(e);
+          throw new CarbonDataWriterException(e.getMessage());
         }
       }
     }
@@ -196,8 +182,6 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     for (int i = 0; i < dataIndexMapLength.length; i++) {
       indexBlockSize += dataIndexMapLength[i];
     }
-    long blockletDataSize = writableKeyArray.length + writableDataArray.length + indexBlockSize;
-    updateBlockletFileChannel(blockletDataSize);
 
     NodeHolder holder = new NodeHolder();
     holder.setDataArray(writableDataArray);
@@ -240,18 +224,28 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     holder.setColumnMaxData(allMaxValue);
     holder.setColumnMinData(allMinValue);
     holder.setAggBlocks(aggBlocks);
-    if (!this.isNodeHolderRequired) {
-      writeDataToFile(holder);
-    } else {
-      nodeHolderList.add(holder);
+    return holder;
+  }
+
+  @Override public void writeBlockletData(NodeHolder holder) throws CarbonDataWriterException {
+    int indexBlockSize = 0;
+    for (int i = 0; i < holder.getKeyBlockIndexLength().length; i++) {
+      indexBlockSize += holder.getKeyBlockIndexLength()[i] + CarbonCommonConstants.INT_SIZE_IN_BYTE;
     }
+
+    for (int i = 0; i < holder.getDataIndexMapLength().length; i++) {
+      indexBlockSize += holder.getDataIndexMapLength()[i];
+    }
+    long blockletDataSize =
+        holder.getKeyArray().length + holder.getDataArray().length + indexBlockSize;
+    updateBlockletFileChannel(blockletDataSize);
+    writeDataToFile(holder);
   }
 
   /**
    * Below method will be used to update the min or max value
    * by removing the length from it
    *
-   * @param value
    * @return min max value without length
    */
   private byte[] updateMinMaxForNoDictionary(byte[] valueWithLength) {
@@ -509,27 +503,5 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
             nodeHolderInfo.getDataIndexMapLength().length * CarbonCommonConstants.LONG_SIZE_IN_BYTE)
             + CarbonCommonConstants.INT_SIZE_IN_BYTE;
     return metaSize;
-  }
-
-  //TODO SIMIAN
-
-  /**
-   * This method will write metadata at the end of file file format in thrift format
-   *
-   * @throws CarbonDataWriterException throw CarbonDataWriterException when problem in writing
-   *                                   the meta data to file
-   */
-  protected void writeleafMetaDataToFile(List<BlockletInfoColumnar> infoList, FileChannel channel)
-      throws CarbonDataWriterException {
-    try {
-      long currentPos = channel.size();
-      CarbonFooterWriter writer = new CarbonFooterWriter(this.fileName);
-      FileFooter convertFileMeta = CarbonMetadataUtil
-          .convertFileFooter(infoList, localCardinality.length, localCardinality,
-              thriftColumnSchemaList);
-      writer.writeFooter(convertFileMeta, currentPos);
-    } catch (IOException e) {
-      throw new CarbonDataWriterException("Problem while writing the carbon file: ", e);
-    }
   }
 }

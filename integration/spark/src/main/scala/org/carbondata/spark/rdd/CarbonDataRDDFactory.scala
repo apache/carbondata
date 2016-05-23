@@ -383,7 +383,9 @@ object CarbonDataRDDFactory extends Logging {
           blocksGroupBy = new DummyLoadRDD(newHadoopRDD).collect().groupBy[String](_._1)
             .map { iter => (iter._1, iter._2.map(_._2)) }.toArray
       }
-
+      CarbonLoaderUtil.checkAndCreateCarbonDataLocation(hdfsStoreLocation,
+        carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName,
+        partitioner.partitionCount, currentLoadCount)
       val status = new
           CarbonDataLoadRDD(sc.sparkContext, new ResultImpl(), carbonLoadModel, storeLocation,
             hdfsStoreLocation, kettleHomePath, partitioner, columinar, currentRestructNumber,

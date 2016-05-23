@@ -414,6 +414,31 @@ public final class CarbonLoaderUtil {
   }
 
   /**
+   * This method will delete the local data load folder location after data load is complete
+   *
+   * @param loadModel
+   * @param segmentName
+   */
+  public static void deleteLocalDataLoadFolderLocation(CarbonLoadModel loadModel,
+      String segmentName) {
+    String databaseName = loadModel.getDatabaseName();
+    String tableName = loadModel.getTableName();
+    CarbonTableIdentifier carbonTableIdentifier =
+        new CarbonTableIdentifier(databaseName, tableName);
+    String segmentId = segmentName.substring(CarbonCommonConstants.LOAD_FOLDER.length());
+    String tempLocationKey = databaseName + '_' + tableName;
+    // form local store location
+    String localStoreLocation = getStoreLocation(CarbonProperties.getInstance()
+            .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL),
+        carbonTableIdentifier, Integer.parseInt(segmentId), loadModel.getPartitionId());
+    try {
+      CarbonUtil.deleteFoldersAndFiles(new File[] { new File(localStoreLocation) });
+    } catch (CarbonUtilException e) {
+      LOGGER.error(e, "Failed to delete local data load folder location");
+    }
+  }
+
+  /**
    * This method will copy the current segment load to cgiven carbon store path
    *
    * @param loadModel
@@ -1186,6 +1211,27 @@ public final class CarbonLoaderUtil {
         flattenedList.add(nbr);
         nodeList.add(eachNode);
       }
+    }
+  }
+
+  /**
+   * This method will get the store location for the given path, segment id and partition id
+   *
+   * @param carbonStorePath
+   * @param dbName
+   * @param tableName
+   * @param partitionCount
+   * @param segmentId
+   */
+  public static void checkAndCreateCarbonDataLocation(String carbonStorePath, String dbName,
+      String tableName, int partitionCount, int segmentId) {
+    CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName);
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+    for (int i = 0; i < partitionCount; i++) {
+      String carbonDataDirectoryPath =
+          carbonTablePath.getCarbonDataDirectoryPath(String.valueOf(i), segmentId);
+      CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
     }
   }
 

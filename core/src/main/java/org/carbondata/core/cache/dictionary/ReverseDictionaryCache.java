@@ -86,7 +86,7 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
         new ArrayList<Dictionary>(dictionaryColumnUniqueIdentifiers.size());
     List<Future<Dictionary>> taskSubmitList =
         new ArrayList<>(dictionaryColumnUniqueIdentifiers.size());
-    ExecutorService executorService = Executors.newFixedThreadPool(FIXED_THREAD_POOL_SIZE);
+    ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
     for (final DictionaryColumnUniqueIdentifier uniqueIdent : dictionaryColumnUniqueIdentifiers) {
       taskSubmitList.add(executorService.submit(new Callable<Dictionary>() {
         @Override public Dictionary call() throws CarbonUtilException {

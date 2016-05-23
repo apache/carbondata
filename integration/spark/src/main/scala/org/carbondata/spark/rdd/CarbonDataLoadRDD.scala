@@ -210,19 +210,13 @@ class CarbonDataLoadRDD[K, V](
           } finally {
             if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
               val newSlice = CarbonCommonConstants.LOAD_FOLDER + loadCount
-              var isCopyFailed = false
-              try { {
-                CarbonLoaderUtil.copyCurrentLoadToHDFS(model, newSlice, null)
-              }
+              try {
+                CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, newSlice)
               } catch {
                 case e: Exception =>
-                  isCopyFailed = true
-                  dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
                   LOGGER.error(e)
               }
-              if (!isCopyFailed) {
-                dataloadStatus = checkAndLoadAggregationTable
-              }
+              dataloadStatus = checkAndLoadAggregationTable
               if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
                 logInfo("DataLoad failure")
               } else {

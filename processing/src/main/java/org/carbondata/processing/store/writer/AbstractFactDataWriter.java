@@ -19,6 +19,8 @@
 
 package org.carbondata.processing.store.writer;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileNotFoundException;
@@ -29,9 +31,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.carbondata.common.logging.LogService;
@@ -43,6 +46,8 @@ import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.metadata.BlockletInfoColumnar;
@@ -56,6 +61,7 @@ import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.hadoop.io.IOUtils;
 
 public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<T>
 
@@ -63,26 +69,21 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(AbstractFactDataWriter.class.getName());
+
+  /**
+   * dfs.bytes-per-checksum
+   * HDFS checksum length, block size for a file should be exactly divisible
+   * by this value
+   */
+  private static final int HDFS_CHECKSUM_LENGTH = 512;
   /**
    * measure count
    */
   protected int measureCount;
   /**
-   * current size of file
-   */
-  protected long currentFileSize;
-  /**
    * file channel
    */
   protected FileChannel fileChannel;
-  /**
-   * isNodeHolderRequired
-   */
-  protected boolean isNodeHolderRequired;
-  /**
-   * Node Holder
-   */
-  protected List<NodeHolder> nodeHolderList;
   /**
    * this will be used for holding blocklet metadata
    */
@@ -122,10 +123,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   private int fileCount;
   /**
-   * filename format
-   */
-  private String fileNameFormat;
-  /**
    * File manager
    */
   private IFileManagerComposite fileManager;
@@ -137,24 +134,38 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * executorService
    */
   private ExecutorService executorService;
+
+  /**
+   * executorService
+   */
+  private List<Future<Void>> executorServiceSubmitList;
   /**
    * data file attributes which will used for file construction
    */
   private CarbonDataFileAttributes carbonDataFileAttributes;
   private CarbonTablePath carbonTablePath;
   /**
+   * data directory location in carbon store path
+   */
+  private String carbonDataDirectoryPath;
+  /**
    * data block size for one carbon data file
    */
   private long dataBlockSize;
   /**
+   * file size at any given point
+   */
+  private long currentFileSize;
+  /**
    * size reserved in one file for writing block meta data. It will be in percentage
    */
   private int spaceReservedForBlockMetaSize;
+  private FileOutputStream fileOutputStream;
 
   public AbstractFactDataWriter(String storeLocation, int measureCount, int mdKeyLength,
-      String tableName, boolean isNodeHolder, IFileManagerComposite fileManager, int[] keyBlockSize,
-      boolean isUpdateFact, CarbonDataFileAttributes carbonDataFileAttributes,
-      List<ColumnSchema> columnSchema) {
+      String tableName, IFileManagerComposite fileManager, int[] keyBlockSize,
+      CarbonDataFileAttributes carbonDataFileAttributes, List<ColumnSchema> columnSchema,
+      String carbonDataDirectoryPath) {
 
     // measure count
     this.measureCount = measureCount;
@@ -176,26 +187,12 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
             CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT));
     this.dataBlockSize = fileSizeInBytes - (fileSizeInBytes * spaceReservedForBlockMetaSize) / 100;
     LOGGER.info("Total file size: " + fileSizeInBytes + " and dataBlock Size: " + dataBlockSize);
-    this.isNodeHolderRequired =
-        Boolean.valueOf(CarbonCommonConstants.WRITE_ALL_NODE_IN_SINGLE_TIME_DEFAULT_VALUE);
     this.fileManager = fileManager;
-
-    /**
-     * keyBlockSize
-     */
+    this.carbonDataDirectoryPath = carbonDataDirectoryPath;
     this.keyBlockSize = keyBlockSize;
-    /**
-     *
-     */
     this.mdkeySize = mdKeyLength;
-
-    this.isNodeHolderRequired = this.isNodeHolderRequired && isNodeHolder;
-    if (this.isNodeHolderRequired) {
-      this.nodeHolderList = new CopyOnWriteArrayList<NodeHolder>();
-
-      this.executorService = Executors.newFixedThreadPool(5);
-    }
-
+    this.executorService = Executors.newFixedThreadPool(1);
+    executorServiceSubmitList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     //TODO: We should delete the levelmetadata file after reading here.
     this.localCardinality =
         CarbonMergerUtil.getCardinalityFromLevelMetadata(storeLocation, tableName);
@@ -224,28 +221,24 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * current file size to 0 close the existing file channel get the new file
    * name and get the channel for new file
    *
+   * @param blockletDataSize  data size of one block
    * @throws CarbonDataWriterException if any problem
    */
   protected void updateBlockletFileChannel(long blockletDataSize) throws CarbonDataWriterException {
-    // get the current file size exceeding the file size threshold
     if ((currentFileSize + blockletDataSize) >= dataBlockSize && currentFileSize != 0) {
       // set the current file size to zero
       LOGGER.info("Writing data to file as max file size reached for file: " + fileName
           + " .Data block size: " + currentFileSize);
+      // write meta data to end of the existing file
+      writeBlockletInfoToFile(blockletInfoList, fileChannel, fileName);
       this.currentFileSize = 0;
-      if (this.isNodeHolderRequired) {
-        FileChannel channel = fileChannel;
-        List<NodeHolder> localNodeHolderList = this.nodeHolderList;
-        executorService.submit(new WriterThread(fileName, channel, localNodeHolderList));
-        this.nodeHolderList = new CopyOnWriteArrayList<NodeHolder>();
-        // close the current open file channel
-      } else {
-        // write meta data to end of the existing file
-        writeleafMetaDataToFile(blockletInfoList, fileChannel, fileName);
-        blockletInfoList =
-            new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-        CarbonUtil.closeStreams(fileChannel);
-      }
+      blockletInfoList =
+          new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+      CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
+      // rename carbon data file from in progress status to actual
+      renameCarbonDataFile();
+      executorServiceSubmitList.add(executorService
+          .submit(new CopyThread(this.fileName.substring(0, this.fileName.lastIndexOf('.')))));
       // initialize the new channel
       initializeWriter();
     }
@@ -271,8 +264,9 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
         + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     this.fileCount++;
     try {
-      // open channle for new data file
-      this.fileChannel = new FileOutputStream(this.fileName, true).getChannel();
+      // open channel for new data file
+      fileOutputStream = new FileOutputStream(this.fileName, true);
+      this.fileChannel = fileOutputStream.getChannel();
     } catch (FileNotFoundException fileNotFoundException) {
       throw new CarbonDataWriterException("Problem while getting the FileChannel for Leaf File",
           fileNotFoundException);
@@ -306,28 +300,9 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   }
 
   /**
-   * Below method will be used to write data and its meta data to file
-   *
-   * @param channel
-   * @param nodeHolderList
-   * @throws CarbonDataWriterException
-   */
-  private void writeData(FileChannel channel, List<NodeHolder> nodeHolderList, String filePath)
-      throws CarbonDataWriterException {
-    List<BlockletInfoColumnar> blockletInfos =
-        new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    for (NodeHolder nodeHolder : nodeHolderList) {
-      long offSet = writeDataToFile(nodeHolder, channel);
-      blockletInfos.add(getBlockletInfo(nodeHolder, offSet));
-    }
-    writeleafMetaDataToFile(blockletInfos, channel, filePath);
-    CarbonUtil.closeStreams(channel);
-  }
-
-  /**
    * This method will write metadata at the end of file file format in thrift format
    */
-  protected void writeleafMetaDataToFile(List<BlockletInfoColumnar> infoList, FileChannel channel,
+  protected void writeBlockletInfoToFile(List<BlockletInfoColumnar> infoList, FileChannel channel,
       String filePath) throws CarbonDataWriterException {
     try {
       long currentPosition = channel.size();
@@ -426,31 +401,123 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    *
    * @throws CarbonDataWriterException
    */
-  public void closeWriter() {
-    if (!this.isNodeHolderRequired) {
-      CarbonUtil.closeStreams(this.fileChannel);
-      // close channel
-    } else {
-      this.executorService.shutdown();
-      try {
-        this.executorService.awaitTermination(2, TimeUnit.HOURS);
-      } catch (InterruptedException ex) {
-        LOGGER.error(ex);
-      }
-      CarbonUtil.closeStreams(this.fileChannel);
-      this.nodeHolderList = null;
-    }
+  public void closeWriter() throws CarbonDataWriterException {
+    CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
+    renameCarbonDataFile();
+    copyCarbonDataFileToCarbonStorePath(this.fileName.substring(0, this.fileName.lastIndexOf('.')));
+    closeExecutorService();
+  }
 
+  /**
+   * This method will close the executor service which is used for copying carbon
+   * data files to carbon store path
+   *
+   * @throws CarbonDataWriterException
+   */
+  private void closeExecutorService() throws CarbonDataWriterException {
+    executorService.shutdown();
+    try {
+      executorService.awaitTermination(2, TimeUnit.HOURS);
+    } catch (InterruptedException e) {
+      throw new CarbonDataWriterException(e.getMessage());
+    }
+    for (int i = 0; i < executorServiceSubmitList.size(); i++) {
+      try {
+        executorServiceSubmitList.get(i).get();
+      } catch (InterruptedException e) {
+        throw new CarbonDataWriterException(e.getMessage());
+      } catch (ExecutionException e) {
+        throw new CarbonDataWriterException(e.getMessage());
+      }
+    }
+  }
+
+  /**
+   * This method will rename carbon data file from in progress status to normal
+   *
+   * @throws CarbonDataWriterException
+   */
+  private void renameCarbonDataFile() throws CarbonDataWriterException {
     File origFile = new File(this.fileName.substring(0, this.fileName.lastIndexOf('.')));
     File curFile = new File(this.fileName);
     if (!curFile.renameTo(origFile)) {
-      LOGGER.info("Problem while renaming the file");
+      throw new CarbonDataWriterException("Problem while renaming the file");
     }
-    if (origFile.length() < 1) {
-      if (!origFile.delete()) {
-        LOGGER.info("Problem while deleting the empty fact file");
-      }
+  }
+
+  /**
+   * This method will copy the given file to carbon store location
+   *
+   * @param localFileName local file name with full path
+   * @throws CarbonDataWriterException
+   */
+  private void copyCarbonDataFileToCarbonStorePath(String localFileName)
+      throws CarbonDataWriterException {
+    long copyStartTime = System.currentTimeMillis();
+    LOGGER.info("Copying " + localFileName + " --> " + carbonDataDirectoryPath);
+    try {
+      CarbonFile localCarbonFile =
+          FileFactory.getCarbonFile(localFileName, FileFactory.getFileType(localFileName));
+      String carbonFilePath = carbonDataDirectoryPath + localFileName
+          .substring(localFileName.lastIndexOf(File.separator));
+      copyLocalFileToCarbonStore(carbonFilePath, localFileName,
+          CarbonCommonConstants.BYTEBUFFER_SIZE,
+          getMaxOfBlockAndFileSize(fileSizeInBytes, localCarbonFile.getSize()));
+    } catch (IOException e) {
+      throw new CarbonDataWriterException(
+          "Problem while copying file from local store to carbon store");
     }
+    LOGGER.info(
+        "Total copy time (ms) to copy file " + localFileName + " is " + (System.currentTimeMillis()
+            - copyStartTime));
+  }
+
+  /**
+   * This method will read the local carbon data file and write to carbon data file in HDFS
+   *
+   * @param carbonStoreFilePath
+   * @param localFilePath
+   * @param bufferSize
+   * @param blockSize
+   * @throws IOException
+   */
+  private void copyLocalFileToCarbonStore(String carbonStoreFilePath, String localFilePath,
+      int bufferSize, long blockSize) throws IOException {
+    DataOutputStream dataOutputStream = null;
+    DataInputStream dataInputStream = null;
+    try {
+      LOGGER.debug(
+          "HDFS file block size for file: " + carbonStoreFilePath + " is " + blockSize + " (bytes");
+      dataOutputStream = FileFactory
+          .getDataOutputStream(carbonStoreFilePath, FileFactory.getFileType(carbonStoreFilePath),
+              bufferSize, blockSize);
+      dataInputStream = FileFactory
+          .getDataInputStream(localFilePath, FileFactory.getFileType(localFilePath), bufferSize);
+      IOUtils.copyBytes(dataInputStream, dataOutputStream, bufferSize);
+    } finally {
+      CarbonUtil.closeStreams(dataInputStream, dataOutputStream);
+    }
+  }
+
+  /**
+   * This method will return max of block size and file size
+   *
+   * @param blockSize
+   * @param fileSize
+   * @return
+   */
+  private static long getMaxOfBlockAndFileSize(long blockSize, long fileSize) {
+    long maxSize = blockSize;
+    if (fileSize > blockSize) {
+      maxSize = fileSize;
+    }
+    // block size should be exactly divisible by 512 which is  maintained by HDFS as bytes
+    // per checksum, dfs.bytes-per-checksum=512 must divide block size
+    long remainder = maxSize % HDFS_CHECKSUM_LENGTH;
+    if (remainder > 0) {
+      maxSize = maxSize + HDFS_CHECKSUM_LENGTH - remainder;
+    }
+    return maxSize;
   }
 
   /**
@@ -458,18 +525,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    *
    * @throws CarbonDataWriterException
    */
-  public void writeleafMetaDataToFile() throws CarbonDataWriterException {
-    if (!isNodeHolderRequired) {
-      writeleafMetaDataToFile(this.blockletInfoList, fileChannel, fileName);
-      this.blockletInfoList =
-          new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    } else {
-      if (this.nodeHolderList.size() > 0) {
-        List<NodeHolder> localNodeHodlerList = nodeHolderList;
-        writeData(fileChannel, localNodeHodlerList, fileName);
-        nodeHolderList = new CopyOnWriteArrayList<NodeHolder>();
-      }
-    }
+  @Override public void writeBlockletInfoToFile() throws CarbonDataWriterException {
+    writeBlockletInfoToFile(this.blockletInfoList, fileChannel, fileName);
   }
 
   /**
@@ -483,7 +540,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   protected void writeDataToFile(NodeHolder nodeHolder) throws CarbonDataWriterException {
     // write data to file and get its offset
     long offset = writeDataToFile(nodeHolder, fileChannel);
-
     // get the blocklet info for currently added blocklet
     BlockletInfoColumnar blockletInfo = getBlockletInfo(nodeHolder, offset);
     // add blocklet info to list
@@ -496,35 +552,37 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
 
   @Override public int getLeafMetadataSize() {
     return blockletInfoList.size();
-
   }
 
   @Override public String getTempStoreLocation() {
-
     return this.fileName;
   }
 
   /**
-   * Thread class for writing data to file
+   * This method will copy the carbon data file from local store location to
+   * carbon store location
    */
-  private final class WriterThread implements Callable<Void> {
+  private final class CopyThread implements Callable<Void> {
 
-    private List<NodeHolder> nodeHolderList;
+    /**
+     * complete path along with file name which needs to be copied to
+     * carbon store path
+     */
+    private String fileName;
 
-    private FileChannel channel;
-
-    private String filePath;
-
-    private WriterThread(String filePath, FileChannel channel, List<NodeHolder> nodeHolderList) {
-      this.channel = channel;
-      this.nodeHolderList = nodeHolderList;
-      this.filePath = filePath;
+    private CopyThread(String fileName) {
+      this.fileName = fileName;
     }
 
+    /**
+     * Computes a result, or throws an exception if unable to do so.
+     *
+     * @return computed result
+     * @throws Exception if unable to compute a result
+     */
     @Override public Void call() throws Exception {
-      writeData(channel, nodeHolderList, filePath);
+      copyCarbonDataFileToCarbonStorePath(fileName);
       return null;
     }
   }
-
 }

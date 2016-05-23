@@ -1035,6 +1035,13 @@ public final class CarbonCommonConstants {
    */
   public static final String MIN_MAX_DEFAULT_VALUE = "true";
 
+  /**
+   * this variable is to enable/disable prefetch of data during merge sort while
+   * reading data from sort temp files
+   */
+  public static final String CARBON_MERGE_SORT_PREFETCH = "carbon.merge.sort.prefetch";
+  public static final String CARBON_MERGE_SORT_PREFETCH_DEFAULT = "true";
+
   private CarbonCommonConstants() {
 
   }

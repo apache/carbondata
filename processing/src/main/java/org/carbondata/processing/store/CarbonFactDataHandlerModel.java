@@ -122,6 +122,10 @@ public class CarbonFactDataHandlerModel {
    * carbon data file attributes like task id, file stamp
    */
   private CarbonDataFileAttributes carbonDataFileAttributes;
+  /**
+   * carbon data directory path
+   */
+  private String carbonDataDirectoryPath;
 
   public CarbonDataFileAttributes getCarbonDataFileAttributes() {
     return carbonDataFileAttributes;
@@ -297,6 +301,14 @@ public class CarbonFactDataHandlerModel {
 
   public void setAggType(char[] aggType) {
     this.aggType = aggType;
+  }
+
+  public String getCarbonDataDirectoryPath() {
+    return carbonDataDirectoryPath;
+  }
+
+  public void setCarbonDataDirectoryPath(String carbonDataDirectoryPath) {
+    this.carbonDataDirectoryPath = carbonDataDirectoryPath;
   }
 }
 

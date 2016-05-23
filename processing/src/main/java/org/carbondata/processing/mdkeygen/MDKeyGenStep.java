@@ -210,9 +210,14 @@ public class MDKeyGenStep extends BaseStep {
     return false;
   }
 
-  private void processingComplete() {
+  private void processingComplete() throws KettleException {
     if (null != dataHandler) {
-      dataHandler.closeHandler();
+      try {
+        dataHandler.closeHandler();
+      } catch (CarbonDataWriterException e) {
+        LOGGER.error(e, e.getMessage());
+        throw new KettleException(e.getMessage());
+      }
     }
     setOutputDone();
   }
@@ -348,12 +353,14 @@ public class MDKeyGenStep extends BaseStep {
     CarbonDataFileAttributes carbonDataFileAttributes =
         new CarbonDataFileAttributes(meta.getTaskNo(), meta.getFactTimeStamp());
     initAggType(msrdataTypes);
+    String carbonDataDirectoryPath = getCarbonDataFolderLocation();
     finalMerger = new SingleThreadFinalSortFilesMerger(dataFolderLocation, tableName,
         dimensionCount - meta.getComplexDimsCount(), meta.getComplexDimsCount(), measureCount,
         meta.getNoDictionaryCount(), aggType, isNoDictionaryDimension);
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = getCarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setPrimitiveDimLens(simpleDimsLen);
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
+    carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     if (meta.getNoDictionaryCount() > 0 || meta.getComplexDimsCount() > 0) {
       carbonFactDataHandlerModel.setMdKeyIndex(measureCount + 1);
     } else {
@@ -459,6 +466,23 @@ public class MDKeyGenStep extends BaseStep {
     }
 
     return outputRow;
+  }
+
+  /**
+   * This method will get the store location for the given path, segment id and partition id
+   *
+   * @return data directory path
+   */
+  private String getCarbonDataFolderLocation() {
+    String carbonStorePath =
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
+    CarbonTableIdentifier carbonTableIdentifier =
+        new CarbonTableIdentifier(meta.getSchemaName(), meta.getTableName());
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+    String carbonDataDirectoryPath =
+        carbonTablePath.getCarbonDataDirectoryPath(meta.getPartitionID(), meta.getSegmentId());
+    return carbonDataDirectoryPath;
   }
 
   /**

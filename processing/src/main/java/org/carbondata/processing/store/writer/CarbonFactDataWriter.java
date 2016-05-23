@@ -39,16 +39,25 @@ public interface CarbonFactDataWriter<T> {
    * @throws CarbonDataWriterException throws new CarbonDataWriterException if any problem
    */
 
-  void writeDataToFile(IndexStorage<T>[] keyStorageArray, byte[][] dataArray, int entryCount,
-      byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel,
+  NodeHolder buildDataNodeHolder(IndexStorage<T>[] keyStorageArray, byte[][] dataArray,
+      int entryCount, byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel,
       byte[] noDictionaryStartKey, byte[] noDictionaryEndKey) throws CarbonDataWriterException;
+
+  /**
+   * If node holder flag is enabled the object will be added to list
+   * and all the blocklets will be return together. If disabled then this
+   * method will itself will call for writing the fact data
+   *
+   * @param holder
+   */
+  void writeBlockletData(NodeHolder holder) throws CarbonDataWriterException;
 
   /**
    * Below method will be used to write the leaf meta data to file
    *
    * @throws CarbonDataWriterException
    */
-  void writeleafMetaDataToFile() throws CarbonDataWriterException;
+  void writeBlockletInfoToFile() throws CarbonDataWriterException;
 
   /**
    * Below method will be used to initialise the writer
@@ -58,7 +67,7 @@ public interface CarbonFactDataWriter<T> {
   /**
    * Below method will be used to close the writer
    */
-  void closeWriter();
+  void closeWriter() throws CarbonDataWriterException;
 
   /**
    * Below method will be used to get the leaf meta data size

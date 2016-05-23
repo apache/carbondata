@@ -123,11 +123,6 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   private boolean isSortTempFileCompressionEnabled;
 
   /**
-   * reader
-   */
-  private TempSortFileReader reader;
-
-  /**
    * totalRecordFetch
    */
   private int totalRecordFetch;
@@ -178,7 +173,9 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    * @throws CarbonSortKeyAndGroupByException problem while initializing
    */
   public void initialize() throws CarbonSortKeyAndGroupByException {
-    prefetch = CarbonCommonConstants.CARBON_PREFETCH_IN_MERGE_VALUE;
+    prefetch = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_MERGE_SORT_PREFETCH,
+            CarbonCommonConstants.CARBON_MERGE_SORT_PREFETCH_DEFAULT));
     bufferSize = CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE;
     this.isSortTempFileCompressionEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED,
@@ -213,16 +210,13 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
 
   private void initialise() throws CarbonSortKeyAndGroupByException {
     try {
-      reader = TempSortFileReaderFactory.getInstance()
-          .getTempSortFileReader(isSortTempFileCompressionEnabled, dimensionCount,
-              complexDimensionCount, measureCount, tempFile, noDictionaryCount);
-
       if (isSortTempFileCompressionEnabled) {
         this.bufferSize = sortTempFileNoOFRecordsInCompression;
       }
-
+      stream = new DataInputStream(
+          new BufferedInputStream(new FileInputStream(tempFile), this.fileBufferSize));
+      this.entryCount = stream.readInt();
       if (prefetch) {
-        this.entryCount = reader.getEntryCount();
         new DataFetcher(false).call();
         totalRecordFetch += currentBuffer.length;
         if (totalRecordFetch < this.entryCount) {
@@ -230,12 +224,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
         }
       } else {
         if (isSortTempFileCompressionEnabled) {
-          this.entryCount = reader.getEntryCount();
           new DataFetcher(false).call();
-        } else {
-          stream = new DataInputStream(
-              new BufferedInputStream(new FileInputStream(tempFile), this.fileBufferSize));
-          this.entryCount = stream.readInt();
         }
       }
 
@@ -398,9 +387,6 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    */
   public void closeStream() {
     CarbonUtil.closeStreams(stream);
-    if (null != reader) {
-      reader.finish();
-    }
     executorService.shutdown();
   }
 
@@ -476,17 +462,26 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   private final class DataFetcher implements Callable<Void> {
     private boolean isBackUpFilling;
 
+    private int numberOfRecords;
+
     private DataFetcher(boolean backUp) {
       isBackUpFilling = backUp;
+      calculateNumberOfRecordsToBeFetched();
+    }
+
+    private void calculateNumberOfRecordsToBeFetched() {
+      int numberOfRecordsLeftToBeRead = entryCount - totalRecordFetch;
+      numberOfRecords =
+          bufferSize < numberOfRecordsLeftToBeRead ? bufferSize : numberOfRecordsLeftToBeRead;
     }
 
     @Override public Void call() throws Exception {
       try {
         if (isBackUpFilling) {
+          backupBuffer = prefetchRecordsFromFile(numberOfRecords);
           isBackupFilled = true;
-          backupBuffer = reader.getRow();
         } else {
-          currentBuffer = reader.getRow();
+          currentBuffer = prefetchRecordsFromFile(numberOfRecords);
         }
       } catch (Exception e) {
         LOGGER.error(e);
@@ -496,4 +491,19 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
 
   }
 
+  /**
+   * This method will read the records from sort temp file and keep it in a buffer
+   *
+   * @param numberOfRecords
+   * @return
+   * @throws CarbonSortKeyAndGroupByException
+   */
+  private Object[][] prefetchRecordsFromFile(int numberOfRecords)
+      throws CarbonSortKeyAndGroupByException {
+    Object[][] records = new Object[numberOfRecords][];
+    for (int i = 0; i < numberOfRecords; i++) {
+      records[i] = getRowFromStream();
+    }
+    return records;
+  }
 }

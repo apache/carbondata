@@ -33,6 +33,7 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 
@@ -51,7 +52,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
   /**
    * thread pool size to be used for dictionary data reading
    */
-  protected static final int FIXED_THREAD_POOL_SIZE = 5;
+  protected int thread_pool_size;
 
   /**
    * LRU cache variable
@@ -70,6 +71,21 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
   public AbstractDictionaryCache(String carbonStorePath, CarbonLRUCache carbonLRUCache) {
     this.carbonStorePath = carbonStorePath;
     this.carbonLRUCache = carbonLRUCache;
+    initThreadPoolSize();
+  }
+
+  /**
+   * This method will initialize the thread pool size to be used for creating the
+   * max number of threads for a job
+   */
+  private void initThreadPoolSize() {
+    try {
+      thread_pool_size = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
+              CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
+    } catch (NumberFormatException e) {
+      thread_pool_size = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+    }
   }
 
   /**
