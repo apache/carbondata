@@ -48,9 +48,7 @@ class CarbonDropCubeRDD[K, V](
       val split = theSplit.asInstanceOf[CarbonLoadPartition]
 
       val partitionCount = partitioner.partitionCount
-      for (a <- 0 until partitionCount) {
-        // TODO: Clear Btree from memory
-      }
+      // TODO: Clear Btree from memory
 
       var havePair = false
       var finished = false

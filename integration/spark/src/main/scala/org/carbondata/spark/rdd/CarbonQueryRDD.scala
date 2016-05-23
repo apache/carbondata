@@ -113,13 +113,12 @@ class CarbonQueryRDD[K, V](
         val noOfNodes = nodeBlockMapping.size
         val noOfTasks = result.size()
         logInfo(s"Identified  no.of.Blocks: $noOfBlocks,"
-                + s"parallelism: $defaultParallelism , no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks"
-        )
-        logInfo("Time taken to identify Blocks to scan : " + (System
-                                                                .currentTimeMillis() - startTime)
-        )
-        for (j <- 0 until result.size()) {
-          val cp = result.get(j).asInstanceOf[CarbonSparkPartition]
+                + s"parallelism: $defaultParallelism , " +
+                s"no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks")
+        logInfo("Time taken to identify Blocks to scan : " +
+                (System.currentTimeMillis() - startTime))
+        result.asScala.foreach { r =>
+          val cp = r.asInstanceOf[CarbonSparkPartition]
           logInfo(s"Node : " + cp.locations.toSeq.mkString(",")
                   + ", No.Of Blocks : " + cp.tableBlockInfos.size())
         }
@@ -154,8 +153,8 @@ class CarbonQueryRDD[K, V](
           val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
           logInfo("*************************" + carbonPropertiesFilePath)
           if (null == carbonPropertiesFilePath) {
-            System.setProperty("carbon.properties.filepath", System.getProperty("user.dir")
-                                                             + '/' + "conf" + '/' + "carbon.properties"
+            System.setProperty("carbon.properties.filepath",
+              System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties"
             )
           }
           // execute query

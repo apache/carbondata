@@ -82,8 +82,8 @@ case class ArrayParser(dimension: CarbonDimension, format: DataFormat) extends G
     if (StringUtils.isNotEmpty(input)) {
       val splits = format.getSplits(input)
       if (ArrayUtils.isNotEmpty(splits)) {
-        for (i <- splits.indices) {
-          children.parseString(splits(i))
+        splits.foreach { s =>
+          children.parseString(s)
         }
       }
     }

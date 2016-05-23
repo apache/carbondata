@@ -283,9 +283,10 @@ object CarbonDataRDDFactory extends Logging {
       }
 
       var currentLoadCount = -1
-      if (carbonLoadModel.getLoadMetadataDetails.size() > 0) {
-        for (eachLoadMetaData <- carbonLoadModel.getLoadMetadataDetails.asScala) {
-          val loadCount = Integer.parseInt(eachLoadMetaData.getLoadName)
+      val convLoadDetails = carbonLoadModel.getLoadMetadataDetails.asScala
+      if (convLoadDetails.nonEmpty) {
+        convLoadDetails.foreach { l =>
+          val loadCount = Integer.parseInt(l.getLoadName)
           if (currentLoadCount < loadCount) {
             currentLoadCount = loadCount
           }

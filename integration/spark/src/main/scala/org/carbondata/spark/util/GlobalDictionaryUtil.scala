@@ -69,12 +69,12 @@ object GlobalDictionaryUtil extends Logging {
     val columnNameBuffer = new ArrayBuffer[String]
     val dimensionsWithDict = dimensions.filter(hasEncoding(_, Encoding.DICTIONARY,
       Encoding.DIRECT_DICTIONARY))
-    for (dim <- dimensionsWithDict) {
+    dimensionsWithDict.foreach { dim =>
       breakable {
-        for (i <- headers.indices) {
-          if (dim.getColName.equalsIgnoreCase(headers(i))) {
+        headers.zipWithIndex.foreach { h =>
+          if (dim.getColName.equalsIgnoreCase(h._1)) {
             dimensionBuffer += dim
-            columnNameBuffer += columns(i)
+            columnNameBuffer += columns(h._2)
             break
           }
         }
@@ -92,15 +92,7 @@ object GlobalDictionaryUtil extends Logging {
     if (dimension.isComplex()) {
       var has = false
       val children = dimension.getListOfChildDimensions
-      breakable {
-        for (i <- 0 until children.size) {
-          has = has || hasEncoding(children.get(i), encoding, excludeEncoding)
-          if (has) {
-            break
-          }
-        }
-      }
-      has
+      children.asScala.exists(hasEncoding(_, encoding, excludeEncoding))
     } else {
       dimension.hasEncoding(encoding) &&
       (excludeEncoding == null || !dimension.hasEncoding(excludeEncoding))
@@ -112,10 +104,9 @@ object GlobalDictionaryUtil extends Logging {
       excludeEncoding: Encoding,
       dimensionsWithEncoding: ArrayBuffer[CarbonDimension]) {
     if (dimension.isComplex()) {
-      val children = dimension.getListOfChildDimensions
-      for (i <- 0 until children.size) {
-        gatherDimensionByEncoding(children.get(i), encoding, excludeEncoding,
-          dimensionsWithEncoding)
+      val children = dimension.getListOfChildDimensions.asScala
+      children.foreach { c =>
+        gatherDimensionByEncoding(c, encoding, excludeEncoding, dimensionsWithEncoding)
       }
     } else {
       if (dimension.hasEncoding(encoding) &&
@@ -183,14 +174,12 @@ object GlobalDictionaryUtil extends Logging {
    */
   def readGlobalDictionaryFromCache(model: DictionaryLoadModel): HashMap[String, Dictionary] = {
     val dictMap = new HashMap[String, Dictionary]
-    for (i <- model.primDimensions.indices) {
-      if (model.dictFileExists(i)) {
-        val dict = CarbonLoaderUtil.getDictionary(model.table,
-          model.primDimensions(i).getColumnId, model.hdfsLocation,
-          model.primDimensions(i).getDataType
-        )
-        dictMap.put(model.primDimensions(i).getColumnId, dict)
-      }
+    model.primDimensions.zipWithIndex.filter(f => model.dictFileExists(f._2)).foreach { m =>
+      val dict = CarbonLoaderUtil.getDictionary(model.table,
+        m._1.getColumnId, model.hdfsLocation,
+        m._1.getDataType
+      )
+      dictMap.put(m._1.getColumnId, dict)
     }
     dictMap
   }
@@ -296,9 +285,9 @@ object GlobalDictionaryUtil extends Logging {
     val dictFilePaths = new Array[String](primDimensions.length)
     val dictFileExists = new Array[Boolean](primDimensions.length)
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(hdfsLocation, table)
-    for (i <- primDimensions.indices) {
-      dictFilePaths(i) = carbonTablePath.getDictionaryFilePath(primDimensions(i).getColumnId)
-      dictFileExists(i) = CarbonUtil.isFileExists(dictFilePaths(i))
+    primDimensions.zipWithIndex.foreach{f =>
+      dictFilePaths(f._2) = carbonTablePath.getDictionaryFilePath(f._1.getColumnId)
+      dictFileExists(f._2) = CarbonUtil.isFileExists(dictFilePaths(f._2))
     }
     new DictionaryLoadModel(table,
       dimensions,
@@ -443,7 +432,7 @@ object GlobalDictionaryUtil extends Logging {
         carbonLoadModel.getCsvHeader.split("" + CSVWriter.DEFAULT_SEPARATOR)
       }
       val (requireDimension, requireColumnNames) = pruneDimensions(dimensions, headers, df.columns)
-      if (requireDimension.length >= 1) {
+      if (requireDimension.nonEmpty) {
         // select column to push down pruning
         df = df.select(requireColumnNames.head, requireColumnNames.tail: _*)
         val model = createDictionaryLoadModel(carbonLoadModel, table, requireDimension,
