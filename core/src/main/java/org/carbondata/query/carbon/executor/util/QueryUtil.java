@@ -276,21 +276,27 @@ public class QueryUtil {
     // query dimension, as well as some aggregation function will be applied
     // in the same dimension
     // so we need to get only one instance of dictionary
+    // direct dictionary skip is done only for the dictionary lookup
     Set<String> dictionaryDimensionFromQuery = new HashSet<String>();
     for (int i = 0; i < queryDimensions.size(); i++) {
-      if (queryDimensions.get(i).getDimension().getEncoder().contains(Encoding.DICTIONARY)) {
+      List<Encoding> encodingList = queryDimensions.get(i).getDimension().getEncoder();
+      if (CarbonUtil.hasEncoding(encodingList, Encoding.DICTIONARY) && !CarbonUtil
+          .hasEncoding(encodingList, Encoding.DIRECT_DICTIONARY)) {
         dictionaryDimensionFromQuery.add(queryDimensions.get(i).getDimension().getColumnId());
       }
     }
     for (int i = 0; i < dimAggInfo.size(); i++) {
-      if (dimAggInfo.get(i).getDim().getEncoder().contains(Encoding.DICTIONARY)) {
+      List<Encoding> encodingList = dimAggInfo.get(i).getDim().getEncoder();
+      if (CarbonUtil.hasEncoding(encodingList, Encoding.DICTIONARY) && !CarbonUtil
+          .hasEncoding(encodingList, Encoding.DIRECT_DICTIONARY)) {
         dictionaryDimensionFromQuery.add(dimAggInfo.get(i).getDim().getColumnId());
       }
     }
     for (int i = 0; i < customAggExpression.size(); i++) {
       List<CarbonColumn> referredColumns = customAggExpression.get(i).getReferredColumns();
       for (CarbonColumn column : referredColumns) {
-        if (CarbonUtil.hasEncoding(column.getEncoder(), Encoding.DICTIONARY)) {
+        if (CarbonUtil.hasEncoding(column.getEncoder(), Encoding.DICTIONARY) && !CarbonUtil
+            .hasEncoding(column.getEncoder(), Encoding.DIRECT_DICTIONARY)) {
           dictionaryDimensionFromQuery.add(column.getColumnId());
         }
       }

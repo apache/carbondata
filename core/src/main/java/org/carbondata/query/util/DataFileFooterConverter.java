@@ -218,6 +218,8 @@ public class DataFileFooterConverter {
         return Encoding.INVERTED_INDEX;
       case BIT_PACKED:
         return Encoding.BIT_PACKED;
+      case DIRECT_DICTIONARY:
+        return Encoding.DIRECT_DICTIONARY;
       default:
         return Encoding.DICTIONARY;
     }

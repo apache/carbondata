@@ -100,6 +100,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return org.carbondata.format.Encoding.INVERTED_INDEX;
       case BIT_PACKED:
         return org.carbondata.format.Encoding.BIT_PACKED;
+      case DIRECT_DICTIONARY:
+        return org.carbondata.format.Encoding.DIRECT_DICTIONARY;
       default:
         return org.carbondata.format.Encoding.DICTIONARY;
     }
@@ -260,6 +262,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return Encoding.INVERTED_INDEX;
       case BIT_PACKED:
         return Encoding.BIT_PACKED;
+      case DIRECT_DICTIONARY:
+        return Encoding.DIRECT_DICTIONARY;
       default:
         return Encoding.DICTIONARY;
     }

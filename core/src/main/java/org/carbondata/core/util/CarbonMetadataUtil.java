@@ -16,7 +16,19 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.metadata.ValueEncoderMeta;
-import org.carbondata.format.*;
+import org.carbondata.format.BlockletBTreeIndex;
+import org.carbondata.format.BlockletIndex;
+import org.carbondata.format.BlockletInfo;
+import org.carbondata.format.BlockletMinMaxIndex;
+import org.carbondata.format.ChunkCompressionMeta;
+import org.carbondata.format.ColumnSchema;
+import org.carbondata.format.CompressionCodec;
+import org.carbondata.format.DataChunk;
+import org.carbondata.format.Encoding;
+import org.carbondata.format.FileFooter;
+import org.carbondata.format.PresenceMeta;
+import org.carbondata.format.SegmentInfo;
+import org.carbondata.format.SortState;
 
 /**
  * Util class to convert to thrift metdata classes
@@ -108,6 +120,9 @@ public class CarbonMetadataUtil {
       List<Encoding> encodings = new ArrayList<Encoding>();
       if (columnSchenma.get(i).encoders.contains(Encoding.DICTIONARY)) {
         encodings.add(Encoding.DICTIONARY);
+      }
+      if (columnSchenma.get(i).encoders.contains(Encoding.DIRECT_DICTIONARY)) {
+        encodings.add(Encoding.DIRECT_DICTIONARY);
       }
       //TODO : Need to find how to set it.
       dataChunk.setRow_chunk(false);
