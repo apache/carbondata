@@ -29,7 +29,9 @@ class CarbonOption(options: Map[String, String]) {
 
   def partitionCount: String = options.getOrElse("partitionCount", "1")
 
-  def partitionClass: String = options.getOrElse("partitionClass",
-    "org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl")
+  def partitionClass: String = {
+    options.getOrElse("partitionClass",
+      "org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl")
+  }
 
 }

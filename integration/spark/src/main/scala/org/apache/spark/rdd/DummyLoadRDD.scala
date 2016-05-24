@@ -26,6 +26,7 @@ import org.carbondata.core.load.BlockDetails
 /**
  * this RDD use to combine blocks in node level
  * return (host,Array[BlockDetails])
+ *
  * @param prev
  */
 class DummyLoadRDD(prev: NewHadoopRDD[LongWritable, Text])
@@ -34,13 +35,14 @@ class DummyLoadRDD(prev: NewHadoopRDD[LongWritable, Text])
   override def getPartitions: Array[Partition] = firstParent[(LongWritable, Text)].partitions
 
   override def compute(theSplit: Partition,
-                       context: TaskContext): Iterator[(String, BlockDetails)] = {
+      context: TaskContext): Iterator[(String, BlockDetails)] = {
     new Iterator[(String, BlockDetails)] {
       val split = theSplit.asInstanceOf[NewHadoopPartition]
       var finished = false
       // added to make sure spark distributes tasks not to single node
       // giving sufficient time for spark to schedule
       Thread.sleep(5000)
+
       override def hasNext: Boolean = {
         if (!finished) {
           finished = true

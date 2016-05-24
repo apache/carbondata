@@ -90,10 +90,11 @@ case class CountDistinctCarbonFinal(inputSet: Expression, origDataType: DataType
 
   override def dataType: DataType = origDataType
 
-  override def toString: String = s"COUNTFINAL(DISTINCT ${inputSet}})"
+  override def toString: String = s"COUNTFINAL(DISTINCT ${ inputSet }})"
 
-  override def newInstance(): AggregateFunction1 =
+  override def newInstance(): AggregateFunction1 = {
     new CountDistinctFunctionCarbonFinal(inputSet, this)
+  }
 }
 
 case class AverageCarbon(child: Expression, castedDataType: DataType = null)
@@ -255,12 +256,17 @@ case class SumDistinctCarbon(child: Expression, castedDataType: DataType = null)
     val partialSum = Alias(SumDistinctCarbon(child), "PartialSumDistinct")()
     SplitEvaluation(
       SumDistinctFinalCarbon(partialSum.toAttribute,
-        if (castedDataType != null) castedDataType else child.dataType),
+        if (castedDataType != null) {
+          castedDataType
+        } else {
+          child.dataType
+        }),
       partialSum :: Nil)
   }
 
-  override def newInstance(): AggregateFunction1 =
+  override def newInstance(): AggregateFunction1 = {
     new SumDisctinctFunctionCarbon(child, this, false)
+  }
 }
 
 case class SumDistinctFinalCarbon(child: Expression, origDataType: DataType)
@@ -319,20 +325,19 @@ case class AverageFunctionCarbon(expr: Expression, base: AggregateExpression1, f
       case s =>
         var dc: MeasureAggregator = null
         if (s != null) {
-          if (s.isInstanceOf[java.math.BigDecimal]) {
-            dc = new AvgBigDecimalAggregator
-            dc.agg(new java.math.BigDecimal(s.toString))
-            dc.setNewValue(new java.math.BigDecimal(s.toString))
-          }
-          else if (s.isInstanceOf[Long]) {
-            dc = new AvgLongAggregator
-            dc.agg(s.toString.toLong)
-            dc.setNewValue(s.toString.toLong)
-          }
-          else {
-            dc = new AvgDoubleAggregator
-            dc.agg(s.toString.toDouble)
-            dc.setNewValue(s.toString.toDouble)
+          s match {
+            case v: java.math.BigDecimal =>
+              dc = new AvgBigDecimalAggregator
+              dc.agg(new java.math.BigDecimal(s.toString))
+              dc.setNewValue(new java.math.BigDecimal(s.toString))
+            case l: Long =>
+              dc = new AvgLongAggregator
+              dc.agg(s.toString.toLong)
+              dc.setNewValue(s.toString.toLong)
+            case _ =>
+              dc = new AvgDoubleAggregator
+              dc.agg(s.toString.toDouble)
+              dc.setNewValue(s.toString.toDouble)
           }
         }
         else {
@@ -340,27 +345,31 @@ case class AverageFunctionCarbon(expr: Expression, base: AggregateExpression1, f
         }
         dc
     }
-    if (avg == null) avg = agg else avg.merge(agg)
+    if (avg == null) {
+      avg = agg
+    } else {
+      avg.merge(agg)
+    }
   }
 
-  override def eval(input: InternalRow): Any =
+  override def eval(input: InternalRow): Any = {
     if (finalAgg) {
-      if (avg.isFirstTime()) {
+      if (avg.isFirstTime) {
         null
       } else {
-        if (avg.isInstanceOf[AvgBigDecimalAggregator]) {
-          Cast(Literal(avg.getBigDecimalValue), base.dataType).eval(null)
-        }
-        else if (avg.isInstanceOf[AvgLongAggregator]) {
-          Cast(Literal(avg.getLongValue), base.dataType).eval(null)
-        }
-        else {
-          Cast(Literal(avg.getDoubleValue), base.dataType).eval(null)
+        avg match {
+          case avg: AvgBigDecimalAggregator =>
+            Cast(Literal(avg.getBigDecimalValue), base.dataType).eval(null)
+          case avg: AvgLongAggregator =>
+            Cast(Literal(avg.getLongValue), base.dataType).eval(null)
+          case _ =>
+            Cast(Literal(avg.getDoubleValue), base.dataType).eval(null)
         }
       }
     } else {
       avg
     }
+  }
 }
 
 case class CountFunctionCarbon(expr: Expression, base: AggregateExpression1, finalAgg: Boolean)
@@ -386,12 +395,16 @@ case class CountFunctionCarbon(expr: Expression, base: AggregateExpression1, fin
         }
         agg1
     }
-    if (count == null) count = agg else count.merge(agg)
+    if (count == null) {
+      count = agg
+    } else {
+      count.merge(agg)
+    }
   }
 
-  override def eval(input: InternalRow): Any =
+  override def eval(input: InternalRow): Any = {
     if (finalAgg && count != null) {
-      if (count.isFirstTime()) {
+      if (count.isFirstTime) {
         0L
       } else {
         Cast(Literal(count.getDoubleValue), base.dataType).eval(null)
@@ -399,6 +412,7 @@ case class CountFunctionCarbon(expr: Expression, base: AggregateExpression1, fin
     } else {
       count
     }
+  }
 
 }
 
@@ -422,20 +436,19 @@ case class SumFunctionCarbon(expr: Expression, base: AggregateExpression1, final
       case s =>
         var dc: MeasureAggregator = null
         if (s != null) {
-          if (s.isInstanceOf[java.math.BigDecimal]) {
-            dc = new SumBigDecimalAggregator
-            dc.agg(new java.math.BigDecimal(s.toString))
-            dc.setNewValue(new java.math.BigDecimal(s.toString))
-          }
-          else if (s.isInstanceOf[Long]) {
-            dc = new SumLongAggregator
-            dc.agg(s.toString.toLong)
-            dc.setNewValue(s.toString.toLong)
-          }
-          else {
-            dc = new SumDoubleAggregator
-            dc.agg(s.toString.toDouble)
-            dc.setNewValue(s.toString.toDouble)
+          s match {
+            case bd: java.math.BigDecimal =>
+              dc = new SumBigDecimalAggregator
+              dc.agg(new java.math.BigDecimal(s.toString))
+              dc.setNewValue(new java.math.BigDecimal(s.toString))
+            case l: Long =>
+              dc = new SumLongAggregator
+              dc.agg(s.toString.toLong)
+              dc.setNewValue(s.toString.toLong)
+            case _ =>
+              dc = new SumDoubleAggregator
+              dc.agg(s.toString.toDouble)
+              dc.setNewValue(s.toString.toDouble)
           }
         }
         else {
@@ -443,27 +456,31 @@ case class SumFunctionCarbon(expr: Expression, base: AggregateExpression1, final
         }
         dc
     }
-    if (sum == null) sum = agg else sum.merge(agg)
+    if (sum == null) {
+      sum = agg
+    } else {
+      sum.merge(agg)
+    }
   }
 
-  override def eval(input: InternalRow): Any =
+  override def eval(input: InternalRow): Any = {
     if (finalAgg && sum != null) {
-      if (sum.isFirstTime()) {
+      if (sum.isFirstTime) {
         null
       } else {
-        if (sum.isInstanceOf[SumBigDecimalAggregator]) {
-          Cast(Literal(sum.getBigDecimalValue), base.dataType).eval(input)
-        }
-        else if (sum.isInstanceOf[SumLongAggregator]) {
-          Cast(Literal(sum.getLongValue), base.dataType).eval(input)
-        }
-        else {
-          Cast(Literal(sum.getDoubleValue), base.dataType).eval(input)
+        sum match {
+          case s: SumBigDecimalAggregator =>
+            Cast(Literal(sum.getBigDecimalValue), base.dataType).eval(input)
+          case s: SumLongAggregator =>
+            Cast(Literal(sum.getLongValue), base.dataType).eval(input)
+          case _ =>
+            Cast(Literal(sum.getDoubleValue), base.dataType).eval(input)
         }
       }
     } else {
       sum
     }
+  }
 }
 
 case class MaxFunctionCarbon(expr: Expression, base: AggregateExpression1, finalAgg: Boolean)
@@ -487,8 +504,8 @@ case class MaxFunctionCarbon(expr: Expression, base: AggregateExpression1, final
         if (s != null) {
           dc.agg(s.toString.toDouble)
           dc.setNewValue(s.toString.toDouble)
-      }
-      dc
+        }
+        dc
     }
     if (max == null) {
       max = agg
@@ -497,9 +514,9 @@ case class MaxFunctionCarbon(expr: Expression, base: AggregateExpression1, final
     }
   }
 
-  override def eval(input: InternalRow): Any =
+  override def eval(input: InternalRow): Any = {
     if (finalAgg && max != null) {
-      if (max.isFirstTime()) {
+      if (max.isFirstTime) {
         null
       } else {
         Cast(Literal(max.getValueObject), base.dataType).eval(null)
@@ -507,6 +524,7 @@ case class MaxFunctionCarbon(expr: Expression, base: AggregateExpression1, final
     } else {
       max
     }
+  }
 }
 
 case class MinFunctionCarbon(expr: Expression, base: AggregateExpression1, finalAgg: Boolean)
@@ -530,8 +548,8 @@ case class MinFunctionCarbon(expr: Expression, base: AggregateExpression1, final
         if (s != null) {
           dc.agg(s.toString.toDouble)
           dc.setNewValue(s.toString.toDouble)
-      }
-      dc
+        }
+        dc
     }
     if (min == null) {
       min = agg
@@ -542,9 +560,11 @@ case class MinFunctionCarbon(expr: Expression, base: AggregateExpression1, final
 
   override def eval(input: InternalRow): Any = {
     if (finalAgg && min != null) {
-      if (min.isFirstTime()) {
+      if (min.isFirstTime) {
         null
-      } else Cast(Literal(min.getValueObject), base.dataType).eval(null)
+      } else {
+        Cast(Literal(min.getValueObject), base.dataType).eval(null)
+      }
     } else {
       min
     }
@@ -552,7 +572,7 @@ case class MinFunctionCarbon(expr: Expression, base: AggregateExpression1, final
 }
 
 case class SumDisctinctFunctionCarbon(expr: Expression, base: AggregateExpression1,
-                                      isFinal: Boolean)
+    isFinal: Boolean)
   extends AggregateFunction1 {
 
   def this() = this(null, null, false) // Required for serialization.
@@ -573,23 +593,21 @@ case class SumDisctinctFunctionCarbon(expr: Expression, base: AggregateExpressio
       case null => null
       case s =>
         var dc: MeasureAggregator = null
-        if (s.isInstanceOf[Double]) {
-          dc = new SumDistinctDoubleAggregator
-          dc.setNewValue(s.toString.toDouble)
-        }
-        else if (s.isInstanceOf[Int]) {
-          dc = new SumDistinctLongAggregator
-          dc.setNewValue(s.toString.toLong)
-        }
-        else if (s.isInstanceOf[java.math.BigDecimal]) {
-          dc = new SumDistinctBigDecimalAggregator
-          dc.setNewValue(new java.math.BigDecimal(s.toString))
+        s match {
+          case Double =>
+            dc = new SumDistinctDoubleAggregator
+            dc.setNewValue(s.toString.toDouble)
+          case Int =>
+            dc = new SumDistinctLongAggregator
+            dc.setNewValue(s.toString.toLong)
+          case bd: java.math.BigDecimal =>
+            dc = new SumDistinctBigDecimalAggregator
+            dc.setNewValue(new java.math.BigDecimal(s.toString))
+          case _ =>
         }
         dc
     }
-    if (agg == null) {
-      distinct
-    } else if (distinct == null) {
+    if (distinct == null) {
       distinct = agg
     } else {
       distinct.merge(agg)
@@ -597,13 +615,15 @@ case class SumDisctinctFunctionCarbon(expr: Expression, base: AggregateExpressio
   }
 
   override def eval(input: InternalRow): Any =
-    // in case of empty load it was failing so added null check.
+  // in case of empty load it was failing so added null check.
+  {
     if (isFinal && distinct != null) {
       Cast(Literal(distinct.getValueObject), base.dataType).eval(null)
     }
     else {
       distinct
     }
+  }
 }
 
 case class CountDistinctFunctionCarbon(expr: Expression, base: AggregateExpression1)
@@ -629,9 +649,7 @@ case class CountDistinctFunctionCarbon(expr: Expression, base: AggregateExpressi
         dc.setNewValue(s.toString)
         dc
     }
-    if (agg == null) {
-      count
-    } else if (count == null) {
+    if (count == null) {
       count = agg
     } else {
       count.merge(agg)
@@ -664,23 +682,22 @@ case class CountDistinctFunctionCarbonFinal(expr: Expression, base: AggregateExp
         dc.setNewValue(s.toString)
         dc
     }
-    if (agg == null) {
-      count
-    } else if (count == null) {
+    if (count == null) {
       count = agg
     } else {
       count.merge(agg)
     }
   }
 
-  override def eval(input: InternalRow): Any =
+  override def eval(input: InternalRow): Any = {
     if (count == null) {
       Cast(Literal(0), base.dataType).eval(null)
-    } else if (count.isFirstTime()) {
+    } else if (count.isFirstTime) {
       Cast(Literal(0), base.dataType).eval(null)
     } else {
       Cast(Literal(count.getDoubleValue), base.dataType).eval(null)
     }
+  }
 }
 
 case class FirstFunctionCarbon(expr: Expression, base: AggregateExpression1)
@@ -725,7 +742,7 @@ case class FlattenExpr(expr: Expression) extends Expression with CodegenFallback
 
   override def eval(input: InternalRow): Any = {
     expr.eval(input) match {
-      case d: MeasureAggregator => d.getDoubleValue()
+      case d: MeasureAggregator => d.getDoubleValue
       case others => others
     }
   }
@@ -751,7 +768,7 @@ case class FlatAggregatorsExpr(expr: Expression) extends Expression with Codegen
   override def eval(input: InternalRow): Any = {
     expr.eval(input) match {
       case d: MeasureAggregator =>
-        d.setNewValue(d.getDoubleValue())
+        d.setNewValue(d.getDoubleValue)
         d
       case others => others
     }

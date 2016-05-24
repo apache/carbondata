@@ -38,8 +38,8 @@ object QueryPlanUtil {
   /**
    * createCarbonInputFormat from query model
    */
-  def createCarbonInputFormat(absoluteTableIdentifier: AbsoluteTableIdentifier) :
-  (CarbonInputFormat[RowResult], Job) = {
+  def createCarbonInputFormat(
+      absoluteTableIdentifier: AbsoluteTableIdentifier): (CarbonInputFormat[RowResult], Job) = {
     val carbonInputFormat = new CarbonInputFormat[RowResult]()
     val jobConf: JobConf = new JobConf(new Configuration)
     val job: Job = new Job(jobConf)

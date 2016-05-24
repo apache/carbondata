@@ -15,8 +15,6 @@
  * limitations under the License.
  */
 
-
-
 package org.apache.spark.util
 
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile
@@ -25,15 +23,13 @@ import org.carbondata.core.datastorage.store.impl.FileFactory
 object FileUtils {
   /**
    * append all csv file path to a String, file path separated by comma
-   * @param carbonFile
-   * @return
    */
   def getPathsFromCarbonFile(carbonFile: CarbonFile): String = {
-    if (carbonFile.isDirectory()) {
+    if (carbonFile.isDirectory) {
       val files = carbonFile.listFiles()
       val stringBuilder = new StringBuilder()
       for (j <- 0 until files.size) {
-        if (files(j).getName().endsWith(".csv")) {
+        if (files(j).getName.endsWith(".csv")) {
           stringBuilder.append(getPathsFromCarbonFile(files(j))).append(",")
         }
       }
@@ -46,8 +42,7 @@ object FileUtils {
 
   /**
    * append all file path to a String, inputPath path separated by comma
-   * @param inputPath
-   * @return
+   *
    */
   def getPaths(inputPath: String): String = {
     if (inputPath == null || inputPath.isEmpty) {

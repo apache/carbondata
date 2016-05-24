@@ -44,10 +44,10 @@ package object spark {
       // temporary solution: write to csv file, then load the csv into carbon
       val tempCSVFolder = s"$storePath/$dbName/$tableName/tempCSV"
       dataFrame.write
-          .format(csvPackage)
-          .option("header", "true")
-          .mode(SaveMode.Overwrite)
-          .save(tempCSVFolder)
+        .format(csvPackage)
+        .option("header", "true")
+        .mode(SaveMode.Overwrite)
+        .save(tempCSVFolder)
 
       val cc = CarbonContext.getInstance(dataFrame.sqlContext.sparkContext)
       val tempCSVPath = new Path(tempCSVFolder)
@@ -61,9 +61,9 @@ package object spark {
         while (itor.hasNext) {
           val f = itor.next()
           if (f.getPath.getName.startsWith("part-")) {
-            val newPath = s"${f.getPath.getParent}/${f.getPath.getName}.csv"
+            val newPath = s"${ f.getPath.getParent }/${ f.getPath.getName }.csv"
             if (!fs.rename(f.getPath, new Path(newPath))) {
-              cc.sql(s"DROP CUBE ${options.tableName}")
+              cc.sql(s"DROP CUBE ${ options.tableName }")
               throw new RuntimeException("File system rename failed when loading data into carbon")
             }
           }
@@ -94,12 +94,12 @@ package object spark {
     private def makeCreateTableString(schema: StructType, option: CarbonOption): String = {
       val tableName = option.tableName
       val carbonSchema = schema.map { field =>
-            s"${field.name} ${convertToCarbonType(field.dataType)}"
-          }
+        s"${ field.name } ${ convertToCarbonType(field.dataType) }"
+      }
       s"""
           CREATE TABLE IF NOT EXISTS $tableName
-          (${carbonSchema.mkString(", ")})
-          STORED BY '${CarbonContext.datasourceName}'
+          (${ carbonSchema.mkString(", ") })
+          STORED BY '${ CarbonContext.datasourceName }'
       """
     }
 

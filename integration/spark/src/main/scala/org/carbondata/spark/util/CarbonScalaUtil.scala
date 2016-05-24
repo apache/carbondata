@@ -29,9 +29,9 @@ import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.query.expression.{DataType => CarbonDataType}
 
 object CarbonScalaUtil {
-  def convertSparkToCarbonDataType(dataType: org.apache.spark.sql.types.DataType): CarbonDataType =
+  def convertSparkToCarbonDataType(
+      dataType: org.apache.spark.sql.types.DataType): CarbonDataType = {
     dataType match {
-
       case StringType => CarbonDataType.StringType
       case IntegerType => CarbonDataType.IntegerType
       case LongType => CarbonDataType.LongType
@@ -45,9 +45,9 @@ object CarbonScalaUtil {
       case NullType => CarbonDataType.NullType
       case _ => CarbonDataType.DecimalType
     }
+  }
 
-  def convertSparkToCarbonSchemaDataType(dataType: String): String =
-
+  def convertSparkToCarbonSchemaDataType(dataType: String): String = {
     dataType match {
       case CarbonCommonConstants.STRING_TYPE => CarbonCommonConstants.STRING
       case CarbonCommonConstants.INTEGER_TYPE => CarbonCommonConstants.INTEGER
@@ -62,8 +62,9 @@ object CarbonScalaUtil {
       case CarbonCommonConstants.TIMESTAMP_TYPE => CarbonCommonConstants.TIMESTAMP
       case anyType => anyType
     }
+  }
 
-  def convertSparkColumnToCarbonLevel(field: (String, String)): Seq[Level] =
+  def convertSparkColumnToCarbonLevel(field: (String, String)): Seq[Level] = {
     field._2 match {
       case CarbonCommonConstants.STRING_TYPE => Seq(
         Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.STRING))
@@ -88,6 +89,7 @@ object CarbonScalaUtil {
       case CarbonCommonConstants.TIMESTAMP_TYPE => Seq(
         Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.TIMESTAMP))
     }
+  }
 
 
   case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
@@ -97,7 +99,7 @@ object CarbonScalaUtil {
       val relation = CarbonEnv.getInstance(carbonContext).carbonCatalog
         .lookupRelation1(Option(carbonTable.getDatabaseName),
           carbonTable.getFactTableName, None)(carbonContext).asInstanceOf[CarbonRelation]
-      var rdd = new SchemaRDD(carbonContext, relation)
+      val rdd = new SchemaRDD(carbonContext, relation)
       rdd.registerTempTable(carbonTable.getFactTableName)
       TransformHolder(rdd, createSparkMeta(carbonTable))
     }

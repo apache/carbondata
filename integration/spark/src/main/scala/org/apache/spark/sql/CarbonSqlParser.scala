@@ -20,8 +20,8 @@ package org.apache.spark.sql
 import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.LinkedHashSet
 import scala.language.implicitConversions
-import scala.util.control.Breaks.{break, breakable}
 
 import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
@@ -33,7 +33,6 @@ import org.apache.spark.sql.catalyst.trees.CurrentOrigin
 import org.apache.spark.sql.execution.command.{DimensionRelation, _}
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
-import scala.collection.mutable.LinkedHashSet
 
 
 /**

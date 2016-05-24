@@ -43,13 +43,13 @@ import org.apache.spark.sql.execution.{SparkPlan, UnaryNode}
  */
 @DeveloperApi
 case class CarbonAggregate(
-                            partial: Boolean,
-                            groupingExpressions: Seq[Expression],
-                            aggregateExpressions: Seq[NamedExpression],
-                            child: SparkPlan)(@transient sqlContext: SQLContext)
+    partial: Boolean,
+    groupingExpressions: Seq[Expression],
+    aggregateExpressions: Seq[NamedExpression],
+    child: SparkPlan)(@transient sqlContext: SQLContext)
   extends UnaryNode {
 
-  override def requiredChildDistribution: Seq[Distribution] =
+  override def requiredChildDistribution: Seq[Distribution] = {
     if (partial) {
       UnspecifiedDistribution :: Nil
     } else {
@@ -59,6 +59,7 @@ case class CarbonAggregate(
         ClusteredDistribution(groupingExpressions) :: Nil
       }
     }
+  }
 
   override def otherCopyArgs: Seq[AnyRef] = sqlContext :: Nil
 
@@ -77,8 +78,8 @@ case class CarbonAggregate(
    *                        output.
    */
   case class ComputedAggregate(unbound: AggregateExpression1,
-                                aggregate: AggregateExpression1,
-                                resultAttribute: AttributeReference)
+      aggregate: AggregateExpression1,
+      resultAttribute: AttributeReference)
 
   /** A list of aggregates that need to be computed for each group. */
   private[this] val computedAggregates = aggregateExpressions.flatMap { agg =>
@@ -128,75 +129,78 @@ case class CarbonAggregate(
     }
   }
 
-  override def doExecute(): RDD[InternalRow] = attachTree(this, "execute") {
-    if (groupingExpressions.isEmpty) {
-      child.execute().mapPartitions { iter =>
-        val buffer = newAggregateBuffer()
-        var currentRow: InternalRow = null
-        while (iter.hasNext) {
-          currentRow = iter.next()
+  override def doExecute(): RDD[InternalRow] = {
+    attachTree(this, "execute") {
+      if (groupingExpressions.isEmpty) {
+        child.execute().mapPartitions { iter =>
+          val buffer = newAggregateBuffer()
+          var currentRow: InternalRow = null
+          while (iter.hasNext) {
+            currentRow = iter.next()
+            var i = 0
+            while (i < buffer.length) {
+              buffer(i).update(currentRow)
+              i += 1
+            }
+          }
+          val resultProjection = new InterpretedProjection(resultExpressions, computedSchema)
+          val aggregateResults = new GenericMutableRow(computedAggregates.length)
+
           var i = 0
           while (i < buffer.length) {
-            buffer(i).update(currentRow)
+            aggregateResults(i) = buffer(i).eval(EmptyRow)
             i += 1
           }
+
+          Iterator(resultProjection(aggregateResults))
         }
-        val resultProjection = new InterpretedProjection(resultExpressions, computedSchema)
-        val aggregateResults = new GenericMutableRow(computedAggregates.length)
+      } else {
+        child.execute().mapPartitions { iter =>
+          val hashTable = new HashMap[InternalRow, Array[AggregateFunction1]]
+          val groupingProjection = new InterpretedMutableProjection(groupingExpressions,
+            childOutput)
 
-        var i = 0
-        while (i < buffer.length) {
-          aggregateResults(i) = buffer(i).eval(EmptyRow)
-          i += 1
-        }
-
-        Iterator(resultProjection(aggregateResults))
-      }
-    } else {
-      child.execute().mapPartitions { iter =>
-        val hashTable = new HashMap[InternalRow, Array[AggregateFunction1]]
-        val groupingProjection = new InterpretedMutableProjection(groupingExpressions, childOutput)
-
-        var currentRow: InternalRow = null
-        while (iter.hasNext) {
-          currentRow = iter.next()
-          val currentGroup = groupingProjection(currentRow)
-          var currentBuffer = hashTable.get(currentGroup)
-          if (currentBuffer == null) {
-            currentBuffer = newAggregateBuffer()
-            hashTable.put(currentGroup.copy(), currentBuffer)
-          }
-
-          var i = 0
-          while (i < currentBuffer.length) {
-            currentBuffer(i).update(currentRow)
-            i += 1
-          }
-        }
-
-        new Iterator[InternalRow] {
-          private[this] val hashTableIter = hashTable.entrySet().iterator()
-          private[this] val aggregateResults = new GenericMutableRow(computedAggregates.length)
-          private[this] val resultProjection =
-            new InterpretedMutableProjection(resultExpressions,
-              computedSchema ++ namedGroups.map(_._2))
-          private[this] val joinedRow = new JoinedRow
-
-          override final def hasNext: Boolean = hashTableIter.hasNext
-
-          override final def next(): InternalRow = {
-            val currentEntry = hashTableIter.next()
-            val currentGroup = currentEntry.getKey
-            val currentBuffer = currentEntry.getValue
+          var currentRow: InternalRow = null
+          while (iter.hasNext) {
+            currentRow = iter.next()
+            val currentGroup = groupingProjection(currentRow)
+            var currentBuffer = hashTable.get(currentGroup)
+            if (currentBuffer == null) {
+              currentBuffer = newAggregateBuffer()
+              hashTable.put(currentGroup.copy(), currentBuffer)
+            }
 
             var i = 0
             while (i < currentBuffer.length) {
-              // Evaluating an aggregate buffer returns the result.  No row is required since we
-              // already added all rows in the group using update.
-              aggregateResults(i) = currentBuffer(i).eval(EmptyRow)
+              currentBuffer(i).update(currentRow)
               i += 1
             }
-            resultProjection(joinedRow(aggregateResults, currentGroup))
+          }
+
+          new Iterator[InternalRow] {
+            private[this] val hashTableIter = hashTable.entrySet().iterator()
+            private[this] val aggregateResults = new GenericMutableRow(computedAggregates.length)
+            private[this] val resultProjection =
+              new InterpretedMutableProjection(resultExpressions,
+                computedSchema ++ namedGroups.map(_._2))
+            private[this] val joinedRow = new JoinedRow
+
+            override final def hasNext: Boolean = hashTableIter.hasNext
+
+            override final def next(): InternalRow = {
+              val currentEntry = hashTableIter.next()
+              val currentGroup = currentEntry.getKey
+              val currentBuffer = currentEntry.getValue
+
+              var i = 0
+              while (i < currentBuffer.length) {
+                // Evaluating an aggregate buffer returns the result.  No row is required since we
+                // already added all rows in the group using update.
+                aggregateResults(i) = currentBuffer(i).eval(EmptyRow)
+                i += 1
+              }
+              resultProjection(joinedRow(aggregateResults, currentGroup))
+            }
           }
         }
       }

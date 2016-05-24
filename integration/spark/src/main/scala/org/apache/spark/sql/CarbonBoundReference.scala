@@ -30,11 +30,11 @@ case class CarbonBoundReference(colExp: ColumnExpression, dataType: DataType, nu
 
   type EvaluatedType = Any
 
-  override def toString: String = s"input[" + colExp.getColIndex() + "]"
+  override def toString: String = s"input[" + colExp.getColIndex + "]"
 
-  override def eval(input: InternalRow): Any = input.get(colExp.getColIndex(), dataType)
+  override def eval(input: InternalRow): Any = input.get(colExp.getColIndex, dataType)
 
-  override def name: String = colExp.getColumnName()
+  override def name: String = colExp.getColumnName
 
   override def toAttribute: Attribute = throw new UnsupportedOperationException
 

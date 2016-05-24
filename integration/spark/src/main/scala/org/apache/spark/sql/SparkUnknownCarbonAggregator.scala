@@ -29,10 +29,10 @@ import org.carbondata.query.aggregator.{CustomMeasureAggregator, MeasureAggregat
 import org.carbondata.query.carbonfilterinterface.RowIntf
 import org.carbondata.query.expression.ColumnExpression
 
-  /**
-  * Custom Aggregator serialized and used to pushdown all aggregate functions from spark layer with
-  * expressions to Carbon layer
-  */
+/**
+ * Custom Aggregator serialized and used to pushdown all aggregate functions from spark layer with
+ * expressions to Carbon layer
+ */
 @SerialVersionUID(-3787749110799088697L)
 class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
   extends CustomMeasureAggregator {
@@ -60,24 +60,24 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
     )
   }
 
-  override def getByteArray(): Array[Byte] = {
+  override def getByteArray: Array[Byte] = {
     throw new UnsupportedOperationException("getByteArray  is not implemented yet")
   }
 
-  override def getDoubleValue(): java.lang.Double = {
+  override def getDoubleValue: java.lang.Double = {
     throw new UnsupportedOperationException("getValue() is not a valid method for result")
   }
 
-  override def getLongValue(): java.lang.Long = {
+  override def getLongValue: java.lang.Long = {
     throw new UnsupportedOperationException("getLongValue() is not a valid method for result")
   }
 
-  override def getBigDecimalValue(): java.math.BigDecimal = {
+  override def getBigDecimalValue: java.math.BigDecimal = {
     throw new
         UnsupportedOperationException("getBigDecimalValue() is not a valid method for result")
   }
 
-  override def getValueObject(): Object = {
+  override def getValueObject: Object = {
 
     result.iterator.foreach(v => getPartialFunction.update(v))
 
@@ -87,7 +87,7 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
   }
 
   override def merge(aggregator: MeasureAggregator): Unit = {
-    if (result.size > 0) {
+    if (result.nonEmpty) {
       result.iterator.foreach(v => {
         getPartialFunction.update(v)
       }
@@ -97,15 +97,11 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
       result.clear
     }
 
-    if (aggregator.isInstanceOf[SparkUnknownCarbonAggregator]) {
-      aggregator.asInstanceOf[SparkUnknownCarbonAggregator].result.iterator.foreach(v => {
-        getPartialFunction.update(v)
-      }
-      )
-
-      aggregator.asInstanceOf[SparkUnknownCarbonAggregator].result.clear
-    } else {
-      throw new Exception("Invalid merge expected type is" + this.getClass().getName())
+    aggregator match {
+      case s: SparkUnknownCarbonAggregator =>
+        s.result.iterator.foreach(v => getPartialFunction.update(v))
+        s.result.clear
+      case _ => throw new Exception("Invalid merge expected type is" + this.getClass.getName);
     }
   }
 
@@ -116,7 +112,7 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
     partialFunction
   }
 
-  override def isFirstTime(): Boolean = {
+  override def isFirstTime: Boolean = {
     isRowsAggregated
   }
 
@@ -141,18 +137,18 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
   }
 
   override def compareTo(aggre: MeasureAggregator): Int = {
-    return 0
+    0
   }
 
-  override def getCopy(): MeasureAggregator = {
-    return new SparkUnknownCarbonAggregator(partialAggregate)
+  override def getCopy: MeasureAggregator = {
+    new SparkUnknownCarbonAggregator(partialAggregate)
   }
 
   override def setNewValue(newVal: Object): Unit = {
 
   }
 
-  override def getColumns(): java.util.List[ColumnExpression] = {
+  override def getColumns: java.util.List[ColumnExpression] = {
     if (allColumns == null) {
       allColumns = partialAggregate.flatMap(_ collect { case a: CarbonBoundReference => a.colExp })
         .asJava
@@ -162,18 +158,16 @@ class SparkUnknownCarbonAggregator(partialAggregate: AggregateExpression1)
 
   override def agg(row: RowIntf): Unit = {
     isRowsAggregated = true
-    val values = row.getValues().toSeq.map { value =>
-      value match {
-        case s: String => org.apache.spark.unsafe.types.UTF8String.fromString(s)
-        // solve: java.math.BigDecimal cannot be cast to org.apache.spark.sql.types.Decimal
-        case d: java.math.BigDecimal =>
-          val javaDecVal = new java.math.BigDecimal(d.toString())
-          val scalaDecVal = new scala.math.BigDecimal(javaDecVal)
-          val decConverter = new org.apache.spark.sql.types.Decimal()
+    val values = row.getValues.toSeq.map {
+      case s: String => org.apache.spark.unsafe.types.UTF8String.fromString(s)
+      // solve: java.math.BigDecimal cannot be cast to org.apache.spark.sql.types.Decimal
+      case d: java.math.BigDecimal =>
+        val javaDecVal = new java.math.BigDecimal(d.toString)
+        val scalaDecVal = new scala.math.BigDecimal(javaDecVal)
+        val decConverter = new org.apache.spark.sql.types.Decimal()
 
-          decConverter.set(scalaDecVal)
-        case _ => value
-      }
+        decConverter.set(scalaDecVal)
+      case others => others
     }
     result += new GenericMutableRow(values.map(a => a.asInstanceOf[Any]).toArray)
   }

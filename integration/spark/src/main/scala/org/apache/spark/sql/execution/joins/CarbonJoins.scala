@@ -29,12 +29,12 @@ import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.unsafe.types.UTF8String
 
 case class FilterPushJoin(
-                           leftKeys: Seq[Expression],
-                           rightKeys: Seq[Expression],
-                           buildSide: BuildSide,
-                           left: SparkPlan,
-                           right: SparkPlan,
-                           condition: Option[Expression]) extends BinaryNode with HashJoin {
+    leftKeys: Seq[Expression],
+    rightKeys: Seq[Expression],
+    buildSide: BuildSide,
+    left: SparkPlan,
+    right: SparkPlan,
+    condition: Option[Expression]) extends BinaryNode with HashJoin {
 
   override private[sql] lazy val metrics = Map(
     "numLeftRows" -> SQLMetrics.createLongMetric(sparkContext, "number of left rows"),

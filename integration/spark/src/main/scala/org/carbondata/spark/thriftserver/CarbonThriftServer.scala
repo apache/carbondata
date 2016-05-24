@@ -27,7 +27,7 @@ import org.carbondata.core.util.CarbonProperties
 object CarbonThriftServer {
 
   def main(args: Array[String]): Unit = {
-    var conf = new SparkConf()
+    val conf = new SparkConf()
       .setAppName("Carbon Thrift Server")
     val sparkHome = System.getenv.get("SPARK_HOME")
     if (null != sparkHome) {
@@ -40,14 +40,14 @@ object CarbonThriftServer {
     try {
       Thread.sleep(Integer.parseInt(warmUpTime))
     } catch {
-      case _ =>
+      case e: Exception =>
         val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
         LOG.error("Wrong value for carbon.spark.warmUpTime " + warmUpTime +
-          "Using default Value and proceeding")
+                  "Using default Value and proceeding")
         Thread.sleep(30000)
     }
 
-    val carbonContext = new CarbonContext(sc, args(0))
+    val carbonContext = new CarbonContext(sc, args.head)
 
     HiveThriftServer2.startWithContext(carbonContext)
   }

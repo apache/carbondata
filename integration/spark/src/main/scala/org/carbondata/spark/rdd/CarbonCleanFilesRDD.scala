@@ -29,22 +29,18 @@ import org.carbondata.spark.util.CarbonQueryUtil
 
 
 class CarbonCleanFilesRDD[K, V](
-                                 sc: SparkContext,
-                                 keyClass: KeyVal[K, V],
-                                 schemaName: String,
-                                 cubeName: String,
-                                 partitioner: Partitioner)
+    sc: SparkContext,
+    keyClass: KeyVal[K, V],
+    schemaName: String,
+    cubeName: String,
+    partitioner: Partitioner)
   extends RDD[(K, V)](sc, Nil) with Logging {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
   override def getPartitions: Array[Partition] = {
     val splits = CarbonQueryUtil.getTableSplits(schemaName, cubeName, null, partitioner)
-    val result = new Array[Partition](splits.length)
-    for (i <- 0 until result.length) {
-      result(i) = new CarbonLoadPartition(id, i, splits(i))
-    }
-    result
+    splits.zipWithIndex.map(s => new CarbonLoadPartition(id, s._2, s._1))
   }
 
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
@@ -59,7 +55,7 @@ class CarbonCleanFilesRDD[K, V](
 
       override def hasNext: Boolean = {
         if (!finished && !havePair) {
-          finished = !false
+          finished = true
           havePair = !finished
         }
         !finished
