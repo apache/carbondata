@@ -48,7 +48,7 @@ object QueryPlanUtil {
 
     val validSegments = new SegmentStatusManager(absoluteTableIdentifier).getValidSegments
     val validSegmentNos =
-      validSegments.listOfValidSegments.asScala.map(x => new Integer(Integer.parseInt(x)))
+      validSegments.listOfValidSegments.asScala.map(x => Integer.valueOf(x))
     CarbonInputFormat.setSegmentsToAccess(job, validSegmentNos.asJava)
     (carbonInputFormat, job)
   }

@@ -316,7 +316,8 @@ public class IntermediateFileMerger implements Callable<Void> {
       }
 
       // added for high card also
-      if (mergerParameters.getNoDictionaryCount() > 0) {
+      if ((mergerParameters.getNoDictionaryCount() + mergerParameters
+          .getComplexDimColCount()) > 0) {
         stream.write(RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row));
       }
 

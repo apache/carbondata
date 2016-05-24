@@ -91,6 +91,19 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     }
   }
   
+  test("complex types data loading") {
+    sql("create table complexcarbontable(deviceInformationId int, channelsId string,"+ 
+        "ROMSize string, purchasedate string, mobile struct<imei:string, imsi:string>,"+
+        "MAC array<string>, locationinfo array<struct<ActiveAreaId:int, ActiveCountry:string, ActiveProvince:string, Activecity:string, ActiveDistrict:string, ActiveStreet:string>>,"+
+        "proddate struct<productionDate:string,activeDeactivedate:array<string>>, gamePointId double,contractNumber double) "+
+        "STORED BY 'org.apache.carbondata.format' "+
+        "TBLPROPERTIES ('DICTIONARY_INCLUDE'='deviceInformationId')")
+    sql("LOAD DATA local inpath './src/test/resources/complexdata.csv' INTO table complexcarbontable "+
+        "OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber',"+
+        "'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')");
+    sql("drop table if exists complexcarbontable")
+  }
+  
   override def afterAll {
     sql("drop cube carboncube")
     sql("drop table hivetable")

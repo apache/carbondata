@@ -1615,6 +1615,11 @@ public final class CarbonUtil {
     List<Boolean> isDictionaryDimensions = new ArrayList<Boolean>();
     Set<Integer> processedColumnGroup = new HashSet<Integer>();
     for (CarbonDimension carbonDimension : tableDimensionList) {
+      List<CarbonDimension> childs = carbonDimension.getListOfChildDimensions();
+      //assuming complex dimensions will always be atlast
+      if(null != childs && childs.size() > 0) {
+        break;
+      }
       if (carbonDimension.isColumnar() && hasEncoding(carbonDimension.getEncoder(),
           Encoding.DICTIONARY)) {
         isDictionaryDimensions.add(true);

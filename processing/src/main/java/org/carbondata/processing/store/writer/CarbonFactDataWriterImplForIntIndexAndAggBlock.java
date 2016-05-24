@@ -99,7 +99,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
 
       }
       totalKeySize += keyLengths[i];
-      if (isDictionaryColumn[i]) {
+      if (isComplexType[i] || isDictionaryColumn[i]) {
         allMinValue[i] = keyStorageArray[i].getMin();
         allMaxValue[i] = keyStorageArray[i].getMax();
       } else {
@@ -291,7 +291,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     for (int i = 0; i < keyStorageArray.length; i++) {
       destPos = 0;
       //handling for high card dims
-      if (!this.isDictionaryColumn[i] && !isComplexType[i]) {
+      if (!isComplexType[i] && !this.isDictionaryColumn[i]) {
         int totalLength = 0;
         // calc size of the total bytes in all the colmns.
         for (int k = 0; k < keyStorageArray[i].getKeyBlock().length; k++) {
@@ -307,6 +307,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
           destPos += length;
         }
       } else {
+        keyBlockSizePosition++;
         if (aggBlocks[i]) {
           keyBlockData[i] = new byte[keyStorageArray[i].getTotalSize()];
           for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
@@ -315,7 +316,6 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
             destPos += keyStorageArray[i].getKeyBlock()[j].length;
           }
         } else {
-          keyBlockSizePosition++;
           if (isComplexType[i]) {
             keyBlockData[i] = new byte[keyStorageArray[i].getKeyBlock().length
                 * keyBlockSize[keyBlockSizePosition]];

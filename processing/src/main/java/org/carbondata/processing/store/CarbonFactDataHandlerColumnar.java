@@ -377,11 +377,20 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private void fillColumnSchemaList(List<CarbonDimension> carbonDimensionsList,
       List<CarbonMeasure> carbonMeasureList) {
     wrapperColumnSchemaList = new ArrayList<ColumnSchema>();
-    for (CarbonDimension carbonDimension : carbonDimensionsList) {
-      wrapperColumnSchemaList.add(carbonDimension.getColumnSchema());
-    }
+    fillCollumnSchemaListForComplexDims(carbonDimensionsList, wrapperColumnSchemaList);
     for (CarbonMeasure carbonMeasure : carbonMeasureList) {
       wrapperColumnSchemaList.add(carbonMeasure.getColumnSchema());
+    }
+  }
+
+  private void fillCollumnSchemaListForComplexDims(List<CarbonDimension> carbonDimensionsList,
+      List<ColumnSchema> wrapperColumnSchemaList) {
+    for (CarbonDimension carbonDimension : carbonDimensionsList) {
+      wrapperColumnSchemaList.add(carbonDimension.getColumnSchema());
+      List<CarbonDimension> childDims = carbonDimension.getListOfChildDimensions();
+      if(null != childDims && childDims.size() > 0) {
+        fillCollumnSchemaListForComplexDims(childDims, wrapperColumnSchemaList);
+      }
     }
   }
 
@@ -486,7 +495,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     CarbonWriteDataHolder[] dataHolder = initialiseDataHolder(dataRows.size());
     CarbonWriteDataHolder keyDataHolder = initialiseKeyBlockHolder(dataRows.size());
     CarbonWriteDataHolder noDictionaryKeyDataHolder = null;
-    if (noDictionaryCount > 0) {
+    if ((noDictionaryCount + complexColCount) > 0) {
       noDictionaryKeyDataHolder = initialiseKeyBlockHolder(dataRows.size());
     }
     for (int count = 0; count < dataRows.size(); count++) {
@@ -553,7 +562,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     calculateUniqueValue(min, uniqueValue);
     byte[][] byteArrayValues = keyDataHolder.getByteArrayValues().clone();
     byte[][] noDictionaryValueHolder = null;
-    if (noDictionaryCount > 0) {
+    if ((noDictionaryCount + complexColCount) > 0) {
       noDictionaryValueHolder = noDictionaryKeyDataHolder.getByteArrayValues();
     }
     ValueCompressionModel compressionModel = ValueCompressionUtil
