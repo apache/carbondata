@@ -30,7 +30,7 @@ import org.apache.spark.sql.execution.command.Partitioner
 import org.apache.spark.util.{FileUtils, SplitUtils}
 
 import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.CarbonDataLoadSchema
+import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonDataLoadSchema, CarbonTableIdentifier}
 import org.carbondata.core.carbon.metadata.CarbonMetadata
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.core.constants.CarbonCommonConstants
@@ -38,6 +38,7 @@ import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.carbondata.lcm.status.SegmentStatusManager
 import org.carbondata.processing.util.CarbonDataProcessorUtil
 import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
 import org.carbondata.spark._
@@ -122,7 +123,12 @@ object CarbonDataRDDFactory extends Logging {
     if (-1 == currentRestructNumber) {
       currentRestructNumber = 0
     }
-    val loadMetadataDetailsArray = CarbonUtil.readLoadMetadata(cube.getMetaDataFilepath).toList
+    var segmentStatusManager = new SegmentStatusManager(
+      new AbsoluteTableIdentifier(
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION),
+        new CarbonTableIdentifier(schemaName, tableName)));
+    val loadMetadataDetailsArray = segmentStatusManager.readLoadMetadata(cube.getMetaDataFilepath())
+      .toList
     val resultMap = new CarbonDeleteLoadByDateRDD(
       sc.sparkContext,
       new DeletedLoadResultImpl(),
@@ -275,9 +281,9 @@ object CarbonDataRDDFactory extends Logging {
       }
 
       // Check if any load need to be deleted before loading new data
-      //      deleteLoadsAndUpdateMetadata(carbonLoadModel, carbonTable, partitioner,
-      // hdfsStoreLocation, false,
-      //        currentRestructNumber)
+      deleteLoadsAndUpdateMetadata(carbonLoadModel, carbonTable, partitioner,
+        hdfsStoreLocation, false,
+        currentRestructNumber)
       if (null == carbonLoadModel.getLoadMetadataDetails) {
         readLoadMetadataDetails(carbonLoadModel, hdfsStoreLocation)
       }
@@ -505,7 +511,11 @@ object CarbonDataRDDFactory extends Logging {
 
   private def readLoadMetadataDetails(model: CarbonLoadModel, hdfsStoreLocation: String) = {
     val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetaDataFilepath
-    val details = CarbonUtil.readLoadMetadata(metadataPath)
+    var segmentStatusManager = new SegmentStatusManager(
+      new AbsoluteTableIdentifier(
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION),
+        new CarbonTableIdentifier(model.getDatabaseName, model.getTableName)));
+    val details = segmentStatusManager.readLoadMetadata(metadataPath)
     model.setLoadMetadataDetails(details.toList.asJava)
   }
 
@@ -518,13 +528,19 @@ object CarbonDataRDDFactory extends Logging {
     if (LoadMetadataUtil.isLoadDeletionRequired(carbonLoadModel)) {
       val loadMetadataFilePath = CarbonLoaderUtil
         .extractLoadMetadataFileLocation(carbonLoadModel)
-      val details = CarbonUtil
+      var segmentStatusManager = new SegmentStatusManager(
+        new AbsoluteTableIdentifier(
+          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION),
+          new CarbonTableIdentifier(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
+        )
+      );
+      val details = segmentStatusManager
         .readLoadMetadata(loadMetadataFilePath)
 
       // Delete marked loads
       val isUpdationRequired = DeleteLoadFolders
-        .deleteLoadFoldersFromFileSystem(carbonLoadModel, partitioner.partitionCount,
-          hdfsStoreLocation, isForceDeletion, currentRestructNumber, details)
+        .deleteLoadFoldersFromFileSystem(carbonLoadModel, hdfsStoreLocation,
+          partitioner.partitionCount, isForceDeletion, details)
 
       if (isUpdationRequired) {
         // Update load metadate file after cleaning deleted nodes
@@ -534,10 +550,10 @@ object CarbonDataRDDFactory extends Logging {
           carbonLoadModel.getTableName, details.toList.asJava)
       }
     }
-
-    CarbonDataMergerUtil
-      .cleanUnwantedMergeLoadFolder(carbonLoadModel, partitioner.partitionCount, hdfsStoreLocation,
-        isForceDeletion, currentRestructNumber)
+// TODO:Need to hanlde this scanario for data compaction
+ //   CarbonDataMergerUtil
+ //     .cleanUnwantedMergeLoadFolder(carbonLoadModel, partitioner.partitionCount,
+ //    hdfsStoreLocation, isForceDeletion, currentRestructNumber)*/
 
   }
 

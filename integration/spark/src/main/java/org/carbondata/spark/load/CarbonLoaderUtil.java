@@ -48,7 +48,6 @@ import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
-import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
@@ -748,9 +747,11 @@ public final class CarbonLoaderUtil {
   }
 
   public static void writeLoadMetadata(CarbonDataLoadSchema schema, String schemaName,
-      String cubeName, List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
-    String dataLoadLocation = schema.getCarbonTable().getMetaDataFilepath() + File.separator
-        + CarbonCommonConstants.LOADMETADATA_FILENAME;
+      String tableName, List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION),
+        new CarbonTableIdentifier(schemaName, tableName));
+    String dataLoadLocation = carbonTablePath.getTableStatusFilePath();
 
     DataOutputStream dataOutputStream;
     Gson gsonObjectToWrite = new Gson();
@@ -793,7 +794,7 @@ public final class CarbonLoaderUtil {
   }
 
   public static String extractLoadMetadataFileLocation(CarbonLoadModel loadModel) {
-    CarbonTable carbonTable = CarbonMetadata.getInstance()
+    CarbonTable carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
         .getCarbonTable(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
     return carbonTable.getMetaDataFilepath();
   }

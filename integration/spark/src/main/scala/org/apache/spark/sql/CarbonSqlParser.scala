@@ -141,6 +141,9 @@ class CarbonSqlParser()
   protected val NOT = Keyword("NOT")
   protected val EXISTS = Keyword("EXISTS")
   protected val DIMENSION = Keyword("DIMENSION")
+  protected val STARTTIME = Keyword("STARTTIME")
+  protected val SEGMENTS = Keyword("SEGMENTS")
+  protected val SEGMENT = Keyword("SEGMENT")
 
   protected val doubleQuotedString = "\"([^\"]+)\"".r
   protected val singleQuotedString = "'([^']+)'".r
@@ -177,7 +180,7 @@ class CarbonSqlParser()
       showCube | showLoads | alterCube | showAllCubes | createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] = loadData | dropCubeOrTable |
-    deleteLoadsByID | deleteLoadsByDate | cleanFiles | loadDataNew
+    deleteLoadsByID | deleteLoadsByLoadDate | deleteLoadsByDate | cleanFiles | loadDataNew
 
   protected lazy val createAggregateTable: Parser[LogicalPlan] =
     CREATE ~> AGGREGATETABLE ~>
@@ -1112,17 +1115,31 @@ class CarbonSqlParser()
   }
 
   protected lazy val showLoads: Parser[LogicalPlan] =
-    SHOW ~> LOADS ~> FOR ~> CUBE ~> (ident <~ ".").? ~ ident ~ (LIMIT ~> numericLit).? <~
+    SHOW ~> (LOADS|SEGMENTS) ~> FOR ~> (CUBE | TABLE) ~> (ident <~ ".").? ~ ident ~
+      (LIMIT ~> numericLit).? <~
       opt(";") ^^ {
       case schemaName ~ cubeName ~ limit => ShowLoadsCommand(schemaName, cubeName, limit)
     }
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
-    DELETE ~> LOAD ~> repsep(numericLit, ",") ~ (FROM ~> CUBE ~> (ident <~ ".").? ~ ident) <~
+    DELETE ~> (LOAD|SEGMENT) ~> repsep(numericLit, ",") ~ (FROM ~> (CUBE | TABLE) ~>
+      (ident <~ ".").? ~ ident) <~
       opt(";") ^^ {
       case loadids ~ cube => cube match {
         case schemaName ~ cubeName => DeleteLoadsById(loadids, schemaName, cubeName)
       }
+    }
+
+  @deprecated
+  protected lazy val deleteLoadsByLoadDate: Parser[LogicalPlan] =
+    DELETE ~> (LOADS|SEGMENTS) ~> FROM ~> (CUBE | TABLE) ~> (ident <~ ".").? ~ ident ~
+      (WHERE ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
+      opt(";") ^^ {
+      case schema ~ cube ~ condition =>
+        condition match {
+          case dateField ~ dateValue =>
+            DeleteLoadsByLoadDate(schema, cube, dateField, dateValue)
+        }
     }
 
   protected lazy val deleteLoadsByDate: Parser[LogicalPlan] =
@@ -1136,7 +1153,7 @@ class CarbonSqlParser()
     }
 
   protected lazy val cleanFiles: Parser[LogicalPlan] =
-    CLEAN ~> FILES ~> FOR ~> CUBE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
+    CLEAN ~> FILES ~> FOR ~> (CUBE | TABLE) ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
       case schemaName ~ cubeName => CleanFiles(schemaName, cubeName)
     }
 

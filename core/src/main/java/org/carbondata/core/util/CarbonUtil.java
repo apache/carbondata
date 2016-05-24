@@ -20,7 +20,6 @@
 
 package org.carbondata.core.util;
 
-import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.File;
@@ -29,7 +28,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
@@ -62,13 +60,10 @@ import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreInfo;
 import org.carbondata.core.datastorage.store.columnar.UnBlockIndexer;
 import org.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
-import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperations;
-import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperationsImpl;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
-import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.metadata.BlockletInfo;
 import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.metadata.SliceMetaData;
@@ -77,7 +72,6 @@ import org.carbondata.core.reader.CarbonFooterReader;
 import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.query.util.DataFileFooterConverter;
 
-import com.google.gson.Gson;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -1091,43 +1085,6 @@ public final class CarbonUtil {
         hdfsStoreLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER + rsCounter
             + "/" + tableName;
     return hdfsLoadedTable;
-  }
-
-  /**
-   * This method reads the load metadata file
-   *
-   * @param cubeFolderPath
-   * @return
-   */
-  public static LoadMetadataDetails[] readLoadMetadata(String cubeFolderPath) {
-    Gson gsonObjectToRead = new Gson();
-    DataInputStream dataInputStream = null;
-    BufferedReader buffReader = null;
-    InputStreamReader inStream = null;
-    String metadataFileName = cubeFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-        + CarbonCommonConstants.LOADMETADATA_FILENAME;
-    LoadMetadataDetails[] listOfLoadFolderDetailsArray;
-
-    AtomicFileOperations fileOperation =
-        new AtomicFileOperationsImpl(metadataFileName, FileFactory.getFileType(metadataFileName));
-
-    try {
-      if (!FileFactory.isFileExist(metadataFileName, FileFactory.getFileType(metadataFileName))) {
-        return new LoadMetadataDetails[0];
-      }
-      dataInputStream = fileOperation.openForRead();
-      inStream = new InputStreamReader(dataInputStream,
-          CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT);
-      buffReader = new BufferedReader(inStream);
-      listOfLoadFolderDetailsArray =
-          gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
-    } catch (IOException e) {
-      return new LoadMetadataDetails[0];
-    } finally {
-      closeStreams(buffReader, inStream, dataInputStream);
-    }
-
-    return listOfLoadFolderDetailsArray;
   }
 
   public static boolean createRSMetaFile(String metaDataPath, String newRSFileName) {

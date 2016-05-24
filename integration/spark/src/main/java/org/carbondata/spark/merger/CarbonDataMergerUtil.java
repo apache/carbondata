@@ -27,6 +27,8 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
@@ -35,7 +37,7 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.lcm.status.SegmentStatusManager;
 import org.carbondata.spark.load.CarbonLoadModel;
 import org.carbondata.spark.load.CarbonLoaderUtil;
 import org.carbondata.spark.load.DeleteLoadFolders;
@@ -82,7 +84,13 @@ public final class CarbonDataMergerUtil {
       toLoadMergeMaxSize = Integer.parseInt(CarbonCommonConstants.TO_LOAD_MERGE_MAX_SIZE_DEFAULT);
     }
 
-    LoadMetadataDetails[] loadDetails = CarbonUtil.readLoadMetadata(metadataPath);
+    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(
+        new AbsoluteTableIdentifier(
+            storeLocation,
+            new CarbonTableIdentifier(carbonLoadModel.getDatabaseName(),
+                carbonLoadModel.getTableName())));
+
+    LoadMetadataDetails[] loadDetails = segmentStatusManager.readLoadMetadata(metadataPath);
 
     for (LoadMetadataDetails loadDetail : loadDetails) {
       if (loadNames.size() < 2) {
@@ -247,7 +255,12 @@ public final class CarbonDataMergerUtil {
       mergeThreshold = Integer.parseInt(CarbonCommonConstants.MERGE_THRESHOLD_DEFAULT_VAL);
     }
 
-    LoadMetadataDetails[] details = CarbonUtil.readLoadMetadata(metadataFilePath);
+    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(
+        new AbsoluteTableIdentifier(
+            storeLocation,
+            new CarbonTableIdentifier(carbonLoadModel.getDatabaseName(),
+                carbonLoadModel.getTableName())));
+    LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metadataFilePath);
 
     int validLoadsNumber = getNumberOfValidLoads(details, loadFiles);
 
@@ -323,7 +336,13 @@ public final class CarbonDataMergerUtil {
 
   public static void updateLoadMetadataWithMergeStatus(List<String> loadsToMerge,
       String metaDataFilepath, String MergedLoadName, CarbonLoadModel carbonLoadModel) {
-    LoadMetadataDetails[] loadDetails = CarbonUtil.readLoadMetadata(metaDataFilepath);
+
+    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(
+        new AbsoluteTableIdentifier(
+            carbonLoadModel.getFactStoreLocation(),
+            new CarbonTableIdentifier(carbonLoadModel.getDatabaseName(),
+                carbonLoadModel.getTableName())));
+    LoadMetadataDetails[] loadDetails = segmentStatusManager.readLoadMetadata(metaDataFilepath);
 
     boolean first = true;
 
@@ -368,7 +387,12 @@ public final class CarbonDataMergerUtil {
     String loadMetadataFilePath = cube.getMetaDataFilepath();
     //String loadMetadataFilePath = CarbonLoaderUtil.extractLoadMetadataFileLocation(loadModel);
 
-    LoadMetadataDetails[] details = CarbonUtil.readLoadMetadata(loadMetadataFilePath);
+    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(
+        new AbsoluteTableIdentifier(
+            storeLocation,
+            new CarbonTableIdentifier(loadModel.getDatabaseName(),
+                loadModel.getTableName())));
+    LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(loadMetadataFilePath);
 
     // for first time before any load , this will be null
     if (null == details || details.length == 0) {

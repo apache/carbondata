@@ -37,6 +37,8 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
@@ -113,6 +115,32 @@ public final class DeleteLoadFolders {
     }
 
     return isDeleted;
+  }
+
+  /**
+   * returns segment path
+   *
+   * @param loadModel
+   * @param storeLocation
+   * @param partitionId
+   * @param oneLoad
+   * @return
+   */
+  private static String getSegmentPath(CarbonLoadModel loadModel, String storeLocation,
+      int partitionId, LoadMetadataDetails oneLoad) {
+
+    String path = null;
+    Integer segmentId = null;
+    try {
+      segmentId = Integer.parseInt(oneLoad.getLoadName());
+    } catch (NumberFormatException nfe) {
+      LOGGER.error("Error message: " + "Invalid segment id: " + oneLoad.getLoadName());
+    }
+
+    path = new CarbonStorePath(storeLocation).getCarbonTablePath(
+        new CarbonTableIdentifier(loadModel.getDatabaseName(), loadModel.getTableName()))
+        .getCarbonDataDirectoryPath("" + partitionId, segmentId);
+    return path;
   }
 
   public static void deleteAggLoadFolders(CarbonFile[] aggFiles, String loadName) {
@@ -282,5 +310,47 @@ public final class DeleteLoadFolders {
       LOGGER.error("exception" + e.getMessage());
     }
   }
+
+  /**
+   * @param loadModel
+   * @param storeLocation
+   * @param partitionCount
+   * @param isForceDelete
+   * @param details
+   * @return
+   *
+   */
+  public static boolean deleteLoadFoldersFromFileSystem(CarbonLoadModel loadModel,
+      String storeLocation, int partitionCount, boolean isForceDelete,
+      LoadMetadataDetails[] details) {
+    String path = null;
+    List<LoadMetadataDetails> deletedLoads =
+        new ArrayList<LoadMetadataDetails>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+
+    boolean isDeleted = false;
+
+    if (details != null && details.length != 0) {
+      for (LoadMetadataDetails oneLoad : details) {
+        if (checkIfLoadCanBeDeleted(oneLoad, isForceDelete)) {
+          boolean deletionStatus = false;
+
+          for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
+            path = getSegmentPath(loadModel, storeLocation, partitionId, oneLoad);
+            deletionStatus = physicalFactAndMeasureMetadataDeletion(path);
+          }
+          if (deletionStatus) {
+            isDeleted = true;
+            oneLoad.setVisibility("false");
+            deletedLoads.add(oneLoad);
+            LOGGER.info("Info: " +
+                " Deleted the load " + oneLoad.getLoadName());
+          }
+        }
+      }
+    }
+
+    return isDeleted;
+  }
+
 
 }

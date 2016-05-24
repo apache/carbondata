@@ -25,9 +25,11 @@ import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext,
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
 
+import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.load.LoadMetadataDetails
-import org.carbondata.core.util.CarbonUtil
+import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.carbondata.lcm.status.SegmentStatusManager
 import org.carbondata.spark.MergeResult
 import org.carbondata.spark.load._
 import org.carbondata.spark.merger.CarbonDataMergerUtil
@@ -63,8 +65,10 @@ class CarbonMergerRDD[K, V](
       val mergedLoadMetadataDetails = CarbonDataMergerUtil
         .executeMerging(model, storeLocation, hdfsStoreLocation, currentRestructNumber,
           metadataFilePath, loadsToMerge, mergedLoadName)
-
-      model.setLoadMetadataDetails(CarbonUtil
+      var segmentStatusManager = new SegmentStatusManager(new AbsoluteTableIdentifier
+      (CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION),
+        new CarbonTableIdentifier(model.getDatabaseName, model.getTableName)))
+      model.setLoadMetadataDetails(segmentStatusManager
         .readLoadMetadata(metadataFilePath).toList.asJava)
 
       if (mergedLoadMetadataDetails) {

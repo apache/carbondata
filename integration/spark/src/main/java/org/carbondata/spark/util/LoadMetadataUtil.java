@@ -30,13 +30,16 @@ package org.carbondata.spark.util;
 
 import java.io.File;
 
+import org.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.lcm.status.SegmentStatusManager;
 import org.carbondata.spark.load.CarbonLoadModel;
 
 public final class LoadMetadataUtil {
@@ -49,7 +52,12 @@ public final class LoadMetadataUtil {
         .getCarbonTable(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
 
     String metaDataLocation = cube.getMetaDataFilepath();
-    LoadMetadataDetails[] details = CarbonUtil.readLoadMetadata(metaDataLocation);
+    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(
+        new AbsoluteTableIdentifier(
+            CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION),
+            new CarbonTableIdentifier(loadModel.getDatabaseName(),
+                loadModel.getTableName())));
+    LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metaDataLocation);
     if (details != null && details.length != 0) {
       for (LoadMetadataDetails oneRow : details) {
         if (CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oneRow.getLoadStatus())
