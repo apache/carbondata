@@ -25,11 +25,11 @@ import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
-import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
-import org.carbondata.query.evaluators.MeasureColumnResolvedFilterInfo;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.conditional.ConditionalExpression;
+import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
+import org.carbondata.query.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 
 public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
 

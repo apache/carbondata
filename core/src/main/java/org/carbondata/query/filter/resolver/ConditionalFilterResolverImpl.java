@@ -26,14 +26,15 @@ import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
-import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.conditional.BinaryConditionalExpression;
 import org.carbondata.query.expression.conditional.ConditionalExpression;
+import org.carbondata.query.filter.resolver.metadata.FilterResolverMetadata;
+import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
+import org.carbondata.query.filter.resolver.resolverinfo.visitor.FilterInfoTypeVisitorFactory;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
-import org.carbondata.query.schema.metadata.DimColumnFilterInfo;
 
 public class ConditionalFilterResolverImpl implements FilterResolverIntf {
 
@@ -60,39 +61,41 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    */
   @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier)
       throws QueryExecutionException {
-
+    FilterResolverMetadata metadata = new FilterResolverMetadata();
+    metadata.setTableIdentifier(absoluteTableIdentifier);
     if ((!isExpressionResolve) && exp instanceof BinaryConditionalExpression) {
       BinaryConditionalExpression binaryConditionalExpression = (BinaryConditionalExpression) exp;
       Expression leftExp = binaryConditionalExpression.getLeft();
       Expression rightExp = binaryConditionalExpression.getRight();
-
       if (leftExp instanceof ColumnExpression) {
         ColumnExpression columnExpression = (ColumnExpression) leftExp;
-        if (columnExpression.getDataType().equals(DataType.TimestampType)) {
+        metadata.setColumnExpression(columnExpression);
+        metadata.setExpression(rightExp);
+        metadata.setIncludeFilter(isIncludeFilter);
+        // If imei=imei comes in filter condition then we need to
+        // skip processing of right expression.
+        // This flow has reached here assuming that this is a single
+        // column expression.
+        // we need to check if the other expression contains column
+        // expression or not in depth.
+        if (FilterUtil.checkIfExpressionContainsColumn(rightExp)) {
           isExpressionResolve = true;
         } else {
-          // If imei=imei comes in filter condition then we need to
-          // skip processing of right expression.
-          // This flow has reached here assuming that this is a single
-          // column expression.
-          // we need to check if the other expression contains column
-          // expression or not in depth.
-          if (FilterUtil.checkIfExpressionContainsColumn(rightExp)) {
-            isExpressionResolve = true;
-          } else {
-
-            DimColumnFilterInfo filterInfo = FilterUtil
-                .getFilterList(absoluteTableIdentifier, rightExp, columnExpression,
-                    isIncludeFilter);
-            dimColResolvedFilterInfo.setFilterValues(filterInfo);
-            dimColResolvedFilterInfo
-                .addDimensionResolvedFilterInstance(columnExpression.getDimension(), filterInfo);
-            dimColResolvedFilterInfo.setDimension(columnExpression.getDimension());
-            dimColResolvedFilterInfo.setColumnIndex(columnExpression.getDimension().getOrdinal());
-          }
+          //Visitor pattern is been used in this scenario inorder to populate the
+          // dimColResolvedFilterInfo
+          //visitable object with filter member values based on the visitor type, currently there
+          //3 types of visitors custom,direct and no dictionary, all types of visitor populate
+          //the visitable instance as per its buisness logic which is different for all the
+          // visitors.
+          dimColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
+              FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnExpression),
+              metadata);
         }
       } else if (rightExp instanceof ColumnExpression) {
         ColumnExpression columnExpression = (ColumnExpression) rightExp;
+        metadata.setColumnExpression(columnExpression);
+        metadata.setExpression(leftExp);
+        metadata.setIncludeFilter(isIncludeFilter);
         if (columnExpression.getDataType().equals(DataType.TimestampType)) {
           isExpressionResolve = true;
         } else {
@@ -105,13 +108,9 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
           if (FilterUtil.checkIfExpressionContainsColumn(leftExp)) {
             isExpressionResolve = true;
           } else {
-            dimColResolvedFilterInfo.setColumnIndex(columnExpression.getDimension().getOrdinal());
-            DimColumnFilterInfo filterInfo = FilterUtil
-                .getFilterList(absoluteTableIdentifier, leftExp, columnExpression, isIncludeFilter);
-            dimColResolvedFilterInfo.setFilterValues(filterInfo);
-            dimColResolvedFilterInfo.setDimension(columnExpression.getDimension());
-            dimColResolvedFilterInfo
-                .addDimensionResolvedFilterInstance(columnExpression.getDimension(), filterInfo);
+            dimColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
+                FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnExpression),
+                metadata);
 
           }
         }
@@ -122,28 +121,24 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     if (isExpressionResolve && exp instanceof ConditionalExpression) {
       ConditionalExpression conditionalExpression = (ConditionalExpression) exp;
       List<ColumnExpression> columnList = conditionalExpression.getColumnList();
-      dimColResolvedFilterInfo.setColumnIndex(columnList.get(0).getDimension().getOrdinal());
-      dimColResolvedFilterInfo.setDimension(columnList.get(0).getDimension());
-      if (!columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
-        try {
-          dimColResolvedFilterInfo.setFilterValues(FilterUtil
-              .getFilterList(absoluteTableIdentifier, exp, columnList.get(0), isIncludeFilter));
-        } catch (QueryExecutionException e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
-        }
-      } else if (!(columnList.get(0).getDimension().getDataType()
-          == org.carbondata.core.carbon.metadata.datatype.DataType.STRUCT
-          || columnList.get(0).getDimension().getDataType()
-          == org.carbondata.core.carbon.metadata.datatype.DataType.STRUCT)) {
-        try {
-          dimColResolvedFilterInfo.setFilterValues(FilterUtil
-              .getFilterListForAllValues(absoluteTableIdentifier, exp, columnList.get(0),
-                  isIncludeFilter));
-        } catch (QueryExecutionException e) {
-          // TODO Auto-generated catch block
-          e.printStackTrace();
-        }
+      metadata.setColumnExpression(columnList.get(0));
+      metadata.setExpression(exp);
+      metadata.setIncludeFilter(isIncludeFilter);
+      if (!columnList.get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY) && !(
+          columnList.get(0).getDimension().getDataType()
+              == org.carbondata.core.carbon.metadata.datatype.DataType.STRUCT
+              || columnList.get(0).getDimension().getDataType()
+              == org.carbondata.core.carbon.metadata.datatype.DataType.ARRAY)) {
+        dimColResolvedFilterInfo.setFilterValues(FilterUtil
+            .getFilterListForAllValues(absoluteTableIdentifier, exp, columnList.get(0),
+                isIncludeFilter));
+        dimColResolvedFilterInfo.setColumnIndex(columnList.get(0).getDimension().getOrdinal());
+        dimColResolvedFilterInfo.setDimension(columnList.get(0).getDimension());
+      } else if (!columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY) || columnList
+          .get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        dimColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
+            FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnList.get(0)), metadata);
+
       }
     }
 
@@ -213,7 +208,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     if (null == dimColResolvedFilterInfo.getEndIndexKey()) {
       try {
         endKey = FilterUtil.getEndKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(),
-            absoluteTableIdentifier, endKey, segmentProperties.getDimensions());
+            absoluteTableIdentifier, endKey, segmentProperties);
         endKeyForNoDictDimension = FilterUtil
             .getEndKeyForNoDictionaryDimension(dimColResolvedFilterInfo, segmentProperties);
       } catch (QueryExecutionException e) {

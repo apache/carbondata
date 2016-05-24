@@ -685,8 +685,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         try {
             doProcess();
         } catch (Throwable e) {
-          LOGGER.error(e,
-              "Thread is terminated due to error");
+          LOGGER.error(e, "Thread is terminated due to error");
           threadStatusObserver.notifyFailed(e);
         }
         return null;
@@ -1104,9 +1103,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                         .getDirectDictionaryGenerator(meta.getColumnDataType()[m]);
                 surrogateKeyForHrrchy[0] =
                     directDictionaryGenerator1.generateDirectSurrogateKey(((String) r[j]));
-                if (surrogateKeyGen.max[m] < surrogateKeyForHrrchy[0]) {
-                  surrogateKeyGen.max[m] = surrogateKeyForHrrchy[0];
-                }
+                surrogateKeyGen.max[m] = Integer.MAX_VALUE;
+
               } else {
                 surrogateKeyForHrrchy[0] =
                     surrogateKeyGen.generateSurrogateKeys(((String) r[j]), foreignKeyColumnName);
@@ -1237,8 +1235,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     boolean[] measurePresentMapping = new boolean[size];
     for (int j = 0; j < size; j++) {
       String columnName = getInputRowMeta().getValueMeta(j).getName();
-      for(String measure : measureCol) {
-        if(measure.equalsIgnoreCase(columnName)) {
+      for (String measure : measureCol) {
+        if (measure.equalsIgnoreCase(columnName)) {
           measurePresentMapping[j] = true;
           break;
         }

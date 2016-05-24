@@ -25,7 +25,7 @@ import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
-import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
+import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
 public interface FilterResolverIntf extends Serializable {
 

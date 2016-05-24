@@ -23,7 +23,7 @@ import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.query.carbonfilterinterface.ExpressionType;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
-import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
+import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
 public class LogicalFilterResolverImpl implements FilterResolverIntf {
   /**

@@ -23,7 +23,7 @@ import java.util.BitSet;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.query.carbon.processor.BlocksChunkHolder;
 import org.carbondata.query.evaluators.DimColumnExecuterFilterInfo;
-import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
+import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 
 public class RestructureFilterExecuterImpl implements FilterExecuter {

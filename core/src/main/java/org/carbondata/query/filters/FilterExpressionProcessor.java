@@ -92,8 +92,8 @@ public class FilterExpressionProcessor implements FilterProcessor {
     LOGGER.info("preparing the start and end key for finding"
         + "start and end block as per filter resolver");
     IndexKey searchStartKey = filterResolver.getstartKey(tableSegment.getSegmentProperties());
-    IndexKey searchEndKey = filterResolver.getEndKey(tableSegment.getSegmentProperties(),
-        tableIdentifier);
+    IndexKey searchEndKey =
+        filterResolver.getEndKey(tableSegment.getSegmentProperties(), tableIdentifier);
     if (null == searchStartKey && null == searchEndKey) {
       try {
         // TODO need to handle for no dictionary dimensions
@@ -112,6 +112,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
         tableSegment.getSegmentProperties().getDimensionColumnsValueSize());
     DataRefNode startBlock = blockFinder.findFirstDataBlock(btreeNode, searchStartKey);
     DataRefNode endBlock = blockFinder.findLastDataBlock(btreeNode, searchEndKey);
+    DataRefNode firstnode = startBlock;
     while (startBlock != endBlock) {
       addBlockBasedOnMinMaxValue(filterResolver, listOfDataBlocksToScan, startBlock,
           tableSegment.getSegmentProperties().getDimensionKeyGenerator());
@@ -122,7 +123,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
         tableSegment.getSegmentProperties().getDimensionKeyGenerator());
     if (listOfDataBlocksToScan.isEmpty()) {
       //Pass the first block itself for applying filters.
-      listOfDataBlocksToScan.add(startBlock);
+      listOfDataBlocksToScan.add(firstnode);
     }
     LOGGER.info("Total Time in retrieving the data reference node" + "after scanning the btree " + (
         System.currentTimeMillis() - startTimeInMillis)
@@ -253,7 +254,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
             != DataType.STRUCT) {
           // getting new dim index.
           if (!currentCondExpression.getColumnList().get(0).getCarbonColumn()
-              .hasEncoding(Encoding.DICTIONARY)) {
+              .hasEncoding(Encoding.DICTIONARY) || currentCondExpression.getColumnList()
+              .get(0).getCarbonColumn()
+              .hasEncoding(Encoding.DIRECT_DICTIONARY)) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                 && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight())) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, true,
@@ -266,10 +269,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, true,
                   tableIdentifier);
             }
-            return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true);
-          } else {
-            return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true);
           }
+          return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true);
+
         }
         break;
       case NOT_EQUALS:

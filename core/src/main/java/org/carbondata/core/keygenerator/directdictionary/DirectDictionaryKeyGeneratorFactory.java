@@ -34,9 +34,9 @@ public final class DirectDictionaryKeyGeneratorFactory {
 
   /**
    * The method returns the DirectDictionaryGenerator based for direct dictionary
-   * column based on datatype
+   * column based on dataType
    *
-   * @param dataType SqlStatement.Type
+   * @param dataType DataType
    * @return the generator instance
    */
   public static DirectDictionaryGenerator getDirectDictionaryGenerator(DataType dataType) {

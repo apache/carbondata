@@ -60,7 +60,6 @@ import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.carbonfilterinterface.RowImpl;
 import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.evaluators.DimColumnExecuterFilterInfo;
-import org.carbondata.query.evaluators.DimColumnResolvedFilterInfo;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
@@ -74,6 +73,7 @@ import org.carbondata.query.filter.executer.RestructureFilterExecuterImpl;
 import org.carbondata.query.filter.executer.RowLevelFilterExecuterImpl;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 import org.carbondata.query.filter.resolver.RowLevelFilterResolverImpl;
+import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.carbondata.query.schema.metadata.DimColumnFilterInfo;
 
 public final class FilterUtil {
@@ -200,7 +200,7 @@ public final class FilterUtil {
    * @param isIncludeFilter
    * @return DimColumnFilterInfo
    */
-  private static DimColumnFilterInfo getNoDictionaryValKeyMemberForFilter(
+  public static DimColumnFilterInfo getNoDictionaryValKeyMemberForFilter(
       AbsoluteTableIdentifier tableIdentifier, ColumnExpression columnExpression,
       List<String> evaluateResultListFinal, boolean isIncludeFilter) {
     List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
@@ -688,12 +688,14 @@ public final class FilterUtil {
   }
 
   public static long[] getEndKey(Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter,
-      AbsoluteTableIdentifier tableIdentifier, long[] endKey,
-      List<CarbonDimension> carbonDimensions) throws QueryExecutionException {
+      AbsoluteTableIdentifier tableIdentifier, long[] endKey, SegmentProperties segmentProperties)
+      throws QueryExecutionException {
 
-    carbonDimensions = getCarbonDimsMappedToKeyGenerator(carbonDimensions);
+    List<CarbonDimension> updatedDimListBasedOnKeyGenerator =
+        getCarbonDimsMappedToKeyGenerator(segmentProperties.getDimensions());
     for (int i = 0; i < endKey.length; i++) {
-      endKey[i] = getMaxValue(tableIdentifier, carbonDimensions.get(i));
+      endKey[i] = getMaxValue(tableIdentifier, updatedDimListBasedOnKeyGenerator.get(i),
+          segmentProperties.getDimColumnsCardinality());
     }
     getEndKeyWithFilter(dimensionFilter, endKey);
     return endKey;
@@ -704,7 +706,8 @@ public final class FilterUtil {
     List<CarbonDimension> listOfCarbonDimPartOfKeyGen =
         new ArrayList<CarbonDimension>(carbonDimensions.size());
     for (CarbonDimension carbonDim : carbonDimensions) {
-      if (CarbonUtil.hasEncoding(carbonDim.getEncoder(), Encoding.DICTIONARY)) {
+      if (CarbonUtil.hasEncoding(carbonDim.getEncoder(), Encoding.DICTIONARY) || CarbonUtil
+          .hasEncoding(carbonDim.getEncoder(), Encoding.DIRECT_DICTIONARY)) {
         listOfCarbonDimPartOfKeyGen.add(carbonDim);
       }
 
@@ -744,19 +747,19 @@ public final class FilterUtil {
    * This API will get the max value of surrogate key which will be used for
    * determining the end key of particular btree.
    *
+   * @param dimCarinality
    * @throws QueryExecutionException
    */
   private static long getMaxValue(AbsoluteTableIdentifier tableIdentifier,
-      CarbonDimension carbonDimension) throws QueryExecutionException {
-    if (DataType.TIMESTAMP == carbonDimension.getDataType()) {
-      return Integer.MAX_VALUE;
-    }
-    Dictionary forwardDictionary = getForwardDictionaryCache(tableIdentifier, carbonDimension);
-    if (null == forwardDictionary) {
-      return -1;
-    }
+      CarbonDimension carbonDimension, int[] dimCarinality) throws QueryExecutionException {
+    //    if (DataType.TIMESTAMP == carbonDimension.getDataType()) {
+    //      return Integer.MAX_VALUE;
+    //    }
     // Get data from all the available slices of the cube
-    return forwardDictionary.getDictionaryChunks().getSize();
+    if (null != dimCarinality) {
+      return dimCarinality[carbonDimension.getKeyOrdinal()];
+    }
+    return -1;
   }
 
   /**
@@ -818,10 +821,9 @@ public final class FilterUtil {
   public static void prepareKeysFromSurrogates(DimColumnFilterInfo filterValues,
       KeyGenerator blockKeyGenerator, CarbonDimension dimension,
       DimColumnExecuterFilterInfo dimColumnExecuterInfo) {
-    if (dimension.getDataType() != DataType.TIMESTAMP) {
-      byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, blockKeyGenerator);
-      dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
-    }
+    byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, blockKeyGenerator);
+    dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
+
   }
 
   /**

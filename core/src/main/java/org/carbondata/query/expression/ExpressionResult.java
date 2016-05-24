@@ -31,7 +31,7 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 
-public class ExpressionResult {
+public class ExpressionResult implements Comparable<ExpressionResult> {
 
   private static final long serialVersionUID = 1L;
   protected DataType dataType;
@@ -112,7 +112,7 @@ public class ExpressionResult {
         if (value instanceof Timestamp) {
           return parser.format((Timestamp) value);
         } else {
-          return parser.format(new Timestamp((long) value));
+          return parser.format(new Timestamp((long) value / 1000));
         }
 
       default:
@@ -307,6 +307,19 @@ public class ExpressionResult {
     }
   }
 
+  public List<String> getListAsString() {
+    List<String> evaluateResultListFinal = new ArrayList<String>(20);
+    List<ExpressionResult> evaluateResultList = getList();
+    for (ExpressionResult result : evaluateResultList) {
+      if (result.getString() == null) {
+        evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
+        continue;
+      }
+      evaluateResultListFinal.add(result.getString());
+    }
+    return evaluateResultListFinal;
+  }
+
   @Override public int hashCode() {
     final int prime = 31;
     int result = 1;
@@ -377,4 +390,37 @@ public class ExpressionResult {
   public boolean isNull() {
     return value == null;
   }
+
+  @Override public int compareTo(ExpressionResult o) {
+    try {
+      switch (o.dataType) {
+        case IntegerType:
+        case LongType:
+        case DoubleType:
+
+          Double d1 = this.getDouble();
+          Double d2 = o.getDouble();
+          return d1.compareTo(d2);
+        case DecimalType:
+          java.math.BigDecimal val1 = this.getDecimal();
+          java.math.BigDecimal val2 = o.getDecimal();
+          return val1.compareTo(val2);
+        case TimestampType:
+          SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+          Date date1 = null;
+          Date date2 = null;
+          date1 = parser.parse(this.getString());
+          date2 = parser.parse(o.getString());
+          return date1.compareTo(date2);
+        case StringType:
+        default:
+          return this.getString().compareTo(o.getString());
+      }
+    } catch (Exception e) {
+      return -1;
+    }
+  }
+
 }
