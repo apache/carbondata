@@ -30,7 +30,7 @@ import org.carbondata.query.scanner.impl.CarbonValue;
 /**
  * Below class holds the query result
  */
-public class BatchResult implements CarbonIterator<RowResult> {
+public class BatchResult extends CarbonIterator<RowResult> {
 
   /**
    * list of keys

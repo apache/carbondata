@@ -25,7 +25,7 @@ import org.carbondata.core.iterator.CarbonIterator;
 /**
  * Below class will be used to iterate over data block
  */
-public class BlockletIterator implements CarbonIterator<DataRefNode> {
+public class BlockletIterator extends CarbonIterator<DataRefNode> {
   /**
    * data store block
    */

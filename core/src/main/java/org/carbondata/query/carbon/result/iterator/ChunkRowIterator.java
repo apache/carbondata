@@ -26,7 +26,7 @@ import org.carbondata.query.carbon.result.RowResult;
 /**
  * Iterator over row result
  */
-public class ChunkRowIterator implements CarbonIterator<RowResult> {
+public class ChunkRowIterator extends CarbonIterator<RowResult> {
 
   /**
    * iterator over chunk result

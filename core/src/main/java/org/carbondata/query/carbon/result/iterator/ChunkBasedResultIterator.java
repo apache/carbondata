@@ -29,7 +29,7 @@ import org.carbondata.query.carbon.result.Result;
 /**
  * Iterator over chunk result
  */
-public class ChunkBasedResultIterator implements CarbonIterator<BatchResult> {
+public class ChunkBasedResultIterator extends CarbonIterator<BatchResult> {
 
   /**
    * query result prepartor which will be used to create a query result

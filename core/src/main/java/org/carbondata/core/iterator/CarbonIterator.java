@@ -19,20 +19,20 @@
 
 package org.carbondata.core.iterator;
 
-public interface CarbonIterator<E> {
-  /**
-   * Returns <tt>true</tt> if the iteration has more elements. (In other
-   * words, returns <tt>true</tt> if <tt>next</tt> would return an element
-   * rather than throwing an exception.)
-   *
-   * @return <tt>true</tt> if the iterator has more elements.
-   */
-  boolean hasNext();
+import java.util.Iterator;
 
-  /**
-   * Returns the next element in the iteration.
-   *
-   * @return the next element in the iteration.
-   */
-  E next();
+/**
+ * CarbonIterator adds default implement for remove. This is required for Java 7.
+ * @param <E>
+ */
+public abstract class CarbonIterator<E> implements Iterator<E> {
+
+  @Override public abstract boolean hasNext();
+
+  @Override public abstract E next();
+
+  @Override public void remove() {
+    throw new UnsupportedOperationException("remove");
+  }
+
 }

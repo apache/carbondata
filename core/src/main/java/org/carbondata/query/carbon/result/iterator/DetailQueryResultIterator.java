@@ -43,7 +43,7 @@ import org.carbondata.query.carbon.result.Result;
  * executing that query are returning a iterator over block and every time next
  * call will come it will execute the block and return the result
  */
-public class DetailQueryResultIterator implements CarbonIterator<BatchResult> {
+public class DetailQueryResultIterator extends CarbonIterator<BatchResult> {
 
   /**
    * LOGGER.

@@ -6,7 +6,7 @@ import org.carbondata.query.carbon.result.Result;
 /**
  * Memory based result iterator
  */
-public class MemoryBasedResultIterator implements CarbonIterator<Result> {
+public class MemoryBasedResultIterator extends CarbonIterator<Result> {
 
   /**
    * query result
