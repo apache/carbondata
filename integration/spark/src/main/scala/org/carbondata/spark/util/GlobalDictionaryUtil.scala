@@ -309,7 +309,7 @@ object GlobalDictionaryUtil extends Logging {
       val stringbuild = new StringBuilder()
       for (j <- 0 until files.size) {
         val filePath = getCsvRecursivePathsFromCarbonFile(files(j))
-        if (!filePath.isEmpty) {
+        if (filePath.nonEmpty) {
           stringbuild.append(filePath).append(",")
         }
       }
@@ -341,7 +341,7 @@ object GlobalDictionaryUtil extends Logging {
         val fileType = FileFactory.getFileType(filePaths(i))
         val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType)
         val filePath = getCsvRecursivePathsFromCarbonFile(carbonFile)
-        if (!filePath.isEmpty) {
+        if (filePath.nonEmpty) {
           stringbuild.append(filePath).append(",")
         }
       }
