@@ -40,13 +40,17 @@ II. Go to the root of the source tree
 $ cd carbondata
 ```
 III. Build the project 
-Build without testing:
+* Build without testing:
 ```
 $ mvn -DskipTests clean install 
 ```
-Or, build with testing:
+* Build with testing:
 ```
 $ mvn clean install
+```
+* Build along with integration test cases: (Note : It takes more time to build)
+```
+$ mvn -Pintegration-test clean install
 ```
 
 ### Developing CarbonData
