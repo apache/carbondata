@@ -1524,6 +1524,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
 
   //TC_1195
   test("TC_1195") {
+    sql("create schema IF NOT EXISTS myschema")
     sql("create cube myschema.vardhan17 DIMENSIONS (AMSize STRING) MEASURES (deviceInformationId integer) OPTIONS (AGGREGATION [deviceInformationId = count])")
     sql("LOAD DATA FACT FROM  './src/test/resources/TestData1.csv' INTO Cube myschema.vardhan17 partitionData(DELIMITER ',' ,QUOTECHAR '\"\"', FILEHEADER 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId')")
     checkAnswer(
