@@ -52,6 +52,8 @@ import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.core.writer.ByteArrayHolder;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
 import org.carbondata.processing.datatypes.GenericDataType;
+import org.carbondata.processing.schema.metadata.ColumnSchemaDetails;
+import org.carbondata.processing.schema.metadata.ColumnSchemaDetailsWrapper;
 import org.carbondata.processing.schema.metadata.ColumnsInfo;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -257,12 +259,15 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
     List<String> dictionaryKeys = new ArrayList<>(dimColumnNames.length);
     List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers =
         new ArrayList<>(dimColumnNames.length);
+    ColumnSchemaDetailsWrapper columnSchemaDetailsWrapper =
+        columnsInfo.getColumnSchemaDetailsWrapper();
     // update the member cache for dimension
     for (int i = 0; i < dimColumnNames.length; i++) {
-      if(columnsInfo.getDirectDictionary()[i]){
+      String dimColName = dimColumnNames[i].substring(tableName.length() + 1);
+      ColumnSchemaDetails details = columnSchemaDetailsWrapper.get(dimColumnIds[i]);
+      if(details.isDirectDictionary()){
         continue;
       }
-      String dimColName = dimColumnNames[i].substring(tableName.length() + 1);
       GenericDataType complexType = columnsInfo.getComplexTypesMap().get(dimColName);
       if (complexType != null) {
         List<GenericDataType> primitiveChild = new ArrayList<GenericDataType>();

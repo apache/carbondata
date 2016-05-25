@@ -150,9 +150,9 @@ public class ColumnsInfo {
   private String[] dimensionColumnIds;
 
   /**
-   * array of boolean values to identify the direct dictionary column
+   * wrapper object having the columnSchemaDetails
    */
-  private boolean[] directDictionary;
+  private ColumnSchemaDetailsWrapper columnSchemaDetailsWrapper;
 
   public Map<String, GenericDataType> getComplexTypesMap() {
     return complexTypesMap;
@@ -494,18 +494,20 @@ public class ColumnsInfo {
   }
 
   /**
-   * The method returns the array boolean to identify the direct dictionary
+   * returns wrapper object having the columnSchemaDetails
+   *
    * @return
    */
-  public boolean[] getDirectDictionary() {
-    return directDictionary;
+  public ColumnSchemaDetailsWrapper getColumnSchemaDetailsWrapper() {
+    return columnSchemaDetailsWrapper;
   }
 
   /**
-   * the method sets the array boolean to identify the direct dictionary
-   * @param directDictionary
+   * set the wrapper object having the columnSchemaDetails
+   *
+   * @param columnSchemaDetailsWrapper
    */
-  public void setDirectDictionary(boolean[] directDictionary) {
-    this.directDictionary = directDictionary;
+  public void setColumnSchemaDetailsWrapper(ColumnSchemaDetailsWrapper columnSchemaDetailsWrapper) {
+    this.columnSchemaDetailsWrapper = columnSchemaDetailsWrapper;
   }
 }

@@ -22,16 +22,15 @@ package org.carbondata.spark.testsuite.directdictionary
 import java.io.File
 import java.sql.Timestamp
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.{CarbonContext, Row}
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.hive.HiveContext
+import org.scalatest.BeforeAndAfterAll
 
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.util.CarbonProperties
 import org.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants
-import org.scalatest.BeforeAndAfterAll
+import org.carbondata.core.util.CarbonProperties
 
 
 /**
@@ -39,7 +38,7 @@ import org.scalatest.BeforeAndAfterAll
   *
   *
   */
-class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll {
+class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with BeforeAndAfterAll {
   var oc: HiveContext = _
 
   override def beforeAll {
@@ -50,22 +49,21 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
         .addProperty(TimeStampGranularityConstants.CARBON_TIME_GRANULARITY,
           TimeStampGranularityConstants.TIME_GRAN_SEC.toString
         )
+      CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "true")
       sql(
-        "CREATE CUBE directDictionaryCube DIMENSIONS (empno Integer,doj Timestamp) MEASURES " +
-          "(salary Integer) " +
-          "OPTIONS (PARTITIONER [PARTITION_COUNT=1])"
+        """
+         CREATE TABLE IF NOT EXISTS directDictionaryTable
+        (empno String, doj Timestamp, salary Int)
+         STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ('DICTIONARY_EXCLUDE'='empno')"""
       )
 
       CarbonProperties.getInstance()
-        .addProperty("carbon.kettle.home", "D:/carbondata/processing/carbonplugins")
-      CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
-      CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "true")
       val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
         .getCanonicalPath
       var csvFilePath = currentDirectory + "/src/test/resources/datasample.csv"
-      sql("LOAD DATA fact from '" + csvFilePath + "' INTO CUBE directDictionaryCube PARTITIONDATA" +
-        "(DELIMITER ',', QUOTECHAR '\"')");
+      sql("LOAD DATA fact from '" + csvFilePath + "' INTO CUBE directDictionaryTable PARTITIONDATA"
+        + "(DELIMITER ',', QUOTECHAR '\"')");
 
     } catch {
       case x: Throwable => CarbonProperties.getInstance()
@@ -73,9 +71,9 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test("select doj from directDictionaryCube") {
+  test("select doj from directDictionaryTable") {
     checkAnswer(
-      sql("select doj from directDictionaryCube"),
+      sql("select doj from directDictionaryTable"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
         Row(Timestamp.valueOf("2016-04-14 15:00:09.0"))
       )
@@ -83,17 +81,17 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
   }
 
 
-  test("select doj from directDictionaryCube with equals filter") {
+  test("select doj from directDictionaryTable with equals filter") {
     checkAnswer(
-      sql("select doj from directDictionaryCube where doj='2016-03-14 15:00:09'"),
+      sql("select doj from directDictionaryTable where doj='2016-03-14 15:00:09'"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09")))
     )
 
   }
   
-    test("select doj from directDictionaryCube with greater than filter") {
+    test("select doj from directDictionaryTable with greater than filter") {
     checkAnswer(
-      sql("select doj from directDictionaryCube where doj>'2016-03-14 15:00:09'"),
+      sql("select doj from directDictionaryTable where doj>'2016-03-14 15:00:09'"),
       Seq(Row(Timestamp.valueOf("2016-04-14 15:00:09")))
     )
 
@@ -101,7 +99,7 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
 
 
   override def afterAll {
-    sql("drop cube directDictionaryCube")
+     sql("drop table directDictionaryTable")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")

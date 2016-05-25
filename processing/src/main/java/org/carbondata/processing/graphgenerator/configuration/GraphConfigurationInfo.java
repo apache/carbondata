@@ -21,6 +21,8 @@ package org.carbondata.processing.graphgenerator.configuration;
 
 import java.util.Map;
 
+import org.carbondata.processing.schema.metadata.ColumnSchemaDetailsWrapper;
+
 public class GraphConfigurationInfo {
   private String connectionName;
 
@@ -189,9 +191,9 @@ public class GraphConfigurationInfo {
   private Boolean[] isNoDictionaryDimMapping;
 
   /**
-   * String of direct dictionary columns and index separated by COLON_SPC_CHARACTER
+   * wrapper object holding the columnschemadetails
    */
-  private String directDictionaryColumnString;
+  private ColumnSchemaDetailsWrapper columnSchemaDetailsWrapper;
 
   /**
    * It is column groups in below format
@@ -962,22 +964,20 @@ public class GraphConfigurationInfo {
   }
 
   /**
-   * Set String of direct dictionary columns index/ordinal and column DataType separated by
-   * COLON_SPC_CHARACTER
+   * Set Wrapper Object having the columnschemadetails
    *
-   * @param directDictionaryColumnString
+   * @param columnSchemaDetailsWrapper
    */
-  public void setDirectDictionaryColumnString(String directDictionaryColumnString) {
-    this.directDictionaryColumnString = directDictionaryColumnString;
+  public void setColumnSchemaDetails(ColumnSchemaDetailsWrapper columnSchemaDetailsWrapper) {
+    this.columnSchemaDetailsWrapper = columnSchemaDetailsWrapper;
   }
 
   /**
-   * String of direct dictionary columns index and DataType separated by COLON_SPC_CHARACTER
-   *
+   * return the Wrapper Object having the columnschemadetails
    * @return
    */
-  public String getDirectDictionaryColumnString() {
-    return directDictionaryColumnString;
+  public ColumnSchemaDetailsWrapper getColumnSchemaDetails() {
+    return columnSchemaDetailsWrapper;
   }
 
   public void setColumnGroupsString(String columnGroups) {

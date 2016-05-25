@@ -38,6 +38,7 @@ import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGene
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.processing.dimension.load.command.DimensionLoadCommand;
 import org.carbondata.processing.dimension.load.info.DimensionLoadInfo;
+import org.carbondata.processing.schema.metadata.ColumnSchemaDetails;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedSeqGenMeta;
@@ -336,9 +337,12 @@ public class CSVDimensionLoadCommand implements DimensionLoadCommand {
             .generateSurrogateKeysForTimeDims(tuple, columnName, columnIndex[i], propertyvalue);
       } else {
         CarbonCSVBasedSeqGenMeta meta = dimensionLoadInfo.getMeta();
-        if (meta.isDirectDictionary(i)) {
+        String dimensionColumnIds = meta.getDimensionColumnIds()[i];
+        ColumnSchemaDetails columnSchemaDetails =
+            meta.getColumnSchemaDetailsWrapper().get(dimensionColumnIds);
+        if (columnSchemaDetails.isDirectDictionary()) {
           DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
-              .getDirectDictionaryGenerator(meta.getColumnDataType()[i]);
+              .getDirectDictionaryGenerator(columnSchemaDetails.getColumnType());
           output[i] = directDictionaryGenerator.generateDirectSurrogateKey(tuple);
         } else {
           output[i] = surrogateKeyGen.generateSurrogateKeys(tuple, columnName);

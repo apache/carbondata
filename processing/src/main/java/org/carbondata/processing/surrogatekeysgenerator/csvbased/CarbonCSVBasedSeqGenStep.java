@@ -63,6 +63,8 @@ import org.carbondata.core.writer.ByteArrayHolder;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
 import org.carbondata.processing.dataprocessor.manager.CarbonDataProcessorManager;
 import org.carbondata.processing.datatypes.GenericDataType;
+import org.carbondata.processing.schema.metadata.ColumnSchemaDetails;
+import org.carbondata.processing.schema.metadata.ColumnSchemaDetailsWrapper;
 import org.carbondata.processing.schema.metadata.ColumnsInfo;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
@@ -241,6 +243,10 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
   private int processed;
 
   private String[] msrDataType;
+  /**
+   * wrapper object having the columnSchemaDetails
+   */
+  private ColumnSchemaDetailsWrapper columnSchemaDetailsWrapper;
 
   /**
    * Constructor
@@ -354,7 +360,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           columnsInfo.setMeasureColumns(meta.measureColumn);
           columnsInfo.setComplexTypesMap(meta.getComplexTypes());
           columnsInfo.setDimensionColumnIds(meta.getDimensionColumnIds());
-          columnsInfo.setDirectDictionary(meta.getDirectDictionary());
+          columnsInfo.setColumnSchemaDetailsWrapper(meta.getColumnSchemaDetailsWrapper());
           updateBagLogFileName();
           String key = meta.getSchemaName() + '/' + meta.getCubeName() + '_' + meta.getTableName();
           badRecordslogger = new BadRecordslogger(key, csvFilepath,
@@ -418,6 +424,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             data.getOutputRowMeta().setValueMetaList(Arrays.asList(out));
           }
         }
+        columnSchemaDetailsWrapper = meta.getColumnSchemaDetailsWrapper();
       }
 
       // no more input to be expected...
@@ -851,6 +858,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     int inputColumnsSize = metaColumnNames.length;
     boolean isGenerated = false;
     int generatedSurrogate = -1;
+    String[] dimensionColumnIds = meta.getDimensionColumnIds();
 
     //If CSV Exported from DB and we enter one row down then that row become empty.
     // In that case it will have first value empty and other values will be null
@@ -1097,10 +1105,11 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
               if (isPresentInSchema) {
                 m = presentColumnMapIndex[j];
               }
-              if (meta.isDirectDictionary(m)) {
+              ColumnSchemaDetails details = columnSchemaDetailsWrapper.get(dimensionColumnIds[m]);
+              if (details.isDirectDictionary()) {
                 DirectDictionaryGenerator directDictionaryGenerator1 =
                     DirectDictionaryKeyGeneratorFactory
-                        .getDirectDictionaryGenerator(meta.getColumnDataType()[m]);
+                        .getDirectDictionaryGenerator(details.getColumnType());
                 surrogateKeyForHrrchy[0] =
                     directDictionaryGenerator1.generateDirectSurrogateKey(((String) r[j]));
                 surrogateKeyGen.max[m] = Integer.MAX_VALUE;

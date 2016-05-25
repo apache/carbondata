@@ -19,13 +19,7 @@
 
 package org.carbondata.processing.util;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.carbondata.core.carbon.CarbonDataLoadSchema.DimensionRelation;
@@ -37,6 +31,9 @@ import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.processing.schema.metadata.ColumnSchemaDetails;
+import org.carbondata.processing.schema.metadata.ColumnSchemaDetailsWrapper;
 
 public final class CarbonSchemaParser {
   /**
@@ -575,7 +572,6 @@ public final class CarbonSchemaParser {
     return carbonDataLoadSchema.getCarbonTable().getFactTableName();
   }
 
-
   /**
    * It will return all column groups in below format
    * 0,1~2~3,4,5,6~7~8,9
@@ -612,7 +608,6 @@ public final class CarbonSchemaParser {
     }
     return columnGroups.toString();
   }
-
 
   /**
    * getHeirAndCardinalityString
@@ -1171,26 +1166,24 @@ public final class CarbonSchemaParser {
   }
 
   /**
-   * the method returns the String of direct dictionary column index and column DataType
-   * separated by COLON_SPC_CHARACTER
+   * the method returns the ColumnSchemaDetailsWrapper
    *
    * @param dimensions
    * @return
    */
-  public static String getDirectDictionaryColumnString(List<CarbonDimension> dimensions,
-      CarbonDataLoadSchema carbonDataLoadSchema) {
-    StringBuffer buff = new StringBuffer();
-    int counter = 0;
+  public static ColumnSchemaDetailsWrapper getColumnSchemaDetails(
+      List<CarbonDimension> dimensions) {
+    ColumnSchemaDetailsWrapper columnSchemaDetailsWrapper = new ColumnSchemaDetailsWrapper();
+    Map<String, ColumnSchemaDetails> columnSchemaDetailsMap =
+        new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (CarbonDimension cDimension : dimensions) {
-      if (cDimension.getEncoder().contains(Encoding.DIRECT_DICTIONARY)) {
-        buff.append(cDimension.getOrdinal());
-        buff.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
-        buff.append(cDimension.getDataType());
-        buff.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
-        counter++;
-      }
+      ColumnSchemaDetails details =
+          new ColumnSchemaDetails(cDimension.getColName(), cDimension.getDataType(),
+              CarbonUtil.hasEncoding(cDimension.getEncoder(), Encoding.DIRECT_DICTIONARY));
+      columnSchemaDetailsMap.put(cDimension.getColumnSchema().getColumnUniqueId(), details);
     }
-    return buff.toString();
+    columnSchemaDetailsWrapper.setColumnSchemaDetailsMap(columnSchemaDetailsMap);
+    return columnSchemaDetailsWrapper;
   }
 
   /**
