@@ -33,6 +33,7 @@ import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, FilterPushJo
 import org.apache.spark.sql.hive.execution.{DescribeHiveTableCommand, DropTable, HiveNativeCommand}
 
 import org.carbondata.common.logging.LogServiceFactory
+import org.carbondata.spark.exception.MalformedCarbonCommandException
 
 object CarbonHiveSyntax {
 
@@ -211,6 +212,8 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
             val resolvedTable = sqlContext.executePlan(CarbonHiveSyntax.parse(d.sql)).analyzed
             planLater(resolvedTable) :: Nil
           } catch {
+            case ce: MalformedCarbonCommandException =>
+              throw ce
             case e: Exception => ExecutedCommand(d) :: Nil
           }
         case DescribeFormattedCommand(sql, tblIdentifier) =>

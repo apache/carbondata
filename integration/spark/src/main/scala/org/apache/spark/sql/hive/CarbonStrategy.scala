@@ -20,6 +20,8 @@ package org.apache.spark.sql.hive
 import org.apache.spark.sql.{CarbonSqlParser, SQLContext, Strategy}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
+import org.carbondata.spark.exception.MalformedCarbonCommandException
+
 private[sql] object CarbonStrategy {
   def getStrategy(context: SQLContext): Strategy = {
     new CarbonStrategies(context).CarbonCubeScans
@@ -36,8 +38,11 @@ private[spark] class CarbonSQLDialect extends HiveQLDialect {
     try {
       sqlParser.parse(sqlText)
     } catch {
+      // MalformedCarbonCommandException need to throw directly
+      // because hive can no parse carbon command
+      case ce: MalformedCarbonCommandException =>
+        throw ce
       case _ => super.parse(sqlText)
-      case x: Throwable => throw x
     }
   }
 }

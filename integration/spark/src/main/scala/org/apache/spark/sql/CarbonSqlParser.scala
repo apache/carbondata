@@ -34,6 +34,9 @@ import org.apache.spark.sql.execution.command.{DimensionRelation, _}
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
 
+import org.carbondata.spark.exception.MalformedCarbonCommandException
+
+
 
 /**
  * Parser for All Carbon DDL, DML cases in Unified context
@@ -326,6 +329,9 @@ class CarbonSqlParser()
           // processing the AST tree
           nodeToPlan(node)
         } catch {
+          // MalformedCarbonCommandException need to be throw directly, parser will catch it
+          case ce: MalformedCarbonCommandException =>
+            throw ce
           case e: Exception =>
             sys.error("Parsing error") // no need to do anything.
         }
@@ -542,31 +548,36 @@ class CarbonSqlParser()
     var dictIncludeCols: Seq[String] = Seq[String]()
 
     // check any column need to be excluded
-    if (None != tableProperties.get("DICTIONARY_EXCLUDE")) {
+    if (tableProperties.get("DICTIONARY_EXCLUDE").isDefined) {
       val dicExcludeCols: String = tableProperties.get("DICTIONARY_EXCLUDE").get
       splittedCols = dicExcludeCols.split(',')
-      splittedCols.foreach { splittedCol =>
-        if (!fields.exists(x => x.column.equalsIgnoreCase(splittedCol))) {
-          sys.error("DICTIONARY_EXCLUDE column(s) is no exist in table. " +
-            "Please check create table statement.")
+        .map { splittedCol =>
+          if (!fields.exists(x => x.column.equalsIgnoreCase(splittedCol.trim))) {
+            val errormsg = "DICTIONARY_EXCLUDE column: " + splittedCol.trim +
+              " is no exist in table. Please check create table statement."
+            throw new MalformedCarbonCommandException(errormsg)
+          }
+          splittedCol.trim
         }
-      }
     }
 
-    if (None != tableProperties.get("DICTIONARY_INCLUDE")) {
+    if (tableProperties.get("DICTIONARY_INCLUDE").isDefined) {
       dictIncludeCols = tableProperties.get("DICTIONARY_INCLUDE").get.split(",")
-      dictIncludeCols.foreach { distIncludeCol =>
-        if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol))) {
-          sys.error("DICTIONARY_INCLUDE column(s) is no exist in table. " +
-            "Please check create table statement.")
+        .map { distIncludeCol =>
+          if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol.trim))) {
+            val errormsg = "DICTIONARY_INCLUDE column: " + distIncludeCol.trim +
+              " is no exist in table. Please check create table statement."
+            throw new MalformedCarbonCommandException(errormsg)
+          }
+          distIncludeCol.trim
         }
-      }
     }
 
     splittedCols.foreach { dicExcludeCol =>
       if (dictIncludeCols.exists(x => x.equalsIgnoreCase(dicExcludeCol))) {
-        sys.error("DICTIONARY_EXCLUDE can not contain the same column with DICTIONARY_INCLUDE. " +
-          "Please check create table statement.")
+        val errormsg = "DICTIONARY_EXCLUDE can not contain the same column: " + dicExcludeCol +
+          " with DICTIONARY_INCLUDE. Please check create table statement."
+        throw new MalformedCarbonCommandException(errormsg)
       }
     }
 
@@ -579,7 +590,7 @@ class CarbonSqlParser()
             noDictionaryDims :+= field.column
           }
         }
-        dimFields += (field)
+        dimFields += field
       }
       else {
         // include the other columns into dims
@@ -595,14 +606,14 @@ class CarbonSqlParser()
   def fillNonStringDimension(dictIncludeCols: Seq[String],
     field: Field, dimFields: LinkedHashSet[Field]) {
     var dictInclude = false
-    if (!dictIncludeCols.isEmpty) {
+    if (dictIncludeCols.nonEmpty) {
       dictIncludeCols.foreach(dictIncludeCol =>
         if (field.column.equalsIgnoreCase(dictIncludeCol)) {
           dictInclude = true
         })
     }
     if (dictInclude) {
-      dimFields += (field)
+      dimFields += field
     }
   }
 
