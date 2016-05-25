@@ -3267,9 +3267,4 @@ class AllDataTypesTestCase5 extends QueryTest with BeforeAndAfterAll {
     )
   }
   )
-
-  //TC_488
-  test("select histogram_numeric(1, 1000)from Carbon_automation_test5")({
-  }
-  )
 }

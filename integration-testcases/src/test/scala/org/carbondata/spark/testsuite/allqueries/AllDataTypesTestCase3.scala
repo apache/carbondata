@@ -144,6 +144,36 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
       sql("LOAD DATA fact from '" + currentDirectory +
         "/src/test/resources/FACT_UNITED_DATA_INFO_sample_cube.csv' INTO CUBE traffic_2g_3g_4g " +
         "PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"', FILEHEADER '')")
+
+      sql(
+        "create table hivetable(imei string,deviceInformationId int,MAC string,deviceColor " +
+          "string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize " +
+          "string,CUPAudit string,CPIClocked string,series string,productionDate timestamp," +
+          "bomCode string,internalModels string, deliveryTime string, channelsId string, " +
+          "channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince " +
+          "string, deliveryCity string,deliveryDistrict string, deliveryStreet string, " +
+          "oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry " +
+          "string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet " +
+          "string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, " +
+          "Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, " +
+          "Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber" +
+          " string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, " +
+          "Latest_YEAR int, Latest_MONTH int, Latest_DAY int, Latest_HOUR string, " +
+          "Latest_areaId string, Latest_country string, Latest_province string, Latest_city " +
+          "string, Latest_district string, Latest_street string, Latest_releaseId string, " +
+          "Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, " +
+          "Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string," +
+          " Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, " +
+          "Latest_phonePADPartitionedVersions string, Latest_operatorId string, " +
+          "gamePointDescription string, gamePointId int,contractNumber int) row format " +
+          "delimited fields terminated by ','"
+      )
+
+      sql(
+        "LOAD DATA local inpath'" + currentDirectory + "/src/test/resources/100_olap.csv'" +
+          " overwrite INTO table hivetable"
+      )
+
     } catch {
       case e: Exception => print("ERROR: Carbon_automation_test3 ")
     }
@@ -352,33 +382,20 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   }
   )
 
-  //TC_112
-  test(
-    "select percentile(deviceInformationId,array(0,0.2,0.3,1))  as  a from Carbon_automation_test31",
-    NonRunningTests
-  )({
-    validateResult(
-      sql(
-        "select percentile(deviceInformationId,array(0,0.2,0.3,1))  as  a from " +
-          "Carbon_automation_test3"
-      ),
-      "TC_112.csv"
-    )
-  }
-  )
-
   //TC_115
   test(
     "select percentile_approx(deviceInformationId,array(0.2,0.3,0.99))  as a from " +
-      "Carbon_automation_test3",
-    NonRunningTests
+      "Carbon_automation_test3"
   )({
-    validateResult(
+    checkAnswer(
       sql(
         "select percentile_approx(deviceInformationId,array(0.2,0.3,0.99))  as a from " +
           "Carbon_automation_test3"
       ),
-      "TC_115.csv"
+      sql(
+        "select percentile_approx(deviceInformationId,array(0.2,0.3,0.99))  as a from " +
+          "hivetable"
+      )
     )
   }
   )
@@ -386,55 +403,60 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   //TC_116
   test(
     "select percentile_approx(deviceInformationId,array(0.2,0.3,0.99),5) as a from " +
-      "Carbon_automation_test3",
-    NonRunningTests
-  )({
-    validateResult(
+      "Carbon_automation_test3")({
+    checkAnswer(
       sql(
         "select percentile_approx(deviceInformationId,array(0.2,0.3,0.99),5) as a from " +
           "Carbon_automation_test3"
       ),
-      "TC_116.csv"
+      sql(
+        "select percentile_approx(deviceInformationId,array(0.2,0.3,0.99),5) as a from " +
+          "hivetable"
+      )
     )
   }
   )
 
   //TC_117
-  test("select histogram_numeric(deviceInformationId,2)  as a from Carbon_automation_test3",
-    NonRunningTests)({
-    validateResult(
+  test("select histogram_numeric(deviceInformationId,2)  as a from Carbon_automation_test3")({
+    checkAnswer(
       sql("select histogram_numeric(deviceInformationId,2)  as a from Carbon_automation_test3"),
-      "TC_117.csv"
+      sql("select histogram_numeric(deviceInformationId,2)  as a from hivetable")
     )
   }
   )
 
   //TC_128
   test(
-    "select percentile(deviceInformationId,array(0,0.2,0.3,1))  as  a from Carbon_automation_test3",
-    NonRunningTests
+    "select percentile(deviceInformationId,array(0,0.2,0.3,1))  as  a from Carbon_automation_test3"
   )({
-    validateResult(
+    checkAnswer(
       sql(
         "select percentile(deviceInformationId,array(0,0.2,0.3,1))  as  a from " +
           "Carbon_automation_test3"
       ),
-      "TC_128.csv"
+      sql(
+        "select percentile(deviceInformationId,array(0,0.2,0.3,1))  as  a from " +
+          "hivetable"
+      )
     )
   }
   )
 
+
   //TC_131
   test(
-    "select percentile_approx(gamePointId,array(0.2,0.3,0.99))  as a from Carbon_automation_test3",
-    NonRunningTests
+    "select percentile_approx(gamePointId,array(0.2,0.3,0.99))  as a from Carbon_automation_test3"
   )({
-    validateResult(
+    checkAnswer(
       sql(
         "select percentile_approx(gamePointId,array(0.2,0.3,0.99))  as a from " +
           "Carbon_automation_test3"
       ),
-      "TC_131.csv"
+      sql(
+        "select percentile_approx(gamePointId,array(0.2,0.3,0.99))  as a from " +
+          "hivetable"
+      )
     )
   }
   )
@@ -442,14 +464,16 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   //TC_132
   test(
     "select percentile_approx(gamePointId,array(0.2,0.3,0.99),5) as a from Carbon_automation_test3",
-    NonRunningTests
-  )({
-    validateResult(
+    NonRunningTests)({
+    checkAnswer(
       sql(
         "select percentile_approx(gamePointId,array(0.2,0.3,0.99),5) as a from " +
           "Carbon_automation_test3"
       ),
-      "TC_132.csv"
+      sql(
+        "select percentile_approx(gamePointId,array(0.2,0.3,0.99),5) as a from " +
+          "hivetable"
+      )
     )
   }
   )
@@ -465,91 +489,73 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_477
-  test("select percentile(1,array(1)) from Carbon_automation_test3",
-    NonRunningTests)({
-    validateResult(
+  test("select percentile(1,array(1)) from Carbon_automation_test3")({
+    checkAnswer(
       sql("select percentile(1,array(1)) from Carbon_automation_test3"),
-      "TC_477.csv"
+      sql("select percentile(1,array(1)) from hivetable")
     )
   }
   )
 
   //TC_479
-  test("select percentile(1,array('0.5')) from Carbon_automation_test3",
-    NonRunningTests)({
-    validateResult(
+  test("select percentile(1,array('0.5')) from Carbon_automation_test3")({
+    checkAnswer(
       sql("select percentile(1,array('0.5')) from Carbon_automation_test3"),
-      "TC_479.csv"
+      sql("select percentile(1,array('0.5')) from hivetable")
     )
   }
   )
 
   //TC_480
-  test("select percentile(1,array('1')) from Carbon_automation_test3",
-    NonRunningTests)({
-    validateResult(
+  test("select percentile(1,array('1')) from Carbon_automation_test3")({
+    checkAnswer(
       sql("select percentile(1,array('1')) from Carbon_automation_test3"),
-      "TC_480.csv"
-    )
-  }
-  )
-
-  //TC_485
-  test("select percentile_approx(1,array(0.5),5000) from Carbon_automation_test311",
-    NonRunningTests)({
-    validateResult(
-      sql("select percentile_approx(1,array(0.5),5000) from Carbon_automation_test3"),
-      "TC_485.csv"
+      sql("select percentile(1,array('1')) from hivetable")
     )
   }
   )
 
   //TC_486
-  test("select percentile_approx(1,array(0.5),5000) from Carbon_automation_test32",
-    NonRunningTests)({
-    validateResult(
+  test("select percentile_approx(1,array(0.5),5000) from Carbon_automation_test32")({
+    checkAnswer(
       sql("select percentile_approx(1,array(0.5),5000) from Carbon_automation_test3"),
-      "TC_486.csv"
+      sql("select percentile_approx(1,array(0.5),5000) from hivetable")
     )
   }
   )
 
   //TC_487
-  test("select histogram_numeric(1, 5000)from Carbon_automation_test3",
-    NonRunningTests)({
-    validateResult(
+  test("select histogram_numeric(1, 5000)from Carbon_automation_test3")({
+    checkAnswer(
       sql("select histogram_numeric(1, 5000)from Carbon_automation_test3"),
-      "TC_487.csv"
+      sql("select histogram_numeric(1, 5000)from hivetable")
     )
   }
   )
 
   //TC_488
-  test("select histogram_numeric(1, 1000)from Carbon_automation_test3",
-    NonRunningTests)({
-    validateResult(
+  test("select histogram_numeric(1, 1000)from Carbon_automation_test3")({
+    checkAnswer(
       sql("select histogram_numeric(1, 1000)from Carbon_automation_test3"),
-      "TC_488.csv"
+      sql("select histogram_numeric(1, 1000)from hivetable")
     )
   }
   )
 
   //TC_489
-  test("select histogram_numeric(1, 500)from Carbon_automation_test31",
-    NonRunningTests)({
-    validateResult(
+  test("select histogram_numeric(1, 500)from Carbon_automation_test31")({
+    checkAnswer(
       sql("select histogram_numeric(1, 500)from Carbon_automation_test3"),
-      "TC_489.csv"
+      sql("select histogram_numeric(1, 500)from hivetable")
     )
   }
   )
 
   //TC_490
-  test("select histogram_numeric(1, 500)from Carbon_automation_test3",
-    NonRunningTests)({
-    validateResult(
+  test("select histogram_numeric(1, 500)from Carbon_automation_test3")({
+    checkAnswer(
       sql("select histogram_numeric(1, 500)from Carbon_automation_test3"),
-      "TC_490.csv"
+      sql("select histogram_numeric(1, 500)from hivetable")
     )
   }
   )
@@ -565,57 +571,37 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
   )
 
   //TC_492
-  test("select collect_set(AMSIZE) from Carbon_automation_test31",
-    NonRunningTests)({
-    validateResult(
+  test("select collect_set(AMSIZE) from Carbon_automation_test3")({
+    checkAnswer(
       sql("select collect_set(AMSIZE) from Carbon_automation_test3"),
-      "TC_492.csv"
+      sql("select collect_set(AMSIZE) from hivetable")
     )
   }
   )
 
   //TC_493
-  test("select collect_set(bomcode) from Carbon_automation_test3", NonRunningTests)({
-    validateResult(
+  test("select collect_set(bomcode) from Carbon_automation_test3")({
+    checkAnswer(
       sql("select collect_set(bomcode) from Carbon_automation_test3"),
-      "TC_493.csv"
+      sql("select collect_set(bomcode) from hivetable")
     )
   }
   )
 
   //TC_494
-  test("select collect_set(imei) from Carbon_automation_test3", NonRunningTests)({
-    validateResult(
+  test("select collect_set(imei) from Carbon_automation_test3")({
+    checkAnswer(
       sql("select collect_set(imei) from Carbon_automation_test3"),
-      "TC_494.csv"
+      sql("select collect_set(imei) from hivetable")
     )
   }
   )
 
   //TC_500
-  test("select percentile(1,array('0.5')) from Carbon_automation_test31", NonRunningTests)({
-    validateResult(
+  test("select percentile(1,array('0.5')) from Carbon_automation_test31")({
+    checkAnswer(
       sql("select percentile(1,array('0.5')) from Carbon_automation_test3"),
-      "TC_500.csv"
-    )
-  }
-  )
-
-  //TC_501
-  test("select percentile_approx(1,array(0.5),5000) from Carbon_automation_test31",
-    NonRunningTests)({
-    validateResult(
-      sql("select percentile_approx(1,array(0.5),5000) from Carbon_automation_test3"),
-      "TC_501.csv"
-    )
-  }
-  )
-
-  //TC_502
-  test("select collect_set(AMSIZE) from Carbon_automation_test3", NonRunningTests)({
-    validateResult(
-      sql("select collect_set(AMSIZE) from Carbon_automation_test3"),
-      "TC_502.csv"
+      sql("select percentile(1,array('0.5')) from hivetable")
     )
   }
   )
