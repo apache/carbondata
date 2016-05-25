@@ -175,8 +175,6 @@ public class MDKeyGenStep extends BaseStep {
       setStepOutputInterface();
     }
 
-    readCounter++;
-
     if (null != row) {
       putRow(data.outputRowMeta, new Object[measureCount + 1]);
       return true;
@@ -188,6 +186,7 @@ public class MDKeyGenStep extends BaseStep {
       finalMerger.startFinalMerge();
       while (finalMerger.hasNext()) {
         Object[] r = finalMerger.next();
+        readCounter++;
         Object[] outputRow = process(r);
         dataHandler.addDataToStore(outputRow);
         writeCounter++;
