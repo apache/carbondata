@@ -839,8 +839,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         if (obj.equals(valueToCheckAgainst)) {
           rowValue[i] = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
         }
-      } else if (i > meta.memberMapping.length) {
-        return rowValue;
       } else {
         rowValue[i] = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
       }
