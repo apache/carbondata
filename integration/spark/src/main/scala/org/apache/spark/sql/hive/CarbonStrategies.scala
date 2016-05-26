@@ -201,7 +201,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         partionValues, isOverwriteExist, inputSqlString) =>
           val isCarbonTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
             .cubeExists(schemaNameOp, cubeName)(sqlContext)
-          if (isCarbonTable) {
+          if (isCarbonTable || partionValues.nonEmpty) {
             ExecutedCommand(LoadCube(schemaNameOp, cubeName, factPathFromUser,
               dimFilesPath, partionValues, isOverwriteExist, inputSqlString)) :: Nil
           } else {
