@@ -369,9 +369,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
   @Override public boolean isCacheFilled(String[] columns) {
     for (String column : columns) {
       Dictionary dicCache = getDictionaryCaches().get(column);
-      if (null != dicCache) {
-        continue;
-      } else {
+      if (null == dicCache) {
         return true;
       }
     }

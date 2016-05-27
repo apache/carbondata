@@ -19,7 +19,6 @@
 
 package org.carbondata.processing.csvreaderstep;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
@@ -91,7 +90,6 @@ public class CsvInput extends BaseStep implements StepInterface {
       TransMeta transMeta, Trans trans) {
     super(stepMeta, stepDataInterface, copyNr, transMeta, trans);
     LOGGER.info("** Using csv file **");
-    //System.out.println("****************** Using my csv file");
   }
 
   /**
@@ -108,7 +106,6 @@ public class CsvInput extends BaseStep implements StepInterface {
   public static final String[] guessStringsFromLine(LogChannelInterface log, String line,
       String delimiter, String enclosure, String escapeCharacter) throws KettleException {
     List<String> strings = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    //        int fieldnr;
 
     String pol; // piece of line
 
@@ -118,8 +115,6 @@ public class CsvInput extends BaseStep implements StepInterface {
       }
 
       // Split string in pieces, only for CSV!
-
-      //      fieldnr = 0;
       int pos = 0;
       int length = line.length();
       boolean dencl = false;
@@ -281,7 +276,6 @@ public class CsvInput extends BaseStep implements StepInterface {
         strings.add(pol);
 
         pos = next + delimiter.length();
-        //        fieldnr++;
       }
       if (pos == length) {
         if (log.isRowLevel()) {
@@ -289,7 +283,6 @@ public class CsvInput extends BaseStep implements StepInterface {
               BaseMessages.getString(PKG, "CsvInput.Log.EndOfEmptyLineFound"));
         }
         strings.add(""); //$NON-NLS-1$
-        //                  fieldnr++;
       }
     } catch (Exception e) {
       throw new KettleException(
@@ -602,19 +595,4 @@ public class CsvInput extends BaseStep implements StepInterface {
     return false;
   }
 
-  public void closeFile() throws KettleException {
-
-    try {
-      if (data.bufferedInputStream != null) {
-        data.bufferedInputStream.close();
-      }
-    } catch (IOException e) {
-      throw new KettleException(
-          "Unable to close file channel for file '" + data.filenames[data.filenr - 1], e);
-    }
-  }
-
-  public boolean isWaitingForData() {
-    return true;
-  }
 }

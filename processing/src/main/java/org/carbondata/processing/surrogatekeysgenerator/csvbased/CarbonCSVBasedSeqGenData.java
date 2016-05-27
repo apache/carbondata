@@ -133,41 +133,6 @@ public class CarbonCSVBasedSeqGenData extends BaseStepData implements StepDataIn
   }
 
   /**
-   * @param columnIndex The columnIndex to set.
-   */
-  public void setColumnIndex(Map<String, int[]> columnIndex) {
-    this.columnIndex = columnIndex;
-  }
-
-  /**
-   * @return Returns the keyFieldIndex.
-   */
-  public int[] getKeyFieldIndex() {
-    return keyFieldIndex;
-  }
-
-  /**
-   * @param keyFieldIndex The keyFieldIndex to set.
-   */
-  public void setKeyFieldIndex(int[] keyFieldIndex) {
-    this.keyFieldIndex = keyFieldIndex;
-  }
-
-  /**
-   * @return Returns the conversionMeta.
-   */
-  public ValueMetaInterface[] getConversionMeta() {
-    return conversionMeta;
-  }
-
-  /**
-   * @param conversionMeta The conversionMeta to set.
-   */
-  public void setConversionMeta(ValueMetaInterface[] conversionMeta) {
-    this.conversionMeta = conversionMeta;
-  }
-
-  /**
    * @return Returns the generator.
    */
   public KeyGenerator getGenerator() {
@@ -186,13 +151,6 @@ public class CarbonCSVBasedSeqGenData extends BaseStepData implements StepDataIn
    */
   public Map<String, KeyGenerator> getKeyGenerators() {
     return keyGenerators;
-  }
-
-  /**
-   * @param keyGenerators The keyGenerators to set.
-   */
-  public void setKeyGenerators(Map<String, KeyGenerator> keyGenerators) {
-    this.keyGenerators = keyGenerators;
   }
 
   /**

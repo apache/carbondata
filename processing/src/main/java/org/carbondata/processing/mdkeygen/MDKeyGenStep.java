@@ -282,7 +282,6 @@ public class MDKeyGenStep extends BaseStep {
       dimLens[i] = dimsLenList.get(i);
     }
 
-    //      this.dimensionCount = dimLens.length;
     this.dimensionCount = meta.getDimensionCount();
 
     int simpleDimsCount = this.dimensionCount - meta.getComplexDimsCount();
@@ -332,8 +331,6 @@ public class MDKeyGenStep extends BaseStep {
 
     FileData fileData = new FileData(metaDataFileName, storeLocation);
     fileManager.add(fileData);
-    String baseSortTempLocation =
-        baseStorePath + File.separator + meta.getSchemaName() + File.separator + meta.getCubeName();
     // Set the data file location
     this.dataFolderLocation =
         storeLocation + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;

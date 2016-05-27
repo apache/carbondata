@@ -324,7 +324,7 @@ public class SortDataRows {
   public void startSorting() throws CarbonSortKeyAndGroupByException {
     LOGGER.info("File based sorting will be used");
     if (this.entryCount > 0) {
-      Object[][] toSort;// = null;
+      Object[][] toSort;
       toSort = new Object[entryCount][];
       System.arraycopy(recordHolderList, 0, toSort, 0, entryCount);
 

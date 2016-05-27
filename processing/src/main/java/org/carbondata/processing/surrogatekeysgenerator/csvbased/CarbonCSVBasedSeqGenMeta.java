@@ -897,7 +897,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       String foreignKey = metaInterface.getValueMeta(j).getName();
       String actualHier = foreignKeyHierarchyMap.get(foreignKey);
       if (null != actualHier) {
-        if (actualHier.indexOf(CarbonCommonConstants.COMA_SPC_CHARACTER) > -1) {
+        if (actualHier.contains(CarbonCommonConstants.COMA_SPC_CHARACTER)) {
           String[] splitHier = actualHier.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
           for (String hier : splitHier) {
             actualHierList.add(hier);

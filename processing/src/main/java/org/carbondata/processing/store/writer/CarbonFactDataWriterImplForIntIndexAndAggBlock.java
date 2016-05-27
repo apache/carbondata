@@ -467,41 +467,4 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     return info;
   }
 
-  protected int calculateAndSetBlockletMetaSize(NodeHolder nodeHolderInfo) {
-    int metaSize = 0;
-    //measure offset and measure length
-    metaSize += (measureCount * CarbonCommonConstants.INT_SIZE_IN_BYTE) + (measureCount
-        * CarbonCommonConstants.LONG_SIZE_IN_BYTE);
-    // start and end key
-    metaSize += mdkeySize * 2;
-
-    // keyblock length + key offsets + number of tuples+ number of columnar block
-    metaSize += (nodeHolderInfo.getKeyLengths().length * CarbonCommonConstants.INT_SIZE_IN_BYTE) + (
-        nodeHolderInfo.getKeyLengths().length * CarbonCommonConstants.LONG_SIZE_IN_BYTE)
-        + CarbonCommonConstants.INT_SIZE_IN_BYTE + CarbonCommonConstants.INT_SIZE_IN_BYTE;
-    // if sorted or not
-    metaSize += nodeHolderInfo.getIsSortedKeyBlock().length;
-
-    //column min max size
-    //for length of columnMinMax byte array
-    metaSize += CarbonCommonConstants.INT_SIZE_IN_BYTE;
-    for (int i = 0; i < nodeHolderInfo.getColumnMaxData().length; i++) {
-      //length of sub byte array
-      metaSize += CarbonCommonConstants.INT_SIZE_IN_BYTE;
-      metaSize += nodeHolderInfo.getColumnMaxData()[i].length;
-    }
-
-    // key block index length + key block index offset + number of key block
-    metaSize +=
-        (nodeHolderInfo.getKeyBlockIndexLength().length * CarbonCommonConstants.INT_SIZE_IN_BYTE)
-            + (nodeHolderInfo.getKeyBlockIndexLength().length
-            * CarbonCommonConstants.LONG_SIZE_IN_BYTE) + CarbonCommonConstants.INT_SIZE_IN_BYTE;
-
-    // aggregate block length + agg block offsets + number of block aggergated
-    metaSize +=
-        (nodeHolderInfo.getDataIndexMapLength().length * CarbonCommonConstants.INT_SIZE_IN_BYTE) + (
-            nodeHolderInfo.getDataIndexMapLength().length * CarbonCommonConstants.LONG_SIZE_IN_BYTE)
-            + CarbonCommonConstants.INT_SIZE_IN_BYTE;
-    return metaSize;
-  }
 }
