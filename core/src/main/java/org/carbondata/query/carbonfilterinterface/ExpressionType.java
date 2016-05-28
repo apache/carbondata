@@ -29,7 +29,7 @@ public enum ExpressionType {
   LESSTHAN,
   LESSTHAN_EQUALTO,
   GREATERTHAN,
-  GREATERYHAN_EQUALTO,
+  GREATERTHAN_EQUALTO,
   ADD,
   SUBSTRACT,
   DIVIDE,
@@ -38,6 +38,7 @@ public enum ExpressionType {
   LIST,
   NOT_IN,
   UNKNOWN,
-  LITERAL
+  LITERAL,
+  RANGE
 
 }

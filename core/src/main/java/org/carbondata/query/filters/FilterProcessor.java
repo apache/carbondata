@@ -49,8 +49,10 @@ public interface FilterProcessor {
    *
    * @param filterResolver DataBlock list with resolved filters
    * @return list of DataRefNode.
+   * @throws QueryExecutionException
    */
   List<DataRefNode> getFilterredBlocks(DataRefNode dataRefNode, FilterResolverIntf filterResolver,
-      AbstractIndex segmentIndexBuilder, AbsoluteTableIdentifier tableIdentifier);
+      AbstractIndex segmentIndexBuilder, AbsoluteTableIdentifier tableIdentifier)
+      throws QueryExecutionException;
 
 }

@@ -22,6 +22,7 @@ package org.carbondata.query.expression.conditional;
 import java.util.List;
 
 import org.carbondata.query.expression.ColumnExpression;
+import org.carbondata.query.expression.ExpressionResult;
 
 public interface ConditionalExpression {
 
@@ -30,6 +31,8 @@ public interface ConditionalExpression {
   List<ColumnExpression> getColumnList();
 
   boolean isSingleDimension();
+
+  List<ExpressionResult> getLiterals();
 
   /**
    * will return the flag of direct dictionary column

@@ -61,6 +61,18 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
         "PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')"
     );
 
+    sql("CREATE CUBE NO_DICTIONARY_CARBON_7 DIMENSIONS (empno string, " +
+      "doj Timestamp, workgroupcategory Integer, empname String,workgroupcategoryname String, " +
+      "deptno Integer, deptname String, projectcode Integer, projectjoindate Timestamp, " +
+      "projectenddate Timestamp, designation String) MEASURES (attendance Integer,utilization " +
+      "Integer,salary Integer) " + "OPTIONS (NO_DICTIONARY(empno,empname,designation) PARTITIONER" +
+      " [PARTITION_COUNT=1])"
+    ).show()
+    sql(
+      "LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE NO_DICTIONARY_CARBON_7 " +
+        "PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')"
+    );
+
   }
 
   test("Detail Query with NO_DICTIONARY_COLUMN Compare With HIVE RESULT") {
@@ -72,6 +84,24 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
     )
 
 
+  }
+
+  test("Detail Query with NO_DICTIONARY_COLUMN with Like range filter") {
+
+
+    checkAnswer(
+      sql("select empno from NO_DICTIONARY_CARBON_7 where empno like '12%'"),
+      Seq(Row("12"))
+    )
+  }
+
+  test("Detail Query with NO_DICTIONARY_COLUMN with greater than range filter") {
+
+
+    checkAnswer(
+      sql("select empno from NO_DICTIONARY_CARBON_7 where empno>'19'"),
+      Seq(Row("20"))
+    )
   }
 
   test("Detail Query with NO_DICTIONARY_COLUMN with  in filter Compare With HIVE RESULT") {
@@ -101,8 +131,8 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Detail Query with NO_DICTIONARY_COLUMN with equals multiple filter Compare With HIVE " +
-    "RESULT")
-  {
+    "RESULT"
+  ) {
 
 
     checkAnswer(

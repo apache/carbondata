@@ -20,6 +20,7 @@ package org.carbondata.query.filter.executer;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
@@ -52,16 +53,20 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(RowLevelFilterExecuterImpl.class.getName());
-  private List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList;
-  private List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList;
-  private Expression exp;
-  private AbsoluteTableIdentifier tableIdentifier;
+  protected List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList;
+  protected List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList;
+  protected Expression exp;
+  protected AbsoluteTableIdentifier tableIdentifier;
 
   public RowLevelFilterExecuterImpl(List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier) {
     this.dimColEvaluatorInfoList = dimColEvaluatorInfoList;
-    this.msrColEvalutorInfoList = msrColEvalutorInfoList;
+    if (null == msrColEvalutorInfoList) {
+      this.msrColEvalutorInfoList = new ArrayList<MeasureColumnResolvedFilterInfo>(20);
+    } else {
+      this.msrColEvalutorInfoList = msrColEvalutorInfoList;
+    }
     this.exp = exp;
     this.tableIdentifier = tableIdentifier;
   }
@@ -84,12 +89,14 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     }
 
     // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_001
-    for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
-      if (msrColumnEvalutorInfo.isMeasureExistsInCurrentSlice() && null == blockChunkHolder
-          .getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]) {
-        blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()] =
-            blockChunkHolder.getDataBlock().getMeasureChunk(blockChunkHolder.getFileReader(),
-                msrColumnEvalutorInfo.getColumnIndex());
+    if (null != msrColEvalutorInfoList) {
+      for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
+        if (msrColumnEvalutorInfo.isMeasureExistsInCurrentSlice() && null == blockChunkHolder
+            .getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]) {
+          blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()] =
+              blockChunkHolder.getDataBlock().getMeasureChunk(blockChunkHolder.getFileReader(),
+                  msrColumnEvalutorInfo.getColumnIndex());
+        }
       }
     }
     // CHECKSTYLE:ON

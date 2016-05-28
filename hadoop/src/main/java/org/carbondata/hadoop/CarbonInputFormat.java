@@ -69,19 +69,17 @@ import org.apache.hadoop.mapreduce.security.TokenCache;
 import org.apache.hadoop.mapreduce.task.JobContextImpl;
 import org.apache.hadoop.util.StringUtils;
 
-
 /**
  * Carbon Input format class representing one carbon table
  */
 public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
-  private static final Log LOG = LogFactory.getLog(CarbonInputFormat.class);
-
-  private static final String DATABASE_NAME = "mapreduce.input.carboninputformat.databasename";
-  private static final String TABLE_NAME = "mapreduce.input.carboninputformat.tablename";
   //comma separated list of input segment numbers
   public static final String INPUT_SEGMENT_NUMBERS =
       "mapreduce.input.carboninputformat.segmentnumbers";
+  private static final Log LOG = LogFactory.getLog(CarbonInputFormat.class);
+  private static final String DATABASE_NAME = "mapreduce.input.carboninputformat.databasename";
+  private static final String TABLE_NAME = "mapreduce.input.carboninputformat.tablename";
 
   public static void setTableToAccess(Job job, CarbonTableIdentifier tableIdentifier) {
     job.getConfiguration().set(CarbonInputFormat.DATABASE_NAME, tableIdentifier.getDatabaseName());
@@ -202,6 +200,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
   /**
    * get total number of rows. Same as count(*)
+   *
    * @throws IOException
    * @throws IndexBuilderException
    */
@@ -260,13 +259,17 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
       List<DataRefNode> filterredBlocks = null;
       // if no filter is given get all blocks from Btree Index
-      if(null == resolver){
+      if (null == resolver) {
         filterredBlocks = getDataBlocksOfIndex(abstractIndex);
       } else {
         // apply filter and get matching blocks
-        filterredBlocks = filterExpressionProcessor
-            .getFilterredBlocks(abstractIndex.getDataRefNode(), resolver, abstractIndex,
-                absoluteTableIdentifier);
+        try {
+          filterredBlocks = filterExpressionProcessor
+              .getFilterredBlocks(abstractIndex.getDataRefNode(), resolver, abstractIndex,
+                  absoluteTableIdentifier);
+        } catch (QueryExecutionException e) {
+          throw new IndexBuilderException(e.getMessage());
+        }
       }
       resultFilterredBlocks.addAll(filterredBlocks);
     }
@@ -321,8 +324,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       IndexKey endIndexKey = FilterUtil.prepareDefaultEndIndexKey(segmentProperties);
 
       // Add all blocks of btree into result
-      DataRefNodeFinder blockFinder = new BTreeDataRefNodeFinder(
-          segmentProperties.getDimensionColumnsValueSize());
+      DataRefNodeFinder blockFinder =
+          new BTreeDataRefNodeFinder(segmentProperties.getDimensionColumnsValueSize());
       DataRefNode startBlock =
           blockFinder.findFirstDataBlock(abstractIndex.getDataRefNode(), startIndexKey);
       DataRefNode endBlock =
@@ -452,7 +455,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private int[] getValidSegments(JobContext job) throws IOException {
     String segmentString = job.getConfiguration().get(INPUT_SEGMENT_NUMBERS, "");
     // if no segments
-    if(segmentString.trim().isEmpty()){
+    if (segmentString.trim().isEmpty()) {
       return new int[0];
     }
 

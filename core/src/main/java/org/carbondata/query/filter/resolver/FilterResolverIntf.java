@@ -19,12 +19,13 @@
 package org.carbondata.query.filter.resolver;
 
 import java.io.Serializable;
+import java.util.SortedMap;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
+import org.carbondata.query.expression.Expression;
 import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
 public interface FilterResolverIntf extends Serializable {
@@ -66,17 +67,23 @@ public interface FilterResolverIntf extends Serializable {
    * API will get the start key based on the filter applied
    * based on the key generator
    *
+   * @param setOfStartKeyByteArray
+   * @param startKey
    * @return long[], array of start keys.
    */
-  IndexKey getstartKey(SegmentProperties segmentProperties);
+  void getstartKey(SegmentProperties segmentProperties, long[] startKey,
+      SortedMap<Integer, byte[]> setOfStartKeyByteArray);
 
   /**
    * API will read the end key based on the max surrogate of
    * particular dimension column
    *
+   * @param setOfEndKeyByteArray
+   * @param endKeys
    * @return
    */
-  IndexKey getEndKey(SegmentProperties segmentProperties, AbsoluteTableIdentifier tableIdentifier);
+  void getEndKey(SegmentProperties segmentProperties, AbsoluteTableIdentifier tableIdentifier,
+      long[] endKeys, SortedMap<Integer, byte[]> setOfEndKeyByteArray);
 
   /**
    * API will return the filter executer type which will be used to evaluate
@@ -85,5 +92,7 @@ public interface FilterResolverIntf extends Serializable {
    * @return FilterExecuterType.
    */
   FilterExecuterType getFilterExecuterType();
+
+  Expression getFilterExpression();
 
 }
