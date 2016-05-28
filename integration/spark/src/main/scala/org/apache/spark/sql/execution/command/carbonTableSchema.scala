@@ -1797,15 +1797,16 @@ private[sql] case class ShowLoads(
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
-    var carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-      .getCarbonTable(schemaName + '_' + tableName)
+    val tableIdentifier = new CarbonTableIdentifier(schemaName, tableName)
+    val carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
+      .getCarbonTable(tableIdentifier.getTableUniqueName)
+    if (carbonTable == null) {
+      sys.error(s"$schemaName.$tableName is not found")
+    }
     val path = carbonTable.getMetaDataFilepath()
 
-    var segmentStatusManager = new SegmentStatusManager(new AbsoluteTableIdentifier
-    (CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION),
-      new CarbonTableIdentifier(schemaName, tableName)
-    )
-    )
+    val segmentStatusManager = new SegmentStatusManager(new AbsoluteTableIdentifier
+    (CarbonEnv.getInstance(sqlContext).carbonCatalog.storePath, tableIdentifier))
     val loadMetadataDetailsArray = segmentStatusManager.readLoadMetadata(path)
 
     if (loadMetadataDetailsArray.nonEmpty) {
