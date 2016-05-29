@@ -157,7 +157,7 @@ public final class CarbonDataMergerUtil {
       factSizeAcrossPartition += getSizeOfFactFileInLoad(loadFiles[0]);
     }
     // check avg fact size if less than configured max size of to load.
-    if (factSizeAcrossPartition < toLoadMergeMaxSize * 1024 * 1024 * 1024) {
+    if (factSizeAcrossPartition < toLoadMergeMaxSize * 1024L * 1024 * 1024) {
       return true;
     }
     return false;

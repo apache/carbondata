@@ -26,14 +26,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
@@ -787,8 +780,8 @@ public class GraphGenerator {
         .setActualDims(CarbonSchemaParser.getCubeDimensions(dimensions, carbonDataLoadSchema));
     graphConfiguration.setComplexTypeString(CarbonSchemaParser.getComplexTypeString(dimensions));
     prepareNoDictionaryMapping(dimensions, graphConfiguration);
-    graphConfiguration.setColumnSchemaDetails(
-        CarbonSchemaParser.getColumnSchemaDetails(dimensions));
+    graphConfiguration
+        .setColumnSchemaDetails(CarbonSchemaParser.getColumnSchemaDetails(dimensions));
     String factTableName = carbonDataLoadSchema.getCarbonTable().getFactTableName();
     graphConfiguration.setTableName(factTableName);
     StringBuilder dimString = new StringBuilder();
@@ -806,7 +799,6 @@ public class GraphGenerator {
     graphConfiguration.setDimensionTableNames(tableString);
     graphConfiguration.setDimensionString(dimString.toString());
     graphConfiguration.setDimensionColumnIds(dimensionColumnIds);
-    StringBuilder propString = new StringBuilder();
     graphConfiguration
         .setForignKey(CarbonSchemaParser.getForeignKeyForTables(dimensions, carbonDataLoadSchema));
     List<CarbonMeasure> measures = carbonDataLoadSchema.getCarbonTable()

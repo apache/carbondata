@@ -24,6 +24,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -148,7 +149,8 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
       ByteBuffer byteBuffer = ByteBuffer.allocate(length + 4 + 1);
       byteBuffer.putInt(length);
       for (BigDecimal val : valueSet) {
-        byte[] bytes = val.toString().getBytes();
+        byte[] bytes =
+            val.toString().getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         byteBuffer.putInt(-1);
         byteBuffer.putInt(bytes.length);
         byteBuffer.put(bytes);

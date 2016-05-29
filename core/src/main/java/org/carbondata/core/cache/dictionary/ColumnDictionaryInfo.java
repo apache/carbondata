@@ -19,6 +19,7 @@
 
 package org.carbondata.core.cache.dictionary;
 
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -145,7 +146,7 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
    * @return
    */
   private int getSurrogateKeyFromDictionaryValue(byte[] key) {
-    String filterKey = new String(key);
+    String filterKey = new String(key, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     int low = 0;
     List<Integer> sortedSurrogates = sortOrderReference.get();
     int high = sortedSurrogates.size() - 1;

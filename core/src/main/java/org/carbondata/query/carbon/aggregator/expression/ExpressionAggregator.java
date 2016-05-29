@@ -19,6 +19,7 @@
 package org.carbondata.query.carbon.aggregator.expression;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.List;
 
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
@@ -102,7 +103,8 @@ public class ExpressionAggregator {
         } else if (!CarbonUtil.hasEncoding(carbonColumn.getEncoder(), Encoding.DICTIONARY)) {
           // for dictionary column get the data
           String noDictionaryColumnData =
-              new String(scannedResult.getDimensionKey(carbonColumn.getOrdinal()));
+              new String(scannedResult.getDimensionKey(carbonColumn.getOrdinal()),
+                  Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
           // if data is equal to default value then its null so no
           // need to do any thing
           if (!CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(noDictionaryColumnData)) {

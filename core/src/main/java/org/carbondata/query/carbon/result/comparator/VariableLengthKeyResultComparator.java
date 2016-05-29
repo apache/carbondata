@@ -18,9 +18,11 @@
  */
 package org.carbondata.query.carbon.result.comparator;
 
+import java.nio.charset.Charset;
 import java.util.Comparator;
 
 import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.carbon.result.ListBasedResultWrapper;
 import org.carbondata.query.carbon.util.DataTypeUtil;
 
@@ -58,11 +60,13 @@ public class VariableLengthKeyResultComparator implements Comparator<ListBasedRe
         listBasedResultWrapperFirst.getKey().getNoDictionaryKeyByIndex(noDictionaryColumnIndex);
     // convert the result based on actual data type
     Object dataBasedOnDataTypeFirst =
-        DataTypeUtil.getDataBasedOnDataType(new String(noDictionaryKeysFirst), dataType);
+        DataTypeUtil.getDataBasedOnDataType(new String(noDictionaryKeysFirst, Charset
+            .forName(CarbonCommonConstants.DEFAULT_CHARSET)), dataType);
     byte[] noDictionaryKeysSecond =
         listBasedResultWrapperSecond.getKey().getNoDictionaryKeyByIndex(noDictionaryColumnIndex);
-    Object dataBasedOnDataTypeSecond =
-        DataTypeUtil.getDataBasedOnDataType(new String(noDictionaryKeysSecond), dataType);
+    Object dataBasedOnDataTypeSecond = DataTypeUtil.getDataBasedOnDataType(
+        new String(noDictionaryKeysSecond, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),
+        dataType);
     int cmp = 0;
     // compare the result
     cmp = DataTypeUtil

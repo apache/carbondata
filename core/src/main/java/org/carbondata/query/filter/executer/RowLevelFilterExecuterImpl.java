@@ -19,6 +19,7 @@
 package org.carbondata.query.filter.executer;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.util.BitSet;
 import java.util.List;
 
@@ -332,7 +333,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     } else {
       noDictionaryVals = dimensionColumnDataChunk.getCompleteDataChunk().get(index);
     }
-    return new String(noDictionaryVals);
+    return new String(noDictionaryVals, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
   }
 
   @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {

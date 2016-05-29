@@ -19,6 +19,7 @@
 package org.carbondata.query.carbon.executor.impl;
 
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -105,7 +106,8 @@ public class QueryResultPreparator {
         if (!CarbonUtil
             .hasEncoding(queryDimension.get(i).getDimension().getEncoder(), Encoding.DICTIONARY)) {
           resultData[currentRow][i] = DataTypeUtil.getDataBasedOnDataType(
-              new String(key.getNoDictionaryKeyByIndex(noDictionaryColumnIndex++)),
+              new String(key.getNoDictionaryKeyByIndex(noDictionaryColumnIndex++),
+                  Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),
               queryDimension.get(i).getDimension().getDataType());
         } else {
           resultData[currentRow][i] =

@@ -18,14 +18,7 @@
  */
 package org.carbondata.lcm.status;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.Closeable;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -138,8 +131,6 @@ public class SegmentStatusManager {
 
           }
         }
-      } else {
-        loadFolderDetailsArray = new LoadMetadataDetails[0];
       }
     } catch (IOException e) {
       LOG.error(e);

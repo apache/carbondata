@@ -18,6 +18,8 @@
  */
 package org.carbondata.query.carbon.aggregator.dimension.impl;
 
+import java.nio.charset.Charset;
+
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.carbon.aggregator.dimension.DimensionDataAggregator;
@@ -71,7 +73,8 @@ public class VariableLengthDimensionAggregator implements DimensionDataAggregato
     if (defaultValue != null) {
       data = (String) defaultValue;
     } else {
-      data = new String(scannedResult.getDimensionKey(blockIndex));
+      data = new String(scannedResult.getDimensionKey(blockIndex),
+          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
       if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(data)) {
         return;
       }

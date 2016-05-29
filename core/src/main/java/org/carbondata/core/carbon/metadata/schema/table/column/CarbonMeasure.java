@@ -101,4 +101,12 @@ public class CarbonMeasure extends CarbonColumn {
     }
     return true;
   }
+
+  /**
+   * hash code
+   * @return
+   */
+  @Override public int hashCode() {
+    return this.getColumnSchema().getColumnUniqueId().hashCode();
+  }
 }

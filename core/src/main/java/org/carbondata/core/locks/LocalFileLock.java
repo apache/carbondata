@@ -61,7 +61,7 @@ public class LocalFileLock extends AbstractCarbonLock {
    */
   private FileLock fileLock;
 
-  public static String tmpPath;
+  public static final String tmpPath;
 
   private String cubeName;
 

@@ -39,7 +39,7 @@ public class IndexKey {
     this.dictionaryKeys = dictionaryKeys;
     this.noDictionaryKeys = noDictionaryKeys;
     if (null == dictionaryKeys) {
-      dictionaryKeys = new byte[0];
+      this.dictionaryKeys = new byte[0];
     }
     if (null == noDictionaryKeys) {
       this.noDictionaryKeys = new byte[0];

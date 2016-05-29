@@ -20,18 +20,10 @@
 package org.carbondata.query.filters.measurefilter.util;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.TreeSet;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
@@ -64,13 +56,7 @@ import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
-import org.carbondata.query.filter.executer.AndFilterExecuterImpl;
-import org.carbondata.query.filter.executer.ExcludeFilterExecuterImpl;
-import org.carbondata.query.filter.executer.FilterExecuter;
-import org.carbondata.query.filter.executer.IncludeFilterExecuterImpl;
-import org.carbondata.query.filter.executer.OrFilterExecuterImpl;
-import org.carbondata.query.filter.executer.RestructureFilterExecuterImpl;
-import org.carbondata.query.filter.executer.RowLevelFilterExecuterImpl;
+import org.carbondata.query.filter.executer.*;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 import org.carbondata.query.filter.resolver.RowLevelFilterResolverImpl;
 import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
@@ -205,7 +191,7 @@ public final class FilterUtil {
       List<String> evaluateResultListFinal, boolean isIncludeFilter) {
     List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
     for (String result : evaluateResultListFinal) {
-      filterValuesList.add(result.getBytes());
+      filterValuesList.add(result.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
     }
 
     Comparator<byte[]> filterNoDictValueComaparator = new Comparator<byte[]>() {
@@ -303,7 +289,8 @@ public final class FilterUtil {
       byte[] columnVal = dictionaryWrapper.next();
       try {
         RowIntf row = new RowImpl();
-        String stringValue = new String(columnVal);
+        String stringValue =
+            new String(columnVal, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         if (stringValue.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
           stringValue = null;
         }

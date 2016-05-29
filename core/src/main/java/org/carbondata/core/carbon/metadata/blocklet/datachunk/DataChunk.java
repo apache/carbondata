@@ -66,7 +66,7 @@ public class DataChunk implements Serializable {
   /**
    * information about presence of values in each row of this column chunk
    */
-  private PresenceMeta nullValueIndexForColumn;
+  private transient PresenceMeta nullValueIndexForColumn;
 
   /**
    * offset of row id page, only if encoded using inverted index

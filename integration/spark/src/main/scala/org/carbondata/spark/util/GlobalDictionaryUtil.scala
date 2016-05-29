@@ -18,6 +18,7 @@
 package org.carbondata.spark.util
 
 import java.io.IOException
+import java.nio.charset.Charset
 import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
@@ -197,7 +198,8 @@ object GlobalDictionaryUtil extends Logging {
         val values = reader.read
         if (values != null) {
           for (j <- 0 until values.size) {
-            set.add(new String(values.get(j)))
+            set.add(new String(values.get(j),
+              Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)))
           }
         }
       }

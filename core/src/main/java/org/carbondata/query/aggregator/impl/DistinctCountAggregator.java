@@ -64,7 +64,7 @@ public class DistinctCountAggregator implements MeasureAggregator {
    *
    */
   //    private Set<Double> valueSet;
-  private transient RoaringBitmap valueSet;
+  private RoaringBitmap valueSet;
 
   private byte[] data;
 

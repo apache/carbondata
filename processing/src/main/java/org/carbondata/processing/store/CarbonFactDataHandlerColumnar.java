@@ -912,7 +912,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
     // if atleast one dimension is present then initialize column splitter otherwise null
 
-    int[] keyBlockSize = null;
     if (dimLens.length > 0) {
       //Using Variable length variable split generator
       //This will help in splitting mdkey to columns. variable split is required because all
@@ -925,14 +924,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
               colGrpModel.getColumnSplit()), colGrpModel.getColumnSplit());
       this.keyBlockHolder =
           new CarbonKeyBlockHolder[this.columnarSplitter.getBlockKeySize().length];
-      keyBlockSize = columnarSplitter.getBlockKeySize();
       this.complexKeyGenerator = new KeyGenerator[completeDimLens.length];
       for (int i = 0; i < completeDimLens.length; i++) {
         complexKeyGenerator[i] =
             KeyGeneratorFactory.getKeyGenerator(new int[] { completeDimLens[i] });
       }
     } else {
-      keyBlockSize = new int[0];
       this.keyBlockHolder = new CarbonKeyBlockHolder[0];
     }
 
