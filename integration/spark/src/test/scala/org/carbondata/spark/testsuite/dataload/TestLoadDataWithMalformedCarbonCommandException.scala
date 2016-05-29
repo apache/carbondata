@@ -22,9 +22,21 @@ package org.carbondata.spark.testsuite.dataload
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.carbondata.spark.exception.MalformedCarbonCommandException
+import org.scalatest.BeforeAndAfterAll
 
 
-class TestLoadDataWithMalformedCarbonCommandException extends QueryTest {
+class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with BeforeAndAfterAll {
+
+  override def beforeAll {
+
+    sql("CREATE table TestLoadTableOptions (ID int, date String, country String, name String," +
+        "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'")
+
+  }
+
+  override def afterAll {
+    sql("drop table TestLoadTableOptions")
+  }
 
   def buildTableWithNoExistDictExclude() = {
       sql(
@@ -88,6 +100,41 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest {
       case e: MalformedCarbonCommandException =>
         assert(e.getMessage.equals("DICTIONARY_EXCLUDE can not contain the same column: country " +
           "with DICTIONARY_INCLUDE. Please check create table statement."))
+      case _ => assert(false)
+    }
+  }
+
+  test("test load data with invalid option") {
+    try {
+      sql("LOAD DATA LOCAL INPATH './src/test/resources/dataretention1.csv' INTO TABLE " +
+        "TestLoadTableOptions OPTIONS('QUOTECHAR'='\"', 'DELIMITERRR' =  ',')")
+      assert(false)
+    } catch {
+      case e: MalformedCarbonCommandException =>
+        assert(e.getMessage.equals("Error: Invalid option(s): delimiterrr"))
+      case _ => assert(false)
+    }
+  }
+
+  test("test load data with duplicate options") {
+    try {
+      sql("LOAD DATA LOCAL INPATH './src/test/resources/dataretention1.csv' INTO TABLE " +
+        "TestLoadTableOptions OPTIONS('DELIMITER' =  ',', 'quotechar'='\"', 'DELIMITER' =  '$')")
+      assert(false)
+    } catch {
+      case e: MalformedCarbonCommandException =>
+        assert(e.getMessage.equals("Error: Duplicate option(s): delimiter"))
+      case _ => assert(false)
+    }
+  }
+
+  test("test load data with case sensitive options") {
+    try {
+      sql(
+        "LOAD DATA local inpath './src/test/resources/dataretention1.csv' INTO table " +
+          "TestLoadTableOptions options('DeLIMITEr'=',', 'qUOtECHAR'='\"')"
+      )
+    } catch {
       case _ => assert(false)
     }
   }

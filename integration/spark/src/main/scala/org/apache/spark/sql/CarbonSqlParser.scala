@@ -831,9 +831,49 @@ class CarbonSqlParser()
           val (schema, cubename) = cube match {
             case schemaName ~ cubeName => (schemaName, cubeName)
           }
+          if(partionDataOptions.isDefined) {
+            validateOptions(partionDataOptions)
+          }
           val patitionOptionsMap = partionDataOptions.getOrElse(List.empty[(String, String)]).toMap
           LoadCube(schema, cubename, filePath, Seq(), patitionOptionsMap, isOverwrite.isDefined)
       }
+
+  private def validateOptions(partionDataOptions: Option[List[(String, String)]]): Unit = {
+
+    // validate with all supported options
+    val options = partionDataOptions.get.groupBy(x => x._1)
+    val supportedOptions = Seq("DELIMITER", "QUOTECHAR", "FILEHEADER", "ESCAPECHAR", "MULTILINE",
+      "COMPLEX_DELIMITER_LEVEL_1", "COMPLEX_DELIMITER_LEVEL_2"
+    )
+    var isSupported = true
+    val invalidOptions = StringBuilder.newBuilder
+    options.foreach(value => {
+      if (!supportedOptions.exists(x => x.equalsIgnoreCase(value._1))) {
+        isSupported = false
+        invalidOptions.append(value._1)
+      }
+
+    }
+    )
+    if (!isSupported) {
+      val errorMessage = "Error: Invalid option(s): " + invalidOptions.toString()
+      throw new MalformedCarbonCommandException(errorMessage)
+    }
+
+    // check for duplicate options
+    val duplicateOptions = options filter {
+      case (_, optionlist) => optionlist.size > 1
+    }
+    val duplicates = StringBuilder.newBuilder
+    if (duplicateOptions.size > 0) {
+      duplicateOptions.foreach(x => {
+        duplicates.append(x._1)
+      }
+      )
+      val errorMessage = "Error: Duplicate option(s): " + duplicates.toString()
+      throw new MalformedCarbonCommandException(errorMessage)
+    }
+  }
 
   protected lazy val dbTableIdentifier: Parser[Seq[String]] =
     (ident <~ ".").? ~ (ident) ^^ {
