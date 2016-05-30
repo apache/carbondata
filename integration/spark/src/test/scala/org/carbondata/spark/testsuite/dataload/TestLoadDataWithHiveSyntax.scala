@@ -19,6 +19,9 @@
 
 package org.carbondata.spark.testsuite.dataload
 
+import java.io.File
+import java.sql.Timestamp
+
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
@@ -106,6 +109,17 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists complexcarbontable")
   }
 
+  test("test carbon table data loading with csv file Header in caps") {
+    sql("drop table if exists header_test")
+    sql("create table header_test(empno int, empname String, designation string, doj String, workgroupcategory int, workgroupcategoryname String,deptno int, deptname String, projectcode int, projectjoindate String,projectenddate String, attendance String,utilization String,salary String) STORED BY 'org.apache.carbondata.format'")
+    val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
+      .getCanonicalPath
+    var csvFilePath = currentDirectory + "/src/test/resources/data_withCAPSHeader.csv"
+    sql("LOAD DATA local inpath '"+ csvFilePath +"' INTO table header_test OPTIONS ('DELIMITER'=',', 'QUOTECHAR'='\"')");
+    checkAnswer(sql("select empno from header_test"),
+      Seq(Row(11), Row(12)))
+  }
+
   test("test duplicate column validation"){
     try{
         sql("create table duplicateColTest(col1 string, Col1 string)")
@@ -116,6 +130,19 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
       }
     }
   }
+
+  test("test carbon table data loading with csv file Header in Mixed Case and create table columns in mixed case") {
+    sql("drop table if exists mixed_header_test")
+    sql("create table mixed_header_test(empno int, empname String, Designation string, doj String, Workgroupcategory int, workgroupcategoryname String,deptno int, deptname String, projectcode int, projectjoindate String,projectenddate String, attendance String,utilization String,salary String) STORED BY 'org.apache.carbondata.format'")
+    val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
+      .getCanonicalPath
+    var csvFilePath = currentDirectory + "/src/test/resources/data_withMixedHeader.csv"
+    sql("LOAD DATA local inpath '"+ csvFilePath +"' INTO table mixed_header_test OPTIONS ('DELIMITER'=',', 'QUOTECHAR'='\"')");
+    checkAnswer(sql("select empno from mixed_header_test"),
+      Seq(Row(11), Row(12)))
+  }
+
+
   test("complex types data loading with hive column having more than required column values") {
     sql("create table complexcarbontable(deviceInformationId int, channelsId string,"+ 
         "ROMSize string, purchasedate string, mobile struct<imei:string, imsi:string>,"+
@@ -145,5 +172,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop cube carboncube")
     sql("drop table hivetable")
+    sql("drop table if exists header_test")
+    sql("drop table if exists mixed_header_test")
   }
 }
