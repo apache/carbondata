@@ -34,6 +34,25 @@ private class TestCarbonSqlParserStub extends CarbonSqlParser {
   */
 class TestCarbonSqlParser extends QueryTest {
 
+  /**
+    * load all test fields
+    * @return
+    */
+  def loadAllFields: Seq[Field] = {
+    var fields: Seq[Field] = Seq[Field]()
+
+    var col1 = Field("col1", Option("Int"), Option("col1"), None, null, Some("columnar"))
+    var col2 = Field("col2", Option("String"), Option("col2"), None, null, Some("columnar"))
+    var col3 = Field("col3", Option("String"), Option("col3"), None, null, Some("columnar"))
+    var col4 = Field("col4", Option("Int"), Option("col4"), None, null, Some("columnar"))
+
+    fields :+= col1
+    fields :+= col2
+    fields :+= col3
+    fields :+= col4
+    fields
+  }
+
   // Testing the column group Splitting method.
   test("Test-updateColumnGroupsInField") {
     val colGroupStr = "(aaa,bbb,ccc),(ddd,eee),(fff),(ggg)"
@@ -58,17 +77,7 @@ class TestCarbonSqlParser extends QueryTest {
   // Testing the extracting of Dims and no Dictionary
   test("Test-extractDimColsAndNoDictionaryFields") {
     val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col2", "DICTIONARY_INCLUDE" -> "col4")
-    var fields: Seq[Field] = Seq[Field]()
-
-    var col1 = Field("col1", Option("Int"), Option("col1"), None, null, Some("columnar"))
-    var col2 = Field("col2", Option("String"), Option("col2"), None, null, Some("columnar"))
-    var col3 = Field("col3", Option("String"), Option("col3"), None, null, Some("columnar"))
-    var col4 = Field("col4", Option("Int"), Option("col4"), None, null, Some("columnar"))
-
-    fields :+= col1
-    fields :+= col2
-    fields :+= col3
-    fields :+= col4
+    var fields: Seq[Field] = loadAllFields
 
     val stub = new TestCarbonSqlParserStub()
     var (dimCols, noDictionary) = stub.extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
@@ -76,35 +85,211 @@ class TestCarbonSqlParser extends QueryTest {
     // testing col
 
     //All dimension fields should be available in dimensions list
+    assert(dimCols.size == 3)
     assert(dimCols.lift(0).get.column.equalsIgnoreCase("col2"))
     assert(dimCols.lift(1).get.column.equalsIgnoreCase("col3"))
     assert(dimCols.lift(2).get.column.equalsIgnoreCase("col4"))
 
     //No dictionary column names will be available in noDictionary list
+    assert(noDictionary.size == 1)
     assert(noDictionary.lift(0).get.equalsIgnoreCase("col2"))
   }
 
+  test("Test-DimAndMsrColsWithNoDictionaryFields1") {
+    val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col1")
+    var fields: Seq[Field] = loadAllFields
+    val stub = new TestCarbonSqlParserStub()
+    var (dimCols, noDictionary) = stub
+      .extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
+    var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+
+    //below fields should be available in dimensions list
+    assert(dimCols.size == 3)
+    assert(dimCols.lift(0).get.column.equalsIgnoreCase("col1"))
+    assert(dimCols.lift(1).get.column.equalsIgnoreCase("col2"))
+    assert(dimCols.lift(2).get.column.equalsIgnoreCase("col3"))
+
+    //below column names will be available in noDictionary list
+    assert(noDictionary.size == 1)
+    assert(noDictionary.lift(0).get.equalsIgnoreCase("col1"))
+
+    //check msr
+    assert(msrCols.size == 1)
+    assert(msrCols.lift(0).get.column.equalsIgnoreCase("col4"))
+  }
+
+  test("Test-DimAndMsrColsWithNoDictionaryFields2") {
+    val tableProperties = Map("DICTIONARY_INCLUDE" -> "col1")
+    var fields: Seq[Field] = loadAllFields
+    val stub = new TestCarbonSqlParserStub()
+    var (dimCols, noDictionary) = stub
+      .extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
+    var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+
+    //below dimension fields should be available in dimensions list
+    assert(dimCols.size == 3)
+    assert(dimCols.lift(0).get.column.equalsIgnoreCase("col1"))
+    assert(dimCols.lift(1).get.column.equalsIgnoreCase("col2"))
+    assert(dimCols.lift(2).get.column.equalsIgnoreCase("col3"))
+
+    //below column names will be available in noDictionary list
+    assert(noDictionary.size == 0)
+
+    //check msr
+    assert(msrCols.size == 1)
+    assert(msrCols.lift(0).get.column.equalsIgnoreCase("col4"))
+  }
+
+  test("Test-DimAndMsrColsWithNoDictionaryFields3") {
+    val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col1", "DICTIONARY_INCLUDE" -> "col4")
+    var fields: Seq[Field] = loadAllFields
+    val stub = new TestCarbonSqlParserStub()
+    var (dimCols, noDictionary) = stub
+      .extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
+    var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+
+    //below dimension fields should be available in dimensions list
+    assert(dimCols.size == 4)
+    assert(dimCols.lift(0).get.column.equalsIgnoreCase("col1"))
+    assert(dimCols.lift(1).get.column.equalsIgnoreCase("col2"))
+    assert(dimCols.lift(2).get.column.equalsIgnoreCase("col3"))
+    assert(dimCols.lift(3).get.column.equalsIgnoreCase("col4"))
+
+    //below column names will be available in noDictionary list
+    assert(noDictionary.size == 1)
+    assert(noDictionary.lift(0).get.equalsIgnoreCase("col1"))
+
+    //check msr
+    assert(msrCols.size == 0)
+  }
+
+  test("Test-DimAndMsrColsWithNoDictionaryFields4") {
+    val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col3", "DICTIONARY_INCLUDE" -> "col2")
+    var fields: Seq[Field] = loadAllFields
+    val stub = new TestCarbonSqlParserStub()
+    var (dimCols, noDictionary) = stub
+      .extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
+    var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+
+    //below dimension fields should be available in dimensions list
+    assert(dimCols.size == 2)
+    assert(dimCols.lift(0).get.column.equalsIgnoreCase("col2"))
+    assert(dimCols.lift(1).get.column.equalsIgnoreCase("col3"))
+
+    //below column names will be available in noDictionary list
+    assert(noDictionary.size == 1)
+    assert(noDictionary.lift(0).get.equalsIgnoreCase("col3"))
+
+    //check msr
+    assert(msrCols.size == 2)
+    assert(msrCols.lift(0).get.column.equalsIgnoreCase("col1"))
+    assert(msrCols.lift(1).get.column.equalsIgnoreCase("col4"))
+  }
+
+  test("Test-DimAndMsrColsWithNoDictionaryFields5") {
+    val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col4", "DICTIONARY_INCLUDE" -> "col2")
+    var fields: Seq[Field] = loadAllFields
+    val stub = new TestCarbonSqlParserStub()
+    var (dimCols, noDictionary) = stub
+      .extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
+    var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+
+    //below dimension fields should be available in dimensions list
+    assert(dimCols.size == 3)
+    assert(dimCols.lift(0).get.column.equalsIgnoreCase("col2"))
+    assert(dimCols.lift(1).get.column.equalsIgnoreCase("col3"))
+    assert(dimCols.lift(2).get.column.equalsIgnoreCase("col4"))
+
+    //below column names will be available in noDictionary list
+    assert(noDictionary.size == 1)
+    assert(noDictionary.lift(0).get.equalsIgnoreCase("col4"))
+
+    //check msr
+    assert(msrCols.size == 1)
+    assert(msrCols.lift(0).get.column.equalsIgnoreCase("col1"))
+  }
+
+  test("Test-DimAndMsrColsWithNoDictionaryFields6") {
+    val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col2", "DICTIONARY_INCLUDE" -> "col1")
+    var fields: Seq[Field] = loadAllFields
+    val stub = new TestCarbonSqlParserStub()
+    var (dimCols, noDictionary) = stub
+      .extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
+    var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+
+    //below dimension fields should be available in dimensions list
+    assert(dimCols.size == 3)
+    assert(dimCols.lift(0).get.column.equalsIgnoreCase("col1"))
+    assert(dimCols.lift(1).get.column.equalsIgnoreCase("col2"))
+    assert(dimCols.lift(2).get.column.equalsIgnoreCase("col3"))
+
+    //below column names will be available in noDictionary list
+    assert(noDictionary.size == 1)
+    assert(noDictionary.lift(0).get.equalsIgnoreCase("col2"))
+
+    //check msr
+    assert(msrCols.size == 1)
+    assert(msrCols.lift(0).get.column.equalsIgnoreCase("col4"))
+  }
+
+  test("Test-DimAndMsrColsWithNoDictionaryFields7") {
+    val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col2 ,col1  ",
+      "DICTIONARY_INCLUDE" -> "col3 ,col4 "
+    )
+    var fields: Seq[Field] = loadAllFields
+    val stub = new TestCarbonSqlParserStub()
+    var (dimCols, noDictionary) = stub
+      .extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
+    var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+
+    //below dimension fields should be available in dimensions list
+    assert(dimCols.size == 4)
+    assert(dimCols.lift(0).get.column.equalsIgnoreCase("col1"))
+    assert(dimCols.lift(1).get.column.equalsIgnoreCase("col2"))
+    assert(dimCols.lift(2).get.column.equalsIgnoreCase("col3"))
+    assert(dimCols.lift(3).get.column.equalsIgnoreCase("col4"))
+
+    //below column names will be available in noDictionary list
+    assert(noDictionary.size == 2)
+    assert(noDictionary.lift(0).get.equalsIgnoreCase("col1"))
+    assert(noDictionary.lift(1).get.equalsIgnoreCase("col2"))
+
+    //check msr
+    assert(msrCols.size == 0)
+  }
+
+  test("Test-DimAndMsrColsWithNoDictionaryFields8") {
+    val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col2,col4", "DICTIONARY_INCLUDE" -> "col3")
+    var fields: Seq[Field] = loadAllFields
+    val stub = new TestCarbonSqlParserStub()
+    var (dimCols, noDictionary) = stub
+      .extractDimColsAndNoDictionaryFieldsTest(fields, tableProperties)
+    var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
+
+    //below dimension fields should be available in dimensions list
+    assert(dimCols.size == 3)
+    assert(dimCols.lift(0).get.column.equalsIgnoreCase("col2"))
+    assert(dimCols.lift(1).get.column.equalsIgnoreCase("col3"))
+    assert(dimCols.lift(2).get.column.equalsIgnoreCase("col4"))
+
+    //below column names will be available in noDictionary list
+    assert(noDictionary.size == 2)
+    assert(noDictionary.lift(0).get.equalsIgnoreCase("col2"))
+    assert(noDictionary.lift(1).get.equalsIgnoreCase("col4"))
+
+    //check msr
+    assert(msrCols.size == 1)
+    assert(msrCols.lift(0).get.column.equalsIgnoreCase("col1"))
+  }
 
   // Testing the extracting of measures
   test("Test-extractMsrColsFromFields") {
     val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col2", "DICTIONARY_INCLUDE" -> "col4")
-    var fields: Seq[Field] = Seq[Field]()
-
-    var col1 = Field("col1", Option("Int"), Option("col1"), None, null, Some("columnar"))
-    var col2 = Field("col2", Option("String"), Option("col2"), None, null, Some("columnar"))
-    var col3 = Field("col3", Option("String"), Option("col3"), None, null, Some("columnar"))
-    var col4 = Field("col4", Option("Int"), Option("col4"), None, null, Some("columnar"))
-
-    fields :+= col1
-    fields :+= col2
-    fields :+= col3
-    fields :+= col4
-
+    var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
     var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
 
     // testing col
-
     assert(msrCols.lift(0).get.column.equalsIgnoreCase("col1"))
 
   }

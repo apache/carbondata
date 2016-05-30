@@ -71,6 +71,17 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
         """)
   }
 
+  def buildTableWithSameDictExcludeAndIncludeWithSpaces() = {
+    sql(
+      """
+           CREATE TABLE IF NOT EXISTS t3
+           (ID Int, date Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int)
+           STORED BY 'org.apache.carbondata.format'
+           TBLPROPERTIES('DICTIONARY_INCLUDE'='country','DICTIONARY_EXCLUDE'='country ')
+      """)
+  }
+
   test("test load data with dictionary exclude columns which no exist in table.") {
     try {
       buildTableWithNoExistDictExclude()
@@ -135,6 +146,17 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
           "TestLoadTableOptions options('DeLIMITEr'=',', 'qUOtECHAR'='\"')"
       )
     } catch {
+      case _ => assert(false)
+    }
+  }
+
+  test("test load data with dictionary include is same with dictionary exclude with spaces") {
+    try {
+      buildTableWithSameDictExcludeAndIncludeWithSpaces()
+    } catch {
+      case e: MalformedCarbonCommandException =>
+        assert(e.getMessage.equals("DICTIONARY_EXCLUDE can not contain the same column: country " +
+          "with DICTIONARY_INCLUDE. Please check create table statement."))
       case _ => assert(false)
     }
   }
