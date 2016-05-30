@@ -975,7 +975,7 @@ class CarbonSqlParser()
   protected lazy val dimCol: Parser[Field] = anyFieldDef
 
   protected lazy val primitiveTypes =
-    STRING | INTEGER | TIMESTAMP | NUMERIC | BIGINT | DECIMAL | INT
+    STRING | INTEGER | TIMESTAMP | NUMERIC | BIGINT | DECIMAL | INT | DOUBLE
   protected lazy val nestedType: Parser[Field] = structFieldType | arrayFieldType |
     primitiveFieldType
 
