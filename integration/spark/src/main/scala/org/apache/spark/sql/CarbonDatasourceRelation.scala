@@ -31,6 +31,7 @@ import org.apache.spark.sql.hive.{CarbonMetaData, CarbonMetastoreTypes, TableMet
 import org.apache.spark.sql.sources.{BaseRelation, CreatableRelationProvider, RelationProvider}
 import org.apache.spark.sql.types.{DataType, StructType}
 
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.spark.{CarbonOption, _}
 
 /**
@@ -131,14 +132,16 @@ case class CarbonRelation(schemaName: String,
 
   def tableName: String = cubeName
 
-  def recursiveMethod(dimName: String): String = {
-    metaData.carbonTable.getChildren(dimName).asScala.map(childDim => {
-      childDim.getDataType.toString.toLowerCase match {
-        case "array" => s"array<${ getArrayChildren(childDim.getColName) }>"
-        case "struct" => s"struct<${ getStructChildren(childDim.getColName) }>"
-        case dType => s"${ childDim.getColName }:${ dType }"
-      }
-    }).mkString(",")
+  def recursiveMethod(dimName: String, childDim: CarbonDimension): String = {
+    childDim.getDataType.toString.toLowerCase match {
+      case "array" => s"${
+          childDim.getColName.substring(dimName.length + 1)
+        }:array<${ getArrayChildren(childDim.getColName) }>"
+      case "struct" => s"${
+          childDim.getColName.substring(dimName.length + 1)
+        }:struct<${ getStructChildren(childDim.getColName) }>"
+      case dType => s"${ childDim.getColName.substring(dimName.length + 1) }:${ dType }"
+    }
   }
 
   def getArrayChildren(dimName: String): String = {
@@ -155,11 +158,12 @@ case class CarbonRelation(schemaName: String,
     metaData.carbonTable.getChildren(dimName).asScala.map(childDim => {
       childDim.getDataType.toString.toLowerCase match {
         case "array" => s"${
-          childDim.getColName.substring(dimName.length() + 1)
+          childDim.getColName.substring(dimName.length + 1)
         }:array<${ getArrayChildren(childDim.getColName) }>"
-        case "struct" => s"struct<${
-          metaData.carbonTable.getChildren(childDim.getColName)
-            .asScala.map(f => s"${ recursiveMethod(f.getColName) }")
+        case "struct" => s"${
+          childDim.getColName.substring(dimName.length + 1)
+        }:struct<${ metaData.carbonTable.getChildren(childDim.getColName)
+            .asScala.map(f => s"${ recursiveMethod(childDim.getColName, f) }").mkString(",")
         }>"
         case dType => s"${ childDim.getColName.substring(dimName.length() + 1) }:${ dType }"
       }
