@@ -173,7 +173,7 @@ public class StructDataType implements GenericDataType {
       dataOutputStream.writeInt(children.size());
       delimiterIndex =
           (delimiter.length - 1) == delimiterIndex ? delimiterIndex : delimiterIndex + 1;
-      for (int i = 0; i < splitInput.length; i++) {
+      for (int i = 0; i < splitInput.length && i < children.size(); i++) {
         children.get(i).parseStringAndWriteByteArray(tableName, splitInput[i], delimiter,
             delimiterIndex, dataOutputStream, surrogateKeyGen);
       }
