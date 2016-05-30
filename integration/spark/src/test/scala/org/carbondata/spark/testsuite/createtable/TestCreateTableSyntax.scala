@@ -22,6 +22,9 @@ package org.carbondata.spark.testsuite.createtable
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
+
+import org.carbondata.spark.exception.MalformedCarbonCommandException
+
 import org.scalatest.BeforeAndAfterAll
 
 /**
@@ -39,6 +42,18 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
         "STORED BY 'org.apache.carbondata.format'")
     sql("describe carbontable").show
     sql("drop table if exists carbontable")
+  }
+  
+  test("test carbon table create with complex datatype as dictionary exclude") {
+    try {
+      sql("create table carbontable(id int, name string, dept string, mobile array<string>, "+
+          "country string, salary double) STORED BY 'org.apache.carbondata.format' " +
+          "TBLPROPERTIES('DICTIONARY_EXCLUDE'='dept,mobile')")
+    } catch {
+      case e : MalformedCarbonCommandException => {
+        assert(e.getMessage.equals("DICTIONARY_EXCLUDE is unsupported for complex datatype column: mobile"))
+      }
+    }
   }
 
   override def afterAll {

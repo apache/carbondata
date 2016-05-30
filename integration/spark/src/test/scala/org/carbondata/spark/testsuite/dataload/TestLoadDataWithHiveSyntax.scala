@@ -75,19 +75,21 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test carbon table data loading using old syntax") {
-    sql("LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE carboncube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
+    sql("LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE carboncube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')")
   }
   
   test("test carbon table data loading using new syntax compatible with hive") {
-    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table carboncube");
-    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table carboncube options('DELIMITER'=',', 'QUOTECHAR'='\"')");
+    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table carboncube")
+    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table carboncube options('DELIMITER'=',', 'QUOTECHAR'='\"')")
   }
   
   test("test carbon table data loading using new syntax with overwrite option compatible with hive") {
     try {
-      sql("LOAD DATA local inpath './src/test/resources/data.csv' overwrite INTO table carboncube");
+      sql("LOAD DATA local inpath './src/test/resources/data.csv' overwrite INTO table carboncube")
     } catch {
-      case e : Throwable => e.printStackTrace()
+      case e : Throwable => {
+        assert(e.getMessage.equals("Overwrite is not supported for carbon table with default.carboncube"))
+      }
     }
   }
   
@@ -100,7 +102,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
         "TBLPROPERTIES ('DICTIONARY_INCLUDE'='deviceInformationId')")
     sql("LOAD DATA local inpath './src/test/resources/complexdata.csv' INTO table complexcarbontable "+
         "OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber',"+
-        "'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')");
+        "'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
     sql("drop table if exists complexcarbontable")
   }
   
@@ -113,7 +115,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
         "TBLPROPERTIES ('DICTIONARY_INCLUDE'='deviceInformationId')")
     sql("LOAD DATA local inpath './src/test/resources/complexdatastructextra.csv' INTO table complexcarbontable "+
         "OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber',"+
-        "'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')");
+        "'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
     sql("drop table if exists complexcarbontable")
   }
   
