@@ -339,7 +339,7 @@ public class MDKeyGenStep extends BaseStep {
 
   private void initDataHandler() {
     int simpleDimsCount =
-        this.dimensionCount - meta.getComplexDimsCount() - meta.getNoDictionaryCount();
+        this.dimensionCount - meta.getComplexDimsCount();
     int[] simpleDimsLen = new int[simpleDimsCount];
     for (int i = 0; i < simpleDimsCount; i++) {
       simpleDimsLen[i] = dimLens[i];

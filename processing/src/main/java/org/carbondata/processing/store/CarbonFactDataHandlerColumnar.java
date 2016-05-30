@@ -280,11 +280,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       this.isNoDictionary[noDictStartIndex + i] = true;
     }
 
-    // setting true value for dims of high card
-    for (int i = noDictStartIndex; i < isNoDictionary.length; i++) {
-      this.isNoDictionary[i] = true;
-    }
-
     if (isAggKeyBlock) {
       int noDictionaryValue = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.HIGH_CARDINALITY_VALUE,
@@ -612,8 +607,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           }
           //complex types
           else {
-            //Need to write columnar block from complex byte array
-            GenericDataType complexDataType = complexIndexMap.get(complexColumnIndex++);
+            // Need to write columnar block from complex byte array
+            int index = complexColumnIndex - noDictionaryCount;
+            GenericDataType complexDataType = complexIndexMap.get(index);
+            complexColumnIndex++;
             if (complexDataType != null) {
               List<ArrayList<byte[]>> columnsArray = new ArrayList<ArrayList<byte[]>>();
               for (int k = 0; k < complexDataType.getColsCount(); k++) {
@@ -672,10 +669,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             new BlockSortThread(i, noDictionaryColumnsData[++noDictionaryColumnCount], false, true,
                 true)));
       }
-    }
-    for (int j = 0; j < noDictionaryCount; j++) {
-      submit.add(executorService
-          .submit(new BlockSortThread(i++, noDictionaryColumnsData[j], false, true, true)));
     }
     for (int k = 0; k < complexColCount; k++) {
       submit.add(executorService.submit(new BlockSortThread(i++,
@@ -1036,7 +1029,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     List<Boolean> complexTypesList = new ArrayList<Boolean>(allColsCount);
     for (int i = 0; i < noOfColumn; i++) {
-      GenericDataType complexDataType = complexIndexMap.get(i);
+      GenericDataType complexDataType = complexIndexMap.get(i - noDictionaryCount);
       if (complexDataType != null) {
         int count = complexDataType.getColsCount();
         for (int j = 0; j < count; j++) {
