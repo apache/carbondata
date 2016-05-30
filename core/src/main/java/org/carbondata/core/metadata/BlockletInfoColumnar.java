@@ -109,6 +109,11 @@ public class BlockletInfoColumnar {
   private byte[][] columnMinData;
 
   /**
+   * true if given index is colgroup block
+   */
+  private boolean[] colGrpBlock;
+
+  /**
    * getFileName().
    *
    * @return String.
@@ -361,5 +366,19 @@ public class BlockletInfoColumnar {
 
   public void setCompressionModel(ValueCompressionModel compressionModel) {
     this.compressionModel = compressionModel;
+  }
+
+  /**
+   * @param colGrpBlock
+   */
+  public void setColGrpBlocks(boolean[] colGrpBlock) {
+    this.colGrpBlock = colGrpBlock;
+  }
+
+  /**
+   * @return
+   */
+  public boolean[] getColGrpBlocks() {
+    return this.colGrpBlock;
   }
 }

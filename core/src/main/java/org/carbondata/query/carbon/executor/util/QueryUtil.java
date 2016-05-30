@@ -21,6 +21,7 @@ package org.carbondata.query.carbon.executor.util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -522,15 +523,13 @@ public class QueryUtil {
     // get column group id and its ordinal mapping of column group
     Map<Integer, List<Integer>> columnGroupAndItsOrdinalMappingForQuery =
         getColumnGroupAndItsOrdinalMapping(queryDimensions);
-    Map<Integer, KeyGenerator> columnGroupAndItsKeygenartor =
-        segmentProperties.getColumnGroupAndItsKeygenartor();
+    KeyGenerator keyGenerator = segmentProperties.getDimensionKeyGenerator();
 
     Iterator<Entry<Integer, List<Integer>>> iterator =
         columnGroupAndItsOrdinalMappingForQuery.entrySet().iterator();
     KeyStructureInfo restructureInfos = null;
     while (iterator.hasNext()) {
       Entry<Integer, List<Integer>> next = iterator.next();
-      KeyGenerator keyGenerator = columnGroupAndItsKeygenartor.get(next.getKey());
       restructureInfos = new KeyStructureInfo();
       // sort the ordinal
       List<Integer> ordinal = next.getValue();
@@ -545,11 +544,48 @@ public class QueryUtil {
       restructureInfos.setMaskByteRanges(maskByteRanges);
       restructureInfos.setMaxKey(maxKey);
       restructureInfos.setMaskedBytes(maksedByte);
+      restructureInfos
+          .setBlockMdKeyStartOffset(getBlockMdKeyStartOffset(segmentProperties, ordinal));
       rowGroupToItsRSInfo
           .put(segmentProperties.getDimensionOrdinalToBlockMapping().get(ordinal.get(0)),
               restructureInfos);
     }
     return rowGroupToItsRSInfo;
+  }
+
+  /**
+   * It return mdkey start index of given column group
+   * @param segmentProperties
+   * @param ordinal : column group ordinal
+   * @return
+   */
+  public static int getBlockMdKeyStartOffset(SegmentProperties segmentProperties,
+      List<Integer> ordinal) {
+    int[][] colGroups = segmentProperties.getColumnGroups();
+    int blockMdkeyStartOffset = 0;
+    for (int i = 0; i < colGroups.length; i++) {
+      if (QueryUtil.searchInArray(colGroups[i], ordinal.get(0))) {
+        break;
+      }
+      blockMdkeyStartOffset += segmentProperties.getDimensionColumnsValueSize()[i];
+    }
+    return blockMdkeyStartOffset;
+  }
+
+  /**
+   * return true if given key is found in array
+   *
+   * @param data
+   * @param key
+   * @return
+   */
+  public static boolean searchInArray(int[] data, int key) {
+    for (int i = 0; i < data.length; i++) {
+      if (key == data[i]) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -561,7 +597,20 @@ public class QueryUtil {
    * stored in bit level
    */
   private static Map<Integer, List<Integer>> getColumnGroupAndItsOrdinalMapping(
-      List<QueryDimension> dimensions) {
+      List<QueryDimension> origdimensions) {
+
+    List<QueryDimension> dimensions = new ArrayList<QueryDimension>(origdimensions.size());
+    dimensions.addAll(origdimensions);
+    /**
+     * sort based on column group id
+     */
+    Collections.sort(dimensions, new Comparator<QueryDimension>() {
+
+      @Override public int compare(QueryDimension o1, QueryDimension o2) {
+        return Integer
+            .compare(o1.getDimension().columnGroupId(), o2.getDimension().columnGroupId());
+      }
+    });
     // list of row groups this will store all the row group column
     Map<Integer, List<Integer>> columnGroupAndItsOrdinalsMapping =
         new HashMap<Integer, List<Integer>>();
@@ -579,7 +628,7 @@ public class QueryUtil {
       // column group
       if (!dimensions.get(index).getDimension().isColumnar()
           && dimensions.get(index).getDimension().columnGroupId() == prvColumnGroupId) {
-        currentColumnGroup.add(dimensions.get(index).getDimension().getColumnGroupOrdinal());
+        currentColumnGroup.add(dimensions.get(index).getDimension().getOrdinal());
       }
 
       // if dimension is not a columnar then it is column group column
@@ -587,7 +636,7 @@ public class QueryUtil {
         currentColumnGroup = new ArrayList<Integer>();
         columnGroupAndItsOrdinalsMapping
             .put(dimensions.get(index).getDimension().columnGroupId(), currentColumnGroup);
-        currentColumnGroup.add(dimensions.get(index).getDimension().getColumnGroupOrdinal());
+        currentColumnGroup.add(dimensions.get(index).getDimension().getOrdinal());
       }
       // update the row id every time,this is required to group the
       // columns
@@ -749,7 +798,7 @@ public class QueryUtil {
    */
   public static void fillQueryDimensionsBlockIndexes(List<QueryDimension> queryDimensions,
       Map<Integer, Integer> columnOrdinalToBlockIndexMapping,
-      List<Integer> dictionaryDimensionBlockIndex, List<Integer> noDictionaryDimensionBlockIndex) {
+      Set<Integer> dictionaryDimensionBlockIndex, List<Integer> noDictionaryDimensionBlockIndex) {
     for (QueryDimension queryDimension : queryDimensions) {
       if (CarbonUtil.hasEncoding(queryDimension.getDimension().getEncoder(), Encoding.DICTIONARY)) {
         dictionaryDimensionBlockIndex

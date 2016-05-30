@@ -141,6 +141,7 @@ public class CarbonFooterWriterTest {
     infoColumnar.setMeasureLength(new int[] { 6, 7 });
     infoColumnar.setMeasureOffset(new long[] { 33, 99 });
     infoColumnar.setAggKeyBlock(new boolean[] { true, true, true, true });
+    infoColumnar.setColGrpBlocks(new boolean[] { false, false, false, false });
     ValueCompressionModel compressionModel = new ValueCompressionModel();
     compressionModel.setMaxValue(new Object[] { 44d, 55d });
     compressionModel.setMinValue(new Object[] { 0d, 0d });

@@ -21,10 +21,10 @@ package org.carbondata.query.filter.executer;
 import java.util.BitSet;
 import java.util.List;
 
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.carbondata.core.carbon.datastore.chunk.impl.VariableLengthDimensionDataChunk;
-import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.carbon.processor.BlocksChunkHolder;
@@ -34,35 +34,33 @@ import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 
 public class IncludeFilterExecuterImpl implements FilterExecuter {
 
-  DimColumnResolvedFilterInfo dimColumnEvaluatorInfo;
-  DimColumnExecuterFilterInfo dimColumnExecuterInfo;
-
-  public IncludeFilterExecuterImpl(DimColumnResolvedFilterInfo dimColumnEvaluatorInfo) {
-    this.dimColumnEvaluatorInfo = dimColumnEvaluatorInfo;
-  }
+  protected DimColumnResolvedFilterInfo dimColumnEvaluatorInfo;
+  protected DimColumnExecuterFilterInfo dimColumnExecuterInfo;
+  protected SegmentProperties segmentProperties;
 
   public IncludeFilterExecuterImpl(DimColumnResolvedFilterInfo dimColumnEvaluatorInfo,
-      KeyGenerator blockKeyGenerator) {
-    this(dimColumnEvaluatorInfo);
+      SegmentProperties segmentProperties) {
+    this.dimColumnEvaluatorInfo = dimColumnEvaluatorInfo;
+    this.segmentProperties = segmentProperties;
     dimColumnExecuterInfo = new DimColumnExecuterFilterInfo();
-    FilterUtil
-        .prepareKeysFromSurrogates(dimColumnEvaluatorInfo.getFilterValues(), blockKeyGenerator,
-            dimColumnEvaluatorInfo.getDimension(), dimColumnExecuterInfo);
+    FilterUtil.prepareKeysFromSurrogates(dimColumnEvaluatorInfo.getFilterValues(),
+        segmentProperties.getDimensionKeyGenerator(), dimColumnEvaluatorInfo.getDimension(),
+        dimColumnExecuterInfo);
 
   }
 
   @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder) {
-    if (null == blockChunkHolder.getDimensionDataChunk()[dimColumnEvaluatorInfo.getColumnIndex()]) {
-      blockChunkHolder.getDimensionDataChunk()[dimColumnEvaluatorInfo.getColumnIndex()] =
-          blockChunkHolder.getDataBlock().getDimensionChunk(blockChunkHolder.getFileReader(),
-              dimColumnEvaluatorInfo.getColumnIndex());
+    int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
+        .get(dimColumnEvaluatorInfo.getColumnIndex());
+    if (null == blockChunkHolder.getDimensionDataChunk()[blockIndex]) {
+      blockChunkHolder.getDimensionDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
+          .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
     }
-    return getFilteredIndexes(
-        blockChunkHolder.getDimensionDataChunk()[dimColumnEvaluatorInfo.getColumnIndex()],
+    return getFilteredIndexes(blockChunkHolder.getDimensionDataChunk()[blockIndex],
         blockChunkHolder.getDataBlock().nodeSize());
   }
 
-  private BitSet getFilteredIndexes(DimensionColumnDataChunk dimensionColumnDataChunk,
+  protected BitSet getFilteredIndexes(DimensionColumnDataChunk dimensionColumnDataChunk,
       int numerOfRows) {
     if (dimensionColumnDataChunk.getAttributes().isNoDictionary()
         && dimensionColumnDataChunk instanceof VariableLengthDimensionDataChunk) {
@@ -210,16 +208,18 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     BitSet bitSet = new BitSet(1);
     byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
     int columnIndex = dimColumnEvaluatorInfo.getColumnIndex();
+    int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping().get(columnIndex);
+
     boolean isScanRequired = false;
     for (int k = 0; k < filterValues.length; k++) {
       // filter value should be in range of max and min value i.e
       // max>filtervalue>min
       // so filter-max should be negative
       int maxCompare =
-          ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blkMaxVal[columnIndex]);
+          ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blkMaxVal[blockIndex]);
       // and filter-min should be positive
       int minCompare =
-          ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blkMinVal[columnIndex]);
+          ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blkMinVal[blockIndex]);
 
       // if any filter value is in range than this block needs to be
       // scanned

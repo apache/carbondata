@@ -185,7 +185,7 @@ public class DataFileFooterConverter {
         blockletInfoThrift.getColumn_data_chunksIterator();
     while (column_data_chunksIterator.hasNext()) {
       org.carbondata.format.DataChunk next = column_data_chunksIterator.next();
-      if (next.isRow_chunk()) {
+      if (next.isRowMajor()) {
         dimensionColumnChunk.add(getDataChunk(next, false));
       } else if (next.getEncoders().contains(org.carbondata.format.Encoding.DELTA)) {
         measureChunk.add(getDataChunk(next, true));
@@ -370,7 +370,7 @@ public class DataFileFooterConverter {
     }
     dataChunk.setRlePageLength(datachunkThrift.getRle_page_length());
     dataChunk.setRlePageOffset(datachunkThrift.getRle_page_offset());
-    dataChunk.setRowChunk(datachunkThrift.isRow_chunk());
+    dataChunk.setRowMajor(datachunkThrift.isRowMajor());
     dataChunk.setRowIdPageLength(datachunkThrift.getRowid_page_length());
     dataChunk.setRowIdPageOffset(datachunkThrift.getRowid_page_offset());
     dataChunk.setSortState(getSortState(datachunkThrift.getSort_state()));

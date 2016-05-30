@@ -19,7 +19,6 @@
 package org.carbondata.processing.store.colgroup;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -33,57 +32,53 @@ import org.carbondata.core.util.ByteUtil;
 import org.carbondata.core.vo.ColumnGroupModel;
 
 /**
- * This will store give min max of rows data
+ * it gives min max of each column of column group
  */
-public class RowStoreMinMax {
+public class ColGroupMinMax {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(RowStoreMinMax.class.getName());
+      LogServiceFactory.getLogService(ColGroupMinMax.class.getName());
   /**
-   * column group model
+   * Column group model
    */
   private ColumnGroupModel colGrpModel;
+
   /**
-   * keygenerator
+   * key generator
    */
   private KeyGenerator keyGenerator;
+
   /**
-   * min value of column of a row block
-   */
-  private byte[][] min;
-  /**
-   * max value of column row block
-   */
-  private byte[][] max;
-  /**
-   * no of column in row block
-   */
-  private int noOfCol;
-  /**
-   * column group
+   * column group id
    */
   private int colGroupId;
+
   /**
-   * mask byte position
+   * no of column in column group
    */
-  private int[][] maskBytePosition;
+  private int noOfCol;
+
+  /**
+   * min value of each column
+   */
+  private byte[][] min;
+
+  /**
+   * max value of each column
+   */
+  private byte[][] max;
+
   /**
    * mask byte range
    */
   private int[][] maskByteRange;
+
   /**
    * max keys
    */
   private byte[][] maxKeys;
 
-  /**
-   * It evaluates min and max value of column participating in a block
-   *
-   * @param colGrpModel
-   * @param columnarSplitter
-   * @param colGroupId
-   */
-  public RowStoreMinMax(ColumnGroupModel colGrpModel, ColumnarSplitter columnarSplitter,
+  public ColGroupMinMax(ColumnGroupModel colGrpModel, ColumnarSplitter columnarSplitter,
       int colGroupId) {
     this.colGrpModel = colGrpModel;
     this.keyGenerator = (KeyGenerator) columnarSplitter;
@@ -92,7 +87,35 @@ public class RowStoreMinMax {
     min = new byte[noOfCol][];
     max = new byte[noOfCol][];
     initialise();
+  }
 
+  /**
+   * @param mdkey
+   */
+  public void add(byte[] mdkey) {
+    for (int i = 0; i < noOfCol; i++) {
+      byte[] col = getMaskedKey(mdkey, maskByteRange[i], maxKeys[i]);
+      setMin(col, i);
+      setMax(col, i);
+    }
+  }
+
+  /**
+   * Below method will be used to get the masked key
+   *
+   * @param data
+   * @return maskedKey
+   */
+  private byte[] getMaskedKey(byte[] data, int[] maskByteRange, byte[] maxKey) {
+    int keySize = maskByteRange.length;
+    byte[] maskedKey = new byte[keySize];
+    int counter = 0;
+    int byteRange = 0;
+    for (int i = 0; i < keySize; i++) {
+      byteRange = maskByteRange[i];
+      maskedKey[counter++] = (byte) (data[byteRange] & maxKey[byteRange]);
+    }
+    return maskedKey;
   }
 
   /**
@@ -100,13 +123,10 @@ public class RowStoreMinMax {
    */
   private void initialise() {
     try {
-      maskBytePosition = new int[noOfCol][];
       maskByteRange = new int[noOfCol][];
       maxKeys = new byte[noOfCol][];
       for (int i = 0; i < noOfCol; i++) {
         maskByteRange[i] = getMaskByteRange(colGrpModel.getColumnGroup()[colGroupId][i]);
-        maskBytePosition[i] = new int[keyGenerator.getKeySizeInBytes()];
-        updateMaskedKeyRanges(maskBytePosition[i], maskByteRange[i]);
         // generating maxkey
         long[] maxKey = new long[keyGenerator.getKeySizeInBytes()];
         maxKey[colGrpModel.getColumnGroup()[colGroupId][i]] = Long.MAX_VALUE;
@@ -114,7 +134,7 @@ public class RowStoreMinMax {
       }
     } catch (KeyGenException e) {
       LOGGER.error(e,
-          "Key generation failed while evaulating row block min max");
+          "Key generation failed while evaulating column group min max");
     }
 
   }
@@ -141,62 +161,12 @@ public class RowStoreMinMax {
   }
 
   /**
-   * update maskedKey position value as per maskedKeyRanges
-   *
-   * @param maskedKey
-   * @param maskedKeyRanges
-   */
-  private void updateMaskedKeyRanges(int[] maskedKey, int[] maskedKeyRanges) {
-    Arrays.fill(maskedKey, -1);
-    for (int i = 0; i < maskedKeyRanges.length; i++) {
-      maskedKey[maskedKeyRanges[i]] = i;
-    }
-  }
-
-  /**
-   * Below method will be used to get the masked key
-   *
-   * @param data
-   * @return maskedKey
-   */
-  private byte[] getMaskedKey(byte[] data, int[] maskByteRange, byte[] maxKey) {
-    int keySize = maskByteRange.length;
-    byte[] maskedKey = new byte[keySize];
-    int counter = 0;
-    int byteRange = 0;
-    for (int i = 0; i < keySize; i++) {
-      byteRange = maskByteRange[i];
-      maskedKey[counter++] = (byte) (data[byteRange] & maxKey[byteRange]);
-    }
-    return maskedKey;
-  }
-
-  /**
-   * @param rowStoreData
-   */
-  public void add(byte[] rowStoreData) {
-    try {
-      for (int i = 0; i < noOfCol; i++) {
-        long[] keyArray = keyGenerator.getKeyArray(rowStoreData, maskBytePosition[i]);
-        byte[] data = keyGenerator.generateKey(keyArray);
-        byte[] col = getMaskedKey(data, maskByteRange[i], maxKeys[i]);
-        setMin(col, i);
-        setMax(col, i);
-      }
-
-    } catch (KeyGenException e) {
-      LOGGER.error(e,
-          "Key generation failed while evaulating row block min max");
-    }
-  }
-
-  /**
-   * set max value of given column
+   * set min value of given column
    *
    * @param colData
    * @param column
    */
-  private void setMax(byte[] colData, int column) {
+  private void setMin(byte[] colData, int column) {
 
     if (null == min[column]) {
       min[column] = colData;
@@ -208,12 +178,12 @@ public class RowStoreMinMax {
   }
 
   /**
-   * set min value of given column
+   * set max value of given column
    *
    * @param colData
    * @param column
    */
-  private void setMin(byte[] colData, int column) {
+  private void setMax(byte[] colData, int column) {
     if (null == max[column]) {
       max[column] = colData;
     } else {
@@ -225,7 +195,7 @@ public class RowStoreMinMax {
   }
 
   /**
-   * Get min value of  block
+   * Get min value of block
    *
    * @return min value of block
    */

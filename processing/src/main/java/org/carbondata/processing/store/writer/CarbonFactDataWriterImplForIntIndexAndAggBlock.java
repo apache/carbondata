@@ -34,6 +34,7 @@ import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.store.CarbonDataFileAttributes;
+import org.carbondata.processing.store.colgroup.ColGroupBlockStorage;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
 public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactDataWriter<int[]> {
@@ -90,6 +91,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     byte[][] allMinValue = new byte[keyStorageArray.length][];
     byte[][] allMaxValue = new byte[keyStorageArray.length][];
     byte[][] keyBlockData = fillAndCompressedKeyBlockData(keyStorageArray, entryCount);
+    boolean[] colGrpBlock = new boolean[keyStorageArray.length];
 
     for (int i = 0; i < keyLengths.length; i++) {
       keyLengths[i] = keyBlockData[i].length;
@@ -105,6 +107,10 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
       } else {
         allMinValue[i] = updateMinMaxForNoDictionary(keyStorageArray[i].getMin());
         allMaxValue[i] = updateMinMaxForNoDictionary(keyStorageArray[i].getMax());
+      }
+      //if keyStorageArray is instance of ColGroupBlockStorage than it's colGroup chunk
+      if (keyStorageArray[i] instanceof ColGroupBlockStorage) {
+        colGrpBlock[i] = true;
       }
     }
     int[] keyBlockIdxLengths = new int[keyBlockSize];
@@ -224,6 +230,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     holder.setColumnMaxData(allMaxValue);
     holder.setColumnMinData(allMinValue);
     holder.setAggBlocks(aggBlocks);
+    holder.setColGrpBlocks(colGrpBlock);
     return holder;
   }
 
@@ -464,6 +471,10 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     info.setEndKey(nodeHolder.getEndKey());
     info.setCompressionModel(nodeHolder.getCompressionModel());
     // return leaf metadata
+
+    //colGroup Blocks
+    info.setColGrpBlocks(nodeHolder.getColGrpBlocks());
+
     return info;
   }
 

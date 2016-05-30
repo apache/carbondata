@@ -44,7 +44,7 @@ public class DataChunk implements Serializable {
   /**
    * whether this chunk is a row chunk or column chunk
    */
-  private boolean isRowChunk;
+  private boolean isRowMajor;
 
   /**
    * the column IDs in this chunk, will have atleast
@@ -129,17 +129,17 @@ public class DataChunk implements Serializable {
   }
 
   /**
-   * @return the isRowChunk
+   * @return the isRowMajor
    */
-  public boolean isRowChunk() {
-    return isRowChunk;
+  public boolean isRowMajor() {
+    return isRowMajor;
   }
 
   /**
-   * @param isRowChunk the isRowChunk to set
+   * @param isRowMajor the isRowMajor to set
    */
-  public void setRowChunk(boolean isRowChunk) {
-    this.isRowChunk = isRowChunk;
+  public void setRowMajor(boolean isRowMajor) {
+    this.isRowMajor = isRowMajor;
   }
 
   /**

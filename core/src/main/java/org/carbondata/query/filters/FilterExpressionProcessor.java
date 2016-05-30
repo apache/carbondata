@@ -29,11 +29,11 @@ import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbonfilterinterface.ExpressionType;
 import org.carbondata.query.expression.BinaryExpression;
@@ -123,12 +123,12 @@ public class FilterExpressionProcessor implements FilterProcessor {
     DataRefNode firstnode = startBlock;
     while (startBlock != endBlock) {
       addBlockBasedOnMinMaxValue(filterResolver, listOfDataBlocksToScan, startBlock,
-          tableSegment.getSegmentProperties().getDimensionKeyGenerator());
+          tableSegment.getSegmentProperties());
       startBlock = startBlock.getNextDataRefNode();
     }
 
     addBlockBasedOnMinMaxValue(filterResolver, listOfDataBlocksToScan, endBlock,
-        tableSegment.getSegmentProperties().getDimensionKeyGenerator());
+        tableSegment.getSegmentProperties());
     if (listOfDataBlocksToScan.isEmpty()) {
       //Pass the first block itself for applying filters.
       listOfDataBlocksToScan.add(firstnode);
@@ -147,12 +147,13 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @param filterResolver
    * @param listOfDataBlocksToScan
    * @param dataRefNode
-   * @param keyGenerator
+   * @param segmentProperties
    */
   private void addBlockBasedOnMinMaxValue(FilterResolverIntf filterResolver,
       List<DataRefNode> listOfDataBlocksToScan, DataRefNode dataRefNode,
-      KeyGenerator keyGenerator) {
-    FilterExecuter filterExecuter = FilterUtil.getFilterExecuterTree(filterResolver, keyGenerator);
+      SegmentProperties segmentProperties) {
+    FilterExecuter filterExecuter =
+        FilterUtil.getFilterExecuterTree(filterResolver, segmentProperties);
     BitSet bitSet = filterExecuter
         .isScanRequired(dataRefNode.getColumnsMaxValue(), dataRefNode.getColumnsMinValue());
     if (!bitSet.isEmpty()) {

@@ -126,6 +126,11 @@ public class NodeHolder {
   private byte[][] allMinValue;
 
   /**
+   * true if given index is colgroup block
+   */
+  private boolean[] colGrpBlock;
+
+  /**
    * @return the keyArray
    */
   public byte[] getKeyArray() {
@@ -411,5 +416,19 @@ public class NodeHolder {
    */
   public void setAllMinValue(byte[][] allMinValue) {
     this.allMinValue = allMinValue;
+  }
+
+  /**
+   * @param colGrpBlock true if block is column group
+   */
+  public void setColGrpBlocks(boolean[] colGrpBlock) {
+    this.colGrpBlock = colGrpBlock;
+  }
+
+  /**
+   * @return
+   */
+  public boolean[] getColGrpBlocks() {
+    return this.colGrpBlock;
   }
 }

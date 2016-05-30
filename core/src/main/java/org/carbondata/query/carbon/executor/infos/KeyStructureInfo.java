@@ -49,6 +49,11 @@ public class KeyStructureInfo {
   private byte[] maxKey;
 
   /**
+   * mdkey start index of block
+   */
+  private int blockMdKeyStartOffset;
+
+  /**
    * @return the keyGenerator
    */
   public KeyGenerator getKeyGenerator() {
@@ -102,5 +107,19 @@ public class KeyStructureInfo {
    */
   public void setMaxKey(byte[] maxKey) {
     this.maxKey = maxKey;
+  }
+
+  /**
+   * @param startOffset
+   */
+  public void setBlockMdKeyStartOffset(int startOffset) {
+    this.blockMdKeyStartOffset = startOffset;
+  }
+
+  /**
+   * @return
+   */
+  public int getBlockMdKeyStartOffset() {
+    return this.blockMdKeyStartOffset;
   }
 }

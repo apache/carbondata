@@ -98,7 +98,7 @@ struct PresenceMeta{
 **/
 struct DataChunk{
     1: required ChunkCompressionMeta chunk_meta; // the metadata of a chunk
-    2: required bool row_chunk; // whether this chunk is a row chunk or column chunk ? Decide whether this can be replace with counting od columnIDs
+    2: required bool rowMajor; // whether this chunk is a row chunk or column chunk ? Decide whether this can be replace with counting od columnIDs
 	/** The column IDs in this chunk, in the order in which the data is physically stored, will have atleast one column ID for columnar format, many column ID for row major format**/
     3: required list<i32> column_ids;
     4: required i64 data_page_offset; // Offset of data page

@@ -32,13 +32,55 @@ class ColumnGroupDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("create table colgrp (column1 string,column2 string,column3 string,column4 string,column5 string,column6 string,column7 string,column8 string,column9 string,column10 string,measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES (\"COLUMN_GROUPS\"=\"(column2,column3,column4),(column7,column8,column9)\")")
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/10dim_4msr.csv' INTO table colgrp options('FILEHEADER'='column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
+    sql("create table normal (column1 string,column2 string,column3 string,column4 string,column5 string,column6 string,column7 string,column8 string,column9 string,column10 string,measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org.apache.carbondata.format'")
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/10dim_4msr.csv' INTO table normal options('FILEHEADER'='column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
   }
 
-  test("column group data loading") {
-    sql("LOAD DATA FACT FROM './src/test/resources/10dim_4msr.csv' INTO Cube colgrp partitionData(DELIMITER ',' ,QUOTECHAR '\"', FILEHEADER 'column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
+  test("select all dimension query") {
+    checkAnswer(
+      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp"),
+      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal"))
+  }
+  
+  test("select all dimension query with filter on columnar") {
+    checkAnswer(
+      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp where column1='column1666'"),
+      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal where column1='column1666'"))
+  }
+  
+  test("select all dimension query with filter on column group dimension") {
+    checkAnswer(
+      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp where column3='column311'"),
+      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal where column3='column311'"))
+  }
+  
+  test("select all dimension query with filter on two dimension from different column group") {
+    checkAnswer(
+      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp where column3='column311' and column7='column74' "),
+      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal where column3='column311' and column7='column74'"))
+  }
+  
+  test("select all dimension query with filter on two dimension from same column group") {
+    checkAnswer(
+      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp where column3='column311' and column4='column42' "),
+      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal where column3='column311' and column4='column42'"))
+  }
+  
+  test("select all dimension query with filter on two dimension one from column group other from columnar") {
+    checkAnswer(
+      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp where column3='column311' and column5='column516' "),
+      sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal where column3='column311' and column5='column516'"))
+  }
+  
+  test("select few dimension") {
+    checkAnswer(
+      sql("select column1,column3,column4,column5,column6,column9,column10 from colgrp"),
+      sql("select column1,column3,column4,column5,column6,column9,column10 from normal"))
   }
 
   override def afterAll {
     sql("drop cube colgrp")
+    sql("drop cube normal")
   }
 }

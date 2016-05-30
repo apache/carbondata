@@ -133,6 +133,11 @@ public class SegmentProperties {
    */
   private int numberOfNoDictionaryDimension;
 
+  /**
+   * column groups
+   */
+  private int[][] colGroups;
+
   public SegmentProperties(List<ColumnSchema> columnsInTable, int[] columnCardinality) {
     dimensions = new ArrayList<CarbonDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     complexDimensions =
@@ -143,10 +148,49 @@ public class SegmentProperties {
         new HashMap<Integer, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     measuresOrdinalToBlockMapping =
         new HashMap<Integer, Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    intialiseColGroups(columnsInTable);
     fillOrdinalToBlockMappingForDimension();
     fillOrdinalToBlockIndexMappingForMeasureColumns();
     fillColumnGroupAndItsCardinality(columnCardinality);
     fillKeyGeneratorDetails();
+  }
+
+  /**
+   * it fills column groups
+   * e.g {{1},{2,3,4},{5},{6},{7,8,9}}
+   *
+   * @param columnsInTable
+   */
+  private void intialiseColGroups(List<ColumnSchema> columnsInTable) {
+    // StringBuffer columnGroups = new StringBuffer();
+    List<List<Integer>> colGrpList = new ArrayList<List<Integer>>();
+    List<Integer> group = new ArrayList<Integer>();
+    for (int i = 0; i < dimensions.size(); i++) {
+      CarbonDimension dimension = dimensions.get(i);
+      if (!dimension.hasEncoding(Encoding.DICTIONARY)) {
+        continue;
+      }
+      group.add(dimension.getOrdinal());
+      // columnGroups.append(dimension.getOrdinal());
+      if (i < dimensions.size() - 1) {
+        int currGroupOrdinal = dimension.columnGroupId();
+        int nextGroupOrdinal = dimensions.get(i + 1).columnGroupId();
+        if (!(currGroupOrdinal == nextGroupOrdinal && currGroupOrdinal != -1)) {
+          colGrpList.add(group);
+          group = new ArrayList<Integer>();
+        }
+      } else {
+        colGrpList.add(group);
+      }
+
+    }
+    colGroups = new int[colGrpList.size()][];
+    for (int i = 0; i < colGroups.length; i++) {
+      colGroups[i] = new int[colGrpList.get(i).size()];
+      for (int j = 0; j < colGroups[i].length; j++) {
+        colGroups[i][j] = colGrpList.get(i).get(j);
+      }
+    }
   }
 
   /**
@@ -544,6 +588,14 @@ public class SegmentProperties {
    */
   public int getNumberOfNoDictionaryDimension() {
     return numberOfNoDictionaryDimension;
+  }
+
+  /**
+   *
+   * @return
+   */
+  public int[][] getColumnGroups() {
+    return this.colGroups;
   }
 
 }

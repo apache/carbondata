@@ -221,6 +221,9 @@ public class MDKeyGenStep extends BaseStep {
       } catch (CarbonDataWriterException e) {
         LOGGER.error(e, e.getMessage());
         throw new KettleException(e.getMessage());
+      } catch (Exception e) {
+        LOGGER.error(e, e.getMessage());
+        throw new KettleException("There is an unexpected error: " + e.getMessage());
       }
     }
     setOutputDone();

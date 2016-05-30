@@ -1,6 +1,7 @@
 package org.carbondata.core.keygenerator.columnar.impl;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -192,13 +193,14 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
   }
 
   @Override public int getKeySizeByBlock(int[] blockIndexes) {
-    int size = 0;
+    Set<Integer> selectedRanges = new HashSet<>();
     for (int i = 0; i < blockIndexes.length; i++) {
-      if (blockIndexes[i] < blockKeySize.length) {
-        size += blockKeySize[blockIndexes[i]];
+      int[] byteRange = byteRangesForKeys[blockIndexes[i]];
+      for (int j = byteRange[0]; j <= byteRange[1]; j++) {
+        selectedRanges.add(j);
       }
     }
-    return size;
+    return selectedRanges.size();
   }
 
 }
