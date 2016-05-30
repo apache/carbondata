@@ -102,6 +102,9 @@ public final class CarbonProperties {
     validateNumberOfCsvFile();
     validateBadRecordsLocation();
     validateBadRecordsEncryption();
+    validateHighCardinalityIdentify();
+    validateHighCardinalityThreshold();
+    validateHighCardinalityInRowCountPercentage();
   }
 
   private void validateBadRecordsLocation() {
@@ -506,6 +509,66 @@ public final class CarbonProperties {
           + CarbonCommonConstants.SORT_BUFFER_SIZE_DEFAULT_VALUE);
       carbonProperties.setProperty(CarbonCommonConstants.SORT_BUFFER_SIZE,
           CarbonCommonConstants.SORT_BUFFER_SIZE_DEFAULT_VALUE);
+    }
+  }
+
+  private void validateHighCardinalityIdentify() {
+    String highcardIdentifyStr = carbonProperties.getProperty(
+        CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE,
+        CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE_DEFAULT);
+    try {
+      Boolean.parseBoolean(highcardIdentifyStr);
+    } catch (NumberFormatException e) {
+      LOGGER.info("The high cardinality identify value \"" + highcardIdentifyStr
+          + "\" is invalid. Using the default value \""
+          + CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE_DEFAULT);
+      carbonProperties.setProperty(CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE,
+          CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE_DEFAULT);
+    }
+  }
+
+  private void validateHighCardinalityThreshold() {
+    String highcardThresholdStr = carbonProperties.getProperty(
+        CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD,
+        CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT);
+    try {
+      int highcardThreshold = Integer.parseInt(highcardThresholdStr);
+      if(highcardThreshold <= CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_MIN){
+        LOGGER.info("The high cardinality threshold value \"" + highcardThresholdStr
+            + "\" is invalid. Using the default value \""
+            + CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT);
+        carbonProperties.setProperty(CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD,
+            CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info("The high cardinality threshold value \"" + highcardThresholdStr
+          + "\" is invalid. Using the default value \""
+          + CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT);
+      carbonProperties.setProperty(CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD,
+          CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT);
+    }
+  }
+
+  private void validateHighCardinalityInRowCountPercentage() {
+    String highcardPercentageStr = carbonProperties.getProperty(
+        CarbonCommonConstants.HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE,
+        CarbonCommonConstants.HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT);
+    try {
+      double highcardPercentage = Double.parseDouble(highcardPercentageStr);
+      if(highcardPercentage <= 0){
+        LOGGER.info("The percentage of high cardinality in row count value \""
+            + highcardPercentageStr + "\" is invalid. Using the default value \""
+            + CarbonCommonConstants.HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT);
+        carbonProperties.setProperty(
+            CarbonCommonConstants.HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE,
+            CarbonCommonConstants.HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info("The percentage of high cardinality in row count value \""
+          + highcardPercentageStr + "\" is invalid. Using the default value \""
+          + CarbonCommonConstants.HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT);
+      carbonProperties.setProperty(CarbonCommonConstants.HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE,
+          CarbonCommonConstants.HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT);
     }
   }
 

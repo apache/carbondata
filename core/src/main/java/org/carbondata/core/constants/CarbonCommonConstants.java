@@ -1042,6 +1042,27 @@ public final class CarbonCommonConstants {
   public static final String CARBON_MERGE_SORT_PREFETCH = "carbon.merge.sort.prefetch";
   public static final String CARBON_MERGE_SORT_PREFETCH_DEFAULT = "true";
 
+  /**
+   * this variable is to enable/disable identify high cardinality during first data loading
+   */
+  public static final String HIGH_CARDINALITY_IDENTIFY_ENABLE =
+      "high.cardinality.identify.enable";
+  public static final String HIGH_CARDINALITY_IDENTIFY_ENABLE_DEFAULT = "true";
+
+  /**
+   * threshold of high cardinality
+   */
+  public static final String HIGH_CARDINALITY_THRESHOLD = "high.cardinality.threshold";
+  public static final String HIGH_CARDINALITY_THRESHOLD_DEFAULT = "1000000";
+  public static final int HIGH_CARDINALITY_THRESHOLD_MIN = 10000;
+
+  /**
+   * percentage of cardinality in row count
+   */
+  public static final String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE =
+      "high.cardinality.row.count.percentage";
+  public static final String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT = "80";
+
   private CarbonCommonConstants() {
 
   }

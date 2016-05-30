@@ -48,6 +48,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
   var filePath: String = _
   var pwd: String = _
   var dimFilePath: String = _
+  var complexfilePath: String = _
   var complexfilePath1: String = _
   var complexfilePath2: String = _
 
@@ -86,6 +87,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
     dimFilePath = "dimTableSample:" + pwd + "/src/test/resources/dimTableSample.csv"
     complexfilePath1 = pwd + "/src/test/resources/complexdata1.csv"
     complexfilePath2 = pwd + "/src/test/resources/complexdata2.csv"
+    complexfilePath = pwd + "/src/test/resources/complexdata.csv"
   }
 
   def buildTable() = {
@@ -115,7 +117,8 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
           "array<string>, locationinfo array<struct<ActiveAreaId integer, ActiveCountry string, " +
           "ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet " +
           "string>>, proddate struct<productionDate string,activeDeactivedate array<string>>) " +
-          "measures(gamePointId numeric,contractNumber numeric) OPTIONS (PARTITIONER [CLASS = " +
+          "measures(gamePointId numeric,contractNumber numeric) OPTIONS ( " +
+          "NO_DICTIONARY (ROMSize) PARTITIONER [CLASS = " +
           "'org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl' ," +
           "COLUMNS= (deviceInformationId) , PARTITION_COUNT=1] )"
       )
@@ -188,11 +191,11 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
   test("[Issue-190]load csv file without header And support complex type") {
     val header = "deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC,locationinfo," +
       "proddate,gamePointId,contractNumber"
-    var carbonLoadModel = buildCarbonLoadModel(complexRelation, complexfilePath2, null, header)
+    var carbonLoadModel = buildCarbonLoadModel(complexRelation, complexfilePath, null, header)
     GlobalDictionaryUtil
       .generateGlobalDictionary(CarbonHiveContext,
         carbonLoadModel,
-        sampleRelation.cubeMeta.dataPath
+        complexRelation.cubeMeta.dataPath
       )
   }
 
@@ -225,4 +228,5 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
       )
     checkDictionary(incrementalLoadTableRelation, "deviceInformationId", "100077")
   }
+
 }

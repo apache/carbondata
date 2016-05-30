@@ -21,6 +21,7 @@ import java.util.regex.Pattern
 
 import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
+import scala.util.control.Breaks.{break, breakable}
 
 import org.apache.commons.lang3.{ArrayUtils, StringUtils}
 import org.apache.spark.{Logging, Partition, Partitioner, TaskContext}
@@ -135,7 +136,13 @@ case class DictionaryLoadModel(table: CarbonTableIdentifier,
     dictFileExists: Array[Boolean],
     isComplexes: Array[Boolean],
     primDimensions: Array[CarbonDimension],
-    delimiters: Array[String]) extends Serializable
+    delimiters: Array[String],
+    highCardIdentifyEnable: Boolean,
+    highCardThreshold: Int,
+    rowCountPercentage: Double,
+    isFirstLoad: Boolean) extends Serializable
+
+case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends Serializable
 
 /**
  * A RDD to combine distinct values in block.
@@ -147,15 +154,16 @@ case class DictionaryLoadModel(table: CarbonTableIdentifier,
 class CarbonBlockDistinctValuesCombineRDD(
     prev: RDD[Row],
     model: DictionaryLoadModel)
-  extends RDD[(Int, Array[String])](prev) with Logging {
+  extends RDD[(Int, ColumnDistinctValues)](prev) with Logging {
 
   override def getPartitions: Array[Partition] = firstParent[Row].partitions
 
-  override def compute(split: Partition, context: TaskContext
-  ): Iterator[(Int, Array[String])] = {
+  override def compute(split: Partition,
+      context: TaskContext): Iterator[(Int, ColumnDistinctValues)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
     val distinctValuesList = new ArrayBuffer[(Int, HashSet[String])]
+    var rowCount = 0L
     try {
       // local combine set
       val dimNum = model.dimensions.length
@@ -180,6 +188,7 @@ class CarbonBlockDistinctValuesCombineRDD(
       while (rddIter.hasNext) {
         row = rddIter.next()
         if (row != null) {
+          rowCount += 1
           for (i <- 0 until dimNum) {
             dimensionParsers(i).parseString(row.getString(i))
           }
@@ -191,7 +200,7 @@ class CarbonBlockDistinctValuesCombineRDD(
     }
     distinctValuesList.map { iter =>
       val valueList = iter._2.toArray
-      (iter._1, valueList)
+      (iter._1, ColumnDistinctValues(valueList, rowCount))
     }.iterator
   }
 }
@@ -204,16 +213,17 @@ class CarbonBlockDistinctValuesCombineRDD(
  * @param model a model package load info
  */
 class CarbonGlobalDictionaryGenerateRDD(
-    prev: RDD[(Int, Array[String])],
+    prev: RDD[(Int, ColumnDistinctValues)],
     model: DictionaryLoadModel)
-  extends RDD[(String, String)](prev) with Logging {
+  extends RDD[(Int, String, Boolean)](prev) with Logging {
 
-  override def getPartitions: Array[Partition] = firstParent[(Int, Array[String])].partitions
+  override def getPartitions: Array[Partition] = firstParent[(Int, ColumnDistinctValues)].partitions
 
-  override def compute(split: Partition, context: TaskContext): Iterator[(String, String)] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+  override def compute(split: Partition, context: TaskContext): Iterator[(Int, String, Boolean)] = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass().getName)
     var status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
-    val iter = new Iterator[(String, String)] {
+    var isHighCardinalityColumn = false
+    val iter = new Iterator[(Int, String, Boolean)] {
       // generate distinct value list
       try {
         val t1 = System.currentTimeMillis
@@ -228,36 +238,52 @@ class CarbonGlobalDictionaryGenerateRDD(
         }
         val t2 = System.currentTimeMillis
         val valuesBuffer = new mutable.HashSet[String]
-        val rddIter = firstParent[(Int, Array[String])].iterator(split, context)
-        while (rddIter.hasNext) {
-          valuesBuffer ++= rddIter.next()._2
+        val rddIter = firstParent[(Int, ColumnDistinctValues)].iterator(split, context)
+        var rowCount = 0L
+        breakable {
+          while (rddIter.hasNext) {
+            val distinctValueList = rddIter.next()._2
+            valuesBuffer ++= distinctValueList.values
+            rowCount += distinctValueList.rowCount
+            // check high cardinality
+            if (model.isFirstLoad && model.highCardIdentifyEnable
+                && !model.isComplexes(split.index)) {
+              isHighCardinalityColumn = GlobalDictionaryUtil.isHighCardinalityColumn(
+                valuesBuffer.size, rowCount, model)
+              if (isHighCardinalityColumn) {
+                break
+              }
+            }
+          }
         }
-        val t3 = System.currentTimeMillis
-        val distinctValueCount = GlobalDictionaryUtil.generateAndWriteNewDistinctValueList(
-          valuesBuffer, dictionary, model, split.index
-        )
-        // clear the value buffer after writing dictionary data
-        valuesBuffer.clear
 
-        val t4 = System.currentTimeMillis
+        if (isHighCardinalityColumn) {
+          LOGGER.info("column " + model.table.getTableUniqueName + "." +
+            model.primDimensions(split.index).getColName + " is high cardinality column")
+        } else {
+          val t3 = System.currentTimeMillis
+          val distinctValueCount = GlobalDictionaryUtil.generateAndWriteNewDistinctValueList(
+            valuesBuffer, dictionary, model, split.index)
+          // clear the value buffer after writing dictionary data
+          valuesBuffer.clear
 
-        if (distinctValueCount > 0) {
-          val columnDictionary = CarbonLoaderUtil.getDictionary(model.table,
-            model.primDimensions(split.index).getColumnId,
-            model.hdfsLocation,
-            model.primDimensions(split.index).getDataType)
-          GlobalDictionaryUtil.writeGlobalDictionaryColumnSortInfo(model, split.index,
-            columnDictionary
-          )
-          val t5 = System.currentTimeMillis
-
-          LOGGER.info("\n columnName:" + model.primDimensions(split.index).getColName +
-                      "\n columnId:" + model.primDimensions(split.index).getColumnId +
-                      "\n new distinct values count:" + distinctValueCount +
-                      "\n create dictionary cache:" + (t2 - t1) +
-                      "\n combine lists:" + (t3 - t2) +
-                      "\n sort list, distinct and write:" + (t4 - t3) +
-                      "\n write sort info:" + (t5 - t4))
+          val t4 = System.currentTimeMillis
+          if (distinctValueCount > 0) {
+            val columnDictionary = CarbonLoaderUtil.getDictionary(model.table,
+              model.primDimensions(split.index).getColumnId,
+              model.hdfsLocation,
+              model.primDimensions(split.index).getDataType)
+            GlobalDictionaryUtil.writeGlobalDictionaryColumnSortInfo(model, split.index,
+              columnDictionary)
+            val t5 = System.currentTimeMillis
+            LOGGER.info("\n columnName:" + model.primDimensions(split.index).getColName +
+              "\n columnId:" + model.primDimensions(split.index).getColumnId +
+              "\n new distinct values count:" + distinctValueCount +
+              "\n create dictionary cache:" + (t2 - t1) +
+              "\n combine lists:" + (t3 - t2) +
+              "\n sort list, distinct and write:" + (t4 - t3) +
+              "\n write sort info:" + (t5 - t4))
+          }
         }
       } catch {
         case ex: Exception =>
@@ -276,8 +302,8 @@ class CarbonGlobalDictionaryGenerateRDD(
         }
       }
 
-      override def next(): (String, String) = {
-        (model.primDimensions(split.index).getColName, status)
+      override def next(): (Int, String, Boolean) = {
+        (split.index, status, isHighCardinalityColumn)
       }
     }
     iter

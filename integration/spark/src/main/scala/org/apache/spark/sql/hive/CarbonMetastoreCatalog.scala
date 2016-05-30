@@ -56,7 +56,38 @@ case class MetaData(var cubesMeta: ArrayBuffer[TableMeta])
 case class CarbonMetaData(dims: Seq[String], msrs: Seq[String], carbonTable: CarbonTable)
 
 case class TableMeta(carbonTableIdentifier: CarbonTableIdentifier, dataPath: String,
-    carbonTable: CarbonTable, partitioner: Partitioner)
+    var carbonTable: CarbonTable, partitioner: Partitioner)
+
+object CarbonMetastoreCatalog {
+
+  def readSchemaFileToThriftTable(schemaFilePath: String): TableInfo = {
+    val createTBase = new ThriftReader.TBaseCreator() {
+      override def create(): org.apache.thrift.TBase[TableInfo, TableInfo._Fields] = {
+        return new TableInfo();
+      }
+    }
+    val thriftReader = new ThriftReader(schemaFilePath, createTBase)
+    var tableInfo: TableInfo = null
+    try {
+      thriftReader.open()
+      tableInfo = thriftReader.read().asInstanceOf[TableInfo]
+    } finally {
+      thriftReader.close()
+    }
+    tableInfo
+  }
+
+  def writeThriftTableToSchemaFile(schemaFilePath: String, tableInfo: TableInfo): Unit = {
+    val thriftWriter = new ThriftWriter(schemaFilePath, false)
+    try {
+      thriftWriter.open();
+      thriftWriter.write(tableInfo);
+    } finally {
+      thriftWriter.close();
+    }
+  }
+
+}
 
 class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: ClientInterface)
   extends HiveMetastoreCatalog(client, hive)
@@ -208,7 +239,6 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     }
     MetaData(metaDataBuffer)
 
-
   }
 
   private def fillMetaData(basePath: String, fileType: FileType,
@@ -335,6 +365,33 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     LOGGER.info("Cube " + tableName + " for schema " + dbName + " created successfully.")
     updateSchemasUpdatedTime(dbName, tableName)
     schemaMetadataPath
+  }
+
+  private def updateMetadataByWrapperTable(
+      wrapperTableInfo: org.carbondata.core.carbon.metadata.schema.table.TableInfo): Unit = {
+
+    CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+      wrapperTableInfo.getTableUniqueName)
+    for (i <- 0 until metadata.cubesMeta.size) {
+      if (wrapperTableInfo.getTableUniqueName.equals(
+        metadata.cubesMeta(i).carbonTableIdentifier.getTableUniqueName)) {
+        metadata.cubesMeta(i).carbonTable = carbonTable
+      }
+    }
+  }
+
+  def updateMetadataByThriftTable(schemaFilePath: String,
+      tableInfo: TableInfo, dbName: String, tableName: String): Unit = {
+
+    tableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
+      .setTime_stamp(System.currentTimeMillis())
+    val schemaConverter = new ThriftWrapperSchemaConverterImpl
+    val wrapperTableInfo = schemaConverter
+      .fromExternalToWrapperTableInfo(tableInfo, dbName, tableName)
+    wrapperTableInfo
+      .setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath))
+    updateMetadataByWrapperTable(wrapperTableInfo)
   }
 
   /*

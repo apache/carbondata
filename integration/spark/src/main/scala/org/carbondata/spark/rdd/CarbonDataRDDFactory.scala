@@ -509,7 +509,7 @@ object CarbonDataRDDFactory extends Logging {
 
   }
 
-  private def readLoadMetadataDetails(model: CarbonLoadModel, hdfsStoreLocation: String) = {
+  def readLoadMetadataDetails(model: CarbonLoadModel, hdfsStoreLocation: String): Unit = {
     val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetaDataFilepath
     var segmentStatusManager = new SegmentStatusManager(
       new AbsoluteTableIdentifier(
