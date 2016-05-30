@@ -22,10 +22,21 @@ package org.carbondata.query.carbon.model;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.query.expression.ColumnExpression;
+import org.carbondata.query.expression.Expression;
+import org.carbondata.query.expression.UnknownExpression;
+import org.carbondata.query.expression.conditional.ConditionalExpression;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 
 /**
@@ -117,6 +128,12 @@ public class QueryModel implements Serializable {
   private String queryTempLocation;
 
   /**
+   * To handle most of the computation in query engines like spark and hive, carbon should give
+   * raw detailed records to it.
+   */
+  private boolean forcedDetailRawQuery;
+
+  /**
    * paritition column list
    */
   private List<String> paritionColumns;
@@ -140,6 +157,144 @@ public class QueryModel implements Serializable {
     sortOrder = new byte[0];
     paritionColumns = new ArrayList<String>();
 
+  }
+
+  public static QueryModel createModel(AbsoluteTableIdentifier absoluteTableIdentifier,
+      CarbonQueryPlan queryPlan, CarbonTable carbonTable) {
+    QueryModel queryModel = new QueryModel();
+    String factTableName = carbonTable.getFactTableName();
+    queryModel.setAbsoluteTableIdentifier(absoluteTableIdentifier);
+
+    fillQueryModel(queryPlan, carbonTable, queryModel, factTableName);
+
+    fillDimensionAggregator(queryPlan, queryModel);
+    queryModel.setLimit(queryPlan.getLimit());
+    queryModel.setDetailQuery(queryPlan.isDetailQuery());
+    queryModel.setForcedDetailRawQuery(queryPlan.isRawDetailQuery());
+    queryModel.setQueryId(queryPlan.getQueryId());
+    queryModel.setQueryTempLocation(queryPlan.getOutLocationPath());
+    return queryModel;
+  }
+
+  private static void fillQueryModel(CarbonQueryPlan queryPlan, CarbonTable carbonTable,
+      QueryModel queryModel, String factTableName) {
+    AbsoluteTableIdentifier currentTemp = queryModel.getAbsoluteTableIdentifier();
+    queryModel.setAbsoluteTableIdentifier(new AbsoluteTableIdentifier(currentTemp.getStorePath(),
+        new CarbonTableIdentifier(queryPlan.getSchemaName(), factTableName)));
+    queryModel.setQueryDimension(queryPlan.getDimensions());
+    fillSortInfoInModel(queryModel, queryPlan.getSortedDimemsions());
+    queryModel.setQueryMeasures(
+        queryPlan.getMeasures());
+    if (null != queryPlan.getFilterExpression()) {
+      processFilterExpression(queryPlan.getFilterExpression(),
+          carbonTable.getDimensionByTableName(factTableName),
+          carbonTable.getMeasureByTableName(factTableName));
+    }
+    queryModel.setCountStarQuery(queryPlan.isCountStarQuery());
+    //TODO need to remove this code, and executor will load the table
+    // from file metadata
+    queryModel.setTable(carbonTable);
+  }
+
+  private static void fillSortInfoInModel(QueryModel executorModel,
+      List<QueryDimension> sortedDims) {
+    if (null != sortedDims) {
+      byte[] sortOrderByteArray = new byte[sortedDims.size()];
+      int i = 0;
+      for (QueryColumn mdim : sortedDims) {
+        sortOrderByteArray[i++] = (byte) mdim.getSortOrder().ordinal();
+      }
+      executorModel.setSortOrder(sortOrderByteArray);
+      executorModel.setSortDimension(sortedDims);
+    } else {
+      executorModel.setSortOrder(new byte[0]);
+      executorModel.setSortDimension(new ArrayList<QueryDimension>(0));
+    }
+
+  }
+
+  private static void fillDimensionAggregator(CarbonQueryPlan logicalPlan,
+      QueryModel executorModel) {
+    Map<String, DimensionAggregatorInfo> dimAggregatorInfos = logicalPlan.getDimAggregatorInfos();
+    List<DimensionAggregatorInfo> dimensionAggregatorInfos =
+        new ArrayList<DimensionAggregatorInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    for (Map.Entry<String, DimensionAggregatorInfo> entry : dimAggregatorInfos.entrySet()) {
+      dimensionAggregatorInfos.add(entry.getValue());
+    }
+    executorModel.setDimAggregationInfo(dimensionAggregatorInfos);
+  }
+
+  public static void processFilterExpression(
+      Expression filterExpression, List<CarbonDimension> dimensions, List<CarbonMeasure> measures) {
+    if (null != filterExpression) {
+      if (null != filterExpression.getChildren() && filterExpression.getChildren().size() == 0) {
+        if (filterExpression instanceof ConditionalExpression) {
+          List<ColumnExpression> listOfCol =
+              ((ConditionalExpression) filterExpression).getColumnList();
+          for (ColumnExpression expression : listOfCol) {
+            setDimAndMsrColumnNode(dimensions, measures, (ColumnExpression) expression);
+          }
+
+        }
+      }
+      for (Expression expression : filterExpression.getChildren()) {
+
+        if (expression instanceof ColumnExpression) {
+          setDimAndMsrColumnNode(dimensions, measures, (ColumnExpression) expression);
+        } else if (expression instanceof UnknownExpression) {
+          UnknownExpression exp = ((UnknownExpression) expression);
+          List<ColumnExpression> listOfColExpression = exp.getAllColumnList();
+          for (ColumnExpression col : listOfColExpression) {
+            setDimAndMsrColumnNode(dimensions, measures, col);
+          }
+        } else {
+          processFilterExpression(expression, dimensions, measures);
+        }
+      }
+    }
+
+  }
+
+  private static CarbonMeasure getCarbonMetadataMeasure(String name, List<CarbonMeasure> measures) {
+    for (CarbonMeasure measure : measures) {
+      if (measure.getColName().equalsIgnoreCase(name)) {
+        return measure;
+      }
+    }
+    return null;
+  }
+
+  private static void setDimAndMsrColumnNode(List<CarbonDimension> dimensions,
+      List<CarbonMeasure> measures, ColumnExpression col) {
+    CarbonDimension dim;
+    CarbonMeasure msr;
+    String columnName;
+    columnName = col.getColumnName();
+    dim = CarbonUtil.findDimension(dimensions, columnName);
+    col.setCarbonColumn(dim);
+    col.setDimension(dim);
+    col.setDimension(true);
+    if (null == dim) {
+      msr = getCarbonMetadataMeasure(columnName, measures);
+      col.setCarbonColumn(msr);
+      col.setDimension(false);
+    }
+  }
+
+  /**
+   * It gets the projection columns
+   */
+  public CarbonColumn[] getProjectionColumns() {
+    CarbonColumn[] carbonColumns =
+        new CarbonColumn[getQueryDimension().size() + getQueryMeasures()
+            .size()];
+    for (QueryDimension dimension : getQueryDimension()) {
+      carbonColumns[dimension.getQueryOrder()] = dimension.getDimension();
+    }
+    for (QueryMeasure msr : getQueryMeasures()) {
+      carbonColumns[msr.getQueryOrder()] = msr.getMeasure();
+    }
+    return carbonColumns;
   }
 
   /**
@@ -233,9 +388,6 @@ public class QueryModel implements Serializable {
     return detailQuery;
   }
 
-  /**
-   * @param isdetailQuery the isdetailQuery to set
-   */
   public void setDetailQuery(boolean detailQuery) {
     this.detailQuery = detailQuery;
   }
@@ -331,9 +483,6 @@ public class QueryModel implements Serializable {
     return filterExpressionResolverTree;
   }
 
-  /**
-   * @param filterEvaluatorTree the filterEvaluatorTree to set
-   */
   public void setFilterExpressionResolverTree(FilterResolverIntf filterExpressionResolverTree) {
     this.filterExpressionResolverTree = filterExpressionResolverTree;
   }
@@ -378,6 +527,14 @@ public class QueryModel implements Serializable {
    */
   public void setTable(CarbonTable table) {
     this.table = table;
+  }
+
+  public boolean isForcedDetailRawQuery() {
+    return forcedDetailRawQuery;
+  }
+
+  public void setForcedDetailRawQuery(boolean forcedDetailRawQuery) {
+    this.forcedDetailRawQuery = forcedDetailRawQuery;
   }
 
 }

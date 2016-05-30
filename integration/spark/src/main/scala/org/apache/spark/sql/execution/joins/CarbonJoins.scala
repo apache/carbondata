@@ -21,7 +21,7 @@ package org.apache.spark.sql.execution.joins
 import scala.Array.canBuildFrom
 
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.CarbonCubeScan
+import org.apache.spark.sql.CarbonTableScan
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{BindReferences, Expression, Literal}
 import org.apache.spark.sql.execution.{BinaryNode, SparkPlan}
@@ -77,7 +77,7 @@ case class FilterPushJoin(
       case BuildRight => left
     }
 
-    val cubeScan = carbonScan.collectFirst { case a: CarbonCubeScan => a }
+    val cubeScan = carbonScan.collectFirst { case a: CarbonTableScan => a }
     if (cubeScan.isDefined) {
       cubeScan.get.addPushdownFilters(streamedKeys, filters, condition)
     }

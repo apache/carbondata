@@ -21,14 +21,13 @@ package org.carbondata.query.carbon.executor;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.model.QueryModel;
-import org.carbondata.query.carbon.result.RowResult;
 
 /**
  * Interface for carbon query executor.
  * Will be used to execute the query based on the query model
  * and will return the iterator over query result
  */
-public interface QueryExecutor {
+public interface QueryExecutor<E> {
 
   /**
    * Below method will be used to execute the query based on query model passed from driver
@@ -37,5 +36,5 @@ public interface QueryExecutor {
    * @return query result iterator
    * @throws QueryExecutionException if any failure while executing the query
    */
-  CarbonIterator<RowResult> execute(QueryModel queryModel) throws QueryExecutionException;
+  CarbonIterator<E> execute(QueryModel queryModel) throws QueryExecutionException;
 }

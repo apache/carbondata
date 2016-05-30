@@ -19,12 +19,16 @@ package org.apache.spark.sql
 
 import scala.collection.mutable.MutableList
 
+import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
 import org.apache.spark.sql.catalyst.trees.TreeNodeRef
 import org.apache.spark.sql.execution.command.tableModel
 import org.apache.spark.sql.hive.HiveContext
-import org.apache.spark.sql.types.{BooleanType, StringType, TimestampType}
+import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
+import org.apache.spark.sql.types.{BooleanType, DataType, StringType, TimestampType}
 
 import org.carbondata.spark.agg._
 
@@ -166,6 +170,35 @@ case class DescribeFormattedCommand(sql: String, tblIdentifier: Seq[String])
       AttributeReference("data_type", StringType, nullable = false)(),
       AttributeReference("comment", StringType, nullable = false)())
   }
+}
+
+case class CarbonDictionaryCatalystDecoder(
+    relations: Seq[CarbonDecoderRelation],
+    profile: CarbonProfile,
+    aliasMap: CarbonAliasDecoderRelation,
+    isOuter: Boolean,
+    child: LogicalPlan) extends UnaryNode {
+  override def output: Seq[Attribute] = child.output
+}
+
+abstract class CarbonProfile(attributes: Seq[Attribute]) extends Serializable{
+  def isEmpty: Boolean = attributes.isEmpty
+}
+case class IncludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attributes)
+case class ExcludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attributes)
+
+case class FakeCarbonCast(child: Literal, dataType: DataType)
+  extends LeafExpression with CodegenFallback {
+
+  override def toString: String = s"FakeCarbonCast($child as ${dataType.simpleString})"
+
+  override def checkInputDataTypes(): TypeCheckResult = {
+    TypeCheckResult.TypeCheckSuccess
+  }
+
+  override def nullable: Boolean = child.nullable
+
+  override def eval(input: InternalRow): Any = child.value
 }
 
 /**

@@ -17,8 +17,6 @@
 
 package org.carbondata.spark.util
 
-import scala.collection.JavaConverters._
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapred.JobConf
@@ -27,7 +25,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier
 import org.carbondata.hadoop.CarbonInputFormat
-import org.carbondata.lcm.status.SegmentStatusManager
 import org.carbondata.query.carbon.result.RowResult
 
 /**
@@ -38,18 +35,14 @@ object QueryPlanUtil {
   /**
    * createCarbonInputFormat from query model
    */
-  def createCarbonInputFormat(
-      absoluteTableIdentifier: AbsoluteTableIdentifier): (CarbonInputFormat[RowResult], Job) = {
+  def createCarbonInputFormat(absoluteTableIdentifier: AbsoluteTableIdentifier) :
+  (CarbonInputFormat[RowResult], Job) = {
     val carbonInputFormat = new CarbonInputFormat[RowResult]()
     val jobConf: JobConf = new JobConf(new Configuration)
     val job: Job = new Job(jobConf)
     FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getStorePath))
-    CarbonInputFormat.setTableToAccess(job, absoluteTableIdentifier.getCarbonTableIdentifier)
-
-    val validSegments = new SegmentStatusManager(absoluteTableIdentifier).getValidSegments
-    val validSegmentNos =
-      validSegments.listOfValidSegments.asScala.map(x => Integer.valueOf(x))
-    CarbonInputFormat.setSegmentsToAccess(job, validSegmentNos.asJava)
+    CarbonInputFormat.setTableToAccess(job.getConfiguration,
+      absoluteTableIdentifier.getCarbonTableIdentifier)
     (carbonInputFormat, job)
   }
 }

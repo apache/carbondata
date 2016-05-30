@@ -53,7 +53,7 @@ public class QueryRunner implements Callable<Void> {
     this.fileReader = FileFactory.getFileHolder(executionInfo.getFileType());
     // if detail query detail query processor will be used to process the
     // block
-    if (executionInfo.isDetailQuery()) {
+    if (executionInfo.isDetailQuery() || executionInfo.isRawRecordDetailQuery()) {
       dataBlockProcessor = new DetailQueryBlockProcessor(executionInfo, fileReader);
     } else {
       dataBlockProcessor = new AggregateQueryBlockProcessor(executionInfo, fileReader);

@@ -17,14 +17,20 @@
 
 package org.apache.spark.sql.hive
 
-import org.apache.spark.sql.{CarbonSqlParser, SQLContext, Strategy}
+import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 
 private[sql] object CarbonStrategy {
-  def getStrategy(context: SQLContext): Strategy = {
-    new CarbonStrategies(context).CarbonCubeScans
+  def getStrategy(context: SQLContext): Seq[Strategy] = {
+    val carbonStrategy = new CarbonStrategies(context)
+    if (context.conf.asInstanceOf[CarbonSQLConf].pushComputation) {
+      Seq(carbonStrategy.CarbonTableScans, carbonStrategy.DDLStrategies)
+    } else {
+      // TODO: need to remove duplicate code in strategies.
+      Seq(new CarbonRawStrategies(context).CarbonRawTableScans, carbonStrategy.DDLStrategies)
+    }
   }
 }
 

@@ -26,6 +26,7 @@
 package org.carbondata.spark
 
 import org.carbondata.core.load.LoadMetadataDetails
+import org.carbondata.query.carbon.result.BatchRawResult
 import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
 
 trait KeyVal[K, V] extends Serializable {
@@ -35,6 +36,15 @@ trait KeyVal[K, V] extends Serializable {
 
 class KeyValImpl extends KeyVal[CarbonKey, CarbonValue] {
   override def getKey(key: CarbonKey, value: CarbonValue): (CarbonKey, CarbonValue) = (key, value)
+}
+
+trait RawKeyVal[K, V] extends Serializable {
+  def getKey(key: BatchRawResult, value: Any): (K, V)
+
+}
+
+class RawKeyValImpl extends RawKeyVal[BatchRawResult, Any] {
+  override def getKey(key: BatchRawResult, value: Any): (BatchRawResult, Any) = (key, value)
 }
 
 trait Result[K, V] extends Serializable {

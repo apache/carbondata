@@ -52,196 +52,135 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
   val LOGGER = LogServiceFactory.getLogService("CarbonStrategies")
 
   def getStrategies: Seq[Strategy] = {
-    val total = sqlContext.planner.strategies :+ CarbonCubeScans
+    val total = sqlContext.planner.strategies :+ CarbonTableScans :+ DDLStrategies
     total
   }
 
   /**
    * Carbon strategies for Carbon cube scanning
    */
-  private[sql] object CarbonCubeScans extends Strategy {
+  private[sql] object CarbonTableScans extends Strategy {
 
-    def apply(plan: LogicalPlan): Seq[SparkPlan] = {
-      plan match {
-        case PhysicalOperation(projectList, predicates,
-        l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)) =>
-          carbonScan(projectList,
-            predicates,
-            carbonRelation.carbonRelation,
-            None,
-            None,
-            None,
-            isGroupByPresent = false,
-            detailQuery = true) :: Nil
+    def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
+      case PhysicalOperation(projectList, predicates,
+      l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)) =>
+        carbonScan(projectList,
+          predicates,
+          carbonRelation.carbonRelation,
+          None,
+          None,
+          None,
+          isGroupByPresent = false,
+          detailQuery = true) :: Nil
 
-        case Limit(IntegerLiteral(limit),
-        Sort(order, _,
-        p@PartialAggregation(namedGroupingAttributes,
-        rewrittenAggregateExpressions,
-        groupingExpressions,
-        partialComputation,
-        PhysicalOperation(
-        projectList,
-        predicates,
-        l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _))))) =>
-          val aggPlan = handleAggregation(plan, p, projectList, predicates, carbonRelation,
-            partialComputation, groupingExpressions, namedGroupingAttributes,
-            rewrittenAggregateExpressions)
-          org.apache.spark.sql.execution.TakeOrderedAndProject(limit,
-            order,
-            None,
-            aggPlan.head) :: Nil
+      case Limit(IntegerLiteral(limit),
+      Sort(order, _,
+      p@PartialAggregation(namedGroupingAttributes,
+      rewrittenAggregateExpressions,
+      groupingExpressions,
+      partialComputation,
+      PhysicalOperation(
+      projectList,
+      predicates,
+      l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _))))) =>
+        val aggPlan = handleAggregation(plan, p, projectList, predicates, carbonRelation,
+          partialComputation, groupingExpressions, namedGroupingAttributes,
+          rewrittenAggregateExpressions)
+        org.apache.spark.sql.execution.TakeOrderedAndProject(limit,
+          order,
+          None,
+          aggPlan.head) :: Nil
 
-        case Limit(IntegerLiteral(limit), p@PartialAggregation(
-        namedGroupingAttributes,
-        rewrittenAggregateExpressions,
-        groupingExpressions,
-        partialComputation,
-        PhysicalOperation(projectList, predicates,
-        l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)))) =>
-          val aggPlan = handleAggregation(plan, p, projectList, predicates, carbonRelation,
-            partialComputation, groupingExpressions, namedGroupingAttributes,
-            rewrittenAggregateExpressions)
-          org.apache.spark.sql.execution.Limit(limit, aggPlan.head) :: Nil
+      case Limit(IntegerLiteral(limit), p@PartialAggregation(
+      namedGroupingAttributes,
+      rewrittenAggregateExpressions,
+      groupingExpressions,
+      partialComputation,
+      PhysicalOperation(projectList, predicates,
+      l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)))) =>
+        val aggPlan = handleAggregation(plan, p, projectList, predicates, carbonRelation,
+          partialComputation, groupingExpressions, namedGroupingAttributes,
+          rewrittenAggregateExpressions)
+        org.apache.spark.sql.execution.Limit(limit, aggPlan.head) :: Nil
 
-        case PartialAggregation(
-        namedGroupingAttributes,
-        rewrittenAggregateExpressions,
-        groupingExpressions,
-        partialComputation,
-        PhysicalOperation(projectList, predicates,
-        l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _))) =>
-          handleAggregation(plan, plan, projectList, predicates, carbonRelation,
-            partialComputation, groupingExpressions, namedGroupingAttributes,
-            rewrittenAggregateExpressions)
+      case PartialAggregation(
+      namedGroupingAttributes,
+      rewrittenAggregateExpressions,
+      groupingExpressions,
+      partialComputation,
+      PhysicalOperation(projectList, predicates,
+      l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _))) =>
+        handleAggregation(plan, plan, projectList, predicates, carbonRelation,
+          partialComputation, groupingExpressions, namedGroupingAttributes,
+          rewrittenAggregateExpressions)
 
-        case Limit(IntegerLiteral(limit),
-        PhysicalOperation(projectList, predicates,
-        l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _))) =>
-          val (_, _, _, _, groupExprs, substitutesortExprs, limitExpr) = extractPlan(plan)
-          val s = carbonScan(projectList, predicates, carbonRelation.carbonRelation, groupExprs,
-            substitutesortExprs, limitExpr, isGroupByPresent = false, detailQuery = true)
-          org.apache.spark.sql.execution.Limit(limit, s) :: Nil
+      case Limit(IntegerLiteral(limit),
+      PhysicalOperation(projectList, predicates,
+      l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _))) =>
+        val (_, _, _, _, groupExprs, substitutesortExprs, limitExpr) = extractPlan(plan)
+        val s = carbonScan(projectList, predicates, carbonRelation.carbonRelation, groupExprs,
+          substitutesortExprs, limitExpr, isGroupByPresent = false, detailQuery = true)
+        org.apache.spark.sql.execution.Limit(limit, s) :: Nil
 
-        case Limit(IntegerLiteral(limit),
-        Sort(order, _,
-        PhysicalOperation(projectList, predicates,
-        l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)))) =>
-          val (_, _, _, _, groupExprs, substitutesortExprs, limitExpr) = extractPlan(plan)
-          val s = carbonScan(projectList, predicates, carbonRelation.carbonRelation, groupExprs,
-            substitutesortExprs, limitExpr, isGroupByPresent = false, detailQuery = true)
-          org.apache.spark.sql.execution.TakeOrderedAndProject(limit,
-            order,
-            None,
-            s) :: Nil
+      case Limit(IntegerLiteral(limit),
+      Sort(order, _,
+      PhysicalOperation(projectList, predicates,
+      l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)))) =>
+        val (_, _, _, _, groupExprs, substitutesortExprs, limitExpr) = extractPlan(plan)
+        val s = carbonScan(projectList, predicates, carbonRelation.carbonRelation, groupExprs,
+          substitutesortExprs, limitExpr, isGroupByPresent = false, detailQuery = true)
+        org.apache.spark.sql.execution.TakeOrderedAndProject(limit,
+          order,
+          None,
+          s) :: Nil
 
-        case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition,
-        PhysicalOperation(projectList, predicates,
-        l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)), right)
-          if canPushDownJoin(right, condition) =>
-          LOGGER.info(s"pushing down for ExtractEquiJoinKeys:right")
-          val carbon = carbonScan(projectList,
-            predicates,
-            carbonRelation.carbonRelation,
-            None,
-            None,
-            None,
-            isGroupByPresent = false,
-            detailQuery = true)
-          val pushedDownJoin = FilterPushJoin(
-            leftKeys: Seq[Expression],
-            rightKeys: Seq[Expression],
-            BuildRight,
-            carbon,
-            planLater(right),
-            condition)
+      case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition,
+      PhysicalOperation(projectList, predicates,
+      l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)), right)
+        if canPushDownJoin(right, condition) =>
+        LOGGER.info(s"pushing down for ExtractEquiJoinKeys:right")
+        val carbon = carbonScan(projectList,
+          predicates,
+          carbonRelation.carbonRelation,
+          None,
+          None,
+          None,
+          isGroupByPresent = false,
+          detailQuery = true)
+        val pushedDownJoin = FilterPushJoin(
+          leftKeys: Seq[Expression],
+          rightKeys: Seq[Expression],
+          BuildRight,
+          carbon,
+          planLater(right),
+          condition)
 
-          condition.map(Filter(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
+        condition.map(Filter(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
 
-        case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left,
-        PhysicalOperation(projectList, predicates,
-        l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)))
-          if canPushDownJoin(left, condition) =>
-          LOGGER.info(s"pushing down for ExtractEquiJoinKeys:left")
-          val carbon = carbonScan(projectList,
-            predicates,
-            carbonRelation.carbonRelation,
-            None,
-            None,
-            None,
-            isGroupByPresent = false,
-            detailQuery = true)
+      case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left,
+      PhysicalOperation(projectList, predicates,
+      l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)))
+        if canPushDownJoin(left, condition) =>
+        LOGGER.info(s"pushing down for ExtractEquiJoinKeys:left")
+        val carbon = carbonScan(projectList,
+          predicates,
+          carbonRelation.carbonRelation,
+          None,
+          None,
+          None,
+          isGroupByPresent = false,
+          detailQuery = true)
 
-          val pushedDownJoin = FilterPushJoin(
-            leftKeys: Seq[Expression],
-            rightKeys: Seq[Expression],
-            BuildLeft,
-            planLater(left),
-            carbon,
-            condition)
-          condition.map(Filter(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
+        val pushedDownJoin = FilterPushJoin(
+          leftKeys: Seq[Expression],
+          rightKeys: Seq[Expression],
+          BuildLeft,
+          planLater(left),
+          carbon,
+          condition)
+        condition.map(Filter(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
 
-        case ShowCubeCommand(schemaName) =>
-          ExecutedCommand(ShowAllTablesInSchema(schemaName, plan.output)) :: Nil
-        case c@ShowAllCubeCommand() =>
-          ExecutedCommand(ShowAllTables(plan.output)) :: Nil
-        case ShowCreateCubeCommand(cm) =>
-          ExecutedCommand(ShowCreateTable(cm, plan.output)) :: Nil
-        case ShowTablesDetailedCommand(schemaName) =>
-          ExecutedCommand(ShowAllTablesDetail(schemaName, plan.output)) :: Nil
-        case DropTable(tableName, ifNotExists)
-          if CarbonEnv.getInstance(sqlContext).carbonCatalog
-            .cubeExists(Seq(tableName))(sqlContext) =>
-          ExecutedCommand(DropCubeCommand(ifNotExists, None, tableName)) :: Nil
-        case ShowAggregateTablesCommand(schemaName) =>
-          ExecutedCommand(ShowAggregateTables(schemaName, plan.output)) :: Nil
-        case ShowLoadsCommand(schemaName, cube, limit) =>
-          ExecutedCommand(ShowLoads(schemaName, cube, limit, plan.output)) :: Nil
-        case LoadCube(schemaNameOp, cubeName, factPathFromUser, dimFilesPath,
-        partionValues, isOverwriteExist, inputSqlString) =>
-          val isCarbonTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
-            .cubeExists(schemaNameOp, cubeName)(sqlContext)
-          if (isCarbonTable || partionValues.nonEmpty) {
-            ExecutedCommand(LoadCube(schemaNameOp, cubeName, factPathFromUser,
-              dimFilesPath, partionValues, isOverwriteExist, inputSqlString)) :: Nil
-          } else {
-            ExecutedCommand(HiveNativeCommand(inputSqlString)) :: Nil
-          }
-        case d: HiveNativeCommand =>
-          try {
-            val resolvedTable = sqlContext.executePlan(CarbonHiveSyntax.parse(d.sql)).analyzed
-            planLater(resolvedTable) :: Nil
-          } catch {
-            case ce: MalformedCarbonCommandException =>
-              throw ce
-            case e: Exception => ExecutedCommand(d) :: Nil
-          }
-        case DescribeFormattedCommand(sql, tblIdentifier) =>
-          val isCube = CarbonEnv.getInstance(sqlContext).carbonCatalog
-            .cubeExists(tblIdentifier)(sqlContext)
-          if (isCube) {
-            val describe =
-              LogicalDescribeCommand(UnresolvedRelation(tblIdentifier, None), isExtended = false)
-            val resolvedTable = sqlContext.executePlan(describe.table).analyzed
-            val resultPlan = sqlContext.executePlan(resolvedTable).executedPlan
-            ExecutedCommand(DescribeCommandFormatted(resultPlan, plan.output, tblIdentifier)) :: Nil
-          }
-          else {
-            ExecutedCommand(DescribeNativeCommand(sql, plan.output)) :: Nil
-          }
-        case describe@LogicalDescribeCommand(table, isExtended) =>
-          val resolvedTable = sqlContext.executePlan(describe.table).analyzed
-          resolvedTable match {
-            case t: MetastoreRelation =>
-              ExecutedCommand(
-                DescribeHiveTableCommand(t, describe.output, describe.isExtended)) :: Nil
-            case o: LogicalPlan =>
-              val resultPlan = sqlContext.executePlan(o).executedPlan
-              ExecutedCommand(
-                RunnableDescribeCommand(resultPlan, describe.output, describe.isExtended)) :: Nil
-          }
-        case _ => Nil
-      }
+      case _ => Nil
     }
 
     def handleAggregation(plan: LogicalPlan,
@@ -348,7 +287,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
 
       if (!detailQuery) {
         val projectSet = AttributeSet(projectList.flatMap(_.references))
-        CarbonCubeScan(
+        CarbonTableScan(
           projectSet.toSeq,
           relation,
           predicates,
@@ -361,7 +300,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       else {
         val projectSet = AttributeSet(projectList.flatMap(_.references))
         Project(projectList,
-          CarbonCubeScan(projectSet.toSeq,
+          CarbonTableScan(projectSet.toSeq,
             relation,
             predicates,
             groupExprs,
@@ -390,6 +329,72 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         case others => others
       }
       (a, b, c, aliases, groupExprs, substitutesortExprs, limitExpr)
+    }
+  }
+
+  object DDLStrategies extends Strategy {
+    def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
+      case ShowCubeCommand(schemaName) =>
+        ExecutedCommand(ShowAllTablesInSchema(schemaName, plan.output)) :: Nil
+      case c@ShowAllCubeCommand() =>
+        ExecutedCommand(ShowAllTables(plan.output)) :: Nil
+      case ShowCreateCubeCommand(cm) =>
+        ExecutedCommand(ShowCreateTable(cm, plan.output)) :: Nil
+      case ShowTablesDetailedCommand(schemaName) =>
+        ExecutedCommand(ShowAllTablesDetail(schemaName, plan.output)) :: Nil
+      case DropTable(tableName, ifNotExists)
+        if CarbonEnv.getInstance(sqlContext).carbonCatalog
+          .cubeExists(Seq(tableName))(sqlContext) =>
+        ExecutedCommand(DropCubeCommand(ifNotExists, None, tableName)) :: Nil
+      case ShowAggregateTablesCommand(schemaName) =>
+        ExecutedCommand(ShowAggregateTables(schemaName, plan.output)) :: Nil
+      case ShowLoadsCommand(schemaName, cube, limit) =>
+        ExecutedCommand(ShowLoads(schemaName, cube, limit, plan.output)) :: Nil
+      case LoadCube(schemaNameOp, cubeName, factPathFromUser, dimFilesPath,
+      partionValues, isOverwriteExist, inputSqlString) =>
+        val isCarbonTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
+          .cubeExists(schemaNameOp, cubeName)(sqlContext)
+        if (isCarbonTable || partionValues.nonEmpty) {
+          ExecutedCommand(LoadCube(schemaNameOp, cubeName, factPathFromUser,
+            dimFilesPath, partionValues, isOverwriteExist, inputSqlString)) :: Nil
+        } else {
+          ExecutedCommand(HiveNativeCommand(inputSqlString)) :: Nil
+        }
+      case d: HiveNativeCommand =>
+        try {
+          val resolvedTable = sqlContext.executePlan(CarbonHiveSyntax.parse(d.sql)).analyzed
+          planLater(resolvedTable) :: Nil
+        } catch {
+          case ce: MalformedCarbonCommandException =>
+            throw ce
+          case e: Exception => ExecutedCommand(d) :: Nil
+        }
+      case DescribeFormattedCommand(sql, tblIdentifier) =>
+        val isCube = CarbonEnv.getInstance(sqlContext).carbonCatalog
+          .cubeExists(tblIdentifier)(sqlContext)
+        if (isCube) {
+          val describe =
+            LogicalDescribeCommand(UnresolvedRelation(tblIdentifier, None), isExtended = false)
+          val resolvedTable = sqlContext.executePlan(describe.table).analyzed
+          val resultPlan = sqlContext.executePlan(resolvedTable).executedPlan
+          ExecutedCommand(DescribeCommandFormatted(resultPlan, plan.output, tblIdentifier)) :: Nil
+        }
+        else {
+          ExecutedCommand(DescribeNativeCommand(sql, plan.output)) :: Nil
+        }
+      case describe@LogicalDescribeCommand(table, isExtended) =>
+        val resolvedTable = sqlContext.executePlan(describe.table).analyzed
+        resolvedTable match {
+          case t: MetastoreRelation =>
+            ExecutedCommand(
+              DescribeHiveTableCommand(t, describe.output, describe.isExtended)) :: Nil
+          case o: LogicalPlan =>
+            val resultPlan = sqlContext.executePlan(o).executedPlan
+            ExecutedCommand(
+              RunnableDescribeCommand(resultPlan, describe.output, describe.isExtended)) :: Nil
+        }
+      case _ =>
+        Nil
     }
   }
 

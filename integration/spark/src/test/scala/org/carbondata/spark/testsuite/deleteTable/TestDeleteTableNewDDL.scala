@@ -1,4 +1,4 @@
-package org.carbondata.integration.spark.testsuite.deleteTable
+package org.carbondata.spark.testsuite.deleteTable
 
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest

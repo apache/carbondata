@@ -37,7 +37,7 @@ import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.hadoop.CarbonInputFormat
 import org.carbondata.query.aggregator.impl.CountAggregator
-import org.carbondata.query.carbon.model.{QueryDimension, QueryMeasure, SortOrderType}
+import org.carbondata.query.carbon.model.{CarbonQueryPlan, QueryDimension, QueryMeasure, QueryModel, SortOrderType}
 import org.carbondata.query.carbon.result.RowResult
 import org.carbondata.query.expression.{ColumnExpression => CarbonColumnExpression}
 import org.carbondata.query.expression.{Expression => CarbonExpression}
@@ -49,11 +49,10 @@ import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
 import org.carbondata.spark.agg._
 import org.carbondata.spark.KeyVal
 import org.carbondata.spark.KeyValImpl
-import org.carbondata.spark.query.CarbonQueryPlan
 import org.carbondata.spark.rdd.CarbonQueryRDD
-import org.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil, QueryPlanUtil}
+import org.carbondata.spark.util.{CarbonScalaUtil, QueryPlanUtil}
 
-case class CarbonCubeScan(
+case class CarbonTableScan(
     var attributes: Seq[Attribute],
     relation: CarbonRelation,
     dimensionPredicates: Seq[Expression],
@@ -307,7 +306,6 @@ case class CarbonCubeScan(
       plan.getDimensions.clear()
       plan.getMeasures.clear()
       plan.getDimAggregatorInfos.clear()
-      plan.getExpressions.clear()
 
       // Fill the selected dimensions & measures obtained from
       // attributes to query plan  for detailed query
@@ -490,7 +488,7 @@ case class CarbonCubeScan(
     val absoluteTableIdentifier = new AbsoluteTableIdentifier(carbonCatalog.storePath,
       new CarbonTableIdentifier(carbonTable.getDatabaseName, carbonTable.getFactTableName))
 
-    val model = CarbonQueryUtil.createQueryModel(
+    val model = QueryModel.createModel(
       absoluteTableIdentifier, buildCarbonPlan, carbonTable)
     val kv: KeyVal[CarbonKey, CarbonValue] = new KeyValImpl()
     // setting queryid

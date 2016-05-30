@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.spark.load;
+package org.carbondata.core.writer.sortindex;
 
 import java.util.List;
 

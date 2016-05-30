@@ -211,6 +211,11 @@ public class BlockExecutionInfo {
   private FileType fileType;
 
   /**
+   * whether it needs only raw byte records with out aggregation.
+   */
+  private boolean isRawRecordDetailQuery;
+
+  /**
    * @return the tableBlock
    */
   public AbstractIndex getDataBlock() {
@@ -644,5 +649,13 @@ public class BlockExecutionInfo {
    */
   public void setFileType(FileType fileType) {
     this.fileType = fileType;
+  }
+
+  public boolean isRawRecordDetailQuery() {
+    return isRawRecordDetailQuery;
+  }
+
+  public void setRawRecordDetailQuery(boolean rawRecordDetailQuery) {
+    isRawRecordDetailQuery = rawRecordDetailQuery;
   }
 }

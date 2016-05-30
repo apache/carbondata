@@ -93,7 +93,7 @@ public abstract class AbstractScannedResultMerger implements ScannedResultMerger
    * for initializing the map based or list based result.
    */
   protected void initialiseResult() {
-    if (!blockExecutionInfo.isDetailQuery()) {
+    if (!blockExecutionInfo.isDetailQuery() && !blockExecutionInfo.isRawRecordDetailQuery()) {
       mergedScannedResult = new MapBasedResult();
     } else {
       mergedScannedResult = new ListBasedResult();

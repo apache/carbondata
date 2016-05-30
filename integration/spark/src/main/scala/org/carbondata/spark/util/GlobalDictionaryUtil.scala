@@ -46,10 +46,7 @@ import org.carbondata.core.reader.{CarbonDictionaryReader, CarbonDictionaryReade
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.core.util.CarbonUtil
 import org.carbondata.core.writer.{CarbonDictionaryWriter, CarbonDictionaryWriterImpl}
-import org.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter, CarbonDictionarySortIndexWriterImpl}
-import org.carbondata.format.TableInfo
-import org.carbondata.spark.load.CarbonDictionarySortInfo
-import org.carbondata.spark.load.CarbonDictionarySortInfoPreparator
+import org.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter, CarbonDictionarySortIndexWriterImpl, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
 import org.carbondata.spark.load.CarbonLoaderUtil
 import org.carbondata.spark.load.CarbonLoadModel
 import org.carbondata.spark.partition.reader.CSVWriter

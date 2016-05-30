@@ -20,7 +20,7 @@
 /**
  *
  */
-package org.carbondata.spark.query;
+package org.carbondata.query.carbon.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -30,11 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.query.carbon.model.DimensionAggregatorInfo;
-import org.carbondata.query.carbon.model.QueryDimension;
-import org.carbondata.query.carbon.model.QueryMeasure;
 import org.carbondata.query.expression.Expression;
-import org.carbondata.spark.query.metadata.CarbonQueryExpression;
 
 /**
  * This class contains all the logical information about the query like dimensions,measures,
@@ -79,12 +75,6 @@ public class CarbonQueryPlan implements Serializable {
       new ArrayList<QueryMeasure>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
   /**
-   * List of expressions. Sum(m1+10), Sum(m1)
-   */
-  private List<CarbonQueryExpression> expressions =
-      new ArrayList<CarbonQueryExpression>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-
-  /**
    * Limit
    */
   private int limit = -1;
@@ -121,6 +111,12 @@ public class CarbonQueryPlan implements Serializable {
   private boolean isCountStartQuery;
 
   private List<QueryDimension> sortedDimensions;
+
+  /**
+   * If it is raw detail query, no need to aggregate in backend. And it reurns with dictionary data
+   * with out decoding.
+   */
+  private boolean rawDetailQuery;
 
   /**
    * Constructor created with cube name.
@@ -256,19 +252,19 @@ public class CarbonQueryPlan implements Serializable {
     return dimAggregatorInfos;
   }
 
-  public void addExpression(CarbonQueryExpression expression) {
-    expressions.add(expression);
-  }
-
-  public List<CarbonQueryExpression> getExpressions() {
-    return expressions;
-  }
-
   public List<QueryDimension> getSortedDimemsions() {
     return sortedDimensions;
   }
 
   public void setSortedDimemsions(List<QueryDimension> dims) {
     this.sortedDimensions = dims;
+  }
+
+  public boolean isRawDetailQuery() {
+    return rawDetailQuery;
+  }
+
+  public void setRawDetailQuery(boolean rawDetailQuery) {
+    this.rawDetailQuery = rawDetailQuery;
   }
 }

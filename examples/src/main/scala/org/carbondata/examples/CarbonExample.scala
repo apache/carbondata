@@ -30,7 +30,7 @@ object CarbonExample {
 
     // get current directory:/examples
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
-      .getCanonicalPath
+                           .getCanonicalPath
 
     // specify parameters
     val storeLocation = currentDirectory + "/target/store"
@@ -39,8 +39,8 @@ object CarbonExample {
     val testData = currentDirectory + "/src/main/resources/data.csv"
 
     val sc = new SparkContext(new SparkConf()
-      .setAppName("CarbonExample")
-      .setMaster("local[2]"))
+                              .setAppName("CarbonExample")
+                              .setMaster("local[2]"))
     sc.setLogLevel("WARN")
 
     val cc = new CarbonContext(sc, storeLocation)

@@ -30,7 +30,7 @@ package org.carbondata.spark.partition.api;
 
 import java.util.List;
 
-import org.carbondata.spark.query.CarbonQueryPlan;
+import org.carbondata.query.carbon.model.CarbonQueryPlan;
 
 import org.apache.spark.sql.execution.command.Partitioner;
 

@@ -21,9 +21,11 @@ import scala.language.implicitConversions
 
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog}
+import org.apache.spark.sql.catalyst.optimizer.{DefaultOptimizer, Optimizer}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.PartitionData
 import org.apache.spark.sql.hive._
+import org.apache.spark.sql.optimizer.CarbonOptimizer
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.util.CarbonProperties
@@ -35,6 +37,8 @@ class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveCon
 
   var lastSchemaUpdatedTime = System.currentTimeMillis()
 
+  protected[sql] override lazy val conf: SQLConf = new CarbonSQLConf
+
   @transient
   override lazy val catalog = {
     CarbonProperties.getInstance().addProperty("carbon.storelocation", storePath)
@@ -44,9 +48,13 @@ class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveCon
   @transient
   override protected[sql] lazy val analyzer = new Analyzer(catalog, functionRegistry, conf)
 
+  @transient
+  override protected[sql] lazy val optimizer: Optimizer =
+    new CarbonOptimizer(DefaultOptimizer, conf)
+
   override protected[sql] def dialectClassName = classOf[CarbonSQLDialect].getCanonicalName
 
-  experimental.extraStrategies = CarbonStrategy.getStrategy(self) :: Nil
+  experimental.extraStrategies = CarbonStrategy.getStrategy(self)
 
   @transient
   val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)
@@ -60,7 +68,7 @@ class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveCon
     val sqlString = sql.toUpperCase
     LOGGER.info(s"Query [$sqlString]")
     val logicPlan: LogicalPlan = parseSql(sql)
-    val result = new CarbonDataFrameRDD(sql: String, this, logicPlan)
+    val result = new CarbonDataFrameRDD(this, logicPlan)
 
     // We force query optimization to happen right away instead of letting it happen lazily like
     // when using the query DSL.  This is so DDL commands behave as expected.  This is only

@@ -35,7 +35,6 @@ import org.carbondata.query.carbon.executor.QueryExecutorFactory
 import org.carbondata.query.carbon.model.QueryModel
 import org.carbondata.query.carbon.result.RowResult
 import org.carbondata.query.expression.Expression
-import org.carbondata.query.filter.resolver.FilterResolverIntf
 import org.carbondata.spark.KeyVal
 import org.carbondata.spark.load.CarbonLoaderUtil
 import org.carbondata.spark.util.QueryPlanUtil
@@ -76,16 +75,14 @@ class CarbonQueryRDD[K, V](
       QueryPlanUtil.createCarbonInputFormat(queryModel.getAbsoluteTableIdentifier)
 
     val result = new util.ArrayList[Partition](defaultParallelism)
-    val validSegments = job.getConfiguration.get(CarbonInputFormat.INPUT_SEGMENT_NUMBERS)
-    if (!validSegments.isEmpty) {
-      var filterResolver: FilterResolverIntf = null
-      if (filterExpression != null) {
-        // set filter resolver tree
-        filterResolver = carbonInputFormat.getResolvedFilter(job, filterExpression)
-        queryModel.setFilterExpressionResolverTree(filterResolver)
-      }
-      // get splits
-      val splits = carbonInputFormat.getSplits(job, filterResolver)
+      // set filter resolver tree
+    var filterResolver = carbonInputFormat
+      .getResolvedFilter(job.getConfiguration, filterExpression)
+    CarbonInputFormat.setFilterPredicates(job.getConfiguration, filterResolver)
+    queryModel.setFilterExpressionResolverTree(filterResolver)
+    // get splits
+    val splits = carbonInputFormat.getSplits(job)
+    if (!splits.isEmpty) {
       val carbonInputSplits = splits.asScala.map(_.asInstanceOf[CarbonInputSplit])
 
       val blockList = carbonInputSplits.map(inputSplit =>
@@ -159,6 +156,7 @@ class CarbonQueryRDD[K, V](
           }
           // execute query
           rowIterator = QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel)
+            .asInstanceOf[CarbonIterator[RowResult]]
         }
         // TODO
         // : CarbonQueryUtil.isQuickFilter quick filter from dictionary needs to support

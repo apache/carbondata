@@ -82,7 +82,7 @@ public abstract class AbstractDataBlockProcessor implements BlockProcessor {
       blockletScanner = new NonFilterScanner(blockExecutionInfo);
     }
 
-    if (blockExecutionInfo.isDetailQuery()) {
+    if (blockExecutionInfo.isDetailQuery() || blockExecutionInfo.isRawRecordDetailQuery()) {
       this.scannerResultAggregator =
           new ListBasedResultAggregator(blockExecutionInfo, new DataAggregator(blockExecutionInfo));
     } else {

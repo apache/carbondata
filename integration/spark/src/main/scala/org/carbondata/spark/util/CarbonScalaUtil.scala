@@ -19,11 +19,13 @@ package org.carbondata.spark.util
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonContext, CarbonEnv, CarbonRelation, SchemaRDD}
+import org.apache.spark.sql._
 import org.apache.spark.sql.execution.command.Level
-import org.apache.spark.sql.hive.CarbonMetaData
+import org.apache.spark.sql.hive.{CarbonMetaData, DictionaryMap}
 import org.apache.spark.sql.types._
 
+import org.carbondata.core.carbon.metadata.datatype.DataType
+import org.carbondata.core.carbon.metadata.encoder.Encoding
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.query.expression.{DataType => CarbonDataType}
@@ -91,6 +93,18 @@ object CarbonScalaUtil {
     }
   }
 
+  def convertCarbonToSparkDataType(dataType: DataType): types.DataType = {
+    dataType match {
+      case DataType.STRING => StringType
+      case DataType.INT => IntegerType
+      case DataType.LONG => LongType
+      case DataType.DOUBLE => DoubleType
+      case DataType.BOOLEAN => BooleanType
+      case DataType.DECIMAL => DecimalType.SYSTEM_DEFAULT
+      case DataType.TIMESTAMP => TimestampType
+    }
+  }
+
 
   case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
 
@@ -106,12 +120,16 @@ object CarbonScalaUtil {
 
     def createSparkMeta(carbonTable: CarbonTable): CarbonMetaData = {
       val dimensionsAttr = carbonTable.getDimensionByTableName(carbonTable.getFactTableName)
-        .asScala.map(x => x.getColName) // wf : may be problem
+                           .asScala.map(x => x.getColName) // wf : may be problem
       val measureAttr = carbonTable.getMeasureByTableName(carbonTable.getFactTableName)
-          .asScala.map(x => x.getColName)
-      CarbonMetaData(dimensionsAttr, measureAttr, carbonTable)
+                        .asScala.map(x => x.getColName)
+      val dictionary =
+        carbonTable.getDimensionByTableName(carbonTable.getFactTableName).asScala.map { f =>
+        (f.getColName.toLowerCase,
+          f.hasEncoding(Encoding.DICTIONARY) && !f.hasEncoding(Encoding.DIRECT_DICTIONARY))
+      }
+      CarbonMetaData(dimensionsAttr, measureAttr, carbonTable, DictionaryMap(dictionary.toMap))
     }
-
   }
 
 }

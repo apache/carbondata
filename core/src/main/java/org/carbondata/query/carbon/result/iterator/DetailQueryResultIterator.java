@@ -18,32 +18,27 @@
  */
 package org.carbondata.query.carbon.result.iterator;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.carbon.datastore.DataRefNode;
-import org.carbondata.core.carbon.datastore.DataRefNodeFinder;
-import org.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.iterator.CarbonIterator;
-import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.impl.QueryExecutorProperties;
-import org.carbondata.query.carbon.executor.impl.QueryResultPreparator;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.carbon.result.BatchResult;
 import org.carbondata.query.carbon.result.Result;
+import org.carbondata.query.carbon.result.preparator.QueryResultPreparator;
+import org.carbondata.query.carbon.result.preparator.impl.QueryResultPreparatorImpl;
 
 /**
  * In case of detail query we cannot keep all the records in memory so for
  * executing that query are returning a iterator over block and every time next
  * call will come it will execute the block and return the result
  */
-public class DetailQueryResultIterator extends CarbonIterator<BatchResult> {
+public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator<BatchResult> {
 
   /**
    * LOGGER.
@@ -54,98 +49,14 @@ public class DetailQueryResultIterator extends CarbonIterator<BatchResult> {
   /**
    * to prepare the result
    */
-  private QueryResultPreparator queryResultPreparator;
+  private QueryResultPreparator<BatchResult> queryResultPreparator;
 
-  /**
-   * execution info of the block
-   */
-  private List<BlockExecutionInfo> blockExecutionInfos;
-
-  /**
-   * executor which will execute the query
-   */
-  private InternalQueryExecutor executor;
-
-  /**
-   * number of cores which can be used
-   */
-  private long numberOfCores;
-
-  /**
-   * keep track of number of blocklet per block
-   */
-  private long[] totalNumberBlockletPerSlice;
-
-  /**
-   * total number of blocklet to be executed
-   */
-  private long totalNumberOfNode;
-
-  /**
-   * current counter to check how blocklet has been executed
-   */
-  private long currentCounter;
-
-  /**
-   * keep the track of number of blocklet of a block has been executed
-   */
-  private long[] numberOfBlockletExecutedPerBlock;
-
-  /**
-   * block index to be executed
-   */
-  private int[] blockIndexToBeExecuted;
 
   public DetailQueryResultIterator(List<BlockExecutionInfo> infos,
       QueryExecutorProperties executerProperties, QueryModel queryModel,
       InternalQueryExecutor queryExecutor) {
-    this.queryResultPreparator = new QueryResultPreparator(executerProperties, queryModel);
-    int recordSize = 0;
-    String defaultInMemoryRecordsSize =
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.INMEMORY_REOCRD_SIZE);
-    if (null != defaultInMemoryRecordsSize) {
-      try {
-        recordSize = Integer.parseInt(defaultInMemoryRecordsSize);
-      } catch (NumberFormatException ne) {
-        LOGGER.error("Invalid inmemory records size. Using default value");
-        recordSize = CarbonCommonConstants.INMEMORY_REOCRD_SIZE_DEFAULT;
-      }
-    }
-    this.numberOfCores = recordSize / Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
-    if (numberOfCores == 0) {
-      numberOfCores++;
-    }
-    executor = queryExecutor;
-    this.blockExecutionInfos = infos;
-    this.blockIndexToBeExecuted = new int[(int) numberOfCores];
-    intialiseInfos();
-  }
-
-  private void intialiseInfos() {
-    this.totalNumberBlockletPerSlice = new long[blockExecutionInfos.size()];
-    this.numberOfBlockletExecutedPerBlock = new long[blockExecutionInfos.size()];
-    int index = -1;
-    for (BlockExecutionInfo blockInfo : blockExecutionInfos) {
-      ++index;
-      DataRefNodeFinder finder = new BTreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
-      DataRefNode startDataBlock = finder
-          .findFirstDataBlock(blockInfo.getDataBlock().getDataRefNode(), blockInfo.getStartKey());
-      DataRefNode endDataBlock = finder
-          .findLastDataBlock(blockInfo.getDataBlock().getDataRefNode(), blockInfo.getEndKey());
-
-      this.totalNumberBlockletPerSlice[index] =
-          endDataBlock.nodeNumber() - startDataBlock.nodeNumber() + 1;
-      totalNumberOfNode += this.totalNumberBlockletPerSlice[index];
-      blockInfo.setFirstDataBlock(startDataBlock);
-      blockInfo.setNumberOfBlockToScan(1);
-    }
-
-  }
-
-  @Override public boolean hasNext() {
-    return currentCounter < totalNumberOfNode;
+    super(infos, executerProperties, queryModel, queryExecutor);
+    this.queryResultPreparator = new QueryResultPreparatorImpl(executerProperties, queryModel);
   }
 
   @Override public BatchResult next() {
@@ -166,7 +77,7 @@ public class DetailQueryResultIterator extends CarbonIterator<BatchResult> {
     if (null != result) {
       Result next = result.next();
       if (next.size() > 0) {
-        return queryResultPreparator.getQueryResult(next);
+        return queryResultPreparator.prepareQueryResult(next);
       } else {
         return new BatchResult();
       }
@@ -174,24 +85,4 @@ public class DetailQueryResultIterator extends CarbonIterator<BatchResult> {
       return new BatchResult();
     }
   }
-
-  private void updateSliceIndexToBeExecuted() {
-    Arrays.fill(blockIndexToBeExecuted, -1);
-    int currentSliceIndex = 0;
-    int i = 0;
-    for (; i < (int) numberOfCores; ) {
-      if (this.totalNumberBlockletPerSlice[currentSliceIndex]
-          > this.numberOfBlockletExecutedPerBlock[currentSliceIndex]) {
-        this.numberOfBlockletExecutedPerBlock[currentSliceIndex]++;
-        blockIndexToBeExecuted[i] = currentSliceIndex;
-        i++;
-      }
-      currentSliceIndex++;
-      if (currentSliceIndex >= totalNumberBlockletPerSlice.length) {
-        break;
-      }
-    }
-    currentCounter += i;
-  }
-
 }

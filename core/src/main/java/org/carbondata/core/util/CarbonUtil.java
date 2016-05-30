@@ -1647,5 +1647,25 @@ public final class CarbonUtil {
     return total;
   }
 
+  /**
+   * Find the dimension from metadata by using unique name. As of now we are
+   * taking level name as unique name. But user needs to give one unique name
+   * for each level,that level he needs to mention in query.
+   *
+   * @param dimensions
+   * @param carbonDim
+   * @return
+   */
+  public static CarbonDimension findDimension(List<CarbonDimension> dimensions, String carbonDim) {
+    CarbonDimension findDim = null;
+    for (CarbonDimension dimension : dimensions) {
+      if (dimension.getColName().equalsIgnoreCase(carbonDim)) {
+        findDim = dimension;
+        break;
+      }
+    }
+    return findDim;
+  }
+
 }
 

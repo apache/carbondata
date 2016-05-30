@@ -35,7 +35,7 @@ import org.carbondata.query.carbon.result.iterator.DetailQueryResultIterator;
  * For executing the detail query it will pass all the block execution
  * info to detail query result iterator and iterator will be returned
  */
-public class DetailQueryExecutor extends AbstractQueryExecutor {
+public class DetailQueryExecutor extends AbstractQueryExecutor<RowResult> {
 
   @Override public CarbonIterator<RowResult> execute(QueryModel queryModel)
       throws QueryExecutionException {

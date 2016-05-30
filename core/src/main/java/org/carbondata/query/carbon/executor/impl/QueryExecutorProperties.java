@@ -45,39 +45,39 @@ public class QueryExecutorProperties {
    * holds the information required for updating the order block
    * dictionary key
    */
-  protected KeyStructureInfo keyStructureInfo;
+  public KeyStructureInfo keyStructureInfo;
 
   /**
    * as we have multiple type of column aggregation like
    * dimension,expression,measure so this will be used to for getting the
    * measure aggregation start index
    */
-  protected int measureStartIndex;
+  public int measureStartIndex;
 
   /**
    * query like count(1),count(*) ,etc will used this parameter
    */
-  protected boolean isFunctionQuery;
+  public boolean isFunctionQuery;
 
   /**
    * aggExpressionStartIndex
    */
-  protected int aggExpressionStartIndex;
+  public int aggExpressionStartIndex;
 
   /**
    * index of the dimension which is present in the order by
    * in a query
    */
-  protected byte[] sortDimIndexes;
+  public byte[] sortDimIndexes;
 
   /**
    * aggregator class selected for all aggregation function selected in query
    */
-  protected MeasureAggregator[] measureAggregators;
+  public MeasureAggregator[] measureAggregators;
 
   /**
    * this will hold the information about the dictionary dimension
    * which to
    */
-  protected Map<String, Dictionary> columnToDictionayMapping;
+  public Map<String, Dictionary> columnToDictionayMapping;
 }

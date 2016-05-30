@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.carbon.executor.impl;
+package org.carbondata.query.carbon.result.preparator.impl;
 
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
@@ -35,6 +35,7 @@ import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.impl.CountAggregator;
 import org.carbondata.query.aggregator.impl.DistinctCountAggregator;
 import org.carbondata.query.aggregator.impl.DistinctStringCountAggregator;
+import org.carbondata.query.carbon.executor.impl.QueryExecutorProperties;
 import org.carbondata.query.carbon.model.DimensionAggregatorInfo;
 import org.carbondata.query.carbon.model.QueryDimension;
 import org.carbondata.query.carbon.model.QueryMeasure;
@@ -59,27 +60,17 @@ import org.carbondata.query.scanner.impl.CarbonValue;
  * for example its implementation case return converted result or directly result with out
  * converting to actual value
  */
-public class QueryResultPreparator {
+public class QueryResultPreparatorImpl extends AbstractQueryResultPreparator<BatchResult> {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(QueryResultPreparator.class.getName());
+      LogServiceFactory.getLogService(QueryResultPreparatorImpl.class.getName());
 
-  /**
-   * query properties
-   */
-  private QueryExecutorProperties queryExecuterProperties;
-
-  /**
-   * query model
-   */
-  private QueryModel queryModel;
-
-  public QueryResultPreparator(QueryExecutorProperties executerProperties, QueryModel queryModel) {
-    this.queryExecuterProperties = executerProperties;
-    this.queryModel = queryModel;
+  public QueryResultPreparatorImpl(QueryExecutorProperties executerProperties,
+      QueryModel queryModel) {
+    super(executerProperties, queryModel);
   }
 
-  public BatchResult getQueryResult(Result scannedResult) {
+  @Override public BatchResult prepareQueryResult(Result scannedResult) {
     if ((null == scannedResult || scannedResult.size() < 1)) {
       return new BatchResult();
     }
@@ -249,46 +240,6 @@ public class QueryResultPreparator {
     }
     LOGGER.info("###########################################------ Total Number of records"
             + resultDataA[0].length);
-    BatchResult chunkResult = new BatchResult();
-    chunkResult.setKeys(keys);
-    chunkResult.setValues(values);
-    return chunkResult;
-  }
-
-  private void fillMeasureValueForAggGroupByQuery(QueryModel queryModel, Object[][] surrogateResult,
-      int dimensionCount, int columnIndex, MeasureAggregator[] v) {
-    int msrCount = queryModel.getQueryMeasures().size();
-    for (int i = 0; i < msrCount; i++) {
-      v[queryExecuterProperties.measureStartIndex + i] =
-          ((MeasureAggregator) surrogateResult[dimensionCount
-              + queryExecuterProperties.measureStartIndex + i][columnIndex]);
-    }
-  }
-
-  private Object[][] encodeToRows(Object[][] data) {
-    if (data.length == 0) {
-      return data;
-    }
-    Object[][] rData = new Object[data[0].length][data.length];
-    int len = data.length;
-    for (int i = 0; i < rData.length; i++) {
-      for (int j = 0; j < len; j++) {
-        rData[i][j] = data[j][i];
-      }
-    }
-    return rData;
-  }
-
-  private BatchResult getEmptyChunkResult(int size) {
-    List<CarbonKey> keys = new ArrayList<CarbonKey>(size);
-    List<CarbonValue> values = new ArrayList<CarbonValue>(size);
-    Object[] row = new Object[1];
-    for (int i = 0; i < size; i++)
-
-    {
-      values.add(new CarbonValue(new MeasureAggregator[0]));
-      keys.add(new CarbonKey(row));
-    }
     BatchResult chunkResult = new BatchResult();
     chunkResult.setKeys(keys);
     chunkResult.setValues(values);

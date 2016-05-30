@@ -33,7 +33,7 @@ import org.carbondata.query.carbon.result.iterator.ChunkRowIterator;
 /**
  * Below class will be used to execute the aggregation query
  */
-public class AggregationQueryExecutor extends AbstractQueryExecutor {
+public class AggregationQueryExecutor extends AbstractQueryExecutor<RowResult> {
 
   @Override public CarbonIterator<RowResult> execute(QueryModel queryModel)
       throws QueryExecutionException {

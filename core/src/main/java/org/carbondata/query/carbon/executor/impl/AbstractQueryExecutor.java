@@ -62,7 +62,7 @@ import org.apache.commons.lang3.ArrayUtils;
  * interface to minimize the effort required to implement this interface. This
  * will be used to prepare all the properties required for query execution
  */
-public abstract class AbstractQueryExecutor implements QueryExecutor {
+public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(AbstractQueryExecutor.class.getName());
@@ -254,6 +254,8 @@ public abstract class AbstractQueryExecutor implements QueryExecutor {
     blockExecutionInfo.setLimit(queryModel.getLimit());
     // setting whether detail query or not
     blockExecutionInfo.setDetailQuery(queryModel.isDetailQuery());
+    // setting whether raw record query or not
+    blockExecutionInfo.setRawRecordDetailQuery(queryModel.isForcedDetailRawQuery());
     // setting the masked byte of the block which will be
     // used to update the unpack the older block keys
     blockExecutionInfo.setMaskedByteForBlock(maksedByte);

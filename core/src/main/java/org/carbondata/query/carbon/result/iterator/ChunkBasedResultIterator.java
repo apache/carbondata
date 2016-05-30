@@ -21,10 +21,11 @@ package org.carbondata.query.carbon.result.iterator;
 
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.carbon.executor.impl.QueryExecutorProperties;
-import org.carbondata.query.carbon.executor.impl.QueryResultPreparator;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.carbon.result.BatchResult;
 import org.carbondata.query.carbon.result.Result;
+import org.carbondata.query.carbon.result.preparator.QueryResultPreparator;
+import org.carbondata.query.carbon.result.preparator.impl.QueryResultPreparatorImpl;
 
 /**
  * Iterator over chunk result
@@ -34,7 +35,7 @@ public class ChunkBasedResultIterator extends CarbonIterator<BatchResult> {
   /**
    * query result prepartor which will be used to create a query result
    */
-  private QueryResultPreparator queryResultPreparator;
+  private QueryResultPreparator<BatchResult> queryResultPreparator;
 
   /**
    * iterator over result
@@ -44,7 +45,7 @@ public class ChunkBasedResultIterator extends CarbonIterator<BatchResult> {
   public ChunkBasedResultIterator(CarbonIterator<Result> queryResultIterator,
       QueryExecutorProperties executerProperties, QueryModel queryModel) {
     this.queryResultIterator = queryResultIterator;
-    this.queryResultPreparator = new QueryResultPreparator(executerProperties, queryModel);
+    this.queryResultPreparator = new QueryResultPreparatorImpl(executerProperties, queryModel);
 
   }
 
@@ -64,7 +65,7 @@ public class ChunkBasedResultIterator extends CarbonIterator<BatchResult> {
    * @return the next element in the iteration
    */
   @Override public BatchResult next() {
-    return queryResultPreparator.getQueryResult(queryResultIterator.next());
+    return queryResultPreparator.prepareQueryResult(queryResultIterator.next());
   }
 
 }
