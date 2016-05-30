@@ -492,8 +492,14 @@ public class BlockDataHandler {
             ValueMetaInterface sourceValueMeta =
                 data.convertRowMeta.getValueMeta(outputIndex);
             try {
-              outputRowData[outputIndex++] =
+              // when found a blank line, outputRowData will be filled as
+              // Object array = ["@NU#LL$!BLANKLINE", null, null, ... ]
+              if (field.length == 0 && newLineFound && outputIndex == 0) {
+                outputRowData[outputIndex++] = CarbonCommonConstants.BLANK_LINE_FLAG;
+              } else {
+                outputRowData[outputIndex++] =
                   sourceValueMeta.convertBinaryStringToNativeType(field);
+              }
             } catch (KettleValueException e) {
               // There was a conversion error,
               //

@@ -455,8 +455,12 @@ public class CsvInput extends BaseStep implements StepInterface {
             if (blockDataHandler.currentOffset <= blockDetails.getBlockLength()) {
               out = blockDataHandler.readOneRow(true);
               if (out != null) {
-                synchronized (putRowLock) {
-                  putRow(data.outputRowMeta, out);
+                if (!CarbonCommonConstants.BLANK_LINE_FLAG.equals(out[0])) {
+                  synchronized (putRowLock) {
+                    putRow(data.outputRowMeta, out);
+                  }
+                } else {
+                  LOGGER.warn("Found a bad record, it is a blank line. Skip it !");
                 }
               }
             }
