@@ -221,6 +221,15 @@ public final class CarbonDataMergerUtil {
   public static boolean checkIfLoadMergingRequired(String metadataFilePath,
       CarbonLoadModel carbonLoadModel, String storeLocation, int partition,
       int currentRestructNumber) {
+    //load merge is not supported as per new store format
+    //moving the load merge check in early to avoid unnecessary load listing casusing IOException
+    String isLoadMergeEnabled = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.ENABLE_LOAD_MERGE,
+            CarbonCommonConstants.DEFAULT_ENABLE_LOAD_MERGE);
+
+    if (isLoadMergeEnabled.equalsIgnoreCase("false")) {
+      return false;
+    }
 
     String loadPath = LoadMetadataUtil
         .createLoadFolderPath(carbonLoadModel, storeLocation, 0, currentRestructNumber);
@@ -237,14 +246,6 @@ public final class CarbonDataMergerUtil {
         return false;
       }
     });
-
-    String isLoadMergeEnabled = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_LOAD_MERGE,
-            CarbonCommonConstants.DEFAULT_ENABLE_LOAD_MERGE);
-
-    if (isLoadMergeEnabled.equalsIgnoreCase("false")) {
-      return false;
-    }
 
     int mergeThreshold;
     try {
