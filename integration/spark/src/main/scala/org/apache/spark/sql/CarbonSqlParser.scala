@@ -362,7 +362,18 @@ class CarbonSqlParser()
         case list@Token("TOK_TABCOLLIST", _) =>
           val cols = BaseSemanticAnalyzer.getColumns(list, true)
           if (cols != null) {
-
+            val dupColsGrp = cols.asScala
+              .groupBy(x => x.getName) filter { case (_, colList) => colList
+              .size > 1
+            }
+            if (dupColsGrp.size > 0) {
+              var columnName: String = ""
+              dupColsGrp.toSeq.foreach(columnName += _._1 + ", ")
+              columnName = columnName.substring(0, columnName.lastIndexOf(", "))
+              val errorMessage = "Duplicate column name: " + columnName + " found in table " +
+                ".Please check create table statement."
+              throw new MalformedCarbonCommandException(errorMessage)
+            }
             cols.asScala.map { col =>
               val columnName = col.getName()
               val dataType = Option(col.getType)

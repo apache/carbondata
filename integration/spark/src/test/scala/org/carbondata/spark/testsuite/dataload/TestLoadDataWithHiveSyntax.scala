@@ -105,7 +105,17 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
         "'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
     sql("drop table if exists complexcarbontable")
   }
-  
+
+  test("test duplicate column validation"){
+    try{
+        sql("create table duplicateColTest(col1 string, Col1 string)")
+    }
+    catch {
+      case e : Exception => {
+        assert(e.getMessage.contains("Duplicate column name"))
+      }
+    }
+  }
   test("complex types data loading with hive column having more than required column values") {
     sql("create table complexcarbontable(deviceInformationId int, channelsId string,"+ 
         "ROMSize string, purchasedate string, mobile struct<imei:string, imsi:string>,"+
