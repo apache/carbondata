@@ -31,6 +31,7 @@ public abstract class BinaryExpression extends Expression {
 
   protected Expression left;
   protected Expression right;
+  protected boolean isRangeExpression;
 
   public BinaryExpression(Expression left, Expression right) {
     this.left = left;
@@ -45,6 +46,14 @@ public abstract class BinaryExpression extends Expression {
 
   public Expression getRight() {
     return right;
+  }
+
+  public boolean isRangeExpression() {
+    return isRangeExpression;
+  }
+
+  public void setRangeExpression(boolean isRangeExpression) {
+    this.isRangeExpression = isRangeExpression;
   }
 
 }

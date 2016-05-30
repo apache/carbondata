@@ -30,7 +30,7 @@ import org.carbondata.query.expression.conditional.ConditionalExpression
 import org.carbondata.query.expression.exception.FilterUnsupportedException
 import org.carbondata.spark.util.CarbonScalaUtil
 
-class SparkUnknownExpression(sparkExp: SparkExpression)
+ class SparkUnknownExpression(sparkExp: SparkExpression)
   extends Expression with ConditionalExpression {
 
   children.addAll(getColumnList())
@@ -75,6 +75,11 @@ class SparkUnknownExpression(sparkExp: SparkExpression)
 
     val lst = new java.util.ArrayList[ColumnExpression]()
     getColumnListFromExpressionTree(sparkExp, lst)
+    lst
+  }
+    def getLiterals(): java.util.List[ExpressionResult] = {
+
+    val lst = new java.util.ArrayList[ExpressionResult]()
     lst
   }
 

@@ -41,6 +41,11 @@ public class LiteralExpression extends LeafExpression {
     return expressionResult;
   }
 
+  public ExpressionResult getExpressionResult() {
+    ExpressionResult expressionResult = new ExpressionResult(dataType, this.value);
+    return expressionResult;
+  }
+
   @Override public ExpressionType getFilterExpressionType() {
     // TODO Auto-generated method stub
     return ExpressionType.LITERAL;

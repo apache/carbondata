@@ -19,9 +19,9 @@
 package org.carbondata.query.filter.resolver;
 
 import java.util.List;
+import java.util.SortedMap;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.expression.ColumnExpression;
@@ -180,9 +180,9 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
    *
    * @return IndexKey.
    */
-  @Override public IndexKey getstartKey(SegmentProperties segmentProperties) {
-    // TODO Auto-generated method stub
-    return null;
+  @Override public void getstartKey(SegmentProperties segmentProperties, long[] startKeys,
+      SortedMap<Integer, byte[]> noDicStartKeys) {
+
   }
 
   /**
@@ -191,10 +191,9 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
    *
    * @return IndexKey.
    */
-  @Override public IndexKey getEndKey(SegmentProperties segmentProperties,
-      AbsoluteTableIdentifier tableIdentifier) {
-    // TODO Auto-generated method stub
-    return null;
+  @Override public void getEndKey(SegmentProperties segmentProperties,
+      AbsoluteTableIdentifier tableIdentifier, long[] endKeys,
+      SortedMap<Integer, byte[]> noDicEndKeys) {
   }
 
   /**
@@ -204,5 +203,10 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
    */
   @Override public FilterExecuterType getFilterExecuterType() {
     return FilterExecuterType.RESTRUCTURE;
+  }
+
+  @Override public Expression getFilterExpression() {
+    // TODO Auto-generated method stub
+    return exp;
   }
 }

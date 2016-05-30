@@ -22,8 +22,19 @@ package org.carbondata.query.filters.measurefilter.util;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
@@ -56,7 +67,14 @@ import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
-import org.carbondata.query.filter.executer.*;
+import org.carbondata.query.filter.executer.AndFilterExecuterImpl;
+import org.carbondata.query.filter.executer.ExcludeFilterExecuterImpl;
+import org.carbondata.query.filter.executer.FilterExecuter;
+import org.carbondata.query.filter.executer.IncludeFilterExecuterImpl;
+import org.carbondata.query.filter.executer.OrFilterExecuterImpl;
+import org.carbondata.query.filter.executer.RestructureFilterExecuterImpl;
+import org.carbondata.query.filter.executer.RowLevelFilterExecuterImpl;
+import org.carbondata.query.filter.executer.RowLevelRangeTypeExecuterFacory;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 import org.carbondata.query.filter.resolver.RowLevelFilterResolverImpl;
 import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
@@ -101,19 +119,22 @@ public final class FilterUtil {
       case RESTRUCTURE:
         return new RestructureFilterExecuterImpl(
             filterExpressionResolverTree.getDimColResolvedFilterInfo(), blockKeyGenerator);
+      case ROWLEVEL_LESSTHAN:
+      case ROWLEVEL_LESSTHAN_EQUALTO:
+      case ROWLEVEL_GREATERTHAN_EQUALTO:
+      case ROWLEVEL_GREATERTHAN:
+        return RowLevelRangeTypeExecuterFacory
+            .getRowLevelRangeTypeExecuter(filterExecuterType, filterExpressionResolverTree);
       case ROWLEVEL:
-        if (filterExpressionResolverTree instanceof RowLevelFilterResolverImpl) {
-          return new RowLevelFilterExecuterImpl(
-              ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
-                  .getDimColEvaluatorInfoList(),
-              ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
-                  .getMsrColEvalutorInfoList(),
-              ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
-              ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier());
-        }
+      default:
+        return new RowLevelFilterExecuterImpl(
+            ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
+                .getDimColEvaluatorInfoList(),
+            ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getMsrColEvalutorInfoList(),
+            ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
+            ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier());
 
     }
-    return null;
 
   }
 
@@ -462,13 +483,15 @@ public final class FilterUtil {
     Arrays.fill(keys, 0);
     int[] rangesForMaskedByte =
         getRangesForMaskedByte((carbonDimension.getKeyOrdinal()), blockLevelKeyGenerator);
-    for (Integer surrogate : dimColumnFilterInfo.getFilterList()) {
-      try {
-        keys[carbonDimension.getKeyOrdinal()] = surrogate;
-        filterValuesList
-            .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
-      } catch (KeyGenException e) {
-        LOGGER.error(e.getMessage());
+    if (null != dimColumnFilterInfo) {
+      for (Integer surrogate : dimColumnFilterInfo.getFilterList()) {
+        try {
+          keys[carbonDimension.getKeyOrdinal()] = surrogate;
+          filterValuesList
+              .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
+        } catch (KeyGenException e) {
+          LOGGER.error(e.getMessage());
+        }
       }
     }
     return filterValuesList.toArray(new byte[filterValuesList.size()][]);
@@ -484,8 +507,7 @@ public final class FilterUtil {
    * @return long[] start key
    */
   public static long[] getStartKey(DimColumnResolvedFilterInfo dimColResolvedFilterInfo,
-      SegmentProperties segmentProperties) {
-    long[] startKey = new long[segmentProperties.getDimensionKeyGenerator().getDimCount()];
+      SegmentProperties segmentProperties, long[] startKey) {
     Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter =
         dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();
     for (Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
@@ -521,24 +543,23 @@ public final class FilterUtil {
    *
    * @param dimColResolvedFilterInfo
    * @param segmentProperties
+   * @param setOfStartKeyByteArray
    * @return
    */
-  public static byte[] getStartKeyForNoDictionaryDimension(
-      DimColumnResolvedFilterInfo dimColResolvedFilterInfo, SegmentProperties segmentProperties) {
+  public static void getStartKeyForNoDictionaryDimension(
+      DimColumnResolvedFilterInfo dimColResolvedFilterInfo, SegmentProperties segmentProperties,
+      SortedMap<Integer, byte[]> setOfStartKeyByteArray) {
     Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter =
         dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();
-    List<byte[]> listOfstartKeyByteArray =
-        new ArrayList<byte[]>(segmentProperties.getNumberOfNoDictionaryDimension());
-    byte[] startNoDictionaryKey = null;
-    //step 1
+    // step 1
     for (Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
       if (!entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
-        List<DimColumnFilterInfo> values = entry.getValue();
-        if (null == values) {
+        List<DimColumnFilterInfo> listOfDimColFilterInfo = entry.getValue();
+        if (null == listOfDimColFilterInfo) {
           continue;
         }
         boolean isExcludePresent = false;
-        for (DimColumnFilterInfo info : values) {
+        for (DimColumnFilterInfo info : listOfDimColFilterInfo) {
           if (!info.isIncludeFilter()) {
             isExcludePresent = true;
           }
@@ -546,20 +567,20 @@ public final class FilterUtil {
         if (isExcludePresent) {
           continue;
         }
-        //step 2
-        byte[] noDictionaryStartKey = values.get(0).getNoDictionaryFilterValuesList().get(0);
-        // Adding the no dictionary start key data which is the smallest in the filters.
-        // step 4
-        listOfstartKeyByteArray.add(noDictionaryStartKey);
+        // step 2
+        byte[] noDictionaryStartKey =
+            listOfDimColFilterInfo.get(0).getNoDictionaryFilterValuesList().get(0);
+        if (setOfStartKeyByteArray.isEmpty()) {
+          setOfStartKeyByteArray.put(entry.getKey().getOrdinal(), noDictionaryStartKey);
+        } else if (null == setOfStartKeyByteArray.get(entry.getKey().getOrdinal())) {
+          setOfStartKeyByteArray.put(entry.getKey().getOrdinal(), noDictionaryStartKey);
+
+        } else if (ByteUtil.UnsafeComparer.INSTANCE
+            .compareTo(setOfStartKeyByteArray.get(entry.getKey().getOrdinal()),
+                noDictionaryStartKey) > 0) {
+          setOfStartKeyByteArray.put(entry.getKey().getOrdinal(), noDictionaryStartKey);
+        }
       }
-    }
-    // get the default start key for no dictionary with intial byte value
-    if (listOfstartKeyByteArray.isEmpty()) {
-      startNoDictionaryKey = getNoDictionaryDefaultStartKey(segmentProperties);
-      return startNoDictionaryKey;
-    } else {
-      //step 5
-      return getKeyWithIndexesAndValues(listOfstartKeyByteArray);
     }
   }
 
@@ -577,22 +598,22 @@ public final class FilterUtil {
    *
    * @param dimColResolvedFilterInfo
    * @param segmentProperties
+   * @param setOfEndKeyByteArray
    * @return end key array
    */
-  public static byte[] getEndKeyForNoDictionaryDimension(
-      DimColumnResolvedFilterInfo dimColResolvedFilterInfo, SegmentProperties segmentProperties) {
+  public static void getEndKeyForNoDictionaryDimension(
+      DimColumnResolvedFilterInfo dimColResolvedFilterInfo, SegmentProperties segmentProperties,
+      SortedMap<Integer, byte[]> setOfEndKeyByteArray) {
+
     Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter =
         dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();
-    List<byte[]> listOfEndKeyByteArrayForEachDims =
-        new ArrayList<byte[]>(segmentProperties.getNumberOfNoDictionaryDimension());
-    byte[] endNoDictionaryKey = null;
-    //step 1
+    // step 1
     for (Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
-      List<DimColumnFilterInfo> listOfDimColFilterInfo = entry.getValue();
-      if (null == listOfDimColFilterInfo) {
-        continue;
-      }
       if (!entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
+        List<DimColumnFilterInfo> listOfDimColFilterInfo = entry.getValue();
+        if (null == listOfDimColFilterInfo) {
+          continue;
+        }
         boolean isExcludePresent = false;
         for (DimColumnFilterInfo info : listOfDimColFilterInfo) {
           if (!info.isIncludeFilter()) {
@@ -602,23 +623,21 @@ public final class FilterUtil {
         if (isExcludePresent) {
           continue;
         }
-        //step 2
+        // step 2
         byte[] noDictionaryEndKey = listOfDimColFilterInfo.get(0).getNoDictionaryFilterValuesList()
             .get(listOfDimColFilterInfo.get(0).getNoDictionaryFilterValuesList().size() - 1);
-        // step 4
-        // Adding the no dictionary end key data which is the smallest in the filters.
-        listOfEndKeyByteArrayForEachDims.add(noDictionaryEndKey);
+        if (setOfEndKeyByteArray.isEmpty()) {
+          setOfEndKeyByteArray.put(entry.getKey().getOrdinal(), noDictionaryEndKey);
+        } else if (null == setOfEndKeyByteArray.get(entry.getKey().getOrdinal())) {
+          setOfEndKeyByteArray.put(entry.getKey().getOrdinal(), noDictionaryEndKey);
+
+        } else if (ByteUtil.UnsafeComparer.INSTANCE
+            .compareTo(setOfEndKeyByteArray.get(entry.getKey().getOrdinal()), noDictionaryEndKey)
+            < 0) {
+          setOfEndKeyByteArray.put(entry.getKey().getOrdinal(), noDictionaryEndKey);
+        }
+
       }
-    }
-    // get the default end key for no dictionary with max byte value
-    if (listOfEndKeyByteArrayForEachDims.isEmpty()) {
-      endNoDictionaryKey = getNoDictionaryDefaultEndKey(segmentProperties);
-      return endNoDictionaryKey;
-    } else {
-      // return the end key which is made of all the dimension
-      //indexes and the all the actual values.
-      //step 5
-      return getKeyWithIndexesAndValues(listOfEndKeyByteArrayForEachDims);
     }
   }
 
@@ -630,7 +649,7 @@ public final class FilterUtil {
    * @param noDictionaryValKeyList
    * @return packed key with its indexes added in starting and its actual values.
    */
-  public static byte[] getKeyWithIndexesAndValues(List<byte[]> noDictionaryValKeyList) {
+  private static byte[] getKeyWithIndexesAndValues(List<byte[]> noDictionaryValKeyList) {
     ByteBuffer[] buffArr = new ByteBuffer[noDictionaryValKeyList.size()];
     int index = 0;
     for (byte[] singleColVal : noDictionaryValKeyList) {
@@ -638,7 +657,7 @@ public final class FilterUtil {
       buffArr[index].put(singleColVal);
       buffArr[index++].rewind();
     }
-    //byteBufer.
+    // byteBufer.
     return CarbonUtil.packByteBufferIntoSingleByteArray(buffArr);
 
   }
@@ -674,7 +693,7 @@ public final class FilterUtil {
     }
   }
 
-  public static long[] getEndKey(Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter,
+  public static void getEndKey(Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter,
       AbsoluteTableIdentifier tableIdentifier, long[] endKey, SegmentProperties segmentProperties)
       throws QueryExecutionException {
 
@@ -685,7 +704,7 @@ public final class FilterUtil {
           segmentProperties.getDimColumnsCardinality());
     }
     getEndKeyWithFilter(dimensionFilter, endKey);
-    return endKey;
+
   }
 
   private static List<CarbonDimension> getCarbonDimsMappedToKeyGenerator(
@@ -835,7 +854,7 @@ public final class FilterUtil {
     return endIndexKey;
   }
 
-  private static byte[] getNoDictionaryDefaultEndKey(SegmentProperties segmentProperties) {
+  public static byte[] getNoDictionaryDefaultEndKey(SegmentProperties segmentProperties) {
     // in case of non filter query when no dictionary columns are present we
     // need to set the default end key, as for non filter query
     // we need to get the last
@@ -884,7 +903,7 @@ public final class FilterUtil {
     return startIndexKey;
   }
 
-  private static byte[] getNoDictionaryDefaultStartKey(SegmentProperties segmentProperties) {
+  public static byte[] getNoDictionaryDefaultStartKey(SegmentProperties segmentProperties) {
     // in case of non filter query when no dictionary columns are present we
     // need to set the default start key, as for non filter query we need to get the first
     // block of the btree so we are setting the least byte value in the start key
@@ -945,6 +964,128 @@ public final class FilterUtil {
     } catch (Exception e) {
       return -1;
     }
+  }
+
+  /**
+   * method will set the start and end key for as per the filter resolver tree
+   * utilized visitor pattern inorder to populate the start and end key population.
+   *
+   * @param segmentProperties
+   * @param tableIdentifier
+   * @param filterResolver
+   * @param listOfStartEndKeys
+   * @throws QueryExecutionException
+   */
+  public static void traverseResolverTreeAndGetStartAndEndKey(SegmentProperties segmentProperties,
+      AbsoluteTableIdentifier tableIdentifier, FilterResolverIntf filterResolver,
+      List<IndexKey> listOfStartEndKeys) throws QueryExecutionException {
+    IndexKey searchStartKey = null;
+    IndexKey searchEndKey = null;
+    long[] startKey = new long[segmentProperties.getDimensionKeyGenerator().getDimCount()];
+    long[] endKey = new long[segmentProperties.getDimensionKeyGenerator().getDimCount()];
+    List<byte[]> listOfStartKeyByteArray =
+        new ArrayList<byte[]>(segmentProperties.getNumberOfNoDictionaryDimension());
+    List<byte[]> listOfEndKeyByteArray =
+        new ArrayList<byte[]>(segmentProperties.getNumberOfNoDictionaryDimension());
+    SortedMap<Integer, byte[]> setOfStartKeyByteArray = new TreeMap<Integer, byte[]>();
+    SortedMap<Integer, byte[]> setOfEndKeyByteArray = new TreeMap<Integer, byte[]>();
+    SortedMap<Integer, byte[]> defaultStartValues = new TreeMap<Integer, byte[]>();
+    SortedMap<Integer, byte[]> defaultEndValues = new TreeMap<Integer, byte[]>();
+    traverseResolverTreeAndPopulateStartAndEndKeys(filterResolver, tableIdentifier,
+        segmentProperties, startKey, setOfStartKeyByteArray, endKey, setOfEndKeyByteArray);
+    fillDefaultStartValue(defaultStartValues, segmentProperties);
+    fillDefaultEndValue(defaultEndValues, segmentProperties);
+    fillNullValuesStartIndexWithDefaultKeys(setOfStartKeyByteArray, segmentProperties);
+    fillNullValuesEndIndexWithDefaultKeys(setOfEndKeyByteArray, segmentProperties);
+    pruneStartAndEndKeys(setOfStartKeyByteArray, listOfStartKeyByteArray);
+    pruneStartAndEndKeys(setOfEndKeyByteArray, listOfEndKeyByteArray);
+
+    searchStartKey = FilterUtil
+        .createIndexKeyFromResolvedFilterVal(startKey, segmentProperties.getDimensionKeyGenerator(),
+            FilterUtil.getKeyWithIndexesAndValues(listOfStartKeyByteArray));
+
+    searchEndKey = FilterUtil
+        .createIndexKeyFromResolvedFilterVal(endKey, segmentProperties.getDimensionKeyGenerator(),
+            FilterUtil.getKeyWithIndexesAndValues(listOfEndKeyByteArray));
+    listOfStartEndKeys.add(searchStartKey);
+    listOfStartEndKeys.add(searchEndKey);
+
+  }
+
+  private static void fillNullValuesStartIndexWithDefaultKeys(
+      SortedMap<Integer, byte[]> setOfStartKeyByteArray, SegmentProperties segmentProperties) {
+    List<CarbonDimension> allDimension = segmentProperties.getDimensions();
+    for (CarbonDimension dimension : allDimension) {
+      if (CarbonUtil.hasEncoding(dimension.getEncoder(), Encoding.DICTIONARY)) {
+        continue;
+      }
+      if (null == setOfStartKeyByteArray.get(dimension.getOrdinal())) {
+        setOfStartKeyByteArray.put(dimension.getOrdinal(), new byte[] { 0 });
+      }
+
+    }
+  }
+
+  private static void fillNullValuesEndIndexWithDefaultKeys(
+      SortedMap<Integer, byte[]> setOfStartKeyByteArray, SegmentProperties segmentProperties) {
+    List<CarbonDimension> allDimension = segmentProperties.getDimensions();
+    for (CarbonDimension dimension : allDimension) {
+      if (CarbonUtil.hasEncoding(dimension.getEncoder(), Encoding.DICTIONARY)) {
+        continue;
+      }
+      if (null == setOfStartKeyByteArray.get(dimension.getOrdinal())) {
+        setOfStartKeyByteArray.put(dimension.getOrdinal(), new byte[] { 127 });
+      }
+
+    }
+  }
+
+  private static void pruneStartAndEndKeys(SortedMap<Integer, byte[]> setOfStartKeyByteArray,
+      List<byte[]> listOfStartKeyByteArray) {
+    for (Map.Entry<Integer, byte[]> entry : setOfStartKeyByteArray.entrySet()) {
+      listOfStartKeyByteArray.add(entry.getValue());
+    }
+  }
+
+  private static void fillDefaultStartValue(SortedMap<Integer, byte[]> setOfStartKeyByteArray,
+      SegmentProperties segmentProperties) {
+    List<CarbonDimension> allDimension = segmentProperties.getDimensions();
+    for (CarbonDimension dimension : allDimension) {
+      if (CarbonUtil.hasEncoding(dimension.getEncoder(), Encoding.DICTIONARY)) {
+        continue;
+      }
+      setOfStartKeyByteArray.put(dimension.getOrdinal(), new byte[] { 0 });
+    }
+
+  }
+
+  private static void fillDefaultEndValue(SortedMap<Integer, byte[]> setOfEndKeyByteArray,
+      SegmentProperties segmentProperties) {
+    List<CarbonDimension> allDimension = segmentProperties.getDimensions();
+    for (CarbonDimension dimension : allDimension) {
+      if (CarbonUtil.hasEncoding(dimension.getEncoder(), Encoding.DICTIONARY)) {
+        continue;
+      }
+      setOfEndKeyByteArray.put(dimension.getOrdinal(), new byte[] { 127 });
+    }
+  }
+
+  private static void traverseResolverTreeAndPopulateStartAndEndKeys(
+      FilterResolverIntf filterResolverTree, AbsoluteTableIdentifier tableIdentifier,
+      SegmentProperties segmentProperties, long[] startKeys,
+      SortedMap<Integer, byte[]> setOfStartKeyByteArray, long[] endKeys,
+      SortedMap<Integer, byte[]> setOfEndKeyByteArray) throws QueryExecutionException {
+    if (null == filterResolverTree) {
+      return;
+    }
+    traverseResolverTreeAndPopulateStartAndEndKeys(filterResolverTree.getLeft(), tableIdentifier,
+        segmentProperties, startKeys, setOfStartKeyByteArray, endKeys, setOfEndKeyByteArray);
+
+    filterResolverTree.getstartKey(segmentProperties, startKeys, setOfStartKeyByteArray);
+    filterResolverTree.getEndKey(segmentProperties, tableIdentifier, endKeys, setOfEndKeyByteArray);
+
+    traverseResolverTreeAndPopulateStartAndEndKeys(filterResolverTree.getRight(), tableIdentifier,
+        segmentProperties, startKeys, setOfStartKeyByteArray, endKeys, setOfEndKeyByteArray);
   }
 
 }

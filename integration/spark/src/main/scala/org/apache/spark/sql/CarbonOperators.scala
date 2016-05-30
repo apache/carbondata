@@ -418,6 +418,17 @@ case class CarbonCubeScan(
           GreaterThanEqualToExpression(transformExpression(left), transformExpression(right))
       case LessThanOrEqual(left, right) => new
           LessThanEqualToExpression(transformExpression(left), transformExpression(right))
+      // convert StartWith('abc') or like(col 'abc%') to col >= 'abc' and col < 'abd'
+      case StartsWith(left, right @ Literal(pattern, dataType)) if (pattern.toString.size > 0) =>
+        val l = new GreaterThanEqualToExpression(
+          transformExpression(left), transformExpression(right))
+        val value = pattern.toString
+        val maxValueLimit = value.substring(0, value.size - 1) + value.charAt(value.size - 1) + 1
+        val r = new LessThanExpression(
+          transformExpression(left),
+            new CarbonLiteralExpression(maxValueLimit,
+              CarbonScalaUtil.convertSparkToCarbonDataType(dataType)))
+        new AndExpression(l, r)
       case AttributeReference(name, dataType, _, _) => new CarbonColumnExpression(name.toString,
         CarbonScalaUtil.convertSparkToCarbonDataType(dataType))
       case Literal(name, dataType) => new

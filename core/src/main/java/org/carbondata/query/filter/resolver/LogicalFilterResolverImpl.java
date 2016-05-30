@@ -18,11 +18,13 @@
  */
 package org.carbondata.query.filter.resolver;
 
+import java.util.SortedMap;
+
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.query.carbonfilterinterface.ExpressionType;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
+import org.carbondata.query.expression.Expression;
 import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
 public class LogicalFilterResolverImpl implements FilterResolverIntf {
@@ -35,7 +37,7 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
 
   protected FilterResolverIntf rightEvalutor;
 
-  private ExpressionType filterExpressionType;
+  protected ExpressionType filterExpressionType;
 
   public LogicalFilterResolverImpl(FilterResolverIntf leftEvalutor,
       FilterResolverIntf rightEvalutor, ExpressionType filterExpressionType) {
@@ -78,14 +80,14 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
     return null;
   }
 
-  @Override public IndexKey getstartKey(SegmentProperties segmentProperties) {
-    return null;
+  @Override public void getstartKey(SegmentProperties segmentProperties, long[] startKey,
+      SortedMap<Integer, byte[]> setOfStartKeyByteArray) {
+
   }
 
-  @Override
-  public IndexKey getEndKey(SegmentProperties segmentProperties,
-      AbsoluteTableIdentifier tableIdentifier) {
-    return null;
+  @Override public void getEndKey(SegmentProperties segmentProperties,
+      AbsoluteTableIdentifier tableIdentifier, long[] endKeys,
+      SortedMap<Integer, byte[]> setOfEndKeyByteArray) {
   }
 
   @Override public FilterExecuterType getFilterExecuterType() {
@@ -98,5 +100,10 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
       default:
         return null;
     }
+  }
+
+  @Override public Expression getFilterExpression() {
+    // TODO Auto-generated method stub
+    return null;
   }
 }

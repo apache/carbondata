@@ -19,8 +19,17 @@
 
 package org.carbondata.query.expression.logical;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.expression.BinaryExpression;
+import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
+import org.carbondata.query.expression.ExpressionResult;
+import org.carbondata.query.expression.LiteralExpression;
 
 public abstract class BinaryLogicalExpression extends BinaryExpression {
 
@@ -34,4 +43,85 @@ public abstract class BinaryLogicalExpression extends BinaryExpression {
     // TODO Auto-generated constructor stub
   }
 
+  public List<ExpressionResult> getLiterals() {
+    List<ExpressionResult> listOfExp =
+        new ArrayList<ExpressionResult>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    getExpressionResultList(this, listOfExp);
+    Collections.sort(listOfExp);
+    return listOfExp;
+  }
+
+  // Will get the column informations involved in the expressions by
+  // traversing the tree
+  public List<ColumnExpression> getColumnList() {
+    // TODO
+    List<ColumnExpression> listOfExp =
+        new ArrayList<ColumnExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    getColumnList(this, listOfExp);
+    return listOfExp;
+  }
+
+  private void getColumnList(Expression expression, List<ColumnExpression> lst) {
+    if (expression instanceof ColumnExpression) {
+      ColumnExpression colExp = (ColumnExpression) expression;
+      boolean found = false;
+
+      for (ColumnExpression currentColExp : lst) {
+        if (currentColExp.getColumnName().equals(colExp.getColumnName())) {
+          found = true;
+          colExp.setColIndex(currentColExp.getColIndex());
+          break;
+        }
+      }
+      if (!found) {
+        colExp.setColIndex(lst.size());
+        lst.add(colExp);
+      }
+    }
+    for (Expression child : expression.getChildren()) {
+      getColumnList(child, lst);
+    }
+  }
+
+  public boolean isSingleDimension() {
+    List<ColumnExpression> listOfExp =
+        new ArrayList<ColumnExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    getColumnList(this, listOfExp);
+    if (listOfExp.size() == 1 && listOfExp.get(0).isDimension()) {
+      return true;
+    }
+    return false;
+
+  }
+
+  private void getExpressionResultList(Expression binaryConditionalExpression,
+      List<ExpressionResult> listOfExp) {
+    if (binaryConditionalExpression instanceof LiteralExpression) {
+      ExpressionResult colExp =
+          ((LiteralExpression) binaryConditionalExpression).getExpressionResult();
+      listOfExp.add(colExp);
+    }
+    for (Expression child : binaryConditionalExpression.getChildren()) {
+      getExpressionResultList(child, listOfExp);
+    }
+
+  }
+
+  /**
+   * the method will return flag (true or false) depending on the existence of the
+   * direct dictionary columns in conditional expression
+   *
+   * @return the method will return flag (true or false)
+   */
+  public boolean isDirectDictionaryColumns() {
+    List<ColumnExpression> listOfExp =
+        new ArrayList<ColumnExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    getColumnList(this, listOfExp);
+    for (ColumnExpression ce : listOfExp) {
+      if (!ce.getCarbonColumn().hasEncoding(Encoding.DICTIONARY)) {
+        return true;
+      }
+    }
+    return false;
+  }
 }
