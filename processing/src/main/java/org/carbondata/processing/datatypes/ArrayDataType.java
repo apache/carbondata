@@ -159,11 +159,12 @@ public class ArrayDataType implements GenericDataType {
       String[] delimiter, int delimiterIndex, DataOutputStream dataOutputStream,
       CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException {
 
-    if (inputString == null || "null".equals(inputString) || "".equals(inputString)) {
-      // Indicates null array
-      dataOutputStream.writeInt(0);
-    } else if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(inputString)) {
-      dataOutputStream.writeInt(-1);
+    if (inputString == null || "null".equals(inputString) || "".equals(inputString) ||
+        CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(inputString)) {
+      dataOutputStream.writeInt(1);
+      children.parseStringAndWriteByteArray(tableName,
+          CarbonCommonConstants.MEMBER_DEFAULT_VAL, delimiter, delimiterIndex, dataOutputStream,
+          surrogateKeyGen);
     } else {
       String[] splitInput = inputString.split(delimiter[delimiterIndex], -1);
       dataOutputStream.writeInt(splitInput.length);
