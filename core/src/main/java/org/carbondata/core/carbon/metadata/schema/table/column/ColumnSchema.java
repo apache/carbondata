@@ -100,6 +100,11 @@ public class ColumnSchema implements Serializable {
   private byte[] defaultValue;
 
   /**
+   * used to define the column visibility of column default is false
+   */
+  private boolean invisible = false;
+
+  /**
    * @return the columnName
    */
   public String getColumnName() {
@@ -324,6 +329,22 @@ public class ColumnSchema implements Serializable {
     } else {
       return false;
     }
+  }
+
+  /**
+   * return the visibility
+   * @return
+   */
+  public boolean isInvisible() {
+    return invisible;
+  }
+
+  /**
+   * set the visibility
+   * @param invisible
+   */
+  public void setInvisible(boolean invisible) {
+    this.invisible = invisible;
   }
 
 }

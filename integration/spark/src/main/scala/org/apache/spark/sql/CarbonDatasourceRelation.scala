@@ -194,7 +194,7 @@ case class CarbonRelation(
     val sett = new LinkedHashSet(
       cubeMeta.carbonTable.getDimensionByTableName(cubeMeta.carbonTableIdentifier.getTableName)
         .asScala.asJava)
-    sett.asScala.toSeq.map(dim => {
+    sett.asScala.toSeq.filter(!_.getColumnSchema.isInvisible).map(dim => {
       val output: DataType = metaData.carbonTable
         .getDimensionByName(metaData.carbonTable.getFactTableName, dim.getColName).getDataType
         .toString.toLowerCase match {
@@ -217,9 +217,8 @@ case class CarbonRelation(
     new LinkedHashSet(
       cubeMeta.carbonTable.
         getMeasureByTableName(cubeMeta.carbonTable.getFactTableName).
-        asScala.asJava).asScala.toSeq.map(x => AttributeReference(
-      x.getColName,
-      CarbonMetastoreTypes.toDataType(
+        asScala.asJava).asScala.toSeq.filter(!_.getColumnSchema.isInvisible)
+        .map(x => AttributeReference(x.getColName, CarbonMetastoreTypes.toDataType(
         metaData.carbonTable.getMeasureByName(factTable, x.getColName).getDataType.toString
           .toLowerCase match {
           case "int" => "double"

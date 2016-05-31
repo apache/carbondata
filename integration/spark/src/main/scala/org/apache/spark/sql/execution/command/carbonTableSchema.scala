@@ -262,7 +262,6 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     // Adding dummy measure if no measure is provided
     if (measures.size < 1) {
       val encoders = new java.util.ArrayList[Encoding]()
-      encoders.add(Encoding.DICTIONARY)
       val coloumnSchema: ColumnSchema = getColumnSchema(DataType.DOUBLE,
         CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
         index,
@@ -270,8 +269,10 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
         encoders,
         isDimensionCol = false,
         -1)
+      coloumnSchema.setInvisible(true)
       val measureColumn = coloumnSchema
       measures += measureColumn
+      allColumns = allColumns ++ measures
     }
 
     newOrderedDims = newOrderedDims ++ complexDims ++ measures

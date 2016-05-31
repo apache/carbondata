@@ -85,6 +85,10 @@ struct ColumnSchema{
 	11: optional string aggregate_function;
 
 	12: optional binary default_value;
+	/**
+	* To specify the visibily of the column by default its false
+	*/
+	13: optional bool invisible;
 }
 
 /**

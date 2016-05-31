@@ -231,7 +231,9 @@ public final class GraphExecutionUtil {
 
       List<CarbonMeasure> measures = schema.getCarbonTable().getMeasureByTableName(factTableName);
       for (CarbonMeasure msr : measures) {
-        columnNames.add(msr.getColName());
+        if (!msr.getColumnSchema().isInvisible()) {
+          columnNames.add(msr.getColName());
+        }
       }
     } else {
       List<CarbonDimension> dimensions = schema.getCarbonTable().getDimensionByTableName(tableName);
