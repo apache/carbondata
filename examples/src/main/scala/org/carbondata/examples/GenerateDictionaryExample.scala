@@ -25,6 +25,7 @@ import org.apache.spark.sql.{CarbonContext, CarbonEnv, CarbonRelation}
 import org.carbondata.core.carbon.CarbonTableIdentifier
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.carbon.path.CarbonStorePath
+import org.carbondata.examples.util.InitForExamples
 
 /**
  * example for global dictionary generation
@@ -33,23 +34,11 @@ import org.carbondata.core.carbon.path.CarbonStorePath
 object GenerateDictionaryExample {
 
   def main(args: Array[String]) {
-
-    val sc = new SparkContext(new SparkConf()
-      .setAppName("GenerateDictionaryExample")
-      .setMaster("local[2]"))
-
-    val pwd = new File(this.getClass.getResource("/").getPath + "/../../").getCanonicalPath
-    val storeLocation = pwd + "/target/store"
-    val factFilePath = pwd + "/src/main/resources/factSample.csv"
-    val kettleHome = new File(pwd + "/../processing/carbonplugins").getCanonicalPath
-    val hiveMetaPath = pwd + "/target/hivemetadata"
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(storeLocation,
+    val cc = InitForExamples.createCarbonContext("GenerateDictionaryExample")
+    val factFilePath = InitForExamples.currentPath + "/src/main/resources/factSample.csv"
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(InitForExamples.storeLocation,
       new CarbonTableIdentifier("default", "dictSample"))
     val dictFolderPath = carbonTablePath.getMetadataDirectoryPath
-
-    val cc = new CarbonContext(sc, storeLocation)
-    cc.setConf("carbon.kettle.home", kettleHome)
-    cc.setConf("hive.metastore.warehouse.dir", hiveMetaPath)
 
     // execute sql statement
     cc.sql("DROP TABLE IF EXISTS dictSample")

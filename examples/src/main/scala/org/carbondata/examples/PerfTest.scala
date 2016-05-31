@@ -21,13 +21,12 @@ import java.io.File
 
 import scala.util.Random
 
-import org.apache.hadoop.hive.conf.HiveConf
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.{CarbonContext, DataFrame, Row, SaveMode, SQLContext}
 import org.apache.spark.sql.types.{DataTypes, StructType}
 
-import org.carbondata.core.util.CarbonProperties
 import org.carbondata.examples.PerfTest._
+import org.carbondata.examples.util.InitForExamples
 
 // scalastyle:off println
 
@@ -128,7 +127,7 @@ class QueryRunner(sqlContext: SQLContext, dataFrame: DataFrame, datasources: Seq
             dataFrame.sqlContext.sparkContext.hadoopConfiguration.set("orc.compress", "SNAPPY")
             loadToNative(datasource)
           case "carbon" =>
-            sqlContext.sql(s"drop table if exists ${PerfTest.makeTableName(datasource)}")
+            sqlContext.sql(s"DROP TABLE IF EXISTS ${PerfTest.makeTableName(datasource)}")
             println(s"loading data into $datasource, path: " +
                 s"${dataFrame.sqlContext.asInstanceOf[CarbonContext].storePath}")
             dataFrame.write
@@ -153,7 +152,7 @@ class QueryRunner(sqlContext: SQLContext, dataFrame: DataFrame, datasources: Seq
           val f = new File(PerfTest.savePath(datasource))
           if (f.exists()) f.delete()
         case "carbon" =>
-          sqlContext.sql(s"drop table if exists ${PerfTest.makeTableName("carbon")}")
+          sqlContext.sql(s"DROP TABLE IF EXISTS ${PerfTest.makeTableName("carbon")}")
         case _ => sys.error("unsupported data source")
       }
     }
@@ -211,70 +210,66 @@ class TableGenerator(sqlContext: SQLContext) {
 object PerfTest {
 
   private val olap: Seq[String] = Seq(
-    """select c3, c4, sum(c8) from tableName
-      |where c1 = 'P1_23' and c2 = 'P2_43'
-      |group by c3, c4""".stripMargin,
+    """SELECT c3, c4, sum(c8) FROM tableName
+      |WHERE c1 = 'P1_23' and c2 = 'P2_43'
+      |GROUP BY c3, c4""".stripMargin,
 
-    """select c2, c3, sum(c9) from tableName
-      |where c1 = 'P1_432' and c4 = 'P4_3' and c5 = 'P5_2'
-      |group by c2, c3 """.stripMargin,
+    """SELECT c2, c3, sum(c9) FROM tableName
+      |WHERE c1 = 'P1_432' and c4 = 'P4_3' and c5 = 'P5_2'
+      |GROUP by c2, c3 """.stripMargin,
 
-    """Select c2, count(distinct c1), sum(c8) from tableName
-      |where c3="P3_4" and c5="P5_4"
-      |group by c2 """.stripMargin,
+    """SELECT c2, count(distinct c1), sum(c8) FROM tableName
+      |WHERE c3="P3_4" and c5="P5_4"
+      |GROUP BY c2 """.stripMargin,
 
-    """Select c2, c5, count(distinct c1), sum(c7) from tableName
-      |where c4="P4_4" and c5="P5_7" and c8>4
-      |group by c2, c5 """.stripMargin
+    """SELECT c2, c5, count(distinct c1), sum(c7) FROM tableName
+      |WHERE c4="P4_4" and c5="P5_7" and c8>4
+      |GROUP BY c2, c5 """.stripMargin
   )
 
   private val point: Seq[String] = Seq(
-    """Select c4 from tableName
-      |where c1="P1_43" """.stripMargin,
+    """SELECT c4 FROM tableName
+      |WHERE c1="P1_43" """.stripMargin,
 
-    """Select c3 from tableName
-      |where c1="P1_542" and c2="P2_23" """.stripMargin,
+    """SELECT c3 FROM tableName
+      |WHERE c1="P1_542" and c2="P2_23" """.stripMargin,
 
-    """Select c3, c5 from tableName
-      |where c1="P1_52" and c7=4""".stripMargin,
+    """SELECT c3, c5 FROM tableName
+      |WHERE c1="P1_52" and c7=4""".stripMargin,
 
-    """Select c4, c9 from tableName
-      |where c1="P1_43" and c8<3""".stripMargin
+    """SELECT c4, c9 FROM tableName
+      |WHERE c1="P1_43" and c8<3""".stripMargin
   )
 
   private val filter: Seq[String] = Seq(
-    """Select * from tableName
-      |where c2="P2_43" """.stripMargin,
+    """SELECT * FROM tableName
+      |WHERE c2="P2_43" """.stripMargin,
 
-    """Select * from tableName
-      |where c3="P3_3"  """.stripMargin,
+    """SELECT * FROM tableName
+      |WHERE c3="P3_3"  """.stripMargin,
 
-    """Select * from tableName
-      |where c2="P2_32" and c3="P3_23" """.stripMargin,
+    """SELECT * FROM tableName
+      |WHERE c2="P2_32" and c3="P3_23" """.stripMargin,
 
-    """Select * from tableName
-      |where c3="P3_28" and c4="P4_3" """.stripMargin
+    """SELECT * FROM tableName
+      |WHERE c3="P3_28" and c4="P4_3" """.stripMargin
   )
 
   private val scan: Seq[String] = Seq(
-    """Select sum(c7), sum(c8), avg(c9), max(c10) from tableName """.stripMargin,
+    """SELECT sum(c7), sum(c8), avg(c9), max(c10) FROM tableName """.stripMargin,
 
-    """Select sum(c7) from tableName
-      |where c2="P2_32" """.stripMargin,
+    """SELECT sum(c7) FROM tableName
+      |WHERE c2="P2_32" """.stripMargin,
 
-    """Select sum(c7), sum(c8), sum(9), sum(c10) from tableName
-      |where c4="P4_4" """.stripMargin,
+    """SELECT sum(c7), sum(c8), sum(9), sum(c10) FROM tableName
+      |WHERE c4="P4_4" """.stripMargin,
 
-    """Select sum(c7), sum(c8), sum(9), sum(c10) from tableName
-      |where c2="P2_75" and c6<5 """.stripMargin
+    """SELECT sum(c7), sum(c8), sum(9), sum(c10) FROM tableName
+      |WHERE c2="P2_75" and c6<5 """.stripMargin
   )
 
   def main(args: Array[String]) {
-    val sc = new SparkContext(new SparkConf()
-        .setAppName("CarbonExample")
-        .setMaster("local[2]"))
-    sc.setLogLevel("ERROR")
-    val cc = createCarbonContext(sc)
+    val cc = InitForExamples.createCarbonContext("PerfTest")
 
     // prepare performance queries
     var workload = Seq[Query]()
@@ -319,27 +314,12 @@ object PerfTest {
     runner.shutDown()
   }
 
-  private def createCarbonContext(sc: SparkContext): CarbonContext = {
-    val storeLocation = currentPath + "/target/store"
-    val kettleHome = new File(currentPath + "/../processing/carbonplugins").getCanonicalPath
-    val hiveMetaPath = currentPath + "/target/hivemetadata"
-
-    val cc = new CarbonContext(sc, storeLocation)
-    cc.setConf("carbon.kettle.home", kettleHome)
-    cc.setConf("hive.metastore.warehouse.dir", hiveMetaPath)
-    cc.setConf(HiveConf.ConfVars.HIVECHECKFILEFORMAT.varname, "false")
-    CarbonProperties.getInstance().addProperty("carbon.table.split.partition.enable", "false")
-    cc
-  }
-
   def makeTableName(datasource: String): String = {
     s"${datasource}_perftest_table"
   }
 
-  def currentPath: String = new File(this.getClass.getResource("/").getPath + "/../../")
-      .getCanonicalPath
-
-  def savePath(datasource: String): String = s"${currentPath}/target/perftest/${datasource}"
+  def savePath(datasource: String): String =
+      s"${InitForExamples.currentPath}/target/perftest/${datasource}"
 
   def withTime(body: => Unit): Long = {
     val start = System.nanoTime()

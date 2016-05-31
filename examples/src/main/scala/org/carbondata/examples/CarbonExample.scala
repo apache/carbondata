@@ -17,42 +17,14 @@
 
 package org.carbondata.examples
 
-import java.io.File
-
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.CarbonContext
 
-import org.carbondata.core.util.CarbonProperties
+import org.carbondata.examples.util.InitForExamples
 
 object CarbonExample {
-
   def main(args: Array[String]) {
-
-    // get current directory:/examples
-    val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
-                           .getCanonicalPath
-
-    // specify parameters
-    val storeLocation = currentDirectory + "/target/store"
-    val kettleHome = new File(currentDirectory + "/../processing/carbonplugins").getCanonicalPath
-    val hiveMetaPath = currentDirectory + "/target/hivemetadata"
-    val testData = currentDirectory + "/src/main/resources/data.csv"
-
-    val sc = new SparkContext(new SparkConf()
-                              .setAppName("CarbonExample")
-                              .setMaster("local[2]"))
-    sc.setLogLevel("WARN")
-
-    val cc = new CarbonContext(sc, storeLocation)
-
-    // As Carbon using kettle, so need to set kettle configuration
-    cc.setConf("carbon.kettle.home", kettleHome)
-    cc.setConf("hive.metastore.warehouse.dir", hiveMetaPath)
-
-    // whether use table split partition
-    // true -> use table split partition, support multiple partition loading
-    // false -> use node split partition, support data load by host partition
-    CarbonProperties.getInstance().addProperty("carbon.table.split.partition.enable", "false")
+    val cc = InitForExamples.createCarbonContext("CarbonExample")
+    val testData = InitForExamples.currentPath + "/src/main/resources/data.csv"
 
     cc.sql("DROP TABLE IF EXISTS t3")
 
@@ -74,6 +46,6 @@ object CarbonExample {
            GROUP BY country
            """).show()
 
-    cc.sql("DROP TABLE t3")
+    cc.sql("DROP TABLE IF EXISTS t3")
   }
 }

@@ -22,50 +22,32 @@ import java.io.File
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.{CarbonContext, SaveMode}
 
-import org.carbondata.core.util.CarbonProperties
+import org.carbondata.examples.util.InitForExamples
 
 object DataFrameAPIExample {
 
   def main(args: Array[String]) {
-
-    val sc = new SparkContext(new SparkConf()
-        .setAppName("DataFrameAPIExample")
-        .setMaster("local[2]")
-    )
-    sc.setLogLevel("WARN")
-    textToCarbon(sc)
-  }
-
-  def textToCarbon(sc: SparkContext): Unit = {
-    val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
-        .getCanonicalPath
-    val storePath = currentDirectory + "/target/store"
-    val kettleHome = new File(currentDirectory + "/../processing/carbonplugins")
-        .getCanonicalPath
-    val hiveMetaPath = currentDirectory + "/target/hivemetadata"
-    val cc = new CarbonContext(sc, storePath)
-    cc.setConf("carbon.kettle.home", kettleHome)
-    cc.setConf("hive.metastore.warehouse.dir", hiveMetaPath)
-    CarbonProperties.getInstance().addProperty("carbon.table.split.partition.enable", "false")
+    val cc = InitForExamples.createCarbonContext("DataFrameAPIExample")
+    val sc = cc.sc
 
     import cc.implicits._
     // create a dataframe
     val df = sc.parallelize(1 to 1000)
-        .map(x => ("a", "b", x))
-        .toDF("c1", "c2", "c3")
+      .map(x => ("a", "b", x))
+      .toDF("c1", "c2", "c3")
 
     // save dataframe to carbon file
     df.write
-        .format("org.apache.spark.sql.CarbonSource")
-        .option("tableName", "carbon1")
-        .mode(SaveMode.Overwrite)
-        .save()
+      .format("org.apache.spark.sql.CarbonSource")
+      .option("tableName", "carbon1")
+      .mode(SaveMode.Overwrite)
+      .save()
 
     // use datasource api to read
     val in = cc.read
-        .format("org.apache.spark.sql.CarbonSource")
-        .option("tableName", "carbon1")
-        .load()
+      .format("org.apache.spark.sql.CarbonSource")
+      .option("tableName", "carbon1")
+      .load()
 
     val count = in.where($"c3" > 500).select($"*").count()
 
@@ -74,13 +56,13 @@ object DataFrameAPIExample {
     // scalastyle:on println
 
     // use SQL to read
-    cc.sql("select count(*) from carbon1 where c3 > 500").show
-    cc.sql("drop cube carbon1")
+    cc.sql("SELECT count(*) FROM carbon1 WHERE c3 > 500").show
+    cc.sql("DROP TABLE IF EXISTS carbon1")
 
     // also support a implicit function for easier access
     import org.carbondata.spark._
     df.saveAsCarbonFile(Map("tableName" -> "carbon2"))
-    cc.sql("select count(*) from carbon2 where c3 > 100").show
-    cc.sql("drop cube carbon2")
+    cc.sql("SELECT count(*) FROM carbon2 WHERE c3 > 100").show
+    cc.sql("DROP TABLE IF EXISTS carbon2")
   }
 }
