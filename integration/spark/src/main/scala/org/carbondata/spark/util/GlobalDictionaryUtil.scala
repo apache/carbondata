@@ -352,9 +352,13 @@ object GlobalDictionaryUtil extends Logging {
       }
     } else {
       val path = carbonFile.getPath
-      if (path.toLowerCase().endsWith(".csv")) {
+      if (carbonFile.getSize == 0) {
+        logWarning(s"input file: $path is empty")
+        ""
+      } else if (path.toLowerCase().endsWith(".csv")) {
         path
       } else {
+        logWarning(s"input file: $path should end with '.csv'")
         ""
       }
     }
@@ -380,7 +384,8 @@ object GlobalDictionaryUtil extends Logging {
       if (stringbuild.nonEmpty) {
         stringbuild.substring(0, stringbuild.size - 1)
       } else {
-        stringbuild.toString()
+        throw new IllegalArgumentException("please check your input path and make sure " +
+          "that files end with '.csv' and content is not empty.")
       }
     }
   }
@@ -392,7 +397,7 @@ object GlobalDictionaryUtil extends Logging {
    * @param carbonLoadModel   CarbonLoadModel
    * @return: org.apache.spark.sql.DataFrame
    */
-  private def loadDataFrame(sqlContext: SQLContext,
+  def loadDataFrame(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel): DataFrame = {
     val df = sqlContext.read
       .format("com.databricks.spark.csv")
