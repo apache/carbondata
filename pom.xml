@@ -119,5 +119,33 @@
         <module>integration-testcases</module>
       </modules>
     </profile>
+    <profile>
+      <id>findbugs</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>findbugs-maven-plugin</artifactId>
+            <version>3.0.0</version>
+            <configuration>
+              <excludeFilterFile>${dev.path}/findbugs-exclude.xml</excludeFilterFile>
+              <failOnError>false</failOnError>
+              <findbugsXmlOutput>true</findbugsXmlOutput>
+              <xmlOutput>true</xmlOutput>
+              <effort>Max</effort>
+            </configuration>
+            <executions>
+              <execution>
+                <id>analyze-compile</id>
+                <phase>compile</phase>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>
