@@ -520,7 +520,7 @@ case class CarbonTableScan(
       }
     }
     // count(*) query executed in driver by querying from Btree
-    if (buildCarbonPlan.isCountStarQuery && null == buildCarbonPlan.getFilterExpression) {
+    if (isCountQuery) {
       val absoluteTableIdentifier = new AbsoluteTableIdentifier(carbonCatalog.storePath,
         new CarbonTableIdentifier(carbonTable.getDatabaseName, carbonTable.getFactTableName)
       )
@@ -540,6 +540,20 @@ case class CarbonTableScan(
         val values = dims
         new GenericMutableRow(values.asInstanceOf[Array[Any]])
       }
+    }
+  }
+
+  /**
+   * return true if query is count query
+   * @return
+   */
+  def isCountQuery: Boolean = {
+    if (buildCarbonPlan.isCountStarQuery() && null == buildCarbonPlan.getFilterExpression &&
+        buildCarbonPlan.getDimensions.size() < 1 && buildCarbonPlan.getMeasures.size() < 2 &&
+        buildCarbonPlan.getDimAggregatorInfos.size() < 1) {
+      true
+    } else {
+      false
     }
   }
 
