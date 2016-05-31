@@ -118,28 +118,28 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
         "Latest_district,Latest_firmware_version,Latest_emui_version,Latest_os_version," +
         "Latest_network,site,site_desc,product,product_desc')")
       sql(
-        "create cube IF NOT EXISTS traffic_2g_3g_4g dimensions(SOURCE_INFO String ," +
-          "APP_CATEGORY_ID String ,APP_CATEGORY_NAME String ,APP_SUB_CATEGORY_ID String ," +
-          "APP_SUB_CATEGORY_NAME String ,RAT_NAME String ,IMSI String ,OFFER_MSISDN String ," +
-          "OFFER_ID String ,OFFER_OPTION_1 String ,OFFER_OPTION_2 String ,OFFER_OPTION_3 String ," +
-          "MSISDN String ,PACKAGE_TYPE String ,PACKAGE_PRICE String ,TAG_IMSI String ,TAG_MSISDN " +
-          "String ,PROVINCE String ,CITY String ,AREA_CODE String ,TAC String ,IMEI String ," +
-          "TERMINAL_TYPE String ,TERMINAL_BRAND String ,TERMINAL_MODEL String ,PRICE_LEVEL String" +
-          " ,NETWORK String ,SHIPPED_OS String ,WIFI String ,WIFI_HOTSPOT String ,GSM String ," +
-          "WCDMA String ,TD_SCDMA String ,LTE_FDD String ,LTE_TDD String ,CDMA String ," +
-          "SCREEN_SIZE String ,SCREEN_RESOLUTION String ,HOST_NAME String ,WEBSITE_NAME String ," +
-          "OPERATOR String ,SRV_TYPE_NAME String ,TAG_HOST String ,CGI String ,CELL_NAME String ," +
-          "COVERITY_TYPE1 String ,COVERITY_TYPE2 String ,COVERITY_TYPE3 String ,COVERITY_TYPE4 " +
-          "String ,COVERITY_TYPE5 String ,LATITUDE String ,LONGITUDE String ,AZIMUTH String ," +
-          "TAG_CGI String ,APN String ,USER_AGENT String ,DAY String ,HOUR String ,`MIN` String ," +
-          "IS_DEFAULT_BEAR integer ,EPS_BEARER_ID String ,QCI integer ,USER_FILTER String ," +
-          "ANALYSIS_PERIOD String ) measures(UP_THROUGHPUT numeric,DOWN_THROUGHPUT numeric," +
-          "UP_PKT_NUM numeric,DOWN_PKT_NUM numeric,APP_REQUEST_NUM numeric,PKT_NUM_LEN_1_64 " +
-          "numeric,PKT_NUM_LEN_64_128 numeric,PKT_NUM_LEN_128_256 numeric,PKT_NUM_LEN_256_512 " +
-          "numeric,PKT_NUM_LEN_512_768 numeric,PKT_NUM_LEN_768_1024 numeric,PKT_NUM_LEN_1024_ALL " +
-          "numeric,IP_FLOW_MARK numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-          ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (MSISDN) ," +
-          "PARTITION_COUNT=3] )"
+        "create cube if not exists traffic_2g_3g_4g dimensions(source_info string ," +
+        "app_category_id string ,app_category_name string ,app_sub_category_id string ," +
+        "app_sub_category_name string ,rat_name string ,imsi string ,offer_msisdn string ," +
+        "offer_id string ,offer_option_1 string ,offer_option_2 string ,offer_option_3 string ," +
+        "msisdn string ,package_type string ,package_price string ,tag_imsi string ,tag_msisdn " +
+        "string ,province string ,city string ,area_code string ,tac string ,imei string ," +
+        "terminal_type string ,terminal_brand string ,terminal_model string ,price_level string" +
+        " ,network string ,shipped_os string ,wifi string ,wifi_hotspot string ,gsm string ," +
+        "wcdma string ,td_scdma string ,lte_fdd string ,lte_tdd string ,cdma string ," +
+        "screen_size string ,screen_resolution string ,host_name string ,website_name string ," +
+        "operator string ,srv_type_name string ,tag_host string ,cgi string ,cell_name string ," +
+        "coverity_type1 string ,coverity_type2 string ,coverity_type3 string ,coverity_type4 " +
+        "string ,coverity_type5 string ,latitude string ,longitude string ,azimuth string ," +
+        "tag_cgi string ,apn string ,user_agent string ,day string ,hour string ,`min` string ," +
+        "is_default_bear integer ,eps_bearer_id string ,qci integer ,user_filter string ," +
+        "analysis_period string ) measures(up_throughput numeric,down_throughput numeric," +
+        "up_pkt_num numeric,down_pkt_num numeric,app_request_num numeric,pkt_num_len_1_64 " +
+        "numeric,pkt_num_len_64_128 numeric,pkt_num_len_128_256 numeric,pkt_num_len_256_512 " +
+        "numeric,pkt_num_len_512_768 numeric,pkt_num_len_768_1024 numeric,pkt_num_len_1024_all " +
+        "numeric,ip_flow_mark numeric) options (partitioner [class = 'org.carbondata" +
+        ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (msisdn) ," +
+        "partition_count=3] )"
       )
       sql("LOAD DATA fact from '" + currentDirectory +
         "/src/test/resources/FACT_UNITED_DATA_INFO_sample_cube.csv' INTO CUBE traffic_2g_3g_4g " +

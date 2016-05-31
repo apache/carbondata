@@ -421,7 +421,8 @@ case class CarbonTableScan(
         val l = new GreaterThanEqualToExpression(
           transformExpression(left), transformExpression(right))
         val value = pattern.toString
-        val maxValueLimit = value.substring(0, value.size - 1) + value.charAt(value.size - 1) + 1
+        val maxValueLimit = value.substring(0, value.length - 1) +
+          (value.charAt(value.length - 1).toInt + 1).toChar
         val r = new LessThanExpression(
           transformExpression(left),
             new CarbonLiteralExpression(maxValueLimit,
