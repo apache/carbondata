@@ -110,7 +110,8 @@ public final class CarbonLoaderUtil {
       String hdfsStoreLocation, String kettleHomePath, int currentRestructNumber) throws Exception {
     System.setProperty("KETTLE_HOME", kettleHomePath);
     if (!new File(storeLocation).mkdirs()) {
-      LOGGER.error("Error while new File(storeLocation).mkdirs() ");
+      LOGGER.error("Error while creating the temp store path: " +
+          storeLocation);
     }
     String outPutLoc = storeLocation + "/etl";
     String databaseName = loadModel.getDatabaseName();
@@ -225,13 +226,9 @@ public final class CarbonLoaderUtil {
       String hdfsStoreLocation, int currentRestructNumber) {
     String baseStorelocation =
         hdfsStoreLocation + File.separator + schemaName + File.separator + cubeName;
-    int restructFolderNumber = currentRestructNumber/*CarbonUtil
-                .checkAndReturnNextRestructFolderNumber(baseStorelocation,
-                        "RS_")*/;
-
     String aggTableLocation =
         baseStorelocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
-            + restructFolderNumber + File.separator + aggTableName;
+            + currentRestructNumber + File.separator + aggTableName;
     return aggTableLocation;
   }
 
@@ -279,7 +276,6 @@ public final class CarbonLoaderUtil {
       tableLoc =
           getTableLocation(partitionSchemaName, partitionCubeName, tableName, hdfsStoreLocation,
               currentRestructNumber);
-      //tableLoc = tableLoc + File.separator + loadFolder;
 
       final List<String> loadFolders = new ArrayList<String>();
       for (int j = 0; j < loadFolder; j++) {

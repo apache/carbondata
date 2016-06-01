@@ -442,9 +442,9 @@ public final class CarbonUtil {
         }
       });
     } catch (IOException e) {
-      throw new CarbonUtilException("Error while deleteing the folders and files");
+      throw new CarbonUtilException("Error while deleting the folders and files");
     } catch (InterruptedException e) {
-      throw new CarbonUtilException("Error while deleteing the folders and files");
+      throw new CarbonUtilException("Error while deleting the folders and files");
     }
   }
 
@@ -466,9 +466,9 @@ public final class CarbonUtil {
         }
       });
     } catch (IOException e) {
-      throw new CarbonUtilException("Error while deleteing the folders and files");
+      throw new CarbonUtilException("Error while deleting the folders and files");
     } catch (InterruptedException e) {
-      throw new CarbonUtilException("Error while deleteing the folders and files");
+      throw new CarbonUtilException("Error while deleting the folders and files");
     }
 
   }
@@ -488,7 +488,7 @@ public final class CarbonUtil {
       }
     }
     if (f.exists() && !f.delete()) {
-      throw new CarbonUtilException("Error while deleteing the folders and files");
+      throw new CarbonUtilException("Error while deleting the folders and files");
     }
   }
 
@@ -504,9 +504,9 @@ public final class CarbonUtil {
         }
       });
     } catch (IOException e) {
-      throw new CarbonUtilException("Error while deleteing the folders and files");
+      throw new CarbonUtilException("Error while deleting the folders and files");
     } catch (InterruptedException e) {
-      throw new CarbonUtilException("Error while deleteing the folders and files");
+      throw new CarbonUtilException("Error while deleting the folders and files");
     }
   }
 
@@ -523,9 +523,9 @@ public final class CarbonUtil {
         }
       });
     } catch (IOException e) {
-      throw new CarbonUtilException("Error while deleteing the folders and files");
+      throw new CarbonUtilException("Error while deleting the folders and files");
     } catch (InterruptedException e) {
-      throw new CarbonUtilException("Error while deleteing the folders and files");
+      throw new CarbonUtilException("Error while deleting the folders and files");
     }
   }
 
@@ -592,7 +592,7 @@ public final class CarbonUtil {
       }
     }
     if (f.exists() && !f.delete()) {
-      throw new CarbonUtilException("Error while deleteing the folders and files");
+      throw new CarbonUtilException("Error while deleting the folders and files");
     }
   }
 
