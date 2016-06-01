@@ -88,6 +88,7 @@ public final class CarbonProperties {
     validateBlockletSize();
     validateMaxFileSize();
     validateNumCores();
+    validateNumCoresBlockSort();
     validateBatchSize();
     validateSortSize();
     validateCardinalityIncrementValue();
@@ -459,6 +460,33 @@ public final class CarbonProperties {
           + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
       carbonProperties.setProperty(CarbonCommonConstants.NUM_CORES,
           CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+    }
+  }
+
+  /**
+   * This method validates the number cores specified for mdk block sort
+   */
+  private void validateNumCoresBlockSort() {
+    String numCoresStr = carbonProperties
+        .getProperty(CarbonCommonConstants.NUM_CORES_BLOCK_SORT,
+            CarbonCommonConstants.NUM_CORES_BLOCK_SORT_DEFAULT_VAL);
+    try {
+      int numCores = Integer.parseInt(numCoresStr);
+
+      if (numCores < CarbonCommonConstants.NUM_CORES_BLOCK_SORT_MIN_VAL
+          || numCores > CarbonCommonConstants.NUM_CORES_BLOCK_SORT_MAX_VAL) {
+        LOGGER.info("The num cores value \"" + numCoresStr
+            + "\" for block sort is invalid. Using the default value \""
+            + CarbonCommonConstants.NUM_CORES_BLOCK_SORT_DEFAULT_VAL);
+        carbonProperties.setProperty(CarbonCommonConstants.NUM_CORES_BLOCK_SORT,
+            CarbonCommonConstants.NUM_CORES_BLOCK_SORT_DEFAULT_VAL);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info("The num cores value \"" + numCoresStr
+          + "\" for block sort is invalid. Using the default value \""
+          + CarbonCommonConstants.NUM_CORES_BLOCK_SORT_DEFAULT_VAL);
+      carbonProperties.setProperty(CarbonCommonConstants.NUM_CORES_BLOCK_SORT,
+          CarbonCommonConstants.NUM_CORES_BLOCK_SORT_DEFAULT_VAL);
     }
   }
 

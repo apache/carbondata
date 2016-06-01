@@ -157,6 +157,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private boolean isAggKeyBlock;
   private long processedDataCount;
   /**
+   * thread pool size to be used for block sort
+   */
+  private int thread_pool_size;
+  /**
    * factLevels
    */
   private int[] surrogateIndex;
@@ -657,7 +661,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         }
       }
     }
-    ExecutorService executorService = Executors.newFixedThreadPool(7);
+    thread_pool_size = Integer.parseInt(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.NUM_CORES_BLOCK_SORT,
+                CarbonCommonConstants.NUM_CORES_BLOCK_SORT_DEFAULT_VAL));
+    ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
     List<Future<IndexStorage>> submit = new ArrayList<Future<IndexStorage>>(
         primitiveDimLens.length + noDictionaryCount + complexColCount);
     int i = 0;

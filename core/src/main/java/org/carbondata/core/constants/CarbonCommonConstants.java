@@ -505,6 +505,22 @@ public final class CarbonCommonConstants {
    */
   public static final String NUM_CORES_LOADING = "carbon.number.of.cores.while.loading";
   /**
+   * Number of cores to be used for block sort
+   */
+  public static final String NUM_CORES_BLOCK_SORT = "carbon.number.of.cores.block.sort";
+  /**
+   * Default value of number of cores to be used for block sort
+   */
+  public static final String NUM_CORES_BLOCK_SORT_DEFAULT_VAL = "7";
+  /**
+   * Max value of number of cores to be used for block sort
+   */
+  public static final int NUM_CORES_BLOCK_SORT_MAX_VAL = 12;
+  /**
+   * Min value of number of cores to be used for block sort
+   */
+  public static final int NUM_CORES_BLOCK_SORT_MIN_VAL = 1;
+  /**
    * CSV_READ_BUFFER_SIZE
    */
   public static final String CSV_READ_BUFFER_SIZE = "carbon.csv.read.buffersize.byte";
