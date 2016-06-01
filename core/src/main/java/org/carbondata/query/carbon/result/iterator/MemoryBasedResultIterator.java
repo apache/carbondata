@@ -1,5 +1,7 @@
 package org.carbondata.query.carbon.result.iterator;
 
+import java.util.NoSuchElementException;
+
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.carbon.result.Result;
 
@@ -39,8 +41,11 @@ public class MemoryBasedResultIterator extends CarbonIterator<Result> {
    * @return the next element in the iteration
    */
   @Override public Result next() {
-    hasNext = false;
-    return result;
+    if (hasNext) {
+      hasNext = false;
+      return result;
+    }
+    throw new NoSuchElementException();
   }
 
 }

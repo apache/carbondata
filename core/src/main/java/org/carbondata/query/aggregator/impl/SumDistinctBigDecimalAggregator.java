@@ -209,6 +209,18 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
     return msrValObj.compareTo(otherVal);
   }
 
+  @Override public boolean equals(Object obj) {
+    if(!(obj instanceof SumDistinctBigDecimalAggregator)) {
+      return false;
+    }
+    SumDistinctBigDecimalAggregator o = (SumDistinctBigDecimalAggregator) obj;
+    return getBigDecimalValue().equals(o.getBigDecimalValue());
+  }
+
+  @Override public int hashCode() {
+    return getBigDecimalValue().hashCode();
+  }
+
   @Override public MeasureAggregator getNew() {
     // TODO Auto-generated method stub
     return new SumDistinctBigDecimalAggregator();

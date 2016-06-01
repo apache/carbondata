@@ -27,7 +27,6 @@ import java.util.Map;
 
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
-import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.filter.resolver.metadata.FilterResolverMetadata;
@@ -64,7 +63,7 @@ public class DimColumnResolvedFilterInfo implements Serializable, ResolvedFilter
 
   private String defaultValue;
 
-  private Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex;
+  private transient Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex;
 
   private CarbonDimension dimension;
 
@@ -86,11 +85,8 @@ public class DimColumnResolvedFilterInfo implements Serializable, ResolvedFilter
 
   private Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionResolvedFilter;
 
-  private Map<CarbonMeasure, List<DimColumnFilterInfo>> measureResolvedFilter;
-
   public DimColumnResolvedFilterInfo() {
     dimensionResolvedFilter = new HashMap<CarbonDimension, List<DimColumnFilterInfo>>(20);
-    measureResolvedFilter = new HashMap<CarbonMeasure, List<DimColumnFilterInfo>>(20);
   }
 
   public IndexKey getStarIndexKey() {

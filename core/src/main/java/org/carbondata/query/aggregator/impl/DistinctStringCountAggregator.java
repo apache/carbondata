@@ -123,6 +123,18 @@ public class DistinctStringCountAggregator implements MeasureAggregator {
     return 0;
   }
 
+  @Override public boolean equals(Object obj) {
+    if(!(obj instanceof DistinctStringCountAggregator)) {
+      return false;
+    }
+    DistinctStringCountAggregator o = (DistinctStringCountAggregator) obj;
+    return getDoubleValue().equals(o.getDoubleValue());
+  }
+
+  @Override public int hashCode() {
+    return getDoubleValue().hashCode();
+  }
+
   @Override public void agg(Object newVal) {
     this.valueSetForStr.add((String) newVal);
   }

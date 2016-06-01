@@ -166,36 +166,33 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
   private BitSet setFilterdIndexToBitSet(FixedLengthDimensionDataChunk dimColumnDataChunk,
       int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
-    if (dimColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
-      FixedLengthDimensionDataChunk fixedChunk = (FixedLengthDimensionDataChunk) dimColumnDataChunk;
-      int startKey = 0;
-      int last = 0;
-      bitSet.flip(0, numerOfRows);
-      int startIndex = 0;
-      byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-      for (int k = 0; k < filterValues.length; k++) {
-        startKey = CarbonUtil
-            .getFirstIndexUsingBinarySearch(dimColumnDataChunk, startIndex, numerOfRows - 1,
-                filterValues[k]);
-        if (startKey == -1) {
-          continue;
-        }
-        bitSet.flip(startKey);
-        last = startKey;
-        for (int j = startKey + 1; j < numerOfRows; j++) {
-          if (ByteUtil.UnsafeComparer.INSTANCE
-              .compareTo(fixedChunk.getCompleteDataChunk(), j * filterValues[k].length,
-                  filterValues[k].length, filterValues[k], 0, filterValues[k].length) == 0) {
-            bitSet.flip(j);
-            last++;
-          } else {
-            break;
-          }
-        }
-        startIndex = last;
-        if (startIndex >= numerOfRows) {
+    int startKey = 0;
+    int last = 0;
+    bitSet.flip(0, numerOfRows);
+    int startIndex = 0;
+    byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+    for (int k = 0; k < filterValues.length; k++) {
+      startKey = CarbonUtil
+          .getFirstIndexUsingBinarySearch(dimColumnDataChunk, startIndex, numerOfRows - 1,
+              filterValues[k]);
+      if (startKey == -1) {
+        continue;
+      }
+      bitSet.flip(startKey);
+      last = startKey;
+      for (int j = startKey + 1; j < numerOfRows; j++) {
+        if (ByteUtil.UnsafeComparer.INSTANCE
+            .compareTo(dimColumnDataChunk.getCompleteDataChunk(), j * filterValues[k].length,
+                filterValues[k].length, filterValues[k], 0, filterValues[k].length) == 0) {
+          bitSet.flip(j);
+          last++;
+        } else {
           break;
         }
+      }
+      startIndex = last;
+      if (startIndex >= numerOfRows) {
+        break;
       }
     }
     return bitSet;

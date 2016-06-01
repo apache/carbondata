@@ -133,6 +133,18 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
     return 0;
   }
 
+  @Override public boolean equals(Object obj) {
+    if(!(obj instanceof DistinctCountAggregatorObjectSet)) {
+      return false;
+    }
+    DistinctCountAggregatorObjectSet o = (DistinctCountAggregatorObjectSet) obj;
+    return getDoubleValue().equals(o.getDoubleValue());
+  }
+
+  @Override public int hashCode() {
+    return getDoubleValue().hashCode();
+  }
+
   @Override public MeasureAggregator get() {
     return this;
   }

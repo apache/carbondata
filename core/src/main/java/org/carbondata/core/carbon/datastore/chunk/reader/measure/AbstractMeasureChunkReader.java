@@ -47,11 +47,6 @@ public abstract class AbstractMeasureChunkReader implements MeasureColumnChunkRe
   protected List<DataChunk> measureColumnChunk;
 
   /**
-   * this hold the metadata of the data type used to store measure column
-   */
-  protected char[] type;
-
-  /**
    * type of valu comprssion model selected for each measure column
    */
   protected UnCompressValue[] values;
@@ -71,7 +66,6 @@ public abstract class AbstractMeasureChunkReader implements MeasureColumnChunkRe
     this.measureColumnChunk = measureColumnChunk;
     this.compressionModel = compressionModel;
     this.filePath = filePath;
-    this.type = compressionModel.getType();
     values =
         new ValueCompressonHolder.UnCompressValue[compressionModel.getUnCompressValues().length];
     for (int i = 0; i < values.length; i++) {

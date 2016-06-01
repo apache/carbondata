@@ -258,6 +258,18 @@ public class DistinctCountAggregator implements MeasureAggregator {
     return 0;
   }
 
+  @Override public boolean equals(Object obj) {
+    if(!(obj instanceof DistinctCountAggregator)) {
+      return false;
+    }
+    DistinctCountAggregator o = (DistinctCountAggregator) obj;
+    return getDoubleValue().equals(o.getDoubleValue());
+  }
+
+  @Override public int hashCode() {
+    return getDoubleValue().hashCode();
+  }
+
   @Override public MeasureAggregator get() {
     ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
     DataOutputStream outputStream = new DataOutputStream(byteStream);

@@ -41,11 +41,6 @@ public class FixedLengthDimensionAggregator implements DimensionDataAggregator {
    */
   protected DimensionAggregatorInfo dimensionAggeragtorInfo;
 
-  /**
-   * default which was added for new dimension after restructuring for the
-   * older blocks
-   */
-  protected Object defaultValue;
 
   /**
    * start index of the aggregator for current dimension column
@@ -82,7 +77,6 @@ public class FixedLengthDimensionAggregator implements DimensionDataAggregator {
   public FixedLengthDimensionAggregator(DimensionAggregatorInfo dimensionAggeragtorInfo,
       Object defaultValue, Dictionary columnDictionary, int aggregatorStartIndex, int blockIndex) {
     this.dimensionAggeragtorInfo = dimensionAggeragtorInfo;
-    this.defaultValue = defaultValue;
     this.aggregatorStartIndex = aggregatorStartIndex;
     this.blockIndex = blockIndex;
     buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE);

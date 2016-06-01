@@ -199,6 +199,18 @@ public class CarbonTablePath extends Path {
     return tablePath + File.separator + AGGREGATE_TABLE_PREFIX + aggTableId;
   }
 
+  @Override public boolean equals(Object o) {
+    if (!(o instanceof CarbonTablePath)) {
+      return false;
+    }
+    CarbonTablePath path = (CarbonTablePath)o;
+    return tablePath.equals(path.tablePath) && super.equals(o);
+  }
+
+  @Override public int hashCode() {
+    return super.hashCode() + tablePath.hashCode();
+  }
+
   /**
    * To manage data file name and composition
    */

@@ -705,6 +705,7 @@ public class QueryUtil {
       // as in case of column group unpacking of the bit packed mdkey will
       // be done
       // only once
+      CarbonDimension dim = entry.getValue().get(0).getDim();
       if (entry.getValue().size() > 1) {
         // how many aggregator will be used for column group
         int numberOfAggregatorForColumnGroup = 0;
@@ -717,8 +718,8 @@ public class QueryUtil {
           numberOfAggregatorForColumnGroup += dimensionAggregatorInfo.getAggList().size();
         }
         dimensionDataAggregators.add(new ColumnGroupDimensionsAggregator(entry.getValue(),
-            columnGroupIdToKeyGeneratorMap.get(entry.getValue().get(0).getDim().getColumnId()),
-            dimensionToBlockIndexMapping.get(entry.getValue().get(0)), dictionaryList,
+            columnGroupIdToKeyGeneratorMap.get(dim.columnGroupId()),
+            dimensionToBlockIndexMapping.get(dim.getOrdinal()), dictionaryList,
             aggregatorStartIndex));
         aggregatorStartIndex += numberOfAggregatorForColumnGroup;
         continue;
@@ -726,19 +727,19 @@ public class QueryUtil {
         // if it is a dictionary column than create a fixed length
         // aggeragtor
         if (CarbonUtil
-            .hasEncoding(entry.getValue().get(0).getDim().getEncoder(), Encoding.DICTIONARY)) {
+            .hasEncoding(dim.getEncoder(), Encoding.DICTIONARY)) {
           dimensionDataAggregators.add(
               new FixedLengthDimensionAggregator(entry.getValue().get(0), null,
-                  columnUniqueIdToDictionaryMap.get(entry.getValue().get(0).getDim().getColumnId()),
+                  columnUniqueIdToDictionaryMap.get(dim.getColumnId()),
                   aggregatorStartIndex,
-                  dimensionToBlockIndexMapping.get(entry.getValue().get(0).getDim().getOrdinal())));
+                  dimensionToBlockIndexMapping.get(dim.getOrdinal())));
         } else {
           // else for not dictionary column create a
           // variable length aggregator
           dimensionDataAggregators.add(
               new VariableLengthDimensionAggregator(entry.getValue().get(0), null,
                   aggregatorStartIndex,
-                  dimensionToBlockIndexMapping.get(entry.getValue().get(0).getDim().getOrdinal())));
+                  dimensionToBlockIndexMapping.get(dim.getOrdinal())));
         }
         aggregatorStartIndex += entry.getValue().get(0).getAggList().size();
       }

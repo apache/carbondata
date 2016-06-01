@@ -21,11 +21,7 @@ package org.carbondata.core.file.manager.composite;
 
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
 
-public class FileData extends AbstractFileManager {
-  /**
-   * File Name
-   */
-  private String fileName;
+public class FileData extends FileManager {
 
   /**
    * Store Path
@@ -40,14 +36,6 @@ public class FileData extends AbstractFileManager {
   public FileData(String fileName, String storePath) {
     this.fileName = fileName;
     this.storePath = storePath;
-  }
-
-  @Override public boolean rename(IFileManagerComposite composite) {
-    return false;
-  }
-
-  @Override public void setName(String name) {
-    this.fileName = name;
   }
 
   /**

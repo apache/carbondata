@@ -89,7 +89,9 @@ public class ThriftReader {
    * This method will set the position of stream from where data has to be read
    */
   public void setReadOffset(long bytesToSkip) throws IOException {
-    dataInputStream.skip(bytesToSkip);
+    if (dataInputStream.skip(bytesToSkip) != bytesToSkip) {
+      throw new IOException("It doesn't set the offset properly");
+    }
   }
 
   /**

@@ -158,6 +158,18 @@ public class AvgLongAggregator extends AbstractMeasureAggregatorBasic {
     }
   }
 
+  @Override public boolean equals(Object obj) {
+    if(!(obj instanceof AvgLongAggregator)) {
+      return false;
+    }
+    AvgLongAggregator o = (AvgLongAggregator)obj;
+    return getLongValue().equals(o.getLongValue());
+  }
+
+  @Override public int hashCode() {
+    return getLongValue().hashCode();
+  }
+
   @Override public void merge(byte[] value) {
     if (0 == value.length) {
       return;

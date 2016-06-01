@@ -17,9 +17,6 @@
  * under the License.
  */
 
-/**
- *
- */
 package org.carbondata.query.scanner.impl;
 
 import java.io.Serializable;
@@ -27,9 +24,6 @@ import java.util.Arrays;
 
 import org.carbondata.query.aggregator.MeasureAggregator;
 
-/**
- * @author R00900208
- */
 public class CarbonValue implements Serializable, Comparable<CarbonValue> {
 
   /**
@@ -79,4 +73,15 @@ public class CarbonValue implements Serializable, Comparable<CarbonValue> {
     return values[topNIndex].compareTo(o.values[topNIndex]);
   }
 
+  @Override public boolean equals(Object obj) {
+    if(!(obj instanceof CarbonValue)) {
+      return false;
+    }
+    CarbonValue o = (CarbonValue)obj;
+    return values[topNIndex].equals(o.values[o.topNIndex]);
+  }
+
+  @Override public int hashCode() {
+    return values[topNIndex].hashCode();
+  }
 }

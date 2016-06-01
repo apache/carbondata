@@ -303,8 +303,6 @@ public class Bits implements Serializable {
           l <<= 8;
           if (maskByteRanges[j] != -1) {
             l ^= key[maskByteRanges[j]] & 0xFF;
-          } else {
-            l ^= 0 & 0xFF;
           }
         }
       }

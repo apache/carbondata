@@ -36,10 +36,10 @@ public class AndFilterResolverImpl extends LogicalFilterResolverImpl {
     super(leftEvalutor, rightEvalutor, filterExpressionType);
   }
 
-  @Override public void getstartKey(SegmentProperties segmentProperties, long[] startKeys,
+  @Override public void getStartKey(SegmentProperties segmentProperties, long[] startKeys,
       SortedMap<Integer, byte[]> noDicStartKeys) {
-    leftEvalutor.getstartKey(segmentProperties, startKeys, noDicStartKeys);
-    rightEvalutor.getstartKey(segmentProperties, startKeys, noDicStartKeys);
+    leftEvalutor.getStartKey(segmentProperties, startKeys, noDicStartKeys);
+    rightEvalutor.getStartKey(segmentProperties, startKeys, noDicStartKeys);
   }
 
   @Override public void getEndKey(SegmentProperties segmentProperties,

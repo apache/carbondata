@@ -24,6 +24,28 @@
     <Source name="~.*\.scala" />
   </Match>
 
+  <!-- This method creates stream but the caller methods are responsible for closing the stream -->
+  <Match>
+    <Class name="org.carbondata.core.datastorage.store.impl.FileFactory"/>
+    <Or>
+      <Method name="getDataInputStream"/>
+    </Or>
+    <Bug pattern="OBL_UNSATISFIED_OBLIGATION_EXCEPTION_EDGE"/>
+  </Match>
+
+  <Match>
+    <Class name="org.carbondata.query.aggregator.impl.BitSet"/>
+    <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
+  </Match>
+
+  <Match>
+    <Class name="org.carbondata.query.expression.ExpressionResult"/>
+    <Or>
+      <Method name="getBoolean"/>
+    </Or>
+    <Bug pattern="NP_BOOLEAN_RETURN_NULL"/>
+  </Match>
+
   <Match>
     <!--
     A mutable static field could be changed by malicious code or by accident. The field could be

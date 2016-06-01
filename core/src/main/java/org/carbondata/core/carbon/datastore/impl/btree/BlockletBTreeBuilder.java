@@ -94,7 +94,6 @@ public class BlockletBTreeBuilder extends AbstractBTreeBuilder {
       }
     }
     if (totalNumberOfTuple == 0) {
-      curNode = new BTreeNonLeafNode();
       return;
     }
     // adding a intermediate node

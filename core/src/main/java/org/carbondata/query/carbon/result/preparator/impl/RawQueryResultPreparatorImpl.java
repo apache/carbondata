@@ -1,7 +1,5 @@
 package org.carbondata.query.carbon.result.preparator.impl;
 
-import java.util.List;
-
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -85,8 +83,6 @@ public class RawQueryResultPreparatorImpl extends AbstractQueryResultPreparator<
 
   private BatchRawResult getResult(QueryModel queryModel, Object[][] convertedResult) {
 
-    List<QueryDimension> queryDimensions = queryModel.getQueryDimension();
-    int dimensionCount = queryDimensions.size();
     int msrCount = queryExecuterProperties.measureAggregators.length;
     Object[][] resultDataA = new Object[1 + msrCount][convertedResult[0].length];
 

@@ -1,6 +1,7 @@
 package org.carbondata.core.keygenerator.columnar.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -203,4 +204,15 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
     return selectedRanges.size();
   }
 
+  @Override public boolean equals(Object obj) {
+    if(!(obj instanceof MultiDimKeyVarLengthVariableSplitGenerator)) {
+      return false;
+    }
+    MultiDimKeyVarLengthVariableSplitGenerator o = (MultiDimKeyVarLengthVariableSplitGenerator)obj;
+    return Arrays.equals(o.dimensionsToSplit, dimensionsToSplit) && super.equals(obj);
+  }
+
+  @Override public int hashCode() {
+    return super.hashCode() + Arrays.hashCode(dimensionsToSplit);
+  }
 }

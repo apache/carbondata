@@ -80,7 +80,7 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
     return null;
   }
 
-  @Override public void getstartKey(SegmentProperties segmentProperties, long[] startKey,
+  @Override public void getStartKey(SegmentProperties segmentProperties, long[] startKey,
       SortedMap<Integer, byte[]> setOfStartKeyByteArray) {
 
   }

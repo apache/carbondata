@@ -145,6 +145,18 @@ public class SumLongAggregator extends AbstractMeasureAggregatorBasic {
     return 0;
   }
 
+  @Override public boolean equals(Object obj) {
+    if(!(obj instanceof SumLongAggregator)) {
+      return false;
+    }
+    SumLongAggregator o = (SumLongAggregator) obj;
+    return getLongValue().equals(o.getLongValue());
+  }
+
+  @Override public int hashCode() {
+    return getLongValue().hashCode();
+  }
+
   @Override public MeasureAggregator getNew() {
     // TODO Auto-generated method stub
     return new SumLongAggregator();

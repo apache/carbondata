@@ -19,16 +19,11 @@
 
 package org.carbondata.core.util;
 
-import java.io.DataInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
@@ -60,7 +55,6 @@ import org.carbondata.core.datastorage.store.compression.type.UnCompressNoneFloa
 import org.carbondata.core.datastorage.store.compression.type.UnCompressNoneInt;
 import org.carbondata.core.datastorage.store.compression.type.UnCompressNoneLong;
 import org.carbondata.core.datastorage.store.compression.type.UnCompressNoneShort;
-import org.carbondata.core.datastorage.store.impl.FileFactory;
 
 public final class ValueCompressionUtil {
 
@@ -692,103 +686,6 @@ public final class ValueCompressionUtil {
 
         return new UnCompressNonDecimalMaxMinDefault();
 
-    }
-  }
-
-  public static ValueCompressionModel getValueCompressionModel(String measureMetaDataFileLocation,
-      int measureCount)
-
-  {
-    MeasureMetaDataModel measureMDMdl =
-        readMeasureMetaDataFile(measureMetaDataFileLocation, measureCount);
-    return getValueCompressionModel(measureMDMdl);
-  }
-
-  public static MeasureMetaDataModel readMeasureMetaDataFile(String measureMetaDataFileLocation,
-      int measureCount) {
-    DataInputStream stream = null;
-    Object[] maxValue = new Object[measureCount];
-    Object[] minValue = new Object[measureCount];
-    Object[] uniqueValue = new Object[measureCount];
-    int[] decimalLength = new int[measureCount];
-    char[] aggType = new char[measureCount];
-    byte[] dataTypeSelected = new byte[measureCount];
-    Object[] minValueFactForAgg = new Object[measureCount];
-    Arrays.fill(dataTypeSelected, (byte) 1);
-    Arrays.fill(aggType, 'n');
-    int currentIndex = 0;
-    byte[] metaBytes = null;
-    ByteBuffer allocate = null;
-    try {
-      stream = FileFactory.getDataInputStream(measureMetaDataFileLocation,
-          FileFactory.getFileType(measureMetaDataFileLocation));
-      if (null != stream) {
-        int totalSize = stream.readInt();
-        metaBytes = new byte[totalSize];
-        stream.readFully(metaBytes);
-        allocate = ByteBuffer.allocate(totalSize);
-        allocate = ByteBuffer.wrap(metaBytes);
-      }
-    } catch (FileNotFoundException f) {
-      LOGGER.error("@@@ msrMetadata File is missing @@@ ");
-    } catch (IOException exception) {
-      LOGGER.error("@@@ Error while reading msrMetadata File is missing @@@ ");
-    } finally {
-      CarbonUtil.closeStreams(stream);
-    }
-    allocate.rewind();
-
-    for (int i = 0; i < aggType.length; i++) {
-      aggType[currentIndex++] = allocate.getChar();
-    }
-    currentIndex = 0;
-    for (int i = 0; i < maxValue.length; i++) {
-      maxValue[currentIndex++] = getValueBasedOnAggType(allocate, aggType[i]);
-    }
-    currentIndex = 0;
-    for (int i = 0; i < minValue.length; i++) {
-      minValue[currentIndex++] = getValueBasedOnAggType(allocate, aggType[i]);
-    }
-    currentIndex = 0;
-    for (int i = 0; i < decimalLength.length; i++) {
-      decimalLength[currentIndex++] = allocate.getInt();
-    }
-    currentIndex = 0;
-    for (int i = 0; i < uniqueValue.length; i++) {
-      uniqueValue[currentIndex++] = getValueBasedOnAggType(allocate, aggType[i]);
-    }
-    if (allocate.hasRemaining()) {
-      currentIndex = 0;
-      for (int i = 0; i < aggType.length; i++) {
-        dataTypeSelected[currentIndex++] = allocate.get();
-      }
-    }
-
-    if (allocate.hasRemaining()) {
-      currentIndex = 0;
-      for (int i = 0; i < aggType.length; i++) {
-        minValueFactForAgg[currentIndex++] = allocate.getDouble();
-      }
-    }
-    MeasureMetaDataModel measureMetaDataModel =
-        new MeasureMetaDataModel(minValue, maxValue, decimalLength, measureCount, uniqueValue,
-            aggType, dataTypeSelected);
-    measureMetaDataModel.setMinValueFactForAgg(minValueFactForAgg);
-    return measureMetaDataModel;
-
-  }
-
-  private static Object getValueBasedOnAggType(ByteBuffer allocate, char type) {
-    if (type == CarbonCommonConstants.BIG_INT_MEASURE) {
-      return allocate.getLong();
-    } else if (type == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-      int len = allocate.getInt();
-      byte[] buff = new byte[len];
-      allocate.get(buff);
-      BigDecimal val = DataTypeUtil.byteToBigDecimal(buff);
-      return val;
-    } else {
-      return allocate.getDouble();
     }
   }
 

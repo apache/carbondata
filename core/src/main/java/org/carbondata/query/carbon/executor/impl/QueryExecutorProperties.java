@@ -32,11 +32,6 @@ import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
 public class QueryExecutorProperties {
 
   /**
-   * table unique name
-   */
-  protected String tableUniqueName;
-
-  /**
    * list of blocks in which query will be executed
    */
   protected List<AbstractIndex> dataBlocks;

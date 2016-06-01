@@ -66,7 +66,7 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
    * @param newVal new value
    */
   @Override public void agg(Object newVal) {
-    valueSet.add(newVal instanceof Long ? (Long) newVal : new Long(newVal.toString()));
+    valueSet.add(newVal instanceof Long ? (Long) newVal : Long.valueOf(newVal.toString()));
   }
 
   @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
@@ -195,6 +195,18 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
       return -1;
     }
     return 0;
+  }
+
+  @Override public boolean equals(Object obj) {
+    if(!(obj instanceof SumDistinctLongAggregator)) {
+      return false;
+    }
+    SumDistinctLongAggregator o = (SumDistinctLongAggregator) obj;
+    return getLongValue().equals(o.getLongValue());
+  }
+
+  @Override public int hashCode() {
+    return getLongValue().hashCode();
   }
 
   @Override public MeasureAggregator getNew() {

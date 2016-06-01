@@ -57,7 +57,8 @@ public class SumBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
 
   @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
-      aggVal.add(dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index));
+      aggVal =
+          aggVal.add(dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index));
       firstTime = false;
     }
   }
@@ -152,6 +153,18 @@ public class SumBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
     BigDecimal value = getBigDecimalValue();
     BigDecimal otherVal = o.getBigDecimalValue();
     return value.compareTo(otherVal);
+  }
+
+  @Override public boolean equals(Object obj) {
+    if(!(obj instanceof SumBigDecimalAggregator)) {
+      return false;
+    }
+    SumBigDecimalAggregator o = (SumBigDecimalAggregator) obj;
+    return getBigDecimalValue().equals(o.getBigDecimalValue());
+  }
+
+  @Override public int hashCode() {
+    return getBigDecimalValue().hashCode();
   }
 
   @Override public MeasureAggregator getNew() {

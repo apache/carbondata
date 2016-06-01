@@ -72,11 +72,9 @@ import org.carbondata.core.reader.CarbonFooterReader;
 import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.query.util.DataFileFooterConverter;
 
-
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
-
 import org.pentaho.di.core.exception.KettleException;
 
 
@@ -886,19 +884,14 @@ public final class CarbonUtil {
 
   public static int[] getUnCompressColumnIndex(int totalLength, byte[] columnIndexData,
       NumberCompressor numberCompressor) {
-    byte[] indexData = null;
-    byte[] indexMap = null;
-    try {
-      ByteBuffer buffer = ByteBuffer.wrap(columnIndexData);
-      buffer.rewind();
-      int indexDataLength = buffer.getInt();
-      indexData = new byte[indexDataLength];
-      indexMap = new byte[totalLength - indexDataLength - CarbonCommonConstants.INT_SIZE_IN_BYTE];
-      buffer.get(indexData);
-      buffer.get(indexMap);
-    } catch (Exception e) {
-      LOGGER.error("Error while compressColumn Index ");
-    }
+    ByteBuffer buffer = ByteBuffer.wrap(columnIndexData);
+    buffer.rewind();
+    int indexDataLength = buffer.getInt();
+    byte[] indexData = new byte[indexDataLength];
+    byte[] indexMap =
+        new byte[totalLength - indexDataLength - CarbonCommonConstants.INT_SIZE_IN_BYTE];
+    buffer.get(indexData);
+    buffer.get(indexMap);
     return UnBlockIndexer.uncompressIndex(numberCompressor.unCompress(indexData),
         numberCompressor.unCompress(indexMap));
   }

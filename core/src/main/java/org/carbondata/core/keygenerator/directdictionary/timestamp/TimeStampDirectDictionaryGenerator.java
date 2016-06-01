@@ -51,13 +51,13 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
   /**
    * The value of 1 unit of the SECOND, MINUTE, HOUR, or DAY in millis.
    */
-  public static long granularityFactor;
+  public static final long granularityFactor;
   /**
    * The date timestamp to be considered as start date for calculating the timestamp
    * java counts the number of milliseconds from  start of "January 1, 1970", this property is
    * customized the start of position. for example "January 1, 2000"
    */
-  public static long cutOffTimeStamp;
+  public static final long cutOffTimeStamp;
 
   /**
    * initialization block for granularityFactor and cutOffTimeStamp
@@ -67,25 +67,26 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
         .getProperty(TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP);
     String timeGranularity = CarbonProperties.getInstance()
         .getProperty(TimeStampGranularityConstants.CARBON_TIME_GRANULARITY, TIME_GRAN_SEC);
-    granularityFactor = 1000;
+    long granularityFactorLocal = 1000;
     switch (timeGranularity) {
       case TIME_GRAN_SEC:
-        granularityFactor = TimeStampGranularityTypeValue.MILLIS_SECONDS.getValue();
+        granularityFactorLocal = TimeStampGranularityTypeValue.MILLIS_SECONDS.getValue();
         break;
       case TIME_GRAN_MIN:
-        granularityFactor = TimeStampGranularityTypeValue.MILLIS_MINUTE.getValue();
+        granularityFactorLocal = TimeStampGranularityTypeValue.MILLIS_MINUTE.getValue();
         break;
       case TIME_GRAN_HOUR:
-        granularityFactor = TimeStampGranularityTypeValue.MILLIS_HOUR.getValue();
+        granularityFactorLocal = TimeStampGranularityTypeValue.MILLIS_HOUR.getValue();
         break;
       case TIME_GRAN_DAY:
-        granularityFactor = TimeStampGranularityTypeValue.MILLIS_DAY.getValue();
+        granularityFactorLocal = TimeStampGranularityTypeValue.MILLIS_DAY.getValue();
         break;
       default:
-        granularityFactor = 1000;
+        granularityFactorLocal = 1000;
     }
+    long cutOffTimeStampLocal;
     if (null == cutOffTimeStampString) {
-      cutOffTimeStamp = -1;
+      cutOffTimeStampLocal = -1;
     } else {
       try {
         SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
@@ -93,11 +94,13 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
                 CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
         timeParser.setLenient(false);
         Date dateToStr = timeParser.parse(cutOffTimeStampString);
-        cutOffTimeStamp = dateToStr.getTime();
+        cutOffTimeStampLocal = dateToStr.getTime();
       } catch (ParseException e) {
-        cutOffTimeStamp = -1;
+        cutOffTimeStampLocal = -1;
       }
     }
+    granularityFactor = granularityFactorLocal;
+    cutOffTimeStamp = cutOffTimeStampLocal;
   }
 
   /**

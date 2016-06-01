@@ -300,8 +300,7 @@ public class StoreCreator {
           new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier.getCarbonTableIdentifier(),
               dims.get(i).getColumnId(), dims.get(i).getDataType()));
       CarbonDictionarySortInfoPreparator preparator =
-          new CarbonDictionarySortInfoPreparator(absoluteTableIdentifier.getStorePath(),
-              absoluteTableIdentifier.getCarbonTableIdentifier());
+          new CarbonDictionarySortInfoPreparator();
       CarbonDictionarySortInfo dictionarySortInfo =
           preparator.getDictionarySortInfo(dict, dims.get(i).getDataType());
       CarbonDictionarySortIndexWriter carbonDictionaryWriter =

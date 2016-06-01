@@ -227,4 +227,15 @@ public class MultiDimKeyVarLengthEquiSplitGenerator extends MultiDimKeyVarLength
     return size;
   }
 
+  @Override public boolean equals(Object obj) {
+    if(!(obj instanceof MultiDimKeyVarLengthEquiSplitGenerator)) {
+      return false;
+    }
+    MultiDimKeyVarLengthEquiSplitGenerator o = (MultiDimKeyVarLengthEquiSplitGenerator)obj;
+    return o.dimensionsToSplit == dimensionsToSplit && super.equals(obj);
+  }
+
+  @Override public int hashCode() {
+    return super.hashCode() + dimensionsToSplit;
+  }
 }

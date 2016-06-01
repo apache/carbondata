@@ -1100,7 +1100,7 @@ public final class FilterUtil {
     traverseResolverTreeAndPopulateStartAndEndKeys(filterResolverTree.getLeft(), tableIdentifier,
         segmentProperties, startKeys, setOfStartKeyByteArray, endKeys, setOfEndKeyByteArray);
 
-    filterResolverTree.getstartKey(segmentProperties, startKeys, setOfStartKeyByteArray);
+    filterResolverTree.getStartKey(segmentProperties, startKeys, setOfStartKeyByteArray);
     filterResolverTree.getEndKey(segmentProperties, tableIdentifier, endKeys, setOfEndKeyByteArray);
 
     traverseResolverTreeAndPopulateStartAndEndKeys(filterResolverTree.getRight(), tableIdentifier,

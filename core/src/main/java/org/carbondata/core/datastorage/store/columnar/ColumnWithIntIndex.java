@@ -19,6 +19,8 @@
 
 package org.carbondata.core.datastorage.store.columnar;
 
+import java.util.Arrays;
+
 import org.carbondata.core.util.ByteUtil;
 
 public class ColumnWithIntIndex implements Comparable<ColumnWithIntIndex> {
@@ -66,4 +68,15 @@ public class ColumnWithIntIndex implements Comparable<ColumnWithIntIndex> {
     return ByteUtil.UnsafeComparer.INSTANCE.compareTo(column, o.column);
   }
 
+  @Override public boolean equals(Object obj) {
+    if(obj == null || getClass() != obj.getClass()) {
+      return false;
+    }
+    ColumnWithIntIndex o = (ColumnWithIntIndex)obj;
+    return Arrays.equals(column, o.column) && index == o.index;
+  }
+
+  @Override public int hashCode() {
+    return Arrays.hashCode(column) + index;
+  }
 }

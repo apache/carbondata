@@ -206,6 +206,18 @@ public class SumDistinctDoubleAggregator extends AbstractMeasureAggregatorBasic 
     return 0;
   }
 
+  @Override public boolean equals(Object obj) {
+    if(!(obj instanceof SumDistinctDoubleAggregator)) {
+      return false;
+    }
+    SumDistinctDoubleAggregator o = (SumDistinctDoubleAggregator) obj;
+    return getDoubleValue().equals(o.getDoubleValue());
+  }
+
+  @Override public int hashCode() {
+    return getDoubleValue().hashCode();
+  }
+
   @Override public MeasureAggregator getNew() {
     // TODO Auto-generated method stub
     return new SumDistinctDoubleAggregator();

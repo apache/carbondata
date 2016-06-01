@@ -174,6 +174,18 @@ public class AvgDoubleAggregator extends AbstractMeasureAggregatorBasic {
     return 0;
   }
 
+  @Override public boolean equals(Object obj) {
+    if(!(obj instanceof AvgDoubleAggregator)) {
+      return false;
+    }
+    AvgDoubleAggregator o = (AvgDoubleAggregator)obj;
+    return getDoubleValue().equals(o.getDoubleValue());
+  }
+
+  @Override public int hashCode() {
+    return getDoubleValue().hashCode();
+  }
+
   @Override public void merge(byte[] value) {
     if (0 == value.length) {
       return;

@@ -129,7 +129,7 @@
             <version>3.0.0</version>
             <configuration>
               <excludeFilterFile>${dev.path}/findbugs-exclude.xml</excludeFilterFile>
-              <failOnError>false</failOnError>
+              <failOnError>true</failOnError>
               <findbugsXmlOutput>true</findbugsXmlOutput>
               <xmlOutput>true</xmlOutput>
               <effort>Max</effort>

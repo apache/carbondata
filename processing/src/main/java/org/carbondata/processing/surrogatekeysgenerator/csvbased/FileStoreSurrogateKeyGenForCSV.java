@@ -41,8 +41,8 @@ import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.file.manager.composite.FileData;
+import org.carbondata.core.file.manager.composite.FileManager;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
-import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
@@ -124,7 +124,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
     setStoreFolderWithLoadNumber(
         checkAndCreateLoadFolderNumber(baseStorePath, columnsInfo.getSchemaName(),
             columnsInfo.getCubeName()));
-    fileManager = new LoadFolderData();
+    fileManager = new FileManager();
     fileManager.setName(loadFolderName + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
 
     hierValueWriter = new HashMap<String, HierarchyValueWriterForCSV>(

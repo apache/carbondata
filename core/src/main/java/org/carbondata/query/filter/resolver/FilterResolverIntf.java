@@ -64,14 +64,12 @@ public interface FilterResolverIntf extends Serializable {
   DimColumnResolvedFilterInfo getDimColResolvedFilterInfo();
 
   /**
-   * API will get the start key based on the filter applied
-   * based on the key generator
-   *
-   * @param setOfStartKeyByteArray
+   *  API will get the start key based on the filter applied based on the key generator
+   * @param segmentProperties
    * @param startKey
-   * @return long[], array of start keys.
+   * @param setOfStartKeyByteArray
    */
-  void getstartKey(SegmentProperties segmentProperties, long[] startKey,
+  void getStartKey(SegmentProperties segmentProperties, long[] startKey,
       SortedMap<Integer, byte[]> setOfStartKeyByteArray);
 
   /**

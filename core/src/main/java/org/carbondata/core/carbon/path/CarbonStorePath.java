@@ -55,4 +55,15 @@ public class CarbonStorePath extends Path {
     return CarbonStorePath.getCarbonTablePath(storePath, tableIdentifier);
   }
 
+  @Override public boolean equals(Object o) {
+    if (!(o instanceof CarbonStorePath)) {
+      return false;
+    }
+    CarbonStorePath path = (CarbonStorePath)o;
+    return storePath.equals(path.storePath) && super.equals(o);
+  }
+
+  @Override public int hashCode() {
+    return super.hashCode() + storePath.hashCode();
+  }
 }

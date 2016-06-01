@@ -160,6 +160,18 @@ public class SumDoubleAggregator extends AbstractMeasureAggregatorBasic {
     return 0;
   }
 
+  @Override public boolean equals(Object obj) {
+    if(!(obj instanceof SumDoubleAggregator)) {
+      return false;
+    }
+    SumDoubleAggregator o = (SumDoubleAggregator) obj;
+    return getDoubleValue().equals(o.getDoubleValue());
+  }
+
+  @Override public int hashCode() {
+    return getDoubleValue().hashCode();
+  }
+
   @Override public MeasureAggregator getNew() {
     return new SumDoubleAggregator();
   }

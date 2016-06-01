@@ -109,7 +109,6 @@ public class BlockBTreeBuilder extends AbstractBTreeBuilder {
       }
     }
     if (nLeaf == 0) {
-      curNode = new BTreeNonLeafNode();
       return;
     }
     // adding a intermediate node

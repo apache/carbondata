@@ -108,9 +108,8 @@ public class FilterScanner extends AbstractBlockletScanner {
         return;
       }
     }
-    BitSet bitSet = new BitSet();
     // apply filter on actual data
-    bitSet = this.filterExecuter.applyFilter(blocksChunkHolder);
+    BitSet bitSet = this.filterExecuter.applyFilter(blocksChunkHolder);
     // if indexes is empty then return with empty result
     if (bitSet.isEmpty()) {
       scannedResult.setNumberOfRows(0);

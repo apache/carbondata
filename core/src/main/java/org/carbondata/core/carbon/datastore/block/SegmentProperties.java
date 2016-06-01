@@ -54,11 +54,6 @@ public class SegmentProperties {
   private KeyGenerator dimensionKeyGenerator;
 
   /**
-   * key generator used for complex dimension
-   */
-  private KeyGenerator complexDimensionKeyGenerator;
-
-  /**
    * list of dimension present in the block
    */
   private List<CarbonDimension> dimensions;
@@ -408,8 +403,6 @@ public class SegmentProperties {
       int[] complexDimensionBitLength = new int[complexDimesionParition.length];
       // number of bits will be 64
       Arrays.fill(complexDimensionBitLength, 64);
-      this.complexDimensionKeyGenerator =
-          new MultiDimKeyVarLengthGenerator(complexDimensionBitLength);
       ColumnarSplitter keySplitter =
           new MultiDimKeyVarLengthVariableSplitGenerator(complexDimensionBitLength,
               complexDimesionParition);

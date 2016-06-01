@@ -22,11 +22,16 @@ package org.carbondata.core.file.manager.composite;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class AbstractFileManager implements IFileManagerComposite {
+import org.carbondata.core.constants.CarbonCommonConstants;
+
+public class FileManager implements IFileManagerComposite {
   /**
    * listOfFileData, composite parent which holds the different objects
    */
-  protected List<IFileManagerComposite> listOfFileData = new ArrayList<IFileManagerComposite>(10);
+  protected List<IFileManagerComposite> listOfFileData =
+      new ArrayList<IFileManagerComposite>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+
+  protected String fileName;
 
   @Override public void add(IFileManagerComposite customData) {
     listOfFileData.add(customData);
@@ -44,7 +49,13 @@ public abstract class AbstractFileManager implements IFileManagerComposite {
   /**
    * Renames the File/Folders
    */
-  public abstract boolean rename(IFileManagerComposite composite);
+  public boolean rename(IFileManagerComposite composite) {
+    return false;
+  }
+
+  @Override public void setName(String name) {
+    this.fileName = name;
+  }
 
   /**
    * Return the size

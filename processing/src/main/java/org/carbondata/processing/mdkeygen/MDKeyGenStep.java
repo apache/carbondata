@@ -36,8 +36,8 @@ import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.file.manager.composite.FileData;
+import org.carbondata.core.file.manager.composite.FileManager;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
-import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.util.CarbonProperties;
@@ -251,7 +251,7 @@ public class MDKeyGenStep extends BaseStep {
     storeLocation = carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     isNoDictionaryDimension =
         RemoveDictionaryUtil.convertStringToBooleanArr(meta.getNoDictionaryDimsMapping());
-    fileManager = new LoadFolderData();
+    fileManager = new FileManager();
     fileManager.setName(CarbonCommonConstants.LOAD_FOLDER + meta.getSegmentId()
         + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
 

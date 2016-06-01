@@ -155,8 +155,7 @@ object GlobalDictionaryUtil extends Logging {
   def writeGlobalDictionaryColumnSortInfo(model: DictionaryLoadModel,
       index: Int,
       dictionary: Dictionary): Unit = {
-    val preparator: CarbonDictionarySortInfoPreparator =
-      new CarbonDictionarySortInfoPreparator(model.hdfsLocation, model.table)
+    val preparator: CarbonDictionarySortInfoPreparator = new CarbonDictionarySortInfoPreparator
     val dictionarySortInfo: CarbonDictionarySortInfo =
       preparator.getDictionarySortInfo(dictionary,
         model.primDimensions(index).getDataType)

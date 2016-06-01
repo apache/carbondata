@@ -56,6 +56,7 @@ public class VariableLengthDimensionAggregator implements DimensionDataAggregato
   public VariableLengthDimensionAggregator(DimensionAggregatorInfo dimensionAggeragtorInfo,
       Object defaultValue, int aggregatorStartIndex, int blockIndex) {
     this.dimensionAggeragtorInfo = dimensionAggeragtorInfo;
+    this.defaultValue = defaultValue;
     this.aggreagtorStartIndex = aggregatorStartIndex;
     this.blockIndex = blockIndex;
   }

@@ -84,11 +84,9 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    *
    * @return start IndexKey
    */
-  public void getstartKey(SegmentProperties segmentProperties, long[] startKey,
+  public void getStartKey(SegmentProperties segmentProperties, long[] startKey,
       SortedMap<Integer, byte[]> noDictStartKeys) {
     if (null == dimColEvaluatorInfoList.get(0).getStarIndexKey()) {
-      startKey =
-          FilterUtil.getStartKey(dimColEvaluatorInfoList.get(0), segmentProperties, startKey);
       FilterUtil
           .getStartKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), segmentProperties,
               noDictStartKeys);

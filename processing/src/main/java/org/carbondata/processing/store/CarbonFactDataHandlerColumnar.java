@@ -51,8 +51,8 @@ import org.carbondata.core.datastorage.store.columnar.IndexStorage;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.dataholder.CarbonWriteDataHolder;
 import org.carbondata.core.datastorage.util.StoreFactory;
+import org.carbondata.core.file.manager.composite.FileManager;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
-import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.columnar.ColumnarSplitter;
@@ -417,7 +417,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @throws CarbonDataWriterException
    */
   public void initialise() throws CarbonDataWriterException {
-    fileManager = new LoadFolderData();
+    fileManager = new FileManager();
     fileManager.setName(new File(this.storeLocation).getName());
     setWritingConfiguration();
   }

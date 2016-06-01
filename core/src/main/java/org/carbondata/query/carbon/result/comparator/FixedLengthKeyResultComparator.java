@@ -60,7 +60,7 @@ public class FixedLengthKeyResultComparator implements Comparator<ListBasedResul
       if (cmp != 0) {
 
         if (sortOrder == 1) {
-          return cmp = cmp * -1;
+          return cmp * -1;
         }
         return cmp;
       }

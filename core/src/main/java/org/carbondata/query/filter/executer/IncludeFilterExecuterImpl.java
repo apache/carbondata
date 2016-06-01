@@ -78,49 +78,41 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   private BitSet setDirectKeyFilterIndexToBitSet(
       VariableLengthDimensionDataChunk dimensionColumnDataChunk, int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
-    if (dimensionColumnDataChunk instanceof VariableLengthDimensionDataChunk) {
-      List<byte[]> listOfColumnarKeyBlockDataForNoDictionaryVals =
-          ((VariableLengthDimensionDataChunk) dimensionColumnDataChunk).getCompleteDataChunk();
-      byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-      int[] columnIndexArray = dimensionColumnDataChunk.getAttributes().getInvertedIndexes();
-      int[] columnReverseIndexArray =
-          dimensionColumnDataChunk.getAttributes().getInvertedIndexesReverse();
-      for (int i = 0; i < filterValues.length; i++) {
-        byte[] filterVal = filterValues[i];
-        if (null != listOfColumnarKeyBlockDataForNoDictionaryVals) {
-
-          if (null != columnIndexArray) {
-            for (int index : columnIndexArray) {
-              byte[] noDictionaryVal =
-                  listOfColumnarKeyBlockDataForNoDictionaryVals.get(columnReverseIndexArray[index]);
-              if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterVal, noDictionaryVal) == 0) {
-                bitSet.set(index);
-              }
+    List<byte[]> listOfColumnarKeyBlockDataForNoDictionaryVals =
+        dimensionColumnDataChunk.getCompleteDataChunk();
+    byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+    int[] columnIndexArray = dimensionColumnDataChunk.getAttributes().getInvertedIndexes();
+    int[] columnReverseIndexArray =
+        dimensionColumnDataChunk.getAttributes().getInvertedIndexesReverse();
+    for (int i = 0; i < filterValues.length; i++) {
+      byte[] filterVal = filterValues[i];
+      if (null != listOfColumnarKeyBlockDataForNoDictionaryVals) {
+        if (null != columnIndexArray) {
+          for (int index : columnIndexArray) {
+            byte[] noDictionaryVal =
+                listOfColumnarKeyBlockDataForNoDictionaryVals.get(columnReverseIndexArray[index]);
+            if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterVal, noDictionaryVal) == 0) {
+              bitSet.set(index);
             }
-          } else if (null != columnReverseIndexArray) {
-
-            for (int index : columnReverseIndexArray) {
-              byte[] noDictionaryVal =
-                  listOfColumnarKeyBlockDataForNoDictionaryVals.get(columnReverseIndexArray[index]);
-              if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterVal, noDictionaryVal) == 0) {
-                bitSet.set(index);
-              }
+          }
+        } else if (null != columnReverseIndexArray) {
+          for (int index : columnReverseIndexArray) {
+            byte[] noDictionaryVal =
+                listOfColumnarKeyBlockDataForNoDictionaryVals.get(columnReverseIndexArray[index]);
+            if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterVal, noDictionaryVal) == 0) {
+              bitSet.set(index);
             }
-          } else {
-
-            for (int index = 0;
-                 index < listOfColumnarKeyBlockDataForNoDictionaryVals.size(); index++) {
-              if (ByteUtil.UnsafeComparer.INSTANCE
-                  .compareTo(filterVal, listOfColumnarKeyBlockDataForNoDictionaryVals.get(index))
-                  == 0) {
-                bitSet.set(index);
-              }
-
+          }
+        } else {
+          for (int index = 0;
+               index < listOfColumnarKeyBlockDataForNoDictionaryVals.size(); index++) {
+            if (ByteUtil.UnsafeComparer.INSTANCE
+                .compareTo(filterVal, listOfColumnarKeyBlockDataForNoDictionaryVals.get(index))
+                == 0) {
+              bitSet.set(index);
             }
-
           }
         }
-
       }
     }
     return bitSet;
@@ -130,37 +122,33 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   private BitSet setFilterdIndexToBitSetWithColumnIndex(
       FixedLengthDimensionDataChunk dimensionColumnDataChunk, int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
-    if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
-      FixedLengthDimensionDataChunk fixedColumnDataChunk =
-          (FixedLengthDimensionDataChunk) dimensionColumnDataChunk;
-      int[] columnIndex = dimensionColumnDataChunk.getAttributes().getInvertedIndexes();
-      int start = 0;
-      int last = 0;
-      int startIndex = 0;
-      byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-      for (int i = 0; i < filterValues.length; i++) {
-        start = CarbonUtil
-            .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-                filterValues[i]);
-        if (start == -1) {
-          continue;
-        }
-        bitSet.set(columnIndex[start]);
-        last = start;
-        for (int j = start + 1; j < numerOfRows; j++) {
-          if (ByteUtil.UnsafeComparer.INSTANCE
-              .compareTo(fixedColumnDataChunk.getCompleteDataChunk(), j * filterValues[i].length,
-                  filterValues[i].length, filterValues[i], 0, filterValues[i].length) == 0) {
-            bitSet.set(columnIndex[j]);
-            last++;
-          } else {
-            break;
-          }
-        }
-        startIndex = last;
-        if (startIndex >= numerOfRows) {
+    int[] columnIndex = dimensionColumnDataChunk.getAttributes().getInvertedIndexes();
+    int start = 0;
+    int last = 0;
+    int startIndex = 0;
+    byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+    for (int i = 0; i < filterValues.length; i++) {
+      start = CarbonUtil
+          .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
+              filterValues[i]);
+      if (start == -1) {
+        continue;
+      }
+      bitSet.set(columnIndex[start]);
+      last = start;
+      for (int j = start + 1; j < numerOfRows; j++) {
+        if (ByteUtil.UnsafeComparer.INSTANCE
+            .compareTo(dimensionColumnDataChunk.getCompleteDataChunk(), j * filterValues[i].length,
+                filterValues[i].length, filterValues[i], 0, filterValues[i].length) == 0) {
+          bitSet.set(columnIndex[j]);
+          last++;
+        } else {
           break;
         }
+      }
+      startIndex = last;
+      if (startIndex >= numerOfRows) {
+        break;
       }
     }
     return bitSet;

@@ -177,6 +177,18 @@ public class CountAggregator implements MeasureAggregator {
     return 0;
   }
 
+  @Override public boolean equals(Object obj) {
+    if(!(obj instanceof CountAggregator)) {
+      return false;
+    }
+    CountAggregator o = (CountAggregator)obj;
+    return getDoubleValue().equals(o.getDoubleValue());
+  }
+
+  @Override public int hashCode() {
+    return getDoubleValue().hashCode();
+  }
+
   @Override public MeasureAggregator get() {
     return this;
   }

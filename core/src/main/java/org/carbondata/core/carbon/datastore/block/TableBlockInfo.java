@@ -105,7 +105,7 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
   @Override public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + (segmentId ^ (segmentId >>> 32));
+    result = prime * result + segmentId;
     result = prime * result + (int) (blockOffset ^ (blockOffset >>> 32));
     result = prime * result + (int) (blockLength ^ (blockLength >>> 32));
     result = prime * result + ((filePath == null) ? 0 : filePath.hashCode());

@@ -19,6 +19,8 @@
 
 package org.carbondata.core.datastorage.store.columnar;
 
+import java.util.Arrays;
+
 import org.carbondata.core.util.ByteUtil.UnsafeComparer;
 
 public class ColumnWithIntIndexForHighCard extends ColumnWithIntIndex
@@ -33,4 +35,15 @@ public class ColumnWithIntIndexForHighCard extends ColumnWithIntIndex
         .compareTo(column, 2, column.length - 2, o.column, 2, o.column.length - 2);
   }
 
+  @Override public boolean equals(Object obj) {
+    if(obj == null || getClass() != obj.getClass()) {
+      return false;
+    }
+    ColumnWithIntIndexForHighCard o = (ColumnWithIntIndexForHighCard)obj;
+    return Arrays.equals(column, o.column) && getIndex() == o.getIndex();
+  }
+
+  @Override public int hashCode() {
+    return Arrays.hashCode(column) + getIndex();
+  }
 }

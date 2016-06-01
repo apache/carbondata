@@ -92,12 +92,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .getCarbonTableIdentifier().getTableName());
 
     QueryUtil.resolveQueryModel(queryModel);
-    /**
-     * setting the table unique name
-     */
-    queryProperties.tableUniqueName =
-        queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getDatabaseName() + '_'
-            + queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName();
 
     // get the table blocks
     try {

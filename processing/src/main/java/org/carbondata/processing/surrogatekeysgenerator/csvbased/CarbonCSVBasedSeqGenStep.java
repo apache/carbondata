@@ -50,8 +50,8 @@ import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.file.manager.composite.FileData;
+import org.carbondata.core.file.manager.composite.FileManager;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
-import org.carbondata.core.file.manager.composite.LoadFolderData;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -1302,7 +1302,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         HierarchyValueWriterForCSV hierWriter = nrmlizedHierWriterMap.get(hierInprogName);
         storeLocation = loadFolderLoc;
         if (null == filemanager) {
-          filemanager = new LoadFolderData();
+          filemanager = new FileManager();
           filemanager.setName(storeLocation);
         }
         if (null == hierWriter) {
