@@ -44,6 +44,7 @@ import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.lcm.status.SegmentStatusManager
+import org.carbondata.spark.exception.MalformedCarbonCommandException
 import org.carbondata.spark.load._
 import org.carbondata.spark.partition.api.impl.QueryPartitionHelper
 import org.carbondata.spark.rdd.CarbonDataRDDFactory
@@ -1413,12 +1414,15 @@ private[sql] case class LoadCube(
       val quoteChar = partionValues.getOrElse("quotechar", "\"")
       val fileHeader = partionValues.getOrElse("fileheader", "")
       val escapeChar = partionValues.getOrElse("escapechar", "")
-      val multiLine = partionValues.getOrElse("multiline", false)
       val complex_delimiter_level_1 = partionValues.getOrElse("complex_delimiter_level_1", "\\$")
       val complex_delimiter_level_2 = partionValues.getOrElse("complex_delimiter_level_2", "\\:")
-      var booleanValForMultiLine = false
-      if (multiLine.equals("true")) {
-        booleanValForMultiLine = true
+      val multiLine = partionValues.getOrElse("multiline", "false").trim.toLowerCase match {
+        case "true" => true
+        case "false" => false
+        case illegal =>
+          val errorMessage = "Illegal syntax found: [" + illegal + "] .The value multiline in " +
+            "load DDL which you set can only be 'true' or 'false', please check your input DDL."
+          throw new MalformedCarbonCommandException(errorMessage)
       }
 
       if (delimiter.equalsIgnoreCase(complex_delimiter_level_1) ||
@@ -1464,7 +1468,7 @@ private[sql] case class LoadCube(
             delimiter,
             quoteChar,
             fileHeader,
-            escapeChar, booleanValForMultiLine)(sqlContext.asInstanceOf[HiveContext])
+            escapeChar, multiLine)(sqlContext.asInstanceOf[HiveContext])
         }
         GlobalDictionaryUtil
           .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.cubeMeta.dataPath)
