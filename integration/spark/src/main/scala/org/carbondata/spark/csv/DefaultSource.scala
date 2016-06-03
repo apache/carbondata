@@ -128,8 +128,9 @@ class DefaultSource extends com.databricks.spark.csv.DefaultSource {
 
     val codec = parameters.getOrElse("codec", null)
 
+    val rdd = CarbonTextFile.withCharset(sqlContext.sparkContext, path, charset)
     CsvRelation(
-      () => CarbonTextFile.withCharset(sqlContext.sparkContext, path, charset),
+      () => rdd,
       Some(path),
       headerFlag,
       delimiter,
