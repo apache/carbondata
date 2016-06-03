@@ -23,6 +23,7 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.schema.metadata.SortObserver;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
@@ -187,8 +188,9 @@ public class SortKeyStep extends BaseStep {
         throw new KettleException(e);
       }
 
-      this.logCounter =
-          Integer.parseInt(CarbonCommonConstants.DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER);
+      this.logCounter = Integer.parseInt(CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.DATA_LOAD_LOG_COUNTER,
+                      CarbonCommonConstants.DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER));
     }
 
     readCounter++;

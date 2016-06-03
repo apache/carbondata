@@ -20,6 +20,7 @@ package org.carbondata.core.carbon.datastore.block;
 
 import java.io.Serializable;
 
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.carbon.path.CarbonTablePath.DataFileUtil;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 
@@ -166,21 +167,25 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
     // if both the task id of the file is same then we need to compare the
     // offset of
     // the file
-    String firstTaskId = DataFileUtil.getTaskNo(filePath);
-    String otherTaskId = DataFileUtil.getTaskNo(filePath);
-    if (firstTaskId.compareTo(otherTaskId) < 1) {
-      return 1;
-    } else if (firstTaskId.compareTo(otherTaskId) > 1) {
-      return -1;
+    if(CarbonTablePath.isCarbonDataFile(filePath)) {
+      String firstTaskId = DataFileUtil.getTaskNo(filePath);
+      String otherTaskId = DataFileUtil.getTaskNo(other.filePath);
+      if (firstTaskId.compareTo(otherTaskId) < 1) {
+        return 1;
+      } else if (firstTaskId.compareTo(otherTaskId) > 1) {
+        return -1;
+      }
+      // compare the part no of both block info
+      int firstPartNo = Integer.parseInt(DataFileUtil.getPartNo(filePath));
+      int SecondPartNo = Integer.parseInt(DataFileUtil.getPartNo(other.filePath));
+      compareResult = firstPartNo - SecondPartNo;
+    } else {
+      compareResult =  filePath.compareTo(other.getFilePath());
     }
-    // compare the part no of both block info
-    int firstPartNo = Integer.parseInt(DataFileUtil.getPartNo(filePath));
-    int SecondPartNo = Integer.parseInt(DataFileUtil.getPartNo(other.filePath));
-    compareResult = firstPartNo - SecondPartNo;
-    //compare result is not 0 then return
     if (compareResult != 0) {
       return compareResult;
     }
+    //compare result is not 0 then return
     // if part no is also same then compare the offset and length of the block
     if (blockOffset + blockLength < other.blockOffset + other.blockLength) {
       return 1;

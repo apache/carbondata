@@ -56,11 +56,7 @@ object SplitUtils {
         part.asInstanceOf[NewHadoopPartition].serializableHadoopSplit.value.asInstanceOf[FileSplit]
       }
       splits.map { block =>
-        val blockDetails = new BlockDetails
-        blockDetails.setBlockOffset(block.getStart)
-        blockDetails.setBlockLength(block.getLength)
-        blockDetails.setFilePath(block.getPath.toString)
-        blockDetails
+        new BlockDetails(block.getPath.toString, block.getStart, block.getLength)
       }
     }
   }

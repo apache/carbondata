@@ -59,6 +59,7 @@ import org.carbondata.processing.graphgenerator.GraphGenerator;
 import org.carbondata.processing.graphgenerator.GraphGeneratorException;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.spark.merger.NodeBlockRelation;
+import org.carbondata.spark.merger.NodeMultiBlockRelation;
 
 import com.google.gson.Gson;
 import org.apache.hadoop.fs.FileSystem;
@@ -1117,27 +1118,34 @@ public final class CarbonLoaderUtil {
   private static void createOutputMap(Map<String, List<TableBlockInfo>> outputMap,
       int blocksPerNode, Set<TableBlockInfo> uniqueBlocks,
       Map<String, List<TableBlockInfo>> nodeAndBlockMapping) {
-    for (Map.Entry<String, List<TableBlockInfo>> entry : nodeAndBlockMapping.entrySet()) {
 
+    ArrayList<NodeMultiBlockRelation> multiBlockRelations =
+            new ArrayList<>(nodeAndBlockMapping.size());
+    for (Map.Entry<String, List<TableBlockInfo>> entry : nodeAndBlockMapping.entrySet()) {
+      multiBlockRelations.add(new NodeMultiBlockRelation(entry.getKey(), entry.getValue()));
+    }
+    // sort nodes based on number of blocks per node, so that nodes having lesser blocks
+    // are assigned first
+    Collections.sort(multiBlockRelations);
+
+    for (NodeMultiBlockRelation nodeMultiBlockRelation : multiBlockRelations) {
+      String nodeName = nodeMultiBlockRelation.getNode();
       // this loop will be for each NODE
       int nodeCapacity = 0;
-
-      List<TableBlockInfo> blocksInEachNode = entry.getValue();
-
       // loop thru blocks of each Node
-      for (TableBlockInfo block : blocksInEachNode) {
+      for (TableBlockInfo block : nodeMultiBlockRelation.getBlocks()) {
 
         // check if this is already assigned.
         if (uniqueBlocks.contains(block)) {
 
-          if (null == outputMap.get(entry.getKey())) {
+          if (null == outputMap.get(nodeName)) {
             List<TableBlockInfo> list =
                 new ArrayList<TableBlockInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-            outputMap.put(entry.getKey(), list);
+            outputMap.put(nodeName, list);
           }
           // assign this block to this node if node has capacity left
           if (nodeCapacity < blocksPerNode) {
-            List<TableBlockInfo> infos = outputMap.get(entry.getKey());
+            List<TableBlockInfo> infos = outputMap.get(nodeName);
             infos.add(block);
             nodeCapacity++;
             uniqueBlocks.remove(block);

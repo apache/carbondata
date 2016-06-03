@@ -484,6 +484,10 @@ public final class CarbonCommonConstants {
    */
   public static final String SORT_FILE_BUFFER_SIZE = "carbon.sort.file.buffer.size";
   /**
+   * no.of records after which counter to be printed
+   */
+  public static final String DATA_LOAD_LOG_COUNTER = "carbon.load.log.counter";
+  /**
    * DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER
    */
   public static final String DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER = "500000";
@@ -1082,6 +1086,15 @@ public final class CarbonCommonConstants {
   public static final String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE =
       "high.cardinality.row.count.percentage";
   public static final String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT = "80";
+
+  /**
+   * 16 mb size
+   */
+  public static final long CARBON_16MB = 16*1024*1024;
+  /**
+   * 256 mb size
+   */
+  public static final long CARBON_256MB = 256*1024*1024;
 
   private CarbonCommonConstants() {
 

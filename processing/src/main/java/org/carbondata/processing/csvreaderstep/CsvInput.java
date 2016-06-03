@@ -368,8 +368,9 @@ public class CsvInput extends BaseStep implements StepInterface {
         }
       }
     }
-
+    LOGGER.info("*****************Started ALL ALL csv reading***********");
     startProcess(numberOfNodes);
+    LOGGER.info("*****************Completed ALL ALL csv reading***********");
     setOutputDone();
     return false;
   }
@@ -379,9 +380,11 @@ public class CsvInput extends BaseStep implements StepInterface {
 
     Callable<Void> callable = new Callable<Void>() {
       @Override public Void call() throws RuntimeException {
-        StandardLogService.setThreadName(("PROCESS_BLOCKS"), null);
+        StandardLogService.setThreadName(("PROCESS_BLOCKS"), Thread.currentThread().getName());
         try {
+          LOGGER.info("*****************started csv reading by thread***********");
           doProcess();
+          LOGGER.info("*****************Completed csv reading by thread***********");
         } catch (Throwable e) {
           LOGGER.error(e,
               "Thread is terminated due to error");

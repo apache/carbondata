@@ -170,6 +170,19 @@ public class CarbonTablePath extends Path {
         + CARBON_DATA_EXT;
   }
 
+  /**
+   * check if it is carbon data file matching extension
+   * @param fileNameWithPath
+   * @return boolean
+   */
+  public static boolean isCarbonDataFile(String fileNameWithPath) {
+    int pos = fileNameWithPath.lastIndexOf('.');
+    if( pos != -1 ) {
+      return fileNameWithPath.substring(pos).startsWith(CARBON_DATA_EXT);
+    }
+    return false;
+  }
+
   private String getSegmentDir(String partitionId, Integer segmentId) {
     return getPartitionDir(partitionId) + File.separator + SEGMENT_PREFIX + segmentId;
   }

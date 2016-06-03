@@ -360,10 +360,8 @@ public class StoreCreator {
     DataProcessTaskStatus schmaModel = new DataProcessTaskStatus(schemaName, cubeName, tableName);
     schmaModel.setCsvFilePath(loadModel.getFactFilePath());
     SchemaInfo info = new SchemaInfo();
-    BlockDetails blockDetails = new BlockDetails();
-    blockDetails.setFilePath(loadModel.getFactFilePath());
-    blockDetails.setBlockOffset(0);
-    blockDetails.setBlockLength(new File(loadModel.getFactFilePath()).length());
+    BlockDetails blockDetails = new BlockDetails(loadModel.getFactFilePath(),
+        0, new File(loadModel.getFactFilePath()).length());
     GraphGenerator.blockInfo.put("qwqwq", new BlockDetails[] { blockDetails });
     schmaModel.setBlocksID("qwqwq");
 

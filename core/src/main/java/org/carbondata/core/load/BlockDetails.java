@@ -39,6 +39,12 @@ public class BlockDetails implements Serializable {
   //file path which block belong to
   private String filePath;
 
+  public BlockDetails(String filePath, long blockOffset, long blockLength) {
+    this.filePath = filePath;
+    this.blockOffset = blockOffset;
+    this.blockLength = blockLength;
+  }
+
   public long getBlockOffset() {
     return blockOffset;
   }

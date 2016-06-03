@@ -58,4 +58,20 @@ object FileUtils {
       stringbuild.substring(0, stringbuild.size - 1)
     }
   }
+
+  def getSpaceOccupied(inputPath: String): Long = {
+    var size : Long = 0
+    if (inputPath == null || inputPath.isEmpty) {
+      size
+    } else {
+      val stringbuild = new StringBuilder()
+      val filePaths = inputPath.split(",")
+      for (i <- 0 until filePaths.size) {
+        val fileType = FileFactory.getFileType(filePaths(i))
+        val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType)
+        size = size + carbonFile.getSize
+      }
+      size
+    }
+  }
 }
