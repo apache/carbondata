@@ -1477,7 +1477,7 @@ private[sql] case class LoadCube(
         case ex: Exception =>
           LOGGER.error(ex)
           LOGGER.audit("Dataload failure. Please check the logs")
-          sys.error("Dataload failure. Please check the logs")
+          throw ex
       }
       finally {
         // Once the data load is successful delete the unwanted partition files
@@ -1492,7 +1492,7 @@ private[sql] case class LoadCube(
           case ex: Exception =>
             LOGGER.error(ex)
             LOGGER.audit("Dataload failure. Problem deleting the partition folder")
-            sys.error("Problem deleting the partition folder")
+            throw ex
         }
 
       }
