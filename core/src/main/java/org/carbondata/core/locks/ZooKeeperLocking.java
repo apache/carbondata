@@ -31,7 +31,6 @@ import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
 import org.apache.zookeeper.Watcher;
-import org.apache.zookeeper.Watcher.Event.KeeperState;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 
@@ -75,28 +74,9 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     String zookeeperUrl = CarbonProperties.getInstance().getProperty("spark.deploy.zookeeper.url");
     int sessionTimeOut = 100000;
     try {
-      zk = new ZooKeeper(zookeeperUrl, sessionTimeOut, new Watcher() {
-
-        @Override public void process(WatchedEvent event) {
-          if (event.getState().equals(KeeperState.SyncConnected)) {
-            // if exists returns null then path doesn't exist. so creating.
-            try {
-              if (null == zk.exists(zooKeeperLocation, true)) {
-                // creating a znode in which all the znodes (lock files )are maintained.
-                zk.create(zooKeeperLocation, new byte[1], Ids.OPEN_ACL_UNSAFE,
-                    CreateMode.PERSISTENT);
-              }
-            } catch (KeeperException | InterruptedException e) {
-              LOGGER.error(e.getMessage());
-            }
-            LOGGER.info("zoo keeper client connected.");
-          }
-
-        }
-      });
-
+      zk = new ZooKeeper(zookeeperUrl, sessionTimeOut, new DummyWatcher());
     } catch (IOException e) {
-      LOGGER.error(e.getMessage());
+      LOGGER.error(e, "Error while zookeeper client");
     }
   }
 
@@ -110,15 +90,25 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     if (lockUsage == LockUsage.METADATA_LOCK) {
       this.lockTypeFolder =
           zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockUsage.toString();
-      // creating a znode in which all the znodes (lock files )are maintained.
       try {
+        createBaseNode();
         // if exists returns null then path doesnt exist. so creating.
         if (null == zk.exists(this.lockTypeFolder, true)) {
           zk.create(this.lockTypeFolder, new byte[1], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
         }
       } catch (KeeperException | InterruptedException e) {
-        LOGGER.error(e.getMessage());
+        LOGGER.error(e, e.getMessage());
       }
+    }
+  }
+
+  /**
+   * Creating a znode in which all the znodes (lock files )are maintained.
+   */
+  private void createBaseNode() throws KeeperException, InterruptedException {
+    if (null == zk.exists(zooKeeperLocation, true)) {
+      // creating a znode in which all the znodes (lock files )are maintained.
+      zk.create(zooKeeperLocation, new byte[1], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
     }
   }
 
@@ -155,7 +145,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
         return false;
       }
     } catch (KeeperException | InterruptedException e) {
-      LOGGER.error(e.getMessage());
+      LOGGER.error(e, e.getMessage());
       return false;
     }
   }
@@ -171,9 +161,14 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
         lockPath = null;
       }
     } catch (KeeperException | InterruptedException e) {
-      LOGGER.error(e.getMessage());
+      LOGGER.error(e, e.getMessage());
       return false;
     }
     return true;
+  }
+
+  private static class DummyWatcher implements Watcher {
+    public void process(WatchedEvent event) {
+    }
   }
 }
