@@ -19,6 +19,7 @@
 
 package org.carbondata.query.filters.measurefilter.util;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
@@ -44,6 +45,7 @@ import org.carbondata.core.cache.CacheType;
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.cache.dictionary.DictionaryChunksWrapper;
 import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
+import org.carbondata.core.cache.dictionary.ForwardDictionary;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
@@ -143,6 +145,7 @@ public final class FilterUtil {
 
   /**
    * It gives filter executer based on columnar or column group
+   *
    * @param dimColResolvedFilterInfo
    * @param segmentProperties
    * @return
@@ -270,14 +273,10 @@ public final class FilterUtil {
 
   {
     List<Integer> surrogates = new ArrayList<Integer>(20);
-    for (String resultVal : evaluateResultList) {
-      // Reading the dictionary value from cache.
-      Integer dictionaryVal =
-          getDictionaryValue(resultVal, tableIdentifier, columnExpression.getDimension());
-      if (null != dictionaryVal) {
-        surrogates.add(dictionaryVal);
-      }
-    }
+    sortFilterModelMembers(columnExpression, evaluateResultList);
+    // Reading the dictionary value from cache.
+    getDictionaryValue(evaluateResultList, tableIdentifier, columnExpression.getDimension(),
+        surrogates);
     Collections.sort(surrogates);
     DimColumnFilterInfo columnFilterInfo = null;
     if (surrogates.size() > 0) {
@@ -292,19 +291,21 @@ public final class FilterUtil {
    * This API will get the Dictionary value for the respective filter member
    * string.
    *
-   * @param value           filter value
+   * @param evaluateResultList filter value
    * @param tableIdentifier
-   * @param dim             , column expression dimension type.
+   * @param dim                , column expression dimension type.
+   * @param surrogates
    * @return the dictionary value.
    * @throws QueryExecutionException
    */
-  private static Integer getDictionaryValue(String value, AbsoluteTableIdentifier tableIdentifier,
-      CarbonDimension dim) throws QueryExecutionException {
+  private static void getDictionaryValue(List<String> evaluateResultList,
+      AbsoluteTableIdentifier tableIdentifier, CarbonDimension dim, List<Integer> surrogates)
+      throws QueryExecutionException {
     Dictionary forwardDictionary = getForwardDictionaryCache(tableIdentifier, dim);
     if (null != forwardDictionary) {
-      return forwardDictionary.getSurrogateKey(value);
+      ((ForwardDictionary) forwardDictionary)
+          .getSurrogateKeyByIncrementalSearch(evaluateResultList, surrogates);
     }
-    return null;
   }
 
   /**
@@ -320,7 +321,8 @@ public final class FilterUtil {
    */
   public static DimColumnFilterInfo getFilterListForAllValues(
       AbsoluteTableIdentifier tableIdentifier, Expression expression,
-      ColumnExpression columnExpression, boolean isIncludeFilter) throws QueryExecutionException {
+      final ColumnExpression columnExpression, boolean isIncludeFilter)
+      throws QueryExecutionException {
     Dictionary forwardDictionary =
         FilterUtil.getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
@@ -348,8 +350,22 @@ public final class FilterUtil {
         LOGGER.audit(e.getMessage());
       }
     }
+    sortFilterModelMembers(columnExpression, evaluateResultListFinal);
     return getFilterValues(tableIdentifier, columnExpression, evaluateResultListFinal,
         isIncludeFilter);
+  }
+
+  private static void sortFilterModelMembers(final ColumnExpression columnExpression,
+      List<String> evaluateResultListFinal) {
+    Comparator<String> filterActualValueComaparator = new Comparator<String>() {
+
+      @Override public int compare(String filterMember1, String filterMember2) {
+        return compareFilterMembersBasedOnActualDataType(filterMember1, filterMember2,
+            columnExpression.getDataType());
+      }
+
+    };
+    Collections.sort(evaluateResultListFinal, filterActualValueComaparator);
   }
 
   /**
@@ -1029,6 +1045,39 @@ public final class FilterUtil {
     listOfStartEndKeys.add(searchStartKey);
     listOfStartEndKeys.add(searchEndKey);
 
+  }
+
+  private static int compareFilterMembersBasedOnActualDataType(String filterMember1,
+      String filterMember2, org.carbondata.query.expression.DataType dataType) {
+    try {
+      switch (dataType) {
+        case IntegerType:
+        case LongType:
+        case DoubleType:
+
+          Double d1 = Double.parseDouble(filterMember1);
+          Double d2 = Double.parseDouble(filterMember2);
+          return d1.compareTo(d2);
+        case DecimalType:
+          java.math.BigDecimal val1 = new BigDecimal(filterMember1);
+          java.math.BigDecimal val2 = new BigDecimal(filterMember2);
+          return val1.compareTo(val2);
+        case TimestampType:
+          SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+          Date date1 = null;
+          Date date2 = null;
+          date1 = parser.parse(filterMember1);
+          date2 = parser.parse(filterMember2);
+          return date1.compareTo(date2);
+        case StringType:
+        default:
+          return filterMember1.compareTo(filterMember2);
+      }
+    } catch (Exception e) {
+      return -1;
+    }
   }
 
   private static void fillNullValuesStartIndexWithDefaultKeys(

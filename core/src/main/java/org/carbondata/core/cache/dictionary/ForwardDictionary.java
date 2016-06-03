@@ -19,6 +19,12 @@
 
 package org.carbondata.core.cache.dictionary;
 
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.carbondata.core.constants.CarbonCommonConstants;
+
 /**
  * This class will be used for dictionary key and value look up
  */
@@ -124,4 +130,22 @@ public class ForwardDictionary implements Dictionary {
     columnDictionaryInfo = null;
   }
 
+  /**
+   * This method will read the surrogates based on search range.
+   *
+   * @param surrogates
+   */
+  public void getSurrogateKeyByIncrementalSearch(List<String> evaluateResultList,
+      List<Integer> surrogates) {
+    List<byte[]> byteValuesOfFilterMembers = new ArrayList<byte[]>(evaluateResultList.size());
+    byte[] keyData = null;
+    for (int i = 0; i < evaluateResultList.size(); i++) {
+      keyData = evaluateResultList.get(i)
+          .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+      byteValuesOfFilterMembers.add(keyData);
+    }
+
+    columnDictionaryInfo
+        .getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers, surrogates);
+  }
 }

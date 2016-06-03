@@ -173,6 +173,52 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
     return 0;
   }
 
+  /**
+   * This method will apply binary search logic to find the surrogate key for the
+   * given value
+   *
+   * @param byteValuesOfFilterMembers to be searched
+   * @param surrogates
+   * @return
+   */
+  public void getIncrementalSurrogateKeyFromDictionary(List<byte[]> byteValuesOfFilterMembers,
+      List<Integer> surrogates) {
+    List<Integer> sortedSurrogates = sortOrderReference.get();
+    int low = 0;
+    for (byte[] byteValueOfFilterMember : byteValuesOfFilterMembers) {
+      String filterKey = new String(byteValueOfFilterMember);
+      int high = sortedSurrogates.size() - 1;
+      while (low <= high) {
+        int mid = (low + high) >>> 1;
+        int surrogateKey = sortedSurrogates.get(mid);
+        byte[] dictionaryValue = getDictionaryBytesFromSurrogate(surrogateKey);
+        int cmp = -1;
+        if (this.getDataType() != DataType.STRING) {
+          cmp = compareFilterKeyWithDictionaryKey(new String(dictionaryValue), filterKey,
+              this.getDataType());
+
+        } else {
+          cmp =
+              ByteUtil.UnsafeComparer.INSTANCE.compareTo(dictionaryValue, byteValueOfFilterMember);
+        }
+        if (cmp < 0) {
+          low = mid + 1;
+        } else if (cmp > 0) {
+          high = mid - 1;
+        } else {
+
+          surrogates.add(surrogateKey);
+          low = mid;
+          break;
+        }
+      }
+    }
+    //Default value has to be added
+    if (surrogates.isEmpty()) {
+      surrogates.add(0);
+    }
+  }
+
   private int compareFilterKeyWithDictionaryKey(String dictionaryVal, String memberVal,
       DataType dataType) {
     try {
@@ -218,4 +264,5 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
   public DataType getDataType() {
     return dataType;
   }
+
 }
