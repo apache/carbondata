@@ -20,7 +20,6 @@
 package org.carbondata.processing.surrogatekeysgenerator.csvbased;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -45,8 +44,6 @@ import org.carbondata.core.file.manager.composite.FileManager;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
-import org.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.core.writer.ByteArrayHolder;
@@ -107,12 +104,13 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
    * task id, each spark task has a unique id
    */
   private String taskNo;
+
   /**
    * @param columnsInfo
    * @throws KettleException
    */
-  public FileStoreSurrogateKeyGenForCSV(ColumnsInfo columnsInfo, String partitionID,
-      int segmentId, String taskNo) throws KettleException {
+  public FileStoreSurrogateKeyGenForCSV(ColumnsInfo columnsInfo, String partitionID, int segmentId,
+      String taskNo) throws KettleException {
     super(columnsInfo);
     populatePrimaryKeyarray(dimInsertFileNames, columnsInfo.getPrimaryKeyMap());
     this.partitionID = partitionID;
@@ -197,8 +195,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
     String carbonDataDirectoryPath =
         carbonTablePath.getCarbonDataDirectoryPath(this.partitionID, this.segmentId);
-    carbonDataDirectoryPath =
-        carbonDataDirectoryPath + File.separator + taskNo;
+    carbonDataDirectoryPath = carbonDataDirectoryPath + File.separator + taskNo;
     carbonDataDirectoryPath =
         carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     boolean isDirCreated = new File(carbonDataDirectoryPath).mkdirs();
@@ -210,35 +207,11 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
 
   /**
    * This method will update the maxkey information.
-   *
-   * @param carbonStorePath       location where Carbon will create the store and write the data
-   *                              in its own format.
-   * @param carbonTableIdentifier table identifier which will give table name and database name
-   * @param columnId              the name of column
-   * @param tabColumnName         tablename + "_" + columnname, for example table_col
-   * @param isMeasure             whether this column is measure or not
+   * @param tabColumnName
+   * @param maxKey max cardinality of a column
    */
-  private void updateMaxKeyInfo(String carbonStorePath, CarbonTableIdentifier carbonTableIdentifier,
-      String columnId, String tabColumnName, boolean isMeasure) throws IOException {
-    CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
-        new CarbonDictionaryMetadataReaderImpl(carbonStorePath, carbonTableIdentifier, columnId);
-    CarbonDictionaryColumnMetaChunk lastEntryOfDictionaryMetaChunk = null;
-    // read metadata file
-    try {
-      lastEntryOfDictionaryMetaChunk =
-          columnMetadataReaderImpl.readLastEntryOfDictionaryMetaChunk();
-    } finally {
-      columnMetadataReaderImpl.close();
-    }
-    int maxKey = lastEntryOfDictionaryMetaChunk.getMax_surrogate_key();
-    if (isMeasure) {
-      if (null == measureMaxSurroagetMap) {
-        measureMaxSurroagetMap = new HashMap<String, Integer>();
-      }
-      measureMaxSurroagetMap.put(tabColumnName, maxKey);
-    } else {
-      checkAndUpdateMap(maxKey, tabColumnName);
-    }
+  private void updateMaxKeyInfo(String tabColumnName, int maxKey) {
+    checkAndUpdateMap(maxKey, tabColumnName);
   }
 
   /**
@@ -265,7 +238,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
     for (int i = 0; i < dimColumnNames.length; i++) {
       String dimColName = dimColumnNames[i].substring(tableName.length() + 1);
       ColumnSchemaDetails details = columnSchemaDetailsWrapper.get(dimColumnIds[i]);
-      if(details.isDirectDictionary()){
+      if (details.isDirectDictionary()) {
         continue;
       }
       GenericDataType complexType = columnsInfo.getComplexTypesMap().get(dimColName);
@@ -283,8 +256,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         }
       } else {
         DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-            new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
-                dimColumnIds[i]);
+            new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, dimColumnIds[i]);
         dictionaryColumnUniqueIdentifiers.add(dictionaryColumnUniqueIdentifier);
         dictionaryKeys.add(dimColumnNames[i]);
       }
@@ -292,6 +264,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
     initDictionaryCacheInfo(dictionaryKeys, dictionaryColumnUniqueIdentifiers,
         reverseDictionaryCache, carbonStorePath);
   }
+
   /**
    * This method will initial the needed information for a dictionary of one column.
    *
@@ -309,13 +282,8 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
       for (int i = 0; i < reverseDictionaries.size(); i++) {
         Dictionary reverseDictionary = (Dictionary) reverseDictionaries.get(i);
         getDictionaryCaches().put(dictionaryKeys.get(i), reverseDictionary);
-        updateMaxKeyInfo(carbonStorePath,
-            dictionaryColumnUniqueIdentifiers.get(i).getCarbonTableIdentifier(),
-            dictionaryColumnUniqueIdentifiers.get(i).getColumnIdentifier(), dictionaryKeys.get(i),
-            false);
+        updateMaxKeyInfo(dictionaryKeys.get(i), reverseDictionary.getDictionaryChunks().getSize());
       }
-    } catch (IOException e) {
-      throw new KettleException(e.getMessage());
     } catch (CarbonUtilException e) {
       throw new KettleException(e.getMessage());
     }

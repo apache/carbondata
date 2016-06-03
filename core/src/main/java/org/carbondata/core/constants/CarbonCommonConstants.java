@@ -213,7 +213,7 @@ public final class CarbonCommonConstants {
   /**
    * default carbon sort size
    */
-  public static final String SORT_SIZE_DEFAULT_VAL = "5000";
+  public static final String SORT_SIZE_DEFAULT_VAL = "100000";
   /**
    * min carbon sort size
    */

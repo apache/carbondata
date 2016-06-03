@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 
 import org.carbondata.common.logging.LogService;
@@ -102,10 +103,6 @@ public class SortDataRows {
    */
   private ExecutorService executorService;
   /**
-   * executorService
-   */
-  private ExecutorService writerExecutorService;
-  /**
    * fileWriteBufferSize
    */
   private int fileWriteBufferSize;
@@ -165,6 +162,14 @@ public class SortDataRows {
    * This will tell whether dimension is dictionary or not.
    */
   private boolean[] noDictionaryDimnesionColumn;
+  /**
+   * executor service for data sort holder
+   */
+  private ExecutorService dataSorterAndWriterExecutorService;
+  /**
+   * semaphore which will used for managing sorted data object arrays
+   */
+  private Semaphore semaphore;
 
   public SortDataRows(String tableName, int dimColCount, int complexDimColCount,
       int measureColCount, SortObserver observer, int noDictionaryCount, String[] measureDatatype,
@@ -220,9 +225,19 @@ public class SortDataRows {
     if (!new File(this.tempFileLocation).mkdirs()) {
       LOGGER.info("Sort Temp Location Already Exists");
     }
-
-    this.executorService = Executors.newFixedThreadPool(10);
-    this.writerExecutorService = Executors.newFixedThreadPool(3);
+    int numberOfCores = 0;
+    try {
+      numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
+              CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
+      numberOfCores = numberOfCores/2;
+    } catch (NumberFormatException exc) {
+      numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+    }
+    this.executorService = Executors.newFixedThreadPool(numberOfCores);
+    this.dataSorterAndWriterExecutorService =
+        Executors.newFixedThreadPool(numberOfCores);
+    semaphore = new Semaphore(numberOfCores);
     this.fileWriteBufferSize = Integer.parseInt(carbonProperties
         .getProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE,
             CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE));
@@ -295,21 +310,19 @@ public class SortDataRows {
 
         startIntermediateMerging(fileList);
       }
-
-      // create new file
-      File destFile = new File(
-          this.tempFileLocation + File.separator + this.tableName + System.nanoTime()
-              + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
       Object[][] recordHolderListLocal = recordHolderList;
-
+      try {
+        semaphore.acquire();
+        dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(recordHolderListLocal));
+      } catch (InterruptedException e) {
+        LOGGER.error(
+            "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
+        throw new CarbonSortKeyAndGroupByException(e.getMessage());
+      }
       // create the new holder Array
       this.recordHolderList = new Object[this.sortBufferSize][];
-
-      sortAndWriteToFile(destFile, recordHolderListLocal, sortBufferSize);
       this.entryCount = 0;
-
     }
-
     recordHolderList[entryCount++] = row;
   }
 
@@ -344,48 +357,9 @@ public class SortDataRows {
 
     }
 
+    startFileBasedMerge();
     procFiles = null;
     this.recordHolderList = null;
-    startFileBasedMerge();
-  }
-
-  /**
-   * sortAndWriteToFile to write data to temp file
-   *
-   * @param destFile
-   * @throws CarbonSortKeyAndGroupByException
-   */
-  private void sortAndWriteToFile(final File destFile, final Object[][] recordHolderListLocal,
-      final int entryCountLocal) throws CarbonSortKeyAndGroupByException {
-    writerExecutorService.submit(new Callable<Void>() {
-      @Override public Void call() throws Exception {
-        String newFileName = "";
-        File finalFile = null;
-        try {
-          // sort the record holder list
-          if (noDictionaryCount > 0) {
-            Arrays.sort(recordHolderListLocal,
-                new RowComparator(noDictionaryDimnesionColumn, noDictionaryCount));
-          } else {
-            // sort the record holder list
-            Arrays.sort(recordHolderListLocal, new RowComparatorForNormalDims(dimColCount));
-          }
-
-          // write data to file
-          writeDataTofile(recordHolderListLocal, entryCountLocal, destFile);
-
-          newFileName = destFile.getAbsolutePath();
-          finalFile = new File(newFileName);
-        } catch (Throwable e) {
-          threadStatusObserver.notifyFailed(e);
-          LOGGER.error(e.getMessage());
-        }
-        synchronized (lockObject) {
-          procFiles.add(finalFile);
-        }
-        return null;
-      }
-    });
   }
 
   /**
@@ -430,12 +404,9 @@ public class SortDataRows {
       // write number of entries to the file
       stream.writeInt(entryCountLocal);
       Object[] row = null;
-      Object[] measures = null;
       for (int i = 0; i < entryCountLocal; i++) {
         // get row from record holder list
         row = recordHolderList[i];
-        measures = new Object[measureColCount];
-
         int fieldIndex = 0;
 
         for (int dimCount = 0; dimCount < this.dimColCount; dimCount++) {
@@ -455,27 +426,17 @@ public class SortDataRows {
             if (aggType[mesCount] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
               Double val = (Double) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
               stream.writeDouble(val);
-              measures[mesCount] = val;
             } else if (aggType[mesCount] == CarbonCommonConstants.BIG_INT_MEASURE) {
               Long val = (Long) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
               stream.writeLong(val);
-              measures[mesCount] = val;
             } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
               BigDecimal val = (BigDecimal) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
               byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
               stream.writeInt(bigDecimalInBytes.length);
               stream.write(bigDecimalInBytes);
-              measures[mesCount] = val;
             }
           } else {
             stream.write((byte) 0);
-            if (aggType[mesCount] == CarbonCommonConstants.BIG_INT_MEASURE) {
-              measures[mesCount] = 0L;
-            } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-              measures[mesCount] = new BigDecimal(0.0);
-            } else {
-              measures[mesCount] = 0.0;
-            }
           }
           fieldIndex++;
         }
@@ -597,8 +558,8 @@ public class SortDataRows {
     try {
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
-      writerExecutorService.shutdown();
-      writerExecutorService.awaitTermination(2, TimeUnit.DAYS);
+      dataSorterAndWriterExecutorService.shutdown();
+      dataSorterAndWriterExecutorService.awaitTermination(2, TimeUnit.DAYS);
     } catch (InterruptedException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while shutdown the server ", e);
     }
@@ -616,11 +577,53 @@ public class SortDataRows {
      * @throws CarbonSortKeyAndGroupByException
      */
     public void notifyFailed(Throwable exception) throws CarbonSortKeyAndGroupByException {
-      writerExecutorService.shutdownNow();
+      dataSorterAndWriterExecutorService.shutdownNow();
       executorService.shutdownNow();
       observer.setFailed(true);
       LOGGER.error(exception);
       throw new CarbonSortKeyAndGroupByException(exception);
     }
   }
+
+  /**
+   * This class is responsible for sorting and writing the object
+   * array which holds the records equal to given array size
+   */
+  private class DataSorterAndWriter implements Callable<Void> {
+    private Object[][] recordHolderArray;
+
+    public DataSorterAndWriter(Object[][] recordHolderArray) {
+      this.recordHolderArray = recordHolderArray;
+    }
+
+    @Override public Void call() throws Exception {
+      try {
+        long startTime = System.currentTimeMillis();
+        if (noDictionaryCount > 0) {
+          Arrays.sort(recordHolderArray,
+              new RowComparator(noDictionaryDimnesionColumn, noDictionaryCount));
+        } else {
+          Arrays.sort(recordHolderArray, new RowComparatorForNormalDims(dimColCount));
+        }
+        // create a new file every time
+        File sortTempFile = new File(
+            tempFileLocation + File.separator + tableName + System.nanoTime()
+                + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
+        writeDataTofile(recordHolderArray, recordHolderArray.length, sortTempFile);
+        // add sort temp filename to and arrayList. When the list size reaches 20 then
+        // intermediate merging of sort temp files will be triggered
+        synchronized (lockObject) {
+          procFiles.add(sortTempFile);
+        }
+        LOGGER.info("Time taken to sort and write sort temp file " + sortTempFile + " is: " + (
+            System.currentTimeMillis() - startTime));
+      } catch (Throwable e) {
+        threadStatusObserver.notifyFailed(e);
+      } finally {
+        semaphore.release();
+      }
+      return null;
+    }
+  }
 }
+
