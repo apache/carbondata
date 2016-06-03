@@ -399,7 +399,7 @@ object GlobalDictionaryUtil extends Logging {
   def loadDataFrame(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel): DataFrame = {
     val df = sqlContext.read
-      .format("com.databricks.spark.csv")
+      .format("com.databricks.spark.csv.newapi")
       .option("header", {
         if (StringUtils.isEmpty(carbonLoadModel.getCsvHeader)) {
           "true"

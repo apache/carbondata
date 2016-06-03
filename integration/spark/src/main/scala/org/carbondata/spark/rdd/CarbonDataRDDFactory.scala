@@ -261,6 +261,27 @@ object CarbonDataRDDFactory extends Logging {
     }
   }
 
+  def configSplitMaxSize(context: SparkContext, filePaths: String,
+    hadoopConfiguration: Configuration): Unit = {
+    val defaultParallelism = if (context.defaultParallelism < 1) 1 else context.defaultParallelism
+    val spaceConsumed = FileUtils.getSpaceOccupied(filePaths)
+    val blockSize =
+      hadoopConfiguration.getLong("dfs.blocksize", CarbonCommonConstants.CARBON_256MB)
+    logInfo("[Block Distribution]")
+    // calculate new block size to allow use all the parallelism
+    if (spaceConsumed < defaultParallelism * blockSize) {
+      var newSplitSize: Long = spaceConsumed / defaultParallelism
+      if (newSplitSize < CarbonCommonConstants.CARBON_16MB) {
+        newSplitSize = CarbonCommonConstants.CARBON_16MB
+      }
+      hadoopConfiguration.set(
+        "mapreduce.input.fileinputformat.split.maxsize", newSplitSize.toString)
+      logInfo("totalInputSpaceConsumed : " + spaceConsumed +
+        " , defaultParallelism : " + defaultParallelism)
+      logInfo("mapreduce.input.fileinputformat.split.maxsize : " + newSplitSize.toString)
+    }
+  }
+
   def loadCarbonData(sc: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       storeLocation: String,
@@ -380,26 +401,8 @@ object CarbonDataRDDFactory extends Logging {
           val filePaths = FileUtils.getPaths(carbonLoadModel.getFactFilePath)
           hadoopConfiguration.set("mapreduce.input.fileinputformat.inputdir", filePaths)
           hadoopConfiguration.set("mapreduce.input.fileinputformat.input.dir.recursive", "true")
-          val defaultParallelism =
-            if (sc.sparkContext.defaultParallelism < 1) 1 else sc.sparkContext.defaultParallelism
-          val spaceConsumed = FileUtils.getSpaceOccupied(filePaths)
-          val blockSize =
-            hadoopConfiguration.getLong("dfs.blocksize", CarbonCommonConstants.CARBON_256MB)
-          logInfo("[Block Distribution]")
-          // calculate new block size to allow use all the parallelism
-          if (spaceConsumed < defaultParallelism * blockSize) {
-            var newSplitSize: Long = spaceConsumed / defaultParallelism
-            if (newSplitSize < CarbonCommonConstants.CARBON_16MB) {
-              newSplitSize = CarbonCommonConstants.CARBON_16MB
-            }
-            hadoopConfiguration.set(
-              "mapreduce.input.fileinputformat.split.maxsize", newSplitSize.toString
-            )
-            logInfo("totalInputSpaceConsumed : " + spaceConsumed +
-              " , defaultParallelism : " + defaultParallelism
-            )
-            logInfo("mapreduce.input.fileinputformat.split.maxsize : " + newSplitSize.toString)
-          }
+
+          configSplitMaxSize(sc.sparkContext, filePaths, hadoopConfiguration)
 
           val inputFormat = new org.apache.hadoop.mapreduce.lib.input.TextInputFormat
           inputFormat match {
