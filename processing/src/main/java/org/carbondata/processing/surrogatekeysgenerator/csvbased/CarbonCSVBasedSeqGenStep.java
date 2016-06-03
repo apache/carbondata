@@ -135,14 +135,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
    * Csv file path
    */
   private String csvFilepath;
-  /**
-   * modifiedDimesions
-   */
-  private String modifiedDimesions;
-  /**
-   * dimTableFileLoc
-   */
-  private String dimTableFileLoc;
+
   /**
    * badRecordslogger
    */
@@ -181,10 +174,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
    * resultArray
    */
   private Future[] resultArray;
-  /**
-   * initialCapacity
-   */
-  private int initialCapacity = 25;
+
   private int outSize;
   /**
    * denormHierarchies
@@ -239,14 +229,22 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
    * CarbonCSVBasedDimSurrogateKeyGen
    */
   private CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen;
-  private int buffer;
-  private int processed;
 
   private String[] msrDataType;
   /**
    * wrapper object having the columnSchemaDetails
    */
   private ColumnSchemaDetailsWrapper columnSchemaDetailsWrapper;
+
+  /**
+   * to check whether column is a no dicitonary column or not
+   */
+  private boolean[] isNoDictionaryColumn;
+
+  /**
+   * to store index of no dictionapry column
+   */
+  private Map<String,Integer> noDictionaryIndexMap;
 
   /**
    * Constructor
@@ -261,8 +259,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       TransMeta t, Trans dis) {
     super(s, stepDataInterface, c, t, dis);
     csvFilepath = dis.getVariable("csvInputFilePath");
-    modifiedDimesions = dis.getVariable("modifiedDimNames");
-    dimTableFileLoc = dis.getVariable("dimFileLocDir");
   }
 
   /**
@@ -292,9 +288,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           if (null == measureCol) {
             measureCol = Arrays.asList(meta.measureColumn);
           }
-          buffer = Integer.parseInt(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.SORT_SIZE,
-                  CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
           // Update the Null value comparer and update the String against which we need
           // to check the values coming from the previous step.
           logCounter =
@@ -426,7 +419,18 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         }
         columnSchemaDetailsWrapper = meta.getColumnSchemaDetailsWrapper();
       }
-
+      isNoDictionaryColumn = new boolean[metaColumnNames.length];
+      noDictionaryIndexMap = new HashMap<String, Integer>();
+      for (int i = 0; i < meta.noDictionaryCols.length; i++) {
+        for (int j = 0; j < metaColumnNames.length; j++) {
+          if (meta.noDictionaryCols[i].equalsIgnoreCase(
+              meta.getTableName() + CarbonCommonConstants.UNDERSCORE + metaColumnNames[j])) {
+            isNoDictionaryColumn[j] = true;
+            noDictionaryIndexMap.put(metaColumnNames[j], i);
+            break;
+          }
+        }
+      }
       // no more input to be expected...
       if (r == null) {
         return processWhenRowIsNull();
@@ -880,7 +884,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       byteBufferArr = new ByteBuffer[meta.noDictionaryCols.length + meta.complexTypes.size()];
     }
     int i = 0;
-    int n = 0;
     int index = 0;
     int l = 0;
     int msrCount = 0;
@@ -892,9 +895,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       r[j] = ((String) r[j]).trim();
       // TODO check if it is ignore dictionary dimension or not . if yes directly write byte buffer
 
-      if (null != meta.noDictionaryCols && isDimensionNoDictionary(meta.noDictionaryCols,
-          columnName) && !measurePresentMapping[j]) {
-        processnoDictionaryDim(getIndexOfNoDictionaryDims(meta.noDictionaryCols, columnName),
+      if (isNoDictionaryColumn[j]) {
+        processnoDictionaryDim(noDictionaryIndexMap.get(columnName),
             (String) r[j], byteBufferArr);
         continue;
       }
@@ -966,7 +968,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
         if (isPresentInSchema) {
           foreignKeyColumnName = meta.dimColNames[m];
-          n = m;
         } else {
           continue;
         }
@@ -1734,14 +1735,11 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     }
   }
 
-  private void processnoDictionaryDim(int index, String dimension, ByteBuffer[] out) {
-
-    String dimensionValue = dimension;
-    ByteBuffer buffer = ByteBuffer.allocate(dimensionValue.length());
-    buffer.put(dimensionValue.getBytes(Charset.forName("UTF-8")));
+  private void processnoDictionaryDim(int index, String dimensionValue, ByteBuffer[] out) {
+    ByteBuffer buffer = ByteBuffer
+        .wrap(dimensionValue.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
     buffer.rewind();
     out[index] = buffer;
-
   }
 
   /**
@@ -1757,26 +1755,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       }
     }
     return false;
-  }
-
-  /**
-   * This method will give the correct index where to place the high card dims
-   *
-   * @param NoDictionaryCols
-   * @param columnName
-   * @return
-   */
-  private int getIndexOfNoDictionaryDims(String[] NoDictionaryCols, String columnName) {
-    for (int i = 0; i < NoDictionaryCols.length; i++) {
-      if (NoDictionaryCols[i]
-          .equalsIgnoreCase(meta.getTableName() + CarbonCommonConstants.UNDERSCORE + columnName)) {
-        // if found return index of high card dims
-        return i;
-      }
-    }
-
-    // this case will not occur as the check is done earlier.
-    return -1;
   }
 
   /**
