@@ -23,7 +23,7 @@ import java.io.File;
 import java.nio.ByteBuffer;
 
 import org.carbondata.core.datastorage.store.FileHolder;
-import org.carbondata.core.datastorage.store.impl.FileHolderImpl;
+import org.carbondata.core.datastorage.store.impl.MemoryMappedFileHolderImpl;
 
 public abstract class AbstractTempSortFileReader implements TempSortFileReader {
   /**
@@ -76,7 +76,7 @@ public abstract class AbstractTempSortFileReader implements TempSortFileReader {
     this.dimensionCount = dimensionCount;
     this.noDictionaryCount = noDictionaryCount;
     this.complexDimensionCount = complexDimensionCount;
-    this.fileHolder = new FileHolderImpl(1);
+    this.fileHolder = new MemoryMappedFileHolderImpl(1);
     this.filePath = tempFile.getAbsolutePath();
     entryCount = fileHolder.readInt(filePath);
     eachRecordSize = dimensionCount + complexDimensionCount + measureCount;
