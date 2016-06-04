@@ -47,6 +47,11 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
    */
   protected BigDecimal aggVal;
 
+  public AvgBigDecimalAggregator() {
+    aggVal = new BigDecimal(0);
+    firstTime = false;
+  }
+
   /**
    * Average Aggregate function which will add all the aggregate values and it
    * will increment the total count every time, for average value
@@ -80,10 +85,10 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
 
   @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
-      aggVal =
-          aggVal.add(dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index));
+      BigDecimal value =
+          dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
+      aggVal = aggVal.add(value);
       count++;
-      firstTime = false;
     }
   }
 

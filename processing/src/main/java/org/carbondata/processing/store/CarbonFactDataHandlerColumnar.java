@@ -388,7 +388,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     for (CarbonDimension carbonDimension : carbonDimensionsList) {
       wrapperColumnSchemaList.add(carbonDimension.getColumnSchema());
       List<CarbonDimension> childDims = carbonDimension.getListOfChildDimensions();
-      if(null != childDims && childDims.size() > 0) {
+      if (null != childDims && childDims.size() > 0) {
         fillCollumnSchemaListForComplexDims(childDims, wrapperColumnSchemaList);
       }
     }
@@ -902,7 +902,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           int num = (value % 1 == 0) ? 0 : decimalPointers;
           decimal[count] = (decimal[count] > num ? decimal[count] : num);
         } else if (type[count] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-          BigDecimal value = (BigDecimal) row[count];
+          byte[] buff = (byte[]) row[count];
+          BigDecimal value = DataTypeUtil.byteToBigDecimal(buff);
           BigDecimal minVal = (BigDecimal) min[count];
           min[count] = minVal.min(value);
         }
@@ -977,7 +978,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     List<Integer> customMeasureIndexList =
         new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (int j = 0; j < type.length; j++) {
-      if (type[j] != 'c') {
+      if (type[j] != CarbonCommonConstants.BYTE_VALUE_MEASURE
+          && type[j] != CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
         otherMeasureIndexList.add(j);
       } else {
         customMeasureIndexList.add(j);

@@ -222,6 +222,7 @@ case class CarbonRelation(
         metaData.carbonTable.getMeasureByName(factTable, x.getColName).getDataType.toString
           .toLowerCase match {
           case "int" => "double"
+          case "decimal" => "decimal(" + x.getPrecision + "," + x.getScale + ")"
           case others => others
         }),
       nullable = true)(qualifiers = tableName +: alias.toSeq))

@@ -2,39 +2,77 @@ package org.carbondata.core.util;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 
 import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
 
 public final class DataTypeUtil {
+
   private DataTypeUtil() {
 
   }
 
-  public static Object getMeasureValueBasedOnDataType(String msrValue, String dataType) {
+  /**
+   * This method will convert a given value to its specific type
+   *
+   * @param msrValue
+   * @param dataType
+   * @param carbonMeasure
+   * @return
+   */
+  public static Object getMeasureValueBasedOnDataType(String msrValue, DataType dataType,
+      CarbonMeasure carbonMeasure) {
     switch (dataType) {
-      case "Decimal":
-        return new BigDecimal(msrValue);
-      case "BigInt":
-      case "Long":
+      case DECIMAL:
+        BigDecimal bigDecimal =
+            new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
+        return normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
+      case LONG:
         return Long.valueOf(msrValue);
       default:
         return Double.valueOf(msrValue);
     }
   }
 
-  public static char getAggType(String dataType) {
+  /**
+   * This method will check the digits before dot with the max precision allowed
+   *
+   * @param bigDecimal
+   * @param allowedPrecision precision configured by the user
+   * @return
+   */
+  public static BigDecimal normalizeDecimalValue(BigDecimal bigDecimal, int allowedPrecision) {
+    if (bigDecimal.precision() > allowedPrecision) {
+      return null;
+    }
+    return bigDecimal;
+  }
+
+  /**
+   * This method will return the type of measure based on its data type
+   *
+   * @param dataType
+   * @return
+   */
+  public static char getAggType(DataType dataType) {
     switch (dataType) {
-      case "Decimal":
+      case DECIMAL:
         return CarbonCommonConstants.BIG_DECIMAL_MEASURE;
-      case "BigInt":
-      case "Long":
+      case LONG:
         return CarbonCommonConstants.BIG_INT_MEASURE;
       default:
-        return 'n';
+        return CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE;
     }
   }
 
+  /**
+   * This method will convert a big decimal value to bytes
+   *
+   * @param num
+   * @return
+   */
   public static byte[] bigDecimalToByte(BigDecimal num) {
     BigInteger sig = new BigInteger(num.unscaledValue().toString());
     int scale = num.scale();
@@ -46,6 +84,12 @@ public final class DataTypeUtil {
     return completeArr;
   }
 
+  /**
+   * This method will convert a byte value back to big decimal value
+   *
+   * @param raw
+   * @return
+   */
   public static BigDecimal byteToBigDecimal(byte[] raw) {
     int scale = (raw[0] & 0xFF);
     byte[] unscale = new byte[raw.length - 1];

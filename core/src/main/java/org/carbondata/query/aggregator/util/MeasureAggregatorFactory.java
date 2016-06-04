@@ -29,11 +29,17 @@ import org.carbondata.query.aggregator.impl.AvgDoubleAggregator;
 import org.carbondata.query.aggregator.impl.AvgLongAggregator;
 import org.carbondata.query.aggregator.impl.CountAggregator;
 import org.carbondata.query.aggregator.impl.DistinctCountAggregatorObjectSet;
+import org.carbondata.query.aggregator.impl.DistinctCountBigDecimalAggregatorObjectSet;
+import org.carbondata.query.aggregator.impl.DistinctCountLongAggregatorObjectSet;
 import org.carbondata.query.aggregator.impl.DummyBigDecimalAggregator;
 import org.carbondata.query.aggregator.impl.DummyDoubleAggregator;
 import org.carbondata.query.aggregator.impl.DummyLongAggregator;
 import org.carbondata.query.aggregator.impl.MaxAggregator;
+import org.carbondata.query.aggregator.impl.MaxBigDecimalAggregator;
+import org.carbondata.query.aggregator.impl.MaxLongAggregator;
 import org.carbondata.query.aggregator.impl.MinAggregator;
+import org.carbondata.query.aggregator.impl.MinBigDecimalAggregator;
+import org.carbondata.query.aggregator.impl.MinLongAggregator;
 import org.carbondata.query.aggregator.impl.SumBigDecimalAggregator;
 import org.carbondata.query.aggregator.impl.SumDistinctBigDecimalAggregator;
 import org.carbondata.query.aggregator.impl.SumDistinctDoubleAggregator;
@@ -86,13 +92,27 @@ public class MeasureAggregatorFactory {
 
     // get the MeasureAggregator based on aggregate type
     if (CarbonCommonConstants.MIN.equalsIgnoreCase(aggregatorType)) {
-      return new MinAggregator();
+      switch (dataType) {
+        case LONG:
+          return new MinLongAggregator();
+        case DECIMAL:
+          return new MinBigDecimalAggregator();
+        default:
+          return new MinAggregator();
+      }
     } else if (CarbonCommonConstants.COUNT.equalsIgnoreCase(aggregatorType)) {
       return new CountAggregator();
     }
     //
     else if (CarbonCommonConstants.MAX.equalsIgnoreCase(aggregatorType)) {
-      return new MaxAggregator();
+      switch (dataType) {
+        case LONG:
+          return new MaxLongAggregator();
+        case DECIMAL:
+          return new MaxBigDecimalAggregator();
+        default:
+          return new MaxAggregator();
+      }
     }
     //
     else if (CarbonCommonConstants.AVERAGE.equalsIgnoreCase(aggregatorType)) {
@@ -110,7 +130,14 @@ public class MeasureAggregatorFactory {
     }
     //
     else if (CarbonCommonConstants.DISTINCT_COUNT.equalsIgnoreCase(aggregatorType)) {
-      return new DistinctCountAggregatorObjectSet();
+      switch (dataType) {
+        case LONG:
+          return new DistinctCountLongAggregatorObjectSet();
+        case DECIMAL:
+          return new DistinctCountBigDecimalAggregatorObjectSet();
+        default:
+          return new DistinctCountAggregatorObjectSet();
+      }
 
     } else if (CarbonCommonConstants.SUM.equalsIgnoreCase(aggregatorType)) {
       switch (dataType) {

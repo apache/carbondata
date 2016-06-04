@@ -70,7 +70,8 @@ case class tableModel(
 
 case class Field(column: String, dataType: Option[String], name: Option[String],
     children: Option[List[Field]], parent: String = null,
-    storeType: Option[String] = Some("columnar"))
+    storeType: Option[String] = Some("columnar"),
+    var precision: Int = 0, var scale: Int = 0)
 
 case class ArrayDataType(dataType: String)
 
@@ -146,14 +147,14 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
       fields.foreach(field => {
         val encoders = new java.util.ArrayList[Encoding]()
         encoders.add(Encoding.DICTIONARY)
-        val coloumnSchema: ColumnSchema = getColumnSchema(
+        val columnSchema: ColumnSchema = getColumnSchema(
           normalizeType(field.dataType.getOrElse("")), field.name.getOrElse(field.column), index,
-          isCol = true, encoders, isDimensionCol = true, rowGroup)
-        allColumns ++= Seq(coloumnSchema)
+          isCol = true, encoders, isDimensionCol = true, rowGroup, field.precision, field.scale)
+        allColumns ++= Seq(columnSchema)
         index = index + 1
         rowGroup = rowGroup + 1
         if (field.children.get != null) {
-          coloumnSchema.setNumberOfChild(field.children.get.size)
+          columnSchema.setNumberOfChild(field.children.get.size)
           allColumns ++= getAllChildren(field.children)
         }
       })
@@ -163,7 +164,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
 
   def getColumnSchema(dataType: DataType, colName: String, index: Integer, isCol: Boolean,
       encoders: java.util.List[Encoding], isDimensionCol: Boolean,
-      colGroup: Integer): ColumnSchema = {
+      colGroup: Integer, precision: Integer, scale: Integer): ColumnSchema = {
     val columnSchema = new ColumnSchema()
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
@@ -172,7 +173,9 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     columnSchema.setEncodingList(encoders)
     columnSchema.setDimensionColumn(isDimensionCol)
     columnSchema.setColumnGroup(colGroup)
-    // TODO: Need to fill RowGroupID, Precision, Scala, converted type
+    columnSchema.setPrecision(precision)
+    columnSchema.setScale(scale)
+    // TODO: Need to fill RowGroupID, converted type
     // & Number of Children after DDL finalization
     columnSchema
   }
@@ -191,7 +194,9 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
         isCol = true,
         encoders,
         isDimensionCol = true,
-        -1)
+        -1,
+        field.precision,
+        field.scale)
       allColumns ++= Seq(columnSchema)
       index = index + 1
       if (field.children.isDefined && field.children.get != null) {
@@ -208,7 +213,9 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
         isCol = true,
         encoders,
         isDimensionCol = false,
-        -1)
+        -1,
+        field.precision,
+        field.scale)
       val measureCol = coloumnSchema
 
       allColumns ++= Seq(measureCol)
@@ -266,10 +273,10 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
       val coloumnSchema: ColumnSchema = getColumnSchema(DataType.DOUBLE,
         CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
         index,
-        isCol = true,
+        true,
         encoders,
-        isDimensionCol = false,
-        -1)
+        false,
+        -1, 0, 0)
       coloumnSchema.setInvisible(true)
       val measureColumn = coloumnSchema
       measures += measureColumn
@@ -356,6 +363,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
       case "int" => DataType.INT
       case "Integer" => DataType.INT
       case "Long" => DataType.LONG
+      case "BigInt" => DataType.LONG
       case "Numeric" => DataType.DOUBLE
       case "Double" => DataType.DOUBLE
       case "Decimal" => DataType.DECIMAL

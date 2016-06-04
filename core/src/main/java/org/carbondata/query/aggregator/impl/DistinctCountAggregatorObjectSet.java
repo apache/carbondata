@@ -19,26 +19,15 @@
 
 package org.carbondata.query.aggregator.impl;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
-public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
+public class DistinctCountAggregatorObjectSet extends AbstractDistinctCountAggregatorObjectSet {
 
   private static final long serialVersionUID = 6313463368629960186L;
-
-  private Set<Object> valueSetForObj;
-
-  public DistinctCountAggregatorObjectSet() {
-    valueSetForObj = new HashSet<Object>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-  }
 
   /**
    * just need to add the unique values to agg set
@@ -47,26 +36,10 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
     valueSetForObj.add(newVal);
   }
 
-  /**
-   * Distinct count Aggregate function which update the Distinct count
-   *
-   * @param newVal new value
-   */
-  @Override public void agg(Object newVal) {
-    valueSetForObj.add(newVal);
-  }
-
   @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
       valueSetForObj.add(dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index));
     }
-  }
-
-  /**
-   * Below method will be used to get the value byte array
-   */
-  @Override public byte[] getByteArray() {
-    return null;
   }
 
   private void agg(Set<Object> set2) {
@@ -82,40 +55,7 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
     agg(distinctCountAggregator.valueSetForObj);
   }
 
-  @Override public Double getDoubleValue() {
-    return (double) valueSetForObj.size();
-  }
-
-  @Override public Long getLongValue() {
-    return (long) valueSetForObj.size();
-  }
-
-  @Override public BigDecimal getBigDecimalValue() {
-    return new BigDecimal(valueSetForObj.size());
-  }
-
-  @Override public Object getValueObject() {
-    return valueSetForObj.size();
-  }
-
-  @Override public void setNewValue(Object newValue) {
-    valueSetForObj.add(newValue);
-  }
-
-  @Override public boolean isFirstTime() {
-    return false;
-  }
-
-  @Override public void writeData(DataOutput output) throws IOException {
-
-  }
-
-  @Override public void readData(DataInput inPut) throws IOException {
-
-  }
-
   @Override public MeasureAggregator getCopy() {
-
     DistinctCountAggregatorObjectSet aggregator = new DistinctCountAggregatorObjectSet();
     aggregator.valueSetForObj = new HashSet<Object>(valueSetForObj);
     return aggregator;
@@ -134,7 +74,7 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
   }
 
   @Override public boolean equals(Object obj) {
-    if(!(obj instanceof DistinctCountAggregatorObjectSet)) {
+    if (!(obj instanceof DistinctCountAggregatorObjectSet)) {
       return false;
     }
     DistinctCountAggregatorObjectSet o = (DistinctCountAggregatorObjectSet) obj;
@@ -147,13 +87,6 @@ public class DistinctCountAggregatorObjectSet implements MeasureAggregator {
 
   @Override public MeasureAggregator get() {
     return this;
-  }
-
-  public String toString() {
-    return valueSetForObj.size() + "";
-  }
-
-  @Override public void merge(byte[] value) {
   }
 
   @Override public MeasureAggregator getNew() {

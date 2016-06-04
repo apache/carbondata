@@ -37,6 +37,9 @@ import java.util.concurrent.TimeUnit;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.metadata.CarbonMetadata;
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -137,8 +140,6 @@ public class SortDataRows {
   private String schemaName;
   private String cubeName;
 
-  private String[] measureDatatype;
-
   private char[] aggType;
 
   /**
@@ -172,8 +173,8 @@ public class SortDataRows {
   private Semaphore semaphore;
 
   public SortDataRows(String tableName, int dimColCount, int complexDimColCount,
-      int measureColCount, SortObserver observer, int noDictionaryCount, String[] measureDatatype,
-      String partitionID, int segmentId, String taskNo, boolean[] noDictionaryColMaping) {
+      int measureColCount, SortObserver observer, int noDictionaryCount, String partitionID,
+      int segmentId, String taskNo, boolean[] noDictionaryColMaping) {
     // set table name
     this.tableName = tableName;
     this.partitionID = partitionID;
@@ -196,8 +197,6 @@ public class SortDataRows {
 
     // observer of writing file in thread
     this.threadStatusObserver = new ThreadStatusObserver();
-
-    this.measureDatatype = measureDatatype;
     this.aggType = new char[measureColCount];
   }
 
@@ -230,13 +229,12 @@ public class SortDataRows {
       numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
               CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
-      numberOfCores = numberOfCores/2;
+      numberOfCores = numberOfCores / 2;
     } catch (NumberFormatException exc) {
       numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
     }
     this.executorService = Executors.newFixedThreadPool(numberOfCores);
-    this.dataSorterAndWriterExecutorService =
-        Executors.newFixedThreadPool(numberOfCores);
+    this.dataSorterAndWriterExecutorService = Executors.newFixedThreadPool(numberOfCores);
     semaphore = new Semaphore(numberOfCores);
     this.fileWriteBufferSize = Integer.parseInt(carbonProperties
         .getProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE,
@@ -280,8 +278,11 @@ public class SortDataRows {
 
   private void initAggType() {
     Arrays.fill(aggType, 'n');
+    CarbonTable carbonTable = CarbonMetadata.getInstance()
+        .getCarbonTable(schemaName + CarbonCommonConstants.UNDERSCORE + tableName);
+    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
     for (int i = 0; i < measureColCount; i++) {
-      aggType[i] = DataTypeUtil.getAggType(measureDatatype[i]);
+      aggType[i] = DataTypeUtil.getAggType(measures.get(i).getDataType());
     }
   }
 

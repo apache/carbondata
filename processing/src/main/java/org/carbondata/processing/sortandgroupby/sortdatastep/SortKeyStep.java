@@ -162,14 +162,6 @@ public class SortKeyStep extends BaseStep {
       // get all fields
       this.meta.getFields(data.getOutputRowMeta(), getStepname(), null, null, this);
 
-      String measureDataType = meta.getMeasureDataType();
-      String[] msrdataTypes = null;
-      if (measureDataType.length() > 0) {
-        msrdataTypes = measureDataType.split(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
-      } else {
-        msrdataTypes = new String[0];
-      }
-
       this.meta.setNoDictionaryCount(
           RemoveDictionaryUtil.extractNoDictionaryCount(meta.getNoDictionaryDims()));
 
@@ -179,8 +171,8 @@ public class SortKeyStep extends BaseStep {
       this.sortDataRows = new SortDataRows(meta.getTabelName(),
           meta.getDimensionCount() - meta.getComplexDimensionCount(),
           meta.getComplexDimensionCount(), meta.getMeasureCount(), this.observer,
-          meta.getNoDictionaryCount(), msrdataTypes, meta.getPartitionID(), meta.getSegmentId(),
-          meta.getTaskNo(), this.noDictionaryColMaping);
+          meta.getNoDictionaryCount(), meta.getPartitionID(), meta.getSegmentId(), meta.getTaskNo(),
+          this.noDictionaryColMaping);
       try {
         // initialize sort
         this.sortDataRows.initialize(meta.getSchemaName(), meta.getCubeName());
@@ -189,8 +181,8 @@ public class SortKeyStep extends BaseStep {
       }
 
       this.logCounter = Integer.parseInt(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.DATA_LOAD_LOG_COUNTER,
-                      CarbonCommonConstants.DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER));
+          .getProperty(CarbonCommonConstants.DATA_LOAD_LOG_COUNTER,
+              CarbonCommonConstants.DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER));
     }
 
     readCounter++;

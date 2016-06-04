@@ -46,6 +46,10 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.metadata.CarbonMetadata;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -230,7 +234,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
    */
   private CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen;
 
-  private String[] msrDataType;
+  private DataType[] msrDataType;
   /**
    * wrapper object having the columnSchemaDetails
    */
@@ -294,7 +298,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
               Integer.parseInt(CarbonCommonConstants.DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER);
           if (null != getInputRowMeta()) {
             meta.updateHierMappings(getInputRowMeta());
-
+            populateCarbonMeasures(meta.measureColumn);
             meta.msrMapping = getMeasureOriginalIndexes(meta.measureColumn);
 
             meta.memberMapping = getMemberMappingOriginalIndexes();
@@ -312,10 +316,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             measureSurrogateReqMapping = createMeasureSurrogateReqMapping();
             createForeignKeyMappingColumns();
             metaColumnNames = createColumnArrayFromMeta();
-            String msrDatatypes = meta.getMeasureDataType();
-            if (msrDatatypes.length() > 0) {
-              msrDataType = msrDatatypes.split(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
-            }
           }
 
           if (!meta.isAggregate()) {
@@ -932,13 +932,15 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             out[memberMapping[dimLen - meta.complexTypes.size() + index]] =
                 (isNull || msr == null || msr.length() == 0) ?
                     null :
-                    DataTypeUtil.getMeasureValueBasedOnDataType(msr,
-                        msrDataType[meta.msrMapping[msrCount]]);
+                    DataTypeUtil
+                        .getMeasureValueBasedOnDataType(msr, msrDataType[meta.msrMapping[msrCount]],
+                            meta.carbonMeasures[meta.msrMapping[msrCount]]);
           } catch (NumberFormatException e) {
             try {
               msr = msr.replaceAll(",", "");
               out[memberMapping[dimLen + index]] = DataTypeUtil
-                  .getMeasureValueBasedOnDataType(msr, msrDataType[meta.msrMapping[msrCount]]);
+                  .getMeasureValueBasedOnDataType(msr, msrDataType[meta.msrMapping[msrCount]],
+                      meta.carbonMeasures[meta.msrMapping[msrCount]]);
             } catch (NumberFormatException ex) {
               badRecordslogger
                   .addBadRecordsToBilder(r, inputColumnsSize, "Measure should be number",
@@ -1771,6 +1773,25 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       exec.shutdownNow();
       LOGGER.error(exception);
       throw new RuntimeException(exception);
+    }
+  }
+
+  /**
+   * This method will fill the carbon measures
+   *
+   * @param measures
+   */
+  private void populateCarbonMeasures(String[] measures) {
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+        meta.getSchemaName() + CarbonCommonConstants.UNDERSCORE + meta.getTableName());
+    meta.carbonMeasures = new CarbonMeasure[measures.length];
+    msrDataType = new DataType[measures.length];
+    for (int i = 0; i < measures.length; i++) {
+      CarbonMeasure carbonMeasure = carbonTable.getMeasureByName(meta.getTableName(), measures[i]);
+      msrDataType[i] = carbonMeasure.getDataType();
+      if(DataType.DECIMAL == carbonMeasure.getDataType()) {
+        meta.carbonMeasures[i] = carbonMeasure;
+      }
     }
   }
 

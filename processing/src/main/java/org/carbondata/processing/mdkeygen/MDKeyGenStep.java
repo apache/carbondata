@@ -32,6 +32,9 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.metadata.CarbonMetadata;
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -341,22 +344,14 @@ public class MDKeyGenStep extends BaseStep {
   }
 
   private void initDataHandler() {
-    int simpleDimsCount =
-        this.dimensionCount - meta.getComplexDimsCount();
+    int simpleDimsCount = this.dimensionCount - meta.getComplexDimsCount();
     int[] simpleDimsLen = new int[simpleDimsCount];
     for (int i = 0; i < simpleDimsCount; i++) {
       simpleDimsLen[i] = dimLens[i];
     }
-    String measureDataType = meta.getMeasureDataType();
-    String[] msrdataTypes = null;
-    if (measureDataType.length() > 0) {
-      msrdataTypes = measureDataType.split(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
-    } else {
-      msrdataTypes = new String[0];
-    }
     CarbonDataFileAttributes carbonDataFileAttributes =
         new CarbonDataFileAttributes(meta.getTaskNo(), meta.getFactTimeStamp());
-    initAggType(msrdataTypes);
+    initAggType();
     String carbonDataDirectoryPath = getCarbonDataFolderLocation();
     finalMerger = new SingleThreadFinalSortFilesMerger(dataFolderLocation, tableName,
         dimensionCount - meta.getComplexDimsCount(), meta.getComplexDimsCount(), measureCount,
@@ -396,11 +391,14 @@ public class MDKeyGenStep extends BaseStep {
     return carbonFactDataHandlerModel;
   }
 
-  private void initAggType(String[] msrdataTypes) {
+  private void initAggType() {
     aggType = new char[measureCount];
     Arrays.fill(aggType, 'n');
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+        meta.getSchemaName() + CarbonCommonConstants.UNDERSCORE + meta.getTableName());
+    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(meta.getTableName());
     for (int i = 0; i < measureCount; i++) {
-      aggType[i] = DataTypeUtil.getAggType(msrdataTypes[i]);
+      aggType[i] = DataTypeUtil.getAggType(measures.get(i).getDataType());
     }
   }
 

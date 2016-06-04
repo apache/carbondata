@@ -19,65 +19,25 @@
 
 package org.carbondata.query.aggregator.impl;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutput;
-import java.io.ObjectOutputStream;
-
-import org.carbondata.common.logging.LogService;
-import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
  * Class Description :
  * It will return max of values
  */
-public class MaxAggregator extends AbstractMeasureAggregatorMaxMin {
+public class MaxAggregator extends AbstractMaxAggregator {
 
   /**
    * serialVersionUID
    */
   private static final long serialVersionUID = -5850218739083899419L;
 
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(MaxAggregator.class.getName());
-
-  protected void internalAgg(Object value) {
-    if (value instanceof Comparable) {
-      @SuppressWarnings("unchecked") Comparable<Object> newValue = ((Comparable<Object>) value);
-      aggVal = (aggVal == null || aggVal.compareTo(newValue) < 0) ? newValue : aggVal;
+  @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
+    if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
+      internalAgg(dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index));
+      firstTime = false;
     }
-  }
-
-  /**
-   * Below method will be used to get the value byte array
-   */
-  @Override public byte[] getByteArray() {
-    byte[] objectBytesVal = new byte[0];
-    if (firstTime) {
-      return objectBytesVal;
-    }
-    ByteArrayOutputStream bos = null;
-    ObjectOutput out = null;
-    try {
-      bos = new ByteArrayOutputStream();
-      out = new ObjectOutputStream(bos);
-
-      out.writeObject(aggVal);
-      objectBytesVal = bos.toByteArray();
-    } catch (Exception e) {
-      LOGGER.error(e,
-          "Problem while getting byte array in maxaggregator: " + e.getMessage());
-    } finally {
-      CarbonUtil.closeStreams(bos);
-    }
-    return objectBytesVal;
   }
 
   /**
@@ -91,75 +51,11 @@ public class MaxAggregator extends AbstractMeasureAggregatorMaxMin {
     agg(maxAggregator.aggVal);
   }
 
-  @Override public void writeData(DataOutput dataOutput) throws IOException {
-    ByteArrayOutputStream bos = null;
-    ObjectOutput out = null;
-
-    try {
-      dataOutput.writeBoolean(firstTime);
-      bos = new ByteArrayOutputStream();
-      out = new ObjectOutputStream(bos);
-      out.writeObject(aggVal);
-      byte[] objectBytes = bos.toByteArray();
-      dataOutput.write(objectBytes.length);
-      dataOutput.write(objectBytes, 0, objectBytes.length);
-    } catch (Exception e) {
-      LOGGER.error(e,
-          "Problem while getting byte array in maxaggregator: " + e.getMessage());
-
-    } finally {
-      CarbonUtil.closeStreams(bos);
-    }
-  }
-
-  @SuppressWarnings("unchecked")
-  @Override
-  public void readData(DataInput inPut)
-      throws IOException {
-
-    ByteArrayInputStream bis = null;
-    ObjectInput in = null;
-    try {
-      firstTime = inPut.readBoolean();
-      int len = inPut.readInt();
-      byte[] data = new byte[len];
-      bis = new ByteArrayInputStream(data);
-      in = new ObjectInputStream(bis);
-      aggVal = (Comparable<Object>) in.readObject();
-    } catch (Exception e) {
-      LOGGER.error(e,
-          "Problem while getting byte array in maxaggregator: " + e.getMessage());
-    } finally {
-      CarbonUtil.closeStreams(bis);
-
-    }
-  }
-
   @Override public MeasureAggregator getCopy() {
     MaxAggregator aggregator = new MaxAggregator();
     aggregator.aggVal = aggVal;
     aggregator.firstTime = firstTime;
     return aggregator;
-  }
-
-  @Override public void merge(byte[] value) {
-    if (0 == value.length) {
-      return;
-    }
-    ByteArrayInputStream bytesInputStream = null;
-    ObjectInput in = null;
-    try {
-      bytesInputStream = new ByteArrayInputStream(value);
-      in = new ObjectInputStream(bytesInputStream);
-      Object newVal = (Comparable<Object>) in.readObject();
-      internalAgg(newVal);
-      firstTime = false;
-    } catch (Exception e) {
-      LOGGER.error(e,
-          "Problem while merging byte array in maxaggregator: " + e.getMessage());
-    } finally {
-      CarbonUtil.closeStreams(bytesInputStream);
-    }
   }
 
   @Override public MeasureAggregator getNew() {

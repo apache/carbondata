@@ -20,8 +20,17 @@
 package org.carbondata.processing.surrogatekeysgenerator.csvbased;
 
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.processing.datatypes.ArrayDataType;
 import org.carbondata.processing.datatypes.GenericDataType;
@@ -127,6 +136,10 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    * measureColumn
    */
   protected String[] measureColumn;
+  /**
+   * array of carbon measures
+   */
+  protected CarbonMeasure[] carbonMeasures;
   /**
    * msrMapping
    */
@@ -1298,8 +1311,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
       rep.saveStepAttribute(idTransformation, idStep, "segmentId", segmentId);
       rep.saveStepAttribute(idTransformation, idStep, "taskNo", taskNo);
-      rep.saveStepAttribute(idTransformation, idStep, "columnSchemaDetails",
-          columnSchemaDetails);
+      rep.saveStepAttribute(idTransformation, idStep, "columnSchemaDetails", columnSchemaDetails);
     } catch (Exception e) {
       throw new KettleException(
           BaseMessages.getString(pkg, "CarbonStep.Exception.UnableToSaveStepInfoToRepository")
@@ -1550,6 +1562,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
 
   /**
    * set segment Id
+   *
    * @param segmentId
    */
   public void setSegmentId(String segmentId) {

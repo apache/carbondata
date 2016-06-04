@@ -740,17 +740,23 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
 object CarbonMetastoreTypes extends RegexParsers {
   protected lazy val primitiveType: Parser[DataType] =
     "string" ^^^ StringType |
-    "float" ^^^ FloatType |
-    "int" ^^^ IntegerType |
-    "tinyint" ^^^ ShortType |
-    "double" ^^^ DoubleType |
-    "long" ^^^ LongType |
-    "binary" ^^^ BinaryType |
-    "boolean" ^^^ BooleanType |
-    //      "decimal" ^^^ DecimalType() |
-    "decimal" ^^^ "decimal" ^^^ DecimalType(18, 2) |
-    "varchar\\((\\d+)\\)".r ^^^ StringType |
-    "timestamp" ^^^ TimestampType
+      "float" ^^^ FloatType |
+      "int" ^^^ IntegerType |
+      "tinyint" ^^^ ShortType |
+      "double" ^^^ DoubleType |
+      "long" ^^^ LongType |
+      "binary" ^^^ BinaryType |
+      "boolean" ^^^ BooleanType |
+      fixedDecimalType |
+      "decimal" ^^^ "decimal" ^^^ DecimalType(18, 2) |
+      "varchar\\((\\d+)\\)".r ^^^ StringType |
+      "timestamp" ^^^ TimestampType
+
+  protected lazy val fixedDecimalType: Parser[DataType] =
+    "decimal" ~> "(" ~> "^[1-9]\\d*".r ~ ("," ~> "^[0-9]\\d*".r <~ ")") ^^ {
+      case precision ~ scale =>
+        DecimalType(precision.toInt, scale.toInt)
+    }
 
   protected lazy val arrayType: Parser[DataType] =
     "array" ~> "<" ~> dataType <~ ">" ^^ {

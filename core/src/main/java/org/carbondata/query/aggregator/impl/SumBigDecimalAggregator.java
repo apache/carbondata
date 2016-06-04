@@ -41,6 +41,11 @@ public class SumBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
    */
   private BigDecimal aggVal;
 
+  public SumBigDecimalAggregator() {
+    aggVal = new BigDecimal(0);
+    firstTime = false;
+  }
+
   /**
    * This method will update the aggVal it will add new value to aggVal
    *
@@ -57,9 +62,9 @@ public class SumBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
 
   @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
-      aggVal =
-          aggVal.add(dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index));
-      firstTime = false;
+      BigDecimal value =
+          dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
+      aggVal = aggVal.add(value);
     }
   }
 
