@@ -17,19 +17,19 @@
 
 package org.carbondata.examples
 
-import java.io._
-
-import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.{CarbonContext, CarbonEnv, CarbonRelation}
 
+import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier
 import org.carbondata.core.carbon.CarbonTableIdentifier
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.carbon.path.CarbonStorePath
 import org.carbondata.examples.util.InitForExamples
+import org.carbondata.spark.load.CarbonLoaderUtil
 
 /**
  * example for global dictionary generation
- * pls check directory of target/store/default and verify global dict file
+ * pls check files under directory of target/store/default/dictSample/Metadata
+ * and verify global dictionary values
  */
 object GenerateDictionaryExample {
 
@@ -42,6 +42,7 @@ object GenerateDictionaryExample {
 
     // execute sql statement
     cc.sql("DROP TABLE IF EXISTS dictSample")
+
     cc.sql("""
            CREATE TABLE IF NOT EXISTS dictSample(id Int, name String, city String, salary Int)
            STORED BY 'org.apache.carbondata.format'
@@ -60,27 +61,29 @@ object GenerateDictionaryExample {
                       dictFolderPath: String) {
     val dataBaseName = carbonTableIdentifier.getDatabaseName
     val tableName = carbonTableIdentifier.getTableName
-    val catalog = CarbonEnv.getInstance(carbonContext).carbonCatalog
-    val carbonRelation = catalog.lookupRelation1(Option(dataBaseName),
-      tableName, None)(carbonContext)
-      .asInstanceOf[CarbonRelation]
-    val table = carbonRelation.cubeMeta.carbonTable
-    val dimensions = table.getDimensionByTableName(tableName)
+    val carbonRelation = CarbonEnv.getInstance(carbonContext).carbonCatalog.
+      lookupRelation1(Option(dataBaseName),
+        tableName, None) (carbonContext).asInstanceOf[CarbonRelation]
+    val carbonTable = carbonRelation.cubeMeta.carbonTable
+    val dimensions = carbonTable.getDimensionByTableName(tableName)
       .toArray.map(_.asInstanceOf[CarbonDimension])
     // scalastyle:off println
     // print dictionary information
     println("**********************************************************************************")
-    println(s"Dictionary of table:$tableName in " +
-      s"database:$dataBaseName")
+    println(s"table:$tableName in " + s"database:$dataBaseName")
     for (dimension <- dimensions) {
-      val inputStream = new FileInputStream(new File(dictFolderPath + "/" +
-        dimension.getColumnId + ".dict").getCanonicalPath)
-      val bufferReader = new BufferedReader(new InputStreamReader(inputStream))
-      println(s"column name: ${dimension.getColName}")
-      var lineData = bufferReader.readLine
-      while (lineData != null) {
-        println(lineData)
-        lineData = bufferReader.readLine
+      println("**********************************************************************************")
+      println(s"dictionary of dimension: ${dimension.getColName}")
+      println(s"Key\t\t\tValue")
+      val columnIdentifier = new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
+        dimension.getColumnId, dimension.getDataType)
+      val dict = CarbonLoaderUtil.getDictionary(columnIdentifier, carbonContext.storePath)
+      var index: Int = 1
+      var distinctValue = dict.getDictionaryValueForKey(index)
+      while (distinctValue != null) {
+        println(index + s"\t\t\t" + distinctValue)
+        index += 1
+        distinctValue = dict.getDictionaryValueForKey(index)
       }
     }
     println("**********************************************************************************")
