@@ -50,11 +50,11 @@ public class BlockDataHandler {
   public int startBuffer;
   public int endBuffer;
   public int bufferSize;
-  public int preferredBufferSize;
   public long bytesToSkipInFirstFile;
   public long totalBytesRead;
   public CsvInputMeta meta ;
   public CsvInputData data ;
+  public TransMeta transMeta;
   public boolean isNeedToSkipFirstLineInBlock;
   public long currentOffset;
 
@@ -74,7 +74,7 @@ public class BlockDataHandler {
     // That way we can at least read one full block of data using NIO
 
     bufferSize = endBuffer - startBuffer;
-    int newSize = bufferSize + preferredBufferSize;
+    int newSize = bufferSize + data.preferredBufferSize;
     byte[] newByteBuffer = new byte[newSize + 100];
 
     // copy over the old data...
@@ -161,12 +161,12 @@ public class BlockDataHandler {
     return result;
   }
 
-  protected boolean openFile(StepMetaInterface smi, StepDataInterface sdi, TransMeta transMeta,
+  protected boolean openFile(StepMetaInterface smi, StepDataInterface sdi, TransMeta trans,
       BlockDetails blockDetails) throws KettleException {
     try {
       this.meta = (CsvInputMeta) smi;
       this.data = (CsvInputData) sdi;
-
+      this.transMeta = trans;
       // Close the previous file...
       if (this.bufferedInputStream != null) {
         this.bufferedInputStream.close();
@@ -209,9 +209,9 @@ public class BlockDataHandler {
     //using file object to get path can return a valid path which for new inputstream
     String filePath = KettleVFS.getFilename(fileObject);
     this.bufferedInputStream = FileFactory.getDataInputStream(filePath,
-        FileFactory.getFileType(filePath), this.preferredBufferSize);
+        FileFactory.getFileType(filePath), data.preferredBufferSize);
     //when open a new file, need to initialize all info
-    this.byteBuffer = new byte[this.preferredBufferSize];
+    this.byteBuffer = new byte[data.preferredBufferSize];
     this.bufferSize = 0;
     this.startBuffer = 0;
     this.endBuffer = 0;
@@ -223,11 +223,21 @@ public class BlockDataHandler {
    * @param offset
    * @throws IOException
    */
-  protected void initializeFileReader(String filePath,long offset) throws IOException {
-    if(this.bufferedInputStream != null){ this.bufferedInputStream.close();}
+  protected void initializeFileReader(String filePath,long offset) throws IOException,
+          KettleFileException {
+    if (this.bufferedInputStream != null) {
+      this.bufferedInputStream.close();
+    }
+
+    // handle local file path, return path which can be handle by inputstream
+    if (FileFactory.getFileType(filePath) == FileFactory.FileType.LOCAL) {
+      FileObject fileObject = KettleVFS.getFileObject(filePath, transMeta);
+      filePath = KettleVFS.getFilename(fileObject);
+    }
+
     this.bufferedInputStream = FileFactory.getDataInputStream(filePath,
-        FileFactory.getFileType(filePath), this.preferredBufferSize,offset);
-    this.byteBuffer = new byte[this.preferredBufferSize];
+        FileFactory.getFileType(filePath), data.preferredBufferSize,offset);
+    this.byteBuffer = new byte[data.preferredBufferSize];
     this.bufferSize = 0;
     this.startBuffer = 0;
     this.endBuffer = 0;
