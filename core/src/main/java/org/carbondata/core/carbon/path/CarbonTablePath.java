@@ -123,7 +123,7 @@ public class CarbonTablePath extends Path {
    * @param factUpdateTimeStamp unique identifier to identify an update
    * @return absolute path of data file stored in carbon data format
    */
-  public String getCarbonDataFilePath(String partitionId, Integer segmentId, Integer filePartNo,
+  public String getCarbonDataFilePath(String partitionId, String segmentId, Integer filePartNo,
       Integer taskNo, String factUpdateTimeStamp) {
     return getSegmentDir(partitionId, segmentId) + File.separator + getCarbonDataFileName(
         filePartNo, taskNo, factUpdateTimeStamp);
@@ -136,7 +136,7 @@ public class CarbonTablePath extends Path {
    * @param segmentId   unique partition identifier
    * @return absolute path of data file stored in carbon data format
    */
-  public String getCarbonDataDirectoryPath(String partitionId, Integer segmentId) {
+  public String getCarbonDataDirectoryPath(String partitionId, String segmentId) {
     return getSegmentDir(partitionId, segmentId);
   }
 
@@ -150,7 +150,7 @@ public class CarbonTablePath extends Path {
    * @param factUpdateTimeStamp unique identifier to identify an update
    * @return absolute path of data file stored in carbon data format
    */
-  public String getCarbonAggDataFilePath(String aggTableID, String partitionId, Integer segmentId,
+  public String getCarbonAggDataFilePath(String aggTableID, String partitionId, String segmentId,
       Integer filePartNo, Integer taskNo, String factUpdateTimeStamp) {
     return getAggSegmentDir(aggTableID, partitionId, segmentId) + File.separator
         + getCarbonDataFileName(filePartNo, taskNo, factUpdateTimeStamp);
@@ -183,7 +183,7 @@ public class CarbonTablePath extends Path {
     return false;
   }
 
-  private String getSegmentDir(String partitionId, Integer segmentId) {
+  private String getSegmentDir(String partitionId, String segmentId) {
     return getPartitionDir(partitionId) + File.separator + SEGMENT_PREFIX + segmentId;
   }
 
@@ -191,7 +191,7 @@ public class CarbonTablePath extends Path {
     return getFactDir() + File.separator + PARTITION_PREFIX + partitionId;
   }
 
-  private String getAggSegmentDir(String aggTableID, String partitionId, Integer segmentId) {
+  private String getAggSegmentDir(String aggTableID, String partitionId, String segmentId) {
     return getAggPartitionDir(aggTableID, partitionId) + File.separator + SEGMENT_PREFIX
         + segmentId;
   }
@@ -271,7 +271,7 @@ public class CarbonTablePath extends Path {
     /**
      * gets segement id from given absolute data file path
      */
-    public static int getSegmentId(String dataFileAbsolutePath) {
+    public static String getSegmentId(String dataFileAbsolutePath) {
       // find segment id from last of data file path
       int endIndex = dataFileAbsolutePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR);
       // + 1 for size of "/"
@@ -282,7 +282,7 @@ public class CarbonTablePath extends Path {
       String[] segmentDirSplits = segmentDirStr.split("_");
       try {
         if (segmentDirSplits.length == 2) {
-          return Integer.parseInt(segmentDirSplits[1]);
+          return segmentDirSplits[1];
         }
       } catch (Exception e) {
         return INVALID_SEGMENT_ID;

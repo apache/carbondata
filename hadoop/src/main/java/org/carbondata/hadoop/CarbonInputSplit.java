@@ -33,35 +33,37 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 public class CarbonInputSplit extends FileSplit implements Serializable, Writable {
 
   private static final long serialVersionUID = 3520344046772190207L;
-  private int segmentId;
+  private String segmentId;
 
   public CarbonInputSplit() {
     super(null, 0, 0, new String[0]);
   }
 
-  public CarbonInputSplit(int segmentId, Path path, long start, long length, String[] locations) {
+  public CarbonInputSplit(String segmentId, Path path, long start, long length,
+      String[] locations) {
     super(path, start, length, locations);
     this.segmentId = segmentId;
   }
 
-  public static CarbonInputSplit from(int segmentId, FileSplit split) throws IOException {
+  public static CarbonInputSplit from(String segmentId, FileSplit split) throws IOException {
     return new CarbonInputSplit(segmentId, split.getPath(), split.getStart(), split.getLength(),
         split.getLocations());
   }
 
-  public int getSegmentId() {
+  public String getSegmentId() {
     return segmentId;
   }
 
   @Override public void readFields(DataInput in) throws IOException {
 
     super.readFields(in);
-    this.segmentId = in.readInt();
+    this.segmentId = in.readUTF();
+
   }
 
   @Override public void write(DataOutput out) throws IOException {
     super.write(out);
-    out.writeInt(segmentId);
+    out.writeUTF(segmentId);
   }
 
 }

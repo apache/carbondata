@@ -410,7 +410,7 @@ public final class CarbonLoaderUtil {
     // form local store location
     String localStoreLocation = getStoreLocation(CarbonProperties.getInstance()
             .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL),
-        carbonTableIdentifier, Integer.parseInt(segmentId), loadModel.getPartitionId());
+        carbonTableIdentifier, segmentId, loadModel.getPartitionId());
     try {
       CarbonUtil.deleteFoldersAndFiles(new File[] { new File(localStoreLocation) });
     } catch (CarbonUtilException e) {
@@ -442,12 +442,12 @@ public final class CarbonLoaderUtil {
       // form carbon store location
       String carbonStoreLocation = getStoreLocation(
           CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS),
-          carbonTableIdentifier, Integer.parseInt(segmentId), loadModel.getPartitionId());
+          carbonTableIdentifier, segmentId, loadModel.getPartitionId());
       String tempLocationKey = databaseName + '_' + tableName;
       // form local store location
       String localStoreLocation = getStoreLocation(CarbonProperties.getInstance()
               .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL),
-          carbonTableIdentifier, Integer.parseInt(segmentId), loadModel.getPartitionId());
+          carbonTableIdentifier, segmentId, loadModel.getPartitionId());
       localStoreLocation = localStoreLocation + File.separator + loadModel.getTaskNo();
       boolean isUpdate = false;
       if (loadModel.isAggLoadRequest() && null != aggTableName) {
@@ -469,8 +469,8 @@ public final class CarbonLoaderUtil {
    * @param partitionId
    * @return
    */
-  private static String getStoreLocation(String storePath,
-      CarbonTableIdentifier carbonTableIdentifier, int segmentId, String partitionId) {
+  public static String getStoreLocation(String storePath,
+      CarbonTableIdentifier carbonTableIdentifier, String segmentId, String partitionId) {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier);
     String carbonDataFilePath = carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
@@ -1215,7 +1215,7 @@ public final class CarbonLoaderUtil {
    * @param segmentId
    */
   public static void checkAndCreateCarbonDataLocation(String carbonStorePath, String dbName,
-      String tableName, int partitionCount, int segmentId) {
+      String tableName, int partitionCount, String segmentId) {
     CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName);
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);

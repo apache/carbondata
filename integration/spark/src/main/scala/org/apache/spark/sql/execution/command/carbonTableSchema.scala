@@ -128,6 +128,11 @@ case class Default(key: String, value: String)
 
 case class DataLoadTableFileMapping(table: String, loadPath: String)
 
+case class CarbonMergerMapping(storeLocation: String, hdfsStoreLocation: String,
+  partitioner: Partitioner, metadataFilePath: String, mergedLoadName: String,
+  kettleHomePath: String, cubeCreationTime: Long, schemaName: String,
+  factTableName: String, validSegments: Array[String])
+
 object TableNewProcessor {
   def apply(cm: tableModel, sqlContext: SQLContext): TableInfo = {
     new TableNewProcessor(cm, sqlContext).process

@@ -17,65 +17,126 @@
 
 package org.carbondata.spark.rdd
 
+import java.util
 import java.util.List
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext}
+import org.apache.hadoop.mapreduce.Job
+import org.apache.spark._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.execution.command.Partitioner
+import org.apache.spark.sql.execution.command.CarbonMergerMapping
 
+import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.carbondata.core.carbon.datastore.block.{SegmentProperties, TableBlockInfo, TaskBlockInfo}
+import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.load.LoadMetadataDetails
-import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.carbondata.lcm.status.SegmentStatusManager
+import org.carbondata.core.iterator.CarbonIterator
+import org.carbondata.core.util.CarbonProperties
+import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
+import org.carbondata.integration.spark.merger.{CarbonCompactionExecutor, CarbonCompactionUtil, RowResultMerger}
+import org.carbondata.query.carbon.result.{BatchRawResult, RowResult}
 import org.carbondata.spark.MergeResult
-import org.carbondata.spark.load._
+import org.carbondata.spark.load.{CarbonLoaderUtil, CarbonLoadModel}
 import org.carbondata.spark.merger.CarbonDataMergerUtil
 import org.carbondata.spark.splits.TableSplit
-import org.carbondata.spark.util.CarbonQueryUtil
+import org.carbondata.spark.util.QueryPlanUtil
+
 
 class CarbonMergerRDD[K, V](
-    sc: SparkContext,
-    result: MergeResult[K, V],
-    carbonLoadModel: CarbonLoadModel,
-    storeLocation: String,
-    hdfsStoreLocation: String,
-    partitioner: Partitioner,
-    currentRestructNumber: Integer,
-    metadataFilePath: String,
-    loadsToMerge: List[String],
-    mergedLoadName: String,
-    kettleHomePath: String,
-    cubeCreationTime: Long)
+  sc: SparkContext,
+  result: MergeResult[K, V],
+  carbonLoadModel: CarbonLoadModel,
+  carbonMergerMapping : CarbonMergerMapping)
   extends RDD[(K, V)](sc, Nil) with Logging {
 
+  val defaultParallelism = sc.defaultParallelism
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
+  val storeLocation = carbonMergerMapping.storeLocation
+  val hdfsStoreLocation = carbonMergerMapping.hdfsStoreLocation
+  val metadataFilePath = carbonMergerMapping.metadataFilePath
+  val mergedLoadName = carbonMergerMapping.mergedLoadName
+  val schemaName = carbonMergerMapping.schemaName
+  val factTableName = carbonMergerMapping.factTableName
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
       var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-      val split = theSplit.asInstanceOf[CarbonLoadPartition]
-      logInfo("Input split: " + split.serializableHadoopSplit.value)
-      val partitionId = split.serializableHadoopSplit.value.getPartition.getUniqueID
-      val model = carbonLoadModel
-        .getCopyWithPartition(split.serializableHadoopSplit.value.getPartition.getUniqueID)
+      carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
+      val carbonSparkPartition = theSplit.asInstanceOf[CarbonSparkPartition]
 
-      val mergedLoadMetadataDetails = CarbonDataMergerUtil
-        .executeMerging(model, storeLocation, hdfsStoreLocation, currentRestructNumber,
-          metadataFilePath, loadsToMerge, mergedLoadName)
-      var segmentStatusManager = new SegmentStatusManager(new AbsoluteTableIdentifier
-      (CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION),
-        new CarbonTableIdentifier(model.getDatabaseName, model.getTableName)))
-      model.setLoadMetadataDetails(segmentStatusManager
-        .readLoadMetadata(metadataFilePath).toList.asJava)
+      val tempLocationKey: String = carbonLoadModel.getDatabaseName + '_' + carbonLoadModel
+        .getTableName
+      CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation)
 
-      if (mergedLoadMetadataDetails) {
-        CarbonLoaderUtil.copyMergedLoadToHDFS(model, currentRestructNumber, mergedLoadName)
-        dataloadStatus = checkAndLoadAggregationTable
+      // sorting the table block info List.
+      // Collections.sort(tableBlockInfoList1)
+      var tableBlockInfoList = carbonSparkPartition.tableBlockInfos
 
+      val segmentMapping: java.util.Map[String, TaskBlockInfo] =
+        CarbonCompactionUtil.createMappingForSegments(tableBlockInfoList)
+
+      val dataFileMetadataSegMapping: java.util.Map[String, List[DataFileFooter]] =
+        CarbonCompactionUtil.createDataFileFooterMappingForSegments(tableBlockInfoList)
+
+      carbonLoadModel.setFactStoreLocation(hdfsStoreLocation)
+
+      // taking the last table block info for getting the segment properties.
+      val listMetadata = dataFileMetadataSegMapping.get(tableBlockInfoList.get
+      (tableBlockInfoList.size()-1).getSegmentId())
+
+      val colCardinality: Array[Int] = listMetadata.get(listMetadata.size() - 1).getSegmentInfo
+        .getColumnCardinality
+
+      val segmentProperties = new SegmentProperties(
+        listMetadata.get(listMetadata.size() - 1).getColumnInTable,
+        colCardinality
+      )
+
+      val exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties, schemaName,
+        factTableName, hdfsStoreLocation, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+      )
+
+      // fire a query and get the results.
+      var result2: util.List[CarbonIterator[BatchRawResult]] = null
+      try {
+        result2 = exec.processTableBlocks()
+      } catch {
+        case e: Exception =>
+          LOGGER.error(e)
+          if (null != e.getMessage) {
+            sys.error("Exception occurred in query execution :: " + e.getMessage)
+          } else {
+            sys.error("Exception occurred in query execution.Please check logs.")
+          }
       }
+
+      val mergeNumber = mergedLoadName
+        .substring(mergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER) +
+          CarbonCommonConstants.LOAD_FOLDER.length(), mergedLoadName.length()
+        )
+
+      val tempStoreLoc = CarbonCompactionUtil.getTempLocation(schemaName,
+        factTableName,
+        "0",
+        mergeNumber,
+        carbonLoadModel.getTaskNo
+      )
+
+      carbonLoadModel.setSegmentId(mergeNumber)
+      carbonLoadModel.setPartitionId(theSplit.index.toString)
+      val merger =
+        new RowResultMerger(result2,
+        schemaName,
+        factTableName,
+        segmentProperties,
+        tempStoreLoc,
+        carbonLoadModel,
+        colCardinality
+      )
+      val mergeStatus = merger.mergerSlice()
 
       var havePair = false
       var finished = false
@@ -93,129 +154,77 @@ class CarbonMergerRDD[K, V](
           throw new java.util.NoSuchElementException("End of stream")
         }
         havePair = false
-        result.getKey(0, mergedLoadMetadataDetails)
+        result.getKey(0, mergeStatus)
       }
-
-
-      def checkAndLoadAggregationTable: String = {
-        var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
-        val carbonTable = model.getCarbonDataLoadSchema.getCarbonTable
-        val aggTables = carbonTable.getAggregateTablesName
-        if (null != aggTables && !aggTables.isEmpty) {
-          val details = model.getLoadMetadataDetails.asScala.toArray
-          val newSlice = CarbonCommonConstants.LOAD_FOLDER + mergedLoadName
-          var listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
-          listOfLoadFolders = CarbonLoaderUtil.addNewSliceNameToList(newSlice, listOfLoadFolders)
-          var listOfAllLoadFolders = CarbonQueryUtil.getListOfSlices(details)
-          listOfAllLoadFolders = CarbonLoaderUtil
-            .addNewSliceNameToList(newSlice, listOfAllLoadFolders)
-          val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
-          val copyListOfLoadFolders = listOfLoadFolders.asScala.toList
-          val copyListOfUpdatedLoadFolders = listOfUpdatedLoadFolders.asScala.toList
-          loadCubeSlices(listOfAllLoadFolders, details)
-          var loadFolders = Array[String]()
-          val loadFolder = CarbonLoaderUtil
-            .getAggLoadFolderLocation(newSlice, model.getDatabaseName, model.getTableName,
-              model.getTableName, hdfsStoreLocation, currentRestructNumber)
-          if (null != loadFolder) {
-            loadFolders :+= loadFolder
-          }
-          dataloadStatus = iterateOverAggTables(aggTables.asScala.toArray,
-            copyListOfLoadFolders.asJava,
-            copyListOfUpdatedLoadFolders.asJava,
-            loadFolders)
-          if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
-            // remove the current slice from memory not the cube
-            CarbonLoaderUtil
-              .removeSliceFromMemory(model.getDatabaseName, model.getTableName, newSlice)
-            logInfo(s"Aggregate table creation failed")
-          } else {
-            logInfo("Aggregate tables creation successfull")
-          }
-        }
-        dataloadStatus
-      }
-
-
-      def loadCubeSlices(listOfLoadFolders: java.util.List[String],
-          deatails: Array[LoadMetadataDetails]) = {
-
-        // TODO: Implement it
-      }
-
-      def iterateOverAggTables(aggTables: Array[String],
-          listOfLoadFolders: java.util.List[String],
-          listOfUpdatedLoadFolders: java.util.List[String],
-          loadFolders: Array[String]): String = {
-        model.setAggLoadRequest(true)
-        aggTables.foreach { aggTableName =>
-          model.setAggTableName(aggTableName)
-          dataloadStatus = loadAggregationTable(listOfLoadFolders, listOfUpdatedLoadFolders,
-            loadFolders)
-          if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
-            logInfo(s"Aggregate table creation failed :: $aggTableName")
-            return CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-          }
-        }
-        CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
-      }
-
-      def loadAggregationTable(listOfLoadFolders: java.util.List[String],
-          listOfUpdatedLoadFolders: java.util.List[String],
-          loadFolders: Array[String]): String = {
-        loadFolders.foreach { loadFolder =>
-          val restructNumber = CarbonUtil.getRestructureNumber(loadFolder, model.getTableName)
-          try {
-            if (CarbonLoaderUtil
-              .isSliceValid(loadFolder, listOfLoadFolders, listOfUpdatedLoadFolders,
-                model.getTableName)) {
-              model.setFactStoreLocation(loadFolder)
-              CarbonLoaderUtil.executeGraph(model, storeLocation, hdfsStoreLocation, kettleHomePath,
-                restructNumber)
-              dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
-            } else {
-              CarbonLoaderUtil
-                .createEmptyLoadFolder(model, loadFolder, hdfsStoreLocation, restructNumber)
-            }
-          } catch {
-            case e: Exception => dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-          } finally {
-            if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
-              val loadName = loadFolder
-                .substring(loadFolder.indexOf(CarbonCommonConstants.LOAD_FOLDER))
-              CarbonLoaderUtil.copyCurrentLoadToHDFS(model, loadName, listOfUpdatedLoadFolders)
-            } else {
-              logInfo(s"Load creation failed :: $loadFolder")
-              return CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-            }
-          }
-        }
-        CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
-      }
-
 
     }
     iter
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
-    val theSplit = split.asInstanceOf[CarbonLoadPartition]
-    val s = theSplit.serializableHadoopSplit.value.getLocations.asScala
-    logInfo("Host Name : " + s.head + s.length)
-    s
+    val theSplit = split.asInstanceOf[CarbonSparkPartition]
+    theSplit.locations.filter(_ != "localhost")
   }
 
   override def getPartitions: Array[Partition] = {
-    val splits = CarbonQueryUtil
-      .getTableSplits(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName, null,
-        partitioner)
-    splits.zipWithIndex.map { s =>
-      new CarbonLoadPartition(id, s._2, s._1)
-    }
-  }
+    val startTime = System.currentTimeMillis()
+    val absoluteTableIdentifier: AbsoluteTableIdentifier = new AbsoluteTableIdentifier(
+      hdfsStoreLocation, new CarbonTableIdentifier(schemaName, factTableName)
+    )
+    val (carbonInputFormat: CarbonInputFormat[RowResult], job: Job) =
+      QueryPlanUtil.createCarbonInputFormat(absoluteTableIdentifier)
+    val result = new util.ArrayList[Partition](defaultParallelism)
+    val mapsOfNodeBlockMapping: util.List[util.Map[String, util.List[TableBlockInfo]]] = new
+        java.util.ArrayList[util.Map[String, util.List[TableBlockInfo]]]()
+    var noOfBlocks = 0
+    for (eachSeg <- carbonMergerMapping.validSegments) {
 
-  override def checkpoint() {
-    // Do nothing. Hadoop RDD should not be checkpointed.
+      job.getConfiguration.set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, eachSeg)
+
+      // get splits
+      val splits = carbonInputFormat.getSplits(job)
+      val carbonInputSplits = splits.asScala.map(_.asInstanceOf[CarbonInputSplit])
+
+      val blocksOfOneSegment = carbonInputSplits.map(inputSplit =>
+        new TableBlockInfo(inputSplit.getPath.toString,
+          inputSplit.getStart, inputSplit.getSegmentId,
+          inputSplit.getLocations, inputSplit.getLength
+        )
+      )
+      noOfBlocks += blocksOfOneSegment.size
+      mapsOfNodeBlockMapping.add(CarbonLoaderUtil.nodeBlockMapping(blocksOfOneSegment.asJava, -1))
+    }
+
+    // combining the segments output i.e combining list of maps.
+    val nodeBlockMapping: util.Map[String, util.List[TableBlockInfo]] =
+      CarbonDataMergerUtil.combineNodeBlockMaps(mapsOfNodeBlockMapping)
+
+
+    var i = 0
+    // Create Spark Partition for each task and assign blocks
+    nodeBlockMapping.asScala.foreach { entry =>
+      val blocksPerNode = entry._2
+      if (blocksPerNode.size() != 0) {
+        result.add(new CarbonSparkPartition(id, i, Seq(entry._1).toArray, blocksPerNode))
+        i += 1
+      }
+    }
+   // val noOfBlocks = blockList.size
+    val noOfNodes = nodeBlockMapping.size
+    val noOfTasks = result.size()
+    logInfo(s"Identified  no.of.Blocks: $noOfBlocks,"
+      + s"parallelism: $defaultParallelism , no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks"
+    )
+    logInfo("Time taken to identify Blocks to scan : " + (System
+      .currentTimeMillis() - startTime)
+    )
+    for (j <- 0 until result.size() - 1) {
+      val cp = result.get(j).asInstanceOf[CarbonSparkPartition]
+      logInfo(s"Node : " + cp.locations.toSeq.mkString(",")
+        + ", No.Of Blocks : " + cp.tableBlockInfos.size()
+      )
+    }
+    result.toArray(new Array[Partition](result.size()))
   }
 }
 

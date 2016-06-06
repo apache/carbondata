@@ -695,6 +695,56 @@ public final class CarbonProperties {
     return defaultVal;
   }
 
+  /**
+   * returns major compaction size value from carbon properties or default value if it is not valid
+   *
+   * @return
+   */
+  public long getMajorCompactionSize() {
+    long compactionSize;
+    try {
+      compactionSize = Long.parseLong(getProperty(CarbonCommonConstants.MAJOR_COMPACTION_SIZE,
+          CarbonCommonConstants.DEFAULT_MAJOR_COMPACTION_SIZE));
+    } catch (NumberFormatException e) {
+      compactionSize = Long.parseLong(CarbonCommonConstants.DEFAULT_MAJOR_COMPACTION_SIZE);
+    }
+    return compactionSize;
+  }
+
+  /**
+   * returns minor compaction size value from carbon properties or default value if it is not valid
+   *
+   * @return
+   */
+  public long getMinorCompactionSize() {
+    long compactionSize;
+    try {
+      compactionSize = Long.parseLong(getProperty(CarbonCommonConstants.MINOR_COMPACTION_SIZE,
+          CarbonCommonConstants.DEFAULT_MINOR_COMPACTION_SIZE));
+    } catch (NumberFormatException e) {
+      compactionSize = Long.parseLong(CarbonCommonConstants.DEFAULT_MINOR_COMPACTION_SIZE);
+    }
+    return compactionSize;
+  }
+
+  /**
+   * returns the number of loads to be preserved.
+   *
+   * @return
+   */
+  public int getNumberOfSegmentsToBePreserved() {
+    int numberOfSegmentsToBePreserved;
+    try {
+      numberOfSegmentsToBePreserved = Integer.parseInt(
+          getProperty(CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS_NUMBER,
+              CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER));
+    } catch (NumberFormatException e) {
+      numberOfSegmentsToBePreserved =
+          Integer.parseInt(CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER);
+    }
+    return numberOfSegmentsToBePreserved;
+  }
+
   public void print() {
     LOGGER.info("------Using Carbon.properties --------");
     LOGGER.info(carbonProperties.toString());

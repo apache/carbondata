@@ -248,8 +248,8 @@ public class MDKeyGenStep extends BaseStep {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
     String partitionId = meta.getPartitionID();
-    String carbonDataDirectoryPath =
-        carbonTablePath.getCarbonDataDirectoryPath(partitionId, meta.getSegmentId());
+    String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionId,
+        meta.getSegmentId()+"");
     carbonDataDirectoryPath = carbonDataDirectoryPath + File.separator + meta.getTaskNo();
     storeLocation = carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     isNoDictionaryDimension =
@@ -483,7 +483,7 @@ public class MDKeyGenStep extends BaseStep {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
     String carbonDataDirectoryPath =
-        carbonTablePath.getCarbonDataDirectoryPath(meta.getPartitionID(), meta.getSegmentId());
+        carbonTablePath.getCarbonDataDirectoryPath(meta.getPartitionID(), meta.getSegmentId()+"");
     return carbonDataDirectoryPath;
   }
 

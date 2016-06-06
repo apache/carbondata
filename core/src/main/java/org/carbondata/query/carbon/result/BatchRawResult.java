@@ -30,7 +30,7 @@ import org.carbondata.query.carbon.util.DataTypeUtil;
 import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 
 /**
- * Below class holds the query result
+ * Below class holds the query result of batches.
  */
 public class BatchRawResult extends CarbonIterator<Object[]> {
 
@@ -45,6 +45,9 @@ public class BatchRawResult extends CarbonIterator<Object[]> {
    */
   private int counter;
 
+  /**
+   * size of the batches.
+   */
   private int size;
 
   public BatchRawResult(Object[][] rows) {
@@ -54,8 +57,25 @@ public class BatchRawResult extends CarbonIterator<Object[]> {
     }
   }
 
+  /**
+   * This will return all the raw records.
+   * @return
+   */
   public Object[][] getAllRows() {
     return rows;
+  }
+
+  /**
+   * This method will return one row at a time based on the counter given.
+   * @param counter
+   * @return
+   */
+  public Object[] getRawRow(int counter) {
+    Object[] outputRow = new Object[rows.length];
+    for(int col = 0 ; col < rows.length ; col++) {
+      outputRow[col] = rows[col][counter];
+    }
+    return outputRow;
   }
 
   /**
@@ -144,5 +164,13 @@ public class BatchRawResult extends CarbonIterator<Object[]> {
 
   public void setQuerySchemaInfo(QuerySchemaInfo querySchemaInfo) {
     this.querySchemaInfo = querySchemaInfo;
+  }
+
+  /**
+   * For getting the total size.
+   * @return
+   */
+  public int getSize() {
+    return size;
   }
 }

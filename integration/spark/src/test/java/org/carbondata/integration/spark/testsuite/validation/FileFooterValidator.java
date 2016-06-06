@@ -1,5 +1,6 @@
 package org.carbondata.spark.testsuite.validation;
 
+import org.apache.spark.sql.common.util.CarbonHiveContext;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -45,7 +46,7 @@ public class FileFooterValidator {
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION);
     CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("default", "validatefooter");
     String segmentPath = CarbonStorePath.getCarbonTablePath(storePath, tableIdentifier)
-        .getCarbonDataDirectoryPath("0", 0);
+        .getCarbonDataDirectoryPath("0", "0");
     CarbonFile carbonFile =
         FileFactory.getCarbonFile(segmentPath, FileFactory.getFileType(segmentPath));
     CarbonFile[] list = carbonFile.listFiles(new CarbonFileFilter() {

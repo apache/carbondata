@@ -127,6 +127,15 @@ public class CarbonFactDataHandlerModel {
    */
   private String carbonDataDirectoryPath;
 
+  private int[] colCardinality;
+
+  public int[] getColCardinality() {
+    return colCardinality;
+  }
+
+  public void setColCardinality(int[] colCardinality) {
+    this.colCardinality = colCardinality;
+  }
   public CarbonDataFileAttributes getCarbonDataFileAttributes() {
     return carbonDataFileAttributes;
   }

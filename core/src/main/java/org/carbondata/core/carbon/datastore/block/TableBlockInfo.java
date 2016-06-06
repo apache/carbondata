@@ -19,6 +19,7 @@
 package org.carbondata.core.carbon.datastore.block;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.carbon.path.CarbonTablePath.DataFileUtil;
@@ -53,14 +54,14 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
   /**
    * id of the segment this will be used to sort the blocks
    */
-  private int segmentId;
+  private String segmentId;
 
   /**
    * locations to store the host name and other detail
    */
   private String[] locations;
 
-  public TableBlockInfo(String filePath, long blockOffset, int segmentId, String[] locations,
+  public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
       long blockLength) {
     this.filePath = FileFactory.getUpdatedFilePath(filePath);
     this.blockOffset = blockOffset;
@@ -85,6 +86,13 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
 
 
   /**
+   * @return the segmentId
+   */
+  public String getSegmentId() {
+    return segmentId;
+  }
+
+  /**
    * @return the locations
    */
   public String[] getLocations() {
@@ -96,21 +104,6 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
    */
   public long getBlockLength() {
     return blockLength;
-  }
-
-  /*
-     * (non-Javadoc)
-     *
-     * @see java.lang.Object#hashCode()
-     */
-  @Override public int hashCode() {
-    final int prime = 31;
-    int result = 1;
-    result = prime * result + segmentId;
-    result = prime * result + (int) (blockOffset ^ (blockOffset >>> 32));
-    result = prime * result + (int) (blockLength ^ (blockLength >>> 32));
-    result = prime * result + ((filePath == null) ? 0 : filePath.hashCode());
-    return result;
   }
 
   /*
@@ -159,10 +152,17 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
 
     int compareResult = 0;
     // get the segment id
-    compareResult = segmentId - other.segmentId;
-    if (compareResult != 0) {
-      return compareResult;
+    // converr seg ID to double.
+
+    double seg1 = Double.parseDouble(segmentId);
+    double seg2 = Double.parseDouble(segmentId);
+    if (seg1 - seg2 < 0) {
+      return -1;
     }
+    if (seg1 - seg2 > 0) {
+      return 1;
+    }
+
     // Comparing the time task id of the file to other
     // if both the task id of the file is same then we need to compare the
     // offset of
@@ -194,4 +194,14 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
     }
     return 0;
   }
+
+  @Override public int hashCode() {
+    int result = filePath.hashCode();
+    result = 31 * result + (int) (blockOffset ^ (blockOffset >>> 32));
+    result = 31 * result + (int) (blockLength ^ (blockLength >>> 32));
+    result = 31 * result + segmentId.hashCode();
+    result = 31 * result + Arrays.hashCode(locations);
+    return result;
+  }
+
 }

@@ -139,7 +139,7 @@ public final class DeleteLoadFolders {
 
     path = new CarbonStorePath(storeLocation).getCarbonTablePath(
         new CarbonTableIdentifier(loadModel.getDatabaseName(), loadModel.getTableName()))
-        .getCarbonDataDirectoryPath("" + partitionId, segmentId);
+        .getCarbonDataDirectoryPath("" + partitionId, segmentId.toString());
     return path;
   }
 

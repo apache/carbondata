@@ -153,7 +153,7 @@ public class SortDataRows {
   /**
    * Id of the load folder
    */
-  private int segmentId;
+  private String segmentId;
   /**
    * task id, each spark task has a unique id
    */
@@ -174,7 +174,7 @@ public class SortDataRows {
 
   public SortDataRows(String tableName, int dimColCount, int complexDimColCount,
       int measureColCount, SortObserver observer, int noDictionaryCount, String partitionID,
-      int segmentId, String taskNo, boolean[] noDictionaryColMaping) {
+      String segmentId, String taskNo, boolean[] noDictionaryColMaping) {
     // set table name
     this.tableName = tableName;
     this.partitionID = partitionID;

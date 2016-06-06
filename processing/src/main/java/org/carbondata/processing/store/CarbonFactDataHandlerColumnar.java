@@ -262,6 +262,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private boolean[] dimensionType;
 
   /**
+   * colCardinality for the merge case.
+   */
+  private int[] colCardinality;
+
+  /**
    * CarbonFactDataHandler constructor
    */
   public CarbonFactDataHandlerColumnar(CarbonFactDataHandlerModel carbonFactDataHandlerModel) {
@@ -341,6 +346,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         carbonTable.getMeasureByTableName(tableName));
     dimensionType =
         CarbonUtil.identifyDimensionType(carbonTable.getDimensionByTableName(tableName));
+    this.colCardinality = carbonFactDataHandlerModel.getColCardinality();
     try {
       numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
@@ -1067,7 +1073,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     return new CarbonFactDataWriterImplForIntIndexAndAggBlock(storeLocation, measureCount,
         mdKeyLength, tableName, fileManager, keyBlockSize, aggKeyBlock, isComplexTypes(),
         noDictionaryCount, carbonDataFileAttributes, databaseName, wrapperColumnSchemaList,
-        noDictionaryCount, dimensionType, carbonDataDirectoryPath);
+        noDictionaryCount, dimensionType, carbonDataDirectoryPath, colCardinality);
   }
 
   private boolean[] isComplexTypes() {
