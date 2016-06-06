@@ -580,7 +580,7 @@ class CarbonSqlParser()
         .map { dictExcludeCol =>
           if (!fields.exists(x => x.column.equalsIgnoreCase(dictExcludeCol))) {
             val errormsg = "DICTIONARY_EXCLUDE column: " + dictExcludeCol +
-              " is no exist in table. Please check create table statement."
+              " does not exist in table. Please check create table statement."
             throw new MalformedCarbonCommandException(errormsg)
           } else if (isComplexDimDictionaryExclude(fields.find (x =>
               x.column.equalsIgnoreCase(dictExcludeCol)).get.dataType.get)) {
@@ -596,7 +596,7 @@ class CarbonSqlParser()
       dictIncludeCols.map { distIncludeCol =>
           if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol))) {
             val errormsg = "DICTIONARY_INCLUDE column: " + distIncludeCol +
-              " is no exist in table. Please check create table statement."
+              " does not exist in table. Please check create table statement."
             throw new MalformedCarbonCommandException(errormsg)
           }
         }

@@ -87,7 +87,7 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
       buildTableWithNoExistDictExclude()
     } catch {
       case e: MalformedCarbonCommandException =>
-        assert(e.getMessage.equals("DICTIONARY_EXCLUDE column: CCC is no exist in table. " +
+        assert(e.getMessage.equals("DICTIONARY_EXCLUDE column: CCC does not exist in table. " +
           "Please check create table statement."))
       case _ => assert(false)
     }
@@ -98,7 +98,7 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
       buildTableWithNoExistDictInclude()
     } catch {
       case e: MalformedCarbonCommandException =>
-        assert(e.getMessage.equals("DICTIONARY_INCLUDE column: AAA is no exist in table. " +
+        assert(e.getMessage.equals("DICTIONARY_INCLUDE column: AAA does not exist in table. " +
           "Please check create table statement."))
       case _ => assert(false)
     }
