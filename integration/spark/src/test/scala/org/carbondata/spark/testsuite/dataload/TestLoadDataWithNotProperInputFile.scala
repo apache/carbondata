@@ -22,6 +22,7 @@ package org.carbondata.spark.testsuite.dataload
 import java.io.File
 
 import org.apache.spark.sql.common.util.{CarbonHiveContext, QueryTest}
+import org.apache.spark.util.FileUtils
 
 import org.carbondata.spark.load.CarbonLoadModel
 import org.carbondata.spark.util.GlobalDictionaryUtil
@@ -32,20 +33,14 @@ import org.scalatest.BeforeAndAfterAll
  * Test class of loading data for carbon table with not proper input file
  *
  */
-class TestLoadDataWithNotProperInputFile extends QueryTest with BeforeAndAfterAll {
-
-  var dataPath: String = _
-  var carbonLoadModel: CarbonLoadModel = _
-
-  override def beforeAll: Unit = {
-    dataPath = new File(this.getClass.getResource("/").getPath + "/../../")
-      .getCanonicalPath + "/src/test/resources/nullSample.csv"
-    carbonLoadModel = new CarbonLoadModel
-    carbonLoadModel.setFactFilePath(dataPath)
-  }
+class TestLoadDataWithNotProperInputFile extends QueryTest {
 
   test("test loading data with input path exists but has nothing") {
     try {
+      var carbonLoadModel: CarbonLoadModel = new CarbonLoadModel
+      val dataPath = new File(this.getClass.getResource("/").getPath + "/../../")
+      .getCanonicalPath + "/src/test/resources/nullSample.csv"
+      carbonLoadModel.setFactFilePath(FileUtils.getPaths(dataPath))
       GlobalDictionaryUtil.loadDataFrame(CarbonHiveContext, carbonLoadModel)
     } catch {
       case e: Throwable =>
@@ -55,10 +50,11 @@ class TestLoadDataWithNotProperInputFile extends QueryTest with BeforeAndAfterAl
   }
 
   test("test loading data with input file not ends with '.csv'") {
-    dataPath = new File(this.getClass.getResource("/").getPath + "/../../")
-      .getCanonicalPath + "/src/test/resources/noneCsvFormat.cs"
-    carbonLoadModel.setFactFilePath(dataPath)
     try {
+      var carbonLoadModel: CarbonLoadModel = new CarbonLoadModel
+      val dataPath = new File(this.getClass.getResource("/").getPath + "/../../")
+        .getCanonicalPath + "/src/test/resources/noneCsvFormat.cs"
+      carbonLoadModel.setFactFilePath(FileUtils.getPaths(dataPath))
       GlobalDictionaryUtil.loadDataFrame(CarbonHiveContext, carbonLoadModel)
     } catch {
       case e: Throwable =>

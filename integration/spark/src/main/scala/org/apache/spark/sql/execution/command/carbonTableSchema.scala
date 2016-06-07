@@ -30,6 +30,7 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.types.TimestampType
+import org.apache.spark.util.FileUtils
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonDataLoadSchema, CarbonTableIdentifier}
@@ -1378,7 +1379,7 @@ private[sql] case class LoadCube(
         sys.error("Cube is locked for updation. Please try after some time")
       }
 
-      val factPath = CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser)
+      val factPath = FileUtils.getPaths(CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser))
       val relation =
         CarbonEnv.getInstance(sqlContext).carbonCatalog
           .lookupRelation1(Option(schemaName), tableName, None)(sqlContext)
@@ -1472,7 +1473,6 @@ private[sql] case class LoadCube(
           FileFactory.mkdirs(partitionLocation, fileType)
           LOGGER.info("Initiating Data Partitioning for the Cube : (" +
                       schemaName + "." + tableName + ")")
-          carbonLoadModel.setFactFilePath(partitionLocation)
           partitionStatus = CarbonContext.partitionData(
             schemaName,
             tableName,
@@ -1482,6 +1482,7 @@ private[sql] case class LoadCube(
             quoteChar,
             fileHeader,
             escapeChar, multiLine)(sqlContext.asInstanceOf[HiveContext])
+          carbonLoadModel.setFactFilePath(FileUtils.getPaths(partitionLocation))
         }
         GlobalDictionaryUtil
           .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.cubeMeta.dataPath)

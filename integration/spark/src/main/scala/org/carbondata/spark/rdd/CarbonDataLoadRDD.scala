@@ -256,8 +256,7 @@ class CarbonDataLoadRDD[K, V](
             if (carbonLoadModel.isDirectLoad) {
               val filelist: java.util.List[String] = new java.util.ArrayList[String](
                 CarbonCommonConstants.CONSTANT_SIZE_TEN)
-              CarbonQueryUtil.getAllFiles(carbonLoadModel.getFactFilePath, filelist,
-                FileFactory.getFileType(carbonLoadModel.getFactFilePath))
+              CarbonQueryUtil.splitFilePath(carbonLoadModel.getFactFilePath, filelist, ",")
               model = carbonLoadModel.getCopyWithPartition(partitionID, filelist,
                 carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
             }

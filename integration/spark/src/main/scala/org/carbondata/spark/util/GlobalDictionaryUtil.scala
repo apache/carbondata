@@ -31,6 +31,7 @@ import org.apache.commons.lang3.{ArrayUtils, StringUtils}
 import org.apache.spark.Logging
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation, DataFrame, SQLContext}
 import org.apache.spark.sql.hive.CarbonMetastoreCatalog
+import org.apache.spark.util.FileUtils
 
 import org.carbondata.core.cache.dictionary.Dictionary
 import org.carbondata.core.carbon.CarbonDataLoadSchema
@@ -332,64 +333,6 @@ object GlobalDictionaryUtil extends Logging {
   }
 
   /**
-   * append all file path to a String, file path separated by comma
-   */
-  def getCsvRecursivePathsFromCarbonFile(carbonFile: CarbonFile): String = {
-    if (carbonFile.isDirectory) {
-      val files = carbonFile.listFiles()
-      val stringbuild = new StringBuilder()
-      for (j <- 0 until files.size) {
-        val filePath = getCsvRecursivePathsFromCarbonFile(files(j))
-        if (filePath.nonEmpty) {
-          stringbuild.append(filePath).append(",")
-        }
-      }
-      if (stringbuild.nonEmpty) {
-        stringbuild.substring(0, stringbuild.size - 1)
-      } else {
-        stringbuild.toString()
-      }
-    } else {
-      val path = carbonFile.getPath
-      if (carbonFile.getSize == 0) {
-        logWarning(s"input file: $path is empty")
-        ""
-      } else if (path.toLowerCase().endsWith(".csv")) {
-        path
-      } else {
-        logWarning(s"input file: $path should end with '.csv'")
-        ""
-      }
-    }
-  }
-
-  /**
-   * append all file path to a String, inputPath path separated by comma
-   */
-  def getCsvRecursivePaths(inputPath: String): String = {
-    if (inputPath == null || inputPath.isEmpty) {
-      inputPath
-    } else {
-      val stringbuild = new StringBuilder()
-      val filePaths = inputPath.split(",")
-      for (i <- 0 until filePaths.size) {
-        val fileType = FileFactory.getFileType(filePaths(i))
-        val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType)
-        val filePath = getCsvRecursivePathsFromCarbonFile(carbonFile)
-        if (filePath.nonEmpty) {
-          stringbuild.append(filePath).append(",")
-        }
-      }
-      if (stringbuild.nonEmpty) {
-        stringbuild.substring(0, stringbuild.size - 1)
-      } else {
-        throw new IllegalArgumentException("please check your input path and make sure " +
-          "that files end with '.csv' and content is not empty.")
-      }
-    }
-  }
-
-  /**
    * load CSV files to DataFrame by using datasource "com.databricks.spark.csv"
    *
    * @param sqlContext SQLContext
@@ -417,7 +360,7 @@ object GlobalDictionaryUtil extends Logging {
         }
       })
       .option("parserLib", "univocity")
-      .load(getCsvRecursivePaths(carbonLoadModel.getFactFilePath))
+      .load(carbonLoadModel.getFactFilePath)
     df
   }
 

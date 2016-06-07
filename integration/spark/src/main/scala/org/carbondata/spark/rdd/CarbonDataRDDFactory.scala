@@ -473,7 +473,7 @@ object CarbonDataRDDFactory extends Logging {
            */
           val hadoopConfiguration = new Configuration(sc.sparkContext.hadoopConfiguration)
           // FileUtils will skip file which is no csv, and return all file path which split by ','
-          val filePaths = FileUtils.getPaths(carbonLoadModel.getFactFilePath)
+          val filePaths = carbonLoadModel.getFactFilePath
           hadoopConfiguration.set("mapreduce.input.fileinputformat.inputdir", filePaths)
           hadoopConfiguration.set("mapreduce.input.fileinputformat.input.dir.recursive", "true")
 

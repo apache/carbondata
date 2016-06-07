@@ -17,26 +17,36 @@
 
 package org.apache.spark.util
 
+import org.apache.spark.Logging
+
+import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile
 import org.carbondata.core.datastorage.store.impl.FileFactory
+import org.carbondata.processing.etl.DataLoadingException
 
-object FileUtils {
+object FileUtils extends Logging {
   /**
    * append all csv file path to a String, file path separated by comma
    */
-  def getPathsFromCarbonFile(carbonFile: CarbonFile): String = {
-    if (carbonFile.isDirectory) {
+  private def getPathsFromCarbonFile(carbonFile: CarbonFile, stringBuild: StringBuilder): Unit = {
+    carbonFile.isDirectory match {
+    case true =>
       val files = carbonFile.listFiles()
-      val stringBuilder = new StringBuilder()
       for (j <- 0 until files.size) {
-        if (files(j).getName.endsWith(".csv")) {
-          stringBuilder.append(getPathsFromCarbonFile(files(j))).append(",")
-        }
+        getPathsFromCarbonFile(files(j), stringBuild)
       }
-      stringBuilder.substring(0,
-        if (stringBuilder.nonEmpty) stringBuilder.size - 1 else 0)
-    } else {
-      carbonFile.getPath.replace('\\', '/')
+    case false =>
+      val path = carbonFile.getPath
+      if (carbonFile.getSize == 0) {
+        logWarning(s"skip empty input file: $path")
+      } else if (path.startsWith(CarbonCommonConstants.UNDERSCORE) ||
+          path.startsWith(CarbonCommonConstants.POINT)) {
+        logWarning(s"skip invisible input file: $path")
+      } else if (path.toLowerCase().endsWith(".csv")) {
+        stringBuild.append(path.replace('\\', '/')).append(CarbonCommonConstants.COMMA)
+      } else {
+        logWarning(s"skip input file: $path, because this path doesn't end with '.csv'")
+      }
     }
   }
 
@@ -46,16 +56,21 @@ object FileUtils {
    */
   def getPaths(inputPath: String): String = {
     if (inputPath == null || inputPath.isEmpty) {
-      inputPath
+      throw new DataLoadingException("input file path cannot be empty.")
     } else {
-      val stringbuild = new StringBuilder()
+      val stringBuild = new StringBuilder()
       val filePaths = inputPath.split(",")
       for (i <- 0 until filePaths.size) {
         val fileType = FileFactory.getFileType(filePaths(i))
         val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType)
-        stringbuild.append(getPathsFromCarbonFile(carbonFile)).append(",")
+        getPathsFromCarbonFile(carbonFile, stringBuild)
       }
-      stringbuild.substring(0, stringbuild.size - 1)
+      if (stringBuild.nonEmpty) {
+        stringBuild.substring(0, stringBuild.size - 1)
+      } else {
+        throw new DataLoadingException("please check your input path and make sure " +
+          "that files end with '.csv' and content is not empty.")
+      }
     }
   }
 
@@ -64,7 +79,6 @@ object FileUtils {
     if (inputPath == null || inputPath.isEmpty) {
       size
     } else {
-      val stringbuild = new StringBuilder()
       val filePaths = inputPath.split(",")
       for (i <- 0 until filePaths.size) {
         val fileType = FileFactory.getFileType(filePaths(i))

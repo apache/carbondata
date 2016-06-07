@@ -39,6 +39,7 @@ import org.carbondata.spark.partition.api.impl.PartitionMultiFileImpl;
 import org.carbondata.spark.partition.api.impl.QueryPartitionHelper;
 import org.carbondata.spark.splits.TableSplit;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.spark.sql.execution.command.Partitioner;
 /**
  * This utilty parses the Carbon query plan to actual query model object.
@@ -153,10 +154,23 @@ public final class CarbonQueryUtil {
     }
   }
 
+  /**
+   * split sourcePath by comma
+   */
+  public static void splitFilePath(String sourcePath, List<String> partitionsFiles,
+      String separator) {
+    if (StringUtils.isNotEmpty(sourcePath)) {
+      String[] files = sourcePath.split(separator);
+      for (String file : files) {
+        partitionsFiles.add(file);
+      }
+    }
+  }
+
   private static List<Partition> getAllFilesForDataLoad(String sourcePath, FileType fileType,
       int partitionCount) throws Exception {
     List<String> files = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    getAllFiles(sourcePath, files, fileType);
+    splitFilePath(sourcePath, files, CarbonCommonConstants.COMMA);
     List<Partition> partitionList =
         new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     Map<Integer, List<String>> partitionFiles = new HashMap<Integer, List<String>>();
@@ -174,7 +188,7 @@ public final class CarbonQueryUtil {
   private static List<Partition> getAllPartitions(String sourcePath, FileType fileType,
       int partitionCount) throws Exception {
     List<String> files = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    getAllFiles(sourcePath, files, fileType);
+    splitFilePath(sourcePath, files, CarbonCommonConstants.COMMA);
     int[] numberOfFilesPerPartition = getNumberOfFilesPerPartition(files.size(), partitionCount);
     int startIndex = 0;
     int endIndex = 0;

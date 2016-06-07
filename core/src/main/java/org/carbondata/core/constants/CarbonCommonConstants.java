@@ -771,9 +771,17 @@ public final class CarbonCommonConstants {
    */
   public static final String AGGREGATE_TABLE_START_TAG = "agg";
   /**
+   * COMMA
+   */
+  public static final String COMMA = ",";
+  /**
    * UNDERSCORE
    */
   public static final String UNDERSCORE = "_";
+  /**
+   * POINT
+   */
+  public static final String POINT = ".";
   /**
    * File separator
    */
