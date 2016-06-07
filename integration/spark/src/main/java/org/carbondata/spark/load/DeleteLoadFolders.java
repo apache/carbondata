@@ -130,16 +130,11 @@ public final class DeleteLoadFolders {
       int partitionId, LoadMetadataDetails oneLoad) {
 
     String path = null;
-    Integer segmentId = null;
-    try {
-      segmentId = Integer.parseInt(oneLoad.getLoadName());
-    } catch (NumberFormatException nfe) {
-      LOGGER.error("Error message: " + "Invalid segment id: " + oneLoad.getLoadName());
-    }
+    String segmentId = oneLoad.getLoadName();
 
     path = new CarbonStorePath(storeLocation).getCarbonTablePath(
         new CarbonTableIdentifier(loadModel.getDatabaseName(), loadModel.getTableName()))
-        .getCarbonDataDirectoryPath("" + partitionId, segmentId.toString());
+        .getCarbonDataDirectoryPath("" + partitionId, segmentId);
     return path;
   }
 
@@ -220,8 +215,9 @@ public final class DeleteLoadFolders {
 
   private static boolean checkIfLoadCanBeDeleted(LoadMetadataDetails oneLoad,
       boolean isForceDelete) {
-    if (CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oneLoad.getLoadStatus()) && oneLoad
-        .getVisibility().equalsIgnoreCase("true")) {
+    if ((CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oneLoad.getLoadStatus())
+        || CarbonCommonConstants.SEGMENT_COMPACTED.equalsIgnoreCase(oneLoad.getLoadStatus()))
+        && oneLoad.getVisibility().equalsIgnoreCase("true")) {
       if (isForceDelete) {
         return true;
       }

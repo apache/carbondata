@@ -60,7 +60,8 @@ public final class LoadMetadataUtil {
     LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metaDataLocation);
     if (details != null && details.length != 0) {
       for (LoadMetadataDetails oneRow : details) {
-        if (CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oneRow.getLoadStatus())
+        if ((CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oneRow.getLoadStatus())
+            || CarbonCommonConstants.SEGMENT_COMPACTED.equalsIgnoreCase(oneRow.getLoadStatus()))
             && oneRow.getVisibility().equalsIgnoreCase("true")) {
           return true;
         }

@@ -349,7 +349,7 @@ public class SegmentStatusManager {
    * @param listOfLoadFolderDetailsArray
    * @throws IOException
    */
-  private void writeLoadDetailsIntoFile(String dataLoadLocation,
+  public void writeLoadDetailsIntoFile(String dataLoadLocation,
       LoadMetadataDetails[] listOfLoadFolderDetailsArray) throws IOException {
     AtomicFileOperations fileWrite =
         new AtomicFileOperationsImpl(dataLoadLocation, FileFactory.getFileType(dataLoadLocation));

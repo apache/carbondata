@@ -1165,6 +1165,8 @@ public final class CarbonCommonConstants {
    */
   public static final long CARBON_256MB = 256*1024*1024;
 
+  public static final String SEGMENT_COMPACTED = "Compacted";
+
   private CarbonCommonConstants() {
 
   }

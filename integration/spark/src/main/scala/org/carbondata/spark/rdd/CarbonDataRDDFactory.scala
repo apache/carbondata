@@ -20,6 +20,7 @@ package org.carbondata.spark.rdd
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.util.control.Breaks._
 
 import org.apache.hadoop.conf.{Configurable, Configuration}
 import org.apache.hadoop.mapreduce.Job
@@ -30,7 +31,8 @@ import org.apache.spark.sql.execution.command.{CarbonMergerMapping, Partitioner}
 import org.apache.spark.util.{FileUtils, SplitUtils}
 
 import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonDataLoadSchema, CarbonTableIdentifier}
+import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonDataLoadSchema,
+CarbonTableIdentifier}
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo
 import org.carbondata.core.carbon.metadata.CarbonMetadata
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
@@ -317,7 +319,8 @@ object CarbonDataRDDFactory extends Logging {
           val storePath = hdfsStoreLocation
           val validSegments: Array[String] = CarbonDataMergerUtil
             .getValidSegments(loadsToMerge).split(',')
-          var carbonMergerMapping = CarbonMergerMapping(storeLocation,
+          val mergeLoadStartTime = CarbonLoaderUtil.readCurrentTime();
+          val carbonMergerMapping = CarbonMergerMapping(storeLocation,
             hdfsStoreLocation,
             partitioner,
             carbonTable.getMetaDataFilepath(),
@@ -354,7 +357,7 @@ object CarbonDataRDDFactory extends Logging {
           if (finalMergeStatus) {
             CarbonDataMergerUtil
                .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath(),
-                 mergedLoadName, carbonLoadModel)
+                 mergedLoadName, carbonLoadModel, mergeLoadStartTime)
           }
         }
       }
@@ -370,23 +373,37 @@ object CarbonDataRDDFactory extends Logging {
       }
 
       // Check if any load need to be deleted before loading new data
-      //      deleteLoadsAndUpdateMetadata(carbonLoadModel, cube, partitioner, hdfsStoreLocation,
-      // false,
-      //        currentRestructNumber)
+      deleteLoadsAndUpdateMetadata(carbonLoadModel, carbonTable, partitioner, hdfsStoreLocation,
+        false,
+        currentRestructNumber
+      )
       if (null == carbonLoadModel.getLoadMetadataDetails) {
         readLoadMetadataDetails(carbonLoadModel, hdfsStoreLocation)
       }
 
       var currentLoadCount = -1
       val convLoadDetails = carbonLoadModel.getLoadMetadataDetails.asScala
+      // taking the latest segment ID present.
+      // so that any other segments above this will be deleted.
       if (convLoadDetails.nonEmpty) {
         convLoadDetails.foreach { l =>
-          val loadCount = Integer.parseInt(l.getLoadName)
-          if (currentLoadCount < loadCount) {
-            currentLoadCount = loadCount
+          var loadCount = 0
+          breakable {
+            try {
+              loadCount = Integer.parseInt(l.getLoadName)
+            } catch {
+              case e: NumberFormatException => // case of merge folder. ignore it.
+                break
+            }
+            if (currentLoadCount < loadCount) {
+              currentLoadCount = loadCount
+            }
           }
         }
         currentLoadCount += 1
+        // Deleting the any partially loaded data if present.
+        // in some case the segment folder which is present in store will not have entry in status.
+        // so deleting those folders.
         CarbonLoaderUtil
           .deletePartialLoadDataIfExist(partitioner.partitionCount, carbonLoadModel.getDatabaseName,
             carbonLoadModel.getTableName, carbonLoadModel.getTableName, hdfsStoreLocation,
@@ -635,7 +652,7 @@ object CarbonDataRDDFactory extends Logging {
     if (LoadMetadataUtil.isLoadDeletionRequired(carbonLoadModel)) {
       val loadMetadataFilePath = CarbonLoaderUtil
         .extractLoadMetadataFileLocation(carbonLoadModel)
-      var segmentStatusManager = new SegmentStatusManager(
+      val segmentStatusManager = new SegmentStatusManager(
         new AbsoluteTableIdentifier(
           CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION),
           new CarbonTableIdentifier(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
@@ -658,17 +675,6 @@ object CarbonDataRDDFactory extends Logging {
         )
       }
     }
-// TODO:Need to hanlde this scanario for data compaction
- //   CarbonDataMergerUtil
- //     .cleanUnwantedMergeLoadFolder(carbonLoadModel, partitioner.partitionCount,
- //    hdfsStoreLocation, isForceDeletion, currentRestructNumber)*/
-
-    // todo add condition if mergin is enabled do this
-     /* CarbonDataMergerUtil
-        .cleanUnwantedMergeLoadFolder(carbonLoadModel, partitioner.partitionCount,
-        hdfsStoreLocation,
-          isForceDeletion, currentRestructNumber) */
-
   }
 
   def dropAggregateTable(

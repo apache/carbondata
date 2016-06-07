@@ -37,7 +37,8 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
-import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
+import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
@@ -48,8 +49,6 @@ import org.carbondata.integration.spark.merger.CompactionType;
 import org.carbondata.lcm.status.SegmentStatusManager;
 import org.carbondata.spark.load.CarbonLoadModel;
 import org.carbondata.spark.load.CarbonLoaderUtil;
-import org.carbondata.spark.load.DeleteLoadFolders;
-import org.carbondata.spark.util.LoadMetadataUtil;
 
 /**
  * utility class for load merging.
@@ -106,9 +105,9 @@ public final class CarbonDataMergerUtil {
     return factSize;
   }
 
-
   /**
    * To check whether the merge property is enabled or not.
+   *
    * @return
    */
 
@@ -145,171 +144,71 @@ public final class CarbonDataMergerUtil {
   }
 
   public static void updateLoadMetadataWithMergeStatus(List<LoadMetadataDetails> loadsToMerge,
-      String metaDataFilepath, String MergedLoadName, CarbonLoadModel carbonLoadModel) {
+      String metaDataFilepath, String MergedLoadName, CarbonLoadModel carbonLoadModel,
+      String mergeLoadStartTime) {
 
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(
-        new AbsoluteTableIdentifier(
-            carbonLoadModel.getFactStoreLocation(),
+    AbsoluteTableIdentifier absoluteTableIdentifier =
+        new AbsoluteTableIdentifier(carbonLoadModel.getFactStoreLocation(),
             new CarbonTableIdentifier(carbonLoadModel.getDatabaseName(),
-                carbonLoadModel.getTableName())));
+                carbonLoadModel.getTableName()));
+
+    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
+
+    CarbonTablePath carbonTablePath = CarbonStorePath
+        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+            absoluteTableIdentifier.getCarbonTableIdentifier());
+
+    String statusFilePath = carbonTablePath.getTableStatusFilePath();
+
     LoadMetadataDetails[] loadDetails = segmentStatusManager.readLoadMetadata(metaDataFilepath);
 
-    boolean first = true;
+    String mergedLoadNumber = MergedLoadName.substring(
+        MergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER)
+            + CarbonCommonConstants.LOAD_FOLDER.length(), MergedLoadName.length());
 
+    String modificationOrDeletionTimeStamp = CarbonLoaderUtil.readCurrentTime();
     for (LoadMetadataDetails loadDetail : loadDetails) {
-
-      if (null != loadDetail.getMergedLoadName()) {
-        if (loadsToMerge.contains(loadDetail) && first) {
-          loadDetail.setMergedLoadName(MergedLoadName.substring(
-              MergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER)
-                  + CarbonCommonConstants.LOAD_FOLDER.length(), MergedLoadName.length()));
-          first = false;
-        } else {
-          continue;
-        }
-      } else if (loadsToMerge.contains(loadDetail)) {
-        if (first) {
-          loadDetail.setMergedLoadName(MergedLoadName.substring(
-              MergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER)
-                  + CarbonCommonConstants.LOAD_FOLDER.length(), MergedLoadName.length()));
-          first = false;
-        } else {
-          loadDetail.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
-          loadDetail.setModificationOrdeletionTimesStamp(CarbonLoaderUtil.readCurrentTime());
-        }
-
+      // check if this segment is merged.
+      if (loadsToMerge.contains(loadDetail)) {
+        loadDetail.setLoadStatus(CarbonCommonConstants.SEGMENT_COMPACTED);
+        loadDetail.setModificationOrdeletionTimesStamp(modificationOrDeletionTimeStamp);
+        loadDetail.setMergedLoadName(mergedLoadNumber);
       }
-
     }
 
+    // create entry for merged one.
+    LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
+    loadMetadataDetails.setPartitionCount(carbonLoadModel.getPartitionId());
+    loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS);
+    String loadEnddate = CarbonLoaderUtil.readCurrentTime();
+    loadMetadataDetails.setTimestamp(loadEnddate);
+    loadMetadataDetails.setLoadName(mergedLoadNumber);
+    loadMetadataDetails.setLoadStartTime(mergeLoadStartTime);
+    loadMetadataDetails.setPartitionCount("0");
+
+    List<LoadMetadataDetails> updatedDetailsList =
+        new ArrayList<LoadMetadataDetails>(Arrays.asList(loadDetails));
+
+    // put the merged folder entry
+    updatedDetailsList.add(loadMetadataDetails);
+
     try {
-      CarbonLoaderUtil.writeLoadMetadata(carbonLoadModel.getCarbonDataLoadSchema(),
-          carbonLoadModel.getDatabaseName(), carbonLoadModel.getTableName(),
-          Arrays.asList(loadDetails));
+      segmentStatusManager.writeLoadDetailsIntoFile(statusFilePath,
+          updatedDetailsList.toArray(new LoadMetadataDetails[updatedDetailsList.size()]));
     } catch (IOException e) {
       LOGGER.error("Error while writing metadata");
     }
 
   }
 
-  public static void cleanUnwantedMergeLoadFolder(CarbonLoadModel loadModel, int partitionCount,
-      String storeLocation, boolean isForceDelete, int currentRestructNumber) {
-
-    CarbonTable cube = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-        .getCarbonTable(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
-
-    String loadMetadataFilePath = cube.getMetaDataFilepath();
-    //String loadMetadataFilePath = CarbonLoaderUtil.extractLoadMetadataFileLocation(loadModel);
-
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(
-        new AbsoluteTableIdentifier(
-            storeLocation,
-            new CarbonTableIdentifier(loadModel.getDatabaseName(),
-                loadModel.getTableName())));
-    LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(loadMetadataFilePath);
-
-    // for first time before any load , this will be null
-    if (null == details || details.length == 0) {
-      return;
-    }
-
-    for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-
-      String path = LoadMetadataUtil
-          .createLoadFolderPath(loadModel, storeLocation, partitionId, currentRestructNumber);
-
-      CarbonFile loadFolder = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
-
-      CarbonFile[] loads = loadFolder.listFiles(new CarbonFileFilter() {
-        @Override public boolean accept(CarbonFile file) {
-          if (file.getName().startsWith(CarbonCommonConstants.LOAD_FOLDER) && file.getName()
-              .contains(CarbonCommonConstants.MERGER_FOLDER_EXT)) {
-            return true;
-          } else {
-            return false;
-          }
-        }
-      });
-
-      for (int i = 0; i < loads.length; i++) {
-        if (checkIfOldMergeLoadCanBeDeleted(loads[i], details)) {
-          // delete merged load folder
-          CarbonFile[] files = loads[i].listFiles();
-          // deleting individual files
-          if (files != null) {
-            for (CarbonFile eachFile : files) {
-              if (!eachFile.delete()) {
-                LOGGER.warn("Unable to delete the file." + loadFolder.getAbsolutePath());
-              }
-            }
-
-            loads[i].delete();
-
-          }
-
-          // delete corresponding aggregate table.
-
-          CarbonFile[] aggFiles = LoadMetadataUtil
-              .getAggregateTableList(loadModel, storeLocation, partitionId, currentRestructNumber);
-          DeleteLoadFolders.deleteAggLoadFolders(aggFiles, loads[i].getName());
-
-        }
-      }
-    }
-  }
-
-  private static boolean checkIfOldMergeLoadCanBeDeleted(CarbonFile eachMergeLoadFolder,
-      LoadMetadataDetails[] details) {
-    boolean found = false;
-    for (LoadMetadataDetails loadDetail : details) {
-      if (null != loadDetail.getMergedLoadName() && (CarbonCommonConstants.LOAD_FOLDER + loadDetail
-          .getMergedLoadName()).equalsIgnoreCase(eachMergeLoadFolder.getName())) {
-        found = true;
-        break;
-      }
-    }
-
-    if (!found) {
-      // check the query execution time out and check the time stamp on load and delete.
-
-      String loadName = eachMergeLoadFolder.getName();
-      long loadTime = Long.parseLong(loadName
-          .substring(loadName.lastIndexOf(CarbonCommonConstants.UNDERSCORE) + 1,
-              loadName.length()));
-      long currentTime = new Date().getTime();
-
-      long millis = getMaxQueryTimeOut();
-
-      if ((currentTime - loadTime) > millis) {
-        // delete that merge load folder
-        return true;
-      }
-    }
-
-    return false;
-  }
-
-  private static long getMaxQueryTimeOut() {
-    int maxTime;
-    try {
-      maxTime = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME));
-    } catch (NumberFormatException e) {
-      maxTime = CarbonCommonConstants.DEFAULT_MAX_QUERY_EXECUTION_TIME;
-    }
-
-    return maxTime * 60000;
-
-  }
-
   /**
-   *  To identify which all segments can be merged.
-   *  @param storeLocation
-   *  @param carbonLoadModel
-   *  @param partitionCount
-   *  @param compactionSize
-   *  @return
+   * To identify which all segments can be merged.
    *
+   * @param storeLocation
+   * @param carbonLoadModel
+   * @param partitionCount
+   * @param compactionSize
+   * @return
    */
   public static List<LoadMetadataDetails> identifySegmentsToBeMerged(String storeLocation,
       CarbonLoadModel carbonLoadModel, int partitionCount, long compactionSize) {
@@ -341,7 +240,6 @@ public final class CarbonDataMergerUtil {
    *
    * @param listOfSegmentsBelowThresholdSize
    * @return
-   *
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnLoadedDate(
       List<LoadMetadataDetails> listOfSegmentsBelowThresholdSize) {
@@ -518,6 +416,7 @@ public final class CarbonDataMergerUtil {
 
   /**
    * checks number of loads to be preserved and returns remaining valid segments
+   *
    * @param carbonLoadModel
    * @return
    */
