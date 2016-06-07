@@ -296,7 +296,9 @@ public class MDKeyGenStep extends BaseStep {
       simpleDimsLen[i] = dimLens[i];
     }
 
-    String[] colStore = meta.getColumnGroupsString().split(",");
+    String[] colStore = null != meta.getColumnGroupsString() ?
+        meta.getColumnGroupsString().split(",") :
+        new String[0];
     int[][] colGroups = new int[colStore.length][];
     for (int i = 0; i < colGroups.length; i++) {
       String[] group = colStore[i].split("~");

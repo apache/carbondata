@@ -127,7 +127,7 @@ public class RemoveDictionaryUtil {
    * @return
    */
   public static boolean checkAllValuesForNull(Object[] row) {
-    if (checkNullForDims(row[0]) && checkNullForDouble(row[2]) && null == row[1]) {
+    if (checkNullForDims(row[0]) && checkNullForMeasures(row[2]) && null == row[1]) {
       return true;
     }
     return false;
@@ -139,9 +139,9 @@ public class RemoveDictionaryUtil {
    * @param object
    * @return
    */
-  private static boolean checkNullForDouble(Object object) {
-    Double[] measures = (Double[]) object;
-    for (Double measure : measures) {
+  private static boolean checkNullForMeasures(Object object) {
+    Object[] measures = (Object[]) object;
+    for (Object measure : measures) {
       if (null != measure) {
         return false;
       }
@@ -327,12 +327,14 @@ public class RemoveDictionaryUtil {
    * @return
    */
   public static String convertBooleanArrToString(Boolean[] noDictionaryDimsMapping) {
-    String str = "";
+    StringBuilder  builder = new StringBuilder();
     int index = 0;
-    for (; index < noDictionaryDimsMapping.length - 1; index++) {
-      str += noDictionaryDimsMapping[index] + CarbonCommonConstants.COMA_SPC_CHARACTER;
+    for (; index < noDictionaryDimsMapping.length ; index++) {
+      builder.append(noDictionaryDimsMapping[index]);
+      builder.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
     }
-    str += noDictionaryDimsMapping[index];
+    int lastIndex = builder.lastIndexOf(CarbonCommonConstants.COMA_SPC_CHARACTER);
+    String str = -1 != lastIndex ? builder.substring(0, lastIndex) : builder.toString();
     return str;
   }
 
@@ -344,7 +346,9 @@ public class RemoveDictionaryUtil {
    */
   public static boolean[] convertStringToBooleanArr(String noDictionaryColMapping) {
 
-    String[] splittedValue = noDictionaryColMapping.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
+    String[] splittedValue = null != noDictionaryColMapping ?
+        noDictionaryColMapping.split(CarbonCommonConstants.COMA_SPC_CHARACTER) :
+        new String[0];
 
     // convert string[] to boolean []
 

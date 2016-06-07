@@ -1357,7 +1357,9 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    * @return column Ids
    */
   public String[] getDimensionColumnIds() {
-    return dimensionColumnIds.split(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
+    return null != dimensionColumnIds ?
+        dimensionColumnIds.split(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER) :
+        new String[0];
   }
 
   /**

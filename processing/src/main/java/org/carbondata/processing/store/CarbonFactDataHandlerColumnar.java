@@ -28,13 +28,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -952,6 +946,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     int dimSet =
         Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
     // if atleast one dimension is present then initialize column splitter otherwise null
+    int noOfColStore = colGrpModel.getNoOfColumnStore();
+    int [] keyBlockSize = new int[noOfColStore + complexColCount];
+
     if (dimLens.length > 0) {
       //Using Variable length variable split generator
       //This will help in splitting mdkey to columns. variable split is required because all
@@ -962,15 +959,16 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       this.columnarSplitter = new MultiDimKeyVarLengthVariableSplitGenerator(CarbonUtil
           .getDimensionBitLength(colGrpModel.getColumnGroupCardinality(),
               colGrpModel.getColumnSplit()), colGrpModel.getColumnSplit());
+      System.arraycopy(columnarSplitter.getBlockKeySize(), 0, keyBlockSize, 0, noOfColStore);
       this.keyBlockHolder =
           new CarbonKeyBlockHolder[this.columnarSplitter.getBlockKeySize().length];
-      this.complexKeyGenerator = new KeyGenerator[completeDimLens.length];
-      for (int i = 0; i < completeDimLens.length; i++) {
-        complexKeyGenerator[i] =
-            KeyGeneratorFactory.getKeyGenerator(new int[] { completeDimLens[i] });
-      }
     } else {
       this.keyBlockHolder = new CarbonKeyBlockHolder[0];
+    }
+    this.complexKeyGenerator = new KeyGenerator[completeDimLens.length];
+    for (int i = 0; i < completeDimLens.length; i++) {
+      complexKeyGenerator[i] =
+          KeyGeneratorFactory.getKeyGenerator(new int[] { completeDimLens[i] });
     }
 
     for (int i = 0; i < keyBlockHolder.length; i++) {
@@ -1003,9 +1001,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     int[] blockKeySize = getBlockKeySizeWithComplexTypes(new MultiDimKeyVarLengthEquiSplitGenerator(
         CarbonUtil.getIncrementedCardinalityFullyFilled(completeDimLens.clone()), (byte) dimSet)
         .getBlockKeySize());
-    int noOfColStore = colGrpModel.getNoOfColumnStore();
-    int [] keyBlockSize = new int[noOfColStore + complexColCount];
-    System.arraycopy(columnarSplitter.getBlockKeySize(), 0, keyBlockSize, 0, noOfColStore);
     System.arraycopy(blockKeySize, noOfColStore, keyBlockSize, noOfColStore,
         blockKeySize.length - noOfColStore);
     this.dataWriter =

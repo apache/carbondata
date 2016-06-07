@@ -72,7 +72,7 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
     int[][] splitDimArray = new int[splits.length][];
     for (int j = 0; j < splits.length; j++) {
       int[] a = convertToArray(splits[j]);
-      splitDimArray[j] = new int[] { a[0], a[a.length - 1] };
+      splitDimArray[j] = a.length > 0 ? new int[] { a[0], a[a.length - 1] } : a;
     }
 
     int[][] dimBlockArray = new int[byteRangesForKeys.length][];
@@ -98,7 +98,9 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
 
     int[][] splitDimArrayLocalIndexes = new int[splitDimArray.length][];
     for (int j = 0; j < splitDimArrayLocalIndexes.length; j++) {
-      splitDimArrayLocalIndexes[j] = new int[] { 0, splitDimArray[j][1] - splitDimArray[j][0] };
+      splitDimArrayLocalIndexes[j] = splitDimArray[j].length > 0 ?
+          new int[] { 0, splitDimArray[j][1] - splitDimArray[j][0] } :
+          new int[0];
     }
 
     int[][][] byteRangesForDims = new int[byteRangesForKeys.length][][];
@@ -120,7 +122,8 @@ public class MultiDimKeyVarLengthVariableSplitGenerator extends MultiDimKeyVarLe
     blockKeySize = new int[splitDimArray.length];
 
     for (int j = 0; j < blockKeySize.length; j++) {
-      blockKeySize[j] = splitDimArray[j][1] - splitDimArray[j][0] + 1;
+      blockKeySize[j] =
+          splitDimArray[j].length > 0 ? splitDimArray[j][1] - splitDimArray[j][0] + 1 : 0;
     }
 
   }

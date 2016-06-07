@@ -27,28 +27,102 @@ import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**
- * Test Class for data loading with hive syntax and old syntax
- *
- */
+  * Test Class for data loading with hive syntax and old syntax
+  *
+  */
 class TestLoadDataWithNoMeasure extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("CREATE TABLE nomeasureTest (empno String, doj String) STORED BY 'org.apache.carbondata.format'")
+    sql("DROP TABLE IF EXISTS nomeasureTest_sd")
+    sql(
+      "CREATE TABLE nomeasureTest (empno String, doj String) STORED BY 'org.apache.carbondata" +
+        ".format'"
+    )
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
     val testData = currentDirectory + "/src/test/resources/datasample.csv"
-    sql("LOAD DATA LOCAL INPATH '"+ testData +"' into table nomeasureTest")
+    sql("LOAD DATA LOCAL INPATH '" + testData + "' into table nomeasureTest")
   }
 
   test("test data loading and validate query output") {
 
     checkAnswer(
       sql("select empno from nomeasureTest"),
-      Seq(Row("11"),Row("12"))
+      Seq(Row("11"), Row("12"))
+    )
+  }
+
+  test("test data loading with single dictionary column") {
+    sql("DROP TABLE IF EXISTS nomeasureTest_sd")
+    sql("CREATE TABLE nomeasureTest_sd (city String) STORED BY 'org.apache.carbondata.format'")
+    val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
+      .getCanonicalPath
+    val testData = currentDirectory + "/src/test/resources/datasingleCol.csv"
+    sql("LOAD DATA LOCAL INPATH '" + testData + "' into table nomeasureTest_sd options " +
+      "('FILEHEADER'='city')"
+    )
+
+    checkAnswer(
+      sql("select city from nomeasureTest_sd"),
+      Seq(Row("CA"), Row("LA"), Row("AD"))
+    )
+  }
+
+  test("test data loading with single no dictionary column") {
+    sql("DROP TABLE IF EXISTS nomeasureTest_sd")
+    sql(
+      "CREATE TABLE nomeasureTest_sd (city String) STORED BY 'org.apache.carbondata.format' " +
+        "TBLPROPERTIES ('DICTIONARY_EXCLUDE'='city')"
+    )
+    val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
+      .getCanonicalPath
+    val testData = currentDirectory + "/src/test/resources/datasingleCol.csv"
+    sql("LOAD DATA LOCAL INPATH '" + testData + "' into table nomeasureTest_sd options " +
+      "('FILEHEADER'='city')"
+    )
+
+    checkAnswer(
+      sql("select city from nomeasureTest_sd"),
+      Seq(Row("CA"), Row("LA"), Row("AD"))
+    )
+  }
+
+  test("test data loading with single complex struct type column") {
+    //only data load check
+    sql("DROP TABLE IF EXISTS nomeasureTest_scd")
+    sql(
+      "CREATE TABLE nomeasureTest_scd (cityDetail struct<cityName:string,cityCode:string>) STORED" +
+        " " +
+        "BY 'org.apache.carbondata.format'"
+    )
+    val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
+      .getCanonicalPath
+    val testData = currentDirectory + "/src/test/resources/datasingleComplexCol.csv"
+    sql("LOAD DATA LOCAL INPATH '" + testData + "' into table nomeasureTest_scd options " +
+      "('DELIMITER'=',','QUOTECHAR'='\"','FILEHEADER'='cityDetail','COMPLEX_DELIMITER_LEVEL_1'=':')"
+    )
+  }
+
+  test("test data loading with single complex array type column") {
+    //only data load check
+    sql("DROP TABLE IF EXISTS nomeasureTest_scd")
+    sql(
+      "CREATE TABLE nomeasureTest_scd (cityDetail array<string>) STORED" +
+        " " +
+        "BY 'org.apache.carbondata.format'"
+    )
+    val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
+      .getCanonicalPath
+    val testData = currentDirectory + "/src/test/resources/datasingleComplexCol.csv"
+    sql("LOAD DATA LOCAL INPATH '" + testData + "' into table nomeasureTest_scd options " +
+      "('DELIMITER'=',','QUOTECHAR'='\"','FILEHEADER'='cityDetail'," +
+      "'COMPLEX_DELIMITER_LEVEL_1'=':')"
     )
   }
 
   override def afterAll {
     sql("drop table nomeasureTest")
+    sql("drop table nomeasureTest_sd")
+    sql("drop table nomeasureTest_scd")
   }
 }

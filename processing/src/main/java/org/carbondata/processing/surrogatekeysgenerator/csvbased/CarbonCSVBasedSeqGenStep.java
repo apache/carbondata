@@ -867,7 +867,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     // In that case it will have first value empty and other values will be null
     // So If records is coming like this then we need to write this records as a bad Record.
 
-    if (null == r[1]) {
+    if (null == r[0]) {
       badRecordslogger
           .addBadRecordsToBilder(r, inputColumnsSize, "Column Names are coming NULL", "null");
       return null;
