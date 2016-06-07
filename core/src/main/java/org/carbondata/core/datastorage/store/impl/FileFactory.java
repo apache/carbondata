@@ -34,6 +34,7 @@ import org.carbondata.core.datastorage.store.filesystem.HDFSCarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.LocalCarbonFile;
 import org.carbondata.core.util.CarbonUtil;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -423,6 +424,27 @@ public final class FileFactory {
         Path pathWithoutSchemeAndAuthority =
             Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
         return pathWithoutSchemeAndAuthority.toString();
+    }
+  }
+
+  /**
+   * It computes size of directory
+   *
+   * @param filePath
+   * @return size in bytes
+   * @throws IOException
+   */
+  public static long getDirectorySize(String filePath) throws IOException {
+    FileType fileType = getFileType(filePath);
+    switch (fileType) {
+      case HDFS:
+        Path path = new Path(filePath);
+        FileSystem fs = path.getFileSystem(configuration);
+        return fs.getContentSummary(path).getLength();
+      case LOCAL:
+      default:
+        File file = new File(filePath);
+        return FileUtils.sizeOfDirectory(file);
     }
   }
 

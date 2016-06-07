@@ -29,7 +29,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{BroadcastHint, Limit, Logica
 import org.apache.spark.sql.execution.{DescribeCommand => RunnableDescribeCommand, ExecutedCommand, Filter, Project, SparkPlan}
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.{DescribeCommand => LogicalDescribeCommand, LogicalRelation}
-import org.apache.spark.sql.execution.joins.{BuildLeft, BuildRight, FilterPushJoin}
+import org.apache.spark.sql.execution.joins.{BroadCastFilterPushJoin, BuildLeft, BuildRight}
 import org.apache.spark.sql.hive.execution.{DescribeHiveTableCommand, DropTable, HiveNativeCommand}
 
 import org.carbondata.common.logging.LogServiceFactory
@@ -147,7 +147,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           None,
           isGroupByPresent = false,
           detailQuery = true)
-        val pushedDownJoin = FilterPushJoin(
+        val pushedDownJoin = BroadCastFilterPushJoin(
           leftKeys: Seq[Expression],
           rightKeys: Seq[Expression],
           BuildRight,
@@ -171,7 +171,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           isGroupByPresent = false,
           detailQuery = true)
 
-        val pushedDownJoin = FilterPushJoin(
+        val pushedDownJoin = BroadCastFilterPushJoin(
           leftKeys: Seq[Expression],
           rightKeys: Seq[Expression],
           BuildLeft,
@@ -250,17 +250,6 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
 
       if (!pushdowmJoinEnabled) {
         return false
-      }
-
-      val isJoinOnCarbonCube = otherRDDPlan match {
-        case other@PhysicalOperation(projectList, predicates,
-        l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)) => true
-        case _ => false
-      }
-
-      // TODO remove the isJoinOnCarbonCube check
-      if (isJoinOnCarbonCube) {
-        return false // For now If both left & right are carbon cubes, let's not join
       }
 
       otherRDDPlan match {

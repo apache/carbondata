@@ -32,6 +32,8 @@ import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.{DataType, StructType}
 
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
+import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.spark.{CarbonOption, _}
 
 /**
@@ -132,6 +134,14 @@ private[sql] case class CarbonDatasourceRelation(
   def schema: StructType = carbonRelation.schema
 
   def sqlContext: SQLContext = context
+
+  override val sizeInBytes: Long = {
+    val tablePath = carbonRelation.cubeMeta.dataPath + CarbonCommonConstants.FILE_SEPARATOR +
+                    carbonRelation.cubeMeta.carbonTableIdentifier.getDatabaseName +
+                    CarbonCommonConstants.FILE_SEPARATOR +
+                    carbonRelation.cubeMeta.carbonTableIdentifier.getTableName
+    FileFactory.getDirectorySize(tablePath)
+  }
 }
 
 /**
