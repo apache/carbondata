@@ -1238,6 +1238,9 @@ private[sql] case class DeleteLoadsById(
   def run(sqlContext: SQLContext): Seq[Row] = {
 
     LOGGER.audit("The delete load by Id request has been received.")
+
+    // validate load ids first
+    validateLoadIds
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
 
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
@@ -1290,6 +1293,14 @@ private[sql] case class DeleteLoadsById(
 
   }
 
+  // validates load ids
+  private def validateLoadIds: Unit = {
+    if (loadids.isEmpty) {
+      val errorMessage = "Error: Load id(s) should not be empty."
+      throw new MalformedCarbonCommandException(errorMessage)
+
+    }
+  }
 }
 
 private[sql] case class DeleteLoadsByLoadDate(
