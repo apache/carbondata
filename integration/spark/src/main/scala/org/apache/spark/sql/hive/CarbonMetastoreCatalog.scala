@@ -298,7 +298,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
                     storePath,
                     org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
                       .getCarbonTable(cubeUniqueName),
-                    // TODO: Need to update schema thirft to hold partitioner
+                    // TODO: Need to update Database thirft to hold partitioner
                     // information and reload when required.
                     Partitioner("org.carbondata.spark.partition.api.impl." +
                                 "SampleDataPartitionerImpl",
@@ -326,7 +326,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
 
   /**
    *
-   * Prepare Thrift Schema from wrapper TableInfo and write to schema file.
+   * Prepare Thrift Schema from wrapper TableInfo and write to Schema file.
    * Load CarbonTable from wrapper tableinfo
    *
    */
@@ -335,7 +335,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     (sqlContext: SQLContext): String = {
 
     if (cubeExists(Seq(dbName, tableName))(sqlContext)) {
-      sys.error(s"Table [$tableName] already exists under schema [$dbName]")
+      sys.error(s"Table [$tableName] already exists under Database [$dbName]")
     }
 
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
@@ -370,8 +370,8 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     thriftWriter.close()
 
     metadata.cubesMeta += cubeMeta
-    logInfo(s"Cube $tableName for schema $dbName created successfully.")
-    LOGGER.info("Cube " + tableName + " for schema " + dbName + " created successfully.")
+    logInfo(s"Table $tableName for Database $dbName created successfully.")
+    LOGGER.info("Table " + tableName + " for Database " + dbName + " created successfully.")
     updateSchemasUpdatedTime(dbName, tableName)
     schemaMetadataPath
   }
@@ -497,7 +497,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   }
 
   /**
-   * Shows all schemas which has schema name like
+   * Shows all schemas which has Database name like
    */
   def showSchemas(schemaLike: Option[String]): Seq[String] = {
     checkSchemasModifiedTimeAndReloadCubes()
@@ -541,8 +541,8 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   def dropCube(partitionCount: Int, tableStorePath: String, schemaName: String, cubeName: String)
     (sqlContext: SQLContext) {
     if (!cubeExists(Seq(schemaName, cubeName))(sqlContext)) {
-      LOGGER.audit(s"Drop cube failed. Cube with $schemaName.$cubeName does not exist")
-      sys.error(s"Cube with $schemaName.$cubeName does not exist")
+      LOGGER.audit(s"Drop Table failed. Table with $schemaName.$cubeName does not exist")
+      sys.error(s"Table with $schemaName.$cubeName does not exist")
     }
 
     val carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
@@ -572,7 +572,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     } catch {
       case e: Exception =>
         LOGGER.audit(
-          s"Error While deleting the table $schemaName.$cubeName during drop cube" + e.getMessage)
+          s"Error While deleting the table $schemaName.$cubeName during drop Table" + e.getMessage)
     }
 
     metadata.cubesMeta -= metadata.cubesMeta.filter(
@@ -580,8 +580,8 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
            c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))(0)
     org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .removeTable(schemaName + "_" + cubeName)
-    logInfo(s"Cube $cubeName of $schemaName schema dropped syccessfully.")
-    LOGGER.info("Cube " + cubeName + " of " + schemaName + " schema dropped syccessfully.")
+    logInfo(s"Table $cubeName of $schemaName Database dropped syccessfully.")
+    LOGGER.info("Table " + cubeName + " of " + schemaName + " Database dropped syccessfully.")
 
   }
 

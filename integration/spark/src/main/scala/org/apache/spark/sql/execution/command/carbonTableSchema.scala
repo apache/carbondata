@@ -234,7 +234,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
       val name = f._1
       LOGGER.error(s"Duplicate column found with name : $name")
       LOGGER.audit(
-        s"Validation failed for Create/Alter Cube Operation - " +
+        s"Validation failed for Create/Alter Table Operation - " +
         s"Duplicate column found with name : $name")
       sys.error(s"Duplicate dimensions found with name : $name")
     })
@@ -323,7 +323,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
           val msg = definedpartCols.mkString(", ")
           LOGGER.error(s"partition columns specified are not part of Dimension columns : $msg")
           LOGGER.audit(
-            s"Validation failed for Create/Alter Cube Operation - " +
+            s"Validation failed for Create/Alter Table Operation - " +
             s"partition columns specified are not part of Dimension columns : $msg")
           sys.error(s"partition columns specified are not part of Dimension columns : $msg")
         }
@@ -335,7 +335,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
             case e: Exception =>
               val cl = part.partitionClass
               LOGGER.audit(
-                s"Validation failed for Create/Alter Cube Operation - " +
+                s"Validation failed for Create/Alter Table Operation - " +
                 s"partition class specified can not be found or loaded : $cl")
               sys.error(s"partition class specified can not be found or loaded : $cl")
           }
@@ -471,7 +471,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
     var dimSrcDimensions = Seq[Dimension]()
     val LOGGER = LogServiceFactory.getLogService(TableProcessor.getClass.getName)
 
-    // Create Cube DDL with Schema defination
+    // Create Table DDL with Database defination
     cm.dimCols.foreach(field => {
       if (field.parent != null) {
         levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue,
@@ -521,7 +521,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       val name = f._1
       LOGGER.error(s"Duplicate dimensions found with name : $name")
       LOGGER.audit(
-        s"Validation failed for Create/Alter Cube Operation - " +
+        s"Validation failed for Create/Alter Table Operation - " +
         s"Duplicate dimensions found with name : $name")
       sys.error(s"Duplicate dimensions found with name : $name")
     })
@@ -530,7 +530,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       val name = f._1
       LOGGER.error(s"Duplicate dimensions found with column name : $name")
       LOGGER.audit(
-        s"Validation failed for Create/Alter Cube Operation - " +
+        s"Validation failed for Create/Alter Table Operation - " +
         s"Duplicate dimensions found with column name : $name")
       sys.error(s"Duplicate dimensions found with column name : $name")
     })
@@ -539,7 +539,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       val name = f._1
       LOGGER.error(s"Duplicate measures found with name : $name")
       LOGGER.audit(
-        s"Validation failed for Create/Alter Cube Operation - " +
+        s"Validation failed for Create/Alter Table Operation - " +
         s"Duplicate measures found with name : $name")
       sys.error(s"Duplicate measures found with name : $name")
     })
@@ -548,7 +548,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       val name = f._1
       LOGGER.error(s"Duplicate measures found with column name : $name")
       LOGGER.audit(
-        s"Validation failed for Create/Alter Cube Operation - " +
+        s"Validation failed for Create/Alter Table Operation - " +
         s"Duplicate measures found with column name : $name")
       sys.error(s"Duplicate measures found with column name : $name")
     })
@@ -561,7 +561,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
         val fault = a.msrName
         LOGGER.error(s"Aggregator should not be defined for dimension fields [$fault]")
         LOGGER.audit(
-          s"Validation failed for Create/Alter Cube Operation - " +
+          s"Validation failed for Create/Alter Table Operation - " +
           s"Aggregator should not be defined for dimension fields [$fault]")
         sys.error(s"Aggregator should not be defined for dimension fields [$fault]")
       }
@@ -571,7 +571,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       val name = f._1
       LOGGER.error(s"Dimension and Measure defined with same name : $name")
       LOGGER.audit(
-        s"Validation failed for Create/Alter Cube Operation - " +
+        s"Validation failed for Create/Alter Table Operation - " +
         s"Dimension and Measure defined with same name : $name")
       sys.error(s"Dimension and Measure defined with same name : $name")
     })
@@ -666,7 +666,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
           val msg = definedpartCols.mkString(", ")
           LOGGER.error(s"partition columns specified are not part of Dimension columns : $msg")
           LOGGER.audit(
-            s"Validation failed for Create/Alter Cube Operation - " +
+            s"Validation failed for Create/Alter Table Operation - " +
             s"partition columns specified are not part of Dimension columns : $msg")
           sys.error(s"partition columns specified are not part of Dimension columns : $msg")
         }
@@ -678,7 +678,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
             case e: Exception =>
               val cl = part.partitionClass
               LOGGER.audit(
-                s"Validation failed for Create/Alter Cube Operation - " +
+                s"Validation failed for Create/Alter Table Operation - " +
                 s"partition class specified can not be found or loaded : $cl")
               sys.error(s"partition class specified can not be found or loaded : $cl")
           }
@@ -723,7 +723,7 @@ private[sql] case class ShowCreateTable(cm: tableModel, override val output: Seq
 
     cm.schemaName = getDB.getDatabaseName(cm.schemaNameOp, sqlContext)
 
-    command = command.append("CREATE CUBE ").append(cm.schemaName).append(".").append(cm.cubeName)
+    command = command.append("CREATE Table ").append(cm.schemaName).append(".").append(cm.cubeName)
       .append(" ")
     relation = relation.append("")
 
@@ -925,7 +925,7 @@ private[sql] case class ShowCreateTable(cm: tableModel, override val output: Seq
       levelsToCheckDuplicate = levelsToCheckDuplicate ++ levels
     }
     else {
-      // Create Cube DDL with Schema defination
+      // Create Table DDL with Database defination
       levels = cm.dimCols.map(
         field => Level(field.name.getOrElse(field.column), field.column, Int.MaxValue,
           field.dataType.getOrElse(CarbonCommonConstants.STRING)))
@@ -1003,7 +1003,7 @@ private[sql] case class ShowCreateTable(cm: tableModel, override val output: Seq
     })
 
     if (levelsArray.size <= 0) {
-      sys.error("No Dimensions defined. Cube should have atleast one dimesnion !")
+      sys.error("No Dimensions defined. Table should have atleast one dimesnion !")
     }
 
     val dims = levelsToCheckDuplicate.map(l => l.name + " " + l.dataType)
@@ -1164,12 +1164,12 @@ private[sql] case class CreateCube(cm: tableModel) extends RunnableCommand {
     cm.schemaName = getDB.getDatabaseName(cm.schemaNameOp, sqlContext)
     val s = cm.schemaName
     val c = cm.cubeName
-    LOGGER.audit(s"Creating cube with Schema name [$s] and cube name [$c]")
+    LOGGER.audit(s"Creating Table with Database name [$s] and Table name [$c]")
 
     val tableInfo: TableInfo = TableNewProcessor(cm, sqlContext)
 
     if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
-      sys.error("No Dimensions found. Cube should have at least one dimesnion !")
+      sys.error("No Dimensions found. Table should have at least one dimesnion !")
     }
 
     val cubeName = cm.cubeName
@@ -1179,14 +1179,14 @@ private[sql] case class CreateCube(cm: tableModel) extends RunnableCommand {
       .contains(cm.cubeName.toLowerCase())) {
       if (!cm.ifNotExistsSet) {
         LOGGER.audit(
-          s"Cube creation with Schema name [$dbName] and cube name [$cubeName] failed. " +
+          s"Table creation with Database name [$dbName] and Table name [$cubeName] failed. " +
           s"Table [$cubeName] already exists under database [$dbName]")
         sys.error(s"Table [$cubeName] already exists under database [$dbName]")
       }
     }
     else {
 
-      // Add schema to catalog and persist
+      // Add Database to catalog and persist
       val catalog = CarbonEnv.getInstance(sqlContext).carbonCatalog
       // Need to fill partitioner class when we support partition
       val cubePath = catalog.createCubeFromThrift(tableInfo, dbName, cubeName, null)(sqlContext)
@@ -1202,7 +1202,7 @@ private[sql] case class CreateCube(cm: tableModel) extends RunnableCommand {
           val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
             .lookupRelation2(Seq(schemaName, cubeName))(sqlContext).asInstanceOf[CarbonRelation]
           if (relation != null) {
-            LOGGER.audit(s"Deleting cube [$cubeName] under schema [$schemaName]" +
+            LOGGER.audit(s"Deleting Table [$cubeName] under Database [$schemaName]" +
                          "as create TABLE failed")
             CarbonEnv.getInstance(sqlContext).carbonCatalog
               .dropCube(relation.cubeMeta.partitioner.partitionCount,
@@ -1212,11 +1212,11 @@ private[sql] case class CreateCube(cm: tableModel) extends RunnableCommand {
           }
 
 
-          LOGGER.audit(s"Cube ceation with Schema name [$s] and cube name [$c] failed")
+          LOGGER.audit(s"Table ceation with Database name [$s] and Table name [$c] failed")
           throw e
       }
 
-      LOGGER.audit(s"Cube created with Schema name [$s] and cube name [$c]")
+      LOGGER.audit(s"Table created with Database name [$s] and Table name [$c]")
     }
 
     Seq.empty
@@ -1245,8 +1245,8 @@ private[sql] case class DeleteLoadsById(
       tableName,
       None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
-      LOGGER.audit(s"The delete load by Id is failed. Cube $schemaName.$tableName does not exist")
-      sys.error(s"Cube $schemaName.$tableName does not exist")
+      LOGGER.audit(s"The delete load by Id is failed. Table $schemaName.$tableName does not exist")
+      sys.error(s"Table $schemaName.$tableName does not exist")
     }
 
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(schemaName + '_' + tableName)
@@ -1312,9 +1312,9 @@ private[sql] case class DeleteLoadsByLoadDate(
     )(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
       LOGGER
-        .audit(s"The delete load by load date is failed. Cube $schemaName.$tableName does not " +
+        .audit(s"The delete load by load date is failed. Table $schemaName.$tableName does not " +
          s"exist")
-      sys.error(s"Cube $schemaName.$tableName does not exist")
+      sys.error(s"Table $schemaName.$tableName does not exist")
     }
 
     var carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
@@ -1373,10 +1373,10 @@ private[sql] case class LoadCube(
       getMetaDataFilepath, LockUsage.METADATA_LOCK)
     try {
       if (carbonLock.lockWithRetries()) {
-        logInfo("Successfully able to get the cube metadata file lock")
+        logInfo("Successfully able to get the table metadata file lock")
       }
       else {
-        sys.error("Cube is locked for updation. Please try after some time")
+        sys.error("Table is locked for updation. Please try after some time")
       }
 
       val factPath = FileUtils.getPaths(CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser))
@@ -1385,7 +1385,7 @@ private[sql] case class LoadCube(
           .lookupRelation1(Option(schemaName), tableName, None)(sqlContext)
           .asInstanceOf[CarbonRelation]
       if (relation == null) {
-        sys.error(s"Cube $schemaName.$tableName does not exist")
+        sys.error(s"Table $schemaName.$tableName does not exist")
       }
       val carbonLoadModel = new CarbonLoadModel()
       carbonLoadModel.setTableName(relation.cubeMeta.carbonTableIdentifier.getTableName)
@@ -1456,7 +1456,7 @@ private[sql] case class LoadCube(
         // First system has to partition the data first and then call the load data
         if (null == relation.cubeMeta.partitioner.partitionColumn ||
             relation.cubeMeta.partitioner.partitionColumn(0).isEmpty) {
-          LOGGER.info("Initiating Direct Load for the Cube : (" +
+          LOGGER.info("Initiating Direct Load for the Table : (" +
                       schemaName + "." + tableName + ")")
           carbonLoadModel.setFactFilePath(factPath)
           carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimiter))
@@ -1471,7 +1471,7 @@ private[sql] case class LoadCube(
           }
           partitionLocation += System.currentTimeMillis()
           FileFactory.mkdirs(partitionLocation, fileType)
-          LOGGER.info("Initiating Data Partitioning for the Cube : (" +
+          LOGGER.info("Initiating Data Partitioning for the Table : (" +
                       schemaName + "." + tableName + ")")
           partitionStatus = CarbonContext.partitionData(
             schemaName,
@@ -1517,9 +1517,9 @@ private[sql] case class LoadCube(
     } finally {
       if (carbonLock != null) {
         if (carbonLock.unlock()) {
-          logInfo("Cube MetaData Unlocked Successfully after data load")
+          logInfo("Table MetaData Unlocked Successfully after data load")
         } else {
-          logError("Unable to unlock Cube MetaData")
+          logError("Unable to unlock Table MetaData")
         }
       }
     }
@@ -1582,7 +1582,7 @@ private[sql] case class LoadAggregationTable(
       cubeName,
       None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
-      sys.error(s"Cube $schemaName.$cubeName does not exist")
+      sys.error(s"Table $schemaName.$cubeName does not exist")
     }
     val carbonLoadModel = new CarbonLoadModel()
     carbonLoadModel.setTableName(cubeName)
@@ -1658,7 +1658,7 @@ private[sql] case class MergeTable(schemaName: String, cubeName: String, tableNa
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
       .lookupRelation2(Seq(schemaName, cubeName), None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
-      sys.error(s"Cube $schemaName.$cubeName does not exist")
+      sys.error(s"Table $schemaName.$cubeName does not exist")
     }
     val carbonLoadModel = new CarbonLoadModel()
     carbonLoadModel.setTableName(cubeName)
@@ -1701,12 +1701,12 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
   def run(sqlContext: SQLContext): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
-    val tmpCube = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
+    val tmpTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(schemaName + "_" + cubeName)
-    if (null == tmpCube) {
+    if (null == tmpTable) {
       if (!ifExistsSet) {
         LOGGER
-          .audit(s"Dropping carbon table with Schema name [$schemaName] and cube name" +
+          .audit(s"Dropping carbon table with Database name [$schemaName] and Table name" +
                  "[$cubeName] failed")
         LOGGER.error(s"Carbon Table $schemaName.$cubeName metadata does not exist")
       }
@@ -1727,15 +1727,15 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
     } else {
       CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
       val carbonLock = CarbonLockFactory
-        .getCarbonLockObj(tmpCube.getMetaDataFilepath, LockUsage.METADATA_LOCK)
+        .getCarbonLockObj(tmpTable .getMetaDataFilepath, LockUsage.METADATA_LOCK)
       try {
         if (carbonLock.lockWithRetries()) {
-          logInfo("Successfully able to get the cube metadata file lock")
+          logInfo("Successfully able to get the table metadata file lock")
         } else {
           LOGGER.audit(
-            s"Dropping cube with Schema name [$schemaName] and cube name [$cubeName] " +
-            s"failed as the Cube is locked")
-          sys.error("Cube is locked for updation. Please try after some time")
+            s"Dropping table with Database name [$schemaName] and Table name [$cubeName] " +
+            s"failed as the Table is locked")
+          sys.error("Table is locked for updation. Please try after some time")
         }
 
         val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
@@ -1743,10 +1743,10 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
 
         if (relation == null) {
           if (!ifExistsSet) {
-            sys.error(s"Cube $schemaName.$cubeName does not exist")
+            sys.error(s"Table $schemaName.$cubeName does not exist")
           }
         } else {
-          LOGGER.audit(s"Deleting cube [$cubeName] under schema [$schemaName]")
+          LOGGER.audit(s"Deleting table [$cubeName] under database [$schemaName]")
 
           CarbonEnv.getInstance(sqlContext).carbonCatalog
             .dropCube(relation.cubeMeta.partitioner.partitionCount,
@@ -1758,20 +1758,20 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
               relation.cubeMeta.partitioner)
           QueryPartitionHelper.getInstance().removePartition(schemaName, cubeName)
 
-          LOGGER.audit(s"Deleted cube [$cubeName] under schema [$schemaName]")
+          LOGGER.audit(s"Deleted table [$cubeName] under database [$schemaName]")
         }
       }
       finally {
         if (carbonLock != null) {
           if (carbonLock.unlock()) {
-            logInfo("Cube MetaData Unlocked Successfully after dropping the cube")
-            val fileType = FileFactory.getFileType(tmpCube.getMetaDataFilepath)
-            if (FileFactory.isFileExist(tmpCube.getMetaDataFilepath, fileType)) {
-              val file = FileFactory.getCarbonFile(tmpCube.getMetaDataFilepath, fileType)
+            logInfo("Table MetaData Unlocked Successfully after dropping the table")
+            val fileType = FileFactory.getFileType(tmpTable .getMetaDataFilepath)
+            if (FileFactory.isFileExist(tmpTable .getMetaDataFilepath, fileType)) {
+              val file = FileFactory.getCarbonFile(tmpTable .getMetaDataFilepath, fileType)
               CarbonUtil.deleteFoldersAndFiles(file.getParentFile)
             }
           } else {
-            logError("Unable to unlock Cube MetaData")
+            logError("Unable to unlock Table MetaData")
           }
         }
       }
@@ -1893,8 +1893,10 @@ private[sql] case class DescribeCommandFormatted(
       (field.name, field.dataType.simpleString, comment)
     }
     results ++= Seq(("", "", ""), ("##Detailed Table Information", "", ""))
-    results ++= Seq(("Schema Name : ", relation.cubeMeta.carbonTableIdentifier.getDatabaseName, ""))
-    results ++= Seq(("Cube Name : ", relation.cubeMeta.carbonTableIdentifier.getTableName, ""))
+    results ++= Seq(("Database Name : ", relation.cubeMeta.carbonTableIdentifier
+      .getDatabaseName, "")
+    )
+    results ++= Seq(("Table Name : ", relation.cubeMeta.carbonTableIdentifier.getTableName, ""))
     results ++= Seq(("CARBON Store Path : ", relation.cubeMeta.dataPath, ""))
     results ++= Seq(("", "", ""), ("#Aggregate Tables", "", ""))
     val carbonTable = relation.cubeMeta.carbonTable
@@ -1952,8 +1954,8 @@ private[sql] case class DeleteLoadByDate(
     var carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata
          .getInstance().getCarbonTable(schemaName + '_' + cubeName)
     if (relation == null) {
-      LOGGER.audit(s"The delete load by date is failed. Cube $schemaName.$cubeName does not exist")
-      sys.error(s"Cube $schemaName.$cubeName does not exist")
+      LOGGER.audit(s"The delete load by date is failed. Table $schemaName.$cubeName does not exist")
+      sys.error(s"Table $schemaName.$cubeName does not exist")
     }
 
     val matches: Seq[AttributeReference] = relation.dimensionsAttr.filter(
@@ -1963,8 +1965,8 @@ private[sql] case class DeleteLoadByDate(
     if (matches.isEmpty) {
       LOGGER.audit(
         "The delete load by date is failed. " +
-        "Cube $schemaName.$cubeName does not contain date field " + dateField)
-      sys.error(s"Cube $schemaName.$cubeName does not contain date field " + dateField)
+        "Table $schemaName.$cubeName does not contain date field " + dateField)
+      sys.error(s"Table $schemaName.$cubeName does not contain date field " + dateField)
     }
     else {
       level = matches.asJava.get(0).name
@@ -2003,8 +2005,8 @@ private[sql] case class CleanFiles(
       .lookupRelation1(Some(schemaName), cubeName, None)(sqlContext).
       asInstanceOf[CarbonRelation]
     if (relation == null) {
-      LOGGER.audit(s"The clean files request is failed. Cube $schemaName.$cubeName does not exist")
-      sys.error(s"Cube $schemaName.$cubeName does not exist")
+      LOGGER.audit(s"The clean files request is failed. Table $schemaName.$cubeName does not exist")
+      sys.error(s"Table $schemaName.$cubeName does not exist")
     }
 
     val carbonLoadModel = new CarbonLoadModel()

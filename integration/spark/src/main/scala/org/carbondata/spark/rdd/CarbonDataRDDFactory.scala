@@ -186,7 +186,7 @@ object CarbonDataRDDFactory extends Logging {
         .getCarbonLockObj(cube.getMetaDataFilepath, LockUsage.METADATA_LOCK)
       try {
         if (carbonLock.lockWithRetries()) {
-          logInfo("Successfully got the cube metadata file lock")
+          logInfo("Successfully got the table metadata file lock")
           if (updatedLoadMetadataDetailsList.nonEmpty) {
             LoadAggregateTabAfterRetention(schemaName, cube.getFactTableName, cube.getFactTableName,
               sqlContext, schema, updatedLoadMetadataDetailsList
@@ -203,7 +203,7 @@ object CarbonDataRDDFactory extends Logging {
         }
       } finally {
         if (carbonLock.unlock()) {
-          logInfo("unlock the cube metadata file successfully")
+          logInfo("unlock the table metadata file successfully")
         } else {
           logError("Unable to unlock the metadata lock")
         }
@@ -229,7 +229,7 @@ object CarbonDataRDDFactory extends Logging {
       None
     )(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
-      sys.error(s"Cube $schemaName.$cubeName does not exist")
+      sys.error(s"Table $schemaName.$cubeName does not exist")
     }
     val carbonLoadModel = new CarbonLoadModel()
     carbonLoadModel.setTableName(cubeName)
@@ -608,7 +608,7 @@ object CarbonDataRDDFactory extends Logging {
             .recordLoadMetadata(result, metadataDetails, carbonLoadModel, loadStatus, loadStartTime)
         } else if (!carbonLoadModel.isRetentionRequest) {
           // TODO : Handle it
-          logInfo("********schema updated**********")
+          logInfo("********Database updated**********")
         }
         logger.audit("The data loading is successful.")
       }
@@ -717,7 +717,7 @@ object CarbonDataRDDFactory extends Logging {
     }
     finally {
       if (carbonLock.unlock()) {
-        logInfo("unlock the cube metadata file successfully")
+        logInfo("unlock the table metadata file successfully")
       } else {
         logError("Unable to unlock the metadata lock")
       }
