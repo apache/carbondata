@@ -36,13 +36,14 @@ object FileUtils extends Logging {
         getPathsFromCarbonFile(files(j), stringBuild)
       }
     case false =>
-      val path = carbonFile.getPath
+      val path = carbonFile.getAbsolutePath
+      val fileName = carbonFile.getName
       if (carbonFile.getSize == 0) {
         logWarning(s"skip empty input file: $path")
-      } else if (path.startsWith(CarbonCommonConstants.UNDERSCORE) ||
-          path.startsWith(CarbonCommonConstants.POINT)) {
+      } else if (fileName.startsWith(CarbonCommonConstants.UNDERSCORE) ||
+          fileName.startsWith(CarbonCommonConstants.POINT)) {
         logWarning(s"skip invisible input file: $path")
-      } else if (path.toLowerCase().endsWith(".csv")) {
+      } else if (fileName.toLowerCase().endsWith(".csv")) {
         stringBuild.append(path.replace('\\', '/')).append(CarbonCommonConstants.COMMA)
       } else {
         logWarning(s"skip input file: $path, because this path doesn't end with '.csv'")
