@@ -126,8 +126,10 @@ public class ForwardDictionary implements Dictionary {
    * This method will release the objects and set default value for primitive types
    */
   @Override public void clear() {
-    columnDictionaryInfo.clear();
-    columnDictionaryInfo = null;
+    if (null != columnDictionaryInfo) {
+      columnDictionaryInfo.clear();
+      columnDictionaryInfo = null;
+    }
   }
 
   /**

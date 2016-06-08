@@ -269,14 +269,38 @@ public final class FilterUtil {
    */
   public static DimColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
       ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter)
-      throws QueryExecutionException
+      throws QueryExecutionException {
+    Dictionary forwardDictionary = null;
+    try {
+      // Reading the dictionary value from cache.
+      forwardDictionary =
+          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
+      return getFilterValues(columnExpression, evaluateResultList, forwardDictionary,
+          isIncludeFilter);
+    } finally {
+      CarbonUtil.clearDictionaryCache(forwardDictionary);
+    }
+  }
 
-  {
-    List<Integer> surrogates = new ArrayList<Integer>(20);
+  /**
+   * Method will prepare the  dimfilterinfo instance by resolving the filter
+   * expression value to its respective surrogates.
+   *
+   * @param columnExpression
+   * @param evaluateResultList
+   * @param forwardDictionary
+   * @param isIncludeFilter
+   * @return
+   * @throws QueryExecutionException
+   */
+  private static DimColumnFilterInfo getFilterValues(ColumnExpression columnExpression,
+      List<String> evaluateResultList, Dictionary forwardDictionary, boolean isIncludeFilter)
+      throws QueryExecutionException {
     sortFilterModelMembers(columnExpression, evaluateResultList);
+    List<Integer> surrogates =
+        new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // Reading the dictionary value from cache.
-    getDictionaryValue(evaluateResultList, tableIdentifier, columnExpression.getDimension(),
-        surrogates);
+    getDictionaryValue(evaluateResultList, forwardDictionary, surrogates);
     Collections.sort(surrogates);
     DimColumnFilterInfo columnFilterInfo = null;
     if (surrogates.size() > 0) {
@@ -292,20 +316,13 @@ public final class FilterUtil {
    * string.
    *
    * @param evaluateResultList filter value
-   * @param tableIdentifier
-   * @param dim                , column expression dimension type.
    * @param surrogates
-   * @return the dictionary value.
    * @throws QueryExecutionException
    */
   private static void getDictionaryValue(List<String> evaluateResultList,
-      AbsoluteTableIdentifier tableIdentifier, CarbonDimension dim, List<Integer> surrogates)
-      throws QueryExecutionException {
-    Dictionary forwardDictionary = getForwardDictionaryCache(tableIdentifier, dim);
-    if (null != forwardDictionary) {
-      ((ForwardDictionary) forwardDictionary)
-          .getSurrogateKeyByIncrementalSearch(evaluateResultList, surrogates);
-    }
+      Dictionary forwardDictionary, List<Integer> surrogates) throws QueryExecutionException {
+    ((ForwardDictionary) forwardDictionary)
+        .getSurrogateKeyByIncrementalSearch(evaluateResultList, surrogates);
   }
 
   /**
@@ -323,36 +340,40 @@ public final class FilterUtil {
       AbsoluteTableIdentifier tableIdentifier, Expression expression,
       final ColumnExpression columnExpression, boolean isIncludeFilter)
       throws QueryExecutionException {
-    Dictionary forwardDictionary =
-        FilterUtil.getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
-    List<String> evaluateResultListFinal = new ArrayList<String>(20);
-    DictionaryChunksWrapper dictionaryWrapper = forwardDictionary.getDictionaryChunks();
-    while (dictionaryWrapper.hasNext()) {
-      byte[] columnVal = dictionaryWrapper.next();
-      try {
-        RowIntf row = new RowImpl();
-        String stringValue =
-            new String(columnVal, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-        if (stringValue.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-          stringValue = null;
-        }
-        row.setValues(new Object[] { DataTypeUtil.getDataBasedOnDataType(stringValue,
-            columnExpression.getCarbonColumn().getDataType()) });
-        Boolean rslt = expression.evaluate(row).getBoolean();
-        if (null != rslt && !(rslt ^ isIncludeFilter)) {
-          if (null == stringValue) {
-            evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
-          } else {
-            evaluateResultListFinal.add(stringValue);
+    Dictionary forwardDictionary = null;
+    try {
+      forwardDictionary =
+          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
+      List<String> evaluateResultListFinal = new ArrayList<String>(20);
+      DictionaryChunksWrapper dictionaryWrapper = forwardDictionary.getDictionaryChunks();
+      while (dictionaryWrapper.hasNext()) {
+        byte[] columnVal = dictionaryWrapper.next();
+        try {
+          RowIntf row = new RowImpl();
+          String stringValue =
+              new String(columnVal, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          if (stringValue.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+            stringValue = null;
           }
+          row.setValues(new Object[] { DataTypeUtil.getDataBasedOnDataType(stringValue,
+              columnExpression.getCarbonColumn().getDataType()) });
+          Boolean rslt = expression.evaluate(row).getBoolean();
+          if (null != rslt && !(rslt ^ isIncludeFilter)) {
+            if (null == stringValue) {
+              evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
+            } else {
+              evaluateResultListFinal.add(stringValue);
+            }
+          }
+        } catch (FilterUnsupportedException e) {
+          LOGGER.audit(e.getMessage());
         }
-      } catch (FilterUnsupportedException e) {
-        LOGGER.audit(e.getMessage());
       }
+      return getFilterValues(columnExpression, evaluateResultListFinal, forwardDictionary,
+          isIncludeFilter);
+    } finally {
+      CarbonUtil.clearDictionaryCache(forwardDictionary);
     }
-    sortFilterModelMembers(columnExpression, evaluateResultListFinal);
-    return getFilterValues(tableIdentifier, columnExpression, evaluateResultListFinal,
-        isIncludeFilter);
   }
 
   private static void sortFilterModelMembers(final ColumnExpression columnExpression,

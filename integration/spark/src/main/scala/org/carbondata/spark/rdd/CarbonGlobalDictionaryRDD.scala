@@ -224,10 +224,13 @@ class CarbonGlobalDictionaryGenerateRDD(
     var status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
     var isHighCardinalityColumn = false
     val iter = new Iterator[(Int, String, Boolean)] {
+      var dictionaryForDistinctValueLookUp: org.carbondata.core.cache.dictionary.Dictionary = _
+      var dictionaryForSortIndexWriting: org.carbondata.core.cache.dictionary.Dictionary = _
+      var dictionaryForDistinctValueLookUpCleared: Boolean = false
       // generate distinct value list
       try {
         val t1 = System.currentTimeMillis
-        val dictionary = if (model.dictFileExists(split.index)) {
+        dictionaryForDistinctValueLookUp = if (model.dictFileExists(split.index)) {
           CarbonLoaderUtil.getDictionary(model.table,
             model.primDimensions(split.index).getColumnId,
             model.hdfsLocation,
@@ -263,18 +266,20 @@ class CarbonGlobalDictionaryGenerateRDD(
         } else {
           val t3 = System.currentTimeMillis
           val distinctValueCount = GlobalDictionaryUtil.generateAndWriteNewDistinctValueList(
-            valuesBuffer, dictionary, model, split.index)
+            valuesBuffer, dictionaryForDistinctValueLookUp, model, split.index)
           // clear the value buffer after writing dictionary data
           valuesBuffer.clear
-
+          org.carbondata.core.util.CarbonUtil
+            .clearDictionaryCache(dictionaryForDistinctValueLookUp);
+          dictionaryForDistinctValueLookUpCleared = true
           val t4 = System.currentTimeMillis
           if (distinctValueCount > 0) {
-            val columnDictionary = CarbonLoaderUtil.getDictionary(model.table,
+            dictionaryForSortIndexWriting = CarbonLoaderUtil.getDictionary(model.table,
               model.primDimensions(split.index).getColumnId,
               model.hdfsLocation,
               model.primDimensions(split.index).getDataType)
             GlobalDictionaryUtil.writeGlobalDictionaryColumnSortInfo(model, split.index,
-              columnDictionary)
+              dictionaryForSortIndexWriting)
             val t5 = System.currentTimeMillis
             LOGGER.info("\n columnName:" + model.primDimensions(split.index).getColName +
               "\n columnId:" + model.primDimensions(split.index).getColumnId +
@@ -289,6 +294,12 @@ class CarbonGlobalDictionaryGenerateRDD(
         case ex: Exception =>
           status = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
           LOGGER.error(ex)
+      } finally {
+        if (!dictionaryForDistinctValueLookUpCleared) {
+          org.carbondata.core.util.CarbonUtil
+            .clearDictionaryCache(dictionaryForDistinctValueLookUp);
+        }
+        org.carbondata.core.util.CarbonUtil.clearDictionaryCache(dictionaryForSortIndexWriting);
       }
       var finished = false
 

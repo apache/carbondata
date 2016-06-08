@@ -162,6 +162,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .getDimensionDictionaryDetail(queryModel.getQueryDimension(),
             queryModel.getDimAggregationInfo(), queryModel.getExpressions(),
             queryModel.getAbsoluteTableIdentifier());
+    queryModel.setColumnToDictionaryMapping(queryProperties.columnToDictionayMapping);
     // setting the sort dimension index. as it will be updated while getting the sort info
     // so currently setting it to default 0 means sort is not present in any dimension
     queryProperties.sortDimIndexes = new byte[queryModel.getQueryDimension().size()];

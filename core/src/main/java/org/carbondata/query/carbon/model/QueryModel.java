@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
@@ -137,6 +138,12 @@ public class QueryModel implements Serializable {
    * paritition column list
    */
   private List<String> paritionColumns;
+
+  /**
+   * this will hold the information about the dictionary dimension
+   * which to
+   */
+  public Map<String, Dictionary> columnToDictionaryMapping;
 
   /**
    * table on which query will be executed
@@ -537,4 +544,17 @@ public class QueryModel implements Serializable {
     this.forcedDetailRawQuery = forcedDetailRawQuery;
   }
 
+  /**
+   * @return
+   */
+  public Map<String, Dictionary> getColumnToDictionaryMapping() {
+    return columnToDictionaryMapping;
+  }
+
+  /**
+   * @param columnToDictionaryMapping
+   */
+  public void setColumnToDictionaryMapping(Map<String, Dictionary> columnToDictionaryMapping) {
+    this.columnToDictionaryMapping = columnToDictionaryMapping;
+  }
 }

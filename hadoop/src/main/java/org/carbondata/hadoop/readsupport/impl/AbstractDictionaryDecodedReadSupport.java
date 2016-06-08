@@ -9,6 +9,7 @@ import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.hadoop.readsupport.CarbonReadSupport;
 
@@ -46,6 +47,17 @@ public abstract class AbstractDictionaryDecodedReadSupport<T> implements CarbonR
           throw new RuntimeException(e);
         }
       }
+    }
+  }
+
+  /**
+   * This method iwll be used to clear the dictionary cache and update access count for each
+   * column involved which will be used during eviction of columns from LRU cache if memory
+   * reaches threshold
+   */
+  @Override public void close() {
+    for (int i = 0; i < dictionaries.length; i++) {
+      CarbonUtil.clearDictionaryCache(dictionaries[i]);
     }
   }
 }

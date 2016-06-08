@@ -28,6 +28,7 @@ import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 
 import org.carbondata.common.logging.LogServiceFactory
+import org.carbondata.core.cache.dictionary.Dictionary
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo
 import org.carbondata.core.iterator.CarbonIterator
 import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
@@ -140,6 +141,7 @@ class CarbonQueryRDD[K, V](
     val iter = new Iterator[(K, V)] {
       var rowIterator: CarbonIterator[_] = _
       var queryStartTime: Long = 0
+      var queryFailed = false
       try {
         val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
         if (!carbonSparkPartition.tableBlockInfos.isEmpty) {
@@ -163,6 +165,7 @@ class CarbonQueryRDD[K, V](
         // : CarbonQueryUtil.isQuickFilter quick filter from dictionary needs to support
       } catch {
         case e: Exception =>
+          queryFailed = true
           LOGGER.error(e)
           // updateCubeAndLevelCacheStatus(levelCacheKeys)
           if (null != e.getMessage) {
@@ -170,6 +173,10 @@ class CarbonQueryRDD[K, V](
           } else {
             sys.error("Exception occurred in query execution.Please check logs.")
           }
+      } finally {
+        if (queryFailed) {
+          clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
+        }
       }
 
       var havePair = false
@@ -181,7 +188,7 @@ class CarbonQueryRDD[K, V](
           havePair = !finished
         }
         if (finished) {
-          // updateCubeAndLevelCacheStatus(levelCacheKeys)
+          clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
         }
         !finished
       }
@@ -195,6 +202,13 @@ class CarbonQueryRDD[K, V](
         val key = row.asInstanceOf[RowResult].getKey()
         val value = row.asInstanceOf[RowResult].getValue()
         keyClass.getKey(key, value)
+      }
+
+      def clearDictionaryCache(columnToDictionaryMap: java.util.Map[String, Dictionary]) = {
+        if (null != columnToDictionaryMap) {
+          org.carbondata.spark.util.CarbonQueryUtil
+            .clearColumnDictionaryCache(columnToDictionaryMap)
+        }
       }
 
       logInfo("*************************** Total Time Taken to execute the query in Carbon Side: " +

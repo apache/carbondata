@@ -19,4 +19,13 @@ public class RawDataReadSupport implements CarbonReadSupport<Object[]> {
   @Override public Object[] readRow(Object[] data) {
     return data;
   }
+
+  /**
+   * This method iwll be used to clear the dictionary cache and update access count for each
+   * column involved which will be used during eviction of columns from LRU cache if memory
+   * reaches threshold
+   */
+  @Override public void close() {
+
+  }
 }

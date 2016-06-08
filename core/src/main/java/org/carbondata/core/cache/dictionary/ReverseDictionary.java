@@ -120,8 +120,10 @@ public class ReverseDictionary implements Dictionary {
    * This method will release the objects and set default value for primitive types
    */
   @Override public void clear() {
-    columnReverseDictionaryInfo.clear();
-    columnReverseDictionaryInfo = null;
+    if (null != columnReverseDictionaryInfo) {
+      columnReverseDictionaryInfo.clear();
+      columnReverseDictionaryInfo = null;
+    }
   }
 
 }

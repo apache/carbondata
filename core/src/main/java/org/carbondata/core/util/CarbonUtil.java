@@ -47,6 +47,7 @@ import java.util.concurrent.Executors;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
@@ -1658,6 +1659,18 @@ public final class CarbonUtil {
       }
     }
     return findDim;
+  }
+
+  /**
+   * This method will be used to clear the dictionary cache after its usage is complete
+   * so that if memory threshold is reached it can evicted from LRU cache
+   *
+   * @param dictionary
+   */
+  public static void clearDictionaryCache(Dictionary dictionary) {
+    if (null != dictionary) {
+      dictionary.clear();
+    }
   }
 
 }

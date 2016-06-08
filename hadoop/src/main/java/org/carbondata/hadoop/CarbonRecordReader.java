@@ -71,6 +71,7 @@ public class CarbonRecordReader<T> extends RecordReader<Void, T> {
   }
 
   @Override public void close() throws IOException {
-    // Nothing to close here.
+    // close read support
+    readSupport.close();
   }
 }

@@ -26,12 +26,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.load.LoadMetadataDetails;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.carbon.model.CarbonQueryPlan;
 import org.carbondata.spark.partition.api.Partition;
 import org.carbondata.spark.partition.api.impl.DefaultLoadBalancer;
@@ -236,6 +238,18 @@ public final class CarbonQueryUtil {
       }
     }
     return slices;
+  }
+
+  /**
+   * This method will clear the dictionary cache for a given map of columns and dictionary cache
+   * mapping
+   *
+   * @param columnToDictionaryMap
+   */
+  public static void clearColumnDictionaryCache(Map<String, Dictionary> columnToDictionaryMap) {
+    for (Map.Entry<String, Dictionary> entry : columnToDictionaryMap.entrySet()) {
+      CarbonUtil.clearDictionaryCache(entry.getValue());
+    }
   }
 
 }

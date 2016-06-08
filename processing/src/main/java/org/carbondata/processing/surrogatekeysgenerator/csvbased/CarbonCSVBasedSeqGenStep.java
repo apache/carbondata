@@ -1706,8 +1706,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           .getProperty(CarbonCommonConstants.CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED,
               CarbonCommonConstants.CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE));
       if (null != surKeyGen) {
-        clearDictionaryCache();
-        surKeyGen.setDictionaryCaches(null);
         surKeyGen.setHierCache(null);
         surKeyGen.setHierCacheReverse(null);
         surKeyGen.setTimeDimCache(null);
@@ -1717,6 +1715,11 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       }
     } catch (Exception e) {
       LOGGER.error(e);
+    } finally {
+      if (null != surKeyGen) {
+        clearDictionaryCache();
+        surKeyGen.setDictionaryCaches(null);
+      }
     }
     nrmlizedHierWriterMap = null;
     data.clean();
@@ -1733,7 +1736,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     Map<String, Dictionary> dictionaryCaches = surrogateKeyGen.getDictionaryCaches();
     List<Dictionary> reverseDictionaries = new ArrayList<>(dictionaryCaches.values());
     for (int i = 0; i < reverseDictionaries.size(); i++) {
-      Dictionary dictionary = (Dictionary) reverseDictionaries.get(i);
+      Dictionary dictionary = reverseDictionaries.get(i);
       dictionary.clear();
     }
   }

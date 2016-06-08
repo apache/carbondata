@@ -69,13 +69,13 @@ public final class CarbonLRUCache {
       lruCacheMemorySize = Integer.parseInt(defaultPropertyName);
     }
     initCache();
-    if (lruCacheMemorySize >= 0) {
+    if (lruCacheMemorySize > 0) {
       LOGGER.info("Configured level cahce size is " + lruCacheMemorySize + " MB");
       // convert in bytes
       lruCacheMemorySize = lruCacheMemorySize * BYTE_CONVERSION_CONSTANT;
     } else {
-      LOGGER.info("Level cache size not configured. Therefore default behavior will be "
-              + "considered and all levels files will be loaded in memory");
+      LOGGER.info("Column cache size not configured. Therefore default behavior will be "
+              + "considered and no LRU based eviction of columns will be done");
     }
   }
 
@@ -172,7 +172,7 @@ public final class CarbonLRUCache {
    */
   public boolean put(String columnIdentifier, Cacheable cacheInfo, long requiredSize) {
     boolean columnKeyAddedSuccessfully = false;
-    if (freeMemorySizeForAddingCache(cacheInfo, requiredSize)) {
+    if (freeMemorySizeForAddingCache(requiredSize)) {
       synchronized (lruCacheMap) {
         currentSize = currentSize + requiredSize;
         if (null == lruCacheMap.get(columnIdentifier)) {
@@ -193,11 +193,10 @@ public final class CarbonLRUCache {
    * This method will check a required column can be loaded into memory or not. If required
    * this method will call for eviction of existing data from memory
    *
-   * @param cacheInfo
    * @param requiredSize
    * @return
    */
-  private boolean freeMemorySizeForAddingCache(Cacheable cacheInfo, long requiredSize) {
+  private boolean freeMemorySizeForAddingCache(long requiredSize) {
     boolean memoryAvailable = false;
     if (lruCacheMemorySize > 0) {
       if (isSizeAvailableToLoadColumnDictionary(requiredSize)) {

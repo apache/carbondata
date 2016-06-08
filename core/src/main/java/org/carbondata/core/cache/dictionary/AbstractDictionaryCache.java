@@ -212,8 +212,6 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
                 loadDictionaryData(dictionaryInfo, dictionaryColumnUniqueIdentifier,
                     dictionaryInfo.getMemorySize(), carbonDictionaryColumnMetaChunk.getEnd_offset(),
                     loadSortIndex);
-                // increment the column access count
-                incrementDictionaryAccessCount(dictionaryInfo);
                 // set the end offset till where file is read
                 dictionaryInfo
                     .setOffsetTillFileIsRead(carbonDictionaryColumnMetaChunk.getEnd_offset());
@@ -227,6 +225,8 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
           }
         }
       }
+      // increment the column access count
+      incrementDictionaryAccessCount(dictionaryInfo);
     } catch (IOException e) {
       throw new CarbonUtilException(e.getMessage());
     }
