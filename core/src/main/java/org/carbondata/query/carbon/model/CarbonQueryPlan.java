@@ -24,7 +24,6 @@ package org.carbondata.query.carbon.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -231,12 +230,16 @@ public class CarbonQueryPlan implements Serializable {
     if (null == dimensionAggregatorInfo) {
       dimensionAggregatorInfo = new DimensionAggregatorInfo();
       dimensionAggregatorInfo.setColumnName(columnName);
-      dimensionAggregatorInfo.setOrderList(Arrays.asList(new Integer[] { queryOrder }));
-      dimensionAggregatorInfo.setAggList(Arrays.asList(new String[] { aggType }));
+      List<Integer> queryOrderList= new ArrayList<Integer>();
+      queryOrderList.add(queryOrder);
+      List<String> aggTypeList= new ArrayList<String>();
+      aggTypeList.add(aggType);
+      dimensionAggregatorInfo.setOrderList(queryOrderList);
+      dimensionAggregatorInfo.setAggList(aggTypeList);
       dimAggregatorInfos.put(columnName, dimensionAggregatorInfo);
     } else {
-      dimensionAggregatorInfo.setOrderList(Arrays.asList(new Integer[] { queryOrder }));
-      dimensionAggregatorInfo.setAggList(Arrays.asList(new String[] { aggType }));
+      dimensionAggregatorInfo.getOrderList().add(queryOrder);
+      dimensionAggregatorInfo.getAggList().add(aggType);
     }
   }
 
