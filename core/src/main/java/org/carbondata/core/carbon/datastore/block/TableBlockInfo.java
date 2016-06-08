@@ -155,7 +155,7 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
     // converr seg ID to double.
 
     double seg1 = Double.parseDouble(segmentId);
-    double seg2 = Double.parseDouble(segmentId);
+    double seg2 = Double.parseDouble(other.segmentId);
     if (seg1 - seg2 < 0) {
       return -1;
     }
