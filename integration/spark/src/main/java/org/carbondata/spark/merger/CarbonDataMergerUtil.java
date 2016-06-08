@@ -148,7 +148,7 @@ public final class CarbonDataMergerUtil {
       String mergeLoadStartTime) {
 
     AbsoluteTableIdentifier absoluteTableIdentifier =
-        new AbsoluteTableIdentifier(carbonLoadModel.getFactStoreLocation(),
+        new AbsoluteTableIdentifier(carbonLoadModel.getStorePath(),
             new CarbonTableIdentifier(carbonLoadModel.getDatabaseName(),
                 carbonLoadModel.getTableName()));
 

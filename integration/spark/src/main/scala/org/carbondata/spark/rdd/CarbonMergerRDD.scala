@@ -81,7 +81,7 @@ class CarbonMergerRDD[K, V](
       val dataFileMetadataSegMapping: java.util.Map[String, List[DataFileFooter]] =
         CarbonCompactionUtil.createDataFileFooterMappingForSegments(tableBlockInfoList)
 
-      carbonLoadModel.setFactStoreLocation(hdfsStoreLocation)
+      carbonLoadModel.setStorePath(hdfsStoreLocation)
 
       // taking the last table block info for getting the segment properties.
       val listMetadata = dataFileMetadataSegMapping.get(tableBlockInfoList.get

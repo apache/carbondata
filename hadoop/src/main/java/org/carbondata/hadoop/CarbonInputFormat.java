@@ -207,7 +207,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     String carbonTableStr = configuration.get(CARBON_TABLE);
     if (carbonTableStr == null) {
       CarbonTable carbonTable = new SchemaReader()
-          .readCarbonTableFromStore(getTablePath(configuration), getTableToAccess(configuration));
+          .readCarbonTableFromStore(getTablePath(configuration), getTableToAccess(configuration),
+              getStorePathString(configuration));
       setCarbonTable(configuration, carbonTable);
       return carbonTable;
     }

@@ -38,7 +38,6 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.lcm.status.SegmentStatusManager;
 import org.carbondata.spark.load.CarbonLoadModel;
 
@@ -54,7 +53,7 @@ public final class LoadMetadataUtil {
     String metaDataLocation = cube.getMetaDataFilepath();
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(
         new AbsoluteTableIdentifier(
-            CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION),
+            loadModel.getStorePath(),
             new CarbonTableIdentifier(loadModel.getDatabaseName(),
                 loadModel.getTableName())));
     LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metaDataLocation);

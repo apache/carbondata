@@ -351,13 +351,15 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
    * convert from external to wrapper tableinfo
    */
   @Override public TableInfo fromExternalToWrapperTableInfo(
-      org.carbondata.format.TableInfo externalTableInfo, String dbName, String tableName) {
+      org.carbondata.format.TableInfo externalTableInfo, String dbName, String tableName,
+      String storePath) {
     TableInfo wrapperTableInfo = new TableInfo();
     wrapperTableInfo.setLastUpdatedTime(
         externalTableInfo.getFact_table().getSchema_evolution().getSchema_evolution_history().get(0)
             .getTime_stamp());
     wrapperTableInfo.setDatabaseName(dbName);
     wrapperTableInfo.setTableUniqueName(dbName + "_" + tableName);
+    wrapperTableInfo.setStorePath(storePath);
     wrapperTableInfo.setFactTable(
         fromExternalToWrapperTableSchema(externalTableInfo.getFact_table(), tableName));
     List<TableSchema> aggTablesList = new ArrayList<TableSchema>();

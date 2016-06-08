@@ -52,7 +52,7 @@ public class CarbonLoadModel implements Serializable {
 
   private boolean aggLoadRequest;
 
-  private String factStoreLocation;
+  private String storePath;
 
   private boolean isRetentionRequest;
 
@@ -325,17 +325,10 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * @return Returns the factStoreLocation.
+   * @param storePath The storePath to set.
    */
-  public String getFactStoreLocation() {
-    return factStoreLocation;
-  }
-
-  /**
-   * @param factStoreLocation The factStoreLocation to set.
-   */
-  public void setFactStoreLocation(String factStoreLocation) {
-    this.factStoreLocation = factStoreLocation;
+  public void setStorePath(String storePath) {
+    this.storePath = storePath;
   }
 
   /**
@@ -343,6 +336,13 @@ public class CarbonLoadModel implements Serializable {
    */
   public String getAggTableName() {
     return aggTableName;
+  }
+
+  /**
+   * @return Returns the factStoreLocation.
+   */
+  public String getStorePath() {
+    return storePath;
   }
 
   /**

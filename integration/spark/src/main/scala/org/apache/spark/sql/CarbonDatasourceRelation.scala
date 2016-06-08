@@ -136,7 +136,7 @@ private[sql] case class CarbonDatasourceRelation(
   def sqlContext: SQLContext = context
 
   override val sizeInBytes: Long = {
-    val tablePath = carbonRelation.cubeMeta.dataPath + CarbonCommonConstants.FILE_SEPARATOR +
+    val tablePath = carbonRelation.cubeMeta.storePath + CarbonCommonConstants.FILE_SEPARATOR +
                     carbonRelation.cubeMeta.carbonTableIdentifier.getDatabaseName +
                     CarbonCommonConstants.FILE_SEPARATOR +
                     carbonRelation.cubeMeta.carbonTableIdentifier.getTableName

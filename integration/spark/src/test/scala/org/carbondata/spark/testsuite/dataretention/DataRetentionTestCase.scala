@@ -139,6 +139,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       ),
       Seq(Row("ind", 9))
     )
+    sql("clean files for table DataRetentionTable")
   }
 
   test("RetentionTest4_DeleteByInvalidLoadId") {

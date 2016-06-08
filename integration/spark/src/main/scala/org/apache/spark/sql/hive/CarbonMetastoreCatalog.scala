@@ -58,7 +58,7 @@ case class CarbonMetaData(dims: Seq[String],
   carbonTable: CarbonTable,
   dictionaryMap: DictionaryMap)
 
-case class TableMeta(carbonTableIdentifier: CarbonTableIdentifier, dataPath: String,
+case class TableMeta(carbonTableIdentifier: CarbonTableIdentifier, storePath: String,
     var carbonTable: CarbonTable, partitioner: Partitioner)
 
 object CarbonMetastoreCatalog {
@@ -286,7 +286,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
 
                   val schemaConverter = new ThriftWrapperSchemaConverterImpl
                   val wrapperTableInfo = schemaConverter
-                    .fromExternalToWrapperTableInfo(tableInfo, dbName, tableName)
+                    .fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, basePath)
                   val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName)
                   val schemaFilePath = CarbonStorePath
                     .getCarbonTablePath(storePath, carbonTableIdentifier).getSchemaFilePath
@@ -350,6 +350,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     val schemaFilePath = carbonTablePath.getSchemaFilePath
     val schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath)
     tableInfo.setMetaDataFilepath(schemaMetadataPath)
+    tableInfo.setStorePath(storePath)
     CarbonMetadata.getInstance().loadTableMetadata(tableInfo)
 
     val cubeMeta = TableMeta(
@@ -391,13 +392,13 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   }
 
   def updateMetadataByThriftTable(schemaFilePath: String,
-      tableInfo: TableInfo, dbName: String, tableName: String): Unit = {
+      tableInfo: TableInfo, dbName: String, tableName: String, storePath: String): Unit = {
 
     tableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
       .setTime_stamp(System.currentTimeMillis())
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     val wrapperTableInfo = schemaConverter
-      .fromExternalToWrapperTableInfo(tableInfo, dbName, tableName)
+      .fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, storePath)
     wrapperTableInfo
       .setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath))
     updateMetadataByWrapperTable(wrapperTableInfo)

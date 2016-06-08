@@ -92,7 +92,7 @@ public class RowResultMerger {
     this.segprop = segProp;
     this.tempStoreLocation = tempStoreLocation;
 
-    this.factStoreLocation = loadModel.getFactStoreLocation();
+    this.factStoreLocation = loadModel.getStorePath();
 
     if (!new File(tempStoreLocation).mkdirs()) {
       LOGGER.error("Error while new File(tempStoreLocation).mkdirs() ");

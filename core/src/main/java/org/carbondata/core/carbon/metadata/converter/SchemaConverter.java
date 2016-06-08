@@ -101,5 +101,5 @@ public interface SchemaConverter {
    * @return
    */
   TableInfo fromExternalToWrapperTableInfo(org.carbondata.format.TableInfo externalTableInfo,
-      String dbName, String tableName);
+      String dbName, String tableName, String storePath);
 }

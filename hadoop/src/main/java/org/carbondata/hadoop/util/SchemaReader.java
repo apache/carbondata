@@ -20,7 +20,7 @@ import org.apache.thrift.TBase;
 public class SchemaReader {
 
   public CarbonTable readCarbonTableFromStore(CarbonTablePath carbonTablePath,
-      CarbonTableIdentifier tableIdentifier) throws IOException {
+      CarbonTableIdentifier tableIdentifier, String storePath) throws IOException {
     String schemaFilePath = carbonTablePath.getSchemaFilePath();
     if (FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.HDFS)) {
       String tableName = tableIdentifier.getTableName();
@@ -39,7 +39,8 @@ public class SchemaReader {
 
       SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
       TableInfo wrapperTableInfo = schemaConverter
-          .fromExternalToWrapperTableInfo(tableInfo, tableIdentifier.getDatabaseName(), tableName);
+          .fromExternalToWrapperTableInfo(tableInfo, tableIdentifier.getDatabaseName(), tableName,
+              storePath);
       wrapperTableInfo.setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath));
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
       return CarbonMetadata.getInstance().getCarbonTable(tableIdentifier.getTableUniqueName());

@@ -76,6 +76,11 @@ public class CarbonTable implements Serializable {
   private String metaDataFilepath;
 
   /**
+   * Store path
+   */
+  private String storePath;
+
+  /**
    * last updated time
    */
   private long tableLastUpdatedTime;
@@ -95,6 +100,7 @@ public class CarbonTable implements Serializable {
     this.tableUniqueName = tableInfo.getTableUniqueName();
     this.factTableName = tableInfo.getFactTable().getTableName();
     this.metaDataFilepath = tableInfo.getMetaDataFilepath();
+    this.storePath = tableInfo.getStorePath();
     fillDimensionsAndMeasuresForTables(tableInfo.getFactTable());
     List<TableSchema> aggregateTableList = tableInfo.getAggregateTableList();
     for (TableSchema aggTable : aggregateTableList) {
@@ -210,6 +216,10 @@ public class CarbonTable implements Serializable {
    */
   public String getMetaDataFilepath() {
     return metaDataFilepath;
+  }
+
+  public String getStorePath() {
+    return storePath;
   }
 
   /**
