@@ -311,10 +311,23 @@ class CarbonSqlParser()
 
         ShowCreateCubeCommand(tableModel(exists.isDefined,
           schemaName.getOrElse("default"), schemaName, cubeName,
-          dimCols.map(f => normalizeType(f)).map(f => addParent(f)),
+          reorderDimensions(dimCols.map(f => normalizeType(f)).map(f => addParent(f))),
           msrCols.map(f => normalizeType(f)), fromKeyword, withKeyword, source,
           factFieldsList, dimRelations, simpleDimRelations, None, aggregation, partitioner, null))
     }
+
+  private def reorderDimensions(dims: Seq[Field]): Seq[Field] = {
+    var complexDimensions: Seq[Field] = Seq()
+    var dimensions: Seq[Field] = Seq()
+    dims.foreach { dimension =>
+      dimension.dataType.getOrElse("NIL") match {
+        case "Array" => complexDimensions = complexDimensions:+dimension
+        case "Struct" => complexDimensions = complexDimensions:+dimension
+        case _ => dimensions = dimensions:+dimension
+      }
+    }
+    dimensions ++ complexDimensions
+  }
 
   /**
    * For handling the create table DDl systax compatible to Hive syntax
@@ -482,7 +495,7 @@ class CarbonSqlParser()
 
     tableModel(ifNotExistPresent,
       dbName.getOrElse("default"), dbName, tableName,
-      dims.map(f => normalizeType(f)).map(f => addParent(f)),
+      reorderDimensions(dims.map(f => normalizeType(f)).map(f => addParent(f))),
       msrs.map(f => normalizeType(f)), "", null, "",
       None, Seq(), null, Option(noDictionaryDims), null, partitioner, groupCols)
   }
@@ -794,7 +807,7 @@ class CarbonSqlParser()
 
         CreateCube(tableModel(exists.isDefined,
           schemaName.getOrElse("default"), schemaName, cubeName,
-          dimCols.map(f => normalizeType(f)).map(f => addParent(f)),
+          reorderDimensions(dimCols.map(f => normalizeType(f)).map(f => addParent(f))),
           msrCols.map(f => normalizeType(f)), "", withKeyword, "",
           None, Seq(), simpleDimRelations, highCard, aggregation, partitioner, null))
     }

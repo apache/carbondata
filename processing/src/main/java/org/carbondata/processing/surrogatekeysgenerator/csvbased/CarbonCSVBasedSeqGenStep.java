@@ -246,9 +246,16 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
   private boolean[] isNoDictionaryColumn;
 
   /**
+   * to check whether column is complex type column or not
+   */
+  private boolean[] isComplexTypeColumn;
+
+  /**
    * to store index of no dictionapry column
    */
-  private Map<String,Integer> noDictionaryIndexMap;
+  private int[] noDictionaryAndComplexIndexMapping;
+
+  private GenericDataType[] complexTypes;
 
   /**
    * Constructor
@@ -418,17 +425,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           }
         }
         columnSchemaDetailsWrapper = meta.getColumnSchemaDetailsWrapper();
-      }
-      isNoDictionaryColumn = new boolean[metaColumnNames.length];
-      noDictionaryIndexMap = new HashMap<String, Integer>();
-      for (int i = 0; i < meta.noDictionaryCols.length; i++) {
-        for (int j = 0; j < metaColumnNames.length; j++) {
-          if (meta.noDictionaryCols[i].equalsIgnoreCase(
-              meta.getTableName() + CarbonCommonConstants.UNDERSCORE + metaColumnNames[j])) {
-            isNoDictionaryColumn[j] = true;
-            noDictionaryIndexMap.put(metaColumnNames[j], i);
-            break;
-          }
+        if (null != getInputRowMeta()) {
+          generateNoDictionaryAndComplexIndexMapping();
         }
       }
       // no more input to be expected...
@@ -474,6 +472,33 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     }
 
     return false;
+  }
+
+  private void generateNoDictionaryAndComplexIndexMapping() {
+    isNoDictionaryColumn = new boolean[metaColumnNames.length];
+    isComplexTypeColumn = new boolean[metaColumnNames.length];
+    noDictionaryAndComplexIndexMapping = new int[metaColumnNames.length];
+    complexTypes = new GenericDataType[meta.getComplexTypeColumns().length];
+    for (int i = 0; i < meta.noDictionaryCols.length; i++) {
+      for (int j = 0; j < metaColumnNames.length; j++) {
+        if (meta.noDictionaryCols[i].equalsIgnoreCase(
+            meta.getTableName() + CarbonCommonConstants.UNDERSCORE + metaColumnNames[j])) {
+          isNoDictionaryColumn[j] = true;
+          noDictionaryAndComplexIndexMapping[j] = i;
+          break;
+        }
+      }
+    }
+    for (int i = 0; i < meta.getComplexTypeColumns().length; i++) {
+      for (int j = 0; j < metaColumnNames.length; j++) {
+        if (meta.getComplexTypeColumns()[i].equalsIgnoreCase(metaColumnNames[j])) {
+          isComplexTypeColumn[j] = true;
+          complexTypes[i] = meta.complexTypes.get(meta.getComplexTypeColumns()[i]);
+          noDictionaryAndComplexIndexMapping[j] = i + meta.noDictionaryCols.length;
+          break;
+        }
+      }
+    }
   }
 
   private void startReadingProcess(int numberOfNodes) throws KettleException, InterruptedException {
@@ -889,7 +914,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     int l = 0;
     int msrCount = 0;
     boolean isNull = false;
-    int complexIndex = meta.noDictionaryCols.length;
     for (int j = 0; j < inputColumnsSize; j++) {
       String columnName = metaColumnNames[j];
       String foreignKeyColumnName = foreignKeyMappingColumns[j];
@@ -897,7 +921,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       // TODO check if it is ignore dictionary dimension or not . if yes directly write byte buffer
 
       if (isNoDictionaryColumn[j]) {
-        processnoDictionaryDim(noDictionaryIndexMap.get(columnName),
+        processnoDictionaryDim(noDictionaryAndComplexIndexMapping[j],
             (String) r[j], byteBufferArr);
         continue;
       }
@@ -1038,108 +1062,105 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
       }
       //If it refers to single hierarchy
-      else {
-        String complexDataTypeName =
-            foreignKeyColumnName.substring(meta.getTableName().length() + 1);
-        GenericDataType complexType = meta.getComplexTypes().get(complexDataTypeName);
-        if (complexType != null) {
-          try {
-            ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
-            DataOutputStream dataOutputStream = new DataOutputStream(byteArray);
-            complexType.parseStringAndWriteByteArray(meta.getTableName(), (String) r[j],
-                new String[] { meta.getComplexDelimiterLevel1(), meta.getComplexDelimiterLevel2() },
-                0, dataOutputStream, surrogateKeyGen);
-            byteBufferArr[complexIndex++] = ByteBuffer.wrap(byteArray.toByteArray());
-            if (null != byteArray) {
-              byteArray.close();
-            }
-          } catch (IOException e1) {
-            throw new KettleException(
-                "Parsing complex string and generating surrogates/ByteArray failed. ", e1);
+      else if(isComplexTypeColumn[j]) {
+        try {
+          GenericDataType complexType =
+              complexTypes[noDictionaryAndComplexIndexMapping[j] - meta.noDictionaryCols.length];
+          ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
+          DataOutputStream dataOutputStream = new DataOutputStream(byteArray);
+          complexType.parseStringAndWriteByteArray(meta.getTableName(), (String) r[j],
+              new String[] { meta.getComplexDelimiterLevel1(), meta.getComplexDelimiterLevel2() },
+              0, dataOutputStream, surrogateKeyGen);
+          byteBufferArr[noDictionaryAndComplexIndexMapping[j]] =
+              ByteBuffer.wrap(byteArray.toByteArray());
+          if (null != byteArray) {
+            byteArray.close();
           }
-          i++;
-        } else {
-          Dictionary dicCache = dictionaryCaches.get(foreignKeyColumnName);
+        } catch (IOException e1) {
+          throw new KettleException(
+              "Parsing complex string and generating surrogates/ByteArray failed. ", e1);
+        }
+        i++;
+      } else {
+        Dictionary dicCache = dictionaryCaches.get(foreignKeyColumnName);
 
-          String actualHierName = null;
-          if (!isPresentInSchema) {
-            actualHierName = meta.hierNames[l++];
+        String actualHierName = null;
+        if (!isPresentInSchema) {
+          actualHierName = meta.hierNames[l++];
 
-          }
+        }
 
-          Int2ObjectMap<int[]> cache = surrogateKeyGen.getHierCache().get(actualHierName);
-          int[] surrogateKeyForHrrchy = null;
-          if (null != cache) {
-            Integer keyFromCsv = dicCache.getSurrogateKey(((String) r[j]));
+        Int2ObjectMap<int[]> cache = surrogateKeyGen.getHierCache().get(actualHierName);
+        int[] surrogateKeyForHrrchy = null;
+        if (null != cache) {
+          Integer keyFromCsv = dicCache.getSurrogateKey(((String) r[j]));
 
-            if (null != keyFromCsv) {
-              surrogateKeyForHrrchy = cache.get(keyFromCsv);
-            } else {
-              addMemberNotExistEntry(r, inputColumnsSize, j, columnName);
-              return null;
-            }
-            // If cardinality exceeded for some levels then for that hierarchy will not be their
-            // so while joining with fact table if we are getting this scenerio we will log it
-            // in bad records
-            if (null == surrogateKeyForHrrchy) {
-              addEntryToBadRecords(r, inputColumnsSize, j, columnName);
-              return null;
-
-            }
+          if (null != keyFromCsv) {
+            surrogateKeyForHrrchy = cache.get(keyFromCsv);
           } else {
-            int[] propIndex = propMap.get(foreignKeyColumnName);
-            Object[] properties;
-            if (null == propIndex) {
-              properties = new Object[0];
-            } else {
-              properties = new Object[propIndex.length];
-              for (int ind = 0; ind < propIndex.length; ind++) {
-                properties[ind] = r[propIndex[ind]];
-              }
-            }
-            surrogateKeyForHrrchy = new int[1];
-            if (isGenerated && !isNull) {
-              surrogateKeyForHrrchy[0] = generatedSurrogate;
-              isGenerated = false;
-              generatedSurrogate = -1;
-            } else {
-              int m = j;
-              if (isPresentInSchema) {
-                m = presentColumnMapIndex[j];
-              }
-              ColumnSchemaDetails details = columnSchemaDetailsWrapper.get(dimensionColumnIds[m]);
-              if (details.isDirectDictionary()) {
-                DirectDictionaryGenerator directDictionaryGenerator1 =
-                    DirectDictionaryKeyGeneratorFactory
-                        .getDirectDictionaryGenerator(details.getColumnType());
-                surrogateKeyForHrrchy[0] =
-                    directDictionaryGenerator1.generateDirectSurrogateKey(((String) r[j]));
-                surrogateKeyGen.max[m] = Integer.MAX_VALUE;
+            addMemberNotExistEntry(r, inputColumnsSize, j, columnName);
+            return null;
+          }
+          // If cardinality exceeded for some levels then for that hierarchy will not be their
+          // so while joining with fact table if we are getting this scenerio we will log it
+          // in bad records
+          if (null == surrogateKeyForHrrchy) {
+            addEntryToBadRecords(r, inputColumnsSize, j, columnName);
+            return null;
 
-              } else {
-                surrogateKeyForHrrchy[0] =
-                    surrogateKeyGen.generateSurrogateKeys(((String) r[j]), foreignKeyColumnName);
-              }
-            }
-            if (surrogateKeyForHrrchy[0] == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
-              addEntryToBadRecords(r, inputColumnsSize, j, columnName);
-              return null;
+          }
+        } else {
+          int[] propIndex = propMap.get(foreignKeyColumnName);
+          Object[] properties;
+          if (null == propIndex) {
+            properties = new Object[0];
+          } else {
+            properties = new Object[propIndex.length];
+            for (int ind = 0; ind < propIndex.length; ind++) {
+              properties[ind] = r[propIndex[ind]];
             }
           }
-          for (int k = 0; k < surrogateKeyForHrrchy.length; k++) {
-            if (dimPresentCsvOrder[i]) {
-              if (duplicateColMapping[j] != null) {
-                for (int m = 0; m < duplicateColMapping[j].length; m++) {
-                  out[duplicateColMapping[j][m]] = Integer.valueOf(surrogateKeyForHrrchy[k]);
-                }
-              } else {
-                out[memberMapping[i]] = Integer.valueOf(surrogateKeyForHrrchy[k]);
-              }
+          surrogateKeyForHrrchy = new int[1];
+          if (isGenerated && !isNull) {
+            surrogateKeyForHrrchy[0] = generatedSurrogate;
+            isGenerated = false;
+            generatedSurrogate = -1;
+          } else {
+            int m = j;
+            if (isPresentInSchema) {
+              m = presentColumnMapIndex[j];
             }
+            ColumnSchemaDetails details = columnSchemaDetailsWrapper.get(dimensionColumnIds[m]);
+            if (details.isDirectDictionary()) {
+              DirectDictionaryGenerator directDictionaryGenerator1 =
+                  DirectDictionaryKeyGeneratorFactory
+                      .getDirectDictionaryGenerator(details.getColumnType());
+              surrogateKeyForHrrchy[0] =
+                  directDictionaryGenerator1.generateDirectSurrogateKey(((String) r[j]));
+              surrogateKeyGen.max[m] = Integer.MAX_VALUE;
 
-            i++;
+            } else {
+              surrogateKeyForHrrchy[0] =
+                  surrogateKeyGen.generateSurrogateKeys(((String) r[j]), foreignKeyColumnName);
+            }
+          }
+          if (surrogateKeyForHrrchy[0] == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
+            addEntryToBadRecords(r, inputColumnsSize, j, columnName);
+            return null;
+          }
+        }
+        for (int k = 0; k < surrogateKeyForHrrchy.length; k++) {
+          if (dimPresentCsvOrder[i]) {
+            if (duplicateColMapping[j] != null) {
+              for (int m = 0; m < duplicateColMapping[j].length; m++) {
+                out[duplicateColMapping[j][m]] = Integer.valueOf(surrogateKeyForHrrchy[k]);
+              }
+            } else {
+              out[memberMapping[i]] = Integer.valueOf(surrogateKeyForHrrchy[k]);
+            }
           }
 
+          i++;
         }
       }
     }
@@ -1702,9 +1723,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
     try {
       closeConnections();
-      boolean isCacheEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED,
-              CarbonCommonConstants.CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE));
       if (null != surKeyGen) {
         surKeyGen.setHierCache(null);
         surKeyGen.setHierCacheReverse(null);

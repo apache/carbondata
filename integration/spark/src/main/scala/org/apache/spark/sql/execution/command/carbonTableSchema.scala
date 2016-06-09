@@ -599,24 +599,6 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
 
     }
 
-    var newOrderedDims = scala.collection.mutable.ListBuffer[Dimension]()
-    val highCardDims = scala.collection.mutable.ListBuffer[Dimension]()
-    val complexDims = scala.collection.mutable.ListBuffer[Dimension]()
-    for (dimension <- dimensions) {
-      if (highCardinalityDims.contains(dimension.name)) {
-        highCardDims += dimension
-      } else if (dimension.hierarchies.head.levels.length > 1) {
-        complexDims += dimension
-      } else {
-        newOrderedDims += dimension
-      }
-
-    }
-
-    newOrderedDims = newOrderedDims ++ highCardDims ++ complexDims
-
-    dimensions = newOrderedDims
-
     if (measures.length <= 0) {
       measures = measures ++ Seq(Measure(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
         CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE, CarbonCommonConstants.NUMERIC,
