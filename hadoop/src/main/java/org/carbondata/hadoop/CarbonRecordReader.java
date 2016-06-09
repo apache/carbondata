@@ -3,9 +3,12 @@ package org.carbondata.hadoop;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.carbondata.query.carbon.executor.QueryExecutorFactory;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
@@ -71,6 +74,13 @@ public class CarbonRecordReader<T> extends RecordReader<Void, T> {
   }
 
   @Override public void close() throws IOException {
+    // clear dictionary cache
+    Map<String, Dictionary> columnToDictionaryMapping = queryModel.getColumnToDictionaryMapping();
+    if (null != columnToDictionaryMapping) {
+      for (Map.Entry<String, Dictionary> entry : columnToDictionaryMapping.entrySet()) {
+        CarbonUtil.clearDictionaryCache(entry.getValue());
+      }
+    }
     // close read support
     readSupport.close();
   }

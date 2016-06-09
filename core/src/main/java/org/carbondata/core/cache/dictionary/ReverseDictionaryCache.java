@@ -22,7 +22,6 @@ package org.carbondata.core.cache.dictionary;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -82,6 +81,8 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
   @Override public List<Dictionary> getAll(
       List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers)
       throws CarbonUtilException {
+    boolean exceptionOccurredInDictionaryLoading = false;
+    String exceptionMessage = "";
     List<Dictionary> reverseDictionaryObjectList =
         new ArrayList<Dictionary>(dictionaryColumnUniqueIdentifiers.size());
     List<Future<Dictionary>> taskSubmitList =
@@ -103,14 +104,17 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
     }
     for (int i = 0; i < taskSubmitList.size(); i++) {
       try {
-        reverseDictionaryObjectList.add(taskSubmitList.get(i).get());
-      } catch (InterruptedException e) {
-        LOGGER.error(e.getMessage());
-        throw new CarbonUtilException(e.getMessage());
-      } catch (ExecutionException e) {
-        LOGGER.error(e.getMessage());
-        throw new CarbonUtilException(e.getMessage());
+        Dictionary columnDictionary = taskSubmitList.get(i).get();
+        reverseDictionaryObjectList.add(columnDictionary);
+      } catch (Throwable e) {
+        exceptionOccurredInDictionaryLoading = true;
+        exceptionMessage = e.getMessage();
       }
+    }
+    if (exceptionOccurredInDictionaryLoading) {
+      clearDictionary(reverseDictionaryObjectList);
+      LOGGER.error(exceptionMessage);
+      throw new CarbonUtilException(exceptionMessage);
     }
     return reverseDictionaryObjectList;
   }

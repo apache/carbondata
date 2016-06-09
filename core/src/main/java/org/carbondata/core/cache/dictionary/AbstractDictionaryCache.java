@@ -20,9 +20,8 @@
 package org.carbondata.core.cache.dictionary;
 
 import java.io.IOException;
+import java.util.List;
 
-import org.carbondata.common.logging.LogService;
-import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.cache.Cache;
 import org.carbondata.core.cache.CacheType;
 import org.carbondata.core.cache.CarbonLRUCache;
@@ -44,11 +43,6 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
     V extends Dictionary>
     implements Cache<DictionaryColumnUniqueIdentifier, Dictionary> {
 
-  /**
-   * Attribute for Carbon LOGGER
-   */
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(AbstractDictionaryCache.class.getName());
   /**
    * thread pool size to be used for dictionary data reading
    */
@@ -276,5 +270,17 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
    */
   protected void incrementDictionaryAccessCount(DictionaryInfo dictionaryInfo) {
     dictionaryInfo.incrementAccessCount();
+  }
+
+  /**
+   * This method will update the dictionary acceess count which is required for its removal
+   * from column LRU cache
+   *
+   * @param dictionaryList
+   */
+  protected void clearDictionary(List<Dictionary> dictionaryList) {
+    for (Dictionary dictionary : dictionaryList) {
+      dictionary.clear();
+    }
   }
 }

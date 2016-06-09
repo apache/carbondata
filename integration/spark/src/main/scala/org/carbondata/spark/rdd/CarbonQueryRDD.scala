@@ -141,7 +141,6 @@ class CarbonQueryRDD[K, V](
     val iter = new Iterator[(K, V)] {
       var rowIterator: CarbonIterator[_] = _
       var queryStartTime: Long = 0
-      var queryFailed = false
       try {
         val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
         if (!carbonSparkPartition.tableBlockInfos.isEmpty) {
@@ -164,8 +163,8 @@ class CarbonQueryRDD[K, V](
         // TODO
         // : CarbonQueryUtil.isQuickFilter quick filter from dictionary needs to support
       } catch {
-        case e: Exception =>
-          queryFailed = true
+        case e: Throwable =>
+          clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
           LOGGER.error(e)
           // updateCubeAndLevelCacheStatus(levelCacheKeys)
           if (null != e.getMessage) {
@@ -173,14 +172,11 @@ class CarbonQueryRDD[K, V](
           } else {
             sys.error("Exception occurred in query execution.Please check logs.")
           }
-      } finally {
-        if (queryFailed) {
-          clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
-        }
       }
 
       var havePair = false
       var finished = false
+      var recordCount = 0
 
       override def hasNext: Boolean = {
         if (!finished && !havePair) {
@@ -201,6 +197,10 @@ class CarbonQueryRDD[K, V](
         val row = rowIterator.next()
         val key = row.asInstanceOf[RowResult].getKey()
         val value = row.asInstanceOf[RowResult].getValue()
+        recordCount += 1
+        if (queryModel.getLimit != -1 && recordCount >= queryModel.getLimit) {
+          clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
+        }
         keyClass.getKey(key, value)
       }
 

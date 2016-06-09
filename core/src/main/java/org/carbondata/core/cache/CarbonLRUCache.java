@@ -146,7 +146,6 @@ public final class CarbonLRUCache {
   public void remove(String key) {
     synchronized (lruCacheMap) {
       removeKey(key);
-      LOGGER.info("Removed level entry from InMemory level lru cache :: " + key);
     }
   }
 
@@ -161,6 +160,7 @@ public final class CarbonLRUCache {
       currentSize = currentSize - cacheable.getMemorySize();
     }
     lruCacheMap.remove(key);
+    LOGGER.info("Removed level entry from InMemory level lru cache :: " + key);
   }
 
   /**

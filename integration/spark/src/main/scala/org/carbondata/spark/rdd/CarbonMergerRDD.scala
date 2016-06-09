@@ -104,7 +104,8 @@ class CarbonMergerRDD[K, V](
       try {
         result2 = exec.processTableBlocks()
       } catch {
-        case e: Exception =>
+        case e: Throwable =>
+          exec.clearDictionaryFromQueryModel
           LOGGER.error(e)
           if (null != e.getMessage) {
             sys.error("Exception occurred in query execution :: " + e.getMessage)
@@ -145,6 +146,9 @@ class CarbonMergerRDD[K, V](
         if (!finished && !havePair) {
           finished = true
           havePair = !finished
+        }
+        if(finished) {
+          exec.clearDictionaryFromQueryModel
         }
         !finished
       }
