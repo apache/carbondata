@@ -39,6 +39,7 @@ import org.carbondata.core.carbon.metadata.datatype.DataType
 import org.carbondata.core.carbon.metadata.encoder.Encoding
 import org.carbondata.core.carbon.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
 import org.carbondata.core.carbon.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
@@ -1870,9 +1871,16 @@ private[sql] case class DescribeCommandFormatted(
       .lookupRelation2(tblIdentifier, None)(sqlContext).asInstanceOf[CarbonRelation]
     var results: Seq[(String, String, String)] = child.schema.fields.map { field =>
       val comment = if (relation.metaData.dims.contains(field.name)) {
-        "DIMENSION"
+        val dimension = relation.metaData.carbonTable.getDimensionByName(
+            relation.cubeMeta.carbonTableIdentifier.getTableName,
+            field.name)
+        if (dimension.hasEncoding(Encoding.DICTIONARY)) {
+          "DICTIONARY, KEY COLUMN"
+        } else {
+          "KEY COLUMN"
+        }
       } else {
-        "MEASURE"
+        ""
       }
       (field.name, field.dataType.simpleString, comment)
     }
@@ -1882,6 +1890,8 @@ private[sql] case class DescribeCommandFormatted(
     )
     results ++= Seq(("Table Name : ", relation.cubeMeta.carbonTableIdentifier.getTableName, ""))
     results ++= Seq(("CARBON Store Path : ", relation.cubeMeta.storePath, ""))
+    results ++= getColumnGroups(relation.metaData.carbonTable.getDimensionByTableName(
+        relation.cubeMeta.carbonTableIdentifier.getTableName).asScala.toList)
     results ++= Seq(("", "", ""), ("#Aggregate Tables", "", ""))
     val carbonTable = relation.cubeMeta.carbonTable
     val aggTables = carbonTable.getAggregateTablesName
@@ -1903,6 +1913,23 @@ private[sql] case class DescribeCommandFormatted(
     results.map { case (name, dataType, comment) =>
       Row(name, dataType, comment)
     }
+  }
+
+  private def getColumnGroups(dimensions: List[CarbonDimension]): Seq[(String, String, String)] = {
+    var results: Seq[(String, String, String)] =
+        Seq(("", "", ""), ("##Column Group Information", "", ""))
+    val groupedDimensions = dimensions.groupBy(x => x.columnGroupId()).filter {
+      case (groupId, _) => groupId != -1
+    }.toSeq.sortBy(_._1)
+    val groups = groupedDimensions.map(colGroups => {
+      colGroups._2.map(dim => dim.getColName).mkString(", ")
+    })
+    var index = 1
+    groups.map { x =>
+      results = results:+(s"Column Group $index", x, "")
+      index = index + 1
+    }
+    results
   }
 }
 
