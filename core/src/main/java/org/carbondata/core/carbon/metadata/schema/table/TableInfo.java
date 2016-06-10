@@ -215,7 +215,7 @@ public class TableInfo implements Serializable {
     if (obj == null) {
       return false;
     }
-    if (obj instanceof TableInfo) {
+    if (!(obj instanceof TableInfo)) {
       return false;
     }
     TableInfo other = (TableInfo) obj;
