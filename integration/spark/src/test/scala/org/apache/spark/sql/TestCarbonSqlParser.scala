@@ -10,9 +10,14 @@ private class TestCarbonSqlParserStub extends CarbonSqlParser {
 
   //val parser:CarbonSqlDDLParser = new CarbonSqlDDLParser()
 
-  def updateColumnGroupsInFieldTest(tableProperties: Map[String, String]): Seq[String] = {
+  def updateColumnGroupsInFieldTest(fields: Seq[Field], tableProperties: Map[String, String]): Seq[String] = {
 
-    updateColumnGroupsInField(tableProperties)
+     var (dims: Seq[Field], noDictionaryDims: Seq[String]) = extractDimColsAndNoDictionaryFields(
+      fields, tableProperties)
+    val msrs: Seq[Field] = extractMsrColsFromFields(fields, tableProperties)
+
+    updateColumnGroupsInField(tableProperties,
+        noDictionaryDims, msrs, dims)
   }
 
   def extractDimColsAndNoDictionaryFieldsTest(fields: Seq[Field], tableProperties: Map[String, String]): (Seq[Field],
@@ -45,31 +50,114 @@ class TestCarbonSqlParser extends QueryTest {
     var col2 = Field("col2", Option("String"), Option("col2"), None, null, Some("columnar"))
     var col3 = Field("col3", Option("String"), Option("col3"), None, null, Some("columnar"))
     var col4 = Field("col4", Option("Int"), Option("col4"), None, null, Some("columnar"))
+    var col5 = Field("col5", Option("String"), Option("col5"), None, null, Some("columnar"))
+    var col6 = Field("col6", Option("String"), Option("col6"), None, null, Some("columnar"))
+    var col7 = Field("col7", Option("String"), Option("col7"), None, null, Some("columnar"))
+    var col8 = Field("col8", Option("String"), Option("col8"), None, null, Some("columnar"))
 
     fields :+= col1
     fields :+= col2
     fields :+= col3
     fields :+= col4
+    fields :+= col5
+    fields :+= col6
+    fields :+= col7
+    fields :+= col8
     fields
   }
 
   // Testing the column group Splitting method.
   test("Test-updateColumnGroupsInField") {
-    val colGroupStr = "(aaa,bbb,ccc),(ddd,eee),(fff),(ggg)"
+    val colGroupStr = "(col2,col3),(col5,col6),(col7,col8)"
     val tableProperties = Map("COLUMN_GROUPS" -> colGroupStr)
+    var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
-    val colgrps = stub.updateColumnGroupsInFieldTest(tableProperties)
-    assert(colgrps.lift(0).get.equalsIgnoreCase("aaa,bbb,ccc"))
-    assert(colgrps.lift(1).get.equalsIgnoreCase("ddd,eee"))
-    assert(colgrps.lift(2).get.equalsIgnoreCase("fff"))
-    assert(colgrps.lift(3).get.equalsIgnoreCase("ggg"))
+    val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
+    assert(colgrps.lift(0).get.equalsIgnoreCase("col2,col3"))
+    assert(colgrps.lift(1).get.equalsIgnoreCase("col5,col6"))
+    assert(colgrps.lift(2).get.equalsIgnoreCase("col7,col8"))
 
+  }
+  test("Test-ColumnGroupsInvalidField_Shouldnotallow") {
+    val colGroupStr = "(col1,col2),(col10,col6),(col7,col8)"
+    val tableProperties = Map("COLUMN_GROUPS" -> colGroupStr)
+    var fields: Seq[Field] = loadAllFields
+    val stub = new TestCarbonSqlParserStub()
+    try {
+      val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
+      assert(false)
+    } catch {
+      case e: Exception => assert(true)
+    }
+  }
+  test("Test-MeasureInColumnGroup_ShouldNotAllow") {
+    //col1 is measure
+    val colGroupStr = "(col1,col2),(col5,col6),(col7,col8)"
+    val tableProperties = Map("COLUMN_GROUPS" -> colGroupStr)
+    var fields: Seq[Field] = loadAllFields
+    val stub = new TestCarbonSqlParserStub()
+    try {
+      val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
+      assert(false)
+    } catch {
+      case e: Exception => assert(true)
+    }
+  }
+  test("Test-NoDictionaryInColumnGroup_ShouldNotAllow") {
+    //col5 is no dictionary
+    val colGroupStr = "(col2,col3),(col5,col6),(col7,col8)"
+    val noDictStr = "col5"
+    val tableProperties = Map("COLUMN_GROUPS" -> colGroupStr, "DICTIONARY_EXCLUDE" -> noDictStr)
+    var fields: Seq[Field] = loadAllFields
+    val stub = new TestCarbonSqlParserStub()
+    try {
+      val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
+      assert(false)
+    } catch {
+      case e: Exception => assert(true)
+    }
+  }
+  test("Test-SameColumnInDifferentGroup_ShouldNotAllow") {
+    val colGroupStr = "(col2,col3),(col5,col6),(col6,col7,col8)"
+    val tableProperties = Map("COLUMN_GROUPS" -> colGroupStr)
+    var fields: Seq[Field] = loadAllFields
+    val stub = new TestCarbonSqlParserStub()
+    try {
+      val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
+      assert(false)
+    } catch {
+      case e: Exception => assert(true)
+    }
+  }
+  
+   test("Test-ColumnAreNotTogetherAsInSchema_ShouldNotAllow") {
+    val colGroupStr = "(col2,col3),(col5,col8)"
+    val tableProperties = Map("COLUMN_GROUPS" -> colGroupStr)
+    var fields: Seq[Field] = loadAllFields
+    val stub = new TestCarbonSqlParserStub()
+    try {
+      val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
+      assert(false)
+    } catch {
+      case e: Exception => assert(true)
+    }
+  }
+  test("Test-ColumnInColumnGroupAreShuffledButInSequence") {
+    val colGroupStr = "(col2,col3),(col7,col8,col6)"
+    val tableProperties = Map("COLUMN_GROUPS" -> colGroupStr)
+    var fields: Seq[Field] = loadAllFields
+    val stub = new TestCarbonSqlParserStub()
+    
+    val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
+    assert(colgrps.lift(0).get.equalsIgnoreCase("col2,col3"))
+    assert(colgrps.lift(1).get.equalsIgnoreCase("col6,col7,col8"))
   }
   // Testing the column group Splitting method with empty table properties so null will be returned.
   test("Test-Empty-updateColumnGroupsInField") {
     val tableProperties = Map("" -> "")
+    var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
-    val colgrps = stub.updateColumnGroupsInFieldTest(Map())
+    val colgrps = stub.updateColumnGroupsInFieldTest(fields, Map())
     //assert( rtn === 1)
     assert(null == colgrps)
   }
@@ -85,7 +173,7 @@ class TestCarbonSqlParser extends QueryTest {
     // testing col
 
     //All dimension fields should be available in dimensions list
-    assert(dimCols.size == 3)
+    assert(dimCols.size == 7)
     assert(dimCols.lift(0).get.column.equalsIgnoreCase("col2"))
     assert(dimCols.lift(1).get.column.equalsIgnoreCase("col3"))
     assert(dimCols.lift(2).get.column.equalsIgnoreCase("col4"))
@@ -104,7 +192,7 @@ class TestCarbonSqlParser extends QueryTest {
     var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
 
     //below fields should be available in dimensions list
-    assert(dimCols.size == 3)
+    assert(dimCols.size == 7)
     assert(dimCols.lift(0).get.column.equalsIgnoreCase("col1"))
     assert(dimCols.lift(1).get.column.equalsIgnoreCase("col2"))
     assert(dimCols.lift(2).get.column.equalsIgnoreCase("col3"))
@@ -127,7 +215,7 @@ class TestCarbonSqlParser extends QueryTest {
     var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
 
     //below dimension fields should be available in dimensions list
-    assert(dimCols.size == 3)
+    assert(dimCols.size == 7)
     assert(dimCols.lift(0).get.column.equalsIgnoreCase("col1"))
     assert(dimCols.lift(1).get.column.equalsIgnoreCase("col2"))
     assert(dimCols.lift(2).get.column.equalsIgnoreCase("col3"))
@@ -149,7 +237,7 @@ class TestCarbonSqlParser extends QueryTest {
     var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
 
     //below dimension fields should be available in dimensions list
-    assert(dimCols.size == 4)
+    assert(dimCols.size == 8)
     assert(dimCols.lift(0).get.column.equalsIgnoreCase("col1"))
     assert(dimCols.lift(1).get.column.equalsIgnoreCase("col2"))
     assert(dimCols.lift(2).get.column.equalsIgnoreCase("col3"))
@@ -172,7 +260,7 @@ class TestCarbonSqlParser extends QueryTest {
     var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
 
     //below dimension fields should be available in dimensions list
-    assert(dimCols.size == 2)
+    assert(dimCols.size == 6)
     assert(dimCols.lift(0).get.column.equalsIgnoreCase("col2"))
     assert(dimCols.lift(1).get.column.equalsIgnoreCase("col3"))
 
@@ -195,7 +283,7 @@ class TestCarbonSqlParser extends QueryTest {
     var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
 
     //below dimension fields should be available in dimensions list
-    assert(dimCols.size == 3)
+    assert(dimCols.size == 7)
     assert(dimCols.lift(0).get.column.equalsIgnoreCase("col2"))
     assert(dimCols.lift(1).get.column.equalsIgnoreCase("col3"))
     assert(dimCols.lift(2).get.column.equalsIgnoreCase("col4"))
@@ -218,7 +306,7 @@ class TestCarbonSqlParser extends QueryTest {
     var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
 
     //below dimension fields should be available in dimensions list
-    assert(dimCols.size == 3)
+    assert(dimCols.size == 7)
     assert(dimCols.lift(0).get.column.equalsIgnoreCase("col1"))
     assert(dimCols.lift(1).get.column.equalsIgnoreCase("col2"))
     assert(dimCols.lift(2).get.column.equalsIgnoreCase("col3"))
@@ -243,7 +331,7 @@ class TestCarbonSqlParser extends QueryTest {
     var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
 
     //below dimension fields should be available in dimensions list
-    assert(dimCols.size == 4)
+    assert(dimCols.size == 8)
     assert(dimCols.lift(0).get.column.equalsIgnoreCase("col1"))
     assert(dimCols.lift(1).get.column.equalsIgnoreCase("col2"))
     assert(dimCols.lift(2).get.column.equalsIgnoreCase("col3"))
@@ -267,7 +355,7 @@ class TestCarbonSqlParser extends QueryTest {
     var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)
 
     //below dimension fields should be available in dimensions list
-    assert(dimCols.size == 3)
+    assert(dimCols.size == 7)
     assert(dimCols.lift(0).get.column.equalsIgnoreCase("col2"))
     assert(dimCols.lift(1).get.column.equalsIgnoreCase("col3"))
     assert(dimCols.lift(2).get.column.equalsIgnoreCase("col4"))

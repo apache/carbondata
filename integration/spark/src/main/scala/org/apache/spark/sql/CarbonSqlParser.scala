@@ -35,6 +35,7 @@ import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
 
 import org.carbondata.spark.exception.MalformedCarbonCommandException
+import org.carbondata.spark.util.CommonUtil
 
 
 
@@ -483,13 +484,13 @@ class CarbonSqlParser()
                                   tableProperties: Map[String, String]): tableModel
   = {
 
-    // get column groups configuration from table properties.
-    val groupCols: Seq[String] = updateColumnGroupsInField(tableProperties)
-
     var (dims: Seq[Field], noDictionaryDims: Seq[String]) = extractDimColsAndNoDictionaryFields(
       fields, tableProperties)
     val msrs: Seq[Field] = extractMsrColsFromFields(fields, tableProperties)
 
+    // get column groups configuration from table properties.
+    val groupCols: Seq[String] = updateColumnGroupsInField(tableProperties,
+        noDictionaryDims, msrs, dims)
 
     val partitioner: Option[Partitioner] = getPartitionerObject(partitionCols, tableProperties)
 
@@ -507,7 +508,10 @@ class CarbonSqlParser()
    * @param tableProperties
    * @return
    */
-  protected def updateColumnGroupsInField(tableProperties: Map[String, String]): Seq[String] = {
+  protected def updateColumnGroupsInField(tableProperties: Map[String, String],
+      noDictionaryDims: Seq[String],
+      msrs: Seq[Field],
+      dims: Seq[Field]): Seq[String] = {
     if (None != tableProperties.get("COLUMN_GROUPS")) {
 
       var splittedColGrps: Seq[String] = Seq[String]()
@@ -519,8 +523,9 @@ class CarbonSqlParser()
       val m: Matcher = Pattern.compile("\\(([^)]+)\\)").matcher(nonSplitCols)
       while (m.find()) {
         val oneGroup: String = m.group(1)
-
-        splittedColGrps :+= oneGroup
+        CommonUtil.validateColumnGroup(oneGroup, noDictionaryDims, msrs, splittedColGrps, dims)
+        val arrangedColGrp = rearrangedColumnGroup(oneGroup, dims)
+        splittedColGrps :+= arrangedColGrp
       }
       // This will  be furthur handled.
       splittedColGrps
@@ -529,6 +534,42 @@ class CarbonSqlParser()
       null
     }
   }
+
+  def rearrangedColumnGroup(colGroup: String, dims: Seq[Field]): String = {
+    // if columns in column group is not in schema order than arrange it in schema order
+    var colGrpFieldIndx: Seq[Int] = Seq[Int]()
+    colGroup.split(',').map(_.trim).foreach { x =>
+      dims.zipWithIndex.foreach { dim =>
+        if (dim._1.column.equalsIgnoreCase(x)) {
+          colGrpFieldIndx :+= dim._2
+        }
+      }
+    }
+    // sort it
+    colGrpFieldIndx = colGrpFieldIndx.sorted
+    // check if columns in column group is in schema order
+    if (!checkIfInSequence(colGrpFieldIndx)) {
+      throw new MalformedCarbonCommandException("Invalid column group:" + colGroup)
+    }
+    def checkIfInSequence(colGrpFieldIndx: Seq[Int]): Boolean = {
+      for (i <- 0 until (colGrpFieldIndx.length - 1)) {
+        if ((colGrpFieldIndx(i + 1) - colGrpFieldIndx(i)) != 1) {
+          throw new MalformedCarbonCommandException(
+            "Invalid column group,column in group should be contiguous as per schema.")
+        }
+      }
+      true
+    }
+    val colGrpNames: StringBuilder = StringBuilder.newBuilder
+    for (i <- 0 until colGrpFieldIndx.length) {
+      colGrpNames.append(dims(colGrpFieldIndx(i)).column)
+      if (i < (colGrpFieldIndx.length - 1)) {
+        colGrpNames.append(",")
+      }
+    }
+    colGrpNames.toString()
+  }
+
 
   /**
    * For getting the partitioner Object
