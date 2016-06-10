@@ -133,7 +133,7 @@ case class DataLoadTableFileMapping(table: String, loadPath: String)
 case class CarbonMergerMapping(storeLocation: String, hdfsStoreLocation: String,
   partitioner: Partitioner, metadataFilePath: String, mergedLoadName: String,
   kettleHomePath: String, cubeCreationTime: Long, schemaName: String,
-  factTableName: String, validSegments: Array[String])
+  factTableName: String, validSegments: Array[String], tableId: String)
 
 object TableNewProcessor {
   def apply(cm: tableModel, sqlContext: SQLContext): TableInfo = {
@@ -352,7 +352,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     val schemaEvol = new SchemaEvolution()
     schemaEvol
       .setSchemaEvolutionEntryList(new util.ArrayList[SchemaEvolutionEntry]())
-    tableSchema.setTableId(1)
+    tableSchema.setTableId(UUID.randomUUID().toString)
     tableSchema.setTableName(cm.cubeName)
     tableSchema.setListOfColumns(allColumns.asJava)
     tableSchema.setSchemaEvalution(schemaEvol)
@@ -1240,8 +1240,7 @@ private[sql] case class DeleteLoadsById(
     val path = carbonTable.getMetaDataFilepath
 
     var segmentStatusManager =
-      new SegmentStatusManager(new AbsoluteTableIdentifier(
-        carbonTable.getStorePath, new CarbonTableIdentifier(schemaName, tableName)))
+      new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
 
     val invalidLoadIds = segmentStatusManager.updateDeletionStatus(loadids.asJava, path).asScala
 
@@ -1305,8 +1304,7 @@ private[sql] case class DeleteLoadsByLoadDate(
 
     var carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
       .getCarbonTable(schemaName + '_' + tableName)
-    var segmentStatusManager = new SegmentStatusManager(new AbsoluteTableIdentifier(
-        carbonTable.getStorePath, new CarbonTableIdentifier(schemaName, tableName)))
+    var segmentStatusManager = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
 
     if (null == carbonTable) {
       var relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
@@ -1800,16 +1798,15 @@ private[sql] case class ShowLoads(
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
-    val tableIdentifier = new CarbonTableIdentifier(schemaName, tableName)
+    val tableUniqueName = schemaName + "_" + tableName
     val carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-      .getCarbonTable(tableIdentifier.getTableUniqueName)
+      .getCarbonTable(tableUniqueName)
     if (carbonTable == null) {
       sys.error(s"$schemaName.$tableName is not found")
     }
     val path = carbonTable.getMetaDataFilepath()
 
-    var segmentStatusManager = new SegmentStatusManager(new AbsoluteTableIdentifier(
-      carbonTable.getStorePath, new CarbonTableIdentifier(schemaName, tableName)))
+    var segmentStatusManager = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
 
     val loadMetadataDetailsArray = segmentStatusManager.readLoadMetadata(path)
 

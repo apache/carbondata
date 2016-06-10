@@ -53,7 +53,7 @@ private[sql] case class CarbonDatasourceHadoopRelation(sqlContext: SQLContext,
     val options = new CarbonOption(parameters)
     val job: Job = new Job(new JobConf())
     FileInputFormat.setInputPaths(job, paths.head)
-    val identifier = new CarbonTableIdentifier(options.dbName, options.tableName)
+    val identifier = new CarbonTableIdentifier(options.dbName, options.tableName, options.tableId)
     CarbonInputFormat.setTableToAccess(job.getConfiguration, identifier)
     val table = CarbonInputFormat.getCarbonTable(job.getConfiguration)
     if(table == null) {

@@ -37,7 +37,6 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
@@ -133,7 +132,7 @@ public final class DeleteLoadFolders {
     String segmentId = oneLoad.getLoadName();
 
     path = new CarbonStorePath(storeLocation).getCarbonTablePath(
-        new CarbonTableIdentifier(loadModel.getDatabaseName(), loadModel.getTableName()))
+        loadModel.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier())
         .getCarbonDataDirectoryPath("" + partitionId, segmentId);
     return path;
   }

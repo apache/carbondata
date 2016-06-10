@@ -32,7 +32,7 @@ import org.apache.spark.sql.hive.CarbonMetastoreCatalog
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.carbondata.core.carbon.{AbsoluteTableIdentifier}
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.hadoop.CarbonInputFormat
@@ -486,8 +486,7 @@ case class CarbonTableScan(
     }
 
     val conf = new Configuration()
-    val absoluteTableIdentifier = new AbsoluteTableIdentifier(carbonCatalog.storePath,
-      new CarbonTableIdentifier(carbonTable.getDatabaseName, carbonTable.getFactTableName))
+    val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
     val model = QueryModel.createModel(
       absoluteTableIdentifier, buildCarbonPlan, carbonTable)
@@ -522,9 +521,7 @@ case class CarbonTableScan(
     }
     // count(*) query executed in driver by querying from Btree
     if (isCountQuery) {
-      val absoluteTableIdentifier = new AbsoluteTableIdentifier(carbonCatalog.storePath,
-        new CarbonTableIdentifier(carbonTable.getDatabaseName, carbonTable.getFactTableName)
-      )
+      val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       val (carbonInputFormat: CarbonInputFormat[RowResult], job: Job) =
         QueryPlanUtil.createCarbonInputFormat(absoluteTableIdentifier)
       // get row count

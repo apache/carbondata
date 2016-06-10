@@ -20,11 +20,11 @@
 package org.carbondata.core.path;
 
 import java.io.IOException;
+import java.util.UUID;
 
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
-
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertTrue;
@@ -40,7 +40,7 @@ public class CarbonFormatDirectoryStructureTest {
    * test table path methods
    */
   @Test public void testTablePathStructure() throws IOException {
-    CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("d1", "t1");
+    CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("d1", "t1", UUID.randomUUID().toString());
     CarbonStorePath carbonStorePath = new CarbonStorePath(CARBON_STORE);
     CarbonTablePath carbonTablePath = carbonStorePath.getCarbonTablePath(tableIdentifier);
     assertTrue(carbonTablePath.getPath().equals(CARBON_STORE + "/d1/t1"));

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import mockit.Mock;
 import mockit.MockUp;
@@ -51,7 +52,7 @@ public class ReverseDictionaryCacheTest extends AbstractDictionaryCacheTest {
     this.databaseName = props.getProperty("database", "testSchema");
     this.tableName = props.getProperty("tableName", "carbon");
     this.carbonStorePath = props.getProperty("storePath", "carbonStore");
-    carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName);
+    carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());
     columnIdentifiers = new String[] { "name", "place" };
     deleteStorePath();
     prepareDataSet();

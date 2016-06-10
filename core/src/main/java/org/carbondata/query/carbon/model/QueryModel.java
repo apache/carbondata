@@ -26,7 +26,6 @@ import java.util.Map;
 
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
@@ -185,9 +184,7 @@ public class QueryModel implements Serializable {
 
   private static void fillQueryModel(CarbonQueryPlan queryPlan, CarbonTable carbonTable,
       QueryModel queryModel, String factTableName) {
-    AbsoluteTableIdentifier currentTemp = queryModel.getAbsoluteTableIdentifier();
-    queryModel.setAbsoluteTableIdentifier(new AbsoluteTableIdentifier(currentTemp.getStorePath(),
-        new CarbonTableIdentifier(queryPlan.getSchemaName(), factTableName)));
+    queryModel.setAbsoluteTableIdentifier(carbonTable.getAbsoluteTableIdentifier());
     queryModel.setQueryDimension(queryPlan.getDimensions());
     fillSortInfoInModel(queryModel, queryPlan.getSortedDimemsions());
     queryModel.setQueryMeasures(

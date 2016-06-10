@@ -114,7 +114,7 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
   
   private def checkDictFile(table: CarbonTable) = {
     val tableIdentifier = new CarbonTableIdentifier(table.getDatabaseName,
-        table.getFactTableName)
+        table.getFactTableName, "1")
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(CarbonHiveContext.hdfsCarbonBasePath,
         tableIdentifier)
     val newHc1 = table.getDimensionByName("highcard", "hc1")

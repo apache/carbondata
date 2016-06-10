@@ -21,6 +21,7 @@ package org.carbondata.hadoop.ft;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.hadoop.CarbonInputFormat;
@@ -31,6 +32,7 @@ import org.carbondata.query.expression.LiteralExpression;
 import org.carbondata.query.expression.conditional.EqualToExpression;
 
 import junit.framework.TestCase;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
@@ -51,7 +53,7 @@ public class CarbonInputFormat_FT extends TestCase {
     CarbonInputFormat carbonInputFormat = new CarbonInputFormat();
     JobConf jobConf = new JobConf(new Configuration());
     Job job = new Job(jobConf);
-    CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("db", "table1");
+    CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("db", "table1", UUID.randomUUID().toString());
     FileInputFormat.addInputPath(job, new Path("/opt/carbonstore/"));
     carbonInputFormat.setTableToAccess(job.getConfiguration(), tableIdentifier);
     job.getConfiguration().set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, "1,2");
@@ -65,7 +67,7 @@ public class CarbonInputFormat_FT extends TestCase {
     CarbonInputFormat carbonInputFormat = new CarbonInputFormat();
     JobConf jobConf = new JobConf(new Configuration());
     Job job = new Job(jobConf);
-    CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("db", "table1");
+    CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("db", "table1", UUID.randomUUID().toString());
     FileInputFormat.addInputPath(job, new Path("/opt/carbonstore/"));
     carbonInputFormat.setTableToAccess(job.getConfiguration(), tableIdentifier);
     job.getConfiguration().set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, "1,2");

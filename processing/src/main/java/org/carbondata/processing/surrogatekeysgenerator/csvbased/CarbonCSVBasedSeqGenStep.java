@@ -45,7 +45,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
 import org.carbondata.core.cache.dictionary.Dictionary;
-import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
@@ -682,10 +681,10 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     String tempLocationKey = meta.getSchemaName() + '_' + meta.getCubeName();
     String baseStorePath = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    CarbonTableIdentifier carbonTableIdentifier =
-        new CarbonTableIdentifier(meta.getSchemaName(), meta.getCubeName());
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+        meta.getSchemaName() + CarbonCommonConstants.UNDERSCORE + meta.getTableName());
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
+        CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTable.getCarbonTableIdentifier());
     String partitionId = meta.getPartitionID();
     String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionId,
         meta.getSegmentId()+"");

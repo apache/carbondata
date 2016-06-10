@@ -128,12 +128,12 @@ public class TableInfo implements Serializable {
     return null;
   }
 
-  public TableSchema getTableSchemaByTableId(int tableId) {
-    if (factTable.getTableId() == tableId) {
+  public TableSchema getTableSchemaByTableId(String tableId) {
+    if (factTable.getTableId().equals(tableId)) {
       return factTable;
     }
     for (TableSchema aggregatTableSchema : aggregateTableList) {
-      if (aggregatTableSchema.getTableId() == tableId) {
+      if (aggregatTableSchema.getTableId().equals(tableId)) {
         return aggregatTableSchema;
       }
     }

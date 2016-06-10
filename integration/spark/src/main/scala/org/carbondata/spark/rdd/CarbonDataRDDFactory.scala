@@ -127,10 +127,7 @@ object CarbonDataRDDFactory extends Logging {
     if (-1 == currentRestructNumber) {
       currentRestructNumber = 0
     }
-    var segmentStatusManager = new SegmentStatusManager(
-      new AbsoluteTableIdentifier(
-        cube.getStorePath,
-        new CarbonTableIdentifier(schemaName, tableName)))
+    var segmentStatusManager = new SegmentStatusManager(cube.getAbsoluteTableIdentifier)
     val loadMetadataDetailsArray = segmentStatusManager.readLoadMetadata(cube.getMetaDataFilepath())
       .toList
     val resultMap = new CarbonDeleteLoadByDateRDD(
@@ -329,14 +326,12 @@ object CarbonDataRDDFactory extends Logging {
             cubeCreationTime,
             schemaName,
             factTableName,
-            validSegments
+            validSegments,
+            carbonTable.getCarbonTableIdentifier.getTableId
           )
           carbonLoadModel.setStorePath(carbonMergerMapping.hdfsStoreLocation)
-          val segmentStatusManager = new SegmentStatusManager(new AbsoluteTableIdentifier
-          (CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION),
-            new CarbonTableIdentifier(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
-          )
-          )
+          val segmentStatusManager = new SegmentStatusManager(carbonTable
+            .getAbsoluteTableIdentifier)
           carbonLoadModel.setLoadMetadataDetails(segmentStatusManager
             .readLoadMetadata(carbonTable.getMetaDataFilepath()).toList.asJava
           )
@@ -633,12 +628,11 @@ object CarbonDataRDDFactory extends Logging {
 
   }
 
-   def readLoadMetadataDetails(model: CarbonLoadModel, hdfsStoreLocation: String): Unit = {
+  def readLoadMetadataDetails(model: CarbonLoadModel, hdfsStoreLocation: String): Unit = {
     val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetaDataFilepath
-    var segmentStatusManager = new SegmentStatusManager(
-      new AbsoluteTableIdentifier(
-        model.getStorePath,
-        new CarbonTableIdentifier(model.getDatabaseName, model.getTableName)))
+    var segmentStatusManager = new SegmentStatusManager(model.getCarbonDataLoadSchema.getCarbonTable
+      .
+        getAbsoluteTableIdentifier)
     val details = segmentStatusManager.readLoadMetadata(metadataPath)
     model.setLoadMetadataDetails(details.toList.asJava)
   }
@@ -652,12 +646,7 @@ object CarbonDataRDDFactory extends Logging {
     if (LoadMetadataUtil.isLoadDeletionRequired(carbonLoadModel)) {
       val loadMetadataFilePath = CarbonLoaderUtil
         .extractLoadMetadataFileLocation(carbonLoadModel)
-      val segmentStatusManager = new SegmentStatusManager(
-        new AbsoluteTableIdentifier(
-          cube.getStorePath,
-          new CarbonTableIdentifier(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
-        )
-      )
+      val segmentStatusManager = new SegmentStatusManager(cube.getAbsoluteTableIdentifier)
       val details = segmentStatusManager
         .readLoadMetadata(loadMetadataFilePath)
 

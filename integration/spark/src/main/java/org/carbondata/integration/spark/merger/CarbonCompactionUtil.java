@@ -28,7 +28,9 @@ import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.datastore.block.TaskBlockInfo;
 import org.carbondata.core.carbon.datastore.exception.IndexBuilderException;
+import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -148,8 +150,8 @@ public class CarbonCompactionUtil {
     String tempLocationKey = schemaName + '_' + cubeName;
     String baseStorePath = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    CarbonTableIdentifier carbonTableIdentifier =
-        new CarbonTableIdentifier(schemaName, cubeName);
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(tempLocationKey);
+    CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
     String partitionId = partitionID;

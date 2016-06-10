@@ -20,6 +20,7 @@ package org.apache.spark.sql.hive
 import java.io._
 import java.net.{InetAddress, InterfaceAddress, NetworkInterface}
 import java.util.GregorianCalendar
+import java.util.UUID
 
 import scala.Array.canBuildFrom
 import scala.collection.JavaConverters._
@@ -265,8 +266,10 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
 
             cubeFolders.foreach(cubeFolder => {
               if (cubeFolder.isDirectory) {
+                val carbonTableIdentifier = new CarbonTableIdentifier(schemaFolder.getName,
+                    cubeFolder.getName, UUID.randomUUID().toString)
                 val carbonTablePath = CarbonStorePath.getCarbonTablePath(basePath,
-                  new CarbonTableIdentifier(schemaFolder.getName, cubeFolder.getName))
+                  carbonTableIdentifier)
                 val cubeMetadataFile = carbonTablePath.getSchemaFilePath
 
                 if (FileFactory.isFileExist(cubeMetadataFile, fileType)) {
@@ -287,17 +290,18 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
                   val schemaConverter = new ThriftWrapperSchemaConverterImpl
                   val wrapperTableInfo = schemaConverter
                     .fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, basePath)
-                  val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName)
                   val schemaFilePath = CarbonStorePath
                     .getCarbonTablePath(storePath, carbonTableIdentifier).getSchemaFilePath
+                  wrapperTableInfo.setStorePath(storePath)
                   wrapperTableInfo
                     .setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath))
                   CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
+                  val carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
+                      .getCarbonTable(cubeUniqueName);
                   metaDataBuffer += TableMeta(
-                    carbonTableIdentifier,
+                    carbonTable.getCarbonTableIdentifier,
                     storePath,
-                    org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-                      .getCarbonTable(cubeUniqueName),
+                    carbonTable,
                     // TODO: Need to update Database thirft to hold partitioner
                     // information and reload when required.
                     Partitioner("org.carbondata.spark.partition.api.impl." +
@@ -345,7 +349,8 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     thriftTableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history
       .add(schemaEvolutionEntry)
 
-    val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName)
+    val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName,
+        tableInfo.getFactTable().getTableId())
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier)
     val schemaFilePath = carbonTablePath.getSchemaFilePath
     val schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath)
@@ -401,6 +406,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
       .fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, storePath)
     wrapperTableInfo
       .setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath))
+    wrapperTableInfo.setStorePath(storePath)
     updateMetadataByWrapperTable(wrapperTableInfo)
   }
 

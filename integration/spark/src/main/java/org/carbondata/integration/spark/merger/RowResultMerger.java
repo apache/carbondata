@@ -32,6 +32,8 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.carbondata.core.carbon.metadata.CarbonMetadata;
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
@@ -266,7 +268,9 @@ public class RowResultMerger {
   private String checkAndCreateCarbonStoreLocation(String factStoreLocation, String schemaName,
       String tableName, String partitionId, String segmentId) {
     String carbonStorePath = factStoreLocation;
-    CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier(schemaName, tableName);
+    CarbonTable carbonTable = CarbonMetadata.getInstance()
+        .getCarbonTable(schemaName + CarbonCommonConstants.UNDERSCORE + tableName);
+    CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
     String carbonDataDirectoryPath =

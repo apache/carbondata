@@ -37,7 +37,7 @@ object GenerateDictionaryExample {
     val cc = InitForExamples.createCarbonContext("GenerateDictionaryExample")
     val factFilePath = InitForExamples.currentPath + "/src/main/resources/factSample.csv"
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(InitForExamples.storeLocation,
-      new CarbonTableIdentifier("default", "dictSample"))
+      new CarbonTableIdentifier("default", "dictSample", "1"))
     val dictFolderPath = carbonTablePath.getMetadataDirectoryPath
 
     // execute sql statement
@@ -53,7 +53,7 @@ object GenerateDictionaryExample {
            """)
 
     // check generated dictionary
-    val tableIdentifier = new CarbonTableIdentifier("default", "dictSample")
+    val tableIdentifier = new CarbonTableIdentifier("default", "dictSample", "1")
     printDictionary(cc, tableIdentifier, dictFolderPath)
   }
 

@@ -130,8 +130,7 @@ case class CarbonDictionaryDecoder(
       val storePath = sqlContext.catalog.asInstanceOf[CarbonMetastoreCatalog].storePath
       val absoluteTableIdentifiers = relations.map { relation =>
         val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
-        (carbonTable.getFactTableName, new AbsoluteTableIdentifier(storePath,
-          new CarbonTableIdentifier(carbonTable.getDatabaseName, carbonTable.getFactTableName)))
+        (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
       }.toMap
 
       if (isRequiredToDecode) {

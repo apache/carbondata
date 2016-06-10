@@ -27,8 +27,6 @@ import java.util.Set;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.cache.dictionary.Dictionary;
-import org.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.datastore.block.TaskBlockInfo;
@@ -190,8 +188,7 @@ public class CarbonCompactionExecutor {
 
     model.setQueryId(System.nanoTime() + "");
 
-    model.setAbsoluteTableIdentifier(new AbsoluteTableIdentifier(storePath,
-        new CarbonTableIdentifier(schemaName, factTableName)));
+    model.setAbsoluteTableIdentifier(carbonTable.getAbsoluteTableIdentifier());
 
     model.setAggTable(false);
     model.setLimit(-1);

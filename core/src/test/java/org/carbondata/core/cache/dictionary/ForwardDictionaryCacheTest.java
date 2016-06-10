@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.carbondata.core.cache.Cache;
 import org.carbondata.core.cache.CacheProvider;
@@ -34,7 +35,6 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriter;
 import org.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriterImpl;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,7 +53,7 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
     this.databaseName = props.getProperty("database", "testSchema");
     this.tableName = props.getProperty("tableName", "carbon");
     this.carbonStorePath = props.getProperty("storePath", "carbonStore");
-    carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName);
+    carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());
     columnIdentifiers = new String[] { "name", "place" };
     deleteStorePath();
     prepareDataSet();

@@ -35,6 +35,8 @@ import org.carbondata.core.cache.CacheType;
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.metadata.CarbonMetadata;
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -189,12 +191,12 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
 
   private String checkAndCreateLoadFolderNumber(String baseStorePath, String databaseName,
       String tableName) throws KettleException {
-    CarbonTableIdentifier carbonTableIdentifier =
-        new CarbonTableIdentifier(databaseName, tableName);
+    CarbonTable carbonTable = CarbonMetadata.getInstance()
+        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
+        CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTable.getCarbonTableIdentifier());
     String carbonDataDirectoryPath =
-        carbonTablePath.getCarbonDataDirectoryPath(this.partitionID, this.segmentId+"");
+        carbonTablePath.getCarbonDataDirectoryPath(this.partitionID, this.segmentId + "");
     carbonDataDirectoryPath = carbonDataDirectoryPath + File.separator + taskNo;
     carbonDataDirectoryPath =
         carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
@@ -224,8 +226,9 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
     String[] dimColumnIds = columnsInfo.getDimensionColumnIds();
     String databaseName = columnsInfo.getSchemaName();
     String tableName = columnsInfo.getTableName();
-    CarbonTableIdentifier carbonTableIdentifier =
-        new CarbonTableIdentifier(databaseName, tableName);
+    CarbonTable carbonTable = CarbonMetadata.getInstance()
+        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
+    CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache reverseDictionaryCache =
         cacheProvider.createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath);

@@ -99,7 +99,7 @@ public class StoreCreator {
       String dbName = "testdb";
       String tableName = "testtable";
       absoluteTableIdentifier =
-          new AbsoluteTableIdentifier(storePath, new CarbonTableIdentifier(dbName, tableName));
+          new AbsoluteTableIdentifier(storePath, new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
     } catch (IOException ex) {
 
     }
@@ -146,6 +146,7 @@ public class StoreCreator {
 
   private static CarbonTable createTable() throws IOException {
     TableInfo tableInfo = new TableInfo();
+    tableInfo.setStorePath(absoluteTableIdentifier.getStorePath());
     tableInfo.setDatabaseName(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName());
     TableSchema tableSchema = new TableSchema();
     tableSchema.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
@@ -226,7 +227,7 @@ public class StoreCreator {
     SchemaEvolution schemaEvol = new SchemaEvolution();
     schemaEvol.setSchemaEvolutionEntryList(new ArrayList<SchemaEvolutionEntry>());
     tableSchema.setSchemaEvalution(schemaEvol);
-    tableSchema.setTableId(1);
+    tableSchema.setTableId(UUID.randomUUID().toString());
     tableInfo.setTableUniqueName(
         absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName() + "_"
             + absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
@@ -393,7 +394,7 @@ public class StoreCreator {
     }
     if (folder.isDirectory()) {
       File[] files = folder.listFiles();
-      for (int i = 0; i < file.length(); i++) {
+      for (int i = 0; i < files.length; i++) {
         if (!files[i].isDirectory() && files[i].getName().startsWith("part")) {
           factFile = files[i];
           break;

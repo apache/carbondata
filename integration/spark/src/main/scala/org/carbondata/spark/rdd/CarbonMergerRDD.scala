@@ -60,6 +60,7 @@ class CarbonMergerRDD[K, V](
   val mergedLoadName = carbonMergerMapping.mergedLoadName
   val schemaName = carbonMergerMapping.schemaName
   val factTableName = carbonMergerMapping.factTableName
+  val tableId = carbonMergerMapping.tableId
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
@@ -173,7 +174,7 @@ class CarbonMergerRDD[K, V](
   override def getPartitions: Array[Partition] = {
     val startTime = System.currentTimeMillis()
     val absoluteTableIdentifier: AbsoluteTableIdentifier = new AbsoluteTableIdentifier(
-      hdfsStoreLocation, new CarbonTableIdentifier(schemaName, factTableName)
+      hdfsStoreLocation, new CarbonTableIdentifier(schemaName, factTableName, tableId)
     )
     val (carbonInputFormat: CarbonInputFormat[RowResult], job: Job) =
       QueryPlanUtil.createCarbonInputFormat(absoluteTableIdentifier)

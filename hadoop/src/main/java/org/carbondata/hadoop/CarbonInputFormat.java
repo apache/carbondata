@@ -96,10 +96,13 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   public static final String INPUT_SEGMENT_NUMBERS =
       "mapreduce.input.carboninputformat.segmentnumbers";
 
+  private static final String TABLE_ID = "mapreduce.input.carboninputformat.tableId";
+
   public static void setTableToAccess(Configuration configuration,
       CarbonTableIdentifier tableIdentifier) {
     configuration.set(CarbonInputFormat.DATABASE_NAME, tableIdentifier.getDatabaseName());
     configuration.set(CarbonInputFormat.TABLE_NAME, tableIdentifier.getTableName());
+    configuration.set(CarbonInputFormat.TABLE_ID, tableIdentifier.getTableId());
   }
 
   /**
@@ -125,8 +128,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   public static CarbonTableIdentifier getTableToAccess(Configuration configuration) {
     String databaseName = configuration.get(CarbonInputFormat.DATABASE_NAME);
     String tableName = configuration.get(CarbonInputFormat.TABLE_NAME);
+    String tableId = configuration.get(CarbonInputFormat.TABLE_ID);
     if (databaseName != null && tableName != null) {
-      return new CarbonTableIdentifier(databaseName, tableName);
+      return new CarbonTableIdentifier(databaseName, tableName, tableId);
     }
     //TODO: better raise exception
     return null;

@@ -148,9 +148,7 @@ public final class CarbonDataMergerUtil {
       String mergeLoadStartTime) {
 
     AbsoluteTableIdentifier absoluteTableIdentifier =
-        new AbsoluteTableIdentifier(carbonLoadModel.getStorePath(),
-            new CarbonTableIdentifier(carbonLoadModel.getDatabaseName(),
-                carbonLoadModel.getTableName()));
+        carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
 
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
 
@@ -363,8 +361,7 @@ public final class CarbonDataMergerUtil {
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     CarbonTableIdentifier tableIdentifier =
-        new CarbonTableIdentifier(carbonLoadModel.getDatabaseName(),
-            carbonLoadModel.getTableName());
+        carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier();
 
     // variable to store one  segment size across partition.
     long sizeOfOneSegmentAcrossPartition = 0;

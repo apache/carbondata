@@ -36,7 +36,6 @@ import java.util.concurrent.TimeUnit;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
@@ -530,9 +529,10 @@ public class SortDataRows {
     String tempLocationKey = schemaName + '_' + cubeName;
     String baseStorePath = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier(schemaName, cubeName);
+    CarbonTable carbonTable = CarbonMetadata.getInstance()
+        .getCarbonTable(schemaName + CarbonCommonConstants.UNDERSCORE + cubeName);
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
+        CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTable.getCarbonTableIdentifier());
     String carbonDataDirectoryPath =
         carbonTablePath.getCarbonDataDirectoryPath(partitionID, segmentId);
     this.tempFileLocation = carbonDataDirectoryPath + File.separator + taskNo

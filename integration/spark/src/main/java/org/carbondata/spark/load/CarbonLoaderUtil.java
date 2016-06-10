@@ -32,6 +32,7 @@ import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
+import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
@@ -405,7 +406,7 @@ public final class CarbonLoaderUtil {
     String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
     CarbonTableIdentifier carbonTableIdentifier =
-        new CarbonTableIdentifier(databaseName, tableName);
+        loadModel.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier();
     String segmentId = segmentName.substring(CarbonCommonConstants.LOAD_FOLDER.length());
     String tempLocationKey = databaseName + '_' + tableName;
     // form local store location
@@ -438,7 +439,7 @@ public final class CarbonLoaderUtil {
     String aggTableName = loadModel.getAggTableName();
     if (copyStore) {
       CarbonTableIdentifier carbonTableIdentifier =
-          new CarbonTableIdentifier(databaseName, tableName);
+          loadModel.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier();
       String segmentId = segmentName.substring(CarbonCommonConstants.LOAD_FOLDER.length());
       // form carbon store location
       String carbonStoreLocation = getStoreLocation(
@@ -733,7 +734,7 @@ public final class CarbonLoaderUtil {
       List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(schema.getCarbonTable().getStorePath(),
-            new CarbonTableIdentifier(schemaName, tableName));
+            schema.getCarbonTable().getCarbonTableIdentifier());
     String dataLoadLocation = carbonTablePath.getTableStatusFilePath();
 
     DataOutputStream dataOutputStream;
@@ -1218,7 +1219,9 @@ public final class CarbonLoaderUtil {
    */
   public static void checkAndCreateCarbonDataLocation(String carbonStorePath, String dbName,
       String tableName, int partitionCount, String segmentId) {
-    CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName);
+    CarbonTable carbonTable = CarbonMetadata.getInstance()
+        .getCarbonTable(dbName + CarbonCommonConstants.UNDERSCORE + tableName);
+    CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
     for (int i = 0; i < partitionCount; i++) {

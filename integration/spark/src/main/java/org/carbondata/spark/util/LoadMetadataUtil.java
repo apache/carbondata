@@ -30,8 +30,6 @@ package org.carbondata.spark.util;
 
 import java.io.File;
 
-import org.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
@@ -51,11 +49,8 @@ public final class LoadMetadataUtil {
         .getCarbonTable(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
 
     String metaDataLocation = cube.getMetaDataFilepath();
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(
-        new AbsoluteTableIdentifier(
-            loadModel.getStorePath(),
-            new CarbonTableIdentifier(loadModel.getDatabaseName(),
-                loadModel.getTableName())));
+    SegmentStatusManager segmentStatusManager =
+        new SegmentStatusManager(cube.getAbsoluteTableIdentifier());
     LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metaDataLocation);
     if (details != null && details.length != 0) {
       for (LoadMetadataDetails oneRow : details) {

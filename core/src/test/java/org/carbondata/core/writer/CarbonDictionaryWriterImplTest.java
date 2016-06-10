@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;
@@ -46,6 +47,7 @@ import org.carbondata.format.ColumnDictionaryChunkMeta;
 
 import mockit.Mock;
 import mockit.MockUp;
+
 import org.apache.thrift.TBase;
 import org.junit.After;
 import org.junit.Before;
@@ -95,7 +97,7 @@ public class CarbonDictionaryWriterImplTest {
     this.tableName = props.getProperty("tableName", "carbon");
     this.carbonStorePath = props.getProperty("storePath", "carbonStore");
     this.columnIdentifier = "Name";
-    carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName);
+    carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());
     deleteStorePath();
     prepareDataSet();
   }

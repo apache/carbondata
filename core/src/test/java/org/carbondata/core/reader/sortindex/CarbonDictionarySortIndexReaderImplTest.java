@@ -21,13 +21,13 @@ package org.carbondata.core.reader.sortindex;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriter;
 import org.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriterImpl;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -56,7 +56,8 @@ public class CarbonDictionarySortIndexReaderImplTest {
    */
   @Test public void read() throws Exception {
     deleteStorePath();
-    CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("testSchema", "carbon");
+    CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("testSchema", "carbon",
+    		UUID.randomUUID().toString());
     CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
         new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, "Name", hdfsStorePath);
     List<int[]> expectedData = prepareExpectedData();

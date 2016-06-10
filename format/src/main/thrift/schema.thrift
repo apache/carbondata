@@ -111,7 +111,7 @@ struct SchemaEvolution{
 * The description of table schema
 */
 struct TableSchema{
-	1: required i32 table_id;  // ID used to
+	1: required string table_id;  // ID used to
 	2: required list<ColumnSchema> table_columns; // Columns in the table
 	3: required SchemaEvolution schema_evolution; // History of schema evolution of this table
 }

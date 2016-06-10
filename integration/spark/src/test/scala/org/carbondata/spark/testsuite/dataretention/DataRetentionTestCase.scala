@@ -49,7 +49,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
   val storeLocation = new File(this.getClass.getResource("/").getPath + "/../test").getCanonicalPath
   val carbonTableIdentifier: CarbonTableIdentifier =
-    new CarbonTableIdentifier("default", "DataRetentionTable")
+    new CarbonTableIdentifier("default", "DataRetentionTable", "1")
   val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
       AbsoluteTableIdentifier(storeLocation, carbonTableIdentifier))
   val carbontablePath = CarbonStorePath.getCarbonTablePath(storeLocation, carbonTableIdentifier)

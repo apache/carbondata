@@ -39,7 +39,7 @@ public class TableSchema implements Serializable {
   /**
    * table id
    */
-  private int tableId;
+  private String tableId;
 
   /**
    * table Name
@@ -63,14 +63,14 @@ public class TableSchema implements Serializable {
   /**
    * @return the tableId
    */
-  public int getTableId() {
+  public String getTableId() {
     return tableId;
   }
 
   /**
    * @param tableId the tableId to set
    */
-  public void setTableId(int tableId) {
+  public void setTableId(String tableId) {
     this.tableId = tableId;
   }
 
@@ -146,20 +146,14 @@ public class TableSchema implements Serializable {
     return null;
   }
 
-  /**
-   * to generate the hascode for this class instance
-   */
   @Override public int hashCode() {
     final int prime = 31;
     int result = 1;
-    result = prime * result + tableId;
+    result = prime * result + ((tableId == null) ? 0 : tableId.hashCode());
     result = prime * result + ((tableName == null) ? 0 : tableName.hashCode());
     return result;
   }
 
-  /**
-   * equals method
-   */
   @Override public boolean equals(Object obj) {
     if (this == obj) {
       return true;
@@ -167,11 +161,15 @@ public class TableSchema implements Serializable {
     if (obj == null) {
       return false;
     }
-    if ((obj instanceof TableSchema)) {
+    if (getClass() != obj.getClass()) {
       return false;
     }
     TableSchema other = (TableSchema) obj;
-    if (tableId != other.tableId) {
+    if (tableId == null) {
+      if (other.tableId != null) {
+        return false;
+      }
+    } else if (!tableId.equals(other.tableId)) {
       return false;
     }
     if (tableName == null) {
