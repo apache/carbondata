@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.execution.command
 
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util
 import java.util.UUID
@@ -1751,6 +1752,13 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
             if (FileFactory.isFileExist(tmpTable .getMetaDataFilepath, fileType)) {
               val file = FileFactory.getCarbonFile(tmpTable .getMetaDataFilepath, fileType)
               CarbonUtil.deleteFoldersAndFiles(file.getParentFile)
+            }
+            // delete bad record log after drop cube
+            val badLogPath = CarbonUtil.getBadLogPath(schemaName +  File.separator + cubeName)
+            val badLogFileType = FileFactory.getFileType(badLogPath)
+            if (FileFactory.isFileExist(badLogPath, badLogFileType)) {
+              val file = FileFactory.getCarbonFile(badLogPath, badLogFileType)
+              CarbonUtil.deleteFoldersAndFiles(file)
             }
           } else {
             logError("Unable to unlock Table MetaData")

@@ -511,6 +511,14 @@ public final class CarbonUtil {
     }
   }
 
+  public static String getBadLogPath(String storeLocation) {
+    String badLogStoreLocation =
+            CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
+    badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
+
+    return badLogStoreLocation;
+  }
+
   public static void deleteFoldersAndFilesSilent(final CarbonFile... file)
       throws CarbonUtilException {
     try {
