@@ -56,6 +56,13 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
 
   }
   
+  test("select channelsId, Latest_DAY from Carbon_automation_test where count(channelsId) = 1") {
+    try {
+      sql("select channelsId, Latest_DAY from Carbon_automation_test where count(channelsId) = 1").collect
+    } catch {
+      case ce: UnsupportedOperationException => ce.getMessage
+    }
+  }
   
   //Test-24
   test("select channelsId, sum(channelsId+ 10)  Total from Carbon_automation_test group by  channelsId order by Total") {

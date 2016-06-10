@@ -433,6 +433,8 @@ case class CarbonTableScan(
       case Literal(name, dataType) => new
           CarbonLiteralExpression(name, CarbonScalaUtil.convertSparkToCarbonDataType(dataType))
       case Cast(left, right) if !left.isInstanceOf[Literal] => transformExpression(left)
+      case aggExpr: AggregateExpression =>
+          throw new UnsupportedOperationException(s"Cannot evaluate expression: $aggExpr")
       case _ =>
         new SparkUnknownExpression(expr.transform {
           case AttributeReference(name, dataType, _, _) =>
