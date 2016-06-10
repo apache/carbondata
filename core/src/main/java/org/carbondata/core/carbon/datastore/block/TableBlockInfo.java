@@ -122,7 +122,7 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
       return false;
     }
     TableBlockInfo other = (TableBlockInfo) obj;
-    if (segmentId != other.segmentId) {
+    if (!segmentId.equals(other.segmentId)) {
       return false;
     }
     if (blockOffset != other.blockOffset) {
