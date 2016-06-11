@@ -22,7 +22,6 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 
 /**
@@ -51,9 +50,7 @@ public class HdfsFileLock extends AbstractCarbonLock {
   public HdfsFileLock(String location, LockUsage lockUsage) {
     this.location = location;
     this.lockUsage = lockUsage;
-    if (this.lockUsage == LockUsage.METADATA_LOCK) {
-      this.location = location + File.separator + CarbonCommonConstants.METADATA_LOCK;
-    }
+    this.location = location + File.separator + this.lockUsage;
     initRetry();
   }
 

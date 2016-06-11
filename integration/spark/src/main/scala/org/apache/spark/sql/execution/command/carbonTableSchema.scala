@@ -46,6 +46,7 @@ import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.carbondata.integration.spark.merger.CompactionType
 import org.carbondata.lcm.status.SegmentStatusManager
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 import org.carbondata.spark.load._
@@ -135,6 +136,10 @@ case class CarbonMergerMapping(storeLocation: String, hdfsStoreLocation: String,
   partitioner: Partitioner, metadataFilePath: String, mergedLoadName: String,
   kettleHomePath: String, cubeCreationTime: Long, schemaName: String,
   factTableName: String, validSegments: Array[String], tableId: String)
+
+case class AlterTableModel(dbName: Option[String], tableName: String, compactionType: String)
+
+case class CompactionModel(compactionSize: Long, compactionType: CompactionType)
 
 object TableNewProcessor {
   def apply(cm: tableModel, sqlContext: SQLContext): TableInfo = {
@@ -1140,6 +1145,71 @@ private[sql] case class AlterTable(
   }
 }
 
+/**
+ * Command for the compaction in alter table command
+ * @param alterTableModel
+ */
+private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) extends
+  RunnableCommand {
+
+  def run(sqlContext: SQLContext): Seq[Row] = {
+    // TODO : Implement it.
+    var tableName = alterTableModel.tableName
+    val schemaName = getDB.getDatabaseName(alterTableModel.dbName, sqlContext)
+    if (null == org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
+      .getCarbonTable(schemaName + "_" + tableName)) {
+      logError("alter table failed. table not found: " + schemaName + "_" + tableName)
+      sys.error("alter table failed. table not found: " + schemaName + "_" + tableName)
+    }
+
+    val relation =
+      CarbonEnv.getInstance(sqlContext).carbonCatalog
+        .lookupRelation1(Option(schemaName), tableName, None)(sqlContext)
+        .asInstanceOf[CarbonRelation]
+    if (relation == null) {
+      sys.error(s"Table $schemaName.$tableName does not exist")
+    }
+    val carbonLoadModel = new CarbonLoadModel()
+
+
+    val table = relation.cubeMeta.carbonTable
+    carbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.toArray)
+    carbonLoadModel.setTableName(table.getFactTableName)
+    val dataLoadSchema = new CarbonDataLoadSchema(table)
+    // Need to fill dimension relation
+    carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
+    carbonLoadModel.setTableName(relation.cubeMeta.carbonTableIdentifier.getTableName)
+    carbonLoadModel.setDatabaseName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
+    carbonLoadModel.setStorePath(relation.cubeMeta.storePath)
+
+    val partitioner = relation.cubeMeta.partitioner
+
+    var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
+    if (null == kettleHomePath) {
+      kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home")
+    }
+    if (kettleHomePath == null) {
+      sys.error(s"carbon.kettle.home is not set")
+    }
+    var storeLocation = CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
+        System.getProperty("java.io.tmpdir")
+      )
+    storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
+
+    CarbonDataRDDFactory
+      .alterTableForCompaction(sqlContext,
+        alterTableModel,
+        carbonLoadModel,
+        partitioner,
+        relation.cubeMeta.storePath,
+        kettleHomePath,
+        storeLocation
+      )
+
+    Seq.empty
+  }
+}
 
 private[sql] case class CreateCube(cm: tableModel) extends RunnableCommand {
 
@@ -1823,7 +1893,9 @@ private[sql] case class ShowLoads(
       val parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP)
 
       var loadMetadataDetailsSortedArray = loadMetadataDetailsArray.sortWith(
-        (l1, l2) => Integer.parseInt(l1.getLoadName) > Integer.parseInt(l2.getLoadName))
+        (l1, l2) => java.lang.Double.parseDouble(l1.getLoadName) > java.lang.Double
+          .parseDouble(l2.getLoadName)
+      )
 
 
       if (limit.isDefined) {

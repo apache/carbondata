@@ -19,7 +19,6 @@ import org.scalatest.BeforeAndAfterAll
 class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "true")
     sql("drop table if exists  noDictionaryCompaction")
 
     sql(
@@ -44,11 +43,42 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
     sql("LOAD DATA fact from '" + csvFilePath2 + "' INTO CUBE noDictionaryCompaction  PARTITIONDATA" +
       "(DELIMITER ',', QUOTECHAR '\"')"
     )
-    // compaction will happen here.
     sql("LOAD DATA fact from '" + csvFilePath3 + "' INTO CUBE noDictionaryCompaction  PARTITIONDATA" +
       "(DELIMITER ',', QUOTECHAR '\"')"
     )
+    // compaction will happen here.
+    sql("alter table noDictionaryCompaction compact 'major'"
+    )
 
+    // wait for compaction to finish.
+    Thread.sleep(1000)
+  }
+
+  // check for 15 seconds if the compacted segments has come or not .
+  // if not created after 15 seconds then testcase will fail.
+
+  test("check if compaction is completed or not.") {
+    var status = true
+    var noOfRetries = 0
+    while (status && noOfRetries < 10) {
+
+      val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
+          AbsoluteTableIdentifier(
+            CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
+            new CarbonTableIdentifier("default", "noDictionaryCompaction", "1")
+          )
+      )
+      val segments = segmentStatusManager.getValidSegments().listOfValidSegments.asScala.toList
+
+      if (!segments.contains("0.1")) {
+        // wait for 2 seconds for compaction to complete.
+        Thread.sleep(2000)
+        noOfRetries += 1
+      }
+      else {
+        status = false
+      }
+    }
   }
 
 
@@ -87,7 +117,10 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
     )
     // merged segment should not be there
     val segments   = segmentStatusManager.getValidSegments.listOfValidSegments.asScala.toList
-      assert(!segments.contains("1"))
+    assert(!segments.contains("0"))
+    assert(!segments.contains("1"))
+    assert(!segments.contains("2"))
+    assert(segments.contains("0.1"))
 
     // now check the answers it should be same.
     checkAnswer(

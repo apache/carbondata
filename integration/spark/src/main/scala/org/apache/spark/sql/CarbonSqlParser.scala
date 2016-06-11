@@ -181,7 +181,7 @@ class CarbonSqlParser()
 
   override protected lazy val start: Parser[LogicalPlan] =
     createCube | showCreateCube | loadManagement | createAggregateTable | describeTable |
-      showCube | showLoads | alterCube | showAllCubes | createTable
+      showCube | showLoads | alterCube | showAllCubes | alterTable | createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] = loadData | dropCubeOrTable |
     deleteLoadsByID | deleteLoadsByLoadDate | deleteLoadsByDate | cleanFiles | loadDataNew
@@ -330,6 +330,21 @@ class CarbonSqlParser()
     dimensions ++ complexDimensions
   }
 
+  protected lazy val alterTable: Parser[LogicalPlan] =
+    ALTER ~> TABLE ~> restInput ^^ {
+      case statement =>
+        try {
+          // DDl will be parsed and we get the AST tree from the HiveQl
+          val node = HiveQlWrapper.getAst("alter table " + statement)
+          // processing the AST tree
+          nodeToPlanForAlterTable(node)
+        } catch {
+          // MalformedCarbonCommandException need to be throw directly, parser will catch it
+          case ce: MalformedCarbonCommandException =>
+            throw ce
+        }
+    }
+
   /**
    * For handling the create table DDl systax compatible to Hive syntax
    */
@@ -463,6 +478,45 @@ class CarbonSqlParser()
 
         // get logical plan.
         CreateCube(tableModel)
+
+    }
+  }
+
+  /**
+   * This function will traverse the tree and logical plan will be formed using that.
+   *
+   * @param node
+   * @return LogicalPlan
+   */
+  protected def nodeToPlanForAlterTable(node: Node): LogicalPlan = {
+    node match {
+      // if create table taken is found then only we will handle.
+      case Token("TOK_ALTERTABLE", children) =>
+
+        var dbName: Option[String] = None
+        var tableName: String = ""
+        var compactionType: String = ""
+
+        children.collect {
+
+          case t@Token("TOK_TABNAME", _) =>
+            val (db, tblName) = extractDbNameTableName(t)
+            dbName = db
+            tableName = tblName
+
+          case Token("TOK_ALTERTABLE_COMPACT", child :: Nil) =>
+            compactionType = BaseSemanticAnalyzer.unescapeSQLString(child.getText)
+
+          case _ => // Unsupport features
+        }
+
+        if (compactionType.equalsIgnoreCase("minor") || compactionType.equalsIgnoreCase("major")) {
+          val altertablemodel = AlterTableModel(dbName, tableName, compactionType)
+          AlterTableCompaction(altertablemodel)
+        }
+        else {
+          sys.error("Invalid compaction type, supported values are 'major' and 'minor'")
+        }
 
     }
   }

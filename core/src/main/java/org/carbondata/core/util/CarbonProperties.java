@@ -738,6 +738,14 @@ public final class CarbonProperties {
       numberOfSegmentsToBePreserved = Integer.parseInt(
           getProperty(CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS_NUMBER,
               CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER));
+      // checking min and max . 0  , 100 is min & max.
+      if (numberOfSegmentsToBePreserved < 0 || numberOfSegmentsToBePreserved > 100) {
+        LOGGER.error("The specified value for property "
+            + CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS_NUMBER + " is incorrect."
+            + " Correct value should be in range of 0 -100. Taking the default value.");
+        numberOfSegmentsToBePreserved =
+            Integer.parseInt(CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER);
+      }
     } catch (NumberFormatException e) {
       numberOfSegmentsToBePreserved =
           Integer.parseInt(CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER);

@@ -978,13 +978,13 @@ public final class CarbonCommonConstants {
    */
   public static final String TO_LOAD_MERGE_MAX_SIZE_DEFAULT = "1";
   /**
-   * ENABLE_LOAD_MERGE
+   * ENABLE_AUTO_LOAD_MERGE
    */
-  public static final String ENABLE_LOAD_MERGE = "carbon.enable.load.merge";
+  public static final String ENABLE_AUTO_LOAD_MERGE = "carbon.enable.auto.load.merge";
   /**
-   * DEFAULT_ENABLE_LOAD_MERGE
+   * DEFAULT_ENABLE_AUTO_LOAD_MERGE
    */
-  public static final String DEFAULT_ENABLE_LOAD_MERGE = "false";
+  public static final String DEFAULT_ENABLE_AUTO_LOAD_MERGE = "false";
 
   /**
    * ZOOKEEPER_ENABLE_LOCK if this is set to true then zookeeper will be used to handle locking
@@ -1047,15 +1047,6 @@ public final class CarbonCommonConstants {
   public static final String INVALID_SEGMENT_ID = "-1";
 
   /**
-   * This property will preserve the latest segments from merge.
-   */
-  public static final String PRESERVE_LATEST_SEGMENTS = "carbon.preserve.latest.segments";
-  /**
-   * By default this property of preserving the segments will be false
-   */
-  public static final String DEFAULT_PRESERVE_LATEST_SEGMENTS = "false";
-
-  /**
    * Size of Minor Compaction in MBs
    */
   public static final String MINOR_COMPACTION_SIZE = "carbon.minor.compaction.size";
@@ -1084,18 +1075,7 @@ public final class CarbonCommonConstants {
   /**
    * If preserve property is enabled then 2 segments will be preserved.
    */
-  public static final String DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER = "2";
-
-  /**
-   * To determine if the compaction need to consider the load start date.
-   */
-  public static final java.lang.String ENABLE_COMPACTION_BASED_ON_DATE =
-      "carbon.enable.date.based.compaction";
-
-  /**
-   * Default property of the date based compaction.default will be false.
-   */
-  public static final String DEFAULT_ENABLE_COMPACTION_BASED_ON_DATE = "true";
+  public static final String DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER = "0";
 
   /**
    * This property will determine the loads of how many days can be compacted.
@@ -1105,7 +1085,7 @@ public final class CarbonCommonConstants {
   /**
    * Default value of 1 day loads can be compacted
    */
-  public static final String DEFAULT_DAYS_ALLOWED_TO_COMPACT = "1";
+  public static final String DEFAULT_DAYS_ALLOWED_TO_COMPACT = "0";
 
   /**
    * space reserved for writing block meta data in carbon data file

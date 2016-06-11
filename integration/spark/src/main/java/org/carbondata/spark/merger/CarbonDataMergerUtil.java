@@ -57,10 +57,6 @@ public final class CarbonDataMergerUtil {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonDataMergerUtil.class.getName());
 
-  private static String isPreserveSegmentEnabled = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS,
-          CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS);
-
   private CarbonDataMergerUtil() {
 
   }
@@ -111,14 +107,14 @@ public final class CarbonDataMergerUtil {
    * @return
    */
 
-  public static boolean checkIfLoadMergingRequired() {
+  public static boolean checkIfAutoLoadMergingRequired() {
     // load merge is not supported as per new store format
     // moving the load merge check in early to avoid unnecessary load listing causing IOException
     // check whether carbons segment merging operation is enabled or not.
     // default will be false.
     String isLoadMergeEnabled = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_LOAD_MERGE,
-            CarbonCommonConstants.DEFAULT_ENABLE_LOAD_MERGE);
+        .getProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
+            CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE);
     if (isLoadMergeEnabled.equalsIgnoreCase("false")) {
       return false;
     }
@@ -209,12 +205,13 @@ public final class CarbonDataMergerUtil {
    * @return
    */
   public static List<LoadMetadataDetails> identifySegmentsToBeMerged(String storeLocation,
-      CarbonLoadModel carbonLoadModel, int partitionCount, long compactionSize) {
+      CarbonLoadModel carbonLoadModel, int partitionCount, long compactionSize,
+      List<LoadMetadataDetails> segments, CompactionType compactionType) {
 
     // check preserve property and preserve the configured number of latest loads.
 
     List<LoadMetadataDetails> listOfSegmentsAfterPreserve =
-        checkPreserveSegmentsPropertyReturnRemaining(carbonLoadModel);
+        checkPreserveSegmentsPropertyReturnRemaining(segments);
 
     // identify the segments to merge based on the Size of the segments across partition.
 
@@ -222,7 +219,7 @@ public final class CarbonDataMergerUtil {
 
     List<LoadMetadataDetails> listOfSegmentsBelowThresholdSize =
         identifySegmentsToBeMergedBasedOnSize(compactionSize, listOfSegmentsAfterPreserve,
-            carbonLoadModel, partitionCount, storeLocation);
+            carbonLoadModel, partitionCount, storeLocation, compactionType);
 
     // filter the segments if the compaction based on days is configured.
 
@@ -245,24 +242,28 @@ public final class CarbonDataMergerUtil {
     List<LoadMetadataDetails> loadsOfSameDate =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    // check whether the property is enabled or not
-    String isDateConsideredForMerging = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_COMPACTION_BASED_ON_DATE,
-            CarbonCommonConstants.DEFAULT_ENABLE_COMPACTION_BASED_ON_DATE);
-
-    // if true then process loads according to the load date.
-    if (isDateConsideredForMerging.equalsIgnoreCase(("true"))) {
-      // filter loads based on the loaded date
-      long numberOfDaysAllowedToMerge = 0;
-      try {
-        numberOfDaysAllowedToMerge = Long.parseLong(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
-                CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT));
-      } catch (NumberFormatException e) {
+    long numberOfDaysAllowedToMerge = 0;
+    try {
+      numberOfDaysAllowedToMerge = Long.parseLong(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
+              CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT));
+      if (numberOfDaysAllowedToMerge < 0 || numberOfDaysAllowedToMerge > 100) {
+        LOGGER.error(
+            "The specified value for property " + CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT
+                + " is incorrect."
+                + " Correct value should be in range of 0 -100. Taking the default value.");
         numberOfDaysAllowedToMerge =
             Long.parseLong(CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT);
       }
 
+    } catch (NumberFormatException e) {
+      numberOfDaysAllowedToMerge =
+          Long.parseLong(CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT);
+    }
+    // if true then process loads according to the load date.
+    if (numberOfDaysAllowedToMerge > 0) {
+
+      // filter loads based on the loaded date
       boolean first = true;
       Date segDate1 = null;
       SimpleDateFormat sdf = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
@@ -355,7 +356,8 @@ public final class CarbonDataMergerUtil {
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnSize(
       long compactionSize, List<LoadMetadataDetails> listOfSegmentsAfterPreserve,
-      CarbonLoadModel carbonLoadModel, int partitionCount, String storeLocation) {
+      CarbonLoadModel carbonLoadModel, int partitionCount, String storeLocation,
+      CompactionType compactionType) {
 
     List<LoadMetadataDetails> segmentsToBeMerged =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -393,7 +395,9 @@ public final class CarbonDataMergerUtil {
         sizeOfOneSegmentAcrossPartition += sizeOfEachSegment;
       }
       totalLength += sizeOfOneSegmentAcrossPartition;
-      // if the total length is less than compaction size then consider for compaction.
+      // in case of minor compaction the size of the segments should exceed the
+      // minor compaction limit then only compaction will occur.
+      // in case of major compaction the size doesnt matter. all the segments will be merged.
       if (totalLength < (compactionSize * 1024 * 1024)) {
         segmentsToBeMerged.add(segment);
       } else if (segmentsToBeMerged.size() < 2) {
@@ -404,8 +408,29 @@ public final class CarbonDataMergerUtil {
         segmentsToBeMerged.add(segment);
         totalLength = sizeOfOneSegmentAcrossPartition;
       }
+      // in case if minor we will merge segments only when it exceeds limit
+      // so check whether limit has been exceeded. if yes then break loop.
+      if (CompactionType.MINOR_COMPACTION.equals(compactionType)) {
+        if (totalLength > (compactionSize * 1024 * 1024)) {
+          // if size of segments exceeds then take those segments and merge.
+          // i.e if 1st segment is 200mb and 2nd segment is 100mb.
+          //  and compaction size is 256mb . we need to merge these 2 loads. so added this check.
+          segmentsToBeMerged.add(segment);
+          break;
+        }
+      }
+
       // after all partitions
       sizeOfOneSegmentAcrossPartition = 0;
+    }
+
+    // if type is minor then we need to check the total size whether it has reached the limit of
+    // compaction size.
+    if (CompactionType.MINOR_COMPACTION.equals(compactionType)) {
+      if (totalLength < compactionSize * 1024 * 1024) {
+        // no need to do the compaction.
+        segmentsToBeMerged.removeAll(segmentsToBeMerged);
+      }
     }
 
     return segmentsToBeMerged;
@@ -414,24 +439,20 @@ public final class CarbonDataMergerUtil {
   /**
    * checks number of loads to be preserved and returns remaining valid segments
    *
-   * @param carbonLoadModel
+   * @param segments
    * @return
    */
   private static List<LoadMetadataDetails> checkPreserveSegmentsPropertyReturnRemaining(
-      CarbonLoadModel carbonLoadModel) {
+      List<LoadMetadataDetails> segments) {
 
     int numberOfSegmentsToBePreserved = 0;
-    LOGGER.info("preserve segments property is " + isPreserveSegmentEnabled);
     // check whether the preserving of the segments from merging is enabled or not.
-    if (isPreserveSegmentEnabled.equalsIgnoreCase("true")) {
-      // get the number of loads to be preserved.
-      numberOfSegmentsToBePreserved =
-          CarbonProperties.getInstance().getNumberOfSegmentsToBePreserved();
-    }
+    // get the number of loads to be preserved.
+    numberOfSegmentsToBePreserved =
+        CarbonProperties.getInstance().getNumberOfSegmentsToBePreserved();
     // get the number of valid segments and retain the latest loads from merging.
     return CarbonDataMergerUtil
-        .getValidLoadDetailsWithRetaining(carbonLoadModel.getLoadMetadataDetails(),
-            numberOfSegmentsToBePreserved);
+        .getValidLoadDetailsWithRetaining(segments, numberOfSegmentsToBePreserved);
   }
 
   /**
@@ -453,6 +474,9 @@ public final class CarbonDataMergerUtil {
           .equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS) || segment
           .getLoadStatus().equalsIgnoreCase(CarbonCommonConstants.MARKED_FOR_UPDATE)) {
         validList.add(segment);
+      } else {
+        // in case if deleted segment is found then break loop.
+        break;
       }
     }
 
@@ -562,5 +586,18 @@ public final class CarbonDataMergerUtil {
       }
     }
     return combinedMap;
+  }
+
+  public static List<LoadMetadataDetails> filterOutAlreadyMergedSegments(
+      List<LoadMetadataDetails> segments, List<LoadMetadataDetails> loadsToMerge) {
+
+    ArrayList<LoadMetadataDetails> list = new ArrayList<>(segments);
+
+    for (LoadMetadataDetails mergedSegs : loadsToMerge) {
+      list.remove(mergedSegs);
+    }
+
+    return list;
+
   }
 }

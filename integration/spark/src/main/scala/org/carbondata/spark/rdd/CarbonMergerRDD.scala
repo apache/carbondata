@@ -18,7 +18,7 @@
 package org.carbondata.spark.rdd
 
 import java.util
-import java.util.List
+import java.util.{Collections, List}
 
 import scala.collection.JavaConverters._
 
@@ -73,8 +73,9 @@ class CarbonMergerRDD[K, V](
       CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation)
 
       // sorting the table block info List.
-      // Collections.sort(tableBlockInfoList1)
       var tableBlockInfoList = carbonSparkPartition.tableBlockInfos
+
+      Collections.sort(tableBlockInfoList)
 
       val segmentMapping: java.util.Map[String, TaskBlockInfo] =
         CarbonCompactionUtil.createMappingForSegments(tableBlockInfoList)
@@ -128,7 +129,7 @@ class CarbonMergerRDD[K, V](
       )
 
       carbonLoadModel.setSegmentId(mergeNumber)
-      carbonLoadModel.setPartitionId(theSplit.index.toString)
+      carbonLoadModel.setPartitionId("0")
       val merger =
         new RowResultMerger(result2,
         schemaName,

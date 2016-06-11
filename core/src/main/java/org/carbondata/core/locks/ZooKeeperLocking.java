@@ -87,18 +87,16 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     this.lockName = CarbonCommonConstants.METADATA_LOCK;
     this.lockTypeFolder = zooKeeperLocation;
 
-    if (lockUsage == LockUsage.METADATA_LOCK) {
-      this.lockTypeFolder =
-          zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockUsage.toString();
-      try {
-        createBaseNode();
-        // if exists returns null then path doesnt exist. so creating.
-        if (null == zk.exists(this.lockTypeFolder, true)) {
-          zk.create(this.lockTypeFolder, new byte[1], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-        }
-      } catch (KeeperException | InterruptedException e) {
-        LOGGER.error(e, e.getMessage());
+    this.lockTypeFolder =
+        zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockUsage.toString();
+    try {
+      createBaseNode();
+      // if exists returns null then path doesnt exist. so creating.
+      if (null == zk.exists(this.lockTypeFolder, true)) {
+        zk.create(this.lockTypeFolder, new byte[1], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
       }
+    } catch (KeeperException | InterruptedException e) {
+      LOGGER.error(e, e.getMessage());
     }
   }
 

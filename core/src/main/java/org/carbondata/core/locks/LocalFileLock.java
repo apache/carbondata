@@ -27,7 +27,6 @@ import java.nio.channels.OverlappingFileLockException;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 
 /**
@@ -88,11 +87,9 @@ public class LocalFileLock extends AbstractCarbonLock {
     schemaName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
 
     cubeName = location.substring(location.lastIndexOf('/') + 1, location.length());
-    if (this.lockUsage == LockUsage.METADATA_LOCK) {
-      this.location =
-          tmpPath + File.separator + schemaName + File.separator + cubeName + File.separator
-              + CarbonCommonConstants.METADATA_LOCK;
-    }
+    this.location =
+        tmpPath + File.separator + schemaName + File.separator + cubeName + File.separator
+            + this.lockUsage;
     initRetry();
   }
 

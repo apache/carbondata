@@ -23,5 +23,7 @@ package org.carbondata.core.locks;
  * Each enum value is one specific lock case.
  */
 public enum LockUsage {
-  METADATA_LOCK;
+  METADATA_LOCK,
+  COMPACTION_LOCK;
+
 }
