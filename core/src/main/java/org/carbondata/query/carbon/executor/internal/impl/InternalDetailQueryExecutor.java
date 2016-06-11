@@ -18,9 +18,12 @@
  */
 package org.carbondata.query.carbon.executor.internal.impl;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.carbondata.common.logging.LogService;
@@ -92,6 +95,7 @@ public class InternalDetailQueryExecutor implements InternalQueryExecutor {
         new UnSortedScannedResultMerger(executionInfos.get(executionInfos.size() - 1),
             sliceIndexes.length);
     ExecutorService execService = Executors.newFixedThreadPool(numberOfCores);
+    List<Future> listFutureObjects = new ArrayList<Future>();
     try {
       for (int currentSliceIndex : sliceIndexes) {
         if (currentSliceIndex == -1) {
@@ -99,14 +103,20 @@ public class InternalDetailQueryExecutor implements InternalQueryExecutor {
         }
         executionInfos.get(currentSliceIndex).setScannedResultProcessor(scannedResultProcessor);
         task = new QueryRunner(executionInfos.get(currentSliceIndex));
-        execService.submit(task);
+        listFutureObjects.add(execService.submit(task));
       }
       execService.shutdown();
       execService.awaitTermination(2, TimeUnit.DAYS);
       LOGGER.info("Total time taken for scan " + (System.currentTimeMillis() - startTime));
+      for (Future future : listFutureObjects) {
+        try {
+          future.get();
+        } catch (ExecutionException e) {
+          throw new QueryExecutionException(e.getMessage());
+        }
+      }
       return scannedResultProcessor.getQueryResultIterator();
     } catch (QueryExecutionException exception) {
-      LOGGER.error(exception, exception.getMessage());
       throw new QueryExecutionException(exception);
     } catch (InterruptedException e) {
       LOGGER.error(e, e.getMessage());

@@ -61,6 +61,7 @@ import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.util.DataTypeUtil;
+import org.carbondata.query.carbonfilterinterface.ExpressionType;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.carbonfilterinterface.RowImpl;
 import org.carbondata.query.carbonfilterinterface.RowIntf;
@@ -180,6 +181,24 @@ public final class FilterUtil {
   }
 
   /**
+   * This method will check if a given expression contains a column expression
+   * recursively.
+   *
+   * @return
+   */
+  public static boolean checkIfExpressionContainsUnknownExp(Expression expression) {
+    if (expression.getFilterExpressionType() == ExpressionType.UNKNOWN) {
+      return true;
+    }
+    for (Expression child : expression.getChildren()) {
+      if (checkIfExpressionContainsUnknownExp(child)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * method will get the masked keys based on the keys generated from surrogates.
    *
    * @param ranges
@@ -269,7 +288,7 @@ public final class FilterUtil {
    */
   public static DimColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
       ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter)
-      throws QueryExecutionException {
+      throws QueryExecutionException, FilterUnsupportedException {
     Dictionary forwardDictionary = null;
     try {
       // Reading the dictionary value from cache.
@@ -339,13 +358,14 @@ public final class FilterUtil {
   public static DimColumnFilterInfo getFilterListForAllValues(
       AbsoluteTableIdentifier tableIdentifier, Expression expression,
       final ColumnExpression columnExpression, boolean isIncludeFilter)
-      throws QueryExecutionException {
+      throws FilterUnsupportedException {
     Dictionary forwardDictionary = null;
+    List<String> evaluateResultListFinal = new ArrayList<String>(20);
+    DictionaryChunksWrapper dictionaryWrapper = null;
     try {
       forwardDictionary =
           getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
-      List<String> evaluateResultListFinal = new ArrayList<String>(20);
-      DictionaryChunksWrapper dictionaryWrapper = forwardDictionary.getDictionaryChunks();
+      dictionaryWrapper = forwardDictionary.getDictionaryChunks();
       while (dictionaryWrapper.hasNext()) {
         byte[] columnVal = dictionaryWrapper.next();
         try {
@@ -367,10 +387,13 @@ public final class FilterUtil {
           }
         } catch (FilterUnsupportedException e) {
           LOGGER.audit(e.getMessage());
+          throw new FilterUnsupportedException(e.getMessage());
         }
       }
       return getFilterValues(columnExpression, evaluateResultListFinal, forwardDictionary,
           isIncludeFilter);
+    } catch (QueryExecutionException e) {
+      throw new FilterUnsupportedException(e.getMessage());
     } finally {
       CarbonUtil.clearDictionaryCache(forwardDictionary);
     }
@@ -1076,14 +1099,23 @@ public final class FilterUtil {
         case LongType:
         case DoubleType:
 
+          if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
+            return 1;
+          }
           Double d1 = Double.parseDouble(filterMember1);
           Double d2 = Double.parseDouble(filterMember2);
           return d1.compareTo(d2);
         case DecimalType:
+          if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
+            return 1;
+          }
           java.math.BigDecimal val1 = new BigDecimal(filterMember1);
           java.math.BigDecimal val2 = new BigDecimal(filterMember2);
           return val1.compareTo(val2);
         case TimestampType:
+          if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
+            return 1;
+          }
           SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
                   CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));

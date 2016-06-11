@@ -71,7 +71,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     this.tableIdentifier = tableIdentifier;
   }
 
-  @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder) {
+  @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder)
+      throws FilterUnsupportedException {
     for (DimColumnResolvedFilterInfo dimColumnEvaluatorInfo : dimColEvaluatorInfoList) {
       if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.ARRAY
           && dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.STRUCT) {
@@ -119,7 +120,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           set.set(index);
         }
       } catch (FilterUnsupportedException e) {
-        LOGGER.error(e, e.getMessage());
+        throw new FilterUnsupportedException(e.getMessage());
       }
     }
     // CHECKSTYLE:ON

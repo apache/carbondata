@@ -19,6 +19,7 @@
 package org.carbondata.query.carbon.processor.impl;
 
 import org.carbondata.core.datastorage.store.FileHolder;
+import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.processor.AbstractDataBlockProcessor;
 
@@ -43,12 +44,18 @@ public class AggregateQueryBlockProcessor extends AbstractDataBlockProcessor {
    * then it will call processor to process the data
    * and the it will call aggregator to aggregate the data
    * it will call finish once all the blocks of a table is scanned
+   *
+   * @throws QueryExecutionException
    */
-  @Override public void processBlock() {
+  @Override public void processBlock() throws QueryExecutionException {
     while (dataBlockIterator.hasNext()) {
-      blocksChunkHolder.setDataBlock(dataBlockIterator.next());
-      blocksChunkHolder.reset();
-      this.scannerResultAggregator.aggregateData(blockletScanner.scanBlocklet(blocksChunkHolder));
+      try {
+        blocksChunkHolder.setDataBlock(dataBlockIterator.next());
+        blocksChunkHolder.reset();
+        this.scannerResultAggregator.aggregateData(blockletScanner.scanBlocklet(blocksChunkHolder));
+      } catch (Exception e) {
+        throw new QueryExecutionException(e);
+      }
     }
     finishScanning();
   }

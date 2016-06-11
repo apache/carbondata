@@ -18,7 +18,7 @@
  */
 package org.carbondata.query.filter.resolver.resolverinfo.visitable;
 
-import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
+import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.resolver.metadata.FilterResolverMetadata;
 import org.carbondata.query.filter.resolver.resolverinfo.visitor.ResolvedFilterInfoVisitorIntf;
 
@@ -30,8 +30,9 @@ public interface ResolvedFilterInfoVisitable {
    * @param visitor
    * @param metadata
    * @throws QueryExecutionException
+   * @throws FilterUnsupportedException
    */
   void populateFilterInfoBasedOnColumnType(ResolvedFilterInfoVisitorIntf visitor,
-      FilterResolverMetadata metadata) throws QueryExecutionException;
+      FilterResolverMetadata metadata) throws FilterUnsupportedException;
 
 }

@@ -45,19 +45,20 @@ public class CarbonRecordReader<T> extends RecordReader<Void, T> {
             carbonInputSplit.getSegmentId(), carbonInputSplit.getLocations(),
             carbonInputSplit.getLength()));
     queryModel.setTableBlockInfos(tableBlockInfoList);
-    readSupport.intialize(queryModel.getProjectionColumns(),
-        queryModel.getAbsoluteTableIdentifier());
+    readSupport
+        .intialize(queryModel.getProjectionColumns(), queryModel.getAbsoluteTableIdentifier());
     try {
       carbonIterator = new ChunkRawRowIterartor(
           (CarbonIterator<BatchRawResult>) QueryExecutorFactory.getQueryExecutor(queryModel)
               .execute(queryModel));
     } catch (QueryExecutionException e) {
-      throw new IOException(e.getMessage());
+      throw new InterruptedException(e.getMessage());
     }
   }
 
-  @Override public boolean nextKeyValue() throws IOException, InterruptedException {
+  @Override public boolean nextKeyValue() {
     return carbonIterator.hasNext();
+
   }
 
   @Override public Void getCurrentKey() throws IOException, InterruptedException {

@@ -77,7 +77,8 @@ public class EqualToExpression extends BinaryConditionalExpression {
         result = val1.getDecimal().compareTo(val2.getDecimal()) == 0;
         break;
       default:
-        break;
+        throw new FilterUnsupportedException(
+            "DataType: " + val1.getDataType() + " not supported for the filter expression");
     }
     val1.set(DataType.BooleanType, result);
     return val1;

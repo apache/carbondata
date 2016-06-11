@@ -42,18 +42,17 @@ public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
    * @throws QueryExecutionException
    */
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
-      FilterResolverMetadata metadata) throws QueryExecutionException {
+      FilterResolverMetadata metadata) throws FilterUnsupportedException {
     DimColumnFilterInfo resolvedFilterObject = null;
+    List<String> evaluateResultListFinal =
+        metadata.getExpression().evaluate(null).getListAsString();
     try {
-      List<String> evaluateResultListFinal =
-          metadata.getExpression().evaluate(null).getListAsString();
       resolvedFilterObject = FilterUtil
           .getFilterValues(metadata.getTableIdentifier(), metadata.getColumnExpression(),
               evaluateResultListFinal, metadata.isIncludeFilter());
-      visitableObj.setFilterValues(resolvedFilterObject);
-    } catch (FilterUnsupportedException e) {
-      LOGGER.audit(e.getMessage());
+    } catch (QueryExecutionException e) {
+      throw new FilterUnsupportedException(e);
     }
+    visitableObj.setFilterValues(resolvedFilterObject);
   }
-
 }

@@ -20,8 +20,6 @@ package org.carbondata.query.carbon.result.iterator;
 
 import java.util.List;
 
-import org.carbondata.common.logging.LogService;
-import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.impl.QueryExecutorProperties;
@@ -41,12 +39,6 @@ import org.carbondata.query.carbon.result.preparator.impl.RawQueryResultPreparat
 public class DetailRawQueryResultIterator
     extends AbstractDetailQueryResultIterator<BatchRawResult> {
 
-  /**
-   * LOGGER.
-   */
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DetailRawQueryResultIterator.class.getName());
-
   private QueryResultPreparator<BatchRawResult> queryResultPreparator;
 
   public DetailRawQueryResultIterator(List<BlockExecutionInfo> infos,
@@ -61,8 +53,8 @@ public class DetailRawQueryResultIterator
     CarbonIterator<Result> result = null;
     try {
       result = executor.executeQuery(blockExecutionInfos, blockIndexToBeExecuted);
-    } catch (QueryExecutionException e) {
-      LOGGER.error(e, e.getMessage());
+    } catch (QueryExecutionException ex) {
+      throw new RuntimeException(ex.getCause());
     }
     for (int i = 0; i < blockIndexToBeExecuted.length; i++) {
       if (blockIndexToBeExecuted[i] != -1) {

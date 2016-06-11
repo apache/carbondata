@@ -23,9 +23,9 @@ import java.util.SortedMap;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.expression.Expression;
+import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
 public interface FilterResolverIntf extends Serializable {
@@ -36,8 +36,9 @@ public interface FilterResolverIntf extends Serializable {
    * executer layer.
    *
    * @throws QueryExecutionException
+   * @throws FilterUnsupportedException
    */
-  void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) throws QueryExecutionException;
+  void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) throws FilterUnsupportedException;
 
   /**
    * This API will provide the left column filter expression
@@ -64,7 +65,8 @@ public interface FilterResolverIntf extends Serializable {
   DimColumnResolvedFilterInfo getDimColResolvedFilterInfo();
 
   /**
-   *  API will get the start key based on the filter applied based on the key generator
+   * API will get the start key based on the filter applied based on the key generator
+   *
    * @param segmentProperties
    * @param startKey
    * @param setOfStartKeyByteArray

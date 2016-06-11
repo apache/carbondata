@@ -20,6 +20,8 @@ package org.carbondata.query.carbon.executor.internal.impl;
 
 import java.util.concurrent.Callable;
 
+import org.carbondata.common.logging.LogService;
+import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
@@ -34,15 +36,18 @@ import org.carbondata.query.carbon.processor.impl.DetailQueryBlockProcessor;
 public class QueryRunner implements Callable<Void> {
 
   /**
+   * LOGGER.
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(QueryRunner.class.getName());
+  /**
    * block processor
    */
   private BlockProcessor dataBlockProcessor;
-
   /**
    * file reader which will be used to execute the query
    */
   private FileHolder fileReader;
-
   /**
    * block execution info which is required to run the query
    */
@@ -66,7 +71,8 @@ public class QueryRunner implements Callable<Void> {
     try {
       this.dataBlockProcessor.processBlock();
     } catch (Exception e) {
-      e.printStackTrace();
+      LOGGER.error(e);
+      throw new Exception(e.getMessage());
     } finally {
       this.fileReader.finish();
     }

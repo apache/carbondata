@@ -52,6 +52,7 @@ import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.model.CarbonQueryPlan;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.expression.Expression;
+import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 import org.carbondata.query.filters.FilterExpressionProcessor;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
@@ -299,7 +300,11 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
     AbsoluteTableIdentifier absoluteTableIdentifier = getAbsoluteTableIdentifier(configuration);
     //get resolved filter
-    return filterExpressionProcessor.getFilterResolver(filterExpression, absoluteTableIdentifier);
+    try {
+      return filterExpressionProcessor.getFilterResolver(filterExpression, absoluteTableIdentifier);
+    } catch (FilterUnsupportedException e) {
+      throw new QueryExecutionException(e.getMessage());
+    }
   }
 
   private AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)

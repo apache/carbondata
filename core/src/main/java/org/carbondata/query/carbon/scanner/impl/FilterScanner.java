@@ -25,11 +25,13 @@ import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.processor.BlocksChunkHolder;
 import org.carbondata.query.carbon.result.AbstractScannedResult;
 import org.carbondata.query.carbon.result.impl.FilterQueryScannedResult;
 import org.carbondata.query.carbon.scanner.AbstractBlockletScanner;
+import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.executer.FilterExecuter;
 
 /**
@@ -73,9 +75,16 @@ public class FilterScanner extends AbstractBlockletScanner {
    * Below method will be used to process the block
    *
    * @param blocksChunkHolder block chunk holder which holds the data
+   * @throws QueryExecutionException
+   * @throws FilterUnsupportedException
    */
-  @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder) {
-    fillScannedResult(blocksChunkHolder);
+  @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
+      throws QueryExecutionException {
+    try {
+      fillScannedResult(blocksChunkHolder);
+    } catch (FilterUnsupportedException e) {
+      throw new QueryExecutionException(e.getMessage());
+    }
     return scannedResult;
   }
 
@@ -93,8 +102,10 @@ public class FilterScanner extends AbstractBlockletScanner {
    * 5. Set the blocks and filter indexes to result
    *
    * @param blocksChunkHolder
+   * @throws FilterUnsupportedException
    */
-  private void fillScannedResult(BlocksChunkHolder blocksChunkHolder) {
+  private void fillScannedResult(BlocksChunkHolder blocksChunkHolder)
+      throws FilterUnsupportedException {
 
     scannedResult.reset();
     // apply min max

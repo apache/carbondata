@@ -326,7 +326,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     if (null != expressionResults) {
       result = prime * result + expressionResults.hashCode();
     } else if (null != value) {
-      result = prime * result + value.hashCode();
+      result = prime * result + value.toString().hashCode();
     } else {
       result = prime * result + "".hashCode();
     }
@@ -334,29 +334,16 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     return result;
   }
 
-  /*
-   * (non-Javadoc)
-   *
-   * @see java.lang.Object#equals(java.lang.Object)
-   */
-  @Override        //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_012
-  public boolean equals(Object obj) {
-    if (null == obj) {
-      return false;
-    }
-
+  @Override public boolean equals(Object obj) {
     if (!(obj instanceof ExpressionResult)) {
       return false;
     }
-    // CHECKSTYLE:ON
     if (this == obj) {
       return true;
     }
-
     if (getClass() != obj.getClass()) {
       return false;
     }
-
     ExpressionResult objToCompare = (ExpressionResult) obj;
     boolean result = false;
     if (this.value == objToCompare.value) {

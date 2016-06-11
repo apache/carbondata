@@ -31,6 +31,7 @@ import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.conditional.BinaryConditionalExpression;
 import org.carbondata.query.expression.conditional.ConditionalExpression;
+import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.resolver.metadata.FilterResolverMetadata;
 import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.carbondata.query.filter.resolver.resolverinfo.visitor.FilterInfoTypeVisitorFactory;
@@ -58,9 +59,10 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    * executer layer.
    *
    * @throws QueryExecutionException
+   * @throws FilterUnsupportedException
    */
   @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier)
-      throws QueryExecutionException {
+      throws FilterUnsupportedException {
     FilterResolverMetadata metadata = new FilterResolverMetadata();
     metadata.setTableIdentifier(absoluteTableIdentifier);
     if ((!isExpressionResolve) && exp instanceof BinaryConditionalExpression) {
@@ -108,6 +110,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
           if (FilterUtil.checkIfExpressionContainsColumn(leftExp)) {
             isExpressionResolve = true;
           } else {
+
             dimColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
                 FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnExpression),
                 metadata);
@@ -124,7 +127,12 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
       metadata.setColumnExpression(columnList.get(0));
       metadata.setExpression(exp);
       metadata.setIncludeFilter(isIncludeFilter);
-      if (!columnList.get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY) && !(
+      if (!columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY) || columnList.get(0)
+          .getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        dimColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
+            FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnList.get(0)), metadata);
+
+      } else if (columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY) && !(
           columnList.get(0).getDimension().getDataType()
               == org.carbondata.core.carbon.metadata.datatype.DataType.STRUCT
               || columnList.get(0).getDimension().getDataType()
@@ -132,13 +140,9 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
         dimColResolvedFilterInfo.setFilterValues(FilterUtil
             .getFilterListForAllValues(absoluteTableIdentifier, exp, columnList.get(0),
                 isIncludeFilter));
+
         dimColResolvedFilterInfo.setColumnIndex(columnList.get(0).getDimension().getOrdinal());
         dimColResolvedFilterInfo.setDimension(columnList.get(0).getDimension());
-      } else if (!columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY) || columnList
-          .get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-        dimColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
-            FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnList.get(0)), metadata);
-
       }
     }
 

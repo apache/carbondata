@@ -18,9 +18,12 @@
  */
 package org.carbondata.query.carbon.executor.internal.impl;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.carbondata.common.logging.LogService;
@@ -84,6 +87,7 @@ public abstract class InternalAbstractQueryExecutor implements InternalQueryExec
       scannedResultProcessor = new UnSortedScannedResultMerger(latestInfo, numberOfCores);
     }
     try {
+      List<Future> listFutureObjects = new ArrayList<Future>();
       for (BlockExecutionInfo blockInfo : tableBlockExecutionInfosList) {
         DataRefNodeFinder finder = new BTreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
         DataRefNode startDataBlock = finder
@@ -94,11 +98,18 @@ public abstract class InternalAbstractQueryExecutor implements InternalQueryExec
         blockInfo.setFirstDataBlock(startDataBlock);
         blockInfo.setNumberOfBlockToScan(numberOfBlockToScan);
         blockInfo.setScannedResultProcessor(scannedResultProcessor);
-        execService.submit(new QueryRunner(blockInfo));
+        listFutureObjects.add(execService.submit(new QueryRunner(blockInfo)));
       }
       execService.shutdown();
       execService.awaitTermination(2, TimeUnit.DAYS);
       LOGGER.info("Total time taken for scan " + (System.currentTimeMillis() - startTime));
+      for (Future future : listFutureObjects) {
+        try {
+          future.get();
+        } catch (ExecutionException e) {
+          throw new QueryExecutionException(e.getMessage());
+        }
+      }
       return scannedResultProcessor.getQueryResultIterator();
     } catch (QueryExecutionException e) {
       LOGGER.error(e, e.getMessage());

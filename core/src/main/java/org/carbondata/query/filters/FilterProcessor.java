@@ -26,6 +26,7 @@ import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.expression.Expression;
+import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 
 public interface FilterProcessor {
@@ -38,9 +39,10 @@ public interface FilterProcessor {
    * @param tableIdentifier ,contains carbon store informations.
    * @return
    * @throws QueryExecutionException
+   * @throws FilterUnsupportedException
    */
   FilterResolverIntf getFilterResolver(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) throws QueryExecutionException;
+      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException;
 
   /**
    * This API is exposed inorder to get the required block reference node

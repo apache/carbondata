@@ -51,7 +51,6 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
    */
   private QueryResultPreparator<BatchResult> queryResultPreparator;
 
-
   public DetailQueryResultIterator(List<BlockExecutionInfo> infos,
       QueryExecutorProperties executerProperties, QueryModel queryModel,
       InternalQueryExecutor queryExecutor) {
@@ -65,7 +64,7 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
     try {
       result = executor.executeQuery(blockExecutionInfos, blockIndexToBeExecuted);
     } catch (QueryExecutionException e) {
-      LOGGER.error(e, e.getMessage());
+      throw new RuntimeException(e.getCause().getMessage());
     }
     for (int i = 0; i < blockIndexToBeExecuted.length; i++) {
       if (blockIndexToBeExecuted[i] != -1) {

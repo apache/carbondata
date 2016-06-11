@@ -19,6 +19,7 @@
 package org.carbondata.query.carbon.processor.impl;
 
 import org.carbondata.core.datastorage.store.FileHolder;
+import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.processor.AbstractDataBlockProcessor;
 
@@ -48,8 +49,10 @@ public class DetailQueryBlockProcessor extends AbstractDataBlockProcessor {
    * This scanner will handle the limit scenario if detail query is without order by.
    * In case of detail query once one block is process it will pass to scanned result processor
    * as in this case number of records will be more and it will take more memory
+   *
+   * @throws QueryExecutionException
    */
-  @Override public void processBlock() {
+  @Override public void processBlock() throws QueryExecutionException {
 
     while (dataBlockIterator.hasNext()) {
       blocksChunkHolder.setDataBlock(dataBlockIterator.next());

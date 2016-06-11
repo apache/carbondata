@@ -42,8 +42,8 @@ import org.carbondata.spark.load.CarbonLoaderUtil
 import org.carbondata.spark.util.QueryPlanUtil
 
 class CarbonSparkPartition(rddId: Int, val idx: Int,
-    val locations: Array[String],
-    val tableBlockInfos: util.List[TableBlockInfo])
+  val locations: Array[String],
+  val tableBlockInfos: util.List[TableBlockInfo])
   extends Partition {
 
   override val index: Int = idx
@@ -55,18 +55,18 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
 }
 
 
-/**
- * This RDD is used to perform query.
- */
+ /**
+  * This RDD is used to perform query.
+  */
 class CarbonQueryRDD[K, V](
-    sc: SparkContext,
-    queryModel: QueryModel,
-    filterExpression: Expression,
-    keyClass: KeyVal[K, V],
-    @transient conf: Configuration,
-    cubeCreationTime: Long,
-    schemaLastUpdatedTime: Long,
-    baseStoreLocation: String)
+  sc: SparkContext,
+  queryModel: QueryModel,
+  filterExpression: Expression,
+  keyClass: KeyVal[K, V],
+  @transient conf: Configuration,
+  cubeCreationTime: Long,
+  schemaLastUpdatedTime: Long,
+  baseStoreLocation: String)
   extends RDD[(K, V)](sc, Nil) with Logging {
 
   val defaultParallelism = sc.defaultParallelism
@@ -77,11 +77,20 @@ class CarbonQueryRDD[K, V](
       QueryPlanUtil.createCarbonInputFormat(queryModel.getAbsoluteTableIdentifier)
 
     val result = new util.ArrayList[Partition](defaultParallelism)
-      // set filter resolver tree
-    var filterResolver = carbonInputFormat
-      .getResolvedFilter(job.getConfiguration, filterExpression)
-    CarbonInputFormat.setFilterPredicates(job.getConfiguration, filterResolver)
-    queryModel.setFilterExpressionResolverTree(filterResolver)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    // set filter resolver tree
+    try {
+      var filterResolver = carbonInputFormat
+        .getResolvedFilter(job.getConfiguration, filterExpression)
+
+      CarbonInputFormat.setFilterPredicates(job.getConfiguration, filterResolver)
+      queryModel.setFilterExpressionResolverTree(filterResolver)
+    }
+    catch {
+      case e: Exception =>
+        LOGGER.error(e)
+        sys.error("Exception occurred in query execution :: " + e.getMessage)
+    }
     // get splits
     val splits = carbonInputFormat.getSplits(job)
     if (!splits.isEmpty) {
@@ -112,14 +121,17 @@ class CarbonQueryRDD[K, V](
         val noOfNodes = nodeBlockMapping.size
         val noOfTasks = result.size()
         logInfo(s"Identified  no.of.Blocks: $noOfBlocks,"
-                + s"parallelism: $defaultParallelism , " +
-                s"no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks")
+          + s"parallelism: $defaultParallelism , " +
+          s"no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks"
+        )
         logInfo("Time taken to identify Blocks to scan : " +
-                (System.currentTimeMillis() - startTime))
+          (System.currentTimeMillis() - startTime)
+        )
         result.asScala.foreach { r =>
           val cp = r.asInstanceOf[CarbonSparkPartition]
           logInfo(s"Node : " + cp.locations.toSeq.mkString(",")
-                  + ", No.Of Blocks : " + cp.tableBlockInfos.size())
+            + ", No.Of Blocks : " + cp.tableBlockInfos.size()
+          )
         }
       } else {
         logInfo("No blocks identified to scan")
@@ -160,7 +172,7 @@ class CarbonQueryRDD[K, V](
           rowIterator = QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel)
             .asInstanceOf[CarbonIterator[RowResult]]
         }
-        // TODO
+        // TODOi
         // : CarbonQueryUtil.isQuickFilter quick filter from dictionary needs to support
       } catch {
         case e: Throwable =>
@@ -212,16 +224,16 @@ class CarbonQueryRDD[K, V](
       }
 
       logInfo("*************************** Total Time Taken to execute the query in Carbon Side: " +
-              (System.currentTimeMillis - queryStartTime)
+        (System.currentTimeMillis - queryStartTime)
       )
     }
     iter
   }
 
 
-  /**
-   * Get the preferred locations where to launch this task.
-   */
+   /**
+    * Get the preferred locations where to launch this task.
+    */
   override def getPreferredLocations(partition: Partition): Seq[String] = {
     val theSplit = partition.asInstanceOf[CarbonSparkPartition]
     theSplit.locations.filter(_ != "localhost")

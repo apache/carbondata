@@ -75,7 +75,8 @@ public class NotInExpression extends BinaryConditionalExpression {
               val = new ExpressionResult(val.getDataType(), exprResVal.getDecimal());
               break;
             default:
-              break;
+              throw new FilterUnsupportedException(
+                  "DataType: " + val.getDataType() + " not supported for the filter expression");
           }
 
         }

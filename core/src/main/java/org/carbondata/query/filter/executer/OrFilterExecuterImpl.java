@@ -21,6 +21,7 @@ package org.carbondata.query.filter.executer;
 import java.util.BitSet;
 
 import org.carbondata.query.carbon.processor.BlocksChunkHolder;
+import org.carbondata.query.expression.exception.FilterUnsupportedException;
 
 public class OrFilterExecuterImpl implements FilterExecuter {
 
@@ -32,7 +33,8 @@ public class OrFilterExecuterImpl implements FilterExecuter {
     this.rightExecuter = rightExecuter;
   }
 
-  @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder) {
+  @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder)
+      throws FilterUnsupportedException {
     BitSet leftFilters = leftExecuter.applyFilter(blockChunkHolder);
     BitSet rightFilters = rightExecuter.applyFilter(blockChunkHolder);
     leftFilters.or(rightFilters);

@@ -19,6 +19,8 @@
 
 package org.carbondata.query.carbon.processor;
 
+import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
+
 /**
  * Scanner interface which will be used
  * to scan the blocks.
@@ -27,6 +29,8 @@ public interface BlockProcessor {
 
   /**
    * Below method can be used to scan the block based on the query execution infos
+   *
+   * @throws QueryExecutionException
    */
-  void processBlock();
+  void processBlock() throws QueryExecutionException;
 }

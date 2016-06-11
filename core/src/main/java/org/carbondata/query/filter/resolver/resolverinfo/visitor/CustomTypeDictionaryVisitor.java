@@ -44,20 +44,17 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
    *
    * @param visitableObj
    * @param metadata
+   * @throws FilterUnsupportedException
    */
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
-      FilterResolverMetadata metadata) {
+      FilterResolverMetadata metadata) throws FilterUnsupportedException {
     DimColumnFilterInfo resolvedFilterObject = null;
-    try {
-      List<String> evaluateResultListFinal =
-          metadata.getExpression().evaluate(null).getListAsString();
-      resolvedFilterObject = getDirectDictionaryValKeyMemberForFilter(metadata.getTableIdentifier(),
-          metadata.getColumnExpression(), evaluateResultListFinal, metadata.isIncludeFilter());
-      visitableObj.setFilterValues(resolvedFilterObject);
-    } catch (FilterUnsupportedException e) {
-      LOGGER.audit(e.getMessage());
-    }
 
+    List<String> evaluateResultListFinal =
+        metadata.getExpression().evaluate(null).getListAsString();
+    resolvedFilterObject = getDirectDictionaryValKeyMemberForFilter(metadata.getTableIdentifier(),
+        metadata.getColumnExpression(), evaluateResultListFinal, metadata.isIncludeFilter());
+    visitableObj.setFilterValues(resolvedFilterObject);
   }
 
   private DimColumnFilterInfo getDirectDictionaryValKeyMemberForFilter(

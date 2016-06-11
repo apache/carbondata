@@ -21,6 +21,7 @@ package org.carbondata.query.filter.executer;
 import java.util.BitSet;
 
 import org.carbondata.query.carbon.processor.BlocksChunkHolder;
+import org.carbondata.query.expression.exception.FilterUnsupportedException;
 
 public interface FilterExecuter {
 
@@ -28,8 +29,9 @@ public interface FilterExecuter {
    * API will apply filter based on resolver instance
    *
    * @return
+   * @throws FilterUnsupportedException
    */
-  BitSet applyFilter(BlocksChunkHolder blocksChunkHolder);
+  BitSet applyFilter(BlocksChunkHolder blocksChunkHolder) throws FilterUnsupportedException;
 
   /**
    * API will verify whether the block can be shortlisted based on block

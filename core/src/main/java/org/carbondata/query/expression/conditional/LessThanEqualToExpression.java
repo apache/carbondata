@@ -69,7 +69,8 @@ public class LessThanEqualToExpression extends BinaryConditionalExpression {
         result = elRes.getDecimal().compareTo(erRes.getDecimal()) <= 0;
         break;
       default:
-        break;
+        throw new FilterUnsupportedException("DataType: " + exprResValue1.getDataType()
+            + " not supported for the filter expression");
     }
     exprResValue1.set(DataType.BooleanType, result);
     return exprResValue1;

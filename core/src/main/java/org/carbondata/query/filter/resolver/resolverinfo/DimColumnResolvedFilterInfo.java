@@ -27,8 +27,8 @@ import java.util.Map;
 
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
-import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
+import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.resolver.metadata.FilterResolverMetadata;
 import org.carbondata.query.filter.resolver.resolverinfo.visitable.ResolvedFilterInfoVisitable;
 import org.carbondata.query.filter.resolver.resolverinfo.visitor.ResolvedFilterInfoVisitorIntf;
@@ -49,8 +49,6 @@ public class DimColumnResolvedFilterInfo implements Serializable, ResolvedFilter
    * need compressed data from file
    */
   private boolean needCompressedData;
-
-
 
   /**
    * rowIndex
@@ -138,8 +136,6 @@ public class DimColumnResolvedFilterInfo implements Serializable, ResolvedFilter
     this.dimension = dimension;
   }
 
-
-
   public int getColumnIndex() {
     return columnIndex;
   }
@@ -172,7 +168,6 @@ public class DimColumnResolvedFilterInfo implements Serializable, ResolvedFilter
     this.rowIndex = rowIndex;
   }
 
-
   public boolean isDimensionExistsInCurrentSilce() {
     return isDimensionExistsInCurrentSilce;
   }
@@ -198,7 +193,7 @@ public class DimColumnResolvedFilterInfo implements Serializable, ResolvedFilter
   }
 
   @Override public void populateFilterInfoBasedOnColumnType(ResolvedFilterInfoVisitorIntf visitor,
-      FilterResolverMetadata metadata) throws QueryExecutionException {
+      FilterResolverMetadata metadata) throws FilterUnsupportedException {
     if (null != visitor) {
       visitor.populateFilterResolvedInfo(this, metadata);
       this.addDimensionResolvedFilterInstance(metadata.getColumnExpression().getDimension(),

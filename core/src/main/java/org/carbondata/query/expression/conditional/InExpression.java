@@ -75,7 +75,8 @@ public class InExpression extends BinaryConditionalExpression {
               val = new ExpressionResult(val.getDataType(), expressionResVal.getDecimal());
               break;
             default:
-              break;
+              throw new FilterUnsupportedException(
+                  "DataType: " + val.getDataType() + " not supported for the filter expression");
           }
 
         }
@@ -84,7 +85,6 @@ public class InExpression extends BinaryConditionalExpression {
       }
     }
     leftRsult.set(DataType.BooleanType, setOfExprResult.contains(leftRsult));
-
     return leftRsult;
   }
 

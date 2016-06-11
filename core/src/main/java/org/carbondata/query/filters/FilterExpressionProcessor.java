@@ -40,6 +40,7 @@ import org.carbondata.query.expression.BinaryExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.conditional.BinaryConditionalExpression;
 import org.carbondata.query.expression.conditional.ConditionalExpression;
+import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.expression.logical.BinaryLogicalExpression;
 import org.carbondata.query.filter.executer.FilterExecuter;
 import org.carbondata.query.filter.resolver.ConditionalFilterResolverImpl;
@@ -62,9 +63,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @param tableIdentifier ,contains carbon store informations
    * @return a filter resolver tree
    * @throws QueryExecutionException
+   * @throws FilterUnsupportedException
    */
   public FilterResolverIntf getFilterResolver(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) throws QueryExecutionException {
+      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException {
     if (null != expressionTree && null != tableIdentifier) {
       return getFilterResolvertree(expressionTree, tableIdentifier);
     }
@@ -121,13 +123,14 @@ public class FilterExpressionProcessor implements FilterProcessor {
     DataRefNode startBlock = blockFinder.findFirstDataBlock(btreeNode, searchStartKey);
     DataRefNode endBlock = blockFinder.findLastDataBlock(btreeNode, searchEndKey);
     DataRefNode firstnode = startBlock;
+    FilterExecuter filterExecuter =
+            FilterUtil.getFilterExecuterTree(filterResolver, tableSegment.getSegmentProperties());
     while (startBlock != endBlock) {
-      addBlockBasedOnMinMaxValue(filterResolver, listOfDataBlocksToScan, startBlock,
+      addBlockBasedOnMinMaxValue(filterExecuter, listOfDataBlocksToScan, startBlock,
           tableSegment.getSegmentProperties());
       startBlock = startBlock.getNextDataRefNode();
     }
-
-    addBlockBasedOnMinMaxValue(filterResolver, listOfDataBlocksToScan, endBlock,
+    addBlockBasedOnMinMaxValue(filterExecuter, listOfDataBlocksToScan, endBlock,
         tableSegment.getSegmentProperties());
     if (listOfDataBlocksToScan.isEmpty()) {
       //Pass the first block itself for applying filters.
@@ -149,11 +152,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @param dataRefNode
    * @param segmentProperties
    */
-  private void addBlockBasedOnMinMaxValue(FilterResolverIntf filterResolver,
+  private void addBlockBasedOnMinMaxValue(FilterExecuter filterExecuter,
       List<DataRefNode> listOfDataBlocksToScan, DataRefNode dataRefNode,
       SegmentProperties segmentProperties) {
-    FilterExecuter filterExecuter =
-        FilterUtil.getFilterExecuterTree(filterResolver, segmentProperties);
+
     BitSet bitSet = filterExecuter
         .isScanRequired(dataRefNode.getColumnsMaxValue(), dataRefNode.getColumnsMinValue());
     if (!bitSet.isEmpty()) {
@@ -170,9 +172,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
    *                       filter expression.
    * @return FilterResolverIntf type.
    * @throws QueryExecutionException
+   * @throws FilterUnsupportedException
    */
   private FilterResolverIntf getFilterResolvertree(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) throws QueryExecutionException {
+      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException {
     FilterResolverIntf filterEvaluatorTree =
         createFilterResolverTree(expressionTree, tableIdentifier, null);
     traverseAndResolveTree(filterEvaluatorTree, tableIdentifier);
@@ -190,7 +193,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @throws QueryExecutionException
    */
   private void traverseAndResolveTree(FilterResolverIntf filterResolverTree,
-      AbsoluteTableIdentifier tableIdentifier) throws QueryExecutionException {
+      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException {
     if (null == filterResolverTree) {
       return;
     }
@@ -274,7 +277,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
               .hasEncoding(Encoding.DICTIONARY) || currentCondExpression.getColumnList().get(0)
               .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
-                && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight())) {
+                && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
+                FilterUtil.checkIfExpressionContainsUnknownExp(currentCondExpression.getRight())
+                    || FilterUtil
+                    .checkIfExpressionContainsUnknownExp(currentCondExpression.getLeft()))) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, true,
                   tableIdentifier);
             }
@@ -307,7 +313,11 @@ public class FilterExpressionProcessor implements FilterProcessor {
           if (!currentCondExpression.getColumnList().get(0).getCarbonColumn()
               .hasEncoding(Encoding.DICTIONARY)) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
-                || FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight())) {
+                && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight())
+                || (FilterUtil
+                    .checkIfExpressionContainsUnknownExp(currentCondExpression.getRight())
+                || FilterUtil
+                    .checkIfExpressionContainsUnknownExp(currentCondExpression.getLeft()))) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, false,
                   tableIdentifier);
             }
@@ -319,6 +329,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
               return new RowLevelRangeFilterResolverImpl(expression, isExpressionResolve, false,
                   tableIdentifier);
             }
+
             return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false);
           }
           return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false);

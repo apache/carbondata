@@ -18,6 +18,7 @@
  */
 package org.carbondata.query.carbon.scanner;
 
+import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.processor.BlocksChunkHolder;
 import org.carbondata.query.carbon.result.AbstractScannedResult;
 
@@ -33,6 +34,8 @@ public interface BlockletScanner {
    * @param blocksChunkHolder block chunk which holds the block data
    * @return scannerResult
    * result after processing
+   * @throws QueryExecutionException
    */
-  AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder);
+  AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
+      throws QueryExecutionException;
 }

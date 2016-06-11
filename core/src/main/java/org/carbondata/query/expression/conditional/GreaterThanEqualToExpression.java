@@ -68,7 +68,8 @@ public class GreaterThanEqualToExpression extends BinaryConditionalExpression {
         result = elRes.getDecimal().compareTo(erRes.getDecimal()) >= 0;
         break;
       default:
-        break;
+        throw new FilterUnsupportedException(
+            "DataType: " + exprResVal1.getDataType() + " not supported for the filter expression");
     }
     exprResVal1.set(DataType.BooleanType, result);
     return exprResVal1;
