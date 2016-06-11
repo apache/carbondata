@@ -272,7 +272,7 @@ object CarbonDataRDDFactory extends Logging {
     val defaultParallelism = if (context.defaultParallelism < 1) 1 else context.defaultParallelism
     val spaceConsumed = FileUtils.getSpaceOccupied(filePaths)
     val blockSize =
-      hadoopConfiguration.getLong("dfs.blocksize", CarbonCommonConstants.CARBON_256MB)
+      hadoopConfiguration.getLongBytes("dfs.blocksize", CarbonCommonConstants.CARBON_256MB)
     logInfo("[Block Distribution]")
     // calculate new block size to allow use all the parallelism
     if (spaceConsumed < defaultParallelism * blockSize) {
