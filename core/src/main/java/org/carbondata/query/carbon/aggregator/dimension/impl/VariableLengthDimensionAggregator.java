@@ -20,9 +20,11 @@ package org.carbondata.query.carbon.aggregator.dimension.impl;
 
 import java.nio.charset.Charset;
 
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.carbon.aggregator.dimension.DimensionDataAggregator;
+import org.carbondata.query.carbon.executor.util.QueryUtil;
 import org.carbondata.query.carbon.model.DimensionAggregatorInfo;
 import org.carbondata.query.carbon.result.AbstractScannedResult;
 import org.carbondata.query.carbon.util.DataTypeUtil;
@@ -46,19 +48,34 @@ public class VariableLengthDimensionAggregator implements DimensionDataAggregato
   /**
    * index of the aggregator
    */
-  private int aggreagtorStartIndex;
+  private int aggregatorStartIndex;
 
   /**
    * index of block in file
    */
   private int blockIndex;
 
+  /**
+   * to store index which will be used to aggregate
+   * number type value like sum avg
+   */
+  private int[] numberTypeAggregatorIndex;
+
+  /**
+   * to store index which will be used to aggregate
+   * actual type value like max, min, dictinct count
+   */
+  private int[] actualTypeAggregatorIndex;
+
   public VariableLengthDimensionAggregator(DimensionAggregatorInfo dimensionAggeragtorInfo,
       Object defaultValue, int aggregatorStartIndex, int blockIndex) {
     this.dimensionAggeragtorInfo = dimensionAggeragtorInfo;
     this.defaultValue = defaultValue;
-    this.aggreagtorStartIndex = aggregatorStartIndex;
+    this.aggregatorStartIndex = aggregatorStartIndex;
     this.blockIndex = blockIndex;
+    numberTypeAggregatorIndex = QueryUtil.getNumberTypeIndex(dimensionAggeragtorInfo.getAggList());
+    actualTypeAggregatorIndex = QueryUtil.getActualTypeIndex(dimensionAggeragtorInfo.getAggList());
+
   }
 
   /**
@@ -85,8 +102,24 @@ public class VariableLengthDimensionAggregator implements DimensionDataAggregato
     if (null == dataBasedOnDataType) {
       return;
     }
-    for (int i = 0; i < dimensionAggeragtorInfo.getAggList().size(); i++) {
-      aggeragtor[aggreagtorStartIndex + i].agg(dataBasedOnDataType);
+    if (actualTypeAggregatorIndex.length > 0) {
+      for (int j = 0; j < actualTypeAggregatorIndex.length; j++) {
+        aggeragtor[aggregatorStartIndex + actualTypeAggregatorIndex[j]].agg(dataBasedOnDataType);
+      }
+    }
+    // if sum or avg aggregator is applied then first we need to check whether data type
+    // if data type is string then convert to double data type and then apply aggregate
+    // function
+    if (numberTypeAggregatorIndex.length > 0) {
+      if (DataType.STRING==dimensionAggeragtorInfo.getDim().getDataType()) {
+        dataBasedOnDataType = DataTypeUtil.getDataBasedOnDataType(data, DataType.DOUBLE);
+      }
+      if (null == dataBasedOnDataType) {
+        return;
+      }
+      for (int j = 0; j < numberTypeAggregatorIndex.length; j++) {
+        aggeragtor[aggregatorStartIndex + numberTypeAggregatorIndex[j]].agg(dataBasedOnDataType);
+      }
     }
   }
 
