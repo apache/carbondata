@@ -19,6 +19,8 @@
 
 package org.carbondata.core.metadata;
 
+import java.util.BitSet;
+
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
 
@@ -112,6 +114,12 @@ public class BlockletInfoColumnar {
    * true if given index is colgroup block
    */
   private boolean[] colGrpBlock;
+
+  /**
+   * bit set which will holds the measure
+   * indexes which are null
+   */
+  private BitSet[] measureNullValueIndex;
 
   /**
    * getFileName().
@@ -359,13 +367,19 @@ public class BlockletInfoColumnar {
     this.columnMinData = columnMinData;
   }
 
-
   public ValueCompressionModel getCompressionModel() {
     return compressionModel;
   }
 
   public void setCompressionModel(ValueCompressionModel compressionModel) {
     this.compressionModel = compressionModel;
+  }
+
+  /**
+   * @return
+   */
+  public boolean[] getColGrpBlocks() {
+    return this.colGrpBlock;
   }
 
   /**
@@ -376,9 +390,16 @@ public class BlockletInfoColumnar {
   }
 
   /**
-   * @return
+   * @return the measureNullValueIndex
    */
-  public boolean[] getColGrpBlocks() {
-    return this.colGrpBlock;
+  public BitSet[] getMeasureNullValueIndex() {
+    return measureNullValueIndex;
+  }
+
+  /**
+   * @param measureNullValueIndex the measureNullValueIndex to set
+   */
+  public void setMeasureNullValueIndex(BitSet[] measureNullValueIndex) {
+    this.measureNullValueIndex = measureNullValueIndex;
   }
 }

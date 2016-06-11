@@ -7,7 +7,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.List;
 
 import org.carbondata.common.logging.LogService;
@@ -16,7 +15,19 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.metadata.ValueEncoderMeta;
-import org.carbondata.format.*;
+import org.carbondata.format.BlockletBTreeIndex;
+import org.carbondata.format.BlockletIndex;
+import org.carbondata.format.BlockletInfo;
+import org.carbondata.format.BlockletMinMaxIndex;
+import org.carbondata.format.ChunkCompressionMeta;
+import org.carbondata.format.ColumnSchema;
+import org.carbondata.format.CompressionCodec;
+import org.carbondata.format.DataChunk;
+import org.carbondata.format.Encoding;
+import org.carbondata.format.FileFooter;
+import org.carbondata.format.PresenceMeta;
+import org.carbondata.format.SegmentInfo;
+import org.carbondata.format.SortState;
 
 /**
  * Util class to convert to thrift metdata classes
@@ -156,7 +167,8 @@ public class CarbonMetadataUtil {
       //meta
       PresenceMeta presenceMeta = new PresenceMeta();
       presenceMeta.setPresent_bit_streamIsSet(true);
-      presenceMeta.setPresent_bit_stream(new BitSet().toByteArray());
+      presenceMeta
+          .setPresent_bit_stream(blockletInfoColumnar.getMeasureNullValueIndex()[i].toByteArray());
       dataChunk.setPresence(presenceMeta);
       //TODO : PresenceMeta needs to be implemented and set here
       // dataChunk.setPresence(new PresenceMeta());

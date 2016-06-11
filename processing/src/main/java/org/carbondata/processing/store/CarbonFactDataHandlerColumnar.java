@@ -26,9 +26,16 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -81,6 +88,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonFactDataHandlerColumnar.class.getName());
   /**
+   * decimalPointers
+   */
+  private final byte decimalPointers = Byte.parseByte(CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS,
+          CarbonCommonConstants.CARBON_DECIMAL_POINTERS_DEFAULT));
+  /**
    * data writer
    */
   private CarbonFactDataWriter dataWriter;
@@ -129,7 +142,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * otherMeasureIndex
    */
   private int[] otherMeasureIndex;
-
   /**
    * customMeasureIndex
    */
@@ -180,13 +192,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private List<Future<Void>> producerExecutorServiceTaskList;
   private ExecutorService consumerExecutorService;
   private List<Future<Void>> consumerExecutorServiceTaskList;
-
   private List<Object[]> dataRows;
-
-  private int currentRestructureNumber;
-
   private int noDictionaryCount;
-
   private ColumnGroupModel colGrpModel;
   private int[] primitiveDimLens;
   private char[] type;
@@ -228,12 +235,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * data directory location in carbon store path
    */
   private String carbonDataDirectoryPath;
-  /**
-   * decimalPointers
-   */
-  private final byte decimalPointers = Byte.parseByte(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS,
-          CarbonCommonConstants.CARBON_DECIMAL_POINTERS_DEFAULT));
   /**
    * no of complex dimensions
    */
@@ -457,7 +458,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     Object[] min = new Object[measureCount];
     int[] decimal = new int[measureCount];
     Object[] uniqueValue = new Object[measureCount];
-
+    // to store index of the measure columns which are null
+    BitSet[] nullValueIndexBitSet = getMeasureNullValueIndexBitSet(measureCount);
     for (int i = 0; i < max.length; i++) {
       if (type[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
         max[i] = Long.MIN_VALUE;
@@ -533,6 +535,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       for (int k = 0; k < otherMeasureIndex.length; k++) {
         if (type[otherMeasureIndex[k]] == CarbonCommonConstants.BIG_INT_MEASURE) {
           if (null == row[otherMeasureIndex[k]]) {
+            nullValueIndexBitSet[otherMeasureIndex[k]].set(count);
             dataHolder[otherMeasureIndex[k]].setWritableLongValueByIndex(count, 0L);
           } else {
             dataHolder[otherMeasureIndex[k]]
@@ -540,6 +543,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           }
         } else {
           if (null == row[otherMeasureIndex[k]]) {
+            nullValueIndexBitSet[otherMeasureIndex[k]].set(count);
             dataHolder[otherMeasureIndex[k]].setWritableDoubleValueByIndex(count, 0.0);
           } else {
             dataHolder[otherMeasureIndex[k]]
@@ -553,6 +557,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             && type[customMeasureIndex[i]] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
           BigDecimal val = BigDecimal.valueOf(0);
           b = DataTypeUtil.bigDecimalToByte(val);
+          nullValueIndexBitSet[customMeasureIndex[i]].set(count);
         } else {
           b = (byte[]) row[customMeasureIndex[i]];
         }
@@ -580,6 +585,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         getNodeHolderObject(writableMeasureDataArray, byteArrayValues, dataRows.size(), startKey,
             endKey, compressionModel, noDictionaryValueHolder, noDictStartKey, noDictEndKey,
             colGrpMinMax);
+    nodeHolder.setMeasureNullValueIndex(nullValueIndexBitSet);
     LOGGER.info("Number Of records processed: " + dataRows.size());
     return nodeHolder;
   }
@@ -587,8 +593,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private NodeHolder getNodeHolderObject(byte[][] dataHolderLocal, byte[][] byteArrayValues,
       int entryCountLocal, byte[] startkeyLocal, byte[] endKeyLocal,
       ValueCompressionModel compressionModel, byte[][] noDictionaryData,
-      byte[] noDictionaryStartKey, byte[] noDictionaryEndKey,
-      ColGroupMinMax[] colGrpMinMax) throws CarbonDataWriterException {
+      byte[] noDictionaryStartKey, byte[] noDictionaryEndKey, ColGroupMinMax[] colGrpMinMax)
+      throws CarbonDataWriterException {
     byte[][][] noDictionaryColumnsData = null;
     List<ArrayList<byte[]>> colsAndValues = new ArrayList<ArrayList<byte[]>>();
     int complexColCount = getComplexColsCount();
@@ -663,7 +669,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
     thread_pool_size = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.NUM_CORES_BLOCK_SORT,
-                CarbonCommonConstants.NUM_CORES_BLOCK_SORT_DEFAULT_VAL));
+            CarbonCommonConstants.NUM_CORES_BLOCK_SORT_DEFAULT_VAL));
     ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
     List<Future<IndexStorage>> submit = new ArrayList<Future<IndexStorage>>(
         primitiveDimLens.length + noDictionaryCount + complexColCount);
@@ -712,8 +718,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   /**
    * DataHolder will have all row mdkey data
+   *
    * @param noOfColumn : no of column participated in mdkey
-   * @param noOfRow : total no of row
+   * @param noOfRow    : total no of row
    * @return : dataholder
    */
   private DataHolder[] getDataHolders(int noOfColumn, int noOfRow, ColGroupMinMax[] colGrpMinMax) {
@@ -863,6 +870,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
     return colGrpMinMax;
   }
+
   /**
    * Evaluate min max of columns in columnn group
    *
@@ -876,6 +884,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       }
     }
   }
+
   /**
    * This method will be used to update the max value for each measure
    */
@@ -947,7 +956,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
     // if atleast one dimension is present then initialize column splitter otherwise null
     int noOfColStore = colGrpModel.getNoOfColumnStore();
-    int [] keyBlockSize = new int[noOfColStore + complexColCount];
+    int[] keyBlockSize = new int[noOfColStore + complexColCount];
 
     if (dimLens.length > 0) {
       //Using Variable length variable split generator
@@ -1061,6 +1070,24 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       dataHolder[customMeasureIndex[i]].initialiseByteArrayValues(size);
     }
     return dataHolder;
+  }
+
+  /**
+   * Below method will be used to get the bit set array for
+   * all the measure, which will store the indexes which are null
+   *
+   * @param measureCount
+   * @return bit set to store null value index
+   */
+  private BitSet[] getMeasureNullValueIndexBitSet(int measureCount) {
+    BitSet[] nullvalueIndexBitset = new BitSet[measureCount];
+    // creating a bit set for all the measure column
+    nullvalueIndexBitset = new BitSet[this.measureCount];
+    for (int i = 0; i < nullvalueIndexBitset.length; i++) {
+      // bitset size will be blocklet size
+      nullvalueIndexBitset[i] = new BitSet(this.blockletSize);
+    }
+    return nullvalueIndexBitset;
   }
 
   private CarbonFactDataWriter<?> getFactDataWriter(String storeLocation, int measureCount,

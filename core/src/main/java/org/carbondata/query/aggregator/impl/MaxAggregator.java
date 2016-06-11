@@ -48,7 +48,11 @@ public class MaxAggregator extends AbstractMaxAggregator {
    */
   @Override public void merge(MeasureAggregator aggregator) {
     MaxAggregator maxAggregator = (MaxAggregator) aggregator;
-    agg(maxAggregator.aggVal);
+    if (!aggregator.isFirstTime()) {
+      agg(maxAggregator.aggVal);
+      firstTime = false;
+    }
+
   }
 
   @Override public MeasureAggregator getCopy() {

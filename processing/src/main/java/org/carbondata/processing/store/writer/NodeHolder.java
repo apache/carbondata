@@ -19,6 +19,8 @@
 
 package org.carbondata.processing.store.writer;
 
+import java.util.BitSet;
+
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 
 public class NodeHolder {
@@ -129,6 +131,12 @@ public class NodeHolder {
    * true if given index is colgroup block
    */
   private boolean[] colGrpBlock;
+
+  /**
+   * bit set which will holds the measure
+   * indexes which are null
+   */
+  private BitSet[] measureNullValueIndex;
 
   /**
    * @return the keyArray
@@ -419,6 +427,13 @@ public class NodeHolder {
   }
 
   /**
+   * @return
+   */
+  public boolean[] getColGrpBlocks() {
+    return this.colGrpBlock;
+  }
+
+  /**
    * @param colGrpBlock true if block is column group
    */
   public void setColGrpBlocks(boolean[] colGrpBlock) {
@@ -426,9 +441,16 @@ public class NodeHolder {
   }
 
   /**
-   * @return
+   * @return the measureNullValueIndex
    */
-  public boolean[] getColGrpBlocks() {
-    return this.colGrpBlock;
+  public BitSet[] getMeasureNullValueIndex() {
+    return measureNullValueIndex;
+  }
+
+  /**
+   * @param measureNullValueIndex the measureNullValueIndex to set
+   */
+  public void setMeasureNullValueIndex(BitSet[] measureNullValueIndex) {
+    this.measureNullValueIndex = measureNullValueIndex;
   }
 }

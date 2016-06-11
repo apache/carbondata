@@ -68,6 +68,7 @@ public class SumDistinctDoubleAggregator extends AbstractMeasureAggregatorBasic 
    */
   @Override public void agg(double newVal) {
     valueSet.add(newVal);
+    firstTime = false;
   }
 
   /**
@@ -77,6 +78,7 @@ public class SumDistinctDoubleAggregator extends AbstractMeasureAggregatorBasic 
    */
   @Override public void agg(Object newVal) {
     valueSet.add(newVal instanceof Double ? (Double) newVal : new Double(newVal.toString()));
+    firstTime = false;
   }
 
   @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
@@ -109,7 +111,10 @@ public class SumDistinctDoubleAggregator extends AbstractMeasureAggregatorBasic 
    */
   @Override public void merge(MeasureAggregator aggregator) {
     SumDistinctDoubleAggregator distinctAggregator = (SumDistinctDoubleAggregator) aggregator;
-    agg(distinctAggregator.valueSet);
+    if (!aggregator.isFirstTime()) {
+      agg(distinctAggregator.valueSet);
+      firstTime = false;
+    }
   }
 
   @Override public Double getDoubleValue() {
@@ -133,7 +138,7 @@ public class SumDistinctDoubleAggregator extends AbstractMeasureAggregatorBasic 
   }
 
   @Override public boolean isFirstTime() {
-    return false;
+    return firstTime;
   }
 
   @Override public void writeData(DataOutput dataOutput) throws IOException {
@@ -207,7 +212,7 @@ public class SumDistinctDoubleAggregator extends AbstractMeasureAggregatorBasic 
   }
 
   @Override public boolean equals(Object obj) {
-    if(!(obj instanceof SumDistinctDoubleAggregator)) {
+    if (!(obj instanceof SumDistinctDoubleAggregator)) {
       return false;
     }
     SumDistinctDoubleAggregator o = (SumDistinctDoubleAggregator) obj;

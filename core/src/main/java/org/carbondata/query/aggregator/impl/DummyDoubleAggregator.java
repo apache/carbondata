@@ -31,15 +31,18 @@ public class DummyDoubleAggregator extends AbstractMeasureAggregatorDummy {
 
   @Override public void agg(double newVal) {
     aggVal = newVal;
+    firstTime = false;
   }
 
   @Override public void agg(Object newVal) {
     aggVal = (Double) newVal;
+    firstTime = false;
   }
 
   @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
       aggVal = dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
+      firstTime = false;
     }
   }
 

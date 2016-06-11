@@ -49,7 +49,6 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
 
   public AvgBigDecimalAggregator() {
     aggVal = new BigDecimal(0);
-    firstTime = false;
   }
 
   /**
@@ -85,9 +84,9 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
 
   @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
-      BigDecimal value =
-          dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
+      BigDecimal value = dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
       aggVal = aggVal.add(value);
+      firstTime = false;
       count++;
     }
   }
@@ -180,10 +179,10 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
   }
 
   @Override public boolean equals(Object obj) {
-    if(!(obj instanceof AvgBigDecimalAggregator)) {
+    if (!(obj instanceof AvgBigDecimalAggregator)) {
       return false;
     }
-    AvgBigDecimalAggregator o = (AvgBigDecimalAggregator)obj;
+    AvgBigDecimalAggregator o = (AvgBigDecimalAggregator) obj;
     return getBigDecimalValue().equals(o.getBigDecimalValue());
   }
 

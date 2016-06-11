@@ -54,10 +54,6 @@ public abstract class AbstractMeasureAggregatorDummy extends AbstractMeasureAggr
   @Override public void merge(MeasureAggregator aggregator) {
   }
 
-  @Override public boolean isFirstTime() {
-    return false;
-  }
-
   @Override public MeasureAggregator getCopy() {
     return null;
   }

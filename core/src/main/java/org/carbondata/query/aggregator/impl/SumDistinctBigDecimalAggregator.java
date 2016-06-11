@@ -73,6 +73,7 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
   @Override public void agg(Object newVal) {
     valueSet.add(
         newVal instanceof BigDecimal ? (BigDecimal) newVal : new BigDecimal(newVal.toString()));
+    firstTime = false;
   }
 
   @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
@@ -108,7 +109,10 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
   @Override public void merge(MeasureAggregator aggregator) {
     SumDistinctBigDecimalAggregator distinctAggregator =
         (SumDistinctBigDecimalAggregator) aggregator;
-    agg(distinctAggregator.valueSet);
+    if (!aggregator.isFirstTime()) {
+      agg(distinctAggregator.valueSet);
+      firstTime = false;
+    }
   }
 
   @Override public BigDecimal getBigDecimalValue() {
@@ -132,7 +136,7 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
   }
 
   @Override public boolean isFirstTime() {
-    return false;
+    return firstTime;
   }
 
   @Override public void writeData(DataOutput dataOutput) throws IOException {
@@ -210,7 +214,7 @@ public class SumDistinctBigDecimalAggregator extends AbstractMeasureAggregatorBa
   }
 
   @Override public boolean equals(Object obj) {
-    if(!(obj instanceof SumDistinctBigDecimalAggregator)) {
+    if (!(obj instanceof SumDistinctBigDecimalAggregator)) {
       return false;
     }
     SumDistinctBigDecimalAggregator o = (SumDistinctBigDecimalAggregator) obj;

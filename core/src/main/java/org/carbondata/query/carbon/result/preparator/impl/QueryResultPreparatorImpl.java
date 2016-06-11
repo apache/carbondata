@@ -211,11 +211,7 @@ public class QueryResultPreparatorImpl extends AbstractQueryResultPreparator<Bat
         QueryMeasure msr = null;
         for (int i = 0; i < queryModel.getQueryMeasures().size(); i++) {
           msr = queryModel.getQueryMeasures().get(i);
-          if (msrAgg[queryExecuterProperties.measureStartIndex + i].isFirstTime() && (
-              msr.getAggregateFunction().equals(CarbonCommonConstants.COUNT) || msr
-                  .getAggregateFunction().equals(CarbonCommonConstants.DISTINCT_COUNT))) {
-            row[msr.getQueryOrder()] = 0.0;
-          } else if (msrAgg[queryExecuterProperties.measureStartIndex + i].isFirstTime()) {
+          if (msrAgg[queryExecuterProperties.measureStartIndex + i].isFirstTime()) {
             row[msr.getQueryOrder()] = null;
           } else {
             Object msrVal;
@@ -230,8 +226,7 @@ public class QueryResultPreparatorImpl extends AbstractQueryResultPreparator<Bat
                 msrVal = msrAgg[queryExecuterProperties.measureStartIndex + i].getDoubleValue();
             }
             row[msr.getQueryOrder()] = DataTypeUtil
-                .getMeasureDataBasedOnDataType(msrVal == null ? null : msrVal,
-                    msr.getMeasure().getDataType());
+                .getMeasureDataBasedOnDataType(msrVal,msr.getMeasure().getDataType());
           }
         }
       }

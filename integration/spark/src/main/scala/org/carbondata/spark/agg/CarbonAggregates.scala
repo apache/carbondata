@@ -618,7 +618,12 @@ case class SumDisctinctFunctionCarbon(expr: Expression, base: AggregateExpressio
   // in case of empty load it was failing so added null check.
   {
     if (isFinal && distinct != null) {
+      if (distinct.isFirstTime) {
+        null
+      }
+      else {
       Cast(Literal(distinct.getValueObject), base.dataType).eval(null)
+      }
     }
     else {
       distinct

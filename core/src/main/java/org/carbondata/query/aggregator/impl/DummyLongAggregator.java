@@ -31,11 +31,13 @@ public class DummyLongAggregator extends AbstractMeasureAggregatorDummy {
 
   @Override public void agg(Object newVal) {
     aggVal = (Long) newVal;
+    firstTime = false;
   }
 
   @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
       aggVal = dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
+      firstTime = false;
     }
   }
 

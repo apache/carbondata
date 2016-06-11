@@ -47,7 +47,10 @@ public class MinAggregator extends AbstractMinAggregator {
    */
   @Override public void merge(MeasureAggregator aggregator) {
     MinAggregator minAggregator = (MinAggregator) aggregator;
-    agg(minAggregator.aggVal);
+    if (!aggregator.isFirstTime()) {
+      agg(minAggregator.aggVal);
+      firstTime = false;
+    }
   }
 
   @Override public MeasureAggregator getCopy() {

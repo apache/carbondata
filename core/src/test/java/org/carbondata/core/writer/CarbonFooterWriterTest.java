@@ -19,13 +19,14 @@
 
 package org.carbondata.core.writer;
 
-import static org.junit.Assert.assertTrue;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 import java.util.UUID;
+
+import junit.framework.TestCase;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
@@ -43,7 +44,7 @@ import org.junit.Test;
  * This class will test the functionality writing and
  * reading a dictionary and its corresponding metadata file
  */
-public class CarbonFooterWriterTest {
+public class CarbonFooterWriterTest extends TestCase{
 
   private String filePath;
 
@@ -142,6 +143,7 @@ public class CarbonFooterWriterTest {
     infoColumnar.setMeasureOffset(new long[] { 33, 99 });
     infoColumnar.setAggKeyBlock(new boolean[] { true, true, true, true });
     infoColumnar.setColGrpBlocks(new boolean[] { false, false, false, false });
+    infoColumnar.setMeasureNullValueIndex(new BitSet[] {new BitSet(),new BitSet()});
     ValueCompressionModel compressionModel = new ValueCompressionModel();
     compressionModel.setMaxValue(new Object[] { 44d, 55d });
     compressionModel.setMinValue(new Object[] { 0d, 0d });

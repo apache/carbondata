@@ -371,6 +371,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     //add column min max data
     infoObj.setColumnMaxData(nodeHolder.getColumnMaxData());
     infoObj.setColumnMinData(nodeHolder.getColumnMinData());
+    infoObj.setMeasureNullValueIndex(nodeHolder.getMeasureNullValueIndex());
     long[] keyOffSets = new long[nodeHolder.getKeyLengths().length];
 
     for (int i = 0; i < keyOffSets.length; i++) {

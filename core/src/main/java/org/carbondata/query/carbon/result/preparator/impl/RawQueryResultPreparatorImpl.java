@@ -2,7 +2,6 @@ package org.carbondata.query.carbon.result.preparator.impl;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.carbon.executor.impl.QueryExecutorProperties;
 import org.carbondata.query.carbon.model.QueryDimension;
@@ -96,11 +95,7 @@ public class RawQueryResultPreparatorImpl extends AbstractQueryResultPreparator<
       QueryMeasure msr = null;
       for (int i = 0; i < queryModel.getQueryMeasures().size(); i++) {
         msr = queryModel.getQueryMeasures().get(i);
-        if (msrAgg[queryExecuterProperties.measureStartIndex + i].isFirstTime() && (
-            msr.getAggregateFunction().equals(CarbonCommonConstants.COUNT) || msr
-                .getAggregateFunction().equals(CarbonCommonConstants.DISTINCT_COUNT))) {
-          resultDataA[i + 1][columnIndex] = 0.0;
-        } else if (msrAgg[queryExecuterProperties.measureStartIndex + i].isFirstTime()) {
+        if (msrAgg[queryExecuterProperties.measureStartIndex + i].isFirstTime()) {
           resultDataA[i + 1][columnIndex] = null;
         } else {
           Object msrVal;
@@ -115,7 +110,7 @@ public class RawQueryResultPreparatorImpl extends AbstractQueryResultPreparator<
               msrVal = msrAgg[queryExecuterProperties.measureStartIndex + i].getDoubleValue();
           }
           resultDataA[i + 1][columnIndex] = DataTypeUtil
-              .getMeasureDataBasedOnDataType(msrVal == null ? null : msrVal,
+              .getMeasureDataBasedOnDataType(msrVal,
                   msr.getMeasure().getDataType());
         }
       }

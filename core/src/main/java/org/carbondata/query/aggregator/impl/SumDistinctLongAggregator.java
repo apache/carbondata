@@ -67,6 +67,7 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
    */
   @Override public void agg(Object newVal) {
     valueSet.add(newVal instanceof Long ? (Long) newVal : Long.valueOf(newVal.toString()));
+    firstTime = false;
   }
 
   @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
@@ -99,7 +100,10 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
    */
   @Override public void merge(MeasureAggregator aggregator) {
     SumDistinctLongAggregator distinctAggregator = (SumDistinctLongAggregator) aggregator;
-    agg(distinctAggregator.valueSet);
+    if (!aggregator.isFirstTime()) {
+      agg(distinctAggregator.valueSet);
+      firstTime = false;
+    }
   }
 
   @Override public Long getLongValue() {
@@ -123,7 +127,7 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
   }
 
   @Override public boolean isFirstTime() {
-    return false;
+    return firstTime;
   }
 
   @Override public void writeData(DataOutput dataOutput) throws IOException {
@@ -198,7 +202,7 @@ public class SumDistinctLongAggregator extends AbstractMeasureAggregatorBasic {
   }
 
   @Override public boolean equals(Object obj) {
-    if(!(obj instanceof SumDistinctLongAggregator)) {
+    if (!(obj instanceof SumDistinctLongAggregator)) {
       return false;
     }
     SumDistinctLongAggregator o = (SumDistinctLongAggregator) obj;

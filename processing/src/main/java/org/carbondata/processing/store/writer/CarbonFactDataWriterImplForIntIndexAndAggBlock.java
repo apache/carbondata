@@ -417,7 +417,8 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
 
     // add the key array length
     info.setKeyLengths(nodeHolder.getKeyLengths());
-
+    // adding null measure index bit set
+    info.setMeasureNullValueIndex(nodeHolder.getMeasureNullValueIndex());
     //add column min max length
     info.setColumnMaxData(nodeHolder.getColumnMaxData());
     info.setColumnMinData(nodeHolder.getColumnMinData());

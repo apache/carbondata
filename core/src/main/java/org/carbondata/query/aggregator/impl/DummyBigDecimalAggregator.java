@@ -34,11 +34,13 @@ public class DummyBigDecimalAggregator extends AbstractMeasureAggregatorDummy {
 
   @Override public void agg(Object newVal) {
     aggVal = (BigDecimal) newVal;
+    firstTime = false;
   }
 
   @Override public void agg(MeasureColumnDataChunk dataChunk, int index) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
       aggVal = dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
+      firstTime = false;
     }
   }
 
