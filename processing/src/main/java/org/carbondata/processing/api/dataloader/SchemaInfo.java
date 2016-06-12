@@ -56,26 +56,6 @@ public class SchemaInfo {
    */
   private boolean isAutoAggregateRequest;
 
-  /**
-   * isAggregateTableCSVLoadRequest
-   */
-  private boolean isAggregateTableCSVLoadRequest;
-
-  /**
-   * schemaPath
-   */
-  private String schemaPath;
-
-  /**
-   * schemaConnName
-   */
-  private String schemaConnName;
-
-  /**
-   * isBackgroundMergingRequest
-   */
-  private boolean isBackgroundMergingRequest;
-
   private String complexDelimiterLevel1;
 
   private String complexDelimiterLevel2;
@@ -175,13 +155,6 @@ public class SchemaInfo {
   }
 
   /**
-   * @return the isAggregateTableCSVLoadRequest
-   */
-  public boolean isAggregateTableCSVLoadRequest() {
-    return isAggregateTableCSVLoadRequest;
-  }
-
-  /**
    * @return the schemaName
    */
   public String getSchemaName() {
@@ -193,20 +166,6 @@ public class SchemaInfo {
    */
   public void setSchemaName(String schemaName) {
     this.schemaName = schemaName;
-  }
-
-  /**
-   * @return the schemaPath
-   */
-  public String getSchemaPath() {
-    return schemaPath;
-  }
-
-  /**
-   * @param schemaPath the schemaPath to set
-   */
-  public void setSchemaPath(String schemaPath) {
-    this.schemaPath = schemaPath;
   }
 
 }

@@ -43,7 +43,6 @@ public class ColumnSchemaDetailsWrapper {
    */
   public String toString() {
     StringBuilder builder = new StringBuilder();
-    int size = columnSchemaDetailsMap.size();
     Set<Map.Entry<String, ColumnSchemaDetails>> entries = columnSchemaDetailsMap.entrySet();
     Iterator<Map.Entry<String, ColumnSchemaDetails>> iterator = entries.iterator();
 

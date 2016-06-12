@@ -287,19 +287,17 @@ public class GraphGenerator {
       }
     }
 
-    if (!kettleInitialized) {
-      synchronized (DRIVERS) {
-        try {
-          if (!kettleInitialized) {
-            EnvUtil.environmentInit();
-            KettleEnvironment.init();
-            kettleInitialized = true;
-          }
-        } catch (KettleException kettlExp) {
-          LOGGER.error(kettlExp);
-          throw new GraphGeneratorException("Error While Initializing the Kettel Engine ",
-              kettlExp);
+    synchronized (DRIVERS) {
+      try {
+        if (!kettleInitialized) {
+          EnvUtil.environmentInit();
+          KettleEnvironment.init();
+          kettleInitialized = true;
         }
+      } catch (KettleException kettlExp) {
+        LOGGER.error(kettlExp);
+        throw new GraphGeneratorException("Error While Initializing the Kettel Engine ",
+            kettlExp);
       }
     }
   }

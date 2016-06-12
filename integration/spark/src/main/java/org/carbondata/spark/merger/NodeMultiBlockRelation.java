@@ -26,4 +26,16 @@ public class NodeMultiBlockRelation implements Comparable<NodeMultiBlockRelation
   @Override public int compareTo(NodeMultiBlockRelation obj) {
     return this.blocks.size() - obj.getBlocks().size();
   }
+
+  @Override public boolean equals(Object obj) {
+    if (!(obj instanceof NodeMultiBlockRelation)) {
+      return false;
+    }
+    NodeMultiBlockRelation o = (NodeMultiBlockRelation) obj;
+    return blocks.equals(o.blocks) && node.equals(o.node);
+  }
+
+  @Override public int hashCode() {
+    return blocks.hashCode() + node.hashCode();
+  }
 }

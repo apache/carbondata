@@ -146,7 +146,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    * @param fileBufferSize
    * @param noDictionaryCount
    * @param aggType
-   * @param isNoDictionaryDimension
+   * @param isNoDictionaryDimensionColumn
    */
   public SortTempFileChunkHolder(File tempFile, int dimensionCount, int complexDimensionCount,
       int measureCount, int fileBufferSize, int noDictionaryCount, char[] aggType,
@@ -399,22 +399,12 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     return entryCount;
   }
 
-  /**
-   * @return the tempFile
-   */
-  public File getTempFile() {
-    return tempFile;
-  }
-
-  /**
-   * @param tempFile the tempFile to set
-   */
-  public void setTempFile(File tempFile) {
-    this.tempFile = tempFile;
-  }
-
   @Override public int compareTo(SortTempFileChunkHolder other) {
 
+    return compare(other);
+  }
+
+  private int compare(SortTempFileChunkHolder other) {
     int diff = 0;
 
     int normalIndex = 0;
@@ -454,9 +444,29 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
         }
         normalIndex++;
       }
-
     }
     return diff;
+  }
+
+  @Override public boolean equals(Object obj) {
+    if (!(obj instanceof SortTempFileChunkHolder)) {
+      return false;
+    }
+    SortTempFileChunkHolder o = (SortTempFileChunkHolder) obj;
+
+
+
+    return o.compare(o) == 0;
+  }
+
+  @Override public int hashCode() {
+    int hash = 0;
+    hash += 31 * measureCount;
+    hash += 31 * dimensionCount;
+    hash += 31 * complexDimensionCount;
+    hash += 31 * noDictionaryCount;
+    hash += tempFile.hashCode();
+    return hash;
   }
 
   private final class DataFetcher implements Callable<Void> {

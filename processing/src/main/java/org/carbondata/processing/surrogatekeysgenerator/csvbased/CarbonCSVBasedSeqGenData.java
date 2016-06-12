@@ -26,7 +26,6 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenerator;
 
 import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.core.row.ValueMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
 
@@ -69,15 +68,6 @@ public class CarbonCSVBasedSeqGenData extends BaseStepData implements StepDataIn
    */
   private int inputSize;
 
-  /**
-   * where the key field indexes are
-   */
-  private int[] keyFieldIndex;
-
-  /**
-   * meta info for a string conversion
-   */
-  private ValueMetaInterface[] conversionMeta;
 
   public CarbonCSVBasedSeqGenData() {
     super();
@@ -179,8 +169,5 @@ public class CarbonCSVBasedSeqGenData extends BaseStepData implements StepDataIn
 
     defaultObjects = null;
 
-    keyFieldIndex = null;
-
-    conversionMeta = null;
   }
 }

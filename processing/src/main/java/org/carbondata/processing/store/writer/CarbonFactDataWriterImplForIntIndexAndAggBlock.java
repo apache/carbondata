@@ -70,9 +70,11 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
       byte[] noDictionaryStartKey, byte[] noDictionaryEndKey) throws CarbonDataWriterException {
     // if there are no NO-Dictionary column present in the table then
     // set the empty byte array
-    if (null == noDictionaryEndKey && null == noDictionaryStartKey) {
-      noDictionaryStartKey = new byte[0];
+    if (null == noDictionaryEndKey) {
       noDictionaryEndKey = new byte[0];
+    }
+    if (null == noDictionaryStartKey) {
+      noDictionaryStartKey = new byte[0];
     }
     // total measure length;
     int totalMsrArrySize = 0;

@@ -909,6 +909,8 @@ public final class CarbonLoaderUtil {
       } else {
         LOGGER.info("Separate carbon.storelocation.hdfs is not configured for hdfs store path");
       }
+    } catch (RuntimeException e) {
+      LOGGER.info(e.getMessage());
     } catch (Exception e) {
       LOGGER.info(e.getMessage());
     }

@@ -389,7 +389,9 @@ public class SortDataRows {
       LOGGER.error(e, "Problem while writing the sort temp file");
       throw e;
     } finally {
-      writer.finish();
+      if(writer != null) {
+        writer.finish();
+      }
     }
   }
 

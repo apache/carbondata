@@ -21,10 +21,6 @@ package org.carbondata.core.constants;
 
 public final class CarbonCommonConstants {
   /**
-   * RETENTION DETAILS FILE
-   */
-  public static final String RETENTION_RECORD = "RetentionDeletionRecord.txt";
-  /**
    * MERGER_FOLDER_EXT
    */
   public static final String MERGER_FOLDER_EXT = ".merge";
@@ -37,10 +33,6 @@ public final class CarbonCommonConstants {
    * short size in bytes
    */
   public static final int SHORT_SIZE_IN_BYTE = 2;
-  /**
-   * char size in bytes
-   */
-  public static final int CHAR_SIZE_IN_BYTE = 2;
   /**
    * DOUBLE size in bytes
    */
@@ -110,10 +102,6 @@ public final class CarbonCommonConstants {
    */
   public static final String BLOCKLET_SIZE = "carbon.blocklet.size";
   /**
-   * Hierarchy blocklet size
-   */
-  public static final String HIERARCHY_BLOCKLET_SIZE = "carbon.hier.blocklet.size";
-  /**
    * TODO: max number of blocklets written in a single file?
    */
   public static final String MAX_FILE_SIZE = "carbon.max.file.size";
@@ -169,10 +157,6 @@ public final class CarbonCommonConstants {
    * max blocklet size
    */
   public static final int BLOCKLET_SIZE_MAX_VAL = 12000000;
-  /**
-   * max Hierarchy blocklet size
-   */
-  public static final String HIERARCHY_BLOCKLET_SIZE_DEFAULT_VAL = "1024";
   /**
    * TODO: default value of max number of blocklet written in a single file?
    */
@@ -235,10 +219,6 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_BADRECORDS_ENCRYPTION_DEFAULT_VAL = "false";
 
-  /**
-   * carbon mode default val
-   */
-  public static final String CARBON_MODE_DEFAULT_VAL = "file";
   /**
    * Slice Meta data file.
    */
@@ -318,10 +298,6 @@ public final class CarbonCommonConstants {
    */
   public static final String SORT_TEMP_FILE_LOCATION = "sortrowtmp";
   /**
-   * GROUP_BY_TEMP_FILE_LOCATION
-   */
-  public static final String GROUP_BY_TEMP_FILE_LOCATION = "groupbytmp";
-  /**
    * SORT_BUFFER_SIZE
    */
   public static final String SORT_BUFFER_SIZE = "carbon.sort.buffer.size";
@@ -384,65 +360,6 @@ public final class CarbonCommonConstants {
    * MEASUREMETADATA_FILE_EXT
    */
   public static final String MEASUREMETADATA_FILE_EXT = ".msrmetadata";
-  /**
-   * QUERY_OUT_FILE_EXT
-   */
-  public static final String QUERY_OUT_FILE_EXT = ".querypart";
-  /**
-   * QUERY_MERGED_FILE_EXT
-   */
-  public static final String QUERY_MERGED_FILE_EXT = ".querymergred";
-
-  /**
-   * PAGINATED CACHE ALLOCATED SIZE in MB
-   */
-  public static final String PAGINATED_CACHE_DISK_SIZE = "carbon.paginated.cache.disk.size";
-  /**
-   * PAGINATED CACHE ALLOCATED SIZE in bytes
-   */
-  public static final Long PAGINATED_CACHE_DISK_SIZE_DEFAULT = 2048L;
-  /**
-   * PAGINATED CACHE ALLOCATED SIZE in bytes
-   */
-  public static final Long PAGINATED_CACHE_DISK_SIZE_MAX = 102400L;
-  /**
-   * PAGINATED CACHE ALLOCATED SIZE in bytes
-   */
-  public static final Long PAGINATED_CACHE_DISK_SIZE_MIN = 256L;
-  /**
-   * Measure Source Data type
-   */
-  public static final String MEASURE_SRC_DATA_TYPE = "MeasureSourceDataType";
-  /**
-   * PAGINATED Internal merge size limit
-   */
-  public static final String PAGINATED_INTERNAL_MERGE_SIZE_LIMIT =
-      "carbon.paginated.internal.merge.size.limit";
-  /**
-   * PAGINATED Internal merge size limit default in MB
-   */
-  public static final String PAGINATED_INTERNAL_MERGE_SIZE_LIMIT_DEFAULT = "10";
-  /**
-   * PAGINATED Internal merge size limit
-   */
-  public static final String PAGINATED_INTERNAL_FILE_ROW_LIMIT =
-      "carbon.paginated.internal.file.row.limit";
-  /**
-   * PAGINATED Internal merge size limit default in MB
-   */
-  public static final String PAGINATED_INTERNAL_FILE_ROW_LIMIT_DEFAULT = "10000";
-  /**
-   * MAP
-   */
-  public static final String MAP = "map";
-  /**
-   * HEAP
-   */
-  public static final String HEAP = "heap";
-  /**
-   * DIMENSION_DEFAULT
-   */
-  public static final int DIMENSION_DEFAULT = 1;
   /**
    * GRAPH_ROWSET_SIZE
    */
@@ -581,39 +498,9 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_DECIMAL_POINTERS_AGG_DEFAULT = "4";
   /**
-   * CHECKPOINT
-   */
-  public static final String CHECKPOINT_EXT = ".checkpoint";
-  /**
-   * CHECKPOINT_FILE_NAME
-   */
-  public static final String CHECKPOINT_FILE_NAME = "checkpointfile_";
-  /**
    * SORT_TEMP_FILE_EXT
    */
   public static final String SORT_TEMP_FILE_EXT = ".sorttemp";
-  /**
-   * CARBON_DATALOAD_CHECKPOINT
-   */
-  public static final String CARBON_DATALOAD_CHECKPOINT = "carbon.dataload.checkpoint";
-  /**
-   * CARBON_DATALOAD_CHECKPOINT_DEFAULTVALUE
-   */
-  public static final String CARBON_DATALOAD_CHECKPOINT_DEFAULTVALUE = "false";
-  /**
-   * BAK_EXT
-   */
-  public static final String BAK_EXT = ".bak";
-  /**
-   * IS_PRODUCERCONSUMER_BASED_SORTING
-   */
-  public static final String IS_PRODUCERCONSUMER_BASED_SORTING =
-      "carbon.is.producer.consumer.based.sorting";
-  /**
-   * PRODUCERCONSUMER_BASED_SORTING_ENABLED
-   */
-  public static final String PRODUCERCONSUMER_BASED_SORTING_ENABLED_DEFAULTVALUE = "false";
-
   /**
    * CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED
    */
@@ -631,10 +518,6 @@ public final class CarbonCommonConstants {
    * CARBON_MAX_THREAD_FOR_SORTING
    */
   public static final String CARBON_MAX_THREAD_FOR_SORTING_DEFAULTVALUE = "2";
-  /**
-   * CARBON_AUTO_AGG_CONST
-   */
-  public static final String CARBON_AUTO_AGG_CONST = "AutoAgg";
   /**
    * IS_SORT_TEMP_FILE_COMPRESSION_ENABLED
    */
@@ -704,10 +587,6 @@ public final class CarbonCommonConstants {
    */
   public static final String IS_FULLY_FILLED_BITS_DEFAULT_VALUE = "true";
   /**
-   * IS_INT_BASED_INDEXER_DEFAULTVALUE
-   */
-  public static final String IS_INT_BASED_INDEXER_DEFAULTVALUE = "true";
-  /**
    * IS_INT_BASED_INDEXER
    */
   public static final String AGGREAGATE_COLUMNAR_KEY_BLOCK = "aggregate.columnar.keyblock";
@@ -723,19 +602,6 @@ public final class CarbonCommonConstants {
    * IS_INT_BASED_INDEXER_DEFAULTVALUE
    */
   public static final String HIGH_CARDINALITY_VALUE_DEFAULTVALUE = "100000";
-  /**
-   * IS_COMPRESSED_KEYBLOCK
-   */
-  public static final String IS_COMPRESSED_KEYBLOCK_DEFAULTVALUE = "false";
-  /**
-   * CARBON_USE_HASHBASED_AGG_INSORT
-   */
-  public static final String CARBON_USE_HASHBASED_AGG_INSORT = "carbon.use.hashbased.agg.insort";
-  /**
-   * CARBON_USE_HASHBASED_AGG_INSORT_DEFAULTVALUE
-   */
-  public static final String CARBON_USE_HASHBASED_AGG_INSORT_DEFAULTVALUE = "false";
-  public static final String SQLNULLVALUE = "#null";
   /**
    * CONSTANT_SIZE_TEN
    */
@@ -870,26 +736,8 @@ public final class CarbonCommonConstants {
   /**
    * SPILL_OVER_DISK_PATH
    */
-  public static final String SPILL_OVER_DISK_PATH = "Temp/paginationcache/";
-  /**
-   * SPILL_OVER_DISK_PATH
-   */
   public static final String SCHEMAS_MODIFIED_TIME_FILE = "modifiedTime.mdt";
   public static final String DEFAULT_INVISIBLE_DUMMY_MEASURE = "default_dummy_measure";
-  public static final String IS_FORCED_IN_MEMORY_CUBE = "carbon.forced.in.memory.cube";
-  public static final String IS_FORCED_IN_MEMORY_CUBE_DEFAULT_VALUE = "false";
-  /**
-   * UPDATING_METADATA
-   */
-  public static final String UPDATING_METADATA = ".tmp";
-  /**
-   * sort index file extension
-   */
-  public static final String LEVEL_SORT_INDEX_FILE_EXT = ".sortindex";
-  /**
-   * LEVEL_ARRAY_SIZE
-   */
-  public static final int LEVEL_ARRAY_SIZE = 10000;
   /**
    * max level cache size upto which level cache will be loaded in memory
    */
@@ -898,11 +746,6 @@ public final class CarbonCommonConstants {
    * max level cache size default value in GB
    */
   public static final String CARBON_MAX_LEVEL_CACHE_SIZE_DEFAULT = "-1";
-  /**
-   * max retry count to acquire a cube for querying or loading a level file in
-   * memory
-   */
-  public static final int MAX_RETRY_COUNT = 5;
   /**
    * retry interval after which loading a level file will be retried
    */
@@ -930,25 +773,12 @@ public final class CarbonCommonConstants {
   public static final char BIG_INT_MEASURE = 'l';
 
   /**
-   * MEASURE_NOT_NULL_VALUE
-   */
-
-  public static final byte MEASURE_NOT_NULL_VALUE = 1;
-  /**
-   * MEASURE_NULL_VALUE
-   */
-  public static final byte MEASURE_NULL_VALUE = 0;
-  /**
    * This determines the size of array to be processed in data load steps. one
    * for dimensions , one of ignore dictionary dimensions , one for measures.
    */
   public static final int ARRAYSIZE = 3;
   public static final String CARBON_UNIFIED_STORE_PATH = "carbon.unified.store.path";
   public static final String CARBON_UNIFIED_STORE_PATH_DEFAULT = "false";
-  /**
-   * Carbon enable quick filter to enable quick filter
-   */
-  public static final String CARBON_ENABLE_QUICK_FILTER = "carbon.enable.quick.filter";
   /**
    * CARBON_PREFETCH_BUFFERSIZE
    */
@@ -1164,7 +994,6 @@ public final class CarbonCommonConstants {
       "false";
 
   private CarbonCommonConstants() {
-
   }
 }
 

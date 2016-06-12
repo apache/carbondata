@@ -288,7 +288,7 @@ public final class CarbonDataMergerUtil {
         // if the load is beyond merged date.
         // then reset everything and continue search for loads.
         else if (loadsOfSameDate.size() < 2) {
-          loadsOfSameDate.removeAll(loadsOfSameDate);
+          loadsOfSameDate.clear();
           // need to add the next segment as first and  to check further
           segDate1 = initializeFirstSegment(loadsOfSameDate, segment, sdf);
         } else { // case where a load is beyond merge date and there is at least 2 loads to merge.
@@ -329,7 +329,9 @@ public final class CarbonDataMergerUtil {
    */
   private static boolean isTwoDatesPresentInRequiredRange(Date segDate1, Date segDate2,
       long numberOfDaysAllowedToMerge) {
-
+    if(segDate1 == null || segDate2 == null) {
+      return false;
+    }
     // take 1 st date add the configured days .
     Calendar cal1 = Calendar.getInstance();
     cal1.set(segDate1.getYear(), segDate1.getMonth(), segDate1.getDate());
@@ -410,7 +412,7 @@ public final class CarbonDataMergerUtil {
       } else if (segmentsToBeMerged.size() < 2) {
         // reset everything as do only continuous merge.
         totalLength = 0;
-        segmentsToBeMerged.removeAll(segmentsToBeMerged);
+        segmentsToBeMerged.clear();
         // add the latest one to the list to check for next segments.
         segmentsToBeMerged.add(segment);
         totalLength = sizeOfOneSegmentAcrossPartition;

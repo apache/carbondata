@@ -61,8 +61,6 @@ public abstract class AbstractTempSortFileReader implements TempSortFileReader {
    */
   protected int eachRecordSize;
 
-  protected int noDictionaryCount;
-
   /**
    * AbstractTempSortFileReader
    *
@@ -74,7 +72,6 @@ public abstract class AbstractTempSortFileReader implements TempSortFileReader {
       File tempFile, int noDictionaryCount) {
     this.measureCount = measureCount;
     this.dimensionCount = dimensionCount;
-    this.noDictionaryCount = noDictionaryCount;
     this.complexDimensionCount = complexDimensionCount;
     this.fileHolder = new MemoryMappedFileHolderImpl(1);
     this.filePath = tempFile.getAbsolutePath();

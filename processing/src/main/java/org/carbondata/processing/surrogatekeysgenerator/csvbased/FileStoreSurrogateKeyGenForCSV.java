@@ -314,13 +314,10 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
   @Override
   protected int updateSurrogateToStore(String tuple, String columnName, int index, int key,
       Object[] properties) throws KettleException {
-    Integer count = null;
     Map<String, Integer> cache = getTimeDimCache().get(columnName);
-
     if (cache == null) {
       return key;
     }
-    count = cache.get(tuple);
     return key;
   }
 

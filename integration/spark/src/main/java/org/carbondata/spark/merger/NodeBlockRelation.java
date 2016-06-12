@@ -45,4 +45,16 @@ public class NodeBlockRelation implements Comparable<NodeBlockRelation> {
   @Override public int compareTo(NodeBlockRelation obj) {
     return this.getNode().compareTo(obj.getNode());
   }
+
+  @Override public boolean equals(Object obj) {
+    if (!(obj instanceof NodeBlockRelation)) {
+      return false;
+    }
+    NodeBlockRelation o = (NodeBlockRelation) obj;
+    return node.equals(o.node);
+  }
+
+  @Override public int hashCode() {
+    return node.hashCode();
+  }
 }

@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -32,7 +31,6 @@ import org.carbondata.query.carbon.model.CarbonQueryPlan;
 import org.carbondata.query.queryinterface.query.metadata.CarbonDimensionLevelFilter;
 import org.carbondata.spark.partition.api.DataPartitioner;
 import org.carbondata.spark.partition.api.Partition;
-import org.carbondata.spark.query.metadata.CarbonDimensionFilter;
 
 import org.apache.spark.sql.execution.command.Partitioner;
 
@@ -116,31 +114,8 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
    * @see DataPartitioner#getPartitions(CarbonQueryPlan)
    */
   public List<Partition> getPartitions(CarbonQueryPlan queryPlan) {
-    CarbonDimensionFilter msisdnFilter = null;
-
-    if (msisdnFilter == null || msisdnFilter.getIncludeFilters().size() == 0) {
-      return allPartitions;
-    }
-
     // TODO: this has to be redone during partitioning implmentatation
-    List<Partition> allowedPartitions =
-        new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    //    for (Partition aPartition : allPartitions) {
-    //      CarbonDimensionLevelFilter partitionFilterDetails =
-    //          aPartition.getPartitionDetails().get(partitionColumn);
-    //
-    //      //Check if the partition is serving any of the hash code generated for include
-    //      //filter of query
-    //      for (String includeFilter : msisdnFilter.getIncludeFilters()) {
-    //        int hashCode = hashCode(includeFilter.hashCode());
-    //        if (partitionFilterDetails.getIncludeFilter().contains(hashCode)) {
-    //          allowedPartitions.add(aPartition);
-    //          break;
-    //        }
-    //      }
-    //    }
-
-    return allowedPartitions;
+    return allPartitions;
   }
 
   /**

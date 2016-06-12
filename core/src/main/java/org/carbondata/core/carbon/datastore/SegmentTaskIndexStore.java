@@ -213,7 +213,7 @@ public class SegmentTaskIndexStore {
    * @param segmentToBeRemoved      segment to be removed
    * @param absoluteTableIdentifier absoluteTableIdentifier
    */
-  public void removeTableBlocks(List<Integer> segmentToBeRemoved,
+  public void removeTableBlocks(List<String> segmentToBeRemoved,
       AbsoluteTableIdentifier absoluteTableIdentifier) {
     // get the lock object if lock object is not present then it is not
     // loaded at all
@@ -229,7 +229,7 @@ public class SegmentTaskIndexStore {
       if (null == map) {
         return;
       }
-      for (Integer segmentId : segmentToBeRemoved) {
+      for (String segmentId : segmentToBeRemoved) {
         map.remove(segmentId);
       }
     }

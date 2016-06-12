@@ -487,11 +487,6 @@ public class CsvInput extends BaseStep implements StepInterface {
 
   @Override public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
     try {
-      // Close the previous file...
-      //
-      if (data.bufferedInputStream != null) {
-        data.bufferedInputStream.close();
-      }
       // Clean the block info in map
       if (GraphGenerator.blockInfo.get(meta.getBlocksID()) != null) {
         GraphGenerator.blockInfo.remove(meta.getBlocksID());
@@ -508,8 +503,6 @@ public class CsvInput extends BaseStep implements StepInterface {
     data = (CsvInputData) sdi;
 
     if (super.init(smi, sdi)) {
-      data.preferredBufferSize = Integer.parseInt(environmentSubstitute(meta.getBufferSize()));
-
       // If the step doesn't have any previous steps, we just get the filename.
       // Otherwise, we'll grab the list of filenames later...
       //
@@ -520,14 +513,7 @@ public class CsvInput extends BaseStep implements StepInterface {
           logError(BaseMessages.getString(PKG, "CsvInput.MissingFilename.Message")); //$NON-NLS-1$
           return false;
         }
-
-        data.filenames = new String[] { filename, };
-      } else {
-        data.filenames = null;
-        data.filenr = 0;
       }
-
-      data.totalBytesRead = 0L;
 
       data.encodingType = EncodingType.guessEncodingType(meta.getEncoding());
 
@@ -548,8 +534,6 @@ public class CsvInput extends BaseStep implements StepInterface {
         logError(BaseMessages.getString(PKG, "CsvInput.BadEncoding.Message"), e); //$NON-NLS-1$
         return false;
       }
-
-      data.isAddingRowNumber = !Const.isEmpty(meta.getRowNumField());
 
       // Handle parallel reading capabilities...
       //

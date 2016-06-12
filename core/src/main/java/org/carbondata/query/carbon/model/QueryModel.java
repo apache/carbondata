@@ -142,7 +142,7 @@ public class QueryModel implements Serializable {
    * this will hold the information about the dictionary dimension
    * which to
    */
-  public Map<String, Dictionary> columnToDictionaryMapping;
+  public transient Map<String, Dictionary> columnToDictionaryMapping;
 
   /**
    * table on which query will be executed

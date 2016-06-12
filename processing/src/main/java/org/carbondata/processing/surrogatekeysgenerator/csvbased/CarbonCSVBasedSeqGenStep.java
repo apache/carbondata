@@ -465,11 +465,13 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       LOGGER.info(logMessage);
       setOutputDone();
 
+    } catch (RuntimeException ex) {
+      LOGGER.error(ex);
+      throw ex;
     } catch (Exception ex) {
       LOGGER.error(ex);
       throw new RuntimeException(ex);
     }
-
     return false;
   }
 
@@ -1035,23 +1037,13 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
             }
           } else {
-            int[] propIndex = propMap.get(foreignKeyColumnName);
-            Object[] props;
-            if (null == propIndex) {
-              props = new Object[0];
-            } else {
-              props = new Object[propIndex.length];
-              for (int ind = 0; ind < propIndex.length; ind++) {
-                props[ind] = r[propIndex[ind]];
-              }
-            }
             surrogateKeyForHierarchy = new int[1];
             surrogateKeyForHierarchy[0] =
                 surrogateKeyGen.generateSurrogateKeys((String) r[j], foreignKeyColumnName);
           }
           for (int k = 0; k < surrogateKeyForHierarchy.length; k++) {
             if (dimPresentCsvOrder[i]) {
-              out[memberMapping[i]] = Integer.valueOf(surrogateKeyForHierarchy[k]);
+              out[memberMapping[i]] = surrogateKeyForHierarchy[k];
             }
 
             i++;

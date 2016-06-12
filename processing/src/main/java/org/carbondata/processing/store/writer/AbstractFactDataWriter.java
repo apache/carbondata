@@ -175,6 +175,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     this.tableName = tableName;
     this.databaseName = databaseName;
 
+    this.databaseName = databaseName;
+
     this.storeLocation = storeLocation;
     this.blockletInfoList =
         new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);

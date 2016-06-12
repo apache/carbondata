@@ -58,9 +58,9 @@ public class SegmentStatusManager {
     this.absoluteTableIdentifier = absoluteTableIdentifier;
   }
 
-  public class ValidSegmentsInfo {
-    public List<String> listOfValidSegments;
-    public List<String> listOfValidUpdatedSegments;
+  public static class ValidSegmentsInfo {
+    public final List<String> listOfValidSegments;
+    public final List<String> listOfValidUpdatedSegments;
 
     public ValidSegmentsInfo(List<String> listOfValidSegments,
         List<String> listOfValidUpdatedSegments) {

@@ -19,8 +19,6 @@
 
 package org.carbondata.processing.csvreaderstep;
 
-import java.io.InputStream;
-
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
 import org.pentaho.di.trans.step.StepDataInterface;
@@ -30,20 +28,10 @@ public class CsvInputData extends BaseStepData implements StepDataInterface {
   public RowMetaInterface convertRowMeta;
   public RowMetaInterface outputRowMeta;
 
-  public byte[] byteBuffer;
-
   public byte[] delimiter;
   public byte[] enclosure;
-
   public int preferredBufferSize;
-  public String[] filenames;
-  public int filenr;
-  public byte[] binaryFilename;
-  public boolean isAddingRowNumber;
-  public long rowNumber;
   public int totalNumberOfSteps;
-  public long bytesToSkipInFirstFile;
-  public long totalBytesRead;
   public boolean parallel;
   public int filenameFieldIndex;
   public int rownumFieldIndex;
@@ -57,10 +45,8 @@ public class CsvInputData extends BaseStepData implements StepDataInterface {
   public PatternMatcherInterface delimiterMatcher;
   public PatternMatcherInterface enclosureMatcher;
   public CrLfMatcherInterface crLfMatcher;
-  protected InputStream bufferedInputStream;
 
   public CsvInputData() {
     super();
-    byteBuffer = new byte[] {};
   }
 }

@@ -213,7 +213,7 @@ public final class GraphExecutionUtil {
         String foreignKey = null;
         for (DimensionRelation dimRel : schema.getDimensionRelationList()) {
           for (String field : dimRel.getColumns()) {
-            if (dimension.equals(field)) {
+            if (dimension.getColName().equals(field)) {
               foreignKey = dimRel.getRelation().getFactForeignKeyColumn();
               break;
             }
