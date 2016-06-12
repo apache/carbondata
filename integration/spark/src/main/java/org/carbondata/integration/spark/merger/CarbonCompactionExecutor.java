@@ -30,6 +30,7 @@ import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.datastore.block.TaskBlockInfo;
+import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
@@ -43,6 +44,7 @@ import org.carbondata.query.carbon.model.QueryDimension;
 import org.carbondata.query.carbon.model.QueryMeasure;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.carbon.result.BatchRawResult;
+import org.carbondata.query.carbon.result.iterator.RawResultIterator;
 
 /**
  * Executor class for executing the query on the selected segments to be merged.
@@ -50,8 +52,9 @@ import org.carbondata.query.carbon.result.BatchRawResult;
  */
 public class CarbonCompactionExecutor {
 
+  private final Map<String, List<DataFileFooter>> dataFileMetadataSegMapping;
   private QueryExecutor queryExecutor;
-  private final SegmentProperties segmentProperties;
+  private final SegmentProperties destinationSegProperties;
   private final String schemaName;
   private final String factTableName;
   private final Map<String, TaskBlockInfo> segmentMapping;
@@ -74,11 +77,12 @@ public class CarbonCompactionExecutor {
    */
   public CarbonCompactionExecutor(Map<String, TaskBlockInfo> segmentMapping,
       SegmentProperties segmentProperties, String schemaName, String factTableName,
-      String storePath, CarbonTable carbonTable) {
+      String storePath, CarbonTable carbonTable,
+      Map<String, List<DataFileFooter>> dataFileMetadataSegMapping) {
 
     this.segmentMapping = segmentMapping;
 
-    this.segmentProperties = segmentProperties;
+    this.destinationSegProperties = segmentProperties;
 
     this.schemaName = schemaName;
 
@@ -87,21 +91,33 @@ public class CarbonCompactionExecutor {
     this.storePath = storePath;
 
     this.carbonTable = carbonTable;
+
+    this.dataFileMetadataSegMapping = dataFileMetadataSegMapping;
   }
 
   /**
    * For processing of the table blocks.
    * @return List of Carbon iterators
    */
-  public List<CarbonIterator<BatchRawResult>> processTableBlocks() throws QueryExecutionException {
+  public List<RawResultIterator> processTableBlocks() throws QueryExecutionException {
 
-    List<CarbonIterator<BatchRawResult>> resultList =
+    List<RawResultIterator> resultList =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     List<TableBlockInfo> list = null;
     queryModel = prepareQueryModel(list);
     // iterate each seg ID
     for (Map.Entry<String, TaskBlockInfo> taskMap : segmentMapping.entrySet()) {
+      String segmentId = taskMap.getKey();
+      List<DataFileFooter> listMetadata = dataFileMetadataSegMapping.get(segmentId);
+
+      int[] colCardinality = listMetadata.get(0).getSegmentInfo().getColumnCardinality();
+
+      SegmentProperties sourceSegProperties = new SegmentProperties(
+          listMetadata.get(0).getColumnInTable(),
+          colCardinality
+      );
+
       // for each segment get taskblock info
       TaskBlockInfo taskBlockInfo = taskMap.getValue();
       Set<String> taskBlockListMapping = taskBlockInfo.getTaskSet();
@@ -111,7 +127,8 @@ public class CarbonCompactionExecutor {
         list = taskBlockInfo.getTableBlockInfoList(task);
         Collections.sort(list);
         queryModel.setTableBlockInfos(list);
-        resultList.add(executeBlockList(list));
+        resultList.add(new RawResultIterator( executeBlockList(list),sourceSegProperties,
+            destinationSegProperties));
 
       }
     }
@@ -173,14 +190,14 @@ public class CarbonCompactionExecutor {
 
     List<QueryDimension> dims = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    for (CarbonDimension dim : segmentProperties.getDimensions()) {
+    for (CarbonDimension dim : destinationSegProperties.getDimensions()) {
       QueryDimension queryDimension = new QueryDimension(dim.getColName());
       dims.add(queryDimension);
     }
     model.setQueryDimension(dims);
 
     List<QueryMeasure> msrs = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    for (CarbonMeasure carbonMeasure : segmentProperties.getMeasures()) {
+    for (CarbonMeasure carbonMeasure : destinationSegProperties.getMeasures()) {
       QueryMeasure queryMeasure = new QueryMeasure(carbonMeasure.getColName());
       msrs.add(queryMeasure);
     }

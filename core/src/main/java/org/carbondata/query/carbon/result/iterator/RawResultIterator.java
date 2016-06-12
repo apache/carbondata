@@ -18,8 +18,13 @@
  */
 package org.carbondata.query.carbon.result.iterator;
 
+import org.carbondata.common.logging.LogService;
+import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.query.carbon.result.BatchRawResult;
+import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 
 /**
  * This is a wrapper iterator over the detail raw query iterator.
@@ -28,6 +33,9 @@ import org.carbondata.query.carbon.result.BatchRawResult;
  */
 public class RawResultIterator extends CarbonIterator<Object[]> {
 
+  private final SegmentProperties sourceSegProperties;
+
+  private final SegmentProperties destinationSegProperties;
   /**
    * Iterator of the Batch raw result.
    */
@@ -38,13 +46,24 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
    */
   private int counter = 0;
 
+  private Object[] currentConveretedRawRow = null;
+
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(RawResultIterator.class.getName());
+
   /**
    * batch of the result.
    */
   private BatchRawResult batch;
 
-  public RawResultIterator(CarbonIterator<BatchRawResult> detailRawQueryResultIterator) {
+  public RawResultIterator(CarbonIterator<BatchRawResult> detailRawQueryResultIterator,
+      SegmentProperties sourceSegProperties, SegmentProperties destinationSegProperties) {
     this.detailRawQueryResultIterator = detailRawQueryResultIterator;
+    this.sourceSegProperties = sourceSegProperties;
+    this.destinationSegProperties = destinationSegProperties;
   }
 
   @Override public boolean hasNext() {
@@ -66,17 +85,39 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
   }
 
   @Override public Object[] next() {
-
     if (null == batch) { // for 1st time
       batch = detailRawQueryResultIterator.next();
     }
     if (!checkIfBatchIsProcessedCompletely(batch)) {
-      return batch.getRawRow(counter++);
+      try {
+        if(null != currentConveretedRawRow){
+          counter++;
+          Object[] currentConveretedRawRowTemp = this.currentConveretedRawRow;
+          currentConveretedRawRow = null;
+          return currentConveretedRawRowTemp;
+        }
+        return convertRow(batch.getRawRow(counter++));
+      } catch (KeyGenException e) {
+        LOGGER.error(e.getMessage());
+        return null;
+      }
     } else { // completed one batch.
       batch = detailRawQueryResultIterator.next();
       counter = 0;
     }
-    return batch.getRawRow(counter++);
+    try {
+      if(null != currentConveretedRawRow){
+        counter++;
+        Object[] currentConveretedRawRowTemp = this.currentConveretedRawRow;
+        currentConveretedRawRow = null;
+        return currentConveretedRawRowTemp;
+      }
+
+      return convertRow(batch.getRawRow(counter++));
+    } catch (KeyGenException e) {
+      LOGGER.error(e.getMessage());
+      return null;
+    }
 
   }
 
@@ -84,15 +125,29 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
    * for fetching the row with out incrementing counter.
    * @return
    */
-  public Object[] fetch(){
+  public Object[] fetchConverted() throws KeyGenException {
+    if(null != currentConveretedRawRow){
+      return currentConveretedRawRow;
+    }
     if(hasNext())
     {
-      return batch.getRawRow(counter);
+      Object[] rawRow = batch.getRawRow(counter);
+      currentConveretedRawRow = convertRow(rawRow);;
+      return currentConveretedRawRow;
     }
     else
     {
       return null;
     }
+  }
+
+  private Object[] convertRow(Object[] rawRow) throws KeyGenException {
+    byte[] dims = ((ByteArrayWrapper) rawRow[0]).getDictionaryKey();
+    long[] keyArray = sourceSegProperties.getDimensionKeyGenerator().getKeyArray(dims);
+    byte[] covertedBytes =
+        destinationSegProperties.getDimensionKeyGenerator().generateKey(keyArray);
+    ((ByteArrayWrapper) rawRow[0]).setDictionaryKey(covertedBytes);
+    return rawRow;
   }
 
   /**

@@ -38,7 +38,7 @@ import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.DataTypeUtil;
@@ -50,7 +50,6 @@ import org.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.carbondata.processing.store.CarbonFactHandler;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.carbondata.query.carbon.result.BatchRawResult;
 import org.carbondata.query.carbon.result.iterator.RawResultIterator;
 import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 import org.carbondata.spark.load.CarbonLoadModel;
@@ -80,12 +79,12 @@ public class RowResultMerger {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(RowResultMerger.class.getName());
 
-  public RowResultMerger(List<CarbonIterator<BatchRawResult>> iteratorList,
+  public RowResultMerger(List<RawResultIterator> iteratorList,
       String schemaName, String tableName,
       SegmentProperties segProp, String tempStoreLocation,
       CarbonLoadModel loadModel, int[] colCardinality) {
 
-    this.rawResultIteratorList = getRawResultIterator(iteratorList);
+    this.rawResultIteratorList = iteratorList;
     // create the List of RawResultIterator.
 
     recordHolderHeap = new PriorityQueue<RawResultIterator>(rawResultIteratorList.size(),
@@ -126,25 +125,6 @@ public class RowResultMerger {
   }
 
   /**
-   * To convert DetailRawQueryResultIterator to RawResultIterators
-   *
-   * @param iteratorList
-   * @return
-   */
-  private List<RawResultIterator> getRawResultIterator(
-      List<CarbonIterator<BatchRawResult>> iteratorList) {
-
-    List<RawResultIterator> rawResultIteratorList =
-        new ArrayList<RawResultIterator>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    for (CarbonIterator<BatchRawResult> itr : iteratorList) {
-      RawResultIterator rawResultIterator = new RawResultIterator(itr);
-      rawResultIteratorList.add(rawResultIterator);
-    }
-
-    return rawResultIteratorList;
-  }
-
-  /**
    * Merge function
    *
    * @throws SliceMergerException
@@ -161,28 +141,36 @@ public class RowResultMerger {
         this.recordHolderHeap.add(leaftTupleIterator);
         index++;
       }
-      RawResultIterator poll = null;
+      RawResultIterator iterator = null;
       while (index > 1) {
-        // poll the top record
-        poll = this.recordHolderHeap.poll();
+        // iterator the top record
+        iterator = this.recordHolderHeap.poll();
+        Object[] convertedRow = iterator.next();
+        if(null == convertedRow){
+          throw new SliceMergerException("Unable to generate mdkey during compaction.");
+        }
         // get the mdkey
-        addRow(poll.next());
+        addRow(convertedRow);
         // if there is no record in the leaf and all then decrement the
         // index
-        if (!poll.hasNext()) {
+        if (!iterator.hasNext()) {
           index--;
           continue;
         }
         // add record to heap
-        this.recordHolderHeap.add(poll);
+        this.recordHolderHeap.add(iterator);
       }
-      // if record holder is not empty then poll the slice holder from
+      // if record holder is not empty then iterator the slice holder from
       // heap
-      poll = this.recordHolderHeap.poll();
+      iterator = this.recordHolderHeap.poll();
       while (true) {
-        addRow(poll.next());
+        Object[] convertedRow = iterator.next();
+        if(null == convertedRow){
+          throw new SliceMergerException("Unable to generate mdkey during compaction.");
+        }
+        addRow(convertedRow);
         // check if leaf contains no record
-        if (!poll.hasNext()) {
+        if (!iterator.hasNext()) {
           break;
         }
       }
@@ -286,8 +274,14 @@ public class RowResultMerger {
 
     @Override public int compare(RawResultIterator o1, RawResultIterator o2) {
 
-      Object[] row1 = o1.fetch();
-      Object[] row2 = o2.fetch();
+      Object[] row1 = new Object[0];
+      Object[] row2 = new Object[0];
+      try {
+        row1 = o1.fetchConverted();
+        row2 = o2.fetchConverted();
+      } catch (KeyGenException e) {
+        LOGGER.error(e.getMessage());
+      }
       if (null == row1 || null == row2) {
         return 0;
       }

@@ -1145,7 +1145,23 @@ public final class CarbonCommonConstants {
    */
   public static final long CARBON_256MB = 256*1024*1024;
 
+  /**
+   * SEGMENT_COMPACTED is property to indicate whether seg is compacted or not.
+   */
   public static final String SEGMENT_COMPACTED = "Compacted";
+
+  /**
+   * whether to include the compacted segments again for compaction or not.
+   */
+  public static final String INCLUDE_ALREADY_COMPACTED_SEGMENTS =
+      "carbon.include.compacted.segments";
+
+  /**
+   * whether to include the compacted segments again for compaction or not. default value is false.
+   * compacted load will not be compacted again in minor compaction.
+   */
+  public static final String INCLUDE_ALREADY_COMPACTED_SEGMENTS_DEFAULT =
+      "false";
 
   private CarbonCommonConstants() {
 

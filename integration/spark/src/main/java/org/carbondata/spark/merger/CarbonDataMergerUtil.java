@@ -370,17 +370,24 @@ public final class CarbonDataMergerUtil {
 
     // total length
     long totalLength = 0;
+
+    String includeCompactedSegments = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.INCLUDE_ALREADY_COMPACTED_SEGMENTS,
+            CarbonCommonConstants.INCLUDE_ALREADY_COMPACTED_SEGMENTS_DEFAULT);
+
     // check size of each segment , sum it up across partitions
     for (LoadMetadataDetails segment : listOfSegmentsAfterPreserve) {
-      String segId = "";
-      // segment is already merged. take the merged folder.
-      if (null != segment.getMergedLoadName()) {
 
-        segId = segment.getMergedLoadName();
+      String segId = segment.getLoadName();
 
-      } else {
-        segId = segment.getLoadName();
+      // in case of minor compaction . check the property whether to include the
+      // compacted segment or not.
+      // check if the segment is compacted or not.
+      if (CompactionType.MINOR_COMPACTION.equals(compactionType) && includeCompactedSegments
+          .equalsIgnoreCase("false") && segId.contains(".")) {
+        continue;
       }
+
       // calculate size across partitions
       for (int partition = 0; partition < partitionCount; partition++) {
 

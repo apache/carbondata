@@ -32,11 +32,12 @@ import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifie
 import org.carbondata.core.carbon.datastore.block.{SegmentProperties, TableBlockInfo, TaskBlockInfo}
 import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.iterator.CarbonIterator
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
-import org.carbondata.integration.spark.merger.{CarbonCompactionExecutor, CarbonCompactionUtil, RowResultMerger}
-import org.carbondata.query.carbon.result.{BatchRawResult, RowResult}
+import org.carbondata.integration.spark.merger.{CarbonCompactionExecutor, CarbonCompactionUtil,
+RowResultMerger}
+import org.carbondata.query.carbon.result.{RowResult}
+import org.carbondata.query.carbon.result.iterator.RawResultIterator
 import org.carbondata.spark.MergeResult
 import org.carbondata.spark.load.{CarbonLoaderUtil, CarbonLoadModel}
 import org.carbondata.spark.merger.CarbonDataMergerUtil
@@ -98,11 +99,12 @@ class CarbonMergerRDD[K, V](
       )
 
       val exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties, schemaName,
-        factTableName, hdfsStoreLocation, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+        factTableName, hdfsStoreLocation, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
+        dataFileMetadataSegMapping
       )
 
       // fire a query and get the results.
-      var result2: util.List[CarbonIterator[BatchRawResult]] = null
+      var result2: util.List[RawResultIterator] = null
       try {
         result2 = exec.processTableBlocks()
       } catch {
