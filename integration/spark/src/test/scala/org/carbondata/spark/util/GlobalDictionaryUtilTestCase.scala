@@ -46,7 +46,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
   var complexRelation: CarbonRelation = _
   var incrementalLoadTableRelation: CarbonRelation = _
   var filePath: String = _
-  var pwd: String = _
+  var workDirectory: String = _
   var dimFilePath: String = _
   var complexfilePath: String = _
   var complexfilePath1: String = _
@@ -83,12 +83,12 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   def buildTestData() = {
-    pwd = new File(this.getClass.getResource("/").getPath + "/../../").getCanonicalPath
-    filePath = pwd + "/src/test/resources/sample.csv"
-    dimFilePath = "dimTableSample:" + pwd + "/src/test/resources/dimTableSample.csv"
-    complexfilePath1 = pwd + "/src/test/resources/complexdata1.csv"
-    complexfilePath2 = pwd + "/src/test/resources/complexdata2.csv"
-    complexfilePath = pwd + "/src/test/resources/complexdata.csv"
+    workDirectory = new File(this.getClass.getResource("/").getPath + "/../../").getCanonicalPath.replace("\\", "/")
+    filePath = workDirectory + "/src/test/resources/sample.csv"
+    dimFilePath = "dimTableSample:" + workDirectory + "/src/test/resources/dimTableSample.csv"
+    complexfilePath1 = workDirectory + "/src/test/resources/complexdata1.csv"
+    complexfilePath2 = workDirectory + "/src/test/resources/complexdata2.csv"
+    complexfilePath = workDirectory + "/src/test/resources/complexdata.csv"
   }
 
   def buildTable() = {

@@ -1216,11 +1216,11 @@ public final class CarbonUtil {
         FileFactory.getFileType(filePath) != FileFactory.FileType.HDFS) {
       String baseHDFSUrl = CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL);
-      String hdfsUrl = conf.get(FS_DEFAULT_FS);
-      if (hdfsUrl.startsWith(HDFS_PREFIX)) {
-        baseHDFSUrl = hdfsUrl + baseHDFSUrl;
-      }
       if (null != baseHDFSUrl) {
+        String hdfsUrl = conf.get(FS_DEFAULT_FS);
+        if (hdfsUrl.startsWith(HDFS_PREFIX)) {
+          baseHDFSUrl = hdfsUrl + baseHDFSUrl;
+        }
         if (baseHDFSUrl.endsWith("/")) {
           baseHDFSUrl = baseHDFSUrl.substring(0, baseHDFSUrl.length() - 1);
         }
