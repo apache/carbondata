@@ -133,6 +133,12 @@ public class MDKeyGenStep extends BaseStep {
   private boolean[] isNoDictionaryDimension;
 
   /**
+   * to check whether dimension use inverted index
+   * or not
+   */
+  private boolean[] isUseInvertedIndex;
+
+  /**
    * CarbonMDKeyGenStep
    *
    * @param stepMeta
@@ -253,6 +259,8 @@ public class MDKeyGenStep extends BaseStep {
     storeLocation = carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     isNoDictionaryDimension =
         RemoveDictionaryUtil.convertStringToBooleanArr(meta.getNoDictionaryDimsMapping());
+    isUseInvertedIndex =
+        RemoveDictionaryUtil.convertStringToBooleanArr(meta.getIsUseInvertedIndex());
     fileManager = new FileManager();
     fileManager.setName(CarbonCommonConstants.LOAD_FOLDER + meta.getSegmentId()
         + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
@@ -361,6 +369,7 @@ public class MDKeyGenStep extends BaseStep {
     carbonFactDataHandlerModel.setPrimitiveDimLens(simpleDimsLen);
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
+    carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndex);
     if (meta.getNoDictionaryCount() > 0 || meta.getComplexDimsCount() > 0) {
       carbonFactDataHandlerModel.setMdKeyIndex(measureCount + 1);
     } else {

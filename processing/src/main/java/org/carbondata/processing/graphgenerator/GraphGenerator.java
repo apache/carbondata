@@ -332,7 +332,6 @@ public class GraphGenerator {
       inputStep = getTableInputStep(configurationInfo);
       selectValueToChangeTheDataType = getSelectValueToChangeTheDataType(configurationInfo, 1);
     }
-
     carbonSurrogateKeyStep = getCarbonCSVBasedSurrogateKeyStep(configurationInfo);
     StepMeta sortStep = getSortStep(configurationInfo);
     StepMeta carbonMDKeyStep = getMDKeyStep(configurationInfo);
@@ -585,6 +584,8 @@ public class GraphGenerator {
 
   private StepMeta getMDKeyStep(GraphConfigurationInfo graphConfiguration) {
     MDKeyGenStepMeta carbonMdKey = new MDKeyGenStepMeta();
+    carbonMdKey.setIsUseInvertedIndex(RemoveDictionaryUtil
+        .convertBooleanArrToString(graphConfiguration.getIsUseInvertedIndex()));
     carbonMdKey.setPartitionID(partitionID);
     carbonMdKey.setSegmentId(segmentId);
     carbonMdKey.setNumberOfCores(graphConfiguration.getNumberOfCores());
@@ -772,6 +773,7 @@ public class GraphGenerator {
     graphConfiguration.setCurrentRestructNumber(currentRestructNumber);
     List<CarbonDimension> dimensions = carbonDataLoadSchema.getCarbonTable()
         .getDimensionByTableName(carbonDataLoadSchema.getCarbonTable().getFactTableName());
+    prepareIsUseInvertedIndex(dimensions, graphConfiguration);
     graphConfiguration
         .setDimensions(CarbonSchemaParser.getCubeDimensions(dimensions, carbonDataLoadSchema));
     graphConfiguration
@@ -933,5 +935,24 @@ public class GraphGenerator {
 
     graphConfig.setIsNoDictionaryDimMapping(
         noDictionaryMapping.toArray(new Boolean[noDictionaryMapping.size()]));
+  }
+  /**
+   * Preparing the boolean [] to map whether the dimension use inverted index or not.
+   *
+   * @param dims
+   * @param graphConfig
+   */
+  private void prepareIsUseInvertedIndex(List<CarbonDimension> dims,
+    GraphConfigurationInfo graphConfig) {
+    List<Boolean> isUseInvertedIndexList = new ArrayList<Boolean>();
+    for (CarbonDimension dimension : dims) {
+      if(dimension.isUseInvertedIndnex()) {
+        isUseInvertedIndexList.add(true);
+      } else {
+        isUseInvertedIndexList.add(false);
+      }
+    }
+    graphConfig.setIsUseInvertedIndex(isUseInvertedIndexList
+        .toArray(new Boolean[isUseInvertedIndexList.size()]));
   }
 }

@@ -48,6 +48,7 @@ import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.columnar.BlockIndexerStorageForInt;
+import org.carbondata.core.datastorage.store.columnar.BlockIndexerStorageForNoInvertedIndex;
 import org.carbondata.core.datastorage.store.columnar.IndexStorage;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.dataholder.CarbonWriteDataHolder;
@@ -161,6 +162,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private boolean[] aggKeyBlock;
   private boolean[] isNoDictionary;
   private boolean isAggKeyBlock;
+  private boolean enableInvertedIndex;
   private long processedDataCount;
   /**
    * thread pool size to be used for block sort
@@ -198,6 +200,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private int[] primitiveDimLens;
   private char[] type;
   private int[] completeDimLens;
+  private boolean[] isUseInvertedIndex;
   /**
    * data file attributes which will used for file construction
    */
@@ -279,6 +282,14 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     this.aggKeyBlock = new boolean[columnStoreCount];
     this.isNoDictionary = new boolean[columnStoreCount];
+    this.isUseInvertedIndex = new boolean[columnStoreCount];
+    for (int i = 0; i < isUseInvertedIndex.length; i++) {
+      if (i < carbonFactDataHandlerModel.getIsUseInvertedIndex().length) {
+        isUseInvertedIndex[i] = carbonFactDataHandlerModel.getIsUseInvertedIndex()[i];
+      } else {
+        isUseInvertedIndex[i] = true;
+      }
+    }
     int noDictStartIndex = this.colGrpModel.getNoOfColumnStore();
     // setting true value for dims of high card
     for (int i = 0; i < noDictionaryCount; i++) {
@@ -681,7 +692,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         dictionaryColumnCount++;
         if (colGrpModel.isColumnar(dictionaryColumnCount)) {
           submit.add(executorService
-              .submit(new BlockSortThread(i, dataHolders[dictionaryColumnCount].getData(), true)));
+              .submit(new BlockSortThread(i, dataHolders[dictionaryColumnCount].getData(),
+                  true, isUseInvertedIndex[i])));
         } else {
           submit.add(
               executorService.submit(new ColGroupBlockStorage(dataHolders[dictionaryColumnCount])));
@@ -689,12 +701,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       } else {
         submit.add(executorService.submit(
             new BlockSortThread(i, noDictionaryColumnsData[++noDictionaryColumnCount], false, true,
-                true)));
+                true, isUseInvertedIndex[i])));
       }
     }
     for (int k = 0; k < complexColCount; k++) {
       submit.add(executorService.submit(new BlockSortThread(i++,
-          colsAndValues.get(k).toArray(new byte[colsAndValues.get(k).size()][]), false)));
+          colsAndValues.get(k).toArray(new byte[colsAndValues.get(k).size()][]), false, true)));
     }
     executorService.shutdown();
     try {
@@ -1092,10 +1104,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   private CarbonFactDataWriter<?> getFactDataWriter(String storeLocation, int measureCount,
       int mdKeyLength, String tableName, IFileManagerComposite fileManager, int[] keyBlockSize) {
-    return new CarbonFactDataWriterImplForIntIndexAndAggBlock(storeLocation, measureCount,
-        mdKeyLength, tableName, fileManager, keyBlockSize, aggKeyBlock, isComplexTypes(),
-        noDictionaryCount, carbonDataFileAttributes, databaseName, wrapperColumnSchemaList,
-        noDictionaryCount, dimensionType, carbonDataDirectoryPath, colCardinality);
+      return new CarbonFactDataWriterImplForIntIndexAndAggBlock(storeLocation, measureCount,
+          mdKeyLength, tableName, fileManager, keyBlockSize, aggKeyBlock, isComplexTypes(),
+          noDictionaryCount, carbonDataFileAttributes, databaseName, wrapperColumnSchemaList,
+          noDictionaryCount, dimensionType, carbonDataDirectoryPath, colCardinality,
+          isUseInvertedIndex);
   }
 
   private boolean[] isComplexTypes() {
@@ -1275,28 +1288,36 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     private byte[][] data;
     private boolean isSortRequired;
     private boolean isCompressionReq;
+    private boolean isUseInvertedIndex;
 
     private boolean isNoDictionary;
 
-    private BlockSortThread(int index, byte[][] data, boolean isSortRequired) {
+    private BlockSortThread(int index, byte[][] data, boolean isSortRequired,
+                            boolean isUseInvertedIndex) {
       this.index = index;
       this.data = data;
       isCompressionReq = aggKeyBlock[this.index];
       this.isSortRequired = isSortRequired;
+      this.isUseInvertedIndex = isUseInvertedIndex;
     }
 
     public BlockSortThread(int index, byte[][] data, boolean b, boolean isNoDictionary,
-        boolean isSortRequired) {
+        boolean isSortRequired, boolean isUseInvertedIndex) {
       this.index = index;
       this.data = data;
       isCompressionReq = b;
       this.isNoDictionary = isNoDictionary;
       this.isSortRequired = isSortRequired;
+      this.isUseInvertedIndex = isUseInvertedIndex;
     }
 
     @Override public IndexStorage call() throws Exception {
-      return new BlockIndexerStorageForInt(this.data, isCompressionReq, isNoDictionary,
-          isSortRequired);
+      if (isUseInvertedIndex) {
+        return new BlockIndexerStorageForInt(this.data, isCompressionReq, isNoDictionary,
+            isSortRequired);
+      } else {
+        return new BlockIndexerStorageForNoInvertedIndex(this.data, isCompressionReq);
+      }
 
     }
 

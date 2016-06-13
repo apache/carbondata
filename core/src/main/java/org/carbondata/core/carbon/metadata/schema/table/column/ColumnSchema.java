@@ -69,6 +69,11 @@ public class ColumnSchema implements Serializable {
   private boolean isDimensionColumn;
 
   /**
+   * Whether the column should use inverted index
+   */
+  private boolean useInvertedIndex;
+
+  /**
    * The group ID for column used for row format columns,
    * where in columns in each group are chunked together.
    */
@@ -158,6 +163,20 @@ public class ColumnSchema implements Serializable {
    */
   public void setDimensionColumn(boolean isDimensionColumn) {
     this.isDimensionColumn = isDimensionColumn;
+  }
+
+  /**
+   * the isUseInvertedIndex
+   */
+  public boolean isUseInvertedIndex() {
+    return useInvertedIndex;
+  }
+
+  /**
+   * @param useInvertedIndex the useInvertedIndex to set
+   */
+  public void setUseInvertedIndex(boolean useInvertedIndex) {
+    this.useInvertedIndex = useInvertedIndex;
   }
 
   /**
