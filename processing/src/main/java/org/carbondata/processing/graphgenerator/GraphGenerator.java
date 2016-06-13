@@ -943,7 +943,7 @@ public class GraphGenerator {
    * @param graphConfig
    */
   private void prepareIsUseInvertedIndex(List<CarbonDimension> dims,
-    GraphConfigurationInfo graphConfig) {
+      GraphConfigurationInfo graphConfig) {
     List<Boolean> isUseInvertedIndexList = new ArrayList<Boolean>();
     for (CarbonDimension dimension : dims) {
       if(dimension.isUseInvertedIndnex()) {

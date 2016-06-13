@@ -25,7 +25,6 @@ import java.nio.channels.FileChannel;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
-import java.util.logging.Logger;
 
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -40,7 +39,6 @@ import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.colgroup.ColGroupBlockStorage;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import sun.rmi.runtime.Log;
 
 public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactDataWriter<int[]> {
 
