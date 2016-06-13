@@ -1104,11 +1104,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   private CarbonFactDataWriter<?> getFactDataWriter(String storeLocation, int measureCount,
       int mdKeyLength, String tableName, IFileManagerComposite fileManager, int[] keyBlockSize) {
-      return new CarbonFactDataWriterImplForIntIndexAndAggBlock(storeLocation, measureCount,
-          mdKeyLength, tableName, fileManager, keyBlockSize, aggKeyBlock, isComplexTypes(),
-          noDictionaryCount, carbonDataFileAttributes, databaseName, wrapperColumnSchemaList,
-          noDictionaryCount, dimensionType, carbonDataDirectoryPath, colCardinality,
-          isUseInvertedIndex);
+    return new CarbonFactDataWriterImplForIntIndexAndAggBlock(storeLocation, measureCount,
+        mdKeyLength, tableName, fileManager, keyBlockSize, aggKeyBlock, isComplexTypes(),
+        noDictionaryCount, carbonDataFileAttributes, databaseName, wrapperColumnSchemaList,
+        noDictionaryCount, dimensionType, carbonDataDirectoryPath, colCardinality,
+        isUseInvertedIndex);
   }
 
   private boolean[] isComplexTypes() {
