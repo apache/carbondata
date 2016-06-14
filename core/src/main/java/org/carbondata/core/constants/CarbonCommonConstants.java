@@ -817,11 +817,6 @@ public final class CarbonCommonConstants {
   public static final String DEFAULT_ENABLE_AUTO_LOAD_MERGE = "false";
 
   /**
-   * NO_INVERTED_INDEX the flag used in create table DDL to disable inverted index for one column
-   */
-  public static final String NO_INVERTED_INDEX = "no_inverted_index";
-
-  /**
    * ZOOKEEPER_ENABLE_LOCK if this is set to true then zookeeper will be used to handle locking
    * mechanism of carbon
    */
