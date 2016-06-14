@@ -41,7 +41,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('NO_INVERTED_INDEX'='ID,name')
+           TBLPROPERTIES('NO_INVERTED_INDEX'='country,name')
            """)
 
     sql(s"""
