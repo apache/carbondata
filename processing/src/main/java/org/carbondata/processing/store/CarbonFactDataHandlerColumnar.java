@@ -283,11 +283,13 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.aggKeyBlock = new boolean[columnStoreCount];
     this.isNoDictionary = new boolean[columnStoreCount];
     this.isUseInvertedIndex = new boolean[columnStoreCount];
-    for (int i = 0; i < isUseInvertedIndex.length; i++) {
-      if (i < carbonFactDataHandlerModel.getIsUseInvertedIndex().length) {
-        isUseInvertedIndex[i] = carbonFactDataHandlerModel.getIsUseInvertedIndex()[i];
-      } else {
-        isUseInvertedIndex[i] = true;
+    if (null != carbonFactDataHandlerModel.getIsUseInvertedIndex()) {
+      for (int i = 0; i < isUseInvertedIndex.length; i++) {
+        if (i < carbonFactDataHandlerModel.getIsUseInvertedIndex().length) {
+          isUseInvertedIndex[i] = carbonFactDataHandlerModel.getIsUseInvertedIndex()[i];
+        } else {
+          isUseInvertedIndex[i] = true;
+        }
       }
     }
     int noDictStartIndex = this.colGrpModel.getNoOfColumnStore();
