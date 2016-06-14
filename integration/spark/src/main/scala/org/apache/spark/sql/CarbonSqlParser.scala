@@ -193,7 +193,7 @@ class CarbonSqlParser()
       case aggregates ~ cube =>
         cube match {
           case schemaName ~ cubeName =>
-            AddAggregatesToTable(schemaName, cubeName, aggregates)
+            AddAggregatesToTable(schemaName, cubeName.toLowerCase(), aggregates)
         }
     }
 
@@ -311,7 +311,7 @@ class CarbonSqlParser()
         }
 
         ShowCreateCubeCommand(tableModel(exists.isDefined,
-          schemaName.getOrElse("default"), schemaName, cubeName,
+          schemaName.getOrElse("default"), schemaName, cubeName.toLowerCase(),
           reorderDimensions(dimCols.map(f => normalizeType(f)).map(f => addParent(f))),
           msrCols.map(f => normalizeType(f)), fromKeyword, withKeyword, source,
           factFieldsList, dimRelations, simpleDimRelations, None, aggregation, partitioner, null))
@@ -438,7 +438,7 @@ class CarbonSqlParser()
           case t@Token("TOK_TABNAME", _) =>
             val (db, tblName) = extractDbNameTableName(t)
             dbName = db
-            tableName = tblName
+            tableName = tblName.toLowerCase()
 
           case Token("TOK_TABLECOMMENT", child :: Nil) =>
             tableComment = BaseSemanticAnalyzer.unescapeSQLString(child.getText)
@@ -901,7 +901,7 @@ class CarbonSqlParser()
         }
 
         CreateCube(tableModel(exists.isDefined,
-          schemaName.getOrElse("default"), schemaName, cubeName,
+          schemaName.getOrElse("default"), schemaName, cubeName.toLowerCase(),
           reorderDimensions(dimCols.map(f => normalizeType(f)).map(f => addParent(f))),
           msrCols.map(f => normalizeType(f)), "", withKeyword, "",
           None, Seq(), simpleDimRelations, highCard, aggregation, partitioner, null))
@@ -944,7 +944,9 @@ class CarbonSqlParser()
           case _ => (Seq())
         }
 
-        AlterTable(tableModel(false, schemaName.getOrElse("default"), schemaName, cubeName,
+        AlterTable(tableModel(false,
+          schemaName.getOrElse("default"),
+          schemaName, cubeName.toLowerCase(),
           dimCols.map(f => normalizeType(f)),
           msrCols.map(f => normalizeType(f)), "", withKeyword, "",
           None, Seq(), simpleDimRelations, noDictionary, aggregation, None, null),
@@ -963,7 +965,7 @@ class CarbonSqlParser()
       (FIELDS ~> TERMINATED ~> BY ~> stringLit).? <~ opt(";") ^^ {
       case filePath ~ dimFolderPath ~ cube ~ partionDataOptions ~ delimiter =>
         val (schema, cubename) = cube match {
-          case schemaName ~ cubeName => (schemaName, cubeName)
+          case schemaName ~ cubeName => (schemaName, cubeName.toLowerCase())
 
         }
         val patitionOptionsMap = partionDataOptions.toMap
@@ -977,7 +979,7 @@ class CarbonSqlParser()
       (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
         case filePath ~ isOverwrite ~ cube ~ partionDataOptions =>
           val (schema, cubename) = cube match {
-            case schemaName ~ cubeName => (schemaName, cubeName)
+            case schemaName ~ cubeName => (schemaName, cubeName.toLowerCase())
           }
           if(partionDataOptions.isDefined) {
             validateOptions(partionDataOptions)
@@ -1077,8 +1079,9 @@ class CarbonSqlParser()
       opt(";") ^^ {
       case tabletype ~ exists ~ schemaName ~ resourceName =>
         tabletype match {
-          case agg ~ table => DropAggregateTableCommand(exists.isDefined, schemaName, resourceName)
-          case _ => DropCubeCommand(exists.isDefined, schemaName, resourceName)
+          case agg ~ table =>
+            DropAggregateTableCommand(exists.isDefined, schemaName, resourceName.toLowerCase())
+          case _ => DropCubeCommand(exists.isDefined, schemaName, resourceName.toLowerCase())
         }
     }
 
@@ -1228,9 +1231,9 @@ class CarbonSqlParser()
       case ef ~ db ~ tbl =>
         val tblIdentifier = db match {
           case Some(dbName) =>
-            Seq(dbName, tbl)
+            Seq(dbName, tbl.toLowerCase())
           case None =>
-            Seq(tbl)
+            Seq(tbl.toLowerCase())
         }
         if (ef.isDefined && "FORMATTED".equalsIgnoreCase(ef.get)) {
           new DescribeFormattedCommand("describe formatted " + tblIdentifier.mkString("."),
@@ -1318,7 +1321,8 @@ class CarbonSqlParser()
     SHOW ~> (LOADS|SEGMENTS) ~> FOR ~> (CUBE | TABLE) ~> (ident <~ ".").? ~ ident ~
       (LIMIT ~> numericLit).? <~
       opt(";") ^^ {
-      case schemaName ~ cubeName ~ limit => ShowLoadsCommand(schemaName, cubeName, limit)
+      case schemaName ~ cubeName ~ limit =>
+        ShowLoadsCommand(schemaName, cubeName.toLowerCase(), limit)
     }
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
@@ -1326,7 +1330,7 @@ class CarbonSqlParser()
       (ident <~ ".").? ~ ident) <~
       opt(";") ^^ {
       case loadids ~ cube => cube match {
-        case schemaName ~ cubeName => DeleteLoadsById(loadids, schemaName, cubeName)
+        case schemaName ~ cubeName => DeleteLoadsById(loadids, schemaName, cubeName.toLowerCase())
       }
     }
 
@@ -1338,7 +1342,7 @@ class CarbonSqlParser()
       case schema ~ cube ~ condition =>
         condition match {
           case dateField ~ dateValue =>
-            DeleteLoadsByLoadDate(schema, cube, dateField, dateValue)
+            DeleteLoadsByLoadDate(schema, cube.toLowerCase(), dateField, dateValue)
         }
     }
 
@@ -1348,13 +1352,13 @@ class CarbonSqlParser()
       case schema ~ cube ~ condition =>
         condition match {
           case dateField ~ dateValue =>
-            DeleteLoadByDate(schema, cube, dateField, dateValue)
+            DeleteLoadByDate(schema, cube.toLowerCase(), dateField, dateValue)
         }
     }
 
   protected lazy val cleanFiles: Parser[LogicalPlan] =
     CLEAN ~> FILES ~> FOR ~> (CUBE | TABLE) ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
-      case schemaName ~ cubeName => CleanFiles(schemaName, cubeName)
+      case schemaName ~ cubeName => CleanFiles(schemaName, cubeName.toLowerCase())
     }
 
 }

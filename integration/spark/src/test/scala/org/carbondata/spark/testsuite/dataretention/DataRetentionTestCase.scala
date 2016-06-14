@@ -49,7 +49,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
   val storeLocation = new File(this.getClass.getResource("/").getPath + "/../test").getCanonicalPath
   val carbonTableIdentifier: CarbonTableIdentifier =
-    new CarbonTableIdentifier("default", "DataRetentionTable", "1")
+    new CarbonTableIdentifier("default", "DataRetentionTable".toLowerCase(), "1")
   val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
       AbsoluteTableIdentifier(storeLocation, carbonTableIdentifier))
   val carbontablePath = CarbonStorePath.getCarbonTablePath(storeLocation, carbonTableIdentifier)
@@ -79,6 +79,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     sql("drop table DataRetentionTable")
+    sql("drop table carbon_TABLE_1")
   }
 
 
@@ -152,6 +153,31 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
         assert(e.getMessage.contains("should not be empty"))
       case _ => assert(false)
     }
+  }
+
+  test("test delete segments by load date with case-insensitive table name") {
+    sql(
+      """
+      CREATE TABLE IF NOT EXISTS carbon_TABLE_1
+      (ID Int, date Timestamp, country String,
+      name String, phonetype String, serialname String, salary Int)
+      STORED BY 'org.apache.carbondata.format'
+      TBLPROPERTIES('DICTIONARY_EXCLUDE'='country,phonetype,serialname',
+      'DICTIONARY_INCLUDE'='ID')
+      """)
+
+    sql("LOAD DATA LOCAL INPATH '" + resource +
+      "emptyDimensionData.csv' into table CarBon_tAbLE_1")
+
+    checkAnswer(
+      sql("select count(*) from cArbon_TaBlE_1"), Seq(Row(20)))
+
+    sql("delete segments from table carbon_TABLE_1 " +
+      "where starttime before '2099-07-28 11:00:00'")
+
+    checkAnswer(
+      sql("select count(*) from caRbon_TabLe_1"), Seq(Row(0)))
+
   }
 
 }

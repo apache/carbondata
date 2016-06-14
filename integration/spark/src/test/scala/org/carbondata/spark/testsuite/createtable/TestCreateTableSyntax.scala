@@ -34,6 +34,7 @@ import org.scalatest.BeforeAndAfterAll
 class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
   
   override def beforeAll {
+    sql("drop table if exists carbontable")
   }
 
   test("Struct field with underscore and struct<struct> syntax check") {
@@ -57,5 +58,6 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
+    sql("drop table if exists carbontable")
   }
 }

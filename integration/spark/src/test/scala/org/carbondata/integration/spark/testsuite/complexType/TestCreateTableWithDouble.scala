@@ -76,10 +76,11 @@ class TestCreateTableWithDouble extends QueryTest with BeforeAndAfterAll {
       case e : Throwable => fail(e)
     }
     // assert that field 'number' is a dimension
-    val tableIdentifier = new CarbonTableIdentifier("default", "doubleComplex2", "uniqueid")
+    val tableIdentifier =
+      new CarbonTableIdentifier("default", "doubleComplex2".toLowerCase(), "uniqueid")
     val carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
       .getCarbonTable(tableIdentifier.getTableUniqueName)
-    val dimExist = carbonTable.getDimensionByTableName("doubleComplex2").toArray.
+    val dimExist = carbonTable.getDimensionByTableName("doubleComplex2".toLowerCase()).toArray.
       exists(_.asInstanceOf[CarbonDimension].getColName.equalsIgnoreCase("number"))
     assertResult(dimExist)(true)
     // assert that load and query is successful
