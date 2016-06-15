@@ -360,6 +360,7 @@ object GlobalDictionaryUtil extends Logging {
         }
       })
       .option("parserLib", "univocity")
+      .option("escape", carbonLoadModel.getEscapeChar)
       .load(carbonLoadModel.getFactFilePath)
     df
   }

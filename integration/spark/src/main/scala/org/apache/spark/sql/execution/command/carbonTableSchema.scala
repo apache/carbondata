@@ -1492,6 +1492,7 @@ private[sql] case class LoadCube(
           throw new MalformedCarbonCommandException(errorMessage)
       }
 
+      carbonLoadModel.setEscapeChar(escapeChar)
       if (delimiter.equalsIgnoreCase(complex_delimiter_level_1) ||
           complex_delimiter_level_1.equalsIgnoreCase(complex_delimiter_level_2) ||
           delimiter.equalsIgnoreCase(complex_delimiter_level_2)) {

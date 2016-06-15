@@ -51,7 +51,7 @@ class DefaultSource extends com.databricks.spark.csv.DefaultSource {
     }
 
     val escape = parameters.getOrElse("escape", null)
-    val escapeChar: Character = if (escape == null) {
+    val escapeChar: Character = if (escape == null || (escape.length == 0)) {
       null
     } else if (escape.length == 1) {
       escape.charAt(0)

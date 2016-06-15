@@ -81,6 +81,27 @@ public class CarbonLoadModel implements Serializable {
   private String segmentId;
 
   /**
+   * escape Char
+   */
+  private String escapeChar;
+
+  /**
+   * get escape char
+   * @return
+   */
+  public String getEscapeChar() {
+    return escapeChar;
+  }
+
+  /**
+   * set escape char
+   * @param escapeChar
+   */
+  public void setEscapeChar(String escapeChar) {
+    this.escapeChar = escapeChar;
+  }
+
+  /**
    * get blocck id
    *
    * @return

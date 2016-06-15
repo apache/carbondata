@@ -201,10 +201,29 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql("drop table LowErcasEcube")
   }
   
+  test("test carbon table data loading using escape char") {
+    sql("DROP TABLE IF EXISTS t3")
+
+    sql("""
+           CREATE TABLE IF NOT EXISTS t3
+           (ID Int, date Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int)
+           STORED BY 'org.apache.carbondata.format'
+           """)
+
+    sql(s"""
+           LOAD DATA LOCAL INPATH './src/test/resources/datawithbackslash.csv' into table t3
+           OPTIONS('ESCAPECHAR'='@')
+        """)
+    checkAnswer(sql("select count(*) from t3"), Seq(Row(10)))
+    sql("DROP TABLE IF EXISTS t3")
+  }
+  
   override def afterAll {
     sql("drop cube carboncube")
     sql("drop table hivetable")
     sql("drop table if exists header_test")
     sql("drop table if exists mixed_header_test")
+
   }
 }
