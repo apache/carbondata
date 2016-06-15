@@ -976,6 +976,11 @@ public final class CarbonCommonConstants {
   public static final long CARBON_256MB = 256*1024*1024;
 
   /**
+   * Data type String.
+   */
+  public static final String DATATYPE_STRING = "STRING";
+
+  /**
    * SEGMENT_COMPACTED is property to indicate whether seg is compacted or not.
    */
   public static final String SEGMENT_COMPACTED = "Compacted";

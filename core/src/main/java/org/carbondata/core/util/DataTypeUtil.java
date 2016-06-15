@@ -3,11 +3,15 @@ package org.carbondata.core.util;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
 
+import org.apache.commons.lang.NumberUtils;
 public final class DataTypeUtil {
 
   private DataTypeUtil() {
@@ -136,5 +140,50 @@ public final class DataTypeUtil {
         dataType = DataType.STRING;
     }
     return dataType;
+  }
+
+  /**
+   * Below method will be used to basically to know whether any non parseable
+   * data is present or not. if present then return null so that system can
+   * process to default null member value.
+   *
+   * @param data           data
+   * @param actualDataType actual data type
+   * @return actual data after conversion
+   */
+  public static Object getDataBasedOnDataType(String data, DataType actualDataType) {
+    if (null == data) {
+      return null;
+    }
+    try {
+      switch (actualDataType) {
+        case INT:
+        case LONG:
+        case DOUBLE:
+        case DECIMAL:
+          if (!NumberUtils.isDigits(data)) {
+            return null;
+          }
+          return data;
+        case TIMESTAMP:
+          if (data.isEmpty()) {
+            return null;
+          }
+          SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+          Date dateToStr = null;
+          try {
+            dateToStr = parser.parse(data);
+            return dateToStr.getTime();
+          } catch (ParseException e) {
+            return null;
+          }
+        default:
+          return data;
+      }
+    } catch (NumberFormatException ex) {
+      return null;
+    }
   }
 }

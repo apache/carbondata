@@ -203,7 +203,7 @@ public class GraphConfigurationInfo {
    * ~-> all ordinal with same group id
    */
   private String columnGroupsString;
-
+  private String columnsDataTypeString;
   /**
    * @return the connectionName
    */
@@ -997,5 +997,16 @@ public class GraphConfigurationInfo {
 
   public void setIsNoDictionaryDimMapping(Boolean[] isNoDictionaryDimMapping) {
     this.isNoDictionaryDimMapping = isNoDictionaryDimMapping;
+  }
+
+  /**
+   * @return columngroups
+   */
+  public String getDimensionColumnsDataType() {
+    return columnsDataTypeString;
+  }
+
+  public void setDimensionColumnsDataType(String columnsDataTypeString) {
+    this.columnsDataTypeString = columnsDataTypeString;
   }
 }

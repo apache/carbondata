@@ -72,6 +72,7 @@ import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
@@ -242,6 +243,14 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
    * to check whether column is a no dicitonary column or not
    */
   private boolean[] isNoDictionaryColumn;
+  /**
+   * to check whether column is a no dicitonary column or not
+   */
+  private boolean[] isStringDataType;
+  /**
+   * to check whether column is a no dicitonary column or not
+   */
+  private String[] dataTypes;
 
   /**
    * to check whether column is complex type column or not
@@ -478,9 +487,16 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     isNoDictionaryColumn = new boolean[metaColumnNames.length];
     isComplexTypeColumn = new boolean[metaColumnNames.length];
     noDictionaryAndComplexIndexMapping = new int[metaColumnNames.length];
+    isStringDataType = new boolean[metaColumnNames.length];
+    dataTypes= new String[metaColumnNames.length];
     complexTypes = new GenericDataType[meta.getComplexTypeColumns().length];
     for (int i = 0; i < meta.noDictionaryCols.length; i++) {
       for (int j = 0; j < metaColumnNames.length; j++) {
+        if (CarbonCommonConstants.DATATYPE_STRING
+            .equalsIgnoreCase(meta.dimColDataTypes.get(metaColumnNames[j]))) {
+          isStringDataType[j] = true;
+        }
+        dataTypes[j]=meta.dimColDataTypes.get(metaColumnNames[j].toLowerCase());
         if (meta.noDictionaryCols[i].equalsIgnoreCase(
             meta.getTableName() + CarbonCommonConstants.UNDERSCORE + metaColumnNames[j])) {
           isNoDictionaryColumn[j] = true;
@@ -910,14 +926,12 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       String columnName = metaColumnNames[j];
       String foreignKeyColumnName = foreignKeyMappingColumns[j];
       r[j] = ((String) r[j]).trim();
-      // TODO check if it is ignore dictionary dimension or not . if yes directly write byte buffer
-
+      // check if it is ignore dictionary dimension or not . if yes directly write byte buffer
       if (isNoDictionaryColumn[j]) {
-        processnoDictionaryDim(noDictionaryAndComplexIndexMapping[j],
-            (String) r[j], byteBufferArr);
+        processnoDictionaryDim(noDictionaryAndComplexIndexMapping[j], (String) r[j], dataTypes[j],
+            isStringDataType[j], byteBufferArr);
         continue;
       }
-
       // There is a possibility that measure can be referred as dimensions also
       // so in that case we need to just copy the value into the measure column index.
       //if it enters here means 3 possibility
@@ -1741,7 +1755,14 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     }
   }
 
-  private void processnoDictionaryDim(int index, String dimensionValue, ByteBuffer[] out) {
+  private void processnoDictionaryDim(int index, String dimensionValue, String dataType,
+      boolean isStringDataType, ByteBuffer[] out) {
+    if (!(isStringDataType)) {
+      if (null == DataTypeUtil
+          .getDataBasedOnDataType(dimensionValue, DataTypeUtil.getDataType(dataType))) {
+        dimensionValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
+      }
+    }
     ByteBuffer buffer = ByteBuffer
         .wrap(dimensionValue.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
     buffer.rewind();

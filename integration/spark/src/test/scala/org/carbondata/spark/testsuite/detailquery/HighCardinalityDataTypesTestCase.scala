@@ -72,6 +72,16 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
       "LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE NO_DICTIONARY_CARBON_7 " +
         "PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')"
     );
+    sql("CREATE CUBE filtertestTable DIMENSIONS (ID Integer,date Timestamp, country String, " +
+      "name String, phonetype String, serialname String) " +
+      "MEASURES (salary Integer) " +
+      "OPTIONS (NO_DICTIONARY(ID) PARTITIONER [PARTITION_COUNT=1])"
+    ).show()
+    sql(
+      s"LOAD DATA FACT FROM './src/test/resources/data2.csv' INTO CUBE filtertestTable OPTIONS" +
+        s"(DELIMITER ',', " +
+        s"FILEHEADER '')"
+    );
 
   }
 
@@ -129,6 +139,14 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row(17))
     )
   }
+  test("Detail Query with NO_DICTIONARY_COLUMN with IS NOT NULL filter") {
+
+
+    checkAnswer(
+      sql("select id  from filtertestTable where id is not null"),
+      Seq(Row(4), Row(6))
+    )
+  }
 
   test("Detail Query with NO_DICTIONARY_COLUMN with equals multiple filter Compare With HIVE " +
     "RESULT"
@@ -173,7 +191,7 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
       sql("select sum(empno) from NO_DICTIONARY_CARBON_6")
     )
   }
-  
+
   test("average Query with NO_DICTIONARY_COLUMN  Compare With HIVE RESULT") {
 
     checkAnswer(

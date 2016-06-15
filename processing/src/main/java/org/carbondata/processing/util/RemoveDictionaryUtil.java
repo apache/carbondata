@@ -24,7 +24,9 @@ package org.carbondata.processing.util;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.constants.IgnoreDictionary;
@@ -304,6 +306,24 @@ public class RemoveDictionaryUtil {
     }
 
     return list1.toArray(new String[list1.size()]);
+  }
+  /**
+   * This will extract the high cardinality count from the string.
+   */
+  public static Map<String, String> extractDimColsDataTypeValues(String colDataTypes) {
+    Map<String, String> mapOfColNameDataType =
+        new HashMap<String, String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    if (null == colDataTypes || colDataTypes.isEmpty()) {
+      return mapOfColNameDataType;
+    }
+    String[] colArray = colDataTypes.split(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
+    String[] colValueArray = null;
+    for (String colArrayVal : colArray) {
+      colValueArray = colArrayVal.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
+      mapOfColNameDataType.put(colValueArray[0].toLowerCase(), colValueArray[1]);
+
+    }
+    return mapOfColNameDataType;
   }
 
   public static byte[] convertListByteArrToSingleArr(List<byte[]> noDictionaryValKeyList) {

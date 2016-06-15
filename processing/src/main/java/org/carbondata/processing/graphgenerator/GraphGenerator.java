@@ -530,6 +530,7 @@ public class GraphGenerator {
     seqMeta.setComplexTypeString(graphConfiguration.getComplexTypeString());
     seqMeta.setBatchSize(Integer.parseInt(graphConfiguration.getBatchSize()));
     seqMeta.setNoDictionaryDims(graphConfiguration.getNoDictionaryDims());
+    seqMeta.setDimensionColumnsDataType(graphConfiguration.getDimensionColumnsDataType());
     seqMeta.setCubeName(schemaInfo.getCubeName());
     seqMeta.setSchemaName(schemaInfo.getSchemaName());
     seqMeta.setComplexDelimiterLevel1(schemaInfo.getComplexDelimiterLevel1());
@@ -842,10 +843,10 @@ public class GraphGenerator {
     graphConfiguration.setMeasureNamesString(CarbonSchemaParser.getMeasuresNamesString(measures));
     graphConfiguration
         .setActualDimensionColumns(CarbonSchemaParser.getActualDimensions(dimensions));
-    //TODO: It will always be empty
+    graphConfiguration
+    .setDimensionColumnsDataType(CarbonSchemaParser.getDimensionsDataTypes(dimensions));
     //graphConfiguration.setNormHiers(CarbonSchemaParser.getNormHiers(cube, schema));
     graphConfiguration.setMeasureDataTypeInfo(CarbonSchemaParser.getMeasuresDataType(measures));
-
     graphConfiguration.setStoreLocation(
         this.schemaName + '/' + carbonDataLoadSchema.getCarbonTable().getFactTableName());
     graphConfiguration.setBlockletSize(

@@ -1053,6 +1053,24 @@ public final class CarbonSchemaParser {
     return actualDimString;
   }
 
+  /**Method will prepare column name and its data type string inorder
+   * to pass to the ETL steps.
+   * @param schemaInfo
+   * @param cube
+   * @return
+   */
+  public static String getDimensionsDataTypes(List<CarbonDimension> dimensions) {
+    StringBuilder dimDataTypeBuilder = new StringBuilder();
+    for (CarbonDimension cDimension : dimensions) {
+      dimDataTypeBuilder.append(cDimension.getColName());
+      dimDataTypeBuilder.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
+      dimDataTypeBuilder.append(cDimension.getDataType().toString());
+      dimDataTypeBuilder.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
+    }
+    String dimDataType = dimDataTypeBuilder.toString();
+    return dimDataType;
+  }
+
   /**
    * @param cube
    * @return
