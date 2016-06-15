@@ -24,13 +24,6 @@ import java.io.File;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
-import org.carbondata.core.carbon.metadata.CarbonMetadata;
-import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
-import org.carbondata.core.carbon.path.CarbonStorePath;
-import org.carbondata.core.carbon.path.CarbonTablePath;
-import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.processing.merger.exeception.SliceMergerException;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -133,53 +126,9 @@ public class CarbonSliceMergerStep extends BaseStep {
     return true;
   }
 
-  /**
-   * @throws KettleException
-   */
-  private void renameFolders() throws KettleException {
-    try {
-      // Rename the load Folder name as till part fact data should
-      // beloaded properly
-      // and renamed to normal.
-      renameLoadFolderFromInProgressToNormal(
-          meta.getSchemaName() + File.separator + meta.getCubeName());
-
-      CarbonDataProcessorUtil.renameBadRecordsFromInProgressToNormal(
-          meta.getSchemaName() + File.separator + meta.getCubeName());
-
-    } catch (SliceMergerException e) {
-      throw new KettleException(e);
-    }
-  }
-
-  /**
-   * @param storeLocation
-   * @throws SliceMergerException
-   */
-  private boolean renameLoadFolderFromInProgressToNormal(String storeLocation)
-      throws SliceMergerException {
-    // get the base store location
-    String tempLocationKey = meta.getSchemaName() + '_' + meta.getCubeName();
-    String baseStorePath = CarbonProperties.getInstance()
-        .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        meta.getSchemaName() + CarbonCommonConstants.UNDERSCORE + meta.getCubeName());
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTable.getCarbonTableIdentifier());
-    String partitionId = meta.getPartitionID();
-    String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionId,
-        meta.getSegmentId()+"");
-    carbonDataDirectoryPath =
-        carbonDataDirectoryPath + File.separator + meta.getTaskNo();
-    String baseStoreLocation =
-        carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-    File currentFolder = new File(baseStoreLocation);
-    File destFolder = new File(carbonDataDirectoryPath);
-    if (!currentFolder.renameTo(destFolder)) {
-      throw new SliceMergerException("Problem while renaming inprogress folder to actual");
-    }
-    LOGGER.info("Folder renamed successfully to :: " + destFolder.getAbsolutePath());
-    return true;
+  private void renameFolders() {
+    CarbonDataProcessorUtil.renameBadRecordsFromInProgressToNormal(
+        meta.getSchemaName() + File.separator + meta.getCubeName());
   }
 
   /**

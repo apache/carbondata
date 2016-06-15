@@ -49,8 +49,6 @@ import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
-import org.carbondata.core.carbon.path.CarbonStorePath;
-import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.FileManager;
@@ -70,6 +68,7 @@ import org.carbondata.processing.schema.metadata.ColumnSchemaDetails;
 import org.carbondata.processing.schema.metadata.ColumnSchemaDetailsWrapper;
 import org.carbondata.processing.schema.metadata.ColumnsInfo;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
+import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -680,19 +679,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
    * Load Store location
    */
   private void updateStoreLocation() {
-    String tempLocationKey = meta.getSchemaName() + '_' + meta.getCubeName();
-    String baseStorePath = CarbonProperties.getInstance()
-        .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        meta.getSchemaName() + CarbonCommonConstants.UNDERSCORE + meta.getTableName());
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTable.getCarbonTableIdentifier());
-    String partitionId = meta.getPartitionID();
-    String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionId,
-        meta.getSegmentId()+"");
-    carbonDataDirectoryPath =
-        carbonDataDirectoryPath + File.separator+ meta.getTaskNo();
-    loadFolderLoc = carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
+    loadFolderLoc = CarbonDataProcessorUtil
+        .getLocalDataFolderLocation(meta.getSchemaName(), meta.getTableName(), meta.getTaskNo(),
+            meta.getPartitionID(), meta.getSegmentId());
   }
 
   private String getBadLogStoreLocation(String storeLocation) {
@@ -837,7 +826,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
   }
 
   private String getCarbonLocalBaseStoreLocation() {
-    String tempLocationKey = meta.getSchemaName() + '_' + meta.getCubeName();
+    String tempLocationKey =
+        meta.getSchemaName() + CarbonCommonConstants.UNDERSCORE + meta.getCubeName()
+            + CarbonCommonConstants.UNDERSCORE + meta.getTaskNo();
     String strLoc = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
     File f = new File(strLoc);

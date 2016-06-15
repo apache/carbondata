@@ -39,8 +39,6 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
-import org.carbondata.core.carbon.path.CarbonStorePath;
-import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
@@ -214,7 +212,7 @@ public class SortDataRows {
     // size of list will be sort buffer size + 1 to avoid creation of new
     // array in list array
     this.recordHolderList = new Object[this.sortBufferSize][];
-    updateSortTempFileLocation(carbonProperties);
+    updateSortTempFileLocation();
 
     // Delete if any older file exists in sort temp folder
     deleteSortLocationIfExists();
@@ -524,22 +522,13 @@ public class SortDataRows {
   /**
    * This will be used to get the sort temo location
    *
-   * @param instance
    */
-  private void updateSortTempFileLocation(CarbonProperties instance) {
-    // get the base location
-    String tempLocationKey = schemaName + '_' + cubeName;
-    String baseStorePath = CarbonProperties.getInstance()
-        .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(schemaName + CarbonCommonConstants.UNDERSCORE + cubeName);
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTable.getCarbonTableIdentifier());
-    String carbonDataDirectoryPath =
-        carbonTablePath.getCarbonDataDirectoryPath(partitionID, segmentId);
-    this.tempFileLocation = carbonDataDirectoryPath + File.separator + taskNo
-        + CarbonCommonConstants.FILE_INPROGRESS_STATUS + File.separator
-        + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
+  private void updateSortTempFileLocation() {
+    String carbonDataDirectoryPath = CarbonDataProcessorUtil
+        .getLocalDataFolderLocation(schemaName, tableName, taskNo, partitionID,
+            Integer.parseInt(segmentId));
+    this.tempFileLocation =
+        carbonDataDirectoryPath + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
     LOGGER.info("temp file location" + this.tempFileLocation);
   }
 

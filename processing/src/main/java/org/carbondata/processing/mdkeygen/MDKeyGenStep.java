@@ -54,6 +54,7 @@ import org.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.carbondata.processing.store.CarbonFactHandler;
 import org.carbondata.processing.store.SingleThreadFinalSortFilesMerger;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
+import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -239,18 +240,9 @@ public class MDKeyGenStep extends BaseStep {
    */
   private boolean setStepConfiguration() {
     this.tableName = meta.getTableName();
-    String tempLocationKey = meta.getSchemaName() + '_' + meta.getCubeName();
-    String baseStorePath = CarbonProperties.getInstance()
-        .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        meta.getSchemaName() + CarbonCommonConstants.UNDERSCORE + meta.getTableName());
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTable.getCarbonTableIdentifier());
-    String partitionId = meta.getPartitionID();
-    String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionId,
-        meta.getSegmentId()+"");
-    carbonDataDirectoryPath = carbonDataDirectoryPath + File.separator + meta.getTaskNo();
-    storeLocation = carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
+    storeLocation = CarbonDataProcessorUtil
+        .getLocalDataFolderLocation(meta.getSchemaName(), meta.getTableName(),
+            String.valueOf(meta.getTaskNo()), meta.getPartitionID(), meta.getSegmentId());
     isNoDictionaryDimension =
         RemoveDictionaryUtil.convertStringToBooleanArr(meta.getNoDictionaryDimsMapping());
     fileManager = new FileManager();
@@ -258,7 +250,7 @@ public class MDKeyGenStep extends BaseStep {
         + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
 
     if (!(new File(storeLocation).exists())) {
-      LOGGER.error("Load Folder Not Present for writing measure metadata  : " + storeLocation);
+      LOGGER.error("Local data load folder location does not exist: " + storeLocation);
       return false;
     }
 

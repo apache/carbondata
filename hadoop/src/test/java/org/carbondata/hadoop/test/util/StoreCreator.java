@@ -334,7 +334,7 @@ public class StoreCreator {
     String outPutLoc = storeLocation + "/etl";
     String schemaName = loadModel.getSchemaName();
     String cubeName = loadModel.getCubeName();
-    String tempLocationKey = schemaName + '_' + cubeName;
+    String tempLocationKey = schemaName + '_' + cubeName + "_1";
     CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation);
     CarbonProperties.getInstance().addProperty("store_output_location", outPutLoc);
     CarbonProperties.getInstance().addProperty("send.signal.load", "false");

@@ -119,7 +119,8 @@ public final class CarbonLoaderUtil {
     String outPutLoc = storeLocation + "/etl";
     String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
-    String tempLocationKey = databaseName + '_' + tableName;
+    String tempLocationKey = databaseName + CarbonCommonConstants.UNDERSCORE + tableName
+        + CarbonCommonConstants.UNDERSCORE + loadModel.getTaskNo();
     CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation);
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, hdfsStoreLocation);
@@ -408,7 +409,8 @@ public final class CarbonLoaderUtil {
     CarbonTableIdentifier carbonTableIdentifier =
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier();
     String segmentId = segmentName.substring(CarbonCommonConstants.LOAD_FOLDER.length());
-    String tempLocationKey = databaseName + '_' + tableName;
+    String tempLocationKey = databaseName + CarbonCommonConstants.UNDERSCORE + tableName
+        + CarbonCommonConstants.UNDERSCORE + loadModel.getTaskNo();
     // form local store location
     String localStoreLocation = getStoreLocation(CarbonProperties.getInstance()
             .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL),

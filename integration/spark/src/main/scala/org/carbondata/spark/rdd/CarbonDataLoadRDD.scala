@@ -169,7 +169,7 @@ class CarbonDataLoadRDD[K, V](
           storeLocation = System.getProperty("java.io.tmpdir")
           storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
         }
-
+        storeLocation = storeLocation + '/' + theSplit.index
         dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
 
         if (model.isRetentionRequest) {
