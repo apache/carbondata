@@ -64,6 +64,9 @@ object FileUtils extends Logging {
       for (i <- 0 until filePaths.size) {
         val fileType = FileFactory.getFileType(filePaths(i))
         val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType)
+        if (!carbonFile.exists()) {
+          throw new DataLoadingException(s"the input file does not exist: ${filePaths(i)}" )
+        }
         getPathsFromCarbonFile(carbonFile, stringBuild)
       }
       if (stringBuild.nonEmpty) {
