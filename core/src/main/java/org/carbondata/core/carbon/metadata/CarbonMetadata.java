@@ -56,7 +56,7 @@ public final class CarbonMetadata {
    * @param tableUniquName
    */
   public void removeTable(String tableUniquName) {
-    tableInfoMap.remove(tableUniquName);
+    tableInfoMap.remove(convertToLowerCase(tableUniquName));
   }
 
   /**
@@ -68,7 +68,7 @@ public final class CarbonMetadata {
    * @param carbonTable
    */
   public void addCarbonTable(CarbonTable carbonTable) {
-    tableInfoMap.put(carbonTable.getTableUniqueName(), carbonTable);
+    tableInfoMap.put(convertToLowerCase(carbonTable.getTableUniqueName()), carbonTable);
   }
 
   /**
@@ -77,12 +77,12 @@ public final class CarbonMetadata {
    * @param tableInfo
    */
   public void loadTableMetadata(TableInfo tableInfo) {
-    CarbonTable carbonTable = tableInfoMap.get(tableInfo.getTableUniqueName());
+    CarbonTable carbonTable = tableInfoMap.get(convertToLowerCase(tableInfo.getTableUniqueName()));
     if (null == carbonTable || carbonTable.getTableLastUpdatedTime() < tableInfo
         .getLastUpdatedTime()) {
       carbonTable = new CarbonTable();
       carbonTable.loadCarbonTable(tableInfo);
-      tableInfoMap.put(tableInfo.getTableUniqueName(), carbonTable);
+      tableInfoMap.put(convertToLowerCase(tableInfo.getTableUniqueName()), carbonTable);
     }
   }
 
@@ -93,7 +93,7 @@ public final class CarbonMetadata {
    * @return
    */
   public CarbonTable getCarbonTable(String tableUniqueName) {
-    return tableInfoMap.get(tableUniqueName);
+    return tableInfoMap.get(convertToLowerCase(tableUniqueName));
   }
 
   /**
@@ -101,6 +101,15 @@ public final class CarbonMetadata {
    */
   public int getNumberOfTables() {
     return tableInfoMap.size();
+  }
+
+  /**
+   * returns the given string in lowercase
+   * @param table
+   * @return
+   */
+  public String convertToLowerCase(String table) {
+    return table.toLowerCase();
   }
 
   /**
