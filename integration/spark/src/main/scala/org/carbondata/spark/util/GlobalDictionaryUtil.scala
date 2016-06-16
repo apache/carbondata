@@ -361,6 +361,8 @@ object GlobalDictionaryUtil extends Logging {
       })
       .option("parserLib", "univocity")
       .option("escape", carbonLoadModel.getEscapeChar)
+      .option("ignoreLeadingWhiteSpace", "true")
+      .option("ignoreTrailingWhiteSpace", "true")
       .load(carbonLoadModel.getFactFilePath)
     df
   }

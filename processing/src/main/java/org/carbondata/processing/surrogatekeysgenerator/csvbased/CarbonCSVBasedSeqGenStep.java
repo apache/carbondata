@@ -911,7 +911,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     for (int j = 0; j < inputColumnsSize; j++) {
       String columnName = metaColumnNames[j];
       String foreignKeyColumnName = foreignKeyMappingColumns[j];
-      r[j] = ((String) r[j]).trim();
       // check if it is ignore dictionary dimension or not . if yes directly write byte buffer
       if (isNoDictionaryColumn[j]) {
         processnoDictionaryDim(noDictionaryAndComplexIndexMapping[j], (String) r[j], dataTypes[j],
