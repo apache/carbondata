@@ -19,30 +19,31 @@
 package org.carbondata.spark.rdd
 
 import java.util
-import java.util.concurrent.{Executors, ExecutorService}
+import java.util.concurrent.{Executors, ExecutorService, Future}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable.ListBuffer
 import scala.util.control.Breaks._
+import scala.util.Random
 
 import org.apache.hadoop.conf.{Configurable, Configuration}
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.FileSplit
-import org.apache.spark.{Logging, Partition, SparkContext}
+import org.apache.spark.{Logging, Partition, SparkContext, SparkEnv}
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation, SQLContext}
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, Partitioner}
 import org.apache.spark.util.{FileUtils, SplitUtils}
 
 import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonDataLoadSchema, CarbonTableIdentifier}
+import org.carbondata.core.carbon.CarbonDataLoadSchema
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo
 import org.carbondata.core.carbon.metadata.CarbonMetadata
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
-import org.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.carbondata.integration.spark.merger.CompactionType
+import org.carbondata.integration.spark.merger.{CompactionCallable, CompactionType}
 import org.carbondata.lcm.status.SegmentStatusManager
 import org.carbondata.processing.util.CarbonDataProcessorUtil
 import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
@@ -51,6 +52,7 @@ import org.carbondata.spark.load._
 import org.carbondata.spark.merger.CarbonDataMergerUtil
 import org.carbondata.spark.splits.TableSplit
 import org.carbondata.spark.util.{CarbonQueryUtil, LoadMetadataUtil}
+
 
 /**
  * This is the factory class which can create different RDD depends on user needs.
@@ -303,6 +305,7 @@ object CarbonDataRDDFactory extends Logging {
       compactionType = CompactionType.MINOR_COMPACTION
     }
 
+    logger.audit("Compaction request received.")
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val cubeCreationTime = CarbonEnv.getInstance(sqlContext).carbonCatalog
       .getCubeCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
@@ -316,32 +319,30 @@ object CarbonDataRDDFactory extends Logging {
 
     val executor: ExecutorService = Executors.newFixedThreadPool(1)
 
-    val compactionModel = CompactionModel(compactionSize, compactionType)
+    val compactionModel = CompactionModel(compactionSize,
+      compactionType,
+      carbonTable,
+      cubeCreationTime
+    )
 
     val lock = CarbonLockFactory
       .getCarbonLockObj(carbonTable.getMetaDataFilepath, LockUsage.COMPACTION_LOCK)
-    try {
 
-      if (lock.lockWithRetries()) {
-
-        startCompactionThreads(sqlContext,
-          carbonLoadModel,
-          partitioner,
-          hdfsStoreLocation,
-          kettleHomePath,
-          storeLocation,
-          carbonTable,
-          cubeCreationTime,
-          executor,
-          compactionModel
-        )
-      }
-      else {
-        logger.error("Not able to acquire the compaction lock.")
-      }
+    if (lock.lockWithRetries()) {
+      logger.error("Acquired the compaction lock.")
+      startCompactionThreads(sqlContext,
+        carbonLoadModel,
+        partitioner,
+        hdfsStoreLocation,
+        kettleHomePath,
+        storeLocation,
+        executor,
+        compactionModel,
+        lock
+      )
     }
-    finally {
-      lock.unlock()
+    else {
+      logger.error("Not able to acquire the compaction lock.")
     }
   }
 
@@ -351,51 +352,89 @@ object CarbonDataRDDFactory extends Logging {
     hdfsStoreLocation: String,
     kettleHomePath: String,
     storeLocation: String,
-    carbonTable: CarbonTable,
-    cubeCreationTime: Long,
     executor: ExecutorService,
-    compactionModel: CompactionModel): Unit = {
-
+    compactionModel: CompactionModel,
+    compactionLock: ICarbonLock): Unit = {
+    // update the updated table status.
+    readLoadMetadataDetails(carbonLoadModel, hdfsStoreLocation)
     var segList: util.List[LoadMetadataDetails] = carbonLoadModel.getLoadMetadataDetails
-    breakable {
-      while (true) {
 
-        val loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
-          hdfsStoreLocation,
-          carbonLoadModel,
-          partitioner.partitionCount,
-          compactionModel.compactionSize,
-          segList,
-          compactionModel.compactionType
-        )
-        logger.info("loads identified for merge is " + loadsToMerge)
-        if (loadsToMerge.size() > 1) {
+    val loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
+      hdfsStoreLocation,
+      carbonLoadModel,
+      partitioner.partitionCount,
+      compactionModel.compactionSize,
+      segList,
+      compactionModel.compactionType
+    )
 
-          executor.submit(new Runnable() {
-            def run() {
+    if (loadsToMerge.size() > 1) {
 
-              // For Merging of the Carbon Segments.
-              Compactor.triggerCompaction(hdfsStoreLocation,
+      new Thread {
+        override def run(): Unit = {
+
+          val futureList: util.List[Future[Void]] = new util.ArrayList[Future[Void]](
+            CarbonCommonConstants
+              .DEFAULT_COLLECTION_SIZE
+          )
+          breakable {
+            while (true) {
+
+              val loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
+                hdfsStoreLocation,
                 carbonLoadModel,
-                partitioner,
-                storeLocation,
-                carbonTable,
-                kettleHomePath,
-                cubeCreationTime,
-                loadsToMerge,
-                sqlContext
+                partitioner.partitionCount,
+                compactionModel.compactionSize,
+                segList,
+                compactionModel.compactionType
               )
+              if (loadsToMerge.size() > 1) {
+                loadsToMerge.asScala.foreach(seg => {
+                  logger.info("load identified for merge is " + seg.getLoadName)
+                }
+                )
+
+                val future: Future[Void] = executor.submit(new CompactionCallable(hdfsStoreLocation,
+                  carbonLoadModel,
+                  partitioner,
+                  storeLocation,
+                  compactionModel.carbonTable,
+                  kettleHomePath,
+                  compactionModel.cubeCreationTime,
+                  loadsToMerge,
+                  sqlContext
+                )
+                )
+                futureList.add(future)
+                segList = CarbonDataMergerUtil
+                  .filterOutAlreadyMergedSegments(segList, loadsToMerge)
+              }
+              else {
+                executor.shutdown()
+                break
+              }
             }
           }
-          )
-          segList = CarbonDataMergerUtil
-            .filterOutAlreadyMergedSegments(segList, loadsToMerge)
+          try {
+            futureList.asScala.foreach(future => {
+              try {
+                future.get
+              }
+              catch {
+                case e: Exception =>
+                  logger.error("Exception in compaction thread " + e.getMessage)
+              }
+            }
+            )
+          }
+          finally {
+            compactionLock.unlock
+          }
         }
-        else {
-          executor.shutdown()
-          break
-        }
-      }
+      }.start
+    }
+    else {
+      compactionLock.unlock()
     }
   }
 
@@ -420,31 +459,39 @@ object CarbonDataRDDFactory extends Logging {
 
         val executor: ExecutorService = Executors.newFixedThreadPool(1)
 
-        val compactionModel = CompactionModel(compactionSize, CompactionType.MINOR_COMPACTION)
+        val compactionModel = CompactionModel(compactionSize,
+          CompactionType.MINOR_COMPACTION,
+          carbonTable,
+          cubeCreationTime
+        )
         val lock = CarbonLockFactory
           .getCarbonLockObj(carbonTable.getMetaDataFilepath, LockUsage.COMPACTION_LOCK)
 
-
-        try {
-          if (lock.lockWithRetries()) {
-            startCompactionThreads(sc,
-              carbonLoadModel,
-              partitioner,
-              hdfsStoreLocation,
-              kettleHomePath,
-              storeLocation,
-              carbonTable,
-              cubeCreationTime,
-              executor,
-              compactionModel
-            )
-          }
-          else {
-            logger.error("Not able to acquire the compaction lock.")
-          }
+        var storeLocation = ""
+        var configuredStore = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+        if (null != configuredStore && configuredStore.length > 0) {
+          storeLocation = configuredStore(Random.nextInt(configuredStore.length))
         }
-        finally {
-          lock.unlock()
+        if (storeLocation == null) {
+          storeLocation = System.getProperty("java.io.tmpdir")
+        }
+        storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
+
+        if (lock.lockWithRetries()) {
+
+          startCompactionThreads(sc,
+            carbonLoadModel,
+            partitioner,
+            hdfsStoreLocation,
+            kettleHomePath,
+            storeLocation,
+            executor,
+            compactionModel,
+            lock
+          )
+        }
+        else {
+          logger.error("Not able to acquire the compaction lock.")
         }
       }
     }

@@ -691,7 +691,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
   private void updateStoreLocation() {
     loadFolderLoc = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(meta.getSchemaName(), meta.getTableName(), meta.getTaskNo(),
-            meta.getPartitionID(), meta.getSegmentId());
+            meta.getPartitionID(), meta.getSegmentId()+"");
   }
 
   private void updateBagLogFileName() {

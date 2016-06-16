@@ -342,13 +342,31 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     dimensionType =
         CarbonUtil.identifyDimensionType(carbonTable.getDimensionByTableName(tableName));
     this.colCardinality = carbonFactDataHandlerModel.getColCardinality();
-    try {
-      numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
-              CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
-    } catch (NumberFormatException exc) {
-      numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+
+    if (carbonFactDataHandlerModel.isCompactionFlow()) {
+      try {
+        numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.NUM_CORES_COMPACTING,
+                CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
+      } catch (NumberFormatException exc) {
+        LOGGER.error("Configured value for property " + CarbonCommonConstants.NUM_CORES_COMPACTING
+            + "is wrong.Falling back to the default value "
+            + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+        numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+      }
+    } else {
+      try {
+        numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
+                CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
+      } catch (NumberFormatException exc) {
+        LOGGER.error("Configured value for property " + CarbonCommonConstants.NUM_CORES_LOADING
+            + "is wrong.Falling back to the default value "
+            + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+        numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+      }
     }
+
     blockletProcessingCount = new AtomicInteger(0);
     producerExecutorService = Executors.newFixedThreadPool(numberOfCores);
     producerExecutorServiceTaskList =

@@ -21,8 +21,10 @@ package org.carbondata.spark.rdd
 import java.util.UUID
 
 import scala.collection.JavaConverters._
+import scala.util.Random
 
 import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext}
+import org.apache.spark.SparkEnv
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
 
@@ -165,11 +167,15 @@ class CarbonDataLoadRDD[K, V](
         CarbonProperties.getInstance().addProperty("high.cardinality.value", "100000")
         CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false")
         CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000")
+        var storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+        if (null != storeLocations && storeLocations.length > 0) {
+          storeLocation = storeLocations(Random.nextInt(storeLocations.length))
+        }
         if (storeLocation == null) {
           storeLocation = System.getProperty("java.io.tmpdir")
-          storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
+          // storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
         }
-        storeLocation = storeLocation + '/' + theSplit.index
+        storeLocation = storeLocation + '/' + System.nanoTime() + '/' + theSplit.index
         dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
 
         if (model.isRetentionRequest) {

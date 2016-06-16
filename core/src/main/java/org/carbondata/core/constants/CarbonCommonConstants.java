@@ -426,6 +426,10 @@ public final class CarbonCommonConstants {
    */
   public static final String NUM_CORES_LOADING = "carbon.number.of.cores.while.loading";
   /**
+   * Number of cores to be used while compacting
+   */
+  public static final String NUM_CORES_COMPACTING = "carbon.number.of.cores.while.compacting";
+  /**
    * Number of cores to be used for block sort
    */
   public static final String NUM_CORES_BLOCK_SORT = "carbon.number.of.cores.block.sort";

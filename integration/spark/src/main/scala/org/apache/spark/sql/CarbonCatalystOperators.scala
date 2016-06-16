@@ -151,7 +151,7 @@ case class ShowLoadsCommand(schemaNameOp: Option[String], cube: String, limit: O
   override def children: Seq[LogicalPlan] = Seq.empty
 
   override def output: Seq[Attribute] = {
-    Seq(AttributeReference("LoadSequenceId", StringType, nullable = false)(),
+    Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
       AttributeReference("Status", StringType, nullable = false)(),
       AttributeReference("Load Start Time", TimestampType, nullable = false)(),
       AttributeReference("Load End Time", TimestampType, nullable = false)())

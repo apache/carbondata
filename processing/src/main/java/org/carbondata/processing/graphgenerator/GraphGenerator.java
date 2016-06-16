@@ -116,8 +116,7 @@ public class GraphGenerator {
   /**
    * OUTPUT_LOCATION
    */
-  private final String outputLocation = CarbonProperties.getInstance()
-      .getProperty("store_output_location", "../unibi-solutions/system/carbon/etl");
+  private String outputLocation = "";
   /**
    * xAxixLocation
    */
@@ -214,6 +213,14 @@ public class GraphGenerator {
     this.segmentId = segmentId;
     initialise();
     LOGGER.info("************* Is Columnar Storage" + isColumnar);
+  }
+
+  public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
+      String factStoreLocation, int currentRestructNum, int allocate,
+      CarbonDataLoadSchema carbonDataLoadSchema, String segmentId, String outputLocation) {
+    this(dataLoadModel, isHDFSReadMode, partitionID, factStoreLocation, currentRestructNum,
+        allocate, carbonDataLoadSchema, segmentId);
+    this.outputLocation = outputLocation;
   }
 
   /**

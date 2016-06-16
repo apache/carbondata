@@ -25,7 +25,9 @@ import java.util.UUID
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
+import scala.util.Random
 
+import org.apache.spark.SparkEnv
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
@@ -34,7 +36,7 @@ import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.util.FileUtils
 
 import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonDataLoadSchema, CarbonTableIdentifier}
+import org.carbondata.core.carbon.CarbonDataLoadSchema
 import org.carbondata.core.carbon.metadata.CarbonMetadata
 import org.carbondata.core.carbon.metadata.datatype.DataType
 import org.carbondata.core.carbon.metadata.encoder.Encoding
@@ -53,6 +55,7 @@ import org.carbondata.spark.load._
 import org.carbondata.spark.partition.api.impl.QueryPartitionHelper
 import org.carbondata.spark.rdd.CarbonDataRDDFactory
 import org.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
+
 
 case class tableModel(
     ifNotExistsSet: Boolean,
@@ -139,7 +142,10 @@ case class CarbonMergerMapping(storeLocation: String, hdfsStoreLocation: String,
 
 case class AlterTableModel(dbName: Option[String], tableName: String, compactionType: String)
 
-case class CompactionModel(compactionSize: Long, compactionType: CompactionType)
+case class CompactionModel(compactionSize: Long,
+  compactionType: CompactionType,
+  carbonTable: CarbonTable,
+  cubeCreationTime: Long)
 
 object TableNewProcessor {
   def apply(cm: tableModel, sqlContext: SQLContext): TableInfo = {
@@ -1454,10 +1460,14 @@ private[sql] case class LoadCube(
       val dataLoadSchema = new CarbonDataLoadSchema(table)
       // Need to fill dimension relation
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
-      var storeLocation = CarbonProperties.getInstance
-        .getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
-          System.getProperty("java.io.tmpdir"))
-
+      var storeLocation = ""
+      var configuredStore = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+      if (null != configuredStore && configuredStore.length > 0) {
+        storeLocation = configuredStore(Random.nextInt(configuredStore.length))
+      }
+      if (storeLocation == null) {
+        storeLocation = System.getProperty("java.io.tmpdir")
+      }
 
       var partitionLocation = relation.cubeMeta.storePath + "/partition/" +
                               relation.cubeMeta.carbonTableIdentifier.getDatabaseName + "/" +

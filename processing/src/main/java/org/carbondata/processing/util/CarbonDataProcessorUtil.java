@@ -268,7 +268,7 @@ public final class CarbonDataProcessorUtil {
    * @return
    */
   public static String getLocalDataFolderLocation(String databaseName, String tableName,
-      String taskId, String partitionId, int segmentId) {
+      String taskId, String partitionId, String segmentId) {
     String tempLocationKey = databaseName + CarbonCommonConstants.UNDERSCORE + tableName
         + CarbonCommonConstants.UNDERSCORE + taskId;
     String baseStorePath = CarbonProperties.getInstance()

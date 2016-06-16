@@ -129,6 +129,12 @@ public class CarbonFactDataHandlerModel {
 
   private int[] colCardinality;
 
+  /**
+   * This is the boolean which will determine whether the data handler call is from the compaction
+   * or not.
+   */
+  private boolean isCompactionFlow;
+
   public int[] getColCardinality() {
     return colCardinality;
   }
@@ -318,6 +324,22 @@ public class CarbonFactDataHandlerModel {
 
   public void setCarbonDataDirectoryPath(String carbonDataDirectoryPath) {
     this.carbonDataDirectoryPath = carbonDataDirectoryPath;
+  }
+
+  /**
+   * To check whether the data handler is for compaction flow or not.
+   * @return
+   */
+  public boolean isCompactionFlow() {
+    return isCompactionFlow;
+  }
+
+  /**
+   * If the handler is calling from the compaction flow set this to true.
+   * @param compactionFlow
+   */
+  public void setCompactionFlow(boolean compactionFlow) {
+    isCompactionFlow = compactionFlow;
   }
 }
 
