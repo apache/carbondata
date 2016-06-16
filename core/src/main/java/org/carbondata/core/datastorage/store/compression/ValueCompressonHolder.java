@@ -88,6 +88,7 @@ public final class ValueCompressonHolder {
         break;
 
       case DATA_LONG:
+      case DATA_BIGINT:
 
         value.setValue(longCompressor.unCompress(data));
         break;
