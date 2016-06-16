@@ -1156,13 +1156,13 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
   private void addEntryToBadRecords(Object[] r, int inputRowSize, int j, String columnName) {
     badRecordslogger.addBadRecordsToBilder(r, inputRowSize,
         "Surrogate key for value " + " \"" + r[j] + "\"" + " with column name " + columnName
-            + " not found in dictionary cache", valueToCheckAgainst);
+            + " not found in dictionary cache", "null");
   }
 
   private void addMemberNotExistEntry(Object[] r, int inputRowSize, int j, String columnName) {
     badRecordslogger.addBadRecordsToBilder(r, inputRowSize,
         "For Coulmn " + columnName + " \"" + r[j] + "\""
-            + " member not exist in the dimension table ", valueToCheckAgainst);
+            + " member not exist in the dimension table ", "null");
   }
 
   private void insertHierIfRequired(Object[] out) throws KettleException {

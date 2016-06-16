@@ -31,7 +31,8 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
   }
 
   override def beforeAll {
-
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
     sql(
       "CREATE TABLE nodictionaryCompaction (country String, ID Int, date Timestamp, name " +
         "String, " +
@@ -46,8 +47,6 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
     var csvFilePath2 = currentDirectory + "/src/test/resources/compaction/compaction2.csv"
     var csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE nodictionaryCompaction " +
         "OPTIONS('DELIMITER' = ',')"
     )
@@ -145,9 +144,7 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table nodictionaryCompaction")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
-      )
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "false")
   }
 

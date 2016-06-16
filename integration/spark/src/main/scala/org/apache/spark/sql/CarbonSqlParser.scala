@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql
 
+import java.nio.charset.Charset
 import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
@@ -34,6 +35,9 @@ import org.apache.spark.sql.execution.command.{DimensionRelation, _}
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
 
+import org.carbondata.core.carbon.metadata.datatype.DataType
+import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.util.DataTypeUtil
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 import org.carbondata.spark.util.CommonUtil
 
@@ -724,7 +728,9 @@ class CarbonSqlParser()
     fields.foreach(field => {
 
       if (dictExcludeCols.toSeq.exists(x => x.equalsIgnoreCase(field.column))) {
-        noDictionaryDims :+= field.column
+        if (DataTypeUtil.getDataType(field.dataType.get.toUpperCase()) != DataType.TIMESTAMP) {
+          noDictionaryDims :+= field.column
+        }
         dimFields += field
       }
       else if (dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {

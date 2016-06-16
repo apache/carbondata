@@ -24,8 +24,11 @@ import java.io.File
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
+
 import org.carbondata.core.util.CarbonProperties
 import org.scalatest.BeforeAndAfterAll
+
+import org.carbondata.core.constants.CarbonCommonConstants
 
 /**
   * Test Class for all queries on multiple datatypes
@@ -37,7 +40,6 @@ class AllDataTypesTestCase2 extends QueryTest with BeforeAndAfterAll {
 
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
-    CarbonProperties.getInstance().addProperty("carbon.direct.surrogate", "false")
     try {
       sql(
         "create cube Carbon_automation_test2 dimensions(imei string,deviceInformationId integer," +
@@ -65,6 +67,10 @@ class AllDataTypesTestCase2 extends QueryTest with BeforeAndAfterAll {
           "PARTITION_COUNT=2] )"
 
       )
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
+        )
       sql("LOAD DATA FACT FROM '" + currentDirectory + "/src/test/resources/100_olap.csv' INTO " +
         "Cube Carbon_automation_test2 partitionData(DELIMITER ',' ,QUOTECHAR '\"', FILEHEADER " +
         "'imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId,marketName,AMSize," +
@@ -87,6 +93,7 @@ class AllDataTypesTestCase2 extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
+    //CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     try {
       sql("drop cube Carbon_automation_test2")
     } catch {

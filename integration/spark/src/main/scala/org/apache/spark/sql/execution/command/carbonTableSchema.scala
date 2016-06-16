@@ -151,9 +151,6 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
 
   var index = 0
   var rowGroup = 0
-  val isDirectDictionary = CarbonProperties.getInstance()
-    .getProperty("carbon.direct.dictionary", "false").toUpperCase.equals("TRUE")
-
   def getAllChildren(fieldChildren: Option[List[Field]]): Seq[ColumnSchema] = {
     var allColumns: Seq[ColumnSchema] = Seq[ColumnSchema]()
     fieldChildren.foreach(fields => {
@@ -256,7 +253,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
       if (highCardinalityDims.contains(column.getColumnName)) {
         column.getEncodingList.remove(Encoding.DICTIONARY)
       }
-      if (column.getDataType == DataType.TIMESTAMP && isDirectDictionary) {
+      if (column.getDataType == DataType.TIMESTAMP) {
         column.getEncodingList.add(Encoding.DIRECT_DICTIONARY)
       }
     }

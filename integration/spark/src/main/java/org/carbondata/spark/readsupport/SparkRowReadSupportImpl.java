@@ -3,6 +3,8 @@ package org.carbondata.spark.readsupport;
 import java.sql.Timestamp;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.carbondata.hadoop.readsupport.impl.AbstractDictionaryDecodedReadSupport;
 import org.carbondata.query.carbon.util.DataTypeUtil;
@@ -33,6 +35,11 @@ public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSuppor
             data[i] = new Timestamp((long) data[i] / 1000);
             break;
           default:
+        }
+      } else if (carbonColumns[i].hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        //convert the long to timestamp in case of direct dictionary column
+        if (DataType.TIMESTAMP == carbonColumns[i].getDataType()) {
+          data[i] = new Timestamp((long) data[i] / 1000);
         }
       }
     }

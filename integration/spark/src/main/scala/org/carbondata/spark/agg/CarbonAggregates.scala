@@ -337,6 +337,10 @@ case class AverageFunctionCarbon(expr: Expression, base: AggregateExpression1, f
               dc = new AvgLongAggregator
               dc.agg(s.toString.toLong)
               dc.setNewValue(s.toString.toLong)
+            case t: java.sql.Timestamp =>
+              dc = new AvgTimestampAggregator
+              dc.agg(s.toString.toDouble)
+              dc.setNewValue(s.toString.toDouble)
             case _ =>
               dc = new AvgDoubleAggregator
               dc.agg(s.toString.toDouble)
@@ -365,6 +369,8 @@ case class AverageFunctionCarbon(expr: Expression, base: AggregateExpression1, f
             Cast(Literal(avg.getBigDecimalValue), base.dataType).eval(null)
           case avg: AvgLongAggregator =>
             Cast(Literal(avg.getLongValue), base.dataType).eval(null)
+          case avg: AvgTimestampAggregator =>
+            Cast(Literal(avg.getDoubleValue), base.dataType).eval(null)
           case _ =>
             Cast(Literal(avg.getDoubleValue), base.dataType).eval(null)
         }
@@ -448,6 +454,10 @@ case class SumFunctionCarbon(expr: Expression, base: AggregateExpression1, final
               dc = new SumLongAggregator
               dc.agg(s.toString.toLong)
               dc.setNewValue(s.toString.toLong)
+            case t: java.sql.Timestamp =>
+              dc = new SumTimestampAggregator
+              dc.agg(s.toString.toDouble)
+              dc.setNewValue(s.toString.toDouble)
             case _ =>
               dc = new SumDoubleAggregator
               dc.agg(s.toString.toDouble)

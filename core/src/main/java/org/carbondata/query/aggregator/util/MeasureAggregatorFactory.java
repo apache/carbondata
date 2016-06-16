@@ -27,6 +27,7 @@ import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.impl.AvgBigDecimalAggregator;
 import org.carbondata.query.aggregator.impl.AvgDoubleAggregator;
 import org.carbondata.query.aggregator.impl.AvgLongAggregator;
+import org.carbondata.query.aggregator.impl.AvgTimestampAggregator;
 import org.carbondata.query.aggregator.impl.CountAggregator;
 import org.carbondata.query.aggregator.impl.DistinctCountAggregatorObjectSet;
 import org.carbondata.query.aggregator.impl.DistinctCountBigDecimalAggregatorObjectSet;
@@ -46,6 +47,7 @@ import org.carbondata.query.aggregator.impl.SumDistinctDoubleAggregator;
 import org.carbondata.query.aggregator.impl.SumDistinctLongAggregator;
 import org.carbondata.query.aggregator.impl.SumDoubleAggregator;
 import org.carbondata.query.aggregator.impl.SumLongAggregator;
+import org.carbondata.query.aggregator.impl.SumTimestampAggregator;
 import org.carbondata.query.carbon.model.CustomAggregateExpression;
 
 /**
@@ -123,6 +125,9 @@ public class MeasureAggregatorFactory {
         case DECIMAL:
 
           return new AvgBigDecimalAggregator();
+        case TIMESTAMP:
+
+          return new AvgTimestampAggregator();
         default:
 
           return new AvgDoubleAggregator();
@@ -147,6 +152,10 @@ public class MeasureAggregatorFactory {
         case DECIMAL:
 
           return new SumBigDecimalAggregator();
+
+        case TIMESTAMP:
+
+          return new SumTimestampAggregator();
         default:
 
           return new SumDoubleAggregator();
