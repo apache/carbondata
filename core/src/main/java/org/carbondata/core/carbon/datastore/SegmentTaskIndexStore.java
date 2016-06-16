@@ -60,6 +60,14 @@ public class SegmentTaskIndexStore {
   private Map<AbsoluteTableIdentifier, Map<String, Map<String, AbstractIndex>>> tableSegmentMap;
 
   /**
+   * map of block info to lock object map, while loading the btree this will be filled
+   * and removed after loading the tree for that particular block info, this will be useful
+   * while loading the tree concurrently so only block level lock will be applied another
+   * block can be loaded concurrently
+   */
+  private Map<String, Object> segmentLockMap;
+
+  /**
    * table and its lock object to this will be useful in case of concurrent
    * query scenario when more than one query comes for same table and in  that
    * case it will ensure that only one query will able to load the blocks
@@ -72,6 +80,7 @@ public class SegmentTaskIndexStore {
             CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     tableLockMap = new ConcurrentHashMap<AbsoluteTableIdentifier, Object>(
         CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    segmentLockMap = new ConcurrentHashMap<String, Object>();
   }
 
   /**
@@ -100,69 +109,146 @@ public class SegmentTaskIndexStore {
     // task id to segment map
     Map<String, AbstractIndex> taskIdToTableSegmentMap =
         new HashMap<String, AbstractIndex>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    addLockObject(absoluteTableIdentifier);
+    Iterator<Entry<String, List<TableBlockInfo>>> iteratorOverSegmentBlocksInfos =
+        segmentToTableBlocksInfos.entrySet().iterator();
+    Map<String, Map<String, AbstractIndex>> tableSegmentMapTemp =
+        addTableSegmentMap(absoluteTableIdentifier);
+    Map<String, AbstractIndex> taskIdToSegmentIndexMap = null;
+    String segmentId = null;
+    try {
+      while (iteratorOverSegmentBlocksInfos.hasNext()) {
+        // segment id to table block mapping
+        Entry<String, List<TableBlockInfo>> next = iteratorOverSegmentBlocksInfos.next();
+        // group task id to table block info mapping for the segment
+        Map<String, List<TableBlockInfo>> taskIdToTableBlockInfoMap =
+            mappedAndGetTaskIdToTableBlockInfo(segmentToTableBlocksInfos);
+        // get the existing map of task id to table segment map
+        segmentId = next.getKey();
+        // check if segment is already loaded, if segment is already loaded
+        //no need to load the segment block
+        taskIdToSegmentIndexMap = tableSegmentMapTemp.get(segmentId);
+        if (taskIdToSegmentIndexMap == null) {
+          // get the segment loader lock object this is to avoid
+          // same segment is getting loaded multiple times
+          // in case of concurrent query
+          Object segmentLoderLockObject = segmentLockMap.get(segmentId);
+          if (null == segmentLoderLockObject) {
+            segmentLoderLockObject = addAndGetSegmentLock(segmentId);
+          }
+          // acquire lock to lod the segment
+          synchronized (segmentLoderLockObject) {
+            taskIdToSegmentIndexMap = tableSegmentMapTemp.get(segmentId);
+            if (null == taskIdToSegmentIndexMap) {
+              // creating a map of take if to table segment
+              taskIdToSegmentIndexMap = new HashMap<String, AbstractIndex>();
+              tableSegmentMapTemp.put(next.getKey(), taskIdToSegmentIndexMap);
+              Iterator<Entry<String, List<TableBlockInfo>>> iterator =
+                  taskIdToTableBlockInfoMap.entrySet().iterator();
+              while (iterator.hasNext()) {
+                Entry<String, List<TableBlockInfo>> taskToBlockInfoList = iterator.next();
+                taskIdToSegmentIndexMap
+                    .put(taskToBlockInfoList.getKey(), loadBlocks(taskToBlockInfoList.getValue()));
+              }
+              // removing from segment lock map as once segment is loaded
+              //if concurrent query is coming for same segment
+              // it will wait on the lock so after this segment will be already
+              //loaded so lock is not required, that is why removing the
+              // the lock object as it wont be useful
+              segmentLockMap.remove(segmentId);
+            }
+          }
+          taskIdToTableSegmentMap.putAll(taskIdToSegmentIndexMap);
+        }
+      }
+    } catch (CarbonUtilException e) {
+      LOGGER.error("Problem while loading the segment");
+      throw new IndexBuilderException(e);
+    }
+    return taskIdToTableSegmentMap;
+  }
+
+  /**
+   * Below method will be used to get the segment level lock object
+   *
+   * @param segmentId
+   * @return lock object
+   */
+  private synchronized Object addAndGetSegmentLock(String segmentId) {
+    // get the segment lock object if it is present then return
+    // otherwise add the new lock and return
+    Object segmentLoderLockObject = segmentLockMap.get(segmentId);
+    if (null == segmentLoderLockObject) {
+      segmentLoderLockObject = new Object();
+      segmentLockMap.put(segmentId, segmentLoderLockObject);
+    }
+    return segmentLoderLockObject;
+  }
+
+  /**
+   * Below code is to add table lock map which will be used to
+   * add
+   *
+   * @param absoluteTableIdentifier
+   */
+  private synchronized void addLockObject(AbsoluteTableIdentifier absoluteTableIdentifier) {
     // add the instance to lock map if it is not present
     if (null == tableLockMap.get(absoluteTableIdentifier)) {
       tableLockMap.put(absoluteTableIdentifier, new Object());
     }
-    Iterator<Entry<String, List<TableBlockInfo>>> iteratorOverSegmentBlocksInfos =
-        segmentToTableBlocksInfos.entrySet().iterator();
+  }
+
+  /**
+   * Below method will be used to get the table segment map
+   * if table segment is not present then it will add and return
+   *
+   * @param absoluteTableIdentifier
+   * @return table segment map
+   */
+  private Map<String, Map<String, AbstractIndex>> addTableSegmentMap(
+      AbsoluteTableIdentifier absoluteTableIdentifier) {
     // get the instance of lock object
     Object lockObject = tableLockMap.get(absoluteTableIdentifier);
-
-    synchronized (lockObject) {
-      // segment id to task id to table segment map
-      Map<String, Map<String, AbstractIndex>> tableSegmentMapTemp =
-          tableSegmentMap.get(absoluteTableIdentifier);
-      if (null == tableSegmentMapTemp) {
-        tableSegmentMapTemp = new HashMap<String, Map<String, AbstractIndex>>();
-        tableSegmentMap.put(absoluteTableIdentifier, tableSegmentMapTemp);
-      }
-      Map<String, AbstractIndex> map = null;
-      DataFileFooter footer = null;
-      try {
-        while (iteratorOverSegmentBlocksInfos.hasNext()) {
-          // segment id to table block mapping
-          Entry<String, List<TableBlockInfo>> next = iteratorOverSegmentBlocksInfos.next();
-          // group task id to table block info mapping for the segment
-          Map<String, List<TableBlockInfo>> taskIdToTableBlockInfoMap =
-              mappedAndGetTaskIdToTableBlockInfo(segmentToTableBlocksInfos);
-          // get the existing map of task id to table segment map
-          map = tableSegmentMapTemp.get(next.getKey());
-          if (map == null) {
-            // creating a map of tak if to table segment
-            map = new HashMap<String, AbstractIndex>();
-            tableSegmentMapTemp.put(next.getKey(), map);
-            Iterator<Entry<String, List<TableBlockInfo>>> iterator =
-                taskIdToTableBlockInfoMap.entrySet().iterator();
-            while (iterator.hasNext()) {
-              Entry<String, List<TableBlockInfo>> taskIdToBlockInfoIterator = iterator.next();
-              // all the block of one task id will be loaded together
-              // so creating a list which will have all the data file metadata to of one task
-              List<DataFileFooter> footerList = new ArrayList<DataFileFooter>();
-
-              for (TableBlockInfo tableBlockInfo : taskIdToBlockInfoIterator.getValue()) {
-                footer = CarbonUtil
-                    .readMetadatFile(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset(),
-                        tableBlockInfo.getBlockLength());
-                footer.setTableBlockInfo(tableBlockInfo);
-                footerList.add(footer);
-              }
-              AbstractIndex segment = new SegmentTaskIndex();
-              // file path of only first block is passed as it all table block info path of
-              // same task id will be same
-              segment.buildIndex(footerList);
-              map.put(taskIdToBlockInfoIterator.getKey(), segment);
-            }
-
-          }
-          taskIdToTableSegmentMap.putAll(map);
+    Map<String, Map<String, AbstractIndex>> tableSegmentMapTemp =
+        tableSegmentMap.get(absoluteTableIdentifier);
+    if (null == tableSegmentMapTemp) {
+      synchronized (lockObject) {
+        // segment id to task id to table segment map
+        tableSegmentMapTemp = tableSegmentMap.get(absoluteTableIdentifier);
+        if (null == tableSegmentMapTemp) {
+          tableSegmentMapTemp = new ConcurrentHashMap<String, Map<String, AbstractIndex>>();
+          tableSegmentMap.put(absoluteTableIdentifier, tableSegmentMapTemp);
         }
-      } catch (CarbonUtilException e) {
-        LOGGER.error("Problem while loading the segment");
-        throw new IndexBuilderException(e);
       }
     }
-    return taskIdToTableSegmentMap;
+    return tableSegmentMapTemp;
+  }
+
+  /**
+   * Below method will be used to load the blocks
+   *
+   * @param tableBlockInfoList
+   * @return loaded segment
+   * @throws CarbonUtilException
+   */
+  private AbstractIndex loadBlocks(List<TableBlockInfo> tableBlockInfoList)
+      throws CarbonUtilException {
+    DataFileFooter footer = null;
+    // all the block of one task id will be loaded together
+    // so creating a list which will have all the data file meta data to of one task
+    List<DataFileFooter> footerList = new ArrayList<DataFileFooter>();
+    for (TableBlockInfo tableBlockInfo : tableBlockInfoList) {
+      footer = CarbonUtil
+          .readMetadatFile(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset(),
+              tableBlockInfo.getBlockLength());
+      footer.setTableBlockInfo(tableBlockInfo);
+      footerList.add(footer);
+    }
+    AbstractIndex segment = new SegmentTaskIndex();
+    // file path of only first block is passed as it all table block info path of
+    // same task id will be same
+    segment.buildIndex(footerList);
+    return segment;
   }
 
   /**
@@ -223,23 +309,29 @@ public class SegmentTaskIndexStore {
       return;
     }
     // Acquire the lock and remove only those instance which was loaded
-    synchronized (lockObject) {
-      Map<String, Map<String, AbstractIndex>> map = tableSegmentMap.get(absoluteTableIdentifier);
-      // if there is no loaded blocks then return
-      if (null == map) {
-        return;
-      }
-      for (String segmentId : segmentToBeRemoved) {
-        map.remove(segmentId);
-      }
+    Map<String, Map<String, AbstractIndex>> map = tableSegmentMap.get(absoluteTableIdentifier);
+    // if there is no loaded blocks then return
+    if (null == map) {
+      return;
+    }
+    for (String segmentId : segmentToBeRemoved) {
+      map.remove(segmentId);
     }
   }
 
+  /**
+   * Below method will be used to check if segment blocks
+   * is already loaded or not
+   *
+   * @param absoluteTableIdentifier
+   * @param segmentId
+   * @return is loaded then return the loaded blocks otherwise null
+   */
   public Map<String, AbstractIndex> getSegmentBTreeIfExists(
       AbsoluteTableIdentifier absoluteTableIdentifier, String segmentId) {
-    Map<String, Map<String, AbstractIndex>> tableSegment
-            = tableSegmentMap.get(absoluteTableIdentifier);
-    if (null == tableSegment){
+    Map<String, Map<String, AbstractIndex>> tableSegment =
+        tableSegmentMap.get(absoluteTableIdentifier);
+    if (null == tableSegment) {
       return null;
     }
     return tableSegment.get(segmentId);

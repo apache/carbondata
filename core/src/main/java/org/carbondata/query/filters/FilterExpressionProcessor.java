@@ -122,7 +122,6 @@ public class FilterExpressionProcessor implements FilterProcessor {
         tableSegment.getSegmentProperties().getDimensionColumnsValueSize());
     DataRefNode startBlock = blockFinder.findFirstDataBlock(btreeNode, searchStartKey);
     DataRefNode endBlock = blockFinder.findLastDataBlock(btreeNode, searchEndKey);
-    DataRefNode firstnode = startBlock;
     FilterExecuter filterExecuter =
             FilterUtil.getFilterExecuterTree(filterResolver, tableSegment.getSegmentProperties());
     while (startBlock != endBlock) {
@@ -132,10 +131,6 @@ public class FilterExpressionProcessor implements FilterProcessor {
     }
     addBlockBasedOnMinMaxValue(filterExecuter, listOfDataBlocksToScan, endBlock,
         tableSegment.getSegmentProperties());
-    if (listOfDataBlocksToScan.isEmpty()) {
-      //Pass the first block itself for applying filters.
-      listOfDataBlocksToScan.add(firstnode);
-    }
     LOGGER.info("Total Time in retrieving the data reference node" + "after scanning the btree " + (
         System.currentTimeMillis() - startTimeInMillis)
         + " Total number of data reference node for executing filter(s) " + listOfDataBlocksToScan
