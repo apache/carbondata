@@ -438,6 +438,19 @@ object PartialAggregation {
     }
   }
 
+  /**
+   * There should be sync between carbonOperators validation and here. we should not convert to
+   * carbon aggregates if the validation does not satisfy.
+   */
+  private def canBeConvertedToCarbonAggregate(expressions: Seq[Expression]): Boolean = {
+    val detailQuery = expressions.map {
+      case attr@AttributeReference(_, _, _, _) => true
+      case par: Alias if par.children.head.isInstanceOf[AggregateExpression1] => true
+      case _ => false
+    }.exists(!_)
+    !detailQuery
+  }
+
   def unapply(plan: LogicalPlan): Option[ReturnType] = unapply((plan, false))
 
   def unapply(combinedPlan: (LogicalPlan, Boolean)): Option[ReturnType] = {
@@ -450,72 +463,99 @@ object PartialAggregation {
             aggregateExpressionsOrig
           }
           else {
-            convertAggregatesForPushdown(false, aggregateExpressionsOrig)
+            // First calculate partialComputation before converting and then check whether it could
+            // be converted or not. This type of checks are necessary for queries like
+            // select sum(col)+10 from table. Here the aggregates are different for
+            // partialComputation and aggregateExpressionsOrig. So first check on partialComputation
+            val preCheckEval = getPartialEvaluation(groupingExpressions, aggregateExpressionsOrig)
+            preCheckEval match {
+              case Some(allExprs) =>
+                if (canBeConvertedToCarbonAggregate(allExprs._1)) {
+                  convertAggregatesForPushdown(false, aggregateExpressionsOrig)
+                } else {
+                  aggregateExpressionsOrig
+                }
+              case _ => aggregateExpressionsOrig
+            }
           }
-        // Collect all aggregate expressions.
-        val allAggregates =
-          aggregateExpressions.flatMap(_ collect { case a: AggregateExpression1 => a })
-        // Collect all aggregate expressions that can be computed partially.
-        val partialAggregates =
-          aggregateExpressions.flatMap(_ collect { case p: PartialAggregate1 => p })
+        val evaluation = getPartialEvaluation(groupingExpressions, aggregateExpressions)
 
-        // Only do partial aggregation if supported by all aggregate expressions.
-        if (allAggregates.size == partialAggregates.size) {
-          // Create a map of expressions to their partial evaluations for all aggregate expressions.
-          val partialEvaluations: Map[TreeNodeRef, SplitEvaluation] =
-            partialAggregates.map(a => (new TreeNodeRef(a), a.asPartial)).toMap
-
-          // We need to pass all grouping expressions though so the grouping can happen a second
-          // time. However some of them might be unnamed so we alias them allowing them to be
-          // referenced in the second aggregation.
-          val namedGroupingExpressions: Map[Expression, NamedExpression] = groupingExpressions.map {
-            case n: NamedExpression => (n, n)
-            case other => (other, Alias(other, "PartialGroup")())
-          }.toMap
-
-          // Replace aggregations with a new expression that computes the result from the already
-          // computed partial evaluations and grouping values.
-          val rewrittenAggregateExpressions = aggregateExpressions.map(_.transformUp {
-            case e: Expression if partialEvaluations.contains(new TreeNodeRef(e)) =>
-              partialEvaluations(new TreeNodeRef(e)).finalEvaluation
-
-            case e: Expression =>
-              // Should trim aliases around `GetField`s. These aliases are introduced while
-              // resolving struct field accesses, because `GetField` is not a `NamedExpression`.
-              // (Should we just turn `GetField` into a `NamedExpression`?)
-              namedGroupingExpressions.collectFirst {
-                case (expr, ne) if expr semanticEquals e => ne.toAttribute
-              }.getOrElse(e)
-          }).asInstanceOf[Seq[NamedExpression]]
-
-          val partialComputation =
-            (namedGroupingExpressions.values ++
-             partialEvaluations.values.flatMap(_.partialEvaluations)).toSeq
-
-          // Convert the other aggregations for push down to Carbon layer. Here don't touch earlier
-          // converted native carbon aggregators.
-          val convertedPartialComputation =
-            if (combinedPlan._2) {
-              partialComputation
-            }
-            else {
-              convertAggregatesForPushdown(true, partialComputation)
-                .asInstanceOf[Seq[NamedExpression]]
-            }
-
-          val namedGroupingAttributes = namedGroupingExpressions.values.map(_.toAttribute).toSeq
-
-          Some(
-            (namedGroupingAttributes,
+        evaluation match {
+          case(Some((partialComputation,
               rewrittenAggregateExpressions,
-              groupingExpressions,
-              convertedPartialComputation,
-              child))
-        } else {
-          None
+              namedGroupingAttributes))) =>
+            // Convert the other aggregations for push down to Carbon layer.
+            // Here don't touch earlier converted native carbon aggregators.
+            val convertedPartialComputation =
+              if (combinedPlan._2) {
+                partialComputation
+              }
+              else {
+                convertAggregatesForPushdown(true, partialComputation)
+                  .asInstanceOf[Seq[NamedExpression]]
+              }
+
+            Some(
+              (namedGroupingAttributes,
+                rewrittenAggregateExpressions,
+                groupingExpressions,
+                convertedPartialComputation,
+                child))
+          case _ => None
         }
+
       case _ => None
     }
+  }
+
+  def getPartialEvaluation(groupingExpressions: Seq[Expression],
+      aggregateExpressions: Seq[Expression]):
+      Option[(Seq[NamedExpression], Seq[NamedExpression], Seq[Attribute])] = {
+    // Collect all aggregate expressions.
+    val allAggregates =
+      aggregateExpressions.flatMap(_ collect { case a: AggregateExpression1 => a })
+    // Collect all aggregate expressions that can be computed partially.
+    val partialAggregates =
+      aggregateExpressions.flatMap(_ collect { case p: PartialAggregate1 => p })
+
+    // Only do partial aggregation if supported by all aggregate expressions.
+    if (allAggregates.size == partialAggregates.size) {
+      // Create a map of expressions to their partial evaluations for all aggregate expressions.
+      val partialEvaluations: Map[TreeNodeRef, SplitEvaluation] =
+        partialAggregates.map(a => (new TreeNodeRef(a), a.asPartial)).toMap
+
+      // We need to pass all grouping expressions though so the grouping can happen a second
+      // time. However some of them might be unnamed so we alias them allowing them to be
+      // referenced in the second aggregation.
+      val namedGroupingExpressions: Map[Expression, NamedExpression] = groupingExpressions.map {
+        case n: NamedExpression => (n, n)
+        case other => (other, Alias(other, "PartialGroup")())
+      }.toMap
+
+      // Replace aggregations with a new expression that computes the result from the already
+      // computed partial evaluations and grouping values.
+      val rewrittenAggregateExpressions = aggregateExpressions.map(_.transformUp {
+        case e: Expression if partialEvaluations.contains(new TreeNodeRef(e)) =>
+          partialEvaluations(new TreeNodeRef(e)).finalEvaluation
+
+        case e: Expression =>
+          // Should trim aliases around `GetField`s. These aliases are introduced while
+          // resolving struct field accesses, because `GetField` is not a `NamedExpression`.
+          // (Should we just turn `GetField` into a `NamedExpression`?)
+          namedGroupingExpressions.collectFirst {
+            case (expr, ne) if expr semanticEquals e => ne.toAttribute
+          }.getOrElse(e)
+      }).asInstanceOf[Seq[NamedExpression]]
+
+      val partialComputation =
+        (namedGroupingExpressions.values ++
+         partialEvaluations.values.flatMap(_.partialEvaluations)).toSeq
+      val namedGroupingAttributes = namedGroupingExpressions.values.map(_.toAttribute).toSeq
+      Some(partialComputation, rewrittenAggregateExpressions, namedGroupingAttributes)
+    } else {
+      None
+    }
+
   }
 }
 

@@ -41,6 +41,18 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       Seq(Row(11, "arvind", 96.2, 1, 11), Row(15, "ayushi", 91.5, 1, 15)))
   }
 
+  test("select empname,trim(designation),avg(salary),avg(empno) from alldatatypescubeAGG where empname in ('arvind','ayushi') group by empname,trim(designation)") {
+    checkAnswer(
+      sql("select empname,trim(designation),avg(salary),avg(empno) from alldatatypescubeAGG where empname in ('arvind','ayushi') group by empname,trim(designation)"),
+      Seq(Row("arvind", "SE", 5040.56, 11.0), Row("ayushi", "SSA", 13245.48, 15.0)))
+  }
+
+  test("select empname,length(designation),max(empno),min(empno), avg(empno) from alldatatypescubeAGG where empname in ('arvind','ayushi') group by empname,length(designation) order by empname") {
+    checkAnswer(
+      sql("select empname,length(designation),max(empno),min(empno), avg(empno) from alldatatypescubeAGG where empname in ('arvind','ayushi') group by empname,length(designation) order by empname"),
+      Seq(Row("arvind", 2, 11, 11, 11.0), Row("ayushi", 3, 15, 15, 15.0)))
+  }
+
   override def afterAll {
     sql("drop cube alldatatypescubeAGG")
   }

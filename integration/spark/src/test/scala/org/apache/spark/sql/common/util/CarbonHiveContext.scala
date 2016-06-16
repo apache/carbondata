@@ -44,8 +44,7 @@ object CarbonHiveContext extends LocalSQLContext(
   val hdfsCarbonPath = new File("./target/test/").getCanonicalPath;
   hdfsCarbonPath
 }) {
-
-  {
+    sparkContext.setLogLevel("ERROR")
     CarbonProperties.getInstance().addProperty("carbon.kettle.home", "../../processing/carbonplugins")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH, System.getProperty("java.io.tmpdir"))
@@ -60,7 +59,6 @@ object CarbonHiveContext extends LocalSQLContext(
 
     CarbonLoaderUtil.deleteStorePath(hdfsCarbonPath)
     //	    //		sql("drop cube timestamptypecube");
-  }
 }
 
 

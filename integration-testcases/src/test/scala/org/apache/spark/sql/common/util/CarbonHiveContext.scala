@@ -44,8 +44,7 @@ object CarbonHiveContext extends LocalSQLContext(
   val hdfsCarbonPath = new File("./target/test/").getCanonicalPath;
   hdfsCarbonPath
 }) {
-
-  {
+    sparkContext.setLogLevel("ERROR")
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
     CarbonProperties.getInstance().addProperty("carbon.kettle.home", currentDirectory+"/../processing/carbonplugins")
@@ -62,7 +61,6 @@ object CarbonHiveContext extends LocalSQLContext(
 
     CarbonLoaderUtil.deleteStorePath(hdfsCarbonPath)
     //	    //		sql("drop cube timestamptypecube");
-  }
 }
 
 
