@@ -80,7 +80,9 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
         // column expression.
         // we need to check if the other expression contains column
         // expression or not in depth.
-        if (FilterUtil.checkIfExpressionContainsColumn(rightExp)) {
+        if (FilterUtil.checkIfExpressionContainsColumn(rightExp)||
+            FilterUtil.isExpressionNeedsToResolved(rightExp,isIncludeFilter) &&
+            columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)){
           isExpressionResolve = true;
         } else {
           //Visitor pattern is been used in this scenario inorder to populate the

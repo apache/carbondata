@@ -69,6 +69,7 @@ import org.carbondata.query.evaluators.DimColumnExecuterFilterInfo;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
+import org.carbondata.query.expression.LiteralExpression;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.executer.AndFilterExecuterImpl;
 import org.carbondata.query.filter.executer.ColGroupFilterExecuterImpl;
@@ -1207,6 +1208,27 @@ public final class FilterUtil {
 
     traverseResolverTreeAndPopulateStartAndEndKeys(filterResolverTree.getRight(), tableIdentifier,
         segmentProperties, startKeys, setOfStartKeyByteArray, endKeys, setOfEndKeyByteArray);
+  }
+
+  /**
+   * Method will find whether the expression needs to be resolved, this can happen
+   * if the expression is exclude and data type is null(mainly in IS NOT NULL filter scenario)
+   * @param rightExp
+   * @param isIncludeFilter
+   * @return
+   */
+  public static boolean isExpressionNeedsToResolved(Expression rightExp, boolean isIncludeFilter) {
+    if (!isIncludeFilter && rightExp instanceof LiteralExpression && (
+        org.carbondata.query.expression.DataType.NullType == ((LiteralExpression) rightExp)
+            .getLiteralExpDataType())) {
+      return true;
+    }
+    for (Expression child : rightExp.getChildren()) {
+      if (isExpressionNeedsToResolved(child, isIncludeFilter)) {
+        return true;
+      }
+    }
+    return false;
   }
 
 }

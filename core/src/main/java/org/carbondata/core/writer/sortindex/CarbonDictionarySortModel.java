@@ -73,6 +73,9 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
         try {
           d1 = new Double(memberValue);
         } catch (NumberFormatException e) {
+          if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(o.memberValue)) {
+            return -1;
+          }
           return 1;
         }
         try {
@@ -87,6 +90,9 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
         try {
           val1 = new java.math.BigDecimal(memberValue);
         } catch (NumberFormatException e) {
+          if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(o.memberValue)) {
+            return -1;
+          }
           return 1;
         }
         try {
@@ -104,6 +110,9 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
         try {
           date1 = parser.parse(memberValue);
         } catch (ParseException e) {
+          if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(o.memberValue)) {
+            return -1;
+          }
           return 1;
         }
         try {

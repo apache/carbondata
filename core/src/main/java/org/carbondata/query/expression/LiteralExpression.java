@@ -56,4 +56,13 @@ public class LiteralExpression extends LeafExpression {
     return "LiteralExpression(" + value + ')';
   }
 
+  /**
+   * getLiteralExpDataType.
+   *
+   * @return
+   */
+  public DataType getLiteralExpDataType() {
+    return dataType;
+  }
+
 }

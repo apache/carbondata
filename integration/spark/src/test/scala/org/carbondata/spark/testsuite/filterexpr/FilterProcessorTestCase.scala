@@ -36,6 +36,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("drop cube if exists filtertestTables")
     sql("drop cube if exists filtertestTablesWithDecimal")
+    sql("drop cube if exists filtertestTablesWithNull")
     sql("CREATE CUBE filtertestTables DIMENSIONS (ID Integer, date Timestamp, country String, " +
       "name String, phonetype String, serialname String) " +
       "MEASURES (salary Integer) " +
@@ -58,6 +59,26 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
         s"filtertestTablesWithDecimal " +
         s"OPTIONS(DELIMITER ',', " +
         s"FILEHEADER '')"
+    )
+    sql(
+      "CREATE CUBE filtertestTablesWithNull DIMENSIONS (ID Integer, date Timestamp, country " +
+        "String, " +
+        "name String, phonetype String, serialname String) " +
+        "MEASURES (salary Integer) " +
+        "OPTIONS (PARTITIONER [PARTITION_COUNT=1])"
+    )
+    sql(
+      s"LOAD DATA FACT FROM './src/test/resources/data2.csv' INTO CUBE " +
+        s"filtertestTablesWithNull " +
+        s"OPTIONS(DELIMITER ',', " +
+        s"FILEHEADER '')"
+    )
+  }
+
+  test("Is not null filter") {
+    checkAnswer(
+      sql("select id from filtertestTablesWithNull " + "where id is not null"),
+      Seq(Row(4), Row(6))
     )
   }
 
