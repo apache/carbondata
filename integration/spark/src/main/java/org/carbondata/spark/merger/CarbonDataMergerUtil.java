@@ -213,18 +213,20 @@ public final class CarbonDataMergerUtil {
     List<LoadMetadataDetails> listOfSegmentsAfterPreserve =
         checkPreserveSegmentsPropertyReturnRemaining(segments);
 
-    // identify the segments to merge based on the Size of the segments across partition.
-
-    List<LoadMetadataDetails> listOfSegmentsBelowThresholdSize =
-        identifySegmentsToBeMergedBasedOnSize(compactionSize, listOfSegmentsAfterPreserve,
-            carbonLoadModel, partitionCount, storeLocation, compactionType);
-
     // filter the segments if the compaction based on days is configured.
 
     List<LoadMetadataDetails> listOfSegmentsLoadedInSameDateInterval =
-        identifySegmentsToBeMergedBasedOnLoadedDate(listOfSegmentsBelowThresholdSize);
+        identifySegmentsToBeMergedBasedOnLoadedDate(listOfSegmentsAfterPreserve);
 
-    return listOfSegmentsLoadedInSameDateInterval;
+    // identify the segments to merge based on the Size of the segments across partition.
+
+    List<LoadMetadataDetails> listOfSegmentsBelowThresholdSize =
+        identifySegmentsToBeMergedBasedOnSize(compactionSize,
+            listOfSegmentsLoadedInSameDateInterval, carbonLoadModel, partitionCount, storeLocation,
+            compactionType);
+
+
+    return listOfSegmentsBelowThresholdSize;
   }
 
   /**
