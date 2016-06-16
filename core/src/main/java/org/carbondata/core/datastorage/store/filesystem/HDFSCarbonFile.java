@@ -22,6 +22,8 @@ package org.carbondata.core.datastorage.store.filesystem;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
@@ -32,7 +34,6 @@ import org.carbondata.core.util.CarbonUtil;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
 import org.apache.hadoop.hdfs.DistributedFileSystem;
 
 public class HDFSCarbonFile implements CarbonFile {
@@ -83,27 +84,23 @@ public class HDFSCarbonFile implements CarbonFile {
   }
 
   @Override public CarbonFile[] listFiles(final CarbonFileFilter fileFilter) {
-    FileStatus[] listStatus = null;
-    try {
-      if (null != fileStatus && fileStatus.isDir()) {
-        Path path = fileStatus.getPath();
-        listStatus =
-            path.getFileSystem(FileFactory.getConfiguration()).listStatus(path, new PathFilter() {
+    CarbonFile[] files = listFiles();
+    if (files != null && files.length >= 1) {
 
-              @Override public boolean accept(Path path) {
-
-                return fileFilter.accept(new HDFSCarbonFile(path));
-              }
-            });
-      } else {
-        return null;
+      List<CarbonFile> fileList = new ArrayList<CarbonFile>(files.length);
+      for (int i = 0; i < files.length; i++) {
+        if (fileFilter.accept(files[i])) {
+          fileList.add(files[i]);
+        }
       }
-    } catch (IOException e) {
-      LOGGER.error("Exception occured: " + e.getMessage());
-      return new CarbonFile[0];
-    }
 
-    return getFiles(listStatus);
+      if (fileList.size() >= 1) {
+        return fileList.toArray(new CarbonFile[fileList.size()]);
+      } else {
+        return new CarbonFile[0];
+      }
+    }
+    return files;
   }
 
   @Override public String getName() {
@@ -111,7 +108,7 @@ public class HDFSCarbonFile implements CarbonFile {
   }
 
   @Override public boolean isDirectory() {
-    return fileStatus.isDir();
+    return fileStatus.isDirectory();
   }
 
   @Override public boolean exists() {
@@ -168,7 +165,7 @@ public class HDFSCarbonFile implements CarbonFile {
 
     FileStatus[] listStatus = null;
     try {
-      if (null != fileStatus && fileStatus.isDir()) {
+      if (null != fileStatus && fileStatus.isDirectory()) {
         Path path = fileStatus.getPath();
         listStatus = path.getFileSystem(FileFactory.getConfiguration()).listStatus(path);
       } else {
@@ -297,4 +294,5 @@ public class HDFSCarbonFile implements CarbonFile {
       return false;
     }
   }
+
 }

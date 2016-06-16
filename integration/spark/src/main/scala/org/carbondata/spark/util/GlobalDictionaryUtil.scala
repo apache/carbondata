@@ -42,6 +42,7 @@ import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile
+import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter
 import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.reader.{CarbonDictionaryReader, CarbonDictionaryReaderImpl, ThriftReader}
 import org.carbondata.core.util.CarbonProperties
@@ -293,13 +294,50 @@ object GlobalDictionaryUtil extends Logging {
       }
     }
     val primDimensions = primDimensionsBuffer.map { x => x }.toArray
-    // list dictionary file path
     val dictFilePaths = new Array[String](primDimensions.length)
     val dictFileExists = new Array[Boolean](primDimensions.length)
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(hdfsLocation, table)
-    primDimensions.zipWithIndex.foreach{f =>
-      dictFilePaths(f._2) = carbonTablePath.getDictionaryFilePath(f._1.getColumnId)
-      dictFileExists(f._2) = CarbonUtil.isFileExists(dictFilePaths(f._2))
+    val fileType = FileFactory.getFileType(dictfolderPath)
+    // Metadata folder
+    val metadataDirectory = FileFactory.getCarbonFile(dictfolderPath, fileType)
+    // need list all dictionary file paths with exists flag
+    metadataDirectory.exists match {
+      case true =>
+        // if Metadata folder is exists, check whether each dictionary file is exists or not.
+        // 1 list all dictionary files in Metadata folder
+        val carbonFiles = metadataDirectory.listFiles(new CarbonFileFilter {
+          @Override def accept(pathname: CarbonFile): Boolean = {
+            CarbonTablePath.isDictionaryFile(pathname)
+          }
+        })
+        // 2 put dictionary file names to fileNamesMap
+        val fileNamesMap = new HashMap[String, Int]
+        for (i <- 0 until carbonFiles.length) {
+          fileNamesMap.put(carbonFiles(i).getName, i)
+        }
+        // 3 lookup fileNamesMap, if file name is in fileNamesMap, file is exists, or not.
+        primDimensions.zipWithIndex.foreach { f =>
+          dictFilePaths(f._2) = carbonTablePath.getDictionaryFilePath(f._1.getColumnId)
+          dictFileExists(f._2) =
+            fileNamesMap.get(CarbonTablePath.getDictionaryFileName(f._1.getColumnId)) match {
+              case None => false
+              case Some(_) => true
+            }
+        }
+      case false =>
+        // if Metadata folder is not exists, all dictionary files are not exists also.
+        try {
+          // create Metadata folder
+          FileFactory.mkdirs(dictfolderPath, fileType)
+        } catch {
+          case ex: IOException =>
+            throw new IOException(s"Failed to created dictionary folder: ${dictfolderPath}")
+        }
+        primDimensions.zipWithIndex.foreach { f =>
+          dictFilePaths(f._2) = carbonTablePath.getDictionaryFilePath(f._1.getColumnId)
+          // all dictionary files are not exists
+          dictFileExists(f._2) = false
+        }
     }
 
     // load high cardinality identify configure
@@ -449,11 +487,6 @@ object GlobalDictionaryUtil extends Logging {
       // create dictionary folder if not exists
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(hdfsLocation, table)
       val dictfolderPath = carbonTablePath.getMetadataDirectoryPath
-      val created = CarbonUtil.checkAndCreateFolder(dictfolderPath)
-      if (!created) {
-        logError("Dictionary Folder creation status :: " + created)
-        throw new IOException("Failed to created dictionary folder")
-      }
       // load data by using dataSource com.databricks.spark.csv
       var df = loadDataFrame(sqlContext, carbonLoadModel)
       // columns which need to generate global dictionary file
