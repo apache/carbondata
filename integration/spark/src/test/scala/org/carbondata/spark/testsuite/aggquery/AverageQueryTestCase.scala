@@ -1,0 +1,105 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.carbondata.spark.testsuite.aggquery
+
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.common.util.CarbonHiveContext._
+import org.apache.spark.sql.common.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
+
+/**
+ * test cases for aggregate query
+ */
+class AverageQueryTestCase extends QueryTest with BeforeAndAfterAll {
+  override def beforeAll {
+    sql("""
+       CREATE TABLE carbonTable (ID int, date timeStamp, country string, count int,
+       phonetype string, serialname string, salary double)
+       STORED BY 'org.apache.carbondata.format'
+        TBLPROPERTIES('DICTIONARY_INCLUDE'='ID')""")
+    sql("""LOAD DATA LOCAL INPATH './src/test/resources/avgTest.csv' INTO table carbonTable""")
+
+    // create a hive table for compatible check
+    sql("""
+       CREATE TABLE hiveTable (ID int, date timeStamp, country string, count int,
+       phonetype string, serialname string, salary double)
+       row format delimited fields terminated by ','""")
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/avgTest.csv' INTO table hiveTable")
+  }
+
+  test("select avg(Measure_IntType)+IntType from table") {
+    checkAnswer(
+      sql("SELECT avg(count)+10 FROM carbonTable"),
+      sql("SELECT avg(count)+10 FROM hiveTable"))
+  }
+
+  test("select avg(Dimension_IntType)+IntType from table") {
+    checkAnswer(
+      sql("SELECT avg(ID)+10 FROM carbonTable"),
+      sql("SELECT avg(ID)+10 FROM hiveTable"))
+  }
+
+  test("select avg(TimeStamp)+IntType from table") {
+    checkAnswer(
+      sql("SELECT avg(date)+10 FROM carbonTable"),
+      sql("SELECT avg(date)+10 FROM hiveTable"))
+  }
+
+  test("select avg(TimeStamp) from table") {
+    checkAnswer(
+      sql("SELECT avg(date) FROM carbonTable"),
+      sql("SELECT avg(date) FROM hiveTable"))
+  }
+
+  test("select avg(StringType)+IntType from table") {
+    checkAnswer(
+      sql("SELECT avg(country)+10 FROM carbonTable"),
+      sql("SELECT avg(country)+10 FROM hiveTable"))
+  }
+
+  test("select max(StringType)+IntType from table") {
+    checkAnswer(
+      sql("SELECT max(country)+10 FROM carbonTable"),
+      sql("SELECT max(country)+10 FROM hiveTable"))
+  }
+
+  test("select min(StringType)+IntType from table") {
+    checkAnswer(
+      sql("SELECT min(country)+10 FROM carbonTable"),
+      sql("SELECT min(country)+10 FROM hiveTable"))
+  }
+
+  test("select sum(StringType)+IntType from table") {
+    checkAnswer(
+      sql("SELECT sum(country)+10 FROM carbonTable"),
+      sql("SELECT sum(country)+10 FROM hiveTable"))
+  }
+
+  test("select sum(distinct StringType)+IntType from table") {
+    checkAnswer(
+      sql("SELECT sum(distinct country)+10 FROM carbonTable"),
+      sql("SELECT sum(distinct country)+10 FROM hiveTable"))
+  }
+
+  override def afterAll {
+    sql("drop table carbonTable")
+    sql("drop table hiveTable")
+  }
+
+}

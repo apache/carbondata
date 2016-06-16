@@ -111,7 +111,10 @@ case class AverageCarbon(child: Expression, castedDataType: DataType = null)
     val partialSum = Alias(AverageCarbon(child), "PartialAverage")()
     SplitEvaluation(
       AverageCarbonFinal(partialSum.toAttribute,
-        if (child.dataType == IntegerType) DoubleType else child.dataType),
+        child.dataType match {
+          case IntegerType | StringType | LongType | TimestampType => DoubleType
+          case _ => child.dataType
+        }),
       partialSum :: Nil)
   }
 
