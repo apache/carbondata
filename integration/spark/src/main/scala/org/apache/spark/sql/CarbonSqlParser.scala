@@ -1331,8 +1331,13 @@ class CarbonSqlParser()
         ShowLoadsCommand(schemaName, cubeName.toLowerCase(), limit)
     }
 
+  protected lazy val segmentId: Parser[String] =
+    ( numericLit ^^ { u => u } |
+      elem("decimal", _.isInstanceOf[lexical.FloatLit]) ^^ (_.chars)
+      )
+
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
-    DELETE ~> (LOAD|SEGMENT) ~> repsep(numericLit, ",") ~ (FROM ~> (CUBE | TABLE) ~>
+    DELETE ~> (LOAD|SEGMENT) ~> repsep(segmentId, ",") ~ (FROM ~> (CUBE | TABLE) ~>
       (ident <~ ".").? ~ ident) <~
       opt(";") ^^ {
       case loadids ~ cube => cube match {
