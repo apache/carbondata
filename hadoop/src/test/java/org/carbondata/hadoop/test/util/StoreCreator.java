@@ -482,9 +482,11 @@ public class StoreCreator {
     boolean hdfsReadMode =
         schmaModel.getCsvFilePath() != null && schmaModel.getCsvFilePath().startsWith("hdfs:");
     int allocate = null != schmaModel.getCsvFilePath() ? 1 : schmaModel.getFilesToProcess().size();
+    String outputLocation = CarbonProperties.getInstance()
+        .getProperty("store_output_location", "../carbon-store/system/carbon/etl");
     GraphGenerator generator =
         new GraphGenerator(model, hdfsReadMode, partitionID, factStoreLocation,
-            currentRestructNumber, allocate, schema, "0");
+            currentRestructNumber, allocate, schema, "0", outputLocation);
     generator.generateGraph();
   }
 

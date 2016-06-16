@@ -39,7 +39,7 @@ public class CarbonInputMapperTest extends TestCase {
   }
 
   @Test public void testInputFormatMapperReadAllRowsAndColumns() throws Exception {
-    /*try {
+    try {
       String outPath = "target/output";
       runJob(outPath, null, null);
       Assert.assertTrue("Count lines are not matching", countTheLines(outPath) == 1000);
@@ -48,11 +48,11 @@ public class CarbonInputMapperTest extends TestCase {
       Assert.assertTrue("failed", false);
       e.printStackTrace();
       throw e;
-    }*/
+    }
   }
 
   @Test public void testInputFormatMapperReadAllRowsAndFewColumns() throws Exception {
-  /*  try {
+    try {
       String outPath = "target/output2";
       CarbonProjection carbonProjection = new CarbonProjection();
       carbonProjection.addColumn("ID");
@@ -64,27 +64,28 @@ public class CarbonInputMapperTest extends TestCase {
       Assert.assertTrue("Column count are not matching", countTheColumns(outPath) == 3);
     } catch (Exception e) {
       Assert.assertTrue("failed", false);
-    } */
+    }
   }
 
   @Test public void testInputFormatMapperReadAllRowsAndFewColumnsWithFilter() throws Exception {
-   /* try {
+    try {
       String outPath = "target/output3";
       CarbonProjection carbonProjection = new CarbonProjection();
       carbonProjection.addColumn("ID");
       carbonProjection.addColumn("country");
       carbonProjection.addColumn("salary");
-      Expression expression= new EqualToExpression(new ColumnExpression("country",
-          DataType.StringType), new LiteralExpression("france", DataType.StringType));
+      Expression expression =
+          new EqualToExpression(new ColumnExpression("country", DataType.StringType),
+              new LiteralExpression("france", DataType.StringType));
       runJob(outPath, carbonProjection, expression);
       Assert.assertTrue("Count lines are not matching", countTheLines(outPath) == 101);
       Assert.assertTrue("Column count are not matching", countTheColumns(outPath) == 3);
     } catch (Exception e) {
       Assert.assertTrue("failed", false);
-    } */
+    }
   }
 
- /* private int countTheLines(String outPath) throws Exception {
+  private int countTheLines(String outPath) throws Exception {
     File file = new File(outPath);
     if (file.exists()) {
       BufferedReader reader = new BufferedReader(new FileReader(file));
@@ -107,7 +108,7 @@ public class CarbonInputMapperTest extends TestCase {
       return split.length;
     }
     return 0;
-  } */
+  }
 
   public static class Map extends Mapper<Void, Object[], Void, Text> {
 
@@ -138,7 +139,8 @@ public class CarbonInputMapperTest extends TestCase {
     }
   }
 
-  private void runJob(String outPath, CarbonProjection projection, Expression filter) throws Exception {
+  private void runJob(String outPath, CarbonProjection projection, Expression filter)
+      throws Exception {
 
     Job job = Job.getInstance(new Configuration());
     job.setJarByClass(CarbonInputMapperTest.class);
@@ -150,10 +152,10 @@ public class CarbonInputMapperTest extends TestCase {
     job.setOutputFormatClass(TextOutputFormat.class);
     AbsoluteTableIdentifier abs = StoreCreator.getAbsoluteTableIdentifier();
     CarbonInputFormat.setTableToAccess(job.getConfiguration(), abs.getCarbonTableIdentifier());
-    if(projection != null) {
+    if (projection != null) {
       CarbonInputFormat.setColumnProjection(projection, job.getConfiguration());
     }
-    if(filter != null) {
+    if (filter != null) {
       CarbonInputFormat.setFilterPredicates(job.getConfiguration(), filter);
     }
     FileInputFormat.addInputPath(job, new Path(abs.getStorePath()));
