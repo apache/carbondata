@@ -49,13 +49,7 @@ import org.pentaho.di.resource.ResourceNamingInterface;
 import org.pentaho.di.resource.ResourceReference;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
-import org.pentaho.di.trans.step.BaseStepMeta;
-import org.pentaho.di.trans.step.StepDataInterface;
-import org.pentaho.di.trans.step.StepInjectionMetaEntry;
-import org.pentaho.di.trans.step.StepInterface;
-import org.pentaho.di.trans.step.StepMeta;
-import org.pentaho.di.trans.step.StepMetaInjectionInterface;
-import org.pentaho.di.trans.step.StepMetaInterface;
+import org.pentaho.di.trans.step.*;
 import org.pentaho.di.trans.steps.textfileinput.InputFileMetaInterface;
 import org.pentaho.di.trans.steps.textfileinput.TextFileInputField;
 import org.pentaho.di.trans.steps.textfileinput.TextFileInputMeta;
@@ -96,6 +90,14 @@ public class CsvInputMeta extends BaseStepMeta
   private int currentRestructNumber;
 
   private String blocksID;
+  /**
+   * database name
+   */
+  private String databaseName;
+  /**
+   * tableName
+   */
+  private String tableName;
 
   public CsvInputMeta() {
     super(); // allocate BaseStepMeta
@@ -116,10 +118,16 @@ public class CsvInputMeta extends BaseStepMeta
     bufferSize = "50000";
     currentRestructNumber = -1;
     blocksID = "";
+    databaseName = "";
+    tableName = "";
+
+
   }
 
   private void readData(Node stepnode) throws KettleXMLException {
     try {
+      databaseName = XMLHandler.getTagValue(stepnode, "databaseName");
+      tableName = XMLHandler.getTagValue(stepnode, "tableName");
       filename = XMLHandler.getTagValue(stepnode, getXmlCode("FILENAME"));
       filenameField = XMLHandler.getTagValue(stepnode, getXmlCode("FILENAME_FIELD"));
       rowNumField = XMLHandler.getTagValue(stepnode, getXmlCode("ROW_NUM_FIELD"));
@@ -189,7 +197,8 @@ public class CsvInputMeta extends BaseStepMeta
 
   public String getXML() {
     StringBuffer retval = new StringBuffer(500);
-
+    retval.append("    ").append(XMLHandler.addTagValue("databaseName", databaseName));
+    retval.append("    ").append(XMLHandler.addTagValue("tableName", tableName));
     retval.append("    ").append(XMLHandler.addTagValue(getXmlCode("FILENAME"), filename));
     retval.append("    ")
         .append(XMLHandler.addTagValue(getXmlCode("FILENAME_FIELD"), filenameField));
@@ -248,6 +257,8 @@ public class CsvInputMeta extends BaseStepMeta
   public void readRep(Repository rep, ObjectId idStep, List<DatabaseMeta> databases,
       Map<String, Counter> counters) throws KettleException {
     try {
+      databaseName = rep.getStepAttributeString(idStep, getRepCode("databaseName"));
+      tableName = rep.getStepAttributeString(idStep, getRepCode("tableName"));
       filename = rep.getStepAttributeString(idStep, getRepCode("FILENAME"));
       filenameField = rep.getStepAttributeString(idStep, getRepCode("FILENAME_FIELD"));
       rowNumField = rep.getStepAttributeString(idStep, getRepCode("ROW_NUM_FIELD"));
@@ -298,6 +309,8 @@ public class CsvInputMeta extends BaseStepMeta
   public void saveRep(Repository rep, ObjectId idTransformation, ObjectId idStep)
       throws KettleException {
     try {
+      rep.saveStepAttribute(idTransformation, idStep, getRepCode("databaseName"), databaseName);
+      rep.saveStepAttribute(idTransformation, idStep, getRepCode("databaseName"), tableName);
       rep.saveStepAttribute(idTransformation, idStep, getRepCode("FILENAME"), filename);
       rep.saveStepAttribute(idTransformation, idStep, getRepCode("FILENAME_FIELD"), filenameField);
       rep.saveStepAttribute(idTransformation, idStep, getRepCode("ROW_NUM_FIELD"), rowNumField);
@@ -781,7 +794,11 @@ public class CsvInputMeta extends BaseStepMeta
       //
       String attributeKey = attr.getKey();
       if (entry.getValueType() != ValueMetaInterface.TYPE_NONE) {
-        if ("FILENAME".equals(attributeKey)) {
+        if ("databaseName".equals(attributeKey)) {
+          databaseName = (String) entry.getValue();
+        } else if ("tableName".equals(attributeKey)) {
+          tableName = (String) entry.getValue();
+        } else if ("FILENAME".equals(attributeKey)) {
           filename = (String) entry.getValue();
         } else if ("FILENAME_FIELD".equals(attributeKey)) {
           filenameField = (String) entry.getValue();
@@ -905,4 +922,35 @@ public class CsvInputMeta extends BaseStepMeta
     this.currentRestructNumber = currentRestructNum;
   }
 
+  /**
+   * retuns database name
+   * @return
+   */
+  public String getDatabaseName() {
+    return databaseName;
+  }
+
+  /**
+   * return tableName
+   * @return
+   */
+  public String getTableName() {
+    return tableName;
+  }
+
+  /**
+   * set databasename
+   * @param databaseName
+   */
+  public void setDatabaseName(String databaseName) {
+    this.databaseName = databaseName;
+  }
+
+  /**
+   * set tabke name
+   * @param tableName
+   */
+  public void setTableName(String tableName) {
+    this.tableName = tableName;
+  }
 }

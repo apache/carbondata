@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -386,8 +386,7 @@ public class CsvInput extends BaseStep implements StepInterface {
           doProcess();
           LOGGER.info("*****************Completed csv reading by thread***********");
         } catch (Throwable e) {
-          LOGGER.error(e,
-              "Thread is terminated due to error");
+          LOGGER.error(e, "Thread is terminated due to error");
         }
         return null;
       }
@@ -477,6 +476,9 @@ public class CsvInput extends BaseStep implements StepInterface {
       //close the last inputstream
       if (blockDataHandler.bufferedInputStream != null) {
         blockDataHandler.bufferedInputStream.close();
+      }
+      if (null != blockDataHandler.badRecordslogger) {
+        blockDataHandler.badRecordslogger.closeStreams();
       }
     } catch (RuntimeException e) {
       throw e;
