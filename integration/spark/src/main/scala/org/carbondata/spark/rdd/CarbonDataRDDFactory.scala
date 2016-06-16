@@ -636,22 +636,32 @@ object CarbonDataRDDFactory extends Logging {
         carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName,
         partitioner.partitionCount, currentLoadCount.toString)
       val status = new
-          CarbonDataLoadRDD(sc.sparkContext, new ResultImpl(), carbonLoadModel, storeLocation,
-            hdfsStoreLocation, kettleHomePath, partitioner, columinar, currentRestructNumber,
-            currentLoadCount, cubeCreationTime, schemaLastUpdatedTime, blocksGroupBy,
+          CarbonDataLoadRDD(sc.sparkContext,
+            new DataLoadResultImpl(),
+            carbonLoadModel,
+            storeLocation,
+            hdfsStoreLocation,
+            kettleHomePath,
+            partitioner,
+            columinar,
+            currentRestructNumber,
+            currentLoadCount,
+            cubeCreationTime,
+            schemaLastUpdatedTime,
+            blocksGroupBy,
             isTableSplitPartition
           ).collect()
       val newStatusMap = scala.collection.mutable.Map.empty[String, String]
       status.foreach { eachLoadStatus =>
-        val state = newStatusMap.get(eachLoadStatus._2.getPartitionCount)
+        val state = newStatusMap.get(eachLoadStatus._1)
         state match {
           case Some(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) =>
-            newStatusMap.put(eachLoadStatus._2.getPartitionCount, eachLoadStatus._2.getLoadStatus)
+            newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
           case Some(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
             if eachLoadStatus._2.getLoadStatus == CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS =>
-            newStatusMap.put(eachLoadStatus._2.getPartitionCount, eachLoadStatus._2.getLoadStatus)
+            newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
           case _ =>
-            newStatusMap.put(eachLoadStatus._2.getPartitionCount, eachLoadStatus._2.getLoadStatus)
+            newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
         }
       }
 
@@ -704,10 +714,14 @@ object CarbonDataRDDFactory extends Logging {
         logWarning("Unable to write load metadata file")
         throw new Exception(message)
       } else {
-        val (result, metadataDetails) = status(0)
+        val metadataDetails = status(0)._2
         if (!isAgg) {
           CarbonLoaderUtil
-            .recordLoadMetadata(result, metadataDetails, carbonLoadModel, loadStatus, loadStartTime)
+            .recordLoadMetadata(currentLoadCount,
+              metadataDetails,
+              carbonLoadModel,
+              loadStatus,
+              loadStartTime)
         } else if (!carbonLoadModel.isRetentionRequest) {
           // TODO : Handle it
           logInfo("********Database updated**********")

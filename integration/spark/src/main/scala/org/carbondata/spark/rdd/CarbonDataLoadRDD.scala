@@ -29,13 +29,12 @@ import org.apache.spark.sql.execution.command.Partitioner
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.common.logging.impl.StandardLogService
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.processing.constants.DataProcessorConstants
 import org.carbondata.processing.etl.DataLoadingException
 import org.carbondata.processing.graphgenerator.GraphGenerator
-import org.carbondata.spark.Result
+import org.carbondata.spark.DataLoadResult
 import org.carbondata.spark.load._
 import org.carbondata.spark.splits.TableSplit
 import org.carbondata.spark.util.CarbonQueryUtil
@@ -92,7 +91,7 @@ class CarbonNodePartition(rddId: Int, val idx: Int, host: String,
  */
 class CarbonDataLoadRDD[K, V](
     sc: SparkContext,
-    result: Result[K, V],
+    result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
     var storeLocation: String,
     hdfsStoreLocation: String,
@@ -148,7 +147,8 @@ class CarbonDataLoadRDD[K, V](
       var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
       var partitionID = "0"
       var model: CarbonLoadModel = _
-
+      var uniqueLoadStatusId = carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE +
+                               theSplit.index
       try {
         val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
         if (null == carbonPropertiesFilePath) {
@@ -417,7 +417,7 @@ class CarbonDataLoadRDD[K, V](
         val loadMetadataDetails = new LoadMetadataDetails()
         loadMetadataDetails.setPartitionCount(partitionID)
         loadMetadataDetails.setLoadStatus(dataloadStatus)
-        result.getKey(loadCount, loadMetadataDetails)
+        result.getKey(uniqueLoadStatusId, loadMetadataDetails)
       }
     }
     iter

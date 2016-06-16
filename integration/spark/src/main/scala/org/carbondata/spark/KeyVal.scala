@@ -47,13 +47,12 @@ class RawKeyValImpl extends RawKeyVal[BatchRawResult, Any] {
   override def getKey(key: BatchRawResult, value: Any): (BatchRawResult, Any) = (key, value)
 }
 
-trait Result[K, V] extends Serializable {
-  def getKey(key: Int, value: LoadMetadataDetails): (K, V)
-
+trait DataLoadResult[K, V] extends Serializable {
+  def getKey(key: String, value: LoadMetadataDetails): (K, V)
 }
 
-class ResultImpl extends Result[Int, LoadMetadataDetails] {
-  override def getKey(key: Int, value: LoadMetadataDetails): (Int, LoadMetadataDetails) = {
+class DataLoadResultImpl extends DataLoadResult[String, LoadMetadataDetails] {
+  override def getKey(key: String, value: LoadMetadataDetails): (String, LoadMetadataDetails) = {
     (key, value)
   }
 }
