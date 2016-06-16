@@ -39,19 +39,19 @@ public class CarbonLockFactory {
   /**
    * This method will determine the lock type.
    *
-   * @param Location
+   * @param location
    * @param lockUsage
    * @return
    */
   public static ICarbonLock getCarbonLockObj(String location, LockUsage lockUsage) {
     switch (lockTypeConfigured.toUpperCase()) {
-      case "LOCALLOCK":
+      case CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL:
         return new LocalFileLock(location, lockUsage);
 
-      case "ZOOKEEPERLOCK":
+      case CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER:
         return new ZooKeeperLocking(lockUsage);
 
-      case "HDFSLOCK":
+      case CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS:
         return new HdfsFileLock(location, lockUsage);
 
       default:

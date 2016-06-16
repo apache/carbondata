@@ -76,6 +76,8 @@ public class ZooKeeperLockingTest {
       }
     };
 
+    ZookeeperInit zki = ZookeeperInit.getInstance("127.0.0.1:" + freePort);
+
     ZooKeeperLocking zkl = new ZooKeeperLocking(LockUsage.METADATA_LOCK);
     Assert.assertTrue(zkl.lock());
 

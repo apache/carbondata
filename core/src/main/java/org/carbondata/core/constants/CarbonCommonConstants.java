@@ -1007,6 +1007,24 @@ public final class CarbonCommonConstants {
    */
   public static final int NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT_DEFAULT_VALUE = 10;
 
+  /**
+   * ZOOKEEPERLOCK TYPE
+   */
+  public static final String CARBON_LOCK_TYPE_ZOOKEEPER =
+      "ZOOKEEPERLOCK";
+
+  /**
+   * LOCALLOCK TYPE
+   */
+  public static final String CARBON_LOCK_TYPE_LOCAL =
+      "LOCALLOCK";
+
+  /**
+   * HDFSLOCK TYPE
+   */
+  public static final String CARBON_LOCK_TYPE_HDFS =
+      "HDFSLOCK";
+
   private CarbonCommonConstants() {
   }
 }

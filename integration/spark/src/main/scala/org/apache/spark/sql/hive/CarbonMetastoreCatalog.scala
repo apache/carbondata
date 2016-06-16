@@ -46,6 +46,7 @@ import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile
 import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType
+import org.carbondata.core.locks.ZookeeperInit
 import org.carbondata.core.reader.ThriftReader
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.core.writer.ThriftWriter
@@ -214,6 +215,16 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   }
 
   def loadMetadata(metadataPath: String): MetaData = {
+
+    // creating zookeeper instance once.
+    // if zookeeper is configured as carbon lock type.
+    if (CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.LOCK_TYPE_DEFAULT)
+      .equalsIgnoreCase(CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER)) {
+      val zookeeperUrl = hive.getConf("spark.deploy.zookeeper.url", "127.0.0.1:2181")
+      ZookeeperInit.getInstance(zookeeperUrl)
+    }
+
     if (metadataPath == null) {
       return null
     }
