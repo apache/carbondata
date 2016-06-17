@@ -81,8 +81,8 @@ import org.pentaho.di.core.exception.KettleException;
 
 public final class CarbonUtil {
 
-  private static final String HDFS_PREFIX = "hdfs://";
-
+  public static final String HDFS_PREFIX = "hdfs://";
+  public static final String VIEWFS_PREFIX = "viewfs://";
   private static final String FS_DEFAULT_FS = "fs.defaultFS";
 
   /**
@@ -1213,21 +1213,22 @@ public final class CarbonUtil {
   public static String checkAndAppendHDFSUrl(String filePath) {
     String currentPath = filePath;
     if (null != filePath && filePath.length() != 0 &&
-        FileFactory.getFileType(filePath) != FileFactory.FileType.HDFS) {
-      String baseHDFSUrl = CarbonProperties.getInstance()
+        FileFactory.getFileType(filePath) != FileFactory.FileType.HDFS &&
+        FileFactory.getFileType(filePath) != FileFactory.FileType.VIEWFS) {
+      String baseDFSUrl = CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL);
-      if (null != baseHDFSUrl) {
-        String hdfsUrl = conf.get(FS_DEFAULT_FS);
-        if (hdfsUrl.startsWith(HDFS_PREFIX)) {
-          baseHDFSUrl = hdfsUrl + baseHDFSUrl;
+      if (null != baseDFSUrl) {
+        String dfsUrl = conf.get(FS_DEFAULT_FS);
+        if (dfsUrl.startsWith(HDFS_PREFIX) || dfsUrl.startsWith(VIEWFS_PREFIX)) {
+          baseDFSUrl = dfsUrl + baseDFSUrl;
         }
-        if (baseHDFSUrl.endsWith("/")) {
-          baseHDFSUrl = baseHDFSUrl.substring(0, baseHDFSUrl.length() - 1);
+        if (baseDFSUrl.endsWith("/")) {
+          baseDFSUrl = baseDFSUrl.substring(0, baseDFSUrl.length() - 1);
         }
         if (!filePath.startsWith("/")) {
           filePath = "/" + filePath;
         }
-        currentPath = baseHDFSUrl + filePath;
+        currentPath = baseDFSUrl + filePath;
       }
     }
     return currentPath;

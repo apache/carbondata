@@ -77,7 +77,8 @@ public class AtomicFileOperationsImpl implements AtomicFileOperations {
       CarbonFile tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
 
       if (!tempFile.renameForce(filePath)) {
-        throw new IOException("temporary file renaming failed");
+        throw new IOException("temporary file renaming failed, src="
+            + tempFile.getPath() + ", dest=" + filePath);
       }
     }
 

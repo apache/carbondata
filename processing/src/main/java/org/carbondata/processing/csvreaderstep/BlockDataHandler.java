@@ -177,7 +177,8 @@ public class BlockDataHandler {
       }
 
       // Open the next one...
-      if (FileFactory.getFileType(blockDetails.getFilePath()) == FileFactory.FileType.HDFS) {
+      if (FileFactory.getFileType(blockDetails.getFilePath()) == FileFactory.FileType.HDFS
+            || FileFactory.getFileType(blockDetails.getFilePath()) == FileFactory.FileType.VIEWFS) {
         //when case HDFS file type, we use the file path directly
         //give 0 offset as the file start offset when open a new file
         initializeFileReader(blockDetails.getFilePath(), 0);

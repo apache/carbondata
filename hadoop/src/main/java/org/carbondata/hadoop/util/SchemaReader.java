@@ -22,7 +22,8 @@ public class SchemaReader {
   public CarbonTable readCarbonTableFromStore(CarbonTablePath carbonTablePath,
       CarbonTableIdentifier tableIdentifier, String storePath) throws IOException {
     String schemaFilePath = carbonTablePath.getSchemaFilePath();
-    if (FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.HDFS)) {
+    if (FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.HDFS)
+          || FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.VIEWFS)) {
       String tableName = tableIdentifier.getTableName();
 
       ThriftReader.TBaseCreator createTBase = new ThriftReader.TBaseCreator() {
