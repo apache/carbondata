@@ -19,6 +19,7 @@
 package org.carbondata.query.carbon.aggregator.dimension.impl;
 
 import java.nio.ByteBuffer;
+import java.sql.Timestamp;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
@@ -96,17 +97,19 @@ public class DirectDictionaryDimensionAggregator implements DimensionDataAggrega
       MeasureAggregator[] aggeragtor) {
     byte[] dimensionData = scannedResult.getDimensionKey(blockIndex);
     int surrogateKey = CarbonUtil.getSurrogateKey(dimensionData, buffer);
-    Object dataBasedOnDataType =
-        (long) directDictionaryGenerator.getValueFromSurrogate(surrogateKey) / 1000;
+    Object valueFromSurrogate = directDictionaryGenerator.getValueFromSurrogate(surrogateKey);
+    if (null != valueFromSurrogate) {
+      Timestamp dataBasedOnDataType = new Timestamp((long) valueFromSurrogate / 1000);
 
-    if (actualTypeAggregatorIndex.length > 0) {
-      for (int j = 0; j < actualTypeAggregatorIndex.length; j++) {
-        aggeragtor[aggregatorStartIndex + actualTypeAggregatorIndex[j]].agg(dataBasedOnDataType);
+      if (actualTypeAggregatorIndex.length > 0) {
+        for (int j = 0; j < actualTypeAggregatorIndex.length; j++) {
+          aggeragtor[aggregatorStartIndex + actualTypeAggregatorIndex[j]].agg(dataBasedOnDataType);
+        }
       }
-    }
-    if (numberTypeAggregatorIndex.length > 0) {
-      for (int j = 0; j < numberTypeAggregatorIndex.length; j++) {
-        aggeragtor[aggregatorStartIndex + numberTypeAggregatorIndex[j]].agg(dataBasedOnDataType);
+      if (numberTypeAggregatorIndex.length > 0) {
+        for (int j = 0; j < numberTypeAggregatorIndex.length; j++) {
+          aggeragtor[aggregatorStartIndex + numberTypeAggregatorIndex[j]].agg(dataBasedOnDataType);
+        }
       }
     }
   }

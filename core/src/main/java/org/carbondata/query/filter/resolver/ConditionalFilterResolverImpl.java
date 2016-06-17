@@ -24,6 +24,7 @@ import java.util.SortedMap;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.expression.ColumnExpression;
@@ -80,9 +81,11 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
         // column expression.
         // we need to check if the other expression contains column
         // expression or not in depth.
-        if (FilterUtil.checkIfExpressionContainsColumn(rightExp)||
-            FilterUtil.isExpressionNeedsToResolved(rightExp,isIncludeFilter) &&
-            columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)){
+        CarbonDimension dimension = columnExpression.getDimension();
+        if (FilterUtil.checkIfExpressionContainsColumn(rightExp)
+            || FilterUtil.isExpressionNeedsToResolved(rightExp, isIncludeFilter) &&
+            dimension.hasEncoding(Encoding.DICTIONARY) && !dimension
+            .hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           isExpressionResolve = true;
         } else {
           //Visitor pattern is been used in this scenario inorder to populate the

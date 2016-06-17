@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -115,22 +114,27 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
         .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
             CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
     timeParser.setLenient(false);
+    if (null == memberStr || memberStr.trim().isEmpty() || memberStr
+        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+      return 1;
+    }
     Date dateToStr = null;
     try {
       dateToStr = timeParser.parse(memberStr);
     } catch (ParseException e) {
-      LOGGER.error("Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value"
-          + e.getMessage());
+      LOGGER.error(
+          "Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value" + e.getMessage());
     }
+    //adding +2 to reserve the first cuttOffDiff value for null or empty date
     if (null == dateToStr) {
       return -1;
     } else {
       if (cutOffTimeStamp >= 0) {
         int keyValue = (int) ((dateToStr.getTime() - cutOffTimeStamp) / granularityFactor);
-        return keyValue < 0 ? -1 : keyValue;
+        return keyValue < 0 ? -1 : keyValue + 2;
       } else {
         int keyValue = (int) (dateToStr.getTime() / granularityFactor);
-        return keyValue < 0 ? -1 : keyValue;
+        return keyValue < 0 ? -1 : keyValue + 2;
       }
     }
   }
@@ -142,11 +146,14 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
    * @return member value/actual value Date
    */
   @Override public Object getValueFromSurrogate(int key) {
+    if (key == 1) {
+      return null;
+    }
     long timeStamp = 0;
     if (cutOffTimeStamp >= 0) {
-      timeStamp = (key * granularityFactor + cutOffTimeStamp);
+      timeStamp = ((key - 2) * granularityFactor + cutOffTimeStamp);
     } else {
-      timeStamp = key * granularityFactor;
+      timeStamp = (key - 2) * granularityFactor;
     }
     return timeStamp * 1000L;
   }
