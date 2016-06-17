@@ -55,7 +55,10 @@ class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveCon
 
   protected[sql] override def getSQLDialect(): ParserDialect = new CarbonSQLDialect(this)
 
-  experimental.extraStrategies = CarbonStrategy.getStrategy(self)
+  experimental.extraStrategies = {
+    val carbonStrategy = new CarbonStrategies(self)
+    Seq(carbonStrategy.CarbonTableScan, carbonStrategy.DDLStrategies)
+  }
 
   @transient
   val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)

@@ -28,16 +28,15 @@ import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 
 import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.cache.dictionary.Dictionary
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo
 import org.carbondata.core.iterator.CarbonIterator
 import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
 import org.carbondata.query.carbon.executor.QueryExecutorFactory
 import org.carbondata.query.carbon.model.QueryModel
-import org.carbondata.query.carbon.result.RowResult
+import org.carbondata.query.carbon.result.{BatchRawResult, RowResult}
+import org.carbondata.query.carbon.result.iterator.ChunkRawRowIterartor
 import org.carbondata.query.expression.Expression
-import org.carbondata.query.filter.resolver.FilterResolverIntf
-import org.carbondata.spark.KeyVal
+import org.carbondata.spark.RawKey
 import org.carbondata.spark.load.CarbonLoaderUtil
 import org.carbondata.spark.util.QueryPlanUtil
 
@@ -54,15 +53,16 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
   }
 }
 
-
  /**
-  * This RDD is used to perform query.
+  * This RDD is used to perform query on CarbonData file. Before sending tasks to scan
+  * CarbonData file, this RDD will leverage CarbonData's index information to do CarbonData file
+  * level filtering in driver side.
   */
-class CarbonQueryRDD[K, V](
+class CarbonScanRDD[K, V](
   sc: SparkContext,
   queryModel: QueryModel,
   filterExpression: Expression,
-  keyClass: KeyVal[K, V],
+  keyClass: RawKey[K, V],
   @transient conf: Configuration,
   cubeCreationTime: Long,
   schemaLastUpdatedTime: Long,
@@ -147,89 +147,67 @@ class CarbonQueryRDD[K, V](
     result.toArray(new Array[Partition](result.size()))
   }
 
+   override def compute(thepartition: Partition, context: TaskContext): Iterator[(K, V)] = {
+     val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
+     val iter = new Iterator[(K, V)] {
+       var rowIterator: CarbonIterator[Array[Any]] = _
+       var queryStartTime: Long = 0
+       try {
+         val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
+         if(!carbonSparkPartition.tableBlockInfos.isEmpty) {
+           queryModel.setQueryId(queryModel.getQueryId() + "_" + carbonSparkPartition.idx)
+           // fill table block info
+           queryModel.setTableBlockInfos(carbonSparkPartition.tableBlockInfos)
+           queryStartTime = System.currentTimeMillis
 
-  override def compute(thepartition: Partition, context: TaskContext): Iterator[(K, V)] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    val iter = new Iterator[(K, V)] {
-      var rowIterator: CarbonIterator[_] = _
-      var queryStartTime: Long = 0
-      try {
-        val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
-        if (!carbonSparkPartition.tableBlockInfos.isEmpty) {
-          queryModel.setQueryId(queryModel.getQueryId + "_" + carbonSparkPartition.idx)
-          // fill table block info
-          queryModel.setTableBlockInfos(carbonSparkPartition.tableBlockInfos)
-          queryStartTime = System.currentTimeMillis
+           val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
+           logInfo("*************************" + carbonPropertiesFilePath)
+           if (null == carbonPropertiesFilePath) {
+             System.setProperty("carbon.properties.filepath",
+               System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties");
+           }
+           // execute query
+           rowIterator = new ChunkRawRowIterartor(
+             QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel)
+                 .asInstanceOf[CarbonIterator[BatchRawResult]])
+                 .asInstanceOf[CarbonIterator[Array[Any]]]
+         }
+       } catch {
+         case e: Exception =>
+           LOGGER.error(e)
+           if (null != e.getMessage) {
+             sys.error("Exception occurred in query execution :: " + e.getMessage)
+           } else {
+             sys.error("Exception occurred in query execution.Please check logs.")
+           }
+       }
 
-          val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
-          logInfo("*************************" + carbonPropertiesFilePath)
-          if (null == carbonPropertiesFilePath) {
-            System.setProperty("carbon.properties.filepath",
-              System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties"
-            )
-          }
-          // execute query
-          rowIterator = QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel)
-            .asInstanceOf[CarbonIterator[RowResult]]
-        }
-        // TODOi
-        // : CarbonQueryUtil.isQuickFilter quick filter from dictionary needs to support
-      } catch {
-        case e: Throwable =>
-          clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
-          LOGGER.error(e)
-          // updateCubeAndLevelCacheStatus(levelCacheKeys)
-          if (null != e.getMessage) {
-            sys.error("Exception occurred in query execution :: " + e.getMessage)
-          } else {
-            sys.error("Exception occurred in query execution.Please check logs.")
-          }
-      }
+       var havePair = false
+       var finished = false
 
-      var havePair = false
-      var finished = false
-      var recordCount = 0
+       override def hasNext: Boolean = {
+         if (!finished && !havePair) {
+           finished = (null == rowIterator) || (!rowIterator.hasNext())
+           havePair = !finished
+         }
+         !finished
+       }
 
-      override def hasNext: Boolean = {
-        if (!finished && !havePair) {
-          finished = (null == rowIterator) || (!rowIterator.hasNext)
-          havePair = !finished
-        }
-        if (finished) {
-          clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
-        }
-        !finished
-      }
+       override def next(): (K, V) = {
+         if (!hasNext) {
+           throw new java.util.NoSuchElementException("End of stream")
+         }
+         havePair = false
+         val row = rowIterator.next()
+         keyClass.getKey(row, null)
+       }
 
-      override def next(): (K, V) = {
-        if (!hasNext) {
-          throw new java.util.NoSuchElementException("End of stream")
-        }
-        havePair = false
-        val row = rowIterator.next()
-        val key = row.asInstanceOf[RowResult].getKey()
-        val value = row.asInstanceOf[RowResult].getValue()
-        recordCount += 1
-        if (queryModel.getLimit != -1 && recordCount >= queryModel.getLimit) {
-          clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
-        }
-        keyClass.getKey(key, value)
-      }
-
-      def clearDictionaryCache(columnToDictionaryMap: java.util.Map[String, Dictionary]) = {
-        if (null != columnToDictionaryMap) {
-          org.carbondata.spark.util.CarbonQueryUtil
-            .clearColumnDictionaryCache(columnToDictionaryMap)
-        }
-      }
-
-      logInfo("*************************** Total Time Taken to execute the query in Carbon Side: " +
-        (System.currentTimeMillis - queryStartTime)
-      )
-    }
-    iter
-  }
-
+       logInfo("********************** Total Time Taken to execute the query in Carbon Side: " +
+           (System.currentTimeMillis - queryStartTime)
+       )
+     }
+     iter
+   }
 
    /**
     * Get the preferred locations where to launch this task.
