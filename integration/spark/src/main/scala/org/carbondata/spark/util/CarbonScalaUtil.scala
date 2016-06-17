@@ -105,18 +105,22 @@ object CarbonScalaUtil {
     }
   }
 
+  def convertValueToSparkDataType(value: Any,
+      dataType: org.apache.spark.sql.types.DataType): Any = {
+    dataType match {
+      case StringType => value.toString
+      case IntegerType => value.toString.toInt
+      case LongType => value.toString.toLong
+      case DoubleType => value.toString.toDouble
+      case FloatType => value.toString.toFloat
+      case _ => value.toString.toDouble
+    }
+  }
+
 
   case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
 
   object CarbonSparkUtil {
-    def createBaseRDD(carbonContext: CarbonContext, carbonTable: CarbonTable): TransformHolder = {
-      val relation = CarbonEnv.getInstance(carbonContext).carbonCatalog
-        .lookupRelation1(Option(carbonTable.getDatabaseName),
-          carbonTable.getFactTableName, None)(carbonContext).asInstanceOf[CarbonRelation]
-      val rdd = new SchemaRDD(carbonContext, relation)
-      rdd.registerTempTable(carbonTable.getFactTableName)
-      TransformHolder(rdd, createSparkMeta(carbonTable))
-    }
 
     def createSparkMeta(carbonTable: CarbonTable): CarbonMetaData = {
       val dimensionsAttr = carbonTable.getDimensionByTableName(carbonTable.getFactTableName)

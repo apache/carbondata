@@ -22,7 +22,7 @@ import java.util
 import java.util.concurrent.{Executors, ExecutorService}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable.ListBuffer
 import scala.util.control.Breaks._
 
 import org.apache.hadoop.conf.{Configurable, Configuration}
@@ -189,9 +189,7 @@ object CarbonDataRDDFactory extends Logging {
         if (carbonLock.lockWithRetries()) {
           logInfo("Successfully got the table metadata file lock")
           if (updatedLoadMetadataDetailsList.nonEmpty) {
-            LoadAggregateTabAfterRetention(schemaName, cube.getFactTableName, cube.getFactTableName,
-              sqlContext, schema, updatedLoadMetadataDetailsList
-            )
+            // TODO: Load Aggregate tables after retention.
           }
 
           // write
@@ -214,56 +212,6 @@ object CarbonDataRDDFactory extends Logging {
       logger.audit("The delete load by date is failed.")
       sys.error("Delete by Date request is failed, potential causes " +
                 "Empty store or Invalid column type, For more details please refer logs.")
-    }
-  }
-
-  def LoadAggregateTabAfterRetention(
-      schemaName: String,
-      cubeName: String,
-      factTableName: String,
-      sqlContext: SQLContext,
-      schema: CarbonDataLoadSchema,
-      list: ListBuffer[LoadMetadataDetails]) {
-    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
-      Option(schemaName),
-      cubeName,
-      None
-    )(sqlContext).asInstanceOf[CarbonRelation]
-    if (relation == null) {
-      sys.error(s"Table $schemaName.$cubeName does not exist")
-    }
-    val carbonLoadModel = new CarbonLoadModel()
-    carbonLoadModel.setTableName(cubeName)
-    carbonLoadModel.setDatabaseName(schemaName)
-    val table = relation.cubeMeta.carbonTable
-    val aggTables = schema.getCarbonTable.getAggregateTablesName
-    if (null != aggTables && !aggTables.isEmpty) {
-      carbonLoadModel.setRetentionRequest(true)
-      carbonLoadModel.setLoadMetadataDetails(list.asJava)
-      carbonLoadModel.setTableName(table.getFactTableName)
-      carbonLoadModel
-        .setCarbonDataLoadSchema(new CarbonDataLoadSchema(relation.cubeMeta.carbonTable))
-      // TODO: need to fill dimension relation from data load sql command
-      var storeLocation = CarbonProperties.getInstance
-        .getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
-          System.getProperty("java.io.tmpdir")
-        )
-      storeLocation = storeLocation + "/carbonstore/" + System.currentTimeMillis()
-      val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
-      var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
-      if (null == kettleHomePath) {
-        kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home")
-      }
-      if (kettleHomePath == null) {
-        sys.error(s"carbon.kettle.home is not set")
-      }
-      CarbonDataRDDFactory.loadCarbonData(
-        sqlContext,
-        carbonLoadModel,
-        storeLocation,
-        relation.cubeMeta.storePath,
-        kettleHomePath,
-        relation.cubeMeta.partitioner, columinar, isAgg = true)
     }
   }
 

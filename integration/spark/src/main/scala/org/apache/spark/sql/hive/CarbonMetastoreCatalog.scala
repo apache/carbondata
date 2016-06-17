@@ -30,6 +30,7 @@ import scala.util.parsing.combinator.RegexParsers
 
 import org.apache.spark
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.{AggregateTableAttributes, Partitioner}
@@ -120,28 +121,13 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     false
   }
 
-  def lookupRelation1(
-      databaseName: Option[String],
-      tableName: String,
-      alias: Option[String] = None)(sqlContext: SQLContext): LogicalPlan = {
-    val db = databaseName match {
-      case Some(name) => name
-      case _ => null
-    }
-    if (db == null) {
-      lookupRelation2(Seq(tableName), alias)(sqlContext)
-    } else {
-      lookupRelation2(Seq(db, tableName), alias)(sqlContext)
-    }
-  }
-
-  override def lookupRelation(tableIdentifier: Seq[String],
+  override def lookupRelation(tableIdentifier: TableIdentifier,
       alias: Option[String] = None): LogicalPlan = {
     try {
       super.lookupRelation(tableIdentifier, alias)
     } catch {
       case s: java.lang.Exception =>
-        lookupRelation2(tableIdentifier, alias)(hive.asInstanceOf[SQLContext])
+        lookupRelation1(tableIdentifier, alias)(hive.asInstanceOf[SQLContext])
     }
   }
 
@@ -153,64 +139,34 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     cubeCreationTime
   }
 
+  def lookupRelation1(dbName: Option[String],
+      tableName: String)(sqlContext: SQLContext): LogicalPlan = {
+    lookupRelation1(TableIdentifier(tableName, dbName))(sqlContext)
+  }
 
-  def lookupRelation2(tableIdentifier: Seq[String],
+  def lookupRelation1(tableIdentifier: TableIdentifier,
       alias: Option[String] = None)(sqlContext: SQLContext): LogicalPlan = {
     checkSchemasModifiedTimeAndReloadCubes()
-    tableIdentifier match {
-      case Seq(schemaName, cubeName) =>
-        val cubes = metadata.cubesMeta.filter(
-          c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(schemaName) &&
-               c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))
-        if (cubes.nonEmpty) {
-          CarbonRelation(schemaName, cubeName,
-            CarbonSparkUtil.createSparkMeta(cubes.head.carbonTable), cubes.head, alias)(sqlContext)
-        } else {
-          LOGGER.audit(s"Table Not Found: $schemaName $cubeName")
-          throw new NoSuchTableException
-        }
-      case Seq(cubeName) =>
-        val currentDatabase = getDB.getDatabaseName(None, sqlContext)
-        val cubes = metadata.cubesMeta.filter(
-          c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(currentDatabase) &&
-               c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))
-        if (cubes.nonEmpty) {
-          CarbonRelation(currentDatabase, cubeName,
-            CarbonSparkUtil.createSparkMeta(cubes.head.carbonTable), cubes.head, alias)(sqlContext)
-        } else {
-          LOGGER.audit(s"Table Not Found: $cubeName")
-          throw new NoSuchTableException
-        }
-      case _ =>
-        LOGGER.audit(s"Table Not Found: $tableIdentifier")
-        throw new NoSuchTableException
-    }
-  }
-
-  def cubeExists(db: Option[String], tableName: String)(sqlContext: SQLContext): Boolean = {
-    if (db.isEmpty || db.get == null || db.get == "") {
-      cubeExists(Seq(tableName))(sqlContext)
+    val database = tableIdentifier.database.getOrElse(getDB.getDatabaseName(None, sqlContext))
+    val cubes = metadata.cubesMeta.filter(
+      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
+           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableIdentifier.table))
+    if (cubes.nonEmpty) {
+      CarbonRelation(database, tableIdentifier.table,
+        CarbonSparkUtil.createSparkMeta(cubes.head.carbonTable), cubes.head, alias)(sqlContext)
     } else {
-      cubeExists(Seq(db.get, tableName))(sqlContext)
+      LOGGER.audit(s"Table Not Found: ${tableIdentifier.table}")
+      throw new NoSuchTableException
     }
   }
 
-  def cubeExists(tableIdentifier: Seq[String])(sqlContext: SQLContext): Boolean = {
+  def tableExists(tableIdentifier: TableIdentifier)(sqlContext: SQLContext): Boolean = {
     checkSchemasModifiedTimeAndReloadCubes()
-    tableIdentifier match {
-      case Seq(schemaName, cubeName) =>
-        val cubes = metadata.cubesMeta.filter(
-          c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(schemaName) &&
-               c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))
-        cubes.nonEmpty
-      case Seq(cubeName) =>
-        val currentDatabase = getDB.getDatabaseName(None, sqlContext)
-        val cubes = metadata.cubesMeta.filter(
-          c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(currentDatabase) &&
-               c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))
-        cubes.nonEmpty
-      case _ => false
-    }
+    val database = tableIdentifier.database.getOrElse(getDB.getDatabaseName(None, sqlContext))
+    val cubes = metadata.cubesMeta.filter(
+      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
+           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableIdentifier.table))
+    cubes.nonEmpty
   }
 
   def loadMetadata(metadataPath: String): MetaData = {
@@ -338,7 +294,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
       dbName: String, tableName: String, partitioner: Partitioner)
     (sqlContext: SQLContext): String = {
 
-    if (cubeExists(Seq(dbName, tableName))(sqlContext)) {
+    if (tableExists(TableIdentifier(tableName, Some(dbName)))(sqlContext)) {
       sys.error(s"Table [$tableName] already exists under Database [$dbName]")
     }
 
@@ -506,7 +462,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   /**
    * Shows all schemas which has Database name like
    */
-  def showSchemas(schemaLike: Option[String]): Seq[String] = {
+  def showDatabases(schemaLike: Option[String]): Seq[String] = {
     checkSchemasModifiedTimeAndReloadCubes()
     metadata.cubesMeta.map { c =>
       schemaLike match {
@@ -526,7 +482,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   /**
    * Shows all cubes for given schema.
    */
-  def getCubes(databaseName: Option[String])(sqlContext: SQLContext): Seq[(String, Boolean)] = {
+  def getTables(databaseName: Option[String])(sqlContext: SQLContext): Seq[(String, Boolean)] = {
 
     val schemaName = databaseName
       .getOrElse(sqlContext.asInstanceOf[HiveContext].catalog.client.currentDatabase)
@@ -539,21 +495,25 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   /**
    * Shows all cubes in all schemas.
    */
-  def getAllCubes()(sqlContext: SQLContext): Seq[(String, String)] = {
+  def getAllTables()(sqlContext: SQLContext): Seq[TableIdentifier] = {
     checkSchemasModifiedTimeAndReloadCubes()
-    metadata.cubesMeta
-      .map { c => (c.carbonTableIdentifier.getDatabaseName, c.carbonTableIdentifier.getTableName) }
+    metadata.cubesMeta.map { c =>
+        TableIdentifier(c.carbonTableIdentifier.getTableName,
+          Some(c.carbonTableIdentifier.getDatabaseName))
+    }
   }
 
-  def dropCube(partitionCount: Int, tableStorePath: String, schemaName: String, cubeName: String)
+  def dropTable(partitionCount: Int, tableStorePath: String, tableIdentifier: TableIdentifier)
     (sqlContext: SQLContext) {
-    if (!cubeExists(Seq(schemaName, cubeName))(sqlContext)) {
-      LOGGER.audit(s"Drop Table failed. Table with $schemaName.$cubeName does not exist")
-      sys.error(s"Table with $schemaName.$cubeName does not exist")
+    val dbName = tableIdentifier.database.get
+    val tableName = tableIdentifier.table
+    if (!tableExists(tableIdentifier)(sqlContext)) {
+      LOGGER.audit(s"Drop Table failed. Table with ${dbName}.$tableName does not exist")
+      sys.error(s"Table with $dbName.$tableName does not exist")
     }
 
     val carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
-      .getCarbonTable(schemaName + "_" + cubeName)
+      .getCarbonTable(dbName + "_" + tableName)
 
     if (null != carbonTable) {
       val metadatFilePath = carbonTable.getMetaDataFilepath
@@ -561,12 +521,12 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
 
       if (FileFactory.isFileExist(metadatFilePath, fileType)) {
         val file = FileFactory.getCarbonFile(metadatFilePath, fileType)
-        CarbonUtil.renameCubeForDeletion(partitionCount, tableStorePath, schemaName, cubeName)
+        CarbonUtil.renameCubeForDeletion(partitionCount, tableStorePath, dbName, tableName)
         CarbonUtil.deleteFoldersAndFilesSilent(file.getParentFile)
       }
 
       val partitionLocation = tableStorePath + File.separator + "partition" + File.separator +
-                              schemaName + File.separator + cubeName
+                              dbName + File.separator + tableName
       val partitionFileType = FileFactory.getFileType(partitionLocation)
       if (FileFactory.isFileExist(partitionLocation, partitionFileType)) {
         CarbonUtil
@@ -575,20 +535,20 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     }
 
     try {
-      sqlContext.sql(s"DROP TABLE $schemaName.$cubeName").collect()
+      sqlContext.sql(s"DROP TABLE $dbName.$tableName").collect()
     } catch {
       case e: Exception =>
         LOGGER.audit(
-          s"Error While deleting the table $schemaName.$cubeName during drop Table" + e.getMessage)
+          s"Error While deleting the table $dbName.$tableName during drop Table" + e.getMessage)
     }
 
     metadata.cubesMeta -= metadata.cubesMeta.filter(
-      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(schemaName) &&
-           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))(0)
+      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(dbName) &&
+           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))(0)
     org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
-      .removeTable(schemaName + "_" + cubeName)
-    logInfo(s"Table $cubeName of $schemaName Database dropped syccessfully.")
-    LOGGER.info("Table " + cubeName + " of " + schemaName + " Database dropped syccessfully.")
+      .removeTable(dbName + "_" + tableName)
+    logInfo(s"Table $tableName of $dbName Database dropped syccessfully.")
+    LOGGER.info("Table " + tableName + " of " + dbName + " Database dropped syccessfully.")
 
   }
 

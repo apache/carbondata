@@ -1231,12 +1231,12 @@ class CarbonSqlParser()
       case ef ~ db ~ tbl =>
         val tblIdentifier = db match {
           case Some(dbName) =>
-            Seq(dbName, tbl.toLowerCase())
+            TableIdentifier(tbl.toLowerCase, Some(dbName))
           case None =>
-            Seq(tbl.toLowerCase())
+            TableIdentifier(tbl.toLowerCase)
         }
         if (ef.isDefined && "FORMATTED".equalsIgnoreCase(ef.get)) {
-          new DescribeFormattedCommand("describe formatted " + tblIdentifier.mkString("."),
+          new DescribeFormattedCommand("describe formatted " + tblIdentifier,
             tblIdentifier)
         }
         else {

@@ -97,6 +97,12 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
 
   }
 
+  test("select count(doj) from directDictionaryCube") {
+    checkAnswer(
+      sql("select count(doj) from directDictionaryCube"),
+      Seq(Row(2))
+    )
+  }
 
   override def afterAll {
     sql("drop cube directDictionaryCube")

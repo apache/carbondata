@@ -81,6 +81,34 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
         "Latest_webUIVersion,Latest_webUITypeCarrVer,Latest_webTypeDataVerNumber," +
         "Latest_operatorsVersion,Latest_phonePADPartitionedVersions,Latest_operatorId," +
         "gamePointId,gamePointDescription')")
+
+      sql(
+        "create table if not exists Carbon_automation_hive (imei string,deviceInformationId int," +
+        "MAC string,deviceColor string,device_backColor string,modelId string,marketName " +
+        "string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string," +
+        "productionDate timestamp,bomCode string,internalModels string, deliveryTime string, " +
+        "channelsId string, channelsName string , deliveryAreaId string, deliveryCountry " +
+        "string, deliveryProvince string, deliveryCity string,deliveryDistrict string, " +
+        "deliveryStreet string, oxSingleNumber string,contractNumber int, ActiveCheckTime string, ActiveAreaId " +
+        "string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict" +
+        " string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, " +
+        "Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, " +
+        "Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string," +
+        "Active_webTypeDataVerNumber string, Active_operatorsVersion string, " +
+        "Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, " +
+        "Latest_DAY int, Latest_HOUR string, Latest_areaId string, Latest_country string, " +
+        "Latest_province string, Latest_city string, Latest_district string, Latest_street " +
+        "string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion " +
+        "string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion " +
+        "string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, " +
+        "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
+        "Latest_operatorId string, , gamePointId int, gamePointDescription string" +
+        ") row format delimited fields terminated by ','"
+      )
+
+      sql("LOAD DATA LOCAL INPATH '" + currentDirectory + "/src/test/resources/100_olap.csv' INTO " +
+          "table Carbon_automation_hive ")
+
     } catch {
       case e: Exception => print("ERROR: DROP Carbon_automation_test ")
     }
@@ -88,6 +116,7 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     sql("drop cube Carbon_automation_test")
+    sql("drop table Carbon_automation_hive")
 
   }
 
@@ -853,7 +882,7 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   test("select variance(deviceInformationId) as a   from Carbon_automation_test")({
     checkAnswer(
       sql("select variance(deviceInformationId) as a   from Carbon_automation_test"),
-      Seq(Row(9.31041555963636E9))
+      sql("select variance(deviceInformationId) as a   from Carbon_automation_hive")
     )
   }
   )

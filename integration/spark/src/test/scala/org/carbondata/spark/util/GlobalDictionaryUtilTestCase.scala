@@ -145,16 +145,16 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
 
   def buildRelation() = {
     val catalog = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
-    sampleRelation = catalog.lookupRelation1(Option("default"), "sample", None)(CarbonHiveContext)
+    sampleRelation = catalog.lookupRelation1(Option("default"), "sample")(CarbonHiveContext)
       .asInstanceOf[CarbonRelation]
     dimSampleRelation = catalog
-      .lookupRelation1(Option("default"), "dimSample", None)(CarbonHiveContext)
+      .lookupRelation1(Option("default"), "dimSample")(CarbonHiveContext)
       .asInstanceOf[CarbonRelation]
     complexRelation = catalog
-      .lookupRelation1(Option("default"), "complextypes", None)(CarbonHiveContext)
+      .lookupRelation1(Option("default"), "complextypes")(CarbonHiveContext)
       .asInstanceOf[CarbonRelation]
     incrementalLoadTableRelation = catalog
-      .lookupRelation1(Option("default"), "incrementalLoadTable", None)(CarbonHiveContext)
+      .lookupRelation1(Option("default"), "incrementalLoadTable")(CarbonHiveContext)
       .asInstanceOf[CarbonRelation]
   }
 

@@ -25,8 +25,9 @@ import org.carbondata.core.iterator.CarbonIterator
 import org.carbondata.query.carbon.executor.QueryExecutorFactory
 import org.carbondata.query.carbon.model.QueryModel
 import org.carbondata.query.carbon.result.BatchRawResult
+import org.carbondata.query.carbon.result.iterator.ChunkRawRowIterartor
 import org.carbondata.query.expression.Expression
-import org.carbondata.spark.RawKeyVal
+import org.carbondata.spark.{RawKey, RawKeyVal}
 
 
 /**
@@ -48,7 +49,7 @@ class CarbonRawQueryRDD[K, V](
     sc: SparkContext,
     queryModel: QueryModel,
     filterExpression: Expression,
-    keyClass: RawKeyVal[K, V],
+    keyClass: RawKey[K, V],
     @transient conf: Configuration,
     cubeCreationTime: Long,
     schemaLastUpdatedTime: Long,
@@ -66,7 +67,7 @@ class CarbonRawQueryRDD[K, V](
   override def compute(thepartition: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
     val iter = new Iterator[(K, V)] {
-      var rowIterator: CarbonIterator[BatchRawResult] = _
+      var rowIterator: CarbonIterator[Array[Any]] = _
       var queryStartTime: Long = 0
       try {
         val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
@@ -83,8 +84,9 @@ class CarbonRawQueryRDD[K, V](
               System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties");
           }
           // execute query
-          rowIterator = QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel)
-            .asInstanceOf[CarbonIterator[BatchRawResult]]
+          rowIterator = new ChunkRawRowIterartor(
+            QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel)
+            .asInstanceOf[CarbonIterator[BatchRawResult]]).asInstanceOf[CarbonIterator[Array[Any]]]
         }
       } catch {
         case e: Exception =>

@@ -53,8 +53,31 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
 
   }
 
+  test("drop table using case insensitive table name") {
+    // create table
+    sql(
+      "CREATE table CaseInsensitiveTable (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'" +
+      "TBLPROPERTIES('DICTIONARY_INCLUDE'='ID', 'DICTIONARY_INCLUDE'='salary')"
+    )
+    // table should drop wihout any error
+    sql("drop table caseInsensitiveTable")
+
+    // Now create same table, it should not give any error.
+    sql(
+      "CREATE table CaseInsensitiveTable (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'" +
+      "TBLPROPERTIES('DICTIONARY_INCLUDE'='ID', 'DICTIONARY_INCLUDE'='salary')"
+    )
+
+  }
+
+
   override def afterAll: Unit = {
 
+    sql("drop table CaseSensitiveTable")
   }
 
 }

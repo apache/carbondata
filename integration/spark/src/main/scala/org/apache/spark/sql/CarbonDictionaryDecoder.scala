@@ -32,6 +32,7 @@ import org.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueI
 import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.carbondata.core.carbon.metadata.datatype.DataType
 import org.carbondata.core.carbon.metadata.encoder.Encoding
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.query.carbon.util.DataTypeUtil
 
 /**
@@ -62,7 +63,7 @@ case class CarbonDictionaryDecoder(
             !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
             canBeDecoded(attr)) {
           val newAttr = AttributeReference(a.name,
-            convertCarbonToSparkDataType(carbonDimension.getDataType),
+            convertCarbonToSparkDataType(carbonDimension),
             a.nullable,
             a.metadata)(a.exprId,
             a.qualifiers).asInstanceOf[Attribute]
@@ -88,8 +89,8 @@ case class CarbonDictionaryDecoder(
     }
   }
 
-  def convertCarbonToSparkDataType(dataType: DataType): types.DataType = {
-    dataType match {
+  def convertCarbonToSparkDataType(carbonDimension: CarbonDimension): types.DataType = {
+    carbonDimension.getDataType match {
       case DataType.STRING => StringType
       case DataType.INT => IntegerType
       case DataType.LONG => LongType
@@ -125,6 +126,9 @@ case class CarbonDictionaryDecoder(
     dictIds
   }
 
+
+  override def outputsUnsafeRows: Boolean = true
+
   override def doExecute(): RDD[InternalRow] = {
     attachTree(this, "execute") {
       val storePath = sqlContext.catalog.asInstanceOf[CarbonMetastoreCatalog].storePath
@@ -143,20 +147,21 @@ case class CarbonDictionaryDecoder(
           val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
             forwardDictionaryCache)
           new Iterator[InternalRow] {
+            val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)
             override final def hasNext: Boolean = iter.hasNext
 
             override final def next(): InternalRow = {
               val row: InternalRow = iter.next()
               val data = row.toSeq(dataTypes).toArray
               for (i <- data.indices) {
-                if (dicts(i) != null) {
+                if (dicts(i) != null && data(i) != null) {
                   data(i) = toType(DataTypeUtil
                     .getDataBasedOnDataType(dicts(i)
                       .getDictionaryValueForKey(data(i).asInstanceOf[Integer]),
                       getDictionaryColumnIds(i)._3))
                 }
               }
-              new GenericMutableRow(data)
+              unsafeProjection(new GenericMutableRow(data))
             }
           }
         }

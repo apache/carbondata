@@ -47,6 +47,14 @@ class RawKeyValImpl extends RawKeyVal[BatchRawResult, Any] {
   override def getKey(key: BatchRawResult, value: Any): (BatchRawResult, Any) = (key, value)
 }
 
+trait RawKey[K, V] extends Serializable {
+  def getKey(key: Array[Any], value: Any): (K, V)
+
+}
+
+class RawKeyImpl extends RawKey[Array[Any], Any] {
+  override def getKey(key: Array[Any], value: Any): (Array[Any], Any) = (key, value)
+}
 trait Result[K, V] extends Serializable {
   def getKey(key: Int, value: LoadMetadataDetails): (K, V)
 

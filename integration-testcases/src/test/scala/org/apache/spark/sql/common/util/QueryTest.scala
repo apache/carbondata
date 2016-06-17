@@ -19,12 +19,13 @@ package org.apache.spark.sql.common.util
 
 import java.util.{Locale, TimeZone}
 
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import scala.collection.JavaConversions._
+
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
-import org.apache.spark.sql.columnar.InMemoryRelation
+import org.apache.spark.sql.execution.columnar.InMemoryRelation
+import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 
-import scala.collection.JavaConversions._
 
 class QueryTest extends PlanTest {
 

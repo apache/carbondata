@@ -34,6 +34,7 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
+import org.carbondata.query.aggregator.impl.max.MaxAggregator;
 
 /**
  * AbstractMeasureAggregatorMaxMin
@@ -45,9 +46,9 @@ public abstract class AbstractMeasureAggregatorMaxMin implements MeasureAggregat
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(MaxAggregator.class.getName());
 
-  protected Comparable<Object> aggVal;
+  public Comparable<Object> aggVal;
 
-  protected boolean firstTime = true;
+  public boolean firstTime = true;
 
   protected abstract void internalAgg(Object value);
 

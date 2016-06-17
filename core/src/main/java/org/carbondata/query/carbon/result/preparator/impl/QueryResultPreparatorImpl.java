@@ -32,9 +32,9 @@ import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerat
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.aggregator.impl.CountAggregator;
-import org.carbondata.query.aggregator.impl.DistinctCountAggregator;
-import org.carbondata.query.aggregator.impl.DistinctStringCountAggregator;
+import org.carbondata.query.aggregator.impl.count.CountAggregator;
+import org.carbondata.query.aggregator.impl.distinct.DistinctCountAggregator;
+import org.carbondata.query.aggregator.impl.distinct.DistinctStringCountAggregator;
 import org.carbondata.query.carbon.executor.impl.QueryExecutorProperties;
 import org.carbondata.query.carbon.model.DimensionAggregatorInfo;
 import org.carbondata.query.carbon.model.QueryDimension;

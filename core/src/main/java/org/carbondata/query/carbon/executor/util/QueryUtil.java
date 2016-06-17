@@ -53,6 +53,7 @@ import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.query.carbon.aggregator.dimension.DimensionDataAggregator;
 import org.carbondata.query.carbon.aggregator.dimension.impl.ColumnGroupDimensionsAggregator;
+import org.carbondata.query.carbon.aggregator.dimension.impl.DirectDictionaryDimensionAggregator;
 import org.carbondata.query.carbon.aggregator.dimension.impl.FixedLengthDimensionAggregator;
 import org.carbondata.query.carbon.aggregator.dimension.impl.VariableLengthDimensionAggregator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
@@ -724,9 +725,15 @@ public class QueryUtil {
         aggregatorStartIndex += numberOfAggregatorForColumnGroup;
         continue;
       } else {
+        if(CarbonUtil.hasEncoding(dim.getEncoder(), Encoding.DIRECT_DICTIONARY)){
+          dimensionDataAggregators.add(
+              new DirectDictionaryDimensionAggregator(entry.getValue().get(0),
+                  aggregatorStartIndex,
+                  dimensionToBlockIndexMapping.get(dim.getOrdinal())));
+        }
         // if it is a dictionary column than create a fixed length
         // aggeragtor
-        if (CarbonUtil
+        else if (CarbonUtil
             .hasEncoding(dim.getEncoder(), Encoding.DICTIONARY)) {
           dimensionDataAggregators.add(
               new FixedLengthDimensionAggregator(entry.getValue().get(0), null,

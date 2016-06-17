@@ -24,7 +24,7 @@ import java.util.List;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.aggregator.impl.CountAggregator;
+import org.carbondata.query.aggregator.impl.count.CountAggregator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;

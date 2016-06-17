@@ -34,7 +34,7 @@ private[sql] object CarbonStrategy {
   }
 }
 
-private[spark] class CarbonSQLDialect extends HiveQLDialect {
+private[spark] class CarbonSQLDialect(context: HiveContext) extends HiveQLDialect(context) {
 
   @transient
   protected val sqlParser = new CarbonSqlParser

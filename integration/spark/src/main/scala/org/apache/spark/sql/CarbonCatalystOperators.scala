@@ -19,18 +19,18 @@ package org.apache.spark.sql
 
 import scala.collection.mutable.MutableList
 
-import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.agg.{CarbonAverage, CarbonCount}
+import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
-import org.apache.spark.sql.catalyst.trees.TreeNodeRef
 import org.apache.spark.sql.execution.command.tableModel
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
-import org.apache.spark.sql.types.{BooleanType, DataType, StringType, TimestampType}
-
-import org.carbondata.spark.agg._
+import org.apache.spark.sql.types._
 
 /**
  * Top command
@@ -94,7 +94,7 @@ case class ShowCubeCommand(schemaNameOp: Option[String]) extends LogicalPlan wit
   override def children: Seq[LogicalPlan] = Seq.empty
 
   override def output: Seq[Attribute] = {
-    Seq(AttributeReference("cubeName", StringType, nullable = false)(),
+    Seq(AttributeReference("tableName", StringType, nullable = false)(),
       AttributeReference("isRegisteredWithSpark", BooleanType, nullable = false)())
   }
 }
@@ -107,8 +107,8 @@ case class ShowAllCubeCommand() extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
 
   override def output: Seq[Attribute] = {
-    Seq(AttributeReference("schemaName", StringType, nullable = false)(),
-      AttributeReference("cubeName", StringType, nullable = false)(),
+    Seq(AttributeReference("dbName", StringType, nullable = false)(),
+      AttributeReference("tableName", StringType, nullable = false)(),
       AttributeReference("isRegisteredWithSpark", BooleanType, nullable = false)())
   }
 }
@@ -161,7 +161,7 @@ case class ShowLoadsCommand(schemaNameOp: Option[String], cube: String, limit: O
 /**
  * Describe formatted for hive table
  */
-case class DescribeFormattedCommand(sql: String, tblIdentifier: Seq[String])
+case class DescribeFormattedCommand(sql: String, tblIdentifier: TableIdentifier)
   extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
 
@@ -181,16 +181,18 @@ case class CarbonDictionaryCatalystDecoder(
   override def output: Seq[Attribute] = child.output
 }
 
-abstract class CarbonProfile(attributes: Seq[Attribute]) extends Serializable{
+abstract class CarbonProfile(attributes: Seq[Attribute]) extends Serializable {
   def isEmpty: Boolean = attributes.isEmpty
 }
+
 case class IncludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attributes)
+
 case class ExcludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attributes)
 
 case class FakeCarbonCast(child: Literal, dataType: DataType)
   extends LeafExpression with CodegenFallback {
 
-  override def toString: String = s"FakeCarbonCast($child as ${dataType.simpleString})"
+  override def toString: String = s"FakeCarbonCast($child as ${ dataType.simpleString })"
 
   override def checkInputDataTypes(): TypeCheckResult = {
     TypeCheckResult.TypeCheckSuccess
@@ -255,7 +257,7 @@ object PhysicalOperation1 extends PredicateHelper {
         val (fields, filters, other, aliases, _, sortOrder, limit) = collectProjectsAndFilters(
           child)
 
-        var aggExps: Seq[AggregateExpression1] = Nil
+        var aggExps: Seq[AggregateExpression] = Nil
         aggregateExpressions.foreach(v => {
           val list = findAggreagateExpression(v)
           aggExps = aggExps ++ list
@@ -276,12 +278,12 @@ object PhysicalOperation1 extends PredicateHelper {
     }
   }
 
-  def findAggreagateExpression(expr: Expression): Seq[AggregateExpression1] = {
+  def findAggreagateExpression(expr: Expression): Seq[AggregateExpression] = {
     val exprList = expr match {
-      case d: AggregateExpression1 => d :: Nil
+      case d: AggregateExpression => d :: Nil
       case Alias(ref, name) => findAggreagateExpression(ref)
       case other =>
-        var listout: Seq[AggregateExpression1] = Nil
+        var listout: Seq[AggregateExpression] = Nil
 
         other.children.foreach(v => {
           val list = findAggreagateExpression(v)
@@ -317,7 +319,7 @@ object PhysicalOperation1 extends PredicateHelper {
           case Alias(ref, name) => ref
           case others => others
         }.filter {
-          case d: AggregateExpression1 => true
+          case d: AggregateExpression => true
           case _ => false
         }
         (fields, filters, other, aliases ++ collectAliases(aggregateExpressions), Some(
@@ -352,6 +354,28 @@ object PhysicalOperation1 extends PredicateHelper {
   }
 }
 
+case class PositionLiteral(expr: Expression, intermediateDataType: DataType)
+  extends LeafExpression with CodegenFallback {
+  override def dataType: DataType = expr.dataType
+
+  override def nullable: Boolean = false
+
+  type EvaluatedType = Any
+  var position = -1
+
+  def setPosition(pos: Int): Unit = position = pos
+
+  override def toString: String = s"PositionLiteral($position : $expr)"
+
+  override def eval(input: InternalRow): Any = {
+    if (position != -1) {
+      input.get(position, intermediateDataType)
+    } else {
+      expr.eval(input)
+    }
+  }
+}
+
 /**
  * Matches a logical aggregation that can be performed on distributed data in two steps.  The first
  * operates on the data in each partition performing partial aggregation for each group.  The second
@@ -367,85 +391,98 @@ object PhysicalOperation1 extends PredicateHelper {
  * - Partial aggregate expressions.
  * - Input to the aggregation.
  */
-object PartialAggregation {
-  type ReturnType =
-  (Seq[Attribute], Seq[NamedExpression], Seq[Expression], Seq[NamedExpression], LogicalPlan)
+object CarbonAggregation {
+  type ReturnType = (Seq[Expression], Seq[NamedExpression], LogicalPlan)
 
   private def convertAggregatesForPushdown(convertUnknown: Boolean,
-      rewrittenAggregateExpressions: Seq[Expression]) = {
-    var counter: Int = 0
-    var updatedExpressions = MutableList[Expression]()
-    rewrittenAggregateExpressions.foreach(v => {
-      val updated = convertAggregate(v, counter, convertUnknown)
-      updatedExpressions += updated
-      counter = counter + 1
-    })
-    updatedExpressions
+      rewrittenAggregateExpressions: Seq[Expression],
+      oneAttr: AttributeReference) = {
+    if (canBeConvertedToCarbonAggregate(rewrittenAggregateExpressions)) {
+      var counter: Int = 0
+      var updatedExpressions = MutableList[Expression]()
+      rewrittenAggregateExpressions.foreach(v => {
+        val updated = convertAggregate(v, counter, convertUnknown, oneAttr)
+        updatedExpressions += updated
+        counter = counter + 1
+      })
+      updatedExpressions
+    } else {
+      rewrittenAggregateExpressions
+    }
   }
 
-  def makePositionLiteral(expr: Expression, index: Int): PositionLiteral = {
-    val posLiteral = PositionLiteral(expr, MeasureAggregatorUDT)
+  def makePositionLiteral(expr: Expression, index: Int, dataType: DataType): PositionLiteral = {
+    val posLiteral = PositionLiteral(expr, dataType)
     posLiteral.setPosition(index)
     posLiteral
   }
 
-  def convertAggregate(current: Expression, index: Int, convertUnknown: Boolean): Expression = {
-    if (convertUnknown) {
+  def convertAggregate(current: Expression,
+      index: Int,
+      convertUnknown: Boolean,
+      oneAttr: AttributeReference): Expression = {
+    if (!convertUnknown && canBeConverted(current)) {
       current.transform {
-        case a@SumCarbon(_, _) => a
-        case a@AverageCarbon(_, _) => a
-        case a@MinCarbon(_, _) => a
-        case a@MaxCarbon(_, _) => a
-        case a@SumDistinctCarbon(_, _) => a
-        case a@CountDistinctCarbon(_) => a
-        case a@CountCarbon(_) => a
-        case anyAggr: AggregateExpression1 => anyAggr
+        case Average(attr: AttributeReference) =>
+          val convertedDataType = transformArrayType(attr)
+          CarbonAverage(makePositionLiteral(convertedDataType, index, convertedDataType.dataType))
+        case Average(Cast(attr: AttributeReference, dataType)) =>
+          val convertedDataType = transformArrayType(attr)
+          CarbonAverage(
+              makePositionLiteral(convertedDataType, index, convertedDataType.dataType))
+        case Count(Seq(s: Literal)) =>
+          CarbonCount(s, Some(makePositionLiteral(transformLongType(oneAttr), index, LongType)))
+        case Count(Seq(attr: AttributeReference)) =>
+          CarbonCount(makePositionLiteral(transformLongType(attr), index, LongType))
+        case Sum(attr: AttributeReference) =>
+          Sum(makePositionLiteral(attr, index, attr.dataType))
+        case Sum(Cast(attr: AttributeReference, dataType)) =>
+          Sum(Cast(makePositionLiteral(attr, index, attr.dataType), dataType))
+        case Min(attr: AttributeReference) => Min(makePositionLiteral(attr, index, attr.dataType))
+        case Min(Cast(attr: AttributeReference, dataType)) =>
+          Min(Cast(makePositionLiteral(attr, index, attr.dataType), dataType))
+        case Max(attr: AttributeReference) =>
+          Max(makePositionLiteral(attr, index, attr.dataType))
+        case Max(Cast(attr: AttributeReference, dataType)) =>
+          Max(Cast(makePositionLiteral(attr, index, attr.dataType), dataType))
       }
     } else {
-      current.transform {
-        case a@Sum(attr: AttributeReference) => SumCarbon(makePositionLiteral(attr, index))
-        case a@Sum(cast@Cast(attr: AttributeReference, _)) => SumCarbon(
-          makePositionLiteral(attr, index), cast.dataType)
-        case a@Average(attr: AttributeReference) => AverageCarbon(makePositionLiteral(attr, index))
-        case a@Average(cast@Cast(attr: AttributeReference, _)) => AverageCarbon(
-          makePositionLiteral(attr, index), cast.dataType)
-        case a@Min(attr: AttributeReference) => MinCarbon(makePositionLiteral(attr, index))
-        case a@Min(cast@Cast(attr: AttributeReference, _)) => MinCarbon(
-          makePositionLiteral(attr, index), cast.dataType)
-        case a@Max(attr: AttributeReference) => MaxCarbon(makePositionLiteral(attr, index))
-        case a@Max(cast@Cast(attr: AttributeReference, _)) => MaxCarbon(
-          makePositionLiteral(attr, index), cast.dataType)
-        case a@SumDistinct(attr: AttributeReference) => SumDistinctCarbon(
-          makePositionLiteral(attr, index))
-        case a@SumDistinct(cast@Cast(attr: AttributeReference, _)) => SumDistinctCarbon(
-          makePositionLiteral(attr, index), cast.dataType)
-        case a@CountDistinct(attr: AttributeReference) => CountDistinctCarbon(
-          makePositionLiteral(attr, index))
-        case a@CountDistinct(childSeq) if childSeq.size == 1 =>
-          childSeq.head match {
-            case attr: AttributeReference => CountDistinctCarbon(makePositionLiteral(attr, index))
-            case _ => a
-          }
-        case a@Count(s@Literal(_, _)) =>
-          CountCarbon(makePositionLiteral(s, index))
-        case a@Count(attr: AttributeReference) =>
-          if (attr.name.equals("*")) {
-            CountCarbon(makePositionLiteral(Literal("*"), index))
-          } else {
-            CountCarbon(makePositionLiteral(attr, index))
-          }
-      }
+      current
     }
+  }
+
+  def canBeConverted(current: Expression): Boolean = current match {
+    case Alias(AggregateExpression(Average(attr: AttributeReference), _, false), _) => true
+    case Alias(AggregateExpression(Average(Cast(attr: AttributeReference, _)), _, false), _) => true
+    case Alias(AggregateExpression(Count(Seq(s: Literal)), _, false), _) => true
+    case Alias(AggregateExpression(Count(Seq(attr: AttributeReference)), _, false), _) => true
+    case Alias(AggregateExpression(Sum(attr: AttributeReference), _, false), _) => true
+    case Alias(AggregateExpression(Sum(Cast(attr: AttributeReference, _)), _, false), _) => true
+    case Alias(AggregateExpression(Min(attr: AttributeReference), _, false), _) => true
+    case Alias(AggregateExpression(Min(Cast(attr: AttributeReference, _)), _, false), _) => true
+    case Alias(AggregateExpression(Max(attr: AttributeReference), _, false), _) => true
+    case Alias(AggregateExpression(Max(Cast(attr: AttributeReference, _)), _, false), _) => true
+    case _ => false
+  }
+
+  def transformArrayType(attr: AttributeReference): AttributeReference = {
+    AttributeReference(attr.name, ArrayType(DoubleType), attr.nullable, attr.metadata)(attr.exprId,
+      attr.qualifiers)
+  }
+
+  def transformLongType(attr: AttributeReference): AttributeReference = {
+    AttributeReference(attr.name, LongType, attr.nullable, attr.metadata)(attr.exprId,
+      attr.qualifiers)
   }
 
   /**
    * There should be sync between carbonOperators validation and here. we should not convert to
    * carbon aggregates if the validation does not satisfy.
    */
-  private def canBeConvertedToCarbonAggregate(expressions: Seq[Expression]): Boolean = {
+  def canBeConvertedToCarbonAggregate(expressions: Seq[Expression]): Boolean = {
     val detailQuery = expressions.map {
       case attr@AttributeReference(_, _, _, _) => true
-      case par: Alias if par.children.head.isInstanceOf[AggregateExpression1] => true
+      case Alias(agg: AggregateExpression, name) => true
       case _ => false
     }.exists(!_)
     !detailQuery
@@ -454,6 +491,7 @@ object PartialAggregation {
   def unapply(plan: LogicalPlan): Option[ReturnType] = unapply((plan, false))
 
   def unapply(combinedPlan: (LogicalPlan, Boolean)): Option[ReturnType] = {
+    val oneAttr = getOneAttribute(combinedPlan._1)
     combinedPlan._1 match {
       case Aggregate(groupingExpressions, aggregateExpressionsOrig, child) =>
 
@@ -463,99 +501,28 @@ object PartialAggregation {
             aggregateExpressionsOrig
           }
           else {
-            // First calculate partialComputation before converting and then check whether it could
-            // be converted or not. This type of checks are necessary for queries like
-            // select sum(col)+10 from table. Here the aggregates are different for
-            // partialComputation and aggregateExpressionsOrig. So first check on partialComputation
-            val preCheckEval = getPartialEvaluation(groupingExpressions, aggregateExpressionsOrig)
-            preCheckEval match {
-              case Some(allExprs) =>
-                if (canBeConvertedToCarbonAggregate(allExprs._1)) {
-                  convertAggregatesForPushdown(false, aggregateExpressionsOrig)
-                } else {
-                  aggregateExpressionsOrig
-                }
-              case _ => aggregateExpressionsOrig
-            }
+            convertAggregatesForPushdown(false, aggregateExpressionsOrig, oneAttr)
           }
-        val evaluation = getPartialEvaluation(groupingExpressions, aggregateExpressions)
-
-        evaluation match {
-          case(Some((partialComputation,
-              rewrittenAggregateExpressions,
-              namedGroupingAttributes))) =>
-            // Convert the other aggregations for push down to Carbon layer.
-            // Here don't touch earlier converted native carbon aggregators.
-            val convertedPartialComputation =
-              if (combinedPlan._2) {
-                partialComputation
-              }
-              else {
-                convertAggregatesForPushdown(true, partialComputation)
-                  .asInstanceOf[Seq[NamedExpression]]
-              }
-
-            Some(
-              (namedGroupingAttributes,
-                rewrittenAggregateExpressions,
-                groupingExpressions,
-                convertedPartialComputation,
-                child))
-          case _ => None
-        }
-
+        Some((groupingExpressions, aggregateExpressions.asInstanceOf[Seq[NamedExpression]], child))
       case _ => None
     }
   }
 
-  def getPartialEvaluation(groupingExpressions: Seq[Expression],
-      aggregateExpressions: Seq[Expression]):
-      Option[(Seq[NamedExpression], Seq[NamedExpression], Seq[Attribute])] = {
-    // Collect all aggregate expressions.
-    val allAggregates =
-      aggregateExpressions.flatMap(_ collect { case a: AggregateExpression1 => a })
-    // Collect all aggregate expressions that can be computed partially.
-    val partialAggregates =
-      aggregateExpressions.flatMap(_ collect { case p: PartialAggregate1 => p })
-
-    // Only do partial aggregation if supported by all aggregate expressions.
-    if (allAggregates.size == partialAggregates.size) {
-      // Create a map of expressions to their partial evaluations for all aggregate expressions.
-      val partialEvaluations: Map[TreeNodeRef, SplitEvaluation] =
-        partialAggregates.map(a => (new TreeNodeRef(a), a.asPartial)).toMap
-
-      // We need to pass all grouping expressions though so the grouping can happen a second
-      // time. However some of them might be unnamed so we alias them allowing them to be
-      // referenced in the second aggregation.
-      val namedGroupingExpressions: Map[Expression, NamedExpression] = groupingExpressions.map {
-        case n: NamedExpression => (n, n)
-        case other => (other, Alias(other, "PartialGroup")())
-      }.toMap
-
-      // Replace aggregations with a new expression that computes the result from the already
-      // computed partial evaluations and grouping values.
-      val rewrittenAggregateExpressions = aggregateExpressions.map(_.transformUp {
-        case e: Expression if partialEvaluations.contains(new TreeNodeRef(e)) =>
-          partialEvaluations(new TreeNodeRef(e)).finalEvaluation
-
-        case e: Expression =>
-          // Should trim aliases around `GetField`s. These aliases are introduced while
-          // resolving struct field accesses, because `GetField` is not a `NamedExpression`.
-          // (Should we just turn `GetField` into a `NamedExpression`?)
-          namedGroupingExpressions.collectFirst {
-            case (expr, ne) if expr semanticEquals e => ne.toAttribute
-          }.getOrElse(e)
-      }).asInstanceOf[Seq[NamedExpression]]
-
-      val partialComputation =
-        (namedGroupingExpressions.values ++
-         partialEvaluations.values.flatMap(_.partialEvaluations)).toSeq
-      val namedGroupingAttributes = namedGroupingExpressions.values.map(_.toAttribute).toSeq
-      Some(partialComputation, rewrittenAggregateExpressions, namedGroupingAttributes)
-    } else {
-      None
+  def getOneAttribute(plan: LogicalPlan): AttributeReference = {
+    var relation: LogicalRelation = null
+    plan collect {
+      case l: LogicalRelation => relation = l
     }
-
+    if (relation != null) {
+      relation.output.find { p =>
+        p.dataType match {
+          case n: NumericType => true
+          case _ => false
+        }
+      }.getOrElse(relation.output.head)
+    } else {
+      null
+    }
   }
 }
 

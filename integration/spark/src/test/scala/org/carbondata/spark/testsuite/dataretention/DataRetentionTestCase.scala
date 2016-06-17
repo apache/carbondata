@@ -96,7 +96,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("RetentionTest_withoutDelete") {
     checkAnswer(
-      sql("SELECT country, count(salary) AS amount FROM DataRetentionTable WHERE country" +
+      sql("SELECT country, count(salary) AS amount FROM dataretentionTable WHERE country" +
           " IN ('china','ind','aus','eng') GROUP BY country"
       ),
       Seq(Row("aus", 9), Row("ind", 9))
@@ -114,7 +114,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     val actualValue: String = getSegmentStartTime(segments, 1)
     // delete segments (0,1) which contains ind, aus
     sql(
-      "DELETE SEGMENTS FROM TABLE DataRetentionTable where STARTTIME before '" + actualValue + "'")
+      "DELETE SEGMENTS FROM TABLE dataretentionTable where STARTTIME before '" + actualValue + "'")
 
     // load segment 2 which contains eng
     sql(
@@ -130,9 +130,9 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("RetentionTest3_DeleteByLoadId") {
     // delete segment 2 and load ind segment
-    sql("DELETE LOAD 2 FROM TABLE DataRetentionTable")
+    sql("DELETE LOAD 2 FROM TABLE dataretentionTable")
     sql(
-      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE DataRetentionTable " +
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dataretentionTable " +
       "OPTIONS('DELIMITER' = ',')")
     checkAnswer(
       sql("SELECT country, count(salary) AS amount FROM DataRetentionTable WHERE country" +
@@ -140,7 +140,10 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       ),
       Seq(Row("ind", 9))
     )
-    sql("clean files for table DataRetentionTable")
+
+    // these queries should execute without any error.
+    sql("show segments for table dataretentionTable")
+    sql("clean files for table dataretentionTable")
   }
 
   test("RetentionTest4_DeleteByInvalidLoadId") {

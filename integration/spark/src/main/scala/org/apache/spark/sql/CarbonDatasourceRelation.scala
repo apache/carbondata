@@ -24,6 +24,7 @@ import scala.language.implicitConversions
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark._
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -56,7 +57,11 @@ class CarbonSource
       case _ =>
         val options = new CarbonOption(parameters)
         val tableIdentifier = options.tableIdentifier.split("""\.""").toSeq
-        CarbonDatasourceRelation(tableIdentifier, None)(sqlContext)
+        val ident = tableIdentifier match {
+          case Seq(name) => TableIdentifier(name)
+          case Seq(db, name) => TableIdentifier(name, Some(db))
+        }
+        CarbonDatasourceRelation(ident, None)(sqlContext)
     }
 
   }
@@ -120,14 +125,14 @@ class CarbonSource
  * This relation is stored to hive metastore
  */
 private[sql] case class CarbonDatasourceRelation(
-    tableIdentifier: Seq[String],
+    tableIdentifier: TableIdentifier,
     alias: Option[String])
   (@transient context: SQLContext)
   extends BaseRelation with Serializable with Logging {
 
   def carbonRelation: CarbonRelation = {
     CarbonEnv.getInstance(context)
-      .carbonCatalog.lookupRelation2(tableIdentifier, None)(sqlContext)
+      .carbonCatalog.lookupRelation1(tableIdentifier, None)(sqlContext)
       .asInstanceOf[CarbonRelation]
   }
 

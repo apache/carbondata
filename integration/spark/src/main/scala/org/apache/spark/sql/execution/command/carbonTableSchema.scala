@@ -27,6 +27,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
 import org.apache.spark.sql.hive.HiveContext
@@ -1101,15 +1102,9 @@ private[sql] case class ShowCreateTable(cm: tableModel, override val output: Seq
 
         if (sqlContext.tableNames(dbName).map(x => x.toLowerCase())
           .contains(tableName.toLowerCase())) {
-          if (dbName.nonEmpty) {
-            dataFrame = DataFrame(sqlContext,
-              sqlContext.catalog.lookupRelation(Seq(dbName, tableName)))
-          }
-          else {
-            dataFrame = DataFrame(sqlContext, sqlContext.catalog.lookupRelation(Seq(tableName)))
-          }
-        }
-        else {
+          dataFrame = DataFrame(sqlContext,
+            sqlContext.catalog.lookupRelation(TableIdentifier(tableName, Some(dbName))))
+        } else {
           LOGGER.error(s"Input source table $tableName does not exists")
           sys.error(s"Input source table $tableName does not exists")
         }
@@ -1164,7 +1159,7 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
 
     val relation =
       CarbonEnv.getInstance(sqlContext).carbonCatalog
-        .lookupRelation1(Option(schemaName), tableName, None)(sqlContext)
+        .lookupRelation1(Option(schemaName), tableName)(sqlContext)
         .asInstanceOf[CarbonRelation]
     if (relation == null) {
       sys.error(s"Table $schemaName.$tableName does not exist")
@@ -1243,20 +1238,20 @@ private[sql] case class CreateCube(cm: tableModel) extends RunnableCommand {
       try {
         sqlContext.sql(
           s"""CREATE TABLE $dbName.$tbName USING org.apache.spark.sql.CarbonSource""" +
-          s""" OPTIONS (cubename "$dbName.$tbName", tablePath "$cubePath") """).collect
+          s""" OPTIONS (tableName "$dbName.$tbName", tablePath "$cubePath") """).collect
       } catch {
         case e: Exception =>
 
+          val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
           val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
-            .lookupRelation2(Seq(dbName, tbName))(sqlContext).asInstanceOf[CarbonRelation]
+            .lookupRelation1(identifier)(sqlContext).asInstanceOf[CarbonRelation]
           if (relation != null) {
             LOGGER.audit(s"Deleting Table [$tbName] under Database [$dbName]" +
                          "as create TABLE failed")
             CarbonEnv.getInstance(sqlContext).carbonCatalog
-              .dropCube(relation.cubeMeta.partitioner.partitionCount,
+              .dropTable(relation.cubeMeta.partitioner.partitionCount,
                 relation.cubeMeta.storePath,
-                dbName,
-                tbName)(sqlContext)
+                identifier)(sqlContext)
           }
 
           LOGGER.audit(s"Table creation with Database name [$dbName] " +
@@ -1289,24 +1284,21 @@ private[sql] case class DeleteLoadsById(
 
     // validate load ids first
     validateLoadIds
-    val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val dbName = getDB.getDatabaseName(schemaNameOp, sqlContext)
 
+    val identifier = TableIdentifier(tableName, Option(dbName))
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
-      Option(schemaName),
-      tableName,
-      None)(sqlContext).asInstanceOf[CarbonRelation]
+      identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
-      LOGGER.audit(s"The delete load by Id is failed. Table $schemaName.$tableName does not exist")
-      sys.error(s"Table $schemaName.$tableName does not exist")
+      LOGGER.audit(s"The delete load by Id is failed. Table $dbName.$tableName does not exist")
+      sys.error(s"Table $dbName.$tableName does not exist")
     }
 
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(schemaName + '_' + tableName)
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(dbName + '_' + tableName)
 
     if (null == carbonTable) {
-      CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
-        Option(schemaName),
-        tableName,
-        None)(sqlContext).asInstanceOf[CarbonRelation]
+      CarbonEnv.getInstance(sqlContext).carbonCatalog
+        .lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
     }
     val path = carbonTable.getMetaDataFilepath
 
@@ -1359,30 +1351,24 @@ private[sql] case class DeleteLoadsByLoadDate(
   def run(sqlContext: SQLContext): Seq[Row] = {
 
     LOGGER.audit("The delete load by load date request has been received.")
-    val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
-
-    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
-      Option(schemaName),
-      tableName,
-     None
-    )(sqlContext).asInstanceOf[CarbonRelation]
+    val dbName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val identifier = TableIdentifier(tableName, Option(dbName))
+    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
+      .lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
       LOGGER
-        .audit(s"The delete load by load date is failed. Table $schemaName.$tableName does not " +
+        .audit(s"The delete load by load date is failed. Table $dbName.$tableName does not " +
          s"exist")
-      sys.error(s"Table $schemaName.$tableName does not exist")
+      sys.error(s"Table $dbName.$tableName does not exist")
     }
 
     var carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-      .getCarbonTable(schemaName + '_' + tableName)
+      .getCarbonTable(dbName + '_' + tableName)
     var segmentStatusManager = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
 
     if (null == carbonTable) {
-      var relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
-        Option(schemaName),
-        tableName,
-        None
-      )(sqlContext).asInstanceOf[CarbonRelation]
+      var relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
+        .lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
     }
     var path = carbonTable.getMetaDataFilepath()
 
@@ -1409,19 +1395,20 @@ private[sql] case class LoadCube(
 
   def run(sqlContext: SQLContext): Seq[Row] = {
 
-    val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val dbName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val identifier = TableIdentifier(tableName, Option(dbName))
     if (isOverwriteExist) {
-      sys.error("Overwrite is not supported for carbon table with " + schemaName + "." + tableName)
+      sys.error("Overwrite is not supported for carbon table with " + dbName + "." + tableName)
     }
     if (null == org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
-      .getCarbonTable(schemaName + "_" + tableName)) {
-      logError("Data loading failed. table not found: " + schemaName + "_" + tableName)
-      LOGGER.audit("Data loading failed. table not found: " + schemaName + "_" + tableName)
-      sys.error("Data loading failed. table not found: " + schemaName + "_" + tableName)
+      .getCarbonTable(dbName + "_" + tableName)) {
+      logError("Data loading failed. table not found: " + dbName + "_" + tableName)
+      LOGGER.audit("Data loading failed. table not found: " + dbName + "_" + tableName)
+      sys.error("Data loading failed. table not found: " + dbName + "_" + tableName)
     }
     CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
     val carbonLock = CarbonLockFactory.getCarbonLockObj(org.carbondata.core.
-      carbon.metadata.CarbonMetadata.getInstance().getCarbonTable(schemaName + "_" + tableName).
+      carbon.metadata.CarbonMetadata.getInstance().getCarbonTable(dbName + "_" + tableName).
       getMetaDataFilepath, LockUsage.METADATA_LOCK)
     try {
       if (carbonLock.lockWithRetries()) {
@@ -1432,12 +1419,10 @@ private[sql] case class LoadCube(
       }
 
       val factPath = FileUtils.getPaths(CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser))
-      val relation =
-        CarbonEnv.getInstance(sqlContext).carbonCatalog
-          .lookupRelation1(Option(schemaName), tableName, None)(sqlContext)
-          .asInstanceOf[CarbonRelation]
+      val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
+        .lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
       if (relation == null) {
-        sys.error(s"Table $schemaName.$tableName does not exist")
+        sys.error(s"Table $dbName.$tableName does not exist")
       }
       val carbonLoadModel = new CarbonLoadModel()
       carbonLoadModel.setTableName(relation.cubeMeta.carbonTableIdentifier.getTableName)
@@ -1511,7 +1496,7 @@ private[sql] case class LoadCube(
         if (null == relation.cubeMeta.partitioner.partitionColumn ||
             relation.cubeMeta.partitioner.partitionColumn(0).isEmpty) {
           LOGGER.info("Initiating Direct Load for the Table : (" +
-                      schemaName + "." + tableName + ")")
+                      dbName + "." + tableName + ")")
           carbonLoadModel.setFactFilePath(factPath)
           carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimiter))
           carbonLoadModel.setCsvHeader(fileHeader)
@@ -1526,9 +1511,9 @@ private[sql] case class LoadCube(
           partitionLocation += System.currentTimeMillis()
           FileFactory.mkdirs(partitionLocation, fileType)
           LOGGER.info("Initiating Data Partitioning for the Table : (" +
-                      schemaName + "." + tableName + ")")
+                      dbName + "." + tableName + ")")
           partitionStatus = CarbonContext.partitionData(
-            schemaName,
+            dbName,
             tableName,
             factPath,
             partitionLocation,
@@ -1605,8 +1590,9 @@ private[sql] case class PartitionData(databaseName: String, tableName: String, f
   var partitionStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
 
   def run(sqlContext: SQLContext): Seq[Row] = {
-    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
-      Option(databaseName), tableName, None)(sqlContext).asInstanceOf[CarbonRelation]
+    val identifier = TableIdentifier(tableName, Option(databaseName))
+    val relation = CarbonEnv.getInstance(sqlContext)
+      .carbonCatalog.lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
     val dimNames = relation.cubeMeta.carbonTable
       .getDimensionByTableName(tableName).asScala.map(_.getColName)
     val msrNames = relation.cubeMeta.carbonTable
@@ -1624,60 +1610,18 @@ private[sql] case class PartitionData(databaseName: String, tableName: String, f
   }
 }
 
-private[sql] case class LoadAggregationTable(
-    newSchema: CarbonTable,
-    schemaName: String,
-    cubeName: String,
-    aggTableName: String) extends RunnableCommand {
-
-  def run(sqlContext: SQLContext): Seq[Row] = {
-    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
-      Option(schemaName),
-      cubeName,
-      None)(sqlContext).asInstanceOf[CarbonRelation]
-    if (relation == null) {
-      sys.error(s"Table $schemaName.$cubeName does not exist")
-    }
-    val carbonLoadModel = new CarbonLoadModel()
-    carbonLoadModel.setTableName(cubeName)
-    val table = relation.cubeMeta.carbonTable
-    carbonLoadModel.setAggTableName(aggTableName)
-    carbonLoadModel.setTableName(table.getFactTableName)
-    carbonLoadModel.setAggLoadRequest(true)
-    var storeLocation = CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
-        System.getProperty("java.io.tmpdir"))
-    storeLocation = storeLocation + "/carbonstore/" + System.currentTimeMillis()
-    val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
-    var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
-    if (null == kettleHomePath) {
-      kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home")
-    }
-    if (kettleHomePath == null) {
-      sys.error(s"carbon.kettle.home is not set")
-    }
-    CarbonDataRDDFactory.loadCarbonData(
-      sqlContext,
-      carbonLoadModel,
-      storeLocation,
-      relation.cubeMeta.storePath,
-      kettleHomePath,
-      relation.cubeMeta.partitioner, columinar, isAgg = true)
-    Seq.empty
-  }
-}
-
-
 private[sql] case class ShowAllTablesInSchema(
     schemaNameOp: Option[String],
     override val output: Seq[Attribute]
 ) extends RunnableCommand {
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
-    val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
-    CarbonEnv.getInstance(sqlContext).carbonCatalog.getCubes(Some(schemaName))(sqlContext).map(
-      x => Row(x._1,
-        sqlContext.asInstanceOf[HiveContext].catalog.tableExists(Seq(schemaName, x._1))))
+    val dbName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    CarbonEnv.getInstance(sqlContext).carbonCatalog.getTables(Some(dbName))(sqlContext)
+      .map{x =>
+        Row(x._1, sqlContext.asInstanceOf[HiveContext]
+          .catalog.tableExists(TableIdentifier(x._1, Some(dbName))))
+      }
   }
 }
 
@@ -1685,9 +1629,9 @@ private[sql] case class ShowAllTables(override val output: Seq[Attribute])
   extends RunnableCommand {
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
-    CarbonEnv.getInstance(sqlContext).carbonCatalog.getAllCubes()(sqlContext)
+    CarbonEnv.getInstance(sqlContext).carbonCatalog.getAllTables()(sqlContext)
       .map { x =>
-        Row(x._1, x._2, sqlContext.asInstanceOf[HiveContext].catalog.tableExists(Seq(x._1, x._2)))
+        Row(x.database.get, x.table, sqlContext.asInstanceOf[HiveContext].catalog.tableExists(x))
       }
   }
 
@@ -1705,18 +1649,19 @@ private[sql] case class ShowAllTablesDetail(
   }
 }
 
-private[sql] case class MergeTable(schemaName: String, cubeName: String, tableName: String)
+private[sql] case class MergeTable(dbName: String, cubeName: String, tableName: String)
   extends RunnableCommand {
 
   def run(sqlContext: SQLContext): Seq[Row] = {
+    val identifier = TableIdentifier(tableName, Option(cubeName))
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
-      .lookupRelation2(Seq(schemaName, cubeName), None)(sqlContext).asInstanceOf[CarbonRelation]
+      .lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
-      sys.error(s"Table $schemaName.$cubeName does not exist")
+      sys.error(s"Table $dbName.$cubeName does not exist")
     }
     val carbonLoadModel = new CarbonLoadModel()
     carbonLoadModel.setTableName(cubeName)
-    carbonLoadModel.setDatabaseName(schemaName)
+    carbonLoadModel.setDatabaseName(dbName)
     val table = relation.cubeMeta.carbonTable
     var isTablePresent = false
     if (table.getFactTableName.equals(tableName)) {
@@ -1749,34 +1694,35 @@ private[sql] case class MergeTable(schemaName: String, cubeName: String, tableNa
 }
 
 private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Option[String],
-    cubeName: String)
+    tableName: String)
   extends RunnableCommand {
 
   def run(sqlContext: SQLContext): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val dbName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val identifier = TableIdentifier(tableName, Option(dbName))
     val tmpTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
-      .getCarbonTable(schemaName + "_" + cubeName)
+      .getCarbonTable(dbName + "_" + tableName)
     if (null == tmpTable) {
       if (!ifExistsSet) {
         LOGGER
-          .audit(s"Dropping carbon table with Database name [$schemaName] and Table name" +
+          .audit(s"Dropping carbon table with Database name [$dbName] and Table name" +
                  "[$cubeName] failed")
-        LOGGER.error(s"Carbon Table $schemaName.$cubeName metadata does not exist")
+        LOGGER.error(s"Carbon Table $dbName.$tableName metadata does not exist")
       }
-      if (sqlContext.tableNames(schemaName).map(x => x.toLowerCase())
-        .contains(cubeName.toLowerCase())) {
+      if (sqlContext.tableNames(dbName).map(x => x.toLowerCase())
+        .contains(tableName.toLowerCase())) {
         try {
           sqlContext.asInstanceOf[HiveContext].catalog.client.
-            runSqlHive(s"DROP TABLE IF EXISTS $schemaName.$cubeName")
+            runSqlHive(s"DROP TABLE IF EXISTS $dbName.$tableName")
         } catch {
           case e: RuntimeException =>
             LOGGER.audit(
-              s"Error While deleting the table $schemaName.$cubeName during drop carbon table" +
+              s"Error While deleting the table $dbName.$tableName during drop carbon table" +
               e.getMessage)
         }
       } else if (!ifExistsSet) {
-        sys.error(s"Carbon Table $schemaName.$cubeName does not exist")
+        sys.error(s"Carbon Table $dbName.$tableName does not exist")
       }
     } else {
       CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
@@ -1787,32 +1733,33 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
           logInfo("Successfully able to get the table metadata file lock")
         } else {
           LOGGER.audit(
-            s"Dropping table with Database name [$schemaName] and Table name [$cubeName] " +
+            s"Dropping table with Database name [$dbName] and Table name [$tableName] " +
             s"failed as the Table is locked")
           sys.error("Table is locked for updation. Please try after some time")
         }
 
         val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
-          .lookupRelation2(Seq(schemaName, cubeName))(sqlContext).asInstanceOf[CarbonRelation]
+          .lookupRelation1(identifier)(sqlContext).asInstanceOf[CarbonRelation]
 
         if (relation == null) {
           if (!ifExistsSet) {
-            sys.error(s"Table $schemaName.$cubeName does not exist")
+            sys.error(s"Table $dbName.$tableName does not exist")
           }
         } else {
-          LOGGER.audit(s"Deleting table [$cubeName] under database [$schemaName]")
+          LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
 
           CarbonEnv.getInstance(sqlContext).carbonCatalog
-            .dropCube(relation.cubeMeta.partitioner.partitionCount,
+            .dropTable(relation.cubeMeta.partitioner.partitionCount,
               relation.cubeMeta.storePath,
-              relation.cubeMeta.carbonTableIdentifier.getDatabaseName,
-              relation.cubeMeta.carbonTableIdentifier.getTableName)(sqlContext)
+              TableIdentifier(relation.cubeMeta.carbonTableIdentifier.getTableName,
+                Some(relation.cubeMeta.carbonTableIdentifier.getDatabaseName))
+              )(sqlContext)
           CarbonDataRDDFactory
-            .dropCube(sqlContext.sparkContext, schemaName, cubeName,
+            .dropCube(sqlContext.sparkContext, dbName, tableName,
               relation.cubeMeta.partitioner)
-          QueryPartitionHelper.getInstance().removePartition(schemaName, cubeName)
+          QueryPartitionHelper.getInstance().removePartition(dbName, tableName)
 
-          LOGGER.audit(s"Deleted table [$cubeName] under database [$schemaName]")
+          LOGGER.audit(s"Deleted table [$tableName] under database [$dbName]")
         }
       }
       finally {
@@ -1825,7 +1772,7 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
               CarbonUtil.deleteFoldersAndFiles(file.getParentFile)
             }
             // delete bad record log after drop cube
-            val badLogPath = CarbonUtil.getBadLogPath(schemaName +  File.separator + cubeName)
+            val badLogPath = CarbonUtil.getBadLogPath(dbName +  File.separator + tableName)
             val badLogFileType = FileFactory.getFileType(badLogPath)
             if (FileFactory.isFileExist(badLogPath, badLogFileType)) {
               val file = FileFactory.getCarbonFile(badLogPath, badLogFileType)
@@ -1847,19 +1794,20 @@ private[sql] case class DropAggregateTableCommand(ifExistsSet: Boolean,
     tableName: String) extends RunnableCommand {
 
   def run(sqlContext: SQLContext): Seq[Row] = {
-    val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
-    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.
-      lookupRelation1(Some(schemaName), tableName, None)(sqlContext).asInstanceOf[CarbonRelation]
+    val dbName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val identifier = TableIdentifier(tableName, Option(dbName))
+    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
+      .lookupRelation1(identifier)(sqlContext).asInstanceOf[CarbonRelation]
 
     if (relation == null) {
       if (!ifExistsSet) {
-        sys.error(s"Aggregate Table $schemaName.$tableName does not exist")
+        sys.error(s"Aggregate Table $dbName.$tableName does not exist")
       }
     }
     else {
       CarbonDataRDDFactory.dropAggregateTable(
         sqlContext.sparkContext,
-        schemaName,
+        dbName,
         tableName,
         relation.cubeMeta.partitioner)
     }
@@ -1941,12 +1889,12 @@ private[sql] case class ShowAggregateTables(
 private[sql] case class DescribeCommandFormatted(
     child: SparkPlan,
     override val output: Seq[Attribute],
-    tblIdentifier: Seq[String])
+    tblIdentifier: TableIdentifier)
   extends RunnableCommand {
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
-      .lookupRelation2(tblIdentifier, None)(sqlContext).asInstanceOf[CarbonRelation]
+      .lookupRelation1(tblIdentifier)(sqlContext).asInstanceOf[CarbonRelation]
     var results: Seq[(String, String, String)] = child.schema.fields.map { field =>
       val comment = if (relation.metaData.dims.contains(field.name)) {
         val dimension = relation.metaData.carbonTable.getDimensionByName(
@@ -2036,15 +1984,16 @@ private[sql] case class DeleteLoadByDate(
   def run(sqlContext: SQLContext): Seq[Row] = {
 
     LOGGER.audit("The delete load by date request has been received.")
-    val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val dbName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val identifier = TableIdentifier(cubeName, Option(dbName))
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
-      .lookupRelation1(Some(schemaName), cubeName, None)(sqlContext).asInstanceOf[CarbonRelation]
+      .lookupRelation1(identifier)(sqlContext).asInstanceOf[CarbonRelation]
     var level: String = ""
     var carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata
-         .getInstance().getCarbonTable(schemaName + '_' + cubeName)
+         .getInstance().getCarbonTable(dbName + '_' + cubeName)
     if (relation == null) {
-      LOGGER.audit(s"The delete load by date is failed. Table $schemaName.$cubeName does not exist")
-      sys.error(s"Table $schemaName.$cubeName does not exist")
+      LOGGER.audit(s"The delete load by date is failed. Table $dbName.$cubeName does not exist")
+      sys.error(s"Table $dbName.$cubeName does not exist")
     }
 
     val matches: Seq[AttributeReference] = relation.dimensionsAttr.filter(
@@ -2054,8 +2003,8 @@ private[sql] case class DeleteLoadByDate(
     if (matches.isEmpty) {
       LOGGER.audit(
         "The delete load by date is failed. " +
-        "Table $schemaName.$cubeName does not contain date field " + dateField)
-      sys.error(s"Table $schemaName.$cubeName does not contain date field " + dateField)
+        "Table $dbName.$cubeName does not contain date field " + dateField)
+      sys.error(s"Table $dbName.$cubeName does not contain date field " + dateField)
     }
     else {
       level = matches.asJava.get(0).name
@@ -2067,7 +2016,7 @@ private[sql] case class DeleteLoadByDate(
     CarbonDataRDDFactory.deleteLoadByDate(
       sqlContext,
       new CarbonDataLoadSchema(carbonTable),
-      schemaName,
+      dbName,
       cubeName,
       tableName,
       CarbonEnv.getInstance(sqlContext).carbonCatalog.storePath,
@@ -2089,13 +2038,14 @@ private[sql] case class CleanFiles(
 
   def run(sqlContext: SQLContext): Seq[Row] = {
     LOGGER.audit("The clean files request has been received.")
-    val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val dbName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val identifier = TableIdentifier(cubeName, Option(dbName))
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
-      .lookupRelation1(Some(schemaName), cubeName, None)(sqlContext).
+      .lookupRelation1(identifier)(sqlContext).
       asInstanceOf[CarbonRelation]
     if (relation == null) {
-      LOGGER.audit(s"The clean files request is failed. Table $schemaName.$cubeName does not exist")
-      sys.error(s"Table $schemaName.$cubeName does not exist")
+      LOGGER.audit(s"The clean files request is failed. Table $dbName.$cubeName does not exist")
+      sys.error(s"Table $dbName.$cubeName does not exist")
     }
 
     val carbonLoadModel = new CarbonLoadModel()
