@@ -440,8 +440,7 @@ public class GraphGenerator {
     csvInputMeta.setBlocksID(this.blocksID);
     csvDataStep.setDraw(true);
     csvDataStep.setDescription("Read raw data from " + GraphGeneratorConstants.CSV_INPUT);
-    csvInputMeta.setDatabaseName(schemaInfo.getSchemaName());
-    csvInputMeta.setTableName(schemaInfo.getCubeName());
+
     return csvDataStep;
   }
 

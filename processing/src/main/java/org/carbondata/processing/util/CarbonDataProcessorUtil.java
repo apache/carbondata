@@ -79,6 +79,7 @@ public final class CarbonDataProcessorUtil {
     return fileBufferSize;
   }
 
+
   /**
    * Utility method to get level cardinality string
    *
@@ -152,6 +153,7 @@ public final class CarbonDataProcessorUtil {
       }
     }// CHECKSTYLE:ON
   }
+
 
   public static void checkResult(List<CheckResultInterface> remarks, StepMeta stepMeta,
       String[] input) {
@@ -273,35 +275,5 @@ public final class CarbonDataProcessorUtil {
         carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId + "");
     String localDataLoadFolderLocation = carbonDataDirectoryPath + File.separator + taskId;
     return localDataLoadFolderLocation;
-  }
-
-  /**
-   * The method returns the bad record store location
-   *
-   * @param storeLocation
-   * @return
-   */
-  public static String getBadLogStoreLocation(String storeLocation) {
-    String badLogStoreLocation =
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
-    badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
-
-    return badLogStoreLocation;
-  }
-
-  /**
-   * method returns the bad log file name
-   *
-   * @param csvFilepath
-   * @return
-   */
-  public static String getBagLogFileName(String csvFilepath) {
-    csvFilepath = new File(csvFilepath).getName();
-    if (csvFilepath.indexOf(".") > -1) {
-      csvFilepath = csvFilepath.substring(0, csvFilepath.indexOf("."));
-    }
-
-    return csvFilepath + '_' + System.currentTimeMillis() + ".log";
-
   }
 }

@@ -27,8 +27,6 @@ import java.util.List;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.BlockDetails;
-import org.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordslogger;
-import org.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.apache.commons.vfs.FileObject;
 import org.pentaho.di.core.exception.KettleConversionException;
@@ -54,21 +52,19 @@ public class BlockDataHandler {
   public int bufferSize;
   public long bytesToSkipInFirstFile;
   public long totalBytesRead;
-  public CsvInputMeta meta;
-  public CsvInputData data;
+  public CsvInputMeta meta ;
+  public CsvInputData data ;
   public TransMeta transMeta;
   public boolean isNeedToSkipFirstLineInBlock;
   public long currentOffset;
 
   protected InputStream bufferedInputStream;
-  protected BadRecordslogger badRecordslogger;
-  private String badRecordFileName;
+
 
   public BlockDataHandler() {
     byteBuffer = new byte[] {};
     isNeedToSkipFirstLineInBlock = true;
     currentOffset = 0;
-
   }
 
   // Resize
@@ -202,12 +198,7 @@ public class BlockDataHandler {
 
       // Don't skip again in the next file...
       this.bytesToSkipInFirstFile = -1L;
-      String key = meta.getDatabaseName() + '/' + meta.getTableName() + '_' + meta.getTableName();
-      badRecordFileName = transMeta.getVariable("csvInputFilePath");
-      badRecordFileName = null != badRecordFileName ? badRecordFileName : meta.getTableName();
-      badRecordFileName = CarbonDataProcessorUtil.getBagLogFileName(badRecordFileName);
-      badRecordslogger = new BadRecordslogger(key, badRecordFileName, CarbonDataProcessorUtil
-          .getBadLogStoreLocation(meta.getDatabaseName() + '/' + meta.getTableName()));
+
       return true;
     } catch (KettleException e) {
       throw e;
@@ -215,12 +206,11 @@ public class BlockDataHandler {
       throw new KettleException(e);
     }
   }
-
   protected void initializeFileReader(FileObject fileObject) throws IOException {
     //using file object to get path can return a valid path which for new inputstream
     String filePath = KettleVFS.getFilename(fileObject);
-    this.bufferedInputStream = FileFactory
-        .getDataInputStream(filePath, FileFactory.getFileType(filePath), data.preferredBufferSize);
+    this.bufferedInputStream = FileFactory.getDataInputStream(filePath,
+        FileFactory.getFileType(filePath), data.preferredBufferSize);
     //when open a new file, need to initialize all info
     this.byteBuffer = new byte[data.preferredBufferSize];
     this.bufferSize = 0;
@@ -228,16 +218,14 @@ public class BlockDataHandler {
     this.endBuffer = 0;
     this.currentOffset = 0;
   }
-
   /**
-   * skip the offset and reset the value
-   *
+   *  skip the offset and reset the value
    * @param filePath
    * @param offset
    * @throws IOException
    */
-  protected void initializeFileReader(String filePath, long offset)
-      throws IOException, KettleFileException {
+  protected void initializeFileReader(String filePath,long offset) throws IOException,
+          KettleFileException {
     if (this.bufferedInputStream != null) {
       this.bufferedInputStream.close();
     }
@@ -248,9 +236,8 @@ public class BlockDataHandler {
       filePath = KettleVFS.getFilename(fileObject);
     }
 
-    this.bufferedInputStream = FileFactory
-        .getDataInputStream(filePath, FileFactory.getFileType(filePath), data.preferredBufferSize,
-            offset);
+    this.bufferedInputStream = FileFactory.getDataInputStream(filePath,
+        FileFactory.getFileType(filePath), data.preferredBufferSize,offset);
     this.byteBuffer = new byte[data.preferredBufferSize];
     this.bufferSize = 0;
     this.startBuffer = 0;
@@ -268,334 +255,337 @@ public class BlockDataHandler {
   public Object[] readOneRow(boolean doConversions) throws KettleException {
 
     try {
-      while (true) {
-        Object[] outputRowData =
-            RowDataUtil.allocateRowData(data.outputRowMeta.size() - RowDataUtil.OVER_ALLOCATE_SIZE);
-        int outputIndex = 0;
-        boolean newLineFound = false;
-        boolean endOfBuffer = false;
-        int newLines = 0;
-        List<Exception> conversionExceptions = null;
-        List<ValueMetaInterface> exceptionFields = null;
 
-        // The strategy is as follows...
-        // We read a block of byte[] from the file.
-        // We scan for the separators in the file (NOT for line feeds etc)
-        // Then we scan that block of data.
-        // We keep a byte[] that we extend if needed..
-        // At the end of the block we read another, etc.
-        //
-        // Let's start by looking where we left off reading.
-        //
-        while (!newLineFound && outputIndex < meta.getInputFields().length) {
+      Object[] outputRowData = RowDataUtil
+          .allocateRowData(data.outputRowMeta.size() - RowDataUtil.OVER_ALLOCATE_SIZE);
+      int outputIndex = 0;
+      boolean newLineFound = false;
+      boolean endOfBuffer = false;
+      int newLines = 0;
+      List<Exception> conversionExceptions = null;
+      List<ValueMetaInterface> exceptionFields = null;
 
-          if (checkBufferSize() && outputRowData != null) {
-            // Last row was being discarded if the last item is null and
-            // there is no end of line delimiter
-            //if (outputRowData != null) {
-            // Make certain that at least one record exists before
-            // filling the rest of them with null
-            if (outputIndex > 0) {
-              return (outputRowData);
-            }
+      // The strategy is as follows...
+      // We read a block of byte[] from the file.
+      // We scan for the separators in the file (NOT for line feeds etc)
+      // Then we scan that block of data.
+      // We keep a byte[] that we extend if needed..
+      // At the end of the block we read another, etc.
+      //
+      // Let's start by looking where we left off reading.
+      //
+      while (!newLineFound && outputIndex < meta.getInputFields().length) {
 
-            return null; // nothing more to read, call it a day.
+        if (checkBufferSize() && outputRowData != null) {
+          // Last row was being discarded if the last item is null and
+          // there is no end of line delimiter
+          //if (outputRowData != null) {
+          // Make certain that at least one record exists before
+          // filling the rest of them with null
+          if (outputIndex > 0) {
+            return (outputRowData);
           }
 
-          // OK, at this point we should have data in the byteBuffer and we should be able
-          // to scan for the next
-          // delimiter (;)
-          // So let's look for a delimiter.
-          // Also skip over the enclosures ("), it is NOT taking into account
-          // escaped enclosures.
-          // Later we can add an option for having escaped or double enclosures
-          // in the file. <sigh>
+          return null; // nothing more to read, call it a day.
+        }
+
+        // OK, at this point we should have data in the byteBuffer and we should be able
+        // to scan for the next
+        // delimiter (;)
+        // So let's look for a delimiter.
+        // Also skip over the enclosures ("), it is NOT taking into account
+        // escaped enclosures.
+        // Later we can add an option for having escaped or double enclosures
+        // in the file. <sigh>
+        //
+        boolean delimiterFound = false;
+        boolean enclosureFound = false;
+        int escapedEnclosureFound = 0;
+        while (!delimiterFound) {
+          // If we find the first char, we might find others as well ;-)
+          // Single byte delimiters only for now.
           //
-          boolean delimiterFound = false;
-          boolean enclosureFound = false;
-          int escapedEnclosureFound = 0;
-          while (!delimiterFound) {
-            // If we find the first char, we might find others as well ;-)
-            // Single byte delimiters only for now.
-            //
-            if (data.delimiterMatcher
-                .matchesPattern(this.byteBuffer, this.endBuffer, data.delimiter)) {
-              delimiterFound = true;
+          if (data.delimiterMatcher
+              .matchesPattern(this.byteBuffer, this.endBuffer, data.delimiter)) {
+            delimiterFound = true;
+          }
+          // Perhaps we found a (pre-mature) new line?
+          //
+          else if (
+              // In case we are not using an enclosure and in case fields contain new
+              // lines we need to make sure that we check the newlines possible flag.
+              // If the flag is enable we skip newline checking except for the last field
+              // in the row. In that one we can't support newlines without
+              // enclosure (handled below).
+              //
+              (!meta.isNewlinePossibleInFields()
+                  || outputIndex == meta.getInputFields().length - 1) && (
+                  data.crLfMatcher.isReturn(this.byteBuffer, this.endBuffer)
+                      || data.crLfMatcher
+                      .isLineFeed(this.byteBuffer, this.endBuffer))) {
+
+            if (data.encodingType.equals(EncodingType.DOUBLE_LITTLE_ENDIAN)
+                || data.encodingType.equals(EncodingType.DOUBLE_BIG_ENDIAN)) {
+              this.endBuffer += 2;
+              this.currentOffset +=2;
+            } else {
+              this.endBuffer++;
+              this.currentOffset++;
             }
-            // Perhaps we found a (pre-mature) new line?
-            //
-            else if (
-                // In case we are not using an enclosure and in case fields contain new
-                // lines we need to make sure that we check the newlines possible flag.
-                // If the flag is enable we skip newline checking except for the last field
-                // in the row. In that one we can't support newlines without
-                // enclosure (handled below).
-                (!meta.isNewlinePossibleInFields()
-                    || outputIndex == meta.getInputFields().length - 1) && (
-                    data.crLfMatcher.isReturn(this.byteBuffer, this.endBuffer) || data.crLfMatcher
-                        .isLineFeed(this.byteBuffer, this.endBuffer))) {
 
-              if (data.encodingType.equals(EncodingType.DOUBLE_LITTLE_ENDIAN) || data.encodingType
-                  .equals(EncodingType.DOUBLE_BIG_ENDIAN)) {
-                this.endBuffer += 2;
-                this.currentOffset += 2;
-              } else {
-                this.endBuffer++;
-                this.currentOffset++;
-              }
+            this.totalBytesRead++;
+            newLines = 1;
 
+            if (this.endBuffer >= this.bufferSize) {
+              // Oops, we need to read more data...
+              // Better resize this before we read other things in it...
+              //
+              this.resizeByteBufferArray();
+
+              // Also read another chunk of data, now that we have the space for it...
+              // Ignore EOF, there might be other stuff in the buffer.
+              //
+              this.readBufferFromFile();
+            }
+
+            // re-check for double delimiters...
+            if (data.crLfMatcher.isReturn(this.byteBuffer, this.endBuffer)
+                || data.crLfMatcher.isLineFeed(this.byteBuffer, this.endBuffer)) {
+              this.endBuffer++;
+              this.currentOffset++;
               this.totalBytesRead++;
-              newLines = 1;
-
+              newLines = 2;
               if (this.endBuffer >= this.bufferSize) {
                 // Oops, we need to read more data...
                 // Better resize this before we read other things in it...
                 //
                 this.resizeByteBufferArray();
 
-                // Also read another chunk of data, now that we have the space for it...
+                // Also read another chunk of data, now that we have the space for
+                // it...
                 // Ignore EOF, there might be other stuff in the buffer.
                 //
                 this.readBufferFromFile();
               }
+            }
 
-              // re-check for double delimiters...
-              if (data.crLfMatcher.isReturn(this.byteBuffer, this.endBuffer) || data.crLfMatcher
-                  .isLineFeed(this.byteBuffer, this.endBuffer)) {
-                this.endBuffer++;
-                this.currentOffset++;
-                this.totalBytesRead++;
-                newLines = 2;
-                if (this.endBuffer >= this.bufferSize) {
-                  // Oops, we need to read more data...
-                  // Better resize this before we read other things in it...
-                  //
-                  this.resizeByteBufferArray();
+            newLineFound = true;
+            delimiterFound = true;
+          }
+          // Perhaps we need to skip over an enclosed part?
+          // We always expect exactly one enclosure character
+          // If we find the enclosure doubled, we consider it escaped.
+          // --> "" is converted to " later on.
+          //
+          else if (data.enclosure != null && data.enclosureMatcher
+              .matchesPattern(this.byteBuffer, this.endBuffer, data.enclosure)) {
 
-                  // Also read another chunk of data, now that we have the space for
-                  // it...
-                  // Ignore EOF, there might be other stuff in the buffer.
-                  //
-                  this.readBufferFromFile();
+            enclosureFound = true;
+            boolean keepGoing;
+            do {
+              if (this.increaseEndBuffer()) {
+                enclosureFound = false;
+                break;
+              }
+
+              if (!doConversions) {
+                //when catch the block which need to skip first line
+                //the complete row like: abc,"cdf","efg",hij
+                //but this row is split to different blocks
+                //in this block,the remaining row like :  fg",hij
+                //so if we meet the enclosure in the skip line, when we meet \r or \n ,let's break
+                if (data.crLfMatcher.isReturn(this.byteBuffer, this.endBuffer)
+                        || data.crLfMatcher.isLineFeed(this.byteBuffer, this.endBuffer)) {
+                  enclosureFound = false;
+                  break;
                 }
               }
 
-              newLineFound = true;
-              delimiterFound = true;
-            }
-            // Perhaps we need to skip over an enclosed part?
-            // We always expect exactly one enclosure character
-            // If we find the enclosure doubled, we consider it escaped.
-            // --> "" is converted to " later on.
-            //
-            else if (data.enclosure != null && data.enclosureMatcher
-                .matchesPattern(this.byteBuffer, this.endBuffer, data.enclosure)) {
-
-              enclosureFound = true;
-              boolean keepGoing;
-              do {
+              keepGoing = !data.enclosureMatcher
+                  .matchesPattern(this.byteBuffer, this.endBuffer,
+                      data.enclosure);
+              if (!keepGoing) {
+                // We found an enclosure character.
+                // Read another byte...
                 if (this.increaseEndBuffer()) {
                   enclosureFound = false;
                   break;
                 }
 
-                if (!doConversions) {
-                  //when catch the block which need to skip first line
-                  //the complete row like: abc,"cdf","efg",hij
-                  //but this row is split to different blocks
-                  //in this block,the remaining row like :  fg",hij
-                  //so if we meet the enclosure in the skip line, when we meet \r or \n ,let's break
-                  if (data.crLfMatcher.isReturn(this.byteBuffer, this.endBuffer) || data.crLfMatcher
-                      .isLineFeed(this.byteBuffer, this.endBuffer)) {
-                    enclosureFound = false;
-                    break;
-                  }
-                }
-
-                keepGoing = !data.enclosureMatcher
-                    .matchesPattern(this.byteBuffer, this.endBuffer, data.enclosure);
-                if (!keepGoing) {
-                  // We found an enclosure character.
-                  // Read another byte...
-                  if (this.increaseEndBuffer()) {
-                    enclosureFound = false;
-                    break;
-                  }
-
-                  // If this character is also an enclosure, we can consider the
-                  // enclosure "escaped".
-                  // As such, if this is an enclosure, we keep going...
-                  //
-                  keepGoing = data.enclosureMatcher
-                      .matchesPattern(this.byteBuffer, this.endBuffer, data.enclosure);
-                  if (keepGoing) {
-                    escapedEnclosureFound++;
-                  } else {
-                    /**
-                     * <pre>
-                     * fix for customer issue.
-                     * after last enclosure there must be either field end or row
-                     * end otherwise enclosure is field content.
-                     * Example:
-                     * EMPNAME, COMPANY
-                     * 'emp'aa','comab'
-                     * 'empbb','com'cd'
-                     * Here enclosure after emp(emp') and after com(com')
-                     * are not the last enclosures
-                     * </pre>
-                     */
-                    keepGoing = !(data.delimiterMatcher
-                        .matchesPattern(this.byteBuffer, this.endBuffer, data.delimiter)
-                        || data.crLfMatcher.isReturn(this.byteBuffer, this.endBuffer)
-                        || data.crLfMatcher.isLineFeed(this.byteBuffer, this.endBuffer));
-                  }
-
-                }
-              } while (keepGoing);
-
-              // Did we reach the end of the buffer?
-              //
-              if (this.endBuffer >= this.bufferSize) {
-                newLineFound = true; // consider it a newline to break out of the upper
-                // while loop
-                newLines += 2; // to remove the enclosures in case of missing
-                // newline on last line.
-                endOfBuffer = true;
-                break;
-              }
-            } else {
-
-              this.endBuffer++;
-              this.currentOffset++;
-              this.totalBytesRead++;
-
-              if (checkBufferSize()) {
-                if (this.endBuffer >= this.bufferSize) {
-                  newLineFound = true;
-                  break;
-                }
-              }
-            }
-          }
-
-          // If we're still here, we found a delimiter..
-          // Since the starting point never changed really, we just can grab range:
-          //
-          //    [startBuffer-endBuffer[
-          //
-          // This is the part we want.
-          // data.byteBuffer[data.startBuffer]
-          //
-          int length = calculateFieldLength(newLineFound, newLines, enclosureFound, endOfBuffer);
-
-          byte[] field = new byte[length];
-          System.arraycopy(this.byteBuffer, this.startBuffer, field, 0, length);
-
-          // Did we have any escaped characters in there?
-          //
-          if (escapedEnclosureFound > 0) {
-            field = this.removeEscapedEnclosures(field, escapedEnclosureFound);
-          }
-
-          if (doConversions) {
-            if (meta.isLazyConversionActive()) {
-              outputRowData[outputIndex++] = field;
-            } else {
-              // We're not lazy so we convert the data right here and now.
-              // The convert object uses binary storage as such we just have to ask
-              // the native type from it.
-              // That will do the actual conversion.
-              //
-              ValueMetaInterface sourceValueMeta = data.convertRowMeta.getValueMeta(outputIndex);
-              try {
-                // when found a blank line, outputRowData will be filled as
-                // Object array = ["@NU#LL$!BLANKLINE", null, null, ... ]
-                if (field.length == 0 && newLineFound && outputIndex == 0) {
-                  outputRowData[outputIndex++] = CarbonCommonConstants.BLANK_LINE_FLAG;
-                } else {
-                  outputRowData[outputIndex++] =
-                      sourceValueMeta.convertBinaryStringToNativeType(field);
-                }
-              } catch (KettleValueException e) {
-                // There was a conversion error,
+                // If this character is also an enclosure, we can consider the
+                // enclosure "escaped".
+                // As such, if this is an enclosure, we keep going...
                 //
-                outputRowData[outputIndex++] = null;
-
-                if (conversionExceptions == null) {
-                  conversionExceptions =
-                      new ArrayList<Exception>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-                  exceptionFields =
-                      new ArrayList<ValueMetaInterface>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+                keepGoing = data.enclosureMatcher
+                    .matchesPattern(this.byteBuffer, this.endBuffer,
+                        data.enclosure);
+                if (keepGoing) {
+                  escapedEnclosureFound++;
+                } else {
+                  /**
+                   * <pre>
+                   * fix for customer issue.
+                   * after last enclosure there must be either field end or row
+                   * end otherwise enclosure is field content.
+                   * Example:
+                   * EMPNAME, COMPANY
+                   * 'emp'aa','comab'
+                   * 'empbb','com'cd'
+                   * Here enclosure after emp(emp') and after com(com')
+                   * are not the last enclosures
+                   * </pre>
+                   */
+                  keepGoing = !(data.delimiterMatcher
+                      .matchesPattern(this.byteBuffer, this.endBuffer,
+                          data.delimiter) || data.crLfMatcher
+                      .isReturn(this.byteBuffer, this.endBuffer)
+                      || data.crLfMatcher
+                      .isLineFeed(this.byteBuffer, this.endBuffer));
                 }
 
-                conversionExceptions.add(e);
-                exceptionFields.add(sourceValueMeta);
               }
+            } while (keepGoing);
+
+            // Did we reach the end of the buffer?
+            //
+            if (this.endBuffer >= this.bufferSize) {
+              newLineFound = true; // consider it a newline to break out of the upper
+              // while loop
+              newLines += 2; // to remove the enclosures in case of missing
+              // newline on last line.
+              endOfBuffer = true;
+              break;
             }
           } else {
-            outputRowData[outputIndex++] = null; // nothing for the header, no conversions here.
-          }
 
-          // OK, move on to the next field...
-          if (!newLineFound) {
-            this.endBuffer++;
-            this.currentOffset++;
-            this.totalBytesRead++;
-          }
-          this.startBuffer = this.endBuffer;
-        }
-
-        // See if we reached the end of the line.
-        // If not, we need to skip the remaining items on the line until the next newline...
-        if (!newLineFound && !checkBufferSize()) {
-          while (!data.crLfMatcher.isReturn(this.byteBuffer, this.endBuffer) && !data.crLfMatcher
-              .isLineFeed(this.byteBuffer, this.endBuffer)) {
             this.endBuffer++;
             this.currentOffset++;
             this.totalBytesRead++;
 
             if (checkBufferSize()) {
-              break; // nothing more to read.
-            }
-
-            // HANDLE: if we're using quoting we might be dealing with a very dirty file
-            // with quoted newlines in trailing fields. (imagine that)
-            // In that particular case we want to use the same logic we use above
-            // (refactored a bit) to skip these fields.
-
-          }
-
-          if (!checkBufferSize()) {
-            while (data.crLfMatcher.isReturn(this.byteBuffer, this.endBuffer) || data.crLfMatcher
-                .isLineFeed(this.byteBuffer, this.endBuffer)) {
-              this.endBuffer++;
-              this.currentOffset++;
-              this.totalBytesRead++;
-              if (checkBufferSize()) {
-                break; // nothing more to read.
+              if (this.endBuffer >= this.bufferSize) {
+                newLineFound = true;
+                break;
               }
             }
           }
-
-          // Make sure we start at the right position the next time around.
-          this.startBuffer = this.endBuffer;
         }
 
-        //            incrementLinesInput();
-        if (conversionExceptions != null && conversionExceptions.size() > 0) {
-          // Forward the first exception
-          throw new KettleConversionException(
-              "There were " + conversionExceptions.size() + " conversion errors on line ",
-              conversionExceptions, exceptionFields, outputRowData);
+        // If we're still here, we found a delimiter..
+        // Since the starting point never changed really, we just can grab range:
+        //
+        //    [startBuffer-endBuffer[
+        //
+        // This is the part we want.
+        // data.byteBuffer[data.startBuffer]
+        //
+        int length =
+            calculateFieldLength(newLineFound, newLines, enclosureFound, endOfBuffer);
+
+        byte[] field = new byte[length];
+        System.arraycopy(this.byteBuffer, this.startBuffer, field, 0, length);
+
+        // Did we have any escaped characters in there?
+        //
+        if (escapedEnclosureFound > 0) {
+          field = this.removeEscapedEnclosures(field, escapedEnclosureFound);
         }
-        if (outputIndex > 0 && outputIndex < meta.getInputFields().length) {
-          badRecordslogger.addBadRecordsToBilder(outputRowData, meta.getInputFields().length,
-              "Row record is not in valid csv format.", null);
-          continue;
+
+        if (doConversions) {
+          if (meta.isLazyConversionActive()) {
+            outputRowData[outputIndex++] = field;
+          } else {
+            // We're not lazy so we convert the data right here and now.
+            // The convert object uses binary storage as such we just have to ask
+            // the native type from it.
+            // That will do the actual conversion.
+            //
+            ValueMetaInterface sourceValueMeta =
+                data.convertRowMeta.getValueMeta(outputIndex);
+            try {
+              // when found a blank line, outputRowData will be filled as
+              // Object array = ["@NU#LL$!BLANKLINE", null, null, ... ]
+              if (field.length == 0 && newLineFound && outputIndex == 0) {
+                outputRowData[outputIndex++] = CarbonCommonConstants.BLANK_LINE_FLAG;
+              } else {
+                outputRowData[outputIndex++] =
+                  sourceValueMeta.convertBinaryStringToNativeType(field);
+              }
+            } catch (KettleValueException e) {
+              // There was a conversion error,
+              //
+              outputRowData[outputIndex++] = null;
+
+              if (conversionExceptions == null) {
+                conversionExceptions = new ArrayList<Exception>(
+                    CarbonCommonConstants.CONSTANT_SIZE_TEN);
+                exceptionFields = new ArrayList<ValueMetaInterface>(
+                    CarbonCommonConstants.CONSTANT_SIZE_TEN);
+              }
+
+              conversionExceptions.add(e);
+              exceptionFields.add(sourceValueMeta);
+            }
+          }
         } else {
-          return outputRowData;
+          outputRowData[outputIndex++] =
+              null; // nothing for the header, no conversions here.
         }
+
+        // OK, move on to the next field...
+        if (!newLineFound) {
+          this.endBuffer++;
+          this.currentOffset++;
+          this.totalBytesRead++;
+        }
+        this.startBuffer = this.endBuffer;
       }
+
+      // See if we reached the end of the line.
+      // If not, we need to skip the remaining items on the line until the next newline...
+      if (!newLineFound && !checkBufferSize()) {
+        while (!data.crLfMatcher.isReturn(this.byteBuffer, this.endBuffer)
+                && !data.crLfMatcher.isLineFeed(this.byteBuffer, this.endBuffer)){
+          this.endBuffer++;
+          this.currentOffset++;
+          this.totalBytesRead++;
+
+          if (checkBufferSize()) {
+            break; // nothing more to read.
+          }
+
+          // HANDLE: if we're using quoting we might be dealing with a very dirty file
+          // with quoted newlines in trailing fields. (imagine that)
+          // In that particular case we want to use the same logic we use above
+          // (refactored a bit) to skip these fields.
+
+        }
+
+        if (!checkBufferSize()) {
+          while (data.crLfMatcher.isReturn(this.byteBuffer, this.endBuffer)
+              || data.crLfMatcher.isLineFeed(this.byteBuffer, this.endBuffer)) {
+            this.endBuffer++;
+            this.currentOffset++;
+            this.totalBytesRead++;
+            if (checkBufferSize()) {
+              break; // nothing more to read.
+            }
+          }
+        }
+
+        // Make sure we start at the right position the next time around.
+        this.startBuffer = this.endBuffer;
+      }
+
+
+      //            incrementLinesInput();
+      if (conversionExceptions != null && conversionExceptions.size() > 0) {
+        // Forward the first exception
+        throw new KettleConversionException("There were " + conversionExceptions.size()
+            + " conversion errors on line ", conversionExceptions, exceptionFields, outputRowData);
+      }
+
+      return outputRowData;
     } catch (KettleConversionException e) {
       throw e;
     } catch (Exception e) {
