@@ -1029,6 +1029,11 @@ public final class CarbonCommonConstants {
   public static final String CARBON_LOCK_TYPE_HDFS =
       "HDFSLOCK";
 
+  /**
+   * Lock file in zoo keeper will be of this name.
+   */
+  public static final String ZOOKEEPER_LOCK = "zookeeperLock";
+
   private CarbonCommonConstants() {
   }
 }

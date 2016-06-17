@@ -49,7 +49,7 @@ public class CarbonLockFactory {
         return new LocalFileLock(location, lockUsage);
 
       case CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER:
-        return new ZooKeeperLocking(lockUsage);
+        return new ZooKeeperLocking(location, lockUsage);
 
       case CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS:
         return new HdfsFileLock(location, lockUsage);

@@ -50,6 +50,11 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   private static final String zooKeeperLocation = CarbonCommonConstants.ZOOKEEPER_LOCATION;
 
   /**
+   * Unique folder for each cube with SchemaName_CubeName
+   */
+  private final String tableIdFolder;
+
+  /**
    * lockName is the name of the lock to use. This name should be same for every process that want
    * to share the same lock
    */
@@ -65,16 +70,29 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   /**
    * @param lockUsage
    */
-  public ZooKeeperLocking(LockUsage lockUsage) {
-    this.lockName = CarbonCommonConstants.METADATA_LOCK;
+  public ZooKeeperLocking(String location, LockUsage lockUsage) {
+    this.lockName = CarbonCommonConstants.ZOOKEEPER_LOCK;
     this.lockTypeFolder = zooKeeperLocation;
+    location = location.replace("\\", "/");
+    String tempStr = location.substring(0, location.lastIndexOf('/'));
+    String schemaName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
+
+    String cubeName = location.substring(location.lastIndexOf('/') + 1, location.length());
+
+    this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + schemaName
+        + '.' + cubeName;
 
     zk = ZookeeperInit.getInstance().getZookeeper();
 
-    this.lockTypeFolder =
-        zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockUsage.toString();
+    this.lockTypeFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + schemaName
+        + '.' + cubeName + CarbonCommonConstants.FILE_SEPARATOR
+        + lockUsage.toString();
     try {
       createBaseNode();
+      // if exists returns null then path doesnt exist. so creating.
+      if (null == zk.exists(this.tableIdFolder, true)) {
+        zk.create(this.tableIdFolder, new byte[1], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+      }
       // if exists returns null then path doesnt exist. so creating.
       if (null == zk.exists(this.lockTypeFolder, true)) {
         zk.create(this.lockTypeFolder, new byte[1], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
