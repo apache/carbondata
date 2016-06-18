@@ -177,13 +177,11 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
    * Below method will used to get the result
    */
   @Override public Result getAggregatedResult() {
-    Result result = new ListBasedResult();
+    Result<List<ListBasedResultWrapper>, Object> result = new ListBasedResult();
     if (!tableBlockExecutionInfos.isFixedKeyUpdateRequired()) {
-      updateKeyWithLatestBlockKeygenerator();
-      result.addScannedResult(listBasedResult);
-    } else {
-      result.addScannedResult(listBasedResult);
+      updateKeyWithLatestBlockKeyGenerator();
     }
+    result.addScannedResult(listBasedResult);
     return result;
   }
 
@@ -195,7 +193,7 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
    *
    * @return updated block
    */
-  private void updateKeyWithLatestBlockKeygenerator() {
+  private void updateKeyWithLatestBlockKeyGenerator() {
     try {
       long[] data = null;
       ByteArrayWrapper key = null;
