@@ -28,7 +28,7 @@ import org.carbondata.core.carbon.metadata.datatype.DataType
 import org.carbondata.core.carbon.metadata.encoder.Encoding
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.query.expression.{DataType => CarbonDataType}
+import org.carbondata.scan.expression.{DataType => CarbonDataType}
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(

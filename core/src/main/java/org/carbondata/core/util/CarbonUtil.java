@@ -71,7 +71,6 @@ import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.metadata.ValueEncoderMeta;
 import org.carbondata.core.reader.CarbonFooterReader;
 import org.carbondata.core.vo.ColumnGroupModel;
-import org.carbondata.query.util.DataFileFooterConverter;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;

@@ -32,7 +32,7 @@ import org.apache.spark.unsafe.types.UTF8String
 
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
-import org.carbondata.query.carbon.model._
+import org.carbondata.scan.model._
 import org.carbondata.spark.{CarbonFilters, RawValue, RawValueImpl}
 import org.carbondata.spark.rdd.CarbonScanRDD
 

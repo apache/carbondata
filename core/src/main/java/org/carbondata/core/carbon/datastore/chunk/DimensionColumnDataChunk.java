@@ -18,7 +18,7 @@
  */
 package org.carbondata.core.carbon.datastore.chunk;
 
-import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
+import org.carbondata.scan.executor.infos.KeyStructureInfo;
 
 /**
  * Interface for dimension column chunk.

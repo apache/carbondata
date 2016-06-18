@@ -10,11 +10,11 @@ import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.hadoop.readsupport.CarbonReadSupport;
-import org.carbondata.query.carbon.executor.QueryExecutorFactory;
-import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
-import org.carbondata.query.carbon.model.QueryModel;
-import org.carbondata.query.carbon.result.BatchResult;
-import org.carbondata.query.carbon.result.iterator.ChunkRowIterator;
+import org.carbondata.scan.executor.QueryExecutorFactory;
+import org.carbondata.scan.executor.exception.QueryExecutionException;
+import org.carbondata.scan.model.QueryModel;
+import org.carbondata.scan.result.BatchResult;
+import org.carbondata.scan.result.iterator.ChunkRowIterator;
 
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;

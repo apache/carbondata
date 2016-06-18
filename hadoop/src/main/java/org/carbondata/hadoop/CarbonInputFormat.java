@@ -56,14 +56,14 @@ import org.carbondata.hadoop.util.CarbonInputFormatUtil;
 import org.carbondata.hadoop.util.ObjectSerializationUtil;
 import org.carbondata.hadoop.util.SchemaReader;
 import org.carbondata.lcm.status.SegmentStatusManager;
-import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
-import org.carbondata.query.carbon.model.CarbonQueryPlan;
-import org.carbondata.query.carbon.model.QueryModel;
-import org.carbondata.query.expression.Expression;
-import org.carbondata.query.expression.exception.FilterUnsupportedException;
-import org.carbondata.query.filter.resolver.FilterResolverIntf;
-import org.carbondata.query.filters.FilterExpressionProcessor;
-import org.carbondata.query.filters.measurefilter.util.FilterUtil;
+import org.carbondata.scan.executor.exception.QueryExecutionException;
+import org.carbondata.scan.expression.Expression;
+import org.carbondata.scan.expression.exception.FilterUnsupportedException;
+import org.carbondata.scan.filter.FilterExpressionProcessor;
+import org.carbondata.scan.filter.FilterUtil;
+import org.carbondata.scan.filter.resolver.FilterResolverIntf;
+import org.carbondata.scan.model.CarbonQueryPlan;
+import org.carbondata.scan.model.QueryModel;
 
 import static org.carbondata.core.constants.CarbonCommonConstants.INVALID_SEGMENT_ID;
 

@@ -33,7 +33,7 @@ import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifie
 import org.carbondata.core.carbon.metadata.datatype.DataType
 import org.carbondata.core.carbon.metadata.encoder.Encoding
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
-import org.carbondata.query.carbon.util.DataTypeUtil
+import org.carbondata.scan.util.DataTypeUtil
 
 /**
  * It decodes the data.

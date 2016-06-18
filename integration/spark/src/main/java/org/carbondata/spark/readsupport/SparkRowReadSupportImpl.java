@@ -5,7 +5,7 @@ import java.sql.Timestamp;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.carbondata.hadoop.readsupport.impl.AbstractDictionaryDecodedReadSupport;
-import org.carbondata.query.carbon.util.DataTypeUtil;
+import org.carbondata.scan.util.DataTypeUtil;
 
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;

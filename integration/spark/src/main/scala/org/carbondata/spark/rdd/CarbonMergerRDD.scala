@@ -36,7 +36,7 @@ import org.carbondata.core.util.CarbonProperties
 import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
 import org.carbondata.integration.spark.merger.{CarbonCompactionExecutor, CarbonCompactionUtil,
 RowResultMerger}
-import org.carbondata.query.carbon.result.iterator.RawResultIterator
+import org.carbondata.scan.result.iterator.RawResultIterator
 import org.carbondata.spark.MergeResult
 import org.carbondata.spark.load.{CarbonLoaderUtil, CarbonLoadModel}
 import org.carbondata.spark.merger.CarbonDataMergerUtil

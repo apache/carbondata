@@ -24,7 +24,7 @@ import java.util.List;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
-import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
+import org.carbondata.scan.wrappers.ByteArrayWrapper;
 
 /**
  * This class will be used to convert the Result into the format used in data writer.

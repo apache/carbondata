@@ -26,7 +26,7 @@ import java.util.List;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.query.carbon.model.CarbonQueryPlan;
+import org.carbondata.scan.model.CarbonQueryPlan;
 import org.carbondata.spark.partition.api.DataPartitioner;
 import org.carbondata.spark.partition.api.Partition;
 

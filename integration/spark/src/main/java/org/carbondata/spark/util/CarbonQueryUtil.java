@@ -34,7 +34,7 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.query.carbon.model.CarbonQueryPlan;
+import org.carbondata.scan.model.CarbonQueryPlan;
 import org.carbondata.spark.partition.api.Partition;
 import org.carbondata.spark.partition.api.impl.DefaultLoadBalancer;
 import org.carbondata.spark.partition.api.impl.PartitionMultiFileImpl;

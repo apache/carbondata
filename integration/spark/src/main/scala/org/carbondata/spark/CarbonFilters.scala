@@ -30,9 +30,9 @@ import org.apache.spark.sql.types.StructType
 import org.carbondata.core.carbon.metadata.datatype.DataType
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn
-import org.carbondata.query.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
-import org.carbondata.query.expression.conditional._
-import org.carbondata.query.expression.logical.{AndExpression, OrExpression}
+import org.carbondata.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
+import org.carbondata.scan.expression.conditional._
+import org.carbondata.scan.expression.logical.{AndExpression, OrExpression}
 import org.carbondata.spark.util.CarbonScalaUtil
 
 /**

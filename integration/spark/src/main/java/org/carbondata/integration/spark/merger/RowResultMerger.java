@@ -50,8 +50,8 @@ import org.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.carbondata.processing.store.CarbonFactHandler;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
-import org.carbondata.query.carbon.result.iterator.RawResultIterator;
-import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
+import org.carbondata.scan.result.iterator.RawResultIterator;
+import org.carbondata.scan.wrappers.ByteArrayWrapper;
 import org.carbondata.spark.load.CarbonLoadModel;
 
 /**
