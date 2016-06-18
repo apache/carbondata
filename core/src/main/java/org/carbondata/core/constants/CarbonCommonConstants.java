@@ -733,6 +733,12 @@ public final class CarbonCommonConstants {
    */
   public static final String INMEMORY_REOCRD_SIZE = "carbon.inmemory.record.size";
   public static final int INMEMORY_REOCRD_SIZE_DEFAULT = 240000;
+
+  /**
+   * INMEMORY_REOCRD_SIZE
+   */
+  public static final String DETAIL_QUERY_BATCH_SIZE = "carbon.detail.batch.size";
+  public static final int DETAIL_QUERY_BATCH_SIZE_DEFAULT = 10000;
   /**
    * SPILL_OVER_DISK_PATH
    */

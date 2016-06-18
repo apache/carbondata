@@ -5,11 +5,10 @@ import java.util.List;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
-import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
-import org.carbondata.query.carbon.executor.internal.impl.InternalDetailQueryExecutor;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.carbon.result.BatchResult;
-import org.carbondata.query.carbon.result.iterator.DetailRawQueryResultIterator;
+import org.carbondata.query.carbon.result.iterator.DetailQueryResultIterator;
+import org.carbondata.query.carbon.result.preparator.impl.RawQueryResultPreparatorImpl;
 
 /**
  * Executor for raw records, it does not parse to actual data
@@ -19,8 +18,7 @@ public class DetailRawRecordQueryExecutor extends AbstractQueryExecutor<BatchRes
   @Override public CarbonIterator<BatchResult> execute(QueryModel queryModel)
       throws QueryExecutionException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
-    InternalQueryExecutor queryExecutor = new InternalDetailQueryExecutor();
-    return new DetailRawQueryResultIterator(blockExecutionInfoList, queryProperties, queryModel,
-        queryExecutor);
+    return new DetailQueryResultIterator(blockExecutionInfoList, queryModel,
+        new RawQueryResultPreparatorImpl(queryProperties, queryModel));
   }
 }

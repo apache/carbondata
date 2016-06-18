@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.carbon.aggregator.impl;
+package org.carbondata.query.carbon.collector.impl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.query.carbon.aggregator.ScannedResultAggregator;
+import org.carbondata.query.carbon.collector.ScannedResultCollector;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
 import org.carbondata.query.carbon.executor.util.QueryUtil;
@@ -38,26 +38,19 @@ import org.carbondata.query.carbon.util.DataTypeUtil;
 import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 
 /**
- * It is not a aggregator it is just a scanned result holder.
+ * It is not a collector it is just a scanned result holder.
  *
- * @TODO change it to some other name
  */
-public class ListBasedResultAggregator implements ScannedResultAggregator {
+public class ListBasedResultCollector implements ScannedResultCollector {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(ListBasedResultAggregator.class.getName());
+      LogServiceFactory.getLogService(ListBasedResultCollector.class.getName());
 
   /**
    * to keep a track of number of row processed to handle limit push down in
    * case of detail query scenario
    */
   private int rowCounter;
-
-  /**
-   * number of records asked in limit query if -1 then its either is
-   * detail+order by query or detail query
-   */
-  private int limit;
 
   /**
    * dimension values list
@@ -94,8 +87,7 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
    */
   private DataType[] measureDatatypes;
 
-  public ListBasedResultAggregator(BlockExecutionInfo blockExecutionInfos) {
-    limit = blockExecutionInfos.getLimit();
+  public ListBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
     this.tableBlockExecutionInfos = blockExecutionInfos;
     restructureInfos = blockExecutionInfos.getKeyStructureInfo();
     measuresOrdinal = tableBlockExecutionInfos.getAggregatorInfo().getMeasureOrdinals();
@@ -111,14 +103,15 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
    * @param scanned result
    *
    */
-  public int aggregateData(AbstractScannedResult scannedResult) {
+  public int collectData(AbstractScannedResult scannedResult, int batchSize) {
     this.listBasedResult =
-        new ArrayList<>(limit == -1 ? scannedResult.numberOfOutputRows() : limit);
+        new ArrayList<>(batchSize);
     boolean isMsrsPresent = measureDatatypes.length > 0;
     ByteArrayWrapper wrapper = null;
     // scan the record and add to list
     ListBasedResultWrapper resultWrapper;
-    while (scannedResult.hasNext() && (limit == -1 || rowCounter < limit)) {
+    int rowCounter = 0;
+    while (scannedResult.hasNext() && rowCounter < batchSize) {
       resultWrapper = new ListBasedResultWrapper();
       if(tableBlockExecutionInfos.isDimensionsExistInQuery()) {
         wrapper = new ByteArrayWrapper();
@@ -143,7 +136,7 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
   private void fillMeasureData(Object[] msrValues, AbstractScannedResult scannedResult) {
     for (short i = 0; i < measuresOrdinal.length; i++) {
       // if measure exists is block then pass measure column
-      // data chunk to the aggregator
+      // data chunk to the collector
       if (isMeasureExistsInCurrentBlock[i]) {
         msrValues[i] =
             getMeasureData(scannedResult.getMeasureChunk(measuresOrdinal[i]),
@@ -176,7 +169,7 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
   /**
    * Below method will used to get the result
    */
-  @Override public Result getAggregatedResult() {
+  @Override public Result getCollectedResult() {
     Result<List<ListBasedResultWrapper>, Object> result = new ListBasedResult();
     if (!tableBlockExecutionInfos.isFixedKeyUpdateRequired()) {
       updateKeyWithLatestBlockKeyGenerator();

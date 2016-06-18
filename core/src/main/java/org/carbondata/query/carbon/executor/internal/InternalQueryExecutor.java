@@ -20,6 +20,7 @@ package org.carbondata.query.carbon.executor.internal;
 
 import java.util.List;
 
+import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
@@ -42,5 +43,5 @@ public interface InternalQueryExecutor {
    * @throws QueryExecutionException
    */
   CarbonIterator<Result> executeQuery(List<BlockExecutionInfo> blockExecutionInfos,
-      int[] blockIndexToBeExecuted) throws QueryExecutionException;
+      int[] blockIndexToBeExecuted, FileHolder fileReader) throws QueryExecutionException;
 }

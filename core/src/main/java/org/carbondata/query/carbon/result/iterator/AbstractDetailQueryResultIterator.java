@@ -18,7 +18,6 @@
  */
 package org.carbondata.query.carbon.result.iterator;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.carbondata.common.logging.LogService;
@@ -27,12 +26,15 @@ import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.FileHolder;
+import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.query.carbon.executor.impl.QueryExecutorProperties;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
 import org.carbondata.query.carbon.model.QueryModel;
+import org.carbondata.query.carbon.processor.AbstractDataBlockIterator;
+import org.carbondata.query.carbon.processor.impl.DataBlockIteratorImpl;
 
 /**
  * In case of detail query we cannot keep all the records in memory so for
@@ -60,101 +62,73 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
   /**
    * number of cores which can be used
    */
-  private long numberOfCores;
+  private int batchSize;
 
   /**
-   * keep track of number of blocklet per block
+   * file reader which will be used to execute the query
    */
-  private long[] totalNumberBlockletPerSlice;
+  protected FileHolder fileReader;
 
-  /**
-   * total number of blocklet to be executed
-   */
-  private long totalNumberOfNode;
+  protected AbstractDataBlockIterator dataBlockIterator;
 
-  /**
-   * current counter to check how blocklet has been executed
-   */
-  protected long currentCounter;
+  protected boolean nextBatch = false;
 
-  /**
-   * keep the track of number of blocklet of a block has been executed
-   */
-  private long[] numberOfBlockletExecutedPerBlock;
-
-  /**
-   * block index to be executed
-   */
-  protected int[] blockIndexToBeExecuted;
-
-  public AbstractDetailQueryResultIterator(List<BlockExecutionInfo> infos,
-      QueryExecutorProperties executerProperties, QueryModel queryModel,
-      InternalQueryExecutor queryExecutor) {
-    int recordSize = 0;
-    String defaultInMemoryRecordsSize =
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.INMEMORY_REOCRD_SIZE);
-    if (null != defaultInMemoryRecordsSize) {
+  public AbstractDetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel) {
+    String batchSizeString =
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE);
+    if (null != batchSizeString) {
       try {
-        recordSize = Integer.parseInt(defaultInMemoryRecordsSize);
+        batchSize = Integer.parseInt(batchSizeString);
       } catch (NumberFormatException ne) {
         LOGGER.error("Invalid inmemory records size. Using default value");
-        recordSize = CarbonCommonConstants.INMEMORY_REOCRD_SIZE_DEFAULT;
+        batchSize = CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT;
       }
+    } else {
+      batchSize = CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT;
     }
-    this.numberOfCores = recordSize / Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
-    if (numberOfCores == 0) {
-      numberOfCores++;
-    }
-    executor = queryExecutor;
+
     this.blockExecutionInfos = infos;
-    this.blockIndexToBeExecuted = new int[(int) numberOfCores];
+    this.fileReader = FileFactory.getFileHolder(
+        FileFactory.getFileType(queryModel.getAbsoluteTableIdentifier().getStorePath()));
     intialiseInfos();
   }
 
   private void intialiseInfos() {
-    this.totalNumberBlockletPerSlice = new long[blockExecutionInfos.size()];
-    this.numberOfBlockletExecutedPerBlock = new long[blockExecutionInfos.size()];
-    int index = -1;
     for (BlockExecutionInfo blockInfo : blockExecutionInfos) {
-      ++index;
       DataRefNodeFinder finder = new BTreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
       DataRefNode startDataBlock = finder
           .findFirstDataBlock(blockInfo.getDataBlock().getDataRefNode(), blockInfo.getStartKey());
       DataRefNode endDataBlock = finder
           .findLastDataBlock(blockInfo.getDataBlock().getDataRefNode(), blockInfo.getEndKey());
-
-      this.totalNumberBlockletPerSlice[index] =
-          endDataBlock.nodeNumber() - startDataBlock.nodeNumber() + 1;
-      totalNumberOfNode += this.totalNumberBlockletPerSlice[index];
+      long numberOfBlockToScan = endDataBlock.nodeNumber() - startDataBlock.nodeNumber() + 1;
       blockInfo.setFirstDataBlock(startDataBlock);
-      blockInfo.setNumberOfBlockToScan(1);
+      blockInfo.setNumberOfBlockToScan(numberOfBlockToScan);
     }
-
   }
 
   @Override public boolean hasNext() {
-    return currentCounter < totalNumberOfNode;
+    if ((dataBlockIterator != null && dataBlockIterator.hasNext()) || nextBatch) {
+      return true;
+    } else {
+      dataBlockIterator = getDataBlockIterator();
+      while (dataBlockIterator != null) {
+        if (dataBlockIterator.hasNext()) {
+          return true;
+        }
+        dataBlockIterator = getDataBlockIterator();
+      }
+      return false;
+    }
   }
 
-  protected int updateSliceIndexToBeExecuted() {
-    Arrays.fill(blockIndexToBeExecuted, -1);
-    int currentSliceIndex = 0;
-    int i = 0;
-    for (; i < (int) numberOfCores; ) {
-      if (this.totalNumberBlockletPerSlice[currentSliceIndex]
-          > this.numberOfBlockletExecutedPerBlock[currentSliceIndex]) {
-        this.numberOfBlockletExecutedPerBlock[currentSliceIndex]++;
-        blockIndexToBeExecuted[i] = currentSliceIndex;
-        i++;
-      }
-      currentSliceIndex++;
-      if (currentSliceIndex >= totalNumberBlockletPerSlice.length) {
-        break;
-      }
+  private DataBlockIteratorImpl getDataBlockIterator() {
+    if(blockExecutionInfos.size() > 0) {
+      BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
+      blockExecutionInfos.remove(executionInfo);
+      return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize);
     }
-    return i;
+    return null;
   }
+
 
 }

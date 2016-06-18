@@ -43,7 +43,7 @@ public final class DirectDictionaryKeyGeneratorFactory {
     DirectDictionaryGenerator directDictionaryGenerator = null;
     switch (dataType) {
       case TIMESTAMP:
-        directDictionaryGenerator = new TimeStampDirectDictionaryGenerator();
+        directDictionaryGenerator = TimeStampDirectDictionaryGenerator.instance;
         break;
       default:
 

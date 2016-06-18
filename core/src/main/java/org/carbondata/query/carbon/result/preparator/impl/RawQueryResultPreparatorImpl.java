@@ -4,6 +4,9 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.query.carbon.executor.impl.QueryExecutorProperties;
 import org.carbondata.query.carbon.model.QueryDimension;
 import org.carbondata.query.carbon.model.QueryMeasure;
@@ -13,6 +16,8 @@ import org.carbondata.query.carbon.result.BatchRawResult;
 import org.carbondata.query.carbon.result.BatchResult;
 import org.carbondata.query.carbon.result.ListBasedResultWrapper;
 import org.carbondata.query.carbon.result.Result;
+import org.carbondata.query.carbon.util.DataTypeUtil;
+import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 
 /**
  * It does not decode the dictionary.
@@ -54,29 +59,67 @@ public class RawQueryResultPreparatorImpl
   @Override public BatchResult prepareQueryResult(
       Result<List<ListBasedResultWrapper>, Object> scannedResult) {
     if ((null == scannedResult || scannedResult.size() < 1)) {
-      BatchRawResult batchRawResult = new BatchRawResult();
-      batchRawResult.setQuerySchemaInfo(querySchemaInfo);
-      return batchRawResult;
+      return new BatchRawResult();
     }
+    QueryDimension[] queryDimensions = querySchemaInfo.getQueryDimensions();
     int msrSize = queryExecuterProperties.measureDataTypes.length;
+    int dimSize = queryDimensions.length;
+    int[] order = querySchemaInfo.getQueryReverseOrder();
     Object[][] resultData = new Object[scannedResult.size()][];
     Object[] value;
     Object[] row;
     int counter = 0;
-    while (scannedResult.hasNext()) {
-      value = scannedResult.getValue();
-      row = new Object[msrSize + 1];
-      row[0] = scannedResult.getKey();
-      if(value != null) {
-        System.arraycopy(value, 0, row, 1, msrSize);
+    if (queryModel.isRawBytesDetailQuery()) {
+      while (scannedResult.hasNext()) {
+        value = scannedResult.getValue();
+        row = new Object[msrSize + 1];
+        row[0] = scannedResult.getKey();
+        if (value != null) {
+          assert (value.length == msrSize);
+          System.arraycopy(value, 0, row, 1, msrSize);
+        }
+        resultData[counter] = row;
+        counter++;
       }
-      resultData[counter] = row;
-      counter ++;
+    } else {
+      while (scannedResult.hasNext()) {
+        value = scannedResult.getValue();
+        row = new Object[msrSize + dimSize];
+        ByteArrayWrapper key = scannedResult.getKey();
+        if (key != null) {
+          long[] surrogateResult = querySchemaInfo.getKeyGenerator()
+              .getKeyArray(key.getDictionaryKey(), querySchemaInfo.getMaskedByteIndexes());
+          int noDictionaryColumnIndex = 0;
+          for (int i = 0; i < dimSize; i++) {
+            if (!queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)) {
+              row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
+                  new String(key.getNoDictionaryKeyByIndex(noDictionaryColumnIndex++)),
+                  queryDimensions[i].getDimension().getDataType());
+            } else if (queryDimensions[i].getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+              DirectDictionaryGenerator directDictionaryGenerator =
+                  DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
+                      queryDimensions[i].getDimension().getDataType());
+              if (directDictionaryGenerator != null) {
+                row[order[i]] = directDictionaryGenerator.getValueFromSurrogate(
+                    (int) surrogateResult[queryDimensions[i].getDimension().getKeyOrdinal()]);
+              }
+            } else {
+              row[order[i]] =
+                  (int) surrogateResult[queryDimensions[i].getDimension().getKeyOrdinal()];
+            }
+          }
+        }
+        for (int i = 0; i < msrSize; i++) {
+          row[order[i + queryDimensions.length]] = value[i];
+        }
+        resultData[counter] = row;
+        counter++;
+      }
     }
+
     LOGGER.info("###########################---- Total Number of records" + scannedResult.size());
     BatchRawResult result = new BatchRawResult();
     result.setRows(resultData);
-    result.setQuerySchemaInfo(querySchemaInfo);
     return result;
   }
 

@@ -186,6 +186,7 @@ public class CarbonCompactionExecutor {
     model.setCountStarQuery(false);
     model.setDetailQuery(true);
     model.setForcedDetailRawQuery(true);
+    model.setRawBytesDetailQuery(true);
     model.setFilterExpressionResolverTree(null);
 
     List<QueryDimension> dims = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);

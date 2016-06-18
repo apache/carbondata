@@ -187,12 +187,6 @@ case class CarbonScan(
   override def outputsUnsafeRows: Boolean = attributesNeedToDecode.size() == 0
 
   override def doExecute(): RDD[InternalRow] = {
-    def toType(obj: Any): Any = {
-      obj match {
-        case s: String => UTF8String.fromString(s)
-        case _ => obj
-      }
-    }
     val outUnsafeRows: Boolean = attributesNeedToDecode.size() == 0
     inputRdd.mapPartitions { iter =>
       val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)
@@ -201,9 +195,9 @@ case class CarbonScan(
 
         override def next(): InternalRow =
           if (outUnsafeRows) {
-            unsafeProjection(new GenericMutableRow(iter.next().map(toType)))
+            unsafeProjection(new GenericMutableRow(iter.next()))
           } else {
-            new GenericMutableRow(iter.next().map(toType))
+            new GenericMutableRow(iter.next())
           }
       }
     }

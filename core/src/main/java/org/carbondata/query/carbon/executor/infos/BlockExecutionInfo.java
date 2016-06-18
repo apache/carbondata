@@ -26,7 +26,6 @@ import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.query.carbon.merger.ScannedResultMerger;
 import org.carbondata.query.filter.executer.FilterExecuter;
 
 /**
@@ -156,11 +155,6 @@ public class BlockExecutionInfo {
   private int[] noDictionaryBlockIndexes;
 
   /**
-   * to process the scanned result
-   */
-  private ScannedResultMerger scannedResultProcessor;
-
-  /**
    * key generator used for generating the table block fixed length key
    */
   private KeyGenerator blockKeyGenerator;
@@ -214,7 +208,7 @@ public class BlockExecutionInfo {
   }
 
   /**
-   * @param tableBlock the tableBlock to set
+   * @param blockIndex the tableBlock to set
    */
   public void setDataBlock(AbstractIndex blockIndex) {
     this.blockIndex = blockIndex;
@@ -410,7 +404,7 @@ public class BlockExecutionInfo {
   }
 
   /**
-   * @param restructureInfos the restructureInfos to set
+   * @param keyStructureInfo the restructureInfos to set
    */
   public void setKeyStructureInfo(KeyStructureInfo keyStructureInfo) {
     this.keyStructureInfo = keyStructureInfo;
@@ -424,7 +418,7 @@ public class BlockExecutionInfo {
   }
 
   /**
-   * @param sortInfos the sortInfos to set
+   * @param sortInfo the sortInfos to set
    */
   public void setSortInfo(SortInfo sortInfo) {
     this.sortInfo = sortInfo;
@@ -473,20 +467,6 @@ public class BlockExecutionInfo {
   }
 
   /**
-   * @return the scannedResultProcessor
-   */
-  public ScannedResultMerger getScannedResultProcessor() {
-    return scannedResultProcessor;
-  }
-
-  /**
-   * @param scannedResultProcessor the scannedResultProcessor to set
-   */
-  public void setScannedResultProcessor(ScannedResultMerger scannedResultProcessor) {
-    this.scannedResultProcessor = scannedResultProcessor;
-  }
-
-  /**
    * @return the filterEvaluatorTree
    */
   public FilterExecuter getFilterExecuterTree() {
@@ -494,7 +474,7 @@ public class BlockExecutionInfo {
   }
 
   /**
-   * @param filterEvaluatorTree the filterEvaluatorTree to set
+   * @param filterExecuterTree the filterEvaluatorTree to set
    */
   public void setFilterExecuterTree(FilterExecuter filterExecuterTree) {
     this.filterExecuterTree = filterExecuterTree;

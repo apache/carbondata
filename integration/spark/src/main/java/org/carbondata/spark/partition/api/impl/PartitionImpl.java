@@ -28,12 +28,8 @@
  */
 package org.carbondata.spark.partition.api.impl;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.query.queryinterface.query.metadata.CarbonDimensionLevelFilter;
 import org.carbondata.spark.partition.api.Partition;
 
 public class PartitionImpl implements Partition {
@@ -41,9 +37,6 @@ public class PartitionImpl implements Partition {
   private String uniqueID;
   private String folderPath;
 
-  private Map<String, CarbonDimensionLevelFilter> filterMap =
-      new HashMap<String, CarbonDimensionLevelFilter>(
-          CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   public PartitionImpl(String uniqueID, String folderPath) {
     this.uniqueID = uniqueID;
@@ -56,10 +49,6 @@ public class PartitionImpl implements Partition {
 
   @Override public String getFilePath() {
     return folderPath;
-  }
-
-  public void setPartitionDetails(String columnName, CarbonDimensionLevelFilter filter) {
-    filterMap.put(columnName, filter);
   }
 
   @Override public String toString() {

@@ -16,30 +16,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.carbon.merger;
+package org.carbondata.query.carbon.collector;
 
-import org.carbondata.core.iterator.CarbonIterator;
-import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
+import org.carbondata.query.carbon.result.AbstractScannedResult;
 import org.carbondata.query.carbon.result.Result;
 
 /**
- * Interface for merging the scanned result
+ * Interface which will be used to aggregate the scan result
  */
-public interface ScannedResultMerger {
+public interface ScannedResultCollector {
 
   /**
-   * Below method will be used to add the scanned result
+   * Below method will be used to aggregate the scanned result
    *
    * @param scannedResult scanned result
-   * @throws QueryExecutionException throw exception in case of failure
+   * @return how many records was aggregated
    */
-  void addScannedResult(Result scannedResult) throws QueryExecutionException;
+  int collectData(AbstractScannedResult scannedResult, int batchSize);
 
   /**
-   * Below method will be used to get the query result
+   * Below method will be used to get the aggregated result
    *
-   * @return query result
-   * @throws QueryExecutionException throw exception in case of any failure
+   * @return
    */
-  CarbonIterator<Result> getQueryResultIterator() throws QueryExecutionException;
+  Result getCollectedResult();
 }

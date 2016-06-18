@@ -40,6 +40,13 @@ import static org.carbondata.core.keygenerator.directdictionary.timestamp.TimeSt
  */
 public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGenerator {
 
+  private TimeStampDirectDictionaryGenerator() {
+
+  }
+
+  public static TimeStampDirectDictionaryGenerator instance =
+      new TimeStampDirectDictionaryGenerator();
+
   /**
    * Logger instance
    */

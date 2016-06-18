@@ -29,6 +29,8 @@ import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
 
+import org.apache.spark.unsafe.types.UTF8String;
+
 /**
  * Utility for data type
  */
@@ -95,7 +97,7 @@ public class DataTypeUtil {
               new org.apache.spark.sql.types.Decimal();
           return decConverter.set(scalaDecVal);
         default:
-          return data;
+          return UTF8String.fromString(data);
       }
     } catch (NumberFormatException ex) {
       LOGGER.error("Problem while converting data type" + data);
