@@ -21,7 +21,6 @@ package org.carbondata.query.carbon.executor.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -42,7 +41,6 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.query.aggregator.util.MeasureAggregatorFactory;
 import org.carbondata.query.carbon.executor.QueryExecutor;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.AggregatorInfo;
@@ -51,7 +49,6 @@ import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
 import org.carbondata.query.carbon.executor.infos.SortInfo;
 import org.carbondata.query.carbon.executor.util.QueryUtil;
 import org.carbondata.query.carbon.executor.util.RestructureUtil;
-import org.carbondata.query.carbon.model.DimensionAggregatorInfo;
 import org.carbondata.query.carbon.model.QueryDimension;
 import org.carbondata.query.carbon.model.QueryMeasure;
 import org.carbondata.query.carbon.model.QueryModel;
@@ -108,33 +105,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             .getDimensionKeyGenerator());
 
     // calculating the total number of aggeragted columns
-    int aggTypeCount = queryModel.getQueryMeasures().size() + queryModel.getExpressions().size();
+    int aggTypeCount = queryModel.getQueryMeasures().size();
 
-    // as in one dimension multiple aggregator can be selected , so we need
-    // to select all the aggregator function
-    Iterator<DimensionAggregatorInfo> iterator = queryModel.getDimAggregationInfo().iterator();
-    while (iterator.hasNext()) {
-      aggTypeCount += iterator.next().getAggList().size();
-    }
     int currentIndex = 0;
     String[] aggTypes = new String[aggTypeCount];
     DataType[] dataTypes = new DataType[aggTypeCount];
-
-    // adding query dimension selected in aggregation info
-    for (DimensionAggregatorInfo dimensionAggregationInfo : queryModel.getDimAggregationInfo()) {
-      for (int i = 0; i < dimensionAggregationInfo.getAggList().size(); i++) {
-        aggTypes[currentIndex] = dimensionAggregationInfo.getAggList().get(i);
-        dataTypes[currentIndex] = dimensionAggregationInfo.getDim().getDataType();
-        currentIndex++;
-      }
-    }
-    // filling the query expression data type and its aggregator
-    // in this case both will be custom
-    for (int i = 0; i < queryModel.getExpressions().size(); i++) {
-      aggTypes[currentIndex] = CarbonCommonConstants.CUSTOM;
-      dataTypes[currentIndex] = DataType.STRING;
-      currentIndex++;
-    }
 
     for (QueryMeasure carbonMeasure : queryModel.getQueryMeasures()) {
       // adding the data type and aggregation type of all the measure this
@@ -144,23 +119,20 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       dataTypes[currentIndex] = carbonMeasure.getMeasure().getDataType();
       currentIndex++;
     }
-    queryProperties.measureAggregators = MeasureAggregatorFactory
-        .getMeassureAggregator(aggTypes, dataTypes, queryModel.getExpressions());
+    queryProperties.measureDataTypes = dataTypes;
     // as aggregation will be executed in following order
     // 1.aggregate dimension expression
     // 2. expression
     // 3. query measure
     // so calculating the index of the expression start index
     // and measure column start index
-    queryProperties.aggExpressionStartIndex =
-        aggTypes.length - queryModel.getExpressions().size() - queryModel.getQueryMeasures().size();
+    queryProperties.aggExpressionStartIndex = queryModel.getQueryMeasures().size();
     queryProperties.measureStartIndex = aggTypes.length - queryModel.getQueryMeasures().size();
 
     // dictionary column unique column id to dictionary mapping
     // which will be used to get column actual data
     queryProperties.columnToDictionayMapping = QueryUtil
         .getDimensionDictionaryDetail(queryModel.getQueryDimension(),
-            queryModel.getDimAggregationInfo(), queryModel.getExpressions(),
             queryModel.getAbsoluteTableIdentifier());
     queryModel.setColumnToDictionaryMapping(queryProperties.columnToDictionayMapping);
     // setting the sort dimension index. as it will be updated while getting the sort info
@@ -240,12 +212,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         QueryUtil.getMaskedByteRange(updatedQueryDimension, blockKeyGenerator);
     int[] maksedByte =
         QueryUtil.getMaskedByte(blockKeyGenerator.getKeySizeInBytes(), maskByteRangesForBlock);
+    blockExecutionInfo.setDimensionsExistInQuery(updatedQueryDimension.size() > 0);
     blockExecutionInfo.setDataBlock(blockIndex);
     blockExecutionInfo.setBlockKeyGenerator(blockKeyGenerator);
     // adding aggregation info for query
     blockExecutionInfo.setAggregatorInfo(getAggregatorInfoForBlock(queryModel, blockIndex));
-    // adding custom aggregate expression of query
-    blockExecutionInfo.setCustomAggregateExpressions(queryModel.getExpressions());
 
     // setting the limit
     blockExecutionInfo.setLimit(queryModel.getLimit());
@@ -296,15 +267,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // expression measure
     List<CarbonMeasure> expressionMeasures =
         new ArrayList<CarbonMeasure>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    // to get all the dimension and measure which required to get the chunk
-    // indexes to be read from file
-    QueryUtil.extractDimensionsAndMeasuresFromExpression(queryModel.getExpressions(),
-        expressionDimensions, expressionMeasures);
     // setting all the dimension chunk indexes to be read from file
     blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(QueryUtil
         .getDimensionsBlockIndexes(updatedQueryDimension,
-            segmentProperties.getDimensionOrdinalToBlockMapping(),
-            queryModel.getDimAggregationInfo(), expressionDimensions));
+            segmentProperties.getDimensionOrdinalToBlockMapping(), expressionDimensions));
     // setting all the measure chunk indexes to be read from file
     blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(QueryUtil
         .getMeasureBlockIndexes(queryModel.getQueryMeasures(), expressionMeasures,
@@ -334,11 +300,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setColumnIdToDcitionaryMapping(queryProperties.columnToDictionayMapping);
     // setting each column value size
     blockExecutionInfo.setEachColumnValueSize(segmentProperties.getEachDimColumnValueSize());
-    blockExecutionInfo.setDimensionAggregator(QueryUtil
-        .getDimensionDataAggregatorList1(queryModel.getDimAggregationInfo(),
-            segmentProperties.getDimensionOrdinalToBlockMapping(),
-            segmentProperties.getColumnGroupAndItsKeygenartor(),
-            queryProperties.columnToDictionayMapping));
     try {
       // to set column group and its key structure info which will be used
       // to
@@ -435,7 +396,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     aggregatorInfos.setMeasureAggregatorStartIndex(queryProperties.measureStartIndex);
     // setting the measure aggregator for all aggregation function selected
     // in query
-    aggregatorInfos.setMeasuresAggreagators(queryProperties.measureAggregators);
+    aggregatorInfos.setMeasureDataTypes(queryProperties.measureDataTypes);
     return aggregatorInfos;
   }
 

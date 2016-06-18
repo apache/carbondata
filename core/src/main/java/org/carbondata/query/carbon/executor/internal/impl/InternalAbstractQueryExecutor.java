@@ -36,7 +36,6 @@ import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
 import org.carbondata.query.carbon.merger.ScannedResultMerger;
-import org.carbondata.query.carbon.merger.impl.SortedScannedResultMerger;
 import org.carbondata.query.carbon.merger.impl.UnSortedScannedResultMerger;
 import org.carbondata.query.carbon.result.Result;
 
@@ -66,9 +65,9 @@ public abstract class InternalAbstractQueryExecutor implements InternalQueryExec
    * Below method will be used to used to execute the detail query
    * and it will return iterator over result
    *
-   * @param executionInfos block execution info which will have all the properties
+   * @param tableBlockExecutionInfosList block execution info which will have all the properties
    *                       required for query execution
-   * @param sliceIndexes   slice indexes to be executed in this case it w
+   * @param sliceIndex   slice indexes to be executed in this case it w
    * @return query result
    */
   @Override public CarbonIterator<Result> executeQuery(
@@ -80,12 +79,7 @@ public abstract class InternalAbstractQueryExecutor implements InternalQueryExec
         tableBlockExecutionInfosList.get(tableBlockExecutionInfosList.size() - 1);
     execService = Executors.newFixedThreadPool(numberOfCores);
     ScannedResultMerger scannedResultProcessor = null;
-    if (null != latestInfo.getSortInfo()
-        && latestInfo.getSortInfo().getSortDimensionIndex().length > 0) {
-      scannedResultProcessor = new SortedScannedResultMerger(latestInfo, numberOfCores);
-    } else {
-      scannedResultProcessor = new UnSortedScannedResultMerger(latestInfo, numberOfCores);
-    }
+    scannedResultProcessor = new UnSortedScannedResultMerger(latestInfo, numberOfCores);
     try {
       List<Future> listFutureObjects = new ArrayList<Future>();
       for (BlockExecutionInfo blockInfo : tableBlockExecutionInfosList) {

@@ -44,13 +44,9 @@ class CarbonOptimizer(optimizer: Optimizer, conf: CatalystConf)
 
   override def execute(plan: LogicalPlan): LogicalPlan = {
     val executedPlan: LogicalPlan = optimizer.execute(plan)
-    if (!conf.asInstanceOf[CarbonSQLConf].pushComputation) {
-      val relations = collectCarbonRelation(plan)
-      if (relations.nonEmpty) {
-        new ResolveCarbonFunctions(relations)(executedPlan)
-      } else {
-        executedPlan
-      }
+    val relations = collectCarbonRelation(plan)
+    if (relations.nonEmpty) {
+      new ResolveCarbonFunctions(relations)(executedPlan)
     } else {
       executedPlan
     }
@@ -111,19 +107,28 @@ class CarbonOptimizer(optimizer: Optimizer, conf: CatalystConf)
 
           case agg: Aggregate if !agg.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
             val attrsOndimAggs = new util.HashSet[Attribute]
-            agg.aggregateExpressions.map { aggExp =>
-              aggExp.transform {
-                case aggExp: AggregateExpression =>
-                  collectDimensionAggregates(aggExp, attrsOndimAggs, aliasMap)
-                  aggExp
-                case a@Alias(attr: Attribute, name) =>
-                  aliasMap.put(a.toAttribute, attr)
-                  a
-              }
+            agg.aggregateExpressions.map {
+              case attr: AttributeReference =>
+              case a@Alias(attr: AttributeReference, name) => aliasMap.put(a.toAttribute, attr)
+              case aggExp: AggregateExpression =>
+                aggExp.transform {
+                  case aggExp: AggregateExpression =>
+                    collectDimensionAggregates(aggExp, attrsOndimAggs, aliasMap)
+                    aggExp
+                  case a@Alias(attr: Attribute, name) =>
+                    aliasMap.put(a.toAttribute, attr)
+                    a
+                }
+              case others =>
+                others.collect {
+                  case attr: AttributeReference
+                    if isDictionaryEncoded(attr, relations, aliasMap) =>
+                    attrsOndimAggs.add(aliasMap.getOrElse(attr, attr))
+                }
             }
             var child = agg.child
             // Incase if the child also aggregate then push down decoder to child
-            if (attrsOndimAggs.size() > 0 && !(child.equals(agg))) {
+            if (attrsOndimAggs.size() > 0 && !child.equals(agg)) {
               child = CarbonDictionaryTempDecoder(attrsOndimAggs,
                 new util.HashSet[Attribute](),
                 agg.child)

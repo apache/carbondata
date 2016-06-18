@@ -36,7 +36,6 @@ import org.carbondata.core.util.CarbonProperties
 import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
 import org.carbondata.integration.spark.merger.{CarbonCompactionExecutor, CarbonCompactionUtil,
 RowResultMerger}
-import org.carbondata.query.carbon.result.{RowResult}
 import org.carbondata.query.carbon.result.iterator.RawResultIterator
 import org.carbondata.spark.MergeResult
 import org.carbondata.spark.load.{CarbonLoaderUtil, CarbonLoadModel}
@@ -179,7 +178,7 @@ class CarbonMergerRDD[K, V](
     val absoluteTableIdentifier: AbsoluteTableIdentifier = new AbsoluteTableIdentifier(
       hdfsStoreLocation, new CarbonTableIdentifier(schemaName, factTableName, tableId)
     )
-    val (carbonInputFormat: CarbonInputFormat[RowResult], job: Job) =
+    val (carbonInputFormat: CarbonInputFormat[Array[Object]], job: Job) =
       QueryPlanUtil.createCarbonInputFormat(absoluteTableIdentifier)
     val result = new util.ArrayList[Partition](defaultParallelism)
     val mapsOfNodeBlockMapping: util.List[util.Map[String, util.List[TableBlockInfo]]] = new

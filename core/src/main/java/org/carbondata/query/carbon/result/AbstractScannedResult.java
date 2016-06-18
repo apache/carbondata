@@ -135,6 +135,14 @@ public abstract class AbstractScannedResult {
   }
 
   /**
+   * Just increment the counter incase of query only on measures.
+   */
+  public void incrementCounter() {
+    rowCounter ++;
+    currentRow ++;
+  }
+
+  /**
    * Below method will be used to get the dimension data based on dimension
    * ordinal and index
    *

@@ -26,35 +26,23 @@
 package org.carbondata.spark
 
 import org.carbondata.core.load.LoadMetadataDetails
-import org.carbondata.query.carbon.result.BatchRawResult
-import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
 
-trait KeyVal[K, V] extends Serializable {
-  def getKey(key: CarbonKey, value: CarbonValue): (K, V)
-
+trait Value[V] extends Serializable {
+  def getValue(value: Array[Object]): V
 }
 
-class KeyValImpl extends KeyVal[CarbonKey, CarbonValue] {
-  override def getKey(key: CarbonKey, value: CarbonValue): (CarbonKey, CarbonValue) = (key, value)
+class ValueImpl extends Value[Array[Object]] {
+  override def getValue(value: Array[Object]): Array[Object] = value
 }
 
-trait RawKeyVal[K, V] extends Serializable {
-  def getKey(key: BatchRawResult, value: Any): (K, V)
-
+trait RawValue[V] extends Serializable {
+  def getValue(value: Array[Any]): V
 }
 
-class RawKeyValImpl extends RawKeyVal[BatchRawResult, Any] {
-  override def getKey(key: BatchRawResult, value: Any): (BatchRawResult, Any) = (key, value)
+class RawValueImpl extends RawValue[Array[Any]] {
+  override def getValue(value: Array[Any]): Array[Any] = value
 }
 
-trait RawKey[K, V] extends Serializable {
-  def getKey(key: Array[Any], value: Any): (K, V)
-
-}
-
-class RawKeyImpl extends RawKey[Array[Any], Any] {
-  override def getKey(key: Array[Any], value: Any): (Array[Any], Any) = (key, value)
-}
 trait Result[K, V] extends Serializable {
   def getKey(key: Int, value: LoadMetadataDetails): (K, V)
 

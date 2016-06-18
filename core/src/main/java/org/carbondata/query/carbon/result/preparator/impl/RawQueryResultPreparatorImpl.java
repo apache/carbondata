@@ -1,22 +1,24 @@
 package org.carbondata.query.carbon.result.preparator.impl;
 
+import java.util.List;
+
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
-import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.carbon.executor.impl.QueryExecutorProperties;
 import org.carbondata.query.carbon.model.QueryDimension;
 import org.carbondata.query.carbon.model.QueryMeasure;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.carbon.model.QuerySchemaInfo;
 import org.carbondata.query.carbon.result.BatchRawResult;
+import org.carbondata.query.carbon.result.BatchResult;
+import org.carbondata.query.carbon.result.ListBasedResultWrapper;
 import org.carbondata.query.carbon.result.Result;
-import org.carbondata.query.carbon.util.DataTypeUtil;
-import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 
 /**
  * It does not decode the dictionary.
  */
-public class RawQueryResultPreparatorImpl extends AbstractQueryResultPreparator<BatchRawResult> {
+public class RawQueryResultPreparatorImpl
+    extends AbstractQueryResultPreparator<List<ListBasedResultWrapper>, Object> {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(RawQueryResultPreparatorImpl.class.getName());
@@ -33,7 +35,7 @@ public class RawQueryResultPreparatorImpl extends AbstractQueryResultPreparator<
         .toArray(new QueryDimension[queryModel.getQueryDimension().size()]));
     querySchemaInfo.setQueryMeasures(queryModel.getQueryMeasures()
         .toArray(new QueryMeasure[queryModel.getQueryMeasures().size()]));
-    int msrSize = queryExecuterProperties.measureAggregators.length;
+    int msrSize = queryExecuterProperties.measureDataTypes.length;
     int dimensionCount = queryModel.getQueryDimension().size();
     int[] queryOrder = new int[dimensionCount + msrSize];
     int[] queryReverseOrder = new int[dimensionCount + msrSize];
@@ -49,75 +51,34 @@ public class RawQueryResultPreparatorImpl extends AbstractQueryResultPreparator<
     querySchemaInfo.setQueryReverseOrder(queryReverseOrder);
   }
 
-  @Override public BatchRawResult prepareQueryResult(Result scannedResult) {
+  @Override public BatchResult prepareQueryResult(
+      Result<List<ListBasedResultWrapper>, Object> scannedResult) {
     if ((null == scannedResult || scannedResult.size() < 1)) {
-      BatchRawResult batchRawResult = new BatchRawResult(new Object[0][0]);
+      BatchRawResult batchRawResult = new BatchRawResult();
       batchRawResult.setQuerySchemaInfo(querySchemaInfo);
       return batchRawResult;
     }
-    int msrSize = queryExecuterProperties.measureAggregators.length;
-    int totalNumberOfColumn = msrSize + 1;
-    Object[][] resultData = new Object[scannedResult.size()][totalNumberOfColumn];
-    int currentRow = 0;
-    ByteArrayWrapper key = null;
-    MeasureAggregator[] value = null;
+    int msrSize = queryExecuterProperties.measureDataTypes.length;
+    Object[][] resultData = new Object[scannedResult.size()][];
+    Object[] value;
+    Object[] row;
+    int counter = 0;
     while (scannedResult.hasNext()) {
-      key = scannedResult.getKey();
       value = scannedResult.getValue();
-      resultData[currentRow][0] = key;
-      for (int i = 0; i < msrSize; i++) {
-        resultData[currentRow][1 + i] = value[i];
+      row = new Object[msrSize + 1];
+      row[0] = scannedResult.getKey();
+      if(value != null) {
+        System.arraycopy(value, 0, row, 1, msrSize);
       }
-      currentRow++;
+      resultData[counter] = row;
+      counter ++;
     }
-
-    if (resultData.length > 0) {
-      resultData = encodeToRows(resultData);
-    }
-    BatchRawResult result = getResult(queryModel, resultData);
+    LOGGER.info("###########################---- Total Number of records" + scannedResult.size());
+    BatchRawResult result = new BatchRawResult();
+    result.setRows(resultData);
     result.setQuerySchemaInfo(querySchemaInfo);
     return result;
   }
 
-
-  private BatchRawResult getResult(QueryModel queryModel, Object[][] convertedResult) {
-
-    int msrCount = queryExecuterProperties.measureAggregators.length;
-    Object[][] resultDataA = new Object[1 + msrCount][convertedResult[0].length];
-
-    for (int columnIndex = 0; columnIndex < resultDataA[0].length; columnIndex++) {
-      resultDataA[0][columnIndex] = convertedResult[0][columnIndex];
-      MeasureAggregator[] msrAgg =
-          new MeasureAggregator[queryExecuterProperties.measureAggregators.length];
-
-      fillMeasureValueForAggGroupByQuery(queryModel, convertedResult, 1, columnIndex, msrAgg);
-
-      QueryMeasure msr = null;
-      for (int i = 0; i < queryModel.getQueryMeasures().size(); i++) {
-        msr = queryModel.getQueryMeasures().get(i);
-        if (msrAgg[queryExecuterProperties.measureStartIndex + i].isFirstTime()) {
-          resultDataA[i + 1][columnIndex] = null;
-        } else {
-          Object msrVal;
-          switch (msr.getMeasure().getDataType()) {
-            case LONG:
-              msrVal = msrAgg[queryExecuterProperties.measureStartIndex + i].getLongValue();
-              break;
-            case DECIMAL:
-              msrVal = msrAgg[queryExecuterProperties.measureStartIndex + i].getBigDecimalValue();
-              break;
-            default:
-              msrVal = msrAgg[queryExecuterProperties.measureStartIndex + i].getDoubleValue();
-          }
-          resultDataA[i + 1][columnIndex] = DataTypeUtil
-              .getMeasureDataBasedOnDataType(msrVal,
-                  msr.getMeasure().getDataType());
-        }
-      }
-    }
-    LOGGER.info("###########################################------ Total Number of records"
-            + resultDataA[0].length);
-    return new BatchRawResult(resultDataA);
-  }
 }
 

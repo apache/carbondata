@@ -25,7 +25,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -43,7 +42,6 @@ import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
-import org.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -51,15 +49,8 @@ import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
-import org.carbondata.query.carbon.aggregator.dimension.DimensionDataAggregator;
-import org.carbondata.query.carbon.aggregator.dimension.impl.ColumnGroupDimensionsAggregator;
-import org.carbondata.query.carbon.aggregator.dimension.impl.DirectDictionaryDimensionAggregator;
-import org.carbondata.query.carbon.aggregator.dimension.impl.FixedLengthDimensionAggregator;
-import org.carbondata.query.carbon.aggregator.dimension.impl.VariableLengthDimensionAggregator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
-import org.carbondata.query.carbon.model.CustomAggregateExpression;
-import org.carbondata.query.carbon.model.DimensionAggregatorInfo;
 import org.carbondata.query.carbon.model.QueryDimension;
 import org.carbondata.query.carbon.model.QueryMeasure;
 import org.carbondata.query.carbon.model.QueryModel;
@@ -161,7 +152,6 @@ public class QueryUtil {
    *
    * @param queryDimensions dimension selected in query
    * @param generator       key generator
-   * @param allDimension    all dimension present in the table
    * @return max key for dimension
    * @throws KeyGenException if any problem while generating the key
    */
@@ -203,29 +193,6 @@ public class QueryUtil {
   }
 
   /**
-   * Below method will be used to extract the dimension and measure from the
-   * expression
-   *
-   * @param expressions aggregate expression
-   * @param dims        extracted dimensions
-   * @param msrs        extracted measures
-   */
-  public static void extractDimensionsAndMeasuresFromExpression(
-      List<CustomAggregateExpression> expressions, List<CarbonDimension> dims,
-      List<CarbonMeasure> msrs) {
-    for (CustomAggregateExpression expression : expressions) {
-      List<CarbonColumn> dimsFromExpr = expression.getReferredColumns();
-      for (CarbonColumn dimFromExpr : dimsFromExpr) {
-        if (!dimFromExpr.isDimesion()) {
-          msrs.add((CarbonMeasure) dimFromExpr);
-        } else {
-          dims.add((CarbonDimension) dimFromExpr);
-        }
-      }
-    }
-  }
-
-  /**
    * Below method will be used to get the dimension block index in file based
    * on query dimension
    *
@@ -235,16 +202,12 @@ public class QueryUtil {
    */
   public static int[] getDimensionsBlockIndexes(List<QueryDimension> queryDimensions,
       Map<Integer, Integer> dimensionOrdinalToBlockMapping,
-      List<DimensionAggregatorInfo> dimAggInfo, List<CarbonDimension> customAggregationDimension) {
+      List<CarbonDimension> customAggregationDimension) {
     // using set as in row group columns will point to same block
     Set<Integer> dimensionBlockIndex = new HashSet<Integer>();
     for (int i = 0; i < queryDimensions.size(); i++) {
       dimensionBlockIndex.add(
           dimensionOrdinalToBlockMapping.get(queryDimensions.get(i).getDimension().getOrdinal()));
-    }
-    for (int i = 0; i < dimAggInfo.size(); i++) {
-      dimensionBlockIndex
-          .add(dimensionOrdinalToBlockMapping.get(dimAggInfo.get(i).getDim().getOrdinal()));
     }
     for (int i = 0; i < customAggregationDimension.size(); i++) {
       dimensionBlockIndex
@@ -260,18 +223,12 @@ public class QueryUtil {
    *
    * @param queryDimensions            query dimension present in the query this will be used to
    *                                   convert the result from surrogate key to actual data
-   * @param dimAggInfo                 dimension present in the dimension aggregation
-   *                                   dictionary will be used to convert to actual data
-   *                                   for aggregation
-   * @param customAggregationDimension dimension which is present in the expression for aggregation
-   *                                   we need dictionary data
    * @param absoluteTableIdentifier    absolute table identifier
    * @return dimension unique id to its dictionary map
    * @throws QueryExecutionException
    */
   public static Map<String, Dictionary> getDimensionDictionaryDetail(
-      List<QueryDimension> queryDimensions, List<DimensionAggregatorInfo> dimAggInfo,
-      List<CustomAggregateExpression> customAggExpression,
+      List<QueryDimension> queryDimensions,
       AbsoluteTableIdentifier absoluteTableIdentifier) throws QueryExecutionException {
     // to store dimension unique column id list, this is required as
     // dimension can be present in
@@ -286,23 +243,6 @@ public class QueryUtil {
           .hasEncoding(encodingList, Encoding.DIRECT_DICTIONARY)) {
         dictionaryDimensionFromQuery.add(queryDimensions.get(i).getDimension().getColumnId());
       }
-    }
-    for (int i = 0; i < dimAggInfo.size(); i++) {
-      List<Encoding> encodingList = dimAggInfo.get(i).getDim().getEncoder();
-      if (CarbonUtil.hasEncoding(encodingList, Encoding.DICTIONARY) && !CarbonUtil
-          .hasEncoding(encodingList, Encoding.DIRECT_DICTIONARY)) {
-        dictionaryDimensionFromQuery.add(dimAggInfo.get(i).getDim().getColumnId());
-      }
-    }
-    for (int i = 0; i < customAggExpression.size(); i++) {
-      List<CarbonColumn> referredColumns = customAggExpression.get(i).getReferredColumns();
-      for (CarbonColumn column : referredColumns) {
-        if (CarbonUtil.hasEncoding(column.getEncoder(), Encoding.DICTIONARY) && !CarbonUtil
-            .hasEncoding(column.getEncoder(), Encoding.DIRECT_DICTIONARY)) {
-          dictionaryDimensionFromQuery.add(column.getColumnId());
-        }
-      }
-
     }
     // converting to list as api exposed needed list which i think
     // is not correct
@@ -672,127 +612,6 @@ public class QueryUtil {
   }
 
   /**
-   * Below method will be used to get the dimension data aggregator list,
-   * which will be used to aggregate the dimension data, aggregate function
-   * like count(dimension) or any other function on dimension will be handled
-   *
-   * @param dimensionAggInfoList           dimension aggregation from query model
-   * @param dimensionToBlockIndexMapping   dimension block to its index mapping this will be
-   *                                       used to read  the block from file
-   * @param columnGroupIdToKeyGeneratorMap column group it to its key generator which will
-   *                                       be used to unpack the row group columns
-   * @param columnUniqueIdToDictionaryMap  this will dictionary column to its dictionary mapping
-   * @return list dimension data aggregator objects
-   */
-
-  public static List<DimensionDataAggregator> getDimensionDataAggregatorList1(
-      List<DimensionAggregatorInfo> dimensionAggInfoList,
-      Map<Integer, Integer> dimensionToBlockIndexMapping,
-      Map<Integer, KeyGenerator> columnGroupIdToKeyGeneratorMap,
-      Map<String, Dictionary> columnUniqueIdToDictionaryMap) {
-
-    Map<Integer, List<DimensionAggregatorInfo>> arrangeDimensionAggregationInfo =
-        arrangeDimensionAggregationInfo(dimensionAggInfoList, dimensionToBlockIndexMapping);
-    List<DimensionDataAggregator> dimensionDataAggregators =
-        new ArrayList<DimensionDataAggregator>();
-    int aggregatorStartIndex = 0;
-
-    for (Entry<Integer, List<DimensionAggregatorInfo>> entry : arrangeDimensionAggregationInfo
-        .entrySet()) {
-      // if number of dimension aggregation is info is more than 2 than it
-      // is a column group dimension
-      // so only one aggregator instance will be created to handle the
-      // aggregation
-      // as in case of column group unpacking of the bit packed mdkey will
-      // be done
-      // only once
-      CarbonDimension dim = entry.getValue().get(0).getDim();
-      if (entry.getValue().size() > 1) {
-        // how many aggregator will be used for column group
-        int numberOfAggregatorForColumnGroup = 0;
-        List<Dictionary> dictionaryList = new ArrayList<Dictionary>();
-        // below code is to create a dictionary list of all the column
-        // group dimension present in the query
-        for (DimensionAggregatorInfo dimensionAggregatorInfo : entry.getValue()) {
-          dictionaryList.add(
-              columnUniqueIdToDictionaryMap.get(dimensionAggregatorInfo.getDim().getColumnId()));
-          numberOfAggregatorForColumnGroup += dimensionAggregatorInfo.getAggList().size();
-        }
-        dimensionDataAggregators.add(new ColumnGroupDimensionsAggregator(entry.getValue(),
-            columnGroupIdToKeyGeneratorMap.get(dim.columnGroupId()),
-            dimensionToBlockIndexMapping.get(dim.getOrdinal()), dictionaryList,
-            aggregatorStartIndex));
-        aggregatorStartIndex += numberOfAggregatorForColumnGroup;
-        continue;
-      } else {
-        if(CarbonUtil.hasEncoding(dim.getEncoder(), Encoding.DIRECT_DICTIONARY)){
-          dimensionDataAggregators.add(
-              new DirectDictionaryDimensionAggregator(entry.getValue().get(0),
-                  aggregatorStartIndex,
-                  dimensionToBlockIndexMapping.get(dim.getOrdinal())));
-        }
-        // if it is a dictionary column than create a fixed length
-        // aggeragtor
-        else if (CarbonUtil
-            .hasEncoding(dim.getEncoder(), Encoding.DICTIONARY)) {
-          dimensionDataAggregators.add(
-              new FixedLengthDimensionAggregator(entry.getValue().get(0), null,
-                  columnUniqueIdToDictionaryMap.get(dim.getColumnId()),
-                  aggregatorStartIndex,
-                  dimensionToBlockIndexMapping.get(dim.getOrdinal())));
-        } else {
-          // else for not dictionary column create a
-          // variable length aggregator
-          dimensionDataAggregators.add(
-              new VariableLengthDimensionAggregator(entry.getValue().get(0), null,
-                  aggregatorStartIndex,
-                  dimensionToBlockIndexMapping.get(dim.getOrdinal())));
-        }
-        aggregatorStartIndex += entry.getValue().get(0).getAggList().size();
-      }
-    }
-    return dimensionDataAggregators;
-  }
-
-  /**
-   * Below method will be used to group the dimension aggregation infos This
-   * grouping will be based on block index of the file to dimension mapping
-   * Basically it will group all the dimension aggregation of same column
-   * group dimension This is done to avoid the column group dimension mdkey
-   * unpacking multiple times. If all the dimension of column group is handled
-   * separately then unpacking of mdkey for same column group will be done
-   * multiple times and it will impact the query performance, so to avoid this
-   * if we group the dimension together and they will point same block in the
-   * physical file so reading will be done only once and unpacking of each row
-   * will be also done only once
-   *
-   * @param queryDimensionAggregationInfos      query dimension aggregation infos
-   * @param dimensionOrdinaltoBlockIndexMapping dimension to file block index mapping
-   * @return block index in file to list of dimension pointing to that block
-   * mapping
-   */
-  private static Map<Integer, List<DimensionAggregatorInfo>> arrangeDimensionAggregationInfo(
-      List<DimensionAggregatorInfo> queryDimensionAggregationInfos,
-      Map<Integer, Integer> dimensionOrdinaltoBlockIndexMapping) {
-    Map<Integer, List<DimensionAggregatorInfo>> groupedDimensionAggregationInfo =
-        new LinkedHashMap<Integer, List<DimensionAggregatorInfo>>();
-    for (DimensionAggregatorInfo queryDimensionAggregatorInfo : queryDimensionAggregationInfos) {
-      List<DimensionAggregatorInfo> list = groupedDimensionAggregationInfo.get(
-          dimensionOrdinaltoBlockIndexMapping
-              .get(queryDimensionAggregatorInfo.getDim().getOrdinal()));
-
-      if (null == list) {
-        list =
-            new ArrayList<DimensionAggregatorInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-        groupedDimensionAggregationInfo.put(dimensionOrdinaltoBlockIndexMapping
-            .get(queryDimensionAggregatorInfo.getDim().getOrdinal()), list);
-      }
-      list.add(queryDimensionAggregatorInfo);
-    }
-    return groupedDimensionAggregationInfo;
-  }
-
-  /**
    * Below method will be used to fill block indexes of the query dimension
    * which will be used in creating a output row Here is method we are passing
    * two list which store the indexes one for dictionary column other for not
@@ -859,10 +678,6 @@ public class QueryUtil {
         queryMeasure
             .setMeasure(carbonTable.getMeasureByName(tableName, queryMeasure.getColumnName()));
       }
-    }
-    // resolve dimension aggregation info
-    for (DimensionAggregatorInfo dimAggInfo : queryModel.getDimAggregationInfo()) {
-      dimAggInfo.setDim(carbonTable.getDimensionByName(tableName, dimAggInfo.getColumnName()));
     }
     //TODO need to handle expression
   }

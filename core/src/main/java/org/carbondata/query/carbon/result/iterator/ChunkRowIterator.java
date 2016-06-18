@@ -21,12 +21,11 @@ package org.carbondata.query.carbon.result.iterator;
 
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.carbon.result.BatchResult;
-import org.carbondata.query.carbon.result.RowResult;
 
 /**
  * Iterator over row result
  */
-public class ChunkRowIterator extends CarbonIterator<RowResult> {
+public class ChunkRowIterator extends CarbonIterator<Object[]> {
 
   /**
    * iterator over chunk result
@@ -73,7 +72,7 @@ public class ChunkRowIterator extends CarbonIterator<RowResult> {
    *
    * @return the next element in the iteration
    */
-  @Override public RowResult next() {
+  @Override public Object[] next() {
     return currentchunk.next();
   }
 

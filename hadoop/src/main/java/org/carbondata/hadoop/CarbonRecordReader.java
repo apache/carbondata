@@ -13,8 +13,8 @@ import org.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.carbondata.query.carbon.executor.QueryExecutorFactory;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.model.QueryModel;
-import org.carbondata.query.carbon.result.BatchRawResult;
-import org.carbondata.query.carbon.result.iterator.ChunkRawRowIterartor;
+import org.carbondata.query.carbon.result.BatchResult;
+import org.carbondata.query.carbon.result.iterator.ChunkRowIterator;
 
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -48,8 +48,8 @@ public class CarbonRecordReader<T> extends RecordReader<Void, T> {
     readSupport
         .intialize(queryModel.getProjectionColumns(), queryModel.getAbsoluteTableIdentifier());
     try {
-      carbonIterator = new ChunkRawRowIterartor(
-          (CarbonIterator<BatchRawResult>) QueryExecutorFactory.getQueryExecutor(queryModel)
+      carbonIterator = new ChunkRowIterator(
+          (CarbonIterator<BatchResult>) QueryExecutorFactory.getQueryExecutor(queryModel)
               .execute(queryModel));
     } catch (QueryExecutionException e) {
       throw new InterruptedException(e.getMessage());

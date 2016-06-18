@@ -31,7 +31,6 @@ import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
@@ -86,16 +85,6 @@ public class QueryModel implements Serializable {
    * records will passed from executor
    */
   private int limit;
-
-  /**
-   * for applying aggregation on dimension
-   */
-  private List<DimensionAggregatorInfo> dimAggregationInfo;
-
-  /**
-   * custom aggregate expression
-   */
-  private List<CustomAggregateExpression> expressions;
 
   /**
    * to check if it is a count star query , so processing will be different
@@ -153,10 +142,6 @@ public class QueryModel implements Serializable {
 
   public QueryModel() {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
-    dimAggregationInfo =
-        new ArrayList<DimensionAggregatorInfo>();
-    expressions =
-        new ArrayList<CustomAggregateExpression>();
     queryDimension = new ArrayList<QueryDimension>();
     queryMeasures = new ArrayList<QueryMeasure>();
     sortDimension = new ArrayList<QueryDimension>();
@@ -173,7 +158,6 @@ public class QueryModel implements Serializable {
 
     fillQueryModel(queryPlan, carbonTable, queryModel, factTableName);
 
-    fillDimensionAggregator(queryPlan, queryModel);
     queryModel.setLimit(queryPlan.getLimit());
     queryModel.setDetailQuery(queryPlan.isDetailQuery());
     queryModel.setForcedDetailRawQuery(queryPlan.isRawDetailQuery());
@@ -215,17 +199,6 @@ public class QueryModel implements Serializable {
       executorModel.setSortDimension(new ArrayList<QueryDimension>(0));
     }
 
-  }
-
-  private static void fillDimensionAggregator(CarbonQueryPlan logicalPlan,
-      QueryModel executorModel) {
-    Map<String, DimensionAggregatorInfo> dimAggregatorInfos = logicalPlan.getDimAggregatorInfos();
-    List<DimensionAggregatorInfo> dimensionAggregatorInfos =
-        new ArrayList<DimensionAggregatorInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    for (Map.Entry<String, DimensionAggregatorInfo> entry : dimAggregatorInfos.entrySet()) {
-      dimensionAggregatorInfos.add(entry.getValue());
-    }
-    executorModel.setDimAggregationInfo(dimensionAggregatorInfos);
   }
 
   public static void processFilterExpression(
@@ -397,20 +370,6 @@ public class QueryModel implements Serializable {
   }
 
   /**
-   * @return the dimAggregationInfo
-   */
-  public List<DimensionAggregatorInfo> getDimAggregationInfo() {
-    return dimAggregationInfo;
-  }
-
-  /**
-   * @param dimAggregationInfo the dimAggregationInfo to set
-   */
-  public void setDimAggregationInfo(List<DimensionAggregatorInfo> dimAggregationInfo) {
-    this.dimAggregationInfo = dimAggregationInfo;
-  }
-
-  /**
    * @return the tableBlockInfos
    */
   public List<TableBlockInfo> getTableBlockInfos() {
@@ -422,20 +381,6 @@ public class QueryModel implements Serializable {
    */
   public void setTableBlockInfos(List<TableBlockInfo> tableBlockInfos) {
     this.tableBlockInfos = tableBlockInfos;
-  }
-
-  /**
-   * @return the expressions
-   */
-  public List<CustomAggregateExpression> getExpressions() {
-    return expressions;
-  }
-
-  /**
-   * @param expressions the expressions to set
-   */
-  public void setExpressions(List<CustomAggregateExpression> expressions) {
-    this.expressions = expressions;
   }
 
   /**

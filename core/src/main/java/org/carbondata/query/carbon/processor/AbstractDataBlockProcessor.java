@@ -23,10 +23,8 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.iterator.CarbonIterator;
-import org.carbondata.query.carbon.aggregator.DataAggregator;
 import org.carbondata.query.carbon.aggregator.ScannedResultAggregator;
 import org.carbondata.query.carbon.aggregator.impl.ListBasedResultAggregator;
-import org.carbondata.query.carbon.aggregator.impl.MapBasedResultAggregator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.scanner.BlockletScanner;
@@ -82,13 +80,8 @@ public abstract class AbstractDataBlockProcessor implements BlockProcessor {
       blockletScanner = new NonFilterScanner(blockExecutionInfo);
     }
 
-    if (blockExecutionInfo.isDetailQuery() || blockExecutionInfo.isRawRecordDetailQuery()) {
-      this.scannerResultAggregator =
-          new ListBasedResultAggregator(blockExecutionInfo, new DataAggregator(blockExecutionInfo));
-    } else {
-      this.scannerResultAggregator =
-          new MapBasedResultAggregator(blockExecutionInfo, new DataAggregator(blockExecutionInfo));
-    }
+    this.scannerResultAggregator =
+        new ListBasedResultAggregator(blockExecutionInfo);
   }
 
   /**

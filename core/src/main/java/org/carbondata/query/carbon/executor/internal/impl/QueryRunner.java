@@ -27,7 +27,6 @@ import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.processor.BlockProcessor;
-import org.carbondata.query.carbon.processor.impl.AggregateQueryBlockProcessor;
 import org.carbondata.query.carbon.processor.impl.DetailQueryBlockProcessor;
 
 /**
@@ -58,11 +57,7 @@ public class QueryRunner implements Callable<Void> {
     this.fileReader = FileFactory.getFileHolder(executionInfo.getFileType());
     // if detail query detail query processor will be used to process the
     // block
-    if (executionInfo.isDetailQuery() || executionInfo.isRawRecordDetailQuery()) {
-      dataBlockProcessor = new DetailQueryBlockProcessor(executionInfo, fileReader);
-    } else {
-      dataBlockProcessor = new AggregateQueryBlockProcessor(executionInfo, fileReader);
-    }
+    dataBlockProcessor = new DetailQueryBlockProcessor(executionInfo, fileReader);
   }
 
   @Override public Void call() throws Exception {

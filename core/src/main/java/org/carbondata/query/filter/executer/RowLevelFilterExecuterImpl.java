@@ -35,8 +35,6 @@ import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.aggregator.util.MeasureAggregatorFactory;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.processor.BlocksChunkHolder;
 import org.carbondata.query.carbon.util.DataTypeUtil;
@@ -209,44 +207,25 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       if (!msrColumnEvalutorInfo.isMeasureExistsInCurrentSlice()) {
         record[msrColumnEvalutorInfo.getRowIndex()] = msrColumnEvalutorInfo.getDefaultValue();
       } else {
-        if (msrColumnEvalutorInfo.isCustomMeasureValue()) {
-          MeasureAggregator aggregator = MeasureAggregatorFactory
-              .getAggregator(msrColumnEvalutorInfo.getAggregator(),
-                  msrColumnEvalutorInfo.getType());
-          aggregator.merge(
-              blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
-                  .getMeasureDataHolder().getReadableByteArrayValueByIndex(index));
-          switch (msrType) {
-            case LONG:
-              record[msrColumnEvalutorInfo.getRowIndex()] = aggregator.getLongValue();
-              break;
-            case DECIMAL:
-              record[msrColumnEvalutorInfo.getRowIndex()] = aggregator.getBigDecimalValue();
-              break;
-            default:
-              record[msrColumnEvalutorInfo.getRowIndex()] = aggregator.getDoubleValue();
-          }
-        } else {
-          Object msrValue;
-          switch (msrType) {
-            case LONG:
-              msrValue =
-                  blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
-                      .getMeasureDataHolder().getReadableLongValueByIndex(index);
-              break;
-            case DECIMAL:
-              msrValue =
-                  blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
-                      .getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
-              break;
-            default:
-              msrValue =
-                  blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
-                      .getMeasureDataHolder().getReadableDoubleValueByIndex(index);
-          }
-          record[msrColumnEvalutorInfo.getRowIndex()] = msrValue;
-
+        Object msrValue;
+        switch (msrType) {
+          case LONG:
+            msrValue =
+                blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
+                    .getMeasureDataHolder().getReadableLongValueByIndex(index);
+            break;
+          case DECIMAL:
+            msrValue =
+                blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
+                    .getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
+            break;
+          default:
+            msrValue =
+                blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
+                    .getMeasureDataHolder().getReadableDoubleValueByIndex(index);
         }
+        record[msrColumnEvalutorInfo.getRowIndex()] = msrValue;
+
       }
     }
     row.setValues(record);
@@ -275,7 +254,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    * Read the actual filter member by passing the dictionary value from
    * the forward dictionary cache which which holds column wise cache
    *
-   * @param dimColumnEvaluaatorInfo
+   * @param dimColumnEvaluatorInfo
    * @param dictionaryValue
    * @param forwardDictionary
    * @return

@@ -33,7 +33,6 @@ import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.result.Result;
 import org.carbondata.query.carbon.result.impl.ListBasedResult;
-import org.carbondata.query.carbon.result.impl.MapBasedResult;
 import org.carbondata.query.carbon.result.iterator.MemoryBasedResultIterator;
 
 /**
@@ -93,11 +92,7 @@ public abstract class AbstractScannedResultMerger implements ScannedResultMerger
    * for initializing the map based or list based result.
    */
   protected void initialiseResult() {
-    if (!blockExecutionInfo.isDetailQuery() && !blockExecutionInfo.isRawRecordDetailQuery()) {
-      mergedScannedResult = new MapBasedResult();
-    } else {
-      mergedScannedResult = new ListBasedResult();
-    }
+    mergedScannedResult = new ListBasedResult();
   }
 
   /**

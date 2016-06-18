@@ -25,7 +25,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier
 import org.carbondata.hadoop.CarbonInputFormat
-import org.carbondata.query.carbon.result.RowResult
 
 /**
  * All the utility functions for carbon plan creation
@@ -36,8 +35,8 @@ object QueryPlanUtil {
    * createCarbonInputFormat from query model
    */
   def createCarbonInputFormat(absoluteTableIdentifier: AbsoluteTableIdentifier) :
-  (CarbonInputFormat[RowResult], Job) = {
-    val carbonInputFormat = new CarbonInputFormat[RowResult]()
+  (CarbonInputFormat[Array[Object]], Job) = {
+    val carbonInputFormat = new CarbonInputFormat[Array[Object]]()
     val jobConf: JobConf = new JobConf(new Configuration)
     val job: Job = new Job(jobConf)
     FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getStorePath))

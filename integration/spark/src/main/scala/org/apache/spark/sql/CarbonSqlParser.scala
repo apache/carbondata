@@ -170,7 +170,7 @@ class CarbonSqlParser()
     initLexical
     phrase(start)(new lexical.Scanner(input)) match {
       case Success(plan, _) => plan match {
-        case x: LoadCube =>
+        case x: LoadTable =>
           x.inputSqlString = input
           x
         case logicalPlan => logicalPlan
@@ -969,7 +969,7 @@ class CarbonSqlParser()
 
         }
         val patitionOptionsMap = partionDataOptions.toMap
-        LoadCube(schema, cubename, filePath, dimFolderPath.getOrElse(Seq()),
+        LoadTable(schema, cubename, filePath, dimFolderPath.getOrElse(Seq()),
             patitionOptionsMap, false)
     }
 
@@ -985,7 +985,7 @@ class CarbonSqlParser()
             validateOptions(partionDataOptions)
           }
           val patitionOptionsMap = partionDataOptions.getOrElse(List.empty[(String, String)]).toMap
-          LoadCube(schema, cubename, filePath, Seq(), patitionOptionsMap, isOverwrite.isDefined)
+          LoadTable(schema, cubename, filePath, Seq(), patitionOptionsMap, isOverwrite.isDefined)
       }
 
   private def validateOptions(partionDataOptions: Option[List[(String, String)]]): Unit = {
@@ -1079,9 +1079,7 @@ class CarbonSqlParser()
       opt(";") ^^ {
       case tabletype ~ exists ~ schemaName ~ resourceName =>
         tabletype match {
-          case agg ~ table =>
-            DropAggregateTableCommand(exists.isDefined, schemaName, resourceName.toLowerCase())
-          case _ => DropCubeCommand(exists.isDefined, schemaName, resourceName.toLowerCase())
+          case _ => DropTableCommand(exists.isDefined, schemaName, resourceName.toLowerCase())
         }
     }
 

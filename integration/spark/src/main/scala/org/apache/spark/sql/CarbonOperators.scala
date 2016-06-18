@@ -26,24 +26,20 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.expressions.aggregate.AggregateExpression
 import org.apache.spark.sql.execution.LeafNode
 import org.apache.spark.sql.hive.CarbonMetastoreCatalog
-import org.apache.spark.sql.types.{DataType, Decimal}
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.query.carbon.model._
-import org.carbondata.spark.{CarbonFilters, RawKey, RawKeyImpl}
+import org.carbondata.spark.{CarbonFilters, RawValue, RawValueImpl}
 import org.carbondata.spark.rdd.CarbonScanRDD
 
 case class CarbonScan(
     var attributesRaw: Seq[Attribute],
     relationRaw: CarbonRelation,
-    dimensionPredicatesRaw: Seq[Expression],
-    aggExprsRaw: Option[Seq[Expression]],
-    useBinaryAggregator: Boolean)(@transient val ocRaw: SQLContext) extends LeafNode {
+    dimensionPredicatesRaw: Seq[Expression])(@transient val ocRaw: SQLContext) extends LeafNode {
   val carbonTable = relationRaw.metaData.carbonTable
   val selectedDims = scala.collection.mutable.MutableList[QueryDimension]()
   val selectedMsrs = scala.collection.mutable.MutableList[QueryMeasure]()
@@ -95,24 +91,6 @@ case class CarbonScan(
           }
         }
       }
-    // Just find out that any aggregation functions are present on dimensions.
-    aggExprsRaw match {
-      case Some(aggExprs) =>
-        aggExprs.foreach {
-          case Alias(agg: AggregateExpression, name) =>
-            agg.collect {
-              case attr: AttributeReference =>
-                val dims = selectedDims.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
-                if(dims.nonEmpty) {
-                  plan.addAggDimAggInfo(dims.head.getColumnName,
-                    dims.head.getAggregateFunction,
-                    dims.head.getQueryOrder)
-                }
-            }
-          case _ =>
-        }
-      case _ =>
-    }
 
     // Fill the selected dimensions & measures obtained from
     // attributes to query plan  for detailed query
@@ -179,14 +157,13 @@ case class CarbonScan(
   }
 
 
-  def inputRdd: CarbonScanRDD[Array[Any], Any] = {
+  def inputRdd: CarbonScanRDD[Array[Any]] = {
 
     val conf = new Configuration()
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-    buildCarbonPlan.getDimAggregatorInfos.clear()
     val model = QueryModel.createModel(
       absoluteTableIdentifier, buildCarbonPlan, carbonTable)
-    val kv: RawKey[Array[Any], Any] = new RawKeyImpl()
+    val kv: RawValue[Array[Any]] = new RawValueImpl
     // setting queryid
     buildCarbonPlan.setQueryId(ocRaw.getConf("queryId", System.nanoTime() + ""))
 
@@ -224,9 +201,9 @@ case class CarbonScan(
 
         override def next(): InternalRow =
           if (outUnsafeRows) {
-            unsafeProjection(new GenericMutableRow(iter.next()._1.map(toType)))
+            unsafeProjection(new GenericMutableRow(iter.next().map(toType)))
           } else {
-            new GenericMutableRow(iter.next()._1.map(toType))
+            new GenericMutableRow(iter.next().map(toType))
           }
       }
     }

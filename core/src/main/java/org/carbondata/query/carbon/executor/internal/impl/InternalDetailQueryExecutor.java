@@ -70,7 +70,7 @@ public class InternalDetailQueryExecutor implements InternalQueryExecutor {
         recordSize = CarbonCommonConstants.INMEMORY_REOCRD_SIZE_DEFAULT;
       }
     }
-    this.numberOfCores = recordSize / Integer.parseInt(CarbonProperties.getInstance()
+    numberOfCores = recordSize / Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
     if (numberOfCores == 0) {
@@ -87,10 +87,11 @@ public class InternalDetailQueryExecutor implements InternalQueryExecutor {
    * @param sliceIndexes   slice indexes to be executed
    * @return query result
    */
-  @Override public CarbonIterator<Result> executeQuery(List<BlockExecutionInfo> executionInfos,
+  @Override public CarbonIterator<Result> executeQuery(
+      List<BlockExecutionInfo> executionInfos,
       int[] sliceIndexes) throws QueryExecutionException {
     long startTime = System.currentTimeMillis();
-    QueryRunner task = null;
+    QueryRunner task;
     ScannedResultMerger scannedResultProcessor =
         new UnSortedScannedResultMerger(executionInfos.get(executionInfos.size() - 1),
             sliceIndexes.length);

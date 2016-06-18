@@ -33,7 +33,6 @@ import org.apache.spark.sql.hive.execution.{DescribeHiveTableCommand, DropTable,
 import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
 
 import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 
 
@@ -64,10 +63,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
             carbonRawScan(projectList,
               predicates,
               carbonRelation,
-              l,
-              None,
-              detailQuery = true,
-              useBinaryAggregation = false)(sqlContext)._1 :: Nil
+              l)(sqlContext) :: Nil
           }
         case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
           CarbonDictionaryDecoder(relations,
@@ -85,10 +81,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
     private def carbonRawScan(projectList: Seq[NamedExpression],
       predicates: Seq[Expression],
       relation: CarbonDatasourceRelation,
-      logicalRelation: LogicalRelation,
-      groupExprs: Option[Seq[Expression]],
-      detailQuery: Boolean,
-      useBinaryAggregation: Boolean)(sc: SQLContext): (SparkPlan, Boolean) = {
+      logicalRelation: LogicalRelation)(sc: SQLContext): SparkPlan = {
 
       val tableName: String =
         relation.carbonRelation.metaData.carbonTable.getFactTableName.toLowerCase
@@ -97,49 +90,32 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       val projectSet = AttributeSet(projectList.flatMap(_.references))
       val scan = CarbonScan(projectSet.toSeq,
         relation.carbonRelation,
-        predicates,
-        groupExprs,
-        useBinaryAggregation)(sqlContext)
-      val dimAggrsPresence: Boolean = scan.buildCarbonPlan.getDimAggregatorInfos.size() > 0
+        predicates)(sqlContext)
       projectList.map {
         case attr: AttributeReference =>
         case Alias(attr: AttributeReference, _) =>
         case others =>
-          others.references
-              .map(f => scan.attributesNeedToDecode.add(f.asInstanceOf[AttributeReference]))
-      }
-      if (!detailQuery) {
-        if (scan.attributesNeedToDecode.size > 0) {
-          val decoder = getCarbonDecoder(logicalRelation,
-            sc,
-            tableName,
-            scan.attributesNeedToDecode.asScala.toSeq,
-            scan)
-          if (scan.unprocessedExprs.nonEmpty) {
-            val filterCondToAdd = scan.unprocessedExprs.reduceLeftOption(expressions.And)
-            (Project(projectList, filterCondToAdd.map(Filter(_, decoder)).getOrElse(decoder)), true)
-          } else {
-            (Project(projectList, decoder), true)
+          others.references.map{f =>
+            val dictionary = relation.carbonRelation.metaData.dictionaryMap.get(f.name)
+            if (dictionary.isDefined && dictionary.get) {
+              scan.attributesNeedToDecode.add(f.asInstanceOf[AttributeReference])
+            }
           }
+      }
+      if (scan.attributesNeedToDecode.size() > 0) {
+        val decoder = getCarbonDecoder(logicalRelation,
+          sc,
+          tableName,
+          scan.attributesNeedToDecode.asScala.toSeq,
+          scan)
+        if (scan.unprocessedExprs.nonEmpty) {
+          val filterCondToAdd = scan.unprocessedExprs.reduceLeftOption(expressions.And)
+          Project(projectList, filterCondToAdd.map(Filter(_, decoder)).getOrElse(decoder))
         } else {
-          (scan, dimAggrsPresence)
+          Project(projectList, decoder)
         }
       } else {
-        if (scan.attributesNeedToDecode.size() > 0) {
-          val decoder = getCarbonDecoder(logicalRelation,
-            sc,
-            tableName,
-            scan.attributesNeedToDecode.asScala.toSeq,
-            scan)
-          if (scan.unprocessedExprs.nonEmpty) {
-            val filterCondToAdd = scan.unprocessedExprs.reduceLeftOption(expressions.And)
-            (Project(projectList, filterCondToAdd.map(Filter(_, decoder)).getOrElse(decoder)), true)
-          } else {
-            (Project(projectList, decoder), true)
-          }
-        } else {
-          (Project(projectList, scan), dimAggrsPresence)
-        }
+        Project(projectList, scan)
       }
     }
 
@@ -158,9 +134,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       val projectExprsNeedToDecode = new java.util.HashSet[Attribute]()
       val scan = CarbonScan(projectList.map(_.toAttribute),
         relation.carbonRelation,
-        predicates,
-        None,
-        useBinaryAggregator = false)(sqlContext)
+        predicates)(sqlContext)
       projectExprsNeedToDecode.addAll(scan.attributesNeedToDecode)
       if (projectExprsNeedToDecode.size() > 0) {
         val decoder = getCarbonDecoder(logicalRelation,
@@ -206,18 +180,6 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         case _ => false
       }
     }
-
-    private def isGroupByPresentOnMeasures(groupingExpressions: Seq[Expression],
-      carbonTable: CarbonTable): Boolean = {
-      groupingExpressions.map { g =>
-        g.collect {
-          case attr: AttributeReference
-            if carbonTable.getMeasureByName(carbonTable.getFactTableName, attr.name) != null =>
-            return true
-        }
-      }
-      false
-    }
   }
 
   object DDLStrategies extends Strategy {
@@ -233,17 +195,17 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       case DropTable(tableName, ifNotExists)
         if CarbonEnv.getInstance(sqlContext).carbonCatalog
             .tableExists(TableIdentifier(tableName.toLowerCase))(sqlContext) =>
-        ExecutedCommand(DropCubeCommand(ifNotExists, None, tableName.toLowerCase)) :: Nil
+        ExecutedCommand(DropTableCommand(ifNotExists, None, tableName.toLowerCase)) :: Nil
       case ShowAggregateTablesCommand(schemaName) =>
         ExecutedCommand(ShowAggregateTables(schemaName, plan.output)) :: Nil
       case ShowLoadsCommand(schemaName, cube, limit) =>
         ExecutedCommand(ShowLoads(schemaName, cube, limit, plan.output)) :: Nil
-      case LoadCube(schemaNameOp, cubeName, factPathFromUser, dimFilesPath,
+      case LoadTable(schemaNameOp, cubeName, factPathFromUser, dimFilesPath,
       partionValues, isOverwriteExist, inputSqlString) =>
         val isCarbonTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
             .tableExists(TableIdentifier(cubeName, schemaNameOp))(sqlContext)
         if (isCarbonTable || partionValues.nonEmpty) {
-          ExecutedCommand(LoadCube(schemaNameOp, cubeName, factPathFromUser,
+          ExecutedCommand(LoadTable(schemaNameOp, cubeName, factPathFromUser,
             dimFilesPath, partionValues, isOverwriteExist, inputSqlString)) :: Nil
         } else {
           ExecutedCommand(HiveNativeCommand(inputSqlString)) :: Nil

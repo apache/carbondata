@@ -21,6 +21,7 @@ package org.carbondata.spark.rdd
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.reflect.ClassTag
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.Job
@@ -33,10 +34,10 @@ import org.carbondata.core.iterator.CarbonIterator
 import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
 import org.carbondata.query.carbon.executor.QueryExecutorFactory
 import org.carbondata.query.carbon.model.QueryModel
-import org.carbondata.query.carbon.result.{BatchRawResult, RowResult}
-import org.carbondata.query.carbon.result.iterator.ChunkRawRowIterartor
+import org.carbondata.query.carbon.result.BatchResult
+import org.carbondata.query.carbon.result.iterator.ChunkRowIterator
 import org.carbondata.query.expression.Expression
-import org.carbondata.spark.RawKey
+import org.carbondata.spark.RawValue
 import org.carbondata.spark.load.CarbonLoaderUtil
 import org.carbondata.spark.util.QueryPlanUtil
 
@@ -58,29 +59,29 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
   * CarbonData file, this RDD will leverage CarbonData's index information to do CarbonData file
   * level filtering in driver side.
   */
-class CarbonScanRDD[K, V](
+class CarbonScanRDD[V: ClassTag](
   sc: SparkContext,
   queryModel: QueryModel,
   filterExpression: Expression,
-  keyClass: RawKey[K, V],
+  keyClass: RawValue[V],
   @transient conf: Configuration,
   cubeCreationTime: Long,
   schemaLastUpdatedTime: Long,
   baseStoreLocation: String)
-  extends RDD[(K, V)](sc, Nil) with Logging {
+  extends RDD[V](sc, Nil) with Logging {
 
   val defaultParallelism = sc.defaultParallelism
 
   override def getPartitions: Array[Partition] = {
     val startTime = System.currentTimeMillis()
-    val (carbonInputFormat: CarbonInputFormat[RowResult], job: Job) =
+    val (carbonInputFormat: CarbonInputFormat[Array[Object]], job: Job) =
       QueryPlanUtil.createCarbonInputFormat(queryModel.getAbsoluteTableIdentifier)
 
     val result = new util.ArrayList[Partition](defaultParallelism)
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     // set filter resolver tree
     try {
-      var filterResolver = carbonInputFormat
+      val filterResolver = carbonInputFormat
         .getResolvedFilter(job.getConfiguration, filterExpression)
 
       CarbonInputFormat.setFilterPredicates(job.getConfiguration, filterResolver)
@@ -147,15 +148,15 @@ class CarbonScanRDD[K, V](
     result.toArray(new Array[Partition](result.size()))
   }
 
-   override def compute(thepartition: Partition, context: TaskContext): Iterator[(K, V)] = {
-     val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
-     val iter = new Iterator[(K, V)] {
+   override def compute(thepartition: Partition, context: TaskContext): Iterator[V] = {
+     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+     val iter = new Iterator[V] {
        var rowIterator: CarbonIterator[Array[Any]] = _
        var queryStartTime: Long = 0
        try {
          val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
          if(!carbonSparkPartition.tableBlockInfos.isEmpty) {
-           queryModel.setQueryId(queryModel.getQueryId() + "_" + carbonSparkPartition.idx)
+           queryModel.setQueryId(queryModel.getQueryId + "_" + carbonSparkPartition.idx)
            // fill table block info
            queryModel.setTableBlockInfos(carbonSparkPartition.tableBlockInfos)
            queryStartTime = System.currentTimeMillis
@@ -164,13 +165,13 @@ class CarbonScanRDD[K, V](
            logInfo("*************************" + carbonPropertiesFilePath)
            if (null == carbonPropertiesFilePath) {
              System.setProperty("carbon.properties.filepath",
-               System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties");
+               System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties")
            }
            // execute query
-           rowIterator = new ChunkRawRowIterartor(
-             QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel)
-                 .asInstanceOf[CarbonIterator[BatchRawResult]])
-                 .asInstanceOf[CarbonIterator[Array[Any]]]
+           rowIterator = new ChunkRowIterator(
+             QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel).
+               asInstanceOf[CarbonIterator[BatchResult]]).asInstanceOf[CarbonIterator[Array[Any]]]
+
          }
        } catch {
          case e: Exception =>
@@ -187,19 +188,18 @@ class CarbonScanRDD[K, V](
 
        override def hasNext: Boolean = {
          if (!finished && !havePair) {
-           finished = (null == rowIterator) || (!rowIterator.hasNext())
+           finished = (null == rowIterator) || (!rowIterator.hasNext)
            havePair = !finished
          }
          !finished
        }
 
-       override def next(): (K, V) = {
+       override def next(): V = {
          if (!hasNext) {
            throw new java.util.NoSuchElementException("End of stream")
          }
          havePair = false
-         val row = rowIterator.next()
-         keyClass.getKey(row, null)
+         keyClass.getValue(rowIterator.next())
        }
 
        logInfo("********************** Total Time Taken to execute the query in Carbon Side: " +

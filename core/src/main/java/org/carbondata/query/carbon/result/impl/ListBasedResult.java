@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.carbon.result.ListBasedResultWrapper;
 import org.carbondata.query.carbon.result.Result;
 import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
@@ -31,7 +30,7 @@ import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 /**
  * Below class is a holder over list based result wrapper
  */
-public class ListBasedResult implements Result<List<ListBasedResultWrapper>> {
+public class ListBasedResult implements Result<List<ListBasedResultWrapper>, Object> {
 
   /**
    * current result list
@@ -71,9 +70,9 @@ public class ListBasedResult implements Result<List<ListBasedResultWrapper>> {
 
   public ListBasedResult() {
     currentRowPointer =
-        new ArrayList<ListBasedResultWrapper>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     allRowsResult =
-        new ArrayList<List<ListBasedResultWrapper>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   }
 
   /**
@@ -121,7 +120,7 @@ public class ListBasedResult implements Result<List<ListBasedResultWrapper>> {
   /**
    * @return will return the value
    */
-  @Override public MeasureAggregator[] getValue() {
+  @Override public Object[] getValue() {
     return currentRowPointer.get(listRecordCounter).getValue();
   }
 
@@ -131,7 +130,7 @@ public class ListBasedResult implements Result<List<ListBasedResultWrapper>> {
    *
    * @param otherResult return to be merged
    */
-  @Override public void merge(Result<List<ListBasedResultWrapper>> otherResult) {
+  @Override public void merge(Result<List<ListBasedResultWrapper>, Object> otherResult) {
     if (otherResult.size() > 0) {
       totalNumberOfRecords += otherResult.size();
       this.allRowsResult.add(otherResult.getResult());

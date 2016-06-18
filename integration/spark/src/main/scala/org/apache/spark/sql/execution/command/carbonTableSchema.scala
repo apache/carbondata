@@ -1381,7 +1381,7 @@ private[sql] case class DeleteLoadsByLoadDate(
 
 }
 
-private[sql] case class LoadCube(
+private[sql] case class LoadTable(
     schemaNameOp: Option[String],
     tableName: String,
     factPathFromUser: String,
@@ -1693,7 +1693,7 @@ private[sql] case class MergeTable(dbName: String, cubeName: String, tableName: 
   }
 }
 
-private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Option[String],
+private[sql] case class DropTableCommand(ifExistsSet: Boolean, schemaNameOp: Option[String],
     tableName: String)
   extends RunnableCommand {
 
@@ -1755,7 +1755,7 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
                 Some(relation.cubeMeta.carbonTableIdentifier.getDatabaseName))
               )(sqlContext)
           CarbonDataRDDFactory
-            .dropCube(sqlContext.sparkContext, dbName, tableName,
+            .dropTable(sqlContext.sparkContext, dbName, tableName,
               relation.cubeMeta.partitioner)
           QueryPartitionHelper.getInstance().removePartition(dbName, tableName)
 
@@ -1783,33 +1783,6 @@ private[sql] case class DropCubeCommand(ifExistsSet: Boolean, schemaNameOp: Opti
           }
         }
       }
-    }
-
-    Seq.empty
-  }
-}
-
-private[sql] case class DropAggregateTableCommand(ifExistsSet: Boolean,
-    schemaNameOp: Option[String],
-    tableName: String) extends RunnableCommand {
-
-  def run(sqlContext: SQLContext): Seq[Row] = {
-    val dbName = getDB.getDatabaseName(schemaNameOp, sqlContext)
-    val identifier = TableIdentifier(tableName, Option(dbName))
-    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
-      .lookupRelation1(identifier)(sqlContext).asInstanceOf[CarbonRelation]
-
-    if (relation == null) {
-      if (!ifExistsSet) {
-        sys.error(s"Aggregate Table $dbName.$tableName does not exist")
-      }
-    }
-    else {
-      CarbonDataRDDFactory.dropAggregateTable(
-        sqlContext.sparkContext,
-        dbName,
-        tableName,
-        relation.cubeMeta.partitioner)
     }
 
     Seq.empty

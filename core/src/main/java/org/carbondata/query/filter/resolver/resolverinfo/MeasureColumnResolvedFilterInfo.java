@@ -31,8 +31,6 @@ public class MeasureColumnResolvedFilterInfo implements Serializable {
 
   private int rowIndex = -1;
 
-  private boolean isCustomMeasureValue;
-
   private Object uniqueValue;
 
   private String aggregator;
@@ -57,14 +55,6 @@ public class MeasureColumnResolvedFilterInfo implements Serializable {
 
   public void setRowIndex(int rowIndex) {
     this.rowIndex = rowIndex;
-  }
-
-  public boolean isCustomMeasureValue() {
-    return isCustomMeasureValue;
-  }
-
-  public void setCustomMeasureValue(boolean isCustomMeasureValue) {
-    this.isCustomMeasureValue = isCustomMeasureValue;
   }
 
   public Object getUniqueValue() {

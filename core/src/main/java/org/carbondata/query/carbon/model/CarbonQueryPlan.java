@@ -24,9 +24,7 @@ package org.carbondata.query.carbon.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.expression.Expression;
@@ -97,12 +95,6 @@ public class CarbonQueryPlan implements Serializable {
    * outLocationPath
    */
   private String outLocationPath;
-
-  /**
-   * dimAggregatorInfoList
-   */
-  private Map<String, DimensionAggregatorInfo> dimAggregatorInfos =
-      new LinkedHashMap<String, DimensionAggregatorInfo>();
 
   /**
    * isCountStarQuery
@@ -225,34 +217,12 @@ public class CarbonQueryPlan implements Serializable {
     this.outLocationPath = outLocationPath;
   }
 
-  public void addAggDimAggInfo(String columnName, String aggType, int queryOrder) {
-    DimensionAggregatorInfo dimensionAggregatorInfo = dimAggregatorInfos.get(columnName);
-    if (null == dimensionAggregatorInfo) {
-      dimensionAggregatorInfo = new DimensionAggregatorInfo();
-      dimensionAggregatorInfo.setColumnName(columnName);
-      List<Integer> queryOrderList= new ArrayList<Integer>();
-      queryOrderList.add(queryOrder);
-      List<String> aggTypeList= new ArrayList<String>();
-      aggTypeList.add(aggType);
-      dimensionAggregatorInfo.setOrderList(queryOrderList);
-      dimensionAggregatorInfo.setAggList(aggTypeList);
-      dimAggregatorInfos.put(columnName, dimensionAggregatorInfo);
-    } else {
-      dimensionAggregatorInfo.getOrderList().add(queryOrder);
-      dimensionAggregatorInfo.getAggList().add(aggType);
-    }
-  }
-
   public boolean isCountStarQuery() {
     return isCountStartQuery;
   }
 
   public void setCountStartQuery(boolean isCountStartQuery) {
     this.isCountStartQuery = isCountStartQuery;
-  }
-
-  public Map<String, DimensionAggregatorInfo> getDimAggregatorInfos() {
-    return dimAggregatorInfos;
   }
 
   public List<QueryDimension> getSortedDimemsions() {

@@ -64,6 +64,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select channelsId, Latest_DAY from Carbon_automation_test where count(channelsId) = 1").collect
     } catch {
       case ce: UnsupportedOperationException => ce.getMessage
+      case ce: Exception => ce.getMessage
     }
   }
   

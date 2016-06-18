@@ -20,13 +20,6 @@ package org.apache.spark.sql
 import org.apache.spark.sql.SQLConf.SQLConfEntry
 import org.apache.spark.sql.hive.CarbonSQLDialect
 
-object CarbonSQLConf {
-
-  val PUSH_COMPUTATION = SQLConfEntry.booleanConf("spark.sql.carbon.push.computation",
-    defaultValue = Some(true))
-
-}
-
  /**
   * A trait that enables the setting and getting of mutable config parameters/hints.
   *
@@ -39,9 +32,5 @@ class CarbonSQLConf extends SQLConf {
   }
 
   override def caseSensitiveAnalysis: Boolean = getConf(SQLConf.CASE_SENSITIVE, false)
-
-  import CarbonSQLConf._
-
-  private[sql] def pushComputation: Boolean = getConf(PUSH_COMPUTATION)
 
 }

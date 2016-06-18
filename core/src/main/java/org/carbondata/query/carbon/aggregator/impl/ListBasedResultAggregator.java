@@ -23,9 +23,9 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.carbon.aggregator.DataAggregator;
 import org.carbondata.query.carbon.aggregator.ScannedResultAggregator;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
@@ -34,6 +34,7 @@ import org.carbondata.query.carbon.result.AbstractScannedResult;
 import org.carbondata.query.carbon.result.ListBasedResultWrapper;
 import org.carbondata.query.carbon.result.Result;
 import org.carbondata.query.carbon.result.impl.ListBasedResult;
+import org.carbondata.query.carbon.util.DataTypeUtil;
 import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 
 /**
@@ -45,10 +46,6 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(ListBasedResultAggregator.class.getName());
-  /**
-   * data aggregator
-   */
-  private DataAggregator dataAggregator;
 
   /**
    * to keep a track of number of row processed to handle limit push down in
@@ -68,14 +65,6 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
   private List<ListBasedResultWrapper> listBasedResult;
 
   /**
-   * aggreagtor used
-   *
-   * @TODO no need to create this
-   * @TODO need to handle in some other way
-   */
-  private MeasureAggregator[] blockAggregator;
-
-  /**
    * restructuring info
    */
   private KeyStructureInfo restructureInfos;
@@ -85,13 +74,34 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
    */
   private BlockExecutionInfo tableBlockExecutionInfos;
 
-  public ListBasedResultAggregator(BlockExecutionInfo blockExecutionInfos,
-      DataAggregator aggregator) {
+  private int[] measuresOrdinal;
+
+  /**
+   * to check whether measure exists in current table block or not this to
+   * handle restructuring scenario
+   */
+  private boolean[] isMeasureExistsInCurrentBlock;
+
+  /**
+   * default value of the measures in case of restructuring some measure wont
+   * be present in the table so in that default value will be used to
+   * aggregate the data for that measure columns
+   */
+  private Object[] measureDefaultValue;
+
+  /**
+   * measure datatypes.
+   */
+  private DataType[] measureDatatypes;
+
+  public ListBasedResultAggregator(BlockExecutionInfo blockExecutionInfos) {
     limit = blockExecutionInfos.getLimit();
     this.tableBlockExecutionInfos = blockExecutionInfos;
-    blockAggregator = blockExecutionInfos.getAggregatorInfo().getMeasuresAggreagators();
     restructureInfos = blockExecutionInfos.getKeyStructureInfo();
-    dataAggregator = new DataAggregator(blockExecutionInfos);
+    measuresOrdinal = tableBlockExecutionInfos.getAggregatorInfo().getMeasureOrdinals();
+    isMeasureExistsInCurrentBlock = tableBlockExecutionInfos.getAggregatorInfo().getMeasureExists();
+    measureDefaultValue = tableBlockExecutionInfos.getAggregatorInfo().getDefaultValues();
+    this.measureDatatypes = tableBlockExecutionInfos.getAggregatorInfo().getMeasureDataTypes();
   }
 
   @Override
@@ -102,52 +112,74 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
    *
    */
   public int aggregateData(AbstractScannedResult scannedResult) {
-    this.listBasedResult = new ArrayList<ListBasedResultWrapper>(
-        limit == -1 ? scannedResult.numberOfOutputRows() : limit);
+    this.listBasedResult =
+        new ArrayList<>(limit == -1 ? scannedResult.numberOfOutputRows() : limit);
+    boolean isMsrsPresent = measureDatatypes.length > 0;
     ByteArrayWrapper wrapper = null;
-    MeasureAggregator[] measureAggregator = null;
     // scan the record and add to list
     ListBasedResultWrapper resultWrapper;
     while (scannedResult.hasNext() && (limit == -1 || rowCounter < limit)) {
-      wrapper = new ByteArrayWrapper();
-      wrapper.setDictionaryKey(scannedResult.getDictionaryKeyArray());
-      wrapper.setNoDictionaryKeys(scannedResult.getNoDictionaryKeyArray());
-      wrapper.setComplexTypesKeys(scannedResult.getComplexTypeKeyArray());
       resultWrapper = new ListBasedResultWrapper();
-      measureAggregator=getNewAggregator();
-      resultWrapper.setKey(wrapper);
-      resultWrapper.setValue(measureAggregator);
+      if(tableBlockExecutionInfos.isDimensionsExistInQuery()) {
+        wrapper = new ByteArrayWrapper();
+        wrapper.setDictionaryKey(scannedResult.getDictionaryKeyArray());
+        wrapper.setNoDictionaryKeys(scannedResult.getNoDictionaryKeyArray());
+        wrapper.setComplexTypesKeys(scannedResult.getComplexTypeKeyArray());
+        resultWrapper.setKey(wrapper);
+      } else {
+        scannedResult.incrementCounter();
+      }
+      if(isMsrsPresent) {
+        Object[] msrValues = new Object[measureDatatypes.length];
+        fillMeasureData(msrValues, scannedResult);
+        resultWrapper.setValue(msrValues);
+      }
       listBasedResult.add(resultWrapper);
       rowCounter++;
-      // call data aggregator to convert measure value to some aggreagtor
-      // object
-      dataAggregator.aggregateData(scannedResult, measureAggregator);
     }
     return rowCounter;
   }
 
-  /**
-   * Below method will be used to get the new aggreagtor
-   *
-   * @return new aggregator object
-   */
-  private MeasureAggregator[] getNewAggregator() {
-    MeasureAggregator[] aggregators = new MeasureAggregator[blockAggregator.length];
-    for (int i = 0; i < blockAggregator.length; i++) {
-      aggregators[i] = blockAggregator[i].getNew();
+  private void fillMeasureData(Object[] msrValues, AbstractScannedResult scannedResult) {
+    for (short i = 0; i < measuresOrdinal.length; i++) {
+      // if measure exists is block then pass measure column
+      // data chunk to the aggregator
+      if (isMeasureExistsInCurrentBlock[i]) {
+        msrValues[i] =
+            getMeasureData(scannedResult.getMeasureChunk(measuresOrdinal[i]),
+                scannedResult.getCurrenrRowId(),measureDatatypes[i]);
+      } else {
+        // if not then get the default value and use that value in aggregation
+        msrValues[i] = measureDefaultValue[i];
+      }
     }
-    return aggregators;
+  }
+
+  private Object getMeasureData(MeasureColumnDataChunk dataChunk, int index, DataType dataType) {
+    if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
+      Object msrVal;
+      switch (dataType) {
+        case LONG:
+          msrVal = dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
+          break;
+        case DECIMAL:
+          msrVal = dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
+          break;
+        default:
+          msrVal = dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
+      }
+      return DataTypeUtil.getMeasureDataBasedOnDataType(msrVal, dataType);
+    }
+    return null;
   }
 
   /**
    * Below method will used to get the result
-   *
-   * @param aggregated result
    */
-  @Override public Result<List<ListBasedResultWrapper>> getAggregatedResult() {
-    Result<List<ListBasedResultWrapper>> result = new ListBasedResult();
+  @Override public Result getAggregatedResult() {
+    Result result = new ListBasedResult();
     if (!tableBlockExecutionInfos.isFixedKeyUpdateRequired()) {
-      updateKeyWithLatestBlockKeyganerator();
+      updateKeyWithLatestBlockKeygenerator();
       result.addScannedResult(listBasedResult);
     } else {
       result.addScannedResult(listBasedResult);
@@ -155,13 +187,15 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
     return result;
   }
 
+
+
   /**
    * Below method will be used to update the fixed length key with the
    * latest block key generator
    *
    * @return updated block
    */
-  private void updateKeyWithLatestBlockKeyganerator() {
+  private void updateKeyWithLatestBlockKeygenerator() {
     try {
       long[] data = null;
       ByteArrayWrapper key = null;
