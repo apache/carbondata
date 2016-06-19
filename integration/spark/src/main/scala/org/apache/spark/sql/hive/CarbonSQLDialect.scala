@@ -18,11 +18,12 @@
 package org.apache.spark.sql.hive
 
 import org.apache.spark.sql.CarbonSqlParser
+import org.apache.spark.sql.catalyst.ParserDialect
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 
-private[spark] class CarbonSQLDialect(context: HiveContext) extends HiveQLDialect(context) {
+private[spark] class CarbonSQLDialect(context: HiveContext) extends ParserDialect {
 
   @transient
   protected val sqlParser = new CarbonSqlParser
@@ -36,7 +37,8 @@ private[spark] class CarbonSQLDialect(context: HiveContext) extends HiveQLDialec
       // because hive can no parse carbon command
       case ce: MalformedCarbonCommandException =>
         throw ce
-      case _ => super.parse(sqlText)
+      case _ =>
+        HiveQl.parseSql(sqlText)
     }
   }
 }

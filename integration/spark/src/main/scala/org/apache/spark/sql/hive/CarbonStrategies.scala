@@ -22,6 +22,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.TableIdentifier._
 import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.catalyst.expressions.{AttributeSet, _}
 import org.apache.spark.sql.catalyst.planning.{PhysicalOperation, QueryPlanner}
@@ -134,7 +135,8 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       val projectExprsNeedToDecode = new java.util.HashSet[Attribute]()
       val scan = CarbonScan(projectList.map(_.toAttribute),
         relation.carbonRelation,
-        predicates)(sqlContext)
+        predicates,
+        useUnsafeCoversion = false)(sqlContext)
       projectExprsNeedToDecode.addAll(scan.attributesNeedToDecode)
       if (projectExprsNeedToDecode.size() > 0) {
         val decoder = getCarbonDecoder(logicalRelation,
@@ -194,7 +196,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         ExecutedCommand(ShowAllTablesDetail(schemaName, plan.output)) :: Nil
       case DropTable(tableName, ifNotExists)
         if CarbonEnv.getInstance(sqlContext).carbonCatalog
-            .tableExists(TableIdentifier(tableName.toLowerCase))(sqlContext) =>
+            .tableExists(TableIdentifier(tableName.toLowerCase, None))(sqlContext) =>
         ExecutedCommand(DropTableCommand(ifNotExists, None, tableName.toLowerCase)) :: Nil
       case ShowAggregateTablesCommand(schemaName) =>
         ExecutedCommand(ShowAggregateTables(schemaName, plan.output)) :: Nil

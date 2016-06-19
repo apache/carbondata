@@ -39,7 +39,8 @@ import org.carbondata.spark.rdd.CarbonScanRDD
 case class CarbonScan(
     var attributesRaw: Seq[Attribute],
     relationRaw: CarbonRelation,
-    dimensionPredicatesRaw: Seq[Expression])(@transient val ocRaw: SQLContext) extends LeafNode {
+    dimensionPredicatesRaw: Seq[Expression],
+    useUnsafeCoversion: Boolean = true)(@transient val ocRaw: SQLContext) extends LeafNode {
   val carbonTable = relationRaw.metaData.carbonTable
   val selectedDims = scala.collection.mutable.MutableList[QueryDimension]()
   val selectedMsrs = scala.collection.mutable.MutableList[QueryMeasure]()
@@ -184,10 +185,11 @@ case class CarbonScan(
   }
 
 
-  override def outputsUnsafeRows: Boolean = attributesNeedToDecode.size() == 0
+  override def outputsUnsafeRows: Boolean =
+    (attributesNeedToDecode.size() == 0) && useUnsafeCoversion
 
   override def doExecute(): RDD[InternalRow] = {
-    val outUnsafeRows: Boolean = attributesNeedToDecode.size() == 0
+    val outUnsafeRows: Boolean = (attributesNeedToDecode.size() == 0) && useUnsafeCoversion
     inputRdd.mapPartitions { iter =>
       val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)
       new Iterator[InternalRow] {

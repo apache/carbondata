@@ -23,7 +23,6 @@ import scala.collection.JavaConversions._
 
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
-import org.apache.spark.sql.execution.columnar.InMemoryRelation
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 
 class QueryTest extends PlanTest {
@@ -68,21 +67,6 @@ class QueryTest extends PlanTest {
       case Some(errorMessage) => fail(errorMessage)
       case None =>
     }
-  }
-
-  /**
-   * Asserts that a given [[DataFrame]] will be executed using the given number of cached results.
-   */
-  def assertCached(query: DataFrame, numCachedTables: Int = 1): Unit = {
-    val planWithCaching = query.queryExecution.withCachedData
-    val cachedData = planWithCaching collect {
-      case cached: InMemoryRelation => cached
-    }
-
-    assert(
-      cachedData.size == numCachedTables,
-      s"Expected query to contain $numCachedTables, but it actually had ${cachedData.size}\n" +
-        planWithCaching)
   }
 
   protected def checkAnswer(df: DataFrame, expectedAnswer: Row): Unit = {

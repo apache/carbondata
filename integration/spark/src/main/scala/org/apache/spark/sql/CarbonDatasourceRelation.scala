@@ -58,7 +58,7 @@ class CarbonSource
         val options = new CarbonOption(parameters)
         val tableIdentifier = options.tableIdentifier.split("""\.""").toSeq
         val ident = tableIdentifier match {
-          case Seq(name) => TableIdentifier(name)
+          case Seq(name) => TableIdentifier(name, None)
           case Seq(db, name) => TableIdentifier(name, Some(db))
         }
         CarbonDatasourceRelation(ident, None)(sqlContext)

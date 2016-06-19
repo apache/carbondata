@@ -68,7 +68,7 @@ object CarbonMetastoreCatalog {
   def readSchemaFileToThriftTable(schemaFilePath: String): TableInfo = {
     val createTBase = new ThriftReader.TBaseCreator() {
       override def create(): org.apache.thrift.TBase[TableInfo, TableInfo._Fields] = {
-        return new TableInfo();
+        new TableInfo()
       }
     }
     val thriftReader = new ThriftReader(schemaFilePath, createTBase)
@@ -85,10 +85,10 @@ object CarbonMetastoreCatalog {
   def writeThriftTableToSchemaFile(schemaFilePath: String, tableInfo: TableInfo): Unit = {
     val thriftWriter = new ThriftWriter(schemaFilePath, false)
     try {
-      thriftWriter.open();
+      thriftWriter.open()
       thriftWriter.write(tableInfo);
     } finally {
-      thriftWriter.close();
+      thriftWriter.close()
     }
   }
 
@@ -119,16 +119,6 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     true
   } else {
     false
-  }
-
-  override def lookupRelation(tableIdentifier: TableIdentifier,
-      alias: Option[String] = None): LogicalPlan = {
-    try {
-      super.lookupRelation(tableIdentifier, alias)
-    } catch {
-      case s: java.lang.Exception =>
-        lookupRelation1(tableIdentifier, alias)(hive.asInstanceOf[SQLContext])
-    }
   }
 
   def getCubeCreationTime(schemaName: String, cubeName: String): Long = {
@@ -253,7 +243,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
                     .setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath))
                   CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
                   val carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-                      .getCarbonTable(cubeUniqueName);
+                      .getCarbonTable(cubeUniqueName)
                   metaDataBuffer += TableMeta(
                     carbonTable.getCarbonTableIdentifier,
                     storePath,
@@ -306,7 +296,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
       .add(schemaEvolutionEntry)
 
     val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName,
-        tableInfo.getFactTable().getTableId())
+        tableInfo.getFactTable.getTableId)
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier)
     val schemaFilePath = carbonTablePath.getSchemaFilePath
     val schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath)
@@ -344,7 +334,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
       wrapperTableInfo.getTableUniqueName)
-    for (i <- 0 until metadata.cubesMeta.size) {
+    for (i <- metadata.cubesMeta.indices) {
       if (wrapperTableInfo.getTableUniqueName.equals(
         metadata.cubesMeta(i).carbonTableIdentifier.getTableUniqueName)) {
         metadata.cubesMeta(i).carbonTable = carbonTable
@@ -508,7 +498,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     val dbName = tableIdentifier.database.get
     val tableName = tableIdentifier.table
     if (!tableExists(tableIdentifier)(sqlContext)) {
-      LOGGER.audit(s"Drop Table failed. Table with ${dbName}.$tableName does not exist")
+      LOGGER.audit(s"Drop Table failed. Table with $dbName.$tableName does not exist")
       sys.error(s"Table with $dbName.$tableName does not exist")
     }
 
