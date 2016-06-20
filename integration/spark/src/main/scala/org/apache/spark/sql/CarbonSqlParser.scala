@@ -1325,9 +1325,10 @@ class CarbonSqlParser()
     }
 
   protected lazy val segmentId: Parser[String] =
-    ( numericLit ^^ { u => u } |
-      elem("decimal", _.isInstanceOf[lexical.FloatLit]) ^^ (_.chars)
-      )
+    numericLit ^^ { u => u } |
+      elem("decimal", p => {
+        p.getClass.getSimpleName.equals("FloatLit") ||
+        p.getClass.getSimpleName.equals("DecimalLit") } ) ^^ (_.chars)
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
     DELETE ~> (LOAD|SEGMENT) ~> repsep(segmentId, ",") ~ (FROM ~> (CUBE | TABLE) ~>
