@@ -1161,8 +1161,8 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
     val schemaName = getDB.getDatabaseName(alterTableModel.dbName, sqlContext)
     if (null == org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(schemaName + "_" + tableName)) {
-      logError("alter table failed. table not found: " + schemaName + "_" + tableName)
-      sys.error("alter table failed. table not found: " + schemaName + "_" + tableName)
+      logError("alter table failed. table not found: " + schemaName + "." + tableName)
+      sys.error("alter table failed. table not found: " + schemaName + "." + tableName)
     }
 
     val relation =
@@ -1418,9 +1418,9 @@ private[sql] case class LoadCube(
     }
     if (null == org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(schemaName + "_" + tableName)) {
-      logError("Data loading failed. table not found: " + schemaName + "_" + tableName)
-      LOGGER.audit("Data loading failed. table not found: " + schemaName + "_" + tableName)
-      sys.error("Data loading failed. table not found: " + schemaName + "_" + tableName)
+      logError("Data loading failed. table not found: " + schemaName + "." + tableName)
+      LOGGER.audit("Data loading failed. table not found: " + schemaName + "." + tableName)
+      sys.error("Data loading failed. table not found: " + schemaName + "." + tableName)
     }
     CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
     val carbonLock = CarbonLockFactory.getCarbonLockObj(org.carbondata.core.
