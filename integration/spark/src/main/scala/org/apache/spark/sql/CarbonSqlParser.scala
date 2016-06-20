@@ -23,6 +23,7 @@ import java.util.regex.{Matcher, Pattern}
 import scala.collection.JavaConverters._
 import scala.collection.mutable.LinkedHashSet
 import scala.language.implicitConversions
+import scala.util.matching.Regex
 
 import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
@@ -36,12 +37,9 @@ import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
 
 import org.carbondata.core.carbon.metadata.datatype.DataType
-import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.DataTypeUtil
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 import org.carbondata.spark.util.CommonUtil
-
-
 
 /**
  * Parser for All Carbon DDL, DML cases in Unified context
@@ -73,7 +71,6 @@ class CarbonSqlParser()
   protected val DETAIL = Keyword("DETAIL")
   protected val DIMENSIONS = Keyword("DIMENSIONS")
   protected val DIMFOLDERPATH = Keyword("DIMFOLDERPATH")
-  protected val DOUBLE = Keyword("DOUBLE")
   protected val DROP = Keyword("DROP")
   protected val ESCAPECHAR = Keyword("ESCAPECHAR")
   protected val EXCLUDE = Keyword("EXCLUDE")
@@ -88,25 +85,17 @@ class CarbonSqlParser()
   protected val IN = Keyword("IN")
   protected val INCLUDE = Keyword("INCLUDE")
   protected val INPATH = Keyword("INPATH")
-  protected val INT = Keyword("INT")
-  protected val INTEGER = Keyword("INTEGER")
   protected val INTO = Keyword("INTO")
   protected val LEVELS = Keyword("LEVELS")
   protected val LIKE = Keyword("LIKE")
   protected val LOAD = Keyword("LOAD")
   protected val LOADS = Keyword("LOADS")
   protected val LOCAL = Keyword("LOCAL")
-  protected val LONG = Keyword("LONG")
   protected val MAPPED = Keyword("MAPPED")
   protected val MEASURES = Keyword("MEASURES")
   protected val MULTILINE = Keyword("MULTILINE")
   protected val COMPLEX_DELIMITER_LEVEL_1 = Keyword("COMPLEX_DELIMITER_LEVEL_1")
   protected val COMPLEX_DELIMITER_LEVEL_2 = Keyword("COMPLEX_DELIMITER_LEVEL_2")
-  protected val NUMERIC = Keyword("NUMERIC")
-  protected val ARRAY = Keyword("ARRAY")
-  protected val STRUCT = Keyword("STRUCT")
-  protected val BIGINT = Keyword("BIGINT")
-  protected val DECIMAL = Keyword("DECIMAL")
   protected val OPTIONS = Keyword("OPTIONS")
   protected val OUTPATH = Keyword("OUTPATH")
   protected val OVERWRITE = Keyword("OVERWRITE")
@@ -117,11 +106,9 @@ class CarbonSqlParser()
   protected val RELATION = Keyword("RELATION")
   protected val SCHEMAS = Keyword("SCHEMAS")
   protected val SHOW = Keyword("SHOW")
-  protected val STRING = Keyword("STRING")
   protected val TABLES = Keyword("TABLES")
   protected val TABLE = Keyword("TABLE")
   protected val TERMINATED = Keyword("TERMINATED")
-  protected val TIMESTAMP = Keyword("TIMESTAMP")
   protected val TYPE = Keyword("TYPE")
   protected val USE = Keyword("USE")
   protected val WHERE = Keyword("WHERE")
@@ -169,6 +156,11 @@ class CarbonSqlParser()
 
   }
 
+  import lexical.Identifier
+  implicit def regexToParser(regex: Regex): Parser[String] = acceptMatch(
+    s"identifier matching regex ${regex}",
+    { case Identifier(str) if regex.unapplySeq(str).isDefined => str }
+  )
   override def parse(input: String): LogicalPlan = synchronized {
     // Initialize the Keywords.
     initLexical
@@ -1131,7 +1123,9 @@ class CarbonSqlParser()
   protected lazy val dimCol: Parser[Field] = anyFieldDef
 
   protected lazy val primitiveTypes =
-    STRING | INTEGER | TIMESTAMP | NUMERIC | BIGINT | DECIMAL | INT | DOUBLE
+    "(?i)string".r ^^^ "string" | "(?i)integer".r ^^^ "integer" | "(?i)timestamp".r ^^^
+    "timestamp" | "(?i)numeric".r ^^^ "numeric" | "(?i)bigint".r ^^^ "bigint" |
+    "(?i)decimal".r ^^^ "decimal" | "(?i)int".r ^^^ "int" | "(?i)double".r ^^^ "double"
   protected lazy val nestedType: Parser[Field] = structFieldType | arrayFieldType |
     primitiveFieldType
 
@@ -1148,7 +1142,7 @@ class CarbonSqlParser()
     }
 
   protected lazy val arrayFieldType: Parser[Field] =
-    (ARRAY ~> "<" ~> nestedType <~ ">") ^^ {
+    (("(?i)array".r ^^^ "array") ~> "<" ~> nestedType <~ ">") ^^ {
       case e1 =>
         Field("unknown", Some("array"), Some("unknown"),
           Some(List(Field("val", e1.dataType, Some("val"),
@@ -1156,14 +1150,15 @@ class CarbonSqlParser()
     }
 
   protected lazy val structFieldType: Parser[Field] =
-    (STRUCT ~> "<" ~> repsep(anyFieldDef, ",") <~ ">") ^^ {
+    (("(?i)struct".r ^^^ "struct") ~> "<" ~> repsep(anyFieldDef, ",") <~ ">") ^^ {
       case e1 =>
         Field("unknown", Some("struct"), Some("unknown"), Some(e1))
     }
 
   protected lazy val measureCol: Parser[Field] =
-    (ident | stringLit) ~ (INTEGER | NUMERIC | BIGINT | DECIMAL).? ~ (AS ~> (ident | stringLit)).? ~
-      (IN ~> (ident | stringLit)).? ^^ {
+    (ident | stringLit) ~ ("(?i)integer".r ^^^ "integer" | "(?i)numeric".r ^^^ "numeric" |
+      "(?i)bigint".r ^^^ "bigint" | "(?i)decimal".r ^^^ "decimal").? ~
+      (AS ~> (ident | stringLit)).? ~ (IN ~> (ident | stringLit)).? ^^ {
       case e1 ~ e2 ~ e3 ~ e4 => Field(e1, e2, e3, Some(null))
     }
 
