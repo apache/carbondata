@@ -24,9 +24,10 @@ import java.io.File
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.{NonRunningTests, QueryTest}
-
-import org.carbondata.core.util.CarbonProperties
 import org.scalatest.BeforeAndAfterAll
+
+import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.util.CarbonProperties
 
 /**
   * Test Class for all queries on multiple datatypes
@@ -1101,40 +1102,13 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       )
       sql(
         "LOAD DATA FACT FROM  './src/test/resources/TestData1.csv' INTO Cube vardhan100 " +
-          "partitionData(DELIMITER ',' ,QUOTECHAR '\"')"
+          "partitionData(DELIMITER ',' ,QUOTECHAR '\"',FILEHEADER 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId')"
       )
       checkAnswer(
         sql("select count(*) from vardhan100"),
         Seq()
       )
       sql("drop cube vardhan100")
-      fail("Unexpected behavior")
-    }
-    catch {
-      case ex: Throwable =>
-    }
-  }
-
-  //TC_1177
-  test("TC_1177") {
-    try {
-      sql(
-        "create cube vardhan12 dimensions(imei string,AMSize string,channelsId string," +
-          "ActiveCountry string, Activecity string)  measures(gamePointId numeric," +
-          "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-          ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
-          "PARTITION_COUNT=2] )"
-      )
-      sql(
-        "LOAD DATA FACT FROM  './src/test/resources/TestData1.csv' INTO Cube vardhan12 " +
-          "partitionData(DELIMITER ',' ,QUOTECHAR '\"', FILEHEADER 'imei,AMSize,channelsId," +
-          "ActiveCountry,Activecity')"
-      )
-      checkAnswer(
-        sql("select count(*) from vardhan12"),
-        Seq()
-      )
-      sql("drop cube vardhan12")
       fail("Unexpected behavior")
     }
     catch {
@@ -1208,7 +1182,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       )
       sql(
         "LOAD DATA FACT FROM  './src/test/resources/TestData1.csv' INTO Cube vardhan100 " +
-          "partitionData(DELIMITER ',' ,QUOTECHAR '\"')"
+          "partitionData(DELIMITER ',' ,QUOTECHAR '\"',FILEHEADER 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId')"
       )
       checkAnswer(
         sql("select count(*) from vardhan100"),
@@ -1252,16 +1226,22 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         ".spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) " +
         "PARTITION_COUNT=2] )"
     )
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd/MM/yyyy HH:mm")
     sql(
       "LOAD DATA FACT FROM  './src/test/resources/TestData6.csv' INTO Cube vardhan500 " +
         "partitionData(DELIMITER ',' ,QUOTECHAR '\"', FILEHEADER 'imei,deviceInformationId," +
         "AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate')"
     )
+
     checkAnswer(
       sql("select count(*) from vardhan500"),
       Seq(Row(100))
     )
     sql("drop cube vardhan500")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
+      );
   }
 
   //TC_1192
@@ -1458,27 +1438,6 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql("drop cube vard970")
   }
 
-  //DTS2015101209623
-  test("DTS2015101209623") {
-    sql(
-      "create cube vard971 dimensions(imei string,productionDate timestamp,AMSize string," +
-        "channelsId string,ActiveCountry string, Activecity string) measures(gamePointId numeric," +
-        "deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-        ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
-        "PARTITION_COUNT=2] )"
-    )
-    sql(
-      "LOAD DATA FACT FROM './src/test/resources/TestData2.csv' INTO CUBE vard971 OPTIONS" +
-        "(DELIMITER ',', QUOTECHAR '\"', FILEHEADER 'imei,productionDate,deviceInformationId," +
-        "AMSize,channelsId,ActiveCountry,Activecity,gamePointId')"
-    )
-    checkAnswer(
-      sql("select imei from vard971 WHERE gamepointId is NULL"),
-      Seq()
-    )
-    sql("drop cube vard971")
-  }
-
   //TC_1326
   test("TC_1326", NonRunningTests) {
     sql(
@@ -1647,6 +1606,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
 
   //TC_1329
   test("TC_1329", NonRunningTests) {
+    sql("drop cube IF EXISTS vardhan01")
     sql(
       "create cube vardhan01 dimensions(key string,name string) measures(gamepointid numeric," +
         "price numeric) with dimFile RELATION (FACT.deviceid=key) INCLUDE ( key,name)"
@@ -1669,6 +1629,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
 
   //TC_1330
   test("TC_1330", NonRunningTests) {
+    sql("drop cube IF EXISTS vardhan01")
     sql(
       "create cube vardhan01 dimensions(key string,name string) measures(gamepointid numeric," +
         "price numeric) with dimFile RELATION (FACT.deviceid=key) INCLUDE ( key,name)"
@@ -1696,6 +1657,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
 
   //TC_1331
   test("TC_1331", NonRunningTests) {
+    sql("drop cube IF EXISTS vardhan01")
     sql(
       "create cube vardhan01 dimensions(key string,name string) measures(gamepointid numeric," +
         "price numeric) with dimFile RELATION (FACT.deviceid=key) INCLUDE ( key,name)"
@@ -2896,6 +2858,10 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
           ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (imei) ," +
           "PARTITION_COUNT=2] )"
       )
+      CarbonProperties.getInstance().
+        addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
+        )
       sql(
         "LOAD DATA FACT FROM './src/test/resources/TestData3.csv' INTO CUBE vardhanretention13 " +
           "OPTIONS(DELIMITER ',', QUOTECHAR '\"\"', FILEHEADER 'imei,deviceInformationId,AMSize," +
@@ -3151,6 +3117,10 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
           ".spark.partition.api.impl.SampleDataPartitionerImpl' ,COLUMNS= (imei) , " +
           "PARTITION_COUNT=2] )"
       )
+      CarbonProperties.getInstance().
+        addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
+        )
       sql(
         "LOAD DATA FACT FROM './src/test/resources/100.csv' INTO Cube Carbon01 OPTIONS(DELIMITER " +
           "',' ,QUOTECHAR '\"\"', FILEHEADER 'imei,deviceInformationId,MAC,deviceColor," +

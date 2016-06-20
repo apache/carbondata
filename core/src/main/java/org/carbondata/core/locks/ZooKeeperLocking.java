@@ -18,19 +18,15 @@
  */
 package org.carbondata.core.locks;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.util.CarbonProperties;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
-import org.apache.zookeeper.WatchedEvent;
-import org.apache.zookeeper.Watcher;
 import org.apache.zookeeper.ZooDefs.Ids;
 import org.apache.zookeeper.ZooKeeper;
 
@@ -51,8 +47,12 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
    * zooKeeperLocation is the location in the zoo keeper file system where the locks will be
    * maintained.
    */
-  private static final String zooKeeperLocation =
-      CarbonProperties.getInstance().getProperty(CarbonCommonConstants.ZOOKEEPER_LOCATION);
+  private static final String zooKeeperLocation = CarbonCommonConstants.ZOOKEEPER_LOCATION;
+
+  /**
+   * Unique folder for each cube with SchemaName_CubeName
+   */
+  private final String tableIdFolder;
 
   /**
    * lockName is the name of the lock to use. This name should be same for every process that want
@@ -67,30 +67,32 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
 
   private String lockTypeFolder;
 
-  // static block to create the zookeeper client.
-  // here the zookeeper client will be created and also the znode will be created.
-
-  static {
-    String zookeeperUrl = CarbonProperties.getInstance().getProperty("spark.deploy.zookeeper.url");
-    int sessionTimeOut = 100000;
-    try {
-      zk = new ZooKeeper(zookeeperUrl, sessionTimeOut, new DummyWatcher());
-    } catch (IOException e) {
-      LOGGER.error(e, "Error while zookeeper client");
-    }
-  }
-
   /**
    * @param lockUsage
    */
-  public ZooKeeperLocking(LockUsage lockUsage) {
-    this.lockName = CarbonCommonConstants.METADATA_LOCK;
+  public ZooKeeperLocking(String location, LockUsage lockUsage) {
+    this.lockName = CarbonCommonConstants.ZOOKEEPER_LOCK;
     this.lockTypeFolder = zooKeeperLocation;
+    location = location.replace("\\", "/");
+    String tempStr = location.substring(0, location.lastIndexOf('/'));
+    String schemaName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
 
-    this.lockTypeFolder =
-        zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockUsage.toString();
+    String cubeName = location.substring(location.lastIndexOf('/') + 1, location.length());
+
+    this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + schemaName
+        + '.' + cubeName;
+
+    zk = ZookeeperInit.getInstance().getZookeeper();
+
+    this.lockTypeFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + schemaName
+        + '.' + cubeName + CarbonCommonConstants.FILE_SEPARATOR
+        + lockUsage.toString();
     try {
       createBaseNode();
+      // if exists returns null then path doesnt exist. so creating.
+      if (null == zk.exists(this.tableIdFolder, true)) {
+        zk.create(this.tableIdFolder, new byte[1], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+      }
       // if exists returns null then path doesnt exist. so creating.
       if (null == zk.exists(this.lockTypeFolder, true)) {
         zk.create(this.lockTypeFolder, new byte[1], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
@@ -98,6 +100,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     } catch (KeeperException | InterruptedException e) {
       LOGGER.error(e, e.getMessage());
     }
+    initRetry();
   }
 
   /**
@@ -165,8 +168,4 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     return true;
   }
 
-  private static class DummyWatcher implements Watcher {
-    public void process(WatchedEvent event) {
-    }
-  }
 }

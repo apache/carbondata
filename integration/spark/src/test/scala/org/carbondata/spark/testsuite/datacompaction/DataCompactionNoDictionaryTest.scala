@@ -30,8 +30,16 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
     segments
   }
 
-  override def beforeAll {
+  val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
+    .getCanonicalPath
 
+  var csvFilePath1 = currentDirectory + "/src/test/resources/compaction/compaction1.csv"
+  var csvFilePath2 = currentDirectory + "/src/test/resources/compaction/compaction2.csv"
+  var csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
+
+  override def beforeAll {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
     sql(
       "CREATE TABLE nodictionaryCompaction (country String, ID Int, date Timestamp, name " +
         "String, " +
@@ -39,15 +47,8 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
         ".format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='country')"
     )
 
-    val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
-      .getCanonicalPath
 
-    var csvFilePath1 = currentDirectory + "/src/test/resources/compaction/compaction1.csv"
-    var csvFilePath2 = currentDirectory + "/src/test/resources/compaction/compaction2.csv"
-    var csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE nodictionaryCompaction " +
         "OPTIONS('DELIMITER' = ',')"
     )
@@ -140,14 +141,20 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
         Row("ireland")
       )
     )
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE nodictionaryCompaction " +
+        "OPTIONS('DELIMITER' = ',')"
+    )
+    sql("DELETE segment 0.1,3 FROM TABLE nodictionaryCompaction")
+    checkAnswer(
+      sql("select country from nodictionaryCompaction"),
+      Seq()
+    )
   }
 
   override def afterAll {
     sql("drop table nodictionaryCompaction")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
-      )
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "false")
   }
 

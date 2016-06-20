@@ -21,6 +21,7 @@ package org.carbondata.core.carbon.path;
 import java.io.File;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 
 import static org.carbondata.core.constants.CarbonCommonConstants.INVALID_SEGMENT_ID;
 
@@ -69,10 +70,27 @@ public class CarbonTablePath extends Path {
 
   /**
    * @param columnId unique column identifier
+   * @return name of dictionary file
+   */
+  public static String getDictionaryFileName(String columnId) {
+    return columnId + DICTIONARY_EXT;
+  }
+
+  /**
+   * whether carbonFile is dictionary file or not
+   * @param carbonFile
+   * @return
+   */
+  public static Boolean isDictionaryFile(CarbonFile carbonFile) {
+    return (!carbonFile.isDirectory()) && (carbonFile.getName().endsWith(DICTIONARY_EXT));
+  }
+
+  /**
+   * @param columnId unique column identifier
    * @return absolute path of dictionary file
    */
   public String getDictionaryFilePath(String columnId) {
-    return getMetaDataDir() + File.separator + columnId + DICTIONARY_EXT;
+    return getMetaDataDir() + File.separator + getDictionaryFileName(columnId);
   }
 
   /**

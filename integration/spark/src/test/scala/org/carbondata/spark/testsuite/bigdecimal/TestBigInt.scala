@@ -23,6 +23,9 @@ import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.util.CarbonProperties
+
 /**
   * Test cases for testing big int functionality
   */
@@ -31,6 +34,8 @@ class TestBigInt extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql("CREATE TABLE IF NOT EXISTS carbonTable (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary bigint)STORED BY 'org.apache.carbondata.format'")
     sql("create table if not exists hiveTable(ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary bigint)row format delimited fields terminated by ','")
     sql("LOAD DATA LOCAL INPATH './src/test/resources/bigIntDataWithHeader.csv' into table carbonTable")
@@ -80,6 +85,8 @@ class TestBigInt extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
 }
 

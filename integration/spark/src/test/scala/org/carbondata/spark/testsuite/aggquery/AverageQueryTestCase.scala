@@ -18,9 +18,10 @@
  */
 package org.carbondata.spark.testsuite.aggquery
 
-import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
+import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.util.CarbonProperties
 import org.scalatest.BeforeAndAfterAll
 
 /**
@@ -33,6 +34,8 @@ class AverageQueryTestCase extends QueryTest with BeforeAndAfterAll {
        phonetype string, serialname string, salary double)
        STORED BY 'org.apache.carbondata.format'
         TBLPROPERTIES('DICTIONARY_INCLUDE'='ID')""")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     sql("""LOAD DATA LOCAL INPATH './src/test/resources/avgTest.csv' INTO table carbonTable""")
 
     // create a hive table for compatible check
@@ -100,6 +103,8 @@ class AverageQueryTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table carbonTable")
     sql("drop table hiveTable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
 
 }

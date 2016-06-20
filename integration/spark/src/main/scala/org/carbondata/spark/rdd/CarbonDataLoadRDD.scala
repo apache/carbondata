@@ -21,21 +21,22 @@ package org.carbondata.spark.rdd
 import java.util.UUID
 
 import scala.collection.JavaConverters._
+import scala.util.Random
 
 import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext}
+import org.apache.spark.SparkEnv
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.common.logging.impl.StandardLogService
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.processing.constants.DataProcessorConstants
 import org.carbondata.processing.etl.DataLoadingException
 import org.carbondata.processing.graphgenerator.GraphGenerator
-import org.carbondata.spark.Result
+import org.carbondata.spark.DataLoadResult
 import org.carbondata.spark.load._
 import org.carbondata.spark.splits.TableSplit
 import org.carbondata.spark.util.CarbonQueryUtil
@@ -92,7 +93,7 @@ class CarbonNodePartition(rddId: Int, val idx: Int, host: String,
  */
 class CarbonDataLoadRDD[K, V](
     sc: SparkContext,
-    result: Result[K, V],
+    result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
     var storeLocation: String,
     hdfsStoreLocation: String,
@@ -148,7 +149,8 @@ class CarbonDataLoadRDD[K, V](
       var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
       var partitionID = "0"
       var model: CarbonLoadModel = _
-
+      var uniqueLoadStatusId = carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE +
+                               theSplit.index
       try {
         val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
         if (null == carbonPropertiesFilePath) {
@@ -165,11 +167,15 @@ class CarbonDataLoadRDD[K, V](
         CarbonProperties.getInstance().addProperty("high.cardinality.value", "100000")
         CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false")
         CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000")
+        var storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+        if (null != storeLocations && storeLocations.length > 0) {
+          storeLocation = storeLocations(Random.nextInt(storeLocations.length))
+        }
         if (storeLocation == null) {
           storeLocation = System.getProperty("java.io.tmpdir")
-          storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
+          // storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
         }
-        storeLocation = storeLocation + '/' + theSplit.index
+        storeLocation = storeLocation + '/' + System.nanoTime() + '/' + theSplit.index
         dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
 
         if (model.isRetentionRequest) {
@@ -417,7 +423,7 @@ class CarbonDataLoadRDD[K, V](
         val loadMetadataDetails = new LoadMetadataDetails()
         loadMetadataDetails.setPartitionCount(partitionID)
         loadMetadataDetails.setLoadStatus(dataloadStatus)
-        result.getKey(loadCount, loadMetadataDetails)
+        result.getKey(uniqueLoadStatusId, loadMetadataDetails)
       }
     }
     iter

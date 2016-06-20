@@ -27,8 +27,15 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.sql.Connection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -362,10 +369,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           columnsInfo.setDimensionColumnIds(meta.getDimensionColumnIds());
           columnsInfo.setColumnSchemaDetailsWrapper(meta.getColumnSchemaDetailsWrapper());
           updateBagLogFileName();
-          csvFilepath = CarbonDataProcessorUtil.getBagLogFileName(csvFilepath);
           String key = meta.getSchemaName() + '/' + meta.getCubeName() + '_' + meta.getTableName();
-          badRecordslogger = new BadRecordslogger(key, csvFilepath, CarbonDataProcessorUtil
-              .getBadLogStoreLocation(meta.getSchemaName() + '/' + meta.getCubeName()));
+          badRecordslogger = new BadRecordslogger(key, csvFilepath,
+              getBadLogStoreLocation(meta.getSchemaName() + '/' + meta.getCubeName()));
 
           columnsInfo.setTimeOrdinalIndices(meta.timeOrdinalIndices);
           surrogateKeyGen = new FileStoreSurrogateKeyGenForCSV(columnsInfo, meta.getPartitionID(),
@@ -691,7 +697,15 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
   private void updateStoreLocation() {
     loadFolderLoc = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(meta.getSchemaName(), meta.getTableName(), meta.getTaskNo(),
-            meta.getPartitionID(), meta.getSegmentId());
+            meta.getPartitionID(), meta.getSegmentId()+"");
+  }
+
+  private String getBadLogStoreLocation(String storeLocation) {
+    String badLogStoreLocation =
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
+    badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
+
+    return badLogStoreLocation;
   }
 
   private void updateBagLogFileName() {
@@ -911,7 +925,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     for (int j = 0; j < inputColumnsSize; j++) {
       String columnName = metaColumnNames[j];
       String foreignKeyColumnName = foreignKeyMappingColumns[j];
-      r[j] = ((String) r[j]).trim();
       // check if it is ignore dictionary dimension or not . if yes directly write byte buffer
       if (isNoDictionaryColumn[j]) {
         processnoDictionaryDim(noDictionaryAndComplexIndexMapping[j], (String) r[j], dataTypes[j],
@@ -1157,13 +1170,13 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
   private void addEntryToBadRecords(Object[] r, int inputRowSize, int j, String columnName) {
     badRecordslogger.addBadRecordsToBilder(r, inputRowSize,
         "Surrogate key for value " + " \"" + r[j] + "\"" + " with column name " + columnName
-            + " not found in dictionary cache", valueToCheckAgainst);
+            + " not found in dictionary cache", "null");
   }
 
   private void addMemberNotExistEntry(Object[] r, int inputRowSize, int j, String columnName) {
     badRecordslogger.addBadRecordsToBilder(r, inputRowSize,
         "For Coulmn " + columnName + " \"" + r[j] + "\""
-            + " member not exist in the dimension table ", valueToCheckAgainst);
+            + " member not exist in the dimension table ", "null");
   }
 
   private void insertHierIfRequired(Object[] out) throws KettleException {

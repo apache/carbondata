@@ -76,10 +76,15 @@ public class ZooKeeperLockingTest {
       }
     };
 
-    ZooKeeperLocking zkl = new ZooKeeperLocking(LockUsage.METADATA_LOCK);
+    ZookeeperInit zki = ZookeeperInit.getInstance("127.0.0.1:" + freePort);
+
+    ZooKeeperLocking zkl =
+        new ZooKeeperLocking("D:/carbondata/examples/target/store/default/t3/Metadata",
+            LockUsage.METADATA_LOCK);
     Assert.assertTrue(zkl.lock());
 
-    ZooKeeperLocking zk2 = new ZooKeeperLocking(LockUsage.METADATA_LOCK);
+    ZooKeeperLocking zk2 = new ZooKeeperLocking(
+        "D:/carbondata/examples/target/store/default/t3/Metadata", LockUsage.METADATA_LOCK);
     Assert.assertTrue(!zk2.lock());
 
     Assert.assertTrue(zkl.unlock());

@@ -34,8 +34,8 @@ import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
-import org.carbondata.integration.spark.merger.{CarbonCompactionExecutor, CarbonCompactionUtil,
-RowResultMerger}
+import org.carbondata.integration.spark.merger.{CarbonCompactionExecutor, CarbonCompactionUtil, RowResultMerger}
+import org.carbondata.processing.util.CarbonDataProcessorUtil
 import org.carbondata.scan.result.iterator.RawResultIterator
 import org.carbondata.spark.MergeResult
 import org.carbondata.spark.load.{CarbonLoaderUtil, CarbonLoadModel}
@@ -69,7 +69,7 @@ class CarbonMergerRDD[K, V](
       val carbonSparkPartition = theSplit.asInstanceOf[CarbonSparkPartition]
 
       val tempLocationKey: String = carbonLoadModel.getDatabaseName + '_' + carbonLoadModel
-        .getTableName
+        .getTableName + carbonLoadModel.getTaskNo
       CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation)
 
       // sorting the table block info List.
@@ -122,11 +122,11 @@ class CarbonMergerRDD[K, V](
           CarbonCommonConstants.LOAD_FOLDER.length(), mergedLoadName.length()
         )
 
-      val tempStoreLoc = CarbonCompactionUtil.getTempLocation(schemaName,
+      val tempStoreLoc = CarbonDataProcessorUtil.getLocalDataFolderLocation(schemaName,
         factTableName,
+        carbonLoadModel.getTaskNo,
         "0",
-        mergeNumber,
-        carbonLoadModel.getTaskNo
+        mergeNumber
       )
 
       carbonLoadModel.setSegmentId(mergeNumber)
@@ -142,25 +142,20 @@ class CarbonMergerRDD[K, V](
       )
       val mergeStatus = merger.mergerSlice()
 
-      var havePair = false
       var finished = false
 
       override def hasNext: Boolean = {
-        if (!finished && !havePair) {
+        if (!finished) {
           finished = true
-          havePair = !finished
+          finished
         }
-        if(finished) {
-          exec.clearDictionaryFromQueryModel
+        else {
+          !finished
         }
-        !finished
       }
 
       override def next(): (K, V) = {
-        if (!hasNext) {
-          throw new java.util.NoSuchElementException("End of stream")
-        }
-        havePair = false
+        finished = true
         result.getKey(0, mergeStatus)
       }
 

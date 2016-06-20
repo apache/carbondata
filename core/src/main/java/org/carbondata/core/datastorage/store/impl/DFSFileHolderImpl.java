@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.carbondata.core.datastorage.store.impl;
 
 import java.io.IOException;
@@ -34,22 +33,21 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-public class HDFSFileHolderImpl implements FileHolder {
+public class DFSFileHolderImpl implements FileHolder {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(HDFSFileHolderImpl.class.getName());
+      LogServiceFactory.getLogService(DFSFileHolderImpl.class.getName());
   /**
    * cache to hold filename and its stream
    */
   private Map<String, FSDataInputStream> fileNameAndStreamCache;
 
-  public HDFSFileHolderImpl() {
+  public DFSFileHolderImpl() {
     this.fileNameAndStreamCache =
         new HashMap<String, FSDataInputStream>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   }
 
   @Override public byte[] readByteArray(String filePath, long offset, int length) {
-
     FSDataInputStream fileChannel = updateCache(filePath);
     byte[] byteBffer = read(fileChannel, length, offset);
     return byteBffer;
@@ -182,5 +180,4 @@ public class HDFSFileHolderImpl implements FileHolder {
     }
     return i;
   }
-
 }

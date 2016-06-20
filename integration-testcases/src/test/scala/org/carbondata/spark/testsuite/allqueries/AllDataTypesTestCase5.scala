@@ -24,8 +24,10 @@ import java.io.File
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
-import org.carbondata.core.util.CarbonProperties
 import org.scalatest.BeforeAndAfterAll
+
+import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.util.CarbonProperties
 
 /**
   * Test Class for all queries on multiple datatypes
@@ -37,7 +39,10 @@ class AllDataTypesTestCase5 extends QueryTest with BeforeAndAfterAll {
 
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
-    CarbonProperties.getInstance().addProperty("carbon.direct.surrogate", "false")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
+      )
 
     try {
       sql(

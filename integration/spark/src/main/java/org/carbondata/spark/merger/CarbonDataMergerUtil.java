@@ -213,20 +213,20 @@ public final class CarbonDataMergerUtil {
     List<LoadMetadataDetails> listOfSegmentsAfterPreserve =
         checkPreserveSegmentsPropertyReturnRemaining(segments);
 
-    // identify the segments to merge based on the Size of the segments across partition.
-
-    LOGGER.info("list of segments after preserve is " + listOfSegmentsAfterPreserve);
-
-    List<LoadMetadataDetails> listOfSegmentsBelowThresholdSize =
-        identifySegmentsToBeMergedBasedOnSize(compactionSize, listOfSegmentsAfterPreserve,
-            carbonLoadModel, partitionCount, storeLocation, compactionType);
-
     // filter the segments if the compaction based on days is configured.
 
     List<LoadMetadataDetails> listOfSegmentsLoadedInSameDateInterval =
-        identifySegmentsToBeMergedBasedOnLoadedDate(listOfSegmentsBelowThresholdSize);
+        identifySegmentsToBeMergedBasedOnLoadedDate(listOfSegmentsAfterPreserve);
 
-    return listOfSegmentsLoadedInSameDateInterval;
+    // identify the segments to merge based on the Size of the segments across partition.
+
+    List<LoadMetadataDetails> listOfSegmentsBelowThresholdSize =
+        identifySegmentsToBeMergedBasedOnSize(compactionSize,
+            listOfSegmentsLoadedInSameDateInterval, carbonLoadModel, partitionCount, storeLocation,
+            compactionType);
+
+
+    return listOfSegmentsBelowThresholdSize;
   }
 
   /**
@@ -409,13 +409,6 @@ public final class CarbonDataMergerUtil {
       // in case of major compaction the size doesnt matter. all the segments will be merged.
       if (totalLength < (compactionSize * 1024 * 1024)) {
         segmentsToBeMerged.add(segment);
-      } else if (segmentsToBeMerged.size() < 2) {
-        // reset everything as do only continuous merge.
-        totalLength = 0;
-        segmentsToBeMerged.clear();
-        // add the latest one to the list to check for next segments.
-        segmentsToBeMerged.add(segment);
-        totalLength = sizeOfOneSegmentAcrossPartition;
       }
       // in case if minor we will merge segments only when it exceeds limit
       // so check whether limit has been exceeded. if yes then break loop.
@@ -483,9 +476,6 @@ public final class CarbonDataMergerUtil {
           .equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS) || segment
           .getLoadStatus().equalsIgnoreCase(CarbonCommonConstants.MARKED_FOR_UPDATE)) {
         validList.add(segment);
-      } else {
-        // in case if deleted segment is found then break loop.
-        break;
       }
     }
 
