@@ -65,7 +65,7 @@ object GenerateDictionaryExample {
       lookupRelation1(Option(dataBaseName),
         tableName, None) (carbonContext).asInstanceOf[CarbonRelation]
     val carbonTable = carbonRelation.cubeMeta.carbonTable
-    val dimensions = carbonTable.getDimensionByTableName(tableName)
+    val dimensions = carbonTable.getDimensionByTableName(tableName.toLowerCase())
       .toArray.map(_.asInstanceOf[CarbonDimension])
     // scalastyle:off println
     // print dictionary information
