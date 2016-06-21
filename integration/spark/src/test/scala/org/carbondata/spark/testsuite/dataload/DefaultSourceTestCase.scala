@@ -46,8 +46,8 @@ class DefaultSourceTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   def buildTestData() = {
-    val pwd = new File(this.getClass.getResource("/").getPath + "/../../").getCanonicalPath
-    filePath = pwd + "/target/defaultsource.csv"
+    val workDirectory = new File(this.getClass.getResource("/").getPath + "/../../").getCanonicalPath
+    filePath = workDirectory + "/target/defaultsource.csv"
     val file = new File(filePath)
     val writer = new BufferedWriter(new FileWriter(file))
     writer.write("c1,c2,c3,c4")
@@ -55,7 +55,7 @@ class DefaultSourceTestCase extends QueryTest with BeforeAndAfterAll {
     var i = 0
     val random = new Random
     for (i <- 0 until 2000000) {
-      writer.write("aaaaaaa" + i + "," +
+      writer.write("   aaaaaaa" + i + "  ,   " +
         "bbbbbbb" + i % 1000 + "," +
         i % 1000000 + "," + i % 10000 + "\n")
     }
@@ -74,15 +74,32 @@ class DefaultSourceTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test new defaultsource: com.databricks.spark.csv.newapi") {
-    val context = CarbonHiveContext
     val df1 = CarbonHiveContext.read
       .format("com.databricks.spark.csv.newapi")
       .option("header", "true")
       .option("delimiter", ",")
       .option("parserLib", "univocity")
+      .option("ignoreLeadingWhiteSpace", "true")
+      .option("ignoreTrailingWhiteSpace", "true")
       .load(filePath)
 
+    assert(!df1.first().getString(0).startsWith(" "))
     assert(df1.count() == 2000000)
     assert(df1.rdd.partitions.length == 3)
+  }
+
+  test("test defaultsource: com.databricks.spark.csv") {
+    val df2 = CarbonHiveContext.read
+      .format("com.databricks.spark.csv")
+      .option("header", "true")
+      .option("delimiter", ",")
+      .option("parserLib", "univocity")
+      .option("ignoreLeadingWhiteSpace", "true")
+      .option("ignoreTrailingWhiteSpace", "true")
+      .load(filePath)
+
+    assert(!df2.first().getString(0).startsWith(" "))
+    assert(df2.count() == 2000000)
+    assert(df2.rdd.partitions.length == 3)
   }
 }

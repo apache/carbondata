@@ -18,23 +18,17 @@
  */
 package org.carbondata.integration.spark.merger;
 
-import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.datastore.block.TaskBlockInfo;
 import org.carbondata.core.carbon.datastore.exception.IndexBuilderException;
-import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
-import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
-import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 
@@ -133,33 +127,6 @@ public class CarbonCompactionUtil {
     }
     return segmentBlockInfoMapping;
 
-  }
-
-  /**
-   * For forming the temp store location
-   * @param schemaName
-   * @param cubeName
-   * @param partitionID
-   * @param segmentId
-   * @param taskNo
-   * @return
-   */
-  public static String getTempLocation(String schemaName, String cubeName, String partitionID,
-      String segmentId, String taskNo){
-    String storeLocation;
-    String tempLocationKey = schemaName + '_' + cubeName;
-    String baseStorePath = CarbonProperties.getInstance()
-        .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(tempLocationKey);
-    CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
-    String partitionId = partitionID;
-    String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionId,
-        segmentId);
-    carbonDataDirectoryPath = carbonDataDirectoryPath + File.separator + taskNo;
-    storeLocation = carbonDataDirectoryPath + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-    return storeLocation;
   }
 
 }

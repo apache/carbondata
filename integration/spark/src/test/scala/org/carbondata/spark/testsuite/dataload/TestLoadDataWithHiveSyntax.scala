@@ -20,11 +20,12 @@
 package org.carbondata.spark.testsuite.dataload
 
 import java.io.File
-import java.sql.Timestamp
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
+import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.util.CarbonProperties
 import org.scalatest.BeforeAndAfterAll
 
 /**
@@ -210,12 +211,15 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
            name String, phonetype String, serialname String, salary Int)
            STORED BY 'org.apache.carbondata.format'
            """)
-
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
     sql(s"""
            LOAD DATA LOCAL INPATH './src/test/resources/datawithbackslash.csv' into table t3
            OPTIONS('ESCAPECHAR'='@')
         """)
     checkAnswer(sql("select count(*) from t3"), Seq(Row(10)))
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     sql("DROP TABLE IF EXISTS t3")
   }
   

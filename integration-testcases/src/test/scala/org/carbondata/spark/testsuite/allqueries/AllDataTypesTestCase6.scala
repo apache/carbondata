@@ -24,9 +24,10 @@ import java.io.File
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.{NonRunningTests, QueryTest}
-
-import org.carbondata.core.util.CarbonProperties
 import org.scalatest.BeforeAndAfterAll
+
+import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.util.CarbonProperties
 
 /**
   * Test Class for all queries on multiple datatypes
@@ -38,12 +39,16 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
 
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
-    CarbonProperties.getInstance().addProperty("carbon.direct.surrogate","false")
+
     try {
       sql(
         "create cube Carbon_automation_test6 dimensions(imei string,deviceInformationId integer,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR integer, Latest_MONTH integer, Latest_DAY integer, Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointDescription string)  measures(gamePointId numeric,contractNumber numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl' ,COLUMNS= (imei) , PARTITION_COUNT=2] )"
 
       )
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
+        )
       sql("LOAD DATA FACT FROM '" + currentDirectory + "/src/test/resources/100_olap.csv' INTO Cube Carbon_automation_test6 partitionData(DELIMITER ',' ,QUOTECHAR '\"', FILEHEADER 'imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName,deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict,deliveryStreet,oxSingleNumber,contractNumber,ActiveCheckTime,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId,Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber,Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer,Active_webTypeDataVerNumber,Active_operatorsVersion,Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR,Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district,Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion,Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer,Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription')")
 
       sql(
@@ -1373,11 +1378,17 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
   //TC_1171
   test("TC_1171") {
     sql("create cube vardhan500 dimensions(imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string, productionDate TIMESTAMP)  measures(gamePointId numeric,deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) PARTITION_COUNT=2] )")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd/MM/yyyy HH:mm")
     sql("LOAD DATA FACT FROM  './src/test/resources/TestData6.csv' INTO Cube vardhan500 partitionData(DELIMITER ',' ,QUOTECHAR '\"', FILEHEADER 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate')")
     checkAnswer(
       sql("select count(*) from vardhan500"),
       Seq(Row(100)))
     sql("drop cube vardhan500")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
+      )
   }
 
   //TC_1172
@@ -1482,17 +1493,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
     sql("drop cube vardhan200")
   }
 
-  //TC_1191
-  test("TC_1191") {
-    sql("create cube vardhan500 dimensions(imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string, productionDate TIMESTAMP)  measures(gamePointId numeric,deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) PARTITION_COUNT=2] )")
-    sql("LOAD DATA FACT FROM  './src/test/resources/TestData6.csv' INTO Cube vardhan500 partitionData(DELIMITER ',' ,QUOTECHAR '\"', FILEHEADER 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate')")
-    checkAnswer(
-      sql("select count(*) from vardhan500"),
-      Seq(Row(100)))
-    sql("drop cube vardhan500")
-  }
-
-  //TC_1192
+   //TC_1192
   test("TC_1192") {
     sql("create cube vardhan1000 dimensions(imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string)  measures(gamePointId numeric,deviceInformationId integer) OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl' columns= (imei) PARTITION_COUNT=2] )")
     sql("LOAD DATA FACT FROM  './src/test/resources/TestData5.csv' INTO Cube vardhan1000 partitionData(DELIMITER ',' ,QUOTECHAR '\"', FILEHEADER 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId')")

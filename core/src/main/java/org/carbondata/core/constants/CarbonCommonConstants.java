@@ -426,6 +426,10 @@ public final class CarbonCommonConstants {
    */
   public static final String NUM_CORES_LOADING = "carbon.number.of.cores.while.loading";
   /**
+   * Number of cores to be used while compacting
+   */
+  public static final String NUM_CORES_COMPACTING = "carbon.number.of.cores.while.compacting";
+  /**
    * Number of cores to be used for block sort
    */
   public static final String NUM_CORES_BLOCK_SORT = "carbon.number.of.cores.block.sort";
@@ -1012,6 +1016,29 @@ public final class CarbonCommonConstants {
    * default number of cores
    */
   public static final int NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT_DEFAULT_VALUE = 10;
+
+  /**
+   * ZOOKEEPERLOCK TYPE
+   */
+  public static final String CARBON_LOCK_TYPE_ZOOKEEPER =
+      "ZOOKEEPERLOCK";
+
+  /**
+   * LOCALLOCK TYPE
+   */
+  public static final String CARBON_LOCK_TYPE_LOCAL =
+      "LOCALLOCK";
+
+  /**
+   * HDFSLOCK TYPE
+   */
+  public static final String CARBON_LOCK_TYPE_HDFS =
+      "HDFSLOCK";
+
+  /**
+   * Lock file in zoo keeper will be of this name.
+   */
+  public static final String ZOOKEEPER_LOCK = "zookeeperLock";
 
   private CarbonCommonConstants() {
   }

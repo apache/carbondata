@@ -67,6 +67,8 @@ import com.google.gson.Gson;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
+import org.apache.spark.SparkConf;
+import org.apache.spark.util.Utils;
 
 public final class CarbonLoaderUtil {
 
@@ -85,7 +87,8 @@ public final class CarbonLoaderUtil {
   }
 
   private static void generateGraph(IDataProcessStatus schmaModel, SchemaInfo info,
-      int currentRestructNumber, CarbonLoadModel loadModel) throws GraphGeneratorException {
+      int currentRestructNumber, CarbonLoadModel loadModel, String outputLocation)
+      throws GraphGeneratorException {
     DataLoadModel model = new DataLoadModel();
     model.setCsvLoad(null != schmaModel.getCsvFilePath() || null != schmaModel.getFilesToProcess());
     model.setSchemaInfo(info);
@@ -105,7 +108,7 @@ public final class CarbonLoaderUtil {
     int allocate = null != schmaModel.getCsvFilePath() ? 1 : schmaModel.getFilesToProcess().size();
     GraphGenerator generator = new GraphGenerator(model, hdfsReadMode, loadModel.getPartitionId(),
         loadModel.getStorePath(), currentRestructNumber, allocate,
-        loadModel.getCarbonDataLoadSchema(), loadModel.getSegmentId());
+        loadModel.getCarbonDataLoadSchema(), loadModel.getSegmentId(), outputLocation);
     generator.generateGraph();
   }
 
@@ -124,7 +127,7 @@ public final class CarbonLoaderUtil {
     CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation);
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, hdfsStoreLocation);
-    CarbonProperties.getInstance().addProperty("store_output_location", outPutLoc);
+    // CarbonProperties.getInstance().addProperty("store_output_location", outPutLoc);
     CarbonProperties.getInstance().addProperty("send.signal.load", "false");
 
     String fileNamePrefix = "";
@@ -161,7 +164,7 @@ public final class CarbonLoaderUtil {
     info.setComplexDelimiterLevel1(loadModel.getComplexDelimiterLevel1());
     info.setComplexDelimiterLevel2(loadModel.getComplexDelimiterLevel2());
 
-    generateGraph(schmaModel, info, currentRestructNumber, loadModel);
+    generateGraph(schmaModel, info, currentRestructNumber, loadModel, outPutLoc);
 
     DataGraphExecuter graphExecuter = new DataGraphExecuter(schmaModel);
     graphExecuter
@@ -1235,4 +1238,13 @@ public final class CarbonLoaderUtil {
     }
   }
 
+  /**
+   * return the Array of available local-dirs
+   *
+   * @param conf
+   * @return
+   */
+  public static String[] getConfiguredLocalDirs(SparkConf conf) {
+    return Utils.getConfiguredLocalDirs(conf);
+  }
 }

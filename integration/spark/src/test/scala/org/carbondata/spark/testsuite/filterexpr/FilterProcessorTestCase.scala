@@ -25,6 +25,9 @@ import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
 import java.sql.Timestamp
 
+import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.util.CarbonProperties
+
 /**
   * Test Class for filter expression query on String datatypes
   *
@@ -42,6 +45,8 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
       "MEASURES (salary Integer) " +
       "OPTIONS (PARTITIONER [PARTITION_COUNT=1])"
     )
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(
       s"LOAD DATA FACT FROM './src/test/resources/dataDiff.csv' INTO CUBE filtertestTables " +
         s"OPTIONS(DELIMITER ',', " +
@@ -67,6 +72,8 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
         "MEASURES (salary Integer) " +
         "OPTIONS (PARTITIONER [PARTITION_COUNT=1])"
     )
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     sql(
       s"LOAD DATA FACT FROM './src/test/resources/data2.csv' INTO CUBE " +
         s"filtertestTablesWithNull " +
@@ -132,5 +139,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     // sql("drop cube filtertestTable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
 }

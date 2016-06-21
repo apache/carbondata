@@ -24,6 +24,9 @@ import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.util.CarbonProperties
+
 /**
  * Test Class for aggregate query on multiple datatypes
  *
@@ -31,6 +34,7 @@ import org.scalatest.BeforeAndAfterAll
 class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     sql("CREATE CUBE alldatatypescubeAGG DIMENSIONS (empno Integer, empname String, designation String, doj Timestamp, workgroupcategory Integer, workgroupcategoryname String, deptno Integer, deptname String, projectcode Integer, projectjoindate Timestamp, projectenddate Timestamp) MEASURES (attendance Integer,utilization Integer,salary Integer) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
     sql("LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE alldatatypescubeAGG PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
   }

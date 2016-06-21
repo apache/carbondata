@@ -74,8 +74,9 @@ public class CarbonInputMapperTest extends TestCase {
       carbonProjection.addColumn("ID");
       carbonProjection.addColumn("country");
       carbonProjection.addColumn("salary");
-      Expression expression= new EqualToExpression(new ColumnExpression("country",
-          DataType.StringType), new LiteralExpression("france", DataType.StringType));
+      Expression expression =
+          new EqualToExpression(new ColumnExpression("country", DataType.StringType),
+              new LiteralExpression("france", DataType.StringType));
       runJob(outPath, carbonProjection, expression);
       Assert.assertTrue("Count lines are not matching", countTheLines(outPath) == 101);
       Assert.assertTrue("Column count are not matching", countTheColumns(outPath) == 3);
@@ -138,7 +139,8 @@ public class CarbonInputMapperTest extends TestCase {
     }
   }
 
-  private void runJob(String outPath, CarbonProjection projection, Expression filter) throws Exception {
+  private void runJob(String outPath, CarbonProjection projection, Expression filter)
+      throws Exception {
 
     Job job = Job.getInstance(new Configuration());
     job.setJarByClass(CarbonInputMapperTest.class);
@@ -150,10 +152,10 @@ public class CarbonInputMapperTest extends TestCase {
     job.setOutputFormatClass(TextOutputFormat.class);
     AbsoluteTableIdentifier abs = StoreCreator.getAbsoluteTableIdentifier();
     CarbonInputFormat.setTableToAccess(job.getConfiguration(), abs.getCarbonTableIdentifier());
-    if(projection != null) {
+    if (projection != null) {
       CarbonInputFormat.setColumnProjection(projection, job.getConfiguration());
     }
-    if(filter != null) {
+    if (filter != null) {
       CarbonInputFormat.setFilterPredicates(job.getConfiguration(), filter);
     }
     FileInputFormat.addInputPath(job, new Path(abs.getStorePath()));

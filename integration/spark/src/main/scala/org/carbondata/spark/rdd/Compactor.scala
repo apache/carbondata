@@ -50,10 +50,9 @@ object Compactor {
     loadsToMerge: java.util.List[LoadMetadataDetails],
     sc: SQLContext): Unit = {
 
-    logger.info("loads about to merge are  " + loadsToMerge)
     val startTime = System.nanoTime();
     val mergedLoadName = CarbonDataMergerUtil.getMergedLoadName(loadsToMerge)
-    var finalMergeStatus = true
+    var finalMergeStatus = false
     val schemaName: String = carbonLoadModel.getDatabaseName
     val factTableName = carbonLoadModel.getTableName
     val storePath = hdfsStoreLocation
@@ -92,12 +91,13 @@ object Compactor {
       carbonMergerMapping
     ).collect
 
-    mergeStatus.foreach { eachMergeStatus =>
-      val state: Boolean = eachMergeStatus._2
-      if (!state) {
-        finalMergeStatus = false
-      }
+    if(mergeStatus.length == 0) {
+      finalMergeStatus = false
     }
+    else {
+      finalMergeStatus = mergeStatus.forall(_._2)
+    }
+
     if (finalMergeStatus) {
       val endTime = System.nanoTime();
       logger.info("time taken to merge " + mergedLoadName + " is " + (endTime - startTime))
@@ -105,6 +105,7 @@ object Compactor {
         .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath(),
           mergedLoadName, carbonLoadModel, mergeLoadStartTime
         )
+      logger.audit("Compaction request completed.")
     }
   }
 }

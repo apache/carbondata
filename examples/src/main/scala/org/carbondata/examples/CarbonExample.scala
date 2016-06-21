@@ -17,14 +17,18 @@
 
 package org.carbondata.examples
 
-import org.apache.spark.{SparkConf, SparkContext}
-
+import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.util.CarbonProperties
 import org.carbondata.examples.util.InitForExamples
 
 object CarbonExample {
   def main(args: Array[String]) {
     val cc = InitForExamples.createCarbonContext("CarbonExample")
     val testData = InitForExamples.currentPath + "/src/main/resources/data.csv"
+
+    // Specify timestamp format based on raw data
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
 
     cc.sql("DROP TABLE IF EXISTS t3")
 
