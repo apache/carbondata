@@ -351,11 +351,13 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         }
       case d: HiveNativeCommand =>
         try {
-          val resolvedTable = sqlContext.executePlan(CarbonHiveSyntax.parse(d.sql)).analyzed
+          val resolvedTable = sqlContext.executePlan(CarbonHiveSyntax.parse(d.sql)).optimizedPlan
           planLater(resolvedTable) :: Nil
         } catch {
           case ce: MalformedCarbonCommandException =>
             throw ce
+          case ae: AnalysisException =>
+            throw ae
           case e: Exception => ExecutedCommand(d) :: Nil
         }
       case DescribeFormattedCommand(sql, tblIdentifier) =>
