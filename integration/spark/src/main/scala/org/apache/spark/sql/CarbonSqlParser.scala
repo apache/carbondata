@@ -310,7 +310,9 @@ class CarbonSqlParser()
           schemaName.getOrElse("default"), schemaName, cubeName.toLowerCase(),
           reorderDimensions(dimCols.map(f => normalizeType(f)).map(f => addParent(f))),
           msrCols.map(f => normalizeType(f)), fromKeyword, withKeyword, source,
-          factFieldsList, dimRelations, simpleDimRelations, None, aggregation, partitioner, null))
+          factFieldsList, dimRelations, simpleDimRelations, None, None, aggregation,
+          partitioner, null))
+
     }
 
   private def reorderDimensions(dims: Seq[Field]): Seq[Field] = {
@@ -542,13 +544,18 @@ class CarbonSqlParser()
     val groupCols: Seq[String] = updateColumnGroupsInField(tableProperties,
         noDictionaryDims, msrs, dims)
 
+    // get no inverted index columns from table properties.
+    val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
+
+
     val partitioner: Option[Partitioner] = getPartitionerObject(partitionCols, tableProperties)
 
     tableModel(ifNotExistPresent,
       dbName.getOrElse("default"), dbName, tableName,
       reorderDimensions(dims.map(f => normalizeType(f)).map(f => addParent(f))),
       msrs.map(f => normalizeType(f)), "", null, "",
-      None, Seq(), null, Option(noDictionaryDims), null, partitioner, groupCols)
+      None, Seq(), null, Option(noDictionaryDims), Option(noInvertedIdxCols), null,
+      partitioner, groupCols)
   }
 
   /**
@@ -659,6 +666,45 @@ class CarbonSqlParser()
     }
     // if partition cols are not given then no need to do partition.
     None
+  }
+
+  /**
+   * This will extract the no inverted columns fields.
+   * By default all dimensions use inverted index.
+   *
+   * @param fields
+   * @param tableProperties
+   * @return
+   */
+  protected def extractNoInvertedIndexColumns(fields: Seq[Field],
+                                              tableProperties: Map[String, String]):
+  Seq[String] = {
+    // check whether the column name is in fields
+    var noInvertedIdxColsProps: Array[String] = Array[String]()
+    var noInvertedIdxCols: Seq[String] = Seq[String]()
+
+    if (tableProperties.get("NO_INVERTED_INDEX").isDefined) {
+      noInvertedIdxColsProps =
+        tableProperties.get("NO_INVERTED_INDEX").get.split(',').map(_.trim)
+      noInvertedIdxColsProps
+        .map { noInvertedIdxColProp =>
+        if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
+          val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
+            " does not exist in table. Please check create table statement."
+          throw new MalformedCarbonCommandException(errormsg)
+        }
+      }
+    }
+    // check duplicate columns and only 1 col left
+    val distinctCols = noInvertedIdxColsProps.toSet
+    // extract the no inverted index columns
+    fields.foreach( field => {
+      if (distinctCols.exists(x => x.equalsIgnoreCase(field.column))) {
+        noInvertedIdxCols :+= field.column
+      }
+    }
+    )
+    noInvertedIdxCols
   }
 
   /**
@@ -902,7 +948,7 @@ class CarbonSqlParser()
           schemaName.getOrElse("default"), schemaName, cubeName.toLowerCase(),
           reorderDimensions(dimCols.map(f => normalizeType(f)).map(f => addParent(f))),
           msrCols.map(f => normalizeType(f)), "", withKeyword, "",
-          None, Seq(), simpleDimRelations, highCard, aggregation, partitioner, null))
+          None, Seq(), simpleDimRelations, highCard, None, aggregation, partitioner, null))
     }
 
   protected lazy val alterCube: Parser[LogicalPlan] =
@@ -947,7 +993,7 @@ class CarbonSqlParser()
           schemaName, cubeName.toLowerCase(),
           dimCols.map(f => normalizeType(f)),
           msrCols.map(f => normalizeType(f)), "", withKeyword, "",
-          None, Seq(), simpleDimRelations, noDictionary, aggregation, None, null),
+          None, Seq(), simpleDimRelations, noDictionary, None, aggregation, None, null),
           dropCols, defaultVals)
 
       case _ =>

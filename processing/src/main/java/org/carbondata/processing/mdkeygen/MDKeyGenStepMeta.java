@@ -140,6 +140,10 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
    * To determine the column whether is dictionary or not.
    */
   private String noDictionaryDimsMapping;
+  /**
+   * To determine the column whether use inverted index or not.
+   */
+  private String isUseInvertedIndex;
 
   /**
    * Constructor
@@ -186,6 +190,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     retval.append("    ").append(XMLHandler.addTagValue("factTimeStamp", factTimeStamp));
     retval.append("    ").append(XMLHandler.addTagValue("factTimeStamp", factTimeStamp));
     retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
+    retval.append("    ").append(XMLHandler.addTagValue("isUseInvertedIndex", isUseInvertedIndex));
     retval.append("    ").append(XMLHandler.addTagValue("segmentId", segmentId));
     retval.append("    ")
         .append(XMLHandler.addTagValue("noDictionaryDimsMapping", noDictionaryDimsMapping));
@@ -213,6 +218,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       taskNo = XMLHandler.getTagValue(stepnode, "taskNo");
       factTimeStamp = XMLHandler.getTagValue(stepnode, "factTimeStamp");
       partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
+      isUseInvertedIndex = XMLHandler.getTagValue(stepnode, "isUseInvertedIndex");
       segmentId = XMLHandler.getTagValue(stepnode, "segmentId");
       noDictionaryDimsMapping = XMLHandler.getTagValue(stepnode, "noDictionaryDimsMapping");
     } catch (Exception e) {
@@ -240,6 +246,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       rep.saveStepAttribute(idTransformation, idStep, "taskNo", taskNo);
       rep.saveStepAttribute(idTransformation, idStep, "factTimeStamp", factTimeStamp);
       rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
+      rep.saveStepAttribute(idTransformation, idStep, "isUseInvertedIndex", isUseInvertedIndex);
       rep.saveStepAttribute(idTransformation, idStep, "segmentId", segmentId);
       rep.saveStepAttribute(idTransformation, idStep, "noDictionaryDimsMapping",
           noDictionaryDimsMapping);
@@ -270,6 +277,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       taskNo = rep.getStepAttributeString(idStep, "taskNo");
       factTimeStamp = rep.getStepAttributeString(idStep, "factTimeStamp");
       partitionID = rep.getStepAttributeString(idStep, "partitionID");
+      isUseInvertedIndex = rep.getStepAttributeString(idStep, "isUseInvertedIndex");
       segmentId = rep.getStepAttributeString(idStep, "segmentId");
       noDictionaryDimsMapping = rep.getStepAttributeString(idStep, "noDictionaryDimsMapping");
     } catch (Exception e) {
@@ -575,5 +583,18 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
    */
   public void setNoDictionaryDimsMapping(String noDictionaryDimsMapping) {
     this.noDictionaryDimsMapping = noDictionaryDimsMapping;
+  }
+  /**
+   * @return isUseInvertedIndex
+   */
+  public String getIsUseInvertedIndex() {
+    return isUseInvertedIndex;
+  }
+
+  /**
+   * @param isUseInvertedIndex the bool array whether use inverted index to set
+   */
+  public void setIsUseInvertedIndex(String isUseInvertedIndex) {
+    this.isUseInvertedIndex = isUseInvertedIndex;
   }
 }

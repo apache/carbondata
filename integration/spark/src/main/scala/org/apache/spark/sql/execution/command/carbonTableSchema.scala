@@ -71,6 +71,7 @@ case class tableModel(
     dimRelations: Seq[DimensionRelation],
     simpleDimRelations: Seq[DimensionRelation],
     highcardinalitydims: Option[Seq[String]],
+    noInvertedIdxCols: Option[Seq[String]],
     aggregation: Seq[Aggregation],
     partitioner: Option[Partitioner],
     columnGroups: Seq[String])
@@ -281,6 +282,19 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
         measures += column
       }
 
+    }
+
+    // Setting the boolen value of useInvertedIndex in column shcehma
+    val noInvertedIndexCols = cm.noInvertedIdxCols.getOrElse(Seq())
+    for (column <- allColumns) {
+      // When the column is measure or the specified no inverted index column in DDL,
+      // set useInvertedIndex to false, otherwise true.
+      if (noInvertedIndexCols.contains(column.getColumnName) ||
+        cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
+        column.setUseInvertedIndex(false)
+      } else {
+        column.setUseInvertedIndex(true)
+      }
     }
 
     // Adding dummy measure if no measure is provided
