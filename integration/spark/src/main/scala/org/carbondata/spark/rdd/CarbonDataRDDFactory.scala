@@ -305,7 +305,10 @@ object CarbonDataRDDFactory extends Logging {
       compactionType = CompactionType.MINOR_COMPACTION
     }
 
-    logger.audit("Compaction request received.")
+    logger
+      .audit("Compaction request received for table " + carbonLoadModel
+        .getDatabaseName + "." + carbonLoadModel.getTableName
+      )
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val cubeCreationTime = CarbonEnv.getInstance(sqlContext).carbonCatalog
       .getCubeCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
@@ -329,7 +332,10 @@ object CarbonDataRDDFactory extends Logging {
       .getCarbonLockObj(carbonTable.getMetaDataFilepath, LockUsage.COMPACTION_LOCK)
 
     if (lock.lockWithRetries()) {
-      logger.error("Acquired the compaction lock.")
+      logger
+        .info("Acquired the compaction lock for table " + carbonLoadModel
+          .getDatabaseName + "." + carbonLoadModel.getTableName
+        )
       startCompactionThreads(sqlContext,
         carbonLoadModel,
         partitioner,
@@ -342,7 +348,15 @@ object CarbonDataRDDFactory extends Logging {
       )
     }
     else {
-      logger.error("Not able to acquire the compaction lock.")
+      logger
+        .audit("Not able to acquire the compaction lock for table " + carbonLoadModel
+          .getDatabaseName + "." + carbonLoadModel.getTableName
+        )
+      logger
+        .error("Not able to acquire the compaction lock for table " + carbonLoadModel
+          .getDatabaseName + "." + carbonLoadModel.getTableName
+        )
+      sys.error("Table is already locked for compaction. Please try after some time.")
     }
   }
 
@@ -455,6 +469,10 @@ object CarbonDataRDDFactory extends Logging {
       logger
         .info("compaction need status is " + CarbonDataMergerUtil.checkIfAutoLoadMergingRequired())
       if (CarbonDataMergerUtil.checkIfAutoLoadMergingRequired()) {
+        logger
+          .audit("Compaction request received for table " + carbonLoadModel
+            .getDatabaseName + "." + carbonLoadModel.getTableName
+          )
         val compactionSize = CarbonDataMergerUtil.getCompactionSize(CompactionType.MINOR_COMPACTION)
 
         val executor: ExecutorService = Executors.newFixedThreadPool(1)
@@ -478,7 +496,7 @@ object CarbonDataRDDFactory extends Logging {
         storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
         if (lock.lockWithRetries()) {
-
+          logger.info("Acquired the compaction lock.")
           startCompactionThreads(sc,
             carbonLoadModel,
             partitioner,
@@ -491,13 +509,23 @@ object CarbonDataRDDFactory extends Logging {
           )
         }
         else {
-          logger.error("Not able to acquire the compaction lock.")
+          logger
+            .audit("Not able to acquire the compaction lock for table " + carbonLoadModel
+              .getDatabaseName + "." + carbonLoadModel.getTableName
+            )
+          logger
+            .error("Not able to acquire the compaction lock for table " + carbonLoadModel
+              .getDatabaseName + "." + carbonLoadModel.getTableName
+            )
         }
       }
     }
 
     try {
-      logger.audit("The data load request has been received.")
+      logger
+        .audit("The data load request has been received for table " + carbonLoadModel
+          .getDatabaseName + "." + carbonLoadModel.getTableName
+        )
 
       currentRestructNumber = CarbonUtil
         .checkAndReturnCurrentRestructFolderNumber(carbonTable.getMetaDataFilepath, "RS_", false)
