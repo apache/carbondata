@@ -244,7 +244,9 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
                   blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
                       .getMeasureDataHolder().getReadableDoubleValueByIndex(index);
           }
-          record[msrColumnEvalutorInfo.getRowIndex()] = msrValue;
+          record[msrColumnEvalutorInfo.getRowIndex()] =
+              blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
+                  .getNullValueIndexHolder().getBitSet().get(index) ? null : msrValue;
 
         }
       }
