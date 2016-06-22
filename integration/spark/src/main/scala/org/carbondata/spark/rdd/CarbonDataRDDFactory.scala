@@ -523,7 +523,7 @@ object CarbonDataRDDFactory extends Logging {
 
     try {
       logger
-        .audit("The data load request has been received for table " + carbonLoadModel
+        .audit("Data load request has been received for table " + carbonLoadModel
           .getDatabaseName + "." + carbonLoadModel.getTableName
         )
 
@@ -785,7 +785,7 @@ object CarbonDataRDDFactory extends Logging {
           message = "Dataload failure"
         }
         logInfo("********clean up done**********")
-        logger.audit("The data loading is failed.")
+        logger.audit("Data load is failed.")
         logWarning("Unable to write load metadata file")
         throw new Exception(message)
       } else {
@@ -801,7 +801,7 @@ object CarbonDataRDDFactory extends Logging {
           // TODO : Handle it
           logInfo("********Database updated**********")
         }
-        logger.audit("The data loading is successful.")
+        logger.audit("Data load is successful.")
       }
     }
 

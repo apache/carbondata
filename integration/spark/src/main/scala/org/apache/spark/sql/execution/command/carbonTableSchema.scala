@@ -1288,7 +1288,7 @@ private[sql] case class DeleteLoadsById(
 
   def run(sqlContext: SQLContext): Seq[Row] = {
 
-    LOGGER.audit("The delete load by Id request has been received.")
+    LOGGER.audit("Delete load by Id request has been received.")
 
     // validate load ids first
     validateLoadIds
@@ -1299,7 +1299,7 @@ private[sql] case class DeleteLoadsById(
       tableName,
       None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
-      LOGGER.audit(s"The delete load by Id is failed. Table $schemaName.$tableName does not exist")
+      LOGGER.audit(s"Delete load by Id is failed. Table $schemaName.$tableName does not exist")
       sys.error(s"Table $schemaName.$tableName does not exist")
     }
 
@@ -1321,14 +1321,14 @@ private[sql] case class DeleteLoadsById(
     if (invalidLoadIds.nonEmpty) {
       if (invalidLoadIds.length == loadids.length) {
         LOGGER.audit(
-          "The delete load by Id is failed. Failed to delete the following load(s). LoadSeqId-" +
+          "Delete load by Id is failed. Failed to delete the following load(s). LoadSeqId-" +
           invalidLoadIds)
         sys.error("Load deletion is failed. Failed to delete the following load(s). LoadSeqId-" +
                   invalidLoadIds)
       }
       else {
         LOGGER.audit(
-          "The delete load by Id is failed. Failed to delete the following load(s). LoadSeqId-" +
+          "Delete load by Id is failed. Failed to delete the following load(s). LoadSeqId-" +
           invalidLoadIds)
         sys.error(
           "Load deletion is partial success. Failed to delete the following load(s). LoadSeqId-" +
@@ -1336,7 +1336,7 @@ private[sql] case class DeleteLoadsById(
       }
     }
 
-    LOGGER.audit("The delete load by Id is successfull.")
+    LOGGER.audit("Delete load by Id is successfull.")
     Seq.empty
 
   }
@@ -1361,7 +1361,7 @@ private[sql] case class DeleteLoadsByLoadDate(
 
   def run(sqlContext: SQLContext): Seq[Row] = {
 
-    LOGGER.audit("The delete load by load date request has been received.")
+    LOGGER.audit("Delete load by load date request has been received.")
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
 
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
@@ -1371,7 +1371,7 @@ private[sql] case class DeleteLoadsByLoadDate(
     )(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
       LOGGER
-        .audit(s"The delete load by load date is failed. Table $schemaName.$tableName does not " +
+        .audit(s"Delete load by load date is failed. Table $schemaName.$tableName does not " +
          s"exist")
       sys.error(s"Table $schemaName.$tableName does not exist")
     }
@@ -1391,7 +1391,7 @@ private[sql] case class DeleteLoadsByLoadDate(
 
 
     var invalidLoadTimestamps = segmentStatusManager.updateDeletionStatus(loadDate, path).asScala
-    LOGGER.audit("The delete load by Id is successfull.")
+    LOGGER.audit("Delete load by load date is successfull.")
     Seq.empty
 
   }
@@ -2095,13 +2095,13 @@ private[sql] case class CleanFiles(
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def run(sqlContext: SQLContext): Seq[Row] = {
-    LOGGER.audit("The clean files request has been received.")
+    LOGGER.audit("Clean files request has been received.")
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
       .lookupRelation1(Some(schemaName), cubeName, None)(sqlContext).
       asInstanceOf[CarbonRelation]
     if (relation == null) {
-      LOGGER.audit(s"The clean files request is failed. Table $schemaName.$cubeName does not exist")
+      LOGGER.audit(s"Clean files request is failed. Table $schemaName.$cubeName does not exist")
       sys.error(s"Table $schemaName.$cubeName does not exist")
     }
 
@@ -2119,7 +2119,7 @@ private[sql] case class CleanFiles(
       carbonLoadModel,
       relation.cubeMeta.storePath,
       relation.cubeMeta.partitioner)
-    LOGGER.audit("The clean files request is successfull.")
+    LOGGER.audit("Clean files request is successfull.")
     Seq.empty
   }
 }
