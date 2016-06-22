@@ -19,10 +19,11 @@
 
 package org.carbondata.spark.testsuite.dataload
 
+import java.io.File
+
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.Row
-import org.carbondata.core.util.CarbonProperties
 import org.scalatest.BeforeAndAfterAll
 
 /**
@@ -32,29 +33,29 @@ import org.scalatest.BeforeAndAfterAll
 
 class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
 
-  test("no inverted index load and query") {
-
+  def currentPath: String = new File(this.getClass.getResource("/").getPath + "/../../")
+    .getCanonicalPath
+  val testData = new File(currentPath + "/../../examples/src/main/resources/dimSample.csv")
+    .getCanonicalPath
+  override def beforeAll {
     sql("DROP TABLE IF EXISTS index")
+  }
+  test("no inverted index load and query") {
 
     sql("""
            CREATE TABLE IF NOT EXISTS index
-           (ID Int, date Timestamp, country String,
-           name String, phonetype String, serialname String, salary Int)
+           (id Int, name String, city String)
            STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('NO_INVERTED_INDEX'='country,name')
+           TBLPROPERTIES('NO_INVERTED_INDEX'='name,city')
            """)
-
     sql(s"""
-           LOAD DATA LOCAL INPATH './src/test/resources/invertedIndex.csv' into table index
+           LOAD DATA LOCAL INPATH '$testData' into table index
            """)
     checkAnswer(
       sql("""
-           SELECT country, count(salary) AS amount
-           FROM index
-           WHERE country IN ('china','france')
-           GROUP BY country
+           SELECT * FROM index WHERE city = "Bangalore"
           """),
-      Seq(Row("france", 16), Row("china", 74)))
+      Seq(Row(19, "Emily", "Bangalore")))
 
     sql("DROP TABLE index")
   }
