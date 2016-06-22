@@ -40,6 +40,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
   override def beforeAll {
     sql("DROP TABLE IF EXISTS index")
   }
+
   test("no inverted index load and query") {
 
     sql("""
@@ -57,7 +58,9 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
           """),
       Seq(Row(19, "Emily", "Bangalore")))
 
-    sql("DROP TABLE index")
   }
 
+  override def afterAll {
+    sql("drop table index")
+  }
 }
