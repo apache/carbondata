@@ -20,7 +20,6 @@
 
 <plugin
    id="MDKeyGen"
-   iconfile="icon.png"
    description="MD Key Gen"
    tooltip="MD Key Gen"
    category="Carbon"

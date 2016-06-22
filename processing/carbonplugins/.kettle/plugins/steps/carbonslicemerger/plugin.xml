@@ -21,7 +21,6 @@
 <plugin
 
    id="CarbonSliceMerger"
-   iconfile="icon.png"
    description="Carbon Slice Merger"
    tooltip="Carbon Slice Merger"
    category="Carbon"

@@ -21,7 +21,6 @@
 <plugin
 
    id="CarbonCSVReaderStep"
-   iconfile="icon.png"
    description="Carbon CSV Reader Step"
    tooltip="Carbon CSV Reader Step"
    category="Carbon"
