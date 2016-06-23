@@ -19,7 +19,7 @@
 
 package org.carbondata.scan.result.iterator;
 
-import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.common.CarbonIterator;
 import org.carbondata.scan.result.BatchResult;
 
 /**

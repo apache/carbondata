@@ -20,6 +20,7 @@ package org.carbondata.scan.result.iterator;
 
 import java.util.List;
 
+import org.carbondata.common.CarbonIterator;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.DataRefNode;
@@ -28,7 +29,6 @@ import org.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.carbondata.scan.model.QueryModel;

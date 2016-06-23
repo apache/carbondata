@@ -1,7 +1,7 @@
 /**
  *
  */
-package org.carbondata.core.locks;
+package org.carbondata.lcm.locks;
 
 import java.io.File;
 

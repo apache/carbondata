@@ -18,7 +18,7 @@
  */
 package org.carbondata.processing.store.colgroup;
 
-import org.carbondata.core.vo.ColumnGroupModel;
+import org.carbondata.core.datastorage.store.columnar.ColumnGroupModel;
 
 /**
  * This will hold column group data.

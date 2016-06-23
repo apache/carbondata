@@ -47,11 +47,11 @@ import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile
 import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType
-import org.carbondata.core.locks.ZookeeperInit
 import org.carbondata.core.reader.ThriftReader
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.core.writer.ThriftWriter
 import org.carbondata.format.{SchemaEvolutionEntry, TableInfo}
+import org.carbondata.lcm.locks.ZookeeperInit
 import org.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
 
 case class MetaData(var cubesMeta: ArrayBuffer[TableMeta])
@@ -454,10 +454,6 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
       dimArray :+= colName
     }
     dimArray
-  }
-
-  def getAggregateTableName(carbonTable: CarbonTable, factTableName: String): String = {
-    CarbonUtil.getNewAggregateTableName(carbonTable.getAggregateTablesName, factTableName)
   }
 
   /**

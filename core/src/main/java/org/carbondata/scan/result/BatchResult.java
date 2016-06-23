@@ -21,7 +21,7 @@ package org.carbondata.scan.result;
 
 import java.util.NoSuchElementException;
 
-import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.common.CarbonIterator;
 
 /**
  * Below class holds the query result

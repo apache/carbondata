@@ -32,15 +32,15 @@ import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperations;
-import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperationsImpl;
-import org.carbondata.core.datastorage.store.fileperations.FileWriteOperation;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.core.locks.CarbonLockFactory;
-import org.carbondata.core.locks.ICarbonLock;
-import org.carbondata.core.locks.LockUsage;
 import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.lcm.fileoperations.AtomicFileOperations;
+import org.carbondata.lcm.fileoperations.AtomicFileOperationsImpl;
+import org.carbondata.lcm.fileoperations.FileWriteOperation;
+import org.carbondata.lcm.locks.CarbonLockFactory;
+import org.carbondata.lcm.locks.ICarbonLock;
+import org.carbondata.lcm.locks.LockUsage;
 
 import com.google.gson.Gson;
 

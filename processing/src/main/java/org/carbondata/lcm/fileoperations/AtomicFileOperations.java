@@ -17,9 +17,17 @@
  * under the License.
  */
 
-package org.carbondata.core.datastorage.store.fileperations;
+package org.carbondata.lcm.fileoperations;
 
-public enum FileWriteOperation {
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
-  APPEND, OVERWRITE
+public interface AtomicFileOperations {
+
+  DataInputStream openForRead() throws IOException;
+
+  void close() throws IOException;
+
+  DataOutputStream openForWrite(FileWriteOperation operation) throws IOException;
 }

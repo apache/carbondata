@@ -20,7 +20,7 @@ package org.carbondata.scan.executor.impl;
 
 import java.util.List;
 
-import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.common.CarbonIterator;
 import org.carbondata.scan.executor.exception.QueryExecutionException;
 import org.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.carbondata.scan.model.QueryModel;

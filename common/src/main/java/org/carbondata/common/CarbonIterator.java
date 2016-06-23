@@ -16,14 +16,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.core.locks;
+
+package org.carbondata.common;
+
+import java.util.Iterator;
 
 /**
- * This enum is used to define the usecase of the lock.
- * Each enum value is one specific lock case.
+ * CarbonIterator adds default implement for remove. This is required for Java 7.
+ * @param <E>
  */
-public enum LockUsage {
-  METADATA_LOCK,
-  COMPACTION_LOCK;
+public abstract class CarbonIterator<E> implements Iterator<E> {
+
+  @Override public abstract boolean hasNext();
+
+  @Override public abstract E next();
+
+  @Override public void remove() {
+    throw new UnsupportedOperationException("remove");
+  }
 
 }

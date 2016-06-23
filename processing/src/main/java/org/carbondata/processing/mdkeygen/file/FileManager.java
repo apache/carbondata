@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.core.file.manager.composite;
+package org.carbondata.processing.mdkeygen.file;
 
 import java.util.ArrayList;
 import java.util.List;

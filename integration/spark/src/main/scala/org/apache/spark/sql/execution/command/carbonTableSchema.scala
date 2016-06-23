@@ -47,9 +47,9 @@ import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
-import org.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.integration.spark.merger.CompactionType
+import org.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
 import org.carbondata.lcm.status.SegmentStatusManager
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 import org.carbondata.spark.load._
@@ -1145,6 +1145,7 @@ private[sql] case class AlterTable(
 
 /**
  * Command for the compaction in alter table command
+ *
  * @param alterTableModel
  */
 private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) extends

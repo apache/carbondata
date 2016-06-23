@@ -5,9 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.carbondata.common.CarbonIterator;
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
-import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.carbondata.scan.executor.QueryExecutorFactory;

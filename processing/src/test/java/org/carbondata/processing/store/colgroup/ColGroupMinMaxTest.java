@@ -11,11 +11,8 @@ import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthVariableSplitGenerator;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.core.vo.ColumnGroupModel;
-import org.carbondata.processing.store.colgroup.ColumnDataHolder;
-import org.carbondata.processing.store.colgroup.DataHolder;
-import org.carbondata.processing.store.colgroup.ColGroupBlockStorage;
-import org.carbondata.processing.store.colgroup.ColGroupDataHolder;
+import org.carbondata.core.datastorage.store.columnar.ColumnGroupModel;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

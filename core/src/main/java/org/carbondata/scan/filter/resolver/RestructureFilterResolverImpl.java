@@ -90,10 +90,6 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
           } else {
             dimColumnResolvedFilterInfo
                 .setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());
-            // dimColumnResolvedFilterInfo
-            // .setNeedCompressedData(info.getSlices().get(info.getCurrentSliceIndex())
-            // .getDataCache(info.getFactTableName()).getAggKeyBlock()[columnExpression.getDim()
-            // .getOrdinal()]);
             dimColumnResolvedFilterInfo.setFilterValues(
                 FilterUtil.getFilterListForRS(right, columnExpression, defaultValue, surrogate));
           }
@@ -115,10 +111,6 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
           } else {
             dimColumnResolvedFilterInfo
                 .setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());
-            // dimColumnResolvedFilterInfo
-            // .setNeedCompressedData(info.getSlices().get(info.getCurrentSliceIndex())
-            // .getDataCache(info.getFactTableName()).getAggKeyBlock()[columnExpression.getDim()
-            // .getOrdinal()]);
             dimColumnResolvedFilterInfo.setFilterValues(
                 FilterUtil.getFilterListForRS(left, columnExpression, defaultValue, surrogate));
           }

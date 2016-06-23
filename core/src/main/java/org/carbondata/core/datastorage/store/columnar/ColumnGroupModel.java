@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.core.vo;
+package org.carbondata.core.datastorage.store.columnar;
 
 public class ColumnGroupModel {
 

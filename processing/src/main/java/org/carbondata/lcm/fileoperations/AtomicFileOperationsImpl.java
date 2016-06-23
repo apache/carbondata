@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.core.datastorage.store.fileperations;
+package org.carbondata.lcm.fileoperations;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

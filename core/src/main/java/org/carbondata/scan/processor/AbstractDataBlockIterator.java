@@ -18,11 +18,11 @@
  */
 package org.carbondata.scan.processor;
 
+import org.carbondata.common.CarbonIterator;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.datastorage.store.FileHolder;
-import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.scan.collector.ScannedResultCollector;
 import org.carbondata.scan.collector.impl.ListBasedResultCollector;
 import org.carbondata.scan.executor.exception.QueryExecutionException;

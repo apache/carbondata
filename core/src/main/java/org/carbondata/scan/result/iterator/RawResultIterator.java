@@ -18,10 +18,10 @@
  */
 package org.carbondata.scan.result.iterator;
 
+import org.carbondata.common.CarbonIterator;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.scan.result.BatchRawResult;
 import org.carbondata.scan.wrappers.ByteArrayWrapper;

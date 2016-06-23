@@ -21,7 +21,7 @@ package org.carbondata.processing.store;
 
 import java.util.Map;
 
-import org.carbondata.core.vo.ColumnGroupModel;
+import org.carbondata.core.datastorage.store.columnar.ColumnGroupModel;
 import org.carbondata.processing.datatypes.GenericDataType;
 
 /**

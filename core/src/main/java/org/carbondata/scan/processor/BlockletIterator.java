@@ -19,8 +19,8 @@
 
 package org.carbondata.scan.processor;
 
+import org.carbondata.common.CarbonIterator;
 import org.carbondata.core.carbon.datastore.DataRefNode;
-import org.carbondata.core.iterator.CarbonIterator;
 
 /**
  * Below class will be used to iterate over data block

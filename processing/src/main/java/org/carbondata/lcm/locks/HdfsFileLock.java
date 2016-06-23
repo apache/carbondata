@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.core.locks;
+package org.carbondata.lcm.locks;
 
 import java.io.DataOutputStream;
 import java.io.File;
