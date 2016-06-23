@@ -26,6 +26,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.keygenerator.KeyGenException;
+import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.scan.collector.ScannedResultCollector;
 import org.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.carbondata.scan.executor.infos.KeyStructureInfo;
@@ -160,7 +161,7 @@ public class ListBasedResultCollector implements ScannedResultCollector {
         default:
           msrVal = dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
       }
-      return org.carbondata.core.util.DataTypeUtil.getMeasureDataBasedOnDataType(msrVal, dataType);
+      return DataTypeUtil.getMeasureDataBasedOnDataType(msrVal, dataType);
     }
     return null;
   }
