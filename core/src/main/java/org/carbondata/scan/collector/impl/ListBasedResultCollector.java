@@ -34,7 +34,6 @@ import org.carbondata.scan.result.AbstractScannedResult;
 import org.carbondata.scan.result.ListBasedResultWrapper;
 import org.carbondata.scan.result.Result;
 import org.carbondata.scan.result.impl.ListBasedResult;
-import org.carbondata.scan.util.DataTypeUtil;
 import org.carbondata.scan.wrappers.ByteArrayWrapper;
 
 /**
@@ -161,7 +160,7 @@ public class ListBasedResultCollector implements ScannedResultCollector {
         default:
           msrVal = dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
       }
-      return DataTypeUtil.getMeasureDataBasedOnDataType(msrVal, dataType);
+      return org.carbondata.core.util.DataTypeUtil.getMeasureDataBasedOnDataType(msrVal, dataType);
     }
     return null;
   }

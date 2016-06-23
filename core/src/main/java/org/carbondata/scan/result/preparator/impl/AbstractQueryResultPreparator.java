@@ -11,7 +11,6 @@ import org.carbondata.scan.model.QueryDimension;
 import org.carbondata.scan.model.QueryModel;
 import org.carbondata.scan.result.BatchResult;
 import org.carbondata.scan.result.preparator.QueryResultPreparator;
-import org.carbondata.scan.util.DataTypeUtil;
 
 public abstract class AbstractQueryResultPreparator<K, V> implements QueryResultPreparator<K, V> {
 
@@ -47,13 +46,13 @@ public abstract class AbstractQueryResultPreparator<K, V> implements QueryResult
             .getValueFromSurrogate((Integer) convertedResult[i][rowIndex]);
       } else {
         if (queryExecuterProperties.sortDimIndexes[i] == 1) {
-          row[queryDimension.getQueryOrder()] = DataTypeUtil.getDataBasedOnDataType(
+          row[queryDimension.getQueryOrder()] = org.carbondata.core.util.DataTypeUtil.getDataBasedOnDataType(
               queryExecuterProperties.columnToDictionayMapping
                   .get(queryDimension.getDimension().getColumnId())
                   .getDictionaryValueFromSortedIndex((Integer) convertedResult[i][rowIndex]),
               queryDimension.getDimension().getDataType());
         } else {
-          row[queryDimension.getQueryOrder()] = DataTypeUtil.getDataBasedOnDataType(
+          row[queryDimension.getQueryOrder()] = org.carbondata.core.util.DataTypeUtil.getDataBasedOnDataType(
               queryExecuterProperties.columnToDictionayMapping
                   .get(queryDimension.getDimension().getColumnId())
                   .getDictionaryValueForKey((Integer) convertedResult[i][rowIndex]),

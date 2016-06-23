@@ -33,7 +33,6 @@ import org.carbondata.scan.model.QueryModel;
 import org.carbondata.scan.result.BatchResult;
 import org.carbondata.scan.result.ListBasedResultWrapper;
 import org.carbondata.scan.result.Result;
-import org.carbondata.scan.util.DataTypeUtil;
 import org.carbondata.scan.wrappers.ByteArrayWrapper;
 
 /**
@@ -88,7 +87,7 @@ public class DetailQueryResultPreparatorImpl
         for (int i = 0; i < dimensionCount; i++) {
           if (!CarbonUtil.hasEncoding(queryDimension.get(i).getDimension().getEncoder(),
               Encoding.DICTIONARY)) {
-            resultData[currentRow][i] = DataTypeUtil.getDataBasedOnDataType(
+            resultData[currentRow][i] = org.carbondata.core.util.DataTypeUtil.getDataBasedOnDataType(
                 new String(key.getNoDictionaryKeyByIndex(noDictionaryColumnIndex++),
                     Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),
                 queryDimension.get(i).getDimension().getDataType());
