@@ -25,16 +25,14 @@ import org.apache.spark.sql.execution.{SparkPlan, UnaryNode}
 import org.apache.spark.sql.hive.{CarbonMetastoreCatalog, CarbonMetastoreTypes}
 import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
 import org.apache.spark.sql.types._
-import org.apache.spark.unsafe.types.UTF8String
 
 import org.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
-import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.carbondata.core.carbon.AbsoluteTableIdentifier
 import org.carbondata.core.carbon.metadata.datatype.DataType
 import org.carbondata.core.carbon.metadata.encoder.Encoding
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
-import org.carbondata.core.util.DataTypeUtil.getDataBasedOnDataType
-import org.carbondata.scan.util.DataTypeUtil
+import org.carbondata.core.util.DataTypeUtil
 
 /**
  * It decodes the data.
@@ -170,8 +168,7 @@ case class CarbonDictionaryDecoder(
               val data = row.toSeq(dataTypes).toArray
               dictIndex.foreach { index =>
                 if (data(index) != null) {
-                  data(index) = DataTypeUtil
-                    .getDataBasedOnDataType(dicts(index)
+                  data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
                       .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
                       getDictionaryColumnIds(index)._3)
                 }
