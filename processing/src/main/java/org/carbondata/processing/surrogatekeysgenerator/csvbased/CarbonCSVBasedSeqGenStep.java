@@ -72,7 +72,6 @@ import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
@@ -972,10 +971,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                   .getMeasureValueBasedOnDataType(msr, msrDataType[meta.msrMapping[msrCount]],
                       meta.carbonMeasures[meta.msrMapping[msrCount]]);
             } catch (NumberFormatException ex) {
-              badRecordslogger
-                  .addBadRecordsToBilder(r, inputColumnsSize, "Measure should be number",
-                      valueToCheckAgainst);
-              return null;
+              LOGGER.warn("Cant not convert : " + msr
+                  + " to Numeric type value. Value considered as null.");
+              out[memberMapping[dimLen - meta.complexTypes.size() + index]] = null;
             }
           }
         }
