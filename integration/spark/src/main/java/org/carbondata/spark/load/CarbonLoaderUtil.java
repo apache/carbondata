@@ -51,6 +51,7 @@ import org.carbondata.core.load.LoadMetadataDetails;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
+import org.carbondata.lcm.status.SegmentStatusManager;
 import org.carbondata.processing.api.dataloader.DataLoadModel;
 import org.carbondata.processing.api.dataloader.SchemaInfo;
 import org.carbondata.processing.csvload.DataGraphExecuter;
@@ -255,6 +256,17 @@ public final class CarbonLoaderUtil {
     }
   }
 
+  public static void deleteSegment(CarbonLoadModel loadModel, int currentLoad) {
+    CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(loadModel.getStorePath(),
+        carbonTable.getCarbonTableIdentifier());
+
+    for (int i = 0; i < carbonTable.getPartitionCount(); i++) {
+      String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(i+"",currentLoad+"");
+      deleteStorePath(segmentPath);
+    }
+  }
+
   public static void deleteSlice(int partitionCount, String schemaName, String cubeName,
       String tableName, String hdfsStoreLocation, int currentRestructNumber, String loadFolder) {
     String tableLoc = null;
@@ -271,43 +283,37 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  public static void deletePartialLoadDataIfExist(int partitionCount, String schemaName,
-      String cubeName, String tableName, String hdfsStoreLocation, int currentRestructNumber,
-      int loadFolder) throws IOException {
-    String tableLoc = null;
-    String partitionSchemaName = null;
-    String partitionCubeName = null;
-    for (int i = 0; i < partitionCount; i++) {
-      partitionSchemaName = schemaName + '_' + i;
-      partitionCubeName = cubeName + '_' + i;
-      tableLoc =
-          getTableLocation(partitionSchemaName, partitionCubeName, tableName, hdfsStoreLocation,
-              currentRestructNumber);
+  public static void deletePartialLoadDataIfExist(CarbonLoadModel loadModel) throws IOException {
+    CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
+    String metaDataLocation = carbonTable.getMetaDataFilepath();
+    SegmentStatusManager segmentStatusManager =
+        new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier());
+    LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metaDataLocation);
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(loadModel.getStorePath(),
+        carbonTable.getCarbonTableIdentifier());
+    final List<String> loadFolders = new ArrayList<String>();
+    for (LoadMetadataDetails loadMetadata : details) {
+      loadFolders.add(carbonTablePath.getCarbonDataDirectoryPath(loadMetadata.getPartitionCount(),
+          loadMetadata.getLoadName())
+          .replace("\\", "/"));
+    }
 
-      final List<String> loadFolders = new ArrayList<String>();
-      for (int j = 0; j < loadFolder; j++) {
-        loadFolders.add(
-            (tableLoc + File.separator + CarbonCommonConstants.LOAD_FOLDER + j).replace("\\", "/"));
-      }
-      if (loadFolder != 0) {
-        loadFolders.add(
-            (tableLoc + File.separator + CarbonCommonConstants.SLICE_METADATA_FILENAME + "."
-                + currentRestructNumber).replace("\\", "/"));
-      }
-      FileType fileType = FileFactory.getFileType(tableLoc);
-      if (FileFactory.isFileExist(tableLoc, fileType)) {
-        CarbonFile carbonFile = FileFactory.getCarbonFile(tableLoc, fileType);
+    //delete folder which metadata no exist in tablestatus
+    for (int i = 0; i < carbonTable.getPartitionCount(); i++) {
+      String partitionPath = carbonTablePath.getPartitionDir(i + "");
+      FileType fileType = FileFactory.getFileType(partitionPath);
+      if (FileFactory.isFileExist(partitionPath, fileType)) {
+        CarbonFile carbonFile = FileFactory.getCarbonFile(partitionPath, fileType);
         CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
-          @Override public boolean accept(CarbonFile path) {
-            return !loadFolders.contains(path.getAbsolutePath().replace("\\", "/")) && !path
-                .getName().contains(CarbonCommonConstants.MERGERD_EXTENSION);
+          @Override
+          public boolean accept(CarbonFile path) {
+            return !loadFolders.contains(path.getAbsolutePath().replace("\\", "/"));
           }
         });
         for (int k = 0; k < listFiles.length; k++) {
           deleteStorePath(listFiles[k].getAbsolutePath());
         }
       }
-
     }
   }
 

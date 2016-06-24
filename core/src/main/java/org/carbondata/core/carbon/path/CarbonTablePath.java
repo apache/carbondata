@@ -205,7 +205,7 @@ public class CarbonTablePath extends Path {
     return getPartitionDir(partitionId) + File.separator + SEGMENT_PREFIX + segmentId;
   }
 
-  private String getPartitionDir(String partitionId) {
+  public String getPartitionDir(String partitionId) {
     return getFactDir() + File.separator + PARTITION_PREFIX + partitionId;
   }
 
@@ -222,7 +222,7 @@ public class CarbonTablePath extends Path {
     return tablePath + File.separator + METADATA_DIR;
   }
 
-  private String getFactDir() {
+  public String getFactDir() {
     return tablePath + File.separator + FACT_DIR;
   }
 

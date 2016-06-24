@@ -561,18 +561,13 @@ object CarbonDataRDDFactory extends Logging {
             }
           }
         }
-        currentLoadCount += 1
-        // Deleting the any partially loaded data if present.
-        // in some case the segment folder which is present in store will not have entry in status.
-        // so deleting those folders.
-        CarbonLoaderUtil
-          .deletePartialLoadDataIfExist(partitioner.partitionCount, carbonLoadModel.getDatabaseName,
-            carbonLoadModel.getTableName, carbonLoadModel.getTableName, hdfsStoreLocation,
-            currentRestructNumber, currentLoadCount
-          )
-      } else {
-        currentLoadCount += 1
       }
+      currentLoadCount += 1
+      // Deleting the any partially loaded data if present.
+      // in some case the segment folder which is present in store will not have entry in status.
+      // so deleting those folders.
+      CarbonLoaderUtil.deletePartialLoadDataIfExist(carbonLoadModel)
+
 
       // reading the start time of data load.
       val loadStartTime = CarbonLoaderUtil.readCurrentTime()
@@ -760,6 +755,7 @@ object CarbonDataRDDFactory extends Logging {
         var message: String = ""
         logInfo("********starting clean up**********")
         if (isAgg) {
+          // TODO:need to clean aggTable
           CarbonLoaderUtil.deleteTable(partitioner.partitionCount, carbonLoadModel.getDatabaseName,
             carbonLoadModel.getTableName, carbonLoadModel.getAggTableName, hdfsStoreLocation,
             currentRestructNumber
@@ -768,12 +764,10 @@ object CarbonDataRDDFactory extends Logging {
         } else {
           val (result, _) = status(0)
           val newSlice = CarbonCommonConstants.LOAD_FOLDER + result
-          CarbonLoaderUtil.deleteSlice(partitioner.partitionCount, carbonLoadModel.getDatabaseName,
-            carbonLoadModel.getTableName, carbonLoadModel.getTableName, hdfsStoreLocation,
-            currentRestructNumber, newSlice
-          )
+          CarbonLoaderUtil.deleteSegment(carbonLoadModel, currentLoadCount)
           val aggTables = carbonTable.getAggregateTablesName
           if (null != aggTables && !aggTables.isEmpty) {
+            // TODO:need to clean aggTable
             aggTables.asScala.foreach { aggTableName =>
               CarbonLoaderUtil
                 .deleteSlice(partitioner.partitionCount, carbonLoadModel.getDatabaseName,
