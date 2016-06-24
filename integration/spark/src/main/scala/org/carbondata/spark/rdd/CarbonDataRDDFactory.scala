@@ -785,12 +785,19 @@ object CarbonDataRDDFactory extends Logging {
       } else {
         val metadataDetails = status(0)._2
         if (!isAgg) {
-          CarbonLoaderUtil
+          val status = CarbonLoaderUtil
             .recordLoadMetadata(currentLoadCount,
               metadataDetails,
               carbonLoadModel,
               loadStatus,
-              loadStartTime)
+              loadStartTime
+            )
+          if (!status) {
+            val message = "Dataload failed due to failure in table status updation."
+            logger.audit("Data load is failed.")
+            logger.error("Dataload failed due to failure in table status updation.")
+            throw new Exception(message)
+          }
         } else if (!carbonLoadModel.isRetentionRequest) {
           // TODO : Handle it
           logInfo("********Database updated**********")

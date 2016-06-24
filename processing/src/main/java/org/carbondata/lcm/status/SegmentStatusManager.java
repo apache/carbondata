@@ -70,6 +70,19 @@ public class SegmentStatusManager {
   }
 
   /**
+   * This will return the lock object used to lock the table status file before updation.
+   *
+   * @return
+   */
+  public ICarbonLock getTableStatusLock() {
+    CarbonTablePath carbonTablePath = CarbonStorePath
+        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+            absoluteTableIdentifier.getCarbonTableIdentifier());
+    String metaDataFilepath = carbonTablePath.getMetadataDirectoryPath();
+    return CarbonLockFactory.getCarbonLockObj(metaDataFilepath, LockUsage.TABLE_STATUS_LOCK);
+  }
+
+  /**
    * get valid segment for given table
    * @return
    * @throws IOException

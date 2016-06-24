@@ -24,6 +24,7 @@ package org.carbondata.core.locks;
  */
 public enum LockUsage {
   METADATA_LOCK,
-  COMPACTION_LOCK;
+  COMPACTION_LOCK,
+  TABLE_STATUS_LOCK;
 
 }

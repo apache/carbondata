@@ -44,6 +44,7 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
+import org.carbondata.core.locks.ICarbonLock;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.integration.spark.merger.CompactionType;
 import org.carbondata.lcm.status.SegmentStatusManager;
@@ -139,60 +140,85 @@ public final class CarbonDataMergerUtil {
     return CarbonCommonConstants.LOAD_FOLDER + segmentNumber;
   }
 
-  public static void updateLoadMetadataWithMergeStatus(List<LoadMetadataDetails> loadsToMerge,
+  public static boolean updateLoadMetadataWithMergeStatus(List<LoadMetadataDetails> loadsToMerge,
       String metaDataFilepath, String MergedLoadName, CarbonLoadModel carbonLoadModel,
       String mergeLoadStartTime) {
 
+    boolean tableStatusUpdationStatus = false;
     AbsoluteTableIdentifier absoluteTableIdentifier =
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
 
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
+    SegmentStatusManager segmentStatusManager =
+        new SegmentStatusManager(absoluteTableIdentifier);
 
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
-
-    String statusFilePath = carbonTablePath.getTableStatusFilePath();
-
-    LoadMetadataDetails[] loadDetails = segmentStatusManager.readLoadMetadata(metaDataFilepath);
-
-    String mergedLoadNumber = MergedLoadName.substring(
-        MergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER)
-            + CarbonCommonConstants.LOAD_FOLDER.length(), MergedLoadName.length());
-
-    String modificationOrDeletionTimeStamp = CarbonLoaderUtil.readCurrentTime();
-    for (LoadMetadataDetails loadDetail : loadDetails) {
-      // check if this segment is merged.
-      if (loadsToMerge.contains(loadDetail)) {
-        loadDetail.setLoadStatus(CarbonCommonConstants.SEGMENT_COMPACTED);
-        loadDetail.setModificationOrdeletionTimesStamp(modificationOrDeletionTimeStamp);
-        loadDetail.setMergedLoadName(mergedLoadNumber);
-      }
-    }
-
-    // create entry for merged one.
-    LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
-    loadMetadataDetails.setPartitionCount(carbonLoadModel.getPartitionId());
-    loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS);
-    String loadEnddate = CarbonLoaderUtil.readCurrentTime();
-    loadMetadataDetails.setTimestamp(loadEnddate);
-    loadMetadataDetails.setLoadName(mergedLoadNumber);
-    loadMetadataDetails.setLoadStartTime(mergeLoadStartTime);
-    loadMetadataDetails.setPartitionCount("0");
-
-    List<LoadMetadataDetails> updatedDetailsList =
-        new ArrayList<LoadMetadataDetails>(Arrays.asList(loadDetails));
-
-    // put the merged folder entry
-    updatedDetailsList.add(loadMetadataDetails);
+    ICarbonLock carbonLock =
+        segmentStatusManager.getTableStatusLock();
 
     try {
-      segmentStatusManager.writeLoadDetailsIntoFile(statusFilePath,
-          updatedDetailsList.toArray(new LoadMetadataDetails[updatedDetailsList.size()]));
-    } catch (IOException e) {
-      LOGGER.error("Error while writing metadata");
-    }
+      if (carbonLock.lockWithRetries()) {
+        LOGGER.info("Acquired lock for the table " + carbonLoadModel.getDatabaseName() + "."
+            + carbonLoadModel.getTableName() + " for table status updation ");
 
+        CarbonTablePath carbonTablePath = CarbonStorePath
+            .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+                absoluteTableIdentifier.getCarbonTableIdentifier());
+
+        String statusFilePath = carbonTablePath.getTableStatusFilePath();
+
+        LoadMetadataDetails[] loadDetails = segmentStatusManager.readLoadMetadata(metaDataFilepath);
+
+        String mergedLoadNumber = MergedLoadName.substring(
+            MergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER)
+                + CarbonCommonConstants.LOAD_FOLDER.length(), MergedLoadName.length());
+
+        String modificationOrDeletionTimeStamp = CarbonLoaderUtil.readCurrentTime();
+        for (LoadMetadataDetails loadDetail : loadDetails) {
+          // check if this segment is merged.
+          if (loadsToMerge.contains(loadDetail)) {
+            loadDetail.setLoadStatus(CarbonCommonConstants.SEGMENT_COMPACTED);
+            loadDetail.setModificationOrdeletionTimesStamp(modificationOrDeletionTimeStamp);
+            loadDetail.setMergedLoadName(mergedLoadNumber);
+          }
+        }
+
+        // create entry for merged one.
+        LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
+        loadMetadataDetails.setPartitionCount(carbonLoadModel.getPartitionId());
+        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS);
+        String loadEnddate = CarbonLoaderUtil.readCurrentTime();
+        loadMetadataDetails.setTimestamp(loadEnddate);
+        loadMetadataDetails.setLoadName(mergedLoadNumber);
+        loadMetadataDetails.setLoadStartTime(mergeLoadStartTime);
+        loadMetadataDetails.setPartitionCount("0");
+
+        List<LoadMetadataDetails> updatedDetailsList = new ArrayList<>(Arrays.asList(loadDetails));
+
+        // put the merged folder entry
+        updatedDetailsList.add(loadMetadataDetails);
+
+        try {
+          segmentStatusManager.writeLoadDetailsIntoFile(statusFilePath,
+              updatedDetailsList.toArray(new LoadMetadataDetails[updatedDetailsList.size()]));
+          tableStatusUpdationStatus = true;
+        } catch (IOException e) {
+          LOGGER.error("Error while writing metadata");
+        }
+      } else {
+        LOGGER.error(
+            "Could not able to obtain lock for table" + carbonLoadModel.getDatabaseName() + "."
+                + carbonLoadModel.getTableName() + "for table status updation");
+      }
+    } finally {
+      if (carbonLock.unlock()) {
+        LOGGER.info("Table unlocked successfully after table status updation" + carbonLoadModel
+            .getDatabaseName() + "." + carbonLoadModel.getTableName());
+      } else {
+        LOGGER.error(
+            "Unable to unlock Table lock for table" + carbonLoadModel.getDatabaseName() + "."
+                + carbonLoadModel.getTableName() + " during table status updation");
+      }
+    }
+    return tableStatusUpdationStatus;
   }
 
   /**

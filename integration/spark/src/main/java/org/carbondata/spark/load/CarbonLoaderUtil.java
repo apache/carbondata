@@ -29,6 +29,7 @@ import org.carbondata.core.cache.CacheProvider;
 import org.carbondata.core.cache.CacheType;
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
+import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
@@ -48,6 +49,7 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.load.LoadMetadataDetails;
+import org.carbondata.core.locks.ICarbonLock;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
@@ -692,52 +694,82 @@ public final class CarbonLoaderUtil {
   /**
    * This API will write the load level metadata for the loadmanagement module inorder to
    * manage the load and query execution management smoothly.
+   *
+   * @param loadCount
+   * @param loadMetadataDetails
+   * @param loadModel
+   * @param loadStatus
+   * @param startLoadTime
+   * @return boolean which determines whether status update is done or not.
+   * @throws IOException
    */
-  public static void recordLoadMetadata(int loadCount, LoadMetadataDetails loadMetadataDetails,
+  public static boolean recordLoadMetadata(int loadCount, LoadMetadataDetails loadMetadataDetails,
       CarbonLoadModel loadModel, String loadStatus, String startLoadTime) throws IOException {
 
-    String dataLoadLocation = null;
-    //String dataLoadLocation = getLoadFolderPath(loadModel);
-    dataLoadLocation =
-        loadModel.getCarbonDataLoadSchema().getCarbonTable().getMetaDataFilepath() + File.separator
-            + CarbonCommonConstants.LOADMETADATA_FILENAME;
-    Gson gsonObjectToRead = new Gson();
-    List<LoadMetadataDetails> listOfLoadFolderDetails = null;
-    DataInputStream dataInputStream = null;
-    String loadEnddate = readCurrentTime();
-    loadMetadataDetails.setTimestamp(loadEnddate);
-    loadMetadataDetails.setLoadStatus(loadStatus);
-    loadMetadataDetails.setLoadName(String.valueOf(loadCount));
-    loadMetadataDetails.setLoadStartTime(startLoadTime);
-    LoadMetadataDetails[] listOfLoadFolderDetailsArray = null;
+    boolean status = false;
+
+    String metaDataFilepath =
+        loadModel.getCarbonDataLoadSchema().getCarbonTable().getMetaDataFilepath();
+
+    AbsoluteTableIdentifier absoluteTableIdentifier =
+        loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
+
+    CarbonTablePath carbonTablePath = CarbonStorePath
+        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+            absoluteTableIdentifier.getCarbonTableIdentifier());
+
+    String tableStatusPath = carbonTablePath.getTableStatusFilePath();
+
+    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(
+        absoluteTableIdentifier);
+
+    ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
+
     try {
-      if (FileFactory.isFileExist(dataLoadLocation, FileFactory.getFileType(dataLoadLocation))) {
+      if (carbonLock.lockWithRetries()) {
+        LOGGER.info(
+            "Acquired lock for table" + loadModel.getDatabaseName() + "." + loadModel.getTableName()
+                + " for table status updation");
 
-        dataInputStream = FileFactory
-            .getDataInputStream(dataLoadLocation, FileFactory.getFileType(dataLoadLocation));
+        LoadMetadataDetails[] listOfLoadFolderDetailsArray =
+            segmentStatusManager.readLoadMetadata(metaDataFilepath);
 
-        BufferedReader buffReader = new BufferedReader(new InputStreamReader(dataInputStream,
-            CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT));
-        listOfLoadFolderDetailsArray =
-            gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
-      }
-      listOfLoadFolderDetails =
-          new ArrayList<LoadMetadataDetails>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        String loadEnddate = readCurrentTime();
+        loadMetadataDetails.setTimestamp(loadEnddate);
+        loadMetadataDetails.setLoadStatus(loadStatus);
+        loadMetadataDetails.setLoadName(String.valueOf(loadCount));
+        loadMetadataDetails.setLoadStartTime(startLoadTime);
 
-      if (null != listOfLoadFolderDetailsArray) {
-        for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
-          listOfLoadFolderDetails.add(loadMetadata);
+        List<LoadMetadataDetails> listOfLoadFolderDetails =
+            new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+
+        if (null != listOfLoadFolderDetailsArray) {
+          for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
+            listOfLoadFolderDetails.add(loadMetadata);
+          }
         }
+        listOfLoadFolderDetails.add(loadMetadataDetails);
+
+        segmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
+            .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
+
+        status = true;
+      } else {
+        LOGGER.error("Not able to acquire the lock for Table status updation for table " + loadModel
+            .getDatabaseName() + "." + loadModel.getTableName());
       }
-      listOfLoadFolderDetails.add(loadMetadataDetails);
-
     } finally {
-
-      CarbonUtil.closeStreams(dataInputStream);
+      if (carbonLock.unlock()) {
+        LOGGER.info(
+            "Table unlocked successfully after table status updation" + loadModel.getDatabaseName()
+                + "." + loadModel.getTableName());
+      } else {
+        LOGGER.error(
+            "Unable to unlock Table lock for table" + loadModel.getDatabaseName() + "." + loadModel
+                .getTableName() + " during table status updation");
+      }
     }
-    writeLoadMetadata(loadModel.getCarbonDataLoadSchema(), loadModel.getDatabaseName(),
-        loadModel.getTableName(), listOfLoadFolderDetails);
-
+    return status;
   }
 
   public static void writeLoadMetadata(CarbonDataLoadSchema schema,
