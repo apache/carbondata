@@ -88,6 +88,12 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row(4), Row(6))
     )
   }
+    test("Multi column with invalid member filter") {
+    checkAnswer(
+      sql("select id from filtertestTablesWithNull " + "where id = salary"),
+      Seq()
+    )
+  }
 
   test("Greater Than Filter") {
     checkAnswer(

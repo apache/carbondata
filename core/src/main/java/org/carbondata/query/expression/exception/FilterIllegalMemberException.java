@@ -16,11 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.carbondata.query.expression.exception;
 
 import java.util.Locale;
 
-public class FilterUnsupportedException extends Exception {
+/**
+ * FilterIllegalMemberException class representing exception which can cause while evaluating
+ * filter members needs to be gracefully handled without propagating to outer layer so that
+ * the execution should not get interrupted.
+ */
+public class FilterIllegalMemberException extends Exception {
 
   /**
    * default serial version ID.
@@ -38,7 +44,7 @@ public class FilterUnsupportedException extends Exception {
    * @param errorCode The error code for this exception.
    * @param msg       The error message for this exception.
    */
-  public FilterUnsupportedException(String msg) {
+  public FilterIllegalMemberException(String msg) {
     super(msg);
     this.msg = msg;
   }
@@ -49,7 +55,7 @@ public class FilterUnsupportedException extends Exception {
    * @param errorCode The error code for this exception.
    * @param msg       The error message for this exception.
    */
-  public FilterUnsupportedException(String msg, Throwable t) {
+  public FilterIllegalMemberException(String msg, Throwable t) {
     super(msg, t);
     this.msg = msg;
   }
@@ -60,7 +66,7 @@ public class FilterUnsupportedException extends Exception {
    * @param errorCode The error code for this exception.
    * @param msg       The error message for this exception.
    */
-  public FilterUnsupportedException(Throwable t) {
+  public FilterIllegalMemberException(Throwable t) {
     super(t);
   }
 
@@ -88,4 +94,5 @@ public class FilterUnsupportedException extends Exception {
   public String getMessage() {
     return this.msg;
   }
+
 }

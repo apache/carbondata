@@ -29,6 +29,7 @@ import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.conditional.BinaryConditionalExpression;
 import org.carbondata.query.expression.conditional.ConditionalExpression;
+import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 
@@ -65,8 +66,10 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
    * value
    *
    * @param absoluteTableIdentifier
+   * @throws FilterUnsupportedException
    */
-  @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
+  @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier)
+      throws FilterUnsupportedException {
 
     DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo = new DimColumnResolvedFilterInfo();
     if (!this.isExpressionResolve && exp instanceof BinaryConditionalExpression) {

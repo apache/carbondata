@@ -23,6 +23,7 @@ import java.util.List;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
+import org.carbondata.query.expression.exception.FilterIllegalMemberException;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.resolver.metadata.FilterResolverMetadata;
 import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
@@ -39,13 +40,19 @@ public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
    *
    * @param visitableObj
    * @param metadata
+   * @throws FilterUnsupportedException,thrown out if exception occurs while evaluating
+   * filter models.
    * @throws QueryExecutionException
    */
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
     DimColumnFilterInfo resolvedFilterObject = null;
-    List<String> evaluateResultListFinal =
-        metadata.getExpression().evaluate(null).getListAsString();
+    List<String> evaluateResultListFinal;
+    try {
+      evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
+    } catch (FilterIllegalMemberException e) {
+      throw new FilterUnsupportedException(e);
+    }
     try {
       resolvedFilterObject = FilterUtil
           .getFilterValues(metadata.getTableIdentifier(), metadata.getColumnExpression(),

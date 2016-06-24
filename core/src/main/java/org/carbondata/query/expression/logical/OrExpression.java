@@ -24,6 +24,7 @@ import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
+import org.carbondata.query.expression.exception.FilterIllegalMemberException;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 
 public class OrExpression extends BinaryLogicalExpression {
@@ -34,7 +35,8 @@ public class OrExpression extends BinaryLogicalExpression {
     super(left, right);
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+  @Override public ExpressionResult evaluate(RowIntf value)
+      throws FilterIllegalMemberException, FilterUnsupportedException {
     ExpressionResult resultLeft = left.evaluate(value);
     ExpressionResult resultRight = right.evaluate(value);
     switch (resultLeft.getDataType()) {

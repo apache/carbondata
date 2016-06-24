@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.query.expression.exception.FilterIllegalMemberException;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.resolver.metadata.FilterResolverMetadata;
 import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
@@ -41,13 +42,18 @@ public class NoDictionaryTypeVisitor implements ResolvedFilterInfoVisitorIntf {
    *
    * @param visitableObj
    * @param metadata
-   * @throws FilterUnsupportedException
+   * @throws FilterUnsupportedException,thrown out if exception occurs while evaluating
+   * filter models.
    */
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
     DimColumnFilterInfo resolvedFilterObject = null;
-    List<String> evaluateResultListFinal =
-        metadata.getExpression().evaluate(null).getListAsString();
+    List<String> evaluateResultListFinal;
+    try {
+      evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
+    } catch (FilterIllegalMemberException e) {
+      throw new FilterUnsupportedException(e);
+    }
     resolvedFilterObject = FilterUtil
         .getNoDictionaryValKeyMemberForFilter(metadata.getTableIdentifier(),
             metadata.getColumnExpression(), evaluateResultListFinal, metadata.isIncludeFilter());

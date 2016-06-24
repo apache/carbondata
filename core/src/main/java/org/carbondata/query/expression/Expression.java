@@ -26,6 +26,7 @@ import java.util.List;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.carbonfilterinterface.ExpressionType;
 import org.carbondata.query.carbonfilterinterface.RowIntf;
+import org.carbondata.query.expression.exception.FilterIllegalMemberException;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 
 public abstract class Expression implements Serializable {
@@ -37,7 +38,8 @@ public abstract class Expression implements Serializable {
   protected List<Expression> children =
       new ArrayList<Expression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-  public abstract ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException;
+  public abstract ExpressionResult evaluate(RowIntf value)
+      throws FilterUnsupportedException, FilterIllegalMemberException;
 
   public abstract ExpressionType getFilterExpressionType();
 

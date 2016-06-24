@@ -1034,6 +1034,12 @@ public final class CarbonCommonConstants {
    */
   public static final String ZOOKEEPER_LOCK = "zookeeperLock";
 
+  /**
+   * Invalid filter member log string
+   */
+  public static final String FILTER_INVALID_MEMBER = " Invalid Record(s) are present "
+                                                     + "while filter evaluation. ";
+
   private CarbonCommonConstants() {
   }
 }

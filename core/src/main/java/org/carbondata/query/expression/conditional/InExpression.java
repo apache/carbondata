@@ -27,6 +27,7 @@ import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
+import org.carbondata.query.expression.exception.FilterIllegalMemberException;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 
 public class InExpression extends BinaryConditionalExpression {
@@ -38,7 +39,8 @@ public class InExpression extends BinaryConditionalExpression {
     super(left, right);
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+  @Override public ExpressionResult evaluate(RowIntf value)
+      throws FilterUnsupportedException, FilterIllegalMemberException {
     ExpressionResult leftRsult = left.evaluate(value);
 
     if (setOfExprResult == null) {
@@ -54,7 +56,6 @@ public class InExpression extends BinaryConditionalExpression {
           } else {
             val = expressionResVal;
           }
-
           switch (val.getDataType()) {
             case StringType:
               val = new ExpressionResult(val.getDataType(), expressionResVal.getString());
@@ -78,7 +79,6 @@ public class InExpression extends BinaryConditionalExpression {
               throw new FilterUnsupportedException(
                   "DataType: " + val.getDataType() + " not supported for the filter expression");
           }
-
         }
         setOfExprResult.add(val);
 

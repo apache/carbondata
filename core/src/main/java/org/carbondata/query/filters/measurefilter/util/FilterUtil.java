@@ -70,6 +70,7 @@ import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
 import org.carbondata.query.expression.LiteralExpression;
+import org.carbondata.query.expression.exception.FilterIllegalMemberException;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.executer.AndFilterExecuterImpl;
 import org.carbondata.query.filter.executer.ColGroupFilterExecuterImpl;
@@ -289,7 +290,7 @@ public final class FilterUtil {
    */
   public static DimColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
       ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter)
-      throws QueryExecutionException, FilterUnsupportedException {
+      throws QueryExecutionException {
     Dictionary forwardDictionary = null;
     try {
       // Reading the dictionary value from cache.
@@ -354,6 +355,7 @@ public final class FilterUtil {
    * @param columnExpression
    * @param isIncludeFilter
    * @return DimColumnFilterInfo
+   * @throws FilterUnsupportedException
    * @throws QueryExecutionException
    */
   public static DimColumnFilterInfo getFilterListForAllValues(
@@ -386,9 +388,8 @@ public final class FilterUtil {
               evaluateResultListFinal.add(stringValue);
             }
           }
-        } catch (FilterUnsupportedException e) {
-          LOGGER.audit(e.getMessage());
-          throw new FilterUnsupportedException(e.getMessage());
+        } catch (FilterIllegalMemberException e) {
+          LOGGER.debug(e.getMessage());
         }
       }
       return getFilterValues(columnExpression, evaluateResultListFinal, forwardDictionary,
@@ -423,10 +424,11 @@ public final class FilterUtil {
    * @param isIncludeFilter
    * @return
    * @throws QueryExecutionException
+   * @throws FilterUnsupportedException
    */
   public static DimColumnFilterInfo getFilterList(AbsoluteTableIdentifier tableIdentifier,
       Expression expression, ColumnExpression columnExpression, boolean isIncludeFilter)
-      throws QueryExecutionException {
+      throws QueryExecutionException, FilterUnsupportedException {
     DimColumnFilterInfo resolvedFilterObject = null;
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
     try {
@@ -449,7 +451,7 @@ public final class FilterUtil {
             getFilterValues(tableIdentifier, columnExpression, evaluateResultListFinal,
                 isIncludeFilter);
       }
-    } catch (FilterUnsupportedException e) {
+    } catch (FilterIllegalMemberException e) {
       LOGGER.audit(e.getMessage());
     }
     return resolvedFilterObject;
@@ -464,9 +466,11 @@ public final class FilterUtil {
    * @param defaultValues
    * @param defaultSurrogate
    * @return
+   * @throws FilterUnsupportedException
    */
   public static DimColumnFilterInfo getFilterListForRS(Expression expression,
-      ColumnExpression columnExpression, String defaultValues, int defaultSurrogate) {
+      ColumnExpression columnExpression, String defaultValues, int defaultSurrogate)
+      throws FilterUnsupportedException {
     List<Integer> filterValuesList = new ArrayList<Integer>(20);
     DimColumnFilterInfo columnFilterInfo = null;
     // List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
@@ -493,7 +497,7 @@ public final class FilterUtil {
         columnFilterInfo = new DimColumnFilterInfo();
         columnFilterInfo.setFilterList(filterValuesList);
       }
-    } catch (FilterUnsupportedException e) {
+    } catch (FilterIllegalMemberException e) {
       LOGGER.audit(e.getMessage());
     }
     return columnFilterInfo;
@@ -509,10 +513,11 @@ public final class FilterUtil {
    * @param defaultSurrogate
    * @param isIncludeFilter
    * @return
+   * @throws FilterUnsupportedException
    */
   public static DimColumnFilterInfo getFilterListForAllMembersRS(Expression expression,
       ColumnExpression columnExpression, String defaultValues, int defaultSurrogate,
-      boolean isIncludeFilter) {
+      boolean isIncludeFilter) throws FilterUnsupportedException {
     List<Integer> filterValuesList = new ArrayList<Integer>(20);
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
     DimColumnFilterInfo columnFilterInfo = null;
@@ -534,7 +539,7 @@ public final class FilterUtil {
           evaluateResultListFinal.add(defaultValues);
         }
       }
-    } catch (FilterUnsupportedException e) {
+    } catch (FilterIllegalMemberException e) {
       LOGGER.audit(e.getMessage());
     }
 
@@ -1231,4 +1236,15 @@ public final class FilterUtil {
     return false;
   }
 
+  /**
+   * This method will print the error log.
+   *
+   * @param e
+   */
+  public static void logError(Throwable e, boolean invalidRowsPresent) {
+    if (!invalidRowsPresent) {
+      invalidRowsPresent=true;
+      LOGGER.error(e, CarbonCommonConstants.FILTER_INVALID_MEMBER + e.getMessage());
+    }
+  }
 }

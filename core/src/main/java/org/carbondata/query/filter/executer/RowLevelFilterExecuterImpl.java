@@ -44,6 +44,7 @@ import org.carbondata.query.carbonfilterinterface.RowImpl;
 import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.expression.Expression;
+import org.carbondata.query.expression.exception.FilterIllegalMemberException;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.carbondata.query.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
@@ -105,26 +106,27 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     int numberOfRows = blockChunkHolder.getDataBlock().nodeSize();
     BitSet set = new BitSet(numberOfRows);
     RowIntf row = new RowImpl();
-
-    // CHECKSTYLE:OFF Approval No:Approval-V1R2C10_007
+    boolean invalidRowsPresent = false;
     for (int index = 0; index < numberOfRows; index++) {
       try {
         createRow(blockChunkHolder, row, index);
-      } catch (QueryExecutionException e1) {
-        // TODO Auto-generated catch block
-        e1.printStackTrace();
+      } catch (QueryExecutionException e) {
+        FilterUtil.logError(e, invalidRowsPresent);
       }
+      Boolean rslt = false;
       try {
-        Boolean rslt = exp.evaluate(row).getBoolean();
-        if (null != rslt && rslt) {
-          set.set(index);
-        }
-      } catch (FilterUnsupportedException e) {
-        throw new FilterUnsupportedException(e.getMessage());
+        rslt = exp.evaluate(row).getBoolean();
+      }
+      // Any invalid member while evaluation shall be ignored, system will log the
+      // error only once since all rows the evaluation happens so inorder to avoid
+      // too much log inforation only once the log will be printed.
+      catch (FilterIllegalMemberException e) {
+        FilterUtil.logError(e, invalidRowsPresent);
+      }
+      if (null != rslt && rslt) {
+        set.set(index);
       }
     }
-    // CHECKSTYLE:ON
-
     return set;
   }
 
