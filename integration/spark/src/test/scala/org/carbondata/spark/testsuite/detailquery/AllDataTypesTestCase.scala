@@ -33,8 +33,8 @@ import org.scalatest.BeforeAndAfterAll
 class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("CREATE CUBE alldatatypescube DIMENSIONS (empno Integer, empname String, designation String, doj Timestamp, workgroupcategory Integer, workgroupcategoryname String, deptno Integer, deptname String, projectcode Integer, projectjoindate Timestamp, projectenddate Timestamp) MEASURES (attendance Integer,utilization Integer,salary Integer) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
-    sql("LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE alldatatypescube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
+    sql("CREATE TABLE alldatatypescube (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/data.csv' INTO TABLE alldatatypescube OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
   }
 
   test("select empno,empname,utilization,count(salary),sum(empno) from alldatatypescube where empname in ('arvind','ayushi') group by empno,empname,utilization") {
@@ -44,6 +44,6 @@ class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop cube alldatatypescube")
+    sql("drop table alldatatypescube")
   }
 }

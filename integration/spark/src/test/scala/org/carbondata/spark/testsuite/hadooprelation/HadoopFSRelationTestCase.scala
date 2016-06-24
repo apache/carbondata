@@ -32,14 +32,14 @@ class HadoopFSRelationTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql(
-      "CREATE CUBE hadoopfsrelation DIMENSIONS (empno Integer, empname String, designation " +
-      "String, doj Timestamp, workgroupcategory Integer, workgroupcategoryname String, deptno " +
-      "Integer, deptname String, projectcode Integer, projectjoindate Timestamp, projectenddate " +
-      "Timestamp) MEASURES (attendance Integer,utilization Integer,salary Integer) OPTIONS " +
-      "(PARTITIONER [PARTITION_COUNT=1])")
+      "CREATE TABLE hadoopfsrelation (empno int, empname String, designation " +
+      "String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno " +
+      "int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate " +
+      "Timestamp,attendance int,utilization int,salary int)" +
+      "STORED BY 'org.apache.carbondata.format'")
     sql(
-      "LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE hadoopfsrelation " +
-      "PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
+      "LOAD DATA local inpath './src/test/resources/data.csv' INTO TABLE hadoopfsrelation " +
+      "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
   }
 
   test("hadoopfsrelation select all test") {
@@ -58,6 +58,6 @@ class HadoopFSRelationTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop cube hadoopfsrelation")
+    sql("drop table hadoopfsrelation")
   }
 }

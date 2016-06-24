@@ -37,48 +37,45 @@ import org.carbondata.core.util.CarbonProperties
 class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("drop cube if exists filtertestTables")
-    sql("drop cube if exists filtertestTablesWithDecimal")
-    sql("drop cube if exists filtertestTablesWithNull")
-    sql("CREATE CUBE filtertestTables DIMENSIONS (ID Integer, date Timestamp, country String, " +
-      "name String, phonetype String, serialname String) " +
-      "MEASURES (salary Integer) " +
-      "OPTIONS (PARTITIONER [PARTITION_COUNT=1])"
+    sql("drop table if exists filtertestTables")
+    sql("drop table if exists filtertestTablesWithDecimal")
+    sql("drop table if exists filtertestTablesWithNull")
+    sql("CREATE TABLE filtertestTables (ID int, date Timestamp, country String, " +
+      "name String, phonetype String, serialname String, salary int) " +
+        "STORED BY 'org.apache.carbondata.format'"
     )
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(
-      s"LOAD DATA FACT FROM './src/test/resources/dataDiff.csv' INTO CUBE filtertestTables " +
-        s"OPTIONS(DELIMITER ',', " +
-        s"FILEHEADER '')"
+      s"LOAD DATA local inpath './src/test/resources/dataDiff.csv' INTO TABLE filtertestTables " +
+        s"OPTIONS('DELIMITER'= ',', " +
+        s"'FILEHEADER'= '')"
     )
     sql(
-      "CREATE CUBE filtertestTablesWithDecimal DIMENSIONS (ID decimal, date Timestamp, country " +
+      "CREATE TABLE filtertestTablesWithDecimal (ID decimal, date Timestamp, country " +
         "String, " +
-        "name String, phonetype String, serialname String) " +
-        "MEASURES (salary Integer) " +
-        "OPTIONS (PARTITIONER [PARTITION_COUNT=1])"
+        "name String, phonetype String, serialname String, salary int) " +
+      "STORED BY 'org.apache.carbondata.format'"
     )
     sql(
-      s"LOAD DATA FACT FROM './src/test/resources/dataDiff.csv' INTO CUBE " +
+      s"LOAD DATA LOCAL INPATH './src/test/resources/dataDiff.csv' INTO TABLE " +
         s"filtertestTablesWithDecimal " +
-        s"OPTIONS(DELIMITER ',', " +
-        s"FILEHEADER '')"
+        s"OPTIONS('DELIMITER'= ',', " +
+        s"'FILEHEADER'= '')"
     )
     sql(
-      "CREATE CUBE filtertestTablesWithNull DIMENSIONS (ID Integer, date Timestamp, country " +
+      "CREATE TABLE filtertestTablesWithNull (ID int, date Timestamp, country " +
         "String, " +
-        "name String, phonetype String, serialname String) " +
-        "MEASURES (salary Integer) " +
-        "OPTIONS (PARTITIONER [PARTITION_COUNT=1])"
+        "name String, phonetype String, serialname String,salary int) " +
+      "STORED BY 'org.apache.carbondata.format'"
     )
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     sql(
-      s"LOAD DATA FACT FROM './src/test/resources/data2.csv' INTO CUBE " +
+      s"LOAD DATA LOCAL INPATH './src/test/resources/data2.csv' INTO TABLE " +
         s"filtertestTablesWithNull " +
-        s"OPTIONS(DELIMITER ',', " +
-        s"FILEHEADER '')"
+        s"OPTIONS('DELIMITER'= ',', " +
+        s"'FILEHEADER'= '')"
     )
   }
 
