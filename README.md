@@ -78,5 +78,11 @@ Read the [quick start](https://github.com/HuaweiBigData/carbondata/wiki/Quick-St
 This is an open source project for everyone, and we are always open to people who want to use this system or contribute to it. 
 This guide document introduce [how to contribute to CarbonData](https://github.com/HuaweiBigData/carbondata/wiki/How-to-contribute-and-Code-Style).
 
+### Contact us
+To get involved in CarbonData:
+
+* [Subscribe](mailto:dev-subscribe@carbondata.incubator.apache.org) then [mail](mailto:dev@carbondata.incubator.apache.org) to us
+* Report issues on [Jira](https://issues.apache.org/jira/browse/CARBONDATA).
+
 ### About
-CarbonData project original contributed from the [Huawei](http://www.huawei.com), in progress of donating this open source project to Apache Software Foundation for leveraging big data ecosystem. 
+CarbonData project original contributed from the [Huawei](http://www.huawei.com)
