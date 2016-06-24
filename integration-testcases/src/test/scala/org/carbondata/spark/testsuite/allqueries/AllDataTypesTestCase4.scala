@@ -1010,6 +1010,16 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       "ActiveCountry string, Activecity string,gamePointId decimal," +
       "deviceInformationId INT) stored by 'org.apache.carbondata.format'"
     )
+
+    sql(
+      "create table testhive1000 (imei string,AMSize string,channelsId string," +
+      "ActiveCountry string, Activecity string,gamePointId decimal," +
+      "deviceInformationId INT) row format delimited fields terminated by ','"
+    )
+
+    sql(
+      "LOAD DATA LOCAL INPATH  './src/test/resources/TestData5.csv' INTO table testhive1000 "
+    )
     sql(
       "LOAD DATA LOCAL INPATH  './src/test/resources/TestData5.csv' INTO table vardhan1000 " +
       "OPTIONS('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId," +
@@ -1017,9 +1027,10 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     )
     checkAnswer(
       sql("select count(*) from vardhan1000"),
-      Seq(Row(97))
+      sql("select count(*) from testhive1000")
     )
     sql("drop table vardhan1000")
+    sql("drop table testhive1000")
   }
 
   //TC_1193

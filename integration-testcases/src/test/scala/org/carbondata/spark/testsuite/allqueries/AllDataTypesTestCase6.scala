@@ -1541,16 +1541,6 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       )
   }
 
-  //TC_1172
-  test("TC_1172") {
-    sql("create table test1000 (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId decimal,deviceInformationId INT) stored by 'org.apache.carbondata.format'")
-    sql("LOAD DATA LOCAL INPATH  './src/test/resources/TestData5.csv' INTO table test1000 OPTIONS('DELIMITER'= ',',' QUOTECHAR'=  '\"',' FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId')")
-    checkAnswer(
-      sql("select count(*) from test1000"),
-      Seq(Row(97)))
-    sql("drop table test1000")
-  }
-
   //TC_1173
   test("TC_1173") {
     sql("create table test9 (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId decimal,deviceInformationId INT) stored by 'org.apache.carbondata.format'")
@@ -1641,16 +1631,6 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       sql("select count(*) from test200"),
       Seq(Row(100)))
     sql("drop table test200")
-  }
-
-  //TC_1192
-  test("TC_1192") {
-    sql("create table test1000 (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId decimal,deviceInformationId INT) stored by 'org.apache.carbondata.format'")
-    sql("LOAD DATA LOCAL INPATH  './src/test/resources/TestData5.csv' INTO table test1000 OPTIONS('DELIMITER'= ',',' QUOTECHAR'=  '\"',' FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId')")
-    checkAnswer(
-      sql("select count(*) from test1000"),
-      Seq(Row(97)))
-    sql("drop table test1000")
   }
 
   //TC_1193
