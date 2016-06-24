@@ -1959,7 +1959,8 @@ private[sql] case class DescribeCommandFormatted(
         val dimension = relation.metaData.carbonTable.getDimensionByName(
             relation.cubeMeta.carbonTableIdentifier.getTableName,
             field.name)
-        if (dimension.hasEncoding(Encoding.DICTIONARY)) {
+        if (dimension.hasEncoding(Encoding.DICTIONARY) &&
+            !dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           "DICTIONARY, KEY COLUMN"
         } else {
           "KEY COLUMN"
