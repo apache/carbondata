@@ -161,7 +161,6 @@ public class QueryUtil {
    *
    * @param queryDimensions dimension selected in query
    * @param generator       key generator
-   * @param allDimension    all dimension present in the table
    * @return max key for dimension
    * @throws KeyGenException if any problem while generating the key
    */
@@ -263,7 +262,7 @@ public class QueryUtil {
    * @param dimAggInfo                 dimension present in the dimension aggregation
    *                                   dictionary will be used to convert to actual data
    *                                   for aggregation
-   * @param customAggregationDimension dimension which is present in the expression for aggregation
+   * @param customAggExpression        dimension which is present in the expression for aggregation
    *                                   we need dictionary data
    * @param absoluteTableIdentifier    absolute table identifier
    * @return dimension unique id to its dictionary map
@@ -352,7 +351,8 @@ public class QueryUtil {
    * @return
    */
   private static List<DictionaryColumnUniqueIdentifier> getDictionaryColumnUniqueIdentifierList(
-      List<String> dictionaryColumnIdList, CarbonTableIdentifier carbonTableIdentifier) {
+      List<String> dictionaryColumnIdList, CarbonTableIdentifier carbonTableIdentifier)
+      throws QueryExecutionException {
     CarbonTable carbonTable =
         CarbonMetadata.getInstance().getCarbonTable(carbonTableIdentifier.getTableUniqueName());
     List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers =
@@ -360,6 +360,10 @@ public class QueryUtil {
     for (String columnIdentifier : dictionaryColumnIdList) {
       CarbonDimension dimension = CarbonMetadata.getInstance()
           .getCarbonDimensionBasedOnColIdentifier(carbonTable, columnIdentifier);
+      if (null == dimension) {
+        throw new QueryExecutionException(
+            "The column id " + columnIdentifier + " could not be resolved.");
+      }
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
           new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
               dimension.getDataType());
@@ -628,7 +632,8 @@ public class QueryUtil {
       // then we need to add ordinal of that column as it belongs to same
       // column group
       if (!dimensions.get(index).getDimension().isColumnar()
-          && dimensions.get(index).getDimension().columnGroupId() == prvColumnGroupId) {
+          && dimensions.get(index).getDimension().columnGroupId() == prvColumnGroupId
+          && null != currentColumnGroup) {
         currentColumnGroup.add(dimensions.get(index).getDimension().getOrdinal());
       }
 

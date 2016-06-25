@@ -183,15 +183,16 @@ public class DataFileFooterConverter {
     List<DataChunk> measureChunk = new ArrayList<DataChunk>();
     Iterator<org.carbondata.format.DataChunk> column_data_chunksIterator =
         blockletInfoThrift.getColumn_data_chunksIterator();
-    while (column_data_chunksIterator.hasNext()) {
-      org.carbondata.format.DataChunk next = column_data_chunksIterator.next();
-      if (next.isRowMajor()) {
-        dimensionColumnChunk.add(getDataChunk(next, false));
-      } else if (next.getEncoders().contains(org.carbondata.format.Encoding.DELTA)) {
-        measureChunk.add(getDataChunk(next, true));
-      } else {
-
-        dimensionColumnChunk.add(getDataChunk(next, false));
+    if (null != column_data_chunksIterator) {
+      while (column_data_chunksIterator.hasNext()) {
+        org.carbondata.format.DataChunk next = column_data_chunksIterator.next();
+        if (next.isRowMajor()) {
+          dimensionColumnChunk.add(getDataChunk(next, false));
+        } else if (next.getEncoders().contains(org.carbondata.format.Encoding.DELTA)) {
+          measureChunk.add(getDataChunk(next, true));
+        } else {
+          dimensionColumnChunk.add(getDataChunk(next, false));
+        }
       }
     }
     blockletInfo.setDimensionColumnChunk(dimensionColumnChunk);

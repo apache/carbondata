@@ -1219,7 +1219,8 @@ public final class CarbonUtil {
           .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL);
       if (null != baseDFSUrl) {
         String dfsUrl = conf.get(FS_DEFAULT_FS);
-        if (dfsUrl.startsWith(HDFS_PREFIX) || dfsUrl.startsWith(VIEWFS_PREFIX)) {
+        if (null != dfsUrl && (dfsUrl.startsWith(HDFS_PREFIX) || dfsUrl
+            .startsWith(VIEWFS_PREFIX))) {
           baseDFSUrl = dfsUrl + baseDFSUrl;
         }
         if (baseDFSUrl.endsWith("/")) {

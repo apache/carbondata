@@ -120,8 +120,10 @@ public class CustomAggregatorHelper {
       File[] filesArray = null;
       for (File loadFoler : loadFolderList) {
         filesArray = getFilesArray(loadFoler, tableName + '_' + columnName);
-        for (int i = 0; i < filesArray.length; i++) {
-          readLevelFileAndUpdateCache(filesArray[i], tableName + '_' + columnName);
+        if (null != filesArray) {
+          for (int i = 0; i < filesArray.length; i++) {
+            readLevelFileAndUpdateCache(filesArray[i], tableName + '_' + columnName);
+          }
         }
       }
     } catch (IOException e) {

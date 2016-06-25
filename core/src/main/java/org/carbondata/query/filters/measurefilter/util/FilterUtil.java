@@ -107,42 +107,50 @@ public final class FilterUtil {
   private static FilterExecuter createFilterExecuterTree(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties) {
     FilterExecuterType filterExecuterType = filterExpressionResolverTree.getFilterExecuterType();
-    switch (filterExecuterType) {
-      case INCLUDE:
-        return getIncludeFilterExecuter(filterExpressionResolverTree.getDimColResolvedFilterInfo(),
-            segmentProperties);
-      case EXCLUDE:
-        return new ExcludeFilterExecuterImpl(
-            filterExpressionResolverTree.getDimColResolvedFilterInfo(),
-            segmentProperties.getDimensionKeyGenerator());
-      case OR:
-        return new OrFilterExecuterImpl(
-            createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties),
-            createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties));
-      case AND:
-        return new AndFilterExecuterImpl(
-            createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties),
-            createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties));
-      case RESTRUCTURE:
-        return new RestructureFilterExecuterImpl(
-            filterExpressionResolverTree.getDimColResolvedFilterInfo(),
-            segmentProperties.getDimensionKeyGenerator());
-      case ROWLEVEL_LESSTHAN:
-      case ROWLEVEL_LESSTHAN_EQUALTO:
-      case ROWLEVEL_GREATERTHAN_EQUALTO:
-      case ROWLEVEL_GREATERTHAN:
-        return RowLevelRangeTypeExecuterFacory
-            .getRowLevelRangeTypeExecuter(filterExecuterType, filterExpressionResolverTree);
-      case ROWLEVEL:
-      default:
-        return new RowLevelFilterExecuterImpl(
-            ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
-                .getDimColEvaluatorInfoList(),
-            ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getMsrColEvalutorInfoList(),
-            ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
-            ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier());
+    if (null != filterExecuterType) {
+      switch (filterExecuterType) {
+        case INCLUDE:
+          return getIncludeFilterExecuter(
+              filterExpressionResolverTree.getDimColResolvedFilterInfo(), segmentProperties);
+        case EXCLUDE:
+          return new ExcludeFilterExecuterImpl(
+              filterExpressionResolverTree.getDimColResolvedFilterInfo(),
+              segmentProperties.getDimensionKeyGenerator());
+        case OR:
+          return new OrFilterExecuterImpl(
+              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties),
+              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties));
+        case AND:
+          return new AndFilterExecuterImpl(
+              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties),
+              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties));
+        case RESTRUCTURE:
+          return new RestructureFilterExecuterImpl(
+              filterExpressionResolverTree.getDimColResolvedFilterInfo(),
+              segmentProperties.getDimensionKeyGenerator());
+        case ROWLEVEL_LESSTHAN:
+        case ROWLEVEL_LESSTHAN_EQUALTO:
+        case ROWLEVEL_GREATERTHAN_EQUALTO:
+        case ROWLEVEL_GREATERTHAN:
+          return RowLevelRangeTypeExecuterFacory
+              .getRowLevelRangeTypeExecuter(filterExecuterType, filterExpressionResolverTree);
+        case ROWLEVEL:
+        default:
+          return new RowLevelFilterExecuterImpl(
+              ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
+                  .getDimColEvaluatorInfoList(),
+              ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
+                  .getMsrColEvalutorInfoList(),
+              ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
+              ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier());
 
+      }
     }
+    return new RowLevelFilterExecuterImpl(
+        ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getDimColEvaluatorInfoList(),
+        ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getMsrColEvalutorInfoList(),
+        ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
+        ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier());
 
   }
 
@@ -1218,6 +1226,7 @@ public final class FilterUtil {
   /**
    * Method will find whether the expression needs to be resolved, this can happen
    * if the expression is exclude and data type is null(mainly in IS NOT NULL filter scenario)
+   *
    * @param rightExp
    * @param isIncludeFilter
    * @return

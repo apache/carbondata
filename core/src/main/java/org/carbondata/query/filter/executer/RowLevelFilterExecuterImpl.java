@@ -215,18 +215,20 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           MeasureAggregator aggregator = MeasureAggregatorFactory
               .getAggregator(msrColumnEvalutorInfo.getAggregator(),
                   msrColumnEvalutorInfo.getType());
-          aggregator.merge(
-              blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
-                  .getMeasureDataHolder().getReadableByteArrayValueByIndex(index));
-          switch (msrType) {
-            case LONG:
-              record[msrColumnEvalutorInfo.getRowIndex()] = aggregator.getLongValue();
-              break;
-            case DECIMAL:
-              record[msrColumnEvalutorInfo.getRowIndex()] = aggregator.getBigDecimalValue();
-              break;
-            default:
-              record[msrColumnEvalutorInfo.getRowIndex()] = aggregator.getDoubleValue();
+          if (null != aggregator) {
+            aggregator.merge(
+                blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
+                    .getMeasureDataHolder().getReadableByteArrayValueByIndex(index));
+            switch (msrType) {
+              case LONG:
+                record[msrColumnEvalutorInfo.getRowIndex()] = aggregator.getLongValue();
+                break;
+              case DECIMAL:
+                record[msrColumnEvalutorInfo.getRowIndex()] = aggregator.getBigDecimalValue();
+                break;
+              default:
+                record[msrColumnEvalutorInfo.getRowIndex()] = aggregator.getDoubleValue();
+            }
           }
         } else {
           Object msrValue;

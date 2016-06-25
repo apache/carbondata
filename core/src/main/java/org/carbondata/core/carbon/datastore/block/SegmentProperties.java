@@ -235,7 +235,8 @@ public class SegmentProperties {
   /**
    * below method will fill dimension and measure detail of the block.
    *
-   * @param blockMetadata
+   * @param columnsInTable
+   * @param columnCardinality
    */
   private void fillDimensionAndMeasureDetails(List<ColumnSchema> columnsInTable,
       int[] columnCardinality) {
@@ -435,7 +436,8 @@ public class SegmentProperties {
       // then we need to add ordinal of that column as it belongs to same
       // column group
       if (!dimensions.get(index).isColumnar()
-          && dimensions.get(index).columnGroupId() == prvColumnGroupId) {
+          && dimensions.get(index).columnGroupId() == prvColumnGroupId
+          && null != currentColumnGroup) {
         currentColumnGroup.add(index);
       }
       // if column is not a columnar then new column group has come

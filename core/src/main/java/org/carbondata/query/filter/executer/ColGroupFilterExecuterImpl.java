@@ -145,7 +145,7 @@ public class ColGroupFilterExecuterImpl extends IncludeFilterExecuterImpl {
   /**
    * It extract min and max data for given column from stored min max value
    *
-   * @param cols
+   * @param colGrpColumns
    * @param minMaxData
    * @param columnIndex
    * @return
@@ -153,18 +153,20 @@ public class ColGroupFilterExecuterImpl extends IncludeFilterExecuterImpl {
   private byte[] getMinMaxData(int[] colGrpColumns, byte[] minMaxData, int columnIndex) {
     int startIndex = 0;
     int endIndex = 0;
-    for (int i = 0; i < colGrpColumns.length; i++) {
-      int[] byteRange =
-          segmentProperties.getDimensionKeyGenerator().getKeyByteOffsets(colGrpColumns[i]);
-      int colSize = 0;
-      for (int j = byteRange[0]; j <= byteRange[1]; j++) {
-        colSize++;
+    if (null != colGrpColumns) {
+      for (int i = 0; i < colGrpColumns.length; i++) {
+        int[] byteRange =
+            segmentProperties.getDimensionKeyGenerator().getKeyByteOffsets(colGrpColumns[i]);
+        int colSize = 0;
+        for (int j = byteRange[0]; j <= byteRange[1]; j++) {
+          colSize++;
+        }
+        if (colGrpColumns[i] == columnIndex) {
+          endIndex = startIndex + colSize;
+          break;
+        }
+        startIndex += colSize;
       }
-      if (colGrpColumns[i] == columnIndex) {
-        endIndex = startIndex + colSize;
-        break;
-      }
-      startIndex += colSize;
     }
     byte[] data = new byte[endIndex - startIndex];
     System.arraycopy(minMaxData, startIndex, data, 0, data.length);
