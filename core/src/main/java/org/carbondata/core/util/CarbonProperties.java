@@ -712,22 +712,6 @@ public final class CarbonProperties {
   }
 
   /**
-   * returns minor compaction size value from carbon properties or default value if it is not valid
-   *
-   * @return
-   */
-  public long getMinorCompactionSize() {
-    long compactionSize;
-    try {
-      compactionSize = Long.parseLong(getProperty(CarbonCommonConstants.MINOR_COMPACTION_SIZE,
-          CarbonCommonConstants.DEFAULT_MINOR_COMPACTION_SIZE));
-    } catch (NumberFormatException e) {
-      compactionSize = Long.parseLong(CarbonCommonConstants.DEFAULT_MINOR_COMPACTION_SIZE);
-    }
-    return compactionSize;
-  }
-
-  /**
    * returns the number of loads to be preserved.
    *
    * @return
@@ -756,6 +740,69 @@ public final class CarbonProperties {
   public void print() {
     LOGGER.info("------Using Carbon.properties --------");
     LOGGER.info(carbonProperties.toString());
+  }
+
+  /**
+   * gettting the unmerged segment numbers to be merged.
+   * @return
+   */
+  public int[] getCompactionSegmentLevelCount() {
+    String commaSeparatedLevels;
+
+    commaSeparatedLevels = getProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
+        CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD);
+    int[] compactionSize = getIntArray(commaSeparatedLevels);
+
+    if(null == compactionSize){
+      compactionSize = getIntArray(CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD);
+    }
+
+    return compactionSize;
+  }
+
+  /**
+   *
+   * @param commaSeparatedLevels
+   * @return
+   */
+  private int[] getIntArray(String commaSeparatedLevels) {
+    String[] levels = commaSeparatedLevels.split(",");
+    int[] compactionSize = new int[levels.length];
+    int i = 0;
+    for (String levelSize : levels) {
+      try {
+        int size = Integer.parseInt(levelSize.trim());
+        if(validate(size,100,0,-1) < 0 ){
+          // if given size is out of boundary then take default value for all levels.
+          return null;
+        }
+        compactionSize[i++] = size;
+      }
+      catch(NumberFormatException e){
+        LOGGER.error(
+            "Given value for property" + CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD
+                + " is not proper. Taking the default value "
+                + CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD);
+        return null;
+      }
+    }
+    return compactionSize;
+  }
+
+  /**
+   * Validate the restrictions
+   *
+   * @param actual
+   * @param max
+   * @param min
+   * @param defaultVal
+   * @return
+   */
+  public int validate(int actual, int max, int min, int defaultVal) {
+    if (actual <= max && actual >= min) {
+      return actual;
+    }
+    return defaultVal;
   }
 
 }

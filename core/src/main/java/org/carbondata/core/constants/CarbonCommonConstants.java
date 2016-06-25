@@ -881,16 +881,6 @@ public final class CarbonCommonConstants {
   public static final String INVALID_SEGMENT_ID = "-1";
 
   /**
-   * Size of Minor Compaction in MBs
-   */
-  public static final String MINOR_COMPACTION_SIZE = "carbon.minor.compaction.size";
-
-  /**
-   * By default size of minor compaction in MBs.
-   */
-  public static final String DEFAULT_MINOR_COMPACTION_SIZE = "256";
-
-  /**
    * Size of Major Compaction in MBs
    */
   public static final String MAJOR_COMPACTION_SIZE = "carbon.major.compaction.size";
@@ -990,18 +980,6 @@ public final class CarbonCommonConstants {
   public static final String SEGMENT_COMPACTED = "Compacted";
 
   /**
-   * whether to include the compacted segments again for compaction or not.
-   */
-  public static final String INCLUDE_ALREADY_COMPACTED_SEGMENTS =
-      "carbon.include.compacted.segments";
-
-  /**
-   * whether to include the compacted segments again for compaction or not. default value is false.
-   * compacted load will not be compacted again in minor compaction.
-   */
-  public static final String INCLUDE_ALREADY_COMPACTED_SEGMENTS_DEFAULT =
-      "false";
-  /**
    * property for number of core to load the blocks in driver
    */
   public static final String NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT =
@@ -1039,6 +1017,17 @@ public final class CarbonCommonConstants {
    */
   public static final String FILTER_INVALID_MEMBER = " Invalid Record(s) are present "
                                                      + "while filter evaluation. ";
+
+  /**
+   * Number of unmerged segments to be merged.
+   */
+  public static final String COMPACTION_SEGMENT_LEVEL_THRESHOLD =
+      "carbon.compaction.level.threshold";
+
+  /**
+   * Default count for Number of segments to be merged in levels is 4,3
+   */
+  public static final String DEFAULT_SEGMENT_LEVEL_THRESHOLD = "4,3";
 
   private CarbonCommonConstants() {
   }
