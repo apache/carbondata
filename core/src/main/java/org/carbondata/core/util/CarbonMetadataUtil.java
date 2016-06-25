@@ -11,10 +11,12 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.metadata.index.BlockIndexInfo;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.metadata.ValueEncoderMeta;
+import org.carbondata.format.BlockIndex;
 import org.carbondata.format.BlockletBTreeIndex;
 import org.carbondata.format.BlockletIndex;
 import org.carbondata.format.BlockletInfo;
@@ -25,6 +27,7 @@ import org.carbondata.format.CompressionCodec;
 import org.carbondata.format.DataChunk;
 import org.carbondata.format.Encoding;
 import org.carbondata.format.FileFooter;
+import org.carbondata.format.IndexHeader;
 import org.carbondata.format.PresenceMeta;
 import org.carbondata.format.SegmentInfo;
 import org.carbondata.format.SortState;
@@ -66,6 +69,23 @@ public class CarbonMetadataUtil {
       footer.addToBlocklet_info_list(getBlockletInfo(info, columnSchemaList));
     }
     return footer;
+  }
+
+  private static BlockletIndex getBlockletIndex(
+      org.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex info) {
+    BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
+
+    for (int i = 0; i < info.getMinMaxIndex().getMaxValues().length; i++) {
+      blockletMinMaxIndex.addToMax_values(ByteBuffer.wrap(info.getMinMaxIndex().getMaxValues()[i]));
+      blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(info.getMinMaxIndex().getMinValues()[i]));
+    }
+    BlockletBTreeIndex blockletBTreeIndex = new BlockletBTreeIndex();
+    blockletBTreeIndex.setStart_key(info.getBtreeIndex().getStartKey());
+    blockletBTreeIndex.setEnd_key(info.getBtreeIndex().getEndKey());
+    BlockletIndex blockletIndex = new BlockletIndex();
+    blockletIndex.setMin_max_index(blockletMinMaxIndex);
+    blockletIndex.setB_tree_index(blockletBTreeIndex);
+    return blockletIndex;
   }
 
   /**
@@ -334,21 +354,53 @@ public class CarbonMetadataUtil {
         min[j] = minMaxIndexList.getMin_values().get(j).array();
         max[j] = minMaxIndexList.getMax_values().get(j).array();
       }
-
-      //      byte[][] min = new byte[minMaxIndexList.getMin_values().size()][];
-      //      List<ByteBuffer> minValues = minMaxIndexList.getMin_values();
-      //      for (int j = 0; j < minValues.size(); j++) {
-      //        min[j] = minValues.get(j).array();
-      //      }
-      //      listOfNodeInfo.get(i).setColumnMinData(min);
-      //
-      //      byte[][] max = new byte[minMaxIndexList.getMax_values().size()][];
-      //      List<ByteBuffer> maxValues = minMaxIndexList.getMax_values();
-      //      for (int j = 0; j < maxValues.size(); j++) {
-      //        max[j] = maxValues.get(j).array();
-      //    }
       listOfNodeInfo.get(i).setColumnMaxData(max);
     }
   }
 
+  /**
+   * Below method will be used to get the index header
+   *
+   * @param columnCardinality cardinality of each column
+   * @param columnSchemaList  list of column present in the table
+   * @return Index header object
+   */
+  public static IndexHeader getIndexHeader(int[] columnCardinality,
+      List<ColumnSchema> columnSchemaList) {
+    // create segment info object
+    SegmentInfo segmentInfo = new SegmentInfo();
+    // set the number of columns
+    segmentInfo.setNum_cols(columnSchemaList.size());
+    // setting the column cardinality
+    segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(columnCardinality));
+    // create index header object
+    IndexHeader indexHeader = new IndexHeader();
+    // set the segment info
+    indexHeader.setSegment_info(segmentInfo);
+    // set the column names
+    indexHeader.setTable_columns(columnSchemaList);
+    return indexHeader;
+  }
+
+  /**
+   * Below method will be used to get the block index info thrift object for each block
+   * present in the segment
+   *
+   * @param blockIndexInfoList block index info list
+   * @return list of block index
+   */
+  public static List<BlockIndex> getBlockIndexInfo(List<BlockIndexInfo> blockIndexInfoList) {
+    List<BlockIndex> thriftBlockIndexList = new ArrayList<BlockIndex>();
+    BlockIndex blockIndex = null;
+    // below code to create block index info object for each block
+    for (BlockIndexInfo blockIndexInfo : blockIndexInfoList) {
+      blockIndex = new BlockIndex();
+      blockIndex.setNum_rows(blockIndexInfo.getNumberOfRows());
+      blockIndex.setOffset(blockIndexInfo.getNumberOfRows());
+      blockIndex.setFile_name(blockIndexInfo.getFileName());
+      blockIndex.setBlock_index(getBlockletIndex(blockIndexInfo.getBlockletIndex()));
+      thriftBlockIndexList.add(blockIndex);
+    }
+    return thriftBlockIndexList;
+  }
 }

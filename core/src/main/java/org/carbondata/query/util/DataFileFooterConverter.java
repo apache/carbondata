@@ -29,6 +29,7 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.carbondata.core.carbon.metadata.blocklet.SegmentInfo;
@@ -47,8 +48,10 @@ import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.metadata.ValueEncoderMeta;
 import org.carbondata.core.reader.CarbonFooterReader;
+import org.carbondata.core.reader.CarbonIndexFileReader;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.format.BlockIndex;
 import org.carbondata.format.FileFooter;
 
 /**
@@ -59,6 +62,47 @@ public class DataFileFooterConverter {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataFileFooterConverter.class.getName());
+
+  /**
+   * Below method will be used to get the index info from index file
+   *
+   * @param filePath           file path of the index file
+   * @param tableBlockInfoList table block index
+   * @return list of index info
+   * @throws IOException problem while reading the index file
+   */
+  public List<DataFileFooter> getIndexInfo(String filePath, List<TableBlockInfo> tableBlockInfoList)
+      throws IOException {
+    CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
+    // open the reader
+    indexReader.openThriftReader(filePath);
+    // get the index header
+    org.carbondata.format.IndexHeader readIndexHeader = indexReader.readIndexHeader();
+    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+    List<org.carbondata.format.ColumnSchema> table_columns = readIndexHeader.getTable_columns();
+    for (int i = 0; i < table_columns.size(); i++) {
+      columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
+    }
+    // get the segment info
+    SegmentInfo segmentInfo = getSegmentInfo(readIndexHeader.getSegment_info());
+    BlockletIndex blockletIndex = null;
+    int counter = 0;
+    DataFileFooter dataFileFooter = null;
+    List<DataFileFooter> dataFileFooters = new ArrayList<DataFileFooter>();
+    // read the block info from file
+    while (indexReader.hasNext()) {
+      BlockIndex readBlockIndexInfo = indexReader.readBlockIndexInfo();
+      blockletIndex = getBlockletIndex(readBlockIndexInfo.getBlock_index());
+      dataFileFooter = new DataFileFooter();
+      dataFileFooter.setBlockletIndex(blockletIndex);
+      dataFileFooter.setColumnInTable(columnSchemaList);
+      dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
+      dataFileFooter.setTableBlockInfo(tableBlockInfoList.get(counter++));
+      dataFileFooter.setSegmentInfo(segmentInfo);
+      dataFileFooters.add(dataFileFooter);
+    }
+    return dataFileFooters;
+  }
 
   /**
    * Below method will be used to convert thrift file meta to wrapper file meta

@@ -48,12 +48,16 @@ import java.util.concurrent.Executors;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.cache.dictionary.Dictionary;
+import org.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
@@ -1680,6 +1684,37 @@ public final class CarbonUtil {
   public static void clearDictionaryCache(Dictionary dictionary) {
     if (null != dictionary) {
       dictionary.clear();
+    }
+  }
+
+  /**
+   * Below method will be used to get all the block index info from index file
+   *
+   * @param taskId                  task id of the file
+   * @param tableBlockInfoList      list of table block
+   * @param absoluteTableIdentifier absolute table identifier
+   * @return list of block info
+   * @throws CarbonUtilException if any problem while reading
+   */
+  public static List<DataFileFooter> readCarbonIndexFile(String taskId,
+      List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier absoluteTableIdentifier)
+      throws CarbonUtilException {
+    // need to sort the  block info list based for task in ascending  order so
+    // it will be sinkup with block index read from file
+    Collections.sort(tableBlockInfoList);
+    CarbonTablePath carbonTablePath = CarbonStorePath
+        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+            absoluteTableIdentifier.getCarbonTableIdentifier());
+    // geting the index file path
+    //TODO need to pass proper partition number when partiton will be supported
+    String carbonIndexFilePath = carbonTablePath
+        .getCarbonIndexFilePath(taskId, "0", tableBlockInfoList.get(0).getSegmentId());
+    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
+    try {
+      // read the index info and return
+      return fileFooterConverter.getIndexInfo(carbonIndexFilePath, tableBlockInfoList);
+    } catch (IOException e) {
+      throw new CarbonUtilException("Problem while reading the file metadata", e);
     }
   }
 

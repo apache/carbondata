@@ -40,8 +40,12 @@ import java.util.concurrent.TimeUnit;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.metadata.CarbonMetadata;
+import org.carbondata.core.carbon.metadata.blocklet.index.BlockletBTreeIndex;
+import org.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex;
+import org.carbondata.core.carbon.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.carbondata.core.carbon.metadata.converter.SchemaConverter;
 import org.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl;
+import org.carbondata.core.carbon.metadata.index.BlockIndexInfo;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.carbon.path.CarbonStorePath;
@@ -52,17 +56,20 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.metadata.BlockletInfoColumnar;
+import org.carbondata.core.util.ByteUtil;
 import org.carbondata.core.util.CarbonMergerUtil;
 import org.carbondata.core.util.CarbonMetadataUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.writer.CarbonFooterWriter;
+import org.carbondata.core.writer.CarbonIndexFileWriter;
+import org.carbondata.format.BlockIndex;
 import org.carbondata.format.FileFooter;
+import org.carbondata.format.IndexHeader;
 import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
 import org.apache.commons.lang3.ArrayUtils;
-
 import org.apache.hadoop.io.IOUtils;
 
 public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<T>
@@ -164,6 +171,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   private int spaceReservedForBlockMetaSize;
   private FileOutputStream fileOutputStream;
 
+  private List<BlockIndexInfo> blockIndexInfoList;
+
   public AbstractFactDataWriter(String storeLocation, int measureCount, int mdKeyLength,
       String databaseName, String tableName, IFileManagerComposite fileManager, int[] keyBlockSize,
       CarbonDataFileAttributes carbonDataFileAttributes, List<ColumnSchema> columnSchema,
@@ -180,6 +189,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     this.storeLocation = storeLocation;
     this.blockletInfoList =
         new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    blockIndexInfoList = new ArrayList<>();
     // get max file size;
     CarbonProperties propInstance = CarbonProperties.getInstance();
     this.fileSizeInBytes = Long.parseLong(propInstance
@@ -223,6 +233,27 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   }
 
   /**
+   * This method will return max of block size and file size
+   *
+   * @param blockSize
+   * @param fileSize
+   * @return
+   */
+  private static long getMaxOfBlockAndFileSize(long blockSize, long fileSize) {
+    long maxSize = blockSize;
+    if (fileSize > blockSize) {
+      maxSize = fileSize;
+    }
+    // block size should be exactly divisible by 512 which is  maintained by HDFS as bytes
+    // per checksum, dfs.bytes-per-checksum=512 must divide block size
+    long remainder = maxSize % HDFS_CHECKSUM_LENGTH;
+    if (remainder > 0) {
+      maxSize = maxSize + HDFS_CHECKSUM_LENGTH - remainder;
+    }
+    return maxSize;
+  }
+
+  /**
    * @param isNoDictionary the isNoDictionary to set
    */
   public void setIsNoDictionary(boolean[] isNoDictionary) {
@@ -237,7 +268,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * current file size to 0 close the existing file channel get the new file
    * name and get the channel for new file
    *
-   * @param blockletDataSize  data size of one block
+   * @param blockletDataSize data size of one block
    * @throws CarbonDataWriterException if any problem
    */
   protected void updateBlockletFileChannel(long blockletDataSize) throws CarbonDataWriterException {
@@ -326,11 +357,56 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       FileFooter convertFileMeta = CarbonMetadataUtil
           .convertFileFooter(infoList, localCardinality.length, localCardinality,
               thriftColumnSchemaList);
+      fillBlockIndexInfoDetails(infoList, convertFileMeta.getNum_rows(), filePath, currentPosition);
       writer.writeFooter(convertFileMeta, currentPosition);
     } catch (IOException e) {
       throw new CarbonDataWriterException("Problem while writing the carbon file: ", e);
     }
+  }
 
+  /**
+   * Below method will be used to fill the vlock info details
+   *
+   * @param infoList        info list
+   * @param numberOfRows    number of rows in file
+   * @param filePath        file path
+   * @param currentPosition current offset
+   */
+  private void fillBlockIndexInfoDetails(List<BlockletInfoColumnar> infoList, long numberOfRows,
+      String filePath, long currentPosition) {
+
+    // as min-max will change for each blocklet and second blocklet min-max can be lesser than
+    // the first blocklet so we need to calculate the complete block level min-max by taking
+    // the min value of each column and max value of each column
+    byte[][] currentMinValue = infoList.get(0).getColumnMinData().clone();
+    byte[][] currentMaxValue = infoList.get(0).getColumnMaxData().clone();
+    byte[][] minValue = null;
+    byte[][] maxValue = null;
+    for (int i = 1; i < infoList.size(); i++) {
+      minValue = infoList.get(i).getColumnMinData();
+      maxValue = infoList.get(i).getColumnMaxData();
+      for (int j = 0; j < maxValue.length; j++) {
+        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMinValue[j], minValue[j]) > 0) {
+          currentMinValue[j] = minValue[j].clone();
+        }
+        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMaxValue[j], maxValue[j]) < 0) {
+          currentMaxValue[j] = maxValue[j].clone();
+        }
+      }
+    }
+    // start and end key we can take based on first blocklet
+    // start key will be the block start key as
+    // it is the least key and end blocklet end key will be the block end key as it is the max key
+    BlockletBTreeIndex btree = new BlockletBTreeIndex(infoList.get(0).getStartKey(),
+        infoList.get(infoList.size() - 1).getEndKey());
+    BlockletMinMaxIndex minmax = new BlockletMinMaxIndex();
+    minmax.setMinValues(currentMinValue);
+    minmax.setMaxValues(currentMaxValue);
+    BlockletIndex blockletIndex = new BlockletIndex(btree, minmax);
+    BlockIndexInfo blockIndexInfo =
+        new BlockIndexInfo(numberOfRows, filePath.substring(0, filePath.lastIndexOf('.')),
+            currentPosition, blockletIndex);
+    blockIndexInfoList.add(blockIndexInfo);
   }
 
   protected List<org.carbondata.format.ColumnSchema> getColumnSchemaListAndCardinality(
@@ -422,7 +498,41 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
     renameCarbonDataFile();
     copyCarbonDataFileToCarbonStorePath(this.fileName.substring(0, this.fileName.lastIndexOf('.')));
+    try {
+      writeIndexFile();
+    } catch (IOException e) {
+      throw new CarbonDataWriterException("Problem while writing the index file", e);
+    }
     closeExecutorService();
+  }
+
+  /**
+   * Below method will be used to write the idex file
+   *
+   * @throws IOException               throws io exception if any problem while writing
+   * @throws CarbonDataWriterException data writing
+   */
+  private void writeIndexFile() throws IOException, CarbonDataWriterException {
+    // get the header
+    IndexHeader indexHeader =
+        CarbonMetadataUtil.getIndexHeader(localCardinality, thriftColumnSchemaList);
+    // get the block index info thrift
+    List<BlockIndex> blockIndexThrift = CarbonMetadataUtil.getBlockIndexInfo(blockIndexInfoList);
+    String fileName = storeLocation + File.separator + carbonTablePath
+        .getCarbonIndexFileName(carbonDataFileAttributes.getTaskId(),
+            carbonDataFileAttributes.getFactTimeStamp());
+    CarbonIndexFileWriter writer = new CarbonIndexFileWriter();
+    // open file
+    writer.openThriftWriter(fileName);
+    // write the header first
+    writer.writeThrift(indexHeader);
+    // write the indexes
+    for (BlockIndex blockIndex : blockIndexThrift) {
+      writer.writeThrift(blockIndex);
+    }
+    writer.close();
+    // copy from temp to actual store location
+    copyCarbonDataFileToCarbonStorePath(fileName);
   }
 
   /**
@@ -514,27 +624,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     } finally {
       CarbonUtil.closeStreams(dataInputStream, dataOutputStream);
     }
-  }
-
-  /**
-   * This method will return max of block size and file size
-   *
-   * @param blockSize
-   * @param fileSize
-   * @return
-   */
-  private static long getMaxOfBlockAndFileSize(long blockSize, long fileSize) {
-    long maxSize = blockSize;
-    if (fileSize > blockSize) {
-      maxSize = fileSize;
-    }
-    // block size should be exactly divisible by 512 which is  maintained by HDFS as bytes
-    // per checksum, dfs.bytes-per-checksum=512 must divide block size
-    long remainder = maxSize % HDFS_CHECKSUM_LENGTH;
-    if (remainder > 0) {
-      maxSize = maxSize + HDFS_CHECKSUM_LENGTH - remainder;
-    }
-    return maxSize;
   }
 
   /**

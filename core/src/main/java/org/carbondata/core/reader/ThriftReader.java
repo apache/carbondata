@@ -35,34 +35,21 @@ import org.apache.thrift.transport.TIOStreamTransport;
  */
 public class ThriftReader {
   /**
-   * Thrift deserializes by taking an existing object and populating it. ThriftReader
-   * needs a way of obtaining instances of the class to be populated and this interface
-   * defines the mechanism by which a client provides these instances.
-   */
-  public static interface TBaseCreator {
-    TBase create();
-  }
-
-  /**
    * buffer size
    */
   private static final int bufferSize = 2048;
-
   /**
    * File containing the objects.
    */
   private String fileName;
-
   /**
    * Used to create empty objects that will be initialized with values from the fileName.
    */
-  private final TBaseCreator creator;
-
+  private TBaseCreator creator;
   /**
    * For reading the fileName.
    */
   private DataInputStream dataInputStream;
-
   /**
    * For reading the binary thrift objects.
    */
@@ -74,6 +61,13 @@ public class ThriftReader {
   public ThriftReader(String fileName, TBaseCreator creator) {
     this.fileName = fileName;
     this.creator = creator;
+  }
+
+  /**
+   * Constructor.
+   */
+  public ThriftReader(String fileName) {
+    this.fileName = fileName;
   }
 
   /**
@@ -118,9 +112,34 @@ public class ThriftReader {
   }
 
   /**
+   * Reads the next object from the fileName.
+   *
+   * @param creator type of object which will be returned
+   * @throws IOException any problem while reading
+   */
+  public TBase read(TBaseCreator creator) throws IOException {
+    TBase t = creator.create();
+    try {
+      t.read(binaryIn);
+    } catch (TException e) {
+      throw new IOException(e);
+    }
+    return t;
+  }
+
+  /**
    * Close the fileName.
    */
   public void close() {
     CarbonUtil.closeStreams(dataInputStream);
+  }
+
+  /**
+   * Thrift deserializes by taking an existing object and populating it. ThriftReader
+   * needs a way of obtaining instances of the class to be populated and this interface
+   * defines the mechanism by which a client provides these instances.
+   */
+  public static interface TBaseCreator {
+    TBase create();
   }
 }
