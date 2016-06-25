@@ -33,8 +33,6 @@ import static org.carbondata.core.keygenerator.directdictionary.timestamp.TimeSt
 import static org.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_MIN;
 import static org.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_SEC;
 
-import org.apache.spark.sql.columnar.TIMESTAMP;
-
 /**
  * The class provides the method to generate dictionary key and getting the actual value from
  * the dictionaryKey for direct dictionary column for TIMESTAMP type.
@@ -95,6 +93,9 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
         Date dateToStr = timeParser.parse(cutOffTimeStampString);
         cutOffTimeStampLocal = dateToStr.getTime();
       } catch (ParseException e) {
+        LOGGER.warn("Cannot convert" + cutOffTimeStampString
+            + " to Time/Long type value. Value considered for cutOffTimeStamp is -1." + e
+            .getMessage());
         cutOffTimeStampLocal = -1;
       }
     }
@@ -122,7 +123,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     try {
       dateToStr = timeParser.parse(memberStr);
     } catch (ParseException e) {
-      LOGGER.error("Cannot convert" + TIMESTAMP.toString()
+      LOGGER.debug("Cannot convert " + memberStr
           + " to Time/Long type value. Value considered as null." + e.getMessage());
       dateToStr = null;
     }
