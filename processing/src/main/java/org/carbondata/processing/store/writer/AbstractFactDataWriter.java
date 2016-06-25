@@ -39,6 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.blocklet.index.BlockletBTreeIndex;
 import org.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex;
@@ -171,12 +172,14 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   private int spaceReservedForBlockMetaSize;
   private FileOutputStream fileOutputStream;
 
+  private SegmentProperties segmentProperties;
+
   private List<BlockIndexInfo> blockIndexInfoList;
 
   public AbstractFactDataWriter(String storeLocation, int measureCount, int mdKeyLength,
       String databaseName, String tableName, IFileManagerComposite fileManager, int[] keyBlockSize,
       CarbonDataFileAttributes carbonDataFileAttributes, List<ColumnSchema> columnSchema,
-      String carbonDataDirectoryPath, int[] colCardinality) {
+      String carbonDataDirectoryPath, int[] colCardinality, SegmentProperties segmentProperties) {
 
     // measure count
     this.measureCount = measureCount;
@@ -187,6 +190,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     this.databaseName = databaseName;
 
     this.storeLocation = storeLocation;
+    this.segmentProperties = segmentProperties;
     this.blockletInfoList =
         new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     blockIndexInfoList = new ArrayList<>();
@@ -356,7 +360,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       CarbonFooterWriter writer = new CarbonFooterWriter(filePath);
       FileFooter convertFileMeta = CarbonMetadataUtil
           .convertFileFooter(infoList, localCardinality.length, localCardinality,
-              thriftColumnSchemaList);
+              thriftColumnSchemaList, segmentProperties);
       fillBlockIndexInfoDetails(infoList, convertFileMeta.getNum_rows(), filePath, currentPosition);
       writer.writeFooter(convertFileMeta, currentPosition);
     } catch (IOException e) {

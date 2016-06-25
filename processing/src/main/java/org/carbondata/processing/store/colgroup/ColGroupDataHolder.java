@@ -18,7 +18,6 @@
  */
 package org.carbondata.processing.store.colgroup;
 
-import org.carbondata.core.vo.ColumnGroupModel;
 
 /**
  * This will hold column group data.
@@ -48,7 +47,7 @@ public class ColGroupDataHolder implements DataHolder {
    * @param colGroupId
    * @param noOfRecords
    */
-  public ColGroupDataHolder(ColumnGroupModel colGrpModel, int keyBlockSize,
+  public ColGroupDataHolder(int keyBlockSize,
        int noOfRecords,ColGroupMinMax colGrpMinMax) {
     this.noOfRecords = noOfRecords;
     this.keyBlockSize = keyBlockSize;
@@ -58,6 +57,7 @@ public class ColGroupDataHolder implements DataHolder {
 
   @Override public void addData(byte[] rowsData, int rowIndex) {
     colGrpData[rowIndex] = rowsData;
+    colGrpMinMax.add(rowsData);
   }
 
   /**

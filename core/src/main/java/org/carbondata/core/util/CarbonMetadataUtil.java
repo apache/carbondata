@@ -8,9 +8,11 @@ import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.metadata.index.BlockIndexInfo;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
@@ -52,7 +54,8 @@ public class CarbonMetadataUtil {
    * @return FileFooter
    */
   public static FileFooter convertFileFooter(List<BlockletInfoColumnar> infoList, int numCols,
-      int[] cardinalities, List<ColumnSchema> columnSchemaList) throws IOException {
+      int[] cardinalities, List<ColumnSchema> columnSchemaList,
+      SegmentProperties segmentProperties) throws IOException {
 
     SegmentInfo segmentInfo = new SegmentInfo();
     segmentInfo.setNum_cols(columnSchemaList.size());
@@ -66,7 +69,7 @@ public class CarbonMetadataUtil {
     }
     footer.setTable_columns(columnSchemaList);
     for (BlockletInfoColumnar info : infoList) {
-      footer.addToBlocklet_info_list(getBlockletInfo(info, columnSchemaList));
+      footer.addToBlocklet_info_list(getBlockletInfo(info, columnSchemaList, segmentProperties));
     }
     return footer;
   }
@@ -122,7 +125,8 @@ public class CarbonMetadataUtil {
   }
 
   private static BlockletInfo getBlockletInfo(BlockletInfoColumnar blockletInfoColumnar,
-      List<ColumnSchema> columnSchenma) throws IOException {
+      List<ColumnSchema> columnSchenma,
+      SegmentProperties segmentProperties) throws IOException {
 
     BlockletInfo blockletInfo = new BlockletInfo();
     blockletInfo.setNum_rows(blockletInfoColumnar.getNumberOfKeys());
@@ -138,10 +142,10 @@ public class CarbonMetadataUtil {
       DataChunk dataChunk = new DataChunk();
       dataChunk.setChunk_meta(getChunkCompressionMeta());
       List<Encoding> encodings = new ArrayList<Encoding>();
-      if (columnSchenma.get(i).encoders.contains(Encoding.DICTIONARY)) {
+      if (containsEncoding(i, Encoding.DICTIONARY, columnSchenma, segmentProperties)) {
         encodings.add(Encoding.DICTIONARY);
       }
-      if (columnSchenma.get(i).encoders.contains(Encoding.DIRECT_DICTIONARY)) {
+      if (containsEncoding(i, Encoding.DIRECT_DICTIONARY, columnSchenma, segmentProperties)) {
         encodings.add(Encoding.DIRECT_DICTIONARY);
       }
       dataChunk.setRowMajor(colGrpblock[i]);
@@ -202,6 +206,28 @@ public class CarbonMetadataUtil {
     blockletInfo.setColumn_data_chunks(colDataChunks);
 
     return blockletInfo;
+  }
+
+  /**
+   * @param blockIndex
+   * @param encoding
+   * @param columnSchemas
+   * @param segmentProperties
+   * @return return true if given encoding is present in column
+   */
+  private static boolean containsEncoding(int blockIndex, Encoding encoding,
+      List<ColumnSchema> columnSchemas, SegmentProperties segmentProperties) {
+    Set<Integer> dimOrdinals = segmentProperties.getDimensionOrdinalForBlock(blockIndex);
+    //column groups will always have dictionary encoding
+    if (dimOrdinals.size() > 1 && Encoding.DICTIONARY == encoding) {
+      return true;
+    }
+    for (Integer dimOrdinal : dimOrdinals) {
+      if (columnSchemas.get(dimOrdinal).encoders.contains(encoding)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static byte[] serializeEncoderMeta(ValueEncoderMeta encoderMeta) throws IOException {

@@ -23,7 +23,6 @@ import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-
 /**
  * Test Class for aggregate query on multiple datatypes
  *
@@ -35,6 +34,12 @@ class ColumnGroupDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
     sql("LOAD DATA LOCAL INPATH './src/test/resources/10dim_4msr.csv' INTO table colgrp options('FILEHEADER'='column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
     sql("create table normal (column1 string,column2 string,column3 string,column4 string,column5 string,column6 string,column7 string,column8 string,column9 string,column10 string,measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org.apache.carbondata.format'")
     sql("LOAD DATA LOCAL INPATH './src/test/resources/10dim_4msr.csv' INTO table normal options('FILEHEADER'='column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
+    //column group with dictionary exclude before column group
+    sql("create table colgrp_dictexclude_before (column1 string,column2 string,column3 string,column4 string,column5 string,column6 string,column7 string,column8 string,column9 string,column10 string,measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ('DICTIONARY_EXCLUDE'='column1',\"COLUMN_GROUPS\"=\"(column2,column3,column4),(column7,column8,column9)\")")
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/10dim_4msr.csv' INTO table colgrp_dictexclude_before options('FILEHEADER'='column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
+    //column group with dictionary exclude after column group
+    sql("create table colgrp_dictexclude_after (column1 string,column2 string,column3 string,column4 string,column5 string,column6 string,column7 string,column8 string,column9 string,column10 string,measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ('DICTIONARY_EXCLUDE'='column10',\"COLUMN_GROUPS\"=\"(column2,column3,column4),(column7,column8,column9)\")")
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/10dim_4msr.csv' INTO table colgrp_dictexclude_after options('FILEHEADER'='column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
   }
 
   test("select all dimension query") {
@@ -79,8 +84,30 @@ class ColumnGroupDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
       sql("select column1,column3,column4,column5,column6,column9,column10 from normal"))
   }
 
+   test("##ColumnGroup_DictionaryExcludeBefore select all dimension on column group and dictionary exclude table") {
+    checkAnswer(
+      sql("select * from colgrp_dictexclude_before"),
+      sql("select * from normal"))
+  }
+  test("##ColumnGroup_DictionaryExcludeBefore select all dimension query with filter on two dimension from same column group") {
+    checkAnswer(
+      sql("select * from colgrp_dictexclude_before where column3='column311' and column4='column42' "),
+      sql("select * from normal where column3='column311' and column4='column42'"))
+  }
+  test("##ColumnGroup_DictionaryExcludeAfter select all dimension on column group and dictionary exclude table") {
+    checkAnswer(
+      sql("select * from colgrp_dictexclude_after"),
+      sql("select * from normal"))
+  }
+  test("##ColumnGroup_DictionaryExcludeAfter select all dimension query with filter on two dimension from same column group") {
+    checkAnswer(
+      sql("select * from colgrp_dictexclude_after where column3='column311' and column4='column42' "),
+      sql("select * from normal where column3='column311' and column4='column42'"))
+  }
   override def afterAll {
-    sql("drop cube colgrp")
-    sql("drop cube normal")
+    sql("drop table colgrp")
+    sql("drop table normal")
+    sql("drop table colgrp_dictexclude_before")
+    sql("drop table colgrp_dictexclude_after")
   }
 }

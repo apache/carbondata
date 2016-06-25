@@ -27,6 +27,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.carbondata.core.keygenerator.KeyGenException;
+import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
 import org.carbondata.query.carbon.executor.util.QueryUtil;
@@ -88,24 +89,18 @@ public class ColGroupFilterExecuterImpl extends IncludeFilterExecuterImpl {
    * @throws KeyGenException
    */
   private KeyStructureInfo getKeyStructureInfo() throws KeyGenException {
-    List<Integer> ordinals = new ArrayList<Integer>();
-    ordinals.add(dimColumnEvaluatorInfo.getColumnIndex());
-
-    int[] maskByteRanges = QueryUtil
-        .getMaskedByteRangeBasedOrdinal(ordinals, segmentProperties.getDimensionKeyGenerator());
-    byte[] maxKey =
-        QueryUtil.getMaxKeyBasedOnOrinal(ordinals, segmentProperties.getDimensionKeyGenerator());
-    int[] maksedByte = QueryUtil
-        .getMaskedByte(segmentProperties.getDimensionKeyGenerator().getKeySizeInBytes(),
-            maskByteRanges);
-    int blockMdkeyStartOffset = QueryUtil.getBlockMdKeyStartOffset(segmentProperties, ordinals);
-
+    int colGrpId = getColumnGroupId(dimColumnEvaluatorInfo.getColumnIndex());
+    KeyGenerator keyGenerator = segmentProperties.getColumnGroupAndItsKeygenartor().get(colGrpId);
+    List<Integer> mdKeyOrdinal = new ArrayList<Integer>();
+    mdKeyOrdinal.add(getMdkeyOrdinal(dimColumnEvaluatorInfo.getColumnIndex(), colGrpId));
+    int[] maskByteRanges = QueryUtil.getMaskedByteRangeBasedOrdinal(mdKeyOrdinal, keyGenerator);
+    byte[] maxKey = QueryUtil.getMaxKeyBasedOnOrinal(mdKeyOrdinal, keyGenerator);
+    int[] maksedByte = QueryUtil.getMaskedByte(keyGenerator.getKeySizeInBytes(), maskByteRanges);
     KeyStructureInfo restructureInfos = new KeyStructureInfo();
-    restructureInfos.setKeyGenerator(segmentProperties.getDimensionKeyGenerator());
+    restructureInfos.setKeyGenerator(keyGenerator);
     restructureInfos.setMaskByteRanges(maskByteRanges);
     restructureInfos.setMaxKey(maxKey);
     restructureInfos.setMaskedBytes(maksedByte);
-    restructureInfos.setBlockMdKeyStartOffset(blockMdkeyStartOffset);
     return restructureInfos;
   }
 
@@ -155,8 +150,9 @@ public class ColGroupFilterExecuterImpl extends IncludeFilterExecuterImpl {
     int endIndex = 0;
     if (null != colGrpColumns) {
       for (int i = 0; i < colGrpColumns.length; i++) {
-        int[] byteRange =
-            segmentProperties.getDimensionKeyGenerator().getKeyByteOffsets(colGrpColumns[i]);
+        int colGrpId = getColumnGroupId(colGrpColumns[i]);
+        int mdKeyOrdinal = getMdkeyOrdinal(colGrpColumns[i], colGrpId);
+        int[] byteRange = getKeyGenerator(colGrpId).getKeyByteOffsets(mdKeyOrdinal);
         int colSize = 0;
         for (int j = byteRange[0]; j <= byteRange[1]; j++) {
           colSize++;
@@ -189,4 +185,25 @@ public class ColGroupFilterExecuterImpl extends IncludeFilterExecuterImpl {
     return null;
   }
 
+  private int getMdkeyOrdinal(int ordinal, int colGrpId) {
+    return segmentProperties.getColumnGroupMdKeyOrdinal(colGrpId, ordinal);
+  }
+
+  private int getColumnGroupId(int ordinal) {
+    int[][] columnGroups = segmentProperties.getColumnGroups();
+    int colGrpId = -1;
+    for (int i = 0; i < columnGroups.length; i++) {
+      if (columnGroups[i].length > 1) {
+        colGrpId++;
+        if (QueryUtil.searchInArray(columnGroups[i], ordinal)) {
+          break;
+        }
+      }
+    }
+    return colGrpId;
+  }
+
+  public KeyGenerator getKeyGenerator(int colGrpId) {
+    return segmentProperties.getColumnGroupAndItsKeygenartor().get(colGrpId);
+  }
 }

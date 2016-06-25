@@ -528,53 +528,38 @@ public class QueryUtil {
     // get column group id and its ordinal mapping of column group
     Map<Integer, List<Integer>> columnGroupAndItsOrdinalMappingForQuery =
         getColumnGroupAndItsOrdinalMapping(queryDimensions);
-    KeyGenerator keyGenerator = segmentProperties.getDimensionKeyGenerator();
+    Map<Integer, KeyGenerator> columnGroupAndItsKeygenartor =
+        segmentProperties.getColumnGroupAndItsKeygenartor();
 
     Iterator<Entry<Integer, List<Integer>>> iterator =
         columnGroupAndItsOrdinalMappingForQuery.entrySet().iterator();
     KeyStructureInfo restructureInfos = null;
     while (iterator.hasNext()) {
       Entry<Integer, List<Integer>> next = iterator.next();
+      KeyGenerator keyGenerator = columnGroupAndItsKeygenartor.get(next.getKey());
       restructureInfos = new KeyStructureInfo();
       // sort the ordinal
       List<Integer> ordinal = next.getValue();
-      Collections.sort(ordinal);
+      List<Integer> mdKeyOrdinal = new ArrayList<Integer>();
+      for (Integer ord : ordinal) {
+        mdKeyOrdinal.add(segmentProperties.getColumnGroupMdKeyOrdinal(next.getKey(), ord));
+      }
+      Collections.sort(mdKeyOrdinal);
       // get the masked byte range for column group
-      int[] maskByteRanges = getMaskedByteRangeBasedOrdinal(ordinal, keyGenerator);
+      int[] maskByteRanges = getMaskedByteRangeBasedOrdinal(mdKeyOrdinal, keyGenerator);
       // max key for column group
-      byte[] maxKey = getMaxKeyBasedOnOrinal(ordinal, keyGenerator);
+      byte[] maxKey = getMaxKeyBasedOnOrinal(mdKeyOrdinal, keyGenerator);
       // get masked key for column group
       int[] maksedByte = getMaskedByte(keyGenerator.getKeySizeInBytes(), maskByteRanges);
       restructureInfos.setKeyGenerator(keyGenerator);
       restructureInfos.setMaskByteRanges(maskByteRanges);
       restructureInfos.setMaxKey(maxKey);
       restructureInfos.setMaskedBytes(maksedByte);
-      restructureInfos
-          .setBlockMdKeyStartOffset(getBlockMdKeyStartOffset(segmentProperties, ordinal));
       rowGroupToItsRSInfo
           .put(segmentProperties.getDimensionOrdinalToBlockMapping().get(ordinal.get(0)),
               restructureInfos);
     }
     return rowGroupToItsRSInfo;
-  }
-
-  /**
-   * It return mdkey start index of given column group
-   * @param segmentProperties
-   * @param ordinal : column group ordinal
-   * @return
-   */
-  public static int getBlockMdKeyStartOffset(SegmentProperties segmentProperties,
-      List<Integer> ordinal) {
-    int[][] colGroups = segmentProperties.getColumnGroups();
-    int blockMdkeyStartOffset = 0;
-    for (int i = 0; i < colGroups.length; i++) {
-      if (QueryUtil.searchInArray(colGroups[i], ordinal.get(0))) {
-        break;
-      }
-      blockMdkeyStartOffset += segmentProperties.getDimensionColumnsValueSize()[i];
-    }
-    return blockMdkeyStartOffset;
   }
 
   /**

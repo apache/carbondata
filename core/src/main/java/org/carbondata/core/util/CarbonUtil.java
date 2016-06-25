@@ -56,6 +56,8 @@ import org.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
+import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -364,11 +366,10 @@ public final class CarbonUtil {
   /**
    * return ColumnGroupModel. check ColumnGroupModel for detail
    *
-   * @param dimLens      : dimension cardinality
    * @param columnGroups : column groups
    * @return ColumnGroupModel  model
    */
-  public static ColumnGroupModel getColGroupModel(int[] dimLens, int[][] columnGroups) {
+  public static ColumnGroupModel getColGroupModel(int[][] columnGroups) {
     int[] columnSplit = new int[columnGroups.length];
     int noOfColumnStore = columnSplit.length;
     boolean[] columnarStore = new boolean[noOfColumnStore];
@@ -380,7 +381,6 @@ public final class CarbonUtil {
     ColumnGroupModel colGroupModel = new ColumnGroupModel();
     colGroupModel.setNoOfColumnStore(noOfColumnStore);
     colGroupModel.setColumnSplit(columnSplit);
-    colGroupModel.setColumnGroupCardinality(dimLens);
     colGroupModel.setColumnarStore(columnarStore);
     colGroupModel.setColumnGroup(columnGroups);
     return colGroupModel;
@@ -1687,6 +1687,49 @@ public final class CarbonUtil {
     }
   }
 
+  /**
+   * @param dictionaryColumnCardinality
+   * @param wrapperColumnSchemaList
+   * @return It returns formatted cardinality by adding -1 value for NoDictionary columns
+   */
+  public static int[] getFormattedCardinality(int[] dictionaryColumnCardinality,
+      List<ColumnSchema> wrapperColumnSchemaList) {
+    List<Integer> cardinality = new ArrayList<>();
+    int counter = 0;
+    for (int i = 0; i < wrapperColumnSchemaList.size(); i++) {
+      if (CarbonUtil.hasEncoding(wrapperColumnSchemaList.get(i).getEncodingList(),
+          org.carbondata.core.carbon.metadata.encoder.Encoding.DICTIONARY)) {
+        cardinality.add(dictionaryColumnCardinality[counter]);
+        counter++;
+      } else if (!wrapperColumnSchemaList.get(i).isDimensionColumn()) {
+        continue;
+      } else {
+        cardinality.add(-1);
+      }
+    }
+    return ArrayUtils.toPrimitive(cardinality.toArray(new Integer[cardinality.size()]));
+  }
+
+  public static List<ColumnSchema> getColumnSchemaList(List<CarbonDimension> carbonDimensionsList,
+      List<CarbonMeasure> carbonMeasureList) {
+    List<ColumnSchema> wrapperColumnSchemaList = new ArrayList<ColumnSchema>();
+    fillCollumnSchemaListForComplexDims(carbonDimensionsList, wrapperColumnSchemaList);
+    for (CarbonMeasure carbonMeasure : carbonMeasureList) {
+      wrapperColumnSchemaList.add(carbonMeasure.getColumnSchema());
+    }
+    return wrapperColumnSchemaList;
+  }
+
+  private static void fillCollumnSchemaListForComplexDims(
+      List<CarbonDimension> carbonDimensionsList, List<ColumnSchema> wrapperColumnSchemaList) {
+    for (CarbonDimension carbonDimension : carbonDimensionsList) {
+      wrapperColumnSchemaList.add(carbonDimension.getColumnSchema());
+      List<CarbonDimension> childDims = carbonDimension.getListOfChildDimensions();
+      if (null != childDims && childDims.size() > 0) {
+        fillCollumnSchemaListForComplexDims(childDims, wrapperColumnSchemaList);
+      }
+    }
+  }
   /**
    * Below method will be used to get all the block index info from index file
    *

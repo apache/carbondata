@@ -19,9 +19,11 @@
 
 package org.carbondata.processing.store;
 
+import java.util.List;
 import java.util.Map;
 
-import org.carbondata.core.vo.ColumnGroupModel;
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.processing.datatypes.GenericDataType;
 
 /**
@@ -105,14 +107,17 @@ public class CarbonFactDataHandlerModel {
    * map which maintains indexing of complex columns
    */
   private Map<Integer, GenericDataType> complexIndexMap;
+
+  /**
+   * Segment properties
+   */
+  private SegmentProperties segmentProperties;
+
   /**
    * primitive dimensions cardinality
    */
   private int[] primitiveDimLens;
-  /**
-   * column group model
-   */
-  private ColumnGroupModel colGrpModel;
+
   /**
    * array in which each character represents an aggregation type and
    * the array length will be equal to the number of measures in table
@@ -127,7 +132,16 @@ public class CarbonFactDataHandlerModel {
    */
   private String carbonDataDirectoryPath;
 
+  /**
+   * cardinality of dimension including no dictionary. no dictionary cardinality
+   * is set to -1
+   */
   private int[] colCardinality;
+
+  /**
+   * wrapper column schema
+   */
+  private List<ColumnSchema> wrapperColumnSchema;
 
   /**
    * This is the boolean which will determine whether the data handler call is from the compaction
@@ -302,14 +316,6 @@ public class CarbonFactDataHandlerModel {
     this.primitiveDimLens = primitiveDimLens;
   }
 
-  public ColumnGroupModel getColGrpModel() {
-    return colGrpModel;
-  }
-
-  public void setColGrpModel(ColumnGroupModel colGrpModel) {
-    this.colGrpModel = colGrpModel;
-  }
-
   public char[] getAggType() {
     return aggType;
   }
@@ -341,5 +347,36 @@ public class CarbonFactDataHandlerModel {
   public void setCompactionFlow(boolean compactionFlow) {
     isCompactionFlow = compactionFlow;
   }
+
+  /**
+   *
+   * @return segmentProperties
+   */
+  public SegmentProperties getSegmentProperties() {
+    return segmentProperties;
+  }
+
+  /**
+   *
+   * @param segmentProperties
+   */
+  public void setSegmentProperties(SegmentProperties segmentProperties) {
+    this.segmentProperties = segmentProperties;
+  }
+
+  /**
+   * @return wrapperColumnSchema
+   */
+  public List<ColumnSchema> getWrapperColumnSchema() {
+    return wrapperColumnSchema;
+  }
+
+  /**
+   * @param wrapperColumnSchema
+   */
+  public void setWrapperColumnSchema(List<ColumnSchema> wrapperColumnSchema) {
+    this.wrapperColumnSchema = wrapperColumnSchema;
+  }
+
 }
 

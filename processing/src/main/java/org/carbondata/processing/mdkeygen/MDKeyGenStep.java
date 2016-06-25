@@ -31,9 +31,11 @@ import java.util.Map.Entry;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
+import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -41,12 +43,10 @@ import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.FileManager;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.core.util.DataTypeUtil;
-import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.CarbonFactDataHandlerColumnar;
@@ -99,6 +99,12 @@ public class MDKeyGenStep extends BaseStep {
 
   private Map<Integer, GenericDataType> complexIndexMap;
 
+  private SegmentProperties segmentProperties;
+
+  private int[] colCardinality;
+
+  private List<ColumnSchema> wrapperColumnSchema;
+
   /**
    * readCounter
    */
@@ -126,7 +132,6 @@ public class MDKeyGenStep extends BaseStep {
 
   private int[] dimLens;
 
-  private ColumnGroupModel colGrpStoreModel;
   /**
    * to check whether dimension is of dictionary type
    * or not
@@ -287,23 +292,17 @@ public class MDKeyGenStep extends BaseStep {
       simpleDimsLen[i] = dimLens[i];
     }
 
-    String[] colStore = null != meta.getColumnGroupsString() ?
-        meta.getColumnGroupsString().split(",") :
-        new String[0];
-    int[][] colGroups = new int[colStore.length][];
-    for (int i = 0; i < colGroups.length; i++) {
-      String[] group = colStore[i].split("~");
-      colGroups[i] = new int[group.length];
-      for (int j = 0; j < colGroups[i].length; j++) {
-        colGroups[i][j] = Integer.parseInt(group[j]);
-      }
-    }
+    CarbonTable carbonTable = CarbonMetadata.getInstance()
+        .getCarbonTable(meta.getSchemaName() + CarbonCommonConstants.UNDERSCORE + tableName);
+    wrapperColumnSchema = CarbonUtil
+        .getColumnSchemaList(carbonTable.getDimensionByTableName(tableName),
+            carbonTable.getMeasureByTableName(tableName));
+    colCardinality =
+        CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchema);
+    segmentProperties = new SegmentProperties(wrapperColumnSchema, colCardinality);
     // Actual primitive dimension used to generate start & end key
 
-    this.colGrpStoreModel = CarbonUtil.getColGroupModel(simpleDimsLen, colGroups);
-    data.generator = KeyGeneratorFactory
-        .getKeyGenerator(colGrpStoreModel.getColumnGroupCardinality(),
-            colGrpStoreModel.getColumnSplit());
+    data.generator = segmentProperties.getDimensionKeyGenerator();
 
     //To Set MDKey Index of each primitive type in complex type
     int surrIndex = simpleDimsCount;
@@ -377,10 +376,12 @@ public class MDKeyGenStep extends BaseStep {
     carbonFactDataHandlerModel.setNoDictionaryCount(meta.getNoDictionaryCount());
     carbonFactDataHandlerModel.setDimensionCount(dimensionCount);
     carbonFactDataHandlerModel.setComplexIndexMap(complexIndexMap);
-    carbonFactDataHandlerModel.setColGrpModel(colGrpStoreModel);
+    carbonFactDataHandlerModel.setSegmentProperties(segmentProperties);
+    carbonFactDataHandlerModel.setColCardinality(colCardinality);
     carbonFactDataHandlerModel.setDataWritingRequest(true);
     carbonFactDataHandlerModel.setAggType(aggType);
     carbonFactDataHandlerModel.setFactDimLens(dimLens);
+    carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
     return carbonFactDataHandlerModel;
   }
 
@@ -449,7 +450,7 @@ public class MDKeyGenStep extends BaseStep {
     }
     outputRow[l] = RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row);
 
-    int[] highCardExcludedRows = new int[colGrpStoreModel.getColumnGroupCardinality().length];
+    int[] highCardExcludedRows = new int[segmentProperties.getDimColumnsCardinality().length];
     for (int i = 0; i < highCardExcludedRows.length; i++) {
       Object key = RemoveDictionaryUtil.getDimension(i, row);
       highCardExcludedRows[i] = (Integer) key;

@@ -25,11 +25,10 @@ import java.util.Set;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
-import org.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.carbondata.core.util.ByteUtil;
-import org.carbondata.core.vo.ColumnGroupModel;
 
 /**
  * it gives min max of each column of column group
@@ -38,20 +37,11 @@ public class ColGroupMinMax {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(ColGroupMinMax.class.getName());
-  /**
-   * Column group model
-   */
-  private ColumnGroupModel colGrpModel;
 
   /**
    * key generator
    */
   private KeyGenerator keyGenerator;
-
-  /**
-   * column group id
-   */
-  private int colGroupId;
 
   /**
    * no of column in column group
@@ -78,12 +68,9 @@ public class ColGroupMinMax {
    */
   private byte[][] maxKeys;
 
-  public ColGroupMinMax(ColumnGroupModel colGrpModel, ColumnarSplitter columnarSplitter,
-      int colGroupId) {
-    this.colGrpModel = colGrpModel;
-    this.keyGenerator = (KeyGenerator) columnarSplitter;
-    this.colGroupId = colGroupId;
-    this.noOfCol = colGrpModel.getColumnSplit()[colGroupId];
+  public ColGroupMinMax(SegmentProperties segmentProperties, int colGroupId) {
+    this.keyGenerator = segmentProperties.getColumnGroupAndItsKeygenartor().get(colGroupId);
+    this.noOfCol = segmentProperties.getNoOfColumnsInColumnGroup(colGroupId);
     min = new byte[noOfCol][];
     max = new byte[noOfCol][];
     initialise();
@@ -126,15 +113,14 @@ public class ColGroupMinMax {
       maskByteRange = new int[noOfCol][];
       maxKeys = new byte[noOfCol][];
       for (int i = 0; i < noOfCol; i++) {
-        maskByteRange[i] = getMaskByteRange(colGrpModel.getColumnGroup()[colGroupId][i]);
+        maskByteRange[i] = getMaskByteRange(i);
         // generating maxkey
-        long[] maxKey = new long[keyGenerator.getKeySizeInBytes()];
-        maxKey[colGrpModel.getColumnGroup()[colGroupId][i]] = Long.MAX_VALUE;
+        long[] maxKey = new long[noOfCol];
+        maxKey[i] = Long.MAX_VALUE;
         maxKeys[i] = keyGenerator.generateKey(maxKey);
       }
     } catch (KeyGenException e) {
-      LOGGER.error(e,
-          "Key generation failed while evaulating column group min max");
+      LOGGER.error(e, "Key generation failed while evaulating column group min max");
     }
 
   }
