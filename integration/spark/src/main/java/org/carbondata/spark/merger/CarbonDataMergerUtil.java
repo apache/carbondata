@@ -588,39 +588,20 @@ public final class CarbonDataMergerUtil {
       }
     }
 
-    // handle the retaining of valid loads,
-
     // check if valid list is big enough for removing the number of seg to be retained.
-    if (validList.size() > numberOfSegToBeRetained) {
+    // last element
+    int removingIndex = validList.size() - 1;
 
-      // after the sort remove the loads from the last as per the retaining count.
-      Collections.sort(validList, new Comparator<LoadMetadataDetails>() {
-
-        @Override public int compare(LoadMetadataDetails seg1, LoadMetadataDetails seg2) {
-          double segNumber1 = Double.parseDouble(seg1.getLoadName());
-          double segNumber2 = Double.parseDouble(seg2.getLoadName());
-
-          if ((segNumber1 - segNumber2) < 0) {
-            return -1;
-          } else if ((segNumber1 - segNumber2) > 0) {
-            return 1;
-          }
-          return 0;
-
-        }
-      });
-
-      for (int i = 0; i < numberOfSegToBeRetained; i++) {
-
-        // remove last segment
-        validList.remove(validList.size() - 1);
-
+    for (int i = validList.size(); i > 0; i--) {
+      if (numberOfSegToBeRetained == 0) {
+        break;
       }
-      return validList;
+      // remove last segment
+      validList.remove(removingIndex--);
+      numberOfSegToBeRetained--;
     }
+    return validList;
 
-    // case where there is no 2 loads available for merging.
-    return new ArrayList<LoadMetadataDetails>(0);
   }
 
   /**

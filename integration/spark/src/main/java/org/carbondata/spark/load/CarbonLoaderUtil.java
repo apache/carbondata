@@ -285,18 +285,19 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  public static void deletePartialLoadDataIfExist(CarbonLoadModel loadModel) throws IOException {
+  public static void deletePartialLoadDataIfExist(CarbonLoadModel loadModel,
+      final boolean isCompactionFlow) throws IOException {
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     String metaDataLocation = carbonTable.getMetaDataFilepath();
     SegmentStatusManager segmentStatusManager =
         new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier());
     LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metaDataLocation);
-    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(loadModel.getStorePath(),
-        carbonTable.getCarbonTableIdentifier());
+    CarbonTablePath carbonTablePath = CarbonStorePath
+        .getCarbonTablePath(loadModel.getStorePath(), carbonTable.getCarbonTableIdentifier());
     final List<String> loadFolders = new ArrayList<String>();
     for (LoadMetadataDetails loadMetadata : details) {
-      loadFolders.add(carbonTablePath.getCarbonDataDirectoryPath(loadMetadata.getPartitionCount(),
-          loadMetadata.getLoadName())
+      loadFolders.add(carbonTablePath
+          .getCarbonDataDirectoryPath(loadMetadata.getPartitionCount(), loadMetadata.getLoadName())
           .replace("\\", "/"));
     }
 
@@ -307,13 +308,22 @@ public final class CarbonLoaderUtil {
       if (FileFactory.isFileExist(partitionPath, fileType)) {
         CarbonFile carbonFile = FileFactory.getCarbonFile(partitionPath, fileType);
         CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
-          @Override
-          public boolean accept(CarbonFile path) {
+          @Override public boolean accept(CarbonFile path) {
             return !loadFolders.contains(path.getAbsolutePath().replace("\\", "/"));
           }
         });
         for (int k = 0; k < listFiles.length; k++) {
-          deleteStorePath(listFiles[k].getAbsolutePath());
+          String segmentId =
+              CarbonTablePath.DataPathUtil.getSegmentId(listFiles[k].getAbsolutePath() + "/dummy");
+          if (isCompactionFlow) {
+            if (segmentId.contains(".")) {
+              deleteStorePath(listFiles[k].getAbsolutePath());
+            }
+          } else {
+            if (!segmentId.contains(".")) {
+              deleteStorePath(listFiles[k].getAbsolutePath());
+            }
+          }
         }
       }
     }
