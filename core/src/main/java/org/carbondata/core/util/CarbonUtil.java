@@ -299,9 +299,7 @@ public final class CarbonUtil {
    */
   public static int[] getIncrementedCardinality(int[] dimCardinality) {
     // get the cardinality incr factor
-    final int incrValue = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE,
-            CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL));
+    final int incrValue = CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL;
 
     int perIncr = 0;
     int remainder = 0;
@@ -333,9 +331,7 @@ public final class CarbonUtil {
 
   public static int getIncrementedCardinality(int dimCardinality) {
     // get the cardinality incr factor
-    final int incrValue = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE,
-            CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL));
+    final int incrValue = CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL;
 
     int perIncr = 0;
     int remainder = 0;
@@ -1254,26 +1250,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * This method will read the retry time interval for loading level files in
-   * memory
-   *
-   * @return
-   */
-  public static long getRetryIntervalForLoadingLevelFile() {
-    long retryInterval = 0;
-    try {
-      retryInterval = Long.parseLong(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_LOAD_LEVEL_RETRY_INTERVAL,
-              CarbonCommonConstants.CARBON_LOAD_LEVEL_RETRY_INTERVAL_DEFAULT));
-    } catch (NumberFormatException e) {
-      retryInterval = Long.parseLong(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_LOAD_LEVEL_RETRY_INTERVAL_DEFAULT));
-    }
-    retryInterval = retryInterval * 1000;
-    return retryInterval;
-  }
-
-  /**
    * Below method will be used to get the aggregator type
    * CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE will return when value is double measure
    * CarbonCommonConstants.BYTE_VALUE_MEASURE will be returned when value is byte array
@@ -1296,13 +1272,6 @@ public final class CarbonUtil {
     }
     String basePath = prop.getProperty(CarbonCommonConstants.STORE_LOCATION,
         CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    String useUniquePath = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_UNIFIED_STORE_PATH,
-            CarbonCommonConstants.CARBON_UNIFIED_STORE_PATH_DEFAULT);
-    if (null != schemaName && !schemaName.isEmpty() && null != cubeName && !cubeName.isEmpty()
-        && "true".equals(useUniquePath)) {
-      basePath = basePath + File.separator + schemaName + File.separator + cubeName;
-    }
     return basePath;
   }
 

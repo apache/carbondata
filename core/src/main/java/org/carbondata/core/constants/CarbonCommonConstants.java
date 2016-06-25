@@ -21,11 +21,6 @@ package org.carbondata.core.constants;
 
 public final class CarbonCommonConstants {
   /**
-   * MERGER_FOLDER_EXT
-   */
-  public static final String MERGER_FOLDER_EXT = ".merge";
-
-  /**
    * integer size in bytes
    */
   public static final int INT_SIZE_IN_BYTE = 4;
@@ -37,22 +32,6 @@ public final class CarbonCommonConstants {
    * DOUBLE size in bytes
    */
   public static final int DOUBLE_SIZE_IN_BYTE = 8;
-  /**
-   * ONLINE_MERGE_MIN_VALUE
-   */
-  public static final int ONLINE_MERGE_MIN_VALUE = 10;
-  /**
-   * ONLINE_MERGE_MAX_VALUE
-   */
-  public static final int ONLINE_MERGE_MAX_VALUE = 100;
-  /**
-   * OFFLINE_MERGE_MIN_VALUE
-   */
-  public static final int OFFLINE_MERGE_MIN_VALUE = 100;
-  /**
-   * OFFLINE_MERGE_MAX_VALUE
-   */
-  public static final int OFFLINE_MERGE_MAX_VALUE = 500;
   /**
    * LONG size in bytes
    */
@@ -74,30 +53,6 @@ public final class CarbonCommonConstants {
    */
   public static final String STORE_LOCATION = "carbon.storelocation";
   /**
-   * The keystore type
-   */
-  public static final String KEYSTORE_TYPE = "carbon.keystore.type";
-  /**
-   * The value store type
-   */
-  public static final String VALUESTORE_TYPE = "carbon.valuestore.type";
-  /**
-   * online merge file size
-   */
-  public static final String ONLINE_MERGE_FILE_SIZE = "carbon.online.merge.file.size";
-  /**
-   * online merge file size default value
-   */
-  public static final String ONLINE_MERGE_FILE_SIZE_DEFAULT_VALUE = "10";
-  /**
-   * offline merge file size
-   */
-  public static final String OFFLINE_MERGE_FILE_SIZE = "carbon.offline.merge.file.size";
-  /**
-   * offline merge file size default value
-   */
-  public static final String OFFLINE_MERGE_FILE_SIZE_DEFAULT_VALUE = "100";
-  /**
    * blocklet size in carbon file
    */
   public static final String BLOCKLET_SIZE = "carbon.blocklet.size";
@@ -110,41 +65,17 @@ public final class CarbonCommonConstants {
    */
   public static final String NUM_CORES = "carbon.number.of.cores";
   /**
-   * carbon batchsize
-   */
-  public static final String BATCH_SIZE = "carbon.batch.size";
-  /**
-   * CARDINALITY_INCREMENT_VALUE
-   */
-  public static final String CARDINALITY_INCREMENT_VALUE = "carbon.cardinality.increment.value";
-  /**
    * carbon sort size
    */
   public static final String SORT_SIZE = "carbon.sort.size";
   /**
    * default location of the carbon member, hierarchy and fact files
    */
-  public static final String STORE_LOCATION_DEFAULT_VAL = "../unibi-solutions/system/carbon/store";
-  /**
-   * default keystore type
-   */
-  public static final String KEYSTORE_TYPE_DEFAULT_VAL = "COMPRESSED_SINGLE_ARRAY";
-  /**
-   * default value store type
-   */
-  public static final String VALUESTORE_TYPE_DEFAULT_VAL = "HEAVY_VALUE_COMPRESSION";
+  public static final String STORE_LOCATION_DEFAULT_VAL = "../carbon.store";
   /**
    * CARDINALITY_INCREMENT_DEFAULT_VALUE
    */
-  public static final String CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL = "10";
-  /**
-   * CARDINALITY_INCREMENT_MIN_VALUE
-   */
-  public static final int CARDINALITY_INCREMENT_MIN_VAL = 5;
-  /**
-   * CARDINALITY_INCREMENT_DEFAULT_VALUE
-   */
-  public static final int CARDINALITY_INCREMENT_MAX_VAL = 30;
+  public static final int CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL = 10;
   /**
    * default blocklet size
    */
@@ -183,18 +114,6 @@ public final class CarbonCommonConstants {
    */
   public static final int NUM_CORES_MAX_VAL = 32;
   /**
-   * default carbon batchsize
-   */
-  public static final String BATCH_SIZE_DEFAULT_VAL = "1000";
-  /**
-   * min carbon batchsize
-   */
-  public static final int BATCH_SIZE_MIN_VAL = 500;
-  /**
-   * max carbon batchsize
-   */
-  public static final int BATCH_SIZE_MAX_VAL = 100000;
-  /**
    * default carbon sort size
    */
   public static final String SORT_SIZE_DEFAULT_VAL = "100000";
@@ -207,18 +126,9 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_PROPERTIES_FILE_PATH = "../../../conf/carbon.properties";
   /**
-   * CARBON_BADRECORDS_ENCRYPTION
-   */
-  public static final String CARBON_BADRECORDS_ENCRYPTION = "carbon.badRecords.encryption";
-  /**
    * CARBON_DDL_BASE_HDFS_URL
    */
   public static final String CARBON_DDL_BASE_HDFS_URL = "carbon.ddl.base.hdfs.url";
-  /**
-   * CARBON_BADRECORDS_ENCRYPTION_DEFAULT_VAL
-   */
-  public static final String CARBON_BADRECORDS_ENCRYPTION_DEFAULT_VAL = "false";
-
   /**
    * Slice Meta data file.
    */
@@ -298,57 +208,6 @@ public final class CarbonCommonConstants {
    */
   public static final String SORT_TEMP_FILE_LOCATION = "sortrowtmp";
   /**
-   * SORT_BUFFER_SIZE
-   */
-  public static final String SORT_BUFFER_SIZE = "carbon.sort.buffer.size";
-  /**
-   * SORT_BUFFER_SIZE_DEFAULT_SIZE
-   */
-  public static final String SORT_BUFFER_SIZE_DEFAULT_VALUE = "5000";
-  /**
-   * SORT_BUFFER_SIZE_MIN_SIZE
-   */
-  public static final int SORT_BUFFER_SIZE_MIN_VALUE = 5;
-  /**
-   * DATA_LOAD_Q_SIZE
-   */
-  public static final String DATA_LOAD_Q_SIZE = "carbon.dataload.queuesize";
-  /**
-   * DATA_LOAD_Q_SIZE_DEFAULT
-   */
-  public static final String DATA_LOAD_Q_SIZE_DEFAULT = "100";
-  /**
-   * DATA_LOAD_Q_SIZE_MIN
-   */
-  public static final int DATA_LOAD_Q_SIZE_MIN = 1;
-  /**
-   * DATA_LOAD_Q_SIZE_MAX
-   */
-  public static final int DATA_LOAD_Q_SIZE_MAX = 100;
-
-  /**
-   * DATA_LOAD_CONC_EXE_SIZE
-   */
-  public static final String DATA_LOAD_CONC_EXE_SIZE = "carbon.dataload.concurrent.execution.size";
-  /**
-   * DATA_LOAD_CONC_EXE_SIZE_DEFAULT
-   */
-  public static final String DATA_LOAD_CONC_EXE_SIZE_DEFAULT = "1";
-  /**
-   * DATA_LOAD_CONC_EXE_SIZE_MIN
-   */
-  public static final int DATA_LOAD_CONC_EXE_SIZE_MIN = 1;
-  /**
-   * DATA_LOAD_CONC_EXE_SIZE_MAX
-   */
-  public static final int DATA_LOAD_CONC_EXE_SIZE_MAX = 5;
-  /**
-   * CARBON_Realtime_data
-   */
-  public static final String CARBON_REALTIMEDATA_FILE =
-      "../unibi-solutions/system/carbon/realtimedata.properties";
-
-  /**
    * CARBON_RESULT_SIZE_DEFAULT
    */
   public static final String LEVEL_FILE_EXTENSION = ".level";
@@ -418,10 +277,6 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE = "50000";
   /**
-   * WRITE_ALL_NODE_IN_SINGLE_TIME_DEFAULT_VALUE
-   */
-  public static final String WRITE_ALL_NODE_IN_SINGLE_TIME_DEFAULT_VALUE = "true";
-  /**
    * Number of cores to be used while loading
    */
   public static final String NUM_CORES_LOADING = "carbon.number.of.cores.while.loading";
@@ -486,34 +341,13 @@ public final class CarbonCommonConstants {
    */
   public static final String HYPHEN_SPC_CHARACTER = "-#!:HYPHEN:!#-";
   /**
-   * CARBON_DECIMAL_POINTERS
-   */
-  public static final String CARBON_DECIMAL_POINTERS = "carbon.decimal.pointers";
-  /**
    * CARBON_DECIMAL_POINTERS_DEFAULT
    */
-  public static final String CARBON_DECIMAL_POINTERS_DEFAULT = "5";
-  /**
-   * CARBON_DECIMAL_POINTERS_AGG
-   */
-  public static final String CARBON_DECIMAL_POINTERS_AGG = "carbon.decimal.pointers.agg";
-  /**
-   * CARBON_DECIMAL_POINTERS_AGG_DEFAULT
-   */
-  public static final String CARBON_DECIMAL_POINTERS_AGG_DEFAULT = "4";
+  public static final byte CARBON_DECIMAL_POINTERS_DEFAULT = 5;
   /**
    * SORT_TEMP_FILE_EXT
    */
   public static final String SORT_TEMP_FILE_EXT = ".sorttemp";
-  /**
-   * CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED
-   */
-  public static final String CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED =
-      "carbon.seqgen.inmemory.lru.cache.enabled";
-  /**
-   * CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE
-   */
-  public static final String CARBON_SEQ_GEN_INMEMORY_LRU_CACHE_ENABLED_DEFAULT_VALUE = "false";
   /**
    * CARBON_MAX_THREAD_FOR_SORTING
    */
@@ -545,15 +379,6 @@ public final class CarbonCommonConstants {
    */
   public static final int DEFAULT_COLLECTION_SIZE = 16;
   /**
-   * CARBON_DATALOAD_VALID_CSVFILE_SIZE
-   */
-  public static final String CARBON_DATALOAD_VALID_CSVFILE_SIZE =
-      "carbon.dataload.valid.csvfile.size(in GB)";
-  /**
-   * CARBON_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE
-   */
-  public static final String CARBON_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE = "5";
-  /**
    * CARBON_TIMESTAMP_DEFAULT_FORMAT
    */
   public static final String CARBON_TIMESTAMP_DEFAULT_FORMAT = "yyyy-MM-dd HH:mm:ss";
@@ -561,15 +386,6 @@ public final class CarbonCommonConstants {
    * CARBON_TIMESTAMP_DEFAULT_FORMAT
    */
   public static final String CARBON_TIMESTAMP_FORMAT = "carbon.timestamp.format";
-  /**
-   * CARBON_DATALOAD_VALID_CSVFILE_SIZE
-   */
-  public static final String CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE =
-      "carbon.dataload.csv.filecount";
-  /**
-   * CARBON_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE
-   */
-  public static final String CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE = "100";
   /**
    * STORE_LOCATION_HDFS
    */
@@ -751,14 +567,6 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_MAX_LEVEL_CACHE_SIZE_DEFAULT = "-1";
   /**
-   * retry interval after which loading a level file will be retried
-   */
-  public static final String CARBON_LOAD_LEVEL_RETRY_INTERVAL = "Carbon.load.level.retry.interval";
-  /**
-   * retry interval default value
-   */
-  public static final String CARBON_LOAD_LEVEL_RETRY_INTERVAL_DEFAULT = "12";
-  /**
    * DOUBLE_VALUE_MEASURE
    */
   public static final char SUM_COUNT_VALUE_MEASURE = 'n';
@@ -781,8 +589,6 @@ public final class CarbonCommonConstants {
    * for dimensions , one of ignore dictionary dimensions , one for measures.
    */
   public static final int ARRAYSIZE = 3;
-  public static final String CARBON_UNIFIED_STORE_PATH = "carbon.unified.store.path";
-  public static final String CARBON_UNIFIED_STORE_PATH_DEFAULT = "false";
   /**
    * CARBON_PREFETCH_BUFFERSIZE
    */
@@ -795,22 +601,6 @@ public final class CarbonCommonConstants {
    * TEMPWRITEFILEEXTENSION
    */
   public static final String TEMPWRITEFILEEXTENSION = ".write";
-  /**
-   * MERGE_THRESHOLD_VALUE
-   */
-  public static final String MERGE_THRESHOLD_VALUE = "carbon.merge.threshold";
-  /**
-   * MERGE_THRESHOLD_DEFAULT_VAL
-   */
-  public static final String MERGE_THRESHOLD_DEFAULT_VAL = "10";
-  /**
-   * TO_LOAD_MERGE_MAX_SIZE
-   */
-  public static final String TO_LOAD_MERGE_MAX_SIZE = "to.merge.load.max.size";
-  /**
-   * TO_LOAD_MERGE_MAX_SIZE_DEFAULT
-   */
-  public static final String TO_LOAD_MERGE_MAX_SIZE_DEFAULT = "1";
   /**
    * ENABLE_AUTO_LOAD_MERGE
    */
@@ -867,16 +657,6 @@ public final class CarbonCommonConstants {
    * a valid surrogate key is not found for a given dictionary value
    */
   public static final int INVALID_SURROGATE_KEY = -1;
-
-  /**
-   * table split partition
-   */
-  public static final String TABLE_SPLIT_PARTITION = "carbon.table.split.partition.enable";
-
-  /**
-   * table split partition default value
-   */
-  public static final String TABLE_SPLIT_PARTITION_DEFAULT_VALUE = "false";
 
   public static final String INVALID_SEGMENT_ID = "-1";
 

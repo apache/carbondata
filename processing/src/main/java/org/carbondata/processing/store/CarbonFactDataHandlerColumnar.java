@@ -86,12 +86,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonFactDataHandlerColumnar.class.getName());
   /**
-   * decimalPointers
-   */
-  private final byte decimalPointers = Byte.parseByte(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS,
-          CarbonCommonConstants.CARBON_DECIMAL_POINTERS_DEFAULT));
-  /**
    * data writer
    */
   private CarbonFactDataWriter dataWriter;
@@ -870,7 +864,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           double minVal = (double) min[count];
           max[count] = (maxVal > value ? max[count] : value);
           min[count] = (minVal < value ? min[count] : value);
-          int num = (value % 1 == 0) ? 0 : decimalPointers;
+          int num = (value % 1 == 0) ? 0 : CarbonCommonConstants.CARBON_DECIMAL_POINTERS_DEFAULT;
           decimal[count] = (decimal[count] > num ? decimal[count] : num);
         } else if (type[count] == CarbonCommonConstants.BIG_INT_MEASURE) {
           long value = (long) row[count];
@@ -878,7 +872,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           long minVal = (long) min[count];
           max[count] = (maxVal > value ? max[count] : value);
           min[count] = (minVal < value ? min[count] : value);
-          int num = (value % 1 == 0) ? 0 : decimalPointers;
+          int num = (value % 1 == 0) ? 0 : CarbonCommonConstants.CARBON_DECIMAL_POINTERS_DEFAULT;
           decimal[count] = (decimal[count] > num ? decimal[count] : num);
         } else if (type[count] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
           byte[] buff = (byte[]) row[count];
