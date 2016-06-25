@@ -98,6 +98,20 @@ public class CarbonTablePath extends Path {
   }
 
   /**
+   * check if it is carbon index file matching extension
+   *
+   * @param fileNameWithPath
+   * @return boolean
+   */
+  public static boolean isCarbonIndexFile(String fileNameWithPath) {
+    int pos = fileNameWithPath.lastIndexOf('.');
+    if (pos != -1) {
+      return fileNameWithPath.substring(pos).startsWith(INDEX_FILE_EXT);
+    }
+    return false;
+  }
+
+  /**
    * gets table path
    */
   public String getPath() {

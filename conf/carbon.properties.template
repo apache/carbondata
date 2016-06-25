@@ -10,13 +10,13 @@ carbon.kettle.home=$<SPARK_HOME>/carbonlib/carbonplugins
 
 #################### Performance Configuration ##################
 ######## DataLoading Configuration ########
-#File read buffer size used during sorting:MIN=:MAX=
+#File read buffer size used during sorting(in MB) :MIN=1:MAX=100
 carbon.sort.file.buffer.size=20
-#Rowset size exchanged between data load graph steps.:MIN=:MAX=
+#Rowset size exchanged between data load graph steps :MIN=500:MAX=1000000
 carbon.graph.rowset.size=100000
-#Number of cores to be used while data loading:MIN=:MAX=
+#Number of cores to be used while data loading
 carbon.number.of.cores.while.loading=6
-#CARBON sort size.:MIN=:MAX=
+#Record count to sort and write to temp intermediate files
 carbon.sort.size=500000
 #Algorithm for hashmap for hashkey calculation
 carbon.enableXXHash=true
@@ -27,43 +27,45 @@ carbon.enableXXHash=true
 #enable prefetch of data during merge sort while reading data from sort temp files in data loading
 #carbon.merge.sort.prefetch=true
 ######## Compaction Configuration ########
-#Number of cores to be used while compacting:MIN=:MAX=
+#Number of cores to be used while compacting
 carbon.number.of.cores.while.compacting=2
-#default minor compaction in MBs
-carbon.minor.compaction.size=256
-#default major compaction in MBs
+#For minor compaction, Number of segments to be merged in stage 1, number of compacted segments to be merged in stage 2.
+carbon.compaction.level.threshold=4,3
+#default size (in MB) for major compaction to be triggered
 carbon.major.compaction.size=1024
 ######## Query Configuration ########
-#Number of cores to be used.:MIN=:MAX=
+#Number of cores to be used while querying
 carbon.number.of.cores=4
-#Carbon Inmemory record size:MIN=:MAX=
-carbon.inmemory.record.size=100000
+#Number of records to be in memory while querying :MIN=100000:MAX=240000
+carbon.inmemory.record.size=120000
 #Improves the performance of filter query
 carbon.enable.quick.filter=false
+##number of core to load the blocks in driver
+#no.of.cores.to.load.blocks.in.driver=10
 
 #################### Extra Configuration ##################
 ##Timestamp format of input data used for timestamp data type.
 #carbon.timestamp.format=yyyy-MM-dd HH:mm:ss
 ######## Dataload Configuration ########
-######File write buffer size used during sorting.
+##File write buffer size used during sorting.
 #carbon.sort.file.write.buffer.size=10485760
+##Locking mechanism for data loading on a table
+#carbon.lock.type=LOCALLOCK
 ##Minimum no of intermediate files after which sort merged to be started.
 #carbon.sort.intermediate.files.limit=20
 ##space reserved in percentage for writing block meta data in carbon data file
 #carbon.block.meta.size.reserved.percentage=10
 ##csv reading buffer size.
 #carbon.csv.read.buffersize.byte=1048576
-##space reserved in percentage for writing block meta data in carbon data file
-#carbon.block.meta.size.reserved.percentage=10
-##High Cardinality value
+##To identify and apply compression for non-high cardinality columns
 #high.cardinality.value=100000
-##CARBON maximum no of threads used for sorting.
-#carbon.max.thread.for.sorting=3
+##maximum no of threads used for reading intermediate files for final merging.
+#carbon.merge.sort.reader.thread=3
 ##Carbon blocklet size. Note: this configuration cannot be change once store is generated
 #carbon.blocklet.size=120000
-##How to times retry to get the lock
+##number of retries to get the metadata lock for loading data to table
 #carbon.load.metadata.lock.retries=3
-##Maximum number of blocklets written in a single file.:Min=1:Max=1000
+##Maximum number of blocklets written in a single file :Min=1:Max=1000
 #carbon.max.file.size=100
 ##Interval between the retries to get the lock
 #carbon.load.metadata.lock.retry.timeout.sec=5
@@ -83,8 +85,6 @@ carbon.enable.quick.filter=false
 #max.query.execution.time=60
 ##Min max is feature added to enhance query performance. To disable this feature, make it false.
 #carbon.enableMinMax=true
-##number of core to load the blocks in driver
-#no.of.cores.to.load.blocks.in.driver=10
 ######## Global Dictionary Configurations ########
 ##To enable/disable identify high cardinality during first data loading
 #high.cardinality.identify.enable=true

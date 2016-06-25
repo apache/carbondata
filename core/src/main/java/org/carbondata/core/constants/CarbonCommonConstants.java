@@ -250,7 +250,7 @@ public final class CarbonCommonConstants {
   /**
    * SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE
    */
-  public static final String SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE = "10";
+  public static final String SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE = "20";
   /**
    * MERGERD_EXTENSION
    */
@@ -349,13 +349,13 @@ public final class CarbonCommonConstants {
    */
   public static final String SORT_TEMP_FILE_EXT = ".sorttemp";
   /**
-   * CARBON_MAX_THREAD_FOR_SORTING
+   * CARBON_MERGE_SORT_READER_THREAD
    */
-  public static final String CARBON_MAX_THREAD_FOR_SORTING = "carbon.max.thread.for.sorting";
+  public static final String CARBON_MERGE_SORT_READER_THREAD = "carbon.merge.sort.reader.thread";
   /**
-   * CARBON_MAX_THREAD_FOR_SORTING
+   * CARBON_MERGE_SORT_READER_THREAD_DEFAULTVALUE
    */
-  public static final String CARBON_MAX_THREAD_FOR_SORTING_DEFAULTVALUE = "2";
+  public static final String CARBON_MERGE_SORT_READER_THREAD_DEFAULTVALUE = "3";
   /**
    * IS_SORT_TEMP_FILE_COMPRESSION_ENABLED
    */
@@ -645,7 +645,7 @@ public final class CarbonCommonConstants {
   /**
    * xxhash algorithm property for hashmap. Default value false
    */
-  public static final String ENABLE_XXHASH_DEFAULT = "false";
+  public static final String ENABLE_XXHASH_DEFAULT = "true";
 
   /**
    * default charset to be used for reading and writing
