@@ -247,12 +247,12 @@ public final class CarbonProperties {
         CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT);
     try {
       int highcardThreshold = Integer.parseInt(highcardThresholdStr);
-      if(highcardThreshold <= CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_MIN){
+      if(highcardThreshold < CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_MIN){
         LOGGER.info("The high cardinality threshold value \"" + highcardThresholdStr
-            + "\" is invalid. Using the default value \""
-            + CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT);
+            + "\" is invalid. Using the min value \""
+            + CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_MIN);
         carbonProperties.setProperty(CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD,
-            CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT);
+            CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_MIN + "");
       }
     } catch (NumberFormatException e) {
       LOGGER.info("The high cardinality threshold value \"" + highcardThresholdStr
