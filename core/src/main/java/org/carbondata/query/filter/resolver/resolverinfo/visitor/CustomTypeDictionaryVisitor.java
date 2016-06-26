@@ -25,6 +25,7 @@ import java.util.List;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.query.expression.ColumnExpression;
@@ -71,7 +72,8 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
         .getDirectDictionaryGenerator(columnExpression.getDimension().getDataType());
     // Reading the dictionary value direct
     for (String filterMember : evaluateResultListFinal) {
-      surrogates.add(directDictionaryGenerator.generateDirectSurrogateKey(filterMember));
+      surrogates.add(directDictionaryGenerator.generateDirectSurrogateKey(filterMember,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
     }
     Collections.sort(surrogates);
     DimColumnFilterInfo columnFilterInfo = null;

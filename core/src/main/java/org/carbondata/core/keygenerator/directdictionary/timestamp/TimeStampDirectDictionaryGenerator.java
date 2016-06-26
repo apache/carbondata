@@ -40,12 +40,6 @@ import static org.carbondata.core.keygenerator.directdictionary.timestamp.TimeSt
 public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGenerator {
 
   /**
-   * Logger instance
-   */
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(TimeStampDirectDictionaryGenerator.class.getName());
-
-  /**
    * The value of 1 unit of the SECOND, MINUTE, HOUR, or DAY in millis.
    */
   public static final long granularityFactor;
@@ -55,6 +49,11 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
    * customized the start of position. for example "January 1, 2000"
    */
   public static final long cutOffTimeStamp;
+  /**
+   * Logger instance
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(TimeStampDirectDictionaryGenerator.class.getName());
 
   /**
    * initialization block for granularityFactor and cutOffTimeStamp
@@ -119,6 +118,27 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
       return 1;
     }
+    return getDirectSurrogateForMember(memberStr, timeParser);
+  }
+
+  /**
+   * The method take member String as input and converts
+   * and returns the dictionary key
+   *
+   * @param memberStr date format string
+   * @return dictionary value
+   */
+  public int generateDirectSurrogateKey(String memberStr, String format) {
+    SimpleDateFormat timeParser = new SimpleDateFormat(format);
+    timeParser.setLenient(false);
+    if (null == memberStr || memberStr.trim().isEmpty() || memberStr
+        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+      return 1;
+    }
+    return getDirectSurrogateForMember(memberStr, timeParser);
+  }
+
+  private int getDirectSurrogateForMember(String memberStr, SimpleDateFormat timeParser) {
     Date dateToStr = null;
     try {
       dateToStr = timeParser.parse(memberStr);
