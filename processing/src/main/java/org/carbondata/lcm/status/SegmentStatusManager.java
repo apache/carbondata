@@ -19,7 +19,6 @@
 package org.carbondata.lcm.status;
 
 import java.io.*;
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -221,23 +220,9 @@ public class SegmentStatusManager {
    * @return -1 if first arg is less than second arg, 1 if first arg is greater than second arg,
    * 0 otherwise
    */
-  private Integer compareDateStrings(String loadValue, String userValue) {
-    SimpleDateFormat sdf = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
-    SimpleDateFormat defaultSdf =
-        new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-    try {
-      Date loadDate = sdf.parse(loadValue);
-      Date userDate = defaultSdf.parse(userValue);
-      if (loadDate.before(userDate)) {
-        return -1;
-      } else if (loadDate.after(userDate)) {
-        return 1;
-      }
-      return 0;
+  private Integer compareDateValues(Long loadValue, Long userValue) {
 
-    } catch (ParseException pe) {
-      return null;
-    }
+    return loadValue.compareTo(userValue);
   }
 
   /**
@@ -296,7 +281,8 @@ public class SegmentStatusManager {
    * @param tableFolderPath
    * @return
    */
-  public List<String> updateDeletionStatus(String loadDate, String tableFolderPath) {
+  public List<String> updateDeletionStatus(String loadDate, String tableFolderPath,
+      Long loadStartTime) {
     ICarbonLock carbonLock =
         CarbonLockFactory.getCarbonLockObj(tableFolderPath, LockUsage.METADATA_LOCK);
     List<String> invalidLoadTimestamps = new ArrayList<String>(0);
@@ -320,7 +306,7 @@ public class SegmentStatusManager {
         listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath);
         if (listOfLoadFolderDetailsArray != null && listOfLoadFolderDetailsArray.length != 0) {
           updateDeletionStatus(loadDate, listOfLoadFolderDetailsArray,
-              invalidLoadTimestamps);
+              invalidLoadTimestamps, loadStartTime);
           if (!invalidLoadTimestamps.isEmpty()) {
             LOG.warn("Load doesnt exist or it is already deleted , LoadTimestamps-"
                 + invalidLoadTimestamps);
@@ -438,14 +424,15 @@ public class SegmentStatusManager {
    * @return invalidLoadTimestamps
    */
   public void updateDeletionStatus(String loadDate,
-      LoadMetadataDetails[] listOfLoadFolderDetailsArray, List<String> invalidLoadTimestamps) {
+      LoadMetadataDetails[] listOfLoadFolderDetailsArray, List<String> invalidLoadTimestamps,
+      Long loadStartTime) {
     // For each load timestamp loop through data and if the
     // required load timestamp is found then mark
     // the metadata as deleted.
     boolean loadFound = false;
-    String loadStartTime = "Load Start Time: ";
+    String loadStartTimeString = "Load Start Time: ";
     for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
-      Integer result = compareDateStrings(loadMetadata.getLoadStartTime(), loadDate);
+      Integer result = compareDateValues(loadMetadata.getLoadStartTimeAsLong(), loadStartTime);
       if (null == result) {
         invalidLoadTimestamps.add(loadDate);
       } else if (result < 0) {
@@ -454,7 +441,7 @@ public class SegmentStatusManager {
           loadMetadata.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
           loadMetadata.setModificationOrdeletionTimesStamp(readCurrentTime());
           LOG.info("Info: " +
-              loadStartTime + loadMetadata.getLoadStartTime() +
+              loadStartTimeString + loadMetadata.getLoadStartTime() +
               " Marked for Delete");
         } else {
           // it is already deleted . can not delete it again.

@@ -20,7 +20,7 @@ package org.apache.spark.sql.execution.command
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util
-import java.util.UUID
+import java.util.{Date, UUID}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -29,7 +29,10 @@ import scala.util.Random
 
 import org.apache.spark.SparkEnv
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
+import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Cast, Literal}
+import org.apache.spark.sql.catalyst.util.DateTimeUtils
+import org.apache.spark.sql.catalyst.util.DateTimeUtils.SQLTimestamp
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.types.TimestampType
@@ -1376,6 +1379,12 @@ private[sql] case class DeleteLoadsByLoadDate(
       sys.error(s"Table $schemaName.$tableName does not exist")
     }
 
+    val timeObj = Cast(Literal(loadDate), TimestampType).eval()
+    if(null == timeObj) {
+      val errorMessage = "Error: Invalid load start time format " + loadDate
+      throw new MalformedCarbonCommandException(errorMessage)
+    }
+
     var carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
       .getCarbonTable(schemaName + '_' + tableName)
     var segmentStatusManager = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
@@ -1389,8 +1398,8 @@ private[sql] case class DeleteLoadsByLoadDate(
     }
     var path = carbonTable.getMetaDataFilepath()
 
-
-    var invalidLoadTimestamps = segmentStatusManager.updateDeletionStatus(loadDate, path).asScala
+    var invalidLoadTimestamps = segmentStatusManager
+      .updateDeletionStatus(loadDate, path, timeObj.asInstanceOf[java.lang.Long]).asScala
     LOGGER.audit("Delete load by load date is successfull.")
     Seq.empty
 
