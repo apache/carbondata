@@ -257,14 +257,14 @@ public class QueryUtil {
    * Below method will be used to get the dictionary mapping for all the
    * dictionary encoded dimension present in the query
    *
-   * @param queryDimensions            query dimension present in the query this will be used to
-   *                                   convert the result from surrogate key to actual data
-   * @param dimAggInfo                 dimension present in the dimension aggregation
-   *                                   dictionary will be used to convert to actual data
-   *                                   for aggregation
-   * @param customAggExpression        dimension which is present in the expression for aggregation
-   *                                   we need dictionary data
-   * @param absoluteTableIdentifier    absolute table identifier
+   * @param queryDimensions         query dimension present in the query this will be used to
+   *                                convert the result from surrogate key to actual data
+   * @param dimAggInfo              dimension present in the dimension aggregation
+   *                                dictionary will be used to convert to actual data
+   *                                for aggregation
+   * @param customAggExpression     dimension which is present in the expression for aggregation
+   *                                we need dictionary data
+   * @param absoluteTableIdentifier absolute table identifier
    * @return dimension unique id to its dictionary map
    * @throws QueryExecutionException
    */
@@ -715,28 +715,24 @@ public class QueryUtil {
         aggregatorStartIndex += numberOfAggregatorForColumnGroup;
         continue;
       } else {
-        if(CarbonUtil.hasEncoding(dim.getEncoder(), Encoding.DIRECT_DICTIONARY)){
+        if (CarbonUtil.hasEncoding(dim.getEncoder(), Encoding.DIRECT_DICTIONARY)) {
           dimensionDataAggregators.add(
-              new DirectDictionaryDimensionAggregator(entry.getValue().get(0),
-                  aggregatorStartIndex,
+              new DirectDictionaryDimensionAggregator(entry.getValue().get(0), aggregatorStartIndex,
                   dimensionToBlockIndexMapping.get(dim.getOrdinal())));
         }
         // if it is a dictionary column than create a fixed length
         // aggeragtor
-        else if (CarbonUtil
-            .hasEncoding(dim.getEncoder(), Encoding.DICTIONARY)) {
+        else if (CarbonUtil.hasEncoding(dim.getEncoder(), Encoding.DICTIONARY)) {
           dimensionDataAggregators.add(
               new FixedLengthDimensionAggregator(entry.getValue().get(0), null,
-                  columnUniqueIdToDictionaryMap.get(dim.getColumnId()),
-                  aggregatorStartIndex,
+                  columnUniqueIdToDictionaryMap.get(dim.getColumnId()), aggregatorStartIndex,
                   dimensionToBlockIndexMapping.get(dim.getOrdinal())));
         } else {
           // else for not dictionary column create a
           // variable length aggregator
           dimensionDataAggregators.add(
               new VariableLengthDimensionAggregator(entry.getValue().get(0), null,
-                  aggregatorStartIndex,
-                  dimensionToBlockIndexMapping.get(dim.getOrdinal())));
+                  aggregatorStartIndex, dimensionToBlockIndexMapping.get(dim.getOrdinal())));
         }
         aggregatorStartIndex += entry.getValue().get(0).getAggList().size();
       }
@@ -835,10 +831,17 @@ public class QueryUtil {
     // resolve query measure
     for (QueryMeasure queryMeasure : queryModel.getQueryMeasures()) {
       // in case of count start column name will  be count * so
-      // for count start add first measure if measure is not present
+      // first need to check any measure is present or not and as if measure
+      // if measure is present and if first measure is not a default
+      // measure than add measure otherwise
       // than add first dimension as a measure
+      //as currently if measure is not present then
+      //we are adding default measure so first condition will
+      //never come false but if in future we can remove so not removing first if check
       if (queryMeasure.getColumnName().equals("count(*)")) {
-        if (carbonTable.getMeasureByTableName(tableName).size() > 0) {
+        if (carbonTable.getMeasureByTableName(tableName).size() > 0 && !carbonTable
+            .getMeasureByTableName(tableName).get(0).getColName()
+            .equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)) {
           queryMeasure.setMeasure(carbonTable.getMeasureByTableName(tableName).get(0));
         } else {
           CarbonMeasure dummyMeasure = new CarbonMeasure(
@@ -854,7 +857,6 @@ public class QueryUtil {
     for (DimensionAggregatorInfo dimAggInfo : queryModel.getDimAggregationInfo()) {
       dimAggInfo.setDim(carbonTable.getDimensionByName(tableName, dimAggInfo.getColumnName()));
     }
-    //TODO need to handle expression
   }
 
   /**

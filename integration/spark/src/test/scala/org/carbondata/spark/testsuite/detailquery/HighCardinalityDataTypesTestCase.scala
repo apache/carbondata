@@ -85,6 +85,13 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
+  test("Count (*) with filter") {
+    checkAnswer(
+      sql("select count(*) from NO_DICTIONARY_CARBON_6 where empno=11"),
+      Seq(Row(1))
+    )
+  }
+
   test("Detail Query with NO_DICTIONARY_COLUMN Compare With HIVE RESULT") {
 
 
