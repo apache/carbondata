@@ -367,6 +367,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           columnsInfo.setComplexTypesMap(meta.getComplexTypes());
           columnsInfo.setDimensionColumnIds(meta.getDimensionColumnIds());
           columnsInfo.setColumnSchemaDetailsWrapper(meta.getColumnSchemaDetailsWrapper());
+          columnsInfo.setColumnProperties(meta.getColumnPropertiesMap());
           updateBagLogFileName();
           String key = meta.getSchemaName() + '/' + meta.getCubeName() + '_' + meta.getTableName();
           badRecordslogger = new BadRecordslogger(key, csvFilepath, getBadLogStoreLocation(

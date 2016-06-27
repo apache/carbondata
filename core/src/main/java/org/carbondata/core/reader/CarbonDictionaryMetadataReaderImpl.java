@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.ColumnIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -47,9 +48,9 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
   private String hdfsStorePath;
 
   /**
-   * column name
+   * column identifier
    */
-  private String columnIdentifier;
+  protected ColumnIdentifier columnIdentifier;
 
   /**
    * dictionary metadata file path
@@ -69,7 +70,7 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
    * @param columnIdentifier      column unique identifier
    */
   public CarbonDictionaryMetadataReaderImpl(String hdfsStorePath,
-      CarbonTableIdentifier carbonTableIdentifier, String columnIdentifier) {
+      CarbonTableIdentifier carbonTableIdentifier, ColumnIdentifier columnIdentifier) {
     this.hdfsStorePath = hdfsStorePath;
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.columnIdentifier = columnIdentifier;
@@ -155,7 +156,7 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(this.hdfsStorePath, carbonTableIdentifier);
     this.columnDictionaryMetadataFilePath =
-        carbonTablePath.getDictionaryMetaFilePath(columnIdentifier);
+        carbonTablePath.getDictionaryMetaFilePath(columnIdentifier.getColumnId());
   }
 
   /**

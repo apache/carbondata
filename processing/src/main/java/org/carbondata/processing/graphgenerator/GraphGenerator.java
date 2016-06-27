@@ -538,6 +538,7 @@ public class GraphGenerator {
     seqMeta.setTaskNo(taskNo);
     seqMeta.setCarbondim(graphConfiguration.getDimensionString());
     seqMeta.setComplexTypeString(graphConfiguration.getComplexTypeString());
+    seqMeta.setColumnPropertiesString(graphConfiguration.getColumnPropertiesString());
     seqMeta.setBatchSize(Integer.parseInt(graphConfiguration.getBatchSize()));
     seqMeta.setNoDictionaryDims(graphConfiguration.getNoDictionaryDims());
     seqMeta.setDimensionColumnsDataType(graphConfiguration.getDimensionColumnsDataType());
@@ -787,6 +788,8 @@ public class GraphGenerator {
         .setDimensions(CarbonSchemaParser.getCubeDimensions(dimensions, carbonDataLoadSchema));
     graphConfiguration
         .setActualDims(CarbonSchemaParser.getCubeDimensions(dimensions, carbonDataLoadSchema));
+    graphConfiguration
+        .setColumnPropertiesString(CarbonSchemaParser.getColumnPropertiesString(dimensions));
     graphConfiguration.setComplexTypeString(CarbonSchemaParser.getComplexTypeString(dimensions));
     prepareNoDictionaryMapping(dimensions, graphConfiguration);
     graphConfiguration

@@ -32,6 +32,7 @@ import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.ColumnIdentifier;
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
@@ -979,7 +980,7 @@ public final class CarbonLoaderUtil {
   }
 
   public static Dictionary getDictionary(CarbonTableIdentifier tableIdentifier,
-      String columnIdentifier, String carbonStorePath, DataType dataType)
+      ColumnIdentifier columnIdentifier, String carbonStorePath, DataType dataType)
       throws CarbonUtilException {
     return getDictionary(
         new DictionaryColumnUniqueIdentifier(tableIdentifier, columnIdentifier, dataType),

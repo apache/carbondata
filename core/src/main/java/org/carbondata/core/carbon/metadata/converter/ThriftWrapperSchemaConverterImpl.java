@@ -159,7 +159,9 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     thriftColumnSchema.setPrecision(wrapperColumnSchema.getPrecision());
     thriftColumnSchema.setNum_child(wrapperColumnSchema.getNumberOfChild());
     thriftColumnSchema.setDefault_value(wrapperColumnSchema.getDefaultValue());
+    thriftColumnSchema.setColumnProperties(wrapperColumnSchema.getColumnProperties());
     thriftColumnSchema.setInvisible(wrapperColumnSchema.isInvisible());
+    thriftColumnSchema.setColumnReferenceId(wrapperColumnSchema.getColumnReferenceId());
     return thriftColumnSchema;
   }
 
@@ -324,7 +326,9 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperColumnSchema.setScale(externalColumnSchema.getScale());
     wrapperColumnSchema.setDefaultValue(externalColumnSchema.getDefault_value());
     wrapperColumnSchema.setAggregateFunction(externalColumnSchema.getAggregate_function());
+    wrapperColumnSchema.setColumnProperties(externalColumnSchema.getColumnProperties());
     wrapperColumnSchema.setInvisible(externalColumnSchema.isInvisible());
+    wrapperColumnSchema.setColumnReferenceId(externalColumnSchema.getColumnReferenceId());
     return wrapperColumnSchema;
   }
 

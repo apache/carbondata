@@ -41,6 +41,7 @@ import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.ColumnIdentifier;
 import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.converter.SchemaConverter;
 import org.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl;
@@ -289,9 +290,10 @@ public class StoreCreator {
     Cache dictCache = CacheProvider.getInstance()
         .createCache(CacheType.REVERSE_DICTIONARY, absoluteTableIdentifier.getStorePath());
     for (int i = 0; i < set.length; i++) {
+      ColumnIdentifier columnIdentifier = new ColumnIdentifier(dims.get(i).getColumnId(), null, null);
       CarbonDictionaryWriter writer =
           new CarbonDictionaryWriterImpl(absoluteTableIdentifier.getStorePath(),
-              absoluteTableIdentifier.getCarbonTableIdentifier(), dims.get(i).getColumnId());
+              absoluteTableIdentifier.getCarbonTableIdentifier(), columnIdentifier);
       for (String value : set[i]) {
         writer.write(value);
       }
@@ -299,14 +301,14 @@ public class StoreCreator {
 
       Dictionary dict = (Dictionary) dictCache.get(
           new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier.getCarbonTableIdentifier(),
-              dims.get(i).getColumnId(), dims.get(i).getDataType()));
+        		  columnIdentifier, dims.get(i).getDataType()));
       CarbonDictionarySortInfoPreparator preparator =
           new CarbonDictionarySortInfoPreparator();
       CarbonDictionarySortInfo dictionarySortInfo =
           preparator.getDictionarySortInfo(dict, dims.get(i).getDataType());
       CarbonDictionarySortIndexWriter carbonDictionaryWriter =
           new CarbonDictionarySortIndexWriterImpl(
-              absoluteTableIdentifier.getCarbonTableIdentifier(), dims.get(i).getColumnId(),
+              absoluteTableIdentifier.getCarbonTableIdentifier(), columnIdentifier,
               absoluteTableIdentifier.getStorePath());
       try {
         carbonDictionaryWriter.writeSortIndex(dictionarySortInfo.getSortIndex());

@@ -20,6 +20,7 @@
 package org.carbondata.processing.util;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.carbondata.core.carbon.CarbonDataLoadSchema.DimensionRelation;
@@ -1228,5 +1229,48 @@ public final class CarbonSchemaParser {
       counter++;
     }
     return counter;
+  }
+
+  public static String getColumnPropertiesString(List<CarbonDimension> dimensions) {
+    StringBuilder colPropertiesString = new StringBuilder();
+    for (int dim = 0; dim < dimensions.size(); dim++) {
+      CarbonDimension dimension = dimensions.get(dim);
+      if (dimension.isComplex()) {
+        List<CarbonDimension> childs = dimension.getListOfChildDimensions();
+        for (CarbonDimension child : childs) {
+          buildDimensionColumnPropertyString(child, colPropertiesString, dim);
+        }
+      } else {
+        buildDimensionColumnPropertyString(dimension, colPropertiesString, dim);
+      }
+
+    }
+
+    return colPropertiesString.toString();
+  }
+
+  protected static void buildDimensionColumnPropertyString(CarbonDimension dimension,
+      StringBuilder colPropertiesString, int dim) {
+    Map<String, String> columnProperties = dimension.getColumnProperties();
+    if (null != columnProperties && columnProperties.size() > 0) {
+      if (colPropertiesString.length() > 0) {
+        colPropertiesString.append(CarbonCommonConstants.HASH_SPC_CHARACTER);
+      }
+      colPropertiesString.append(dimension.getColName())
+          .append(CarbonCommonConstants.COLON_SPC_CHARACTER);
+      int size = columnProperties.entrySet().size();
+      int index = 0;
+      Iterator<Entry<String, String>> itr = columnProperties.entrySet().iterator();
+      while (itr.hasNext()) {
+        Entry<String, String> entry = itr.next();
+        colPropertiesString.append(entry.getKey())
+            .append(CarbonCommonConstants.HYPHEN_SPC_CHARACTER);
+        colPropertiesString.append(entry.getValue());
+        index++;
+        if (index < size) {
+          colPropertiesString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
+        }
+      }
+    }
   }
 }
