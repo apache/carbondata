@@ -522,7 +522,8 @@ public class CsvInput extends BaseStep implements StepInterface {
       try {
         data.delimiter = data.encodingType
             .getBytes(environmentSubstitute(meta.getDelimiter()), meta.getEncoding());
-
+        data.escapeCharacter = data.encodingType
+          .getBytes(environmentSubstitute(meta.getEscapeCharacter()), meta.getEncoding());
         if (Const.isEmpty(meta.getEnclosure())) {
           data.enclosure = null;
         } else {

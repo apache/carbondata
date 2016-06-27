@@ -1496,7 +1496,7 @@ private[sql] case class LoadCube(
       val delimiter = partionValues.getOrElse("delimiter", ",")
       val quoteChar = partionValues.getOrElse("quotechar", "\"")
       val fileHeader = partionValues.getOrElse("fileheader", "")
-      val escapeChar = partionValues.getOrElse("escapechar", "")
+      val escapeChar = partionValues.getOrElse("escapechar", "\\")
       val complex_delimiter_level_1 = partionValues.getOrElse("complex_delimiter_level_1", "\\$")
       val complex_delimiter_level_2 = partionValues.getOrElse("complex_delimiter_level_2", "\\:")
       val multiLine = partionValues.getOrElse("multiline", "false").trim.toLowerCase match {

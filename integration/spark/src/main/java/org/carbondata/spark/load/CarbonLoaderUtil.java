@@ -104,6 +104,7 @@ public final class CarbonLoaderUtil {
           .getModificationOrDeletionTimesFromLoadMetadataDetails(loadMetadataDetails));
     }
     model.setBlocksID(schmaModel.getBlocksID());
+    model.setEscapeCharacter(schmaModel.getEscapeCharacter());
     model.setTaskNo(loadModel.getTaskNo());
     model.setFactTimeStamp(loadModel.getFactTimeStamp());
     boolean hdfsReadMode =
@@ -159,6 +160,7 @@ public final class CarbonLoaderUtil {
     }
 
     schmaModel.setBlocksID(loadModel.getBlocksID());
+    schmaModel.setEscapeCharacter(loadModel.getEscapeChar());
     SchemaInfo info = new SchemaInfo();
 
     info.setSchemaName(databaseName);

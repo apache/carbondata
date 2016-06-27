@@ -264,6 +264,7 @@ public class CarbonLoadModel implements Serializable {
     copy.taskNo = taskNo;
     copy.factTimeStamp = factTimeStamp;
     copy.segmentId = segmentId;
+    copy.escapeChar = escapeChar;
     return copy;
   }
 
@@ -300,6 +301,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.taskNo = taskNo;
     copyObj.factTimeStamp = factTimeStamp;
     copyObj.segmentId = segmentId;
+    copyObj.escapeChar = escapeChar;
     return copyObj;
   }
 

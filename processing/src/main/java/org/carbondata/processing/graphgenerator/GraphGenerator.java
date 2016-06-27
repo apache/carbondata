@@ -178,6 +178,7 @@ public class GraphGenerator {
   private String factStoreLocation;
   private int currentRestructNumber;
   private String blocksID;
+  private String escapeCharacter;
   /**
    * task id, each spark task has a unique id
    */
@@ -211,6 +212,7 @@ public class GraphGenerator {
     this.taskNo = dataLoadModel.getTaskNo();
     this.factTimeStamp = dataLoadModel.getFactTimeStamp();
     this.segmentId = segmentId;
+    this.escapeCharacter = dataLoadModel.getEscapeCharacter();
     initialise();
     LOGGER.info("************* Is Columnar Storage" + isColumnar);
   }
@@ -438,6 +440,7 @@ public class GraphGenerator {
         CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT));
     //set blocks info id
     csvInputMeta.setBlocksID(this.blocksID);
+    csvInputMeta.setEscapeCharacter(this.escapeCharacter);
     csvDataStep.setDraw(true);
     csvDataStep.setDescription("Read raw data from " + GraphGeneratorConstants.CSV_INPUT);
 

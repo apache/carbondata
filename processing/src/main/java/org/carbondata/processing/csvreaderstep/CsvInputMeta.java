@@ -97,6 +97,8 @@ public class CsvInputMeta extends BaseStepMeta
 
   private String blocksID;
 
+  private String escapeCharacter;
+
   public CsvInputMeta() {
     super(); // allocate BaseStepMeta
     allocate(0);
@@ -116,6 +118,7 @@ public class CsvInputMeta extends BaseStepMeta
     bufferSize = "50000";
     currentRestructNumber = -1;
     blocksID = "";
+    escapeCharacter ="\\";
   }
 
   private void readData(Node stepnode) throws KettleXMLException {
@@ -152,7 +155,7 @@ public class CsvInputMeta extends BaseStepMeta
       currentRestructNumber =
           Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
       blocksID = XMLHandler.getTagValue(stepnode, "blocksID");
-
+      escapeCharacter = XMLHandler.getTagValue(stepnode, "escapeCharacter");
       Node fields = XMLHandler.getSubNode(stepnode, getXmlCode("FIELDS"));
       int nrfields = XMLHandler.countNodes(fields, getXmlCode("FIELD"));
 
@@ -169,7 +172,8 @@ public class CsvInputMeta extends BaseStepMeta
         inputFields[i].setFormat(XMLHandler.getTagValue(fnode, getXmlCode("FIELD_FORMAT")));
         inputFields[i]
             .setCurrencySymbol(XMLHandler.getTagValue(fnode, getXmlCode("FIELD_CURRENCY")));
-        inputFields[i].setDecimalSymbol(XMLHandler.getTagValue(fnode, getXmlCode("FIELD_DECIMAL")));
+        inputFields[i].setDecimalSymbol(XMLHandler.getTagValue(fnode,
+            getXmlCode("FIELD_DECIMAL")));
         inputFields[i].setGroupSymbol(XMLHandler.getTagValue(fnode, getXmlCode("FIELD_GROUP")));
         inputFields[i]
             .setLength(Const.toInt(XMLHandler.getTagValue(fnode, getXmlCode("FIELD_LENGTH")), -1));
@@ -214,7 +218,7 @@ public class CsvInputMeta extends BaseStepMeta
     retval.append("    ")
         .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
     retval.append("    ").append(XMLHandler.addTagValue("blocksID", blocksID));
-
+    retval.append("    ").append(XMLHandler.addTagValue("escapeCharacter", escapeCharacter));
     retval.append("    ").append(XMLHandler.openTag(getXmlCode("FIELDS"))).append(Const.CR);
     for (int i = 0; i < inputFields.length; i++) {
       TextFileInputField field = inputFields[i];
@@ -266,6 +270,7 @@ public class CsvInputMeta extends BaseStepMeta
       encoding = rep.getStepAttributeString(idStep, getRepCode("ENCODING"));
       currentRestructNumber = (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
       blocksID = rep.getStepAttributeString(idStep, getRepCode("blocksID"));
+      escapeCharacter = rep.getStepAttributeString(idStep, getRepCode("escapeCharacter"));
       int nrfields = rep.countNrStepAttributes(idStep, getRepCode("FIELD_NAME"));
 
       allocate(nrfields);
@@ -320,6 +325,8 @@ public class CsvInputMeta extends BaseStepMeta
       rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
           currentRestructNumber);
       rep.saveStepAttribute(idTransformation, idStep, getRepCode("blocksID"), blocksID);
+      rep.saveStepAttribute(idTransformation, idStep, getRepCode("escapeCharacter"),
+          escapeCharacter);
       for (int i = 0; i < inputFields.length; i++) {
         TextFileInputField field = inputFields[i];
 
@@ -605,7 +612,11 @@ public class CsvInputMeta extends BaseStepMeta
   }
 
   public String getEscapeCharacter() {
-    return null;
+    return escapeCharacter;
+  }
+
+  public void setEscapeCharacter(String escapeCharacter){
+    this.escapeCharacter = escapeCharacter;
   }
 
   public String getFileType() {
@@ -811,6 +822,8 @@ public class CsvInputMeta extends BaseStepMeta
           currentRestructNumber = (Integer) entry.getValue();
         } else if ("blocksID".equals(attributeKey)) {
           blocksID = (String) entry.getValue();
+        } else if ("escapeCharacter".equals(attributeKey)) {
+          escapeCharacter = (String) entry.getValue();
         } else {
           throw new RuntimeException(
               "Unhandled metadata injection of attribute: " + attr.toString() + " - " + attr

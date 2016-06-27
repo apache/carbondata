@@ -1,0 +1,22 @@
+imei,specialchar
+1AA1,hash#124
+1AA2,space 125
+1AA3,ampersand&&hi
+1AA4,escape\\esc
+1AA44,"escape\esc"
+1AA5,not!hi
+1AA6,braces(hi)
+1AA7,percentage%hi
+1AA8,Tilde~~
+1AA9,dollar$hi
+1AA10,star***hi
+1AA11,colon:hi
+1AA12,semi;colon
+1AA13,quote'1'22
+1AA14,underscore_hi
+1AA15,equals=hi
+1AA16,plus+hi
+1232,"ayush@b.com"
+12323,"ayush@@b.com"
+12345,"西安\咸阳"
+12346,"西安\\咸阳"

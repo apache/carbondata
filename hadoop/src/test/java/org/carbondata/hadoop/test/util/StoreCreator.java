@@ -365,7 +365,7 @@ public class StoreCreator {
         0, new File(loadModel.getFactFilePath()).length());
     GraphGenerator.blockInfo.put("qwqwq", new BlockDetails[] { blockDetails });
     schmaModel.setBlocksID("qwqwq");
-
+    schmaModel.setEscapeCharacter("\\");
     info.setSchemaName(schemaName);
     info.setCubeName(cubeName);
 
@@ -473,6 +473,7 @@ public class StoreCreator {
     model.setTaskNo("1");
     model.setBlocksID(schmaModel.getBlocksID());
     model.setFactTimeStamp(readCurrentTime());
+    model.setEscapeCharacter(schmaModel.getEscapeCharacter());
     if (null != loadMetadataDetails && !loadMetadataDetails.isEmpty()) {
       model.setLoadNames(
           CarbonDataProcessorUtil.getLoadNameFromLoadMetaDataDetails(loadMetadataDetails));
