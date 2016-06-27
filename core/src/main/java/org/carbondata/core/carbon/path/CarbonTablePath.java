@@ -47,7 +47,7 @@ public class CarbonTablePath extends Path {
   protected static final String PARTITION_PREFIX = "Part";
   protected static final String CARBON_DATA_EXT = ".carbondata";
   protected static final String DATA_PART_PREFIX = "part";
-  private static final String INDEX_FILE_EXT = ".carbonindex";
+  protected static final String INDEX_FILE_EXT = ".carbonindex";
 
   protected String tablePath;
 

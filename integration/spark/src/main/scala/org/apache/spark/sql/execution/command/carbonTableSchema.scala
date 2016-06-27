@@ -1260,11 +1260,12 @@ private[sql] case class CreateCube(cm: tableModel) extends RunnableCommand {
       // Add Database to catalog and persist
       val catalog = CarbonEnv.getInstance(sqlContext).carbonCatalog
       // Need to fill partitioner class when we support partition
-      val cubePath = catalog.createCubeFromThrift(tableInfo, dbName, tbName, null)(sqlContext)
+      val tablePath = catalog.createCubeFromThrift(tableInfo, dbName, tbName, null)(sqlContext)
       try {
         sqlContext.sql(
           s"""CREATE TABLE $dbName.$tbName USING org.apache.spark.sql.CarbonSource""" +
-          s""" OPTIONS (cubename "$dbName.$tbName", tablePath "$cubePath") """).collect
+          s""" OPTIONS (cubename "$dbName.$tbName", tablePath "$tablePath", path "$tablePath") """)
+              .collect
       } catch {
         case e: Exception =>
 

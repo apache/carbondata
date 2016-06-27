@@ -355,7 +355,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     logInfo(s"Table $tableName for Database $dbName created successfully.")
     LOGGER.info("Table " + tableName + " for Database " + dbName + " created successfully.")
     updateSchemasUpdatedTime(dbName, tableName)
-    schemaMetadataPath
+    carbonTablePath.getPath
   }
 
   private def updateMetadataByWrapperTable(
