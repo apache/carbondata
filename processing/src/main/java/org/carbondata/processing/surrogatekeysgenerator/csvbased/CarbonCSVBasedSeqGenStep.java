@@ -457,15 +457,15 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       }
 
       startReadingProcess(numberOfNodes);
-      CarbonUtil.writeLevelCardinalityFile(loadFolderLoc, meta.getTableName(),
-          getUpdatedCardinality());
       badRecordslogger.closeStreams();
       if (!meta.isAggregate()) {
         closeNormalizedHierFiles();
       }
       if (writeCounter == 0) {
-        putRow(data.getOutputRowMeta(), new Object[outSize]);
+        return processWhenRowIsNull();
       }
+      CarbonUtil.writeLevelCardinalityFile(loadFolderLoc, meta.getTableName(),
+          getUpdatedCardinality());
       LOGGER.info("Record Procerssed For table: " + meta.getTableName());
       String logMessage =
           "Summary: Carbon CSV Based Seq Gen Step : " + readCounter + ": Write: " + writeCounter;
