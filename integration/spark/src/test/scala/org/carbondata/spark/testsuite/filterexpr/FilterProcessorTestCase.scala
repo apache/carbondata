@@ -40,38 +40,31 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists filtertestTables")
     sql("drop table if exists filtertestTablesWithDecimal")
     sql("drop table if exists filtertestTablesWithNull")
-    sql("drop table if exists filterWithTimeStamp")
+    sql("drop table if exists filterTimestampDataType")
     sql("drop table if exists noloadtable")
     sql("CREATE TABLE filtertestTables (ID int, date Timestamp, country String, " +
       "name String, phonetype String, serialname String, salary int) " +
-      "STORED BY 'org.apache.carbondata.format'"
+        "STORED BY 'org.apache.carbondata.format'"
     )
     sql("CREATE TABLE noloadtable (ID int, date Timestamp, country String, " +
       "name String, phonetype String, serialname String, salary int) " +
       "STORED BY 'org.apache.carbondata.format'"
     )
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "MM-dd-yyyy HH:mm:ss")
-
-    sql("CREATE TABLE filterWithTimeStamp (ID int, date Timestamp, country String, " +
+     CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "MM-dd-yyyy HH:mm:ss")
+        
+     sql("CREATE TABLE filterTimestampDataType (ID int, date Timestamp, country String, " +
       "name String, phonetype String, serialname String, salary int) " +
-      "STORED BY 'org.apache.carbondata.format'"
+        "STORED BY 'org.apache.carbondata.format'"
     )
+       CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "MM-dd-yyyy HH:mm:ss")
     sql(
       s"LOAD DATA LOCAL INPATH './src/test/resources/data2_DiffTimeFormat.csv' INTO TABLE " +
-        s"filterWithTimeStamp " +
+        s"filterTimestampDataType " +
         s"OPTIONS('DELIMITER'= ',', " +
         s"'FILEHEADER'= '')"
     )
-
-    test("Time stamp filter with diff time format for load ") {
-      checkAnswer(
-        sql("select date  from filterWithTimeStamp where date > '2014-07-10 00:00:00'"),
-        Seq(Row(Timestamp.valueOf("2014-07-20 00:00:00.0")),
-          Row(Timestamp.valueOf("2014-07-25 00:00:00.0"))
-        )
-      )
-    }
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(
@@ -83,7 +76,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
       "CREATE TABLE filtertestTablesWithDecimal (ID decimal, date Timestamp, country " +
         "String, " +
         "name String, phonetype String, serialname String, salary int) " +
-        "STORED BY 'org.apache.carbondata.format'"
+      "STORED BY 'org.apache.carbondata.format'"
     )
     sql(
       s"LOAD DATA LOCAL INPATH './src/test/resources/dataDiff.csv' INTO TABLE " +
@@ -95,10 +88,10 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
       "CREATE TABLE filtertestTablesWithNull (ID int, date Timestamp, country " +
         "String, " +
         "name String, phonetype String, serialname String,salary int) " +
-        "STORED BY 'org.apache.carbondata.format'"
+      "STORED BY 'org.apache.carbondata.format'"
     )
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
     sql(
       s"LOAD DATA LOCAL INPATH './src/test/resources/data2.csv' INTO TABLE " +
         s"filtertestTablesWithNull " +
@@ -107,14 +100,21 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-
+    
   test("Is not null filter") {
     checkAnswer(
       sql("select id from filtertestTablesWithNull " + "where id is not null"),
       Seq(Row(4), Row(6))
     )
   }
-  test("Multi column with invalid member filter") {
+  
+    test("Between  filter") {
+    checkAnswer(
+      sql("select date from filtertestTablesWithNull " + " where date between '2014-01-20 00:00:00' and '2014-01-28 00:00:00'"),
+      Seq(Row(Timestamp.valueOf("2014-01-21 00:00:00")), Row(Timestamp.valueOf("2014-01-22 00:00:00")))
+    )
+  }
+    test("Multi column with invalid member filter") {
     checkAnswer(
       sql("select id from filtertestTablesWithNull " + "where id = salary"),
       Seq()
@@ -168,11 +168,43 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row(1, "china"))
     )
   }
-
+  
   test("filter query over table having no data") {
     checkAnswer(
       sql("select * from noloadtable " + "where country='china' and name='aaa1'"),
       Seq()
+    )
+  }
+
+
+    
+     test("Time stamp filter with diff time format for load greater") {
+    checkAnswer(
+      sql("select date  from filterTimestampDataType where date > '2014-07-10 00:00:00'"),
+      Seq(Row(Timestamp.valueOf("2014-07-20 00:00:00.0")),
+        Row(Timestamp.valueOf("2014-07-25 00:00:00.0"))
+      )
+    )
+  }
+    test("Time stamp filter with diff time format for load less") {
+    checkAnswer(
+      sql("select date  from filterTimestampDataType where date < '2014-07-20 00:00:00'"),
+      Seq(Row(Timestamp.valueOf("2014-07-10 00:00:00.0"))
+      )
+    )
+  }
+   test("Time stamp filter with diff time format for load less than equal") {
+    checkAnswer(
+      sql("select date  from filterTimestampDataType where date <= '2014-07-20 00:00:00'"),
+      Seq(Row(Timestamp.valueOf("2014-07-10 00:00:00.0")),Row(Timestamp.valueOf("2014-07-20 00:00:00.0"))
+      )
+    )
+  }
+      test("Time stamp filter with diff time format for load greater than equal") {
+    checkAnswer(
+      sql("select date  from filterTimestampDataType where date >= '2014-07-20 00:00:00'"),
+      Seq(Row(Timestamp.valueOf("2014-07-20 00:00:00.0")),Row(Timestamp.valueOf("2014-07-25 00:00:00.0"))
+      )
     )
   }
 

@@ -18,6 +18,7 @@
  */
 package org.carbondata.query.filter.executer;
 
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 import org.carbondata.query.filter.resolver.RowLevelRangeFilterResolverImpl;
@@ -33,11 +34,13 @@ public class RowLevelRangeTypeExecuterFacory {
    * filter tree resolver type.
    *
    * @param filterExpressionResolverTree
+   * @param segmentProperties
    * @param dataType                     DataType
    * @return the generator instance
    */
   public static RowLevelFilterExecuterImpl getRowLevelRangeTypeExecuter(
-      FilterExecuterType filterExecuterType, FilterResolverIntf filterExpressionResolverTree) {
+      FilterExecuterType filterExecuterType, FilterResolverIntf filterExpressionResolverTree,
+      SegmentProperties segmentProperties) {
     switch (filterExecuterType) {
 
       case ROWLEVEL_LESSTHAN:
@@ -49,7 +52,7 @@ public class RowLevelRangeTypeExecuterFacory {
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getFilterExpression(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
-                .getFilterRangeValues());
+                .getFilterRangeValues(segmentProperties), segmentProperties);
       case ROWLEVEL_LESSTHAN_EQUALTO:
         return new RowLevelRangeLessThanEqualFilterExecuterImpl(
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
@@ -59,7 +62,7 @@ public class RowLevelRangeTypeExecuterFacory {
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getFilterExpression(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
-                .getFilterRangeValues());
+                .getFilterRangeValues(segmentProperties), segmentProperties);
       case ROWLEVEL_GREATERTHAN_EQUALTO:
         return new RowLevelRangeGrtrThanEquaToFilterExecuterImpl(
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
@@ -69,7 +72,7 @@ public class RowLevelRangeTypeExecuterFacory {
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getFilterExpression(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
-                .getFilterRangeValues());
+                .getFilterRangeValues(segmentProperties), segmentProperties);
       case ROWLEVEL_GREATERTHAN:
         return new RowLevelRangeGrtThanFiterExecuterImpl(
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
@@ -79,7 +82,7 @@ public class RowLevelRangeTypeExecuterFacory {
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getFilterExpression(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
             ((RowLevelRangeFilterResolverImpl) filterExpressionResolverTree)
-                .getFilterRangeValues());
+                .getFilterRangeValues(segmentProperties), segmentProperties);
       default:
         // Scenario wont come logic must break
         return null;

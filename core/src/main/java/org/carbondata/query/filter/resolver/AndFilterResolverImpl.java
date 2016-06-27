@@ -22,12 +22,13 @@ import java.util.SortedMap;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbonfilterinterface.ExpressionType;
 
 public class AndFilterResolverImpl extends LogicalFilterResolverImpl {
 
   /**
-   *
+   *i
    */
   private static final long serialVersionUID = -761688076874662001L;
 
@@ -44,7 +45,7 @@ public class AndFilterResolverImpl extends LogicalFilterResolverImpl {
 
   @Override public void getEndKey(SegmentProperties segmentProperties,
       AbsoluteTableIdentifier tableIdentifier, long[] endKeys,
-      SortedMap<Integer, byte[]> noDicEndKeys) {
+      SortedMap<Integer, byte[]> noDicEndKeys) throws QueryExecutionException {
     leftEvalutor.getEndKey(segmentProperties, tableIdentifier, endKeys, noDicEndKeys);
     rightEvalutor.getEndKey(segmentProperties, tableIdentifier, endKeys, noDicEndKeys);
   }
