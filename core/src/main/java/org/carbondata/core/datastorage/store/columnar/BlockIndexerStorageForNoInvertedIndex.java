@@ -32,22 +32,23 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
 
   public BlockIndexerStorageForNoInvertedIndex(byte[][] keyBlockInput, boolean compressData) {
     // without invertedindex but can be RLE
-    if(compressData) {
+    if (compressData) {
       // with RLE
       byte[] prvKey = keyBlockInput[0];
       List<byte[]> list = new ArrayList<byte[]>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
       list.add(keyBlockInput[0]);
-      int counter=1;
-      int start=0;
+      int counter = 1;
+      int start = 0;
       List<Integer> map = new ArrayList<Integer>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-      for(int i = 1;i < keyBlockInput.length;i++) {
-        if(ByteUtil.UnsafeComparer.INSTANCE.compareTo(prvKey, keyBlockInput[i])!=0) {
-          prvKey=keyBlockInput[i];
+      int length = keyBlockInput.length;
+      for(int i = 1; i < length; i++) {
+        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(prvKey, keyBlockInput[i]) != 0) {
+          prvKey = keyBlockInput[i];
           list.add(keyBlockInput[i]);
           map.add(start);
           map.add(counter);
-          start+=counter;
-          counter=1;
+          start += counter;
+          counter = 1;
           continue;
         }
         counter++;
@@ -55,7 +56,7 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
       map.add(start);
       map.add(counter);
       this.keyBlock = convertToKeyArray(list);
-      if(keyBlockInput.length == this.keyBlock.length) {
+      if (keyBlockInput.length == this.keyBlock.length) {
         dataIndexMap = new int[0];
       } else {
         dataIndexMap = convertToArray(map);
@@ -68,7 +69,7 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
 
   private int[] convertToArray(List<Integer> list) {
     int[] shortArray = new int[list.size()];
-    for(int i = 0;i < shortArray.length;i++) {
+    for(int i = 0; i < shortArray.length; i++) {
       shortArray[i] = list.get(i);
     }
     return shortArray;
@@ -76,9 +77,9 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
 
   private byte[][] convertToKeyArray(List<byte[]> list) {
     byte[][] shortArray = new byte[list.size()][];
-    for(int i = 0;i < shortArray.length;i++) {
+    for (int i = 0; i < shortArray.length; i++) {
       shortArray[i] = list.get(i);
-      totalSize+=shortArray[i].length;
+      totalSize += shortArray[i].length;
     }
     return shortArray;
   }
