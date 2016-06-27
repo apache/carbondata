@@ -89,12 +89,12 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   /**
    * dictionary file path
    */
-  private String dictionaryFilePath;
+  protected String dictionaryFilePath;
 
   /**
    * dictionary metadata file path
    */
-  private String dictionaryMetaFilePath;
+  protected String dictionaryMetaFilePath;
 
   /**
    * start offset of dictionary chunk  for a segment

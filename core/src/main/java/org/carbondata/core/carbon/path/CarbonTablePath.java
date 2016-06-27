@@ -36,9 +36,9 @@ import org.apache.hadoop.fs.Path;
 public class CarbonTablePath extends Path {
 
   protected static final String METADATA_DIR = "Metadata";
-  private static final String DICTIONARY_EXT = ".dict";
-  private static final String DICTIONARY_META_EXT = ".dictmeta";
-  private static final String SORT_INDEX_EXT = ".sortindex";
+  protected static final String DICTIONARY_EXT = ".dict";
+  protected static final String DICTIONARY_META_EXT = ".dictmeta";
+  protected static final String SORT_INDEX_EXT = ".sortindex";
   protected static final String SCHEMA_FILE = "schema";
   protected static final String TABLE_STATUS_FILE = "tablestatus";
   protected static final String FACT_DIR = "Fact";

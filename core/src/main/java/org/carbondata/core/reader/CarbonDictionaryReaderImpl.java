@@ -42,12 +42,12 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
   /**
    * carbon table identifier
    */
-  private CarbonTableIdentifier carbonTableIdentifier;
+  protected CarbonTableIdentifier carbonTableIdentifier;
 
   /**
    * HDFS store path
    */
-  private String hdfsStorePath;
+  protected String hdfsStorePath;
 
   /**
    * column name
@@ -57,7 +57,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
   /**
    * dictionary file path
    */
-  private String columnDictionaryFilePath;
+  protected String columnDictionaryFilePath;
 
   /**
    * dictionary thrift file reader
@@ -197,7 +197,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
   /**
    * This method will form the path for dictionary file for a given column
    */
-  private void initFileLocation() {
+  protected void initFileLocation() {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(this.hdfsStorePath, carbonTableIdentifier);
     this.columnDictionaryFilePath = carbonTablePath

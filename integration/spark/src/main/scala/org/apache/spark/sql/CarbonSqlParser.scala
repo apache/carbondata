@@ -141,7 +141,6 @@ class CarbonSqlParser()
   protected val STARTTIME = Keyword("STARTTIME")
   protected val SEGMENTS = Keyword("SEGMENTS")
   protected val SEGMENT = Keyword("SEGMENT")
-  protected val SHARED = Keyword("SHARED")
 
   protected val doubleQuotedString = "\"([^\"]+)\"".r
   protected val singleQuotedString = "'([^']+)'".r
@@ -695,8 +694,8 @@ class CarbonSqlParser()
       dictIncludeCols =
         tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).get.split(",").map(_.trim)
       dictIncludeCols.map { distIncludeCol =>
-          if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol))) {
-            val errormsg = "DICTIONARY_INCLUDE column: " + distIncludeCol +
+          if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol.trim))) {
+            val errormsg = "DICTIONARY_INCLUDE column: " + distIncludeCol.trim +
               " does not exist in table. Please check create table statement."
             throw new MalformedCarbonCommandException(errormsg)
           }
