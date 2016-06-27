@@ -92,3 +92,7 @@ carbon.enable.quick.filter=false
 #high.cardinality.threshold=1000000
 ##Percentage to identify whether column cardinality is more than configured percent of total row count
 #high.cardinality.row.count.percentage=80
+##The property to set the date to be considered as start date for calculating the timestamp.
+#carbon.cutOffTimestamp=2000-01-01 00:00:00
+##The property to set the timestamp (ie milis) conversion to the SECOND, MINUTE, HOUR or DAY level.
+#carbon.timegranularity=SECOND
