@@ -24,6 +24,7 @@ import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
+import org.carbondata.query.expression.exception.FilterIllegalMemberException;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 
 public class EqualToExpression extends BinaryConditionalExpression {
@@ -34,7 +35,8 @@ public class EqualToExpression extends BinaryConditionalExpression {
     super(left, right);
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+  @Override public ExpressionResult evaluate(RowIntf value)
+      throws FilterUnsupportedException, FilterIllegalMemberException {
     ExpressionResult elRes = left.evaluate(value);
     ExpressionResult erRes = right.evaluate(value);
 
@@ -56,7 +58,6 @@ public class EqualToExpression extends BinaryConditionalExpression {
       }
     }
 
-    // todo: move to util
     switch (val1.getDataType()) {
       case StringType:
         result = val1.getString().equals(val2.getString());

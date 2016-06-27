@@ -20,7 +20,6 @@
 
 <plugin
    id="CarbonSortKeyGroupBy"
-   iconfile="icon.png"
    description="Carbon Sort And Group By"
    tooltip="Carbon Sort And Group By"
    category="Carbon"

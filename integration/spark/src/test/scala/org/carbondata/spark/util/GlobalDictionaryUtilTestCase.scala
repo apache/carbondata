@@ -94,34 +94,31 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
   def buildTable() = {
     try {
       sql(
-        "CREATE CUBE IF NOT EXISTS sample DIMENSIONS (id STRING, name STRING, city STRING) " +
-          "MEASURES (age INTEGER) OPTIONS(PARTITIONER[CLASS='org.carbondata.spark" +
-          ".partition.api.impl.SampleDataPartitionerImpl',COLUMNS=(id),PARTITION_COUNT=1])"
+        "CREATE TABLE IF NOT EXISTS sample (id STRING, name STRING, city STRING, " +
+          "age INT) STORED BY 'org.apache.carbondata.format'"
       )
     } catch {
       case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
     try {
       sql(
-        "CREATE CUBE IF NOT EXISTS dimSample DIMENSIONS (id STRING, name STRING, city STRING) " +
-          "MEASURES (age INTEGER) WITH dimTableSample RELATION(Fact.id=id) INCLUDE(id,name) " +
-          "OPTIONS(PARTITIONER[CLASS='org.carbondata.spark.partition.api.impl" +
-          ".SampleDataPartitionerImpl',COLUMNS=(id),PARTITION_COUNT=1])"
+        "CREATE TABLE IF NOT EXISTS dimSample (id STRING, name STRING, city STRING, " +
+          "age INT) STORED BY 'org.apache.carbondata.format'" +
+        "TBLPROPERTIES('DICTIONARY_EXCLUDE'='id,name')"
       )
     } catch {
       case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
     try {
       sql(
-        "create cube complextypes dimensions(deviceInformationId integer, channelsId string, " +
-          "ROMSize string, purchasedate string, mobile struct<imei string, imsi string>, MAC " +
-          "array<string>, locationinfo array<struct<ActiveAreaId integer, ActiveCountry string, " +
-          "ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet " +
-          "string>>, proddate struct<productionDate string,activeDeactivedate array<string>>) " +
-          "measures(gamePointId numeric,contractNumber numeric) OPTIONS ( " +
-          "NO_DICTIONARY (ROMSize) PARTITIONER [CLASS = " +
-          "'org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl' ," +
-          "COLUMNS= (deviceInformationId) , PARTITION_COUNT=1] )"
+        "create table complextypes (deviceInformationId INT, channelsId string, " +
+          "ROMSize string, purchasedate string, mobile struct<imei: string, imsi: string>, MAC " +
+          "array<string>, locationinfo array<struct<ActiveAreaId: INT, ActiveCountry: string, " +
+          "ActiveProvince: string, Activecity: string, ActiveDistrict: string, ActiveStreet: " +
+          "string>>, proddate struct<productionDate: string,activeDeactivedate: array<string>>, " +
+          "gamePointId INT,contractNumber INT) STORED BY 'org.apache.carbondata.format'" +
+          "TBLPROPERTIES('DICTIONARY_EXCLUDE'='ROMSize')"
+
       )
     } catch {
       case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
@@ -129,14 +126,13 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
 
     try {
       sql(
-        "create cube incrementalLoadTable dimensions(deviceInformationId integer, channelsId " +
-          "string, ROMSize string, purchasedate string, mobile struct<imei string, imsi string>, " +
-          "MAC array<string>, locationinfo array<struct<ActiveAreaId integer, ActiveCountry " +
-          "string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet " +
-          "string>>, proddate struct<productionDate string,activeDeactivedate array<string>>) " +
-          "measures(gamePointId numeric,contractNumber numeric) OPTIONS (PARTITIONER [CLASS = " +
-          "'org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl' ," +
-          "COLUMNS= (deviceInformationId) , PARTITION_COUNT=1] )"
+        "create table incrementalLoadTable (deviceInformationId INT, channelsId " +
+          "string, ROMSize string, purchasedate string, mobile struct<imei: string, imsi: string>, " +
+          "MAC array<string>, locationinfo array<struct<ActiveAreaId: INT, ActiveCountry: " +
+          "string, ActiveProvince: string, Activecity: string, ActiveDistrict: string, ActiveStreet: " +
+          "string>>, proddate struct<productionDate: string,activeDeactivedate: array<string>>, " +
+          "gamePointId INT,contractNumber INT) STORED BY 'org.apache.carbondata.format'"+
+          "TBLPROPERTIES('DICTIONARY_INCLUDE'='deviceInformationId')"
       )
     } catch {
       case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)

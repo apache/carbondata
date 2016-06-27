@@ -19,7 +19,6 @@
 
 package org.carbondata.core.datastorage.util;
 
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.NodeKeyStore;
 import org.carbondata.core.datastorage.store.NodeMeasureDataStore;
@@ -38,21 +37,8 @@ import org.carbondata.core.datastorage.store.impl.key.compressed.CompressedSingl
 import org.carbondata.core.datastorage.store.impl.key.compressed.CompressedSingleArrayKeyInMemoryStore;
 import org.carbondata.core.datastorage.store.impl.key.uncompressed.SingleArrayKeyFileStore;
 import org.carbondata.core.datastorage.store.impl.key.uncompressed.SingleArrayKeyInMemoryStore;
-import org.carbondata.core.util.CarbonProperties;
 
 public final class StoreFactory {
-  /**
-   * Single Array Key store.
-   */
-  private static final String SINGLE_ARRAY = "SINGLE_ARRAY";
-  /**
-   * Compressed single array key store.
-   */
-  private static final String COMPRESSED_SINGLE_ARRAY = "COMPRESSED_SINGLE_ARRAY";
-  /**
-   * Double array data store.
-   */
-  private static final String COMPRESSED_DOUBLE_ARRAY = "COMPRESSED_DOUBLE_ARRAY";
   /**
    * key type.
    */
@@ -63,26 +49,8 @@ public final class StoreFactory {
   private static StoreType valueType;
 
   static {
-    String keytype = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.KEYSTORE_TYPE,
-        CarbonCommonConstants.KEYSTORE_TYPE_DEFAULT_VAL);
-    String valuetype = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.VALUESTORE_TYPE,
-            CarbonCommonConstants.VALUESTORE_TYPE_DEFAULT_VAL);
-
-    // set key type
-    if (COMPRESSED_SINGLE_ARRAY.equals(keytype)) {
-      keyType = StoreType.COMPRESSED_SINGLE_ARRAY;
-    } else if (SINGLE_ARRAY.equals(keytype)) {
-      keyType = StoreType.SINGLE_ARRAY;
-    } else {
-      keyType = StoreType.COMPRESSED_SINGLE_ARRAY;
-    }
-    // set value type
-    if (COMPRESSED_DOUBLE_ARRAY.equals(valuetype)) {
-      valueType = StoreType.COMPRESSED_DOUBLE_ARRAY;
-    } else {
-      valueType = StoreType.HEAVY_VALUE_COMPRESSION;
-    }
+    keyType = StoreType.COMPRESSED_SINGLE_ARRAY;
+    valueType = StoreType.HEAVY_VALUE_COMPRESSION;
   }
 
   private StoreFactory() {

@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.columnar.IndexStorage;
@@ -55,10 +56,10 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
       CarbonDataFileAttributes carbonDataFileAttributes, String databaseName,
       List<ColumnSchema> wrapperColumnSchemaList, int numberOfNoDictionaryColumn,
       boolean[] isDictionaryColumn, String carbonDataDirectoryPath, int[] colCardinality,
-      boolean[] isUseInvertedIndex) {
+      SegmentProperties segmentProperties, boolean[] isUseInvertedIndex) {
     super(storeLocation, measureCount, mdKeyLength, databaseName, tableName, fileManager,
         keyBlockSize, carbonDataFileAttributes, wrapperColumnSchemaList, carbonDataDirectoryPath,
-        colCardinality);
+        colCardinality, segmentProperties);
     this.isComplexType = isComplexType;
     this.databaseName = databaseName;
     this.numberOfNoDictionaryColumn = numberOfNoDictionaryColumn;

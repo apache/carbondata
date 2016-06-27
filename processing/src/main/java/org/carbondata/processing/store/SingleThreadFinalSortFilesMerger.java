@@ -162,11 +162,11 @@ public class SingleThreadFinalSortFilesMerger {
     int maxThreadForSorting = 0;
     try {
       maxThreadForSorting = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_MAX_THREAD_FOR_SORTING,
-              CarbonCommonConstants.CARBON_MAX_THREAD_FOR_SORTING_DEFAULTVALUE));
+          .getProperty(CarbonCommonConstants.CARBON_MERGE_SORT_READER_THREAD,
+              CarbonCommonConstants.CARBON_MERGE_SORT_READER_THREAD_DEFAULTVALUE));
     } catch (NumberFormatException e) {
       maxThreadForSorting =
-          Integer.parseInt(CarbonCommonConstants.CARBON_MAX_THREAD_FOR_SORTING_DEFAULTVALUE);
+          Integer.parseInt(CarbonCommonConstants.CARBON_MERGE_SORT_READER_THREAD_DEFAULTVALUE);
     }
     ExecutorService service = Executors.newFixedThreadPool(maxThreadForSorting);
 

@@ -112,15 +112,6 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
 
   val metadata = loadMetadata(storePath)
 
-  lazy val useUniquePath = if ("true".equalsIgnoreCase(CarbonProperties.getInstance().
-    getProperty(
-      CarbonCommonConstants.CARBON_UNIFIED_STORE_PATH,
-      CarbonCommonConstants.CARBON_UNIFIED_STORE_PATH_DEFAULT))) {
-    true
-  } else {
-    false
-  }
-
   def lookupRelation1(
       databaseName: Option[String],
       tableName: String,
@@ -230,34 +221,8 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     }
     val fileType = FileFactory.getFileType(metadataPath)
     val metaDataBuffer = new ArrayBuffer[TableMeta]
-    if (useUniquePath) {
-      if (FileFactory.isFileExist(metadataPath, fileType)) {
-        val file = FileFactory.getCarbonFile(metadataPath, fileType)
-        val schemaFolders = file.listFiles()
-
-        schemaFolders.foreach(schemaFolder => {
-          if (schemaFolder.isDirectory) {
-            val cubeFolders = schemaFolder.listFiles()
-
-            cubeFolders.foreach(cubeFolder => {
-              val schemaPath = metadataPath + "/" + schemaFolder.getName + "/" + cubeFolder.getName
-              try {
-                fillMetaData(schemaPath, fileType, metaDataBuffer)
-                updateSchemasUpdatedTime(schemaFolder.getName, cubeFolder.getName)
-              } catch {
-                case ex: org.apache.hadoop.security.AccessControlException =>
-                // Ingnore Access control exception and get only accessible cube details
-              }
-            })
-          }
-        })
-      }
-
-    } else {
-
-      fillMetaData(metadataPath, fileType, metaDataBuffer)
-      updateSchemasUpdatedTime("", "")
-    }
+    fillMetaData(metadataPath, fileType, metaDataBuffer)
+    updateSchemasUpdatedTime("", "")
     MetaData(metaDataBuffer)
 
   }
@@ -605,13 +570,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
 
   private def getTimestampFileAndType(schemaName: String, cubeName: String) = {
 
-    val timestampFile = if (useUniquePath) {
-      storePath + "/" + schemaName + "/" + cubeName + "/" +
-      CarbonCommonConstants.SCHEMAS_MODIFIED_TIME_FILE
-    }
-    else {
-      storePath + "/" + CarbonCommonConstants.SCHEMAS_MODIFIED_TIME_FILE
-    }
+    val timestampFile = storePath + "/" + CarbonCommonConstants.SCHEMAS_MODIFIED_TIME_FILE
 
     val timestampFileType = FileFactory.getFileType(timestampFile)
     (timestampFile, timestampFileType)
@@ -627,14 +586,8 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
 
     touchSchemasTimestampFile(schemaName, cubeName)
 
-    if (useUniquePath) {
-      cubeModifiedTimeStore.put(schemaName + '_' + cubeName,
-        FileFactory.getCarbonFile(timestampFile, timestampFileType).getLastModifiedTime)
-    }
-    else {
-      cubeModifiedTimeStore.put("default",
-        FileFactory.getCarbonFile(timestampFile, timestampFileType).getLastModifiedTime)
-    }
+    cubeModifiedTimeStore.put("default",
+      FileFactory.getCarbonFile(timestampFile, timestampFileType).getLastModifiedTime)
 
   }
 
@@ -645,26 +598,11 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   }
 
   def checkSchemasModifiedTimeAndReloadCubes() {
-    if (useUniquePath) {
-      metadata.cubesMeta.foreach(c => {
-        val (timestampFile, timestampFileType) = getTimestampFileAndType(
-          c.carbonTableIdentifier.getDatabaseName, c.carbonTableIdentifier.getTableName)
-
-        if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
-          if (!(FileFactory.getCarbonFile(timestampFile, timestampFileType).getLastModifiedTime ==
-                cubeModifiedTimeStore.get(c.carbonTableIdentifier.getDatabaseName + "_" +
-                                          c.carbonTableIdentifier.getTableName))) {
-            refreshCache()
-          }
-        }
-      })
-    } else {
-      val (timestampFile, timestampFileType) = getTimestampFileAndType("", "")
-      if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
-        if (!(FileFactory.getCarbonFile(timestampFile, timestampFileType).
-          getLastModifiedTime == cubeModifiedTimeStore.get("default"))) {
-          refreshCache()
-        }
+    val (timestampFile, timestampFileType) = getTimestampFileAndType("", "")
+    if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
+      if (!(FileFactory.getCarbonFile(timestampFile, timestampFileType).
+        getLastModifiedTime == cubeModifiedTimeStore.get("default"))) {
+        refreshCache()
       }
     }
   }

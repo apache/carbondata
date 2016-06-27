@@ -212,6 +212,10 @@ class CarbonDataLoadRDD[K, V](
               dataloadStatus = checkAndLoadAggregationTable
               if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
                 logInfo("DataLoad failure")
+              } else if (CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+                  .equals(dataloadStatus)) {
+                logInfo("DataLoad complete")
+                logInfo("Data Load partially successful with LoadCount:" + loadCount)
               } else {
                 logInfo("DataLoad complete")
                 logInfo("Data Loaded successfully with LoadCount:" + loadCount)

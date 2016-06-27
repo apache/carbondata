@@ -3,10 +3,9 @@ package org.carbondata.integration.spark.testsuite.dataload
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
-
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
+import org.scalatest.BeforeAndAfterAll
 
 /**
  * Test Class for data loading when there are null measures in data
@@ -28,11 +27,12 @@ class TestLoadDataWithEmptyArrayColumns extends QueryTest with BeforeAndAfterAll
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
       )
-    sql(s"""
+    sql(
+      s"""
             LOAD DATA inpath './src/test/resources/arrayColumnEmpty.csv'
-            into table nest13 options ('DELIMITER'=',', 'complex_delimiter_level_1'='/',
-            'FILEHEADER'= 'imei,age,productdate,gamePointId,reserved6,mobile')
-         """)
+            into table nest13 options ('DELIMITER'=',', 'complex_delimiter_level_1'='/')
+         """
+    )
     checkAnswer(
       sql("""
              SELECT count(*) from nest13

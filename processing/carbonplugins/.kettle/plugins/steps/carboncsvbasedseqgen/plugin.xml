@@ -21,7 +21,6 @@
 <plugin
 
    id="CarbonCSVBasedSurrogateGen"
-   iconfile="icon.png"
    description="Carbon CSV Based Surrogate Key Generator"
    tooltip="Carbon CSV based Surrogate Key Generator"
    category="Carbon"

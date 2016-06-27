@@ -105,7 +105,24 @@ object Compactor {
         .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath(),
           mergedLoadName, carbonLoadModel, mergeLoadStartTime
         )
-      logger.audit("Compaction request completed.")
+      logger
+        .audit("Compaction request completed for table " + carbonLoadModel
+          .getDatabaseName + "." + carbonLoadModel.getTableName
+        )
+      logger
+        .info("Compaction request completed for table " + carbonLoadModel
+          .getDatabaseName + "." + carbonLoadModel.getTableName
+        )
+    }
+    else {
+      logger
+        .audit("Compaction request failed for table " + carbonLoadModel
+          .getDatabaseName + "." + carbonLoadModel.getTableName
+        )
+      logger
+        .error("Compaction request failed for table " + carbonLoadModel
+          .getDatabaseName + "." + carbonLoadModel.getTableName
+        )
     }
   }
 }

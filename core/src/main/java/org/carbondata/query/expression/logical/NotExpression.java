@@ -25,6 +25,7 @@ import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
 import org.carbondata.query.expression.UnaryExpression;
+import org.carbondata.query.expression.exception.FilterIllegalMemberException;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 
 public class NotExpression extends UnaryExpression {
@@ -34,7 +35,8 @@ public class NotExpression extends UnaryExpression {
     super(child);
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+  @Override public ExpressionResult evaluate(RowIntf value)
+      throws FilterIllegalMemberException, FilterUnsupportedException {
     ExpressionResult expResult = child.evaluate(value);
     expResult.set(DataType.BooleanType, !(expResult.getBoolean()));
     switch (expResult.getDataType()) {

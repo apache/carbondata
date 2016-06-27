@@ -35,6 +35,7 @@ import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
+import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -42,7 +43,6 @@ import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.DataTypeUtil;
-import org.carbondata.core.vo.ColumnGroupModel;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.merger.exeception.SliceMergerException;
 import org.carbondata.processing.store.CarbonDataFileAttributes;
@@ -74,15 +74,13 @@ public class RowResultMerger {
   private AbstractQueue<RawResultIterator> recordHolderHeap;
 
   private TupleConversionAdapter tupleConvertor;
-  private ColumnGroupModel colGrpStoreModel;
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(RowResultMerger.class.getName());
 
-  public RowResultMerger(List<RawResultIterator> iteratorList,
-      String schemaName, String tableName,
-      SegmentProperties segProp, String tempStoreLocation,
-      CarbonLoadModel loadModel, int[] colCardinality) {
+  public RowResultMerger(List<RawResultIterator> iteratorList, String schemaName, String tableName,
+      SegmentProperties segProp, String tempStoreLocation, CarbonLoadModel loadModel,
+      int[] colCardinality) {
 
     this.rawResultIteratorList = iteratorList;
     // create the List of RawResultIterator.
@@ -222,16 +220,20 @@ public class RowResultMerger {
         .setMdKeyLength(segprop.getDimensionKeyGenerator().getKeySizeInBytes());
     carbonFactDataHandlerModel.setStoreLocation(tempStoreLocation);
     carbonFactDataHandlerModel.setDimLens(segprop.getDimColumnsCardinality());
+    carbonFactDataHandlerModel.setSegmentProperties(segprop);
     carbonFactDataHandlerModel.setNoDictionaryCount(segprop.getNumberOfNoDictionaryDimension());
     carbonFactDataHandlerModel.setDimensionCount(
         segprop.getDimensions().size() - carbonFactDataHandlerModel.getNoDictionaryCount());
+    CarbonTable carbonTable = CarbonMetadata.getInstance()
+        .getCarbonTable(schemaName + CarbonCommonConstants.UNDERSCORE + tableName);
+    List<ColumnSchema> wrapperColumnSchema = CarbonUtil
+        .getColumnSchemaList(carbonTable.getDimensionByTableName(tableName),
+            carbonTable.getMeasureByTableName(tableName));
+    carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
     //TO-DO Need to handle complex types here .
     Map<Integer, GenericDataType> complexIndexMap =
         new HashMap<Integer, GenericDataType>(segprop.getComplexDimensions().size());
     carbonFactDataHandlerModel.setComplexIndexMap(complexIndexMap);
-    this.colGrpStoreModel =
-        CarbonUtil.getColGroupModel(segprop.getDimColumnsCardinality(), segprop.getColumnGroups());
-    carbonFactDataHandlerModel.setColGrpModel(colGrpStoreModel);
     carbonFactDataHandlerModel.setDataWritingRequest(true);
 
     char[] aggType = new char[segprop.getMeasures().size()];

@@ -104,7 +104,8 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
 
   @Override
   public CarbonFile getParentFile() {
-    return new HDFSCarbonFile(fileStatus.getPath().getParent());
+    Path parent = fileStatus.getPath().getParent();
+    return null == parent ? null : new HDFSCarbonFile(parent);
   }
 
   @Override

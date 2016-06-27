@@ -45,7 +45,7 @@ class TestLoadDataWithMaxMinInteger extends QueryTest with BeforeAndAfterAll {
       """
         LOAD DATA INPATH './src/test/resources/datawithmininteger.csv'
         INTO table integer_table_01 options ('DELIMITER'=',',
-        'QUOTECHAR'='"', 'FILEHEADER'= 'imei,age')
+        'QUOTECHAR'='"')
       """)
     checkAnswer(sql("select age from integer_table_01"),
       Seq(Row(10.0), Row(26.0), Row(10.0), Row(10.0), Row(20.0),
@@ -64,7 +64,7 @@ class TestLoadDataWithMaxMinInteger extends QueryTest with BeforeAndAfterAll {
       """
         LOAD DATA INPATH './src/test/resources/datawithmaxinteger.csv'
         INTO table integer_table_02 options ('DELIMITER'=',',
-        'QUOTECHAR'='"', 'FILEHEADER'= 'imei,age')
+        'QUOTECHAR'='"')
       """)
     checkAnswer(sql("select age from integer_table_02"),
       Seq(Row(10.0), Row(26.0), Row(10.0), Row(10.0), Row(20.0),
@@ -83,7 +83,7 @@ class TestLoadDataWithMaxMinInteger extends QueryTest with BeforeAndAfterAll {
       """
         LOAD DATA INPATH './src/test/resources/datawithmaxmininteger.csv'
         INTO table integer_table_03 options ('DELIMITER'=',',
-        'QUOTECHAR'='"', 'FILEHEADER'= 'imei,age')
+        'QUOTECHAR'='"')
       """)
     checkAnswer(sql("select age from integer_table_03"),
       Seq(Row(10.0), Row(26.0), Row(10.0), Row(10.0), Row(20.0),

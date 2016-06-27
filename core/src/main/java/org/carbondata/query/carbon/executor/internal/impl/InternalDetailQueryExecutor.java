@@ -123,6 +123,12 @@ public class InternalDetailQueryExecutor implements InternalQueryExecutor {
       throw new QueryExecutionException(e);
     } finally {
       execService = null;
+      for (int currentSliceIndex : sliceIndexes) {
+        if (currentSliceIndex == -1) {
+          continue;
+        }
+        executionInfos.get(currentSliceIndex).setScannedResultProcessor(null);
+      }
     }
   }
 

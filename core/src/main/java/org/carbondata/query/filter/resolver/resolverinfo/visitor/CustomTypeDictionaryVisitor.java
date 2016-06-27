@@ -25,9 +25,11 @@ import java.util.List;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.query.expression.ColumnExpression;
+import org.carbondata.query.expression.exception.FilterIllegalMemberException;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.resolver.metadata.FilterResolverMetadata;
 import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
@@ -44,14 +46,19 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
    *
    * @param visitableObj
    * @param metadata
-   * @throws FilterUnsupportedException
+   * @throws FilterUnsupportedException,thrown out if exception occurs while evaluating
+   * filter models.
    */
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
     DimColumnFilterInfo resolvedFilterObject = null;
 
-    List<String> evaluateResultListFinal =
-        metadata.getExpression().evaluate(null).getListAsString();
+    List<String> evaluateResultListFinal;
+    try {
+      evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
+    } catch (FilterIllegalMemberException e) {
+      throw new FilterUnsupportedException(e);
+    }
     resolvedFilterObject = getDirectDictionaryValKeyMemberForFilter(metadata.getTableIdentifier(),
         metadata.getColumnExpression(), evaluateResultListFinal, metadata.isIncludeFilter());
     visitableObj.setFilterValues(resolvedFilterObject);
@@ -65,7 +72,8 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
         .getDirectDictionaryGenerator(columnExpression.getDimension().getDataType());
     // Reading the dictionary value direct
     for (String filterMember : evaluateResultListFinal) {
-      surrogates.add(directDictionaryGenerator.generateDirectSurrogateKey(filterMember));
+      surrogates.add(directDictionaryGenerator.generateDirectSurrogateKey(filterMember,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
     }
     Collections.sort(surrogates);
     DimColumnFilterInfo columnFilterInfo = null;

@@ -30,20 +30,20 @@ import org.apache.spark.sql.Row
   */
 class TestLoadDataWithBlankLine extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
-    sql("CREATE CUBE carboncube DIMENSIONS (empno Integer, empname String, designation String, " +
-      "doj String, workgroupcategory Integer, workgroupcategoryname String, deptno Integer, " +
-      "deptname String, projectcode Integer, projectjoindate String, projectenddate String) " +
-      "MEASURES (attendance Integer,utilization Integer,salary Integer) " +
-      "OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
-    sql("LOAD DATA FACT FROM './src/test/resources/datawithblanklines.csv' INTO CUBE carboncube" +
-      " OPTIONS(DELIMITER ',')");
+    sql("CREATE TABLE carbontable (empno int, empname String, designation String, " +
+      "doj String, workgroupcategory int, workgroupcategoryname String, deptno int, " +
+      "deptname String, projectcode int, projectjoindate String, projectenddate String, " +
+      "attendance int,utilization int,salary int) " +
+        "STORED BY 'org.apache.carbondata.format'")
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/datawithblanklines.csv' INTO TABLE" +
+        " carbontable OPTIONS('DELIMITER'= ',')");
   }
   test("test carbon table data loading when there are  blank lines in data") {
-    checkAnswer(sql("select count(*) from carboncube"),
+    checkAnswer(sql("select count(*) from carbontable"),
       Seq(Row(12)))
   }
 
   override def afterAll {
-    sql("drop cube carboncube")
+    sql("drop table carbontable")
   }
 }

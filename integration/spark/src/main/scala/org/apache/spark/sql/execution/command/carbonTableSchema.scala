@@ -20,7 +20,7 @@ package org.apache.spark.sql.execution.command
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util
-import java.util.UUID
+import java.util.{Date, UUID}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -29,7 +29,10 @@ import scala.util.Random
 
 import org.apache.spark.SparkEnv
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
+import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Cast, Literal}
+import org.apache.spark.sql.catalyst.util.DateTimeUtils
+import org.apache.spark.sql.catalyst.util.DateTimeUtils.SQLTimestamp
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.types.TimestampType
@@ -1302,7 +1305,7 @@ private[sql] case class DeleteLoadsById(
 
   def run(sqlContext: SQLContext): Seq[Row] = {
 
-    LOGGER.audit("The delete load by Id request has been received.")
+    LOGGER.audit("Delete load by Id request has been received.")
 
     // validate load ids first
     validateLoadIds
@@ -1313,7 +1316,7 @@ private[sql] case class DeleteLoadsById(
       tableName,
       None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
-      LOGGER.audit(s"The delete load by Id is failed. Table $schemaName.$tableName does not exist")
+      LOGGER.audit(s"Delete load by Id is failed. Table $schemaName.$tableName does not exist")
       sys.error(s"Table $schemaName.$tableName does not exist")
     }
 
@@ -1335,14 +1338,14 @@ private[sql] case class DeleteLoadsById(
     if (invalidLoadIds.nonEmpty) {
       if (invalidLoadIds.length == loadids.length) {
         LOGGER.audit(
-          "The delete load by Id is failed. Failed to delete the following load(s). LoadSeqId-" +
+          "Delete load by Id is failed. Failed to delete the following load(s). LoadSeqId-" +
           invalidLoadIds)
         sys.error("Load deletion is failed. Failed to delete the following load(s). LoadSeqId-" +
                   invalidLoadIds)
       }
       else {
         LOGGER.audit(
-          "The delete load by Id is failed. Failed to delete the following load(s). LoadSeqId-" +
+          "Delete load by Id is failed. Failed to delete the following load(s). LoadSeqId-" +
           invalidLoadIds)
         sys.error(
           "Load deletion is partial success. Failed to delete the following load(s). LoadSeqId-" +
@@ -1350,7 +1353,7 @@ private[sql] case class DeleteLoadsById(
       }
     }
 
-    LOGGER.audit("The delete load by Id is successfull.")
+    LOGGER.audit("Delete load by Id is successfull.")
     Seq.empty
 
   }
@@ -1375,7 +1378,7 @@ private[sql] case class DeleteLoadsByLoadDate(
 
   def run(sqlContext: SQLContext): Seq[Row] = {
 
-    LOGGER.audit("The delete load by load date request has been received.")
+    LOGGER.audit("Delete load by load date request has been received.")
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
 
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
@@ -1385,9 +1388,15 @@ private[sql] case class DeleteLoadsByLoadDate(
     )(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
       LOGGER
-        .audit(s"The delete load by load date is failed. Table $schemaName.$tableName does not " +
+        .audit(s"Delete load by load date is failed. Table $schemaName.$tableName does not " +
          s"exist")
       sys.error(s"Table $schemaName.$tableName does not exist")
+    }
+
+    val timeObj = Cast(Literal(loadDate), TimestampType).eval()
+    if(null == timeObj) {
+      val errorMessage = "Error: Invalid load start time format " + loadDate
+      throw new MalformedCarbonCommandException(errorMessage)
     }
 
     var carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
@@ -1403,9 +1412,9 @@ private[sql] case class DeleteLoadsByLoadDate(
     }
     var path = carbonTable.getMetaDataFilepath()
 
-
-    var invalidLoadTimestamps = segmentStatusManager.updateDeletionStatus(loadDate, path).asScala
-    LOGGER.audit("The delete load by Id is successfull.")
+    var invalidLoadTimestamps = segmentStatusManager
+      .updateDeletionStatus(loadDate, path, timeObj.asInstanceOf[java.lang.Long]).asScala
+    LOGGER.audit("Delete load by load date is successfull.")
     Seq.empty
 
   }
@@ -1973,7 +1982,8 @@ private[sql] case class DescribeCommandFormatted(
         val dimension = relation.metaData.carbonTable.getDimensionByName(
             relation.cubeMeta.carbonTableIdentifier.getTableName,
             field.name)
-        if (dimension.hasEncoding(Encoding.DICTIONARY)) {
+        if (dimension.hasEncoding(Encoding.DICTIONARY) &&
+            !dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           "DICTIONARY, KEY COLUMN"
         } else {
           "KEY COLUMN"
@@ -2109,13 +2119,13 @@ private[sql] case class CleanFiles(
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def run(sqlContext: SQLContext): Seq[Row] = {
-    LOGGER.audit("The clean files request has been received.")
+    LOGGER.audit("Clean files request has been received.")
     val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
       .lookupRelation1(Some(schemaName), cubeName, None)(sqlContext).
       asInstanceOf[CarbonRelation]
     if (relation == null) {
-      LOGGER.audit(s"The clean files request is failed. Table $schemaName.$cubeName does not exist")
+      LOGGER.audit(s"Clean files request is failed. Table $schemaName.$cubeName does not exist")
       sys.error(s"Table $schemaName.$cubeName does not exist")
     }
 
@@ -2133,7 +2143,7 @@ private[sql] case class CleanFiles(
       carbonLoadModel,
       relation.cubeMeta.storePath,
       relation.cubeMeta.partitioner)
-    LOGGER.audit("The clean files request is successfull.")
+    LOGGER.audit("Clean files request is successfull.")
     Seq.empty
   }
 }

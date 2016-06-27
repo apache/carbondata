@@ -48,12 +48,18 @@ import java.util.concurrent.Executors;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.cache.dictionary.Dictionary;
+import org.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
+import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
+import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
@@ -293,9 +299,7 @@ public final class CarbonUtil {
    */
   public static int[] getIncrementedCardinality(int[] dimCardinality) {
     // get the cardinality incr factor
-    final int incrValue = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE,
-            CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL));
+    final int incrValue = CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL;
 
     int perIncr = 0;
     int remainder = 0;
@@ -327,9 +331,7 @@ public final class CarbonUtil {
 
   public static int getIncrementedCardinality(int dimCardinality) {
     // get the cardinality incr factor
-    final int incrValue = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE,
-            CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL));
+    final int incrValue = CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL;
 
     int perIncr = 0;
     int remainder = 0;
@@ -360,11 +362,10 @@ public final class CarbonUtil {
   /**
    * return ColumnGroupModel. check ColumnGroupModel for detail
    *
-   * @param dimLens      : dimension cardinality
    * @param columnGroups : column groups
    * @return ColumnGroupModel  model
    */
-  public static ColumnGroupModel getColGroupModel(int[] dimLens, int[][] columnGroups) {
+  public static ColumnGroupModel getColGroupModel(int[][] columnGroups) {
     int[] columnSplit = new int[columnGroups.length];
     int noOfColumnStore = columnSplit.length;
     boolean[] columnarStore = new boolean[noOfColumnStore];
@@ -376,7 +377,6 @@ public final class CarbonUtil {
     ColumnGroupModel colGroupModel = new ColumnGroupModel();
     colGroupModel.setNoOfColumnStore(noOfColumnStore);
     colGroupModel.setColumnSplit(columnSplit);
-    colGroupModel.setColumnGroupCardinality(dimLens);
     colGroupModel.setColumnarStore(columnarStore);
     colGroupModel.setColumnGroup(columnGroups);
     return colGroupModel;
@@ -1219,7 +1219,8 @@ public final class CarbonUtil {
           .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL);
       if (null != baseDFSUrl) {
         String dfsUrl = conf.get(FS_DEFAULT_FS);
-        if (dfsUrl.startsWith(HDFS_PREFIX) || dfsUrl.startsWith(VIEWFS_PREFIX)) {
+        if (null != dfsUrl && (dfsUrl.startsWith(HDFS_PREFIX) || dfsUrl
+            .startsWith(VIEWFS_PREFIX))) {
           baseDFSUrl = dfsUrl + baseDFSUrl;
         }
         if (baseDFSUrl.endsWith("/")) {
@@ -1249,26 +1250,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * This method will read the retry time interval for loading level files in
-   * memory
-   *
-   * @return
-   */
-  public static long getRetryIntervalForLoadingLevelFile() {
-    long retryInterval = 0;
-    try {
-      retryInterval = Long.parseLong(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_LOAD_LEVEL_RETRY_INTERVAL,
-              CarbonCommonConstants.CARBON_LOAD_LEVEL_RETRY_INTERVAL_DEFAULT));
-    } catch (NumberFormatException e) {
-      retryInterval = Long.parseLong(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_LOAD_LEVEL_RETRY_INTERVAL_DEFAULT));
-    }
-    retryInterval = retryInterval * 1000;
-    return retryInterval;
-  }
-
-  /**
    * Below method will be used to get the aggregator type
    * CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE will return when value is double measure
    * CarbonCommonConstants.BYTE_VALUE_MEASURE will be returned when value is byte array
@@ -1291,13 +1272,6 @@ public final class CarbonUtil {
     }
     String basePath = prop.getProperty(CarbonCommonConstants.STORE_LOCATION,
         CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    String useUniquePath = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_UNIFIED_STORE_PATH,
-            CarbonCommonConstants.CARBON_UNIFIED_STORE_PATH_DEFAULT);
-    if (null != schemaName && !schemaName.isEmpty() && null != cubeName && !cubeName.isEmpty()
-        && "true".equals(useUniquePath)) {
-      basePath = basePath + File.separator + schemaName + File.separator + cubeName;
-    }
     return basePath;
   }
 
@@ -1679,6 +1653,80 @@ public final class CarbonUtil {
   public static void clearDictionaryCache(Dictionary dictionary) {
     if (null != dictionary) {
       dictionary.clear();
+    }
+  }
+
+  /**
+   * @param dictionaryColumnCardinality
+   * @param wrapperColumnSchemaList
+   * @return It returns formatted cardinality by adding -1 value for NoDictionary columns
+   */
+  public static int[] getFormattedCardinality(int[] dictionaryColumnCardinality,
+      List<ColumnSchema> wrapperColumnSchemaList) {
+    List<Integer> cardinality = new ArrayList<>();
+    int counter = 0;
+    for (int i = 0; i < wrapperColumnSchemaList.size(); i++) {
+      if (CarbonUtil.hasEncoding(wrapperColumnSchemaList.get(i).getEncodingList(),
+          org.carbondata.core.carbon.metadata.encoder.Encoding.DICTIONARY)) {
+        cardinality.add(dictionaryColumnCardinality[counter]);
+        counter++;
+      } else if (!wrapperColumnSchemaList.get(i).isDimensionColumn()) {
+        continue;
+      } else {
+        cardinality.add(-1);
+      }
+    }
+    return ArrayUtils.toPrimitive(cardinality.toArray(new Integer[cardinality.size()]));
+  }
+
+  public static List<ColumnSchema> getColumnSchemaList(List<CarbonDimension> carbonDimensionsList,
+      List<CarbonMeasure> carbonMeasureList) {
+    List<ColumnSchema> wrapperColumnSchemaList = new ArrayList<ColumnSchema>();
+    fillCollumnSchemaListForComplexDims(carbonDimensionsList, wrapperColumnSchemaList);
+    for (CarbonMeasure carbonMeasure : carbonMeasureList) {
+      wrapperColumnSchemaList.add(carbonMeasure.getColumnSchema());
+    }
+    return wrapperColumnSchemaList;
+  }
+
+  private static void fillCollumnSchemaListForComplexDims(
+      List<CarbonDimension> carbonDimensionsList, List<ColumnSchema> wrapperColumnSchemaList) {
+    for (CarbonDimension carbonDimension : carbonDimensionsList) {
+      wrapperColumnSchemaList.add(carbonDimension.getColumnSchema());
+      List<CarbonDimension> childDims = carbonDimension.getListOfChildDimensions();
+      if (null != childDims && childDims.size() > 0) {
+        fillCollumnSchemaListForComplexDims(childDims, wrapperColumnSchemaList);
+      }
+    }
+  }
+  /**
+   * Below method will be used to get all the block index info from index file
+   *
+   * @param taskId                  task id of the file
+   * @param tableBlockInfoList      list of table block
+   * @param absoluteTableIdentifier absolute table identifier
+   * @return list of block info
+   * @throws CarbonUtilException if any problem while reading
+   */
+  public static List<DataFileFooter> readCarbonIndexFile(String taskId,
+      List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier absoluteTableIdentifier)
+      throws CarbonUtilException {
+    // need to sort the  block info list based for task in ascending  order so
+    // it will be sinkup with block index read from file
+    Collections.sort(tableBlockInfoList);
+    CarbonTablePath carbonTablePath = CarbonStorePath
+        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+            absoluteTableIdentifier.getCarbonTableIdentifier());
+    // geting the index file path
+    //TODO need to pass proper partition number when partiton will be supported
+    String carbonIndexFilePath = carbonTablePath
+        .getCarbonIndexFilePath(taskId, "0", tableBlockInfoList.get(0).getSegmentId());
+    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
+    try {
+      // read the index info and return
+      return fileFooterConverter.getIndexInfo(carbonIndexFilePath, tableBlockInfoList);
+    } catch (IOException e) {
+      throw new CarbonUtilException("Problem while reading the file metadata", e);
     }
   }
 

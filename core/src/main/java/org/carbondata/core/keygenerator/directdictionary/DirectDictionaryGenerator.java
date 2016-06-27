@@ -40,4 +40,17 @@ public interface DirectDictionaryGenerator {
    */
   Object getValueFromSurrogate(int key);
 
+  /**
+   * The method generate and returns the dictionary / surrogate key for direct dictionary column
+   * This Method is called while executing filter queries for getting direct surrogate members.
+   * Currently the query engine layer only supports yyyy-MM-dd HH:mm:ss date format no matter
+   * in which format the data is been stored, so while retrieving the direct surrogate value for
+   * filter member first it should be converted in date form as per above format and needs to
+   * retrieve time stamp.
+   *
+   * @param member The member string value
+   * @return returns dictionary/ surrogate value
+   */
+  int generateDirectSurrogateKey(String memberStr, String format);
+
 }

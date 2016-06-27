@@ -60,11 +60,8 @@ public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<b
    */
   @Override public int fillChunkData(byte[] data, int offset, int rowId,
       KeyStructureInfo restructuringInfo) {
-    byte[] rowData = new byte[restructuringInfo.getMaskedBytes().length];
-    System.arraycopy(dataChunk, rowId * chunkAttributes.getColumnValueSize(), rowData,
-        restructuringInfo.getBlockMdKeyStartOffset(), chunkAttributes.getColumnValueSize());
     byte[] maskedKey =
-        getMaskedKey(rowData, rowId * chunkAttributes.getColumnValueSize(), restructuringInfo);
+        getMaskedKey(dataChunk, rowId * chunkAttributes.getColumnValueSize(), restructuringInfo);
     System.arraycopy(maskedKey, 0, data, offset, maskedKey.length);
     return maskedKey.length;
   }
@@ -81,7 +78,7 @@ public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<b
     int byteRange = 0;
     for (int i = 0; i < info.getMaskByteRanges().length; i++) {
       byteRange = info.getMaskByteRanges()[i];
-      maskedKey[counter++] = (byte) (data[byteRange] & info.getMaxKey()[byteRange]);
+      maskedKey[counter++] = (byte) (data[byteRange + offset] & info.getMaxKey()[byteRange]);
     }
     return maskedKey;
   }

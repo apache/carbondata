@@ -35,24 +35,24 @@ import org.scalatest.BeforeAndAfterAll
 class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("CREATE CUBE carboncube DIMENSIONS (empno Integer, empname String, designation String, doj String, workgroupcategory Integer, workgroupcategoryname String, deptno Integer, deptname String, projectcode Integer, projectjoindate String, projectenddate String) MEASURES (attendance Integer,utilization Integer,salary Integer) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
+    sql("CREATE table carbontable (empno int, empname String, designation String, doj String, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate String, projectenddate String, attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
     sql("create table hivetable(empno int, empname String, designation string, doj String, workgroupcategory int, workgroupcategoryname String,deptno int, deptname String, projectcode int, projectjoindate String,projectenddate String, attendance String,utilization String,salary String)row format delimited fields terminated by ','")
   }
 
   test("test data loading and validate query output") {
     //Create test cube and hive table
-    sql("CREATE CUBE testcube DIMENSIONS (empno Integer, empname String, designation String, doj String, workgroupcategory Integer, workgroupcategoryname String, deptno Integer, deptname String, projectcode Integer, projectjoindate String, projectenddate String) MEASURES (attendance Integer,utilization Integer,salary Integer) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
+    sql("CREATE table testtable (empno int, empname String, designation String, doj String, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate String, projectenddate String,attendance double,utilization double,salary double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate')")
     sql("create table testhivetable(empno int, empname String, designation string, doj String, workgroupcategory int, workgroupcategoryname String,deptno int, deptname String, projectcode int, projectjoindate String,projectenddate String, attendance double,utilization double,salary double)row format delimited fields terminated by ','")
     //load data into test cube and hive table and validate query result
-    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table testcube")
+    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table testtable")
     sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' overwrite INTO table testhivetable")
-    checkAnswer(sql("select * from testcube"), sql("select * from testhivetable"))
+    checkAnswer(sql("select * from testtable"), sql("select * from testhivetable"))
     //load data incrementally and validate query result
-    sql("LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE testcube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')")
+    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO TABLE testtable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
     sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' INTO table testhivetable")
-    checkAnswer(sql("select * from testcube"), sql("select * from testhivetable"))
+    checkAnswer(sql("select * from testtable"), sql("select * from testhivetable"))
     //drop test cube and table
-    sql("drop cube testcube")
+    sql("drop table testtable")
     sql("drop table testhivetable")
   }
 
@@ -62,14 +62,14 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
    */
   test("test data loading with different case file header and validate query output") {
     //Create test cube and hive table
-    sql("CREATE CUBE testcube1 DIMENSIONS (empno Integer, empname String, designation String, doj String, workgroupcategory Integer, workgroupcategoryname String, deptno Integer, deptname String, projectcode Integer, projectjoindate String, projectenddate String) MEASURES (attendance Integer,utilization Integer,salary Integer) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
+    sql("CREATE table testtable1 (empno int, empname String, designation String, doj String, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate String, projectenddate String,attendance double,utilization double,salary double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate')")
     sql("create table testhivetable1(empno int, empname String, designation string, doj String, workgroupcategory int, workgroupcategoryname String,deptno int, deptname String, projectcode int, projectjoindate String,projectenddate String, attendance double,utilization double,salary double)row format delimited fields terminated by ','")
     //load data into test cube and hive table and validate query result
-    sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' INTO table testcube1 options('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='EMPno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,SALARY')")
+    sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' INTO table testtable1 options('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='EMPno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,SALARY')")
     sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' overwrite INTO table testhivetable1")
-    checkAnswer(sql("select * from testcube1"), sql("select * from testhivetable1"))
+    checkAnswer(sql("select * from testtable1"), sql("select * from testhivetable1"))
     //drop test cube and table
-    sql("drop cube testcube1")
+    sql("drop table testtable1")
     sql("drop table testhivetable1")
   }
   
@@ -79,20 +79,20 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test carbon table data loading using old syntax") {
-    sql("LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE carboncube PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')")
+    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO TABLE carbontable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
   }
   
   test("test carbon table data loading using new syntax compatible with hive") {
-    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table carboncube")
-    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table carboncube options('DELIMITER'=',', 'QUOTECHAR'='\"')")
+    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table carbontable")
+    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table carbontable options('DELIMITER'=',', 'QUOTECHAR'='\"')")
   }
   
   test("test carbon table data loading using new syntax with overwrite option compatible with hive") {
     try {
-      sql("LOAD DATA local inpath './src/test/resources/data.csv' overwrite INTO table carboncube")
+      sql("LOAD DATA local inpath './src/test/resources/data.csv' overwrite INTO table carbontable")
     } catch {
       case e : Throwable => {
-        assert(e.getMessage.equals("Overwrite is not supported for carbon table with default.carboncube"))
+        assert(e.getMessage.equals("Overwrite is not supported for carbon table with default.carbontable"))
       }
     }
   }
@@ -224,7 +224,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   }
   
   override def afterAll {
-    sql("drop cube carboncube")
+    sql("drop table carbontable")
     sql("drop table hivetable")
     sql("drop table if exists header_test")
     sql("drop table if exists mixed_header_test")

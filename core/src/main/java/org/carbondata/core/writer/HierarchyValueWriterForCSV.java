@@ -127,7 +127,7 @@ public class HierarchyValueWriterForCSV {
       }
     });
 
-    if (listFiles.length == 0) {
+    if (null == listFiles || listFiles.length == 0) {
       counter = 0;
       return;
     }

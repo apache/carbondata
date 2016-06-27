@@ -24,6 +24,7 @@ import org.carbondata.query.carbonfilterinterface.RowIntf;
 import org.carbondata.query.expression.DataType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
+import org.carbondata.query.expression.exception.FilterIllegalMemberException;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 
 public class GreaterThanEqualToExpression extends BinaryConditionalExpression {
@@ -33,7 +34,8 @@ public class GreaterThanEqualToExpression extends BinaryConditionalExpression {
     super(left, right);
   }
 
-  public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+  public ExpressionResult evaluate(RowIntf value)
+      throws FilterUnsupportedException, FilterIllegalMemberException {
     ExpressionResult elRes = left.evaluate(value);
     ExpressionResult erRes = right.evaluate(value);
     ExpressionResult exprResVal1 = elRes;

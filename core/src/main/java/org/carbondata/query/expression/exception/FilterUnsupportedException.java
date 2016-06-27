@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.carbondata.query.expression.exception;
 
 import java.util.Locale;
@@ -89,5 +88,4 @@ public class FilterUnsupportedException extends Exception {
   public String getMessage() {
     return this.msg;
   }
-
 }

@@ -21,11 +21,6 @@ package org.carbondata.core.vo;
 public class ColumnGroupModel {
 
   /**
-   * cardinality all dimension
-   */
-  private int[] colGroupCardinality;
-
-  /**
    * number of columns in columnar block
    */
   private int[] columnSplit;
@@ -48,22 +43,6 @@ public class ColumnGroupModel {
    * {{0,1,2},3,4,{5,6}}
    */
   private int[][] columnGroups;
-
-  /**
-   * @return cardinality of column groups
-   */
-  public int[] getColumnGroupCardinality() {
-    return colGroupCardinality;
-  }
-
-  /**
-   * set columngroup cardinality
-   *
-   * @param columnGroupCardinality
-   */
-  public void setColumnGroupCardinality(int[] columnGroupCardinality) {
-    this.colGroupCardinality = columnGroupCardinality;
-  }
 
   /**
    * return columnSplit

@@ -44,6 +44,7 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.load.LoadMetadataDetails;
+import org.carbondata.core.locks.ICarbonLock;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.integration.spark.merger.CompactionType;
 import org.carbondata.lcm.status.SegmentStatusManager;
@@ -61,36 +62,19 @@ public final class CarbonDataMergerUtil {
 
   }
 
+  /**
+   * Returns the size of all the carbondata files present in the segment.
+   * @param carbonFile
+   * @return
+   */
   private static long getSizeOfFactFileInLoad(CarbonFile carbonFile) {
     long factSize = 0;
 
-    // check if update fact is present.
-
-    CarbonFile[] factFileUpdated = carbonFile.listFiles(new CarbonFileFilter() {
-
-      @Override public boolean accept(CarbonFile file) {
-        if (file.getName().endsWith(CarbonCommonConstants.FACT_UPDATE_EXTENSION)) {
-          return true;
-        }
-        return false;
-      }
-    });
-
-    if (factFileUpdated.length != 0) {
-      for (CarbonFile fact : factFileUpdated) {
-        factSize += fact.getSize();
-      }
-      return factSize;
-    }
-
-    // normal fact case.
+    // carbon data file case.
     CarbonFile[] factFile = carbonFile.listFiles(new CarbonFileFilter() {
 
       @Override public boolean accept(CarbonFile file) {
-        if (file.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT)) {
-          return true;
-        }
-        return false;
+        return CarbonTablePath.isCarbonDataFile(file.getName());
       }
     });
 
@@ -139,60 +123,85 @@ public final class CarbonDataMergerUtil {
     return CarbonCommonConstants.LOAD_FOLDER + segmentNumber;
   }
 
-  public static void updateLoadMetadataWithMergeStatus(List<LoadMetadataDetails> loadsToMerge,
+  public static boolean updateLoadMetadataWithMergeStatus(List<LoadMetadataDetails> loadsToMerge,
       String metaDataFilepath, String MergedLoadName, CarbonLoadModel carbonLoadModel,
       String mergeLoadStartTime) {
 
+    boolean tableStatusUpdationStatus = false;
     AbsoluteTableIdentifier absoluteTableIdentifier =
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
 
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
+    SegmentStatusManager segmentStatusManager =
+        new SegmentStatusManager(absoluteTableIdentifier);
 
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
-
-    String statusFilePath = carbonTablePath.getTableStatusFilePath();
-
-    LoadMetadataDetails[] loadDetails = segmentStatusManager.readLoadMetadata(metaDataFilepath);
-
-    String mergedLoadNumber = MergedLoadName.substring(
-        MergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER)
-            + CarbonCommonConstants.LOAD_FOLDER.length(), MergedLoadName.length());
-
-    String modificationOrDeletionTimeStamp = CarbonLoaderUtil.readCurrentTime();
-    for (LoadMetadataDetails loadDetail : loadDetails) {
-      // check if this segment is merged.
-      if (loadsToMerge.contains(loadDetail)) {
-        loadDetail.setLoadStatus(CarbonCommonConstants.SEGMENT_COMPACTED);
-        loadDetail.setModificationOrdeletionTimesStamp(modificationOrDeletionTimeStamp);
-        loadDetail.setMergedLoadName(mergedLoadNumber);
-      }
-    }
-
-    // create entry for merged one.
-    LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
-    loadMetadataDetails.setPartitionCount(carbonLoadModel.getPartitionId());
-    loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS);
-    String loadEnddate = CarbonLoaderUtil.readCurrentTime();
-    loadMetadataDetails.setTimestamp(loadEnddate);
-    loadMetadataDetails.setLoadName(mergedLoadNumber);
-    loadMetadataDetails.setLoadStartTime(mergeLoadStartTime);
-    loadMetadataDetails.setPartitionCount("0");
-
-    List<LoadMetadataDetails> updatedDetailsList =
-        new ArrayList<LoadMetadataDetails>(Arrays.asList(loadDetails));
-
-    // put the merged folder entry
-    updatedDetailsList.add(loadMetadataDetails);
+    ICarbonLock carbonLock =
+        segmentStatusManager.getTableStatusLock();
 
     try {
-      segmentStatusManager.writeLoadDetailsIntoFile(statusFilePath,
-          updatedDetailsList.toArray(new LoadMetadataDetails[updatedDetailsList.size()]));
-    } catch (IOException e) {
-      LOGGER.error("Error while writing metadata");
-    }
+      if (carbonLock.lockWithRetries()) {
+        LOGGER.info("Acquired lock for the table " + carbonLoadModel.getDatabaseName() + "."
+            + carbonLoadModel.getTableName() + " for table status updation ");
 
+        CarbonTablePath carbonTablePath = CarbonStorePath
+            .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+                absoluteTableIdentifier.getCarbonTableIdentifier());
+
+        String statusFilePath = carbonTablePath.getTableStatusFilePath();
+
+        LoadMetadataDetails[] loadDetails = segmentStatusManager.readLoadMetadata(metaDataFilepath);
+
+        String mergedLoadNumber = MergedLoadName.substring(
+            MergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER)
+                + CarbonCommonConstants.LOAD_FOLDER.length(), MergedLoadName.length());
+
+        String modificationOrDeletionTimeStamp = CarbonLoaderUtil.readCurrentTime();
+        for (LoadMetadataDetails loadDetail : loadDetails) {
+          // check if this segment is merged.
+          if (loadsToMerge.contains(loadDetail)) {
+            loadDetail.setLoadStatus(CarbonCommonConstants.SEGMENT_COMPACTED);
+            loadDetail.setModificationOrdeletionTimesStamp(modificationOrDeletionTimeStamp);
+            loadDetail.setMergedLoadName(mergedLoadNumber);
+          }
+        }
+
+        // create entry for merged one.
+        LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
+        loadMetadataDetails.setPartitionCount(carbonLoadModel.getPartitionId());
+        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS);
+        String loadEnddate = CarbonLoaderUtil.readCurrentTime();
+        loadMetadataDetails.setTimestamp(loadEnddate);
+        loadMetadataDetails.setLoadName(mergedLoadNumber);
+        loadMetadataDetails.setLoadStartTime(mergeLoadStartTime);
+        loadMetadataDetails.setPartitionCount("0");
+
+        List<LoadMetadataDetails> updatedDetailsList = new ArrayList<>(Arrays.asList(loadDetails));
+
+        // put the merged folder entry
+        updatedDetailsList.add(loadMetadataDetails);
+
+        try {
+          segmentStatusManager.writeLoadDetailsIntoFile(statusFilePath,
+              updatedDetailsList.toArray(new LoadMetadataDetails[updatedDetailsList.size()]));
+          tableStatusUpdationStatus = true;
+        } catch (IOException e) {
+          LOGGER.error("Error while writing metadata");
+        }
+      } else {
+        LOGGER.error(
+            "Could not able to obtain lock for table" + carbonLoadModel.getDatabaseName() + "."
+                + carbonLoadModel.getTableName() + "for table status updation");
+      }
+    } finally {
+      if (carbonLock.unlock()) {
+        LOGGER.info("Table unlocked successfully after table status updation" + carbonLoadModel
+            .getDatabaseName() + "." + carbonLoadModel.getTableName());
+      } else {
+        LOGGER.error(
+            "Unable to unlock Table lock for table" + carbonLoadModel.getDatabaseName() + "."
+                + carbonLoadModel.getTableName() + " during table status updation");
+      }
+    }
+    return tableStatusUpdationStatus;
   }
 
   /**
@@ -208,25 +217,44 @@ public final class CarbonDataMergerUtil {
       CarbonLoadModel carbonLoadModel, int partitionCount, long compactionSize,
       List<LoadMetadataDetails> segments, CompactionType compactionType) {
 
+    List sortedSegments = new ArrayList(segments);
+    // sort the segment details.
+    Collections.sort(sortedSegments, new Comparator<LoadMetadataDetails>() {
+      @Override public int compare(LoadMetadataDetails seg1, LoadMetadataDetails seg2) {
+        double seg1Id = Double.parseDouble(seg1.getLoadName());
+        double seg2Id = Double.parseDouble(seg2.getLoadName());
+        if (seg1Id - seg2Id < 0) {
+          return -1;
+        }
+        if (seg1Id - seg2Id > 0) {
+          return 1;
+        }
+        return 0;
+      }
+    });
+
     // check preserve property and preserve the configured number of latest loads.
 
     List<LoadMetadataDetails> listOfSegmentsAfterPreserve =
-        checkPreserveSegmentsPropertyReturnRemaining(segments);
+        checkPreserveSegmentsPropertyReturnRemaining(sortedSegments);
 
     // filter the segments if the compaction based on days is configured.
 
     List<LoadMetadataDetails> listOfSegmentsLoadedInSameDateInterval =
         identifySegmentsToBeMergedBasedOnLoadedDate(listOfSegmentsAfterPreserve);
-
+    List<LoadMetadataDetails> listOfSegmentsToBeMerged;
     // identify the segments to merge based on the Size of the segments across partition.
+    if (compactionType.equals(CompactionType.MAJOR_COMPACTION)) {
 
-    List<LoadMetadataDetails> listOfSegmentsBelowThresholdSize =
-        identifySegmentsToBeMergedBasedOnSize(compactionSize,
-            listOfSegmentsLoadedInSameDateInterval, carbonLoadModel, partitionCount, storeLocation,
-            compactionType);
+      listOfSegmentsToBeMerged = identifySegmentsToBeMergedBasedOnSize(compactionSize,
+          listOfSegmentsLoadedInSameDateInterval, carbonLoadModel, partitionCount, storeLocation);
+    } else {
 
+      listOfSegmentsToBeMerged =
+          identifySegmentsToBeMergedBasedOnSegCount(listOfSegmentsLoadedInSameDateInterval);
+    }
 
-    return listOfSegmentsBelowThresholdSize;
+    return listOfSegmentsToBeMerged;
   }
 
   /**
@@ -347,7 +375,7 @@ public final class CarbonDataMergerUtil {
   }
 
   /**
-   * Identify the segments to be merged based on the Size.
+   * Identify the segments to be merged based on the Size in case of Major compaction.
    *
    * @param compactionSize
    * @param listOfSegmentsAfterPreserve
@@ -358,8 +386,7 @@ public final class CarbonDataMergerUtil {
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnSize(
       long compactionSize, List<LoadMetadataDetails> listOfSegmentsAfterPreserve,
-      CarbonLoadModel carbonLoadModel, int partitionCount, String storeLocation,
-      CompactionType compactionType) {
+      CarbonLoadModel carbonLoadModel, int partitionCount, String storeLocation) {
 
     List<LoadMetadataDetails> segmentsToBeMerged =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -367,75 +394,157 @@ public final class CarbonDataMergerUtil {
     CarbonTableIdentifier tableIdentifier =
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier();
 
-    // variable to store one  segment size across partition.
-    long sizeOfOneSegmentAcrossPartition = 0;
 
     // total length
     long totalLength = 0;
-
-    String includeCompactedSegments = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.INCLUDE_ALREADY_COMPACTED_SEGMENTS,
-            CarbonCommonConstants.INCLUDE_ALREADY_COMPACTED_SEGMENTS_DEFAULT);
 
     // check size of each segment , sum it up across partitions
     for (LoadMetadataDetails segment : listOfSegmentsAfterPreserve) {
 
       String segId = segment.getLoadName();
+      // variable to store one  segment size across partition.
+      long sizeOfOneSegmentAcrossPartition =
+          getSizeOfOneSegmentAcrossPartition(partitionCount, storeLocation, tableIdentifier, segId);
 
-      // in case of minor compaction . check the property whether to include the
-      // compacted segment or not.
-      // check if the segment is compacted or not.
-      if (CompactionType.MINOR_COMPACTION.equals(compactionType) && includeCompactedSegments
-          .equalsIgnoreCase("false") && segId.contains(".")) {
-        continue;
-      }
-
-      // calculate size across partitions
-      for (int partition = 0; partition < partitionCount; partition++) {
-
-        String loadPath = CarbonLoaderUtil
-            .getStoreLocation(storeLocation, tableIdentifier, segId, partition + "");
-
-        CarbonFile segmentFolder =
-            FileFactory.getCarbonFile(loadPath, FileFactory.getFileType(loadPath));
-
-        long sizeOfEachSegment = getSizeOfFactFileInLoad(segmentFolder);
-
-        sizeOfOneSegmentAcrossPartition += sizeOfEachSegment;
-      }
-      totalLength += sizeOfOneSegmentAcrossPartition;
-      // in case of minor compaction the size of the segments should exceed the
-      // minor compaction limit then only compaction will occur.
-      // in case of major compaction the size doesnt matter. all the segments will be merged.
-      if (totalLength < (compactionSize * 1024 * 1024)) {
-        segmentsToBeMerged.add(segment);
-      }
-      // in case if minor we will merge segments only when it exceeds limit
-      // so check whether limit has been exceeded. if yes then break loop.
-      if (CompactionType.MINOR_COMPACTION.equals(compactionType)) {
-        if (totalLength > (compactionSize * 1024 * 1024)) {
-          // if size of segments exceeds then take those segments and merge.
-          // i.e if 1st segment is 200mb and 2nd segment is 100mb.
-          //  and compaction size is 256mb . we need to merge these 2 loads. so added this check.
-          segmentsToBeMerged.add(segment);
+      // if size of a segment is greater than the Major compaction size. then ignore it.
+      if (sizeOfOneSegmentAcrossPartition > (compactionSize * 1024 * 1024)) {
+        // if already 2 segments have been found for merging then stop scan here and merge.
+        if (segmentsToBeMerged.size() > 1) {
           break;
+        } else { // if only one segment is found then remove the earlier one in list.
+          // reset the total length to 0.
+          segmentsToBeMerged = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+          totalLength = 0;
+          continue;
         }
       }
 
-      // after all partitions
-      sizeOfOneSegmentAcrossPartition = 0;
-    }
+      totalLength += sizeOfOneSegmentAcrossPartition;
 
-    // if type is minor then we need to check the total size whether it has reached the limit of
-    // compaction size.
-    if (CompactionType.MINOR_COMPACTION.equals(compactionType)) {
-      if (totalLength < compactionSize * 1024 * 1024) {
-        // no need to do the compaction.
-        segmentsToBeMerged.removeAll(segmentsToBeMerged);
+      // in case of major compaction the size doesnt matter. all the segments will be merged.
+      if (totalLength < (compactionSize * 1024 * 1024)) {
+        segmentsToBeMerged.add(segment);
+      } else { // if already 2 segments have been found for merging then stop scan here and merge.
+        if (segmentsToBeMerged.size() > 1) {
+          break;
+        } else { // if only one segment is found then remove the earlier one in list and put this.
+          // reset the total length to the current identified segment.
+          segmentsToBeMerged = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+          segmentsToBeMerged.add(segment);
+          totalLength = sizeOfOneSegmentAcrossPartition;
+        }
       }
+
     }
 
     return segmentsToBeMerged;
+  }
+
+  /**
+   * For calculating the size of a segment across all partition.
+   * @param partitionCount
+   * @param storeLocation
+   * @param tableIdentifier
+   * @param segId
+   * @return
+   */
+  private static long getSizeOfOneSegmentAcrossPartition(int partitionCount, String storeLocation,
+      CarbonTableIdentifier tableIdentifier, String segId) {
+    long sizeOfOneSegmentAcrossPartition = 0;
+    // calculate size across partitions
+    for (int partition = 0; partition < partitionCount; partition++) {
+
+      String loadPath = CarbonLoaderUtil
+          .getStoreLocation(storeLocation, tableIdentifier, segId, partition + "");
+
+      CarbonFile segmentFolder =
+          FileFactory.getCarbonFile(loadPath, FileFactory.getFileType(loadPath));
+
+      long sizeOfEachSegment = getSizeOfFactFileInLoad(segmentFolder);
+
+      sizeOfOneSegmentAcrossPartition += sizeOfEachSegment;
+    }
+    return sizeOfOneSegmentAcrossPartition;
+  }
+
+  /**
+   * Identify the segments to be merged based on the segment count
+   *
+   * @param listOfSegmentsAfterPreserve
+   * @return
+   */
+  private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnSegCount(
+      List<LoadMetadataDetails> listOfSegmentsAfterPreserve) {
+
+    List<LoadMetadataDetails> mergedSegments =
+        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    List<LoadMetadataDetails> unMergedSegments =
+        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+
+    int[] noOfSegmentLevelsCount =
+        CarbonProperties.getInstance().getCompactionSegmentLevelCount();
+
+    int level1Size = 0;
+    int level2Size = 0;
+    boolean first = true;
+
+    for(int levelCount : noOfSegmentLevelsCount){
+      if(first){
+        level1Size = levelCount;
+        first = false;
+      }
+      else{
+        level2Size = levelCount;
+        break;
+        // breaking as we are doing only 2 levels
+      }
+
+    }
+
+    int unMergeCounter = 0;
+    int mergeCounter = 0;
+
+    // check size of each segment , sum it up across partitions
+    for (LoadMetadataDetails segment : listOfSegmentsAfterPreserve) {
+
+      String segName = segment.getLoadName();
+
+      // if a segment is already merged 2 levels then it s name will become .2
+      // need to exclude those segments from minor compaction.
+      if (segName.endsWith(".2")) {
+        continue;
+      }
+
+      // check if the segment is merged or not
+
+      if (!isMergedSegment(segName)) {
+        //if it is an unmerged segment then increment counter
+        unMergeCounter++;
+        unMergedSegments.add(segment);
+        if (unMergeCounter == (level1Size)) {
+          return unMergedSegments;
+        }
+      } else {
+        mergeCounter++;
+        mergedSegments.add(segment);
+        if (mergeCounter == (level2Size)) {
+          return mergedSegments;
+        }
+      }
+    }
+    return new ArrayList<>(0);
+  }
+
+  /**
+   * To check if the segment is merged or not.
+   * @param segName
+   * @return
+   */
+  private static boolean isMergedSegment(String segName) {
+    if(segName.contains(".")){
+      return true;
+    }
+    return false;
   }
 
   /**
@@ -479,39 +588,20 @@ public final class CarbonDataMergerUtil {
       }
     }
 
-    // handle the retaining of valid loads,
-
     // check if valid list is big enough for removing the number of seg to be retained.
-    if (validList.size() > numberOfSegToBeRetained) {
+    // last element
+    int removingIndex = validList.size() - 1;
 
-      // after the sort remove the loads from the last as per the retaining count.
-      Collections.sort(validList, new Comparator<LoadMetadataDetails>() {
-
-        @Override public int compare(LoadMetadataDetails seg1, LoadMetadataDetails seg2) {
-          double segNumber1 = Double.parseDouble(seg1.getLoadName());
-          double segNumber2 = Double.parseDouble(seg2.getLoadName());
-
-          if ((segNumber1 - segNumber2) < 0) {
-            return -1;
-          } else if ((segNumber1 - segNumber2) > 0) {
-            return 1;
-          }
-          return 0;
-
-        }
-      });
-
-      for (int i = 0; i < numberOfSegToBeRetained; i++) {
-
-        // remove last segment
-        validList.remove(validList.size() - 1);
-
+    for (int i = validList.size(); i > 0; i--) {
+      if (numberOfSegToBeRetained == 0) {
+        break;
       }
-      return validList;
+      // remove last segment
+      validList.remove(removingIndex--);
+      numberOfSegToBeRetained--;
     }
+    return validList;
 
-    // case where there is no 2 loads available for merging.
-    return new ArrayList<LoadMetadataDetails>(0);
   }
 
   /**
@@ -524,10 +614,6 @@ public final class CarbonDataMergerUtil {
 
     long compactionSize = 0;
     switch (compactionType) {
-      case MINOR_COMPACTION:
-        compactionSize = CarbonProperties.getInstance().getMinorCompactionSize();
-        break;
-
       case MAJOR_COMPACTION:
         compactionSize = CarbonProperties.getInstance().getMajorCompactionSize();
         break;

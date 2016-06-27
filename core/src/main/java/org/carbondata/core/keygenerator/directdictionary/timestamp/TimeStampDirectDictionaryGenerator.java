@@ -33,19 +33,11 @@ import static org.carbondata.core.keygenerator.directdictionary.timestamp.TimeSt
 import static org.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_MIN;
 import static org.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_SEC;
 
-import org.apache.spark.sql.columnar.TIMESTAMP;
-
 /**
  * The class provides the method to generate dictionary key and getting the actual value from
  * the dictionaryKey for direct dictionary column for TIMESTAMP type.
  */
 public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGenerator {
-
-  /**
-   * Logger instance
-   */
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(TimeStampDirectDictionaryGenerator.class.getName());
 
   /**
    * The value of 1 unit of the SECOND, MINUTE, HOUR, or DAY in millis.
@@ -57,6 +49,11 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
    * customized the start of position. for example "January 1, 2000"
    */
   public static final long cutOffTimeStamp;
+  /**
+   * Logger instance
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(TimeStampDirectDictionaryGenerator.class.getName());
 
   /**
    * initialization block for granularityFactor and cutOffTimeStamp
@@ -95,6 +92,9 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
         Date dateToStr = timeParser.parse(cutOffTimeStampString);
         cutOffTimeStampLocal = dateToStr.getTime();
       } catch (ParseException e) {
+        LOGGER.warn("Cannot convert" + cutOffTimeStampString
+            + " to Time/Long type value. Value considered for cutOffTimeStamp is -1." + e
+            .getMessage());
         cutOffTimeStampLocal = -1;
       }
     }
@@ -118,23 +118,45 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
       return 1;
     }
+    return getDirectSurrogateForMember(memberStr, timeParser);
+  }
+
+  /**
+   * The method take member String as input and converts
+   * and returns the dictionary key
+   *
+   * @param memberStr date format string
+   * @return dictionary value
+   */
+  public int generateDirectSurrogateKey(String memberStr, String format) {
+    SimpleDateFormat timeParser = new SimpleDateFormat(format);
+    timeParser.setLenient(false);
+    if (null == memberStr || memberStr.trim().isEmpty() || memberStr
+        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+      return 1;
+    }
+    return getDirectSurrogateForMember(memberStr, timeParser);
+  }
+
+  private int getDirectSurrogateForMember(String memberStr, SimpleDateFormat timeParser) {
     Date dateToStr = null;
     try {
       dateToStr = timeParser.parse(memberStr);
     } catch (ParseException e) {
-      LOGGER.error(
-          "Cannot convert" + TIMESTAMP.toString() + " to Time/Long type value" + e.getMessage());
+      LOGGER.debug("Cannot convert " + memberStr
+          + " to Time/Long type value. Value considered as null." + e.getMessage());
+      dateToStr = null;
     }
     //adding +2 to reserve the first cuttOffDiff value for null or empty date
     if (null == dateToStr) {
-      return -1;
+      return 1;
     } else {
       if (cutOffTimeStamp >= 0) {
         int keyValue = (int) ((dateToStr.getTime() - cutOffTimeStamp) / granularityFactor);
-        return keyValue < 0 ? -1 : keyValue + 2;
+        return keyValue < 0 ? 1 : keyValue + 2;
       } else {
         int keyValue = (int) (dateToStr.getTime() / granularityFactor);
-        return keyValue < 0 ? -1 : keyValue + 2;
+        return keyValue < 0 ? 1 : keyValue + 2;
       }
     }
   }

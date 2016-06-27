@@ -20,7 +20,6 @@
 
 <plugin
    id="CarbonAutoAggSliceMerger"
-   iconfile="icon.png"
    description="Carbon Auto Agg Slice Merger"
    tooltip="Carbon Auto Agg Slice Merger"
    category="Carbon"

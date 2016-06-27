@@ -116,6 +116,7 @@ public class SegmentTaskIndexStore {
         addTableSegmentMap(absoluteTableIdentifier);
     Map<String, AbstractIndex> taskIdToSegmentIndexMap = null;
     String segmentId = null;
+    String taskId = null;
     try {
       while (iteratorOverSegmentBlocksInfos.hasNext()) {
         // segment id to table block mapping
@@ -147,8 +148,9 @@ public class SegmentTaskIndexStore {
                   taskIdToTableBlockInfoMap.entrySet().iterator();
               while (iterator.hasNext()) {
                 Entry<String, List<TableBlockInfo>> taskToBlockInfoList = iterator.next();
-                taskIdToSegmentIndexMap
-                    .put(taskToBlockInfoList.getKey(), loadBlocks(taskToBlockInfoList.getValue()));
+                taskId = taskToBlockInfoList.getKey();
+                taskIdToSegmentIndexMap.put(taskId,
+                    loadBlocks(taskId, taskToBlockInfoList.getValue(), absoluteTableIdentifier));
               }
               // removing from segment lock map as once segment is loaded
               //if concurrent query is coming for same segment
@@ -231,19 +233,12 @@ public class SegmentTaskIndexStore {
    * @return loaded segment
    * @throws CarbonUtilException
    */
-  private AbstractIndex loadBlocks(List<TableBlockInfo> tableBlockInfoList)
-      throws CarbonUtilException {
-    DataFileFooter footer = null;
+  private AbstractIndex loadBlocks(String taskId, List<TableBlockInfo> tableBlockInfoList,
+      AbsoluteTableIdentifier tableIdentifier) throws CarbonUtilException {
     // all the block of one task id will be loaded together
     // so creating a list which will have all the data file meta data to of one task
-    List<DataFileFooter> footerList = new ArrayList<DataFileFooter>();
-    for (TableBlockInfo tableBlockInfo : tableBlockInfoList) {
-      footer = CarbonUtil
-          .readMetadatFile(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset(),
-              tableBlockInfo.getBlockLength());
-      footer.setTableBlockInfo(tableBlockInfo);
-      footerList.add(footer);
-    }
+    List<DataFileFooter> footerList =
+        CarbonUtil.readCarbonIndexFile(taskId, tableBlockInfoList, tableIdentifier);
     AbstractIndex segment = new SegmentTaskIndex();
     // file path of only first block is passed as it all table block info path of
     // same task id will be same

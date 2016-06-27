@@ -52,9 +52,9 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
         )
       CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "true")
       sql(
-        "CREATE CUBE directDictionaryCube DIMENSIONS (empno Integer,doj Timestamp) MEASURES " +
-          "(salary Integer) " +
-          "OPTIONS (PARTITIONER [PARTITION_COUNT=1])"
+        "CREATE TABLE directDictionaryCube (empno int,doj Timestamp, " +
+          "salary int) " +
+          "STORED BY 'org.apache.carbondata.format'"
       )
 
       CarbonProperties.getInstance()
@@ -62,8 +62,8 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
       val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
         .getCanonicalPath
       var csvFilePath = currentDirectory + "/src/test/resources/datasample.csv"
-      sql("LOAD DATA fact from '" + csvFilePath + "' INTO CUBE directDictionaryCube PARTITIONDATA" +
-        "(DELIMITER ',', QUOTECHAR '\"')");
+      sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryCube OPTIONS" +
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
 
     } catch {
       case x: Throwable => CarbonProperties.getInstance()
@@ -105,7 +105,7 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
   }
 
   override def afterAll {
-    sql("drop cube directDictionaryCube")
+    sql("drop table directDictionaryCube")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")

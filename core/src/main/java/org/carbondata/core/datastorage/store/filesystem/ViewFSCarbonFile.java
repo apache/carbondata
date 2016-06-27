@@ -101,9 +101,9 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
     return files;
   }
 
-  @Override
-  public CarbonFile getParentFile() {
-    return new ViewFSCarbonFile(fileStatus.getPath().getParent());
+  @Override public CarbonFile getParentFile() {
+    Path parent = fileStatus.getPath().getParent();
+    return null == parent ? null : new ViewFSCarbonFile(parent);
   }
 
   @Override

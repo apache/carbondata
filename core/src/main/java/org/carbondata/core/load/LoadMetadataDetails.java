@@ -20,6 +20,13 @@
 package org.carbondata.core.load;
 
 import java.io.Serializable;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
+import org.carbondata.common.logging.LogService;
+import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.constants.CarbonCommonConstants;
 
 public class LoadMetadataDetails implements Serializable {
 
@@ -28,6 +35,15 @@ public class LoadMetadataDetails implements Serializable {
   private String loadStatus;
   private String loadName;
   private String partitionCount;
+
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(LoadMetadataDetails.class.getName());
+
+  private static final SimpleDateFormat parser =
+      new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
   /**
    * Segment modification or deletion time stamp
    */
@@ -125,6 +141,33 @@ public class LoadMetadataDetails implements Serializable {
     return loadStartTime;
   }
 
+  /**
+   * return loadStartTime
+   * @return
+   */
+  public long getLoadStartTimeAsLong() {
+    return getTimeStamp(loadStartTime);
+  }
+
+  /**
+   * returns load start time as long value
+   * @param loadStartTime
+   * @return
+   */
+  private Long getTimeStamp(String loadStartTime) {
+    if (loadStartTime.isEmpty()) {
+      return null;
+    }
+
+    Date dateToStr = null;
+    try {
+      dateToStr = parser.parse(loadStartTime);
+      return dateToStr.getTime() * 1000;
+    } catch (ParseException e) {
+      LOGGER.error("Cannot convert" + loadStartTime + " to Time/Long type value" + e.getMessage());
+      return null;
+    }
+  }
   /**
    * @param loadStartTime
    */
