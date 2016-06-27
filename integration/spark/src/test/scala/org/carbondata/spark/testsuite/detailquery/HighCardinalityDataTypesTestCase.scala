@@ -49,38 +49,37 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
         "NO_DICTIONARY_HIVE_6"
     );
     //For Carbon cube creation.
-    sql("CREATE CUBE NO_DICTIONARY_CARBON_6 DIMENSIONS (empno Integer, " +
-      "doj Timestamp, workgroupcategory Integer, empname String,workgroupcategoryname String, " +
-      "deptno Integer, deptname String, projectcode Integer, projectjoindate Timestamp, " +
-      "projectenddate Timestamp, designation String) MEASURES (attendance Integer,utilization " +
-      "Integer,salary Integer) " + "OPTIONS (NO_DICTIONARY(empno,empname,designation) PARTITIONER" +
-      " [PARTITION_COUNT=1])"
-    ).show()
+    sql("CREATE TABLE NO_DICTIONARY_CARBON_6 (empno Int, " +
+      "doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, " +
+      "deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, " +
+      "projectenddate Timestamp, designation String,attendance Int,utilization " +
+      "Int,salary Int) STORED BY 'org.apache.carbondata.format' " +
+        "TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno,empname,designation')"
+    )
     sql(
-      "LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE NO_DICTIONARY_CARBON_6 " +
-        "PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')"
-    );
+      "LOAD DATA LOCAL INPATH './src/test/resources/data.csv' INTO TABLE NO_DICTIONARY_CARBON_6 " +
+        "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+    )
 
-    sql("CREATE CUBE NO_DICTIONARY_CARBON_7 DIMENSIONS (empno string, " +
-      "doj Timestamp, workgroupcategory Integer, empname String,workgroupcategoryname String, " +
-      "deptno Integer, deptname String, projectcode Integer, projectjoindate Timestamp, " +
-      "projectenddate Timestamp, designation String) MEASURES (attendance Integer,utilization " +
-      "Integer,salary Integer) " + "OPTIONS (NO_DICTIONARY(empno,empname,designation) PARTITIONER" +
-      " [PARTITION_COUNT=1])"
-    ).show()
+    sql("CREATE TABLE NO_DICTIONARY_CARBON_7 (empno string, " +
+      "doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, " +
+      "deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, " +
+      "projectenddate Timestamp, designation String,attendance Int,utilization " +
+      "Int,salary Int) STORED BY 'org.apache.carbondata.format' " +
+      "TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno,empname,designation')"
+    )
     sql(
-      "LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE NO_DICTIONARY_CARBON_7 " +
-        "PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')"
-    );
-    sql("CREATE CUBE filtertestTable DIMENSIONS (ID Integer,date Timestamp, country String, " +
-      "name String, phonetype String, serialname String) " +
-      "MEASURES (salary Integer) " +
-      "OPTIONS (NO_DICTIONARY(ID) PARTITIONER [PARTITION_COUNT=1])"
-    ).show()
+      "LOAD DATA LOCAL INPATH './src/test/resources/data.csv' INTO TABLE NO_DICTIONARY_CARBON_7 " +
+      "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
+    )
+    sql("CREATE TABLE filtertestTable (ID Int,date Timestamp, country String, " +
+      "name String, phonetype String, serialname String, salary Int) " +
+        "STORED BY 'org.apache.carbondata.format' " +  "TBLPROPERTIES('DICTIONARY_EXCLUDE'='ID')"
+    )
     sql(
-      s"LOAD DATA FACT FROM './src/test/resources/data2.csv' INTO CUBE filtertestTable OPTIONS" +
-        s"(DELIMITER ',', " +
-        s"FILEHEADER '')"
+      s"LOAD DATA LOCAL INPATH './src/test/resources/data2.csv' INTO TABLE filtertestTable OPTIONS"+
+        s"('DELIMITER'= ',', " +
+        s"'FILEHEADER'= '')"
     );
 
   }

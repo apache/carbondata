@@ -55,17 +55,17 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
     var csvFilePath2 = currentDirectory + "/src/test/resources/compaction/compaction2.csv"
     var csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
 
-    sql("LOAD DATA fact from '" + csvFilePath1 + "' INTO CUBE compactionLockTestTable " +
-      "PARTITIONDATA" +
-      "(DELIMITER ',', QUOTECHAR '\"')"
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE compactionLockTestTable " +
+      "OPTIONS" +
+      "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
-    sql("LOAD DATA fact from '" + csvFilePath2 + "' INTO CUBE compactionLockTestTable  " +
-      "PARTITIONDATA" +
-      "(DELIMITER ',', QUOTECHAR '\"')"
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath2 + "' INTO TABLE compactionLockTestTable  " +
+      "OPTIONS" +
+      "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
-    sql("LOAD DATA fact from '" + csvFilePath3 + "' INTO CUBE compactionLockTestTable  " +
-      "PARTITIONDATA" +
-      "(DELIMITER ',', QUOTECHAR '\"')"
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath3 + "' INTO TABLE compactionLockTestTable  " +
+      "OPTIONS" +
+      "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
     // take the lock so that next compaction will be failed.
     carbonLock.lockWithRetries()

@@ -177,7 +177,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop cube noloadtable")
+    sql("drop table noloadtable")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }

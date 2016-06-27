@@ -39,12 +39,12 @@ class DataCompactionTest extends QueryTest with BeforeAndAfterAll {
     var csvFilePath2 = currentDirectory + "/src/test/resources/compaction/compaction2.csv"
     var csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
 
-    sql("LOAD DATA fact from '" + csvFilePath1 + "' INTO CUBE normalcompaction PARTITIONDATA" +
-      "(DELIMITER ',', QUOTECHAR '\"')"
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE normalcompaction OPTIONS" +
+      "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
     CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "true")
-    sql("LOAD DATA fact from '" + csvFilePath2 + "' INTO CUBE normalcompaction  PARTITIONDATA" +
-      "(DELIMITER ',', QUOTECHAR '\"')"
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath2 + "' INTO TABLE normalcompaction  OPTIONS" +
+      "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
     CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "true")
     System.out
@@ -52,8 +52,8 @@ class DataCompactionTest extends QueryTest with BeforeAndAfterAll {
         .getProperty("carbon.enable.load.merge")
       )
     // compaction will happen here.
-    sql("LOAD DATA fact from '" + csvFilePath3 + "' INTO CUBE normalcompaction  PARTITIONDATA" +
-      "(DELIMITER ',', QUOTECHAR '\"')"
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath3 + "' INTO TABLE normalcompaction  OPTIONS" +
+      "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
     // compaction will happen here.
     sql("alter table normalcompaction compact 'major'"

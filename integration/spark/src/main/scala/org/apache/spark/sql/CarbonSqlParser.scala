@@ -179,23 +179,10 @@ class CarbonSqlParser()
   }
 
   override protected lazy val start: Parser[LogicalPlan] =
-     createCube | showCreateCube | loadManagement | createAggregateTable |
-      describeTable |
-      showCube | showLoads | alterCube | showAllCubes | alterTable | createTable
+    loadManagement | describeTable | showLoads | alterTable | createTable
 
-  protected lazy val loadManagement: Parser[LogicalPlan] = loadData | dropCubeOrTable |
-    deleteLoadsByID | deleteLoadsByLoadDate | deleteLoadsByDate | cleanFiles | loadDataNew
-
-  protected lazy val createAggregateTable: Parser[LogicalPlan] =
-    CREATE ~> AGGREGATETABLE ~>
-      (aggregates) ~
-      (FROM ~> CUBE ~> (ident <~ ".").? ~ ident) <~ opt(";") ^^ {
-      case aggregates ~ cube =>
-        cube match {
-          case schemaName ~ cubeName =>
-            AddAggregatesToTable(schemaName, cubeName.toLowerCase(), aggregates)
-        }
-    }
+  protected lazy val loadManagement: Parser[LogicalPlan] = deleteLoadsByID | deleteLoadsByLoadDate |
+    cleanFiles | loadDataNew
 
   protected lazy val aggregates: Parser[Seq[AggregateTableAttributes]] =
     repsep((aggregateExpression | aggAttribute), ",")
@@ -248,21 +235,6 @@ class CarbonSqlParser()
   protected lazy val dropDefinition =
     DROP ~> "(" ~> rep1sep((stringLit | ident), ",") <~ ")"
 
-  protected lazy val addDefinition =
-    (ADD ~> cubeDefinition)
-
-  protected lazy val cubeDefinition =
-    ((DIMENSIONS ~> "(" ~> dimCols <~ ")").? ~
-      (MEASURES ~> "(" ~> measureCols <~ ")").? ~
-      (WITH ~ (simpleDimRelations)).?)
-
-  protected lazy val showCubeDefinition =
-    ((DIMENSIONS ~> "(" ~> dimCols <~ ")").? ~
-      (MEASURES ~> "(" ~> measureCols <~ ")").? ~
-      ((FACT ~> FROM ~ (dbTableIdentifier | stringLit) ~ (colsFilter).? ~
-        ("," ~> DIMENSION ~> FROM ~> dimRelations).?).?) ~
-      (WITH ~ (simpleDimRelations)).?)
-
   protected lazy val aggOptionsForShowCreate =
     (aggregation).? ~ (",".? ~> partitioner).?
   protected lazy val aggOptions =
@@ -274,48 +246,6 @@ class CarbonSqlParser()
     ("(" ~> aggOptions <~ ")")
 
   protected val escapedIdentifier = "`([^`]+)`".r
-
-
-  protected lazy val showCreateCube: Parser[LogicalPlan] =
-    SHOW ~> CREATE ~> CUBE ~> (IF ~> NOT ~> EXISTS).? ~ (ident <~ ".").? ~ ident ~
-      showCubeDefinition ~
-      (OPTIONS ~> showcreateCubeOptionDef).? <~ (";").? ^^ {
-      case exists ~ schemaName ~ cubeName ~ cubeDefinition ~ options =>
-        val (dimCols, msrCols, fromKeyword, withKeyword, source,
-        factFieldsList, dimRelations, simpleDimRelations) =
-          cubeDefinition match {
-            case _ ~ _ ~ Some(_) ~ Some(_) => sys
-              .error("FROM and WITH keywords can not be used together")
-
-            case dimCols ~ msrCols ~ fromBody ~ withBody =>
-              val (fromKeyword, source, factFieldsList, dimRelations) = fromBody match {
-                case Some(fromKeyword ~ source ~ factFieldsList ~ dimRelations) =>
-                  (fromKeyword, source, factFieldsList, dimRelations)
-
-                case _ => ("", "", None, None)
-              }
-
-              val (withKeyword, simpleDimRelations) = withBody match {
-                case Some(withKeyword ~ simpleDimRelations) => (withKeyword, simpleDimRelations)
-                case _ => ("", Seq())
-              }
-
-              (dimCols.getOrElse(Seq()), msrCols
-                .getOrElse(Seq()), fromKeyword, withKeyword, source, factFieldsList,
-                dimRelations.getOrElse(Seq()), simpleDimRelations)
-          }
-
-        val (aggregation, partitioner) = options match {
-          case Some(aggregation ~ partitioner) => (aggregation.getOrElse(Seq()), partitioner)
-          case _ => (Seq(), None)
-        }
-
-        ShowCreateCubeCommand(tableModel(exists.isDefined,
-          schemaName.getOrElse("default"), schemaName, cubeName.toLowerCase(),
-          reorderDimensions(dimCols.map(f => normalizeType(f)).map(f => addParent(f))),
-          msrCols.map(f => normalizeType(f)), fromKeyword, withKeyword, source,
-          factFieldsList, dimRelations, simpleDimRelations, None, aggregation, partitioner, null))
-    }
 
   private def reorderDimensions(dims: Seq[Field]): Seq[Field] = {
     var complexDimensions: Seq[Field] = Seq()
@@ -954,99 +884,6 @@ class CarbonSqlParser()
     case other => other
   }
 
-  protected lazy val createCube: Parser[LogicalPlan] =
-    CREATE ~> CUBE ~> (IF ~> NOT ~> EXISTS).? ~ (ident <~ ".").? ~ ident ~
-      cubeDefinition ~
-      (OPTIONS ~> createCubeOptionDef).? <~ (";").? ^^ {
-      case exists ~ schemaName ~ cubeName ~ cubeDefinition ~ options =>
-        val (dimCols, msrCols, withKeyword, simpleDimRelations) = cubeDefinition match {
-
-          case dimCols ~ msrCols ~ withBody =>
-            val (withKeyword, simpleDimRelations) = withBody match {
-              case Some(withKeyword ~ simpleDimRelations) => (withKeyword, simpleDimRelations)
-              case _ => ("", Seq())
-            }
-
-            (dimCols.getOrElse(Seq()), msrCols.getOrElse(Seq()), withKeyword, simpleDimRelations)
-        }
-
-        val (highCard, aggregation, partitioner) = options match {
-          case Some(hc ~ agg ~ part) => (hc.getOrElse(Some(Seq())), agg.getOrElse(Seq()), part)
-          case _ => (Some(Seq()), Seq(), None)
-        }
-
-        CreateCube(tableModel(exists.isDefined,
-          schemaName.getOrElse("default"), schemaName, cubeName.toLowerCase(),
-          reorderDimensions(dimCols.map(f => normalizeType(f)).map(f => addParent(f))),
-          msrCols.map(f => normalizeType(f)), "", withKeyword, "",
-          None, Seq(), simpleDimRelations, highCard, aggregation, partitioner, null))
-    }
-
-  protected lazy val alterCube: Parser[LogicalPlan] =
-    ALTER ~> CUBE ~> (ident <~ ".").? ~ ident ~
-      (dropDefinition).? ~
-      (addDefinition).? ~
-      (OPTIONS ~> defaultOptions).? <~ opt(";") ^^ {
-      case schemaName ~ cubeName ~ dropDefinition ~ addDefinition ~ options =>
-        val (dimCols, msrCols, withKeyword, simpleDimRelations) = addDefinition match {
-
-          case Some(dimCols ~ msrCols ~ withBody) =>
-            val (withKeyword, simpleDimRelations) = withBody match {
-              case Some(withKeyword ~ simpleDimRelations) => (withKeyword, simpleDimRelations)
-              case _ => ("", Seq())
-            }
-
-            if (dimCols.isEmpty && msrCols.isEmpty) {
-              sys.error(
-                "empty ADD definition found.Please provide the dimensions/measures to be added.")
-            } else {
-              (dimCols.getOrElse(Seq()), msrCols.getOrElse(Seq()), withKeyword, simpleDimRelations)
-            }
-
-          case _ =>
-            (Seq(), Seq(), "", Seq())
-        }
-
-        val (noDictionary, aggregation, defaultVals) = options match {
-          case Some(noDictionary ~ aggregation ~ defaultVals) => (noDictionary
-            .getOrElse(Some(Seq())),
-            aggregation.getOrElse(Seq()), defaultVals.getOrElse(Seq()))
-          case _ => (Some(Seq()), Seq(), Seq())
-        }
-
-        val (dropCols) = dropDefinition match {
-          case Some(dropCols) => (dropCols)
-          case _ => (Seq())
-        }
-
-        AlterTable(tableModel(false,
-          schemaName.getOrElse("default"),
-          schemaName, cubeName.toLowerCase(),
-          dimCols.map(f => normalizeType(f)),
-          msrCols.map(f => normalizeType(f)), "", withKeyword, "",
-          None, Seq(), simpleDimRelations, noDictionary, aggregation, None, null),
-          dropCols, defaultVals)
-
-      case _ =>
-        sys.error("Parsing error")
-    }
-
-
-  protected lazy val loadData: Parser[LogicalPlan] =
-    LOAD ~> DATA ~> FACT ~> FROM ~> stringLit ~
-      (DIMENSION ~> FROM ~> repsep(tableFileMapping, ",")).? ~
-      (opt(OVERWRITE) ~> INTO ~> CUBE ~> (ident <~ ".").? ~ ident) ~
-      ((PARTITIONDATA | OPTIONS) ~> "(" ~> repsep(partitionOptions, ",") <~ ")") ~
-      (FIELDS ~> TERMINATED ~> BY ~> stringLit).? <~ opt(";") ^^ {
-      case filePath ~ dimFolderPath ~ cube ~ partionDataOptions ~ delimiter =>
-        val (schema, cubename) = cube match {
-          case schemaName ~ cubeName => (schemaName, cubeName.toLowerCase())
-
-        }
-        val patitionOptionsMap = partionDataOptions.toMap
-        LoadCube(schema, cubename, filePath, dimFolderPath.getOrElse(Seq()),
-            patitionOptionsMap, false)
-    }
 
   protected lazy val loadDataNew: Parser[LogicalPlan] =
     LOAD ~> DATA ~> opt(LOCAL) ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
@@ -1129,12 +966,6 @@ class CarbonSqlParser()
       case _ => ("", "")
     }
 
-  protected lazy val showAggregateTables: Parser[LogicalPlan] =
-    SHOW ~> AGGREGATE ~> TABLES ~> (IN ~> ident).? <~ opt(";") ^^ {
-      case schema =>
-        ShowAggregateTablesCommand(schema)
-    }
-
   protected lazy val showCube: Parser[LogicalPlan] =
     SHOW ~> CUBES ~> (IN ~> ident).? ~ (DETAIL).? <~ opt(";") ^^ {
       case schema ~ detail =>
@@ -1149,53 +980,6 @@ class CarbonSqlParser()
       case _ => ShowAllCubeCommand()
     }
 
-  protected lazy val dropCubeOrTable: Parser[LogicalPlan] =
-    DROP ~> (CUBE | (AGGREGATE ~ TABLE)) ~ (IF ~> EXISTS).? ~ (ident <~ ".").? ~ ident <~
-      opt(";") ^^ {
-      case tabletype ~ exists ~ schemaName ~ resourceName =>
-        tabletype match {
-          case agg ~ table =>
-            DropAggregateTableCommand(exists.isDefined, schemaName, resourceName.toLowerCase())
-          case _ => DropCubeCommand(exists.isDefined, schemaName, resourceName.toLowerCase())
-        }
-    }
-
-  protected lazy val cubeRelation: Parser[Relation] =
-    RELATION ~> "(" ~> FACT ~> ("." ~> ident) ~ ("=" ~> ident) <~ ")" ^^ {
-      case lcol ~ rcol => Relation(lcol, rcol)
-    }
-
-  protected lazy val simpleCubeRelation: Parser[Relation] =
-    RELATION ~> "(" ~> FACT ~> ("." ~> ident) ~ ("=" ~> ident) <~ ")" ^^ {
-      case lcol ~ rcol => Relation(lcol, rcol)
-    }
-
-  protected lazy val colsFilter: Parser[FilterCols] =
-    (INCLUDE | EXCLUDE) ~ ("(" ~> repsep(ident | stringLit, ",") <~ ")") ^^ {
-      case includeKey ~ fieldList => FilterCols(includeKey, fieldList)
-    }
-
-  protected lazy val dimRelation: Parser[DimensionRelation] =
-    (ident <~ ":") ~ (dbTableIdentifier | stringLit) ~ cubeRelation ~ ((INCLUDE | EXCLUDE) ~ ("(" ~>
-      repsep(ident | stringLit, ",") <~ ")")).? ^^ {
-      case tableName ~ dimSource ~ relation ~ filterCols =>
-        val (includeKey, fieldList) = filterCols match {
-          case Some(includeKey ~ fieldList) => (includeKey, fieldList)
-          case others => ("", Seq())
-        }
-        DimensionRelation(tableName, dimSource, relation, Some(includeKey), Some(fieldList))
-    }
-
-  protected lazy val dimRelations: Parser[Seq[DimensionRelation]] = repsep(dimRelation, ",")
-
-  protected lazy val simpleDimRelation: Parser[DimensionRelation] =
-    ident ~ simpleCubeRelation ~ (INCLUDE ~> ("(" ~> repsep(ident | stringLit, ",") <~ ")")) ^^ {
-      case tableName ~ relation ~ colList =>
-        DimensionRelation(tableName, "", relation, Some("INCLUDE"), Some(colList))
-    }
-
-  protected lazy val simpleDimRelations: Parser[Seq[DimensionRelation]] = repsep(simpleDimRelation,
-    ",")
 
   protected lazy val dimCol: Parser[Field] = anyFieldDef
 
@@ -1395,7 +1179,7 @@ class CarbonSqlParser()
   }
 
   protected lazy val showLoads: Parser[LogicalPlan] =
-    SHOW ~> (LOADS|SEGMENTS) ~> FOR ~> (CUBE | TABLE) ~> (ident <~ ".").? ~ ident ~
+    SHOW ~> (LOADS|SEGMENTS) ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident ~
       (LIMIT ~> numericLit).? <~
       opt(";") ^^ {
       case schemaName ~ cubeName ~ limit =>
@@ -1408,7 +1192,7 @@ class CarbonSqlParser()
       )
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
-    DELETE ~> (LOAD|SEGMENT) ~> repsep(segmentId, ",") ~ (FROM ~> (CUBE | TABLE) ~>
+    DELETE ~> (LOAD|SEGMENT) ~> repsep(segmentId, ",") ~ (FROM ~> TABLE ~>
       (ident <~ ".").? ~ ident) <~
       opt(";") ^^ {
       case loadids ~ cube => cube match {
@@ -1416,9 +1200,8 @@ class CarbonSqlParser()
       }
     }
 
-  @deprecated
   protected lazy val deleteLoadsByLoadDate: Parser[LogicalPlan] =
-    DELETE ~> (LOADS|SEGMENTS) ~> FROM ~> (CUBE | TABLE) ~> (ident <~ ".").? ~ ident ~
+    DELETE ~> (LOADS|SEGMENTS) ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
       (WHERE ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
       opt(";") ^^ {
       case schema ~ cube ~ condition =>
@@ -1428,18 +1211,8 @@ class CarbonSqlParser()
         }
     }
 
-  protected lazy val deleteLoadsByDate: Parser[LogicalPlan] =
-    DELETE ~> FROM ~> CUBE ~> (ident <~ ".").? ~ ident ~ (WHERE ~> (ident <~ BEFORE) ~ stringLit) <~
-      opt(";") ^^ {
-      case schema ~ cube ~ condition =>
-        condition match {
-          case dateField ~ dateValue =>
-            DeleteLoadByDate(schema, cube.toLowerCase(), dateField, dateValue)
-        }
-    }
-
   protected lazy val cleanFiles: Parser[LogicalPlan] =
-    CLEAN ~> FILES ~> FOR ~> (CUBE | TABLE) ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
+    CLEAN ~> FILES ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
       case schemaName ~ cubeName => CleanFiles(schemaName, cubeName.toLowerCase())
     }
 
