@@ -47,8 +47,8 @@ public abstract class AbstractDictionaryDecodedReadSupport<T> implements CarbonR
         try {
           dataTypes[i] = carbonColumns[i].getDataType();
           dictionaries[i] = forwardDictionaryCache.get(new DictionaryColumnUniqueIdentifier(
-              absoluteTableIdentifier.getCarbonTableIdentifier(), carbonColumns[i].getColumnId(),
-              dataTypes[i]));
+              absoluteTableIdentifier.getCarbonTableIdentifier(),
+              carbonColumns[i].getColumnIdentifier(), dataTypes[i]));
         } catch (CarbonUtilException e) {
           throw new RuntimeException(e);
         }

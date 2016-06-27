@@ -37,7 +37,9 @@ import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.util.FileUtils
+import org.codehaus.jackson.map.ObjectMapper
 
+import org.carbondata.common.factory.CarbonCommonFactory
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.CarbonDataLoadSchema
 import org.carbondata.core.carbon.metadata.CarbonMetadata
@@ -57,7 +59,8 @@ import org.carbondata.spark.exception.MalformedCarbonCommandException
 import org.carbondata.spark.load._
 import org.carbondata.spark.partition.api.impl.QueryPartitionHelper
 import org.carbondata.spark.rdd.CarbonDataRDDFactory
-import org.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
+import org.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, GlobalDictionaryUtil}
+import org.carbondata.spark.CarbonSparkFactory
 
 
 case class tableModel(
@@ -77,7 +80,8 @@ case class tableModel(
     noInvertedIdxCols: Option[Seq[String]],
     aggregation: Seq[Aggregation],
     partitioner: Option[Partitioner],
-    columnGroups: Seq[String])
+    columnGroups: Seq[String],
+    colProps: Option[util.Map[String, util.List[ColumnProperty]]] = None)
 
 case class Field(column: String, dataType: Option[String], name: Option[String],
     children: Option[List[Field]], parent: String = null,
@@ -93,6 +97,8 @@ case class StructField(column: String, dataType: String)
 case class FieldMapping(levelName: String, columnName: String)
 
 case class HierarchyMapping(hierName: String, hierType: String, levels: Seq[String])
+
+case class ColumnProperty(key: String, value: String)
 
 case class ComplexField(complexType: String, primitiveField: Option[Field],
     complexField: Option[ComplexField])
@@ -188,9 +194,26 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     val columnSchema = new ColumnSchema()
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
-    columnSchema.setColumnUniqueId(UUID.randomUUID().toString)
-    columnSchema.setColumnar(isCol)
+    val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
+    if (highCardinalityDims.contains(colName)) {
+      encoders.remove(encoders.remove(Encoding.DICTIONARY))
+    }
+    if (dataType == DataType.TIMESTAMP) {
+      encoders.add(Encoding.DIRECT_DICTIONARY)
+    }
+    var colPropMap = new java.util.HashMap[String, String]()
+    if (None != cm.colProps && null != cm.colProps.get.get(colName)) {
+      val colProps = cm.colProps.get.get(colName)
+      colProps.asScala.foreach { x => colPropMap.put(x.key, x.value) }
+    }
+    columnSchema.setColumnProperties(colPropMap)
     columnSchema.setEncodingList(encoders)
+    val colUniqueIdGenerator = CarbonCommonFactory.getColumnUniqueIdGenerator
+    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(cm.schemaName,
+      columnSchema)
+    columnSchema.setColumnUniqueId(columnUniqueId)
+    columnSchema.setColumnReferenceId(columnUniqueId)
+    columnSchema.setColumnar(isCol)
     columnSchema.setDimensionColumn(isDimensionCol)
     columnSchema.setColumnGroup(colGroup)
     columnSchema.setPrecision(precision)
@@ -259,15 +282,6 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
 
     updateColumnGroupsInFields(cm.columnGroups, allColumns)
 
-    for (column <- allColumns) {
-      if (highCardinalityDims.contains(column.getColumnName)) {
-        column.getEncodingList.remove(Encoding.DICTIONARY)
-      }
-      if (column.getDataType == DataType.TIMESTAMP) {
-        column.getEncodingList.add(Encoding.DIRECT_DICTIONARY)
-      }
-    }
-
     var newOrderedDims = scala.collection.mutable.ListBuffer[ColumnSchema]()
     val complexDims = scala.collection.mutable.ListBuffer[ColumnSchema]()
     val measures = scala.collection.mutable.ListBuffer[ColumnSchema]()
@@ -315,7 +329,8 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
       measures += measureColumn
       allColumns = allColumns ++ measures
     }
-
+    val columnValidator = CarbonSparkFactory.getCarbonColumnValidator()
+    columnValidator.validateColumns(allColumns)
     newOrderedDims = newOrderedDims ++ complexDims ++ measures
 
     cm.partitioner match {
@@ -1510,7 +1525,7 @@ private[sql] case class LoadCube(
       val delimiter = partionValues.getOrElse("delimiter", ",")
       val quoteChar = partionValues.getOrElse("quotechar", "\"")
       val fileHeader = partionValues.getOrElse("fileheader", "")
-      val escapeChar = partionValues.getOrElse("escapechar", "")
+      val escapeChar = partionValues.getOrElse("escapechar", "\\")
       val complex_delimiter_level_1 = partionValues.getOrElse("complex_delimiter_level_1", "\\$")
       val complex_delimiter_level_2 = partionValues.getOrElse("complex_delimiter_level_2", "\\:")
       val multiLine = partionValues.getOrElse("multiline", "false").trim.toLowerCase match {
@@ -1977,11 +1992,19 @@ private[sql] case class DescribeCommandFormatted(
   override def run(sqlContext: SQLContext): Seq[Row] = {
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
       .lookupRelation2(tblIdentifier, None)(sqlContext).asInstanceOf[CarbonRelation]
+    val mapper = new ObjectMapper()
+    val colProps = StringBuilder.newBuilder
     var results: Seq[(String, String, String)] = child.schema.fields.map { field =>
       val comment = if (relation.metaData.dims.contains(field.name)) {
         val dimension = relation.metaData.carbonTable.getDimensionByName(
             relation.cubeMeta.carbonTableIdentifier.getTableName,
             field.name)
+        if (null != dimension.getColumnProperties && dimension.getColumnProperties.size() > 0) {
+          val colprop = mapper.writeValueAsString(dimension.getColumnProperties)
+          colProps.append(field.name).append(".")
+          .append(mapper.writeValueAsString(dimension.getColumnProperties))
+          .append(",")
+        }
         if (dimension.hasEncoding(Encoding.DICTIONARY) &&
             !dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           "DICTIONARY, KEY COLUMN"
@@ -1989,9 +2012,15 @@ private[sql] case class DescribeCommandFormatted(
           "KEY COLUMN"
         }
       } else {
-        ""
+        ("MEASURE")
       }
       (field.name, field.dataType.simpleString, comment)
+    }
+    val colPropStr = if (colProps.toString().trim().length() > 0) {
+      // drops additional comma at end
+      colProps.toString().dropRight(1)
+    } else {
+      colProps.toString()
     }
     results ++= Seq(("", "", ""), ("##Detailed Table Information", "", ""))
     results ++= Seq(("Database Name : ", relation.cubeMeta.carbonTableIdentifier
@@ -1999,8 +2028,6 @@ private[sql] case class DescribeCommandFormatted(
     )
     results ++= Seq(("Table Name : ", relation.cubeMeta.carbonTableIdentifier.getTableName, ""))
     results ++= Seq(("CARBON Store Path : ", relation.cubeMeta.storePath, ""))
-    results ++= getColumnGroups(relation.metaData.carbonTable.getDimensionByTableName(
-        relation.cubeMeta.carbonTableIdentifier.getTableName).asScala.toList)
     results ++= Seq(("", "", ""), ("#Aggregate Tables", "", ""))
     val carbonTable = relation.cubeMeta.carbonTable
     val aggTables = carbonTable.getAggregateTablesName
@@ -2008,7 +2035,9 @@ private[sql] case class DescribeCommandFormatted(
       results ++= Seq(("NONE", "", ""))
     } else {
       aggTables.asScala.foreach(aggTable => {
-        results ++= Seq(("", "", ""), ("Agg Table :" + aggTable, "#Columns", "#AggregateType"))
+        results ++= Seq(("", "", ""),
+          ("Agg Table :" + aggTable, "#Columns", "#AggregateType")
+        )
         carbonTable.getDimensionByTableName(aggTable).asScala.foreach(dim => {
           results ++= Seq(("", dim.getColName, ""))
         })
@@ -2018,9 +2047,14 @@ private[sql] case class DescribeCommandFormatted(
       }
       )
     }
-
+    results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))
+    if (colPropStr.length() > 0) {
+      results ++= Seq((colPropStr, "", ""))
+    } else {
+      results ++= Seq(("NONE", "", ""))
+    }
     results.map { case (name, dataType, comment) =>
-      Row(name, dataType, comment)
+      Row(f"$name%-36s $dataType%-80s $comment%-72s")
     }
   }
 

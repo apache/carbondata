@@ -1657,6 +1657,70 @@ public final class CarbonUtil {
   }
 
   /**
+   * convert from wrapper to external data type
+   *
+   * @param dataType
+   * @return
+   */
+  public static org.carbondata.format.DataType fromWrapperToExternalDataType(DataType dataType) {
+
+    if (null == dataType) {
+      return null;
+    }
+    switch (dataType) {
+      case STRING:
+        return org.carbondata.format.DataType.STRING;
+      case INT:
+        return org.carbondata.format.DataType.INT;
+      case LONG:
+        return org.carbondata.format.DataType.LONG;
+      case DOUBLE:
+        return org.carbondata.format.DataType.DOUBLE;
+      case DECIMAL:
+        return org.carbondata.format.DataType.DECIMAL;
+      case TIMESTAMP:
+        return org.carbondata.format.DataType.TIMESTAMP;
+      case ARRAY:
+        return org.carbondata.format.DataType.ARRAY;
+      case STRUCT:
+        return org.carbondata.format.DataType.STRUCT;
+      default:
+        return org.carbondata.format.DataType.STRING;
+    }
+  }
+
+  /**
+   * convert from external to wrapper data type
+   *
+   * @param dataType
+   * @return
+   */
+  public static DataType fromExternalToWrapperDataType(org.carbondata.format.DataType dataType) {
+    if (null == dataType) {
+      return null;
+    }
+    switch (dataType) {
+      case STRING:
+        return DataType.STRING;
+      case INT:
+        return DataType.INT;
+      case LONG:
+        return DataType.LONG;
+      case DOUBLE:
+        return DataType.DOUBLE;
+      case DECIMAL:
+        return DataType.DECIMAL;
+      case TIMESTAMP:
+        return DataType.TIMESTAMP;
+      case ARRAY:
+        return DataType.ARRAY;
+      case STRUCT:
+        return DataType.STRUCT;
+      default:
+        return DataType.STRING;
+    }
+  }
+  /**
    * @param dictionaryColumnCardinality
    * @param wrapperColumnSchemaList
    * @return It returns formatted cardinality by adding -1 value for NoDictionary columns

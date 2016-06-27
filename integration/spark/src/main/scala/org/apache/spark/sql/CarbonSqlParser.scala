@@ -18,6 +18,7 @@
 package org.apache.spark.sql
 
 import java.nio.charset.Charset
+import java.util
 import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
@@ -37,6 +38,7 @@ import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
 
 import org.carbondata.core.carbon.metadata.datatype.DataType
+import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.DataTypeUtil
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 import org.carbondata.spark.util.CommonUtil
@@ -139,6 +141,7 @@ class CarbonSqlParser()
   protected val STARTTIME = Keyword("STARTTIME")
   protected val SEGMENTS = Keyword("SEGMENTS")
   protected val SEGMENT = Keyword("SEGMENT")
+  protected val SHARED = Keyword("SHARED")
 
   protected val doubleQuotedString = "\"([^\"]+)\"".r
   protected val singleQuotedString = "'([^']+)'".r
@@ -176,7 +179,8 @@ class CarbonSqlParser()
   }
 
   override protected lazy val start: Parser[LogicalPlan] =
-    createCube | showCreateCube | loadManagement | createAggregateTable | describeTable |
+     createCube | showCreateCube | loadManagement | createAggregateTable |
+      describeTable |
       showCube | showLoads | alterCube | showAllCubes | alterTable | createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] = loadData | dropCubeOrTable |
@@ -469,10 +473,14 @@ class CarbonSqlParser()
           sys.error("Not a carbon format request")
         }
 
-        // prepare table model of the collected tokens
-        val tableModel: tableModel = prepareTableModel(ifNotExistPresent, dbName, tableName, fields,
-          partitionCols,
-          tableProperties)
+      // validate tblProperties
+      if (!CommonUtil.validateTblProperties(tableProperties, fields)) {
+        throw new MalformedCarbonCommandException("Invalid table properties")
+      }
+      // prepare table model of the collected tokens
+      val tableModel: tableModel = prepareTableModel(ifNotExistPresent, dbName, tableName, fields,
+        partitionCols,
+        tableProperties)
 
         // get logical plan.
         CreateCube(tableModel)
@@ -540,6 +548,8 @@ class CarbonSqlParser()
       fields, tableProperties)
     val msrs: Seq[Field] = extractMsrColsFromFields(fields, tableProperties)
 
+    // column properties
+    val colProps = extractColumnProperties(fields, tableProperties)
     // get column groups configuration from table properties.
     val groupCols: Seq[String] = updateColumnGroupsInField(tableProperties,
         noDictionaryDims, msrs, dims)
@@ -554,8 +564,8 @@ class CarbonSqlParser()
       dbName.getOrElse("default"), dbName, tableName,
       reorderDimensions(dims.map(f => normalizeType(f)).map(f => addParent(f))),
       msrs.map(f => normalizeType(f)), "", null, "",
-      None, Seq(), null, Option(noDictionaryDims), Option(noInvertedIdxCols), null,
-      partitioner, groupCols)
+      None, Seq(), null, Option(noDictionaryDims), Option(noInvertedIdxCols), null, partitioner,
+      groupCols, Some(colProps))
   }
 
   /**
@@ -569,10 +579,10 @@ class CarbonSqlParser()
       noDictionaryDims: Seq[String],
       msrs: Seq[Field],
       dims: Seq[Field]): Seq[String] = {
-    if (None != tableProperties.get("COLUMN_GROUPS")) {
+    if (None != tableProperties.get(CarbonCommonConstants.COLUMN_GROUPS)) {
 
       var splittedColGrps: Seq[String] = Seq[String]()
-      val nonSplitCols: String = tableProperties.get("COLUMN_GROUPS").get
+      val nonSplitCols: String = tableProperties.get(CarbonCommonConstants.COLUMN_GROUPS).get
 
       // row groups will be specified in table properties like -> "(col1,col2),(col3,col4)"
       // here first splitting the value by () . so that the above will be splitted into 2 strings.
@@ -644,13 +654,13 @@ class CarbonSqlParser()
     var partitionClass: String = ""
     var partitionCount: Int = 1
     var partitionColNames: Array[String] = Array[String]()
-    if (None != tableProperties.get("PARTITIONCLASS")) {
-      partitionClass = tableProperties.get("PARTITIONCLASS").get
+    if (None != tableProperties.get(CarbonCommonConstants.PARTITIONCLASS)) {
+      partitionClass = tableProperties.get(CarbonCommonConstants.PARTITIONCLASS).get
     }
 
-    if (None != tableProperties.get("PARTITIONCOUNT")) {
+    if (None != tableProperties.get(CarbonCommonConstants.PARTITIONCOUNT)) {
       try {
-        partitionCount = tableProperties.get("PARTITIONCOUNT").get.toInt
+        partitionCount = tableProperties.get(CarbonCommonConstants.PARTITIONCOUNT).get.toInt
       } catch {
         case e: Exception => // no need to do anything.
       }
@@ -668,6 +678,54 @@ class CarbonSqlParser()
     None
   }
 
+  protected def extractColumnProperties(fields: Seq[Field], tableProperties: Map[String, String]):
+  util.Map[String, util.List[ColumnProperty]] = {
+    val colPropMap = new util.HashMap[String, util.List[ColumnProperty]]()
+    fields.foreach { field =>
+      if (field.children.isDefined && field.children.get != null) {
+        fillAllChildrenColumnProperty(field.column, field.children, tableProperties, colPropMap)
+      } else {
+        fillColumnProperty(None, field.column, tableProperties, colPropMap)
+      }
+    }
+    colPropMap
+  }
+
+  protected def fillAllChildrenColumnProperty(parent: String, fieldChildren: Option[List[Field]],
+    tableProperties: Map[String, String],
+    colPropMap: util.HashMap[String, util.List[ColumnProperty]]) {
+    fieldChildren.foreach(fields => {
+      fields.foreach(field => {
+        fillColumnProperty(Some(parent), field.column, tableProperties, colPropMap)
+      }
+      )
+    }
+    )
+  }
+
+  protected def fillColumnProperty(parentColumnName: Option[String],
+    columnName: String,
+    tableProperties: Map[String, String],
+    colPropMap: util.HashMap[String, util.List[ColumnProperty]]) {
+    val (tblPropKey, colProKey) = getKey(parentColumnName, columnName)
+    val colProps = CommonUtil.getColumnProperties(tblPropKey, tableProperties)
+    if (None != colProps) {
+      colPropMap.put(colProKey, colProps.get)
+    }
+  }
+
+  def getKey(parentColumnName: Option[String],
+    columnName: String): (String, String) = {
+    if (None != parentColumnName) {
+      if (columnName == "val") {
+        (parentColumnName.get, parentColumnName.get + "." + columnName)
+      } else {
+        (parentColumnName.get + "." + columnName, parentColumnName.get + "." + columnName)
+      }
+    } else {
+      (columnName, columnName)
+    }
+  }
   /**
    * This will extract the no inverted columns fields.
    * By default all dimensions use inverted index.
@@ -724,8 +782,9 @@ class CarbonSqlParser()
     var dictIncludeCols: Seq[String] = Seq[String]()
 
     // All excluded cols should be there in create table cols
-    if (tableProperties.get("DICTIONARY_EXCLUDE").isDefined) {
-      dictExcludeCols = tableProperties.get("DICTIONARY_EXCLUDE").get.split(',').map(_.trim)
+    if (tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).isDefined) {
+      dictExcludeCols =
+        tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).get.split(',').map(_.trim)
       dictExcludeCols
         .map { dictExcludeCol =>
           if (!fields.exists(x => x.column.equalsIgnoreCase(dictExcludeCol))) {
@@ -748,8 +807,9 @@ class CarbonSqlParser()
         }
     }
     // All included cols should be there in create table cols
-    if (tableProperties.get("DICTIONARY_INCLUDE").isDefined) {
-      dictIncludeCols = tableProperties.get("DICTIONARY_INCLUDE").get.split(",").map(_.trim)
+    if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
+      dictIncludeCols =
+        tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).get.split(",").map(_.trim)
       dictIncludeCols.map { distIncludeCol =>
           if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol))) {
             val errormsg = "DICTIONARY_INCLUDE column: " + distIncludeCol +
@@ -846,13 +906,15 @@ class CarbonSqlParser()
     var dictExcludedCols: Array[String] = Array[String]()
 
     // get all included cols
-    if (None != tableProperties.get("DICTIONARY_INCLUDE")) {
-      dictIncludedCols = tableProperties.get("DICTIONARY_INCLUDE").get.split(',').map(_.trim)
+    if (None != tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE)) {
+      dictIncludedCols =
+        tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).get.split(',').map(_.trim)
     }
 
     // get all excluded cols
-    if (None != tableProperties.get("DICTIONARY_EXCLUDE")) {
-      dictExcludedCols = tableProperties.get("DICTIONARY_EXCLUDE").get.split(',').map(_.trim)
+    if (None != tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE)) {
+      dictExcludedCols =
+        tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).get.split(',').map(_.trim)
     }
 
     // by default consider all non string cols as msrs. consider all include/ exclude cols as dims
@@ -933,8 +995,8 @@ class CarbonSqlParser()
   }
 
   protected def unquoteString(str: String) = str match {
-    case singleQuotedString(s) => s
-    case doubleQuotedString(s) => s
+    case singleQuotedString(s) => s.toLowerCase()
+    case doubleQuotedString(s) => s.toLowerCase()
     case other => other
   }
 
@@ -1305,7 +1367,6 @@ class CarbonSqlParser()
           new DescribeCommand(UnresolvedRelation(tblIdentifier, None), ef.isDefined)
         }
     }
-
   private def normalizeType(field: Field): Field = {
     field.dataType.getOrElse("NIL") match {
       case "string" => Field(field.column, Some("String"), field.name, Some(null), field.parent,

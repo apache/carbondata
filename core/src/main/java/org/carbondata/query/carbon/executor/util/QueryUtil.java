@@ -357,16 +357,16 @@ public class QueryUtil {
         CarbonMetadata.getInstance().getCarbonTable(carbonTableIdentifier.getTableUniqueName());
     List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers =
         new ArrayList<>(dictionaryColumnIdList.size());
-    for (String columnIdentifier : dictionaryColumnIdList) {
+    for (String columnId : dictionaryColumnIdList) {
       CarbonDimension dimension = CarbonMetadata.getInstance()
-          .getCarbonDimensionBasedOnColIdentifier(carbonTable, columnIdentifier);
+          .getCarbonDimensionBasedOnColIdentifier(carbonTable, columnId);
       if (null == dimension) {
         throw new QueryExecutionException(
-            "The column id " + columnIdentifier + " could not be resolved.");
+            "The column id " + columnId + " could not be resolved.");
       }
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-          new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
-              dimension.getDataType());
+          new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
+              dimension.getColumnIdentifier(), dimension.getDataType());
       dictionaryColumnUniqueIdentifiers.add(dictionaryColumnUniqueIdentifier);
     }
     return dictionaryColumnUniqueIdentifiers;

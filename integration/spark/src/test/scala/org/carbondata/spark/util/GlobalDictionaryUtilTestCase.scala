@@ -25,6 +25,7 @@ import org.apache.spark.sql.common.util.CarbonHiveContext
 import org.apache.spark.sql.common.util.CarbonHiveContext.sql
 import org.apache.spark.sql.common.util.QueryTest
 
+import org.carbondata.core.carbon.ColumnIdentifier
 import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier
 import org.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier}
 import org.carbondata.core.constants.CarbonCommonConstants
@@ -159,10 +160,10 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
     val dimension = table.getDimensionByName(table.getFactTableName, columnName)
     val tableIdentifier = new CarbonTableIdentifier(table.getDatabaseName, table.getFactTableName, "uniqueid")
 
-    val columnIdentifier = new DictionaryColumnUniqueIdentifier(tableIdentifier,
-      dimension.getColumnId, dimension.getDataType
+    val dictColumnIdentifier = new DictionaryColumnUniqueIdentifier(tableIdentifier,
+      dimension.getColumnIdentifier, dimension.getDataType
     )
-    val dict = CarbonLoaderUtil.getDictionary(columnIdentifier,
+    val dict = CarbonLoaderUtil.getDictionary(dictColumnIdentifier,
       CarbonHiveContext.hdfsCarbonBasePath
     )
     assert(dict.getSurrogateKey(value) != CarbonCommonConstants.INVALID_SURROGATE_KEY)

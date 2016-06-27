@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.ColumnIdentifier;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriter;
@@ -58,8 +59,9 @@ public class CarbonDictionarySortIndexReaderImplTest {
     deleteStorePath();
     CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("testSchema", "carbon",
     		UUID.randomUUID().toString());
+    ColumnIdentifier columnIdentifier = new ColumnIdentifier("Name", null, null);
     CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
-        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, "Name", hdfsStorePath);
+        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, columnIdentifier, hdfsStorePath);
     List<int[]> expectedData = prepareExpectedData();
 
     List<Integer> sortIndex = Arrays.asList(ArrayUtils.toObject(expectedData.get(0)));
@@ -68,7 +70,7 @@ public class CarbonDictionarySortIndexReaderImplTest {
     dictionarySortIndexWriter.writeInvertedSortIndex(invertedSortIndex);
     dictionarySortIndexWriter.close();
     CarbonDictionarySortIndexReader dictionarySortIndexReader =
-        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, "Name", hdfsStorePath);
+        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, columnIdentifier, hdfsStorePath);
     List<Integer> actualSortIndex = dictionarySortIndexReader.readSortIndex();
     List<Integer> actualInvertedSortIndex = dictionarySortIndexReader.readInvertedSortIndex();
     for (int i = 0; i < actualSortIndex.size(); i++) {

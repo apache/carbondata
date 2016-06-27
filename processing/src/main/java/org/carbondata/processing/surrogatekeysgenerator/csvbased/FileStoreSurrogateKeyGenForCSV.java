@@ -35,6 +35,7 @@ import org.carbondata.core.cache.CacheType;
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.ColumnIdentifier;
 import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -241,17 +242,21 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         List<GenericDataType> primitiveChild = new ArrayList<GenericDataType>();
         complexType.getAllPrimitiveChildren(primitiveChild);
         for (GenericDataType eachPrimitive : primitiveChild) {
+          ColumnIdentifier columnIdentifier = new ColumnIdentifier(eachPrimitive.getColumnId(),
+              columnsInfo.getColumnProperties(eachPrimitive.getName()), details.getColumnType());
           String dimColumnName =
               tableName + CarbonCommonConstants.UNDERSCORE + eachPrimitive.getName();
           DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-              new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
-                  eachPrimitive.getColumnId());
+              new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier);
           dictionaryColumnUniqueIdentifiers.add(dictionaryColumnUniqueIdentifier);
           dictionaryKeys.add(dimColumnName);
         }
       } else {
+        ColumnIdentifier columnIdentifier =
+            new ColumnIdentifier(dimColumnIds[i], columnsInfo.getColumnProperties(dimColName),
+                details.getColumnType());
         DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-            new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, dimColumnIds[i]);
+            new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier);
         dictionaryColumnUniqueIdentifiers.add(dictionaryColumnUniqueIdentifier);
         dictionaryKeys.add(dimColumnNames[i]);
       }
@@ -386,4 +391,3 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
   }
 
 }
-

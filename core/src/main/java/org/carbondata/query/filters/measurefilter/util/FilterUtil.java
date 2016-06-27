@@ -871,7 +871,7 @@ public final class FilterUtil {
       CarbonDimension carbonDimension) throws QueryExecutionException {
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(tableIdentifier.getCarbonTableIdentifier(),
-            String.valueOf(carbonDimension.getColumnId()), carbonDimension.getDataType());
+            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType());
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache forwardDictionaryCache =
         cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, tableIdentifier.getStorePath());

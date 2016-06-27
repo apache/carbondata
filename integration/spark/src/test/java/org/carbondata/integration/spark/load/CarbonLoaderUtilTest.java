@@ -1,4 +1,4 @@
-package org.carbondata.spark.load;
+package org.carbondata.integration.spark.load;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
-
+import org.carbondata.spark.load.CarbonLoaderUtil;
 import org.junit.Test;
 import org.pentaho.di.core.util.Assert;
 

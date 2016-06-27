@@ -14,6 +14,7 @@ import java.util.Properties;
 
 import org.carbondata.core.cache.Cache;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.ColumnIdentifier;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
@@ -84,7 +85,8 @@ public class AbstractDictionaryCacheTest {
   }
 
   protected DictionaryColumnUniqueIdentifier createDictionaryColumnUniqueIdentifier(
-      String columnIdentifier) {
+      String columnId) {
+	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, DataType.STRING);
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
             DataType.STRING);
@@ -106,8 +108,9 @@ public class AbstractDictionaryCacheTest {
    * @param data
    * @throws IOException
    */
-  protected void prepareWriterAndWriteData(List<String> data, String columnIdentifier)
+  protected void prepareWriterAndWriteData(List<String> data, String columnId)
       throws IOException {
+	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, null);
     CarbonDictionaryWriter carbonDictionaryWriter =
         new CarbonDictionaryWriterImpl(carbonStorePath, carbonTableIdentifier, columnIdentifier);
     CarbonTablePath carbonTablePath =

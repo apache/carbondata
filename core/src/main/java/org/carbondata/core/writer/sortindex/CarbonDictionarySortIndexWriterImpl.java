@@ -24,6 +24,7 @@ import java.util.List;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.ColumnIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.util.CarbonUtil;
@@ -39,17 +40,17 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
   /**
    * carbonTable Identifier holding the info of databaseName and tableName
    */
-  private CarbonTableIdentifier carbonTableIdentifier;
+  protected CarbonTableIdentifier carbonTableIdentifier;
 
   /**
    * column name
    */
-  private String columnIdentifier;
+  protected ColumnIdentifier columnIdentifier;
 
   /**
    * carbon store location
    */
-  private String carbonStorePath;
+  protected String carbonStorePath;
   /**
    * Path of dictionary sort index file for which the sortIndex to be written
    */
@@ -76,7 +77,7 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
    * @param columnIdentifier      column unique identifier
    */
   public CarbonDictionarySortIndexWriterImpl(final CarbonTableIdentifier carbonTableIdentifier,
-      final String columnIdentifier, final String carbonStorePath) {
+      final ColumnIdentifier columnIdentifier, final String carbonStorePath) {
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.columnIdentifier = columnIdentifier;
     this.carbonStorePath = carbonStorePath;
@@ -117,9 +118,7 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
     boolean isNotNull =
         null != columnSortInfo.getSort_index() && null != columnSortInfo.sort_index_inverted;
     if (isNotNull) {
-      CarbonTablePath carbonTablePath =
-          CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
-      this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier);
+      initPath();
       String folderContainingFile = CarbonTablePath.getFolderContainingFile(this.sortIndexFilePath);
       boolean created = CarbonUtil.checkAndCreateFolder(folderContainingFile);
       if (!created) {
@@ -142,6 +141,12 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
         this.sortIndexFilePath = null;
       }
     }
+  }
+
+  protected void initPath() {
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+    this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId());
   }
 
   /**

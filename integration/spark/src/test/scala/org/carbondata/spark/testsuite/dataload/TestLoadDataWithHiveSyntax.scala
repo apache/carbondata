@@ -202,7 +202,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql("drop table LowErcasEcube")
   }
   
-  test("test carbon table data loading using escape char") {
+  test("test carbon table data loading using escape char 1") {
     sql("DROP TABLE IF EXISTS t3")
 
     sql("""
@@ -222,7 +222,58 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     sql("DROP TABLE IF EXISTS t3")
   }
-  
+
+  test("test carbon table data loading using escape char 2") {
+    sql("DROP TABLE IF EXISTS t3")
+
+    sql("""
+         CREATE TABLE t3(imei string,specialchar string)
+         STORED BY 'org.apache.carbondata.format'
+        """)
+
+    sql("""
+       LOAD DATA LOCAL INPATH './src/test/resources/datawithescapecharacter.csv' into table t3
+          options ('DELIMITER'=',', 'QUOTECHAR'='\"','ESCAPECHAR'='\')
+        """)
+    checkAnswer(sql("select count(*) from t3"), Seq(Row(21)))
+    checkAnswer(sql("select specialchar from t3 where imei = '1AA44'"),Seq(Row("escapeesc")))
+    sql("DROP TABLE IF EXISTS t3")
+  }
+
+  test("test carbon table data loading using escape char 3") {
+    sql("DROP TABLE IF EXISTS t3")
+
+    sql("""
+         CREATE TABLE t3(imei string,specialchar string)
+         STORED BY 'org.apache.carbondata.format'
+        """)
+
+    sql("""
+       LOAD DATA LOCAL INPATH './src/test/resources/datawithescapecharacter.csv' into table t3
+          options ('DELIMITER'=',', 'QUOTECHAR'='\"','ESCAPECHAR'='@')
+        """)
+    checkAnswer(sql("select count(*) from t3"), Seq(Row(21)))
+    checkAnswer(sql("select specialchar from t3 where imei in ('1232','12323')"),Seq(Row
+    ("ayush@b.com"),Row("ayushb.com")))
+    sql("DROP TABLE IF EXISTS t3")
+  }
+  test("test carbon table data loading with special character") {
+    sql("DROP TABLE IF EXISTS t3")
+
+    sql("""
+         CREATE TABLE t3(imei string,specialchar string)
+         STORED BY 'org.apache.carbondata.format'
+        """)
+
+    sql("""
+       LOAD DATA LOCAL INPATH './src/test/resources/datawithspecialcharacter.csv' into table t3
+          options ('DELIMITER'=',', 'QUOTECHAR'='\"')
+       """)
+    checkAnswer(sql("select count(*) from t3"), Seq(Row(36)))
+    sql("DROP TABLE IF EXISTS t3")
+  }
+
+
   override def afterAll {
     sql("drop table carbontable")
     sql("drop table hivetable")

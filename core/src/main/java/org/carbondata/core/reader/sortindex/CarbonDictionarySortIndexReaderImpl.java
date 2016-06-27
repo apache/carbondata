@@ -24,6 +24,7 @@ import java.util.List;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.ColumnIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.reader.ThriftReader;
@@ -44,7 +45,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
   /**
    * column name
    */
-  private String columnIdentifier;
+  protected ColumnIdentifier columnIdentifier;
 
   /**
    * hdfs store location
@@ -78,7 +79,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
    * @param carbonStorePath       carbon store path
    */
   public CarbonDictionarySortIndexReaderImpl(final CarbonTableIdentifier carbonTableIdentifier,
-      final String columnIdentifier, final String carbonStorePath) {
+      final ColumnIdentifier columnIdentifier, final String carbonStorePath) {
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.columnIdentifier = columnIdentifier;
     this.carbonStorePath = carbonStorePath;
@@ -144,7 +145,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
   private void init() throws IOException {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
-    this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier);
+    this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId());
     openThriftReader();
   }
 
