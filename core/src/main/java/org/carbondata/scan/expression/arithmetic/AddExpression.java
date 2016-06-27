@@ -19,7 +19,7 @@
 
 package org.carbondata.scan.expression.arithmetic;
 
-import org.carbondata.scan.expression.DataType;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
 import org.carbondata.scan.expression.exception.FilterUnsupportedException;
@@ -51,18 +51,18 @@ public class AddExpression extends BinaryArithmeticExpression {
       }
     }
     switch (val1.getDataType()) {
-      case StringType:
-      case DoubleType:
-        addExprRightRes.set(DataType.DoubleType, val1.getDouble() + val2.getDouble());
+      case STRING:
+      case DOUBLE:
+        addExprRightRes.set(DataType.DOUBLE, val1.getDouble() + val2.getDouble());
         break;
-      case IntegerType:
-        addExprRightRes.set(DataType.IntegerType, val1.getInt() + val2.getInt());
+      case INT:
+        addExprRightRes.set(DataType.INT, val1.getInt() + val2.getInt());
         break;
-      case LongType:
-        addExprRightRes.set(DataType.LongType, val1.getLong() + val2.getLong());
+      case LONG:
+        addExprRightRes.set(DataType.LONG, val1.getLong() + val2.getLong());
         break;
-      case DecimalType:
-        addExprRightRes.set(DataType.DecimalType, val1.getDecimal().add(val2.getDecimal()));
+      case DECIMAL:
+        addExprRightRes.set(DataType.DECIMAL, val1.getDecimal().add(val2.getDecimal()));
         break;
       default:
         throw new FilterUnsupportedException(

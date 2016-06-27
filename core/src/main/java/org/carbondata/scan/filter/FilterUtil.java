@@ -1092,12 +1092,12 @@ public final class FilterUtil {
   }
 
   private static int compareFilterMembersBasedOnActualDataType(String filterMember1,
-      String filterMember2, org.carbondata.scan.expression.DataType dataType) {
+      String filterMember2, DataType dataType) {
     try {
       switch (dataType) {
-        case IntegerType:
-        case LongType:
-        case DoubleType:
+        case INT:
+        case LONG:
+        case DOUBLE:
 
           if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
             return 1;
@@ -1105,14 +1105,14 @@ public final class FilterUtil {
           Double d1 = Double.parseDouble(filterMember1);
           Double d2 = Double.parseDouble(filterMember2);
           return d1.compareTo(d2);
-        case DecimalType:
+        case DECIMAL:
           if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
             return 1;
           }
           java.math.BigDecimal val1 = new BigDecimal(filterMember1);
           java.math.BigDecimal val2 = new BigDecimal(filterMember2);
           return val1.compareTo(val2);
-        case TimestampType:
+        case TIMESTAMP:
           if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
             return 1;
           }
@@ -1124,7 +1124,7 @@ public final class FilterUtil {
           date1 = parser.parse(filterMember1);
           date2 = parser.parse(filterMember2);
           return date1.compareTo(date2);
-        case StringType:
+        case STRING:
         default:
           return filterMember1.compareTo(filterMember2);
       }
@@ -1218,7 +1218,7 @@ public final class FilterUtil {
    */
   public static boolean isExpressionNeedsToResolved(Expression rightExp, boolean isIncludeFilter) {
     if (!isIncludeFilter && rightExp instanceof LiteralExpression && (
-        org.carbondata.scan.expression.DataType.NullType == ((LiteralExpression) rightExp)
+        DataType.NULL == ((LiteralExpression) rightExp)
             .getLiteralExpDataType())) {
       return true;
     }

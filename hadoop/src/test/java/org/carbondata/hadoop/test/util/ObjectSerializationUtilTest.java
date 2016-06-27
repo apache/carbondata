@@ -19,9 +19,9 @@
 
 package org.carbondata.hadoop.test.util;
 
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.hadoop.util.ObjectSerializationUtil;
 import org.carbondata.scan.expression.ColumnExpression;
-import org.carbondata.scan.expression.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.LiteralExpression;
 import org.carbondata.scan.expression.conditional.EqualToExpression;
@@ -38,15 +38,15 @@ public class ObjectSerializationUtilTest extends TestCase {
   }
 
   @Test public void testConvertObjectToString() throws Exception {
-    Expression expression = new EqualToExpression(new ColumnExpression("c1", DataType.StringType),
-        new LiteralExpression("a", DataType.StringType));
+    Expression expression = new EqualToExpression(new ColumnExpression("c1", DataType.STRING),
+        new LiteralExpression("a", DataType.STRING));
     String string = ObjectSerializationUtil.convertObjectToString(expression);
     Assert.assertTrue(string != null);
   }
 
   @Test public void testConvertStringToObject() throws Exception {
-    Expression expression = new EqualToExpression(new ColumnExpression("c1", DataType.StringType),
-        new LiteralExpression("a", DataType.StringType));
+    Expression expression = new EqualToExpression(new ColumnExpression("c1", DataType.STRING),
+        new LiteralExpression("a", DataType.STRING));
     String string = ObjectSerializationUtil.convertObjectToString(expression);
     Assert.assertTrue(string != null);
     Object object = ObjectSerializationUtil.convertStringToObject(string);

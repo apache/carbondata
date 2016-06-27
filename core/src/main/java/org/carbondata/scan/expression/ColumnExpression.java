@@ -19,6 +19,7 @@
 
 package org.carbondata.scan.expression;
 
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.scan.filter.intf.ExpressionType;

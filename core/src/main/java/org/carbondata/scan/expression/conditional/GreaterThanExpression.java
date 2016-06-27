@@ -19,7 +19,7 @@
 
 package org.carbondata.scan.expression.conditional;
 
-import org.carbondata.scan.expression.DataType;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
 import org.carbondata.scan.expression.exception.FilterUnsupportedException;
@@ -40,7 +40,7 @@ public class GreaterThanExpression extends BinaryConditionalExpression {
     ExpressionResult exprRightRes = right.evaluate(value);
     ExpressionResult val1 = exprLeftRes;
     if (exprLeftRes.isNull() || exprRightRes.isNull()) {
-      exprLeftRes.set(DataType.BooleanType, false);
+      exprLeftRes.set(DataType.BOOLEAN, false);
       return exprLeftRes;
     }
     if (exprLeftRes.getDataType() != exprRightRes.getDataType()) {
@@ -52,29 +52,29 @@ public class GreaterThanExpression extends BinaryConditionalExpression {
     }
     boolean result = false;
     switch (val1.getDataType()) {
-      case StringType:
+      case STRING:
         result = exprLeftRes.getString().compareTo(exprRightRes.getString()) > 0;
         break;
-      case DoubleType:
+      case DOUBLE:
         result = exprLeftRes.getDouble() > (exprRightRes.getDouble());
         break;
-      case IntegerType:
+      case INT:
         result = exprLeftRes.getInt() > (exprRightRes.getInt());
         break;
-      case TimestampType:
+      case TIMESTAMP:
         result = exprLeftRes.getTime() > (exprRightRes.getTime());
         break;
-      case LongType:
+      case LONG:
         result = exprLeftRes.getLong() > (exprRightRes.getLong());
         break;
-      case DecimalType:
+      case DECIMAL:
         result = exprLeftRes.getDecimal().compareTo(exprRightRes.getDecimal()) > 0;
         break;
       default:
         throw new FilterUnsupportedException(
             "DataType: " + val1.getDataType() + " not supported for the filter expression");
     }
-    val1.set(DataType.BooleanType, result);
+    val1.set(DataType.BOOLEAN, result);
     return val1;
   }
 

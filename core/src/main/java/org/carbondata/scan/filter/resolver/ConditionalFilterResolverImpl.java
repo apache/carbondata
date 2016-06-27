@@ -23,11 +23,11 @@ import java.util.SortedMap;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.scan.executor.exception.QueryExecutionException;
 import org.carbondata.scan.expression.ColumnExpression;
-import org.carbondata.scan.expression.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.conditional.BinaryConditionalExpression;
 import org.carbondata.scan.expression.conditional.ConditionalExpression;
@@ -103,7 +103,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
         metadata.setColumnExpression(columnExpression);
         metadata.setExpression(leftExp);
         metadata.setIncludeFilter(isIncludeFilter);
-        if (columnExpression.getDataType().equals(DataType.TimestampType)) {
+        if (columnExpression.getDataType().equals(DataType.TIMESTAMP)) {
           isExpressionResolve = true;
         } else {
           // if imei=imei comes in filter condition then we need to
