@@ -44,7 +44,7 @@ Prerequisites for building CarbonData:
 
 I. Clone and build CarbonData
 ```
-$ git clone https://github.com/HuaweiBigData/carbondata.git
+$ git clone https://github.com/apache/incubator-carbondata.git
 ```
 II. Go to the root of the source tree
 ```
