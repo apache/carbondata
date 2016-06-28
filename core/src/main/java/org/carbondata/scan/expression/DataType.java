@@ -21,7 +21,8 @@ package org.carbondata.scan.expression;
 
 public enum DataType {
   StringType(0), DateType(1), TimestampType(2), BooleanType(1), IntegerType(3), FloatType(
-      4), LongType(5), DoubleType(6), NullType(7), DecimalType(8), ArrayType(9), StructType(10);
+      4), LongType(5), DoubleType(6), NullType(7), DecimalType(8), ArrayType(9), StructType(
+      10), ShortType(11);
   private int presedenceOrder;
 
   private DataType(int value) {

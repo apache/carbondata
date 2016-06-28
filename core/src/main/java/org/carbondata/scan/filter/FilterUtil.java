@@ -1012,8 +1012,9 @@ public final class FilterUtil {
       DataType dataType) {
     try {
       switch (dataType) {
+        case SHORT:
+          return Short.compare((Short.parseShort(dictionaryVal)), (Short.parseShort(memberVal)));
         case INT:
-
           return Integer.compare((Integer.parseInt(dictionaryVal)), (Integer.parseInt(memberVal)));
         case DOUBLE:
           return Double
@@ -1095,6 +1096,7 @@ public final class FilterUtil {
       String filterMember2, org.carbondata.scan.expression.DataType dataType) {
     try {
       switch (dataType) {
+        case ShortType:
         case IntegerType:
         case LongType:
         case DoubleType:

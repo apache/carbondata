@@ -55,6 +55,9 @@ public class AddExpression extends BinaryArithmeticExpression {
       case DoubleType:
         addExprRightRes.set(DataType.DoubleType, val1.getDouble() + val2.getDouble());
         break;
+      case ShortType:
+        addExprRightRes.set(DataType.ShortType, val1.getShort() + val2.getShort());
+        break;
       case IntegerType:
         addExprRightRes.set(DataType.IntegerType, val1.getInt() + val2.getInt());
         break;

@@ -61,6 +61,9 @@ public class EqualToExpression extends BinaryConditionalExpression {
       case StringType:
         result = val1.getString().equals(val2.getString());
         break;
+      case ShortType:
+        result = val1.getShort().equals(val2.getShort());
+        break;
       case IntegerType:
         result = val1.getInt().equals(val2.getInt());
         break;

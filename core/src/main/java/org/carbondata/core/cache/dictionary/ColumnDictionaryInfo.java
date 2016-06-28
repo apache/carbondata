@@ -223,6 +223,8 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
       DataType dataType) {
     try {
       switch (dataType) {
+        case SHORT:
+          return Short.compare((Short.parseShort(dictionaryVal)), (Short.parseShort(memberVal)));
         case INT:
           return Integer.compare((Integer.parseInt(dictionaryVal)), (Integer.parseInt(memberVal)));
         case DOUBLE:

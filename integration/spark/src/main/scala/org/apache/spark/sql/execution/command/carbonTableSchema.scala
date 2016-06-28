@@ -379,6 +379,8 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
       case "String" => DataType.STRING
       case "int" => DataType.INT
       case "Integer" => DataType.INT
+      case "tinyint" => DataType.SHORT
+      case "short" => DataType.SHORT
       case "Long" => DataType.LONG
       case "BigInt" => DataType.LONG
       case "Numeric" => DataType.DOUBLE

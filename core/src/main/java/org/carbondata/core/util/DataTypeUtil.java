@@ -120,6 +120,9 @@ public final class DataTypeUtil {
       case "INT":
         dataType = DataType.INT;
         break;
+      case "SHORT":
+        dataType = DataType.SHORT;
+        break;
       case "LONG":
         dataType = DataType.LONG;
         break;
@@ -158,6 +161,7 @@ public final class DataTypeUtil {
     try {
       switch (actualDataType) {
         case INT:
+        case SHORT:
         case LONG:
         case DOUBLE:
         case DECIMAL:
