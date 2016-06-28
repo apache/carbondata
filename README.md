@@ -1,19 +1,30 @@
-# CarbonData
+<!--
+    Licensed to the Apache Software Foundation (ASF) under one
+    or more contributor license agreements.  See the NOTICE file
+    distributed with this work for additional information
+    regarding copyright ownership.  The ASF licenses this file
+    to you under the Apache License, Version 2.0 (the
+    "License"); you may not use this file except in compliance
+    with the License.  You may obtain a copy of the License at
+
+      http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing,
+    software distributed under the License is distributed on an
+    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+    KIND, either express or implied.  See the License for the
+    specific language governing permissions and limitations
+    under the License.
+-->
+
+# Apache CarbonData
 CarbonData is a new Apache Hadoop native file format for faster 
 interactive query using advanced columnar storage, index, compression 
 and encoding techniques to improve computing efficiency, in turn it will 
 help speedup queries an order of magnitude faster over PetaBytes of data. 
 
-### Why CarbonData
-Based on the below requirements, we investigated existing file formats in the Hadoop eco-system, but we could not find a suitable solution that can satisfy all the requirements at the same time,so we start designing CarbonData. 
-* Requirement1:Support big scan & only fetch a few columns 
-* Requirement2:Support primary key lookup response in sub-second. 
-* Requirement3:Support interactive OLAP-style query over big data which involve many filters in a query, this type of workload should response in seconds. 
-* Requirement4:Support fast individual record extraction which fetch all columns of the record. 
-* Requirement5:Support HDFS so that customer can leverage existing Hadoop cluster. 
-
 ### Features
-CarbonData file format is a columnar store in HDFS, it has many features that a modern columnar format has, such as splittable, compression schema ,complex data type etc. And CarbonData has following unique features:
+CarbonData file format is a columnar store in HDFS, it has many features that a modern columnar format has, such as splittable, compression schema ,complex data type etc, and CarbonData has following unique features:
 * Stores data along with index: it can significantly accelerate query performance and reduces the I/O scans and CPU resources, where there are filters in the query.  CarbonData index consists of multiple level of indices, a processing framework can leverage this index to reduce the task it needs to schedule and process, and it can also do skip scan in more finer grain unit (called blocklet) in task side scanning instead of scanning the whole file. 
 * Operable encoded data :Through supporting efficient compression and global encoding schemes, can query on compressed/encoded data, the data can be converted just before returning the results to the users, which is "late materialized". 
 * Column group: Allow multiple columns to form a column group that would be stored as row format. This reduces the row reconstruction cost at query time.
@@ -75,8 +86,15 @@ You can also make those setting to be the default by setting to the "Defaults ->
 Read the [quick start](https://github.com/HuaweiBigData/carbondata/wiki/Quick-Start).
 
 ### Fork and Contribute
-This is an open source project for everyone, and we are always open to people who want to use this system or contribute to it. 
+This is an active open source project for everyone, and we are always open to people who want to use this system or contribute to it. 
 This guide document introduce [how to contribute to CarbonData](https://github.com/HuaweiBigData/carbondata/wiki/How-to-contribute-and-Code-Style).
 
-### About
-CarbonData project original contributed from the [Huawei](http://www.huawei.com), in progress of donating this open source project to Apache Software Foundation for leveraging big data ecosystem. 
+### Contact us
+To get involved in CarbonData:
+
+* [Subscribe:dev@carbondata.incubator.apache.org](mailto:dev-subscribe@carbondata.incubator.apache.org) then [mail](mailto:dev@carbondata.incubator.apache.org) to us
+* Report issues on [Jira](https://issues.apache.org/jira/browse/CARBONDATA).
+
+## About
+Apache CarbonData is an open source project of The Apache Software Foundation (ASF).
+CarbonData project original contributed from the [Huawei](http://www.huawei.com).
