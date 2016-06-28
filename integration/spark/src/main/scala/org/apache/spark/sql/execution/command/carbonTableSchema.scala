@@ -1265,7 +1265,7 @@ private[sql] case class CreateCube(cm: tableModel) extends RunnableCommand {
       try {
         sqlContext.sql(
           s"""CREATE TABLE $dbName.$tbName USING org.apache.spark.sql.CarbonSource""" +
-          s""" OPTIONS (cubename "$dbName.$tbName", tablePath "$tablePath", path "$tablePath") """)
+          s""" OPTIONS (cubename "$dbName.$tbName", tablePath "$tablePath") """)
               .collect
       } catch {
         case e: Exception =>
