@@ -58,6 +58,9 @@ public class GreaterThanExpression extends BinaryConditionalExpression {
       case DoubleType:
         result = exprLeftRes.getDouble() > (exprRightRes.getDouble());
         break;
+      case ShortType:
+        result = exprLeftRes.getShort() > (exprRightRes.getShort());
+        break;
       case IntegerType:
         result = exprLeftRes.getInt() > (exprRightRes.getInt());
         break;

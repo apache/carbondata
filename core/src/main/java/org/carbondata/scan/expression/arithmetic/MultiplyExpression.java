@@ -55,6 +55,9 @@ public class MultiplyExpression extends BinaryArithmeticExpression {
       case DoubleType:
         multiplyExprRightRes.set(DataType.DoubleType, val1.getDouble() * val2.getDouble());
         break;
+      case ShortType:
+        multiplyExprRightRes.set(DataType.ShortType, val1.getShort() * val2.getShort());
+        break;
       case IntegerType:
         multiplyExprRightRes.set(DataType.IntegerType, val1.getInt() * val2.getInt());
         break;

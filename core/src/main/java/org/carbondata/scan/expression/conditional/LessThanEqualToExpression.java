@@ -53,6 +53,9 @@ public class LessThanEqualToExpression extends BinaryConditionalExpression {
       case StringType:
         result = elRes.getString().compareTo(erRes.getString()) <= 0;
         break;
+      case ShortType:
+        result = elRes.getShort() <= (erRes.getShort());
+        break;
       case IntegerType:
         result = elRes.getInt() <= (erRes.getInt());
         break;

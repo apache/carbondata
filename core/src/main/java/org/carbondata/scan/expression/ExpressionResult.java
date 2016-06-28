@@ -73,6 +73,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             throw new FilterUnsupportedException(e);
           }
 
+        case ShortType:
+          return ((Short) value).intValue();
         case IntegerType:
         case DoubleType:
 
@@ -87,6 +89,48 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             return (int) (((Timestamp) value).getTime() % 1000);
           } else {
             return (Integer) value;
+          }
+
+        default:
+          throw new FilterUnsupportedException(
+              "Cannot convert" + this.getDataType().name() + " to integer type value");
+      }
+
+    } catch (ClassCastException e) {
+      throw new FilterUnsupportedException(
+          "Cannot convert" + this.getDataType().name() + " to Integer type value");
+    }
+  }
+
+  public Short getShort() throws FilterUnsupportedException {
+    if (value == null) {
+      return null;
+    }
+    try {
+      switch (this.getDataType()) {
+        case StringType:
+          try {
+            return Short.parseShort(value.toString());
+          } catch (NumberFormatException e) {
+            throw new FilterUnsupportedException(e);
+          }
+        case ShortType:
+        case IntegerType:
+        case DoubleType:
+
+          if (value instanceof Double) {
+            return ((Double) value).shortValue();
+          } else if (value instanceof Integer) {
+            return ((Integer) value).shortValue();
+          }
+          return (Short) value;
+
+        case TimestampType:
+
+          if (value instanceof Timestamp) {
+            return (short) (((Timestamp) value).getTime() % 1000);
+          } else {
+            return (Short) value;
           }
 
         default:
@@ -132,7 +176,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           } catch (NumberFormatException e) {
             throw new FilterUnsupportedException(e);
           }
-
+        case ShortType:
+          return ((Short) value).doubleValue();
         case IntegerType:
           return ((Integer) value).doubleValue();
         case LongType:
@@ -168,7 +213,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           } catch (NumberFormatException e) {
             throw new FilterUnsupportedException(e);
           }
-
+        case ShortType:
+          return ((Short) value).longValue();
         case IntegerType:
           return (Long) value;
         case LongType:
@@ -205,7 +251,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           } catch (NumberFormatException e) {
             throw new FilterUnsupportedException(e);
           }
-
+        case ShortType:
+          return new BigDecimal((short) value);
         case IntegerType:
           return new BigDecimal((int) value);
         case LongType:
@@ -249,6 +296,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             throw new FilterUnsupportedException(
                 "Cannot convert" + this.getDataType().name() + " to Time/Long type value");
           }
+        case ShortType:
+          return ((Short) value).longValue();
         case IntegerType:
         case LongType:
           return (Long) value;
@@ -354,6 +403,9 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         case StringType:
           result = this.getString().equals(objToCompare.getString());
           break;
+        case ShortType:
+          result = this.getShort().equals(objToCompare.getShort());
+          break;
         case IntegerType:
           result = this.getInt().equals(objToCompare.getInt());
           break;
@@ -381,6 +433,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
   @Override public int compareTo(ExpressionResult o) {
     try {
       switch (o.dataType) {
+        case ShortType:
         case IntegerType:
         case LongType:
         case DoubleType:

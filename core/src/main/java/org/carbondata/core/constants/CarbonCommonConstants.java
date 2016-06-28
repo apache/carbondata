@@ -707,6 +707,7 @@ public final class CarbonCommonConstants {
   public static final String COLUMNAR = "columnar";
 
   public static final String INTEGER = "Integer";
+  public static final String SHORT = "Short";
   public static final String NUMERIC = "Numeric";
   public static final String TIMESTAMP = "Timestamp";
   public static final String ARRAY = "ARRAY";

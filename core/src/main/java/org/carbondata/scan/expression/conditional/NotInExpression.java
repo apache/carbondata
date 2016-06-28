@@ -59,6 +59,9 @@ public class NotInExpression extends BinaryConditionalExpression {
             case StringType:
               val = new ExpressionResult(val.getDataType(), exprResVal.getString());
               break;
+            case ShortType:
+              val = new ExpressionResult(val.getDataType(), exprResVal.getShort());
+              break;
             case IntegerType:
               val = new ExpressionResult(val.getDataType(), exprResVal.getInt());
               break;

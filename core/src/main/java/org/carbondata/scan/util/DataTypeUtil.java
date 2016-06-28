@@ -18,7 +18,6 @@
  */
 package org.carbondata.scan.util;
 
-import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -52,30 +51,20 @@ public class DataTypeUtil {
    */
   public static Object getDataBasedOnDataType(String data, DataType actualDataType) {
 
-    if (null == data) {
+    if (null == data || data.isEmpty()) {
       return null;
     }
     try {
       switch (actualDataType) {
         case INT:
-          if (data.isEmpty()) {
-            return null;
-          }
           return Integer.parseInt(data);
+        case SHORT:
+          return Short.parseShort(data);
         case DOUBLE:
-          if (data.isEmpty()) {
-            return null;
-          }
           return Double.parseDouble(data);
         case LONG:
-          if (data.isEmpty()) {
-            return null;
-          }
           return Long.parseLong(data);
         case TIMESTAMP:
-          if (data.isEmpty()) {
-            return null;
-          }
           SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
                   CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
@@ -88,9 +77,6 @@ public class DataTypeUtil {
             return null;
           }
         case DECIMAL:
-          if (data.isEmpty()) {
-            return null;
-          }
           java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data);
           scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
           org.apache.spark.sql.types.Decimal decConverter =
@@ -136,40 +122,6 @@ public class DataTypeUtil {
       return null;
     }
 
-  }
-
-  public static int compareBasedOnDatatYpe(Object data1, Object data2, DataType dataType) {
-    switch (dataType) {
-      case INT:
-        return ((Integer) data1).compareTo((Integer) data2);
-      case LONG:
-      case TIMESTAMP:
-        return ((Long) data1).compareTo((Long) data2);
-      case DOUBLE:
-        return ((Double) data1).compareTo((Double) data2);
-      case DECIMAL:
-        return ((BigDecimal) data1).compareTo((BigDecimal) data2);
-      default:
-        return ((String) data1).compareTo((String) data2);
-    }
-  }
-
-  /**
-   * below method is to check whether data type is of numeric type or not
-   *
-   * @param dataType data type
-   * @return true if numeric data type
-   */
-  public boolean isNumericDatatype(DataType dataType) {
-    switch (dataType) {
-      case INT:
-      case LONG:
-      case DOUBLE:
-      case DECIMAL:
-        return true;
-      default:
-        return false;
-    }
   }
 
 }

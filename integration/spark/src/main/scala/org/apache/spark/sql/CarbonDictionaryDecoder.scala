@@ -92,6 +92,7 @@ case class CarbonDictionaryDecoder(
       relation: CarbonRelation): types.DataType = {
     carbonDimension.getDataType match {
       case DataType.STRING => StringType
+      case DataType.SHORT => ShortType
       case DataType.INT => IntegerType
       case DataType.LONG => LongType
       case DataType.DOUBLE => DoubleType

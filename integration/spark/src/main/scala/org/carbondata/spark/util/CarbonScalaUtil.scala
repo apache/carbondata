@@ -35,6 +35,7 @@ object CarbonScalaUtil {
       dataType: org.apache.spark.sql.types.DataType): CarbonDataType = {
     dataType match {
       case StringType => CarbonDataType.StringType
+      case ShortType => CarbonDataType.ShortType
       case IntegerType => CarbonDataType.IntegerType
       case LongType => CarbonDataType.LongType
       case DoubleType => CarbonDataType.DoubleType
@@ -54,7 +55,7 @@ object CarbonScalaUtil {
       case CarbonCommonConstants.STRING_TYPE => CarbonCommonConstants.STRING
       case CarbonCommonConstants.INTEGER_TYPE => CarbonCommonConstants.INTEGER
       case CarbonCommonConstants.BYTE_TYPE => CarbonCommonConstants.INTEGER
-      case CarbonCommonConstants.SHORT_TYPE => CarbonCommonConstants.INTEGER
+      case CarbonCommonConstants.SHORT_TYPE => CarbonCommonConstants.SHORT
       case CarbonCommonConstants.LONG_TYPE => CarbonCommonConstants.NUMERIC
       case CarbonCommonConstants.DOUBLE_TYPE => CarbonCommonConstants.NUMERIC
       case CarbonCommonConstants.FLOAT_TYPE => CarbonCommonConstants.NUMERIC
@@ -66,36 +67,10 @@ object CarbonScalaUtil {
     }
   }
 
-  def convertSparkColumnToCarbonLevel(field: (String, String)): Seq[Level] = {
-    field._2 match {
-      case CarbonCommonConstants.STRING_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.STRING))
-      case CarbonCommonConstants.INTEGER_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.INTEGER))
-      case CarbonCommonConstants.BYTE_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.INTEGER))
-      case CarbonCommonConstants.SHORT_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.INTEGER))
-      case CarbonCommonConstants.LONG_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.NUMERIC))
-      case CarbonCommonConstants.DOUBLE_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.NUMERIC))
-      case CarbonCommonConstants.FLOAT_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.NUMERIC))
-      case CarbonCommonConstants.DECIMAL_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.NUMERIC))
-      case CarbonCommonConstants.DATE_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.STRING))
-      case CarbonCommonConstants.BOOLEAN_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.STRING))
-      case CarbonCommonConstants.TIMESTAMP_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.TIMESTAMP))
-    }
-  }
-
   def convertCarbonToSparkDataType(dataType: DataType): types.DataType = {
     dataType match {
       case DataType.STRING => StringType
+      case DataType.SHORT => ShortType
       case DataType.INT => IntegerType
       case DataType.LONG => LongType
       case DataType.DOUBLE => DoubleType
@@ -104,21 +79,6 @@ object CarbonScalaUtil {
       case DataType.TIMESTAMP => TimestampType
     }
   }
-
-  def convertValueToSparkDataType(value: Any,
-      dataType: org.apache.spark.sql.types.DataType): Any = {
-    dataType match {
-      case StringType => value.toString
-      case IntegerType => value.toString.toInt
-      case LongType => value.toString.toLong
-      case DoubleType => value.toString.toDouble
-      case FloatType => value.toString.toFloat
-      case _ => value.toString.toDouble
-    }
-  }
-
-
-  case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
 
   object CarbonSparkUtil {
 

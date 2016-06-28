@@ -301,6 +301,8 @@ class DataFileFooterConverter {
     switch (dataTypeThrift) {
       case STRING:
         return DataType.STRING;
+      case SHORT:
+        return DataType.SHORT;
       case INT:
         return DataType.INT;
       case LONG:

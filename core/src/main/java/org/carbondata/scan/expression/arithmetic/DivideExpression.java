@@ -54,6 +54,9 @@ public class DivideExpression extends BinaryArithmeticExpression {
       case DoubleType:
         divideExprRightRes.set(DataType.DoubleType, val1.getDouble() / val2.getDouble());
         break;
+      case ShortType:
+        divideExprRightRes.set(DataType.ShortType, val1.getShort() / val2.getShort());
+        break;
       case IntegerType:
         divideExprRightRes.set(DataType.IntegerType, val1.getInt() / val2.getInt());
         break;
