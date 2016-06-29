@@ -213,7 +213,7 @@ object CarbonDataRDDFactory extends Logging {
       }
     } else {
       logError("Delete by Date request is failed")
-      logger.audit("The delete load by date is failed.")
+      logger.audit(s"The delete load by date is failed for $schemaName.$cubeName")
       sys.error("Delete by Date request is failed, potential causes " +
                 "Empty store or Invalid column type, For more details please refer logs.")
     }
@@ -305,8 +305,8 @@ object CarbonDataRDDFactory extends Logging {
     }
 
     logger
-      .audit("Compaction request received for table " + carbonLoadModel
-        .getDatabaseName + "." + carbonLoadModel.getTableName
+      .audit(s"Compaction request received for table " +
+        s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}"
       )
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val cubeCreationTime = CarbonEnv.getInstance(sqlContext).carbonCatalog
@@ -345,8 +345,8 @@ object CarbonDataRDDFactory extends Logging {
     }
     else {
       logger
-        .audit("Not able to acquire the compaction lock for table " + carbonLoadModel
-          .getDatabaseName + "." + carbonLoadModel.getTableName
+        .audit("Not able to acquire the compaction lock for table " +
+          s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}"
         )
       logger
         .error("Not able to acquire the compaction lock for table " + carbonLoadModel
@@ -827,7 +827,8 @@ object CarbonDataRDDFactory extends Logging {
           message = "Dataload failure"
         }
         logInfo("********clean up done**********")
-        logger.audit("Data load is failed.")
+        logger.audit(s"Data load is failed for " +
+          s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}")
         logWarning("Unable to write load metadata file")
         throw new Exception(message)
       } else {
@@ -842,7 +843,8 @@ object CarbonDataRDDFactory extends Logging {
             )
           if (!status) {
             val message = "Dataload failed due to failure in table status updation."
-            logger.audit("Data load is failed.")
+            logger.audit("Data load is failed for " +
+              s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}")
             logger.error("Dataload failed due to failure in table status updation.")
             throw new Exception(message)
           }
@@ -850,7 +852,8 @@ object CarbonDataRDDFactory extends Logging {
           // TODO : Handle it
           logInfo("********Database updated**********")
         }
-        logger.audit("Data load is successful.")
+        logger.audit("Data load is successful for " +
+          s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}")
       }
     }
 

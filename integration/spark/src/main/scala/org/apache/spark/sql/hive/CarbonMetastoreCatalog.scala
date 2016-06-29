@@ -158,7 +158,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
           CarbonRelation(schemaName, cubeName,
             CarbonSparkUtil.createSparkMeta(cubes.head.carbonTable), cubes.head, alias)(sqlContext)
         } else {
-          LOGGER.audit(s"Table Not Found: $schemaName $cubeName")
+          LOGGER.audit(s"Table Not Found: $schemaName.$cubeName")
           throw new NoSuchTableException
         }
       case Seq(cubeName) =>
@@ -170,7 +170,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
           CarbonRelation(currentDatabase, cubeName,
             CarbonSparkUtil.createSparkMeta(cubes.head.carbonTable), cubes.head, alias)(sqlContext)
         } else {
-          LOGGER.audit(s"Table Not Found: $cubeName")
+          LOGGER.audit(s"Table Not Found: $currentDatabase.$cubeName")
           throw new NoSuchTableException
         }
       case _ =>
@@ -580,7 +580,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     val (timestampFile, timestampFileType) = getTimestampFileAndType(schemaName, cubeName)
 
     if (!FileFactory.isFileExist(timestampFile, timestampFileType)) {
-      LOGGER.audit("Creating timestamp file")
+      LOGGER.audit(s"Creating timestamp file for $schemaName.$cubeName")
       FileFactory.createNewFile(timestampFile, timestampFileType)
     }
 
