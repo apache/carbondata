@@ -6,7 +6,7 @@ Such queries select only a few columns with a group by clause but do not contain
 ![Full Scan Query](/docs/images/format/carbon_data_full_scan.png?raw=true)
 
 ### OLAP Style Query / Multi-dimensional Analysis
-These are queries which are typically fired from Interactive Analysis tools. Such queries often select a few columns but involve filters and group by on a column or a grouping expression. 
+These are queries which are typically fired from Interactive Analysis tools. Such queries often select a few columns but involve filters and group by on a column or a grouping expression.  
 ![OLAP Scan Query](/docs/images/format/carbon_data_olap_scan.png?raw=true)
 
 
