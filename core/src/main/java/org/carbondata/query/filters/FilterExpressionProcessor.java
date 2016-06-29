@@ -302,7 +302,8 @@ public class FilterExpressionProcessor implements FilterProcessor {
             && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
             != DataType.STRUCT) {
           if (!currentCondExpression.getColumnList().get(0).getCarbonColumn()
-              .hasEncoding(Encoding.DICTIONARY)) {
+              .hasEncoding(Encoding.DICTIONARY) || currentCondExpression.getColumnList().get(0)
+              .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                 && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
                 FilterUtil.checkIfExpressionContainsUnknownExp(currentCondExpression.getRight())
@@ -333,18 +334,12 @@ public class FilterExpressionProcessor implements FilterProcessor {
             && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()
             != DataType.STRUCT) {
           condExpression = (ConditionalExpression) expression;
-          if (condExpression.isSingleDimension()) {
-            if (!condExpression.getColumnList().get(0).getCarbonColumn()
-                .hasEncoding(Encoding.DICTIONARY)) {
-              if (FilterUtil.checkIfExpressionContainsColumn(expression)) {
-                return new RowLevelFilterResolverImpl(expression, isExpressionResolve, false,
-                    tableIdentifier);
-              } else if (expressionTree.getFilterExpressionType() == ExpressionType.UNKNOWN) {
-                return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
-              }
-
-              return new ConditionalFilterResolverImpl(expression, true, true);
-            }
+          if (condExpression.getColumnList().get(0).getCarbonColumn()
+              .hasEncoding(Encoding.DICTIONARY) && !condExpression.getColumnList().get(0)
+              .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+            return new ConditionalFilterResolverImpl(expression, true, true);
+          } else {
+            return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
           }
         } else {
           return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
