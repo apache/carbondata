@@ -140,7 +140,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     for (int i = 0; i < filterValues.length; i++) {
       startKey = CarbonUtil
           .getFirstIndexUsingBinarySearch(dimColumnDataChunk, startIndex, numerOfRows - 1,
-              filterValues[i]);
+              filterValues[i], false);
       if (startKey < 0) {
         continue;
       }
@@ -175,7 +175,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     for (int k = 0; k < filterValues.length; k++) {
       startKey = CarbonUtil
           .getFirstIndexUsingBinarySearch(dimColumnDataChunk, startIndex, numerOfRows - 1,
-              filterValues[k]);
+              filterValues[k], false);
       if (startKey < 0) {
         continue;
       }

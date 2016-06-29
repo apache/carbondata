@@ -605,9 +605,34 @@ public final class FilterUtil {
           LOGGER.error(e.getMessage());
         }
       }
+
     }
     return filterValuesList.toArray(new byte[filterValuesList.size()][]);
 
+  }
+
+  /**
+   * The method is used to get the single dictionary key's mask key
+   * @param surrogate
+   * @param carbonDimension
+   * @param blockLevelKeyGenerator
+   * @return
+   */
+  public static byte[] getMaskKey(int surrogate, CarbonDimension carbonDimension,
+      KeyGenerator blockLevelKeyGenerator) {
+
+    int[] keys = new int[blockLevelKeyGenerator.getDimCount()];
+    byte[] maskedKey = null;
+    Arrays.fill(keys, 0);
+    int[] rangesForMaskedByte =
+        getRangesForMaskedByte((carbonDimension.getKeyOrdinal()), blockLevelKeyGenerator);
+    try {
+      keys[carbonDimension.getKeyOrdinal()] = surrogate;
+      maskedKey = getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys));
+    } catch (KeyGenException e) {
+      LOGGER.error(e.getMessage());
+    }
+    return maskedKey;
   }
 
   /**

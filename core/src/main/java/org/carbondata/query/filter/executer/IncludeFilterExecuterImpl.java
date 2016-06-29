@@ -130,7 +130,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     for (int i = 0; i < filterValues.length; i++) {
       start = CarbonUtil
           .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-              filterValues[i]);
+              filterValues[i], false);
       if (start < 0) {
         continue;
       }
@@ -167,7 +167,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       for (int k = 0; k < filterValues.length; k++) {
         start = CarbonUtil.getFirstIndexUsingBinarySearch(
             (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-            filterValues[k]);
+            filterValues[k], false);
         if (start < 0) {
           continue;
         }

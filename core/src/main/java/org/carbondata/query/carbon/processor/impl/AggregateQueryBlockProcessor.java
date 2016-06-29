@@ -32,7 +32,7 @@ public class AggregateQueryBlockProcessor extends AbstractDataBlockProcessor {
   /**
    * AggregateQueryScanner constructor
    *
-   * @param blockExecutionInfos
+   * @param tableBlockExecutionInfos
    */
   public AggregateQueryBlockProcessor(BlockExecutionInfo tableBlockExecutionInfos,
       FileHolder fileReader) {

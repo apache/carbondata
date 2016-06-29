@@ -20,27 +20,11 @@
 
 package org.carbondata.core.util;
 
-import java.io.Closeable;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.PrivilegedExceptionAction;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -866,7 +850,7 @@ public final class CarbonUtil {
   }
 
   public static int getFirstIndexUsingBinarySearch(FixedLengthDimensionDataChunk dimColumnDataChunk,
-      int low, int high, byte[] compareValue) {
+      int low, int high, byte[] compareValue, boolean matchUpLimit) {
     int cmpResult = 0;
     while (high >= low) {
       int mid = (low + high) / 2;
@@ -879,11 +863,20 @@ public final class CarbonUtil {
         high = mid - 1;
       } else {
         int currentIndex = mid;
-        while (currentIndex - 1 >= 0 && ByteUtil.UnsafeComparer.INSTANCE
-            .compareTo(dimColumnDataChunk.getCompleteDataChunk(),
-                (currentIndex - 1) * compareValue.length, compareValue.length, compareValue, 0,
-                compareValue.length) == 0) {
-          --currentIndex;
+        if(!matchUpLimit) {
+          while (currentIndex - 1 >= 0 && ByteUtil.UnsafeComparer.INSTANCE
+              .compareTo(dimColumnDataChunk.getCompleteDataChunk(),
+                  (currentIndex - 1) * compareValue.length, compareValue.length, compareValue, 0,
+                  compareValue.length) == 0) {
+            --currentIndex;
+          }
+        } else {
+          while (currentIndex + 1 <= high && ByteUtil.UnsafeComparer.INSTANCE
+              .compareTo(dimColumnDataChunk.getCompleteDataChunk(),
+                  (currentIndex + 1) * compareValue.length, compareValue.length, compareValue, 0,
+                  compareValue.length) == 0) {
+            currentIndex++;
+          }
         }
         return currentIndex;
       }

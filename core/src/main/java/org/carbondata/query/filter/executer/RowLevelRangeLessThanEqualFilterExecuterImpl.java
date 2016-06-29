@@ -26,6 +26,8 @@ import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.carbon.processor.BlocksChunkHolder;
@@ -33,6 +35,7 @@ import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.carbondata.query.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
+import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 
 public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilterExecuterImpl {
   protected byte[][] filterRangeValues;
@@ -88,12 +91,23 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
 
   private BitSet getFilteredIndexes(DimensionColumnDataChunk dimensionColumnDataChunk,
       int numerOfRows) {
+    byte[] defaultValue = null;
+    if (dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+          .getDirectDictionaryGenerator(
+              dimColEvaluatorInfoList.get(0).getDimension().getDataType());
+      int key = directDictionaryGenerator.generateDirectSurrogateKey(null) + 1;
+      defaultValue = FilterUtil.getMaskKey(key, dimColEvaluatorInfoList.get(0).getDimension(),
+          this.segmentProperties.getDimensionKeyGenerator());
+    }
     if (null != dimensionColumnDataChunk.getAttributes().getInvertedIndexes()
         && dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
+
       return setFilterdIndexToBitSetWithColumnIndex(
-          (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, numerOfRows);
+          (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, numerOfRows, defaultValue);
+
     }
-    return setFilterdIndexToBitSet(dimensionColumnDataChunk, numerOfRows);
+    return setFilterdIndexToBitSet(dimensionColumnDataChunk, numerOfRows, defaultValue);
   }
 
   /**
@@ -107,17 +121,35 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
    * @return BitSet.
    */
   private BitSet setFilterdIndexToBitSetWithColumnIndex(
-      FixedLengthDimensionDataChunk dimensionColumnDataChunk, int numerOfRows) {
+      FixedLengthDimensionDataChunk dimensionColumnDataChunk, int numerOfRows,
+      byte[] defaultValue) {
     BitSet bitSet = new BitSet(numerOfRows);
     int[] columnIndex = dimensionColumnDataChunk.getAttributes().getInvertedIndexes();
     int start = 0;
     int last = 0;
+    int skip = 0;
     int startIndex = 0;
     byte[][] filterValues = this.filterRangeValues;
+    //find the number of default values to skip the null value in case of direct dictionary
+    if (null != defaultValue) {
+      start = CarbonUtil
+          .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
+              defaultValue, true);
+      if (start < 0) {
+        skip = -(start + 1);
+        // end of block
+        if (skip == numerOfRows) {
+          return bitSet;
+        }
+      } else {
+        skip = start;
+      }
+      startIndex = skip;
+    }
     for (int i = 0; i < filterValues.length; i++) {
       start = CarbonUtil
           .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-              filterValues[i]);
+              filterValues[i], true);
       if (start < 0) {
         start = -(start + 1);
         if (start == numerOfRows) {
@@ -133,7 +165,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
         }
       }
       last = start;
-      for (int j = start; j >= 0; j--) {
+      for (int j = start; j >= skip; j--) {
         bitSet.set(columnIndex[j]);
         last--;
       }
@@ -153,20 +185,38 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
    *
    * @param dimensionColumnDataChunk
    * @param numerOfRows
+   * @param defaultValue
    * @return BitSet.
    */
   private BitSet setFilterdIndexToBitSet(DimensionColumnDataChunk dimensionColumnDataChunk,
-      int numerOfRows) {
+      int numerOfRows, byte[] defaultValue) {
     BitSet bitSet = new BitSet(numerOfRows);
     if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
       int start = 0;
       int last = 0;
       int startIndex = 0;
       byte[][] filterValues = this.filterRangeValues;
+      int skip = 0;
+      //find the number of default values to skip the null value in case of direct dictionary
+      if (null != defaultValue) {
+        start = CarbonUtil.getFirstIndexUsingBinarySearch(
+            (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, startIndex, numerOfRows - 1,
+            defaultValue, true);
+        if (start < 0) {
+          skip = -(start + 1);
+          // end of block
+          if (skip == numerOfRows) {
+            return bitSet;
+          }
+        } else {
+          skip = start;
+        }
+        startIndex = skip;
+      }
       for (int k = 0; k < filterValues.length; k++) {
         start = CarbonUtil.getFirstIndexUsingBinarySearch(
             (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-            filterValues[k]);
+            filterValues[k], true);
         if (start < 0) {
           start = -(start + 1);
           if (start == numerOfRows) {
@@ -181,7 +231,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
           }
         }
         last = start;
-        for (int j = start; j >= 0; j--) {
+        for (int j = start; j >= skip; j--) {
           bitSet.set(j);
           last--;
         }
