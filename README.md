@@ -30,64 +30,28 @@ CarbonData file format is a columnar store in HDFS, it has many features that a 
 * Column group: Allow multiple columns to form a column group that would be stored as row format. This reduces the row reconstruction cost at query time.
 * Supports for various use cases with one single Data format : like interactive OLAP-style query, Sequential Access (big scan), Random Access (narrow scan). 
 
-### CarbonData File Structure and Format
-The online document at [CarbonData File Format](https://github.com/HuaweiBigData/carbondata/wiki/CarbonData-File-Structure-and-Format)
-
-### Building CarbonData
-Prerequisites for building CarbonData:
-* Unix-like environment (Linux, Mac OS X)
-* git
-* Apache Maven (we recommend version 3.0.4)
-* Java 7 or 8
-* Scala 2.10
-* Apache Thrift 0.9.3
-
-I. Clone and build CarbonData
-```
-$ git clone https://github.com/apache/incubator-carbondata.git
-```
-II. Go to the root of the source tree
-```
-$ cd carbondata
-```
-III. Build the project 
-* Build without testing:
-```
-$ mvn -DskipTests clean install 
-```
-* Build with testing:
-```
-$ mvn clean install
-```
-* Build along with integration test cases: (Note : It takes more time to build)
-```
-$ mvn -Pintegration-test clean install
-```
-
-### Developing CarbonData
-The CarbonData committers use IntelliJ IDEA and Eclipse IDE to develop.
-
-#### IntelliJ IDEA
-* Download IntelliJ at https://www.jetbrains.com/idea/ and install the Scala plug-in for IntelliJ at http://plugins.jetbrains.com/plugin/?id=1347
-* Go to "File -> Import Project", locate the CarbonData source directory, and select "Maven Project".
-* In the Import Wizard, select "Import Maven projects automatically" and leave other settings at their default. 
-* Leave other settings at their default and you should be able to start your development.
-* When you run the scala test, sometimes you will get out of memory exception. You can increase your VM memory usage by the following setting, for example:
-```
--XX:MaxPermSize=512m -Xmx3072m
-```
-You can also make those setting to be the default by setting to the "Defaults -> ScalaTest".
-
-#### Eclipse
-* Download the Scala IDE (preferred) or install the scala plugin to Eclipse.
-* Import the CarbonData Maven projects ("File" -> "Import" -> "Maven" -> "Existing Maven Projects" -> locate the CarbonData source directory).
+### Building CarbonData and using Development tools
+Please refer [Bulding Carbondata and configuring IDE](docs/Installing-CarbonData-And-IDE-Configuartion.md)
 
 ### Getting Started
-Read the [quick start](https://github.com/HuaweiBigData/carbondata/wiki/Quick-Start).
+Read the [quick start](docs/Quick-Start.md)
+
+### Usage of Carbondata
+ [DDL Operations on Carbondata](docs/DDL-Operations-on-Carbon.md) 
+ 
+ [DML Operations on Carbondata](docs/DML-Operations-on-Carbon.md)  
+ 
+ [Carbondata data management](docs/Carbondata-Management.md)  
+
+### CarbonData File Structure and interfaces
+Please refer [CarbonData File Format](docs/Carbondata-File-Structure-and-Format.md) and [Carbon Interfaces](docs/Carbon-Interfaces.md)
+
+### Other Technical Material
+[Apache CarbonData meetup material](docs/Apache-CarbonData-meetup-material.pdf)
 
 ### Fork and Contribute
 This is an active open source project for everyone, and we are always open to people who want to use this system or contribute to it. 
-This guide document introduce [how to contribute to CarbonData](https://github.com/HuaweiBigData/carbondata/wiki/How-to-contribute-and-Code-Style).
+This guide document introduce [how to contribute to CarbonData](docs/How-to-contribute-to-Apache-CarbonData.md).
 
 ### Contact us
 To get involved in CarbonData:
