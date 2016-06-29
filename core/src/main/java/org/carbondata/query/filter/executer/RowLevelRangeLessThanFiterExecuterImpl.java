@@ -36,16 +36,14 @@ import org.carbondata.query.filter.resolver.resolverinfo.MeasureColumnResolvedFi
 
 public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecuterImpl {
   private byte[][] filterRangeValues;
-  private SegmentProperties segmentProperties;
 
   public RowLevelRangeLessThanFiterExecuterImpl(
       List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, byte[][] filterRangeValues,
       SegmentProperties segmentProperties) {
-    super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier);
+    super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier, segmentProperties);
     this.filterRangeValues = filterRangeValues;
-    this.segmentProperties = segmentProperties;
   }
 
   @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {

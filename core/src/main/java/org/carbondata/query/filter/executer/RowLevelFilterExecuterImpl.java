@@ -28,16 +28,20 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.datastore.chunk.impl.VariableLengthDimensionDataChunk;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.aggregator.util.MeasureAggregatorFactory;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
+import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
+import org.carbondata.query.carbon.executor.util.QueryUtil;
 import org.carbondata.query.carbon.processor.BlocksChunkHolder;
 import org.carbondata.query.carbon.util.DataTypeUtil;
 import org.carbondata.query.carbonfilterinterface.RowImpl;
@@ -58,11 +62,22 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   protected List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList;
   protected Expression exp;
   protected AbsoluteTableIdentifier tableIdentifier;
+  protected SegmentProperties segmentProperties;
+  /**
+   * it has index at which given dimension is stored in file
+   */
+  private int[] blocksIndex;
 
   public RowLevelFilterExecuterImpl(List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
-      AbsoluteTableIdentifier tableIdentifier) {
+      AbsoluteTableIdentifier tableIdentifier, SegmentProperties segmentProperties) {
     this.dimColEvaluatorInfoList = dimColEvaluatorInfoList;
+    this.segmentProperties = segmentProperties;
+    this.blocksIndex = new int[dimColEvaluatorInfoList.size()];
+    for (int i=0;i<dimColEvaluatorInfoList.size();i++) {
+      this.blocksIndex[i] = segmentProperties.getDimensionOrdinalToBlockMapping()
+              .get(dimColEvaluatorInfoList.get(i).getColumnIndex());
+    }
     if (null == msrColEvalutorInfoList) {
       this.msrColEvalutorInfoList = new ArrayList<MeasureColumnResolvedFilterInfo>(20);
     } else {
@@ -74,18 +89,17 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
   @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder)
       throws FilterUnsupportedException {
-    for (DimColumnResolvedFilterInfo dimColumnEvaluatorInfo : dimColEvaluatorInfoList) {
+    for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
+      DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = dimColEvaluatorInfoList.get(i);
       if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.ARRAY
           && dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.STRUCT) {
-        if (null == blockChunkHolder.getDimensionDataChunk()[dimColumnEvaluatorInfo
-            .getColumnIndex()]) {
-          blockChunkHolder.getDimensionDataChunk()[dimColumnEvaluatorInfo.getColumnIndex()] =
-              blockChunkHolder.getDataBlock().getDimensionChunk(blockChunkHolder.getFileReader(),
-                  dimColumnEvaluatorInfo.getColumnIndex());
+        if (null == blockChunkHolder.getDimensionDataChunk()[blocksIndex[i]]) {
+          blockChunkHolder.getDimensionDataChunk()[blocksIndex[i]] = blockChunkHolder.getDataBlock()
+              .getDimensionChunk(blockChunkHolder.getFileReader(), blocksIndex[i]);
         }
       } else {
         GenericQueryType complexType = dimColumnEvaluatorInfo.getComplexTypesWithBlockStartIndex()
-            .get(dimColumnEvaluatorInfo.getColumnIndex());
+            .get(blocksIndex[i]);
         complexType.fillRequiredBlockData(blockChunkHolder);
       }
     }
@@ -143,19 +157,20 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       throws QueryExecutionException {
     Object[] record = new Object[dimColEvaluatorInfoList.size() + msrColEvalutorInfoList.size()];
     String memberString = null;
-    for (DimColumnResolvedFilterInfo dimColumnEvaluatorInfo : dimColEvaluatorInfoList) {
+    for (int i=0;i<dimColEvaluatorInfoList.size();i++) {
+      DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = dimColEvaluatorInfoList.get(i);
       if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.ARRAY
           && dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.STRUCT) {
         if (!dimColumnEvaluatorInfo.isDimensionExistsInCurrentSilce()) {
           record[dimColumnEvaluatorInfo.getRowIndex()] = dimColumnEvaluatorInfo.getDefaultValue();
         }
         if (!dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)
-            && blockChunkHolder.getDimensionDataChunk()[dimColumnEvaluatorInfo
-            .getColumnIndex()] instanceof VariableLengthDimensionDataChunk) {
+            && blockChunkHolder
+            .getDimensionDataChunk()[blocksIndex[i]] instanceof VariableLengthDimensionDataChunk) {
 
           VariableLengthDimensionDataChunk dimensionColumnDataChunk =
               (VariableLengthDimensionDataChunk) blockChunkHolder
-                  .getDimensionDataChunk()[dimColumnEvaluatorInfo.getColumnIndex()];
+                  .getDimensionDataChunk()[blocksIndex[i]];
           if (null != dimensionColumnDataChunk.getCompleteDataChunk()) {
             memberString =
                 readMemberBasedOnNoDictionaryVal(dimColumnEvaluatorInfo, dimensionColumnDataChunk,
@@ -173,7 +188,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           }
         } else {
           int dictionaryValue =
-              readSurrogatesFromColumnBlock(blockChunkHolder, index, dimColumnEvaluatorInfo);
+              readSurrogatesFromColumnBlock(blockChunkHolder, index, dimColumnEvaluatorInfo,
+                  blocksIndex[i]);
           Dictionary forwardDictionary = null;
           if (dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)
               && !dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
@@ -317,13 +333,41 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    * @return
    */
   private int readSurrogatesFromColumnBlock(BlocksChunkHolder blockChunkHolder, int index,
-      DimColumnResolvedFilterInfo dimColumnEvaluatorInfo) {
-    byte[] rawData =
-        blockChunkHolder.getDimensionDataChunk()[dimColumnEvaluatorInfo.getColumnIndex()]
-            .getChunkData(index);
-    ByteBuffer byteBuffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE);
-    int dictionaryValue = CarbonUtil.getSurrogateKey(rawData, byteBuffer);
-    return dictionaryValue;
+      DimColumnResolvedFilterInfo dimColumnEvaluatorInfo, int blockIndex) {
+    if (dimColumnEvaluatorInfo.getDimension().isColumnar()) {
+      byte[] rawData = blockChunkHolder.getDimensionDataChunk()[blockIndex].getChunkData(index);
+      ByteBuffer byteBuffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE);
+      int dictionaryValue = CarbonUtil.getSurrogateKey(rawData, byteBuffer);
+      return dictionaryValue;
+    } else {
+      return readSurrogatesFromColumnGroupBlock(blockChunkHolder, index, dimColumnEvaluatorInfo,
+          blockIndex);
+    }
+
+  }
+
+  /**
+   * @param blockChunkHolder
+   * @param index
+   * @param dimColumnEvaluatorInfo
+   * @return read surrogate of given row of given column group dimension
+   */
+  private int readSurrogatesFromColumnGroupBlock(BlocksChunkHolder blockChunkHolder, int index,
+      DimColumnResolvedFilterInfo dimColumnEvaluatorInfo, int blockIndex) {
+    try {
+      KeyStructureInfo keyStructureInfo =
+          QueryUtil.getKeyStructureInfo(segmentProperties, dimColumnEvaluatorInfo);
+      byte[] colData = blockChunkHolder.getDimensionDataChunk()[blockIndex].getChunkData(index);
+      long[] result = keyStructureInfo.getKeyGenerator().getKeyArray(colData);
+      int colGroupId =
+          QueryUtil.getColumnGroupId(segmentProperties, dimColumnEvaluatorInfo.getColumnIndex());
+      int dictionaryValue = (int) result[segmentProperties
+          .getColumnGroupMdKeyOrdinal(colGroupId, dimColumnEvaluatorInfo.getColumnIndex())];
+      return dictionaryValue;
+    } catch (KeyGenException e) {
+      LOGGER.error(e);
+    }
+    return 0;
   }
 
   /**

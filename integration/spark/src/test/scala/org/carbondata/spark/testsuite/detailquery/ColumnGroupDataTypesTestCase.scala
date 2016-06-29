@@ -104,6 +104,24 @@ class ColumnGroupDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
       sql("select * from colgrp_dictexclude_after where column3='column311' and column4='column42' "),
       sql("select * from normal where column3='column311' and column4='column42'"))
   }
+  test("ExcludeFilter") {
+    checkAnswer(
+      sql("select * from colgrp where column3 != 'column311'"),
+      sql("select * from normal where column3 != 'column311'"))
+
+    checkAnswer(
+      sql("select * from colgrp where column3 like 'column31%'"),
+      sql("select * from normal where column3 like 'column31%'"))
+    checkAnswer(
+      sql("select * from colgrp where column3 not like 'column31%'"),
+      sql("select * from normal where column3 not like 'column31%'"))
+  }
+  test("RowFilter") {
+    checkAnswer(
+      sql("select * from colgrp where column3 != column4"),
+      sql("select * from normal where column3 != column4"))
+  }
+
   override def afterAll {
     sql("drop table colgrp")
     sql("drop table normal")

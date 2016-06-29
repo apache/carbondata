@@ -73,9 +73,10 @@ import org.carbondata.query.expression.LiteralExpression;
 import org.carbondata.query.expression.exception.FilterIllegalMemberException;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.executer.AndFilterExecuterImpl;
-import org.carbondata.query.filter.executer.ColGroupFilterExecuterImpl;
+import org.carbondata.query.filter.executer.ExcludeColGroupFilterExecuterImpl;
 import org.carbondata.query.filter.executer.ExcludeFilterExecuterImpl;
 import org.carbondata.query.filter.executer.FilterExecuter;
+import org.carbondata.query.filter.executer.IncludeColGroupFilterExecuterImpl;
 import org.carbondata.query.filter.executer.IncludeFilterExecuterImpl;
 import org.carbondata.query.filter.executer.OrFilterExecuterImpl;
 import org.carbondata.query.filter.executer.RestructureFilterExecuterImpl;
@@ -113,9 +114,8 @@ public final class FilterUtil {
           return getIncludeFilterExecuter(
               filterExpressionResolverTree.getDimColResolvedFilterInfo(), segmentProperties);
         case EXCLUDE:
-          return new ExcludeFilterExecuterImpl(
-              filterExpressionResolverTree.getDimColResolvedFilterInfo(),
-              segmentProperties.getDimensionKeyGenerator());
+          return getExcludeFilterExecuter(
+              filterExpressionResolverTree.getDimColResolvedFilterInfo(), segmentProperties);
         case OR:
           return new OrFilterExecuterImpl(
               createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties),
@@ -143,7 +143,8 @@ public final class FilterUtil {
               ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
                   .getMsrColEvalutorInfoList(),
               ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
-              ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier());
+              ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
+              segmentProperties);
 
       }
     }
@@ -151,7 +152,8 @@ public final class FilterUtil {
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getDimColEvaluatorInfoList(),
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getMsrColEvalutorInfoList(),
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
-        ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier());
+        ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
+        segmentProperties);
 
   }
 
@@ -168,10 +170,26 @@ public final class FilterUtil {
     if (dimColResolvedFilterInfo.getDimension().isColumnar()) {
       return new IncludeFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
     } else {
-      return new ColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
+      return new IncludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
     }
   }
 
+  /**
+   * It gives filter executer based on columnar or column group
+   *
+   * @param dimColResolvedFilterInfo
+   * @param segmentProperties
+   * @return
+   */
+  private static FilterExecuter getExcludeFilterExecuter(
+      DimColumnResolvedFilterInfo dimColResolvedFilterInfo, SegmentProperties segmentProperties) {
+
+    if (dimColResolvedFilterInfo.getDimension().isColumnar()) {
+      return new ExcludeFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
+    } else {
+      return new ExcludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
+    }
+  }
   /**
    * This method will check if a given expression contains a column expression
    * recursively.
