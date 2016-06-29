@@ -31,20 +31,20 @@ CarbonData file format is a columnar store in HDFS, it has many features that a 
 * Supports for various use cases with one single Data format : like interactive OLAP-style query, Sequential Access (big scan), Random Access (narrow scan). 
 
 ### Building CarbonData and using Development tools
-Please refer [Bulding Carbondata and configuring IDE](docs/Installing-CarbonData-And-IDE-Configuartion.md)
+Please refer [Bulding CarbonData and configuring IDE](docs/Installing-CarbonData-And-IDE-Configuartion.md)
 
 ### Getting Started
 Read the [quick start](docs/Quick-Start.md)
 
-### Usage of Carbondata
- [DDL Operations on Carbondata](docs/DDL-Operations-on-Carbon.md) 
+### Usage of CarbonData
+ [DDL Operations on CarbonData](docs/DDL-Operations-on-Carbon.md) 
  
- [DML Operations on Carbondata](docs/DML-Operations-on-Carbon.md)  
+ [DML Operations on CarbonData](docs/DML-Operations-on-Carbon.md)  
  
- [Carbondata data management](docs/Carbondata-Management.md)  
+ [CarbonData data management](docs/Carbondata-Management.md)  
 
 ### CarbonData File Structure and interfaces
-Please refer [CarbonData File Format](docs/Carbondata-File-Structure-and-Format.md) and [Carbon Interfaces](docs/Carbon-Interfaces.md)
+Please refer [CarbonData File Format](docs/Carbondata-File-Structure-and-Format.md) and [CarbonData Interfaces](docs/Carbon-Interfaces.md)
 
 ### Other Technical Material
 [Apache CarbonData meetup material](docs/Apache-CarbonData-meetup-material.pdf)
