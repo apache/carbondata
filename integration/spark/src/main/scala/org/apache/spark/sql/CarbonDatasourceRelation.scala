@@ -51,12 +51,14 @@ class CarbonSource
   override def createRelation(
       sqlContext: SQLContext,
       parameters: Map[String, String]): BaseRelation = {
-    parameters.get("path") match {
-      case Some(path) => CarbonDatasourceHadoopRelation(sqlContext, Array(path), parameters)
-      case _ =>
-        val options = new CarbonOption(parameters)
-        val tableIdentifier = options.tableIdentifier.split("""\.""").toSeq
-        CarbonDatasourceRelation(tableIdentifier, None)(sqlContext)
+    if (parameters.get("tablePath") != None) {
+      val options = new CarbonOption(parameters)
+      val tableIdentifier = options.tableIdentifier.split("""\.""").toSeq
+      CarbonDatasourceRelation(tableIdentifier, None)(sqlContext)
+    } else if (parameters.get("path") != None) {
+      CarbonDatasourceHadoopRelation(sqlContext, Array(parameters.get("path").get), parameters)
+    } else {
+      sys.error("Carbon table path not found")
     }
 
   }

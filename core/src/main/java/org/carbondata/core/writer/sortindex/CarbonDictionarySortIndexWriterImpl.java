@@ -54,7 +54,7 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
   /**
    * Path of dictionary sort index file for which the sortIndex to be written
    */
-  private String sortIndexFilePath;
+  protected String sortIndexFilePath;
   /**
    * Instance of thrift writer to write the data
    */

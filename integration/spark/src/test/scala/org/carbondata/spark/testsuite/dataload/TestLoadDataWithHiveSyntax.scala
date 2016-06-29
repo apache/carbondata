@@ -257,7 +257,8 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     ("ayush@b.com"),Row("ayushb.com")))
     sql("DROP TABLE IF EXISTS t3")
   }
-  test("test carbon table data loading with special character") {
+
+  test("test carbon table data loading with special character 1") {
     sql("DROP TABLE IF EXISTS t3")
 
     sql("""
@@ -267,12 +268,30 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
 
     sql("""
        LOAD DATA LOCAL INPATH './src/test/resources/datawithspecialcharacter.csv' into table t3
-          options ('DELIMITER'=',', 'QUOTECHAR'='\"')
+          options ('DELIMITER'=',', 'QUOTECHAR'='"')
        """)
-    checkAnswer(sql("select count(*) from t3"), Seq(Row(36)))
+    checkAnswer(sql("select count(*) from t3"), Seq(Row(37)))
+    checkAnswer(sql("select specialchar from t3 where imei='1AA36'"),Seq(Row("\"i\"")))
     sql("DROP TABLE IF EXISTS t3")
   }
 
+  test("test carbon table data loading with special character 2") {
+    sql("DROP TABLE IF EXISTS t3")
+
+    sql("""
+        CREATE table t3(customer_id int, 124_string_level_province String, date_level String,
+        Time_level String, lname String, fname String, mi String, address1 String, address2 String, address3 String, address4 String, city String, country String, phone1 String, phone2 String, marital_status String, yearly_income String, gender String, education String, member_card String, occupation String, houseowner String, fullname String, numeric_level double, account_num double, customer_region_id int, total_children int, num_children_at_home int, num_cars_owned int)
+        STORED BY 'org.apache.carbondata.format'
+        """)
+
+    sql("""
+       LOAD DATA LOCAL INPATH './src/test/resources/datawithcomplexspecialchar.csv' into
+       table t3 options ('DELIMITER'=',', 'QUOTECHAR'='"','ESCAPECHAR'='"')
+        """)
+    checkAnswer(sql("select count(*) from t3"), Seq(Row(150)))
+    checkAnswer(sql("select 124_string_level_province from t3 where customer_id=103"),Seq(Row("\"state province # 124\"")))
+    sql("DROP TABLE IF EXISTS t3")
+  }
 
   override def afterAll {
     sql("drop table carbontable")

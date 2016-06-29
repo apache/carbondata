@@ -40,12 +40,12 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
   /**
    * carbon table identifier
    */
-  private CarbonTableIdentifier carbonTableIdentifier;
+  protected CarbonTableIdentifier carbonTableIdentifier;
 
   /**
    * HDFS store path
    */
-  private String hdfsStorePath;
+  protected String hdfsStorePath;
 
   /**
    * column identifier
@@ -55,7 +55,7 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
   /**
    * dictionary metadata file path
    */
-  private String columnDictionaryMetadataFilePath;
+  protected String columnDictionaryMetadataFilePath;
 
   /**
    * dictionary metadata thrift file reader
@@ -152,7 +152,7 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
   /**
    * This method will form the path for dictionary metadata file for a given column
    */
-  private void initFileLocation() {
+  protected void initFileLocation() {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(this.hdfsStorePath, carbonTableIdentifier);
     this.columnDictionaryMetadataFilePath =

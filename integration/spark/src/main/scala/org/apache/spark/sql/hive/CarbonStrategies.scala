@@ -63,7 +63,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
   /**
    * Carbon strategies for Carbon cube scanning
    */
-  private[sql] class CarbonTableScans extends Strategy {
+  protected[sql] class CarbonTableScans extends Strategy {
 
     def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
       case PhysicalOperation(projectList, predicates,
@@ -269,7 +269,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
     /**
      * Create carbon scan
      */
-    private def carbonScan(projectList: Seq[NamedExpression],
+    protected def carbonScan(projectList: Seq[NamedExpression],
         predicates: Seq[Expression],
         relation: CarbonRelation,
         groupExprs: Option[Seq[Expression]],

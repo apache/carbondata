@@ -40,7 +40,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
   /**
    * carbonTable Identifier holding the info of databaseName and tableName
    */
-  private CarbonTableIdentifier carbonTableIdentifier;
+  protected CarbonTableIdentifier carbonTableIdentifier;
 
   /**
    * column name
@@ -50,12 +50,12 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
   /**
    * hdfs store location
    */
-  private String carbonStorePath;
+  protected String carbonStorePath;
 
   /**
    * the path of the dictionary Sort Index file
    */
-  private String sortIndexFilePath;
+  protected String sortIndexFilePath;
 
   /**
    * Column sort info thrift instance.
@@ -143,10 +143,14 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
    * @throws IOException if any I/O errors occurs
    */
   private void init() throws IOException {
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
-    this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId());
+    initPath();
     openThriftReader();
+  }
+
+  protected void initPath() {
+    CarbonTablePath carbonTablePath =
+         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+    this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId());
   }
 
   /**

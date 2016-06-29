@@ -41,12 +41,12 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
     var csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
 
 
-    sql("LOAD DATA fact from '" + csvFilePath1 + "' INTO CUBE cardinalityTest PARTITIONDATA" +
-      "(DELIMITER ',', QUOTECHAR '\"')"
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE cardinalityTest OPTIONS" +
+      "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
     CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "true")
-    sql("LOAD DATA fact from '" + csvFilePath2 + "' INTO CUBE cardinalityTest  PARTITIONDATA" +
-      "(DELIMITER ',', QUOTECHAR '\"')"
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath2 + "' INTO TABLE cardinalityTest  OPTIONS" +
+      "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
     CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "true")
     System.out
@@ -54,8 +54,8 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
         .getProperty("carbon.enable.load.merge")
       )
     // compaction will happen here.
-    sql("LOAD DATA fact from '" + csvFilePath3 + "' INTO CUBE cardinalityTest  PARTITIONDATA" +
-      "(DELIMITER ',', QUOTECHAR '\"')"
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath3 + "' INTO TABLE cardinalityTest  OPTIONS" +
+      "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
     // compaction will happen here.
     sql("alter table cardinalityTest compact 'major'"

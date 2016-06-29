@@ -569,6 +569,7 @@ public class CsvInput extends BaseStep implements StepInterface {
         }
       }
 
+      data.escapeCharMatcher = new SingleBytePatternMatcher();
       switch (data.encodingType) {
         case DOUBLE_BIG_ENDIAN:
           data.crLfMatcher = new MultiByteBigCrLfMatcher();

@@ -253,12 +253,18 @@ public class SegmentStatusManager {
         listOfLoadFolderDetailsArray = readLoadMetadata(cubeFolderPath);
         if (listOfLoadFolderDetailsArray != null && listOfLoadFolderDetailsArray.length != 0) {
           updateDeletionStatus(loadIds, listOfLoadFolderDetailsArray, invalidLoadIds);
-          if (!invalidLoadIds.isEmpty()) {
-            LOG.warn("Load doesnt exist or it is already deleted , LoadSeqId-" + invalidLoadIds);
+          if(invalidLoadIds.isEmpty())
+          {
+            // All or None , if anything fails then dont write
+            writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
           }
-          writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
+          else
+          {
+            return invalidLoadIds;
+          }
+
         } else {
-          LOG.warn("Load doesnt exist or it is already deleted , LoadSeqId-" + loadIds);
+          LOG.audit("Delete load by Id is failed. No matching load id found.");
           return loadIds;
         }
 
@@ -307,24 +313,16 @@ public class SegmentStatusManager {
         if (listOfLoadFolderDetailsArray != null && listOfLoadFolderDetailsArray.length != 0) {
           updateDeletionStatus(loadDate, listOfLoadFolderDetailsArray,
               invalidLoadTimestamps, loadStartTime);
-          if (!invalidLoadTimestamps.isEmpty()) {
-            LOG.warn("Load doesnt exist or it is already deleted , LoadTimestamps-"
-                + invalidLoadTimestamps);
-            if (invalidLoadTimestamps.size() == listOfLoadFolderDetailsArray.length) {
-              LOG.audit(
-                  "The delete load by Id is failed. Failed to delete the following load(s)."
-                      + " LoadSeqId-" + invalidLoadTimestamps);
-              LOG.error("Error message: "
-                  + "Load deletion is failed. Failed to delete the following load(s). LoadSeqId-" +
-                  invalidLoadTimestamps);
-
-            }
+          if(invalidLoadTimestamps.isEmpty()) {
+            writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
+          }
+          else
+          {
+            return invalidLoadTimestamps;
           }
 
-          writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
-
         } else {
-          LOG.warn("Load doesnt exist or it is already deleted , LoadTimestamp-" + loadDate);
+          LOG.audit("Delete load by date is failed. No matching load found.");
           invalidLoadTimestamps.add(loadDate);
           return invalidLoadTimestamps;
         }
@@ -383,7 +381,7 @@ public class SegmentStatusManager {
    * @param invalidLoadIds
    * @return invalidLoadIds
    */
-  public void updateDeletionStatus(List<String> loadIds,
+  public List<String> updateDeletionStatus(List<String> loadIds,
       LoadMetadataDetails[] listOfLoadFolderDetailsArray, List<String> invalidLoadIds) {
     for (String loadId : loadIds) {
       boolean loadFound = false;
@@ -393,26 +391,24 @@ public class SegmentStatusManager {
       for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
 
         if (loadId.equalsIgnoreCase(loadMetadata.getLoadName())) {
-          loadFound = true;
           if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())) {
+            loadFound = true;
             loadMetadata.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
             loadMetadata.setModificationOrdeletionTimesStamp(readCurrentTime());
             LOG.info("LoadId " + loadId + " Marked for Delete");
-          } else {
-            // it is already deleted . can not delete it again.
-            invalidLoadIds.add(loadId);
           }
-
           break;
         }
       }
 
       if (!loadFound) {
+        LOG.audit("Delete load by Id is failed. No matching load id found.");
         invalidLoadIds.add(loadId);
+        return invalidLoadIds;
       }
 
     }
-
+    return invalidLoadIds;
   }
 
   /**
@@ -423,7 +419,7 @@ public class SegmentStatusManager {
    * @param invalidLoadTimestamps
    * @return invalidLoadTimestamps
    */
-  public void updateDeletionStatus(String loadDate,
+  public List<String> updateDeletionStatus(String loadDate,
       LoadMetadataDetails[] listOfLoadFolderDetailsArray, List<String> invalidLoadTimestamps,
       Long loadStartTime) {
     // For each load timestamp loop through data and if the
@@ -433,28 +429,25 @@ public class SegmentStatusManager {
     String loadStartTimeString = "Load Start Time: ";
     for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
       Integer result = compareDateValues(loadMetadata.getLoadStartTimeAsLong(), loadStartTime);
-      if (null == result) {
-        invalidLoadTimestamps.add(loadDate);
-      } else if (result < 0) {
-        loadFound = true;
+      if (result < 0) {
         if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())) {
+          loadFound = true;
           loadMetadata.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
           loadMetadata.setModificationOrdeletionTimesStamp(readCurrentTime());
           LOG.info("Info: " +
               loadStartTimeString + loadMetadata.getLoadStartTime() +
               " Marked for Delete");
-        } else {
-          // it is already deleted . can not delete it again.
-          invalidLoadTimestamps.add(loadMetadata.getLoadStartTime());
         }
       }
+
     }
 
     if (!loadFound) {
       invalidLoadTimestamps.add(loadDate);
-
+      LOG.audit("Delete load by date is failed. No matching load found.");
+      return invalidLoadTimestamps;
     }
-
+    return invalidLoadTimestamps;
   }
 
   /**

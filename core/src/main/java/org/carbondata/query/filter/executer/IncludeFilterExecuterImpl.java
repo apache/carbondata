@@ -131,7 +131,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       start = CarbonUtil
           .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
               filterValues[i]);
-      if (start == -1) {
+      if (start < 0) {
         continue;
       }
       bitSet.set(columnIndex[start]);

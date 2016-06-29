@@ -133,7 +133,8 @@ public final class FilterUtil {
         case ROWLEVEL_GREATERTHAN_EQUALTO:
         case ROWLEVEL_GREATERTHAN:
           return RowLevelRangeTypeExecuterFacory
-              .getRowLevelRangeTypeExecuter(filterExecuterType, filterExpressionResolverTree);
+              .getRowLevelRangeTypeExecuter(filterExecuterType, filterExpressionResolverTree,
+                  segmentProperties);
         case ROWLEVEL:
         default:
           return new RowLevelFilterExecuterImpl(

@@ -1182,6 +1182,7 @@ private[sql] case class AlterTable(
 
 /**
  * Command for the compaction in alter table command
+ *
  * @param alterTableModel
  */
 private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) extends
@@ -1274,11 +1275,12 @@ private[sql] case class CreateCube(cm: tableModel) extends RunnableCommand {
       // Add Database to catalog and persist
       val catalog = CarbonEnv.getInstance(sqlContext).carbonCatalog
       // Need to fill partitioner class when we support partition
-      val cubePath = catalog.createCubeFromThrift(tableInfo, dbName, tbName, null)(sqlContext)
+      val tablePath = catalog.createCubeFromThrift(tableInfo, dbName, tbName, null)(sqlContext)
       try {
         sqlContext.sql(
           s"""CREATE TABLE $dbName.$tbName USING org.apache.spark.sql.CarbonSource""" +
-          s""" OPTIONS (cubename "$dbName.$tbName", tablePath "$cubePath") """).collect
+          s""" OPTIONS (cubename "$dbName.$tbName", tablePath "$tablePath") """)
+              .collect
       } catch {
         case e: Exception =>
 
@@ -1350,25 +1352,15 @@ private[sql] case class DeleteLoadsById(
 
     val invalidLoadIds = segmentStatusManager.updateDeletionStatus(loadids.asJava, path).asScala
 
-    if (invalidLoadIds.nonEmpty) {
-      if (invalidLoadIds.length == loadids.length) {
-        LOGGER.audit(
-          "Delete load by Id is failed. Failed to delete the following load(s). LoadSeqId-" +
-          invalidLoadIds)
-        sys.error("Load deletion is failed. Failed to delete the following load(s). LoadSeqId-" +
-                  invalidLoadIds)
-      }
-      else {
-        LOGGER.audit(
-          "Delete load by Id is failed. Failed to delete the following load(s). LoadSeqId-" +
-          invalidLoadIds)
-        sys.error(
-          "Load deletion is partial success. Failed to delete the following load(s). LoadSeqId-" +
-          invalidLoadIds)
-      }
+    if (invalidLoadIds.isEmpty) {
+
+      LOGGER.audit("Delete load by Id is successfull.")
+    }
+    else {
+      sys.error("Delete load by Id is failed. No matching load id found. SegmentSeqId(s) - "
+                + invalidLoadIds)
     }
 
-    LOGGER.audit("Delete load by Id is successfull.")
     Seq.empty
 
   }
@@ -1429,7 +1421,12 @@ private[sql] case class DeleteLoadsByLoadDate(
 
     var invalidLoadTimestamps = segmentStatusManager
       .updateDeletionStatus(loadDate, path, timeObj.asInstanceOf[java.lang.Long]).asScala
-    LOGGER.audit("Delete load by load date is successfull.")
+    if(invalidLoadTimestamps.isEmpty) {
+      LOGGER.audit("Delete load by load date is successfull.")
+    }
+    else {
+      sys.error("Delete load by load date is failed. No matching load found.")
+    }
     Seq.empty
 
   }

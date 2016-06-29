@@ -23,6 +23,7 @@ import java.util.SortedMap;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
@@ -81,9 +82,11 @@ public interface FilterResolverIntf extends Serializable {
    * @param setOfEndKeyByteArray
    * @param endKeys
    * @return
+   * @throws QueryExecutionException
    */
   void getEndKey(SegmentProperties segmentProperties, AbsoluteTableIdentifier tableIdentifier,
-      long[] endKeys, SortedMap<Integer, byte[]> setOfEndKeyByteArray);
+      long[] endKeys, SortedMap<Integer, byte[]> setOfEndKeyByteArray)
+      throws QueryExecutionException;
 
   /**
    * API will return the filter executer type which will be used to evaluate

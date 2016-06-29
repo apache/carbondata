@@ -140,7 +140,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
       startKey = CarbonUtil
           .getFirstIndexUsingBinarySearch(dimColumnDataChunk, startIndex, numerOfRows - 1,
               filterValues[i]);
-      if (startKey == -1) {
+      if (startKey < 0) {
         continue;
       }
       bitSet.flip(columnIndex[startKey]);

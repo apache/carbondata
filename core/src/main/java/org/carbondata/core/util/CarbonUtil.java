@@ -888,7 +888,50 @@ public final class CarbonUtil {
         return currentIndex;
       }
     }
-    return -1;
+    return -(low + 1);
+  }
+
+  /**
+   * Method will identify the value which is lesser than the pivot element
+   * on which range filter is been applied.
+   *
+   * @param currentIndex
+   * @param dimColumnDataChunk
+   * @param compareValue
+   * @return index value
+   */
+  public static int nextLesserValueToTarget(int currentIndex,
+      FixedLengthDimensionDataChunk dimColumnDataChunk, byte[] compareValue) {
+    while (currentIndex - 1 >= 0 && ByteUtil.UnsafeComparer.INSTANCE
+        .compareTo(dimColumnDataChunk.getCompleteDataChunk(),
+            (currentIndex - 1) * compareValue.length, compareValue.length, compareValue, 0,
+            compareValue.length) >= 0) {
+      --currentIndex;
+    }
+
+    return --currentIndex;
+  }
+
+  /**
+   * Method will identify the value which is greater than the pivot element
+   * on which range filter is been applied.
+   *
+   * @param currentIndex
+   * @param dimColumnDataChunk
+   * @param compareValue
+   * @param numerOfRows
+   * @return index value
+   */
+  public static int nextGreaterValueToTarget(int currentIndex,
+      FixedLengthDimensionDataChunk dimColumnDataChunk, byte[] compareValue, int numerOfRows) {
+    while (currentIndex + 1 < numerOfRows && ByteUtil.UnsafeComparer.INSTANCE
+        .compareTo(dimColumnDataChunk.getCompleteDataChunk(),
+            (currentIndex + 1) * compareValue.length, compareValue.length, compareValue, 0,
+            compareValue.length) <= 0) {
+      ++currentIndex;
+    }
+
+    return ++currentIndex;
   }
 
   public static int[] getUnCompressColumnIndex(int totalLength, byte[] columnIndexData,
