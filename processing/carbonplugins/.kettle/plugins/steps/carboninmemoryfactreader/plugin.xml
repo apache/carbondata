@@ -20,7 +20,6 @@
 
 <plugin
    id="CarbonInMemoryFactReader"
-   iconfile="icon.png"
    description="Carbon InMemory Fact Reader"
    tooltip="Carbon InMemory Fact Reader"
    category="Carbon"

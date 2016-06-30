@@ -41,109 +41,103 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance().addProperty("carbon.direct.surrogate", "false")
     try {
       sql(
-        "create cube Carbon_automation_test3 dimensions(imei string,deviceInformationId integer," +
-          "MAC string,deviceColor string,device_backColor string,modelId string,marketName " +
-          "string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string," +
-          "productionDate timestamp,bomCode string,internalModels string, deliveryTime string, " +
-          "channelsId string, channelsName string , deliveryAreaId string, deliveryCountry " +
-          "string, deliveryProvince string, deliveryCity string,deliveryDistrict string, " +
-          "deliveryStreet string, oxSingleNumber string, ActiveCheckTime string, ActiveAreaId " +
-          "string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict" +
-          " string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, " +
-          "Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, " +
-          "Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string," +
-          "Active_webTypeDataVerNumber string, Active_operatorsVersion string, " +
-          "Active_phonePADPartitionedVersions string, Latest_YEAR integer, Latest_MONTH integer, " +
-          "Latest_DAY integer, Latest_HOUR string, Latest_areaId string, Latest_country string, " +
-          "Latest_province string, Latest_city string, Latest_district string, Latest_street " +
-          "string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion " +
-          "string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion " +
-          "string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, " +
-          "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
-          "Latest_operatorId string, gamePointDescription string)  measures(gamePointId numeric," +
-          "contractNumber numeric) OPTIONS (PARTITIONER [CLASS = 'org.carbondata" +
-          ".spark.partition.api.impl.SampleDataPartitionerImpl' ,COLUMNS= (imei) , " +
-          "PARTITION_COUNT=2] )"
+        "create table Carbon_automation_test3 (imei string,deviceInformationId int,MAC string," +
+        "deviceColor string,device_backColor string,modelId string,marketName string,AMSize " +
+        "string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate " +
+        "string,bomCode string,internalModels string, deliveryTime string, channelsId string, " +
+        "channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince " +
+        "string, deliveryCity string,deliveryDistrict string, deliveryStreet string, " +
+        "oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry " +
+        "string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet " +
+        "string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, " +
+        "Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, " +
+        "Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber " +
+        "string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, " +
+        "Latest_YEAR int, Latest_MONTH int, Latest_DAY int, Latest_HOUR string, Latest_areaId " +
+        "string, Latest_country string, Latest_province string, Latest_city string, " +
+        "Latest_district string, Latest_street string, Latest_releaseId string, " +
+        "Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, " +
+        "Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, " +
+        "Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, " +
+        "Latest_phonePADPartitionedVersions string, Latest_operatorId string, " +
+        "gamePointDescription string, gamePointId int,contractNumber int) stored by 'org.apache" +
+        ".carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='Latest_MONTH," +
+        "deviceInformationId')")
+      sql("LOAD DATA LOCAL INPATH '" + currentDirectory +
+          "/src/test/resources/100_olap.csv' INTO table Carbon_automation_test3 OPTIONS" +
+          "('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,MAC," +
+          "deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked," +
+          "series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName," +
+          "deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict," +
+          "deliveryStreet,oxSingleNumber,contractNumber,ActiveCheckTime,ActiveAreaId," +
+          "ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId," +
+          "Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber," +
+          "Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer," +
+          "Active_webTypeDataVerNumber,Active_operatorsVersion," +
+          "Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR," +
+          "Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district," +
+          "Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion," +
+          "Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer," +
+          "Latest_webTypeDataVerNumber,Latest_operatorsVersion," +
+          "Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription')")
+      sql(
+        "create table myvmallTest (imei String,uuid String,MAC String,device_color String," +
+        "device_shell_color String,device_name String,product_name String,ram String,rom  String," +
+        "cpu_clock String,series String,check_date String,check_month int , check_day int," +
+        "check_hour int,bom String,inside_name String,packing_date  String,packing_year String," +
+        "packing_month String,packing_day String,packing_hour String,customer_name String," +
+        "deliveryAreaId String,deliveryCountry String, deliveryProvince String,deliveryCity " +
+        "String,deliveryDistrict String,packing_list_no String,order_no String,Active_check_time " +
+        "String,Active_check_year int, Active_check_month int,Active_check_day int," +
+        "Active_check_hour int, ActiveAreaId String,ActiveCountry String,ActiveProvince String," +
+        "Activecity String, ActiveDistrict String,Active_network String,Active_firmware_version " +
+        "String, Active_emui_version String,Active_os_version String,Latest_check_time String, " +
+        "Latest_check_year int,Latest_check_month int,Latest_check_day int, Latest_check_hour " +
+        "int,Latest_areaId String,Latest_country String,Latest_province  String,Latest_city " +
+        "String,Latest_district String,Latest_firmware_version String, Latest_emui_version " +
+        "String,Latest_os_version String,Latest_network String,site String, site_desc String," +
+        "product String,product_desc String,check_year int) " +
+        "stored by 'org.apache.carbondata.format'")
+      sql("LOAD DATA LOCAL INPATH '" + currentDirectory +
+          "/src/test/resources/100_VMALL_1_Day_DATA_2015-09-15.csv' INTO table myvmallTest " +
+          "OPTIONS('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,uuid,MAC," +
+          "device_color,device_shell_color,device_name,product_name,ram,rom,cpu_clock,series," +
+          "check_date,check_year,check_month,check_day,check_hour,bom,inside_name,packing_date," +
+          "packing_year,packing_month,packing_day,packing_hour,customer_name,deliveryAreaId," +
+          "deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict,packing_list_no," +
+          "order_no,Active_check_time,Active_check_year,Active_check_month,Active_check_day," +
+          "Active_check_hour,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict," +
+          "Active_network,Active_firmware_version,Active_emui_version,Active_os_version," +
+          "Latest_check_time,Latest_check_year,Latest_check_month,Latest_check_day," +
+          "Latest_check_hour,Latest_areaId,Latest_country,Latest_province,Latest_city," +
+          "Latest_district,Latest_firmware_version,Latest_emui_version,Latest_os_version," +
+          "Latest_network,site,site_desc,product,product_desc')")
 
-      )
-      sql("LOAD DATA FACT FROM '" + currentDirectory + "/src/test/resources/100_olap.csv' INTO " +
-        "Cube Carbon_automation_test3 partitionData(DELIMITER ',' ,QUOTECHAR '\"', FILEHEADER " +
-        "'imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId,marketName,AMSize," +
-        "ROMSize,CUPAudit,CPIClocked,series,productionDate,bomCode,internalModels,deliveryTime," +
-        "channelsId,channelsName,deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity," +
-        "deliveryDistrict,deliveryStreet,oxSingleNumber,contractNumber,ActiveCheckTime," +
-        "ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet," +
-        "ActiveOperatorId,Active_releaseId,Active_EMUIVersion,Active_operaSysVersion," +
-        "Active_BacVerNumber,Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer," +
-        "Active_webTypeDataVerNumber,Active_operatorsVersion,Active_phonePADPartitionedVersions," +
-        "Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR,Latest_areaId,Latest_country," +
-        "Latest_province,Latest_city,Latest_district,Latest_street,Latest_releaseId," +
-        "Latest_EMUIVersion,Latest_operaSysVersion,Latest_BacVerNumber,Latest_BacFlashVer," +
-        "Latest_webUIVersion,Latest_webUITypeCarrVer,Latest_webTypeDataVerNumber," +
-        "Latest_operatorsVersion,Latest_phonePADPartitionedVersions,Latest_operatorId," +
-        "gamePointId,gamePointDescription')")
       sql(
-        "create cube myvmallTest dimensions(imei String,uuid String,MAC String,device_color " +
-          "String,device_shell_color String,device_name String,product_name String,ram String,rom" +
-          " String,cpu_clock String,series String,check_date String,check_month Integer ," +
-          "check_day Integer,check_hour Integer,bom String,inside_name String,packing_date " +
-          "String,packing_year String,packing_month String,packing_day String,packing_hour " +
-          "String,customer_name String,deliveryAreaId String,deliveryCountry String," +
-          "deliveryProvince String,deliveryCity String,deliveryDistrict String,packing_list_no " +
-          "String,order_no String,Active_check_time String,Active_check_year Integer," +
-          "Active_check_month Integer,Active_check_day Integer,Active_check_hour Integer," +
-          "ActiveAreaId String,ActiveCountry String,ActiveProvince String,Activecity String," +
-          "ActiveDistrict String,Active_network String,Active_firmware_version String," +
-          "Active_emui_version String,Active_os_version String,Latest_check_time String," +
-          "Latest_check_year Integer,Latest_check_month Integer,Latest_check_day Integer," +
-          "Latest_check_hour Integer,Latest_areaId String,Latest_country String,Latest_province " +
-          "String,Latest_city String,Latest_district String,Latest_firmware_version String," +
-          "Latest_emui_version String,Latest_os_version String,Latest_network String,site String," +
-          "site_desc String,product String,product_desc String) MEASURES(check_year Integer) " +
-          "OPTIONS (PARTITIONER [CLASS = 'org.carbondata.spark.partition.api.impl" +
-          ".SampleDataPartitionerImpl' ,columns= (imei) ,PARTITION_COUNT=3] )"
-      )
-      sql("LOAD DATA fact from '" + currentDirectory +
-        "/src/test/resources/100_VMALL_1_Day_DATA_2015-09-15.csv' INTO CUBE myvmallTest " +
-        "PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"', FILEHEADER 'imei,uuid,MAC,device_color," +
-        "device_shell_color,device_name,product_name,ram,rom,cpu_clock,series,check_date," +
-        "check_year,check_month,check_day,check_hour,bom,inside_name,packing_date,packing_year," +
-        "packing_month,packing_day,packing_hour,customer_name,deliveryAreaId,deliveryCountry," +
-        "deliveryProvince,deliveryCity,deliveryDistrict,packing_list_no,order_no," +
-        "Active_check_time,Active_check_year,Active_check_month,Active_check_day," +
-        "Active_check_hour,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict," +
-        "Active_network,Active_firmware_version,Active_emui_version,Active_os_version," +
-        "Latest_check_time,Latest_check_year,Latest_check_month,Latest_check_day," +
-        "Latest_check_hour,Latest_areaId,Latest_country,Latest_province,Latest_city," +
-        "Latest_district,Latest_firmware_version,Latest_emui_version,Latest_os_version," +
-        "Latest_network,site,site_desc,product,product_desc')")
-      sql(
-        "create cube if not exists traffic_2g_3g_4g dimensions(source_info string ," +
-        "app_category_id string ,app_category_name string ,app_sub_category_id string ," +
-        "app_sub_category_name string ,rat_name string ,imsi string ,offer_msisdn string ," +
-        "offer_id string ,offer_option_1 string ,offer_option_2 string ,offer_option_3 string ," +
-        "msisdn string ,package_type string ,package_price string ,tag_imsi string ,tag_msisdn " +
-        "string ,province string ,city string ,area_code string ,tac string ,imei string ," +
-        "terminal_type string ,terminal_brand string ,terminal_model string ,price_level string" +
-        " ,network string ,shipped_os string ,wifi string ,wifi_hotspot string ,gsm string ," +
-        "wcdma string ,td_scdma string ,lte_fdd string ,lte_tdd string ,cdma string ," +
-        "screen_size string ,screen_resolution string ,host_name string ,website_name string ," +
-        "operator string ,srv_type_name string ,tag_host string ,cgi string ,cell_name string ," +
-        "coverity_type1 string ,coverity_type2 string ,coverity_type3 string ,coverity_type4 " +
-        "string ,coverity_type5 string ,latitude string ,longitude string ,azimuth string ," +
-        "tag_cgi string ,apn string ,user_agent string ,day string ,hour string ,`min` string ," +
-        "is_default_bear integer ,eps_bearer_id string ,qci integer ,user_filter string ," +
-        "analysis_period string ) measures(up_throughput numeric,down_throughput numeric," +
-        "up_pkt_num numeric,down_pkt_num numeric,app_request_num numeric,pkt_num_len_1_64 " +
-        "numeric,pkt_num_len_64_128 numeric,pkt_num_len_128_256 numeric,pkt_num_len_256_512 " +
-        "numeric,pkt_num_len_512_768 numeric,pkt_num_len_768_1024 numeric,pkt_num_len_1024_all " +
-        "numeric,ip_flow_mark numeric) options (partitioner [class = 'org.carbondata" +
-        ".spark.partition.api.impl.SampleDataPartitionerImpl' ,columns= (msisdn) ," +
-        "partition_count=3] )"
-      )
-      sql("LOAD DATA fact from '" + currentDirectory +
-        "/src/test/resources/FACT_UNITED_DATA_INFO_sample_cube.csv' INTO CUBE traffic_2g_3g_4g " +
-        "PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"', FILEHEADER '')")
+        "create table if not exists traffic_2g_3g_4g (source_info string , app_category_id string" +
+        " ,app_category_name string ,app_sub_category_id string , app_sub_category_name string ," +
+        "rat_name string ,imsi string ,offer_msisdn string , offer_id string ,offer_option_1 " +
+        "string ,offer_option_2 string ,offer_option_3 string , msisdn string ,package_type " +
+        "string ,package_price string ,tag_imsi string ,tag_msisdn string ,province string ,city " +
+        "string ,area_code string ,tac string ,imei string , terminal_type string ,terminal_brand" +
+        " string ,terminal_model string ,price_level string  ,network string ,shipped_os string ," +
+        "wifi string ,wifi_hotspot string ,gsm string , wcdma string ,td_scdma string ,lte_fdd " +
+        "string ,lte_tdd string ,cdma string , screen_size string ,screen_resolution string ," +
+        "host_name string ,website_name string , operator string ,srv_type_name string ,tag_host " +
+        "string ,cgi string ,cell_name string , coverity_type1 string ,coverity_type2 string ," +
+        "coverity_type3 string ,coverity_type4  string ,coverity_type5 string ,latitude string ," +
+        "longitude string ,azimuth string , tag_cgi string ,apn string ,user_agent string ,day " +
+        "string ,hour string ,`min` string , is_default_bear int ,eps_bearer_id string ,qci int ," +
+        "user_filter string , analysis_period string, up_throughput decimal,down_throughput " +
+        "decimal, up_pkt_num decimal,down_pkt_num decimal,app_request_num decimal," +
+        "pkt_num_len_1_64  decimal,pkt_num_len_64_128 decimal,pkt_num_len_128_256 decimal," +
+        "pkt_num_len_256_512  decimal,pkt_num_len_512_768 decimal,pkt_num_len_768_1024 decimal," +
+        "pkt_num_len_1024_all  decimal,ip_flow_mark decimal)" +
+        " stored by 'org.apache.carbondata.format'")
+
+      sql("LOAD DATA LOCAL INPATH '" + currentDirectory +
+        "/src/test/resources/FACT_UNITED_DATA_INFO_sample_table.csv' INTO table traffic_2g_3g_4g " +
+        "OPTIONS('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= '')")
 
       sql(
         "create table hivetable(imei string,deviceInformationId int,MAC string,deviceColor " +
@@ -175,18 +169,19 @@ class AllDataTypesTestCase3 extends QueryTest with BeforeAndAfterAll {
       )
 
     } catch {
-      case e: Exception => print("ERROR: Carbon_automation_test3 ")
+      case e: Exception => print("ERROR : " + e.getMessage)
     }
 
   }
 
   override def afterAll {
     try {
-      sql("drop cube Carbon_automation_test3")
-      sql("drop cube myvmallTest")
-      sql("drop cube traffic_2g_3g_4g")
+      sql("drop table Carbon_automation_test3")
+      sql("drop table myvmallTest")
+      sql("drop table traffic_2g_3g_4g")
+      sql("drop table hivetable")
     } catch {
-      case e: Exception => print("ERROR: DROP Carbon_automation_test3 ")
+      case e: Exception => print("ERROR : " + e.getMessage)
     }
   }
 

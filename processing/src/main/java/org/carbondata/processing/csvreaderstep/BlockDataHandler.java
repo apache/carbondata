@@ -161,11 +161,32 @@ public class BlockDataHandler {
     return result;
   }
 
+  public byte[] removeEscapeChar(byte[] field, byte[] escapeChar) {
+    byte[] result = new byte[field.length];
+    int resultIndex = 0;
+    for (int i = 0; i < field.length; i++) {
+      if (field[i] != escapeChar[0]) {
+        result[resultIndex++] = field[i];
+      }
+      if (i + 1 < field.length) {
+        if (field[i] == escapeChar[0] && field[i + 1] == escapeChar[0]) {
+          result[resultIndex++] = field[i];
+          i++;
+        }
+      }
+    }
+
+    byte[] finalResult = new byte[resultIndex];
+    System.arraycopy(result,0,finalResult,0,resultIndex);
+    return finalResult;
+  }
+
   protected boolean openFile(StepMetaInterface smi, StepDataInterface sdi, TransMeta trans,
       BlockDetails blockDetails) throws KettleException {
     try {
       this.meta = (CsvInputMeta) smi;
       this.data = (CsvInputData) sdi;
+      this.data.preferredBufferSize = Integer.parseInt(this.meta.getBufferSize());
       this.transMeta = trans;
       // Close the previous file...
       if (this.bufferedInputStream != null) {
@@ -300,7 +321,10 @@ public class BlockDataHandler {
         //
         boolean delimiterFound = false;
         boolean enclosureFound = false;
+        boolean quoteAfterDelimiter = false;
+        boolean quoteBeforeDelimiterOrCrLf = false;
         int escapedEnclosureFound = 0;
+        boolean escapedEnclosureFlag = false;
         while (!delimiterFound) {
           // If we find the first char, we might find others as well ;-)
           // Single byte delimiters only for now.
@@ -379,8 +403,11 @@ public class BlockDataHandler {
           //
           else if (data.enclosure != null && data.enclosureMatcher
               .matchesPattern(this.byteBuffer, this.endBuffer, data.enclosure)) {
-
+            if(this.startBuffer == this.endBuffer){
+              quoteAfterDelimiter = true;
+            }
             enclosureFound = true;
+            boolean outOfEnclosureFlag = false;
             boolean keepGoing;
             do {
               if (this.increaseEndBuffer()) {
@@ -405,6 +432,11 @@ public class BlockDataHandler {
                   .matchesPattern(this.byteBuffer, this.endBuffer,
                       data.enclosure);
               if (!keepGoing) {
+                outOfEnclosureFlag = !outOfEnclosureFlag;
+                if(this.endBuffer -1 >= 0 && data.escapeCharMatcher.matchesPattern(this
+                    .byteBuffer,this.endBuffer - 1,data.escapeCharacter)){
+                  escapedEnclosureFlag = true;
+                }
                 // We found an enclosure character.
                 // Read another byte...
                 if (this.increaseEndBuffer()) {
@@ -420,7 +452,10 @@ public class BlockDataHandler {
                     .matchesPattern(this.byteBuffer, this.endBuffer,
                         data.enclosure);
                 if (keepGoing) {
-                  escapedEnclosureFound++;
+                  outOfEnclosureFlag = !outOfEnclosureFlag;
+                  if (!escapedEnclosureFlag || data.enclosure[0] == data.escapeCharacter[0]) {
+                    escapedEnclosureFound++;
+                  }
                 } else {
                   /**
                    * <pre>
@@ -443,6 +478,30 @@ public class BlockDataHandler {
                       .isLineFeed(this.byteBuffer, this.endBuffer));
                 }
 
+              }
+              if (this.endBuffer - 1 >= 0
+                  && data.delimiterMatcher.matchesPattern(this.byteBuffer, this.endBuffer,
+                  data.delimiter)
+                  || data.crLfMatcher.isReturn(this.byteBuffer, this.endBuffer)
+                  || data.crLfMatcher.isLineFeed(this.byteBuffer, this.endBuffer)) {
+                if (data.enclosureMatcher
+                    .matchesPattern(this.byteBuffer, this.endBuffer - 1, data.enclosure)) {
+                  quoteBeforeDelimiterOrCrLf = true;
+                }
+              }
+              if (outOfEnclosureFlag) {
+                keepGoing = !(data.delimiterMatcher
+                  .matchesPattern(this.byteBuffer, this.endBuffer,
+                    data.delimiter) || data.crLfMatcher
+                  .isReturn(this.byteBuffer, this.endBuffer)
+                  || data.crLfMatcher
+                  .isLineFeed(this.byteBuffer, this.endBuffer));
+              }
+
+              if (quoteBeforeDelimiterOrCrLf && quoteAfterDelimiter) {
+                enclosureFound = true;
+              } else {
+                enclosureFound = false;
               }
             } while (keepGoing);
 
@@ -480,15 +539,18 @@ public class BlockDataHandler {
         // data.byteBuffer[data.startBuffer]
         //
         int length =
-            calculateFieldLength(newLineFound, newLines, enclosureFound, endOfBuffer);
+            calculateFieldLength(newLineFound, newLines, enclosureFound, endOfBuffer,
+              quoteAfterDelimiter, quoteBeforeDelimiterOrCrLf);
 
         byte[] field = new byte[length];
         System.arraycopy(this.byteBuffer, this.startBuffer, field, 0, length);
 
-        // Did we have any escaped characters in there?
-        //
-        if (escapedEnclosureFound > 0) {
+        if (escapedEnclosureFound > 0 && quoteAfterDelimiter && quoteBeforeDelimiterOrCrLf) {
           field = this.removeEscapedEnclosures(field, escapedEnclosureFound);
+        }
+
+        if(doConversions && quoteAfterDelimiter && data.escapeCharacter[0] != data.enclosure[0]){
+          field = removeEscapeChar(field,data.escapeCharacter);
         }
 
         if (doConversions) {
@@ -619,7 +681,7 @@ public class BlockDataHandler {
   }
 
   private int calculateFieldLength(boolean newLineFound, int newLines, boolean enclosureFound,
-      boolean endOfBuffer) {
+      boolean endOfBuffer, boolean quoteAfterDelimeter, boolean quoteBeforeDelimeterOrCrLf) {
 
     int length = this.endBuffer - this.startBuffer;
     if (newLineFound) {
@@ -631,6 +693,7 @@ public class BlockDataHandler {
         this.startBuffer++; // offset for the enclosure in last field before EOF
       }
     }
+
     if (enclosureFound) {
       this.startBuffer++;
       length -= 2;
@@ -638,6 +701,12 @@ public class BlockDataHandler {
         length = 0;
       }
     }
+
+    if (!endOfBuffer && (quoteAfterDelimeter && !quoteBeforeDelimeterOrCrLf)) {
+      this.startBuffer++;
+      length--;
+    }
+
     if (length <= 0) {
       length = 0;
     }

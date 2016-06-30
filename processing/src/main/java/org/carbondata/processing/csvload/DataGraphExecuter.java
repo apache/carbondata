@@ -327,6 +327,8 @@ public class DataGraphExecuter {
                 .getTextInputFiles(model.getCsvHeader(), builder, measuresInCSVFile, ",");
             ((CsvInputMeta) step.getStepMetaInterface()).setInputFields(inputParams);
             ((CsvInputMeta) step.getStepMetaInterface()).setDelimiter(model.getCsvDelimiter());
+            ((CsvInputMeta) step.getStepMetaInterface())
+              .setEscapeCharacter(model.getEscapeCharacter());
             ((CsvInputMeta) step.getStepMetaInterface()).setHeaderPresent(false);
 
           } else if (model.getFilesToProcess().size() > 0) {
@@ -337,6 +339,8 @@ public class DataGraphExecuter {
                     model.getCsvDelimiter());
             ((CsvInputMeta) step.getStepMetaInterface()).setInputFields(inputFields);
             ((CsvInputMeta) step.getStepMetaInterface()).setDelimiter(model.getCsvDelimiter());
+            ((CsvInputMeta) step.getStepMetaInterface())
+              .setEscapeCharacter(model.getEscapeCharacter());
             ((CsvInputMeta) step.getStepMetaInterface()).setHeaderPresent(true);
           }
         }
@@ -415,6 +419,8 @@ public class DataGraphExecuter {
                 .getTextInputFiles(model.getCsvHeader(), builder, measuresInCSVFile, ",");
             ((CsvInputMeta) step.getStepMetaInterface()).setInputFields(inputFields);
             ((CsvInputMeta) step.getStepMetaInterface()).setDelimiter(model.getCsvDelimiter());
+            ((CsvInputMeta) step.getStepMetaInterface())
+                .setEscapeCharacter(model.getEscapeCharacter());
             ((CsvInputMeta) step.getStepMetaInterface()).setHeaderPresent(false);
 
           } else if (model.getFilesToProcess().size() > 0) {
@@ -425,6 +431,8 @@ public class DataGraphExecuter {
                     model.getCsvDelimiter());
             ((CsvInputMeta) step.getStepMetaInterface()).setInputFields(inputFields);
             ((CsvInputMeta) step.getStepMetaInterface()).setDelimiter(model.getCsvDelimiter());
+            ((CsvInputMeta) step.getStepMetaInterface())
+              .setEscapeCharacter(model.getEscapeCharacter());
             ((CsvInputMeta) step.getStepMetaInterface()).setHeaderPresent(true);
           }
         }

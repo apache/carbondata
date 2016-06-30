@@ -167,20 +167,18 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
     // if both the task id of the file is same then we need to compare the
     // offset of
     // the file
-    if(CarbonTablePath.isCarbonDataFile(filePath)) {
-      String firstTaskId = DataFileUtil.getTaskNo(filePath);
-      String otherTaskId = DataFileUtil.getTaskNo(other.filePath);
-      if (firstTaskId.compareTo(otherTaskId) < 1) {
-        return 1;
-      } else if (firstTaskId.compareTo(otherTaskId) > 1) {
-        return -1;
+    if (CarbonTablePath.isCarbonDataFile(filePath)) {
+      int firstTaskId = Integer.parseInt(DataFileUtil.getTaskNo(filePath));
+      int otherTaskId = Integer.parseInt(DataFileUtil.getTaskNo(other.filePath));
+      if (firstTaskId != otherTaskId) {
+        return firstTaskId - otherTaskId;
       }
       // compare the part no of both block info
       int firstPartNo = Integer.parseInt(DataFileUtil.getPartNo(filePath));
       int SecondPartNo = Integer.parseInt(DataFileUtil.getPartNo(other.filePath));
       compareResult = firstPartNo - SecondPartNo;
     } else {
-      compareResult =  filePath.compareTo(other.getFilePath());
+      compareResult = filePath.compareTo(other.getFilePath());
     }
     if (compareResult != 0) {
       return compareResult;
@@ -188,9 +186,9 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
     //compare result is not 0 then return
     // if part no is also same then compare the offset and length of the block
     if (blockOffset + blockLength < other.blockOffset + other.blockLength) {
-      return 1;
-    } else if (blockOffset + blockLength > other.blockOffset + other.blockLength) {
       return -1;
+    } else if (blockOffset + blockLength > other.blockOffset + other.blockLength) {
+      return 1;
     }
     return 0;
   }

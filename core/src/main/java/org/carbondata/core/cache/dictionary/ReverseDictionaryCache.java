@@ -132,7 +132,7 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
     Dictionary reverseDictionary = null;
     ColumnReverseDictionaryInfo columnReverseDictionaryInfo =
         (ColumnReverseDictionaryInfo) carbonLRUCache.get(
-            getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
+            getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
                 CacheType.REVERSE_DICTIONARY));
     if (null != columnReverseDictionaryInfo) {
       reverseDictionary = new ReverseDictionary(columnReverseDictionaryInfo);
@@ -149,8 +149,9 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
    */
   @Override public void invalidate(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
-    carbonLRUCache.remove(getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
-        CacheType.REVERSE_DICTIONARY));
+    carbonLRUCache.remove(
+        getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
+            CacheType.REVERSE_DICTIONARY));
   }
 
   /**
@@ -173,12 +174,12 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
           "Either dictionary or its metadata does not exist for column identifier :: "
               + dictionaryColumnUniqueIdentifier.getColumnIdentifier());
     }
-    String columnIdentifier = dictionaryColumnUniqueIdentifier.getColumnIdentifier();
+    String columnIdentifier = dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId();
     ColumnReverseDictionaryInfo columnReverseDictionaryInfo =
         getColumnReverseDictionaryInfo(dictionaryColumnUniqueIdentifier, columnIdentifier);
     // do not load sort index file for reverse dictionary
     checkAndLoadDictionaryData(dictionaryColumnUniqueIdentifier, columnReverseDictionaryInfo,
-        getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
+        getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
             CacheType.REVERSE_DICTIONARY), false);
     reverseDictionary = new ReverseDictionary(columnReverseDictionaryInfo);
     return reverseDictionary;

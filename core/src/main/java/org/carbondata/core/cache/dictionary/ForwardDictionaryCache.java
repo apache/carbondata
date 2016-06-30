@@ -131,7 +131,7 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     Dictionary forwardDictionary = null;
     ColumnDictionaryInfo columnDictionaryInfo = (ColumnDictionaryInfo) carbonLRUCache.get(
-        getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
+        getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
             CacheType.FORWARD_DICTIONARY));
     if (null != columnDictionaryInfo) {
       forwardDictionary = new ForwardDictionary(columnDictionaryInfo);
@@ -148,8 +148,9 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
    */
   @Override public void invalidate(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
-    carbonLRUCache.remove(getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
-        CacheType.FORWARD_DICTIONARY));
+    carbonLRUCache.remove(
+        getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
+            CacheType.FORWARD_DICTIONARY));
   }
 
   /**
@@ -172,12 +173,12 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
           "Either dictionary or its metadata does not exist for column identifier :: "
               + dictionaryColumnUniqueIdentifier.getColumnIdentifier());
     }
-    String columnIdentifier = dictionaryColumnUniqueIdentifier.getColumnIdentifier();
+    String columnIdentifier = dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId();
     ColumnDictionaryInfo columnDictionaryInfo =
         getColumnDictionaryInfo(dictionaryColumnUniqueIdentifier, columnIdentifier);
     // load sort index file in case of forward dictionary
     checkAndLoadDictionaryData(dictionaryColumnUniqueIdentifier, columnDictionaryInfo,
-        getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
+        getLruCacheKey(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
             CacheType.FORWARD_DICTIONARY), true);
     forwardDictionary = new ForwardDictionary(columnDictionaryInfo);
     return forwardDictionary;

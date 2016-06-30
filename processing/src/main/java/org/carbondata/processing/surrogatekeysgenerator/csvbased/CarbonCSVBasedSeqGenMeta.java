@@ -85,6 +85,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
   protected Map<String, GenericDataType> complexTypes =
       new HashMap<String, GenericDataType>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
+  protected Map<String, Map<String, String>> columnProperties =
+      new HashMap<String, Map<String, String>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   /**
    * dimLens
    */
@@ -265,6 +267,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
   private String complexDelimiterLevel2;
   private String complexTypeString;
 
+  private String columnPropertiesString;
+
   private String[] complexTypeColumns;
   /**
    * Primary Key String
@@ -410,6 +414,10 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
 
   public void setComplexTypeString(String complexTypeString) {
     this.complexTypeString = complexTypeString;
+  }
+
+  public void setColumnPropertiesString(String columnPropertiesString) {
+    this.columnPropertiesString = columnPropertiesString;
   }
 
   public String[] getComplexTypeColumns() {
@@ -617,6 +625,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     carbonhierColumn = "";
     foreignKeyHierarchyString = "";
     complexTypeString = "";
+    columnPropertiesString = "";
     complexDelimiterLevel1 = "";
     complexDelimiterLevel2 = "";
     primaryKeysString = "";
@@ -662,6 +671,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     retval.append("    ")
         .append(XMLHandler.addTagValue("foreignKeyHierarchyString", foreignKeyHierarchyString));
     retval.append("    ").append(XMLHandler.addTagValue("complexTypeString", complexTypeString));
+    retval.append("    ")
+        .append(XMLHandler.addTagValue("columnPropertiesString", columnPropertiesString));
     retval.append("    ")
         .append(XMLHandler.addTagValue("complexDelimiterLevel1", complexDelimiterLevel1));
     retval.append("    ")
@@ -719,6 +730,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       carbonhierColumn = XMLHandler.getTagValue(stepnode, "carbonhierColumn");
       foreignKeyHierarchyString = XMLHandler.getTagValue(stepnode, "foreignKeyHierarchyString");
       complexTypeString = XMLHandler.getTagValue(stepnode, "complexTypeString");
+      columnPropertiesString = XMLHandler.getTagValue(stepnode, "columnPropertiesString");
       complexDelimiterLevel1 = XMLHandler.getTagValue(stepnode, "complexDelimiterLevel1");
       complexDelimiterLevel2 = XMLHandler.getTagValue(stepnode, "complexDelimiterLevel2");
       primaryKeysString = XMLHandler.getTagValue(stepnode, "primaryKeysString");
@@ -782,6 +794,9 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       complexTypeColumns = new String[0];
     }
 
+    if (null != columnPropertiesString) {
+      updateColumnPropertiesMap(columnPropertiesString);
+    }
     hirches = getHierarichies(carbonhier);
 
     hierColumnMap = getHierarchiesColumnMap(carbonhierColumn);
@@ -822,6 +837,23 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     }
 
     updateDenormColunList(denormColumNames);
+  }
+
+  private void updateColumnPropertiesMap(String columnPropertiesString) {
+    String[] colsProperty = columnPropertiesString.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
+    for (String property : colsProperty) {
+      String[] colKeyVals = property.split(CarbonCommonConstants.COLON_SPC_CHARACTER);
+      String colName = colKeyVals[0];
+      Map<String, String> colPropMap = new HashMap<>();
+      String[] keyVals = colKeyVals[1].split(CarbonCommonConstants.COMA_SPC_CHARACTER);
+      for (int i = 0; i < keyVals.length; i++) {
+        String[] keyVal = keyVals[i].split(CarbonCommonConstants.HYPHEN_SPC_CHARACTER);
+        String key = keyVal[0];
+        String value = keyVal[1];
+        colPropMap.put(key, value);
+      }
+      columnProperties.put(colName, colPropMap);
+    }
   }
 
   private void updateDenormColunList(String denormColumNames) {
@@ -1632,6 +1664,10 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    */
   public String getTaskNo() {
     return taskNo;
+  }
+
+  public Map<String, Map<String, String>> getColumnPropertiesMap() {
+    return columnProperties;
   }
 
   /**

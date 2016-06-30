@@ -51,7 +51,7 @@ public class DataTypeUtil {
    */
   public static Object getDataBasedOnDataType(String data, DataType actualDataType) {
 
-    if (null == data || data.isEmpty()) {
+    if (null == data || data.isEmpty() || CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(data)) {
       return null;
     }
     try {

@@ -84,9 +84,9 @@ public class LocalFileLock extends AbstractCarbonLock {
     this.lockUsage = lockUsage;
     location = location.replace("\\", "/");
     String tempStr = location.substring(0, location.lastIndexOf('/'));
+    cubeName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
+    tempStr = tempStr.substring(0, tempStr.lastIndexOf('/'));
     schemaName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
-
-    cubeName = location.substring(location.lastIndexOf('/') + 1, location.length());
     this.location =
         tmpPath + File.separator + schemaName + File.separator + cubeName + File.separator
             + this.lockUsage;

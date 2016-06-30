@@ -22,16 +22,18 @@ package org.carbondata.core.cache.dictionary;
 import java.io.IOException;
 import java.util.List;
 
+import org.carbondata.common.factory.CarbonCommonFactory;
 import org.carbondata.core.cache.Cache;
 import org.carbondata.core.cache.CacheType;
 import org.carbondata.core.cache.CarbonLRUCache;
-import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
-import org.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
+import org.carbondata.core.reader.CarbonDictionaryMetadataReader;
+import org.carbondata.core.service.DictionaryService;
+import org.carbondata.core.service.PathService;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
@@ -91,12 +93,17 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
    */
   protected boolean isFileExistsForGivenColumn(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
-    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonStorePath,
-        dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
-    String dictionaryFilePath = carbonTablePath
-        .getDictionaryFilePath(dictionaryColumnUniqueIdentifier.getColumnIdentifier());
-    String dictionaryMetadataFilePath = carbonTablePath
-        .getDictionaryMetaFilePath(dictionaryColumnUniqueIdentifier.getColumnIdentifier());
+    PathService pathService = CarbonCommonFactory.getPathService();
+    CarbonTablePath carbonTablePath = pathService
+        .getCarbonTablePath(dictionaryColumnUniqueIdentifier.getColumnIdentifier(), carbonStorePath,
+            dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
+
+    String dictionaryFilePath =
+        carbonTablePath.getDictionaryFilePath(dictionaryColumnUniqueIdentifier
+            .getColumnIdentifier().getColumnId());
+    String dictionaryMetadataFilePath =
+        carbonTablePath.getDictionaryMetaFilePath(dictionaryColumnUniqueIdentifier
+            .getColumnIdentifier().getColumnId());
     // check if both dictionary and its metadata file exists for a given column
     return CarbonUtil.isFileExists(dictionaryFilePath) && CarbonUtil
         .isFileExists(dictionaryMetadataFilePath);
@@ -111,10 +118,11 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
    */
   protected CarbonDictionaryColumnMetaChunk readLastChunkFromDictionaryMetadataFile(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) throws IOException {
-    CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
-        new CarbonDictionaryMetadataReaderImpl(this.carbonStorePath,
-            dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-            dictionaryColumnUniqueIdentifier.getColumnIdentifier());
+    DictionaryService dictService = CarbonCommonFactory.getDictionaryService();
+    CarbonDictionaryMetadataReader columnMetadataReaderImpl = dictService
+        .getDictionaryMetadataReader(dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
+            dictionaryColumnUniqueIdentifier.getColumnIdentifier(), carbonStorePath);
+
     CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk = null;
     // read metadata file
     try {
@@ -148,10 +156,13 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
    */
   private CarbonFile getDictionaryMetaCarbonFile(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
-    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonStorePath,
-        dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
-    String dictionaryFilePath = carbonTablePath
-        .getDictionaryMetaFilePath(dictionaryColumnUniqueIdentifier.getColumnIdentifier());
+    PathService pathService = CarbonCommonFactory.getPathService();
+    CarbonTablePath carbonTablePath = pathService
+        .getCarbonTablePath(dictionaryColumnUniqueIdentifier.getColumnIdentifier(), carbonStorePath,
+            dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
+    String dictionaryFilePath =
+        carbonTablePath.getDictionaryMetaFilePath(dictionaryColumnUniqueIdentifier
+            .getColumnIdentifier().getColumnId());
     FileFactory.FileType fileType = FileFactory.getFileType(dictionaryFilePath);
     CarbonFile carbonFile = FileFactory.getCarbonFile(dictionaryFilePath, fileType);
     return carbonFile;

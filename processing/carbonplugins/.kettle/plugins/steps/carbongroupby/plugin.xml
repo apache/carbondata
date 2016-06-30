@@ -20,7 +20,6 @@
 
 <plugin
    id="CarbonGroupBy"
-   iconfile="icon.png"
    description="Carbon Group By"
    tooltip="Carbon Group By"
    category="Carbon"

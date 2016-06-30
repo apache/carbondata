@@ -70,6 +70,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
 
     if (null == batch || checkIfBatchIsProcessedCompletely(batch)) {
       if (detailRawQueryResultIterator.hasNext()) {
+        batch = null;
         batch = detailRawQueryResultIterator.next();
         counter = 0; // batch changed so reset the counter.
       } else {
@@ -102,6 +103,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
         return null;
       }
     } else { // completed one batch.
+      batch = null;
       batch = detailRawQueryResultIterator.next();
       counter = 0;
     }

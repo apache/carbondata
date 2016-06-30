@@ -367,6 +367,6 @@ public class CarbonTable implements Serializable {
    * TODO: to be implemented while supporting partitioning
    */
   public int getPartitionCount() {
-    return 0;
+    return 1;
   }
 }

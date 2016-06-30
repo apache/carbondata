@@ -25,16 +25,19 @@ import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.carbondata.common.factory.CarbonCommonFactory;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
-import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.ColumnIdentifier;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
+import org.carbondata.core.reader.CarbonDictionaryMetadataReader;
 import org.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
+import org.carbondata.core.service.PathService;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.format.ColumnDictionaryChunk;
@@ -56,7 +59,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   /**
    * carbon type identifier
    */
-  private CarbonTableIdentifier carbonTableIdentifier;
+  protected CarbonTableIdentifier carbonTableIdentifier;
 
   /**
    * list which will hold values upto maximum of one dictionary chunk size
@@ -74,24 +77,24 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   private ThriftWriter dictionaryThriftWriter;
 
   /**
-   * column name
+   * column identifier
    */
-  private String columnIdentifier;
+  protected ColumnIdentifier columnIdentifier;
 
   /**
    * HDFS store path
    */
-  private String hdfsStorePath;
+  protected String hdfsStorePath;
 
   /**
    * dictionary file path
    */
-  private String dictionaryFilePath;
+  protected String dictionaryFilePath;
 
   /**
    * dictionary metadata file path
    */
-  private String dictionaryMetaFilePath;
+  protected String dictionaryMetaFilePath;
 
   /**
    * start offset of dictionary chunk  for a segment
@@ -134,7 +137,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    * @param columnIdentifier      column unique identifier
    */
   public CarbonDictionaryWriterImpl(String hdfsStorePath,
-      CarbonTableIdentifier carbonTableIdentifier, String columnIdentifier) {
+      CarbonTableIdentifier carbonTableIdentifier, ColumnIdentifier columnIdentifier) {
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.columnIdentifier = columnIdentifier;
     this.hdfsStorePath = hdfsStorePath;
@@ -236,16 +239,22 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    */
   private void init() throws IOException {
     initDictionaryChunkSize();
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(this.hdfsStorePath, carbonTableIdentifier);
-    this.dictionaryFilePath = carbonTablePath.getDictionaryFilePath(columnIdentifier);
-    this.dictionaryMetaFilePath = carbonTablePath.getDictionaryMetaFilePath(columnIdentifier);
+    initPaths();
     if (CarbonUtil.isFileExists(this.dictionaryFilePath)) {
       this.chunk_start_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
       validateDictionaryFileOffsetWithLastSegmentEntryOffset();
     }
     openThriftWriter(this.dictionaryFilePath);
     createChunkList();
+  }
+
+  protected void initPaths() {
+    PathService pathService = CarbonCommonFactory.getPathService();
+    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(columnIdentifier,
+            this.hdfsStorePath, carbonTableIdentifier);
+    this.dictionaryFilePath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId());
+    this.dictionaryMetaFilePath =
+        carbonTablePath.getDictionaryMetaFilePath(columnIdentifier.getColumnId());
   }
 
   /**
@@ -382,9 +391,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   private CarbonDictionaryColumnMetaChunk getChunkMetaObjectForLastSegmentEntry()
       throws IOException {
     CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk = null;
-    CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
-        new CarbonDictionaryMetadataReaderImpl(this.hdfsStorePath, this.carbonTableIdentifier,
-            this.columnIdentifier);
+    CarbonDictionaryMetadataReader columnMetadataReaderImpl = getDictionaryMetadataReader();
     try {
       // read the last segment entry for dictionary metadata
       carbonDictionaryColumnMetaChunk =
@@ -394,5 +401,13 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
       columnMetadataReaderImpl.close();
     }
     return carbonDictionaryColumnMetaChunk;
+  }
+
+  /**
+   * @return
+   */
+  protected CarbonDictionaryMetadataReader getDictionaryMetadataReader() {
+    return new CarbonDictionaryMetadataReaderImpl(hdfsStorePath, carbonTableIdentifier,
+        columnIdentifier);
   }
 }

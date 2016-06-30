@@ -21,7 +21,6 @@
 <plugin
 
    id="CarbonSurrogateGen"
-   iconfile="icon.png"
    description="Carbon Surrogate Key Generator"
    tooltip="Carbon Surrogate Key Generator"
    category="Carbon"

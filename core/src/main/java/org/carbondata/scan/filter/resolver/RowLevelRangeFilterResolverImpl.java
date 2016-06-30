@@ -25,16 +25,23 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.SortedMap;
 
+import org.carbondata.common.logging.LogService;
+import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.scan.executor.exception.QueryExecutionException;
 import org.carbondata.scan.expression.ColumnExpression;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
 import org.carbondata.scan.expression.conditional.BinaryConditionalExpression;
+import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
+import org.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.carbondata.scan.expression.logical.BinaryLogicalExpression;
 import org.carbondata.scan.filter.DimColumnFilterInfo;
 import org.carbondata.scan.filter.FilterUtil;
@@ -48,7 +55,8 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    *
    */
   private static final long serialVersionUID = 6629319265336666789L;
-
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(RowLevelRangeFilterResolverImpl.class.getName());
   private List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList;
   private List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList;
   private AbsoluteTableIdentifier tableIdentifier;
@@ -64,19 +72,25 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
   }
 
   /**
-   * This method will return the filter values which is present in the range leve
+   * This method will return the filter values which is present in the range level
    * conditional expressions.
    *
    * @return
    */
-  public byte[][] getFilterRangeValues() {
-    List<byte[]> filterValuesList = new ArrayList<byte[]>();
-    if (null != dimColEvaluatorInfoList.get(0).getFilterValues()) {
-      filterValuesList =
+  public byte[][] getFilterRangeValues(SegmentProperties segmentProperties) {
+
+    if (null != dimColEvaluatorInfoList.get(0).getFilterValues() && !dimColEvaluatorInfoList.get(0)
+        .getDimension().hasEncoding(Encoding.DICTIONARY)) {
+      List<byte[]> noDictFilterValuesList =
           dimColEvaluatorInfoList.get(0).getFilterValues().getNoDictionaryFilterValuesList();
-      return filterValuesList.toArray((new byte[filterValuesList.size()][]));
+      return noDictFilterValuesList.toArray((new byte[noDictFilterValuesList.size()][]));
+    } else if (null != dimColEvaluatorInfoList.get(0).getFilterValues() && dimColEvaluatorInfoList
+        .get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(),
+          this.dimColEvaluatorInfoList.get(0).getDimension(),
+          segmentProperties.getDimensionKeyGenerator());
     }
-    return filterValuesList.toArray((new byte[filterValuesList.size()][]));
+    return null;
 
   }
 
@@ -88,6 +102,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
   public void getStartKey(SegmentProperties segmentProperties, long[] startKey,
       SortedMap<Integer, byte[]> noDictStartKeys) {
     if (null == dimColEvaluatorInfoList.get(0).getStarIndexKey()) {
+      FilterUtil.getStartKey(dimColEvaluatorInfoList.get(0), segmentProperties, startKey);
       FilterUtil
           .getStartKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), segmentProperties,
               noDictStartKeys);
@@ -123,12 +138,20 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           ((BinaryConditionalExpression) this.getFilterExpression()).getLiterals();
     }
     List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
+    boolean invalidRowsPresent = false;
     for (ExpressionResult result : listOfExpressionResults) {
-      if (result.getString() == null) {
-        filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL.getBytes());
-        continue;
+      try {
+        if (result.getString() == null) {
+          filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL.getBytes());
+          continue;
+        }
+        filterValuesList.add(result.getString().getBytes());
+      } catch (FilterIllegalMemberException e) {
+        // Any invalid member while evaluation shall be ignored, system will log the
+        // error only once since all rows the evaluation happens so inorder to avoid
+        // too much log inforation only once the log will be printed.
+        FilterUtil.logError(e, invalidRowsPresent);
       }
-      filterValuesList.add(result.getString().getBytes());
     }
     Comparator<byte[]> filterNoDictValueComaparator = new Comparator<byte[]>() {
       @Override public int compare(byte[] filterMember1, byte[] filterMember2) {
@@ -160,7 +183,11 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           dimColumnEvaluatorInfo.setRowIndex(index++);
           dimColumnEvaluatorInfo.setDimension(columnExpression.getDimension());
           dimColumnEvaluatorInfo.setDimensionExistsInCurrentSilce(false);
-          filterInfo.setFilterListForNoDictionaryCols(getNoDictionaryRangeValues());
+          if (columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+            filterInfo.setFilterList(getDirectSurrogateValues(columnExpression));
+          } else {
+            filterInfo.setFilterListForNoDictionaryCols(getNoDictionaryRangeValues());
+          }
           filterInfo.setIncludeFilter(isIncludeFilter);
           dimColumnEvaluatorInfo.setFilterValues(filterInfo);
           dimColumnEvaluatorInfo
@@ -178,6 +205,30 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
         }
       }
     }
+  }
+
+  private List<Integer> getDirectSurrogateValues(ColumnExpression columnExpression) {
+    List<ExpressionResult> listOfExpressionResults = new ArrayList<ExpressionResult>(20);
+    DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+        .getDirectDictionaryGenerator(columnExpression.getDimension().getDataType());
+
+    if (this.getFilterExpression() instanceof BinaryConditionalExpression) {
+      listOfExpressionResults =
+          ((BinaryConditionalExpression) this.getFilterExpression()).getLiterals();
+    }
+    List<Integer> filterValuesList = new ArrayList<Integer>(20);
+    try {
+      // if any filter member provided by user is invalid throw error else
+      // system can display inconsistent result.
+      for (ExpressionResult result : listOfExpressionResults) {
+        filterValuesList.add(directDictionaryGenerator
+            .generateDirectSurrogateKey(result.getString(),
+                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+      }
+    } catch (FilterIllegalMemberException e) {
+      new FilterUnsupportedException(e);
+    }
+    return filterValuesList;
   }
 
   /**

@@ -21,6 +21,8 @@ package org.carbondata.core.cache.dictionary;
 
 import java.io.IOException;
 
+import org.carbondata.core.carbon.ColumnIdentifier;
+
 public interface DictionaryCacheLoader {
 
   /**
@@ -37,6 +39,7 @@ public interface DictionaryCacheLoader {
    *                                   read in memory after dictionary loading
    * @throws IOException
    */
-  void load(DictionaryInfo dictionaryInfo, String columnIdentifier, long dictionaryChunkStartOffset,
-      long dictionaryChunkEndOffset, boolean loadSortIndex) throws IOException;
+  void load(DictionaryInfo dictionaryInfo, ColumnIdentifier columnIdentifier,
+      long dictionaryChunkStartOffset, long dictionaryChunkEndOffset, boolean loadSortIndex)
+      throws IOException;
 }

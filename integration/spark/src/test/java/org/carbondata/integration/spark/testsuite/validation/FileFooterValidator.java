@@ -1,4 +1,4 @@
-package org.carbondata.spark.testsuite.validation;
+package org.carbondata.integration.spark.testsuite.validation;
 
 import org.apache.spark.sql.common.util.CarbonHiveContext;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
@@ -15,10 +15,10 @@ import org.carbondata.format.BlockletInfo;
 import org.carbondata.format.DataChunk;
 import org.carbondata.format.Encoding;
 import org.carbondata.format.FileFooter;
-
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
+
 import static org.junit.Assert.assertTrue;
 
 public class FileFooterValidator {
@@ -44,7 +44,7 @@ public class FileFooterValidator {
                 + "PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')");
     String storePath =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION);
-    CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("default", "validatefooter");
+    CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("default", "validatefooter", "1");
     String segmentPath = CarbonStorePath.getCarbonTablePath(storePath, tableIdentifier)
         .getCarbonDataDirectoryPath("0", "0");
     CarbonFile carbonFile =

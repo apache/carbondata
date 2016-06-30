@@ -30,6 +30,7 @@ public class CsvInputData extends BaseStepData implements StepDataInterface {
 
   public byte[] delimiter;
   public byte[] enclosure;
+  public byte[] escapeCharacter;
   public int preferredBufferSize;
   public int totalNumberOfSteps;
   public boolean parallel;
@@ -44,6 +45,7 @@ public class CsvInputData extends BaseStepData implements StepDataInterface {
   public EncodingType encodingType;
   public PatternMatcherInterface delimiterMatcher;
   public PatternMatcherInterface enclosureMatcher;
+  public PatternMatcherInterface escapeCharMatcher;
   public CrLfMatcherInterface crLfMatcher;
 
   public CsvInputData() {

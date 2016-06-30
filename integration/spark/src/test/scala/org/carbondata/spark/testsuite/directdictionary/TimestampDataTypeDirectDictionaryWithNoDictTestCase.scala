@@ -62,8 +62,8 @@ class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with
       val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
         .getCanonicalPath
       var csvFilePath = currentDirectory + "/src/test/resources/datasample.csv"
-      sql("LOAD DATA fact from '" + csvFilePath + "' INTO CUBE directDictionaryTable PARTITIONDATA"
-        + "(DELIMITER ',', QUOTECHAR '\"')");
+      sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable OPTIONS"
+        + "('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
 
     } catch {
       case x: Throwable => CarbonProperties.getInstance()

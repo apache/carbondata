@@ -19,35 +19,19 @@
 
 package org.carbondata.core.datastorage.util;
 
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.NodeMeasureDataStore;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.impl.data.compressed.HeavyCompressedDoubleArrayDataInMemoryStore;
-
 import org.carbondata.core.datastorage.store.impl.data.uncompressed.DoubleArrayDataInMemoryStore;
-import org.carbondata.core.util.CarbonProperties;
 
 public final class StoreFactory {
-  /**
-   * Double array data store.
-   */
-  private static final String COMPRESSED_DOUBLE_ARRAY = "COMPRESSED_DOUBLE_ARRAY";
   /**
    * value type.
    */
   private static StoreType valueType;
 
   static {
-    String valuetype = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.VALUESTORE_TYPE,
-            CarbonCommonConstants.VALUESTORE_TYPE_DEFAULT_VAL);
-
-    // set value type
-    if (COMPRESSED_DOUBLE_ARRAY.equals(valuetype)) {
-      valueType = StoreType.COMPRESSED_DOUBLE_ARRAY;
-    } else {
-      valueType = StoreType.HEAVY_VALUE_COMPRESSION;
-    }
+    valueType = StoreType.HEAVY_VALUE_COMPRESSION;
   }
 
   private StoreFactory() {

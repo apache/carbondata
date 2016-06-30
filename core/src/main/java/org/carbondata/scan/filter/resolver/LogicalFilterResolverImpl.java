@@ -23,6 +23,7 @@ import java.util.SortedMap;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.carbondata.scan.executor.exception.QueryExecutionException;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.filter.intf.ExpressionType;
 import org.carbondata.scan.filter.intf.FilterExecuterType;
@@ -88,7 +89,7 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
 
   @Override public void getEndKey(SegmentProperties segmentProperties,
       AbsoluteTableIdentifier tableIdentifier, long[] endKeys,
-      SortedMap<Integer, byte[]> setOfEndKeyByteArray) {
+      SortedMap<Integer, byte[]> setOfEndKeyByteArray) throws QueryExecutionException {
   }
 
   @Override public FilterExecuterType getFilterExecuterType() {
