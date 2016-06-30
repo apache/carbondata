@@ -2,6 +2,7 @@ package org.apache.spark.sql
 
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.execution.command.Field
+import org.carbondata.core.constants.CarbonCommonConstants
 
 /**
   * Stub class for calling the CarbonSqlParser
@@ -69,7 +70,7 @@ class TestCarbonSqlParser extends QueryTest {
   // Testing the column group Splitting method.
   test("Test-updateColumnGroupsInField") {
     val colGroupStr = "(col2,col3),(col5,col6),(col7,col8)"
-    val tableProperties = Map("COLUMN_GROUPS" -> colGroupStr)
+    val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr)
     var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
     val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
@@ -80,7 +81,7 @@ class TestCarbonSqlParser extends QueryTest {
   }
   test("Test-ColumnGroupsInvalidField_Shouldnotallow") {
     val colGroupStr = "(col1,col2),(col10,col6),(col7,col8)"
-    val tableProperties = Map("COLUMN_GROUPS" -> colGroupStr)
+    val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr)
     var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
     try {
@@ -93,7 +94,7 @@ class TestCarbonSqlParser extends QueryTest {
   test("Test-MeasureInColumnGroup_ShouldNotAllow") {
     //col1 is measure
     val colGroupStr = "(col1,col2),(col5,col6),(col7,col8)"
-    val tableProperties = Map("COLUMN_GROUPS" -> colGroupStr)
+    val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr)
     var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
     try {
@@ -107,7 +108,7 @@ class TestCarbonSqlParser extends QueryTest {
     //col5 is no dictionary
     val colGroupStr = "(col2,col3),(col5,col6),(col7,col8)"
     val noDictStr = "col5"
-    val tableProperties = Map("COLUMN_GROUPS" -> colGroupStr, "DICTIONARY_EXCLUDE" -> noDictStr)
+    val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr, CarbonCommonConstants.DICTIONARY_EXCLUDE -> noDictStr)
     var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
     try {
@@ -119,7 +120,7 @@ class TestCarbonSqlParser extends QueryTest {
   }
   test("Test-SameColumnInDifferentGroup_ShouldNotAllow") {
     val colGroupStr = "(col2,col3),(col5,col6),(col6,col7,col8)"
-    val tableProperties = Map("COLUMN_GROUPS" -> colGroupStr)
+    val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr)
     var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
     try {
@@ -132,7 +133,7 @@ class TestCarbonSqlParser extends QueryTest {
   
    test("Test-ColumnAreNotTogetherAsInSchema_ShouldNotAllow") {
     val colGroupStr = "(col2,col3),(col5,col8)"
-    val tableProperties = Map("COLUMN_GROUPS" -> colGroupStr)
+    val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr)
     var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
     try {
@@ -144,7 +145,7 @@ class TestCarbonSqlParser extends QueryTest {
   }
   test("Test-ColumnInColumnGroupAreShuffledButInSequence") {
     val colGroupStr = "(col2,col3),(col7,col8,col6)"
-    val tableProperties = Map("COLUMN_GROUPS" -> colGroupStr)
+    val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr)
     var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
     
@@ -164,7 +165,7 @@ class TestCarbonSqlParser extends QueryTest {
 
   // Testing the extracting of Dims and no Dictionary
   test("Test-extractDimColsAndNoDictionaryFields") {
-    val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col2", "DICTIONARY_INCLUDE" -> "col4")
+    val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE -> "col2", CarbonCommonConstants.DICTIONARY_INCLUDE -> "col4")
     var fields: Seq[Field] = loadAllFields
 
     val stub = new TestCarbonSqlParserStub()
@@ -184,7 +185,7 @@ class TestCarbonSqlParser extends QueryTest {
   }
 
   test("Test-DimAndMsrColsWithNoDictionaryFields1") {
-    val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col1")
+    val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE -> "col1")
     var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
     var (dimCols, noDictionary) = stub
@@ -207,7 +208,7 @@ class TestCarbonSqlParser extends QueryTest {
   }
 
   test("Test-DimAndMsrColsWithNoDictionaryFields2") {
-    val tableProperties = Map("DICTIONARY_INCLUDE" -> "col1")
+    val tableProperties = Map(CarbonCommonConstants.DICTIONARY_INCLUDE -> "col1")
     var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
     var (dimCols, noDictionary) = stub
@@ -229,7 +230,7 @@ class TestCarbonSqlParser extends QueryTest {
   }
 
   test("Test-DimAndMsrColsWithNoDictionaryFields3") {
-    val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col1", "DICTIONARY_INCLUDE" -> "col4")
+    val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE -> "col1", CarbonCommonConstants.DICTIONARY_INCLUDE -> "col4")
     var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
     var (dimCols, noDictionary) = stub
@@ -252,7 +253,7 @@ class TestCarbonSqlParser extends QueryTest {
   }
 
   test("Test-DimAndMsrColsWithNoDictionaryFields4") {
-    val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col3", "DICTIONARY_INCLUDE" -> "col2")
+    val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE -> "col3", CarbonCommonConstants.DICTIONARY_INCLUDE -> "col2")
     var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
     var (dimCols, noDictionary) = stub
@@ -275,7 +276,7 @@ class TestCarbonSqlParser extends QueryTest {
   }
 
   test("Test-DimAndMsrColsWithNoDictionaryFields5") {
-    val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col4", "DICTIONARY_INCLUDE" -> "col2")
+    val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE -> "col4", CarbonCommonConstants.DICTIONARY_INCLUDE -> "col2")
     var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
     var (dimCols, noDictionary) = stub
@@ -298,7 +299,7 @@ class TestCarbonSqlParser extends QueryTest {
   }
 
   test("Test-DimAndMsrColsWithNoDictionaryFields6") {
-    val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col2", "DICTIONARY_INCLUDE" -> "col1")
+    val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE -> "col2", CarbonCommonConstants.DICTIONARY_INCLUDE -> "col1")
     var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
     var (dimCols, noDictionary) = stub
@@ -321,8 +322,8 @@ class TestCarbonSqlParser extends QueryTest {
   }
 
   test("Test-DimAndMsrColsWithNoDictionaryFields7") {
-    val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col2 ,col1  ",
-      "DICTIONARY_INCLUDE" -> "col3 ,col4 "
+    val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE -> "col2 ,col1  ",
+      CarbonCommonConstants.DICTIONARY_INCLUDE -> "col3 ,col4 "
     )
     var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
@@ -347,7 +348,7 @@ class TestCarbonSqlParser extends QueryTest {
   }
 
   test("Test-DimAndMsrColsWithNoDictionaryFields8") {
-    val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col2,col4", "DICTIONARY_INCLUDE" -> "col3")
+    val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE-> "col2,col4", CarbonCommonConstants.DICTIONARY_INCLUDE -> "col3")
     var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
     var (dimCols, noDictionary) = stub
@@ -372,7 +373,7 @@ class TestCarbonSqlParser extends QueryTest {
 
   // Testing the extracting of measures
   test("Test-extractMsrColsFromFields") {
-    val tableProperties = Map("DICTIONARY_EXCLUDE" -> "col2", "DICTIONARY_INCLUDE" -> "col4")
+    val tableProperties = Map(CarbonCommonConstants.DICTIONARY_EXCLUDE -> "col2", CarbonCommonConstants.DICTIONARY_INCLUDE -> "col4")
     var fields: Seq[Field] = loadAllFields
     val stub = new TestCarbonSqlParserStub()
     var msrCols = stub.extractMsrColsFromFieldsTest(fields, tableProperties)

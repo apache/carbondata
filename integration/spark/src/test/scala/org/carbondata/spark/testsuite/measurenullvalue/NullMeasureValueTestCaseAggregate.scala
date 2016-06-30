@@ -59,7 +59,7 @@ class NullMeasureValueTestCaseAggregate extends QueryTest with BeforeAndAfterAll
    }
    
   override def afterAll {
-    sql("drop cube t3")
+    sql("drop table t3")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }

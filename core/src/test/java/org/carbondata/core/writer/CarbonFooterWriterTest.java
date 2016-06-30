@@ -28,6 +28,9 @@ import java.util.UUID;
 
 import junit.framework.TestCase;
 
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
@@ -35,6 +38,7 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.reader.CarbonFooterReader;
 import org.carbondata.core.util.CarbonMetadataUtil;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.format.ColumnSchema;
 import org.junit.After;
 import org.junit.Before;
@@ -68,16 +72,26 @@ public class CarbonFooterWriterTest extends TestCase{
 
     List<BlockletInfoColumnar> infoColumnars = getBlockletInfoColumnars();
 
-		writer.writeFooter(CarbonMetadataUtil.convertFileFooter(
-				infoColumnars,
-				6,
-				new int[] { 2, 4, 5, 7 },
-				Arrays.asList(new ColumnSchema[]{getDimensionColumn("IMEI1"),
+    int[] cardinalities = new int[] { 2, 4, 5, 7, 9, 10 };
+    List<ColumnSchema> columnSchema = Arrays.asList(new ColumnSchema[]{getDimensionColumn("IMEI1"),
 						getDimensionColumn("IMEI2"),
 						getDimensionColumn("IMEI3"),
 						getDimensionColumn("IMEI4"),
 						getDimensionColumn("IMEI5"),
-						getDimensionColumn("IMEI6")})), 0);
+						getDimensionColumn("IMEI6")});
+    List<org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema> wrapperColumnSchema = Arrays.asList(new org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema[]{getWrapperDimensionColumn("IMEI1"),
+    	getWrapperDimensionColumn("IMEI2"),
+    	getWrapperDimensionColumn("IMEI3"),
+    	getWrapperDimensionColumn("IMEI4"),
+    	getWrapperDimensionColumn("IMEI5"),
+    	getWrapperDimensionColumn("IMEI6")});
+    int[] colCardinality = CarbonUtil.getFormattedCardinality(cardinalities, wrapperColumnSchema);
+    SegmentProperties segmentProperties = new SegmentProperties(wrapperColumnSchema, colCardinality);
+		writer.writeFooter(CarbonMetadataUtil.convertFileFooter(
+				infoColumnars,
+				6,
+				cardinalities,columnSchema, segmentProperties
+				), 0);
 
     CarbonFooterReader metaDataReader = new CarbonFooterReader(filePath, 0);
     assertTrue(metaDataReader.readFooter() != null);
@@ -97,6 +111,20 @@ public class CarbonFooterWriterTest extends TestCase{
 	    dimColumn.setNum_child(0);
 	    return dimColumn;
 	  }
+  public static org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema getWrapperDimensionColumn(String columnName) {
+   org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema dimColumn = new org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema();
+   dimColumn.setColumnar(true);
+   dimColumn.setColumnName(columnName);
+   dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
+   dimColumn.setDataType(DataType.STRING);
+   dimColumn.setDimensionColumn(true);
+   List<Encoding> encodeList =
+        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+   encodeList.add(Encoding.DICTIONARY);
+   dimColumn.setEncodingList(encodeList);
+   dimColumn.setNumberOfChild(0);;
+   return dimColumn;
+ }
 
   /**
    * test writing fact metadata.
@@ -106,14 +134,24 @@ public class CarbonFooterWriterTest extends TestCase{
     createFile();
     CarbonFooterWriter writer = new CarbonFooterWriter(filePath);
     List<BlockletInfoColumnar> infoColumnars = getBlockletInfoColumnars();
-    writer.writeFooter(CarbonMetadataUtil
-        .convertFileFooter(infoColumnars, 6, new int[] { 2, 4, 5, 7 },
-        		Arrays.asList(new ColumnSchema[]{getDimensionColumn("IMEI1"),
+    int[] cardinalities = new int[] { 2, 4, 5, 7, 9, 10};
+    List<ColumnSchema> columnSchema = Arrays.asList(new ColumnSchema[]{getDimensionColumn("IMEI1"),
 						getDimensionColumn("IMEI2"),
 						getDimensionColumn("IMEI3"),
 						getDimensionColumn("IMEI4"),
 						getDimensionColumn("IMEI5"),
-						getDimensionColumn("IMEI6")})), 0);
+						getDimensionColumn("IMEI6")});
+    List<org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema> wrapperColumnSchema = Arrays.asList(new org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema[]{getWrapperDimensionColumn("IMEI1"),
+    	getWrapperDimensionColumn("IMEI2"),
+    	getWrapperDimensionColumn("IMEI3"),
+    	getWrapperDimensionColumn("IMEI4"),
+    	getWrapperDimensionColumn("IMEI5"),
+    	getWrapperDimensionColumn("IMEI6")});
+    int[] colCardinality = CarbonUtil.getFormattedCardinality(cardinalities, wrapperColumnSchema);
+    SegmentProperties segmentProperties = new SegmentProperties(wrapperColumnSchema, cardinalities);
+    writer.writeFooter(CarbonMetadataUtil
+        .convertFileFooter(infoColumnars, 6, colCardinality,
+        		columnSchema,segmentProperties), 0);
 
     CarbonFooterReader metaDataReader = new CarbonFooterReader(filePath, 0);
     List<BlockletInfoColumnar> nodeInfoColumnars =

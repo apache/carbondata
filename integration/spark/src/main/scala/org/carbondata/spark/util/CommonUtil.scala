@@ -16,8 +16,13 @@
  */
 package org.carbondata.spark.util
 
-import org.apache.spark.sql.execution.command.Field
+import java.util
+import java.util.UUID
 
+import org.apache.spark.sql.execution.command.{ColumnProperty, Field}
+
+import org.carbondata.core.carbon.metadata.datatype.DataType
+import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 
 object CommonUtil {
@@ -54,6 +59,7 @@ object CommonUtil {
 
   }
 
+
   def isTimeStampColumn(colName: String, dims: Seq[Field]): Boolean = {
     dims.foreach { dim =>
       if (dim.column.equalsIgnoreCase(colName)) {
@@ -83,5 +89,76 @@ object CommonUtil {
       }
     }
     false
+  }
+
+  def getColumnProperties(column: String,
+      tableProperties: Map[String, String]): Option[util.List[ColumnProperty]] = {
+    val fieldProps = new util.ArrayList[ColumnProperty]()
+    val columnPropertiesStartKey = CarbonCommonConstants.COLUMN_PROPERTIES + "." + column + "."
+    tableProperties.foreach {
+      case (key, value) =>
+        if (key.startsWith(columnPropertiesStartKey)) {
+          fieldProps.add(ColumnProperty(key.substring(columnPropertiesStartKey.length(),
+            key.length()), value))
+        }
+    }
+    if (fieldProps.isEmpty()) {
+      None
+    } else {
+      Some(fieldProps)
+    }
+  }
+
+  def validateTblProperties(tableProperties: Map[String, String], fields: Seq[Field]): Boolean = {
+    val itr = tableProperties.keys
+    var isValid: Boolean = true
+    tableProperties.foreach {
+      case (key, value) =>
+        if (!validateFields(key, fields)) {
+          isValid = false
+          throw new MalformedCarbonCommandException(s"Invalid table properties ${ key }")
+        }
+    }
+    isValid
+  }
+
+  def validateFields(key: String, fields: Seq[Field]): Boolean = {
+    var isValid: Boolean = false
+    fields.foreach { field =>
+      if (field.children.isDefined && field.children.get != null) {
+        field.children.foreach(fields => {
+          fields.foreach(complexfield => {
+            val column = if ("val" == complexfield.column) {
+              field.column
+            } else {
+              field.column + "." + complexfield.column
+            }
+            if (validateColumnProperty(key, column)) {
+              isValid = true
+            }
+          }
+          )
+        }
+        )
+      } else {
+        if (validateColumnProperty(key, field.column)) {
+          isValid = true
+        }
+      }
+
+    }
+    isValid
+  }
+
+  def validateColumnProperty(key: String, column: String): Boolean = {
+    if (!key.startsWith(CarbonCommonConstants.COLUMN_PROPERTIES)) {
+      return true
+    }
+    val columnPropertyKey = CarbonCommonConstants.COLUMN_PROPERTIES + "." + column + "."
+    if (key.startsWith(columnPropertyKey)) {
+      true
+    } else {
+      false
+    }
   }
 }

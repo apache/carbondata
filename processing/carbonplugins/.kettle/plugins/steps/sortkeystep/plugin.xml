@@ -20,7 +20,6 @@
 
 <plugin
    id="SortKey"
-   iconfile="icon.png"
    description="Carbon Sort"
    tooltip="Carbon Sort"
    category="Carbon"

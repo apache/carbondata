@@ -1,0 +1,38 @@
+imei,specialchar
+1AA0,double"specialchar"quote
+1AA1,hash#124
+1AA2,space 125
+1AA3,ampersand&&hi
+1AA4,escape\esc
+1AA5,not!hi
+1AA6,braces(hi)
+1AA7,percentage%hi
+1AA8,Tilde~~
+1AA9,dollar$hi
+1AA10,star***hi
+1AA11,colon:hi
+1AA12,semi;colon
+1AA13,quote'1'22
+1AA14,underscore_hi
+1AA15,equals=hi
+1AA16,plus+hi
+1AA17,minus-hi
+1AA18,combination ~!@#$%^&*()_+| CA
+1AA19,https://www.google.co.in/?gws_rd=cr&ei=BF7rUqOoEc6GrgeIooHQDQ#q=India+state BC
+1AA20,LonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmembernameLonglevelmember
+1AA21,char123234Number
+1AA22,\\  esc  !@~##%%&**(*&((*()()*  ""  some thing ""  ' DF
+1AA23,select * from sale_fact
+1AA24,pipe|hi
+1AA25,Curly{braces}hi
+1AA26,braces[hi]
+1AA27,question?hi
+1AA28,lessthan< hi
+1AA29,morethan>hi
+1AA30,dot.hi
+1AA31,comma,hi
+1AA32,escapecomma\,hi
+1AA33,fslash/hi
+1AA34,a@b
+1AA35,\\n
+1AA36,"\"i\""

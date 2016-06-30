@@ -31,6 +31,7 @@ import org.carbondata.core.cache.Cache;
 import org.carbondata.core.cache.CacheProvider;
 import org.carbondata.core.cache.CacheType;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.ColumnIdentifier;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriter;
@@ -208,7 +209,8 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
    * @param columnIdentifier
    * @throws IOException
    */
-  private void writeSortIndexFile(List<String> data, String columnIdentifier) throws IOException {
+  private void writeSortIndexFile(List<String> data, String columnId) throws IOException {
+	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, null);
     Map<String, Integer> dataToSurrogateKeyMap = new HashMap<>(data.size());
     int surrogateKey = 0;
     List<Integer> invertedIndexList = new ArrayList<>(data.size());

@@ -190,6 +190,8 @@ public class GraphConfigurationInfo {
 
   private Boolean[] isNoDictionaryDimMapping;
 
+  private String columnPropertiesString;
+
   /**
    * wrapper object holding the columnschemadetails
    */
@@ -997,6 +999,14 @@ public class GraphConfigurationInfo {
 
   public void setIsNoDictionaryDimMapping(Boolean[] isNoDictionaryDimMapping) {
     this.isNoDictionaryDimMapping = isNoDictionaryDimMapping;
+  }
+
+  public void setColumnPropertiesString(String columnPropertiesString) {
+    this.columnPropertiesString = columnPropertiesString;
+  }
+
+  public String getColumnPropertiesString() {
+    return this.columnPropertiesString;
   }
 
   /**

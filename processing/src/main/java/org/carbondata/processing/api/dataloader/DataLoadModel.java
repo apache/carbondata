@@ -59,6 +59,7 @@ public class DataLoadModel {
    */
   private String factTimeStamp;
 
+  private String escapeCharacter;
   /**
    * @return Returns the schemaInfo.
    */
@@ -187,6 +188,14 @@ public class DataLoadModel {
    */
   public void setFactTimeStamp(String factTimeStamp) {
     this.factTimeStamp = factTimeStamp;
+  }
+
+  public String getEscapeCharacter() {
+    return escapeCharacter;
+  }
+
+  public void setEscapeCharacter(String escapeCharacter) {
+    this.escapeCharacter = escapeCharacter;
   }
 }
 

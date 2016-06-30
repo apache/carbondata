@@ -20,7 +20,6 @@
 
 <plugin
    id="CarbonFactReader"
-   iconfile="icon.png"
    description="Carbon Fact Reader"
    tooltip="Carbon Fact Reader"
    category="Carbon"

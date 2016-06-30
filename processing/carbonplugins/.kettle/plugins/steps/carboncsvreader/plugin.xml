@@ -21,7 +21,6 @@
 <plugin
 
    id="CSVReader"
-   iconfile="icon.png"
    description="Carbon CSVReader"
    tooltip="Carbon CSVReader"
    category="Carbon"

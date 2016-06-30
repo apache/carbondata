@@ -18,6 +18,8 @@
  */
 package org.carbondata.hadoop;
 
+import org.carbondata.core.carbon.path.CarbonTablePath;
+
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 
@@ -37,6 +39,6 @@ public class CarbonPathFilter implements PathFilter {
   }
 
   @Override public boolean accept(Path path) {
-    return true;
+    return CarbonTablePath.isCarbonDataFile(path.getName());
   }
 }

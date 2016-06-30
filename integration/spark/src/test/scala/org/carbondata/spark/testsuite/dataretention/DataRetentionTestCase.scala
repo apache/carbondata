@@ -185,5 +185,42 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       sql("select count(*) from caRbon_TabLe_1"), Seq(Row(0)))
 
   }
+  test("RetentionTest_DeleteSegmentsByLoadTimeValiadtion") {
+
+    try {
+      sql(
+        "DELETE SEGMENTS FROM TABLE dataretentionTable where STARTTIME before" +
+        " 'abcd-01-01 00:00:00'")
+      assert(false)
+    } catch {
+      case e: MalformedCarbonCommandException =>
+        assert(e.getMessage.contains("Invalid load start time format"))
+      case _ => assert(false)
+    }
+
+    try {
+      sql(
+        "DELETE SEGMENTS FROM TABLE dataretentionTable where STARTTIME before" +
+        " '2099:01:01 00:00:00'")
+      assert(false)
+    } catch {
+      case e: MalformedCarbonCommandException =>
+        assert(e.getMessage.contains("Invalid load start time format"))
+      case _ => assert(false)
+    }
+
+    checkAnswer(
+      sql("SELECT country, count(salary) AS amount FROM DataRetentionTable WHERE country" +
+          " IN ('china','ind','aus','eng') GROUP BY country"
+      ),
+      Seq(Row("ind", 9))
+    )
+    sql("DELETE SEGMENTS FROM TABLE dataretentionTable where STARTTIME before '2099-01-01'")
+    checkAnswer(
+      sql("SELECT country, count(salary) AS amount FROM DataRetentionTable WHERE country" +
+          " IN ('china','ind','aus','eng') GROUP BY country"), Seq())
+
+
+  }
 
 }

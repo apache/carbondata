@@ -29,7 +29,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 
 import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.CarbonTableIdentifier
+import org.carbondata.core.carbon.{CarbonTableIdentifier, ColumnIdentifier}
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.spark.load.CarbonLoaderUtil
@@ -140,6 +140,7 @@ case class DictionaryLoadModel(table: CarbonTableIdentifier,
     highCardIdentifyEnable: Boolean,
     highCardThreshold: Int,
     rowCountPercentage: Double,
+    columnIdentifier: Array[ColumnIdentifier],
     isFirstLoad: Boolean) extends Serializable
 
 case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends Serializable
@@ -232,7 +233,7 @@ class CarbonGlobalDictionaryGenerateRDD(
         val t1 = System.currentTimeMillis
         dictionaryForDistinctValueLookUp = if (model.dictFileExists(split.index)) {
           CarbonLoaderUtil.getDictionary(model.table,
-            model.primDimensions(split.index).getColumnId,
+            model.columnIdentifier(split.index),
             model.hdfsLocation,
             model.primDimensions(split.index).getDataType
           )
@@ -275,7 +276,7 @@ class CarbonGlobalDictionaryGenerateRDD(
           val t4 = System.currentTimeMillis
           if (distinctValueCount > 0) {
             dictionaryForSortIndexWriting = CarbonLoaderUtil.getDictionary(model.table,
-              model.primDimensions(split.index).getColumnId,
+              model.columnIdentifier(split.index),
               model.hdfsLocation,
               model.primDimensions(split.index).getDataType)
             GlobalDictionaryUtil.writeGlobalDictionaryColumnSortInfo(model, split.index,

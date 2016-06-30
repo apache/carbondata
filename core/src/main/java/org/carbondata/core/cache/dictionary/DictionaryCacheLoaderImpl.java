@@ -22,11 +22,12 @@ package org.carbondata.core.cache.dictionary;
 import java.io.IOException;
 import java.util.List;
 
+import org.carbondata.common.factory.CarbonCommonFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.ColumnIdentifier;
 import org.carbondata.core.reader.CarbonDictionaryReader;
-import org.carbondata.core.reader.CarbonDictionaryReaderImpl;
 import org.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReader;
-import org.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReaderImpl;
+import org.carbondata.core.service.DictionaryService;
 
 /**
  * This class is responsible for loading the dictionary data for given columns
@@ -67,7 +68,7 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
    *                                   read in memory after dictionary loading
    * @throws IOException
    */
-  @Override public void load(DictionaryInfo dictionaryInfo, String columnIdentifier,
+  @Override public void load(DictionaryInfo dictionaryInfo, ColumnIdentifier columnIdentifier,
       long dictionaryChunkStartOffset, long dictionaryChunkEndOffset, boolean loadSortIndex)
       throws IOException {
     List<byte[]> dictionaryChunk =
@@ -87,7 +88,7 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
    * @return list of dictionary value
    * @throws IOException
    */
-  private List<byte[]> load(String columnIdentifier, long startOffset, long endOffset)
+  private List<byte[]> load(ColumnIdentifier columnIdentifier, long startOffset, long endOffset)
       throws IOException {
     CarbonDictionaryReader dictionaryReader = getDictionaryReader(columnIdentifier);
     List<byte[]> dictionaryValue = null;
@@ -106,7 +107,7 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
    * @param columnIdentifier
    * @throws IOException
    */
-  private void readSortIndexFile(DictionaryInfo dictionaryInfo, String columnIdentifier)
+  private void readSortIndexFile(DictionaryInfo dictionaryInfo, ColumnIdentifier columnIdentifier)
       throws IOException {
     CarbonDictionarySortIndexReader sortIndexReader = getSortIndexReader(columnIdentifier);
     try {
@@ -123,20 +124,19 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
    * @param columnIdentifier unique column identifier
    * @return carbon dictionary reader instance
    */
-  private CarbonDictionaryReader getDictionaryReader(String columnIdentifier) {
-    CarbonDictionaryReader dictionaryReader =
-        new CarbonDictionaryReaderImpl(carbonStorePath, carbonTableIdentifier, columnIdentifier);
-    return dictionaryReader;
+  private CarbonDictionaryReader getDictionaryReader(ColumnIdentifier columnIdentifier) {
+    DictionaryService dictService = CarbonCommonFactory.getDictionaryService();
+    return dictService
+        .getDictionaryReader(carbonTableIdentifier, columnIdentifier, carbonStorePath);
   }
 
   /**
    * @param columnIdentifier unique column identifier
    * @return sort index reader instance
    */
-  private CarbonDictionarySortIndexReader getSortIndexReader(String columnIdentifier) {
-    CarbonDictionarySortIndexReader sortIndexReader =
-        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, columnIdentifier,
-            carbonStorePath);
-    return sortIndexReader;
+  private CarbonDictionarySortIndexReader getSortIndexReader(ColumnIdentifier columnIdentifier) {
+    DictionaryService dictService = CarbonCommonFactory.getDictionaryService();
+    return dictService
+        .getDictionarySortIndexReader(carbonTableIdentifier, columnIdentifier, carbonStorePath);
   }
 }

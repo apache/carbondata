@@ -87,6 +87,8 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
 
   private String blocksID;
 
+  private String escapeCharacter;
+
   public DataProcessTaskStatus(String schemaName, String cubeName, String tableName) {
     this.schemaName = schemaName;
     this.cubeName = cubeName;
@@ -289,5 +291,13 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
 
   public void setBlocksID(String blocksID) {
     this.blocksID = blocksID;
+  }
+
+  public String getEscapeCharacter() {
+    return escapeCharacter;
+  }
+
+  public void setEscapeCharacter(String escapeCharacter) {
+    this.escapeCharacter = escapeCharacter;
   }
 }

@@ -89,5 +89,4 @@ public class FilterUnsupportedException extends Exception {
   public String getMessage() {
     return this.msg;
   }
-
 }

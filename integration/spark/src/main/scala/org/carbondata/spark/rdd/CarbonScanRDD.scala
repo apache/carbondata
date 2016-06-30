@@ -80,11 +80,14 @@ class CarbonScanRDD[V: ClassTag](
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     // set filter resolver tree
     try {
-      val filterResolver = carbonInputFormat
-        .getResolvedFilter(job.getConfiguration, filterExpression)
-
-      CarbonInputFormat.setFilterPredicates(job.getConfiguration, filterResolver)
-      queryModel.setFilterExpressionResolverTree(filterResolver)
+      // before applying filter check whether segments are available in the table.
+      val splits = carbonInputFormat.getSplits(job)
+      if (!splits.isEmpty) {
+        var filterResolver = carbonInputFormat
+          .getResolvedFilter(job.getConfiguration, filterExpression)
+        CarbonInputFormat.setFilterPredicates(job.getConfiguration, filterResolver)
+        queryModel.setFilterExpressionResolverTree(filterResolver)
+      }
     }
     catch {
       case e: Exception =>

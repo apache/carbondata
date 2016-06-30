@@ -22,6 +22,7 @@ package org.carbondata.scan.expression.arithmetic;
 import org.carbondata.scan.expression.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
+import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.carbondata.scan.filter.intf.ExpressionType;
 import org.carbondata.scan.filter.intf.RowIntf;
@@ -34,7 +35,8 @@ public class SubstractExpression extends BinaryArithmeticExpression {
     super(left, right);
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+  @Override public ExpressionResult evaluate(RowIntf value)
+      throws FilterUnsupportedException, FilterIllegalMemberException {
     ExpressionResult subtractExprLeftRes = left.evaluate(value);
     ExpressionResult subtractExprRightRes = right.evaluate(value);
     ExpressionResult val1 = subtractExprLeftRes;

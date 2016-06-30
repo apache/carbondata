@@ -72,7 +72,6 @@ import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
@@ -368,10 +367,11 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           columnsInfo.setComplexTypesMap(meta.getComplexTypes());
           columnsInfo.setDimensionColumnIds(meta.getDimensionColumnIds());
           columnsInfo.setColumnSchemaDetailsWrapper(meta.getColumnSchemaDetailsWrapper());
+          columnsInfo.setColumnProperties(meta.getColumnPropertiesMap());
           updateBagLogFileName();
           String key = meta.getSchemaName() + '/' + meta.getCubeName() + '_' + meta.getTableName();
-          badRecordslogger = new BadRecordslogger(key, csvFilepath,
-              getBadLogStoreLocation(meta.getSchemaName() + '/' + meta.getCubeName()));
+          badRecordslogger = new BadRecordslogger(key, csvFilepath, getBadLogStoreLocation(
+              meta.getSchemaName() + '/' + meta.getCubeName() + "/" + meta.getTaskNo()));
 
           columnsInfo.setTimeOrdinalIndices(meta.timeOrdinalIndices);
           surrogateKeyGen = new FileStoreSurrogateKeyGenForCSV(columnsInfo, meta.getPartitionID(),
@@ -458,15 +458,15 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       }
 
       startReadingProcess(numberOfNodes);
-      CarbonUtil.writeLevelCardinalityFile(loadFolderLoc, meta.getTableName(),
-          getUpdatedCardinality());
       badRecordslogger.closeStreams();
       if (!meta.isAggregate()) {
         closeNormalizedHierFiles();
       }
       if (writeCounter == 0) {
-        putRow(data.getOutputRowMeta(), new Object[outSize]);
+        return processWhenRowIsNull();
       }
+      CarbonUtil.writeLevelCardinalityFile(loadFolderLoc, meta.getTableName(),
+          getUpdatedCardinality());
       LOGGER.info("Record Procerssed For table: " + meta.getTableName());
       String logMessage =
           "Summary: Carbon CSV Based Seq Gen Step : " + readCounter + ": Write: " + writeCounter;
@@ -972,10 +972,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                   .getMeasureValueBasedOnDataType(msr, msrDataType[meta.msrMapping[msrCount]],
                       meta.carbonMeasures[meta.msrMapping[msrCount]]);
             } catch (NumberFormatException ex) {
-              badRecordslogger
-                  .addBadRecordsToBilder(r, inputColumnsSize, "Measure should be number",
-                      valueToCheckAgainst);
-              return null;
+              LOGGER.warn("Cant not convert : " + msr
+                  + " to Numeric type value. Value considered as null.");
+              out[memberMapping[dimLen - meta.complexTypes.size() + index]] = null;
             }
           }
         }
