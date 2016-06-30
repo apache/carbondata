@@ -20,7 +20,7 @@ package org.apache.spark.sql.execution.command
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util
-import java.util.{Date, UUID}
+import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -30,10 +30,8 @@ import scala.util.Random
 import org.apache.spark.SparkEnv
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
-import org.apache.spark.sql.catalyst.util.DateTimeUtils
-import org.apache.spark.sql.catalyst.util.DateTimeUtils.SQLTimestamp
+import org.apache.spark.sql.catalyst.TableIdentifier._
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Cast, Literal}
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.types.TimestampType
@@ -48,20 +46,19 @@ import org.carbondata.core.carbon.metadata.datatype.DataType
 import org.carbondata.core.carbon.metadata.encoder.Encoding
 import org.carbondata.core.carbon.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
 import org.carbondata.core.carbon.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
-import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
-import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema
+import org.carbondata.core.carbon.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.integration.spark.merger.CompactionType
 import org.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
 import org.carbondata.lcm.status.SegmentStatusManager
+import org.carbondata.spark.CarbonSparkFactory
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 import org.carbondata.spark.load._
 import org.carbondata.spark.partition.api.impl.QueryPartitionHelper
 import org.carbondata.spark.rdd.CarbonDataRDDFactory
-import org.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, GlobalDictionaryUtil}
-import org.carbondata.spark.CarbonSparkFactory
+import org.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
 
 
 case class tableModel(
@@ -1568,7 +1565,7 @@ private[sql] case class LoadTable(
       catch {
         case ex: Exception =>
           LOGGER.error(ex)
-          LOGGER.audit(s"Dataload failure for $schemaName.$tableName. Please check the logs")
+          LOGGER.audit(s"Dataload failure for $dbName.$tableName. Please check the logs")
           throw ex
       }
       finally {
@@ -1583,7 +1580,7 @@ private[sql] case class LoadTable(
         } catch {
           case ex: Exception =>
             LOGGER.error(ex)
-            LOGGER.audit(s"Dataload failure for $schemaName.$tableName. " +
+            LOGGER.audit(s"Dataload failure for $dbName.$tableName. " +
               "Problem deleting the partition folder")
             throw ex
         }

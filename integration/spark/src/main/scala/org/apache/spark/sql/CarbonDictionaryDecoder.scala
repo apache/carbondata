@@ -198,9 +198,13 @@ case class CarbonDictionaryDecoder(
       cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary]) = {
     val dicts: Seq[Dictionary] = getDictionaryColumnIds.map { f =>
       if (f._2 != null) {
-        cache.get(new DictionaryColumnUniqueIdentifier(
-          atiMap.get(f._1).get.getCarbonTableIdentifier,
-          f._2, f._3))
+        try {
+          cache.get(new DictionaryColumnUniqueIdentifier(
+            atiMap.get(f._1).get.getCarbonTableIdentifier,
+            f._2, f._3))
+        } catch {
+          case _ => null
+        }
       } else {
         null
       }

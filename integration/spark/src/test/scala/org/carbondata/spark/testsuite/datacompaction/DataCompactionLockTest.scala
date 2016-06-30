@@ -2,18 +2,18 @@ package org.carbondata.spark.testsuite.datacompaction
 
 import java.io.File
 
-import org.apache.spark.sql.Row
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
+
 import org.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
 import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.carbondata.core.util.CarbonProperties
+import org.carbondata.lcm.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.carbondata.lcm.status.SegmentStatusManager
-import org.scalatest.BeforeAndAfterAll
-
-import scala.collection.JavaConverters._
 
 /**
   * FT for data compaction Locking scenario.

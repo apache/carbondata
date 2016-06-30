@@ -47,37 +47,37 @@ class ColumnGroupDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
       sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp"),
       sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal"))
   }
-  
+
   test("select all dimension query with filter on columnar") {
     checkAnswer(
       sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp where column1='column1666'"),
       sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal where column1='column1666'"))
   }
-  
+
   test("select all dimension query with filter on column group dimension") {
     checkAnswer(
       sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp where column3='column311'"),
       sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal where column3='column311'"))
   }
-  
+
   test("select all dimension query with filter on two dimension from different column group") {
     checkAnswer(
       sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp where column3='column311' and column7='column74' "),
       sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal where column3='column311' and column7='column74'"))
   }
-  
+
   test("select all dimension query with filter on two dimension from same column group") {
     checkAnswer(
       sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp where column3='column311' and column4='column42' "),
       sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal where column3='column311' and column4='column42'"))
   }
-  
+
   test("select all dimension query with filter on two dimension one from column group other from columnar") {
     checkAnswer(
       sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from colgrp where column3='column311' and column5='column516' "),
       sql("select column1,column2,column3,column4,column5,column6,column7,column8,column9,column10 from normal where column3='column311' and column5='column516'"))
   }
-  
+
   test("select few dimension") {
     checkAnswer(
       sql("select column1,column3,column4,column5,column6,column9,column10 from colgrp"),

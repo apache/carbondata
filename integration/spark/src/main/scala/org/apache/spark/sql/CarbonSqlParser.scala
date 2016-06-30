@@ -17,8 +17,6 @@
 
 package org.apache.spark.sql
 
-import java.nio.charset.Charset
-import java.util
 import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
@@ -33,7 +31,7 @@ import org.apache.spark.sql.catalyst.{SqlLexical, _}
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
-import org.apache.spark.sql.execution.command.{DimensionRelation, _}
+import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
 
@@ -601,8 +599,8 @@ class CarbonSqlParser()
   }
 
   protected def extractColumnProperties(fields: Seq[Field], tableProperties: Map[String, String]):
-  util.Map[String, util.List[ColumnProperty]] = {
-    val colPropMap = new util.HashMap[String, util.List[ColumnProperty]]()
+  java.util.Map[String, java.util.List[ColumnProperty]] = {
+    val colPropMap = new java.util.HashMap[String, java.util.List[ColumnProperty]]()
     fields.foreach { field =>
       if (field.children.isDefined && field.children.get != null) {
         fillAllChildrenColumnProperty(field.column, field.children, tableProperties, colPropMap)
@@ -615,7 +613,7 @@ class CarbonSqlParser()
 
   protected def fillAllChildrenColumnProperty(parent: String, fieldChildren: Option[List[Field]],
     tableProperties: Map[String, String],
-    colPropMap: util.HashMap[String, util.List[ColumnProperty]]) {
+    colPropMap: java.util.HashMap[String, java.util.List[ColumnProperty]]) {
     fieldChildren.foreach(fields => {
       fields.foreach(field => {
         fillColumnProperty(Some(parent), field.column, tableProperties, colPropMap)
@@ -628,7 +626,7 @@ class CarbonSqlParser()
   protected def fillColumnProperty(parentColumnName: Option[String],
     columnName: String,
     tableProperties: Map[String, String],
-    colPropMap: util.HashMap[String, util.List[ColumnProperty]]) {
+    colPropMap: java.util.HashMap[String, java.util.List[ColumnProperty]]) {
     val (tblPropKey, colProKey) = getKey(parentColumnName, columnName)
     val colProps = CommonUtil.getColumnProperties(tblPropKey, tableProperties)
     if (None != colProps) {
