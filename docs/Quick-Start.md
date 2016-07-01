@@ -60,12 +60,14 @@ $ ./bin/spark-shell --master local --jars ${carbondata_jar},${mysql_jar}
 import org.apache.spark.sql.CarbonContext
 import java.io.File
 import org.apache.hadoop.hive.conf.HiveConf
-val cc = new CarbonContext(sc, "./carbondata/store")
+val storePath = "hdfs://hacluster/Opt/CarbonStore"
+val cc = new CarbonContext(sc, storePath)
 cc.setConf("carbon.kettle.home","./carbondata/carbonplugins")
 val metadata = new File("").getCanonicalPath + "/carbondata/metadata"
 cc.setConf("hive.metastore.warehouse.dir", metadata)
 cc.setConf(HiveConf.ConfVars.HIVECHECKFILEFORMAT.varname, "false")
 ```
+Note: `storePath` should be a hdfs path, the path is used to store table data.
 
 * Create table
 
@@ -89,7 +91,7 @@ EOF
 
 ```
 val dataFilePath = new File("").getCanonicalPath + "/carbondata/sample.csv"
-cc.sql(s"load data inpath '$dataFilePath' into table table1")
+cc.sql(s"load data local inpath '$dataFilePath' into table table1")
 ```
 
 * Query data from table1
