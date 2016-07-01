@@ -67,7 +67,7 @@ val metadata = new File("").getCanonicalPath + "/carbondata/metadata"
 cc.setConf("hive.metastore.warehouse.dir", metadata)
 cc.setConf(HiveConf.ConfVars.HIVECHECKFILEFORMAT.varname, "false")
 ```
-Note: `storePath` should be a hdfs path, the path is used to store table data.
+*Note*: `storePath` should be a hdfs path, the path is used to store table data.
 
 * Create table
 
