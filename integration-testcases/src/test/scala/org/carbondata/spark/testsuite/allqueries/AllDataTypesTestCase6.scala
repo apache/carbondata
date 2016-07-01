@@ -92,7 +92,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
           "bomCode string,internalModels string, deliveryTime string, channelsId string, " +
           "channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince " +
           "string, deliveryCity string,deliveryDistrict string, deliveryStreet string, " +
-          "oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry " +
+          "oxSingleNumber string,contractNumber int, ActiveCheckTime string, ActiveAreaId string, ActiveCountry " +
           "string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet " +
           "string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, " +
           "Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, " +
@@ -104,8 +104,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
           "Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, " +
           "Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string," +
           " Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, " +
-          "Latest_phonePADPartitionedVersions string, Latest_operatorId string, " +
-          "gamePointDescription string, gamePointId int,contractNumber int) row format " +
+          "Latest_phonePADPartitionedVersions string, Latest_operatorId string,gamePointId int," +
+          "gamePointDescription string) row format " +
           "delimited fields terminated by ','"
       )
 
@@ -367,7 +367,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
   test("select sum( DISTINCT channelsId) a  from Carbon_automation_test6")({
     checkAnswer(
       sql("select sum( DISTINCT channelsId) a  from Carbon_automation_test6"),
-      Seq(Row(428.0)))
+      sql("select sum( DISTINCT channelsId) a  from hivetable"))
   })
 
   //TC_083
@@ -419,7 +419,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
   test("select variance(gamePointId) as a   from Carbon_automation_test6")({
     checkAnswer(
       sql("select variance(gamePointId) as a   from Carbon_automation_test6"),
-      Seq(Row(654787.843930927)))
+      sql("select variance(gamePointId) as a   from hivetable"))
   })
 
   //TC_120
@@ -888,14 +888,14 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
   test("select variance(gamepointid), var_pop(gamepointid)  from Carbon_automation_test6 where channelsid>2")({
     checkAnswer(
       sql("select variance(gamepointid), var_pop(gamepointid)  from Carbon_automation_test6 where channelsid>2"),
-      Seq(Row(622630.4599570761, 622630.4599570761)))
+      sql("select variance(gamepointid), var_pop(gamepointid)  from hivetable where channelsid>2"))
   })
 
   //TC_445
   test("select variance(bomcode), var_pop(gamepointid)  from Carbon_automation_test6 where activeareaid>3")({
     checkAnswer(
       sql("select variance(bomcode), var_pop(gamepointid)  from Carbon_automation_test6 where activeareaid>3"),
-      Seq(Row(1.4776446556169722E10, 663683.3954750763)))
+      sql("select variance(bomcode), var_pop(gamepointid)  from hivetable where activeareaid>3"))
   })
 
   //TC_447

@@ -24,7 +24,8 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.CatalystConf
-import org.apache.spark.sql.catalyst.expressions.{AggregateExpression, Attribute, _}
+import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, _}
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -43,13 +44,9 @@ class CarbonOptimizer(optimizer: Optimizer, conf: CatalystConf)
 
   override def execute(plan: LogicalPlan): LogicalPlan = {
     val executedPlan: LogicalPlan = optimizer.execute(plan)
-    if (!conf.asInstanceOf[CarbonSQLConf].pushComputation) {
-      val relations = collectCarbonRelation(plan)
-      if (relations.nonEmpty) {
-        new ResolveCarbonFunctions(relations)(executedPlan)
-      } else {
-        executedPlan
-      }
+    val relations = collectCarbonRelation(plan)
+    if (relations.nonEmpty) {
+      new ResolveCarbonFunctions(relations)(executedPlan)
     } else {
       executedPlan
     }
@@ -110,19 +107,28 @@ class CarbonOptimizer(optimizer: Optimizer, conf: CatalystConf)
 
           case agg: Aggregate if !agg.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
             val attrsOndimAggs = new util.HashSet[Attribute]
-            agg.aggregateExpressions.map { aggExp =>
-              aggExp.transform {
-                case aggExp: AggregateExpression =>
-                  collectDimensionAggregates(aggExp, attrsOndimAggs, aliasMap)
-                  aggExp
-                case a@Alias(attr: Attribute, name) =>
-                  aliasMap.put(a.toAttribute, attr)
-                  a
-              }
+            agg.aggregateExpressions.map {
+              case attr: AttributeReference =>
+              case a@Alias(attr: AttributeReference, name) => aliasMap.put(a.toAttribute, attr)
+              case aggExp: AggregateExpression =>
+                aggExp.transform {
+                  case aggExp: AggregateExpression =>
+                    collectDimensionAggregates(aggExp, attrsOndimAggs, aliasMap)
+                    aggExp
+                  case a@Alias(attr: Attribute, name) =>
+                    aliasMap.put(a.toAttribute, attr)
+                    a
+                }
+              case others =>
+                others.collect {
+                  case attr: AttributeReference
+                    if isDictionaryEncoded(attr, relations, aliasMap) =>
+                    attrsOndimAggs.add(aliasMap.getOrElse(attr, attr))
+                }
             }
             var child = agg.child
             // Incase if the child also aggregate then push down decoder to child
-            if (attrsOndimAggs.size() > 0 && !child.isInstanceOf[Aggregate]) {
+            if (attrsOndimAggs.size() > 0 && !child.equals(agg)) {
               child = CarbonDictionaryTempDecoder(attrsOndimAggs,
                 new util.HashSet[Attribute](),
                 agg.child)
@@ -398,10 +404,10 @@ class CarbonOptimizer(optimizer: Optimizer, conf: CatalystConf)
         allAttrsNotDecode: util.Set[Attribute],
         aliasMap: CarbonAliasDecoderRelation) = {
       val uAttr = aliasMap.getOrElse(attr, attr)
-      val relation = relations.find(p => p.attributeMap.contains(uAttr))
+      val relation = relations.find(p => p.contains(uAttr))
       if (relation.isDefined) {
         relation.get.carbonRelation.carbonRelation.metaData.dictionaryMap.get(uAttr.name) match {
-          case Some(true) if !allAttrsNotDecode.contains(uAttr) =>
+          case Some(true) if !allAttrsNotDecode.asScala.exists(p => p.name.equals(uAttr.name)) =>
             val newAttr = AttributeReference(attr.name,
               IntegerType,
               attr.nullable,
@@ -419,7 +425,7 @@ class CarbonOptimizer(optimizer: Optimizer, conf: CatalystConf)
         relations: Seq[CarbonDecoderRelation],
         aliasMap: CarbonAliasDecoderRelation): Boolean = {
       val uAttr = aliasMap.getOrElse(attr, attr)
-      val relation = relations.find(p => p.attributeMap.contains(uAttr))
+      val relation = relations.find(p => p.contains(uAttr))
       if (relation.isDefined) {
         relation.get.carbonRelation.carbonRelation.metaData.dictionaryMap.get(uAttr.name) match {
           case Some(true) => true
@@ -443,7 +449,7 @@ class CarbonOptimizer(optimizer: Optimizer, conf: CatalystConf)
   // get the carbon relation from plan.
   def collectCarbonRelation(plan: LogicalPlan): Seq[CarbonDecoderRelation] = {
     plan collect {
-      case Subquery(alias, l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)) =>
+      case l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _) =>
         CarbonDecoderRelation(l.attributeMap, carbonRelation)
     }
   }
@@ -459,9 +465,16 @@ case class CarbonDecoderRelation(
   }
 
   def contains(attr: Attribute): Boolean = {
-    attributeMap
-       .exists(entry => entry._1.name.equals(attr.name) && entry._1.exprId.equals(attr.exprId)) ||
-     extraAttrs.exists(entry => entry.name.equals(attr.name) && entry.exprId.equals(attr.exprId))
+    var exists =
+      attributeMap.exists(entry => entry._1.name.equalsIgnoreCase(attr.name) &&
+                        entry._1.exprId.equals(attr.exprId)) ||
+      extraAttrs.exists(entry => entry.name.equalsIgnoreCase(attr.name) &&
+                                entry.exprId.equals(attr.exprId))
+    if(!exists) {
+      exists = attributeMap.exists(entry => entry._1.name.equalsIgnoreCase(attr.name)) ||
+        extraAttrs.exists(entry => entry.name.equalsIgnoreCase(attr.name) )
+    }
+    exists
   }
 }
 
@@ -474,7 +487,8 @@ case class CarbonAliasDecoderRelation() {
   }
 
   def getOrElse(key: Attribute, default: Attribute): Attribute = {
-    val value = attrMap.find(p => p._1.name.equals(key.name) && p._1.exprId.equals(key.exprId))
+    val value = attrMap.find(p =>
+      p._1.name.equalsIgnoreCase(key.name) && p._1.exprId.equals(key.exprId))
     value match {
       case Some((k, v)) => v
       case _ => default

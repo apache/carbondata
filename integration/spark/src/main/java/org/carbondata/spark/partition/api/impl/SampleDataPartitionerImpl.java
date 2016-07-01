@@ -22,20 +22,18 @@ package org.carbondata.spark.partition.api.impl;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.query.carbon.model.CarbonQueryPlan;
-import org.carbondata.query.queryinterface.query.metadata.CarbonDimensionLevelFilter;
+import org.carbondata.scan.model.CarbonQueryPlan;
 import org.carbondata.spark.partition.api.DataPartitioner;
 import org.carbondata.spark.partition.api.Partition;
 
 import org.apache.spark.sql.execution.command.Partitioner;
 
 /**
- * Sample partition based on MSISDN.
+ * Sample partition.
  */
 public class SampleDataPartitionerImpl implements DataPartitioner {
   private static final LogService LOGGER =
@@ -78,12 +76,8 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
       PartitionImpl partitionImpl =
           new PartitionImpl("" + partionCounter, baseLocation + '/' + partionCounter);
 
-      CarbonDimensionLevelFilter filter = new CarbonDimensionLevelFilter();
       List<Object> includedHashes = new ArrayList<Object>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
       includedHashes.add(partionCounter);
-
-      filter.setIncludeFilter(includedHashes);
-      partitionImpl.setPartitionDetails(partitionColumn, filter);
 
       allPartitions.add(partitionImpl);
     }
@@ -121,20 +115,9 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
   /**
    * Identify the partitions applicable for the given filter
    */
-  public List<Partition> getPartitions(Map<String, CarbonDimensionLevelFilter> filters) {
-    if (filters == null || filters.size() == 0 || filters.get(partitionColumn) == null) {
-      return allPartitions;
-    }
+  public List<Partition> getPartitions() {
+    return allPartitions;
 
-    CarbonDimensionLevelFilter msisdnFilter = filters.get(partitionColumn);
-    List<Partition> allowedPartitions =
-        new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-
-    if (msisdnFilter.getIncludeFilter().isEmpty()) {
-      // Partition check can be done only for include filter list.
-      // If the filter is of other type,return all the partitions list
-      return allPartitions;
-    }
     // TODO: this has to be redone during partitioning implementation
     //    for (Partition aPartition : allPartitions) {
     //      CarbonDimensionLevelFilter partitionFilterDetails =
@@ -151,7 +134,6 @@ public class SampleDataPartitionerImpl implements DataPartitioner {
     //      }
     //    }
 
-    return allowedPartitions;
   }
 
   private int hashCode(long key) {

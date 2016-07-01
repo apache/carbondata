@@ -20,7 +20,6 @@
 package org.carbondata.core.datastorage.store.columnar;
 
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
-import org.carbondata.core.vo.ColumnGroupModel;
 
 public class ColumnarKeyStoreInfo {
   private int numberOfKeys;

@@ -34,12 +34,12 @@
   </Match>
 
   <Match>
-    <Class name="org.carbondata.query.aggregator.impl.BitSet"/>
+    <Class name="org.carbondata.scan.aggregator.impl.BitSet"/>
     <Bug pattern="SE_TRANSIENT_FIELD_NOT_RESTORED"/>
   </Match>
 
   <Match>
-    <Class name="org.carbondata.query.expression.ExpressionResult"/>
+    <Class name="org.carbondata.scan.expression.ExpressionResult"/>
     <Or>
       <Method name="getBoolean"/>
     </Or>

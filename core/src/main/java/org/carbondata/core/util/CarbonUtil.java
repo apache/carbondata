@@ -45,9 +45,8 @@ import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.FileHolder;
+import org.carbondata.core.datastorage.store.columnar.ColumnGroupModel;
 import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
-import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreInfo;
 import org.carbondata.core.datastorage.store.columnar.UnBlockIndexer;
 import org.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
@@ -55,13 +54,7 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
-import org.carbondata.core.metadata.BlockletInfo;
-import org.carbondata.core.metadata.BlockletInfoColumnar;
-import org.carbondata.core.metadata.SliceMetaData;
 import org.carbondata.core.metadata.ValueEncoderMeta;
-import org.carbondata.core.reader.CarbonFooterReader;
-import org.carbondata.core.vo.ColumnGroupModel;
-import org.carbondata.query.util.DataFileFooterConverter;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -120,35 +113,6 @@ public final class CarbonUtil {
         }
       }
     }
-  }
-
-  public static File[] getSortedFileList(File[] fileArray) {
-    Arrays.sort(fileArray, new Comparator<File>() {
-      public int compare(File o1, File o2) {
-        try {
-          return o1.getName().compareTo(o2.getName());
-        } catch (Exception e) {
-
-          LOGGER.error(e, "Error while getSortedFile");
-          return 0;
-        }
-      }
-    });
-    return fileArray;
-  }
-
-  public static CarbonFile[] getSortedFileList(CarbonFile[] fileArray) {
-    Arrays.sort(fileArray, new Comparator<CarbonFile>() {
-      public int compare(CarbonFile o1, CarbonFile o2) {
-        try {
-          return o1.getName().compareTo(o2.getName());
-        } catch (Exception e) {
-
-          return o1.getName().compareTo(o2.getName());
-        }
-      }
-    });
-    return fileArray;
   }
 
   /**
@@ -410,35 +374,6 @@ public final class CarbonUtil {
    * @param path file path array
    * @throws Exception exception
    */
-  public static void deleteFoldersAndFiles(final String... path) throws CarbonUtilException {
-    if (path == null) {
-      return;
-    }
-    try {
-      UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
-
-        @Override public Void run() throws Exception {
-          for (int i = 0; i < path.length; i++) {
-            if (null != path[i]) {
-              deleteRecursive(new File(path[i]));
-            }
-          }
-          return null;
-        }
-      });
-    } catch (IOException e) {
-      throw new CarbonUtilException("Error while deleting the folders and files");
-    } catch (InterruptedException e) {
-      throw new CarbonUtilException("Error while deleting the folders and files");
-    }
-  }
-
-  /**
-   * This method will be used to delete the folder and files
-   *
-   * @param path file path array
-   * @throws Exception exception
-   */
   public static void deleteFoldersAndFiles(final File... path) throws CarbonUtilException {
     try {
       UserGroupInformation.getLoginUser().doAs(new PrivilegedExceptionAction<Void>() {
@@ -556,10 +491,10 @@ public final class CarbonUtil {
           boolean isRenameSuccessfull = file.renameTo(newFilePath);
           if (!isRenameSuccessfull) {
             LOGGER.error("Problem renaming the cube :: " + fullPath);
-            c = new DeleteCube(file);
+            c = new DeleteFolderAndFiles(file);
             executorService.submit(c);
           } else {
-            c = new DeleteCube(FileFactory.getCarbonFile(newFilePath, fileType));
+            c = new DeleteFolderAndFiles(FileFactory.getCarbonFile(newFilePath, fileType));
             executorService.submit(c);
           }
         }
@@ -602,203 +537,12 @@ public final class CarbonUtil {
     }
   }
 
-  /**
-   * This method will be used to read leaf meta data format of meta data will be
-   * <entrycount><keylength><keyoffset><measure1length><measure1offset>
-   *
-   * @param file
-   * @param measureCount
-   * @param mdKeySize
-   * @return will return blocklet info which will have all the meta data
-   * related to data file
-   */
-  public static List<BlockletInfo> getBlockletInfo(File file, int measureCount, int mdKeySize) {
-    List<BlockletInfo> listOfBlockletInfo =
-        new ArrayList<BlockletInfo>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    String filesLocation = file.getAbsolutePath();
-    long fileSize = file.length();
-    return getBlockletDetails(listOfBlockletInfo, filesLocation, measureCount, mdKeySize, fileSize);
-  }
-
-  /**
-   * This method will be used to read leaf meta data format of meta data will be
-   * <entrycount><keylength><keyoffset><measure1length><measure1offset>
-   *
-   * @param file
-   * @param measureCount
-   * @param mdKeySize
-   * @return will return blocklet info which will have all the meta data
-   * related to data file
-   */
-  public static List<BlockletInfo> getBlockletInfo(CarbonFile file, int measureCount,
-      int mdKeySize) {
-    List<BlockletInfo> listOfNodeInfo =
-        new ArrayList<BlockletInfo>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    String filesLocation = file.getAbsolutePath();
-    long fileSize = file.getSize();
-    return getBlockletDetails(listOfNodeInfo, filesLocation, measureCount, mdKeySize, fileSize);
-  }
-
-  /**
-   * @param listOfNodeInfo
-   * @param filesLocation
-   * @param measureCount
-   * @param mdKeySize
-   * @param fileSize
-   * @return
-   */
-  private static List<BlockletInfo> getBlockletDetails(List<BlockletInfo> listOfNodeInfo,
-      String filesLocation, int measureCount, int mdKeySize, long fileSize) {
-    long offset = fileSize - CarbonCommonConstants.LONG_SIZE_IN_BYTE;
-    FileHolder fileHolder = FileFactory.getFileHolder(FileFactory.getFileType(filesLocation));
-    offset = fileHolder.readDouble(filesLocation, offset);
-    int totalMetaDataLength = (int) (fileSize - CarbonCommonConstants.LONG_SIZE_IN_BYTE - offset);
-    ByteBuffer buffer =
-        ByteBuffer.wrap(fileHolder.readByteArray(filesLocation, offset, totalMetaDataLength));
-    buffer.rewind();
-    while (buffer.hasRemaining()) {
-      int[] msrLength = new int[measureCount];
-      long[] msrOffset = new long[measureCount];
-      BlockletInfo info = new BlockletInfo();
-      byte[] startKey = new byte[mdKeySize];
-      byte[] endKey = new byte[mdKeySize];
-      info.setFileName(filesLocation);
-      info.setNumberOfKeys(buffer.getInt());
-      info.setKeyLength(buffer.getInt());
-      info.setKeyOffset(buffer.getLong());
-      buffer.get(startKey);
-      buffer.get(endKey);
-      info.setStartKey(startKey);
-      info.setEndKey(endKey);
-      for (int i = 0; i < measureCount; i++) {
-        msrLength[i] = buffer.getInt();
-        msrOffset[i] = buffer.getLong();
-      }
-      info.setMeasureLength(msrLength);
-      info.setMeasureOffset(msrOffset);
-      listOfNodeInfo.add(info);
-    }
-    fileHolder.finish();
-    return listOfNodeInfo;
-  }
-
-  /**
-   * This method will be used to read blocklet meta data format of meta data will
-   * be <entrycount><keylength><keyoffset><measure1length><measure1offset>
-   *
-   * @param file
-   * @return will return blocklet info which will have all the meta data
-   * related to leaf file
-   */
-  public static List<BlockletInfoColumnar> getBlockletInfoColumnar(CarbonFile file) {
-    List<BlockletInfoColumnar> listOfBlockletInfo =
-        new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    String filesLocation = file.getAbsolutePath();
-    long fileSize = file.getSize();
-    return getBlockletInfo(listOfBlockletInfo, filesLocation, fileSize);
-  }
-
-  /**
-   * @param listOfBlockletInfo
-   * @param filesLocation
-   * @param fileSize
-   * @return
-   */
-  private static List<BlockletInfoColumnar> getBlockletInfo(
-      List<BlockletInfoColumnar> listOfBlockletInfo, String filesLocation, long fileSize) {
-    long offset = fileSize - CarbonCommonConstants.LONG_SIZE_IN_BYTE;
-    FileHolder fileHolder = FileFactory.getFileHolder(FileFactory.getFileType(filesLocation));
-    offset = fileHolder.readDouble(filesLocation, offset);
-    CarbonFooterReader metaDataReader = new CarbonFooterReader(filesLocation, offset);
-    try {
-      listOfBlockletInfo = CarbonMetadataUtil.convertBlockletInfo(metaDataReader.readFooter());
-    } catch (IOException e) {
-      LOGGER.error("Problem while reading metadata :: " + filesLocation);
-    }
-    for (BlockletInfoColumnar infoColumnar : listOfBlockletInfo) {
-      infoColumnar.setFileName(filesLocation);
-    }
-    return listOfBlockletInfo;
-  }
-
-  /**
-   * This method will be used to read the slice metadata
-   *
-   * @param rsFiles
-   * @return slice meta data
-   * @throws CarbonUtilException
-   */
-  public static SliceMetaData readSliceMetadata(File rsFiles, int restructFolderNumber)
-      throws CarbonUtilException {
-    SliceMetaData readObject = null;
-    InputStream stream = null;
-    ObjectInputStream objectInputStream = null;
-    File file = null;
-    try {
-      file = new File(rsFiles + File.separator + getSliceMetaDataFileName(restructFolderNumber));
-      stream = new FileInputStream(
-          rsFiles + File.separator + getSliceMetaDataFileName(restructFolderNumber));
-      objectInputStream = new ObjectInputStream(stream);
-      readObject = (SliceMetaData) objectInputStream.readObject();
-    } catch (ClassNotFoundException e) {
-      throw new CarbonUtilException(
-          "Problem while reading the slicemeta data file " + file.getAbsolutePath(), e);
-    }
-    //
-    catch (IOException e) {
-      throw new CarbonUtilException("Problem while reading the slicemeta data file ", e);
-    } finally {
-      closeStreams(objectInputStream, stream);
-    }
-    return readObject;
-  }
-
-  public static void writeSliceMetaDataFile(String path, SliceMetaData sliceMetaData,
-      int nextRestructFolder) {
-    OutputStream stream = null;
-    ObjectOutputStream objectOutputStream = null;
-    try {
-      LOGGER.info("Slice Metadata file Path: " + path + '/' + CarbonUtil
-          .getSliceMetaDataFileName(nextRestructFolder));
-      stream = FileFactory
-          .getDataOutputStream(path + File.separator + getSliceMetaDataFileName(nextRestructFolder),
-              FileFactory.getFileType(path));
-      objectOutputStream = new ObjectOutputStream(stream);
-      objectOutputStream.writeObject(sliceMetaData);
-    } catch (IOException e) {
-      LOGGER.error(e.getMessage());
-    } finally {
-      closeStreams(objectOutputStream, stream);
-    }
-  }
-
   public static void deleteFiles(File[] intermediateFiles) throws CarbonUtilException {
     for (int i = 0; i < intermediateFiles.length; i++) {
       if (!intermediateFiles[i].delete()) {
         throw new CarbonUtilException("Problem while deleting intermediate file");
       }
     }
-  }
-
-  public static ColumnarKeyStoreInfo getColumnarKeyStoreInfo(BlockletInfoColumnar blockletInfo,
-      int[] eachBlockSize, ColumnGroupModel colGrpModel) {
-    ColumnarKeyStoreInfo columnarKeyStoreInfo = new ColumnarKeyStoreInfo();
-    columnarKeyStoreInfo.setFilePath(blockletInfo.getFileName());
-    columnarKeyStoreInfo.setIsSorted(blockletInfo.getIsSortedKeyColumn());
-    columnarKeyStoreInfo.setKeyBlockIndexLength(blockletInfo.getKeyBlockIndexLength());
-    columnarKeyStoreInfo.setKeyBlockIndexOffsets(blockletInfo.getKeyBlockIndexOffSets());
-    columnarKeyStoreInfo.setKeyBlockLengths(blockletInfo.getKeyLengths());
-    columnarKeyStoreInfo.setKeyBlockOffsets(blockletInfo.getKeyOffSets());
-    columnarKeyStoreInfo.setNumberOfKeys(blockletInfo.getNumberOfKeys());
-    columnarKeyStoreInfo.setSizeOfEachBlock(eachBlockSize);
-    columnarKeyStoreInfo.setNumberCompressor(new NumberCompressor(Integer.parseInt(
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL))));
-    columnarKeyStoreInfo.setAggKeyBlock(blockletInfo.getAggKeyBlock());
-    columnarKeyStoreInfo.setDataIndexMapLength(blockletInfo.getDataIndexMapLength());
-    columnarKeyStoreInfo.setDataIndexMapOffsets(blockletInfo.getDataIndexMapOffsets());
-    columnarKeyStoreInfo.setHybridStoreModel(colGrpModel);
-    return columnarKeyStoreInfo;
   }
 
   public static byte[] getKeyArray(ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolder,
@@ -955,103 +699,6 @@ public final class CarbonUtil {
     return integers;
   }
 
-  public static String[] getSlices(String storeLocation,
-      FileFactory.FileType fileType) {
-    try {
-      if (!FileFactory.isFileExist(storeLocation, fileType)) {
-        return new String[0];
-      }
-    } catch (IOException e) {
-      LOGGER.error("Error occurred :: " + e.getMessage());
-    }
-    CarbonFile file = FileFactory.getCarbonFile(storeLocation, fileType);
-    CarbonFile[] listFiles = listFiles(file);
-    if (null == listFiles || listFiles.length < 0) {
-      return new String[0];
-    }
-    Arrays.sort(listFiles, new CarbonFileFolderComparator());
-    String[] slices = new String[listFiles.length];
-    for (int i = 0; i < listFiles.length; i++) {
-      slices[i] = listFiles[i].getAbsolutePath();
-    }
-    return slices;
-  }
-
-  /**
-   * @param file
-   * @return
-   */
-  public static CarbonFile[] listFiles(CarbonFile file) {
-    CarbonFile[] listFiles = file.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile pathname) {
-        return pathname.getName().startsWith(CarbonCommonConstants.LOAD_FOLDER) && !pathname
-            .getName().endsWith(CarbonCommonConstants.FILE_INPROGRESS_STATUS);
-      }
-    });
-    return listFiles;
-  }
-
-  public static List<CarbonSliceAndFiles> getSliceAndFilesList(String tableName,
-      CarbonFile[] listFiles, FileFactory.FileType fileType) {
-
-    List<CarbonSliceAndFiles> sliceFactFilesList =
-        new ArrayList<CarbonSliceAndFiles>(listFiles.length);
-    if (listFiles.length == 0) {
-      return sliceFactFilesList;
-    }
-
-    CarbonSliceAndFiles sliceAndFiles = null;
-    CarbonFile[] sortedPathForFiles = null;
-    for (int i = 0; i < listFiles.length; i++) {
-      sliceAndFiles = new CarbonSliceAndFiles();
-      sliceAndFiles.setPath(listFiles[i].getAbsolutePath());
-      sortedPathForFiles = getAllFactFiles(sliceAndFiles.getPath(), tableName, fileType);
-      if (null != sortedPathForFiles && sortedPathForFiles.length > 0) {
-        Arrays.sort(sortedPathForFiles,
-            new CarbonFileComparator("\\" + CarbonCommonConstants.FACT_FILE_EXT));
-        sliceAndFiles.setSliceFactFilesList(sortedPathForFiles);
-        sliceFactFilesList.add(sliceAndFiles);
-      }
-    }
-    return sliceFactFilesList;
-  }
-
-  /**
-   * Below method will be used to get the fact file present in slice
-   *
-   * @param sliceLocation slice location
-   * @return fact files array
-   */
-  public static CarbonFile[] getAllFactFiles(String sliceLocation, final String tableName,
-      FileFactory.FileType fileType) {
-    CarbonFile file = FileFactory.getCarbonFile(sliceLocation, fileType);
-    CarbonFile[] files = null;
-    CarbonFile[] updatedFactFiles = null;
-    if (file.isDirectory()) {
-      updatedFactFiles = file.listFiles(new CarbonFileFilter() {
-
-        @Override public boolean accept(CarbonFile pathname) {
-          return ((!pathname.isDirectory()) && (pathname.getName().startsWith(tableName))
-              && pathname.getName().endsWith(CarbonCommonConstants.FACT_UPDATE_EXTENSION));
-        }
-      });
-
-      if (updatedFactFiles.length != 0) {
-        return updatedFactFiles;
-
-      }
-
-      files = file.listFiles(new CarbonFileFilter() {
-        public boolean accept(CarbonFile pathname) {
-          return ((!pathname.isDirectory()) && (pathname.getName().startsWith(tableName))
-              && pathname.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT));
-
-        }
-      });
-    }
-    return files;
-  }
-
   /**
    * Read level metadata file and return cardinality
    *
@@ -1084,61 +731,6 @@ public final class CarbonUtil {
     }
 
     return cardinality;
-  }
-
-  public static String getNewAggregateTableName(List<String> tableList, String factTableName) {
-    int count = 1;
-    List<String> newTableList = new ArrayList<String>(10);
-    newTableList.addAll(tableList);
-    if (newTableList.contains(factTableName)) {
-      newTableList.remove(factTableName);
-    }
-    if (!newTableList.isEmpty()) {
-      Collections.sort(newTableList, new AggTableComparator());
-      String highestCountAggTableName = newTableList.get(0);
-      count = Integer.parseInt(
-          highestCountAggTableName.substring(highestCountAggTableName.lastIndexOf("_") + 1))
-          + count;
-    }
-    return CarbonCommonConstants.AGGREGATE_TABLE_START_TAG + CarbonCommonConstants.UNDERSCORE
-        + factTableName + CarbonCommonConstants.UNDERSCORE + count;
-  }
-
-  public static String getRSPath(String schemaName, String cubeName, String tableName,
-      String hdfsLocation, int currentRestructNumber) {
-    if (null == hdfsLocation) {
-      hdfsLocation =
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
-    }
-
-    String hdfsStoreLocation = hdfsLocation;
-    hdfsStoreLocation = hdfsStoreLocation + File.separator + schemaName + File.separator + cubeName;
-
-    int rsCounter = currentRestructNumber/*CarbonUtil.checkAndReturnNextRestructFolderNumber(
-                hdfsStoreLocation, "RS_")*/;
-    if (rsCounter == -1) {
-      rsCounter = 0;
-    }
-    String hdfsLoadedTable =
-        hdfsStoreLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER + rsCounter
-            + "/" + tableName;
-    return hdfsLoadedTable;
-  }
-
-  public static boolean createRSMetaFile(String metaDataPath, String newRSFileName) {
-    String fullFileName = metaDataPath + File.separator + newRSFileName;
-    FileFactory.FileType fileType =
-        FileFactory.getFileType(metaDataPath + File.separator + newRSFileName);
-    try {
-      return FileFactory.createNewFile(fullFileName, fileType);
-    } catch (IOException e) {
-      LOGGER.error("Error while writing RS meta file : " + fullFileName + e.getMessage());
-      return false;
-    }
-  }
-
-  public static String getSliceMetaDataFileName(int restructFolderNumber) {
-    return CarbonCommonConstants.SLICE_METADATA_FILENAME + "." + restructFolderNumber;
   }
 
   public static void writeLevelCardinalityFile(String loadFolderLoc, String tableName,
@@ -1175,32 +767,6 @@ public final class CarbonUtil {
     } finally {
       closeStreams(channel, fileOutputStream);
     }
-  }
-
-  public static SliceMetaData readSliceMetaDataFile(String path) {
-    SliceMetaData readObject = null;
-    InputStream stream = null;
-    ObjectInputStream objectInputStream = null;
-    //
-    try {
-      stream = FileFactory.getDataInputStream(path, FileFactory.getFileType(path));
-      objectInputStream = new ObjectInputStream(stream);
-      readObject = (SliceMetaData) objectInputStream.readObject();
-    } catch (ClassNotFoundException e) {
-      LOGGER.error(e);
-    } catch (FileNotFoundException e) {
-      LOGGER.error("@@@@@ SliceMetaData File is missing @@@@@ :" + path);
-    } catch (IOException e) {
-      LOGGER.error("@@@@@ Error while reading SliceMetaData File @@@@@ :" + path);
-    } finally {
-      closeStreams(objectInputStream, stream);
-    }
-    return readObject;
-  }
-
-  public static SliceMetaData readSliceMetaDataFile(String folderPath, int currentRestructNumber) {
-    String path = folderPath + '/' + getSliceMetaDataFileName(currentRestructNumber);
-    return readSliceMetaDataFile(path);
   }
 
   /**
@@ -1511,12 +1077,11 @@ public final class CarbonUtil {
   /**
    * Thread to delete the cubes
    *
-   * @author m00258959
    */
-  private static final class DeleteCube implements Callable<Void> {
+  private static final class DeleteFolderAndFiles implements Callable<Void> {
     private CarbonFile file;
 
-    private DeleteCube(CarbonFile file) {
+    private DeleteFolderAndFiles(CarbonFile file) {
       this.file = file;
     }
 
@@ -1525,34 +1090,6 @@ public final class CarbonUtil {
       return null;
     }
 
-  }
-
-  private static class CarbonFileComparator implements Comparator<CarbonFile> {
-    /**
-     * File extension
-     */
-    private String fileExt;
-
-    public CarbonFileComparator(String fileExt) {
-      this.fileExt = fileExt;
-    }
-
-    @Override public int compare(CarbonFile file1, CarbonFile file2) {
-      String firstFileName = file1.getName().split(fileExt)[0];
-      String secondFileName = file2.getName().split(fileExt)[0];
-      int lastIndexOfO1 = firstFileName.lastIndexOf('_');
-      int lastIndexOfO2 = secondFileName.lastIndexOf('_');
-      int f1 = 0;
-      int f2 = 0;
-
-      try {
-        f1 = Integer.parseInt(firstFileName.substring(lastIndexOfO1 + 1));
-        f2 = Integer.parseInt(secondFileName.substring(lastIndexOfO2 + 1));
-      } catch (NumberFormatException nfe) {
-        return -1;
-      }
-      return (f1 < f2) ? -1 : (f1 == f2 ? 0 : 1);
-    }
   }
 
   /**

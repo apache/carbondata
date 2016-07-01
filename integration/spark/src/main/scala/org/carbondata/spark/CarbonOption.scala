@@ -21,7 +21,7 @@ package org.carbondata.spark
  * Contains all options for Spark data source
  */
 class CarbonOption(options: Map[String, String]) {
-  def tableIdentifier: String = options.getOrElse("cubeName", s"$dbName.$tableName")
+  def tableIdentifier: String = options.getOrElse("tableName", s"$dbName.$tableName")
 
   def dbName: String = options.getOrElse("dbName", "default")
 

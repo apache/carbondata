@@ -22,7 +22,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.errors.attachTree
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.{SparkPlan, UnaryNode}
-import org.apache.spark.sql.hive.CarbonMetastoreCatalog
+import org.apache.spark.sql.hive.{CarbonMetastoreCatalog, CarbonMetastoreTypes}
 import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
 import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
@@ -32,7 +32,8 @@ import org.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueI
 import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier, ColumnIdentifier}
 import org.carbondata.core.carbon.metadata.datatype.DataType
 import org.carbondata.core.carbon.metadata.encoder.Encoding
-import org.carbondata.query.carbon.util.DataTypeUtil
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
+import org.carbondata.scan.util.DataTypeUtil
 
 /**
  * It decodes the data.
@@ -53,20 +54,19 @@ case class CarbonDictionaryDecoder(
     child.output.map { a =>
       val attr = aliasMap.getOrElse(a, a)
       val relation = relations.find(p => p.contains(attr))
-      if(relation.isDefined) {
+      if(relation.isDefined && canBeDecoded(attr)) {
         val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
         val carbonDimension = carbonTable
           .getDimensionByName(carbonTable.getFactTableName, attr.name)
         if (carbonDimension != null &&
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
-            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
-            canBeDecoded(attr)) {
+            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           val newAttr = AttributeReference(a.name,
-            convertCarbonToSparkDataType(carbonDimension.getDataType),
+            convertCarbonToSparkDataType(carbonDimension,
+              relation.get.carbonRelation.carbonRelation),
             a.nullable,
             a.metadata)(a.exprId,
             a.qualifiers).asInstanceOf[Attribute]
-          newAttr.resolved
           newAttr
         } else {
           a
@@ -88,15 +88,30 @@ case class CarbonDictionaryDecoder(
     }
   }
 
-  def convertCarbonToSparkDataType(dataType: DataType): types.DataType = {
-    dataType match {
+  def convertCarbonToSparkDataType(carbonDimension: CarbonDimension,
+      relation: CarbonRelation): types.DataType = {
+    carbonDimension.getDataType match {
       case DataType.STRING => StringType
+      case DataType.SHORT => ShortType
       case DataType.INT => IntegerType
       case DataType.LONG => LongType
       case DataType.DOUBLE => DoubleType
       case DataType.BOOLEAN => BooleanType
-      case DataType.DECIMAL => DecimalType.DoubleDecimal
+      case DataType.DECIMAL =>
+        val scale: Int = carbonDimension.getColumnSchema.getScale
+        val precision: Int = carbonDimension.getColumnSchema.getPrecision
+        if (scale > 0 && precision > 0)  {
+          DecimalType(scale, precision)
+        } else {
+          DecimalType(18, 2)
+        }
       case DataType.TIMESTAMP => TimestampType
+      case DataType.STRUCT =>
+        CarbonMetastoreTypes
+        .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
+      case DataType.ARRAY =>
+        CarbonMetastoreTypes
+        .toDataType(s"array<${ relation.getArrayChildren(carbonDimension.getColName) }>")
     }
   }
 
@@ -126,6 +141,9 @@ case class CarbonDictionaryDecoder(
     dictIds
   }
 
+
+  override def outputsUnsafeRows: Boolean = true
+
   override def doExecute(): RDD[InternalRow] = {
     attachTree(this, "execute") {
       val storePath = sqlContext.catalog.asInstanceOf[CarbonMetastoreCatalog].storePath
@@ -143,21 +161,23 @@ case class CarbonDictionaryDecoder(
               .createCache(CacheType.FORWARD_DICTIONARY, storePath)
           val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
             forwardDictionaryCache)
+          val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
           new Iterator[InternalRow] {
+            val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)
             override final def hasNext: Boolean = iter.hasNext
 
             override final def next(): InternalRow = {
               val row: InternalRow = iter.next()
               val data = row.toSeq(dataTypes).toArray
-              for (i <- data.indices) {
-                if (dicts(i) != null) {
-                  data(i) = toType(DataTypeUtil
-                    .getDataBasedOnDataType(dicts(i)
-                      .getDictionaryValueForKey(data(i).asInstanceOf[Integer]),
-                      getDictionaryColumnIds(i)._3))
+              dictIndex.foreach { index =>
+                if (data(index) != null) {
+                  data(index) = DataTypeUtil
+                    .getDataBasedOnDataType(dicts(index)
+                      .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
+                      getDictionaryColumnIds(index)._3)
                 }
               }
-              new GenericMutableRow(data)
+              unsafeProjection(row)
             }
           }
         }
@@ -174,20 +194,17 @@ case class CarbonDictionaryDecoder(
     }
   }
 
-  private def toType(obj: Any): Any = {
-    obj match {
-      case s: String => UTF8String.fromString(s)
-      case _ => obj
-    }
-  }
-
   private def getDictionary(atiMap: Map[String, AbsoluteTableIdentifier],
       cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary]) = {
     val dicts: Seq[Dictionary] = getDictionaryColumnIds.map { f =>
       if (f._2 != null) {
-        cache.get(new DictionaryColumnUniqueIdentifier(
-          atiMap.get(f._1).get.getCarbonTableIdentifier,
-          f._2, f._3))
+        try {
+          cache.get(new DictionaryColumnUniqueIdentifier(
+            atiMap.get(f._1).get.getCarbonTableIdentifier,
+            f._2, f._3))
+        } catch {
+          case _ => null
+        }
       } else {
         null
       }

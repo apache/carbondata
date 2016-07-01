@@ -81,7 +81,7 @@ package object spark {
         case StringType => CarbonType.STRING.name
         case IntegerType => CarbonType.INT.name
         case ByteType => CarbonType.INT.name
-        case ShortType => CarbonType.INT.name
+        case ShortType => CarbonType.SHORT.name
         case LongType => CarbonType.LONG.name
         case FloatType => CarbonType.DOUBLE.name
         case DoubleType => CarbonType.DOUBLE.name

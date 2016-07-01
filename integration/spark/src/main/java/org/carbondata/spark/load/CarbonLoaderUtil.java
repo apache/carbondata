@@ -18,9 +18,23 @@
  */
 package org.carbondata.spark.load;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
@@ -42,18 +56,18 @@ import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperations;
-import org.carbondata.core.datastorage.store.fileperations.AtomicFileOperationsImpl;
-import org.carbondata.core.datastorage.store.fileperations.FileWriteOperation;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.core.locks.ICarbonLock;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
+import org.carbondata.lcm.fileoperations.AtomicFileOperations;
+import org.carbondata.lcm.fileoperations.AtomicFileOperationsImpl;
+import org.carbondata.lcm.fileoperations.FileWriteOperation;
+import org.carbondata.lcm.locks.ICarbonLock;
 import org.carbondata.lcm.status.SegmentStatusManager;
 import org.carbondata.processing.api.dataloader.DataLoadModel;
 import org.carbondata.processing.api.dataloader.SchemaInfo;
@@ -67,7 +81,6 @@ import org.carbondata.spark.merger.NodeBlockRelation;
 import org.carbondata.spark.merger.NodeMultiBlockRelation;
 
 import com.google.gson.Gson;
-
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;

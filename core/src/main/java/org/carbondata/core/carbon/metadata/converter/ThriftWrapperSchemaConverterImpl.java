@@ -123,6 +123,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return org.carbondata.format.DataType.STRING;
       case INT:
         return org.carbondata.format.DataType.INT;
+      case SHORT:
+        return org.carbondata.format.DataType.SHORT;
       case LONG:
         return org.carbondata.format.DataType.LONG;
       case DOUBLE:
@@ -287,6 +289,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return DataType.STRING;
       case INT:
         return DataType.INT;
+      case SHORT:
+        return DataType.SHORT;
       case LONG:
         return DataType.LONG;
       case DOUBLE:

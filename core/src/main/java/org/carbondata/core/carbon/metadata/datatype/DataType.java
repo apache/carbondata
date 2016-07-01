@@ -22,6 +22,7 @@ public enum DataType {
 
   STRING,
   INT,
+  SHORT,
   LONG,
   DOUBLE,
   BOOLEAN,

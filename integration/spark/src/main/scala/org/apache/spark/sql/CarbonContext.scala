@@ -20,6 +20,7 @@ package org.apache.spark.sql
 import scala.language.implicitConversions
 
 import org.apache.spark.SparkContext
+import org.apache.spark.sql.catalyst.ParserDialect
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog}
 import org.apache.spark.sql.catalyst.optimizer.{DefaultOptimizer, Optimizer}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -52,9 +53,12 @@ class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveCon
   override protected[sql] lazy val optimizer: Optimizer =
     new CarbonOptimizer(DefaultOptimizer, conf)
 
-  override protected[sql] def dialectClassName = classOf[CarbonSQLDialect].getCanonicalName
+  protected[sql] override def getSQLDialect(): ParserDialect = new CarbonSQLDialect(this)
 
-  experimental.extraStrategies = CarbonStrategy.getStrategy(self)
+  experimental.extraStrategies = {
+    val carbonStrategy = new CarbonStrategies(self)
+    Seq(carbonStrategy.CarbonTableScan, carbonStrategy.DDLStrategies)
+  }
 
   @transient
   val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)

@@ -25,8 +25,6 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 
-import org.apache.spark.sql.columnar.TIMESTAMP;
-
 /**
  * This class contains attributes of file which are required to
  * construct file name like taskId, factTimeStamp
@@ -84,7 +82,7 @@ public class CarbonDataFileAttributes {
       dateToStr = parser.parse(factTimeStamp);
       return Long.toString(dateToStr.getTime());
     } catch (ParseException e) {
-      LOGGER.error("Cannot convert" + TIMESTAMP.toString()
+      LOGGER.error("Cannot convert" + factTimeStamp
           + " to Time/Long type value" + e.getMessage());
       return null;
     }

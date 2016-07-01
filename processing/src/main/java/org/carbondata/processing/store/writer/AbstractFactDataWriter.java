@@ -54,8 +54,6 @@ import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
-import org.carbondata.core.file.manager.composite.FileData;
-import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.metadata.BlockletInfoColumnar;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.core.util.CarbonMergerUtil;
@@ -67,6 +65,8 @@ import org.carbondata.core.writer.CarbonIndexFileWriter;
 import org.carbondata.format.BlockIndex;
 import org.carbondata.format.FileFooter;
 import org.carbondata.format.IndexHeader;
+import org.carbondata.processing.mdkeygen.file.FileData;
+import org.carbondata.processing.mdkeygen.file.IFileManagerComposite;
 import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 

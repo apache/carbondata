@@ -34,10 +34,10 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
 import org.carbondata.processing.datatypes.GenericDataType;
+import org.carbondata.processing.mdkeygen.file.IFileManagerComposite;
 import org.carbondata.processing.schema.metadata.ArrayWrapper;
 import org.carbondata.processing.schema.metadata.ColumnsInfo;
 

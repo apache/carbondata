@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.carbondata.common.CarbonIterator;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.cache.dictionary.Dictionary;
@@ -35,16 +36,15 @@ import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.query.carbon.executor.QueryExecutor;
-import org.carbondata.query.carbon.executor.QueryExecutorFactory;
-import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
-import org.carbondata.query.carbon.model.QueryDimension;
-import org.carbondata.query.carbon.model.QueryMeasure;
-import org.carbondata.query.carbon.model.QueryModel;
-import org.carbondata.query.carbon.result.BatchRawResult;
-import org.carbondata.query.carbon.result.iterator.RawResultIterator;
+import org.carbondata.scan.executor.QueryExecutor;
+import org.carbondata.scan.executor.QueryExecutorFactory;
+import org.carbondata.scan.executor.exception.QueryExecutionException;
+import org.carbondata.scan.model.QueryDimension;
+import org.carbondata.scan.model.QueryMeasure;
+import org.carbondata.scan.model.QueryModel;
+import org.carbondata.scan.result.BatchRawResult;
+import org.carbondata.scan.result.iterator.RawResultIterator;
 
 /**
  * Executor class for executing the query on the selected segments to be merged.
@@ -187,6 +187,7 @@ public class CarbonCompactionExecutor {
     model.setCountStarQuery(false);
     model.setDetailQuery(true);
     model.setForcedDetailRawQuery(true);
+    model.setRawBytesDetailQuery(true);
     model.setFilterExpressionResolverTree(null);
 
     List<QueryDimension> dims = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);

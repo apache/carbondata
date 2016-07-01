@@ -27,9 +27,12 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.optimizer.CarbonAliasDecoderRelation
 import org.apache.spark.sql.types.StructType
 
-import org.carbondata.query.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
-import org.carbondata.query.expression.conditional._
-import org.carbondata.query.expression.logical.{AndExpression, OrExpression}
+import org.carbondata.core.carbon.metadata.datatype.DataType
+import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn
+import org.carbondata.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
+import org.carbondata.scan.expression.conditional._
+import org.carbondata.scan.expression.logical.{AndExpression, OrExpression}
 import org.carbondata.spark.util.CarbonScalaUtil
 
 /**
@@ -102,14 +105,19 @@ object CarbonFilters {
   def selectFilters(filters: Seq[Expression],
       attrList: java.util.HashSet[Attribute],
       aliasMap: CarbonAliasDecoderRelation): Unit = {
-    def translate(expr: Expression): Option[sources.Filter] = {
+    def translate(expr: Expression, or: Boolean = false): Option[sources.Filter] = {
       expr match {
-        case Or(left, right) =>
-          for {
-            leftFilter <- translate(left)
-            rightFilter <- translate(right)
-          } yield {
-            sources.Or(leftFilter, rightFilter)
+        case or@ Or(left, right) =>
+
+          val leftFilter = translate(left, true)
+          val rightFilter = translate(right, true)
+          if (leftFilter.isDefined && rightFilter.isDefined) {
+            Some( sources.Or(leftFilter.get, rightFilter.get))
+          } else {
+            or.collect {
+              case attr: AttributeReference => attrList.add(aliasMap.getOrElse(attr, attr))
+            }
+            None
           }
 
         case And(left, right) =>
@@ -148,27 +156,35 @@ object CarbonFilters {
           Some(sources.In(a.name, hSet.toArray))
 
         case others =>
-          others.collect {
-            case attr: AttributeReference =>
-              attrList.add(aliasMap.getOrElse(attr, attr))
+          if (!or) {
+            others.collect {
+              case attr: AttributeReference =>
+                attrList.add(aliasMap.getOrElse(attr, attr))
+            }
           }
           None
       }
     }
-    filters.flatMap(translate).toArray
+    filters.flatMap(translate(_, false)).toArray
   }
 
   def processExpression(exprs: Seq[Expression],
       attributesNeedToDecode: java.util.HashSet[AttributeReference],
-      unprocessedExprs: ArrayBuffer[Expression]): Option[CarbonExpression] = {
-    def transformExpression(expr: Expression): Option[CarbonExpression] = {
+      unprocessedExprs: ArrayBuffer[Expression],
+      carbonTable: CarbonTable): Option[CarbonExpression] = {
+    def transformExpression(expr: Expression, or: Boolean = false): Option[CarbonExpression] = {
       expr match {
-        case Or(left, right) =>
-          for {
-            leftFilter <- transformExpression(left)
-            rightFilter <- transformExpression(right)
-          } yield {
-            new OrExpression(leftFilter, rightFilter)
+        case or@ Or(left, right) =>
+          val leftFilter = transformExpression(left, true)
+          val rightFilter = transformExpression(right, true)
+          if (leftFilter.isDefined && rightFilter.isDefined) {
+            Some(new OrExpression(leftFilter.get, rightFilter.get))
+          } else {
+            or.collect {
+              case attr: AttributeReference => attributesNeedToDecode.add(attr)
+            }
+            unprocessedExprs += or
+            None
           }
 
         case And(left, right) =>
@@ -208,21 +224,39 @@ object CarbonFilters {
             new ListExpression(list.map(transformExpression(_).get).asJava)))
 
         case AttributeReference(name, dataType, _, _) =>
-          Some(new CarbonColumnExpression(name.toString,
-            CarbonScalaUtil.convertSparkToCarbonDataType(dataType)))
+          Some(new CarbonColumnExpression(name,
+            CarbonScalaUtil.convertSparkToCarbonDataType(
+              getActualCarbonDataType(name, carbonTable))))
         case FakeCarbonCast(literal, dataType) => transformExpression(literal)
         case Literal(name, dataType) => Some(new
             CarbonLiteralExpression(name, CarbonScalaUtil.convertSparkToCarbonDataType(dataType)))
         case Cast(left, right) if !left.isInstanceOf[Literal] => transformExpression(left)
         case others =>
-          others.collect {
-            case attr: AttributeReference => attributesNeedToDecode.add(attr)
+          if (!or) {
+            others.collect {
+              case attr: AttributeReference => attributesNeedToDecode.add(attr)
+            }
+            unprocessedExprs += others
           }
-          unprocessedExprs += others
           None
       }
     }
-    exprs.flatMap(transformExpression).reduceOption(new AndExpression(_, _))
+    exprs.flatMap(transformExpression(_, false)).reduceOption(new AndExpression(_, _))
   }
 
+  private def getActualCarbonDataType(column: String, carbonTable: CarbonTable) = {
+    var carbonColumn: CarbonColumn =
+      carbonTable.getDimensionByName(carbonTable.getFactTableName, column)
+    val dataType = if (carbonColumn != null) {
+      carbonColumn.getDataType
+    } else {
+      carbonColumn = carbonTable.getMeasureByName(carbonTable.getFactTableName, column)
+      carbonColumn.getDataType match {
+        case DataType.LONG => DataType.LONG
+        case DataType.DECIMAL => DataType.DECIMAL
+        case _ => DataType.DOUBLE
+      }
+    }
+    CarbonScalaUtil.convertCarbonToSparkDataType(dataType)
+  }
 }

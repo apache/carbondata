@@ -55,17 +55,13 @@ class CarbonDecoderProcessor {
       case cd: CarbonDictionaryTempDecoder =>
         nodeList.add(Node(cd))
         process(cd.child, nodeList)
-      case j: Join =>
+      case j: BinaryNode =>
         val leftList = new util.ArrayList[AbstractNode]
         val rightList = new util.ArrayList[AbstractNode]
         nodeList.add(JoinNode(leftList, rightList))
         process(j.left, leftList)
         process(j.right, rightList)
-      case p: Project => process(p.child, nodeList)
-      case f: Filter => process(f.child, nodeList)
-      case s: Sort => process(s.child, nodeList)
-      case a: Aggregate => process(a.child, nodeList)
-      case l: Limit => process(l.child, nodeList)
+      case e: UnaryNode => process(e.child, nodeList)
       case _ =>
     }
   }

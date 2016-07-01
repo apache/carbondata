@@ -25,13 +25,13 @@ import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
-import org.carbondata.query.carbon.model.CarbonQueryPlan;
-import org.carbondata.query.carbon.model.QueryDimension;
-import org.carbondata.query.carbon.model.QueryMeasure;
-import org.carbondata.query.carbon.model.QueryModel;
-import org.carbondata.query.expression.Expression;
-import org.carbondata.query.filter.resolver.FilterResolverIntf;
-import org.carbondata.query.filters.FilterExpressionProcessor;
+import org.carbondata.scan.expression.Expression;
+import org.carbondata.scan.filter.FilterExpressionProcessor;
+import org.carbondata.scan.filter.resolver.FilterResolverIntf;
+import org.carbondata.scan.model.CarbonQueryPlan;
+import org.carbondata.scan.model.QueryDimension;
+import org.carbondata.scan.model.QueryMeasure;
+import org.carbondata.scan.model.QueryModel;
 
 /**
  * Utility class

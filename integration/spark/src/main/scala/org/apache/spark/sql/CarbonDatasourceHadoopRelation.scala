@@ -39,7 +39,7 @@ import org.apache.spark.util.SerializableConfiguration
 
 import org.carbondata.core.carbon.CarbonTableIdentifier
 import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
-import org.carbondata.query.expression.logical.AndExpression
+import org.carbondata.scan.expression.logical.AndExpression
 import org.carbondata.spark.{CarbonFilters, CarbonOption}
 import org.carbondata.spark.readsupport.SparkRowReadSupportImpl
 import org.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil

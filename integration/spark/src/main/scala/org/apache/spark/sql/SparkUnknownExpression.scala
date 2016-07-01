@@ -24,10 +24,10 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericMutableRow}
 
 import org.carbondata.core.carbon.metadata.encoder.Encoding
-import org.carbondata.query.carbonfilterinterface.{ExpressionType, RowIntf}
-import org.carbondata.query.expression.{ColumnExpression, ExpressionResult, UnknownExpression}
-import org.carbondata.query.expression.conditional.ConditionalExpression
-import org.carbondata.query.expression.exception.FilterUnsupportedException
+import org.carbondata.scan.expression.{ColumnExpression, ExpressionResult, UnknownExpression}
+import org.carbondata.scan.expression.conditional.ConditionalExpression
+import org.carbondata.scan.expression.exception.FilterUnsupportedException
+import org.carbondata.scan.filter.intf.{ExpressionType, RowIntf}
 import org.carbondata.spark.util.CarbonScalaUtil
 
 class SparkUnknownExpression(sparkExp: SparkExpression)

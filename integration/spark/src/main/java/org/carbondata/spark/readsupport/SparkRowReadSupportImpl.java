@@ -7,7 +7,7 @@ import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.carbondata.hadoop.readsupport.impl.AbstractDictionaryDecodedReadSupport;
-import org.carbondata.query.carbon.util.DataTypeUtil;
+import org.carbondata.scan.util.DataTypeUtil;
 
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;

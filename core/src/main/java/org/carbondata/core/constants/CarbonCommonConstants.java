@@ -523,6 +523,7 @@ public final class CarbonCommonConstants {
   public static final String COLUMNAR = "columnar";
 
   public static final String INTEGER = "Integer";
+  public static final String SHORT = "Short";
   public static final String NUMERIC = "Numeric";
   public static final String TIMESTAMP = "Timestamp";
   public static final String ARRAY = "ARRAY";
@@ -553,6 +554,12 @@ public final class CarbonCommonConstants {
    */
   public static final String INMEMORY_REOCRD_SIZE = "carbon.inmemory.record.size";
   public static final int INMEMORY_REOCRD_SIZE_DEFAULT = 240000;
+
+  /**
+   * INMEMORY_REOCRD_SIZE
+   */
+  public static final String DETAIL_QUERY_BATCH_SIZE = "carbon.detail.batch.size";
+  public static final int DETAIL_QUERY_BATCH_SIZE_DEFAULT = 10000;
   /**
    * SPILL_OVER_DISK_PATH
    */

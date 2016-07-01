@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
 import org.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
-import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
+import org.carbondata.scan.executor.infos.KeyStructureInfo;
 
 /**
  * This class is holder of the dimension column chunk data of the variable

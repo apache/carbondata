@@ -28,13 +28,14 @@ import org.carbondata.core.carbon.metadata.datatype.DataType
 import org.carbondata.core.carbon.metadata.encoder.Encoding
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.query.expression.{DataType => CarbonDataType}
+import org.carbondata.scan.expression.{DataType => CarbonDataType}
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(
       dataType: org.apache.spark.sql.types.DataType): CarbonDataType = {
     dataType match {
       case StringType => CarbonDataType.StringType
+      case ShortType => CarbonDataType.ShortType
       case IntegerType => CarbonDataType.IntegerType
       case LongType => CarbonDataType.LongType
       case DoubleType => CarbonDataType.DoubleType
@@ -54,7 +55,7 @@ object CarbonScalaUtil {
       case CarbonCommonConstants.STRING_TYPE => CarbonCommonConstants.STRING
       case CarbonCommonConstants.INTEGER_TYPE => CarbonCommonConstants.INTEGER
       case CarbonCommonConstants.BYTE_TYPE => CarbonCommonConstants.INTEGER
-      case CarbonCommonConstants.SHORT_TYPE => CarbonCommonConstants.INTEGER
+      case CarbonCommonConstants.SHORT_TYPE => CarbonCommonConstants.SHORT
       case CarbonCommonConstants.LONG_TYPE => CarbonCommonConstants.NUMERIC
       case CarbonCommonConstants.DOUBLE_TYPE => CarbonCommonConstants.NUMERIC
       case CarbonCommonConstants.FLOAT_TYPE => CarbonCommonConstants.NUMERIC
@@ -66,36 +67,10 @@ object CarbonScalaUtil {
     }
   }
 
-  def convertSparkColumnToCarbonLevel(field: (String, String)): Seq[Level] = {
-    field._2 match {
-      case CarbonCommonConstants.STRING_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.STRING))
-      case CarbonCommonConstants.INTEGER_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.INTEGER))
-      case CarbonCommonConstants.BYTE_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.INTEGER))
-      case CarbonCommonConstants.SHORT_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.INTEGER))
-      case CarbonCommonConstants.LONG_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.NUMERIC))
-      case CarbonCommonConstants.DOUBLE_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.NUMERIC))
-      case CarbonCommonConstants.FLOAT_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.NUMERIC))
-      case CarbonCommonConstants.DECIMAL_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.NUMERIC))
-      case CarbonCommonConstants.DATE_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.STRING))
-      case CarbonCommonConstants.BOOLEAN_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.STRING))
-      case CarbonCommonConstants.TIMESTAMP_TYPE => Seq(
-        Level(field._1, field._1, Int.MaxValue, CarbonCommonConstants.TIMESTAMP))
-    }
-  }
-
   def convertCarbonToSparkDataType(dataType: DataType): types.DataType = {
     dataType match {
       case DataType.STRING => StringType
+      case DataType.SHORT => ShortType
       case DataType.INT => IntegerType
       case DataType.LONG => LongType
       case DataType.DOUBLE => DoubleType
@@ -105,18 +80,7 @@ object CarbonScalaUtil {
     }
   }
 
-
-  case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
-
   object CarbonSparkUtil {
-    def createBaseRDD(carbonContext: CarbonContext, carbonTable: CarbonTable): TransformHolder = {
-      val relation = CarbonEnv.getInstance(carbonContext).carbonCatalog
-        .lookupRelation1(Option(carbonTable.getDatabaseName),
-          carbonTable.getFactTableName, None)(carbonContext).asInstanceOf[CarbonRelation]
-      val rdd = new SchemaRDD(carbonContext, relation)
-      rdd.registerTempTable(carbonTable.getFactTableName)
-      TransformHolder(rdd, createSparkMeta(carbonTable))
-    }
 
     def createSparkMeta(carbonTable: CarbonTable): CarbonMetaData = {
       val dimensionsAttr = carbonTable.getDimensionByTableName(carbonTable.getFactTableName)

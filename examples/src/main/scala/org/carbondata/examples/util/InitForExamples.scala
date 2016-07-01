@@ -25,6 +25,8 @@ import org.apache.spark.sql.CarbonContext
 
 import org.carbondata.core.util.CarbonProperties
 
+// scalastyle:off println
+
 object InitForExamples {
 
   def currentPath: String = new File(this.getClass.getResource("/").getPath + "/../../")
@@ -39,6 +41,8 @@ object InitForExamples {
       .setMaster("local[2]"))
     sc.setLogLevel("ERROR")
 
+    println(s"Starting $appName using spark version ${sc.version}")
+
     val cc = new CarbonContext(sc, storeLocation)
     cc.setConf("carbon.kettle.home", kettleHome)
     cc.setConf("hive.metastore.warehouse.dir", hiveMetaPath)
@@ -51,3 +55,5 @@ object InitForExamples {
     cc
   }
 }
+// scalastyle:on println
+

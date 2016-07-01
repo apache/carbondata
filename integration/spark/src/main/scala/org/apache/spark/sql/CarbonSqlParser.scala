@@ -17,8 +17,6 @@
 
 package org.apache.spark.sql
 
-import java.nio.charset.Charset
-import java.util
 import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
@@ -33,7 +31,7 @@ import org.apache.spark.sql.catalyst.{SqlLexical, _}
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
-import org.apache.spark.sql.execution.command.{DimensionRelation, _}
+import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
 
@@ -168,7 +166,7 @@ class CarbonSqlParser()
     initLexical
     phrase(start)(new lexical.Scanner(input)) match {
       case Success(plan, _) => plan match {
-        case x: LoadCube =>
+        case x: LoadTable =>
           x.inputSqlString = input
           x
         case logicalPlan => logicalPlan
@@ -606,8 +604,8 @@ class CarbonSqlParser()
   }
 
   protected def extractColumnProperties(fields: Seq[Field], tableProperties: Map[String, String]):
-  util.Map[String, util.List[ColumnProperty]] = {
-    val colPropMap = new util.HashMap[String, util.List[ColumnProperty]]()
+  java.util.Map[String, java.util.List[ColumnProperty]] = {
+    val colPropMap = new java.util.HashMap[String, java.util.List[ColumnProperty]]()
     fields.foreach { field =>
       if (field.children.isDefined && field.children.get != null) {
         fillAllChildrenColumnProperty(field.column, field.children, tableProperties, colPropMap)
@@ -620,7 +618,7 @@ class CarbonSqlParser()
 
   protected def fillAllChildrenColumnProperty(parent: String, fieldChildren: Option[List[Field]],
     tableProperties: Map[String, String],
-    colPropMap: util.HashMap[String, util.List[ColumnProperty]]) {
+    colPropMap: java.util.HashMap[String, java.util.List[ColumnProperty]]) {
     fieldChildren.foreach(fields => {
       fields.foreach(field => {
         fillColumnProperty(Some(parent), field.column, tableProperties, colPropMap)
@@ -633,7 +631,7 @@ class CarbonSqlParser()
   protected def fillColumnProperty(parentColumnName: Option[String],
     columnName: String,
     tableProperties: Map[String, String],
-    colPropMap: util.HashMap[String, util.List[ColumnProperty]]) {
+    colPropMap: java.util.HashMap[String, java.util.List[ColumnProperty]]) {
     val (tblPropKey, colProKey) = getKey(parentColumnName, columnName)
     val colProps = CommonUtil.getColumnProperties(tblPropKey, tableProperties)
     if (None != colProps) {
@@ -939,7 +937,7 @@ class CarbonSqlParser()
             validateOptions(partionDataOptions)
           }
           val patitionOptionsMap = partionDataOptions.getOrElse(List.empty[(String, String)]).toMap
-          LoadCube(schema, cubename, filePath, Seq(), patitionOptionsMap, isOverwrite.isDefined)
+          LoadTable(schema, cubename, filePath, Seq(), patitionOptionsMap, isOverwrite.isDefined)
       }
 
   private def validateOptions(partionDataOptions: Option[List[(String, String)]]): Unit = {
@@ -1135,12 +1133,12 @@ class CarbonSqlParser()
       case ef ~ db ~ tbl =>
         val tblIdentifier = db match {
           case Some(dbName) =>
-            Seq(dbName, tbl.toLowerCase())
+            TableIdentifier(tbl.toLowerCase, Some(dbName))
           case None =>
-            Seq(tbl.toLowerCase())
+            TableIdentifier(tbl.toLowerCase)
         }
         if (ef.isDefined && "FORMATTED".equalsIgnoreCase(ef.get)) {
-          new DescribeFormattedCommand("describe formatted " + tblIdentifier.mkString("."),
+          new DescribeFormattedCommand("describe formatted " + tblIdentifier,
             tblIdentifier)
         }
         else {
@@ -1229,9 +1227,10 @@ class CarbonSqlParser()
     }
 
   protected lazy val segmentId: Parser[String] =
-    ( numericLit ^^ { u => u } |
-      elem("decimal", _.isInstanceOf[lexical.FloatLit]) ^^ (_.chars)
-      )
+    numericLit ^^ { u => u } |
+      elem("decimal", p => {
+        p.getClass.getSimpleName.equals("FloatLit") ||
+        p.getClass.getSimpleName.equals("DecimalLit") } ) ^^ (_.chars)
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
     DELETE ~> (LOAD|SEGMENT) ~> repsep(segmentId, ",") ~ (FROM ~> TABLE ~>

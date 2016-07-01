@@ -36,7 +36,7 @@ public class TimeStampDirectDictionaryGenerator_UT {
   private int surrogateKey = -1;
 
   @Before public void setUp() throws Exception {
-    TimeStampDirectDictionaryGenerator generator = new TimeStampDirectDictionaryGenerator();
+    TimeStampDirectDictionaryGenerator generator = TimeStampDirectDictionaryGenerator.instance;
     surrogateKey = generator.generateDirectSurrogateKey("2015-10-20 12:30:01");
   }
 
@@ -46,7 +46,7 @@ public class TimeStampDirectDictionaryGenerator_UT {
    * @throws Exception
    */
   @Test public void generateDirectSurrogateKey() throws Exception {
-    TimeStampDirectDictionaryGenerator generator = new TimeStampDirectDictionaryGenerator();
+    TimeStampDirectDictionaryGenerator generator = TimeStampDirectDictionaryGenerator.instance;
     // default timestamp format is "yyyy-MM-dd HH:mm:ss" and the data being passed
     // in "dd/MM/yyyy" so the parsing should fail and method should return -1.
     int key = generator.generateDirectSurrogateKey("20/12/2014");
@@ -62,7 +62,7 @@ public class TimeStampDirectDictionaryGenerator_UT {
    * @throws Exception
    */
   @Test public void getValueFromSurrogate() throws Exception {
-    TimeStampDirectDictionaryGenerator generator = new TimeStampDirectDictionaryGenerator();
+    TimeStampDirectDictionaryGenerator generator = TimeStampDirectDictionaryGenerator.instance;
     long valueFromSurrogate = (long) generator.getValueFromSurrogate(surrogateKey);
     Date date = new Date(valueFromSurrogate / 1000);
     SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()

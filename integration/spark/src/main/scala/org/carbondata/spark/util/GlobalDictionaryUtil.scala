@@ -406,7 +406,7 @@ object GlobalDictionaryUtil extends Logging {
 
     // update CarbonDataLoadSchema
     val carbonTable = catalog.lookupRelation1(Option(model.table.getDatabaseName),
-          model.table.getTableName, None)(sqlContext)
+          model.table.getTableName)(sqlContext)
         .asInstanceOf[CarbonRelation].cubeMeta.carbonTable
     carbonLoadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(carbonTable))
 

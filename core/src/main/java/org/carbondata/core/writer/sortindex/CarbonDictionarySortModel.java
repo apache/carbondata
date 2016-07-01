@@ -64,6 +64,7 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
    */
   @Override public int compareTo(CarbonDictionarySortModel o) {
     switch (dataType) {
+      case SHORT:
       case INT:
       case LONG:
       case DOUBLE:

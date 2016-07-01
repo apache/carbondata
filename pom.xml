@@ -114,6 +114,19 @@
       </properties>
     </profile>
     <profile>
+      <id>spark-1.5.2</id>
+      <!-- default -->
+      <properties>
+        <spark.version>1.5.2</spark.version>
+      </properties>
+    </profile>
+    <profile>
+      <id>spark-1.6.1</id>
+      <properties>
+        <spark.version>1.6.1</spark.version>
+      </properties>
+    </profile>
+    <profile>
       <id>integration-test</id>
       <modules>
         <module>integration-testcases</module>

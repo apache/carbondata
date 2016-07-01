@@ -39,6 +39,13 @@ import static org.carbondata.core.keygenerator.directdictionary.timestamp.TimeSt
  */
 public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGenerator {
 
+  private TimeStampDirectDictionaryGenerator() {
+
+  }
+
+  public static TimeStampDirectDictionaryGenerator instance =
+      new TimeStampDirectDictionaryGenerator();
+
   /**
    * The value of 1 unit of the SECOND, MINUTE, HOUR, or DAY in millis.
    */

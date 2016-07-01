@@ -34,12 +34,12 @@ import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.columnar.ColumnGroupModel;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthVariableSplitGenerator;
 import org.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.core.vo.ColumnGroupModel;
 
 import org.apache.commons.lang3.ArrayUtils;
 

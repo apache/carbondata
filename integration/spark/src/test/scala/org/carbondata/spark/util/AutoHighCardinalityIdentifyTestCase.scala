@@ -108,7 +108,7 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
 
   def relation: CarbonRelation = {
     CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
-        .lookupRelation1(Option("default"), "highcard", None)(CarbonHiveContext)
+        .lookupRelation1(Option("default"), "highcard")(CarbonHiveContext)
         .asInstanceOf[CarbonRelation]
   }
   
