@@ -1,16 +1,9 @@
+# This github has migrated to apache: https://github.com/apache/incubator-carbondata, please fork new github.
 # CarbonData
 CarbonData is a new Apache Hadoop native file format for faster 
 interactive query using advanced columnar storage, index, compression 
 and encoding techniques to improve computing efficiency, in turn it will 
 help speedup queries an order of magnitude faster over PetaBytes of data. 
-
-### Why CarbonData
-Based on the below requirements, we investigated existing file formats in the Hadoop eco-system, but we could not find a suitable solution that can satisfy all the requirements at the same time,so we start designing CarbonData. 
-* Requirement1:Support big scan & only fetch a few columns 
-* Requirement2:Support primary key lookup response in sub-second. 
-* Requirement3:Support interactive OLAP-style query over big data which involve many filters in a query, this type of workload should response in seconds. 
-* Requirement4:Support fast individual record extraction which fetch all columns of the record. 
-* Requirement5:Support HDFS so that customer can leverage existing Hadoop cluster. 
 
 ### Features
 CarbonData file format is a columnar store in HDFS, it has many features that a modern columnar format has, such as splittable, compression schema ,complex data type etc. And CarbonData has following unique features:

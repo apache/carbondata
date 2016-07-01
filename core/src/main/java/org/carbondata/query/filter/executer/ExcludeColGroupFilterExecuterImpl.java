@@ -37,19 +37,19 @@ import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilter
  * It checks if filter is required on given block and if required, it does
  * linear search on block data and set the bitset.
  */
-public class ColGroupFilterExecuterImpl extends IncludeFilterExecuterImpl {
+public class ExcludeColGroupFilterExecuterImpl extends ExcludeFilterExecuterImpl {
 
   /**
    * LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(ColGroupFilterExecuterImpl.class.getName());
+      LogServiceFactory.getLogService(ExcludeColGroupFilterExecuterImpl.class.getName());
 
   /**
    * @param dimColResolvedFilterInfo
    * @param segmentProperties
    */
-  public ColGroupFilterExecuterImpl(DimColumnResolvedFilterInfo dimColResolvedFilterInfo,
+  public ExcludeColGroupFilterExecuterImpl(DimColumnResolvedFilterInfo dimColResolvedFilterInfo,
       SegmentProperties segmentProperties) {
     super(dimColResolvedFilterInfo, segmentProperties);
   }
@@ -60,7 +60,7 @@ public class ColGroupFilterExecuterImpl extends IncludeFilterExecuterImpl {
   protected BitSet getFilteredIndexes(DimensionColumnDataChunk dimensionColumnDataChunk,
       int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
-
+    bitSet.flip(0, numerOfRows);
     try {
       KeyStructureInfo keyStructureInfo = getKeyStructureInfo();
       byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
@@ -70,7 +70,7 @@ public class ColGroupFilterExecuterImpl extends IncludeFilterExecuterImpl {
           byte[] colData = new byte[keyStructureInfo.getMaskByteRanges().length];
           dimensionColumnDataChunk.fillChunkData(colData, 0, rowId, keyStructureInfo);
           if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterVal, colData) == 0) {
-            bitSet.set(rowId);
+            bitSet.flip(rowId);
           }
         }
       }
@@ -89,10 +89,10 @@ public class ColGroupFilterExecuterImpl extends IncludeFilterExecuterImpl {
    * @throws KeyGenException
    */
   private KeyStructureInfo getKeyStructureInfo() throws KeyGenException {
-    int colGrpId = getColumnGroupId(dimColumnEvaluatorInfo.getColumnIndex());
+    int colGrpId = getColumnGroupId(dimColEvaluatorInfo.getColumnIndex());
     KeyGenerator keyGenerator = segmentProperties.getColumnGroupAndItsKeygenartor().get(colGrpId);
     List<Integer> mdKeyOrdinal = new ArrayList<Integer>();
-    mdKeyOrdinal.add(getMdkeyOrdinal(dimColumnEvaluatorInfo.getColumnIndex(), colGrpId));
+    mdKeyOrdinal.add(getMdkeyOrdinal(dimColEvaluatorInfo.getColumnIndex(), colGrpId));
     int[] maskByteRanges = QueryUtil.getMaskedByteRangeBasedOrdinal(mdKeyOrdinal, keyGenerator);
     byte[] maxKey = QueryUtil.getMaxKeyBasedOnOrinal(mdKeyOrdinal, keyGenerator);
     int[] maksedByte = QueryUtil.getMaskedByte(keyGenerator.getKeySizeInBytes(), maskByteRanges);
@@ -109,80 +109,8 @@ public class ColGroupFilterExecuterImpl extends IncludeFilterExecuterImpl {
    */
   public BitSet isScanRequired(byte[][] blkMaxVal, byte[][] blkMinVal) {
     BitSet bitSet = new BitSet(1);
-    byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-    int columnIndex = dimColumnEvaluatorInfo.getColumnIndex();
-    int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping().get(columnIndex);
-    int[] cols = getAllColumns(columnIndex);
-    byte[] maxValue = getMinMaxData(cols, blkMaxVal[blockIndex], columnIndex);
-    byte[] minValue = getMinMaxData(cols, blkMinVal[blockIndex], columnIndex);
-    boolean isScanRequired = false;
-    for (int k = 0; k < filterValues.length; k++) {
-      // filter value should be in range of max and min value i.e
-      // max>filtervalue>min
-      // so filter-max should be negative
-      int maxCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], maxValue);
-      // and filter-min should be positive
-      int minCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], minValue);
-
-      // if any filter value is in range than this block needs to be
-      // scanned
-      if (maxCompare <= 0 && minCompare >= 0) {
-        isScanRequired = true;
-        break;
-      }
-    }
-    if (isScanRequired) {
-      bitSet.set(0);
-    }
+    bitSet.flip(0, 1);
     return bitSet;
-  }
-
-  /**
-   * It extract min and max data for given column from stored min max value
-   *
-   * @param colGrpColumns
-   * @param minMaxData
-   * @param columnIndex
-   * @return
-   */
-  private byte[] getMinMaxData(int[] colGrpColumns, byte[] minMaxData, int columnIndex) {
-    int startIndex = 0;
-    int endIndex = 0;
-    if (null != colGrpColumns) {
-      for (int i = 0; i < colGrpColumns.length; i++) {
-        int colGrpId = getColumnGroupId(colGrpColumns[i]);
-        int mdKeyOrdinal = getMdkeyOrdinal(colGrpColumns[i], colGrpId);
-        int[] byteRange = getKeyGenerator(colGrpId).getKeyByteOffsets(mdKeyOrdinal);
-        int colSize = 0;
-        for (int j = byteRange[0]; j <= byteRange[1]; j++) {
-          colSize++;
-        }
-        if (colGrpColumns[i] == columnIndex) {
-          endIndex = startIndex + colSize;
-          break;
-        }
-        startIndex += colSize;
-      }
-    }
-    byte[] data = new byte[endIndex - startIndex];
-    System.arraycopy(minMaxData, startIndex, data, 0, data.length);
-    return data;
-  }
-
-  /**
-   * It returns column groups which have provided column ordinal
-   *
-   * @param columnIndex
-   * @return column group array
-   */
-  private int[] getAllColumns(int columnIndex) {
-    int[][] colGroups = segmentProperties.getColumnGroups();
-    for (int i = 0; i < colGroups.length; i++) {
-      if (QueryUtil.searchInArray(colGroups[i], columnIndex)) {
-        return colGroups[i];
-      }
-    }
-    return null;
   }
 
   private int getMdkeyOrdinal(int ordinal, int colGrpId) {

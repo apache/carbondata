@@ -37,16 +37,14 @@ import org.carbondata.query.filter.resolver.resolverinfo.MeasureColumnResolvedFi
 public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilterExecuterImpl {
 
   protected byte[][] filterRangeValues;
-  private SegmentProperties segmentProperties;
 
   public RowLevelRangeGrtrThanEquaToFilterExecuterImpl(
       List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, byte[][] filterRangeValues,
       SegmentProperties segmentProperties) {
-    super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier);
+    super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier, segmentProperties);
     this.filterRangeValues = filterRangeValues;
-    this.segmentProperties = segmentProperties;
   }
 
   @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
@@ -120,7 +118,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     for (int i = 0; i < filterValues.length; i++) {
       start = CarbonUtil
           .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-              filterValues[i]);
+              filterValues[i], false);
       if (start < 0) {
         start = -(start + 1);
         if (start == numerOfRows) {
@@ -170,7 +168,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
       for (int k = 0; k < filterValues.length; k++) {
         start = CarbonUtil.getFirstIndexUsingBinarySearch(
             (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-            filterValues[k]);
+            filterValues[k], false);
         if (start < 0) {
           start = -(start + 1);
           if (start == numerOfRows) {
@@ -179,7 +177,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
           // Method will compare the tentative index value after binary search, this tentative
           // index needs to be compared by the filter member if its >= filter then from that
           // index the bitset will be considered for filtering process.
-          if (ByteUtil.compare(filterValues[k],dimensionColumnDataChunk.getChunkData(start))
+          if (ByteUtil.compare(filterValues[k], dimensionColumnDataChunk.getChunkData(start))
               >= 0) {
             start = start + 1;
           }

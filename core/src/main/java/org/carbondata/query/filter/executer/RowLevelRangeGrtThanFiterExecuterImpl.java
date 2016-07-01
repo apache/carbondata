@@ -36,16 +36,14 @@ import org.carbondata.query.filter.resolver.resolverinfo.MeasureColumnResolvedFi
 
 public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecuterImpl {
   private byte[][] filterRangeValues;
-  private SegmentProperties segmentProperties;
 
   public RowLevelRangeGrtThanFiterExecuterImpl(
       List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, byte[][] filterRangeValues,
       SegmentProperties segmentProperties) {
-    super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier);
+    super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier, segmentProperties);
     this.filterRangeValues = filterRangeValues;
-    this.segmentProperties = segmentProperties;
   }
 
   @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
@@ -119,10 +117,11 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
     for (int i = 0; i < filterValues.length; i++) {
       start = CarbonUtil
           .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-              filterValues[i]);
-      start = CarbonUtil
-          .nextGreaterValueToTarget(start, (FixedLengthDimensionDataChunk) dimensionColumnDataChunk,
-              filterValues[i], numerOfRows);
+              filterValues[i], true);
+      if (start >= 0) {
+        start = CarbonUtil.nextGreaterValueToTarget(start,
+            (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, filterValues[i], numerOfRows);
+      }
       // Logic will handle the case where the range filter member is not present in block
       // in this case the binary search will return the index from where the bit sets will be
       // set inorder to apply filters. this is greater than filter so the range will be taken
@@ -177,7 +176,7 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
       for (int k = 0; k < filterValues.length; k++) {
         start = CarbonUtil.getFirstIndexUsingBinarySearch(
             (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-            filterValues[k]);
+            filterValues[k], true);
         start = CarbonUtil.nextGreaterValueToTarget(start,
             (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, filterValues[k], numerOfRows);
         if (start < 0) {

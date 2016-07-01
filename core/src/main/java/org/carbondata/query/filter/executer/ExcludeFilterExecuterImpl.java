@@ -21,10 +21,10 @@ package org.carbondata.query.filter.executer;
 import java.util.BitSet;
 import java.util.List;
 
+import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.carbondata.core.carbon.datastore.chunk.impl.VariableLengthDimensionDataChunk;
-import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.util.ByteUtil;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.carbon.processor.BlocksChunkHolder;
@@ -34,37 +34,38 @@ import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 
 public class ExcludeFilterExecuterImpl implements FilterExecuter {
 
-  DimColumnResolvedFilterInfo dimColEvaluatorInfo;
-  DimColumnExecuterFilterInfo dimColumnExecuterInfo;
-
-  public ExcludeFilterExecuterImpl(DimColumnResolvedFilterInfo dimColEvaluatorInfo) {
-    this.dimColEvaluatorInfo = dimColEvaluatorInfo;
-  }
+  protected DimColumnResolvedFilterInfo dimColEvaluatorInfo;
+  protected DimColumnExecuterFilterInfo dimColumnExecuterInfo;
+  protected SegmentProperties segmentProperties;
 
   public ExcludeFilterExecuterImpl(DimColumnResolvedFilterInfo dimColEvaluatorInfo,
-      KeyGenerator blockKeyGenerator) {
-    this(dimColEvaluatorInfo);
+      SegmentProperties segmentProperties) {
+    this.dimColEvaluatorInfo = dimColEvaluatorInfo;
     dimColumnExecuterInfo = new DimColumnExecuterFilterInfo();
-    FilterUtil.prepareKeysFromSurrogates(dimColEvaluatorInfo.getFilterValues(), blockKeyGenerator,
-        dimColEvaluatorInfo.getDimension(), dimColumnExecuterInfo);
+    this.segmentProperties = segmentProperties;
+    FilterUtil.prepareKeysFromSurrogates(dimColEvaluatorInfo.getFilterValues(),
+        segmentProperties.getDimensionKeyGenerator(), dimColEvaluatorInfo.getDimension(),
+        dimColumnExecuterInfo);
   }
 
   @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder) {
-    if (null == blockChunkHolder.getDimensionDataChunk()[dimColEvaluatorInfo.getColumnIndex()]) {
-      blockChunkHolder.getDataBlock().getDimensionChunk(blockChunkHolder.getFileReader(),
-          dimColEvaluatorInfo.getColumnIndex());
+    int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
+        .get(dimColEvaluatorInfo.getColumnIndex());
+    if (null == blockChunkHolder.getDimensionDataChunk()[blockIndex]) {
+      blockChunkHolder.getDataBlock()
+          .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
     }
-    if (null == blockChunkHolder.getDimensionDataChunk()[dimColEvaluatorInfo.getColumnIndex()]) {
-      blockChunkHolder.getDimensionDataChunk()[dimColEvaluatorInfo.getColumnIndex()] =
-          blockChunkHolder.getDataBlock().getDimensionChunk(blockChunkHolder.getFileReader(),
-              dimColEvaluatorInfo.getColumnIndex());
+    if (null == blockChunkHolder.getDimensionDataChunk()[blockIndex]) {
+      blockChunkHolder.getDimensionDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
+          .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
     }
     return getFilteredIndexes(
-        blockChunkHolder.getDimensionDataChunk()[dimColEvaluatorInfo.getColumnIndex()],
+        blockChunkHolder.getDimensionDataChunk()[blockIndex],
         blockChunkHolder.getDataBlock().nodeSize());
   }
 
-  private BitSet getFilteredIndexes(DimensionColumnDataChunk dimColumnDataChunk, int numerOfRows) {
+  protected BitSet getFilteredIndexes(DimensionColumnDataChunk dimColumnDataChunk,
+      int numerOfRows) {
     // For high cardinality dimensions.
     if (dimColumnDataChunk.getAttributes().isNoDictionary()
         && dimColumnDataChunk instanceof VariableLengthDimensionDataChunk) {
@@ -139,7 +140,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     for (int i = 0; i < filterValues.length; i++) {
       startKey = CarbonUtil
           .getFirstIndexUsingBinarySearch(dimColumnDataChunk, startIndex, numerOfRows - 1,
-              filterValues[i]);
+              filterValues[i], false);
       if (startKey < 0) {
         continue;
       }

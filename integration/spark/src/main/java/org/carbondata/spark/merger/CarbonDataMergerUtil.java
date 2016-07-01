@@ -113,14 +113,17 @@ public final class CarbonDataMergerUtil {
    */
   public static String getMergedLoadName(List<LoadMetadataDetails> segmentsToBeMergedList) {
     String firstSegmentName = segmentsToBeMergedList.get(0).getLoadName();
-    // check if segment is already merged or not.
-    if (null != segmentsToBeMergedList.get(0).getMergedLoadName()) {
-      firstSegmentName = segmentsToBeMergedList.get(0).getMergedLoadName();
+    if (firstSegmentName.contains(".")) {
+      String beforeDecimal = firstSegmentName.substring(0, firstSegmentName.indexOf("."));
+      String afterDecimal = firstSegmentName.substring(firstSegmentName.indexOf(".") + 1);
+      int fraction = Integer.parseInt(afterDecimal) + 1;
+      String mergedSegmentName = beforeDecimal + "." + fraction;
+      return CarbonCommonConstants.LOAD_FOLDER + mergedSegmentName;
+    } else {
+      String mergeName = firstSegmentName + "." + 1;
+      return CarbonCommonConstants.LOAD_FOLDER + mergeName;
     }
 
-    float segmentNumber = Float.parseFloat(firstSegmentName);
-    segmentNumber += 0.1;
-    return CarbonCommonConstants.LOAD_FOLDER + segmentNumber;
   }
 
   public static boolean updateLoadMetadataWithMergeStatus(List<LoadMetadataDetails> loadsToMerge,
