@@ -62,7 +62,7 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
       case STRING:
         result = !val1.getString().equals(val2.getString());
         break;
-      case ShortType:
+      case SHORT:
         result = val1.getShort().shortValue() != val2.getShort().shortValue();
         break;
       case INT:
