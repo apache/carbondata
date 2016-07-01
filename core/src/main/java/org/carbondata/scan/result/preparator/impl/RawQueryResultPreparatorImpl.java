@@ -16,7 +16,6 @@ import org.carbondata.scan.result.BatchRawResult;
 import org.carbondata.scan.result.BatchResult;
 import org.carbondata.scan.result.ListBasedResultWrapper;
 import org.carbondata.scan.result.Result;
-import org.carbondata.scan.util.DataTypeUtil;
 import org.carbondata.scan.wrappers.ByteArrayWrapper;
 
 /**
@@ -92,7 +91,7 @@ public class RawQueryResultPreparatorImpl
           int noDictionaryColumnIndex = 0;
           for (int i = 0; i < dimSize; i++) {
             if (!queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)) {
-              row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
+              row[order[i]] = org.carbondata.core.util.DataTypeUtil.getDataBasedOnDataType(
                   new String(key.getNoDictionaryKeyByIndex(noDictionaryColumnIndex++)),
                   queryDimensions[i].getDimension().getDataType());
             } else if (queryDimensions[i].getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {

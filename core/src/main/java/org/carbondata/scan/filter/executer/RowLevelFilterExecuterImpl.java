@@ -45,7 +45,6 @@ import org.carbondata.scan.filter.intf.RowIntf;
 import org.carbondata.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.carbondata.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.carbondata.scan.processor.BlocksChunkHolder;
-import org.carbondata.scan.util.DataTypeUtil;
 
 public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
@@ -161,7 +160,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
                 memberString = null;
               }
             }
-            record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
+            record[dimColumnEvaluatorInfo.getRowIndex()] = org.carbondata.core.util.DataTypeUtil
                 .getDataBasedOnDataType(memberString,
                     dimColumnEvaluatorInfo.getDimension().getDataType());
           } else {
@@ -176,7 +175,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
             memberString =
                 getFilterActualValueFromDictionaryValue(dimColumnEvaluatorInfo, dictionaryValue,
                     forwardDictionary);
-            record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
+            record[dimColumnEvaluatorInfo.getRowIndex()] = org.carbondata.core.util.DataTypeUtil
                 .getDataBasedOnDataType(memberString,
                     dimColumnEvaluatorInfo.getDimension().getDataType());
           } else if (dimColumnEvaluatorInfo.getDimension()

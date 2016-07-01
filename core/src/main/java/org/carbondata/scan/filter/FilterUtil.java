@@ -59,6 +59,7 @@ import org.carbondata.core.util.ByteUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
+import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.scan.executor.exception.QueryExecutionException;
 import org.carbondata.scan.expression.ColumnExpression;
 import org.carbondata.scan.expression.Expression;
@@ -82,7 +83,6 @@ import org.carbondata.scan.filter.intf.RowIntf;
 import org.carbondata.scan.filter.resolver.FilterResolverIntf;
 import org.carbondata.scan.filter.resolver.RowLevelFilterResolverImpl;
 import org.carbondata.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
-import org.carbondata.scan.util.DataTypeUtil;
 
 public final class FilterUtil {
   private static final LogService LOGGER =

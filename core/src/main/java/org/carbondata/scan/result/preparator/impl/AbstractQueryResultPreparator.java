@@ -6,12 +6,12 @@ import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.scan.executor.impl.QueryExecutorProperties;
 import org.carbondata.scan.model.QueryDimension;
 import org.carbondata.scan.model.QueryModel;
 import org.carbondata.scan.result.BatchResult;
 import org.carbondata.scan.result.preparator.QueryResultPreparator;
-import org.carbondata.scan.util.DataTypeUtil;
 
 public abstract class AbstractQueryResultPreparator<K, V> implements QueryResultPreparator<K, V> {
 

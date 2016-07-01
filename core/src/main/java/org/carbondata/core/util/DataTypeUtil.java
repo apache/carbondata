@@ -1,3 +1,22 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.carbondata.core.util;
 
 import java.math.BigDecimal;
@@ -7,16 +26,22 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import org.carbondata.common.logging.LogService;
+import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
 
 import org.apache.commons.lang.NumberUtils;
+import org.apache.spark.unsafe.types.UTF8String;
+
 public final class DataTypeUtil {
 
-  private DataTypeUtil() {
-
-  }
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(DataTypeUtil.class.getName());
 
   /**
    * This method will convert a given value to its specific type
@@ -47,7 +72,7 @@ public final class DataTypeUtil {
    * @param allowedPrecision precision configured by the user
    * @return
    */
-  public static BigDecimal normalizeDecimalValue(BigDecimal bigDecimal, int allowedPrecision) {
+  private static BigDecimal normalizeDecimalValue(BigDecimal bigDecimal, int allowedPrecision) {
     if (bigDecimal.precision() > allowedPrecision) {
       return null;
     }
@@ -143,9 +168,40 @@ public final class DataTypeUtil {
   }
 
   /**
-   * Below method will be used to basically to know whether any non parseable
-   * data is present or not. if present then return null so that system can
-   * process to default null member value.
+   * Below method will be used to basically to know whether the input data is valid string of
+   * giving data type. If there is any non parseable string is present return false.
+   */
+  public static boolean isValidData(String data, DataType actualDataType) {
+    if (null == data) {
+      return false;
+    }
+    switch (actualDataType) {
+      case INT:
+      case LONG:
+      case DOUBLE:
+      case DECIMAL:
+        return NumberUtils.isDigits(data);
+      case TIMESTAMP:
+        if (data.isEmpty()) {
+          return false;
+        }
+        SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+        try {
+          parser.parse(data);
+          return true;
+        } catch (ParseException e) {
+          return false;
+        }
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * Below method will be used to convert the data passed to its actual data
+   * type
    *
    * @param data           data
    * @param actualDataType actual data type
@@ -158,13 +214,20 @@ public final class DataTypeUtil {
     try {
       switch (actualDataType) {
         case INT:
-        case LONG:
-        case DOUBLE:
-        case DECIMAL:
-          if (!NumberUtils.isDigits(data)) {
+          if (data.isEmpty()) {
             return null;
           }
-          return data;
+          return Integer.parseInt(data);
+        case DOUBLE:
+          if (data.isEmpty()) {
+            return null;
+          }
+          return Double.parseDouble(data);
+        case LONG:
+          if (data.isEmpty()) {
+            return null;
+          }
+          return Long.parseLong(data);
         case TIMESTAMP:
           if (data.isEmpty()) {
             return null;
@@ -175,15 +238,53 @@ public final class DataTypeUtil {
           Date dateToStr = null;
           try {
             dateToStr = parser.parse(data);
-            return dateToStr.getTime();
+            return dateToStr.getTime() * 1000;
           } catch (ParseException e) {
+            LOGGER.error("Cannot convert" + data + " to Time/Long type value" + e.getMessage());
             return null;
           }
+        case DECIMAL:
+          if (data.isEmpty()) {
+            return null;
+          }
+          BigDecimal javaDecVal = new BigDecimal(data);
+          scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
+          org.apache.spark.sql.types.Decimal decConverter =
+              new org.apache.spark.sql.types.Decimal();
+          return decConverter.set(scalaDecVal);
+        default:
+          return UTF8String.fromString(data);
+      }
+    } catch (NumberFormatException ex) {
+      LOGGER.error("Problem while converting data type" + data);
+      return null;
+    }
+
+  }
+
+  public static Object getMeasureDataBasedOnDataType(Object data, DataType dataType) {
+    if (null == data) {
+      return null;
+    }
+    try {
+      switch (dataType) {
+        case DOUBLE:
+          return data;
+        case LONG:
+          return data;
+        case DECIMAL:
+          BigDecimal javaDecVal = new BigDecimal(data.toString());
+          scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
+          org.apache.spark.sql.types.Decimal decConverter =
+              new org.apache.spark.sql.types.Decimal();
+          return decConverter.set(scalaDecVal);
         default:
           return data;
       }
     } catch (NumberFormatException ex) {
+      LOGGER.error("Problem while converting data type" + data);
       return null;
     }
+
   }
 }
