@@ -1,0 +1,9 @@
+empid,ename,sal,deptno,mgr,gender,dob,comm,desc
+1,abc,1233,10,2,,2014-07-01 12:07:28,1234.191,string_null
+2,bcd,1322,,3,f,2014-07-01 12:07:28,19.99,int_null
+3,cde,4322,,4,m,,16.996,date_null
+4,    ,43243,,5,m,,999.117,string_space
+5,,43242,20,6,m,2017-07-01 12:07:28,99.999,string_null
+6,ijk,,20,6,m,2017-07-01 12:07:28,50089,double_null
+7,pqr,2422,20,6,m,2017-07-01 12:07:28,32.339,decimal_null
+8

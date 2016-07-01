@@ -22,6 +22,7 @@ package org.carbondata.scan.expression.arithmetic;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
+import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.carbondata.scan.filter.intf.ExpressionType;
 import org.carbondata.scan.filter.intf.RowIntf;
@@ -33,7 +34,8 @@ public class DivideExpression extends BinaryArithmeticExpression {
     super(left, right);
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+  @Override public ExpressionResult evaluate(RowIntf value)
+      throws FilterUnsupportedException, FilterIllegalMemberException {
     ExpressionResult divideExprLeftRes = left.evaluate(value);
     ExpressionResult divideExprRightRes = right.evaluate(value);
     ExpressionResult val1 = divideExprLeftRes;
@@ -53,6 +55,9 @@ public class DivideExpression extends BinaryArithmeticExpression {
       case STRING:
       case DOUBLE:
         divideExprRightRes.set(DataType.DOUBLE, val1.getDouble() / val2.getDouble());
+        break;
+      case SHORT:
+        divideExprRightRes.set(DataType.SHORT, val1.getShort() / val2.getShort());
         break;
       case INT:
         divideExprRightRes.set(DataType.INT, val1.getInt() / val2.getInt());

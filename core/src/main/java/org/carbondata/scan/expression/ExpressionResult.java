@@ -30,7 +30,7 @@ import java.util.List;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.scan.expression.exception.FilterUnsupportedException;
+import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
 
 public class ExpressionResult implements Comparable<ExpressionResult> {
 
@@ -61,7 +61,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
   }
 
   //CHECKSTYLE:OFF Approval No:Approval-V1R2C10_009
-  public Integer getInt() throws FilterUnsupportedException {
+  public Integer getInt() throws FilterIllegalMemberException {
     if (value == null) {
       return null;
     }
@@ -71,57 +71,101 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           try {
             return Integer.parseInt(value.toString());
           } catch (NumberFormatException e) {
-            throw new FilterUnsupportedException(e);
+            throw new FilterIllegalMemberException(e);
           }
-
+        case SHORT:
+          return ((Short) value).intValue();
         case INT:
         case DOUBLE:
-
           if (value instanceof Double) {
             return ((Double) value).intValue();
           }
           return (Integer) value;
-
         case TIMESTAMP:
-
           if (value instanceof Timestamp) {
             return (int) (((Timestamp) value).getTime() % 1000);
           } else {
             return (Integer) value;
           }
-
         default:
-          throw new FilterUnsupportedException(
+          throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to integer type value");
       }
 
     } catch (ClassCastException e) {
-      throw new FilterUnsupportedException(
+      throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Integer type value");
     }
   }
 
-  public String getString() {
+  public Short getShort() throws FilterIllegalMemberException {
     if (value == null) {
       return null;
     }
-    switch (this.getDataType()) {
-      case TIMESTAMP:
-        SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
-        if (value instanceof Timestamp) {
-          return parser.format((Timestamp) value);
-        } else {
-          return parser.format(new Timestamp((long) value / 1000));
-        }
+    try {
+      switch (this.getDataType()) {
+        case STRING:
+          try {
+            return Short.parseShort(value.toString());
+          } catch (NumberFormatException e) {
+            throw new FilterIllegalMemberException(e);
+          }
+        case SHORT:
+        case INT:
+        case DOUBLE:
 
-      default:
-        return value.toString();
+          if (value instanceof Double) {
+            return ((Double) value).shortValue();
+          } else if (value instanceof Integer) {
+            return ((Integer) value).shortValue();
+          }
+          return (Short) value;
+
+        case TIMESTAMP:
+
+          if (value instanceof Timestamp) {
+            return (short) (((Timestamp) value).getTime() % 1000);
+          } else {
+            return (Short) value;
+          }
+
+        default:
+          throw new FilterIllegalMemberException(
+              "Cannot convert" + this.getDataType().name() + " to integer type value");
+      }
+
+    } catch (ClassCastException e) {
+      throw new FilterIllegalMemberException(
+          "Cannot convert" + this.getDataType().name() + " to Integer type value");
     }
   }
 
-  public Double getDouble() throws FilterUnsupportedException {
+  public String getString() throws FilterIllegalMemberException {
+    if (value == null) {
+      return null;
+    }
+    try {
+      switch (this.getDataType()) {
+        case TIMESTAMP:
+          SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+          if (value instanceof Timestamp) {
+            return parser.format((Timestamp) value);
+          } else {
+            return parser.format(new Timestamp((long) value / 1000));
+          }
+
+        default:
+          return value.toString();
+      }
+    } catch (Exception e) {
+      throw new FilterIllegalMemberException(
+          "Cannot convert" + this.getDataType().name() + " to String type value");
+    }
+  }
+
+  public Double getDouble() throws FilterIllegalMemberException {
     if (value == null) {
       return null;
     }
@@ -131,9 +175,10 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           try {
             return Double.parseDouble(value.toString());
           } catch (NumberFormatException e) {
-            throw new FilterUnsupportedException(e);
+            throw new FilterIllegalMemberException(e);
           }
-
+        case SHORT:
+          return ((Short) value).doubleValue();
         case INT:
           return ((Integer) value).doubleValue();
         case LONG:
@@ -147,17 +192,17 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             return (Double) (value);
           }
         default:
-          throw new FilterUnsupportedException(
+          throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to double type value");
       }
     } catch (ClassCastException e) {
-      throw new FilterUnsupportedException(
+      throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Double type value");
     }
   }
   //CHECKSTYLE:ON
 
-  public Long getLong() throws FilterUnsupportedException {
+  public Long getLong() throws FilterIllegalMemberException {
     if (value == null) {
       return null;
     }
@@ -167,9 +212,10 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           try {
             return Long.parseLong(value.toString());
           } catch (NumberFormatException e) {
-            throw new FilterUnsupportedException(e);
+            throw new FilterIllegalMemberException(e);
           }
-
+        case SHORT:
+          return ((Short) value).longValue();
         case INT:
           return (Long) value;
         case LONG:
@@ -183,18 +229,18 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             return (Long) value;
           }
         default:
-          throw new FilterUnsupportedException(
+          throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to Long type value");
       }
     } catch (ClassCastException e) {
-      throw new FilterUnsupportedException(
+      throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Long type value");
     }
 
   }
 
   //Add to judge for BigDecimal
-  public BigDecimal getDecimal() throws FilterUnsupportedException {
+  public BigDecimal getDecimal() throws FilterIllegalMemberException {
     if (value == null) {
       return null;
     }
@@ -204,9 +250,10 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           try {
             return new BigDecimal(value.toString());
           } catch (NumberFormatException e) {
-            throw new FilterUnsupportedException(e);
+            throw new FilterIllegalMemberException(e);
           }
-
+        case SHORT:
+          return new BigDecimal((short) value);
         case INT:
           return new BigDecimal((int) value);
         case LONG:
@@ -222,34 +269,39 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             return new BigDecimal((long) value);
           }
         default:
-          throw new FilterUnsupportedException(
+          throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to Long type value");
       }
     } catch (ClassCastException e) {
-      throw new FilterUnsupportedException(
+      throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Long type value");
     }
 
   }
 
-  public Long getTime() throws FilterUnsupportedException {
+  public Long getTime() throws FilterIllegalMemberException {
     if (value == null) {
       return null;
     }
     try {
       switch (this.getDataType()) {
         case STRING:
-          SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+          // Currently the query engine layer only supports yyyy-MM-dd HH:mm:ss date format
+          // no matter in which format the data is been stored, so while retrieving the direct
+          // surrogate value for filter member first it should be converted in date form as per
+          // above format and needs to retrieve time stamp.
+          SimpleDateFormat parser =
+              new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
           Date dateToStr;
           try {
             dateToStr = parser.parse(value.toString());
             return dateToStr.getTime() * 1000;
           } catch (ParseException e) {
-            throw new FilterUnsupportedException(
+            throw new FilterIllegalMemberException(
                 "Cannot convert" + this.getDataType().name() + " to Time/Long type value");
           }
+        case SHORT:
+          return ((Short) value).longValue();
         case INT:
         case LONG:
           return (Long) value;
@@ -262,17 +314,17 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             return (Long) value;
           }
         default:
-          throw new FilterUnsupportedException(
+          throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to Time/Long type value");
       }
     } catch (ClassCastException e) {
-      throw new FilterUnsupportedException(
+      throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Time/Long type value");
     }
 
   }
 
-  public Boolean getBoolean() throws FilterUnsupportedException {
+  public Boolean getBoolean() throws FilterIllegalMemberException {
     if (value == null) {
       return null;
     }
@@ -282,18 +334,18 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           try {
             return Boolean.parseBoolean(value.toString());
           } catch (NumberFormatException e) {
-            throw new FilterUnsupportedException(e);
+            throw new FilterIllegalMemberException(e);
           }
 
         case BOOLEAN:
           return Boolean.parseBoolean(value.toString());
 
         default:
-          throw new FilterUnsupportedException(
+          throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to boolean type value");
       }
     } catch (ClassCastException e) {
-      throw new FilterUnsupportedException(
+      throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Boolean type value");
     }
   }
@@ -308,7 +360,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     }
   }
 
-  public List<String> getListAsString() {
+  public List<String> getListAsString() throws FilterIllegalMemberException {
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
     List<ExpressionResult> evaluateResultList = getList();
     for (ExpressionResult result : evaluateResultList) {
@@ -355,10 +407,12 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         case STRING:
           result = this.getString().equals(objToCompare.getString());
           break;
+        case SHORT:
+          result = this.getShort().equals(objToCompare.getShort());
+          break;
         case INT:
           result = this.getInt().equals(objToCompare.getInt());
           break;
-
         case DOUBLE:
           result = this.getDouble().equals(objToCompare.getDouble());
           break;
@@ -368,7 +422,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         default:
           break;
       }
-    } catch (FilterUnsupportedException ex) {
+    } catch (FilterIllegalMemberException ex) {
       return false;
     }
 
@@ -382,10 +436,10 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
   @Override public int compareTo(ExpressionResult o) {
     try {
       switch (o.dataType) {
+        case SHORT:
         case INT:
         case LONG:
         case DOUBLE:
-
           Double d1 = this.getDouble();
           Double d2 = o.getDouble();
           return d1.compareTo(d2);

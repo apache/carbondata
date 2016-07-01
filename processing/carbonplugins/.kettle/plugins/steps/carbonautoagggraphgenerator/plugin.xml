@@ -20,7 +20,6 @@
 
 <plugin
    id="CarbonAutoAggGraphGenerator"
-   iconfile="icon.png"
    description="Carbon Auto Agg Graph Generator"
    tooltip="Carbon Auto Agg Graph Generator"
    category="Carbon"

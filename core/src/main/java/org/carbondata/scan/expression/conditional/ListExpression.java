@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
+import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.carbondata.scan.filter.intf.ExpressionType;
 import org.carbondata.scan.filter.intf.RowIntf;
@@ -39,7 +40,11 @@ public class ListExpression extends Expression {
     List<ExpressionResult> listOfExprRes = new ArrayList<ExpressionResult>(10);
 
     for (Expression expr : children) {
-      listOfExprRes.add(expr.evaluate(value));
+      try {
+        listOfExprRes.add(expr.evaluate(value));
+      } catch (FilterIllegalMemberException e) {
+        continue;
+      }
     }
     return new ExpressionResult(listOfExprRes);
   }

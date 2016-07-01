@@ -75,34 +75,12 @@ public final class CarbonProperties {
           CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
     }
 
-    if (null == carbonProperties.getProperty(CarbonCommonConstants.VALUESTORE_TYPE)) {
-      carbonProperties.setProperty(CarbonCommonConstants.VALUESTORE_TYPE,
-          CarbonCommonConstants.VALUESTORE_TYPE_DEFAULT_VAL);
-    }
-
-    if (null == carbonProperties.getProperty(CarbonCommonConstants.KEYSTORE_TYPE)) {
-      carbonProperties.setProperty(CarbonCommonConstants.KEYSTORE_TYPE,
-          CarbonCommonConstants.KEYSTORE_TYPE_DEFAULT_VAL);
-    }
-
     validateBlockletSize();
     validateMaxFileSize();
     validateNumCores();
     validateNumCoresBlockSort();
-    validateBatchSize();
     validateSortSize();
-    validateCardinalityIncrementValue();
-    validateOnlineMergerSize();
-    validateOfflineMergerSize();
-    validateSortBufferSize();
-    validateDataLoadQSize();
-    validateDataLoadConcExecSize();
-    validateDecimalPointers();
-    validateDecimalPointersAgg();
-    validateCsvFileSize();
-    validateNumberOfCsvFile();
     validateBadRecordsLocation();
-    validateBadRecordsEncryption();
     validateHighCardinalityIdentify();
     validateHighCardinalityThreshold();
     validateHighCardinalityInRowCountPercentage();
@@ -114,168 +92,6 @@ public final class CarbonProperties {
     if (null == badRecordsLocation || badRecordsLocation.length() == 0) {
       carbonProperties.setProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
           CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL);
-    }
-  }
-
-  private void validateBadRecordsEncryption() {
-    String badRecordsEncryption =
-        carbonProperties.getProperty(CarbonCommonConstants.CARBON_BADRECORDS_ENCRYPTION);
-    if (null == badRecordsEncryption || badRecordsEncryption.length() == 0) {
-      carbonProperties.setProperty(CarbonCommonConstants.CARBON_BADRECORDS_ENCRYPTION,
-          CarbonCommonConstants.CARBON_BADRECORDS_ENCRYPTION_DEFAULT_VAL);
-    }
-  }
-
-  private void validateCsvFileSize() {
-    try {
-      int csvFileSizeProperty = Integer.parseInt(carbonProperties
-          .getProperty(CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE,
-              CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE));
-      if (csvFileSizeProperty < 1) {
-        LOGGER.info("Invalid value for " + CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE
-                + "\"Only Positive Integer(greater than zero) is allowed. Using the default value\""
-                + CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE);
-
-        carbonProperties.setProperty(CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE,
-            CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.info("Invalid value for " + CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE
-              + "\"Only Positive Integer(greater than zero) is allowed. Using the default value\""
-              + CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE);
-
-      carbonProperties.setProperty(CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE,
-          CarbonCommonConstants.CARBON_DATALOAD_VALID_CSVFILE_SIZE_DEFAULTVALUE);
-    }
-  }
-
-  private void validateNumberOfCsvFile() {
-    String count = CarbonCommonConstants.CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE;
-    try {
-      int csvFileSizeProperty = Integer.parseInt(carbonProperties
-          .getProperty(count,
-              CarbonCommonConstants.CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE));
-      if (csvFileSizeProperty < 1) {
-        LOGGER.info("Invalid value for " + count
-                + "\"Only Positive Integer(greater than zero) is allowed. Using the default value\""
-                + CarbonCommonConstants.CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE);
-
-        carbonProperties.setProperty(count,
-            CarbonCommonConstants.CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.info("Invalid value for " + count
-              + "\"Only Positive Integer(greater than zero) is allowed. Using the default value\""
-              + CarbonCommonConstants.CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE);
-
-      carbonProperties.setProperty(count,
-          CarbonCommonConstants.CARBON_DATALOAD_VALID_NUMBAER_OF_CSVFILE_DEFAULTVALUE);
-    }
-  }
-
-  /**
-   * This method validates the batch size
-   */
-  private void validateOnlineMergerSize() {
-    String onlineMergeSize = carbonProperties
-        .getProperty(CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE,
-            CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
-    try {
-      int offlineMergerSize = Integer.parseInt(onlineMergeSize);
-
-      if (offlineMergerSize < CarbonCommonConstants.ONLINE_MERGE_MIN_VALUE
-          || offlineMergerSize > CarbonCommonConstants.ONLINE_MERGE_MAX_VALUE) {
-        LOGGER.info("The online Merge Size value \"" + onlineMergeSize
-                + "\" is invalid. Using the default value \""
-                + CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
-        carbonProperties.setProperty(CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE,
-            CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.info("The online Merge Size value \"" + onlineMergeSize
-              + "\" is invalid. Using the default value \""
-              + CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
-      carbonProperties.setProperty(CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE,
-          CarbonCommonConstants.ONLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
-    }
-  }
-
-  /**
-   * This method validates the batch size
-   */
-  private void validateOfflineMergerSize() {
-    String offLineMergerSize = carbonProperties
-        .getProperty(CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE,
-            CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
-    try {
-      int offLineMergeSize = Integer.parseInt(offLineMergerSize);
-
-      if (offLineMergeSize < CarbonCommonConstants.OFFLINE_MERGE_MIN_VALUE
-          || offLineMergeSize > CarbonCommonConstants.OFFLINE_MERGE_MAX_VALUE) {
-        LOGGER.info("The offline Merge Size value \"" + offLineMergerSize
-                + "\" is invalid. Using the default value \""
-                + CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
-        carbonProperties.setProperty(CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE,
-            CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.info("The offline Merge Size value \"" + offLineMergerSize
-              + "\" is invalid. Using the default value \""
-              + CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
-      carbonProperties.setProperty(CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE,
-          CarbonCommonConstants.OFFLINE_MERGE_FILE_SIZE_DEFAULT_VALUE);
-    }
-  }
-
-  /**
-   * This method validates the batch size
-   */
-  private void validateBatchSize() {
-    String batchSizeStr = carbonProperties.getProperty(CarbonCommonConstants.BATCH_SIZE,
-        CarbonCommonConstants.BATCH_SIZE_DEFAULT_VAL);
-    try {
-      int batchSize = Integer.parseInt(batchSizeStr);
-
-      if (batchSize < CarbonCommonConstants.BATCH_SIZE_MIN_VAL
-          || batchSize > CarbonCommonConstants.BATCH_SIZE_MAX_VAL) {
-        LOGGER.info("The batch size value \"" + batchSizeStr + "\" is invalid. "
-            + "Using the default value \"" + CarbonCommonConstants.BATCH_SIZE_DEFAULT_VAL);
-        carbonProperties.setProperty(CarbonCommonConstants.BATCH_SIZE,
-            CarbonCommonConstants.BATCH_SIZE_DEFAULT_VAL);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.info("The batch size value \"" + batchSizeStr
-          + "\" is invalid. Using the default value \""
-          + CarbonCommonConstants.BATCH_SIZE_DEFAULT_VAL);
-      carbonProperties.setProperty(CarbonCommonConstants.BATCH_SIZE,
-          CarbonCommonConstants.BATCH_SIZE_DEFAULT_VAL);
-    }
-  }
-
-  /**
-   * This method validates the batch size
-   */
-  private void validateCardinalityIncrementValue() {
-    String cardinalityIncr = carbonProperties
-        .getProperty(CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE,
-            CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL);
-    try {
-      int batchSize = Integer.parseInt(cardinalityIncr);
-
-      if (batchSize < CarbonCommonConstants.CARDINALITY_INCREMENT_MIN_VAL
-          || batchSize > CarbonCommonConstants.CARDINALITY_INCREMENT_MAX_VAL) {
-        LOGGER.info("The batch size value \"" + cardinalityIncr
-                + "\" is invalid. Using the default value \""
-                + CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL);
-        carbonProperties.setProperty(CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE,
-            CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.info("The cardinality size value \"" + cardinalityIncr
-              + "\" is invalid. Using the default value \""
-              + CarbonCommonConstants.BATCH_SIZE_DEFAULT_VAL);
-      carbonProperties.setProperty(CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE,
-          CarbonCommonConstants.CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL);
     }
   }
 
@@ -302,111 +118,6 @@ public final class CarbonProperties {
               + CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
       carbonProperties.setProperty(CarbonCommonConstants.BLOCKLET_SIZE,
           CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
-    }
-  }
-
-  /**
-   * This method validates data load queue size
-   */
-  private void validateDataLoadQSize() {
-    String dataLoadQSize = carbonProperties.getProperty(CarbonCommonConstants.DATA_LOAD_Q_SIZE,
-        CarbonCommonConstants.DATA_LOAD_Q_SIZE_DEFAULT);
-    try {
-      int dataLoadQSizeInt = Integer.parseInt(dataLoadQSize);
-
-      if (dataLoadQSizeInt < CarbonCommonConstants.DATA_LOAD_Q_SIZE_MIN
-          || dataLoadQSizeInt > CarbonCommonConstants.DATA_LOAD_Q_SIZE_MAX) {
-        LOGGER.info("The data load queue size value \"" + dataLoadQSize
-                + "\" is invalid. Using the default value \""
-                + CarbonCommonConstants.DATA_LOAD_Q_SIZE_DEFAULT);
-        carbonProperties.setProperty(CarbonCommonConstants.DATA_LOAD_Q_SIZE,
-            CarbonCommonConstants.DATA_LOAD_Q_SIZE_DEFAULT);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.info("The data load queue size value \"" + dataLoadQSize
-              + "\" is invalid. Using the default value \""
-              + CarbonCommonConstants.DATA_LOAD_Q_SIZE_DEFAULT);
-      carbonProperties.setProperty(CarbonCommonConstants.DATA_LOAD_Q_SIZE,
-          CarbonCommonConstants.DATA_LOAD_Q_SIZE_DEFAULT);
-    }
-  }
-
-  /**
-   * This method validates the data load concurrent exec size
-   */
-  private void validateDataLoadConcExecSize() {
-    String dataLoadConcExecSize = carbonProperties
-        .getProperty(CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE,
-            CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_DEFAULT);
-    try {
-      int dataLoadConcExecSizeInt = Integer.parseInt(dataLoadConcExecSize);
-
-      if (dataLoadConcExecSizeInt < CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_MIN
-          || dataLoadConcExecSizeInt > CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_MAX) {
-        LOGGER.info("The data load concurrent exec size value \"" + dataLoadConcExecSize
-                + "\" is invalid. Using the default value \""
-                + CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_DEFAULT);
-        carbonProperties.setProperty(CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE,
-            CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_DEFAULT);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.info("The data load concurrent exec size value \"" + dataLoadConcExecSize
-              + "\" is invalid. Using the default value \""
-              + CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_DEFAULT);
-      carbonProperties.setProperty(CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE,
-          CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_DEFAULT);
-    }
-  }
-
-  /**
-   * This method validates the decimal pointers size
-   */
-  private void validateDecimalPointers() {
-    String decimalPointers = carbonProperties
-        .getProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS,
-            CarbonCommonConstants.CARBON_DECIMAL_POINTERS_DEFAULT);
-    try {
-      int decimalPointersInt = Integer.parseInt(decimalPointers);
-
-      if (decimalPointersInt < 0 || decimalPointersInt > 15) {
-        LOGGER.info("The decimal pointers agg \"" + decimalPointers
-                + "\" is invalid. Using the default value \""
-                + CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_DEFAULT);
-        carbonProperties.setProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS,
-            CarbonCommonConstants.CARBON_DECIMAL_POINTERS_DEFAULT);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.info("The decimal pointers agg \"" + decimalPointers
-              + "\" is invalid. Using the default value \""
-              + CarbonCommonConstants.DATA_LOAD_CONC_EXE_SIZE_DEFAULT);
-      carbonProperties.setProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS,
-          CarbonCommonConstants.CARBON_DECIMAL_POINTERS_DEFAULT);
-    }
-  }
-
-  /**
-   * This method validates the data load concurrent exec size
-   */
-  private void validateDecimalPointersAgg() {
-    String decimalPointers = carbonProperties
-        .getProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS_AGG,
-            CarbonCommonConstants.CARBON_DECIMAL_POINTERS_AGG_DEFAULT);
-    try {
-      int decimalPointersInt = Integer.parseInt(decimalPointers);
-
-      if (decimalPointersInt < 0 || decimalPointersInt > 15) {
-        LOGGER.info("The decimal pointers agg \"" + decimalPointers
-                + "\" is invalid. Using the default value \""
-                + CarbonCommonConstants.CARBON_DECIMAL_POINTERS_AGG_DEFAULT);
-        carbonProperties.setProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS_AGG,
-            CarbonCommonConstants.CARBON_DECIMAL_POINTERS_AGG_DEFAULT);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.info("The decimal pointers agg \"" + decimalPointers
-              + "\" is invalid. Using the default value \""
-              + CarbonCommonConstants.CARBON_DECIMAL_POINTERS_AGG_DEFAULT);
-      carbonProperties.setProperty(CarbonCommonConstants.CARBON_DECIMAL_POINTERS_AGG,
-          CarbonCommonConstants.CARBON_DECIMAL_POINTERS_AGG_DEFAULT);
     }
   }
 
@@ -515,31 +226,6 @@ public final class CarbonProperties {
     }
   }
 
-  /**
-   * This method validates the sort size
-   */
-  private void validateSortBufferSize() {
-    String sortSizeStr = carbonProperties.getProperty(CarbonCommonConstants.SORT_BUFFER_SIZE,
-        CarbonCommonConstants.SORT_BUFFER_SIZE_DEFAULT_VALUE);
-    try {
-      int sortSize = Integer.parseInt(sortSizeStr);
-
-      if (sortSize < CarbonCommonConstants.SORT_BUFFER_SIZE_MIN_VALUE) {
-        LOGGER.info("The batch size value \"" + sortSizeStr
-            + "\" is invalid. Using the default value \""
-            + CarbonCommonConstants.SORT_BUFFER_SIZE_DEFAULT_VALUE);
-        carbonProperties.setProperty(CarbonCommonConstants.SORT_BUFFER_SIZE,
-            CarbonCommonConstants.SORT_BUFFER_SIZE_DEFAULT_VALUE);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.info("The batch size value \"" + sortSizeStr
-          + "\" is invalid. Using the default value \""
-          + CarbonCommonConstants.SORT_BUFFER_SIZE_DEFAULT_VALUE);
-      carbonProperties.setProperty(CarbonCommonConstants.SORT_BUFFER_SIZE,
-          CarbonCommonConstants.SORT_BUFFER_SIZE_DEFAULT_VALUE);
-    }
-  }
-
   private void validateHighCardinalityIdentify() {
     String highcardIdentifyStr = carbonProperties.getProperty(
         CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE,
@@ -561,12 +247,12 @@ public final class CarbonProperties {
         CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT);
     try {
       int highcardThreshold = Integer.parseInt(highcardThresholdStr);
-      if(highcardThreshold <= CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_MIN){
+      if(highcardThreshold < CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_MIN){
         LOGGER.info("The high cardinality threshold value \"" + highcardThresholdStr
-            + "\" is invalid. Using the default value \""
-            + CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT);
+            + "\" is invalid. Using the min value \""
+            + CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_MIN);
         carbonProperties.setProperty(CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD,
-            CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT);
+            CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_MIN + "");
       }
     } catch (NumberFormatException e) {
       LOGGER.info("The high cardinality threshold value \"" + highcardThresholdStr
@@ -712,22 +398,6 @@ public final class CarbonProperties {
   }
 
   /**
-   * returns minor compaction size value from carbon properties or default value if it is not valid
-   *
-   * @return
-   */
-  public long getMinorCompactionSize() {
-    long compactionSize;
-    try {
-      compactionSize = Long.parseLong(getProperty(CarbonCommonConstants.MINOR_COMPACTION_SIZE,
-          CarbonCommonConstants.DEFAULT_MINOR_COMPACTION_SIZE));
-    } catch (NumberFormatException e) {
-      compactionSize = Long.parseLong(CarbonCommonConstants.DEFAULT_MINOR_COMPACTION_SIZE);
-    }
-    return compactionSize;
-  }
-
-  /**
    * returns the number of loads to be preserved.
    *
    * @return
@@ -756,6 +426,69 @@ public final class CarbonProperties {
   public void print() {
     LOGGER.info("------Using Carbon.properties --------");
     LOGGER.info(carbonProperties.toString());
+  }
+
+  /**
+   * gettting the unmerged segment numbers to be merged.
+   * @return
+   */
+  public int[] getCompactionSegmentLevelCount() {
+    String commaSeparatedLevels;
+
+    commaSeparatedLevels = getProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
+        CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD);
+    int[] compactionSize = getIntArray(commaSeparatedLevels);
+
+    if(null == compactionSize){
+      compactionSize = getIntArray(CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD);
+    }
+
+    return compactionSize;
+  }
+
+  /**
+   *
+   * @param commaSeparatedLevels
+   * @return
+   */
+  private int[] getIntArray(String commaSeparatedLevels) {
+    String[] levels = commaSeparatedLevels.split(",");
+    int[] compactionSize = new int[levels.length];
+    int i = 0;
+    for (String levelSize : levels) {
+      try {
+        int size = Integer.parseInt(levelSize.trim());
+        if(validate(size,100,0,-1) < 0 ){
+          // if given size is out of boundary then take default value for all levels.
+          return null;
+        }
+        compactionSize[i++] = size;
+      }
+      catch(NumberFormatException e){
+        LOGGER.error(
+            "Given value for property" + CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD
+                + " is not proper. Taking the default value "
+                + CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD);
+        return null;
+      }
+    }
+    return compactionSize;
+  }
+
+  /**
+   * Validate the restrictions
+   *
+   * @param actual
+   * @param max
+   * @param min
+   * @param defaultVal
+   * @return
+   */
+  public int validate(int actual, int max, int min, int defaultVal) {
+    if (actual <= max && actual >= min) {
+      return actual;
+    }
+    return defaultVal;
   }
 
 }

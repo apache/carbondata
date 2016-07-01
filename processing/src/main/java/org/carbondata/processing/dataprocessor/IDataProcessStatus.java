@@ -197,4 +197,6 @@ public interface IDataProcessStatus {
   void setCsvDelimiter(String csvDelimiter);
 
   String getBlocksID();
+
+  String getEscapeCharacter();
 }

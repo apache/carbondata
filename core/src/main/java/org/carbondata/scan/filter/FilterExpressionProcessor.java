@@ -122,7 +122,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
     DataRefNode startBlock = blockFinder.findFirstDataBlock(btreeNode, searchStartKey);
     DataRefNode endBlock = blockFinder.findLastDataBlock(btreeNode, searchEndKey);
     FilterExecuter filterExecuter =
-            FilterUtil.getFilterExecuterTree(filterResolver, tableSegment.getSegmentProperties());
+        FilterUtil.getFilterExecuterTree(filterResolver, tableSegment.getSegmentProperties());
     while (startBlock != endBlock) {
       addBlockBasedOnMinMaxValue(filterExecuter, listOfDataBlocksToScan, startBlock,
           tableSegment.getSegmentProperties());
@@ -184,6 +184,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
    *
    * @param filterResolverTree
    * @param tableIdentifier
+   * @throws FilterUnsupportedException
    * @throws QueryExecutionException
    */
   private void traverseAndResolveTree(FilterResolverIntf filterResolverTree,
@@ -284,11 +285,6 @@ public class FilterExpressionProcessor implements FilterProcessor {
                 == ExpressionType.GREATERTHAN_EQUALTO
                 || currentCondExpression.getFilterExpressionType()
                 == ExpressionType.LESSTHAN_EQUALTO) {
-              if (currentCondExpression.getColumnList().get(0).getCarbonColumn()
-                  .hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-                return new RowLevelFilterResolverImpl(expression, isExpressionResolve, true,
-                    tableIdentifier);
-              }
               return new RowLevelRangeFilterResolverImpl(expression, isExpressionResolve, true,
                   tableIdentifier);
             }
@@ -305,12 +301,12 @@ public class FilterExpressionProcessor implements FilterProcessor {
             && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
             != DataType.STRUCT) {
           if (!currentCondExpression.getColumnList().get(0).getCarbonColumn()
-              .hasEncoding(Encoding.DICTIONARY)) {
+              .hasEncoding(Encoding.DICTIONARY) || currentCondExpression.getColumnList().get(0)
+              .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
-                && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight())
-                || (FilterUtil
-                    .checkIfExpressionContainsUnknownExp(currentCondExpression.getRight())
-                || FilterUtil
+                && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
+                FilterUtil.checkIfExpressionContainsUnknownExp(currentCondExpression.getRight())
+                    || FilterUtil
                     .checkIfExpressionContainsUnknownExp(currentCondExpression.getLeft()))) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, false,
                   tableIdentifier);
@@ -337,18 +333,12 @@ public class FilterExpressionProcessor implements FilterProcessor {
             && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()
             != DataType.STRUCT) {
           condExpression = (ConditionalExpression) expression;
-          if (condExpression.isSingleDimension()) {
-            if (!condExpression.getColumnList().get(0).getCarbonColumn()
-                .hasEncoding(Encoding.DICTIONARY)) {
-              if (FilterUtil.checkIfExpressionContainsColumn(expression)) {
-                return new RowLevelFilterResolverImpl(expression, isExpressionResolve, false,
-                    tableIdentifier);
-              } else if (expressionTree.getFilterExpressionType() == ExpressionType.UNKNOWN) {
-                return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
-              }
-
-              return new ConditionalFilterResolverImpl(expression, true, true);
-            }
+          if (condExpression.getColumnList().get(0).getCarbonColumn()
+              .hasEncoding(Encoding.DICTIONARY) && !condExpression.getColumnList().get(0)
+              .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+            return new ConditionalFilterResolverImpl(expression, true, true);
+          } else {
+            return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
           }
         } else {
           return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);

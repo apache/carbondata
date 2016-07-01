@@ -145,6 +145,9 @@ public final class DataTypeUtil {
       case "INT":
         dataType = DataType.INT;
         break;
+      case "SHORT":
+        dataType = DataType.SHORT;
+        break;
       case "LONG":
         dataType = DataType.LONG;
         break;
@@ -218,6 +221,11 @@ public final class DataTypeUtil {
             return null;
           }
           return Integer.parseInt(data);
+        case SHORT:
+          if (data.isEmpty()) {
+            return null;
+          }
+          return Short.parseShort(data);
         case DOUBLE:
           if (data.isEmpty()) {
             return null;

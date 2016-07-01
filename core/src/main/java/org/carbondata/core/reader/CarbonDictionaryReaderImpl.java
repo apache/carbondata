@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.ColumnIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -41,22 +42,22 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
   /**
    * carbon table identifier
    */
-  private CarbonTableIdentifier carbonTableIdentifier;
+  protected CarbonTableIdentifier carbonTableIdentifier;
 
   /**
    * HDFS store path
    */
-  private String hdfsStorePath;
+  protected String hdfsStorePath;
 
   /**
    * column name
    */
-  private String columnIdentifier;
+  protected ColumnIdentifier columnIdentifier;
 
   /**
    * dictionary file path
    */
-  private String columnDictionaryFilePath;
+  protected String columnDictionaryFilePath;
 
   /**
    * dictionary thrift file reader
@@ -71,7 +72,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    * @param columnIdentifier      column unique identifier
    */
   public CarbonDictionaryReaderImpl(String hdfsStorePath,
-      CarbonTableIdentifier carbonTableIdentifier, String columnIdentifier) {
+      CarbonTableIdentifier carbonTableIdentifier, ColumnIdentifier columnIdentifier) {
     this.hdfsStorePath = hdfsStorePath;
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.columnIdentifier = columnIdentifier;
@@ -196,10 +197,11 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
   /**
    * This method will form the path for dictionary file for a given column
    */
-  private void initFileLocation() {
+  protected void initFileLocation() {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(this.hdfsStorePath, carbonTableIdentifier);
-    this.columnDictionaryFilePath = carbonTablePath.getDictionaryFilePath(columnIdentifier);
+    this.columnDictionaryFilePath = carbonTablePath
+        .getDictionaryFilePath(columnIdentifier.getColumnId());
   }
 
   /**
@@ -266,9 +268,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    * @throws IOException read and close method throws IO exception
    */
   private List<CarbonDictionaryColumnMetaChunk> readDictionaryMetadataFile() throws IOException {
-    CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
-        new CarbonDictionaryMetadataReaderImpl(this.hdfsStorePath, this.carbonTableIdentifier,
-            this.columnIdentifier);
+    CarbonDictionaryMetadataReader columnMetadataReaderImpl = getDictionaryMetadataReader();
     List<CarbonDictionaryColumnMetaChunk> dictionaryMetaChunkList = null;
     // read metadata file
     try {
@@ -278,6 +278,14 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
       columnMetadataReaderImpl.close();
     }
     return dictionaryMetaChunkList;
+  }
+
+  /**
+   * @return
+   */
+  protected CarbonDictionaryMetadataReader getDictionaryMetadataReader() {
+    return new CarbonDictionaryMetadataReaderImpl(this.hdfsStorePath, carbonTableIdentifier,
+        this.columnIdentifier);
   }
 
   /**

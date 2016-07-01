@@ -22,6 +22,7 @@ package org.carbondata.scan.expression.conditional;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
+import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.carbondata.scan.filter.intf.ExpressionType;
 import org.carbondata.scan.filter.intf.RowIntf;
@@ -34,7 +35,8 @@ public class EqualToExpression extends BinaryConditionalExpression {
     super(left, right);
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+  @Override public ExpressionResult evaluate(RowIntf value)
+      throws FilterUnsupportedException, FilterIllegalMemberException {
     ExpressionResult elRes = left.evaluate(value);
     ExpressionResult erRes = right.evaluate(value);
 
@@ -56,10 +58,12 @@ public class EqualToExpression extends BinaryConditionalExpression {
       }
     }
 
-    // todo: move to util
     switch (val1.getDataType()) {
       case STRING:
         result = val1.getString().equals(val2.getString());
+        break;
+      case SHORT:
+        result = val1.getShort().equals(val2.getShort());
         break;
       case INT:
         result = val1.getInt().equals(val2.getInt());

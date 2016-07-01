@@ -19,12 +19,14 @@
 
 package org.carbondata.common.logging.impl;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Properties;
 
 import org.carbondata.common.logging.LogService;
 
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.log4j.Logger;
 import org.apache.log4j.MDC;
 
@@ -273,8 +275,17 @@ public final class StandardLogService implements LogService {
     } catch (UnknownHostException e) {
       hostName = "localhost";
     }
-
-    logger.log(AuditLevel.AUDIT, "[" + hostName + "]" + msg);
+    String username = "unknown";
+    String threadid = "unknown";
+    try {
+      threadid = Thread.currentThread().getId() + "";
+      username = UserGroupInformation.getCurrentUser().getShortUserName();
+    } catch (IOException e) {
+      username = "unknown";
+    }
+    logger.log(AuditLevel.AUDIT, "[" + hostName + "]"
+        + "[" + username + "]"
+        + "[Thread-" +  threadid + "]" + msg);
   }
 
   /**

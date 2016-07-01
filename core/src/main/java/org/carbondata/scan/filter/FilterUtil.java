@@ -65,12 +65,14 @@ import org.carbondata.scan.expression.ColumnExpression;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
 import org.carbondata.scan.expression.LiteralExpression;
+import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.carbondata.scan.filter.executer.AndFilterExecuterImpl;
-import org.carbondata.scan.filter.executer.ColGroupFilterExecuterImpl;
 import org.carbondata.scan.filter.executer.DimColumnExecuterFilterInfo;
+import org.carbondata.scan.filter.executer.ExcludeColGroupFilterExecuterImpl;
 import org.carbondata.scan.filter.executer.ExcludeFilterExecuterImpl;
 import org.carbondata.scan.filter.executer.FilterExecuter;
+import org.carbondata.scan.filter.executer.IncludeColGroupFilterExecuterImpl;
 import org.carbondata.scan.filter.executer.IncludeFilterExecuterImpl;
 import org.carbondata.scan.filter.executer.OrFilterExecuterImpl;
 import org.carbondata.scan.filter.executer.RestructureFilterExecuterImpl;
@@ -105,42 +107,52 @@ public final class FilterUtil {
   private static FilterExecuter createFilterExecuterTree(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties) {
     FilterExecuterType filterExecuterType = filterExpressionResolverTree.getFilterExecuterType();
-    switch (filterExecuterType) {
-      case INCLUDE:
-        return getIncludeFilterExecuter(filterExpressionResolverTree.getDimColResolvedFilterInfo(),
-            segmentProperties);
-      case EXCLUDE:
-        return new ExcludeFilterExecuterImpl(
-            filterExpressionResolverTree.getDimColResolvedFilterInfo(),
-            segmentProperties.getDimensionKeyGenerator());
-      case OR:
-        return new OrFilterExecuterImpl(
-            createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties),
-            createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties));
-      case AND:
-        return new AndFilterExecuterImpl(
-            createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties),
-            createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties));
-      case RESTRUCTURE:
-        return new RestructureFilterExecuterImpl(
-            filterExpressionResolverTree.getDimColResolvedFilterInfo(),
-            segmentProperties.getDimensionKeyGenerator());
-      case ROWLEVEL_LESSTHAN:
-      case ROWLEVEL_LESSTHAN_EQUALTO:
-      case ROWLEVEL_GREATERTHAN_EQUALTO:
-      case ROWLEVEL_GREATERTHAN:
-        return RowLevelRangeTypeExecuterFacory
-            .getRowLevelRangeTypeExecuter(filterExecuterType, filterExpressionResolverTree);
-      case ROWLEVEL:
-      default:
-        return new RowLevelFilterExecuterImpl(
-            ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
-                .getDimColEvaluatorInfoList(),
-            ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getMsrColEvalutorInfoList(),
-            ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
-            ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier());
+    if (null != filterExecuterType) {
+      switch (filterExecuterType) {
+        case INCLUDE:
+          return getIncludeFilterExecuter(
+              filterExpressionResolverTree.getDimColResolvedFilterInfo(), segmentProperties);
+        case EXCLUDE:
+          return getExcludeFilterExecuter(
+              filterExpressionResolverTree.getDimColResolvedFilterInfo(), segmentProperties);
+        case OR:
+          return new OrFilterExecuterImpl(
+              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties),
+              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties));
+        case AND:
+          return new AndFilterExecuterImpl(
+              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties),
+              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties));
+        case RESTRUCTURE:
+          return new RestructureFilterExecuterImpl(
+              filterExpressionResolverTree.getDimColResolvedFilterInfo(),
+              segmentProperties.getDimensionKeyGenerator());
+        case ROWLEVEL_LESSTHAN:
+        case ROWLEVEL_LESSTHAN_EQUALTO:
+        case ROWLEVEL_GREATERTHAN_EQUALTO:
+        case ROWLEVEL_GREATERTHAN:
+          return RowLevelRangeTypeExecuterFacory
+              .getRowLevelRangeTypeExecuter(filterExecuterType, filterExpressionResolverTree,
+                  segmentProperties);
+        case ROWLEVEL:
+        default:
+          return new RowLevelFilterExecuterImpl(
+              ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
+                  .getDimColEvaluatorInfoList(),
+              ((RowLevelFilterResolverImpl) filterExpressionResolverTree)
+                  .getMsrColEvalutorInfoList(),
+              ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
+              ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
+              segmentProperties);
 
+      }
     }
+    return new RowLevelFilterExecuterImpl(
+        ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getDimColEvaluatorInfoList(),
+        ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getMsrColEvalutorInfoList(),
+        ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
+        ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
+        segmentProperties);
 
   }
 
@@ -157,10 +169,26 @@ public final class FilterUtil {
     if (dimColResolvedFilterInfo.getDimension().isColumnar()) {
       return new IncludeFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
     } else {
-      return new ColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
+      return new IncludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
     }
   }
 
+  /**
+   * It gives filter executer based on columnar or column group
+   *
+   * @param dimColResolvedFilterInfo
+   * @param segmentProperties
+   * @return
+   */
+  private static FilterExecuter getExcludeFilterExecuter(
+      DimColumnResolvedFilterInfo dimColResolvedFilterInfo, SegmentProperties segmentProperties) {
+
+    if (dimColResolvedFilterInfo.getDimension().isColumnar()) {
+      return new ExcludeFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
+    } else {
+      return new ExcludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
+    }
+  }
   /**
    * This method will check if a given expression contains a column expression
    * recursively.
@@ -288,7 +316,7 @@ public final class FilterUtil {
    */
   public static DimColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
       ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter)
-      throws QueryExecutionException, FilterUnsupportedException {
+      throws QueryExecutionException {
     Dictionary forwardDictionary = null;
     try {
       // Reading the dictionary value from cache.
@@ -353,6 +381,7 @@ public final class FilterUtil {
    * @param columnExpression
    * @param isIncludeFilter
    * @return DimColumnFilterInfo
+   * @throws FilterUnsupportedException
    * @throws QueryExecutionException
    */
   public static DimColumnFilterInfo getFilterListForAllValues(
@@ -385,9 +414,8 @@ public final class FilterUtil {
               evaluateResultListFinal.add(stringValue);
             }
           }
-        } catch (FilterUnsupportedException e) {
-          LOGGER.audit(e.getMessage());
-          throw new FilterUnsupportedException(e.getMessage());
+        } catch (FilterIllegalMemberException e) {
+          LOGGER.debug(e.getMessage());
         }
       }
       return getFilterValues(columnExpression, evaluateResultListFinal, forwardDictionary,
@@ -422,10 +450,11 @@ public final class FilterUtil {
    * @param isIncludeFilter
    * @return
    * @throws QueryExecutionException
+   * @throws FilterUnsupportedException
    */
   public static DimColumnFilterInfo getFilterList(AbsoluteTableIdentifier tableIdentifier,
       Expression expression, ColumnExpression columnExpression, boolean isIncludeFilter)
-      throws QueryExecutionException {
+      throws QueryExecutionException, FilterUnsupportedException {
     DimColumnFilterInfo resolvedFilterObject = null;
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
     try {
@@ -448,7 +477,7 @@ public final class FilterUtil {
             getFilterValues(tableIdentifier, columnExpression, evaluateResultListFinal,
                 isIncludeFilter);
       }
-    } catch (FilterUnsupportedException e) {
+    } catch (FilterIllegalMemberException e) {
       LOGGER.audit(e.getMessage());
     }
     return resolvedFilterObject;
@@ -463,9 +492,11 @@ public final class FilterUtil {
    * @param defaultValues
    * @param defaultSurrogate
    * @return
+   * @throws FilterUnsupportedException
    */
   public static DimColumnFilterInfo getFilterListForRS(Expression expression,
-      ColumnExpression columnExpression, String defaultValues, int defaultSurrogate) {
+      ColumnExpression columnExpression, String defaultValues, int defaultSurrogate)
+      throws FilterUnsupportedException {
     List<Integer> filterValuesList = new ArrayList<Integer>(20);
     DimColumnFilterInfo columnFilterInfo = null;
     // List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
@@ -492,7 +523,7 @@ public final class FilterUtil {
         columnFilterInfo = new DimColumnFilterInfo();
         columnFilterInfo.setFilterList(filterValuesList);
       }
-    } catch (FilterUnsupportedException e) {
+    } catch (FilterIllegalMemberException e) {
       LOGGER.audit(e.getMessage());
     }
     return columnFilterInfo;
@@ -508,10 +539,11 @@ public final class FilterUtil {
    * @param defaultSurrogate
    * @param isIncludeFilter
    * @return
+   * @throws FilterUnsupportedException
    */
   public static DimColumnFilterInfo getFilterListForAllMembersRS(Expression expression,
       ColumnExpression columnExpression, String defaultValues, int defaultSurrogate,
-      boolean isIncludeFilter) {
+      boolean isIncludeFilter) throws FilterUnsupportedException {
     List<Integer> filterValuesList = new ArrayList<Integer>(20);
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
     DimColumnFilterInfo columnFilterInfo = null;
@@ -533,7 +565,7 @@ public final class FilterUtil {
           evaluateResultListFinal.add(defaultValues);
         }
       }
-    } catch (FilterUnsupportedException e) {
+    } catch (FilterIllegalMemberException e) {
       LOGGER.audit(e.getMessage());
     }
 
@@ -572,9 +604,34 @@ public final class FilterUtil {
           LOGGER.error(e.getMessage());
         }
       }
+
     }
     return filterValuesList.toArray(new byte[filterValuesList.size()][]);
 
+  }
+
+  /**
+   * The method is used to get the single dictionary key's mask key
+   * @param surrogate
+   * @param carbonDimension
+   * @param blockLevelKeyGenerator
+   * @return
+   */
+  public static byte[] getMaskKey(int surrogate, CarbonDimension carbonDimension,
+      KeyGenerator blockLevelKeyGenerator) {
+
+    int[] keys = new int[blockLevelKeyGenerator.getDimCount()];
+    byte[] maskedKey = null;
+    Arrays.fill(keys, 0);
+    int[] rangesForMaskedByte =
+        getRangesForMaskedByte((carbonDimension.getKeyOrdinal()), blockLevelKeyGenerator);
+    try {
+      keys[carbonDimension.getKeyOrdinal()] = surrogate;
+      maskedKey = getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys));
+    } catch (KeyGenException e) {
+      LOGGER.error(e.getMessage());
+    }
+    return maskedKey;
   }
 
   /**
@@ -857,7 +914,7 @@ public final class FilterUtil {
       CarbonDimension carbonDimension) throws QueryExecutionException {
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(tableIdentifier.getCarbonTableIdentifier(),
-            String.valueOf(carbonDimension.getColumnId()), carbonDimension.getDataType());
+            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType());
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache forwardDictionaryCache =
         cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, tableIdentifier.getStorePath());
@@ -1012,8 +1069,9 @@ public final class FilterUtil {
       DataType dataType) {
     try {
       switch (dataType) {
+        case SHORT:
+          return Short.compare((Short.parseShort(dictionaryVal)), (Short.parseShort(memberVal)));
         case INT:
-
           return Integer.compare((Integer.parseInt(dictionaryVal)), (Integer.parseInt(memberVal)));
         case DOUBLE:
           return Double
@@ -1095,6 +1153,7 @@ public final class FilterUtil {
       String filterMember2, DataType dataType) {
     try {
       switch (dataType) {
+        case SHORT:
         case INT:
         case LONG:
         case DOUBLE:
@@ -1212,6 +1271,7 @@ public final class FilterUtil {
   /**
    * Method will find whether the expression needs to be resolved, this can happen
    * if the expression is exclude and data type is null(mainly in IS NOT NULL filter scenario)
+   *
    * @param rightExp
    * @param isIncludeFilter
    * @return
@@ -1230,4 +1290,15 @@ public final class FilterUtil {
     return false;
   }
 
+  /**
+   * This method will print the error log.
+   *
+   * @param e
+   */
+  public static void logError(Throwable e, boolean invalidRowsPresent) {
+    if (!invalidRowsPresent) {
+      invalidRowsPresent=true;
+      LOGGER.error(e, CarbonCommonConstants.FILTER_INVALID_MEMBER + e.getMessage());
+    }
+  }
 }

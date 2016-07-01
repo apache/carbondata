@@ -20,7 +20,6 @@
 
 <plugin
    id="CarbonAggSurrogateGenerator"
-   iconfile="icon.png"
    description="Carbon Agg Surrogate Generator"
    tooltip="Carbon Agg Surrogate Generator"
    category="Carbon"

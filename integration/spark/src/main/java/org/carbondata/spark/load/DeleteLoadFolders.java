@@ -38,6 +38,7 @@ import java.util.List;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.path.CarbonStorePath;
+import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
@@ -180,8 +181,8 @@ public final class DeleteLoadFolders {
         CarbonFile[] filesToBeDeleted = file.listFiles(new CarbonFileFilter() {
 
           @Override public boolean accept(CarbonFile file) {
-            return (file.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT) || file.getName()
-                .endsWith(CarbonCommonConstants.MEASUREMETADATA_FILE_EXT));
+            return (CarbonTablePath.isCarbonDataFile(file.getName())
+                || CarbonTablePath.isCarbonIndexFile(file.getName()));
           }
         });
 

@@ -24,6 +24,7 @@ import java.util.List;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.ColumnIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.reader.ThriftReader;
@@ -39,22 +40,22 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
   /**
    * carbonTable Identifier holding the info of databaseName and tableName
    */
-  private CarbonTableIdentifier carbonTableIdentifier;
+  protected CarbonTableIdentifier carbonTableIdentifier;
 
   /**
    * column name
    */
-  private String columnIdentifier;
+  protected ColumnIdentifier columnIdentifier;
 
   /**
    * hdfs store location
    */
-  private String carbonStorePath;
+  protected String carbonStorePath;
 
   /**
    * the path of the dictionary Sort Index file
    */
-  private String sortIndexFilePath;
+  protected String sortIndexFilePath;
 
   /**
    * Column sort info thrift instance.
@@ -78,7 +79,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
    * @param carbonStorePath       carbon store path
    */
   public CarbonDictionarySortIndexReaderImpl(final CarbonTableIdentifier carbonTableIdentifier,
-      final String columnIdentifier, final String carbonStorePath) {
+      final ColumnIdentifier columnIdentifier, final String carbonStorePath) {
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.columnIdentifier = columnIdentifier;
     this.carbonStorePath = carbonStorePath;
@@ -142,10 +143,14 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
    * @throws IOException if any I/O errors occurs
    */
   private void init() throws IOException {
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
-    this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier);
+    initPath();
     openThriftReader();
+  }
+
+  protected void initPath() {
+    CarbonTablePath carbonTablePath =
+         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+    this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId());
   }
 
   /**

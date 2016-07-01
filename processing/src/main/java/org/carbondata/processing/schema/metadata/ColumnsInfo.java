@@ -154,6 +154,8 @@ public class ColumnsInfo {
    */
   private ColumnSchemaDetailsWrapper columnSchemaDetailsWrapper;
 
+  private Map<String, Map<String, String>> columnProperties;
+
   public Map<String, GenericDataType> getComplexTypesMap() {
     return complexTypesMap;
   }
@@ -509,5 +511,13 @@ public class ColumnsInfo {
    */
   public void setColumnSchemaDetailsWrapper(ColumnSchemaDetailsWrapper columnSchemaDetailsWrapper) {
     this.columnSchemaDetailsWrapper = columnSchemaDetailsWrapper;
+  }
+
+  public void setColumnProperties(Map<String, Map<String, String>> columnProperties) {
+    this.columnProperties = columnProperties;
+  }
+
+  public Map<String, String> getColumnProperties(String columnName) {
+    return this.columnProperties.get(columnName);
   }
 }

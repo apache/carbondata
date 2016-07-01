@@ -22,6 +22,7 @@ package org.carbondata.scan.expression.conditional;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
+import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.carbondata.scan.filter.intf.ExpressionType;
 import org.carbondata.scan.filter.intf.RowIntf;
@@ -34,7 +35,8 @@ public class LessThanExpression extends BinaryConditionalExpression {
     super(left, right);
   }
 
-  public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+  public ExpressionResult evaluate(RowIntf value)
+      throws FilterUnsupportedException, FilterIllegalMemberException {
     ExpressionResult erRes = right.evaluate(value);
     ExpressionResult elRes = left.evaluate(value);
 
@@ -55,6 +57,9 @@ public class LessThanExpression extends BinaryConditionalExpression {
     switch (val1.getDataType()) {
       case STRING:
         result = elRes.getString().compareTo(erRes.getString()) < 0;
+        break;
+      case SHORT:
+        result = elRes.getShort() < (erRes.getShort());
         break;
       case INT:
         result = elRes.getInt() < (erRes.getInt());

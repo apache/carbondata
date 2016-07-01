@@ -27,11 +27,12 @@ namespace java org.carbondata.format
 */
 enum DataType {
 	STRING = 0,
-	INT = 1,
-	LONG = 2,
-	DOUBLE = 3,
-	DECIMAL = 4,
-	TIMESTAMP = 5,
+	SHORT = 1,
+	INT = 2,
+	LONG = 3,
+	DOUBLE = 4,
+	DECIMAL = 5,
+	TIMESTAMP = 6,
 	ARRAY = 20,
 	STRUCT = 21,
 }
@@ -85,10 +86,19 @@ struct ColumnSchema{
 	11: optional string aggregate_function;
 
 	12: optional binary default_value;
-	/**
+	
+	13: optional map<string,string> columnProperties
+	
+    /**
 	* To specify the visibily of the column by default its false
 	*/
-	13: optional bool invisible;
+	14: optional bool invisible;
+
+	/**
+	 * column reference id
+	 */
+	15: optional string columnReferenceId;	
+	
 }
 
 /**

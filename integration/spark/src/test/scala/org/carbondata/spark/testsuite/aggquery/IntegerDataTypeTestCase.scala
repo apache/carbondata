@@ -26,14 +26,15 @@ import org.scalatest.BeforeAndAfterAll
 
 /**
  * Test Class for aggregate query on Integer datatypes
+ *
  * @author N00902756
  *
  */
 class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("CREATE CUBE integertypecubeAgg DIMENSIONS (empno Integer, workgroupcategory Integer, deptno Integer, projectcode Integer) MEASURES (attendance Integer) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
-    sql("LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE integertypecubeAgg PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')")
+    sql("CREATE TABLE integertypecubeAgg (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED BY 'org.apache.carbondata.format'")
+    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO TABLE integertypecubeAgg OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')")
   }
 
   test("select empno from integertypecubeAgg") {
@@ -43,6 +44,6 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop cube integertypecubeAgg")
+    sql("drop table integertypecubeAgg")
   }
 }

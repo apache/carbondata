@@ -22,30 +22,34 @@ import java.io.File;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
+import org.carbondata.core.datastorage.store.impl.FileFactory;
 
 import static org.carbondata.core.constants.CarbonCommonConstants.INVALID_SEGMENT_ID;
 
 import org.apache.hadoop.fs.Path;
+
 
 /**
  * Helps to get Table content paths.
  */
 public class CarbonTablePath extends Path {
 
-  private static final String METADATA_DIR = "Metadata";
-  private static final String DICTIONARY_EXT = ".dict";
-  private static final String DICTIONARY_META_EXT = ".dictmeta";
-  private static final String SORT_INDEX_EXT = ".sortindex";
-  private static final String SCHEMA_FILE = "schema";
-  private static final String TABLE_STATUS_FILE = "tablestatus";
-  private static final String FACT_DIR = "Fact";
-  private static final String AGGREGATE_TABLE_PREFIX = "Agg";
-  private static final String SEGMENT_PREFIX = "Segment_";
-  private static final String PARTITION_PREFIX = "Part";
-  private static final String CARBON_DATA_EXT = ".carbondata";
-  private static final String DATA_PART_PREFIX = "part";
+  protected static final String METADATA_DIR = "Metadata";
+  protected static final String DICTIONARY_EXT = ".dict";
+  protected static final String DICTIONARY_META_EXT = ".dictmeta";
+  protected static final String SORT_INDEX_EXT = ".sortindex";
+  protected static final String SCHEMA_FILE = "schema";
+  protected static final String TABLE_STATUS_FILE = "tablestatus";
+  protected static final String FACT_DIR = "Fact";
+  protected static final String AGGREGATE_TABLE_PREFIX = "Agg";
+  protected static final String SEGMENT_PREFIX = "Segment_";
+  protected static final String PARTITION_PREFIX = "Part";
+  protected static final String CARBON_DATA_EXT = ".carbondata";
+  protected static final String DATA_PART_PREFIX = "part";
+  protected static final String INDEX_FILE_EXT = ".carbonindex";
 
-  private String tablePath;
+  protected String tablePath;
 
   public CarbonTablePath(String tablePathString) {
     super(tablePathString);
@@ -62,13 +66,6 @@ public class CarbonTablePath extends Path {
   }
 
   /**
-   * gets table path
-   */
-  public String getPath() {
-    return tablePath;
-  }
-
-  /**
    * @param columnId unique column identifier
    * @return name of dictionary file
    */
@@ -78,11 +75,47 @@ public class CarbonTablePath extends Path {
 
   /**
    * whether carbonFile is dictionary file or not
+   *
    * @param carbonFile
    * @return
    */
   public static Boolean isDictionaryFile(CarbonFile carbonFile) {
     return (!carbonFile.isDirectory()) && (carbonFile.getName().endsWith(DICTIONARY_EXT));
+  }
+
+  /**
+   * check if it is carbon data file matching extension
+   *
+   * @param fileNameWithPath
+   * @return boolean
+   */
+  public static boolean isCarbonDataFile(String fileNameWithPath) {
+    int pos = fileNameWithPath.lastIndexOf('.');
+    if (pos != -1) {
+      return fileNameWithPath.substring(pos).startsWith(CARBON_DATA_EXT);
+    }
+    return false;
+  }
+
+  /**
+   * check if it is carbon index file matching extension
+   *
+   * @param fileNameWithPath
+   * @return boolean
+   */
+  public static boolean isCarbonIndexFile(String fileNameWithPath) {
+    int pos = fileNameWithPath.lastIndexOf('.');
+    if (pos != -1) {
+      return fileNameWithPath.substring(pos).startsWith(INDEX_FILE_EXT);
+    }
+    return false;
+  }
+
+  /**
+   * gets table path
+   */
+  public String getPath() {
+    return tablePath;
   }
 
   /**
@@ -148,6 +181,29 @@ public class CarbonTablePath extends Path {
   }
 
   /**
+   * Below method will be used to get the index file present in the segment folder
+   * based on task id
+   *
+   * @param taskId      task id of the file
+   * @param partitionId partition number
+   * @param segmentId   segment number
+   * @return full qualified carbon index path
+   */
+  public String getCarbonIndexFilePath(final String taskId, final String partitionId,
+      final String segmentId) {
+    String segmentDir = getSegmentDir(partitionId, segmentId);
+    CarbonFile carbonFile =
+        FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir));
+
+    CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
+      @Override public boolean accept(CarbonFile file) {
+        return file.getName().startsWith(taskId) && file.getName().endsWith(INDEX_FILE_EXT);
+      }
+    });
+    return files[0].getAbsolutePath();
+  }
+
+  /**
    * Gets absolute path of data file
    *
    * @param partitionId unique partition identifier
@@ -189,23 +245,21 @@ public class CarbonTablePath extends Path {
   }
 
   /**
-   * check if it is carbon data file matching extension
-   * @param fileNameWithPath
-   * @return boolean
+   * Below method will be used to get the carbon index filename
+   *
+   * @param taskNo               task number
+   * @param factUpdatedTimeStamp time stamp
+   * @return filename
    */
-  public static boolean isCarbonDataFile(String fileNameWithPath) {
-    int pos = fileNameWithPath.lastIndexOf('.');
-    if( pos != -1 ) {
-      return fileNameWithPath.substring(pos).startsWith(CARBON_DATA_EXT);
-    }
-    return false;
+  public String getCarbonIndexFileName(int taskNo, String factUpdatedTimeStamp) {
+    return taskNo + "-" + factUpdatedTimeStamp + INDEX_FILE_EXT;
   }
 
   private String getSegmentDir(String partitionId, String segmentId) {
     return getPartitionDir(partitionId) + File.separator + SEGMENT_PREFIX + segmentId;
   }
 
-  private String getPartitionDir(String partitionId) {
+  public String getPartitionDir(String partitionId) {
     return getFactDir() + File.separator + PARTITION_PREFIX + partitionId;
   }
 
@@ -222,7 +276,7 @@ public class CarbonTablePath extends Path {
     return tablePath + File.separator + METADATA_DIR;
   }
 
-  private String getFactDir() {
+  public String getFactDir() {
     return tablePath + File.separator + FACT_DIR;
   }
 
@@ -234,7 +288,7 @@ public class CarbonTablePath extends Path {
     if (!(o instanceof CarbonTablePath)) {
       return false;
     }
-    CarbonTablePath path = (CarbonTablePath)o;
+    CarbonTablePath path = (CarbonTablePath) o;
     return tablePath.equals(path.tablePath) && super.equals(o);
   }
 

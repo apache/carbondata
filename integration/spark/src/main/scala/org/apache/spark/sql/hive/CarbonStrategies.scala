@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.hive
 
+import java.util
+
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql._
@@ -32,6 +34,7 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.{DescribeCommand => LogicalDescribeCommand, LogicalRelation}
 import org.apache.spark.sql.hive.execution.{DescribeHiveTableCommand, DropTable, HiveNativeCommand}
 import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
+import org.apache.spark.sql.types.IntegerType
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.spark.exception.MalformedCarbonCommandException
@@ -138,7 +141,11 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         predicates,
         useUnsafeCoversion = false)(sqlContext)
       projectExprsNeedToDecode.addAll(scan.attributesNeedToDecode)
-      if (projectExprsNeedToDecode.size() > 0) {
+      val updatedAttrs = scan.attributesRaw.map(attr =>
+        updateDataType(attr.asInstanceOf[AttributeReference], relation, projectExprsNeedToDecode))
+      scan.attributesRaw = updatedAttrs
+      if (projectExprsNeedToDecode.size() > 0
+          && isDictionaryEncoded(projectExprsNeedToDecode.asScala.toSeq, relation)) {
         val decoder = getCarbonDecoder(logicalRelation,
           sc,
           tableName,
@@ -151,7 +158,12 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           decoder
         }
       } else {
-        scan
+        if (scan.unprocessedExprs.nonEmpty) {
+          val filterCondToAdd = scan.unprocessedExprs.reduceLeftOption(expressions.And)
+          filterCondToAdd.map(Filter(_, scan)).getOrElse(scan)
+        } else {
+          scan
+        }
       }
     }
 
@@ -172,6 +184,31 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       }
       CarbonDictionaryDecoder(Seq(relation), IncludeProfile(attrs),
         CarbonAliasDecoderRelation(), scan)(sc)
+    }
+
+    def isDictionaryEncoded(projectExprsNeedToDecode: Seq[Attribute],
+        relation: CarbonDatasourceRelation): Boolean = {
+      var isEncoded = false
+      projectExprsNeedToDecode.foreach { attr =>
+        if (relation.carbonRelation.metaData.dictionaryMap.get(attr.name).getOrElse(false)) {
+          isEncoded = true
+        }
+      }
+      isEncoded
+    }
+
+    def updateDataType(attr: AttributeReference,
+        relation: CarbonDatasourceRelation,
+        allAttrsNotDecode: util.Set[Attribute]): AttributeReference = {
+      if (relation.carbonRelation.metaData.dictionaryMap.get(attr.name).getOrElse(false) &&
+        !allAttrsNotDecode.asScala.exists(p => p.name.equals(attr.name))) {
+        AttributeReference(attr.name,
+          IntegerType,
+          attr.nullable,
+          attr.metadata)(attr.exprId, attr.qualifiers)
+      } else {
+        attr
+      }
     }
 
     private def isStarQuery(plan: LogicalPlan) = {
@@ -214,11 +251,13 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         }
       case d: HiveNativeCommand =>
         try {
-          val resolvedTable = sqlContext.executePlan(CarbonHiveSyntax.parse(d.sql)).analyzed
+          val resolvedTable = sqlContext.executePlan(CarbonHiveSyntax.parse(d.sql)).optimizedPlan
           planLater(resolvedTable) :: Nil
         } catch {
           case ce: MalformedCarbonCommandException =>
             throw ce
+          case ae: AnalysisException =>
+            throw ae
           case e: Exception => ExecutedCommand(d) :: Nil
         }
       case DescribeFormattedCommand(sql, tblIdentifier) =>

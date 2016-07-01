@@ -32,8 +32,8 @@ import org.scalatest.BeforeAndAfterAll
 class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("CREATE CUBE integertypecubejoin DIMENSIONS (empno Integer, workgroupcategory Integer, deptno Integer, projectcode Integer) MEASURES (attendance Integer) OPTIONS (PARTITIONER [PARTITION_COUNT=1])")
-    sql("LOAD DATA fact from './src/test/resources/data.csv' INTO CUBE integertypecubejoin PARTITIONDATA(DELIMITER ',', QUOTECHAR '\"')")
+    sql("CREATE TABLE integertypecubejoin (empno int, workgroupcategory string, deptno int, projectcode int,attendance int) STORED BY 'org.apache.carbondata.format'")
+    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO TABLE integertypecubejoin OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
   }
 
   test("select empno from integertypecubejoin") {
@@ -43,6 +43,6 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop cube integertypecubejoin")
+    sql("drop table integertypecubejoin")
   }
 }

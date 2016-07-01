@@ -52,16 +52,18 @@ class CarbonSource
   override def createRelation(
       sqlContext: SQLContext,
       parameters: Map[String, String]): BaseRelation = {
-    parameters.get("path") match {
-      case Some(path) => CarbonDatasourceHadoopRelation(sqlContext, Array(path), parameters)
-      case _ =>
-        val options = new CarbonOption(parameters)
-        val tableIdentifier = options.tableIdentifier.split("""\.""").toSeq
-        val ident = tableIdentifier match {
-          case Seq(name) => TableIdentifier(name, None)
-          case Seq(db, name) => TableIdentifier(name, Some(db))
-        }
-        CarbonDatasourceRelation(ident, None)(sqlContext)
+    if (parameters.get("tablePath") != None) {
+      val options = new CarbonOption(parameters)
+      val tableIdentifier = options.tableIdentifier.split("""\.""").toSeq
+      val ident = tableIdentifier match {
+        case Seq(name) => TableIdentifier(name, None)
+        case Seq(db, name) => TableIdentifier(name, Some(db))
+      }
+      CarbonDatasourceRelation(ident, None)(sqlContext)
+    } else if (parameters.get("path") != None) {
+      CarbonDatasourceHadoopRelation(sqlContext, Array(parameters.get("path").get), parameters)
+    } else {
+      sys.error("Carbon table path not found")
     }
 
   }
@@ -242,6 +244,7 @@ case class CarbonRelation(
         metaData.carbonTable.getMeasureByName(factTable, x.getColName).getDataType.toString
           .toLowerCase match {
           case "int" => "double"
+          case "short" => "double"
           case "decimal" => "decimal(" + x.getPrecision + "," + x.getScale + ")"
           case others => others
         }),
