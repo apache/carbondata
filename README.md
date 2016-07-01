@@ -1,4 +1,4 @@
-# This github has migrated to apache: https://github.com/apache/incubator-carbondata, please fork new github.
+# This github has been migrated to apache: https://github.com/apache/incubator-carbondata, please fork and raise PRs to apache github 
 # CarbonData
 CarbonData is a new Apache Hadoop native file format for faster 
 interactive query using advanced columnar storage, index, compression 
