@@ -47,9 +47,9 @@ object CarbonThriftServer {
         Thread.sleep(30000)
     }
 
-    val carbonContext = new CarbonContext(sc, args.head)
+    val cc = new CarbonContext(sc, args.head)
 
-    HiveThriftServer2.startWithContext(carbonContext)
+    HiveThriftServer2.startWithContext(cc)
   }
 
 }

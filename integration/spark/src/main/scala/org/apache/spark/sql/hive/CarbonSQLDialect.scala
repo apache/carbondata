@@ -23,7 +23,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 
-private[spark] class CarbonSQLDialect(context: HiveContext) extends ParserDialect {
+private[spark] class CarbonSQLDialect(hiveContext: HiveContext) extends ParserDialect {
 
   @transient
   protected val sqlParser = new CarbonSqlParser
