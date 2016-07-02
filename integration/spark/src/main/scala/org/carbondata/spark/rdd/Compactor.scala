@@ -48,7 +48,7 @@ object Compactor {
     kettleHomePath: String,
     cubeCreationTime: Long,
     loadsToMerge: java.util.List[LoadMetadataDetails],
-    sc: SQLContext): Unit = {
+    sqlContext: SQLContext): Unit = {
 
     val startTime = System.nanoTime();
     val mergedLoadName = CarbonDataMergerUtil.getMergedLoadName(loadsToMerge)
@@ -85,7 +85,7 @@ object Compactor {
     )
 
     val mergeStatus = new CarbonMergerRDD(
-      sc.sparkContext,
+      sqlContext.sparkContext,
       new MergeResultImpl(),
       carbonLoadModel,
       carbonMergerMapping

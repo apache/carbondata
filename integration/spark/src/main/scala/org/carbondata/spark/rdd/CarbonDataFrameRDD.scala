@@ -20,8 +20,8 @@ package org.carbondata.spark.rdd
 import org.apache.spark.sql.{CarbonContext, DataFrame, Row}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 
-class CarbonDataFrameRDD(val sc: CarbonContext, logicalPlan: LogicalPlan)
-  extends DataFrame(sc, logicalPlan) {
+class CarbonDataFrameRDD(val cc: CarbonContext, logicalPlan: LogicalPlan)
+  extends DataFrame(cc, logicalPlan) {
 
   override def collect(): Array[Row] = {
 
