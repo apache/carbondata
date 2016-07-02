@@ -101,7 +101,8 @@ case class DictionaryMap(dictionaryMap: Map[String, Boolean]) {
   }
 }
 
-class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String, client: ClientInterface)
+class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
+    client: ClientInterface)
   extends HiveMetastoreCatalog(client, hiveContext)
     with spark.Logging {
 
