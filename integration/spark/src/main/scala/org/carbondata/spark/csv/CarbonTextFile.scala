@@ -50,13 +50,13 @@ private[csv] object CarbonTextFile {
       hadoopConfiguration).setName("newHadoopRDD-spark-csv")
   }
 
-  def withCharset(cc: SparkContext, location: String, charset: String): RDD[String] = {
+  def withCharset(sc: SparkContext, location: String, charset: String): RDD[String] = {
     if (Charset.forName(charset) == TextFile.DEFAULT_CHARSET) {
-      newHadoopRDD(cc, location).map(pair => pair._2.toString)
+      newHadoopRDD(sc, location).map(pair => pair._2.toString)
     } else {
       // can't pass a Charset object here cause its not serializable
       // TODO: maybe use mapPartitions instead?
-      newHadoopRDD(cc, location).map(
+      newHadoopRDD(sc, location).map(
         pair => new String(pair._2.getBytes, 0, pair._2.getLength, charset))
     }
   }
