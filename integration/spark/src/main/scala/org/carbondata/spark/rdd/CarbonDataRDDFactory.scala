@@ -93,7 +93,7 @@ object CarbonDataRDDFactory extends Logging {
   }
 
   def mergeCarbonData(
-      sc: SQLContext,
+      sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       storeLocation: String,
       hdfsStoreLocation: String,
@@ -442,7 +442,7 @@ object CarbonDataRDDFactory extends Logging {
     }
   }
 
-  def loadCarbonData(sc: SQLContext,
+  def loadCarbonData(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       storeLocation: String,
       hdfsStoreLocation: String,
@@ -485,7 +485,7 @@ object CarbonDataRDDFactory extends Logging {
 
         if (lock.lockWithRetries()) {
           logger.info("Acquired the compaction lock.")
-          startCompactionThreads(sc,
+          startCompactionThreads(sqlContext,
             carbonLoadModel,
             partitioner,
             hdfsStoreLocation,
@@ -566,9 +566,9 @@ object CarbonDataRDDFactory extends Logging {
       // reading the start time of data load.
       val loadStartTime = CarbonLoaderUtil.readCurrentTime()
       carbonLoadModel.setFactTimeStamp(loadStartTime)
-      val cubeCreationTime = CarbonEnv.getInstance(sc).carbonCatalog
+      val cubeCreationTime = CarbonEnv.getInstance(sqlContext).carbonCatalog
         .getCubeCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
-      val schemaLastUpdatedTime = CarbonEnv.getInstance(sc).carbonCatalog
+      val schemaLastUpdatedTime = CarbonEnv.getInstance(sqlContext).carbonCatalog
         .getSchemaLastUpdatedTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
 
       // compaction handling
@@ -605,7 +605,7 @@ object CarbonDataRDDFactory extends Logging {
                   pathBuilder.substring(0, pathBuilder.size - 1)
                 }
                 (split.getPartition.getUniqueID, SplitUtils.getSplits(pathBuilder.toString(),
-                  sc.sparkContext
+                  sqlContext.sparkContext
                 ))
             }
           } else {
@@ -624,7 +624,7 @@ object CarbonDataRDDFactory extends Logging {
                 }
                 pathBuilder.append(split.getPartition.getUniqueID).append("/")
                 (split.getPartition.getUniqueID,
-                  SplitUtils.getSplits(pathBuilder.toString, sc.sparkContext))
+                  SplitUtils.getSplits(pathBuilder.toString, sqlContext.sparkContext))
             }
           }
 
@@ -637,13 +637,13 @@ object CarbonDataRDDFactory extends Logging {
            * 4)DummyLoadRDD output (host,Array[BlockDetails])as the parameter to CarbonDataLoadRDD
            *   which parititon by host
            */
-          val hadoopConfiguration = new Configuration(sc.sparkContext.hadoopConfiguration)
+          val hadoopConfiguration = new Configuration(sqlContext.sparkContext.hadoopConfiguration)
           // FileUtils will skip file which is no csv, and return all file path which split by ','
           val filePaths = carbonLoadModel.getFactFilePath
           hadoopConfiguration.set("mapreduce.input.fileinputformat.inputdir", filePaths)
           hadoopConfiguration.set("mapreduce.input.fileinputformat.input.dir.recursive", "true")
 
-          configSplitMaxSize(sc.sparkContext, filePaths, hadoopConfiguration)
+          configSplitMaxSize(sqlContext.sparkContext, filePaths, hadoopConfiguration)
 
           val inputFormat = new org.apache.hadoop.mapreduce.lib.input.TextInputFormat
           inputFormat match {
@@ -700,7 +700,7 @@ object CarbonDataRDDFactory extends Logging {
         carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName,
         partitioner.partitionCount, currentLoadCount.toString)
       val status = new
-          CarbonDataLoadRDD(sc.sparkContext,
+          CarbonDataLoadRDD(sqlContext.sparkContext,
             new DataLoadResultImpl(),
             carbonLoadModel,
             storeLocation,

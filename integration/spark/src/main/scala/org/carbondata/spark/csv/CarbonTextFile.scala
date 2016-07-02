@@ -37,26 +37,26 @@ import org.carbondata.spark.rdd.CarbonDataRDDFactory
  */
 private[csv] object CarbonTextFile {
 
-  private def newHadoopRDD(context: SparkContext, location: String) = {
-    val hadoopConfiguration = new Configuration(context.hadoopConfiguration)
+  private def newHadoopRDD(sc: SparkContext, location: String) = {
+    val hadoopConfiguration = new Configuration(sc.hadoopConfiguration)
     hadoopConfiguration.setStrings(FileInputFormat.INPUT_DIR, location)
     hadoopConfiguration.setBoolean(FileInputFormat.INPUT_DIR_RECURSIVE, true)
-    CarbonDataRDDFactory.configSplitMaxSize(context, location, hadoopConfiguration)
+    CarbonDataRDDFactory.configSplitMaxSize(sc, location, hadoopConfiguration)
     new NewHadoopRDD[LongWritable, Text](
-      context,
+      sc,
       classOf[TextInputFormat],
       classOf[LongWritable],
       classOf[Text],
       hadoopConfiguration).setName("newHadoopRDD-spark-csv")
   }
 
-  def withCharset(context: SparkContext, location: String, charset: String): RDD[String] = {
+  def withCharset(sc: SparkContext, location: String, charset: String): RDD[String] = {
     if (Charset.forName(charset) == TextFile.DEFAULT_CHARSET) {
-      newHadoopRDD(context, location).map(pair => pair._2.toString)
+      newHadoopRDD(sc, location).map(pair => pair._2.toString)
     } else {
       // can't pass a Charset object here cause its not serializable
       // TODO: maybe use mapPartitions instead?
-      newHadoopRDD(context, location).map(
+      newHadoopRDD(sc, location).map(
         pair => new String(pair._2.getBytes, 0, pair._2.getLength, charset))
     }
   }

@@ -57,13 +57,13 @@ object GenerateDictionaryExample {
     printDictionary(cc, tableIdentifier, dictFolderPath)
   }
 
-  def printDictionary(carbonContext: CarbonContext, carbonTableIdentifier: CarbonTableIdentifier,
+  def printDictionary(cc: CarbonContext, carbonTableIdentifier: CarbonTableIdentifier,
                       dictFolderPath: String) {
     val dataBaseName = carbonTableIdentifier.getDatabaseName
     val tableName = carbonTableIdentifier.getTableName
-    val carbonRelation = CarbonEnv.getInstance(carbonContext).carbonCatalog.
+    val carbonRelation = CarbonEnv.getInstance(cc).carbonCatalog.
       lookupRelation1(Option(dataBaseName),
-        tableName) (carbonContext).asInstanceOf[CarbonRelation]
+        tableName) (cc).asInstanceOf[CarbonRelation]
     val carbonTable = carbonRelation.cubeMeta.carbonTable
     val dimensions = carbonTable.getDimensionByTableName(tableName.toLowerCase())
       .toArray.map(_.asInstanceOf[CarbonDimension])
@@ -77,7 +77,7 @@ object GenerateDictionaryExample {
       println(s"Key\t\t\tValue")
       val columnIdentifier = new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
         dimension.getColumnIdentifier, dimension.getDataType)
-      val dict = CarbonLoaderUtil.getDictionary(columnIdentifier, carbonContext.storePath)
+      val dict = CarbonLoaderUtil.getDictionary(columnIdentifier, cc.storePath)
       var index: Int = 1
       var distinctValue = dict.getDictionaryValueForKey(index)
       while (distinctValue != null) {
