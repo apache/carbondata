@@ -22,36 +22,36 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  // normal deletion case
-  test("drop table Test with new DDL") {
-    sql("drop table table1")
-
-  }
-
-  // deletion case with if exists
-  test("drop table if exists Test with new DDL") {
-    sql("drop table if exists table2")
-
-  }
-
-  // try to delete after deletion with if exists
-  test("drop table after deletion with if exists with new DDL") {
-    sql("drop table if exists table2")
-
-  }
-
-  // try to delete after deletion with out if exists. this should fail
-  test("drop table after deletion with new DDL") {
-    try {
-      sql("drop table table2")
-      fail("failed") // this should not be executed as exception is expected
-    }
-    catch {
-      case e: Exception => // pass the test case as this is expected
-    }
-
-
-  }
+//  // normal deletion case
+//  test("drop table Test with new DDL") {
+//    sql("drop table table1")
+//
+//  }
+//
+//  // deletion case with if exists
+//  test("drop table if exists Test with new DDL") {
+//    sql("drop table if exists table2")
+//
+//  }
+//
+//  // try to delete after deletion with if exists
+//  test("drop table after deletion with if exists with new DDL") {
+//    sql("drop table if exists table2")
+//
+//  }
+//
+//  // try to delete after deletion with out if exists. this should fail
+//  test("drop table after deletion with new DDL") {
+//    try {
+//      sql("drop table table2")
+//      fail("failed") // this should not be executed as exception is expected
+//    }
+//    catch {
+//      case e: Exception => // pass the test case as this is expected
+//    }
+//
+//
+//  }
 
   test("drop table using case insensitive table name") {
     // create table
