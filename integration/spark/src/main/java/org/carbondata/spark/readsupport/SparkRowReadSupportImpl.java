@@ -6,6 +6,7 @@ import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
+import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.hadoop.readsupport.impl.AbstractDictionaryDecodedReadSupport;
 
 import org.apache.spark.sql.Row;
@@ -23,7 +24,7 @@ public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSuppor
   @Override public Row readRow(Object[] data) {
     for (int i = 0; i < dictionaries.length; i++) {
       if (dictionaries[i] != null) {
-        data[i] = org.carbondata.core.util.DataTypeUtil
+        data[i] = DataTypeUtil
             .getDataBasedOnDataType(dictionaries[i].getDictionaryValueForKey((int) data[i]),
                 dataTypes[i]);
         switch (dataTypes[i]) {

@@ -37,6 +37,7 @@ import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.scan.executor.exception.QueryExecutionException;
 import org.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.carbondata.scan.executor.util.QueryUtil;
@@ -177,7 +178,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
                 memberString = null;
               }
             }
-            record[dimColumnEvaluatorInfo.getRowIndex()] = org.carbondata.core.util.DataTypeUtil
+            record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
                 .getDataBasedOnDataType(memberString,
                     dimColumnEvaluatorInfo.getDimension().getDataType());
           } else {
@@ -193,7 +194,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
             memberString =
                 getFilterActualValueFromDictionaryValue(dimColumnEvaluatorInfo, dictionaryValue,
                     forwardDictionary);
-            record[dimColumnEvaluatorInfo.getRowIndex()] = org.carbondata.core.util.DataTypeUtil
+            record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
                 .getDataBasedOnDataType(memberString,
                     dimColumnEvaluatorInfo.getDimension().getDataType());
           } else if (dimColumnEvaluatorInfo.getDimension()

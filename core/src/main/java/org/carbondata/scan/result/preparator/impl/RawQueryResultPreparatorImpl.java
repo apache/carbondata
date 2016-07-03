@@ -7,6 +7,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.scan.executor.impl.QueryExecutorProperties;
 import org.carbondata.scan.model.QueryDimension;
 import org.carbondata.scan.model.QueryMeasure;
@@ -91,7 +92,7 @@ public class RawQueryResultPreparatorImpl
           int noDictionaryColumnIndex = 0;
           for (int i = 0; i < dimSize; i++) {
             if (!queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)) {
-              row[order[i]] = org.carbondata.core.util.DataTypeUtil.getDataBasedOnDataType(
+              row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
                   new String(key.getNoDictionaryKeyByIndex(noDictionaryColumnIndex++)),
                   queryDimensions[i].getDimension().getDataType());
             } else if (queryDimensions[i].getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {

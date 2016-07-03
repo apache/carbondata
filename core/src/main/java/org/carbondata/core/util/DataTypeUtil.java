@@ -179,6 +179,7 @@ public final class DataTypeUtil {
       return false;
     }
     switch (actualDataType) {
+      case SHORT:
       case INT:
       case LONG:
       case DOUBLE:

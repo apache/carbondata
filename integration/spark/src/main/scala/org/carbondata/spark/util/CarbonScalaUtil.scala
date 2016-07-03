@@ -20,7 +20,6 @@ package org.carbondata.spark.util
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql._
-import org.apache.spark.sql.execution.command.Level
 import org.apache.spark.sql.hive.{CarbonMetaData, DictionaryMap}
 import org.apache.spark.sql.types._
 
@@ -34,6 +33,7 @@ object CarbonScalaUtil {
       dataType: org.apache.spark.sql.types.DataType): CarbonDataType = {
     dataType match {
       case StringType => CarbonDataType.STRING
+      case ShortType => CarbonDataType.SHORT
       case IntegerType => CarbonDataType.INT
       case LongType => CarbonDataType.LONG
       case DoubleType => CarbonDataType.DOUBLE
@@ -68,6 +68,7 @@ object CarbonScalaUtil {
   def convertCarbonToSparkDataType(dataType: CarbonDataType): types.DataType = {
     dataType match {
       case CarbonDataType.STRING => StringType
+      case CarbonDataType.SHORT => ShortType
       case CarbonDataType.INT => IntegerType
       case CarbonDataType.LONG => LongType
       case CarbonDataType.DOUBLE => DoubleType
