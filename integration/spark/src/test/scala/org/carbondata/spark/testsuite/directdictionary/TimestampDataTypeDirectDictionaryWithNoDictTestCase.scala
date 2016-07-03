@@ -39,7 +39,7 @@ import org.carbondata.core.util.CarbonProperties
   *
   */
 class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with BeforeAndAfterAll {
-  var oc: HiveContext = _
+  var hiveContext: HiveContext = _
 
   override def beforeAll {
     try {

@@ -101,8 +101,9 @@ case class DictionaryMap(dictionaryMap: Map[String, Boolean]) {
   }
 }
 
-class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: ClientInterface)
-  extends HiveMetastoreCatalog(client, hive)
+class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
+    client: ClientInterface)
+  extends HiveMetastoreCatalog(client, hiveContext)
     with spark.Logging {
 
   @transient val LOGGER = LogServiceFactory
@@ -159,7 +160,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     if (CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.LOCK_TYPE_DEFAULT)
       .equalsIgnoreCase(CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER)) {
-      val zookeeperUrl = hive.getConf("spark.deploy.zookeeper.url", "127.0.0.1:2181")
+      val zookeeperUrl = hiveContext.getConf("spark.deploy.zookeeper.url", "127.0.0.1:2181")
       ZookeeperInit.getInstance(zookeeperUrl)
     }
 
@@ -344,7 +345,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
   def getNodeList: Array[String] = {
 
     val arr =
-      hive.sparkContext.getExecutorMemoryStatus.map {
+      hiveContext.sparkContext.getExecutorMemoryStatus.map {
         kv =>
           kv._1.split(":")(0)
       }.toSeq
@@ -352,7 +353,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     val selectedLocalIPList = localhostIPs.filter(arr.contains(_))
 
     val nodelist: List[String] = withoutDriverIP(arr.toList)(selectedLocalIPList.contains(_))
-    val masterMode = hive.sparkContext.getConf.get("spark.master")
+    val masterMode = hiveContext.sparkContext.getConf.get("spark.master")
     if (nodelist.nonEmpty) {
       // Specific for Yarn Mode
       if ("yarn-cluster".equals(masterMode) || "yarn-client".equals(masterMode)) {

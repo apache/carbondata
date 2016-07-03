@@ -22,7 +22,7 @@ import org.apache.spark.sql.hive.{CarbonMetastoreCatalog, HiveContext}
 /**
  * Carbon Environment for unified context
  */
-case class CarbonEnv(carbonContext: HiveContext, carbonCatalog: CarbonMetastoreCatalog)
+case class CarbonEnv(hiveContext: HiveContext, carbonCatalog: CarbonMetastoreCatalog)
 
 object CarbonEnv {
   val className = classOf[CarbonEnv].getCanonicalName
