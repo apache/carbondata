@@ -212,35 +212,21 @@ public final class DataTypeUtil {
    * @return actual data after conversion
    */
   public static Object getDataBasedOnDataType(String data, DataType actualDataType) {
-    if (null == data) {
+
+    if (null == data || data.isEmpty() || CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(data)) {
       return null;
     }
     try {
       switch (actualDataType) {
         case INT:
-          if (data.isEmpty()) {
-            return null;
-          }
           return Integer.parseInt(data);
         case SHORT:
-          if (data.isEmpty()) {
-            return null;
-          }
           return Short.parseShort(data);
         case DOUBLE:
-          if (data.isEmpty()) {
-            return null;
-          }
           return Double.parseDouble(data);
         case LONG:
-          if (data.isEmpty()) {
-            return null;
-          }
           return Long.parseLong(data);
         case TIMESTAMP:
-          if (data.isEmpty()) {
-            return null;
-          }
           SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
                   CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
@@ -253,10 +239,7 @@ public final class DataTypeUtil {
             return null;
           }
         case DECIMAL:
-          if (data.isEmpty()) {
-            return null;
-          }
-          BigDecimal javaDecVal = new BigDecimal(data);
+          java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data);
           scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
           org.apache.spark.sql.types.Decimal decConverter =
               new org.apache.spark.sql.types.Decimal();
@@ -272,6 +255,7 @@ public final class DataTypeUtil {
   }
 
   public static Object getMeasureDataBasedOnDataType(Object data, DataType dataType) {
+
     if (null == data) {
       return null;
     }
@@ -282,7 +266,7 @@ public final class DataTypeUtil {
         case LONG:
           return data;
         case DECIMAL:
-          BigDecimal javaDecVal = new BigDecimal(data.toString());
+          java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data.toString());
           scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
           org.apache.spark.sql.types.Decimal decConverter =
               new org.apache.spark.sql.types.Decimal();
