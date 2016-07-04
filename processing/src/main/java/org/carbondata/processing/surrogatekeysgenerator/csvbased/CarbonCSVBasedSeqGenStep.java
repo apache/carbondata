@@ -1756,8 +1756,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
   private void processnoDictionaryDim(int index, String dimensionValue, String dataType,
       boolean isStringDataType, ByteBuffer[] out) {
     if (!(isStringDataType)) {
-      if (null == DataTypeUtil
-          .getDataBasedOnDataType(dimensionValue, DataTypeUtil.getDataType(dataType))) {
+      if (!DataTypeUtil.isValidData(dimensionValue, DataTypeUtil.getDataType(dataType))) {
         dimensionValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
       }
     }

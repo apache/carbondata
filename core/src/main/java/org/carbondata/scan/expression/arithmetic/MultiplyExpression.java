@@ -19,7 +19,7 @@
 
 package org.carbondata.scan.expression.arithmetic;
 
-import org.carbondata.scan.expression.DataType;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
 import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
@@ -53,22 +53,21 @@ public class MultiplyExpression extends BinaryArithmeticExpression {
       }
     }
     switch (val1.getDataType()) {
-      case StringType:
-      case DoubleType:
-        multiplyExprRightRes.set(DataType.DoubleType, val1.getDouble() * val2.getDouble());
+      case STRING:
+      case DOUBLE:
+        multiplyExprRightRes.set(DataType.DOUBLE, val1.getDouble() * val2.getDouble());
         break;
-      case ShortType:
-        multiplyExprRightRes.set(DataType.ShortType, val1.getShort() * val2.getShort());
+      case SHORT:
+        multiplyExprRightRes.set(DataType.SHORT, val1.getShort() * val2.getShort());
         break;
-      case IntegerType:
-        multiplyExprRightRes.set(DataType.IntegerType, val1.getInt() * val2.getInt());
+      case INT:
+        multiplyExprRightRes.set(DataType.INT, val1.getInt() * val2.getInt());
         break;
-      case LongType:
-        multiplyExprRightRes.set(DataType.LongType, val1.getLong() * val2.getLong());
+      case LONG:
+        multiplyExprRightRes.set(DataType.LONG, val1.getLong() * val2.getLong());
         break;
-      case DecimalType:
-        multiplyExprRightRes
-            .set(DataType.DecimalType, val1.getDecimal().multiply(val2.getDecimal()));
+      case DECIMAL:
+        multiplyExprRightRes.set(DataType.DECIMAL, val1.getDecimal().multiply(val2.getDecimal()));
         break;
       default:
         throw new FilterUnsupportedException(

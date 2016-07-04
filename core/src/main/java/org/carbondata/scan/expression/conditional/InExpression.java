@@ -22,7 +22,7 @@ package org.carbondata.scan.expression.conditional;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.carbondata.scan.expression.DataType;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
 import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
@@ -57,25 +57,25 @@ public class InExpression extends BinaryConditionalExpression {
             val = expressionResVal;
           }
           switch (val.getDataType()) {
-            case StringType:
+            case STRING:
               val = new ExpressionResult(val.getDataType(), expressionResVal.getString());
               break;
-            case ShortType:
+            case SHORT:
               val = new ExpressionResult(val.getDataType(), expressionResVal.getShort());
               break;
-            case IntegerType:
+            case INT:
               val = new ExpressionResult(val.getDataType(), expressionResVal.getInt());
               break;
-            case DoubleType:
+            case DOUBLE:
               val = new ExpressionResult(val.getDataType(), expressionResVal.getDouble());
               break;
-            case TimestampType:
+            case TIMESTAMP:
               val = new ExpressionResult(val.getDataType(), expressionResVal.getTime());
               break;
-            case LongType:
+            case LONG:
               val = new ExpressionResult(val.getDataType(), expressionResVal.getLong());
               break;
-            case DecimalType:
+            case DECIMAL:
               val = new ExpressionResult(val.getDataType(), expressionResVal.getDecimal());
               break;
             default:
@@ -87,7 +87,7 @@ public class InExpression extends BinaryConditionalExpression {
 
       }
     }
-    leftRsult.set(DataType.BooleanType, setOfExprResult.contains(leftRsult));
+    leftRsult.set(DataType.BOOLEAN, setOfExprResult.contains(leftRsult));
     return leftRsult;
   }
 

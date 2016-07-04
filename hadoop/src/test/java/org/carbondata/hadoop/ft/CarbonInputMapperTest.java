@@ -8,12 +8,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.hadoop.CarbonInputFormat;
 import org.carbondata.hadoop.CarbonProjection;
 import org.carbondata.hadoop.test.util.StoreCreator;
 import org.carbondata.scan.expression.ColumnExpression;
-import org.carbondata.scan.expression.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.LiteralExpression;
 import org.carbondata.scan.expression.conditional.EqualToExpression;
@@ -75,8 +75,8 @@ public class CarbonInputMapperTest extends TestCase {
       carbonProjection.addColumn("country");
       carbonProjection.addColumn("salary");
       Expression expression =
-          new EqualToExpression(new ColumnExpression("country", DataType.StringType),
-              new LiteralExpression("france", DataType.StringType));
+          new EqualToExpression(new ColumnExpression("country", DataType.STRING),
+              new LiteralExpression("france", DataType.STRING));
       runJob(outPath, carbonProjection, expression);
       Assert.assertTrue("Count lines are not matching", countTheLines(outPath) == 101);
       Assert.assertTrue("Column count are not matching", countTheColumns(outPath) == 3);

@@ -23,9 +23,9 @@ import java.util.List;
 import java.util.UUID;
 
 import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.hadoop.CarbonInputFormat;
 import org.carbondata.scan.expression.ColumnExpression;
-import org.carbondata.scan.expression.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.LiteralExpression;
 import org.carbondata.scan.expression.conditional.EqualToExpression;
@@ -70,8 +70,8 @@ public class CarbonInputFormat_FT extends TestCase {
     FileInputFormat.addInputPath(job, new Path("/opt/carbonstore/"));
     carbonInputFormat.setTableToAccess(job.getConfiguration(), tableIdentifier);
     job.getConfiguration().set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, "1,2");
-    Expression expression = new EqualToExpression(new ColumnExpression("c1", DataType.StringType),
-        new LiteralExpression("a", DataType.StringType));
+    Expression expression = new EqualToExpression(new ColumnExpression("c1", DataType.STRING),
+        new LiteralExpression("a", DataType.STRING));
     CarbonInputFormat.setFilterPredicates(job.getConfiguration(), expression);
     List splits = carbonInputFormat.getSplits(job);
 

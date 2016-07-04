@@ -20,33 +20,31 @@ package org.carbondata.spark.util
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql._
-import org.apache.spark.sql.execution.command.Level
 import org.apache.spark.sql.hive.{CarbonMetaData, DictionaryMap}
 import org.apache.spark.sql.types._
 
-import org.carbondata.core.carbon.metadata.datatype.DataType
+import org.carbondata.core.carbon.metadata.datatype.{DataType => CarbonDataType}
 import org.carbondata.core.carbon.metadata.encoder.Encoding
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.scan.expression.{DataType => CarbonDataType}
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(
       dataType: org.apache.spark.sql.types.DataType): CarbonDataType = {
     dataType match {
-      case StringType => CarbonDataType.StringType
-      case ShortType => CarbonDataType.ShortType
-      case IntegerType => CarbonDataType.IntegerType
-      case LongType => CarbonDataType.LongType
-      case DoubleType => CarbonDataType.DoubleType
-      case FloatType => CarbonDataType.FloatType
-      case DateType => CarbonDataType.DateType
-      case BooleanType => CarbonDataType.BooleanType
-      case TimestampType => CarbonDataType.TimestampType
-      case ArrayType(_, _) => CarbonDataType.ArrayType
-      case StructType(_) => CarbonDataType.StructType
-      case NullType => CarbonDataType.NullType
-      case _ => CarbonDataType.DecimalType
+      case StringType => CarbonDataType.STRING
+      case ShortType => CarbonDataType.SHORT
+      case IntegerType => CarbonDataType.INT
+      case LongType => CarbonDataType.LONG
+      case DoubleType => CarbonDataType.DOUBLE
+      case FloatType => CarbonDataType.FLOAT
+      case DateType => CarbonDataType.DATE
+      case BooleanType => CarbonDataType.BOOLEAN
+      case TimestampType => CarbonDataType.TIMESTAMP
+      case ArrayType(_, _) => CarbonDataType.ARRAY
+      case StructType(_) => CarbonDataType.STRUCT
+      case NullType => CarbonDataType.NULL
+      case _ => CarbonDataType.DECIMAL
     }
   }
 
@@ -67,16 +65,16 @@ object CarbonScalaUtil {
     }
   }
 
-  def convertCarbonToSparkDataType(dataType: DataType): types.DataType = {
+  def convertCarbonToSparkDataType(dataType: CarbonDataType): types.DataType = {
     dataType match {
-      case DataType.STRING => StringType
-      case DataType.SHORT => ShortType
-      case DataType.INT => IntegerType
-      case DataType.LONG => LongType
-      case DataType.DOUBLE => DoubleType
-      case DataType.BOOLEAN => BooleanType
-      case DataType.DECIMAL => DecimalType.SYSTEM_DEFAULT
-      case DataType.TIMESTAMP => TimestampType
+      case CarbonDataType.STRING => StringType
+      case CarbonDataType.SHORT => ShortType
+      case CarbonDataType.INT => IntegerType
+      case CarbonDataType.LONG => LongType
+      case CarbonDataType.DOUBLE => DoubleType
+      case CarbonDataType.BOOLEAN => BooleanType
+      case CarbonDataType.DECIMAL => DecimalType.SYSTEM_DEFAULT
+      case CarbonDataType.TIMESTAMP => TimestampType
     }
   }
 

@@ -16,19 +16,32 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.carbondata.core.carbon.metadata.datatype;
 
 public enum DataType {
 
-  STRING,
-  INT,
-  SHORT,
-  LONG,
-  DOUBLE,
-  BOOLEAN,
-  DECIMAL,
-  TIMESTAMP,
-  ARRAY,
-  STRUCT,
-  MAP;
+  STRING(0),
+  DATE(1),
+  TIMESTAMP(2),
+  BOOLEAN(1),
+  SHORT(2),
+  INT(3),
+  FLOAT(4),
+  LONG(5),
+  DOUBLE(6),
+  NULL(7),
+  DECIMAL(8),
+  ARRAY(9),
+  STRUCT(10);
+
+  private int presedenceOrder;
+
+  DataType(int value) {
+    this.presedenceOrder = value;
+  }
+
+  public int getPresedenceOrder() {
+    return presedenceOrder;
+  }
 }

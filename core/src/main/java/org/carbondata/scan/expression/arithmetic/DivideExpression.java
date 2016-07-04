@@ -19,7 +19,7 @@
 
 package org.carbondata.scan.expression.arithmetic;
 
-import org.carbondata.scan.expression.DataType;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
 import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
@@ -52,21 +52,21 @@ public class DivideExpression extends BinaryArithmeticExpression {
       }
     }
     switch (val1.getDataType()) {
-      case StringType:
-      case DoubleType:
-        divideExprRightRes.set(DataType.DoubleType, val1.getDouble() / val2.getDouble());
+      case STRING:
+      case DOUBLE:
+        divideExprRightRes.set(DataType.DOUBLE, val1.getDouble() / val2.getDouble());
         break;
-      case ShortType:
-        divideExprRightRes.set(DataType.ShortType, val1.getShort() / val2.getShort());
+      case SHORT:
+        divideExprRightRes.set(DataType.SHORT, val1.getShort() / val2.getShort());
         break;
-      case IntegerType:
-        divideExprRightRes.set(DataType.IntegerType, val1.getInt() / val2.getInt());
+      case INT:
+        divideExprRightRes.set(DataType.INT, val1.getInt() / val2.getInt());
         break;
-      case LongType:
-        divideExprRightRes.set(DataType.LongType, val1.getLong() / val2.getLong());
+      case LONG:
+        divideExprRightRes.set(DataType.LONG, val1.getLong() / val2.getLong());
         break;
-      case DecimalType:
-        divideExprRightRes.set(DataType.DecimalType, val1.getDecimal().divide(val2.getDecimal()));
+      case DECIMAL:
+        divideExprRightRes.set(DataType.DECIMAL, val1.getDecimal().divide(val2.getDecimal()));
         break;
       default:
         throw new FilterUnsupportedException(

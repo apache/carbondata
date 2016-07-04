@@ -19,7 +19,7 @@
 
 package org.carbondata.scan.expression.logical;
 
-import org.carbondata.scan.expression.DataType;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
 import org.carbondata.scan.expression.UnaryExpression;
@@ -38,10 +38,10 @@ public class NotExpression extends UnaryExpression {
   @Override public ExpressionResult evaluate(RowIntf value)
       throws FilterIllegalMemberException, FilterUnsupportedException {
     ExpressionResult expResult = child.evaluate(value);
-    expResult.set(DataType.BooleanType, !(expResult.getBoolean()));
+    expResult.set(DataType.BOOLEAN, !(expResult.getBoolean()));
     switch (expResult.getDataType()) {
-      case BooleanType:
-        expResult.set(DataType.BooleanType, !(expResult.getBoolean()));
+      case BOOLEAN:
+        expResult.set(DataType.BOOLEAN, !(expResult.getBoolean()));
         break;
       default:
         throw new FilterUnsupportedException(

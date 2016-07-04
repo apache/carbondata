@@ -19,7 +19,7 @@
 
 package org.carbondata.scan.expression.conditional;
 
-import org.carbondata.scan.expression.DataType;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
 import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
@@ -40,7 +40,7 @@ public class LessThanEqualToExpression extends BinaryConditionalExpression {
     ExpressionResult erRes = right.evaluate(value);
     ExpressionResult exprResValue1 = elRes;
     if (elRes.isNull() || erRes.isNull()) {
-      elRes.set(DataType.BooleanType, false);
+      elRes.set(DataType.BOOLEAN, false);
       return elRes;
     }
     if (elRes.getDataType() != erRes.getDataType()) {
@@ -51,32 +51,32 @@ public class LessThanEqualToExpression extends BinaryConditionalExpression {
     }
     boolean result = false;
     switch (exprResValue1.getDataType()) {
-      case StringType:
+      case STRING:
         result = elRes.getString().compareTo(erRes.getString()) <= 0;
         break;
-      case ShortType:
+      case SHORT:
         result = elRes.getShort() <= (erRes.getShort());
         break;
-      case IntegerType:
+      case INT:
         result = elRes.getInt() <= (erRes.getInt());
         break;
-      case DoubleType:
+      case DOUBLE:
         result = elRes.getDouble() <= (erRes.getDouble());
         break;
-      case TimestampType:
+      case TIMESTAMP:
         result = elRes.getTime() <= (erRes.getTime());
         break;
-      case LongType:
+      case LONG:
         result = elRes.getLong() <= (erRes.getLong());
         break;
-      case DecimalType:
+      case DECIMAL:
         result = elRes.getDecimal().compareTo(erRes.getDecimal()) <= 0;
         break;
       default:
         throw new FilterUnsupportedException("DataType: " + exprResValue1.getDataType()
             + " not supported for the filter expression");
     }
-    exprResValue1.set(DataType.BooleanType, result);
+    exprResValue1.set(DataType.BOOLEAN, result);
     return exprResValue1;
   }
 

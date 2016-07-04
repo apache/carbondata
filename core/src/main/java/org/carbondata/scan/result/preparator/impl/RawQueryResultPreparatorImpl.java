@@ -7,6 +7,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.scan.executor.impl.QueryExecutorProperties;
 import org.carbondata.scan.model.QueryDimension;
 import org.carbondata.scan.model.QueryMeasure;
@@ -16,7 +17,6 @@ import org.carbondata.scan.result.BatchRawResult;
 import org.carbondata.scan.result.BatchResult;
 import org.carbondata.scan.result.ListBasedResultWrapper;
 import org.carbondata.scan.result.Result;
-import org.carbondata.scan.util.DataTypeUtil;
 import org.carbondata.scan.wrappers.ByteArrayWrapper;
 
 /**
