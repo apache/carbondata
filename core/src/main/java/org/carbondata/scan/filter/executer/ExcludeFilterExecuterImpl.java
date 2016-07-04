@@ -166,21 +166,17 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
   private BitSet setFilterdIndexToBitSet(FixedLengthDimensionDataChunk dimColumnDataChunk,
       int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
-    if (dimColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
-      FixedLengthDimensionDataChunk fixedChunk = (FixedLengthDimensionDataChunk) dimColumnDataChunk;
-      int start = 0;
       bitSet.flip(0, numerOfRows);
       byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
       for (int k = 0; k < filterValues.length; k++) {
-        for (int j = start + 1; j < numerOfRows; j++) {
+        for (int j = 0; j < numerOfRows; j++) {
           if (ByteUtil.UnsafeComparer.INSTANCE
-              .compareTo(fixedChunk.getCompleteDataChunk(), j * filterValues[k].length,
+              .compareTo(dimColumnDataChunk.getCompleteDataChunk(), j * filterValues[k].length,
                   filterValues[k].length, filterValues[k], 0, filterValues[k].length) == 0) {
             bitSet.flip(j);
           }
         }
       }
-    }
     return bitSet;
   }
 

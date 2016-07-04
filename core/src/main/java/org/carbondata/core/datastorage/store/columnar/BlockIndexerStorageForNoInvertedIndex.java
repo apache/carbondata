@@ -20,6 +20,8 @@
 package org.carbondata.core.datastorage.store.columnar;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 import org.carbondata.core.constants.CarbonCommonConstants;
@@ -125,10 +127,45 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
   }
 
   @Override public byte[] getMin() {
-    return new byte[0];
+    Arrays.sort(keyBlock, new Comparator<byte[]>() {
+      @Override
+      public int compare(byte[] col1, byte[] col2) {
+        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(col1, col2);
+      }
+    });
+    return keyBlock[0];
   }
 
   @Override public byte[] getMax() {
-    return new byte[0];
+    Arrays.sort(keyBlock, new Comparator<byte[]>() {
+      @Override
+      public int compare(byte[] col1, byte[] col2) {
+        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(col1, col2);
+      }
+    });
+    return keyBlock[keyBlock.length - 1];
   }
+
+  public byte[] getHighCardMin () {
+    Arrays.sort(keyBlock, new Comparator<byte[]>() {
+      @Override
+      public int compare(byte[] col1, byte[] col2) {
+        return ByteUtil.UnsafeComparer.INSTANCE
+                .compareTo(col1, 2, col1.length - 2, col2, 2, col2.length - 2);
+      }
+    });
+    return keyBlock[0];
+  }
+
+  public byte[] getHighCardMax () {
+    Arrays.sort(keyBlock, new Comparator<byte[]>() {
+      @Override
+      public int compare(byte[] col1, byte[] col2) {
+        return ByteUtil.UnsafeComparer.INSTANCE
+                .compareTo(col1, 2, col1.length - 2, col2, 2, col2.length - 2);
+      }
+    });
+    return keyBlock[keyBlock.length - 1];
+  }
+
 }

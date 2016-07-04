@@ -22,19 +22,17 @@ package org.carbondata.processing.store.writer;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.columnar.BlockIndexerStorageForNoInvertedIndex;
 import org.carbondata.core.datastorage.store.columnar.IndexStorage;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.carbondata.core.metadata.BlockletInfoColumnar;
-import org.carbondata.core.util.ByteUtil;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.processing.mdkeygen.file.IFileManagerComposite;
 import org.carbondata.processing.store.CarbonDataFileAttributes;
@@ -111,36 +109,17 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
 
       }
       totalKeySize += keyLengths[i];
-      if(isUseInvertedIndex[i]) {
-        if (isComplexType[i] || isDictionaryColumn[i]) {
-          allMinValue[i] = keyStorageArray[i].getMin();
-          allMaxValue[i] = keyStorageArray[i].getMax();
-        } else {
-          allMinValue[i] = updateMinMaxForNoDictionary(keyStorageArray[i].getMin());
-          allMaxValue[i] = updateMinMaxForNoDictionary(keyStorageArray[i].getMax());
-        }
-      } else {
-        byte[][] minmaxArray = keyStorageArray[i].getKeyBlock();
-        if (isComplexType[i] || isDictionaryColumn[i]) {
-          Arrays.sort(minmaxArray, new Comparator<byte[]>() {
-            @Override
-            public int compare(byte[] col1, byte[] col2) {
-              return ByteUtil.UnsafeComparer.INSTANCE.compareTo(col1, col2);
-            }
-          });
-          allMinValue[i] = minmaxArray[0];
-          allMaxValue[i] = minmaxArray[minmaxArray.length-1];
-        } else {
-          Arrays.sort(minmaxArray, new Comparator<byte[]>() {
-            @Override
-            public int compare(byte[] col1, byte[] col2) {
-              return ByteUtil.UnsafeComparer.INSTANCE
-                  .compareTo(col1, 2, col1.length - 2, col2, 2, col2.length - 2);
-            }
-          });
-          allMinValue[i] = updateMinMaxForNoDictionary(minmaxArray[0]);
-          allMaxValue[i] = updateMinMaxForNoDictionary(minmaxArray[minmaxArray.length-1]);
-        }
+      if (isComplexType[i] || isDictionaryColumn[i]) {
+        allMinValue[i] = keyStorageArray[i].getMin();
+        allMaxValue[i] = keyStorageArray[i].getMax();
+      } else if (isUseInvertedIndex[i]) {
+        allMinValue[i] = updateMinMaxForNoDictionary(keyStorageArray[i].getMin());
+        allMaxValue[i] = updateMinMaxForNoDictionary(keyStorageArray[i].getMax());
+      } else if (keyStorageArray[i] instanceof BlockIndexerStorageForNoInvertedIndex) {
+        BlockIndexerStorageForNoInvertedIndex keyStorageArrayNoInvertedIndex =
+            (BlockIndexerStorageForNoInvertedIndex) keyStorageArray[i];
+        allMinValue[i] = updateMinMaxForNoDictionary(keyStorageArrayNoInvertedIndex.getHighCardMin());
+        allMaxValue[i] = updateMinMaxForNoDictionary(keyStorageArrayNoInvertedIndex.getHighCardMax());
       }
       //if keyStorageArray is instance of ColGroupBlockStorage than it's colGroup chunk
       if (keyStorageArray[i] instanceof ColGroupBlockStorage) {

@@ -159,10 +159,9 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     if (dimensionColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
       FixedLengthDimensionDataChunk fixedDimensionChunk =
           (FixedLengthDimensionDataChunk) dimensionColumnDataChunk;
-      int start = 0;
       byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
       for (int k = 0; k < filterValues.length; k++) {
-        for (int j = start; j < numerOfRows; j++) {
+        for (int j = 0; j < numerOfRows; j++) {
           if (ByteUtil.UnsafeComparer.INSTANCE
               .compareTo(fixedDimensionChunk.getCompleteDataChunk(), j * filterValues[k].length,
                   filterValues[k].length, filterValues[k], 0, filterValues[k].length) == 0) {
