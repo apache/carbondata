@@ -26,6 +26,8 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.CarbonContext
+import org.apache.spark.sql.hive.DistributionUtil
 
 import org.carbondata.common.CarbonIterator
 import org.carbondata.common.logging.LogServiceFactory
@@ -66,7 +68,8 @@ class CarbonScanRDD[V: ClassTag](
   @transient conf: Configuration,
   cubeCreationTime: Long,
   schemaLastUpdatedTime: Long,
-  baseStoreLocation: String)
+  baseStoreLocation: String,
+  activeNodes: Array[String])
   extends RDD[V](sc, Nil) with Logging {
 
   val defaultParallelism = sc.defaultParallelism
@@ -107,8 +110,25 @@ class CarbonScanRDD[V: ClassTag](
       )
       if (blockList.nonEmpty) {
         // group blocks to nodes, tasks
+        var activeNodes = DistributionUtil.getNodeList(sparkContext)
+        var confExecutors = activeNodes.length
+        if(sparkContext.getConf.contains("spark.executor.instances")) {
+          confExecutors = sparkContext.getConf.get("spark.executor.instances").toInt
+        }
+        // check if no nodes available then request the number of needed executors.
+        if(activeNodes.length < confExecutors) {
+          val nodeBlockMapping =
+            CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism, null)
+          val requiredExecutors = nodeBlockMapping.size()
+          CarbonContext.ensureExecutors(sparkContext, requiredExecutors)
+              logInfo("No.of Executors required=" + requiredExecutors
+                        + " , spark.executor.instances=" + confExecutors
+                        + ", no.of.nodes where data present=" + nodeBlockMapping.size())
+          activeNodes = DistributionUtil.getNodeList(sparkContext)
+        }
         val nodeBlockMapping =
-          CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism)
+          CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism,
+            activeNodes.toList.asJava)
 
         var i = 0
         // Create Spark Partition for each task and assign blocks
