@@ -1072,7 +1072,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         mdKeyLength, tableName, fileManager, keyBlockSize, aggKeyBlock, isComplexTypes(),
         noDictionaryCount, carbonDataFileAttributes, databaseName, wrapperColumnSchemaList,
         noDictionaryCount, dimensionType, carbonDataDirectoryPath, colCardinality,
-        segmentProperties, isUseInvertedIndex);
+        segmentProperties);
   }
 
   private boolean[] isComplexTypes() {
@@ -1280,7 +1280,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         return new BlockIndexerStorageForInt(this.data, isCompressionReq, isNoDictionary,
             isSortRequired);
       } else {
-        return new BlockIndexerStorageForNoInvertedIndex(this.data, isCompressionReq);
+        return new BlockIndexerStorageForNoInvertedIndex(this.data, isCompressionReq,
+            isNoDictionary);
       }
 
     }

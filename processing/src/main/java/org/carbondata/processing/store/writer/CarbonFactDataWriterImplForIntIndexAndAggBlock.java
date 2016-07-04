@@ -27,7 +27,6 @@ import java.util.List;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.datastorage.store.columnar.BlockIndexerStorageForNoInvertedIndex;
 import org.carbondata.core.datastorage.store.columnar.IndexStorage;
 import org.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
 import org.carbondata.core.datastorage.store.compression.ValueCompressionModel;
@@ -42,7 +41,6 @@ import org.carbondata.processing.store.writer.exception.CarbonDataWriterExceptio
 public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactDataWriter<int[]> {
 
   protected boolean[] aggBlocks;
-  private boolean[] isUseInvertedIndex;
   private NumberCompressor numberCompressor;
   private boolean[] isComplexType;
   private int numberOfNoDictionaryColumn;
@@ -54,7 +52,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
       CarbonDataFileAttributes carbonDataFileAttributes, String databaseName,
       List<ColumnSchema> wrapperColumnSchemaList, int numberOfNoDictionaryColumn,
       boolean[] isDictionaryColumn, String carbonDataDirectoryPath, int[] colCardinality,
-      SegmentProperties segmentProperties, boolean[] isUseInvertedIndex) {
+      SegmentProperties segmentProperties) {
     super(storeLocation, measureCount, mdKeyLength, databaseName, tableName, fileManager,
         keyBlockSize, carbonDataFileAttributes, wrapperColumnSchemaList, carbonDataDirectoryPath,
         colCardinality, segmentProperties);
@@ -63,7 +61,6 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     this.numberOfNoDictionaryColumn = numberOfNoDictionaryColumn;
     this.isDictionaryColumn = isDictionaryColumn;
     this.aggBlocks = aggBlocks;
-    this.isUseInvertedIndex = isUseInvertedIndex;
     this.numberCompressor = new NumberCompressor(Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)));
@@ -112,14 +109,9 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
       if (isComplexType[i] || isDictionaryColumn[i]) {
         allMinValue[i] = keyStorageArray[i].getMin();
         allMaxValue[i] = keyStorageArray[i].getMax();
-      } else if (isUseInvertedIndex[i]) {
+      } else {
         allMinValue[i] = updateMinMaxForNoDictionary(keyStorageArray[i].getMin());
         allMaxValue[i] = updateMinMaxForNoDictionary(keyStorageArray[i].getMax());
-      } else if (keyStorageArray[i] instanceof BlockIndexerStorageForNoInvertedIndex) {
-        BlockIndexerStorageForNoInvertedIndex keyStorageArrayNoInvIndex =
-            (BlockIndexerStorageForNoInvertedIndex) keyStorageArray[i];
-        allMinValue[i] = updateMinMaxForNoDictionary(keyStorageArrayNoInvIndex.getHighCardMin());
-        allMaxValue[i] = updateMinMaxForNoDictionary(keyStorageArrayNoInvIndex.getHighCardMax());
       }
       //if keyStorageArray is instance of ColGroupBlockStorage than it's colGroup chunk
       if (keyStorageArray[i] instanceof ColGroupBlockStorage) {

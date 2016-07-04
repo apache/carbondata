@@ -32,7 +32,8 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
   private int totalSize;
   private int[] dataIndexMap;
 
-  public BlockIndexerStorageForNoInvertedIndex(byte[][] keyBlockInput, boolean compressData) {
+  public BlockIndexerStorageForNoInvertedIndex(byte[][] keyBlockInput, boolean compressData,
+                                               boolean isNoDictionary) {
     // without invertedindex but can be RLE
     if (compressData) {
       // with RLE
@@ -66,6 +67,23 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
     } else {
       this.keyBlock = keyBlockInput;
       dataIndexMap = new int[0];
+    }
+
+    if (isNoDictionary) {
+      Arrays.sort(keyBlock, new Comparator<byte[]>() {
+        @Override
+        public int compare(byte[] col1, byte[] col2) {
+          return ByteUtil.UnsafeComparer.INSTANCE
+              .compareTo(col1, 2, col1.length - 2, col2, 2, col2.length - 2);
+        }
+      });
+    } else {
+      Arrays.sort(keyBlock, new Comparator<byte[]>() {
+        @Override
+        public int compare(byte[] col1, byte[] col2) {
+          return ByteUtil.UnsafeComparer.INSTANCE.compareTo(col1, col2);
+        }
+      });
     }
   }
 
@@ -127,44 +145,10 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
   }
 
   @Override public byte[] getMin() {
-    Arrays.sort(keyBlock, new Comparator<byte[]>() {
-      @Override
-      public int compare(byte[] col1, byte[] col2) {
-        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(col1, col2);
-      }
-    });
     return keyBlock[0];
   }
 
   @Override public byte[] getMax() {
-    Arrays.sort(keyBlock, new Comparator<byte[]>() {
-      @Override
-      public int compare(byte[] col1, byte[] col2) {
-        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(col1, col2);
-      }
-    });
-    return keyBlock[keyBlock.length - 1];
-  }
-
-  public byte[] getHighCardMin() {
-    Arrays.sort(keyBlock, new Comparator<byte[]>() {
-      @Override
-      public int compare(byte[] col1, byte[] col2) {
-        return ByteUtil.UnsafeComparer.INSTANCE
-                .compareTo(col1, 2, col1.length - 2, col2, 2, col2.length - 2);
-      }
-    });
-    return keyBlock[0];
-  }
-
-  public byte[] getHighCardMax() {
-    Arrays.sort(keyBlock, new Comparator<byte[]>() {
-      @Override
-      public int compare(byte[] col1, byte[] col2) {
-        return ByteUtil.UnsafeComparer.INSTANCE
-                .compareTo(col1, 2, col1.length - 2, col2, 2, col2.length - 2);
-      }
-    });
     return keyBlock[keyBlock.length - 1];
   }
 
