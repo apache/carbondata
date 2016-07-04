@@ -482,7 +482,6 @@ class CarbonSqlParser()
     // get no inverted index columns from table properties.
     val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
 
-
     val partitioner: Option[Partitioner] = getPartitionerObject(partitionCols, tableProperties)
 
     tableModel(ifNotExistPresent,

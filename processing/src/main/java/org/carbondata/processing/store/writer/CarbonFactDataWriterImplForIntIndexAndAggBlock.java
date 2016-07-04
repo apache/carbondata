@@ -116,10 +116,10 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
         allMinValue[i] = updateMinMaxForNoDictionary(keyStorageArray[i].getMin());
         allMaxValue[i] = updateMinMaxForNoDictionary(keyStorageArray[i].getMax());
       } else if (keyStorageArray[i] instanceof BlockIndexerStorageForNoInvertedIndex) {
-        BlockIndexerStorageForNoInvertedIndex keyStorageArrayNoInvertedIndex =
+        BlockIndexerStorageForNoInvertedIndex keyStorageArrayNoInvIndex =
             (BlockIndexerStorageForNoInvertedIndex) keyStorageArray[i];
-        allMinValue[i] = updateMinMaxForNoDictionary(keyStorageArrayNoInvertedIndex.getHighCardMin());
-        allMaxValue[i] = updateMinMaxForNoDictionary(keyStorageArrayNoInvertedIndex.getHighCardMax());
+        allMinValue[i] = updateMinMaxForNoDictionary(keyStorageArrayNoInvIndex.getHighCardMin());
+        allMaxValue[i] = updateMinMaxForNoDictionary(keyStorageArrayNoInvIndex.getHighCardMax());
       }
       //if keyStorageArray is instance of ColGroupBlockStorage than it's colGroup chunk
       if (keyStorageArray[i] instanceof ColGroupBlockStorage) {
