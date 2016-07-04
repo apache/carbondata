@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
@@ -66,31 +67,26 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     }
     try {
       switch (this.getDataType()) {
-        case StringType:
+        case STRING:
           try {
             return Integer.parseInt(value.toString());
           } catch (NumberFormatException e) {
             throw new FilterIllegalMemberException(e);
           }
-
-        case ShortType:
+        case SHORT:
           return ((Short) value).intValue();
-        case IntegerType:
-        case DoubleType:
-
+        case INT:
+        case DOUBLE:
           if (value instanceof Double) {
             return ((Double) value).intValue();
           }
           return (Integer) value;
-
-        case TimestampType:
-
+        case TIMESTAMP:
           if (value instanceof Timestamp) {
             return (int) (((Timestamp) value).getTime() % 1000);
           } else {
             return (Integer) value;
           }
-
         default:
           throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to integer type value");
@@ -108,15 +104,15 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     }
     try {
       switch (this.getDataType()) {
-        case StringType:
+        case STRING:
           try {
             return Short.parseShort(value.toString());
           } catch (NumberFormatException e) {
             throw new FilterIllegalMemberException(e);
           }
-        case ShortType:
-        case IntegerType:
-        case DoubleType:
+        case SHORT:
+        case INT:
+        case DOUBLE:
 
           if (value instanceof Double) {
             return ((Double) value).shortValue();
@@ -125,7 +121,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           }
           return (Short) value;
 
-        case TimestampType:
+        case TIMESTAMP:
 
           if (value instanceof Timestamp) {
             return (short) (((Timestamp) value).getTime() % 1000);
@@ -150,7 +146,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     }
     try {
       switch (this.getDataType()) {
-        case TimestampType:
+        case TIMESTAMP:
           SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
                   CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
@@ -175,21 +171,21 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     }
     try {
       switch (this.getDataType()) {
-        case StringType:
+        case STRING:
           try {
             return Double.parseDouble(value.toString());
           } catch (NumberFormatException e) {
             throw new FilterIllegalMemberException(e);
           }
-        case ShortType:
+        case SHORT:
           return ((Short) value).doubleValue();
-        case IntegerType:
+        case INT:
           return ((Integer) value).doubleValue();
-        case LongType:
+        case LONG:
           return ((Long) value).doubleValue();
-        case DoubleType:
+        case DOUBLE:
           return (Double) value;
-        case TimestampType:
+        case TIMESTAMP:
           if (value instanceof Timestamp) {
             return (double) ((Timestamp) value).getTime() * 1000;
           } else {
@@ -212,21 +208,21 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     }
     try {
       switch (this.getDataType()) {
-        case StringType:
+        case STRING:
           try {
             return Long.parseLong(value.toString());
           } catch (NumberFormatException e) {
             throw new FilterIllegalMemberException(e);
           }
-        case ShortType:
+        case SHORT:
           return ((Short) value).longValue();
-        case IntegerType:
+        case INT:
           return (Long) value;
-        case LongType:
+        case LONG:
           return (Long) value;
-        case DoubleType:
+        case DOUBLE:
           return (Long) value;
-        case TimestampType:
+        case TIMESTAMP:
           if (value instanceof Timestamp) {
             return 1000 * ((Timestamp) value).getTime();
           } else {
@@ -250,23 +246,23 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     }
     try {
       switch (this.getDataType()) {
-        case StringType:
+        case STRING:
           try {
             return new BigDecimal(value.toString());
           } catch (NumberFormatException e) {
             throw new FilterIllegalMemberException(e);
           }
-        case ShortType:
+        case SHORT:
           return new BigDecimal((short) value);
-        case IntegerType:
+        case INT:
           return new BigDecimal((int) value);
-        case LongType:
+        case LONG:
           return new BigDecimal((long) value);
-        case DoubleType:
+        case DOUBLE:
           return new BigDecimal((double) value);
-        case DecimalType:
+        case DECIMAL:
           return new BigDecimal(value.toString());
-        case TimestampType:
+        case TIMESTAMP:
           if (value instanceof Timestamp) {
             return new BigDecimal(1000 * ((Timestamp) value).getTime());
           } else {
@@ -289,7 +285,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     }
     try {
       switch (this.getDataType()) {
-        case StringType:
+        case STRING:
           // Currently the query engine layer only supports yyyy-MM-dd HH:mm:ss date format
           // no matter in which format the data is been stored, so while retrieving the direct
           // surrogate value for filter member first it should be converted in date form as per
@@ -304,14 +300,14 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             throw new FilterIllegalMemberException(
                 "Cannot convert" + this.getDataType().name() + " to Time/Long type value");
           }
-        case ShortType:
+        case SHORT:
           return ((Short) value).longValue();
-        case IntegerType:
-        case LongType:
+        case INT:
+        case LONG:
           return (Long) value;
-        case DoubleType:
+        case DOUBLE:
           return (Long) value;
-        case TimestampType:
+        case TIMESTAMP:
           if (value instanceof Timestamp) {
             return ((Timestamp) value).getTime() * 1000;
           } else {
@@ -334,14 +330,14 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     }
     try {
       switch (this.getDataType()) {
-        case StringType:
+        case STRING:
           try {
             return Boolean.parseBoolean(value.toString());
           } catch (NumberFormatException e) {
             throw new FilterIllegalMemberException(e);
           }
 
-        case BooleanType:
+        case BOOLEAN:
           return Boolean.parseBoolean(value.toString());
 
         default:
@@ -408,20 +404,19 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     }
     try {
       switch (this.getDataType()) {
-        case StringType:
+        case STRING:
           result = this.getString().equals(objToCompare.getString());
           break;
-        case ShortType:
+        case SHORT:
           result = this.getShort().equals(objToCompare.getShort());
           break;
-        case IntegerType:
+        case INT:
           result = this.getInt().equals(objToCompare.getInt());
           break;
-
-        case DoubleType:
+        case DOUBLE:
           result = this.getDouble().equals(objToCompare.getDouble());
           break;
-        case TimestampType:
+        case TIMESTAMP:
           result = this.getLong().equals(objToCompare.getLong());
           break;
         default:
@@ -441,19 +436,18 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
   @Override public int compareTo(ExpressionResult o) {
     try {
       switch (o.dataType) {
-        case ShortType:
-        case IntegerType:
-        case LongType:
-        case DoubleType:
-
+        case SHORT:
+        case INT:
+        case LONG:
+        case DOUBLE:
           Double d1 = this.getDouble();
           Double d2 = o.getDouble();
           return d1.compareTo(d2);
-        case DecimalType:
+        case DECIMAL:
           java.math.BigDecimal val1 = this.getDecimal();
           java.math.BigDecimal val2 = o.getDecimal();
           return val1.compareTo(val2);
-        case TimestampType:
+        case TIMESTAMP:
           SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
                   CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
@@ -462,7 +456,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           date1 = parser.parse(this.getString());
           date2 = parser.parse(o.getString());
           return date1.compareTo(date2);
-        case StringType:
+        case STRING:
         default:
           return this.getString().compareTo(o.getString());
       }

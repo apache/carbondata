@@ -19,7 +19,7 @@
 
 package org.carbondata.scan.expression.logical;
 
-import org.carbondata.scan.expression.DataType;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
 import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
@@ -40,8 +40,8 @@ public class OrExpression extends BinaryLogicalExpression {
     ExpressionResult resultLeft = left.evaluate(value);
     ExpressionResult resultRight = right.evaluate(value);
     switch (resultLeft.getDataType()) {
-      case BooleanType:
-        resultLeft.set(DataType.BooleanType, (resultLeft.getBoolean() || resultRight.getBoolean()));
+      case BOOLEAN:
+        resultLeft.set(DataType.BOOLEAN, (resultLeft.getBoolean() || resultRight.getBoolean()));
         break;
       default:
         throw new FilterUnsupportedException(

@@ -26,6 +26,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.keygenerator.KeyGenException;
+import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.scan.collector.ScannedResultCollector;
 import org.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.carbondata.scan.executor.infos.KeyStructureInfo;
@@ -34,7 +35,6 @@ import org.carbondata.scan.result.AbstractScannedResult;
 import org.carbondata.scan.result.ListBasedResultWrapper;
 import org.carbondata.scan.result.Result;
 import org.carbondata.scan.result.impl.ListBasedResult;
-import org.carbondata.scan.util.DataTypeUtil;
 import org.carbondata.scan.wrappers.ByteArrayWrapper;
 
 /**

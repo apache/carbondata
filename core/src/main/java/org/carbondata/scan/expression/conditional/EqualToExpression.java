@@ -19,7 +19,7 @@
 
 package org.carbondata.scan.expression.conditional;
 
-import org.carbondata.scan.expression.DataType;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
 import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
@@ -47,7 +47,7 @@ public class EqualToExpression extends BinaryConditionalExpression {
 
     if (elRes.isNull() || erRes.isNull()) {
       result = elRes.isNull() && erRes.isNull();
-      val1.set(DataType.BooleanType, result);
+      val1.set(DataType.BOOLEAN, result);
       return val1;
     }
     //default implementation if the data types are different for the resultsets
@@ -59,32 +59,32 @@ public class EqualToExpression extends BinaryConditionalExpression {
     }
 
     switch (val1.getDataType()) {
-      case StringType:
+      case STRING:
         result = val1.getString().equals(val2.getString());
         break;
-      case ShortType:
+      case SHORT:
         result = val1.getShort().equals(val2.getShort());
         break;
-      case IntegerType:
+      case INT:
         result = val1.getInt().equals(val2.getInt());
         break;
-      case DoubleType:
+      case DOUBLE:
         result = val1.getDouble().equals(val2.getDouble());
         break;
-      case TimestampType:
+      case TIMESTAMP:
         result = val1.getTime().equals(val2.getTime());
         break;
-      case LongType:
+      case LONG:
         result = val1.getLong().equals(val2.getLong());
         break;
-      case DecimalType:
+      case DECIMAL:
         result = val1.getDecimal().compareTo(val2.getDecimal()) == 0;
         break;
       default:
         throw new FilterUnsupportedException(
             "DataType: " + val1.getDataType() + " not supported for the filter expression");
     }
-    val1.set(DataType.BooleanType, result);
+    val1.set(DataType.BOOLEAN, result);
     return val1;
   }
 

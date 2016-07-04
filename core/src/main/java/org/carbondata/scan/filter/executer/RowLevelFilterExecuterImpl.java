@@ -37,6 +37,7 @@ import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.scan.executor.exception.QueryExecutionException;
 import org.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.carbondata.scan.executor.util.QueryUtil;
@@ -50,7 +51,6 @@ import org.carbondata.scan.filter.intf.RowIntf;
 import org.carbondata.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.carbondata.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.carbondata.scan.processor.BlocksChunkHolder;
-import org.carbondata.scan.util.DataTypeUtil;
 
 public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
