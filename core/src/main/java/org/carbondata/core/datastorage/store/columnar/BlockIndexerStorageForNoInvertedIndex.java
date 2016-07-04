@@ -146,7 +146,7 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
     return keyBlock[keyBlock.length - 1];
   }
 
-  public byte[] getHighCardMin () {
+  public byte[] getHighCardMin() {
     Arrays.sort(keyBlock, new Comparator<byte[]>() {
       @Override
       public int compare(byte[] col1, byte[] col2) {
@@ -157,7 +157,7 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
     return keyBlock[0];
   }
 
-  public byte[] getHighCardMax () {
+  public byte[] getHighCardMax() {
     Arrays.sort(keyBlock, new Comparator<byte[]>() {
       @Override
       public int compare(byte[] col1, byte[] col2) {
