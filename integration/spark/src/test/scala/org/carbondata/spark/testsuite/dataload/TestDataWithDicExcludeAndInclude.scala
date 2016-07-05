@@ -39,6 +39,10 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
     filePath = pwd + "/src/test/resources/emptyDimensionData.csv"
   }
 
+  def dropTable() = {
+    sql("DROP TABLE IF EXISTS t3")
+  }
+
   def buildTable() = {
     try {
       sql(
@@ -69,12 +73,14 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
   }
 
   override def beforeAll {
+    dropTable
     buildTestData
     buildTable
     loadTable
   }
 
   test("test load data with dictionary exclude & include and with empty dimension") {
+    sql("select ID from t3").show()
     checkAnswer(
       sql("select ID from t3"), Seq(Row(1), Row(2), Row(3), Row(4), Row(5), Row(6), Row(7),
         Row(8), Row(9), Row(10), Row(11), Row(12), Row(13), Row(14), Row(15), Row(16), Row
@@ -83,7 +89,7 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
   }
 
   override def afterAll {
-    sql("drop table t3")
+    dropTable
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
