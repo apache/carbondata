@@ -21,10 +21,13 @@ package org.apache.spark.sql.common.util
 
 import java.io.File
 
+import scala.collection.mutable.ArrayBuffer
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.CarbonContext
 import org.apache.spark.{SparkConf, SparkContext}
+
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.spark.load.CarbonLoaderUtil
@@ -53,16 +56,16 @@ object CarbonHiveContext extends LocalSQLContext(
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH, System.getProperty("java.io.tmpdir"))
 
-    val hadoopConf = new Configuration();
-    hadoopConf.addResource(new Path("../core-default.xml"));
-    hadoopConf.addResource(new Path("core-site.xml"));
-    val hdfsCarbonPath = new File("./target/test/").getCanonicalPath;
-    setConf("hive.metastore.warehouse.dir", hdfsCarbonPath +"/hivemetadata")
+  override protected def configure(): Map[String, String] = {
+    val map: Map[String, String] = super.configure()
+    val buffer = new ArrayBuffer[(String, String)]() ++ map.toSeq
+    val hdfsCarbonPath = new File("./target/test/").getCanonicalPath
     val hiveMetaStoreDB = hdfsCarbonPath+"/metastore_db"
-    setConf("javax.jdo.option.ConnectionURL","jdbc:derby:;databaseName="+hiveMetaStoreDB+";create=true")
-
-    CarbonLoaderUtil.deleteStorePath(hdfsCarbonPath)
-    //	    //		sql("drop cube timestamptypecube");
+    buffer += (("javax.jdo.option.ConnectionURL","jdbc:derby:;databaseName="+hiveMetaStoreDB+";create=true"))
+    buffer += (("hive.metastore.warehouse.dir", hdfsCarbonPath +"/hivemetadata"))
+    val newMap = buffer.toMap
+    newMap
+  }
 }
 
 
