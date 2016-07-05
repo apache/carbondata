@@ -17,9 +17,11 @@
 
 package org.apache.spark.sql
 
+import java.io.File
+
 import scala.language.implicitConversions
 
-import org.apache.spark.SparkContext
+import org.apache.spark.{Logging, SparkContext}
 import org.apache.spark.sql.catalyst.ParserDialect
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog}
 import org.apache.spark.sql.catalyst.optimizer.{DefaultOptimizer, Optimizer}
@@ -32,8 +34,22 @@ import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.spark.rdd.CarbonDataFrameRDD
 
-class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveContext(sc) {
+class CarbonContext(
+    val sc: SparkContext,
+    val storePath: String,
+    metaStorePath: String) extends HiveContext(sc) with Logging {
   self =>
+
+  def this (sc: SparkContext) = {
+    this (sc,
+      new File("./carbonstore").getCanonicalPath,
+      new File("./carbonmetastore").getCanonicalPath)
+  }
+
+  def this (sc: SparkContext, storePath: String) = {
+    this (sc, storePath, new File("./carbonmetastore").getCanonicalPath)
+  }
+
   CarbonContext.addInstance(sc, this)
 
   var lastSchemaUpdatedTime = System.currentTimeMillis()
@@ -58,6 +74,19 @@ class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveCon
   experimental.extraStrategies = {
     val carbonStrategy = new CarbonStrategies(self)
     Seq(carbonStrategy.CarbonTableScan, carbonStrategy.DDLStrategies)
+  }
+
+  override protected def configure(): Map[String, String] = {
+    sc.hadoopConfiguration.addResource("hive-site.xml")
+    if (sc.hadoopConfiguration.get("javax.jdo.option.ConnectionURL") == null) {
+      val hiveMetaStoreDB = metaStorePath + "/metastore_db"
+      logDebug(s"metastore db is going to be created in location : $hiveMetaStoreDB")
+      super.configure() ++ Map(("javax.jdo.option.ConnectionURL",
+              "jdbc:derby:;databaseName=" + hiveMetaStoreDB + ";create=true"),
+        ("hive.metastore.warehouse.dir", metaStorePath + "/hivemetadata"))
+    } else {
+      super.configure()
+    }
   }
 
   @transient

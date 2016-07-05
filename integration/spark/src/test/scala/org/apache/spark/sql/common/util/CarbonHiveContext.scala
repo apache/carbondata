@@ -21,12 +21,8 @@ package org.apache.spark.sql.common.util
 
 import java.io.File
 
-import scala.collection.mutable.ArrayBuffer
-
-import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.Path
-import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.CarbonContext
+import org.apache.spark.{SparkConf, SparkContext}
 
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
@@ -34,34 +30,23 @@ import org.carbondata.core.util.CarbonProperties
 class LocalSQLContext(val hdfsCarbonBasePath: String)
   extends CarbonContext(new SparkContext(new SparkConf()
     .setAppName("CarbonSpark")
-    .setMaster("local[2]")), hdfsCarbonBasePath) {
+    .setMaster("local[2]")
+    .set("spark.sql.shuffle.partitions", "20")),
+    hdfsCarbonBasePath,
+    hdfsCarbonBasePath) {
 
 }
 
-object CarbonHiveContext extends LocalSQLContext(
-{
-  val hadoopConf = new Configuration();
-  hadoopConf.addResource(new Path("../core-default.xml"));
-  hadoopConf.addResource(new Path("core-site.xml"));
-  new File("./target/test/").mkdirs()
-  val hdfsCarbonPath = new File("./target/test/").getCanonicalPath;
-  hdfsCarbonPath
-}) {
+object CarbonHiveContext extends LocalSQLContext(new File("./target/test/").getCanonicalPath) {
     sparkContext.setLogLevel("ERROR")
-    CarbonProperties.getInstance().addProperty("carbon.kettle.home", "../../processing/carbonplugins")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH, System.getProperty("java.io.tmpdir"))
+    CarbonProperties.getInstance()
+      .addProperty("carbon.kettle.home", "../../processing/carbonplugins")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
+        System.getProperty("java.io.tmpdir"))
 
-  override protected def configure(): Map[String, String] = {
-    val map: Map[String, String] = super.configure()
-    val buffer = new ArrayBuffer[(String, String)]() ++ map.toSeq
-    val hdfsCarbonPath = new File("./target/test/").getCanonicalPath
-    val hiveMetaStoreDB = hdfsCarbonPath+"/metastore_db"
-    buffer += (("javax.jdo.option.ConnectionURL","jdbc:derby:;databaseName="+hiveMetaStoreDB+";create=true"))
-    buffer += (("hive.metastore.warehouse.dir", hdfsCarbonPath +"/hivemetadata"))
-    val newMap = buffer.toMap
-    newMap
-  }
 }
 
 
