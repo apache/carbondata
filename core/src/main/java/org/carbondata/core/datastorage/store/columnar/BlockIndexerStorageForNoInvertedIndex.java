@@ -29,6 +29,7 @@ import org.carbondata.core.util.ByteUtil;
 
 public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]> {
   private byte[][] keyBlock;
+  private byte[][] sortedBlock;
   private int totalSize;
   private int[] dataIndexMap;
 
@@ -69,8 +70,10 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
       dataIndexMap = new int[0];
     }
 
+    this.sortedBlock = new byte[keyBlock.length][];
+    System.arraycopy(keyBlock, 0, sortedBlock, 0, keyBlock.length);
     if (isNoDictionary) {
-      Arrays.sort(keyBlock, new Comparator<byte[]>() {
+      Arrays.sort(sortedBlock, new Comparator<byte[]>() {
         @Override
         public int compare(byte[] col1, byte[] col2) {
           return ByteUtil.UnsafeComparer.INSTANCE
@@ -78,13 +81,14 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
         }
       });
     } else {
-      Arrays.sort(keyBlock, new Comparator<byte[]>() {
+      Arrays.sort(sortedBlock, new Comparator<byte[]>() {
         @Override
         public int compare(byte[] col1, byte[] col2) {
           return ByteUtil.UnsafeComparer.INSTANCE.compareTo(col1, col2);
         }
       });
     }
+
   }
 
   private int[] convertToArray(List<Integer> list) {
@@ -145,11 +149,11 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
   }
 
   @Override public byte[] getMin() {
-    return keyBlock[0];
+    return sortedBlock[0];
   }
 
   @Override public byte[] getMax() {
-    return keyBlock[keyBlock.length - 1];
+    return sortedBlock[sortedBlock.length - 1];
   }
 
 }
