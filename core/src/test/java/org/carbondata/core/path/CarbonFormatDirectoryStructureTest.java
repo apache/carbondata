@@ -43,17 +43,17 @@ public class CarbonFormatDirectoryStructureTest {
     CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("d1", "t1", UUID.randomUUID().toString());
     CarbonStorePath carbonStorePath = new CarbonStorePath(CARBON_STORE);
     CarbonTablePath carbonTablePath = carbonStorePath.getCarbonTablePath(tableIdentifier);
-    assertTrue(carbonTablePath.getPath().equals(CARBON_STORE + "/d1/t1"));
-    assertTrue(carbonTablePath.getSchemaFilePath().equals(CARBON_STORE + "/d1/t1/Metadata/schema"));
-    assertTrue(carbonTablePath.getTableStatusFilePath()
+    assertTrue(carbonTablePath.getPath().replace("\\", "/").equals(CARBON_STORE + "/d1/t1"));
+    assertTrue(carbonTablePath.getSchemaFilePath().replace("\\", "/").equals(CARBON_STORE + "/d1/t1/Metadata/schema"));
+    assertTrue(carbonTablePath.getTableStatusFilePath().replace("\\", "/")
         .equals(CARBON_STORE + "/d1/t1/Metadata/tablestatus"));
-    assertTrue(carbonTablePath.getDictionaryFilePath("t1_c1")
+    assertTrue(carbonTablePath.getDictionaryFilePath("t1_c1").replace("\\", "/")
         .equals(CARBON_STORE + "/d1/t1/Metadata/t1_c1.dict"));
-    assertTrue(carbonTablePath.getDictionaryMetaFilePath("t1_c1")
+    assertTrue(carbonTablePath.getDictionaryMetaFilePath("t1_c1").replace("\\", "/")
         .equals(CARBON_STORE + "/d1/t1/Metadata/t1_c1.dictmeta"));
-    assertTrue(carbonTablePath.getSortIndexFilePath("t1_c1")
+    assertTrue(carbonTablePath.getSortIndexFilePath("t1_c1").replace("\\", "/")
         .equals(CARBON_STORE + "/d1/t1/Metadata/t1_c1.sortindex"));
-    assertTrue(carbonTablePath.getCarbonDataFilePath("1", "2", 3, 4, "999")
+    assertTrue(carbonTablePath.getCarbonDataFilePath("1", "2", 3, 4, "999").replace("\\", "/")
         .equals(CARBON_STORE + "/d1/t1/Fact/Part1/Segment_2/part-3-4-999.carbondata"));
   }
 
