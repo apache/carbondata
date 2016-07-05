@@ -310,7 +310,6 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql(s"""
          LOAD DATA LOCAL INPATH './src/test/resources/lessthandatacolumndata.csv' into table t3
         """)
-    sql("select * from t3").show()
     checkAnswer(sql("select count(*) from t3"),Seq(Row(10)))
   }
 
