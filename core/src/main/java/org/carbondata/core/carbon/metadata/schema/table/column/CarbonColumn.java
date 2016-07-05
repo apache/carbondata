@@ -148,6 +148,12 @@ public class CarbonColumn implements Serializable {
     return columnSchema.isDimensionColumn();
   }
 
+  /**
+   * @return if column use inverted index return true, else false.
+   */
+  public Boolean isUseInvertedIndnex() {
+    return columnSchema.isUseInvertedIndex();
+  }
   public ColumnSchema getColumnSchema() {
     return this.columnSchema;
   }
