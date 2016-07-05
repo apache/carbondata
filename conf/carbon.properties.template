@@ -96,3 +96,5 @@ carbon.enable.quick.filter=false
 #carbon.cutOffTimestamp=2000-01-01 00:00:00
 ##The property to set the timestamp (ie milis) conversion to the SECOND, MINUTE, HOUR or DAY level.
 #carbon.timegranularity=SECOND
+##The property is used to configure the value to be treated as null during dataloading
+#serialization.null.format=\N

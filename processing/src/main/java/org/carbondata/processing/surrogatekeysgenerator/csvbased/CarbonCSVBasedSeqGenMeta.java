@@ -38,6 +38,7 @@ import org.carbondata.processing.datatypes.PrimitiveDataType;
 import org.carbondata.processing.datatypes.StructDataType;
 import org.carbondata.processing.schema.metadata.ColumnSchemaDetailsWrapper;
 import org.carbondata.processing.schema.metadata.HierarchiesInfo;
+import org.carbondata.processing.schema.metadata.TableOptionWrapper;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
@@ -363,14 +364,24 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
   private String segmentId;
 
   /***
-   * String of columns ordinal and column datatype separated by COLON_SPC_CHARACTER
+   * String of columns ordinal and column datatype separated by HASH_SPC_CHARACTER
    */
   private String columnSchemaDetails;
+
+  /**
+   * String of key value pair separated by , and HASH_SPC_CHARACTER
+   */
+  private String tableOption;
 
   /**
    * wrapper object having the columnSchemaDetails
    */
   private ColumnSchemaDetailsWrapper columnSchemaDetailsWrapper;
+
+  /**
+   * Wrapper object holding the table options
+   */
+  private TableOptionWrapper tableOptionWrapper;
   /**
    * task id, each spark task has a unique id
    */
@@ -644,6 +655,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     taskNo = "";
     columnSchemaDetails = "";
     columnsDataTypeString="";
+    tableOption = "";
   }
 
   // helper method to allocate the arrays
@@ -709,6 +721,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     retval.append("    ").append(XMLHandler.addTagValue("taskNo", taskNo));
     retval.append("    ")
         .append(XMLHandler.addTagValue("columnSchemaDetails", columnSchemaDetails));
+    retval.append("    ")
+        .append(XMLHandler.addTagValue("tableOption", tableOption));
     return retval.toString();
   }
 
@@ -758,6 +772,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       segmentId = XMLHandler.getTagValue(stepnode, "segmentId");
       taskNo = XMLHandler.getTagValue(stepnode, "taskNo");
       columnSchemaDetails = XMLHandler.getTagValue(stepnode, "columnSchemaDetails");
+      tableOption = XMLHandler.getTagValue(stepnode, "tableOption");
       String batchConfig = XMLHandler.getTagValue(stepnode, "batchSize");
 
       if (batchConfig != null) {
@@ -784,7 +799,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
   }
 
   public void initialize() throws KettleException {
-    columnSchemaDetailsWrapper = new ColumnSchemaDetailsWrapper(columnSchemaDetails);
+    this.columnSchemaDetailsWrapper = new ColumnSchemaDetailsWrapper(columnSchemaDetails);
+    this.tableOptionWrapper = new TableOptionWrapper(tableOption);
 
     updateDimensions(carbondim, carbonmsr, noDictionaryDims);
     dimColDataTypes=RemoveDictionaryUtil.extractDimColsDataTypeValues(columnsDataTypeString);
@@ -1324,6 +1340,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       segmentId = rep.getStepAttributeString(idStep, "segmentId");
       taskNo = rep.getStepAttributeString(idStep, "taskNo");
       columnSchemaDetails = rep.getStepAttributeString(idStep, "columnSchemaDetails");
+      tableOption = rep.getStepAttributeString(idStep, "tableOption");
       int nrKeys = rep.countNrStepAttributes(idStep, "lookup_keyfield");
       allocate(nrKeys);
     } catch (Exception e) {
@@ -1378,6 +1395,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       rep.saveStepAttribute(idTransformation, idStep, "segmentId", segmentId);
       rep.saveStepAttribute(idTransformation, idStep, "taskNo", taskNo);
       rep.saveStepAttribute(idTransformation, idStep, "columnSchemaDetails", columnSchemaDetails);
+      rep.saveStepAttribute(idTransformation, idStep, "tableOption", tableOption);
     } catch (Exception e) {
       throw new KettleException(
           BaseMessages.getString(pkg, "CarbonStep.Exception.UnableToSaveStepInfoToRepository")
@@ -1677,6 +1695,22 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    */
   public ColumnSchemaDetailsWrapper getColumnSchemaDetailsWrapper() {
     return columnSchemaDetailsWrapper;
+  }
+
+  /**
+   * the method set the TableOption details
+   * @param tableOption
+   */
+  public void setTableOption(String tableOption) {
+    this.tableOption = tableOption;
+  }
+
+  /**
+   * the method returns the wrapper object of tableoption
+   * @return
+   */
+  public TableOptionWrapper getTableOptionWrapper() {
+    return tableOptionWrapper;
   }
 }
 

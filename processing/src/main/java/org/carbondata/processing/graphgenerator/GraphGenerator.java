@@ -26,7 +26,14 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
@@ -46,6 +53,7 @@ import org.carbondata.processing.csvreaderstep.CsvInputMeta;
 import org.carbondata.processing.graphgenerator.configuration.GraphConfigurationInfo;
 import org.carbondata.processing.mdkeygen.MDKeyGenStepMeta;
 import org.carbondata.processing.merger.step.CarbonSliceMergerStepMeta;
+import org.carbondata.processing.schema.metadata.TableOptionWrapper;
 import org.carbondata.processing.sortandgroupby.sortdatastep.SortKeyStepMeta;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedSeqGenMeta;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
@@ -566,6 +574,7 @@ public class GraphGenerator {
     seqMeta.setNormHiers(graphConfiguration.getNormHiers());
     seqMeta.setHeirKeySize(graphConfiguration.getHeirAndKeySizeString());
     seqMeta.setColumnSchemaDetails(graphConfiguration.getColumnSchemaDetails().toString());
+    seqMeta.setTableOption(graphConfiguration.getTableOptionWrapper().toString());
     String[] aggType = graphConfiguration.getAggType();
     StringBuilder builder = new StringBuilder();
     for (int i = 0; i < aggType.length; i++) {
@@ -796,6 +805,7 @@ public class GraphGenerator {
     prepareNoDictionaryMapping(dimensions, graphConfiguration);
     graphConfiguration
         .setColumnSchemaDetails(CarbonSchemaParser.getColumnSchemaDetails(dimensions));
+    graphConfiguration.setTableOptionWrapper(prepareTableOptionWrapper());
     String factTableName = carbonDataLoadSchema.getCarbonTable().getFactTableName();
     graphConfiguration.setTableName(factTableName);
     StringBuilder dimString = new StringBuilder();
@@ -898,6 +908,17 @@ public class GraphGenerator {
     graphConfiguration.setDriverclass(schemaInfo.getSrcDriverName());
     graphConfiguration.setConnectionUrl(schemaInfo.getSrcConUrl());
     return graphConfiguration;
+  }
+
+  /**
+   * the method returns the table option wrapper
+   *
+   * @return
+   */
+  private TableOptionWrapper prepareTableOptionWrapper() {
+    TableOptionWrapper tableOptionWrapper =
+        new TableOptionWrapper(schemaInfo.getSerializationNullFormat());
+    return tableOptionWrapper;
   }
 
   private String getQuoteType(SchemaInfo schemaInfo) throws GraphGeneratorException {
