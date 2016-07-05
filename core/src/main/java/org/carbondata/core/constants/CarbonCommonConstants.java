@@ -824,6 +824,16 @@ public final class CarbonCommonConstants {
    */
   public static final String DEFAULT_SEGMENT_LEVEL_THRESHOLD = "4,3";
 
+  /**
+   * default location of the carbon metastore db
+   */
+  public static final String METASTORE_LOCATION_DEFAULT_VAL = "../carbon.metastore";
+
+  /**
+   * hive connection url
+   */
+  public static final String HIVE_CONNECTION_URL = "javax.jdo.option.ConnectionURL";
+
   private CarbonCommonConstants() {
   }
 }

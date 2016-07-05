@@ -80,7 +80,6 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
           "Latest_webTypeDataVerNumber,Latest_operatorsVersion," +
           "Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription')")
 
-      )
 
       sql(
         "create table if not exists Carbon_automation_hive (imei string,deviceInformationId int," +
