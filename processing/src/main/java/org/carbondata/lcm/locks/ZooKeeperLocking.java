@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.constants.CarbonCommonConstants;
 
 import org.apache.zookeeper.CreateMode;
@@ -68,25 +69,21 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   private String lockTypeFolder;
 
   /**
-   * @param lockUsage
+   * @param tableIdentifier
+   * @param lockFile
    */
-  public ZooKeeperLocking(String location, LockUsage lockUsage) {
-    this.lockName = CarbonCommonConstants.ZOOKEEPER_LOCK;
-    this.lockTypeFolder = zooKeeperLocation;
-    location = location.replace("\\", "/");
-    String tempStr = location.substring(0, location.lastIndexOf('/'));
-    String schemaName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
-
-    String cubeName = location.substring(location.lastIndexOf('/') + 1, location.length());
-
-    this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + schemaName
-        + '.' + cubeName;
+  public ZooKeeperLocking(CarbonTableIdentifier tableIdentifier, String lockFile) {
+    this.lockName = lockFile;
+    this.tableIdFolder =
+        zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier.getDatabaseName()
+            + '.' + tableIdentifier.getTableName();
 
     zk = ZookeeperInit.getInstance().getZookeeper();
 
-    this.lockTypeFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + schemaName
-        + '.' + cubeName + CarbonCommonConstants.FILE_SEPARATOR
-        + lockUsage.toString();
+    this.lockTypeFolder =
+        zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier.getDatabaseName()
+            + '.' + tableIdentifier.getTableName() + CarbonCommonConstants.FILE_SEPARATOR
+            + lockFile;
     try {
       createBaseNode();
       // if exists returns null then path doesnt exist. so creating.

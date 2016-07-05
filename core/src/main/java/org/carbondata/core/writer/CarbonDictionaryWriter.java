@@ -57,4 +57,7 @@ public interface CarbonDictionaryWriter extends Closeable {
    * @throws IOException if an I/O error occurs
    */
   void write(List<byte[]> valueList) throws IOException;
+
+
+  void commit() throws IOException;
 }

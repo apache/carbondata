@@ -152,6 +152,16 @@ public class CarbonTablePath extends Path {
   }
 
   /**
+   *
+   * @param columnId
+   * @param dictOffset
+   * @return absolute path of sortindex with appeneded dictionary offset
+   */
+  public String getSortIndexFilePath(String columnId, long dictOffset) {
+    return getMetaDataDir() + File.separator + columnId + "_" + dictOffset + SORT_INDEX_EXT;
+  }
+
+  /**
    * @return absolute path of schema file
    */
   public String getSchemaFilePath() {
@@ -380,4 +390,5 @@ public class CarbonTablePath extends Path {
       return INVALID_SEGMENT_ID;
     }
   }
+
 }

@@ -27,12 +27,17 @@ import org.apache.commons.lang3.{ArrayUtils, StringUtils}
 import org.apache.spark.{Logging, Partition, Partitioner, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
+import org.carbon.common.transaction.CarbonTransactionImpl
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.{CarbonTableIdentifier, ColumnIdentifier}
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.lcm.locks.CarbonLockFactory
+import org.carbondata.lcm.locks.LockUsage
 import org.carbondata.spark.load.CarbonLoaderUtil
+import org.carbondata.spark.tasks.DictionaryWriterTask
+import org.carbondata.spark.tasks.SortIndexWriterTask
 import org.carbondata.spark.util.GlobalDictionaryUtil
 
 /**
@@ -55,6 +60,8 @@ trait GenericParser {
   def parseString(input: String): Unit
 }
 
+case class DictionaryStats(distinctValues: java.util.List[String],
+    dictWriteTime: Long, sortIndexWriteTime: Long)
 case class PrimitiveParser(dimension: CarbonDimension,
     setOpt: Option[HashSet[String]]) extends GenericParser {
   val (hasDictEncoding, set: HashSet[String]) = setOpt match {
@@ -230,6 +237,8 @@ class CarbonGlobalDictionaryGenerateRDD(
       var dictionaryForDistinctValueLookUp: org.carbondata.core.cache.dictionary.Dictionary = _
       var dictionaryForSortIndexWriting: org.carbondata.core.cache.dictionary.Dictionary = _
       var dictionaryForDistinctValueLookUpCleared: Boolean = false
+      val dictLock = CarbonLockFactory.getCarbonLockObj(model.table,
+        model.columnIdentifier(split.index).getColumnId + LockUsage.LOCK)
       // generate distinct value list
       try {
         val t1 = System.currentTimeMillis
@@ -265,33 +274,44 @@ class CarbonGlobalDictionaryGenerateRDD(
 
         if (isHighCardinalityColumn) {
           LOGGER.info("column " + model.table.getTableUniqueName + "." +
-            model.primDimensions(split.index).getColName + " is high cardinality column")
+                      model.primDimensions(split.index).getColName + " is high cardinality column")
         } else {
           val t3 = System.currentTimeMillis
-          val distinctValueCount = GlobalDictionaryUtil.generateAndWriteNewDistinctValueList(
-            valuesBuffer, dictionaryForDistinctValueLookUp, model, split.index)
+          if (dictLock.lockWithRetries()) {
+            logInfo(s"Successfully able to get the dictionary lock for ${
+              model.primDimensions(split.index).getColName
+            }")
+          } else {
+            sys
+              .error(s"Dictionary file ${
+                model.primDimensions(split.index).getColName
+              } is locked for updation. Please try after some time")
+          }
+          val dictWriteTask = new DictionaryWriterTask(valuesBuffer,
+            dictionaryForDistinctValueLookUp,
+            model,
+            split.index)
+          val sortIndexWriteTask = new SortIndexWriterTask(model,
+            split.index,
+            dictionaryForDistinctValueLookUp,
+            dictWriteTask)
+          val transactionHandler = new CarbonTransactionImpl[DictionaryStats]()
+          transactionHandler.addTask(sortIndexWriteTask)
+          transactionHandler.executeTasks()
+          transactionHandler.commit()
+          val dictStats = transactionHandler.get(0)
           // clear the value buffer after writing dictionary data
           valuesBuffer.clear
           org.carbondata.core.util.CarbonUtil
             .clearDictionaryCache(dictionaryForDistinctValueLookUp);
           dictionaryForDistinctValueLookUpCleared = true
-          val t4 = System.currentTimeMillis
-          if (distinctValueCount > 0) {
-            dictionaryForSortIndexWriting = CarbonLoaderUtil.getDictionary(model.table,
-              model.columnIdentifier(split.index),
-              model.hdfsLocation,
-              model.primDimensions(split.index).getDataType)
-            GlobalDictionaryUtil.writeGlobalDictionaryColumnSortInfo(model, split.index,
-              dictionaryForSortIndexWriting)
-            val t5 = System.currentTimeMillis
-            LOGGER.info("\n columnName:" + model.primDimensions(split.index).getColName +
+          LOGGER.info("\n columnName:" + model.primDimensions(split.index).getColName +
               "\n columnId:" + model.primDimensions(split.index).getColumnId +
-              "\n new distinct values count:" + distinctValueCount +
+              "\n new distinct values count:" + dictStats.distinctValues.size() +
               "\n create dictionary cache:" + (t2 - t1) +
               "\n combine lists:" + (t3 - t2) +
-              "\n sort list, distinct and write:" + (t4 - t3) +
-              "\n write sort info:" + (t5 - t4))
-          }
+              "\n sort list, distinct and write:" + dictStats.dictWriteTime +
+              "\n write sort info:" + dictStats.sortIndexWriteTime)
         }
       } catch {
         case ex: Exception =>
@@ -303,6 +323,17 @@ class CarbonGlobalDictionaryGenerateRDD(
             .clearDictionaryCache(dictionaryForDistinctValueLookUp);
         }
         org.carbondata.core.util.CarbonUtil.clearDictionaryCache(dictionaryForSortIndexWriting);
+        if (dictLock != null) {
+          if (dictLock.unlock()) {
+            logInfo(s"Dictionary ${
+              model.primDimensions(split.index).getColName
+            } Unlocked Successfully.")
+          } else {
+            logError(s"Unable to unlock Dictionary ${
+              model.primDimensions(split.index).getColName
+            }")
+          }
+        }
       }
       var finished = false
 
