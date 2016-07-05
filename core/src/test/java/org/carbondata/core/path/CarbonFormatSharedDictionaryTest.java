@@ -38,11 +38,11 @@ public class CarbonFormatSharedDictionaryTest {
    * test shared dictionary location
    */
   @Test public void testSharedDimentionLocation() throws IOException {
-    assertTrue(CarbonSharedDictionaryPath.getDictionaryFilePath(CARBON_STORE, "d1", "shared_c1")
+    assertTrue(CarbonSharedDictionaryPath.getDictionaryFilePath(CARBON_STORE, "d1", "shared_c1").replace("\\", "/")
         .equals(CARBON_STORE + "/d1/SharedDictionary/shared_c1.dict"));
-    assertTrue(CarbonSharedDictionaryPath.getDictionaryMetaFilePath(CARBON_STORE, "d1", "shared_c1")
+    assertTrue(CarbonSharedDictionaryPath.getDictionaryMetaFilePath(CARBON_STORE, "d1", "shared_c1").replace("\\", "/")
         .equals(CARBON_STORE + "/d1/SharedDictionary/shared_c1.dictmeta"));
-    assertTrue(CarbonSharedDictionaryPath.getSortIndexFilePath(CARBON_STORE, "d1", "shared_c1")
+    assertTrue(CarbonSharedDictionaryPath.getSortIndexFilePath(CARBON_STORE, "d1", "shared_c1").replace("\\", "/")
         .equals(CARBON_STORE + "/d1/SharedDictionary/shared_c1.sortindex"));
   }
 }
