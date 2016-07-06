@@ -92,6 +92,24 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
       sql("select count(distinct salary) from hiveTable"))
   }
 
+  test("test filter query on big decimal column") {
+    // equal to
+    checkAnswer(sql("select salary from carbonTable where salary=45234525465882.24"),
+      sql("select salary from hiveTable where salary=45234525465882.24"))
+    // greater than
+    checkAnswer(sql("select salary from carbonTable where salary>15000"),
+      sql("select salary from hiveTable where salary>15000"))
+    // greater than equal to
+    checkAnswer(sql("select salary from carbonTable where salary>=15000.43525"),
+      sql("select salary from hiveTable where salary>=15000.43525"))
+    // less than
+    checkAnswer(sql("select salary from carbonTable where salary<45234525465882"),
+      sql("select salary from hiveTable where salary<45234525465882"))
+    // less than equal to
+    checkAnswer(sql("select salary from carbonTable where salary<=45234525465882.24"),
+      sql("select salary from hiveTable where salary<=45234525465882.24"))
+  }
+
   override def afterAll {
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")

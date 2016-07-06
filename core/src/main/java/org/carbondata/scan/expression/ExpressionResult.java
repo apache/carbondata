@@ -259,7 +259,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         case LONG:
           return new BigDecimal((long) value);
         case DOUBLE:
-          return new BigDecimal((double) value);
+          return new BigDecimal(value.toString());
         case DECIMAL:
           return new BigDecimal(value.toString());
         case TIMESTAMP:
