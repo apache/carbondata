@@ -368,9 +368,9 @@ public class CsvInput extends BaseStep implements StepInterface {
         }
       }
     }
-    LOGGER.info("*****************Started ALL ALL csv reading***********");
+    LOGGER.info("*****************Started all csv reading***********");
     startProcess(numberOfNodes);
-    LOGGER.info("*****************Completed ALL ALL csv reading***********");
+    LOGGER.info("*****************Completed all csv reading***********");
     setOutputDone();
     return false;
   }
