@@ -172,6 +172,7 @@ case class CarbonScan(
       .getCubeCreationTime(relationRaw.schemaName, relationRaw.tableName)
     val schemaLastUpdatedTime = carbonCatalog
       .getSchemaLastUpdatedTime(relationRaw.schemaName, relationRaw.tableName)
+    val activeNodes = carbonCatalog.getNodeList
     val big = new CarbonScanRDD(
       ocRaw.sparkContext,
       model,
@@ -180,7 +181,8 @@ case class CarbonScan(
       conf,
       cubeCreationTime,
       schemaLastUpdatedTime,
-      carbonCatalog.storePath)
+      carbonCatalog.storePath,
+      activeNodes)
     big
   }
 

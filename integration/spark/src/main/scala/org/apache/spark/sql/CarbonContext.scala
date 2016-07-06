@@ -20,6 +20,7 @@ package org.apache.spark.sql
 import scala.language.implicitConversions
 
 import org.apache.spark.SparkContext
+import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.catalyst.ParserDialect
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog}
 import org.apache.spark.sql.catalyst.optimizer.{DefaultOptimizer, Optimizer}
@@ -154,4 +155,23 @@ object CarbonContext {
   }
 
   def datasourceName: String = "org.apache.carbondata.format"
+
+   /**
+   * the method request the required executors
+   * @param sc
+   * @param numExecutors
+   * @return
+   */
+  final def ensureExecutors(sc: SparkContext, numExecutors: Int): Boolean = {
+    sc.schedulerBackend match {
+      case b: CoarseGrainedSchedulerBackend =>
+        val requiredExecutors = numExecutors -  b.numExistingExecutors
+        if(requiredExecutors > 0) {
+          b.requestExecutors(requiredExecutors)
+        }
+        true
+      case _ =>
+        false
+    }
+  }
 }
