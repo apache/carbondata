@@ -60,12 +60,14 @@ $ ./bin/spark-shell --master local --jars ${carbondata_jar},${mysql_jar}
 import org.apache.spark.sql.CarbonContext
 import java.io.File
 import org.apache.hadoop.hive.conf.HiveConf
-val cc = new CarbonContext(sc, "./carbondata/store")
+val storePath = "hdfs://hacluster/Opt/CarbonStore"
+val cc = new CarbonContext(sc, storePath)
 cc.setConf("carbon.kettle.home","./carbondata/carbonplugins")
 val metadata = new File("").getCanonicalPath + "/carbondata/metadata"
 cc.setConf("hive.metastore.warehouse.dir", metadata)
 cc.setConf(HiveConf.ConfVars.HIVECHECKFILEFORMAT.varname, "false")
 ```
+*Note*: `storePath` can be a hdfs path or a local path , the path is used to store table data.
 
 * Create table
 
@@ -91,6 +93,8 @@ EOF
 val dataFilePath = new File("").getCanonicalPath + "/carbondata/sample.csv"
 cc.sql(s"load data inpath '$dataFilePath' into table table1")
 ```
+
+Note: Carbondata also support `LOAD DATA LOCAL INPATH 'folder_path' INTO TABLE [db_name.]table_name OPTIONS(property_name=property_value, ...)` syntax, but right now there is no significant meaning to local in carbondata.We just keep it to align with hive syntax. `dataFilePath` can be hdfs path as well like `val dataFilePath = hdfs://hacluster//carbondata/sample.csv`  
 
 * Query data from table1
 
