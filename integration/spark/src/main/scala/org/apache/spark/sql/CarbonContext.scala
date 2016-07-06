@@ -31,6 +31,7 @@ import org.apache.spark.sql.hive._
 import org.apache.spark.sql.optimizer.CarbonOptimizer
 
 import org.carbondata.common.logging.LogServiceFactory
+import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.spark.rdd.CarbonDataFrameRDD
 
@@ -42,12 +43,14 @@ class CarbonContext(
 
   def this (sc: SparkContext) = {
     this (sc,
-      new File("./carbonstore").getCanonicalPath,
-      new File("./carbonmetastore").getCanonicalPath)
+      new File(CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL).getCanonicalPath,
+      new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
   }
 
   def this (sc: SparkContext, storePath: String) = {
-    this (sc, storePath, new File("./carbonmetastore").getCanonicalPath)
+    this (sc,
+      storePath,
+      new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
   }
 
   CarbonContext.addInstance(sc, this)
@@ -58,7 +61,8 @@ class CarbonContext(
 
   @transient
   override lazy val catalog = {
-    CarbonProperties.getInstance().addProperty("carbon.storelocation", storePath)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
     new CarbonMetastoreCatalog(this, storePath, metadataHive) with OverrideCatalog
   }
 
@@ -78,11 +82,11 @@ class CarbonContext(
 
   override protected def configure(): Map[String, String] = {
     sc.hadoopConfiguration.addResource("hive-site.xml")
-    if (sc.hadoopConfiguration.get("javax.jdo.option.ConnectionURL") == null) {
+    if (sc.hadoopConfiguration.get(CarbonCommonConstants.HIVE_CONNECTION_URL) == null) {
       val hiveMetaStoreDB = metaStorePath + "/metastore_db"
       logDebug(s"metastore db is going to be created in location : $hiveMetaStoreDB")
-      super.configure() ++ Map(("javax.jdo.option.ConnectionURL",
-              "jdbc:derby:;databaseName=" + hiveMetaStoreDB + ";create=true"),
+      super.configure() ++ Map((CarbonCommonConstants.HIVE_CONNECTION_URL,
+              s"jdbc:derby:;databaseName=$hiveMetaStoreDB;create=true"),
         ("hive.metastore.warehouse.dir", metaStorePath + "/hivemetadata"))
     } else {
       super.configure()
