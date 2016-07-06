@@ -23,6 +23,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.carbondata.scan.executor.exception.QueryExecutionException;
 import org.carbondata.scan.executor.infos.BlockExecutionInfo;
@@ -66,9 +67,12 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
         future = execute();
       } else {
         fileReader.finish();
+        execService.shutdown();
+        execService.awaitTermination(2, TimeUnit.HOURS);
       }
     } catch (Exception ex) {
       fileReader.finish();
+      execService.shutdown();
       throw new RuntimeException(ex.getCause().getMessage());
     }
     return result;
