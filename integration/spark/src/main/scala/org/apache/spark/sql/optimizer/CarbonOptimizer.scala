@@ -369,7 +369,7 @@ class CarbonOptimizer(optimizer: Optimizer, conf: CatalystConf)
                 aliasMap.put(a.toAttribute, attr)
                 a
               case a@Alias(_, name) =>
-                aliasMap.put(a.toAttribute, new AttributeReference("",StringType)())
+                aliasMap.put(a.toAttribute, new AttributeReference("", StringType)())
                 a
             }
           }
@@ -381,7 +381,7 @@ class CarbonOptimizer(optimizer: Optimizer, conf: CatalystConf)
                 aliasMap.put(a.toAttribute, attr)
                 a
               case a@Alias(_, name) =>
-                aliasMap.put(a.toAttribute, new AttributeReference("",StringType)())
+                aliasMap.put(a.toAttribute, new AttributeReference("", StringType)())
                 a
             }
           }
