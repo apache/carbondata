@@ -30,7 +30,7 @@ import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, _}
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.types.IntegerType
+import org.apache.spark.sql.types.{IntegerType, StringType}
 
 import org.carbondata.spark.CarbonFilters
 
@@ -368,6 +368,9 @@ class CarbonOptimizer(optimizer: Optimizer, conf: CatalystConf)
               case a@Alias(attr: Attribute, name) =>
                 aliasMap.put(a.toAttribute, attr)
                 a
+              case a@Alias(_, name) =>
+                aliasMap.put(a.toAttribute, new AttributeReference("",StringType)())
+                a
             }
           }
           project
@@ -376,6 +379,9 @@ class CarbonOptimizer(optimizer: Optimizer, conf: CatalystConf)
             aggExp.transform {
               case a@Alias(attr: Attribute, name) =>
                 aliasMap.put(a.toAttribute, attr)
+                a
+              case a@Alias(_, name) =>
+                aliasMap.put(a.toAttribute, new AttributeReference("",StringType)())
                 a
             }
           }
