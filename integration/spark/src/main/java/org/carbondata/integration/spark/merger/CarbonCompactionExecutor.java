@@ -213,6 +213,8 @@ public class CarbonCompactionExecutor {
 
     model.setTable(carbonTable);
 
+    model.setInMemoryRecordSize(CarbonCommonConstants.COMPACTION_INMEMORY_RECORD_SIZE);
+
     return model;
   }
 

@@ -149,6 +149,9 @@ case class CarbonMergerMapping(storeLocation: String, hdfsStoreLocation: String,
   kettleHomePath: String, cubeCreationTime: Long, schemaName: String,
   factTableName: String, validSegments: Array[String], tableId: String)
 
+case class NodeInfo(TaskId: String, noOfBlocks: Int)
+
+
 case class AlterTableModel(dbName: Option[String], tableName: String, compactionType: String)
 
 case class CompactionModel(compactionSize: Long,

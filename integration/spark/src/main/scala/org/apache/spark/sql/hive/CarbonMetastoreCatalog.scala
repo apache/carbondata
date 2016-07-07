@@ -18,12 +18,10 @@
 package org.apache.spark.sql.hive
 
 import java.io._
-import java.net.{InetAddress, InterfaceAddress, NetworkInterface}
 import java.util.GregorianCalendar
 import java.util.UUID
 
 import scala.Array.canBuildFrom
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.util.parsing.combinator.RegexParsers
@@ -282,7 +280,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
                     // information and reload when required.
                     Partitioner("org.carbondata.spark.partition.api.impl." +
                                 "SampleDataPartitionerImpl",
-                      Array(""), 1, getNodeList))
+                      Array(""), 1, Array("")))
                 }
               }
             })
@@ -339,7 +337,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
       storePath,
       CarbonMetadata.getInstance().getCarbonTable(dbName + "_" + tableName),
       Partitioner("org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
-        Array(""), 1, getNodeList))
+        Array(""), 1, DistributionUtil.getNodeList(hive.sparkContext)))
 
     val fileType = FileFactory.getFileType(schemaMetadataPath)
     if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
@@ -384,73 +382,6 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
       .setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath))
     wrapperTableInfo.setStorePath(storePath)
     updateMetadataByWrapperTable(wrapperTableInfo)
-  }
-
-  /*
-   * This method will return the list of executers in the cluster.
-   * For this we take the  memory status of all node with getExecutorMemoryStatus
-   * and extract the keys. getExecutorMemoryStatus also returns the driver memory also
-   * In client mode driver will run in the localhost
-   * There can be executor spawn in same drive node. So we can remove first occurance of
-   * localhost for retriving executor list
-   */
-  def getNodeList: Array[String] = {
-
-    val arr =
-      hive.sparkContext.getExecutorMemoryStatus.map {
-        kv =>
-          kv._1.split(":")(0)
-      }.toSeq
-    val localhostIPs = getLocalhostIPs
-    val selectedLocalIPList = localhostIPs.filter(arr.contains(_))
-
-    val nodelist: List[String] = withoutDriverIP(arr.toList)(selectedLocalIPList.contains(_))
-    val masterMode = hive.sparkContext.getConf.get("spark.master")
-    if (nodelist.nonEmpty) {
-      // Specific for Yarn Mode
-      if ("yarn-cluster".equals(masterMode) || "yarn-client".equals(masterMode)) {
-        val nodeNames = nodelist.map { x =>
-          val addr = InetAddress.getByName(x)
-          addr.getHostName
-        }
-        nodeNames.toArray
-      }
-      else {
-        // For Standalone cluster, node IPs will be returned.
-        nodelist.toArray
-      }
-    }
-    else {
-      Seq(InetAddress.getLocalHost.getHostName).toArray
-    }
-  }
-
-  private def getLocalhostIPs = {
-    val iface = NetworkInterface.getNetworkInterfaces
-    var addresses: List[InterfaceAddress] = List.empty
-    while (iface.hasMoreElements) {
-      addresses = iface.nextElement().getInterfaceAddresses.asScala.toList ++ addresses
-    }
-    val inets = addresses.map(_.getAddress.getHostAddress)
-    inets
-  }
-
-  /*
-   * This method will remove the first occurance of any of the ips  mentioned in the predicate.
-   * Eg: l = List(Master,slave1,Master,slave2,slave3) is the list of nodes where first Master is
-   * the Driver  node.
-   * this method withoutFirst (l)(x=> x == 'Master') will remove the first occurance of Master.
-   * The resulting List containt List(slave1,Master,slave2,slave3)
-   */
-  def withoutDriverIP[A](xs: List[A])(p: A => Boolean): List[A] = {
-    xs match {
-      case x :: rest => if (p(x)) {
-        rest
-      } else {
-        x :: withoutDriverIP(rest)(p)
-      }
-      case _ => Nil
-    }
   }
 
 

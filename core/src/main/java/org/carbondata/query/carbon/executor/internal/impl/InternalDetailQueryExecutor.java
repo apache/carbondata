@@ -36,6 +36,7 @@ import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
 import org.carbondata.query.carbon.merger.ScannedResultMerger;
 import org.carbondata.query.carbon.merger.impl.UnSortedScannedResultMerger;
+import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.carbon.result.Result;
 
 /**
@@ -54,22 +55,31 @@ public class InternalDetailQueryExecutor implements InternalQueryExecutor {
    */
   private int numberOfCores;
 
-  public InternalDetailQueryExecutor() {
+  public InternalDetailQueryExecutor(QueryModel queryModel) {
 
     // below code will be used to update the number of cores based on number
     // records we
     // can keep in memory while executing the query execution
     int recordSize = 0;
-    String defaultInMemoryRecordsSize =
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.INMEMORY_REOCRD_SIZE);
-    if (null != defaultInMemoryRecordsSize) {
-      try {
-        recordSize = Integer.parseInt(defaultInMemoryRecordsSize);
-      } catch (NumberFormatException ne) {
-        LOGGER.error("Invalid inmemory records size. Using default value");
-        recordSize = CarbonCommonConstants.INMEMORY_REOCRD_SIZE_DEFAULT;
+
+    // in case of compaction we will pass the in memory record size.
+    int inMemoryRecordSizeInModel = queryModel.getInMemoryRecordSize();
+    if(inMemoryRecordSizeInModel > 0){
+      recordSize = inMemoryRecordSizeInModel;
+    }
+    else {
+      String defaultInMemoryRecordsSize =
+          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.INMEMORY_REOCRD_SIZE);
+      if (null != defaultInMemoryRecordsSize) {
+        try {
+          recordSize = Integer.parseInt(defaultInMemoryRecordsSize);
+        } catch (NumberFormatException ne) {
+          LOGGER.error("Invalid inmemory records size. Using default value");
+          recordSize = CarbonCommonConstants.INMEMORY_REOCRD_SIZE_DEFAULT;
+        }
       }
     }
+    LOGGER.info("In memory record size considered is: " + recordSize);
     this.numberOfCores = recordSize / Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));

@@ -817,6 +817,11 @@ public final class CarbonCommonConstants {
    */
   public static final String DEFAULT_SEGMENT_LEVEL_THRESHOLD = "4,3";
 
+  /**
+   * Rocord size in case of compaction.
+   */
+  public static final int COMPACTION_INMEMORY_RECORD_SIZE = 120000;
+
   private CarbonCommonConstants() {
   }
 }

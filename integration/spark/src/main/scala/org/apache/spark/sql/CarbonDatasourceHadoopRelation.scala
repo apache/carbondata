@@ -32,7 +32,7 @@ import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.mapreduce.SparkHadoopMapReduceUtil
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
-import org.apache.spark.sql.hive.TableMeta
+import org.apache.spark.sql.hive.{CarbonMetastoreCatalog, DistributionUtil, TableMeta}
 import org.apache.spark.sql.sources.{Filter, HadoopFsRelation, OutputWriterFactory}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
@@ -69,7 +69,7 @@ private[sql] case class CarbonDatasourceHadoopRelation(sqlContext: SQLContext,
         Partitioner(options.partitionClass,
           Array(""),
           options.partitionCount.toInt,
-          CarbonEnv.getInstance(sqlContext).carbonCatalog.getNodeList)),
+          DistributionUtil.getNodeList(sqlContext.sparkContext))),
       None)(sqlContext)
 
     (relation, job.getConfiguration)

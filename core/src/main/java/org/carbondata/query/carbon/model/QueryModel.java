@@ -145,6 +145,11 @@ public class QueryModel implements Serializable {
   public transient Map<String, Dictionary> columnToDictionaryMapping;
 
   /**
+   * Number of records to keep in memory.
+   */
+  public int inMemoryRecordSize;
+
+  /**
    * table on which query will be executed
    * TODO need to remove this ad pass only the path
    * and carbon metadata will load the table from metadata file
@@ -553,5 +558,13 @@ public class QueryModel implements Serializable {
    */
   public void setColumnToDictionaryMapping(Map<String, Dictionary> columnToDictionaryMapping) {
     this.columnToDictionaryMapping = columnToDictionaryMapping;
+  }
+
+  public int getInMemoryRecordSize() {
+    return inMemoryRecordSize;
+  }
+
+  public void setInMemoryRecordSize(int inMemoryRecordSize) {
+    this.inMemoryRecordSize = inMemoryRecordSize;
   }
 }

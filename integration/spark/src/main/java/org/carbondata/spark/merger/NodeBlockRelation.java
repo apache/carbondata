@@ -18,23 +18,23 @@
  */
 package org.carbondata.spark.merger;
 
-import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
+import org.carbondata.core.carbon.datastore.block.Distributable;
 
 /**
  * Block to Node mapping
  */
 public class NodeBlockRelation implements Comparable<NodeBlockRelation> {
 
-  private final TableBlockInfo block;
+  private final Distributable block;
   private final String node;
 
-  public NodeBlockRelation(TableBlockInfo block, String node) {
+  public NodeBlockRelation(Distributable block, String node) {
     this.block = block;
     this.node = node;
 
   }
 
-  public TableBlockInfo getBlock() {
+  public Distributable getBlock() {
     return block;
   }
 

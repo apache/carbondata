@@ -29,7 +29,7 @@ import org.apache.spark.rdd.RDD
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.cache.dictionary.Dictionary
-import org.carbondata.core.carbon.datastore.block.TableBlockInfo
+import org.carbondata.core.carbon.datastore.block.{Distributable, TableBlockInfo}
 import org.carbondata.core.iterator.CarbonIterator
 import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
 import org.carbondata.query.carbon.executor.QueryExecutorFactory
@@ -103,7 +103,7 @@ class CarbonQueryRDD[K, V](
         new TableBlockInfo(inputSplit.getPath.toString,
           inputSplit.getStart, inputSplit.getSegmentId,
           inputSplit.getLocations, inputSplit.getLength
-        )
+        ).asInstanceOf[Distributable]
       )
       if (blockList.nonEmpty) {
         // group blocks to nodes, tasks
@@ -113,11 +113,13 @@ class CarbonQueryRDD[K, V](
         var i = 0
         // Create Spark Partition for each task and assign blocks
         nodeBlockMapping.asScala.foreach { entry =>
-          entry._2.asScala.foreach { blocksPerTask =>
+          entry._2.asScala.foreach { blocksPerTask => {
+            val tableBlockInfo = blocksPerTask.asScala.map(_.asInstanceOf[TableBlockInfo])
             if (blocksPerTask.size() != 0) {
-              result.add(new CarbonSparkPartition(id, i, Seq(entry._1).toArray, blocksPerTask))
+              result
+                .add(new CarbonSparkPartition(id, i, Seq(entry._1).toArray, tableBlockInfo.asJava))
               i += 1
-            }
+            }}
           }
         }
         val noOfBlocks = blockList.size

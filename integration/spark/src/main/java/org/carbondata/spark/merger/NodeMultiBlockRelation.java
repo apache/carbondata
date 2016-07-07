@@ -2,20 +2,20 @@ package org.carbondata.spark.merger;
 
 import java.util.List;
 
-import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
+import org.carbondata.core.carbon.datastore.block.Distributable;
 
 public class NodeMultiBlockRelation implements Comparable<NodeMultiBlockRelation> {
 
-  private final List<TableBlockInfo> blocks;
+  private final List<Distributable> blocks;
   private final String node;
 
-  public NodeMultiBlockRelation(String node, List<TableBlockInfo> blocks) {
+  public NodeMultiBlockRelation(String node, List<Distributable> blocks) {
     this.node = node;
     this.blocks = blocks;
 
   }
 
-  public List<TableBlockInfo> getBlocks() {
+  public List<Distributable> getBlocks() {
     return blocks;
   }
 

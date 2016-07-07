@@ -40,7 +40,7 @@ public class DetailQueryExecutor extends AbstractQueryExecutor<RowResult> {
   @Override public CarbonIterator<RowResult> execute(QueryModel queryModel)
       throws QueryExecutionException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
-    InternalQueryExecutor queryExecutor = new InternalDetailQueryExecutor();
+    InternalQueryExecutor queryExecutor = new InternalDetailQueryExecutor(queryModel);
     return new ChunkRowIterator(
         new DetailQueryResultIterator(blockExecutionInfoList, queryProperties, queryModel,
             queryExecutor));

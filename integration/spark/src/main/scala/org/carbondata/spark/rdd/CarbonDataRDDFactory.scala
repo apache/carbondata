@@ -36,7 +36,7 @@ import org.apache.spark.util.{FileUtils, SplitUtils}
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.CarbonDataLoadSchema
-import org.carbondata.core.carbon.datastore.block.TableBlockInfo
+import org.carbondata.core.carbon.datastore.block.{Distributable, TableBlockInfo}
 import org.carbondata.core.carbon.metadata.CarbonMetadata
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.core.constants.CarbonCommonConstants
@@ -713,7 +713,7 @@ object CarbonDataRDDFactory extends Logging {
             new TableBlockInfo(fileSplit.getPath.toString,
               fileSplit.getStart, "1",
               fileSplit.getLocations, fileSplit.getLength
-            )
+            ).asInstanceOf[Distributable]
           }
           )
           // group blocks to nodes, tasks
@@ -740,11 +740,12 @@ object CarbonDataRDDFactory extends Logging {
           logInfo(str)
           blocksGroupBy = nodeBlockMapping.map(entry => {
             val blockDetailsList =
-              entry._2.asScala.map(tableBlock =>
+              entry._2.asScala.map(distributable => {
+                val tableBlock = distributable.asInstanceOf[TableBlockInfo]
                 new BlockDetails(tableBlock.getFilePath,
                   tableBlock.getBlockOffset, tableBlock.getBlockLength
                 )
-              ).toArray
+              }).toArray
             (entry._1, blockDetailsList)
           }
           ).toArray
