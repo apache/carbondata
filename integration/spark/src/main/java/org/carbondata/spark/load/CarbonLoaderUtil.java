@@ -307,25 +307,30 @@ public final class CarbonLoaderUtil {
     String metaDataLocation = carbonTable.getMetaDataFilepath();
     SegmentStatusManager segmentStatusManager =
         new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier());
-    LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metaDataLocation);
+    final LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metaDataLocation);
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(loadModel.getStorePath(), carbonTable.getCarbonTableIdentifier());
-    final List<String> loadFolders = new ArrayList<String>();
-    for (LoadMetadataDetails loadMetadata : details) {
-      loadFolders.add(carbonTablePath
-          .getCarbonDataDirectoryPath(loadMetadata.getPartitionCount(), loadMetadata.getLoadName())
-          .replace("\\", "/"));
-    }
 
     //delete folder which metadata no exist in tablestatus
     for (int i = 0; i < carbonTable.getPartitionCount(); i++) {
-      String partitionPath = carbonTablePath.getPartitionDir(i + "");
+      final String partitionCount = i + "";
+      String partitionPath = carbonTablePath.getPartitionDir(partitionCount);
       FileType fileType = FileFactory.getFileType(partitionPath);
       if (FileFactory.isFileExist(partitionPath, fileType)) {
         CarbonFile carbonFile = FileFactory.getCarbonFile(partitionPath, fileType);
         CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
           @Override public boolean accept(CarbonFile path) {
-            return !loadFolders.contains(path.getAbsolutePath().replace("\\", "/"));
+            String segmentId =
+                CarbonTablePath.DataPathUtil.getSegmentId(path.getAbsolutePath() + "/dummy");
+            boolean found = false;
+            for (int j = 0; j < details.length; j++) {
+              if (details[j].getLoadName().equals(segmentId)
+                  && details[j].getPartitionCount().equals(partitionCount)) {
+                found = true;
+                break;
+              }
+            }
+            return !found;
           }
         });
         for (int k = 0; k < listFiles.length; k++) {
