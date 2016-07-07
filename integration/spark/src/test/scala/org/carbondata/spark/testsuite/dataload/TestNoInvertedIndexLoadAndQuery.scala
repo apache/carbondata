@@ -24,6 +24,9 @@ import java.io.File
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.Row
+
+import org.carbondata.core.util.CarbonProperties
+import org.carbondata.core.constants.CarbonCommonConstants
 import org.scalatest.BeforeAndAfterAll
 
 /**
@@ -35,32 +38,68 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
 
   def currentPath: String = new File(this.getClass.getResource("/").getPath + "/../../")
     .getCanonicalPath
-  val testData = new File(currentPath + "/../../examples/src/main/resources/dimSample.csv")
+  val testData1 = new File(currentPath + "/../../examples/src/main/resources/dimSample.csv")
     .getCanonicalPath
+  val testData2 = new File(currentPath + "/../../examples/src/main/resources/data.csv")
+    .getCanonicalPath
+
   override def beforeAll {
-    sql("DROP TABLE IF EXISTS index")
+    sql("DROP TABLE IF EXISTS index1")
+    sql("DROP TABLE IF EXISTS index2")
   }
 
-  test("no inverted index load and query") {
+  test("no inverted index load and point query") {
 
     sql("""
-           CREATE TABLE IF NOT EXISTS index
+           CREATE TABLE IF NOT EXISTS index1
            (id Int, name String, city String)
            STORED BY 'org.apache.carbondata.format'
            TBLPROPERTIES('NO_INVERTED_INDEX'='name,city')
            """)
     sql(s"""
-           LOAD DATA LOCAL INPATH '$testData' into table index
+           LOAD DATA LOCAL INPATH '$testData1' into table index1
            """)
     checkAnswer(
       sql("""
-           SELECT * FROM index WHERE city = "Bangalore"
+           SELECT * FROM index1 WHERE city = "Bangalore"
           """),
       Seq(Row("Emily", "Bangalore", 19.0)))
 
   }
 
-  override def afterAll {
-    sql("drop table index")
+  test("no inverted index load and agg query") {
+
+    sql(
+      """
+        CREATE TABLE IF NOT EXISTS index2
+        (ID Int, date Timestamp, country String,
+        name String, phonetype String, serialname String, salary Int)
+        STORED BY 'org.apache.carbondata.format'
+        TBLPROPERTIES('NO_INVERTED_INDEX'='country,name,phonetype')
+      """)
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+
+    sql(s"""
+           LOAD DATA LOCAL INPATH '$testData2' into table index2
+           """)
+
+    checkAnswer(
+      sql("""
+           SELECT country, count(salary) AS amount
+           FROM index2
+           WHERE country IN ('china','france')
+           GROUP BY country
+          """),
+      Seq(Row("china", 849), Row("france", 101))
+    )
+
   }
+
+  override def afterAll {
+    sql("drop table index1")
+    sql("drop table index2")
+  }
+
 }
