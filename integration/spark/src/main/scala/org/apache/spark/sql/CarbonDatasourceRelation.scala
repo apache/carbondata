@@ -142,7 +142,7 @@ private[sql] case class CarbonDatasourceRelation(
                     carbonRelation.cubeMeta.carbonTableIdentifier.getDatabaseName +
                     CarbonCommonConstants.FILE_SEPARATOR +
                     carbonRelation.cubeMeta.carbonTableIdentifier.getTableName
-    val fileType = FileFactory.getFileType
+    val fileType = FileFactory.getFileType(tablePath)
     if(FileFactory.isFileExist(tablePath, fileType)) {
       FileFactory.getDirectorySize(tablePath)
     } else {

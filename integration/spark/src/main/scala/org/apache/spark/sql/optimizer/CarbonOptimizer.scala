@@ -443,8 +443,17 @@ class CarbonOptimizer(optimizer: Optimizer, conf: CatalystConf)
   // get the carbon relation from plan.
   def collectCarbonRelation(plan: LogicalPlan): Seq[CarbonDecoderRelation] = {
     plan collect {
-      case Subquery(alias, l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)) =>
-        CarbonDecoderRelation(l.attributeMap, carbonRelation)
+      case subQuery: Subquery if (isCarbonRelation(subQuery.child)) => subQuery.child match {
+        case l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _) =>
+          CarbonDecoderRelation(l.attributeMap, carbonRelation)
+      }
+    }
+  }
+
+  def isCarbonRelation(relation: Any): Boolean = {
+    relation match {
+      case l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _) => true
+      case _ => false
     }
   }
 }
