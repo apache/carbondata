@@ -18,6 +18,7 @@
  */
 package org.carbondata.query.carbon.executor.infos;
 
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.query.aggregator.MeasureAggregator;
 
 /**
@@ -70,6 +71,11 @@ public class AggregatorInfo {
    * aggregator array
    */
   private int measureAggregatorStartIndex;
+
+  /**
+   * Datatype of each measure;
+   */
+  private DataType[] measureDataTypes;
 
   /**
    * @return the measuresAggreagators
@@ -153,5 +159,13 @@ public class AggregatorInfo {
    */
   public void setMeasureAggregatorStartIndex(int measureAggregatorStartIndex) {
     this.measureAggregatorStartIndex = measureAggregatorStartIndex;
+  }
+
+  public DataType[] getMeasureDataTypes() {
+    return measureDataTypes;
+  }
+
+  public void setMeasureDataTypes(DataType[] measureDataTypes) {
+    this.measureDataTypes = measureDataTypes;
   }
 }

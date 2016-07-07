@@ -29,22 +29,20 @@ import org.carbondata.core.load.LoadMetadataDetails
 import org.carbondata.query.carbon.result.BatchRawResult
 import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
 
-trait KeyVal[K, V] extends Serializable {
-  def getKey(key: CarbonKey, value: CarbonValue): (K, V)
-
+trait Value[V] extends Serializable {
+  def getValue(value: Array[Object]): V
 }
 
-class KeyValImpl extends KeyVal[CarbonKey, CarbonValue] {
-  override def getKey(key: CarbonKey, value: CarbonValue): (CarbonKey, CarbonValue) = (key, value)
+class ValueImpl extends Value[Array[Object]] {
+  override def getValue(value: Array[Object]): Array[Object] = value
 }
 
-trait RawKeyVal[K, V] extends Serializable {
-  def getKey(key: BatchRawResult, value: Any): (K, V)
-
+trait RawValue[V] extends Serializable {
+  def getValue(value: BatchRawResult): V
 }
 
-class RawKeyValImpl extends RawKeyVal[BatchRawResult, Any] {
-  override def getKey(key: BatchRawResult, value: Any): (BatchRawResult, Any) = (key, value)
+class RawValueImpl extends RawValue[BatchRawResult] {
+  override def getValue(value: BatchRawResult): BatchRawResult = value
 }
 
 trait DataLoadResult[K, V] extends Serializable {

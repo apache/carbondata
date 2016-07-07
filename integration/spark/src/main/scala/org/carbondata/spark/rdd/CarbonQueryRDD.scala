@@ -21,6 +21,7 @@ package org.carbondata.spark.rdd
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.reflect.ClassTag
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.Job
@@ -37,7 +38,7 @@ import org.carbondata.query.carbon.model.QueryModel
 import org.carbondata.query.carbon.result.RowResult
 import org.carbondata.query.expression.Expression
 import org.carbondata.query.filter.resolver.FilterResolverIntf
-import org.carbondata.spark.KeyVal
+import org.carbondata.spark.Value
 import org.carbondata.spark.load.CarbonLoaderUtil
 import org.carbondata.spark.util.QueryPlanUtil
 
@@ -55,19 +56,19 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
 }
 
 
- /**
-  * This RDD is used to perform query.
-  */
-class CarbonQueryRDD[K, V](
-  sc: SparkContext,
-  queryModel: QueryModel,
-  filterExpression: Expression,
-  keyClass: KeyVal[K, V],
-  @transient conf: Configuration,
-  cubeCreationTime: Long,
-  schemaLastUpdatedTime: Long,
-  baseStoreLocation: String)
-  extends RDD[(K, V)](sc, Nil) with Logging {
+/**
+ * This RDD is used to perform query.
+ */
+class CarbonQueryRDD[V: ClassTag](
+    sc: SparkContext,
+    queryModel: QueryModel,
+    filterExpression: Expression,
+    valueClass: Value[V],
+    @transient conf: Configuration,
+    cubeCreationTime: Long,
+    schemaLastUpdatedTime: Long,
+    baseStoreLocation: String)
+  extends RDD[V](sc, Nil) with Logging {
 
   val defaultParallelism = sc.defaultParallelism
 
@@ -83,7 +84,7 @@ class CarbonQueryRDD[K, V](
       // before applying filter check whether segments are available in the table.
       val splits = carbonInputFormat.getSplits(job)
       if (!splits.isEmpty) {
-        var filterResolver = carbonInputFormat
+        val filterResolver = carbonInputFormat
           .getResolvedFilter(job.getConfiguration, filterExpression)
         CarbonInputFormat.setFilterPredicates(job.getConfiguration, filterResolver)
         queryModel.setFilterExpressionResolverTree(filterResolver)
@@ -153,10 +154,10 @@ class CarbonQueryRDD[K, V](
   }
 
 
-  override def compute(thepartition: Partition, context: TaskContext): Iterator[(K, V)] = {
+  override def compute(thepartition: Partition, context: TaskContext): Iterator[V] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    val iter = new Iterator[(K, V)] {
-      var rowIterator: CarbonIterator[_] = _
+    val iter = new Iterator[V] {
+      var rowIterator: CarbonIterator[Array[Object]] = _
       var queryStartTime: Long = 0
       try {
         val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
@@ -175,7 +176,7 @@ class CarbonQueryRDD[K, V](
           }
           // execute query
           rowIterator = QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel)
-            .asInstanceOf[CarbonIterator[RowResult]]
+            .asInstanceOf[CarbonIterator[Array[Object]]]
         }
         // TODOi
         // : CarbonQueryUtil.isQuickFilter quick filter from dictionary needs to support
@@ -206,19 +207,16 @@ class CarbonQueryRDD[K, V](
         !finished
       }
 
-      override def next(): (K, V) = {
+      override def next(): V = {
         if (!hasNext) {
           throw new java.util.NoSuchElementException("End of stream")
         }
         havePair = false
-        val row = rowIterator.next()
-        val key = row.asInstanceOf[RowResult].getKey()
-        val value = row.asInstanceOf[RowResult].getValue()
         recordCount += 1
         if (queryModel.getLimit != -1 && recordCount >= queryModel.getLimit) {
           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
         }
-        keyClass.getKey(key, value)
+        valueClass.getValue(rowIterator.next())
       }
 
       def clearDictionaryCache(columnToDictionaryMap: java.util.Map[String, Dictionary]) = {

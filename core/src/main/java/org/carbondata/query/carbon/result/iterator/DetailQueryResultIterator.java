@@ -29,16 +29,17 @@ import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.carbon.result.BatchResult;
+import org.carbondata.query.carbon.result.ListBasedResultWrapper;
 import org.carbondata.query.carbon.result.Result;
 import org.carbondata.query.carbon.result.preparator.QueryResultPreparator;
-import org.carbondata.query.carbon.result.preparator.impl.QueryResultPreparatorImpl;
+import org.carbondata.query.carbon.result.preparator.impl.DetailQueryResultPreparatorImpl;
 
 /**
  * In case of detail query we cannot keep all the records in memory so for
  * executing that query are returning a iterator over block and every time next
  * call will come it will execute the block and return the result
  */
-public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator<BatchResult> {
+public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator {
 
   /**
    * LOGGER.
@@ -49,17 +50,18 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
   /**
    * to prepare the result
    */
-  private QueryResultPreparator<BatchResult> queryResultPreparator;
+  private QueryResultPreparator<List<ListBasedResultWrapper>, Object> queryResultPreparator;
 
   public DetailQueryResultIterator(List<BlockExecutionInfo> infos,
       QueryExecutorProperties executerProperties, QueryModel queryModel,
       InternalQueryExecutor queryExecutor) {
     super(infos, executerProperties, queryModel, queryExecutor);
-    this.queryResultPreparator = new QueryResultPreparatorImpl(executerProperties, queryModel);
+    this.queryResultPreparator =
+        new DetailQueryResultPreparatorImpl(executerProperties, queryModel);
   }
 
   @Override public BatchResult next() {
-    updateSliceIndexToBeExecuted();
+    currentCounter += updateSliceIndexToBeExecuted();
     CarbonIterator<Result> result = null;
     try {
       result = executor.executeQuery(blockExecutionInfos, blockIndexToBeExecuted);

@@ -126,11 +126,12 @@ public class MapBasedResultAggregator implements ScannedResultAggregator {
 
   /**
    * Below method will used to get the result
-   *
-   * @param aggregated result
    */
-  @Override public Result<Map<ByteArrayWrapper, MeasureAggregator[]>> getAggregatedResult() {
-    Result<Map<ByteArrayWrapper, MeasureAggregator[]>> result = new MapBasedResult();
+  @Override
+  public Result<Map<ByteArrayWrapper, MeasureAggregator[]>, MeasureAggregator> getAggregatedResult()
+  {
+    Result<Map<ByteArrayWrapper, MeasureAggregator[]>, MeasureAggregator> result =
+        new MapBasedResult();
     updateAggregatedResult();
     result.addScannedResult(aggData);
     return result;

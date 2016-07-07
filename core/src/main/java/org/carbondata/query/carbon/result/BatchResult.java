@@ -19,74 +19,47 @@
 
 package org.carbondata.query.carbon.result;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.NoSuchElementException;
 
-import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.iterator.CarbonIterator;
-import org.carbondata.query.scanner.impl.CarbonKey;
-import org.carbondata.query.scanner.impl.CarbonValue;
 
 /**
  * Below class holds the query result
  */
-public class BatchResult extends CarbonIterator<RowResult> {
+public class BatchResult extends CarbonIterator<Object[]> {
 
   /**
    * list of keys
    */
-  private List<CarbonKey> keys;
-
-  /**
-   * list of values
-   */
-  private List<CarbonValue> values;
+  protected Object[][] rows;
 
   /**
    * counter to check whether all the records are processed or not
    */
-  private int counter;
+  protected int counter;
 
   public BatchResult() {
-    keys = new ArrayList<CarbonKey>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    values = new ArrayList<CarbonValue>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    this.rows = new Object[0][];
   }
 
   /**
-   * Below method will be used to get the key
+   * Below method will be used to get the rows
    *
    * @return
    */
-  public List<CarbonKey> getKeys() {
-    return keys;
-  }
-
-  /**
-   * below method will be used to set the key
-   *
-   * @param keys
-   */
-  public void setKeys(List<CarbonKey> keys) {
-    this.keys = keys;
-  }
-
-  /**
-   * Below method will be used to get the values
-   *
-   * @return
-   */
-  public List<CarbonValue> getValues() {
-    return values;
+  public Object[][] getRows() {
+    return rows;
   }
 
   /**
    * Below method will be used to get the set the values
    *
-   * @param values
+   * @param rows
    */
-  public void setValues(List<CarbonValue> values) {
-    this.values = values;
+  public void setRows(Object[][] rows) {
+    this.rows = rows;
   }
+
 
   /**
    * Returns {@code true} if the iteration has more elements.
@@ -94,7 +67,7 @@ public class BatchResult extends CarbonIterator<RowResult> {
    * @return {@code true} if the iteration has more elements
    */
   @Override public boolean hasNext() {
-    return counter < keys.size();
+    return counter < rows.length;
   }
 
   /**
@@ -102,11 +75,12 @@ public class BatchResult extends CarbonIterator<RowResult> {
    *
    * @return the next element in the iteration
    */
-  @Override public RowResult next() {
-    RowResult rowResult = new RowResult();
-    rowResult.setKey(keys.get(counter));
-    rowResult.setValue(values.get(counter));
+  @Override public Object[] next() {
+    if (!hasNext()) {
+      throw new NoSuchElementException();
+    }
+    Object[] row = rows[counter];
     counter++;
-    return rowResult;
+    return row;
   }
 }

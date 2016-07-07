@@ -52,8 +52,8 @@ public class InternalCountStartQueryExecutor implements InternalQueryExecutor {
   /**
    * Method to execute the count start query
    *
-   * @param block execution info
-   * @param slice indexes
+   * @param infos execution info
+   * @param sliceIndex indexes
    */
   public CarbonIterator<Result> executeQuery(List<BlockExecutionInfo> infos, int[] sliceIndex)
       throws QueryExecutionException {
@@ -68,7 +68,7 @@ public class InternalCountStartQueryExecutor implements InternalQueryExecutor {
     countAgg[0].setNewValue(count);
 
     ListBasedResultWrapper resultWrapper = new ListBasedResultWrapper();
-    Result<List<ListBasedResultWrapper>> result = new ListBasedResult();
+    Result<List<ListBasedResultWrapper>, Object> result = new ListBasedResult();
     ByteArrayWrapper wrapper = new ByteArrayWrapper();
     wrapper.setDictionaryKey(new byte[0]);
     resultWrapper.setKey(wrapper);

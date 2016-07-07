@@ -216,6 +216,11 @@ public class BlockExecutionInfo {
   private boolean isRawRecordDetailQuery;
 
   /**
+   * whether dimensions exist in query.
+   */
+  private boolean isDimensionsExistInQuery;
+
+  /**
    * @return the tableBlock
    */
   public AbstractIndex getDataBlock() {
@@ -657,5 +662,13 @@ public class BlockExecutionInfo {
 
   public void setRawRecordDetailQuery(boolean rawRecordDetailQuery) {
     isRawRecordDetailQuery = rawRecordDetailQuery;
+  }
+
+  public boolean isDimensionsExistInQuery() {
+    return isDimensionsExistInQuery;
+  }
+
+  public void setDimensionsExistInQuery(boolean dimensionsExistInQuery) {
+    isDimensionsExistInQuery = dimensionsExistInQuery;
   }
 }

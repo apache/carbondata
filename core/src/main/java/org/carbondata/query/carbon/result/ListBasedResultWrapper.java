@@ -1,13 +1,12 @@
 package org.carbondata.query.carbon.result;
 
-import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 
 public class ListBasedResultWrapper {
 
   private ByteArrayWrapper key;
 
-  private MeasureAggregator[] value;
+  private Object[] value;
 
   /**
    * @return the key
@@ -26,14 +25,14 @@ public class ListBasedResultWrapper {
   /**
    * @return the value
    */
-  public MeasureAggregator[] getValue() {
+  public Object[] getValue() {
     return value;
   }
 
   /**
    * @param value the value to set
    */
-  public void setValue(MeasureAggregator[] value) {
+  public void setValue(Object[] value) {
     this.value = value;
   }
 }

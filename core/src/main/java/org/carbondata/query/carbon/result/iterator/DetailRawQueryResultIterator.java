@@ -19,6 +19,11 @@
 package org.carbondata.query.carbon.result.iterator;
 
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
@@ -26,7 +31,8 @@ import org.carbondata.query.carbon.executor.impl.QueryExecutorProperties;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
 import org.carbondata.query.carbon.model.QueryModel;
-import org.carbondata.query.carbon.result.BatchRawResult;
+import org.carbondata.query.carbon.result.BatchResult;
+import org.carbondata.query.carbon.result.ListBasedResultWrapper;
 import org.carbondata.query.carbon.result.Result;
 import org.carbondata.query.carbon.result.preparator.QueryResultPreparator;
 import org.carbondata.query.carbon.result.preparator.impl.RawQueryResultPreparatorImpl;
@@ -36,10 +42,13 @@ import org.carbondata.query.carbon.result.preparator.impl.RawQueryResultPreparat
  * executing that query are returning a iterator over block and every time next
  * call will come it will execute the block and return the result
  */
-public class DetailRawQueryResultIterator
-    extends AbstractDetailQueryResultIterator<BatchRawResult> {
+public class DetailRawQueryResultIterator extends AbstractDetailQueryResultIterator {
 
-  private QueryResultPreparator<BatchRawResult> queryResultPreparator;
+  private ExecutorService execService = Executors.newFixedThreadPool(1);
+
+  private Future<ResultInfo> future;
+
+  private QueryResultPreparator<List<ListBasedResultWrapper>, Object> queryResultPreparator;
 
   public DetailRawQueryResultIterator(List<BlockExecutionInfo> infos,
       QueryExecutorProperties executerProperties, QueryModel queryModel,
@@ -48,26 +57,59 @@ public class DetailRawQueryResultIterator
     this.queryResultPreparator = new RawQueryResultPreparatorImpl(executerProperties, queryModel);
   }
 
-  @Override public BatchRawResult next() {
-    updateSliceIndexToBeExecuted();
-    CarbonIterator<Result> result = null;
+  @Override public BatchResult next() {
+    BatchResult result;
     try {
-      result = executor.executeQuery(blockExecutionInfos, blockIndexToBeExecuted);
-    } catch (QueryExecutionException ex) {
-      throw new RuntimeException(ex.getCause());
-    }
-    for (int i = 0; i < blockIndexToBeExecuted.length; i++) {
-      if (blockIndexToBeExecuted[i] != -1) {
-        blockExecutionInfos.get(blockIndexToBeExecuted[i]).setFirstDataBlock(
-            blockExecutionInfos.get(blockIndexToBeExecuted[i]).getFirstDataBlock()
-                .getNextDataRefNode());
+      if (future == null) {
+        future = execute();
       }
+      ResultInfo resultFromFuture = future.get();
+      result = resultFromFuture.result;
+      currentCounter += resultFromFuture.counter;
+      if (hasNext()) {
+        future = execute();
+      } else {
+        execService.shutdown();
+        execService.awaitTermination(2, TimeUnit.HOURS);
+      }
+      return result;
+    } catch (Exception e) {
+      execService.shutdown();
+      throw new RuntimeException(e.getCause());
     }
-    if (null != result) {
-      Result next = result.next();
-      return queryResultPreparator.prepareQueryResult(next);
-    } else {
-      return queryResultPreparator.prepareQueryResult(null);
-    }
+  }
+
+
+  private Future<ResultInfo> execute() {
+    return execService.submit(new Callable<ResultInfo>() {
+      @Override public ResultInfo call() throws QueryExecutionException {
+        int counter =  updateSliceIndexToBeExecuted();
+        CarbonIterator<Result> result =
+            executor.executeQuery(blockExecutionInfos, blockIndexToBeExecuted);
+        for (int i = 0; i < blockIndexToBeExecuted.length; i++) {
+          if (blockIndexToBeExecuted[i] != -1) {
+            blockExecutionInfos.get(blockIndexToBeExecuted[i]).setFirstDataBlock(
+                blockExecutionInfos.get(blockIndexToBeExecuted[i]).getFirstDataBlock()
+                    .getNextDataRefNode());
+          }
+        }
+        BatchResult batchResult;
+        if (null != result) {
+          Result next = result.next();
+          batchResult = queryResultPreparator.prepareQueryResult(next);
+        } else {
+          batchResult = queryResultPreparator.prepareQueryResult(null);
+        }
+        ResultInfo resultInfo = new ResultInfo();
+        resultInfo.counter = counter;
+        resultInfo.result = batchResult;
+        return resultInfo;
+      }
+    });
+  }
+
+  private static class ResultInfo {
+    private int counter;
+    private BatchResult result;
   }
 }

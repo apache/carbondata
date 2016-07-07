@@ -19,13 +19,12 @@
 
 package org.carbondata.query.carbon.result;
 
-import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 
 /**
  * Result interface for storing the result
  */
-public interface Result<K> {
+public interface Result<K, V> {
   /**
    * Below method will be used to
    * add the sccaed result
@@ -53,9 +52,9 @@ public interface Result<K> {
    *
    * @return value
    */
-  MeasureAggregator[] getValue();
+  V[] getValue();
 
-  void merge(Result<K> otherResult);
+  void merge(Result<K, V> otherResult);
 
   /**
    * Below method will be used to get the result

@@ -26,7 +26,6 @@ import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
 import org.carbondata.query.carbon.executor.internal.impl.InternalDetailQueryExecutor;
 import org.carbondata.query.carbon.model.QueryModel;
-import org.carbondata.query.carbon.result.RowResult;
 import org.carbondata.query.carbon.result.iterator.ChunkRowIterator;
 import org.carbondata.query.carbon.result.iterator.DetailQueryResultIterator;
 
@@ -35,9 +34,9 @@ import org.carbondata.query.carbon.result.iterator.DetailQueryResultIterator;
  * For executing the detail query it will pass all the block execution
  * info to detail query result iterator and iterator will be returned
  */
-public class DetailQueryExecutor extends AbstractQueryExecutor<RowResult> {
+public class DetailQueryExecutor extends AbstractQueryExecutor {
 
-  @Override public CarbonIterator<RowResult> execute(QueryModel queryModel)
+  @Override public CarbonIterator<Object[]> execute(QueryModel queryModel)
       throws QueryExecutionException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
     InternalQueryExecutor queryExecutor = new InternalDetailQueryExecutor(queryModel);

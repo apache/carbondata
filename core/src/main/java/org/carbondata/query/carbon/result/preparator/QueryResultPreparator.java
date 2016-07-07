@@ -1,9 +1,10 @@
 package org.carbondata.query.carbon.result.preparator;
 
+import org.carbondata.query.carbon.result.BatchResult;
 import org.carbondata.query.carbon.result.Result;
 
-public interface QueryResultPreparator<E> {
+public interface QueryResultPreparator<K, V> {
 
-  public E prepareQueryResult(Result scannedResult);
+  public BatchResult prepareQueryResult(Result<K, V> scannedResult);
 
 }

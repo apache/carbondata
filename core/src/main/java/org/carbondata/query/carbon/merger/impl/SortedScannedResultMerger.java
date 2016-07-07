@@ -128,21 +128,26 @@ public class SortedScannedResultMerger extends AbstractScannedResultMerger {
       while (mergedScannedResult.hasNext()) {
         wrapper = new ListBasedResultWrapper();
         ByteArrayWrapper key = mergedScannedResult.getKey();
-        keyArray = keyStructureInfo.getKeyGenerator()
-            .getKeyArray(key.getDictionaryKey(), keyStructureInfo.getMaskedBytes());
-        for (int i = 0; i < sortInfo.getSortDimension().size(); i++) {
-          if (CarbonUtil.hasEncoding(sortInfo.getSortDimension().get(i).getDimension().getEncoder(),
-              Encoding.DICTIONARY)) {
-            keyArray[sortInfo.getSortDimension().get(i).getDimension().getKeyOrdinal()] =
-                blockExecutionInfo.getColumnIdToDcitionaryMapping()
-                    .get(sortInfo.getSortDimension().get(i).getDimension().getColumnId())
-                    .getSortedIndex((int) keyArray[sortInfo.getSortDimension().get(i).getDimension()
-                        .getKeyOrdinal()]);
+        if (key != null) {
+          keyArray = keyStructureInfo.getKeyGenerator()
+              .getKeyArray(key.getDictionaryKey(), keyStructureInfo.getMaskedBytes());
+          for (int i = 0; i < sortInfo.getSortDimension().size(); i++) {
+            if (CarbonUtil
+                .hasEncoding(sortInfo.getSortDimension().get(i).getDimension().getEncoder(),
+                    Encoding.DICTIONARY)) {
+              keyArray[sortInfo.getSortDimension().get(i).getDimension().getKeyOrdinal()] =
+                  blockExecutionInfo.getColumnIdToDcitionaryMapping()
+                      .get(sortInfo.getSortDimension().get(i).getDimension().getColumnId())
+                      .getSortedIndex(
+                          (int) keyArray[sortInfo.getSortDimension().get(i).getDimension()
+                              .getKeyOrdinal()]);
+            }
           }
+          key.setDictionaryKey(
+              getMaskedKey(keyStructureInfo.getKeyGenerator().generateKey(keyArray),
+                  keyStructureInfo));
+          wrapper.setKey(key);
         }
-        key.setDictionaryKey(getMaskedKey(keyStructureInfo.getKeyGenerator().generateKey(keyArray),
-            keyStructureInfo));
-        wrapper.setKey(key);
         wrapper.setValue(mergedScannedResult.getValue());
         result.add(wrapper);
       }

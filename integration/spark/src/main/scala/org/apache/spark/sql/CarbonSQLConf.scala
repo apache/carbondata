@@ -22,8 +22,11 @@ import org.apache.spark.sql.hive.CarbonSQLDialect
 
 object CarbonSQLConf {
 
-  val PUSH_COMPUTATION = SQLConfEntry.booleanConf("spark.sql.carbon.push.computation",
-    defaultValue = Some(true))
+  val PUSH_COMPUTATION =
+    SQLConfEntry.booleanConf("spark.sql.carbon.push.computation", defaultValue = Some(true))
+
+  val USE_BINARY_CARBON_AGGREGATOR =
+    SQLConfEntry.booleanConf("spark.sql.carbon.binary.aggregator", defaultValue = Some(true))
 
 }
 
@@ -43,5 +46,7 @@ class CarbonSQLConf extends SQLConf {
   import CarbonSQLConf._
 
   private[sql] def pushComputation: Boolean = getConf(PUSH_COMPUTATION)
+
+  private[sql] def useBinaryAggregation: Boolean = getConf(USE_BINARY_CARBON_AGGREGATOR)
 
 }

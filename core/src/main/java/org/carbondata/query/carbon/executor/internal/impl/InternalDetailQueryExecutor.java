@@ -97,10 +97,11 @@ public class InternalDetailQueryExecutor implements InternalQueryExecutor {
    * @param sliceIndexes   slice indexes to be executed
    * @return query result
    */
-  @Override public CarbonIterator<Result> executeQuery(List<BlockExecutionInfo> executionInfos,
+  @Override public CarbonIterator<Result> executeQuery(
+      List<BlockExecutionInfo> executionInfos,
       int[] sliceIndexes) throws QueryExecutionException {
     long startTime = System.currentTimeMillis();
-    QueryRunner task = null;
+    QueryRunner task;
     ScannedResultMerger scannedResultProcessor =
         new UnSortedScannedResultMerger(executionInfos.get(executionInfos.size() - 1),
             sliceIndexes.length);

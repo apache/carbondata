@@ -45,10 +45,8 @@ import org.carbondata.query.expression.{LiteralExpression => CarbonLiteralExpres
 import org.carbondata.query.expression.arithmetic.{AddExpression, DivideExpression, MultiplyExpression, SubstractExpression}
 import org.carbondata.query.expression.conditional._
 import org.carbondata.query.expression.logical.{AndExpression, OrExpression}
-import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
+import org.carbondata.spark.{Value, ValueImpl}
 import org.carbondata.spark.agg._
-import org.carbondata.spark.KeyVal
-import org.carbondata.spark.KeyValImpl
 import org.carbondata.spark.rdd.CarbonQueryRDD
 import org.carbondata.spark.util.{CarbonScalaUtil, QueryPlanUtil}
 
@@ -417,7 +415,7 @@ case class CarbonTableScan(
       case LessThanOrEqual(left, right) => new
           LessThanEqualToExpression(transformExpression(left), transformExpression(right))
       // convert StartWith('abc') or like(col 'abc%') to col >= 'abc' and col < 'abd'
-      case StartsWith(left, right @ Literal(pattern, dataType)) if (pattern.toString.size > 0) =>
+      case StartsWith(left, right @ Literal(pattern, dataType)) if pattern.toString.nonEmpty =>
         val l = new GreaterThanEqualToExpression(
           transformExpression(left), transformExpression(right))
         val value = pattern.toString
@@ -473,7 +471,7 @@ case class CarbonTableScan(
     extraPreds = Seq(cond)
   }
 
-  def inputRdd: CarbonQueryRDD[CarbonKey, CarbonValue] = {
+  def inputRdd: CarbonQueryRDD[Array[Object]] = {
     val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     // Update the FilterExpressions with extra conditions added through join pushdown
     if (extraPreds.nonEmpty) {
@@ -492,7 +490,7 @@ case class CarbonTableScan(
 
     val model = QueryModel.createModel(
       absoluteTableIdentifier, buildCarbonPlan, carbonTable)
-    val kv: KeyVal[CarbonKey, CarbonValue] = new KeyValImpl()
+    val kv: Value[Array[Object]] = new ValueImpl()
     // setting queryid
     buildCarbonPlan.setQueryId(oc.getConf("queryId", System.nanoTime() + ""))
 
@@ -536,9 +534,7 @@ case class CarbonTableScan(
     } else {
       // all the other queries are sent to executor
       inputRdd.map { row =>
-        val dims = row._1.getKey.map(toType)
-        val values = dims
-        new GenericMutableRow(values.asInstanceOf[Array[Any]])
+        new GenericMutableRow(row.map(toType))
       }
     }
   }
@@ -548,7 +544,7 @@ case class CarbonTableScan(
    * @return
    */
   def isCountQuery: Boolean = {
-    if (buildCarbonPlan.isCountStarQuery() && null == buildCarbonPlan.getFilterExpression &&
+    if (buildCarbonPlan.isCountStarQuery && null == buildCarbonPlan.getFilterExpression &&
         buildCarbonPlan.getDimensions.size() < 1 && buildCarbonPlan.getMeasures.size() < 2 &&
         buildCarbonPlan.getDimAggregatorInfos.size() < 1) {
       true

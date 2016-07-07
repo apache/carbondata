@@ -17,6 +17,8 @@
 
 package org.carbondata.spark.rdd
 
+import scala.reflect.ClassTag
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 
@@ -26,34 +28,23 @@ import org.carbondata.query.carbon.executor.QueryExecutorFactory
 import org.carbondata.query.carbon.model.QueryModel
 import org.carbondata.query.carbon.result.BatchRawResult
 import org.carbondata.query.expression.Expression
-import org.carbondata.spark.RawKeyVal
+import org.carbondata.spark.RawValue
 
 
 /**
  * This RDD is used to perform query with raw data, it means it doesn't convert dictionary values
  * to actual data.
- *
- * @param sc
- * @param queryModel
- * @param filterExpression
- * @param keyClass
- * @param conf
- * @param cubeCreationTime
- * @param schemaLastUpdatedTime
- * @param baseStoreLocation
- * @tparam K
- * @tparam V
  */
-class CarbonRawQueryRDD[K, V](
+class CarbonRawQueryRDD[V: ClassTag](
     sc: SparkContext,
     queryModel: QueryModel,
     filterExpression: Expression,
-    keyClass: RawKeyVal[K, V],
+    valueClass: RawValue[V],
     @transient conf: Configuration,
     cubeCreationTime: Long,
     schemaLastUpdatedTime: Long,
     baseStoreLocation: String)
-  extends CarbonQueryRDD[K, V](sc,
+  extends CarbonQueryRDD[V](sc,
     queryModel,
     filterExpression,
     null,
@@ -63,15 +54,15 @@ class CarbonRawQueryRDD[K, V](
     baseStoreLocation) with Logging {
 
 
-  override def compute(thepartition: Partition, context: TaskContext): Iterator[(K, V)] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
-    val iter = new Iterator[(K, V)] {
+  override def compute(thepartition: Partition, context: TaskContext): Iterator[V] = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    val iter = new Iterator[V] {
       var rowIterator: CarbonIterator[BatchRawResult] = _
       var queryStartTime: Long = 0
       try {
         val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
         if(!carbonSparkPartition.tableBlockInfos.isEmpty) {
-          queryModel.setQueryId(queryModel.getQueryId() + "_" + carbonSparkPartition.idx)
+          queryModel.setQueryId(queryModel.getQueryId + "_" + carbonSparkPartition.idx)
           // fill table block info
           queryModel.setTableBlockInfos(carbonSparkPartition.tableBlockInfos)
           queryStartTime = System.currentTimeMillis
@@ -80,7 +71,7 @@ class CarbonRawQueryRDD[K, V](
           logInfo("*************************" + carbonPropertiesFilePath)
           if (null == carbonPropertiesFilePath) {
             System.setProperty("carbon.properties.filepath",
-              System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties");
+              System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties")
           }
           // execute query
           rowIterator = QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel)
@@ -102,19 +93,18 @@ class CarbonRawQueryRDD[K, V](
 
       override def hasNext: Boolean = {
         if (!finished && !havePair) {
-          finished = (null == rowIterator) || (!rowIterator.hasNext())
+          finished = (null == rowIterator) || (!rowIterator.hasNext)
           havePair = !finished
         }
         !finished
       }
 
-      override def next(): (K, V) = {
+      override def next(): V = {
         if (!hasNext) {
           throw new java.util.NoSuchElementException("End of stream")
         }
         havePair = false
-        val row = rowIterator.next()
-        keyClass.getKey(row, null)
+        valueClass.getValue(rowIterator.next())
       }
 
       logInfo("*************************** Total Time Taken to execute the query in Carbon Side: " +

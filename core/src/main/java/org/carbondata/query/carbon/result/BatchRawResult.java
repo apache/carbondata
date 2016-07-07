@@ -20,7 +20,6 @@
 package org.carbondata.query.carbon.result;
 
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
-import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.util.CarbonUtil;
@@ -32,38 +31,9 @@ import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 /**
  * Below class holds the query result of batches.
  */
-public class BatchRawResult extends CarbonIterator<Object[]> {
-
-  /**
-   * list of keys
-   */
-  private Object[][] rows;
+public class BatchRawResult extends BatchResult {
 
   private QuerySchemaInfo querySchemaInfo;
-  /**
-   * counter to check whether all the records are processed or not
-   */
-  private int counter;
-
-  /**
-   * size of the batches.
-   */
-  private int size;
-
-  public BatchRawResult(Object[][] rows) {
-    this.rows = rows;
-    if (rows.length > 0) {
-      this.size = rows[0].length;
-    }
-  }
-
-  /**
-   * This will return all the raw records.
-   * @return
-   */
-  public Object[][] getAllRows() {
-    return rows;
-  }
 
   /**
    * This method will return one row at a time based on the counter given.
@@ -71,22 +41,8 @@ public class BatchRawResult extends CarbonIterator<Object[]> {
    * @return
    */
   public Object[] getRawRow(int counter) {
-    Object[] outputRow = new Object[rows.length];
-    for(int col = 0 ; col < rows.length ; col++) {
-      outputRow[col] = rows[col][counter];
-    }
-    return outputRow;
+    return rows[counter];
   }
-
-  /**
-   * Returns {@code true} if the iteration has more elements.
-   *
-   * @return {@code true} if the iteration has more elements
-   */
-  @Override public boolean hasNext() {
-    return counter < size;
-  }
-
   /**
    * Returns the next element in the iteration.
    *
@@ -97,30 +53,33 @@ public class BatchRawResult extends CarbonIterator<Object[]> {
   }
 
   private Object[] parseData() {
-    ByteArrayWrapper key = (ByteArrayWrapper) rows[0][counter];
     int[] order = querySchemaInfo.getQueryReverseOrder();
-    long[] surrogateResult = querySchemaInfo.getKeyGenerator()
-        .getKeyArray(key.getDictionaryKey(), querySchemaInfo.getMaskedByteIndexes());
+    Object[] row = rows[counter];
+    ByteArrayWrapper key = (ByteArrayWrapper) row[0];
     QueryDimension[] queryDimensions = querySchemaInfo.getQueryDimensions();
-    Object[] parsedData = new Object[queryDimensions.length + rows.length - 1];
-    int noDictionaryColumnIndex = 0;
-    for (int i = 0; i < queryDimensions.length; i++) {
-      if (!queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)) {
-        parsedData[order[i]] = DataTypeUtil.getDataBasedOnDataType(
-            new String(key.getNoDictionaryKeyByIndex(noDictionaryColumnIndex++)),
-            queryDimensions[i].getDimension().getDataType());
-      } else if (queryDimensions[i].getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-        DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
-            .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
-        parsedData[order[i]] = directDictionaryGenerator.getValueFromSurrogate(
-            (int) surrogateResult[queryDimensions[i].getDimension().getKeyOrdinal()]);
-      } else {
-        parsedData[order[i]] =
-            (int) surrogateResult[queryDimensions[i].getDimension().getKeyOrdinal()];
+    Object[] parsedData = new Object[queryDimensions.length + row.length - 1];
+    if(key != null) {
+      long[] surrogateResult = querySchemaInfo.getKeyGenerator()
+          .getKeyArray(key.getDictionaryKey(), querySchemaInfo.getMaskedByteIndexes());
+      int noDictionaryColumnIndex = 0;
+      for (int i = 0; i < queryDimensions.length; i++) {
+        if (!queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)) {
+          parsedData[order[i]] = DataTypeUtil.getDataBasedOnDataType(
+              new String(key.getNoDictionaryKeyByIndex(noDictionaryColumnIndex++)),
+              queryDimensions[i].getDimension().getDataType());
+        } else if (queryDimensions[i].getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+          DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+              .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
+          parsedData[order[i]] = directDictionaryGenerator.getValueFromSurrogate(
+              (int) surrogateResult[queryDimensions[i].getDimension().getKeyOrdinal()]);
+        } else {
+          parsedData[order[i]] =
+              (int) surrogateResult[queryDimensions[i].getDimension().getKeyOrdinal()];
+        }
       }
     }
-    for (int i = 0; i < rows.length - 1; i++) {
-      parsedData[order[i + queryDimensions.length]] = rows[i + 1][counter];
+    for (int i = 0; i < row.length - 1; i++) {
+      parsedData[order[i + queryDimensions.length]] = row[i + 1];
     }
     counter++;
     return parsedData;
@@ -153,7 +112,12 @@ public class BatchRawResult extends CarbonIterator<Object[]> {
     }
     Object[] orderData = new Object[parsedData.length];
     for (int i = 0; i < parsedData.length; i++) {
-      orderData[i] = parsedData[aggOrder[i]];
+      // this case can come with expressions with out column like count(*)
+      if(i < aggOrder.length) {
+        orderData[i] = parsedData[aggOrder[i]];
+      } else {
+        orderData[i] = parsedData[i];
+      }
     }
     return orderData;
   }
@@ -171,6 +135,6 @@ public class BatchRawResult extends CarbonIterator<Object[]> {
    * @return
    */
   public int getSize() {
-    return size;
+    return rows.length;
   }
 }

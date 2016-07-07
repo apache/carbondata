@@ -23,16 +23,15 @@ import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.internal.InternalQueryExecutor;
 import org.carbondata.query.carbon.executor.internal.impl.InternalCountStartQueryExecutor;
 import org.carbondata.query.carbon.model.QueryModel;
-import org.carbondata.query.carbon.result.RowResult;
 import org.carbondata.query.carbon.result.iterator.ChunkBasedResultIterator;
 import org.carbondata.query.carbon.result.iterator.ChunkRowIterator;
 
 /**
  * Below class will be used to execute the count start query
  */
-public class CountStarQueryExecutor extends AbstractQueryExecutor<RowResult> {
+public class CountStarQueryExecutor extends AbstractQueryExecutor {
 
-  @Override public CarbonIterator<RowResult> execute(QueryModel queryModel)
+  @Override public CarbonIterator<Object[]> execute(QueryModel queryModel)
       throws QueryExecutionException {
     initQuery(queryModel);
     InternalQueryExecutor queryExecutor =

@@ -157,13 +157,13 @@ case class CarbonRawAggregate(
           while (iter.hasNext) {
             currentRow = iter.next().asInstanceOf[CarbonRawMutableRow]
             while (currentRow.hasNext) {
+              currentRow.next()
               numInputRows += 1
               var i = 0
               while (i < buffer.length) {
                 buffer(i).update(currentRow)
                 i += 1
               }
-              currentRow.next()
             }
           }
           val resultProjection = new InterpretedProjection(resultExpressions, computedSchema)
@@ -186,6 +186,7 @@ case class CarbonRawAggregate(
             currentRow = iter.next().asInstanceOf[CarbonRawMutableRow]
             while (currentRow.hasNext) {
               numInputRows += 1
+              currentRow.next()
               val currentGroup = currentRow.getKey
               var currentBuffer = hashTable.get(currentGroup)
               if (currentBuffer == null) {
@@ -198,7 +199,6 @@ case class CarbonRawAggregate(
                 currentBuffer(i).update(currentRow)
                 i += 1
               }
-              currentRow.next()
             }
           }
 

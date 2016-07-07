@@ -18,23 +18,23 @@
 package org.carbondata.spark.rdd
 
 import scala.collection.JavaConverters._
+import scala.reflect.ClassTag
 
 import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
 
-import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
-import org.carbondata.spark.KeyVal
+import org.carbondata.spark.Value
 import org.carbondata.spark.util.CarbonQueryUtil
 
 
-class CarbonDropAggregateTableRDD[K, V](
+class CarbonDropAggregateTableRDD[V: ClassTag](
     sc: SparkContext,
-    keyClass: KeyVal[K, V],
+    valueClass: Value[V],
     schemaName: String,
     cubeName: String,
     partitioner: Partitioner)
-  extends RDD[(K, V)](sc, Nil) with Logging {
+  extends RDD[V](sc, Nil) with Logging {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
@@ -45,8 +45,8 @@ class CarbonDropAggregateTableRDD[K, V](
     }
   }
 
-  override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
-    val iter = new Iterator[(K, V)] {
+  override def compute(theSplit: Partition, context: TaskContext): Iterator[V] = {
+    val iter = new Iterator[V] {
       val split = theSplit.asInstanceOf[CarbonLoadPartition]
       logInfo("Input split: " + split.serializableHadoopSplit.value)
       // TODO call CARBON delete API
@@ -62,14 +62,12 @@ class CarbonDropAggregateTableRDD[K, V](
         !finished
       }
 
-      override def next(): (K, V) = {
+      override def next(): V = {
         if (!hasNext) {
           throw new java.util.NoSuchElementException("End of stream")
         }
         havePair = false
-        val row = new CarbonKey(null)
-        val value = new CarbonValue(null)
-        keyClass.getKey(row, value)
+        valueClass.getValue(null)
       }
     }
     iter

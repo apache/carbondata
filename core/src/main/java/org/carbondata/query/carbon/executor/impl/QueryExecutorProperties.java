@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
 
@@ -75,4 +76,9 @@ public class QueryExecutorProperties {
    * which to
    */
   public Map<String, Dictionary> columnToDictionayMapping;
+
+  /**
+   * Measure datatypes
+   */
+  public DataType[] measureDataTypes;
 }

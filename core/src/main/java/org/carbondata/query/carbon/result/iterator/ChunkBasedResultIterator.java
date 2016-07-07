@@ -19,13 +19,17 @@
 
 package org.carbondata.query.carbon.result.iterator;
 
+import java.util.Map;
+
 import org.carbondata.core.iterator.CarbonIterator;
+import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.carbon.executor.impl.QueryExecutorProperties;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.carbon.result.BatchResult;
 import org.carbondata.query.carbon.result.Result;
 import org.carbondata.query.carbon.result.preparator.QueryResultPreparator;
 import org.carbondata.query.carbon.result.preparator.impl.QueryResultPreparatorImpl;
+import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 
 /**
  * Iterator over chunk result
@@ -35,7 +39,8 @@ public class ChunkBasedResultIterator extends CarbonIterator<BatchResult> {
   /**
    * query result prepartor which will be used to create a query result
    */
-  private QueryResultPreparator<BatchResult> queryResultPreparator;
+  private QueryResultPreparator<Map<ByteArrayWrapper, MeasureAggregator[]>, MeasureAggregator>
+      queryResultPreparator;
 
   /**
    * iterator over result

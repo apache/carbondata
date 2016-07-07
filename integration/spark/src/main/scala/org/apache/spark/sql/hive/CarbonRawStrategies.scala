@@ -99,7 +99,9 @@ class CarbonRawStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan
     Seq[SparkPlan] = {
       val groupByPresentOnMsr = isGroupByPresentOnMeasures(groupingExpressions,
         carbonRelation.carbonRelation.metaData.carbonTable)
-      if(!groupByPresentOnMsr) {
+      if(!groupByPresentOnMsr
+         && sqlContext.asInstanceOf[CarbonContext].conf.asInstanceOf[CarbonSQLConf]
+           .useBinaryAggregation) {
         val s = carbonRawScan(projectList,
           predicates,
           carbonRelation,

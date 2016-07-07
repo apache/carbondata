@@ -24,7 +24,6 @@ import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.{SparkPlan, UnaryNode}
 import org.apache.spark.sql.hive.CarbonMetastoreCatalog
 import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
-import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.carbondata.core.cache.{Cache, CacheProvider, CacheType}
@@ -33,6 +32,7 @@ import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifie
 import org.carbondata.core.carbon.metadata.datatype.DataType
 import org.carbondata.core.carbon.metadata.encoder.Encoding
 import org.carbondata.query.carbon.util.DataTypeUtil
+import org.carbondata.spark.util.CarbonScalaUtil
 
 /**
  * It decodes the data.
@@ -62,7 +62,7 @@ case class CarbonDictionaryDecoder(
             !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
             canBeDecoded(attr)) {
           val newAttr = AttributeReference(a.name,
-            convertCarbonToSparkDataType(carbonDimension.getDataType),
+            CarbonScalaUtil.convertCarbonToSparkDataType(carbonDimension.getDataType),
             a.nullable,
             a.metadata)(a.exprId,
             a.qualifiers).asInstanceOf[Attribute]
@@ -85,18 +85,6 @@ case class CarbonDictionaryDecoder(
       case ep: ExcludeProfile =>
         !ep.attributes.exists(a => a.name.equals(attr.name))
       case _ => true
-    }
-  }
-
-  def convertCarbonToSparkDataType(dataType: DataType): types.DataType = {
-    dataType match {
-      case DataType.STRING => StringType
-      case DataType.INT => IntegerType
-      case DataType.LONG => LongType
-      case DataType.DOUBLE => DoubleType
-      case DataType.BOOLEAN => BooleanType
-      case DataType.DECIMAL => DecimalType.DoubleDecimal
-      case DataType.TIMESTAMP => TimestampType
     }
   }
 

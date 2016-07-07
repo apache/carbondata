@@ -32,7 +32,8 @@ import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
 /**
  * To store aggregated result
  */
-public class MapBasedResult implements Result<Map<ByteArrayWrapper, MeasureAggregator[]>> {
+public class MapBasedResult
+    implements Result<Map<ByteArrayWrapper, MeasureAggregator[]>, MeasureAggregator> {
   /**
    * iterator over result
    */
@@ -54,7 +55,7 @@ public class MapBasedResult implements Result<Map<ByteArrayWrapper, MeasureAggre
   private int resulSize;
 
   public MapBasedResult() {
-    scannerResult = new HashMap<ByteArrayWrapper, MeasureAggregator[]>(
+    scannerResult = new HashMap<>(
         CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     this.resultIterator = scannerResult.entrySet().iterator();
   }
@@ -86,7 +87,6 @@ public class MapBasedResult implements Result<Map<ByteArrayWrapper, MeasureAggre
    * below method will be used to merge the
    * scanned result
    *
-   * @param otherResult return to be merged
    */
   @Override public void addScannedResult(Map<ByteArrayWrapper, MeasureAggregator[]> scannerResult) {
     this.scannerResult = scannerResult;
@@ -99,11 +99,11 @@ public class MapBasedResult implements Result<Map<ByteArrayWrapper, MeasureAggre
    * scanned result, in case of map based the
    * result we need to aggregate the result
    *
-   * @param otherResult return to be merged
    */
-  @Override public void merge(Result<Map<ByteArrayWrapper, MeasureAggregator[]>> result) {
-    ByteArrayWrapper key = null;
-    MeasureAggregator[] value = null;
+  @Override public void merge(
+      Result<Map<ByteArrayWrapper, MeasureAggregator[]>, MeasureAggregator> result) {
+    ByteArrayWrapper key;
+    MeasureAggregator[] value;
     Map<ByteArrayWrapper, MeasureAggregator[]> otherResult = result.getResult();
     if (otherResult != null) {
       while (resultIterator.hasNext()) {

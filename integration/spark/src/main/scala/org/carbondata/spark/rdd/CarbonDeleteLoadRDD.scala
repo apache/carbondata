@@ -18,36 +18,34 @@
 package org.carbondata.spark.rdd
 
 import scala.collection.JavaConverters._
+import scala.reflect.ClassTag
 
 import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
 
-import org.carbondata.query.scanner.impl.{CarbonKey, CarbonValue}
-import org.carbondata.spark.KeyVal
+import org.carbondata.spark.Value
 import org.carbondata.spark.util.CarbonQueryUtil
 
-class CarbonDeleteLoadRDD[K, V](
-                                 sc: SparkContext,
-                                 keyClass: KeyVal[K, V],
-                                 loadId: Int,
-                                 schemaName: String,
-                                 cubeName: String,
-                                 partitioner: Partitioner)
-  extends RDD[(K, V)](sc, Nil) with Logging {
+class CarbonDeleteLoadRDD[V: ClassTag](
+    sc: SparkContext,
+    valueClass: Value[V],
+    loadId: Int,
+    schemaName: String,
+    cubeName: String,
+    partitioner: Partitioner)
+  extends RDD[V](sc, Nil) with Logging {
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
   override def getPartitions: Array[Partition] = {
     val splits = CarbonQueryUtil.getTableSplits(schemaName, cubeName, null, partitioner)
-    val result = new Array[Partition](splits.length)
-    for (i <- 0 until result.length) {
-      result(i) = new CarbonLoadPartition(id, i, splits(i))
+    splits.zipWithIndex.map {f =>
+      new CarbonLoadPartition(id, f._2, f._1)
     }
-    result
   }
 
-  override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
-    val iter = new Iterator[(K, V)] {
+  override def compute(theSplit: Partition, context: TaskContext): Iterator[V] = {
+    val iter = new Iterator[V] {
       val split = theSplit.asInstanceOf[CarbonLoadPartition]
       logInfo("Input split: " + split.serializableHadoopSplit.value)
       // TODO call CARBON delete API
@@ -57,20 +55,18 @@ class CarbonDeleteLoadRDD[K, V](
 
       override def hasNext: Boolean = {
         if (!finished && !havePair) {
-          finished = !false
+          finished = true
           havePair = !finished
         }
         !finished
       }
 
-      override def next(): (K, V) = {
+      override def next(): V = {
         if (!hasNext) {
           throw new java.util.NoSuchElementException("End of stream")
         }
         havePair = false
-        val row = new CarbonKey(null)
-        val value = new CarbonValue(null)
-        keyClass.getKey(row, value)
+        valueClass.getValue(null)
       }
 
     }
@@ -81,7 +77,7 @@ class CarbonDeleteLoadRDD[K, V](
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val theSplit = split.asInstanceOf[CarbonLoadPartition]
     val s = theSplit.serializableHadoopSplit.value.getLocations.asScala
-    logInfo("Host Name : " + s(0) + s.length)
+    logInfo("Host Name : " + s.head + s.length)
     s
   }
 }

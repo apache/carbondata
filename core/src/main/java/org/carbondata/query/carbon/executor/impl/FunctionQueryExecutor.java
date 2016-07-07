@@ -21,7 +21,6 @@ package org.carbondata.query.carbon.executor.impl;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.model.QueryModel;
-import org.carbondata.query.carbon.result.RowResult;
 
 /**
  * Below class will be used execute the function query
@@ -29,7 +28,7 @@ import org.carbondata.query.carbon.result.RowResult;
  */
 public class FunctionQueryExecutor extends CountStarQueryExecutor {
 
-  @Override public CarbonIterator<RowResult> execute(QueryModel queryModel)
+  @Override public CarbonIterator<Object[]> execute(QueryModel queryModel)
       throws QueryExecutionException {
     queryProperties.isFunctionQuery = true;
     return super.execute(queryModel);

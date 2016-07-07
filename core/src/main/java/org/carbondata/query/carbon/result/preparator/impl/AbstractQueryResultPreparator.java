@@ -1,17 +1,20 @@
 package org.carbondata.query.carbon.result.preparator.impl;
 
-import java.util.ArrayList;
 import java.util.List;
 
+import org.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.carbon.executor.impl.QueryExecutorProperties;
+import org.carbondata.query.carbon.model.QueryDimension;
 import org.carbondata.query.carbon.model.QueryModel;
 import org.carbondata.query.carbon.result.BatchResult;
 import org.carbondata.query.carbon.result.preparator.QueryResultPreparator;
-import org.carbondata.query.scanner.impl.CarbonKey;
-import org.carbondata.query.scanner.impl.CarbonValue;
+import org.carbondata.query.carbon.util.DataTypeUtil;
 
-public abstract class AbstractQueryResultPreparator<E> implements QueryResultPreparator<E> {
+public abstract class AbstractQueryResultPreparator<K, V> implements QueryResultPreparator<K, V> {
 
   /**
    * query properties
@@ -39,6 +42,39 @@ public abstract class AbstractQueryResultPreparator<E> implements QueryResultPre
     }
   }
 
+
+  protected void fillDimensionData(Object[][] convertedResult, List<QueryDimension> queryDimensions,
+      int dimensionCount, Object[] row, int rowIndex) {
+    QueryDimension queryDimension;
+    for (int i = 0; i < dimensionCount; i++) {
+      queryDimension = queryDimensions.get(i);
+      if (!CarbonUtil
+          .hasEncoding(queryDimension.getDimension().getEncoder(), Encoding.DICTIONARY)) {
+        row[queryDimension.getQueryOrder()] = convertedResult[i][rowIndex];
+      } else if (CarbonUtil
+          .hasEncoding(queryDimension.getDimension().getEncoder(), Encoding.DIRECT_DICTIONARY)) {
+        DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+            .getDirectDictionaryGenerator(queryDimension.getDimension().getDataType());
+        row[queryDimension.getQueryOrder()] = directDictionaryGenerator
+            .getValueFromSurrogate((Integer) convertedResult[i][rowIndex]);
+      } else {
+        if (queryExecuterProperties.sortDimIndexes[i] == 1) {
+          row[queryDimension.getQueryOrder()] = DataTypeUtil.getDataBasedOnDataType(
+              queryExecuterProperties.columnToDictionayMapping
+                  .get(queryDimension.getDimension().getColumnId())
+                  .getDictionaryValueFromSortedIndex((Integer) convertedResult[i][rowIndex]),
+              queryDimension.getDimension().getDataType());
+        } else {
+          row[queryDimension.getQueryOrder()] = DataTypeUtil.getDataBasedOnDataType(
+              queryExecuterProperties.columnToDictionayMapping
+                  .get(queryDimension.getDimension().getColumnId())
+                  .getDictionaryValueForKey((Integer) convertedResult[i][rowIndex]),
+              queryDimension.getDimension().getDataType());
+        }
+      }
+    }
+  }
+
   protected Object[][] encodeToRows(Object[][] data) {
     if (data.length == 0) {
       return data;
@@ -54,18 +90,9 @@ public abstract class AbstractQueryResultPreparator<E> implements QueryResultPre
   }
 
   protected BatchResult getEmptyChunkResult(int size) {
-    List<CarbonKey> keys = new ArrayList<CarbonKey>(size);
-    List<CarbonValue> values = new ArrayList<CarbonValue>(size);
-    Object[] row = new Object[1];
-    for (int i = 0; i < size; i++)
-
-    {
-      values.add(new CarbonValue(new MeasureAggregator[0]));
-      keys.add(new CarbonKey(row));
-    }
+    Object[][] row = new Object[size][1];
     BatchResult chunkResult = new BatchResult();
-    chunkResult.setKeys(keys);
-    chunkResult.setValues(values);
+    chunkResult.setRows(row);
     return chunkResult;
   }
 
