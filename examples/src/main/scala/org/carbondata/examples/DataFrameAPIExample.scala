@@ -17,10 +17,7 @@
 
 package org.carbondata.examples
 
-import java.io.File
-
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.{CarbonContext, SaveMode}
+import org.apache.spark.sql.SaveMode
 
 import org.carbondata.examples.util.InitForExamples
 
@@ -38,14 +35,14 @@ object DataFrameAPIExample {
 
     // save dataframe to carbon file
     df.write
-      .format("org.apache.spark.sql.CarbonSource")
+      .format("carbondata")
       .option("tableName", "carbon1")
       .mode(SaveMode.Overwrite)
       .save()
 
     // use datasource api to read
     val in = cc.read
-      .format("org.apache.spark.sql.CarbonSource")
+      .format("carbondata")
       .option("tableName", "carbon1")
       .load()
 

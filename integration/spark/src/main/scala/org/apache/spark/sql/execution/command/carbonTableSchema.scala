@@ -847,7 +847,7 @@ private[sql] case class CreateTable(cm: tableModel) extends RunnableCommand {
       val tablePath = catalog.createCubeFromThrift(tableInfo, dbName, tbName, null)(sqlContext)
       try {
         sqlContext.sql(
-          s"""CREATE TABLE $dbName.$tbName USING org.apache.spark.sql.carbondata.CarbonSource""" +
+          s"""CREATE TABLE $dbName.$tbName USING carbondata""" +
           s""" OPTIONS (tableName "$dbName.$tbName", tablePath "$tablePath") """)
               .collect
       } catch {

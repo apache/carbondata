@@ -354,7 +354,8 @@ class CarbonSqlParser()
           case _ => // Unsupport features
         }
 
-        if (!storedBy.equals(CarbonContext.datasourceName)) {
+        if (!(storedBy.equals(CarbonContext.datasourceName) ||
+              storedBy.equals(CarbonContext.datasourceShortName))) {
           // TODO: should execute by Hive instead of error
           sys.error("Not a carbon format request")
         }
