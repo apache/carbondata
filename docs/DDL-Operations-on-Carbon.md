@@ -72,7 +72,7 @@ Here, DICTIONARY_EXCLUDE will exclude dictionary creation. This is applicable fo
   ```
  - **Inverted Index Configuration**
 
-   Inverted index is very useful to improve compression ratio and query speed, specially for those low-cardinality columns whose position are in reward position.
+   Inverted index is very useful to improve compression ratio and query speed, especially for those low-cardinality columns who are in reward position.
    By default inverted index will be enabled, but user can also set not to use inverted index for some columns.
 
   ```ruby
