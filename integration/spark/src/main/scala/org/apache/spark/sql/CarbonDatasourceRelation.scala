@@ -42,7 +42,12 @@ import org.carbondata.spark.{CarbonOption, _}
  * Creates carbon relations
  */
 class CarbonSource
-  extends RelationProvider with CreatableRelationProvider with HadoopFsRelationProvider {
+  extends RelationProvider
+    with CreatableRelationProvider
+    with HadoopFsRelationProvider
+    with DataSourceRegister {
+
+  override def shortName(): String = "carbondata"
 
   /**
    * Returns a new base relation with the given parameters.
@@ -93,7 +98,7 @@ class CarbonSource
         sys.error(s"ErrorIfExists mode, path $storePath already exists.")
       case (SaveMode.Overwrite, true) =>
         val cc = CarbonContext.getInstance(sqlContext.sparkContext)
-        cc.sql(s"DROP CUBE IF EXISTS ${ options.dbName }.${ options.tableName }")
+        cc.sql(s"DROP TABLE IF EXISTS ${ options.dbName }.${ options.tableName }")
         (true, false)
       case (SaveMode.Overwrite, false) | (SaveMode.ErrorIfExists, false) =>
         (true, false)

@@ -56,7 +56,6 @@ class CarbonSqlParser()
   protected val CLASS = Keyword("CLASS")
   protected val CLEAN = Keyword("CLEAN")
   protected val COLUMNS = Keyword("COLUMNS")
-  protected val CUBES = Keyword("CUBES")
   protected val DATA = Keyword("DATA")
   protected val DELETE = Keyword("DELETE")
   protected val DESCRIBE = Keyword("DESCRIBE")
@@ -370,7 +369,7 @@ class CarbonSqlParser()
         tableProperties)
 
         // get logical plan.
-        CreateCube(tableModel)
+        CreateTable(tableModel)
 
     }
   }
@@ -957,20 +956,6 @@ class CarbonSqlParser()
     (stringLit <~ "=") ~ stringLit ^^ {
       case opt ~ optvalue => (opt.trim.toLowerCase(), optvalue)
       case _ => ("", "")
-    }
-
-  protected lazy val showCube: Parser[LogicalPlan] =
-    SHOW ~> CUBES ~> (IN ~> ident).? ~ (DETAIL).? <~ opt(";") ^^ {
-      case schema ~ detail =>
-        if (detail.isDefined) {
-          ShowTablesDetailedCommand(schema)
-        } else {
-          ShowCubeCommand(schema)
-        }
-    }
-  protected lazy val showAllCubes: Parser[LogicalPlan] =
-    SHOW ~> ALL ~> CUBES <~ opt(";") ^^ {
-      case _ => ShowAllCubeCommand()
     }
 
 
