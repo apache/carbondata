@@ -22,7 +22,6 @@ import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
-import org.apache.spark.sql.execution.command.tableModel
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
 import org.apache.spark.sql.types._
@@ -46,95 +45,6 @@ object getDB {
     dbName.getOrElse(sqlContext.asInstanceOf[HiveContext].catalog.client.currentDatabase)
   }
 
-}
-
-/**
- * Shows schemas
- */
-case class ShowSchemaCommand(cmd: Option[String]) extends LogicalPlan with Command {
-  override def children: Seq[LogicalPlan] = Seq.empty
-
-  override def output: Seq[Attribute] = {
-    Seq(AttributeReference("result", StringType, nullable = false)())
-  }
-}
-
-/**
- * Shows AggregateTables of a schema
- */
-case class ShowCreateCubeCommand(cm: tableModel) extends LogicalPlan with Command {
-  override def children: Seq[LogicalPlan] = Seq.empty
-
-  override def output: Seq[Attribute] = {
-    Seq(AttributeReference("createCubeCmd", StringType, nullable = false)())
-  }
-}
-
-/**
- * Shows AggregateTables of a schema
- */
-case class ShowAggregateTablesCommand(schemaNameOp: Option[String])
-  extends LogicalPlan with Command {
-  override def children: Seq[LogicalPlan] = Seq.empty
-
-  override def output: Seq[Attribute] = {
-    Seq(AttributeReference("tableName", StringType, nullable = false)())
-  }
-}
-
-/**
- * Shows cubes in schema
- */
-case class ShowCubeCommand(schemaNameOp: Option[String]) extends LogicalPlan with Command {
-  override def children: Seq[LogicalPlan] = Seq.empty
-
-  override def output: Seq[Attribute] = {
-    Seq(AttributeReference("tableName", StringType, nullable = false)(),
-      AttributeReference("isRegisteredWithSpark", BooleanType, nullable = false)())
-  }
-}
-
-
-/**
- * Shows cubes in schema
- */
-case class ShowAllCubeCommand() extends LogicalPlan with Command {
-  override def children: Seq[LogicalPlan] = Seq.empty
-
-  override def output: Seq[Attribute] = {
-    Seq(AttributeReference("dbName", StringType, nullable = false)(),
-      AttributeReference("tableName", StringType, nullable = false)(),
-      AttributeReference("isRegisteredWithSpark", BooleanType, nullable = false)())
-  }
-}
-
-case class SuggestAggregateCommand(
-    script: Option[String],
-    sugType: Option[String],
-    schemaName: Option[String],
-    cubeName: String) extends LogicalPlan with Command {
-  override def children: Seq[LogicalPlan] = Seq.empty
-
-  override def output: Seq[Attribute] = {
-    Seq(AttributeReference("SuggestionType", StringType, nullable = false)(),
-      AttributeReference("Suggestion", StringType, nullable = false)())
-  }
-}
-
-/**
- * Shows cubes in schema
- */
-case class ShowTablesDetailedCommand(schemaNameOp: Option[String])
-  extends LogicalPlan with Command {
-  override def children: Seq[LogicalPlan] = Seq.empty
-
-  override def output: Seq[Attribute] = {
-    Seq(AttributeReference("TABLE_CAT", StringType, nullable = true)(),
-      AttributeReference("TABLE_SCHEM", StringType, nullable = false)(),
-      AttributeReference("TABLE_NAME", StringType, nullable = false)(),
-      AttributeReference("TABLE_TYPE", StringType, nullable = false)(),
-      AttributeReference("REMARKS", StringType, nullable = false)())
-  }
 }
 
 /**

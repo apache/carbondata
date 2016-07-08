@@ -223,21 +223,11 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
 
   object DDLStrategies extends Strategy {
     def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-      case ShowCubeCommand(schemaName) =>
-        ExecutedCommand(ShowAllTablesInSchema(schemaName, plan.output)) :: Nil
-      case c@ShowAllCubeCommand() =>
-        ExecutedCommand(ShowAllTables(plan.output)) :: Nil
-      case ShowCreateCubeCommand(cm) =>
-        ExecutedCommand(ShowCreateTable(cm, plan.output)) :: Nil
-      case ShowTablesDetailedCommand(schemaName) =>
-        ExecutedCommand(ShowAllTablesDetail(schemaName, plan.output)) :: Nil
       case DropTable(tableName, ifNotExists)
         if CarbonEnv.getInstance(sqlContext).carbonCatalog
             .tableExists(toTableIdentifier(tableName.toLowerCase))(sqlContext) =>
         val identifier = toTableIdentifier(tableName.toLowerCase)
         ExecutedCommand(DropTableCommand(ifNotExists, identifier.database, identifier.table)) :: Nil
-      case ShowAggregateTablesCommand(schemaName) =>
-        ExecutedCommand(ShowAggregateTables(schemaName, plan.output)) :: Nil
       case ShowLoadsCommand(schemaName, cube, limit) =>
         ExecutedCommand(ShowLoads(schemaName, cube, limit, plan.output)) :: Nil
       case LoadTable(schemaNameOp, cubeName, factPathFromUser, dimFilesPath,
