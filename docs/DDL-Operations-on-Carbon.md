@@ -36,7 +36,8 @@ This command can be used to create carbon table by specifying the list of fields
        STORED BY 'org.apache.carbondata.format' 
        TBLPROPERTIES ('COLUMN_GROUPS'='(productName,productCategory)',
                      'DICTIONARY_EXCLUDE'='productName',
-                     'DICTIONARY_INCLUDE'='productNumber')
+                     'DICTIONARY_INCLUDE'='productNumber'
+                     'NO_INVERTED_INDEX'='productBatch')
   ```
 
 ### Parameter Description
@@ -69,7 +70,15 @@ Here, DICTIONARY_EXCLUDE will exclude dictionary creation. This is applicable fo
   ```ruby
   TBLPROPERTIES ("COLUMN_GROUPS"="(column1,column3),(Column4,Column5,Column6)") 
   ```
+ - **Inverted Index Configuration**
 
+   Inverted index is very useful to improve compression ratio and query speed, specially for those low-cardinality columns whose position are in reward position.
+   By Default inverted index will be enabled, but user can also set not to use inverted index for some columns.
+
+  ```ruby
+  TBLPROPERTIES ("NO_INVERTED_INDEX"="column1,column3")
+  ```
+Here, NO_INVERTED_INDEX will not use inverted index for the specified columns. This is applicable for high-cardinality columns and is a optional parameter.
 ### Scenarios
 #### Create table by specifying schema
 
