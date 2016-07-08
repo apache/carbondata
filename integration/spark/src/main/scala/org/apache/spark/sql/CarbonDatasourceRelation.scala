@@ -52,20 +52,19 @@ class CarbonSource
   override def createRelation(
       sqlContext: SQLContext,
       parameters: Map[String, String]): BaseRelation = {
-    if (parameters.get("tablePath") != None) {
-      val options = new CarbonOption(parameters)
-      val tableIdentifier = options.tableIdentifier.split("""\.""").toSeq
-      val ident = tableIdentifier match {
-        case Seq(name) => TableIdentifier(name, None)
-        case Seq(db, name) => TableIdentifier(name, Some(db))
-      }
-      CarbonDatasourceRelation(ident, None)(sqlContext)
-    } else if (parameters.get("path") != None) {
-      CarbonDatasourceHadoopRelation(sqlContext, Array(parameters.get("path").get), parameters)
-    } else {
-      sys.error("Carbon table path not found")
+    // if path is provided we can directly create Hadoop relation. \
+    // Otherwise create datasource relation
+    parameters.get("path") match {
+      case Some(path) => CarbonDatasourceHadoopRelation(sqlContext, Array(path), parameters)
+      case _ =>
+        val options = new CarbonOption(parameters)
+        val tableIdentifier = options.tableIdentifier.split("""\.""").toSeq
+        val identifier = tableIdentifier match {
+          case Seq(name) => TableIdentifier(name, None)
+          case Seq(db, name) => TableIdentifier(name, Some(db))
+        }
+        CarbonDatasourceRelation(identifier, None)(sqlContext)
     }
-
   }
 
   override def createRelation(
@@ -93,7 +92,7 @@ class CarbonSource
         sys.error(s"ErrorIfExists mode, path $storePath already exists.")
       case (SaveMode.Overwrite, true) =>
         val cc = CarbonContext.getInstance(sqlContext.sparkContext)
-        cc.sql(s"DROP CUBE IF EXISTS ${ options.dbName }.${ options.tableName }")
+        cc.sql(s"DROP TABLE IF EXISTS ${ options.dbName }.${ options.tableName }")
         (true, false)
       case (SaveMode.Overwrite, false) | (SaveMode.ErrorIfExists, false) =>
         (true, false)
