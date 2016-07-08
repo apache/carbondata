@@ -63,7 +63,7 @@ package object spark {
           if (f.getPath.getName.startsWith("part-")) {
             val newPath = s"${ f.getPath.getParent }/${ f.getPath.getName }.csv"
             if (!fs.rename(f.getPath, new Path(newPath))) {
-              cc.sql(s"DROP CUBE ${ options.tableName }")
+              cc.sql(s"DROP TABLE ${ options.tableName }")
               throw new RuntimeException("File system rename failed when loading data into carbon")
             }
           }
