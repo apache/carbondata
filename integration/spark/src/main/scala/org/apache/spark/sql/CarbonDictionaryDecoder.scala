@@ -80,9 +80,11 @@ case class CarbonDictionaryDecoder(
   def canBeDecoded(attr: Attribute): Boolean = {
     profile match {
       case ip: IncludeProfile if ip.attributes.nonEmpty =>
-        ip.attributes.exists(a => a.name.equals(attr.name))
+        ip.attributes
+          .exists(a => a.name.equalsIgnoreCase(attr.name))
       case ep: ExcludeProfile =>
-        !ep.attributes.exists(a => a.name.equals(attr.name))
+        !ep.attributes
+          .exists(a => a.name.equalsIgnoreCase(attr.name))
       case _ => true
     }
   }
@@ -175,7 +177,7 @@ case class CarbonDictionaryDecoder(
                       getDictionaryColumnIds(index)._3)
                 }
               }
-              unsafeProjection(row)
+              unsafeProjection(new GenericMutableRow(data))
             }
           }
         }

@@ -17,9 +17,11 @@
 
 package org.apache.spark.sql
 
+import java.io.File
+
 import scala.language.implicitConversions
 
-import org.apache.spark.SparkContext
+import org.apache.spark.{Logging, SparkContext}
 import org.apache.spark.sql.catalyst.ParserDialect
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog}
 import org.apache.spark.sql.catalyst.optimizer.{DefaultOptimizer, Optimizer}
@@ -29,11 +31,28 @@ import org.apache.spark.sql.hive._
 import org.apache.spark.sql.optimizer.CarbonOptimizer
 
 import org.carbondata.common.logging.LogServiceFactory
+import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.spark.rdd.CarbonDataFrameRDD
 
-class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveContext(sc) {
+class CarbonContext(
+    val sc: SparkContext,
+    val storePath: String,
+    metaStorePath: String) extends HiveContext(sc) with Logging {
   self =>
+
+  def this (sc: SparkContext) = {
+    this (sc,
+      new File(CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL).getCanonicalPath,
+      new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
+  }
+
+  def this (sc: SparkContext, storePath: String) = {
+    this (sc,
+      storePath,
+      new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
+  }
+
   CarbonContext.addInstance(sc, this)
 
   var lastSchemaUpdatedTime = System.currentTimeMillis()
@@ -42,7 +61,8 @@ class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveCon
 
   @transient
   override lazy val catalog = {
-    CarbonProperties.getInstance().addProperty("carbon.storelocation", storePath)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
     new CarbonMetastoreCatalog(this, storePath, metadataHive) with OverrideCatalog
   }
 
@@ -58,6 +78,19 @@ class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveCon
   experimental.extraStrategies = {
     val carbonStrategy = new CarbonStrategies(self)
     Seq(carbonStrategy.CarbonTableScan, carbonStrategy.DDLStrategies)
+  }
+
+  override protected def configure(): Map[String, String] = {
+    sc.hadoopConfiguration.addResource("hive-site.xml")
+    if (sc.hadoopConfiguration.get(CarbonCommonConstants.HIVE_CONNECTION_URL) == null) {
+      val hiveMetaStoreDB = metaStorePath + "/metastore_db"
+      logDebug(s"metastore db is going to be created in location : $hiveMetaStoreDB")
+      super.configure() ++ Map((CarbonCommonConstants.HIVE_CONNECTION_URL,
+              s"jdbc:derby:;databaseName=$hiveMetaStoreDB;create=true"),
+        ("hive.metastore.warehouse.dir", metaStorePath + "/hivemetadata"))
+    } else {
+      super.configure()
+    }
   }
 
   @transient

@@ -33,7 +33,6 @@ object InitForExamples {
     .getCanonicalPath
   val storeLocation = currentPath + "/target/store"
   val kettleHome = new File(currentPath + "/../processing/carbonplugins").getCanonicalPath
-  val hiveMetaPath = currentPath + "/target/hivemetadata"
 
   def createCarbonContext(appName: String): CarbonContext = {
     val sc = new SparkContext(new SparkConf()
@@ -43,10 +42,8 @@ object InitForExamples {
 
     println(s"Starting $appName using spark version ${sc.version}")
 
-    val cc = new CarbonContext(sc, storeLocation)
+    val cc = new CarbonContext(sc, storeLocation, currentPath + "/target/carbonmetastore")
     cc.setConf("carbon.kettle.home", kettleHome)
-    cc.setConf("hive.metastore.warehouse.dir", hiveMetaPath)
-    cc.setConf(HiveConf.ConfVars.HIVECHECKFILEFORMAT.varname, "false")
 
     // whether use table split partition
     // true -> use table split partition, support multiple partition loading
