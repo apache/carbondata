@@ -106,13 +106,13 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
     this.measureDatatypes = tableBlockExecutionInfos.getAggregatorInfo().getMeasureDataTypes();
   }
 
-  @Override
   /**
    * This method will add a record both key and value to list object
    * it will keep track of how many record is processed, to handle limit scenario
    * @param scanned result
    *
    */
+  @Override
   public int aggregateData(AbstractScannedResult scannedResult) {
     this.listBasedResult =
         new ArrayList<>(limit == -1 ? scannedResult.numberOfOutputRows() : limit);
@@ -122,7 +122,7 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
     ListBasedResultWrapper resultWrapper;
     while (scannedResult.hasNext() && (limit == -1 || rowCounter < limit)) {
       resultWrapper = new ListBasedResultWrapper();
-      if(tableBlockExecutionInfos.isDimensionsExistInQuery()) {
+      if (tableBlockExecutionInfos.isDimensionsExistInQuery()) {
         wrapper = new ByteArrayWrapper();
         wrapper.setDictionaryKey(scannedResult.getDictionaryKeyArray());
         wrapper.setNoDictionaryKeys(scannedResult.getNoDictionaryKeyArray());
@@ -131,7 +131,7 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
       } else {
         scannedResult.incrementCounter();
       }
-      if(isMsrsPresent) {
+      if (isMsrsPresent) {
         Object[] msrValues = new Object[measureDatatypes.length];
         fillMeasureData(msrValues, scannedResult);
         resultWrapper.setValue(msrValues);
@@ -147,9 +147,8 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
       // if measure exists is block then pass measure column
       // data chunk to the aggregator
       if (isMeasureExistsInCurrentBlock[i]) {
-        msrValues[i] =
-            getMeasureData(scannedResult.getMeasureChunk(measuresOrdinal[i]),
-                scannedResult.getCurrenrRowId(),measureDatatypes[i]);
+        msrValues[i] = getMeasureData(scannedResult.getMeasureChunk(measuresOrdinal[i]),
+            scannedResult.getCurrenrRowId(), measureDatatypes[i]);
       } else {
         // if not then get the default value and use that value in aggregation
         msrValues[i] = measureDefaultValue[i];
@@ -180,7 +179,8 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
    */
   @Override public Result<List<ListBasedResultWrapper>, Object> getAggregatedResult() {
     Result<List<ListBasedResultWrapper>, Object> result = new ListBasedResult();
-    if (!tableBlockExecutionInfos.isFixedKeyUpdateRequired()) {
+    if (tableBlockExecutionInfos.isFixedKeyUpdateRequired() && tableBlockExecutionInfos
+        .isDimensionsExistInQuery()) {
       updateKeyWithLatestBlockKeygenerator();
       result.addScannedResult(listBasedResult);
     } else {
@@ -188,8 +188,6 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
     }
     return result;
   }
-
-
 
   /**
    * Below method will be used to update the fixed length key with the

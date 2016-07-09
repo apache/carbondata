@@ -265,7 +265,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .setTotalNumberOfMeasureBlock(segmentProperties.getMeasuresOrdinalToBlockMapping().size());
     // to check whether older block key update is required or not
     blockExecutionInfo.setFixedKeyUpdateRequired(
-        blockKeyGenerator.equals(queryProperties.keyStructureInfo.getKeyGenerator()));
+        !blockKeyGenerator.equals(queryProperties.keyStructureInfo.getKeyGenerator()));
     IndexKey startIndexKey = null;
     IndexKey endIndexKey = null;
     if (null != queryModel.getFilterExpressionResolverTree()) {

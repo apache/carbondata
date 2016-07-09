@@ -88,8 +88,14 @@ public class MapBasedResultAggregator implements ScannedResultAggregator {
     restructureInfos = tableBlockExecutionInfos.getKeyStructureInfo();
   }
 
-  @Override public int aggregateData(AbstractScannedResult scannedResult) {
-
+  /**
+   * Below method will be used to aggregate the scanned result
+   *
+   * @param scannedResult scanned result
+   * @return how many records was aggregated
+   */
+  @Override
+  public int aggregateData(AbstractScannedResult scannedResult) {
     while (scannedResult.hasNext()) {
       // fill the keys
       wrapper.setDictionaryKey(scannedResult.getDictionaryKeyArray());
@@ -128,8 +134,8 @@ public class MapBasedResultAggregator implements ScannedResultAggregator {
    * Below method will used to get the result
    */
   @Override
-  public Result<Map<ByteArrayWrapper, MeasureAggregator[]>, MeasureAggregator> getAggregatedResult()
-  {
+  public Result<Map<ByteArrayWrapper, MeasureAggregator[]>, MeasureAggregator>
+        getAggregatedResult() {
     Result<Map<ByteArrayWrapper, MeasureAggregator[]>, MeasureAggregator> result =
         new MapBasedResult();
     updateAggregatedResult();
@@ -144,7 +150,8 @@ public class MapBasedResultAggregator implements ScannedResultAggregator {
    * @return updated block
    */
   private void updateAggregatedResult() {
-    if (!tableBlockExecutionInfos.isFixedKeyUpdateRequired()) {
+    if (!tableBlockExecutionInfos.isFixedKeyUpdateRequired() || !tableBlockExecutionInfos
+        .isDimensionsExistInQuery()) {
       return;
     }
     try {
