@@ -6,9 +6,7 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
+ * http://www.apache.org/licenses/LICENSE-2.0
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -19,6 +17,7 @@
 
 package org.carbondata.processing.csvreaderstep;
 
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,15 +58,10 @@ public class CsvInput extends BaseStep implements StepInterface {
   // for i18n purposes, needed by Translator2!!   $NON-NLS-1$
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CsvInput.class.getName());
-  private CsvInputMeta meta;
-  private CsvInputData data;
-
   /**
-   * resultArray
+   * NUM_CORES_DEFAULT_VAL
    */
-  private Future[] resultArray;
-
-  private boolean isTerminated;
+  private static final int NUM_CORES_DEFAULT_VAL = 2;
   /**
    * ReentrantLock getFileBlockLock
    */
@@ -76,12 +70,13 @@ public class CsvInput extends BaseStep implements StepInterface {
    * ReentrantLock putRowLock
    */
   private final Object putRowLock = new Object();
-
+  private CsvInputMeta meta;
+  private CsvInputData data;
   /**
-   * NUM_CORES_DEFAULT_VAL
+   * resultArray
    */
-  private static final int NUM_CORES_DEFAULT_VAL = 2;
-
+  private Future[] resultArray;
+  private boolean isTerminated;
   private List<List<BlockDetails>> threadBlockList = new ArrayList<>();
 
   private ExecutorService exec;
@@ -205,7 +200,6 @@ public class CsvInput extends BaseStep implements StepInterface {
           enclFound = false;
           boolean found = false;
           int startpoint = from;
-          int tries = 1;
           do {
             next = line.indexOf(delimiter, startpoint);
 
@@ -216,7 +210,6 @@ public class CsvInput extends BaseStep implements StepInterface {
               if (escapeCharacter != null && escapeCharacter.equals(before)) {
                 // take the next separator, this one is escaped...
                 startpoint = next + 1;
-                tries++;
                 containsEscapedSeparators = true;
               } else {
                 found = true;
@@ -383,11 +376,10 @@ public class CsvInput extends BaseStep implements StepInterface {
         StandardLogService.setThreadName(("PROCESS_BLOCKS"), Thread.currentThread().getName());
         try {
           LOGGER.info("*****************started csv reading by thread***********");
-          doProcess();
+          doProcessUnivocity();
           LOGGER.info("*****************Completed csv reading by thread***********");
         } catch (Throwable e) {
-          LOGGER.error(e,
-              "Thread is terminated due to error");
+          LOGGER.error(e, "Thread is terminated due to error");
         }
         return null;
       }
@@ -421,68 +413,49 @@ public class CsvInput extends BaseStep implements StepInterface {
     exec.shutdown();
   }
 
-  private void doProcess() throws RuntimeException {
+  private void doProcessUnivocity() {
+    List<BlockDetails> blocksListForProcess = null;
+    synchronized (getBlockListLock) {
+      //get the blocksList for this thread
+      blocksListForProcess = threadBlockList.get(threadBlockList.size() - 1);
+      threadBlockList.remove(threadBlockList.size() - 1);
+    }
+    long currentTimeMillis = System.currentTimeMillis();
+    UnivocityCsvParser parser = new UnivocityCsvParser(getParserVo(blocksListForProcess));
+    long numberOfRows = 0;
+    int numberOfColumns = meta.getInputFields().length;
     try {
-      List<BlockDetails> blocksListForProcess = null;
-      synchronized (getBlockListLock) {
-        //get the blocksList for this thread
-        blocksListForProcess = threadBlockList.get(threadBlockList.size() - 1);
-        threadBlockList.remove(threadBlockList.size() - 1);
-      }
-      /**
-       * 1) Skip first line always for every block other than first block in file
-       * 2) Always read line by line
-       * 3) Always read first line of next block and break
-       */
-      BlockDataHandler blockDataHandler = new BlockDataHandler();
-      Object[] out = null;
-      int processingBlockIndex = 0;
-      while (processingBlockIndex < blocksListForProcess.size()) {
-        //get block to handle
-        BlockDetails blockDetails = blocksListForProcess.get(processingBlockIndex);
-        //move to next block for next time to handle
-        processingBlockIndex++;
-        //open file and seek to block offset
-        if (blockDataHandler.openFile(meta, data, getTransMeta(), blockDetails)) {
-          while (true) {
-            //scan the block data
-            if (blockDetails.getBlockOffset() != 0
-                && blockDataHandler.isNeedToSkipFirstLineInBlock) {
-              //move cursor to the block offset
-              blockDataHandler
-                  .initializeFileReader(blockDetails.getFilePath(), blockDetails.getBlockOffset());
-              //skip first line
-              blockDataHandler.readOneRow(false);
-              blockDataHandler.isNeedToSkipFirstLineInBlock = false;
-            }
-            if (blockDataHandler.currentOffset <= blockDetails.getBlockLength()) {
-              out = blockDataHandler.readOneRow(true);
-              if (out != null) {
-                if (!CarbonCommonConstants.BLANK_LINE_FLAG.equals(out[0])) {
-                  synchronized (putRowLock) {
-                    putRow(data.outputRowMeta, out);
-                  }
-                } else {
-                  LOGGER.warn("Found a bad record, it is a blank line. Skip it !");
-                }
-              }
-            }
-            if (out == null || blockDetails.getBlockLength() < blockDataHandler.currentOffset) {
-              //over the block size or end of the block
-              break;
-            }
-          }
+      parser.initialize();
+      while (parser.hasMoreRecords()) {
+        String[] next = parser.getNextRecord();
+        if (next.length < numberOfColumns) {
+          String[] temp = new String[numberOfColumns];
+          System.arraycopy(next, 0, temp, 0, next.length);
+          next = temp;
+        }
+        synchronized (putRowLock) {
+          putRow(data.outputRowMeta, next);
+          numberOfRows++;
         }
       }
-      //close the last inputstream
-      if (blockDataHandler.bufferedInputStream != null) {
-        blockDataHandler.bufferedInputStream.close();
-      }
-    } catch (RuntimeException e) {
-      throw e;
-    } catch (Exception e) {
+    } catch (IOException e) {
+      throw new RuntimeException(e);
+    } catch (KettleException e) {
       throw new RuntimeException(e);
     }
+    LOGGER.info("Total Number of records processed by this thread is: " + numberOfRows);
+    LOGGER.info("Time taken to processed " + numberOfRows + " Number of records: " + (
+        System.currentTimeMillis() - currentTimeMillis));
+  }
+
+  private UnivocityCsvParserVo getParserVo(List<BlockDetails> blocksListForProcess) {
+    UnivocityCsvParserVo csvParserVo = new UnivocityCsvParserVo();
+    csvParserVo.setBlockDetailsList(blocksListForProcess);
+    csvParserVo.setDelimiter(meta.getDelimiter());
+    csvParserVo.setNumberOfColumns(meta.getInputFields().length);
+    csvParserVo.setEscapeCharacter(meta.getEscapeCharacter());
+    csvParserVo.setHeaderPresent(meta.isHeaderPresent());
+    return csvParserVo;
   }
 
   @Override public void dispose(StepMetaInterface smi, StepDataInterface sdi) {
@@ -523,7 +496,7 @@ public class CsvInput extends BaseStep implements StepInterface {
         data.delimiter = data.encodingType
             .getBytes(environmentSubstitute(meta.getDelimiter()), meta.getEncoding());
         data.escapeCharacter = data.encodingType
-          .getBytes(environmentSubstitute(meta.getEscapeCharacter()), meta.getEncoding());
+            .getBytes(environmentSubstitute(meta.getEscapeCharacter()), meta.getEncoding());
         if (Const.isEmpty(meta.getEnclosure())) {
           data.enclosure = null;
         } else {
@@ -548,42 +521,7 @@ public class CsvInput extends BaseStep implements StepInterface {
         //
 
       }
-
-      // Set the most efficient pattern matcher to match the delimiter.
-      //
-      if (data.delimiter.length == 1) {
-        data.delimiterMatcher = new SingleBytePatternMatcher();
-      } else {
-        data.delimiterMatcher = new MultiBytePatternMatcher();
-      }
-
-      // Set the most efficient pattern matcher to match the enclosure.
-      //
-      if (data.enclosure == null) {
-        data.enclosureMatcher = new EmptyPatternMatcher();
-      } else {
-        if (data.enclosure.length == 1) {
-          data.enclosureMatcher = new SingleBytePatternMatcher();
-        } else {
-          data.enclosureMatcher = new MultiBytePatternMatcher();
-        }
-      }
-
-      data.escapeCharMatcher = new SingleBytePatternMatcher();
-      switch (data.encodingType) {
-        case DOUBLE_BIG_ENDIAN:
-          data.crLfMatcher = new MultiByteBigCrLfMatcher();
-          break;
-        case DOUBLE_LITTLE_ENDIAN:
-          data.crLfMatcher = new MultiByteLittleCrLfMatcher();
-          break;
-        default:
-          data.crLfMatcher = new SingleByteCrLfMatcher();
-          break;
-      }
-
       return true;
-
     }
     return false;
   }

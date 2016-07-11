@@ -54,7 +54,12 @@
       <artifactId>kettle-engine</artifactId>
       <version>${kettle.version}</version>
     </dependency>
-    <dependency>
+	<dependency>
+      <groupId>com.univocity</groupId>
+      <artifactId>univocity-parsers</artifactId>
+      <version>1.5.6</version>
+    </dependency>
+	<dependency>
       <groupId>pentaho-kettle</groupId>
       <artifactId>kettle-core</artifactId>
       <version>${kettle.version}</version>
