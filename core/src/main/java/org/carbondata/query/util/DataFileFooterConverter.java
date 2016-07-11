@@ -74,32 +74,36 @@ public class DataFileFooterConverter {
   public List<DataFileFooter> getIndexInfo(String filePath, List<TableBlockInfo> tableBlockInfoList)
       throws IOException {
     CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
-    // open the reader
-    indexReader.openThriftReader(filePath);
-    // get the index header
-    org.carbondata.format.IndexHeader readIndexHeader = indexReader.readIndexHeader();
-    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
-    List<org.carbondata.format.ColumnSchema> table_columns = readIndexHeader.getTable_columns();
-    for (int i = 0; i < table_columns.size(); i++) {
-      columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
-    }
-    // get the segment info
-    SegmentInfo segmentInfo = getSegmentInfo(readIndexHeader.getSegment_info());
-    BlockletIndex blockletIndex = null;
-    int counter = 0;
-    DataFileFooter dataFileFooter = null;
     List<DataFileFooter> dataFileFooters = new ArrayList<DataFileFooter>();
-    // read the block info from file
-    while (indexReader.hasNext()) {
-      BlockIndex readBlockIndexInfo = indexReader.readBlockIndexInfo();
-      blockletIndex = getBlockletIndex(readBlockIndexInfo.getBlock_index());
-      dataFileFooter = new DataFileFooter();
-      dataFileFooter.setBlockletIndex(blockletIndex);
-      dataFileFooter.setColumnInTable(columnSchemaList);
-      dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
-      dataFileFooter.setTableBlockInfo(tableBlockInfoList.get(counter++));
-      dataFileFooter.setSegmentInfo(segmentInfo);
-      dataFileFooters.add(dataFileFooter);
+    try {
+      // open the reader
+      indexReader.openThriftReader(filePath);
+      // get the index header
+      org.carbondata.format.IndexHeader readIndexHeader = indexReader.readIndexHeader();
+      List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+      List<org.carbondata.format.ColumnSchema> table_columns = readIndexHeader.getTable_columns();
+      for (int i = 0; i < table_columns.size(); i++) {
+        columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
+      }
+      // get the segment info
+      SegmentInfo segmentInfo = getSegmentInfo(readIndexHeader.getSegment_info());
+      BlockletIndex blockletIndex = null;
+      int counter = 0;
+      DataFileFooter dataFileFooter = null;
+      // read the block info from file
+      while (indexReader.hasNext()) {
+        BlockIndex readBlockIndexInfo = indexReader.readBlockIndexInfo();
+        blockletIndex = getBlockletIndex(readBlockIndexInfo.getBlock_index());
+        dataFileFooter = new DataFileFooter();
+        dataFileFooter.setBlockletIndex(blockletIndex);
+        dataFileFooter.setColumnInTable(columnSchemaList);
+        dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
+        dataFileFooter.setTableBlockInfo(tableBlockInfoList.get(counter++));
+        dataFileFooter.setSegmentInfo(segmentInfo);
+        dataFileFooters.add(dataFileFooter);
+      }
+    } finally {
+      indexReader.closeThriftReader();
     }
     return dataFileFooters;
   }
