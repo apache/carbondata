@@ -22,13 +22,14 @@ import java.io.File
 import scala.language.implicitConversions
 
 import org.apache.spark.{Logging, SparkContext}
-import org.apache.spark.sql.catalyst.ParserDialect
+import org.apache.spark.sql.catalyst.{CatalystConf, ParserDialect}
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog}
-import org.apache.spark.sql.catalyst.optimizer.{DefaultOptimizer, Optimizer}
+import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.command.PartitionData
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.optimizer.CarbonOptimizer
+import org.apache.spark.util.Utils
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.constants.CarbonCommonConstants
@@ -71,7 +72,10 @@ class CarbonContext(
 
   @transient
   override protected[sql] lazy val optimizer: Optimizer =
-    new CarbonOptimizer(DefaultOptimizer, conf)
+    CarbonOptimizer.optimizer(
+      CarbonContext.createDefaultOptimizer(conf, sc),
+      conf.asInstanceOf[CarbonSQLConf],
+      sc.version)
 
   protected[sql] override def getSQLDialect(): ParserDialect = new CarbonSQLDialect(this)
 
@@ -192,4 +196,17 @@ object CarbonContext {
     cache(sc) = cc
   }
 
+  def createDefaultOptimizer(conf: CatalystConf, sc: SparkContext): Optimizer = {
+    val name = "org.apache.spark.sql.catalyst.optimizer.DefaultOptimizer"
+    val loader = Utils.getContextOrSparkClassLoader
+    try {
+      val cons = loader.loadClass(name + "$").getDeclaredConstructors
+      cons.head.setAccessible(true)
+      cons.head.newInstance().asInstanceOf[Optimizer]
+    } catch {
+      case e: Exception =>
+        loader.loadClass(name).getConstructor(classOf[CatalystConf])
+          .newInstance(conf).asInstanceOf[Optimizer]
+    }
+  }
 }
