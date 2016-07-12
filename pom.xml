@@ -114,16 +114,16 @@
       </properties>
     </profile>
     <profile>
-      <id>spark-1.5.2</id>
+      <id>spark-1.5</id>
       <!-- default -->
       <properties>
         <spark.version>1.5.2</spark.version>
       </properties>
     </profile>
     <profile>
-      <id>spark-1.6.1</id>
+      <id>spark-1.6</id>
       <properties>
-        <spark.version>1.6.1</spark.version>
+        <spark.version>1.6.2</spark.version>
       </properties>
     </profile>
     <profile>
