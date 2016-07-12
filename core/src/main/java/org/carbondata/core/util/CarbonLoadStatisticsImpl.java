@@ -283,21 +283,6 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
     return parSurrogateKey2MdkAdd2FileTime.get(partitionID)[1] / 1000.0;
   }
 
-  private long getTotalRecords() {
-    return this.totalRecords;
-  }
-
-  private int getLoadSpeed() {
-    return (int)(totalRecords / totalTime);
-  }
-
-  private double getTotalTime(String partitionID) {
-    this.totalTime = getLoadCsvfilesToDfTime() + getDicShuffleAndWriteFileTotalTime() +
-        getLruCacheLoadTime() + getSurrogatekeysTotalTime(partitionID) +
-        getSurrogateKey2MdkAdd2FileTime(partitionID);
-    return totalTime;
-  }
-
   //Get the hostBlockMap
   private ConcurrentHashMap<String, Integer> getHostBlockMap() {
     return hostBlockMap;
@@ -306,6 +291,42 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
   //Get the partitionBlockMap
   private ConcurrentHashMap<String, Integer> getPartitionBlockMap() {
     return partitionBlockMap;
+  }
+
+  //Speed calculate
+  private long getTotalRecords() {
+    return this.totalRecords;
+  }
+
+  private int getLoadSpeed() {
+    return (int)(totalRecords / totalTime);
+  }
+
+  private int getGenDicSpeed() {
+    return (int)(totalRecords / getLoadCsvfilesToDfTime() + getDicShuffleAndWriteFileTotalTime());
+  }
+
+  private int getReadCSVSpeed(String partitionID) {
+    return (int)(totalRecords / getCsvInputStepTime(partitionID));
+  }
+
+  private int getGenSurKeySpeed(String partitionID) {
+    return (int)(totalRecords / getGeneratingSurrogatekeysTime(partitionID));
+  }
+
+  private int getSortKeySpeed(String partitionID) {
+    return (int)(totalRecords / getSortRowsStepTotalTime(partitionID));
+  }
+
+  private int getMDKSpeed(String partitionID) {
+    return (int)(totalRecords / getSurrogateKey2MdkAdd2FileTime(partitionID));
+  }
+
+  private double getTotalTime(String partitionID) {
+    this.totalTime = getLoadCsvfilesToDfTime() + getDicShuffleAndWriteFileTotalTime() +
+        getLruCacheLoadTime() + getSurrogatekeysTotalTime(partitionID) +
+        getSurrogateKey2MdkAdd2FileTime(partitionID);
+    return totalTime;
   }
 
   //Print the statistics information
@@ -373,7 +394,13 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
     LOGGER.audit("===============Load_Speed_Info===============");
     LOGGER.audit("Total Num of Records Processed: " + getTotalRecords());
     LOGGER.audit("Total Time Cost: " + getTotalTime(partitionID));
-    LOGGER.audit("Load Speed: " + getLoadSpeed() + " (records/second)");
+    LOGGER.audit("Total Load Speed: " + getLoadSpeed() + "records/s");
+    LOGGER.audit("Generate Dictionaries Speed: " + getGenDicSpeed() + "records/s");
+    LOGGER.audit("Read CSV Speed: " + getReadCSVSpeed(partitionID) + " records/s");
+    LOGGER.audit("Generate Surrogate Key Speed: " + getGenSurKeySpeed(partitionID) + " records/s");
+    LOGGER.audit("Sort Key/Write Temp Files Speed: " + getSortKeySpeed(partitionID) + " records/s");
+    LOGGER.audit("MDK Step Speed: " + getMDKSpeed(partitionID) + " records/s");
+    LOGGER.audit("=============================================");
   }
 
   public void printStatisticsInfo(String partitionID) {
