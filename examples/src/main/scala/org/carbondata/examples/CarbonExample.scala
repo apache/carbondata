@@ -30,9 +30,6 @@ object CarbonExample {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS, "true")
-
     cc.sql("DROP TABLE IF EXISTS t3")
 
     cc.sql("""

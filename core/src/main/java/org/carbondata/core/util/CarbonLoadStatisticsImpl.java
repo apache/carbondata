@@ -393,7 +393,7 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
   private void printLoadSpeedInfo(String partitionID) {
     LOGGER.audit("===============Load_Speed_Info===============");
     LOGGER.audit("Total Num of Records Processed: " + getTotalRecords());
-    LOGGER.audit("Total Time Cost: " + getTotalTime(partitionID));
+    LOGGER.audit("Total Time Cost: " + getTotalTime(partitionID) + "(s)");
     LOGGER.audit("Total Load Speed: " + getLoadSpeed() + "records/s");
     LOGGER.audit("Generate Dictionaries Speed: " + getGenDicSpeed() + "records/s");
     LOGGER.audit("Read CSV Speed: " + getReadCSVSpeed(partitionID) + " records/s");
