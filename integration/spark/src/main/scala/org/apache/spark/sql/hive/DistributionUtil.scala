@@ -25,12 +25,17 @@ import scala.collection.JavaConverters._
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.CarbonContext
 
+import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.datastore.block.Distributable
+
+
 
 /**
  *
  */
 object DistributionUtil {
+  @transient
+  val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)
   /*
    * This method will return the list of executers in the cluster.
    * For this we take the  memory status of all node with getExecutorMemoryStatus
@@ -112,13 +117,20 @@ object DistributionUtil {
     confExecutorsTemp: String,
     sparkContext: SparkContext):
   Array[String] = {
-    val confExecutors = confExecutorsTemp.toInt
+    val confExecutors = if (null != confExecutorsTemp) confExecutorsTemp.toInt else 1
     val requiredExecutors = if (nodeMapping.size > confExecutors) {
       confExecutors
     } else {nodeMapping.size()}
 
     CarbonContext.ensureExecutors(sparkContext, requiredExecutors)
-    val nodes = DistributionUtil.getNodeList(sparkContext)
+    var nodes = DistributionUtil.getNodeList(sparkContext)
+    var maxTimes = 30;
+    while (nodes.length != requiredExecutors && maxTimes > 0) {
+      Thread.sleep(500);
+      nodes = DistributionUtil.getNodeList(sparkContext)
+      maxTimes = maxTimes - 1;
+    }
+    LOGGER.info("Time elapsed to allocate the required executors : " + (30 - maxTimes) * 500)
     nodes
   }
 }

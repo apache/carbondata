@@ -27,6 +27,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.hive.DistributionUtil
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.cache.dictionary.Dictionary
@@ -37,7 +38,6 @@ import org.carbondata.query.carbon.executor.QueryExecutorFactory
 import org.carbondata.query.carbon.model.QueryModel
 import org.carbondata.query.carbon.result.RowResult
 import org.carbondata.query.expression.Expression
-import org.carbondata.query.filter.resolver.FilterResolverIntf
 import org.carbondata.spark.Value
 import org.carbondata.spark.load.CarbonLoaderUtil
 import org.carbondata.spark.util.QueryPlanUtil
@@ -108,8 +108,23 @@ class CarbonQueryRDD[V: ClassTag](
       )
       if (blockList.nonEmpty) {
         // group blocks to nodes, tasks
+        val requiredExecutors = CarbonLoaderUtil.getRequiredExecutors(blockList.asJava)
+        var confExecutors : String = null
+        if (sparkContext.getConf.contains("spark.executor.instances")) {
+          confExecutors = sparkContext.getConf.get("spark.executor.instances")
+        } else if (sparkContext.getConf.contains("spark.dynamicAllocation.enabled")
+          && sparkContext.getConf.get("spark.dynamicAllocation.enabled").trim
+          .equalsIgnoreCase("true")) {
+          if (sparkContext.getConf.contains("spark.dynamicAllocation.maxExecutors")) {
+            confExecutors = sparkContext.getConf.get("spark.dynamicAllocation.maxExecutors")
+          }
+        }
+        val activeNodes = DistributionUtil
+          .ensureExecutorsAndGetNodeList(requiredExecutors, confExecutors, sparkContext)
         val nodeBlockMapping =
-          CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism)
+          CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism,
+            activeNodes.toList.asJava
+          )
 
         var i = 0
         // Create Spark Partition for each task and assign blocks
