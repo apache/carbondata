@@ -26,6 +26,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.util.Random
+
 import org.apache.spark.SparkEnv
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -36,6 +37,7 @@ import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
+
 import org.carbondata.common.factory.CarbonCommonFactory
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.CarbonDataLoadSchema
