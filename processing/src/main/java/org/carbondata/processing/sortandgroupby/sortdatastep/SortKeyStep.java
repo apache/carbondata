@@ -24,6 +24,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.common.logging.impl.StandardLogService;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.carbondata.processing.schema.metadata.SortObserver;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
@@ -154,6 +155,8 @@ public class SortKeyStep extends BaseStep {
 
     // if first
     if (first) {
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordSortRowsStepTotalTime(
+          meta.getPartitionID(), System.currentTimeMillis());
       first = false;
 
       // clone out row meta
@@ -232,6 +235,10 @@ public class SortKeyStep extends BaseStep {
       LOGGER.info(logMessage);
       putRow(data.getOutputRowMeta(), new Object[0]);
       setOutputDone();
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordSortRowsStepTotalTime(
+          meta.getPartitionID(), System.currentTimeMillis());
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordSurrogatekeysTotalTime(
+          meta.getPartitionID(), System.currentTimeMillis());
       return false;
     } catch (CarbonSortKeyAndGroupByException e) {
       throw new KettleException(e);

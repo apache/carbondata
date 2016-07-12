@@ -54,9 +54,7 @@ import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.core.util.DataTypeUtil;
+import org.carbondata.core.util.*;
 import org.carbondata.core.writer.ByteArrayHolder;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
 import org.carbondata.processing.dataprocessor.manager.CarbonDataProcessorManager;
@@ -290,6 +288,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
       Object[] r = getRow();  // get row, blocks when needed!
       if (first) {
+        CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordGeneratingSurrogatekeysTime(
+            meta.getPartitionID(), System.currentTimeMillis());
         first = false;
         meta.initialize();
         final Object dataProcessingLockObject = CarbonDataProcessorManager.getInstance()
@@ -471,6 +471,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       String logMessage =
           "Summary: Carbon CSV Based Seq Gen Step : " + readCounter + ": Write: " + writeCounter;
       LOGGER.info(logMessage);
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordGeneratingSurrogatekeysTime(
+          meta.getPartitionID(), System.currentTimeMillis());
       setOutputDone();
 
     } catch (RuntimeException ex) {

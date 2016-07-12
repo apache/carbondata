@@ -40,10 +40,7 @@ import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.core.util.CarbonUtilException;
-import org.carbondata.core.util.DataTypeUtil;
+import org.carbondata.core.util.*;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.mdkeygen.file.FileData;
 import org.carbondata.processing.mdkeygen.file.FileManager;
@@ -177,6 +174,8 @@ public class MDKeyGenStep extends BaseStep {
     meta.initialize();
     Object[] row = getRow();
     if (first) {
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordMdkGenerateTotalTime(
+          meta.getPartitionID(), System.currentTimeMillis());
       first = false;
 
       data.outputRowMeta = new RowMeta();
@@ -198,6 +197,8 @@ public class MDKeyGenStep extends BaseStep {
       initDataHandler();
       dataHandler.initialise();
       finalMerger.startFinalMerge();
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordSurrogateKey2MdkAdd2FileTime(
+          meta.getPartitionID(), System.currentTimeMillis());
       while (finalMerger.hasNext()) {
         Object[] r = finalMerger.next();
         readCounter++;
@@ -224,7 +225,12 @@ public class MDKeyGenStep extends BaseStep {
     String logMessage =
         "Finished Carbon Mdkey Generation Step: Read: " + readCounter + ": Write: " + writeCounter;
     LOGGER.info(logMessage);
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordTotalRecords(writeCounter);
     processingComplete();
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordSurrogateKey2MdkAdd2FileTime(
+        meta.getPartitionID(), System.currentTimeMillis());
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordMdkGenerateTotalTime(
+        meta.getPartitionID(), System.currentTimeMillis());
     return false;
   }
 

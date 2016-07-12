@@ -415,6 +415,14 @@ public final class CarbonCommonConstants {
    */
   public static final String AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE = "true";
   /**
+   * TIME_STAT_UTIL_TYPE
+   */
+  public static final String ENABLE_DATA_LOADING_STATISTICS = "enable.data.loading.statistics";
+  /**
+   * TIME_STAT_UTIL_TYPE_DEFAULT
+   */
+  public static final String ENABLE_DATA_LOADING_STATISTICS_DEFAULT = "false";
+  /**
    * IS_INT_BASED_INDEXER
    */
   public static final String HIGH_CARDINALITY_VALUE = "high.cardinality.value";
