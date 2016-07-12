@@ -117,6 +117,11 @@ class CarbonContext(
 }
 
 object CarbonContext {
+
+  val datasourceName: String = "org.apache.carbondata.format"
+
+  val datasourceShortName: String = "carbondata"
+
   /**
    * @param schemaName - Schema Name
    * @param cubeName   - Cube Name
@@ -187,5 +192,4 @@ object CarbonContext {
     cache(sc) = cc
   }
 
-  def datasourceName: String = "org.apache.carbondata.format"
 }

@@ -112,6 +112,9 @@
                     <Compile-Timestamp>2015-07-15 02.59.16</Compile-Timestamp>
                   </manifestEntries>
                 </transformer>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.AppendingTransformer">
+                  <resource>META-INF/services/org.apache.spark.sql.sources.DataSourceRegister</resource>
+                </transformer>
               </transformers>
             </configuration>
           </execution>
