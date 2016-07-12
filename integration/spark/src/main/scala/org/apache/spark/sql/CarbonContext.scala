@@ -80,6 +80,9 @@ class CarbonContext(val sc: SparkContext, val storePath: String) extends HiveCon
 }
 
 object CarbonContext {
+
+  @transient
+  val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)
   /**
    * @param schemaName - Schema Name
    * @param cubeName   - Cube Name
@@ -163,6 +166,10 @@ object CarbonContext {
     sc.schedulerBackend match {
       case b: CoarseGrainedSchedulerBackend =>
         val requiredExecutors = numExecutors -  b.numExistingExecutors
+        LOGGER
+          .info("number of executors is =" + numExecutors + " existing executors are =" + b
+            .numExistingExecutors
+          )
         if(requiredExecutors > 0) {
           b.requestExecutors(requiredExecutors)
         }

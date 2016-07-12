@@ -245,8 +245,14 @@ class CarbonMergerRDD[K, V](
     logInfo("No.of Executors required=" + requiredExecutors
       + " , spark.executor.instances=" + confExecutors
       + ", no.of.nodes where data present=" + nodeMapping.size())
-    val nodes = DistributionUtil.getNodeList(sparkContext)
-
+    var nodes = DistributionUtil.getNodeList(sparkContext)
+    var maxTimes = 30
+    while (nodes.length != requiredExecutors && maxTimes > 0) {
+      Thread.sleep(500)
+      nodes = DistributionUtil.getNodeList(sparkContext)
+      maxTimes = maxTimes - 1
+    }
+    logInfo("Time taken to wait for executor allocation is =" + ((30 - maxTimes) * 500) + "millis")
 
     var i = 0
 
