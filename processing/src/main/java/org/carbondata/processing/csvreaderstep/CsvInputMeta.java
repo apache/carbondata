@@ -97,6 +97,8 @@ public class CsvInputMeta extends BaseStepMeta
 
   private String blocksID;
 
+  private String partitionID;
+
   private String escapeCharacter;
 
   public CsvInputMeta() {
@@ -118,6 +120,7 @@ public class CsvInputMeta extends BaseStepMeta
     bufferSize = "50000";
     currentRestructNumber = -1;
     blocksID = "";
+    partitionID = "";
     escapeCharacter ="\\";
   }
 
@@ -155,6 +158,7 @@ public class CsvInputMeta extends BaseStepMeta
       currentRestructNumber =
           Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
       blocksID = XMLHandler.getTagValue(stepnode, "blocksID");
+      partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
       escapeCharacter = XMLHandler.getTagValue(stepnode, "escapeCharacter");
       Node fields = XMLHandler.getSubNode(stepnode, getXmlCode("FIELDS"));
       int nrfields = XMLHandler.countNodes(fields, getXmlCode("FIELD"));
@@ -218,6 +222,7 @@ public class CsvInputMeta extends BaseStepMeta
     retval.append("    ")
         .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
     retval.append("    ").append(XMLHandler.addTagValue("blocksID", blocksID));
+    retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
     retval.append("    ").append(XMLHandler.addTagValue("escapeCharacter", escapeCharacter));
     retval.append("    ").append(XMLHandler.openTag(getXmlCode("FIELDS"))).append(Const.CR);
     for (int i = 0; i < inputFields.length; i++) {
@@ -270,6 +275,7 @@ public class CsvInputMeta extends BaseStepMeta
       encoding = rep.getStepAttributeString(idStep, getRepCode("ENCODING"));
       currentRestructNumber = (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
       blocksID = rep.getStepAttributeString(idStep, getRepCode("blocksID"));
+      partitionID = rep.getStepAttributeString(idStep, getRepCode("partitionID"));
       escapeCharacter = rep.getStepAttributeString(idStep, getRepCode("escapeCharacter"));
       int nrfields = rep.countNrStepAttributes(idStep, getRepCode("FIELD_NAME"));
 
@@ -325,6 +331,7 @@ public class CsvInputMeta extends BaseStepMeta
       rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
           currentRestructNumber);
       rep.saveStepAttribute(idTransformation, idStep, getRepCode("blocksID"), blocksID);
+      rep.saveStepAttribute(idTransformation, idStep, getRepCode("partitionID"), partitionID);
       rep.saveStepAttribute(idTransformation, idStep, getRepCode("escapeCharacter"),
           escapeCharacter);
       for (int i = 0; i < inputFields.length; i++) {
@@ -822,6 +829,8 @@ public class CsvInputMeta extends BaseStepMeta
           currentRestructNumber = (Integer) entry.getValue();
         } else if ("blocksID".equals(attributeKey)) {
           blocksID = (String) entry.getValue();
+        } else if ("partitionID".equals(attributeKey)) {
+          partitionID = (String) entry.getValue();
         } else if ("escapeCharacter".equals(attributeKey)) {
           escapeCharacter = (String) entry.getValue();
         } else {
@@ -918,4 +927,11 @@ public class CsvInputMeta extends BaseStepMeta
     this.currentRestructNumber = currentRestructNum;
   }
 
+  public void setPartitionID(String partitionID) {
+    this.partitionID = partitionID;
+  }
+
+  public String getPartitionID() {
+    return this.partitionID;
+  }
 }

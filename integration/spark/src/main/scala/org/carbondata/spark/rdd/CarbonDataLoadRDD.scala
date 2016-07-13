@@ -18,13 +18,18 @@
 
 package org.carbondata.spark.rdd
 
+import java.lang.Long
 import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.util.Random
 
-import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext}
+import org.apache.spark.Logging
+import org.apache.spark.Partition
+import org.apache.spark.SerializableWritable
+import org.apache.spark.SparkContext
 import org.apache.spark.SparkEnv
+import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
 
@@ -33,6 +38,7 @@ import org.carbondata.common.logging.impl.StandardLogService
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.carbondata.core.util.CarbonProperties
+import org.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.carbondata.processing.constants.DataProcessorConstants
 import org.carbondata.processing.etl.DataLoadingException
 import org.carbondata.processing.graphgenerator.GraphGenerator
@@ -159,6 +165,7 @@ class CarbonDataLoadRDD[K, V](
         }
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         setModelAndBlocksInfo()
+        CarbonTimeStatisticsFactory.getLoadStatisticsInstance.initPartitonInfo(model.getPartitionId)
         CarbonProperties.getInstance().addProperty("carbon.is.columnar.storage", "true")
         CarbonProperties.getInstance().addProperty("carbon.dimension.split.value.in.columnar", "1")
         CarbonProperties.getInstance().addProperty("carbon.is.fullyfilled.bits", "true")
@@ -219,6 +226,8 @@ class CarbonDataLoadRDD[K, V](
               } else {
                 logInfo("DataLoad complete")
                 logInfo("Data Loaded successfully with LoadCount:" + loadCount)
+                CarbonTimeStatisticsFactory.getLoadStatisticsInstance.printStatisticsInfo(
+                  model.getPartitionId)
               }
             } else {
               logInfo("DataLoad failure")
@@ -253,11 +262,15 @@ class CarbonDataLoadRDD[K, V](
             // get this partition data blocks and put it to global static map
             GraphGenerator.blockInfo.put(blocksID, split.partitionBlocksDetail)
             StandardLogService.setThreadName(partitionID, null)
+            CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordPartitionBlockMap(
+              partitionID, split.partitionBlocksDetail.length)
           case false =>
             // for node partition
             val split = theSplit.asInstanceOf[CarbonNodePartition]
             logInfo("Input split: " + split.serializableHadoopSplit)
             logInfo("The Block Count in this node :" + split.nodeBlocksDetail.length)
+            CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordHostBlockMap(
+              split.serializableHadoopSplit, split.nodeBlocksDetail.length)
             val blocksID = gernerateBlocksID
             carbonLoadModel.setBlocksID(blocksID)
             carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
