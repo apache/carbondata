@@ -17,6 +17,8 @@
 
 package org.carbondata.spark.rdd
 
+import java.io.{DataInputStream, InputStreamReader}
+import java.nio.charset.Charset
 import java.util.regex.Pattern
 
 import scala.collection.mutable
@@ -24,7 +26,7 @@ import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 import scala.util.control.Breaks.{break, breakable}
 
 import org.apache.commons.lang3.{ArrayUtils, StringUtils}
-import org.apache.spark.{Logging, Partition, Partitioner, TaskContext}
+import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 
@@ -32,8 +34,12 @@ import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.{CarbonTableIdentifier, ColumnIdentifier}
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.spark.load.CarbonLoaderUtil
+import org.carbondata.core.datastorage.store.impl.FileFactory
+import org.carbondata.processing.etl.DataLoadingException
+import org.carbondata.spark.load.{CarbonLoaderUtil, CarbonLoadModel}
+import org.carbondata.spark.partition.reader.{CSVParser, CSVReader}
 import org.carbondata.spark.util.GlobalDictionaryUtil
+import org.carbondata.spark.util.GlobalDictionaryUtil._
 
 /**
  * A partitioner partition by column.
@@ -319,5 +325,105 @@ class CarbonGlobalDictionaryGenerateRDD(
       }
     }
     iter
+  }
+}
+
+/**
+ * Set column dictionry patition format
+ *
+ * @param id  partition id
+ * @param dimension  current carbon dimension
+ */
+class CarbonColumnDictPatition(id: Int, dimension: CarbonDimension)
+  extends Partition {
+  override val index: Int = id
+  val preDefDictDimension = dimension
+}
+
+
+/**
+ * Use external column dict to generate global dictionary
+ *
+ * @param carbonLoadModel  carbon load model
+ * @param sparkContext  spark context
+ * @param table  carbon table identifier
+ * @param dimensions  carbon dimenisons having predefined dict
+ * @param hdfsLocation  carbon base store path
+ * @param dictFolderPath  path of dictionary folder
+*/
+class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
+    dictionaryLoadModel: DictionaryLoadModel,
+    sparkContext: SparkContext,
+    table: CarbonTableIdentifier,
+    dimensions: Array[CarbonDimension],
+    hdfsLocation: String,
+    dictFolderPath: String)
+  extends RDD[(Int, ColumnDistinctValues)](sparkContext, Nil) with Logging {
+
+  override def getPartitions: Array[Partition] = {
+    val primDimensions = dictionaryLoadModel.primDimensions
+    val primDimLength = primDimensions.length
+    val result = new Array[Partition](primDimLength)
+    for (i <- 0 until primDimLength) {
+      result(i) = new CarbonColumnDictPatition(i, primDimensions(i))
+    }
+    result
+  }
+
+  override def compute(split: Partition, context: TaskContext)
+  : Iterator[(Int, ColumnDistinctValues)] = {
+    val theSplit = split.asInstanceOf[CarbonColumnDictPatition]
+    val primDimension = theSplit.preDefDictDimension
+    // read the column dict data
+    val preDefDictFilePath = carbonLoadModel.getPredefDictFilePath(primDimension)
+    var csvReader: CSVReader = null
+    var inputStream: DataInputStream = null
+    var colDictData: java.util.Iterator[Array[String]] = null
+    try {
+      inputStream = FileFactory.getDataInputStream(preDefDictFilePath,
+        FileFactory.getFileType(preDefDictFilePath))
+      csvReader = new CSVReader(new InputStreamReader(inputStream, Charset.defaultCharset),
+        CSVReader.DEFAULT_SKIP_LINES, new CSVParser(carbonLoadModel.getCsvDelimiter.charAt(0)))
+      // read the column data to list iterator
+      colDictData = csvReader.readAll.iterator
+    } catch {
+      case ex: Exception =>
+        logError(s"Error in reading pre-defined " +
+          s"dictionary file:${ex.getMessage}")
+    } finally {
+      if (csvReader != null) {
+        try {
+          csvReader.close
+        } catch {
+          case ex: Exception =>
+            logError(s"Error in closing csvReader of " +
+            s"pre-defined dictionary file:${ex.getMessage}")
+        }
+      }
+      if (inputStream != null) {
+        try {
+          inputStream.close
+        } catch {
+          case ex: Exception =>
+            logError(s"Error in closing inputStream of " +
+            s"pre-defined dictionary file:${ex.getMessage}")
+        }
+      }
+    }
+    val mapIdWithSet = new HashMap[String, HashSet[String]]
+    val columnValues = new HashSet[String]
+    val distinctValues = (theSplit.index, columnValues)
+    mapIdWithSet.put(primDimension.getColumnId, columnValues)
+    // use parser to generate new dict value
+    val dimensionParser = GlobalDictionaryUtil.generateParserForDimension(
+      Some(primDimension),
+      createDataFormat(carbonLoadModel.getDelimiters),
+      mapIdWithSet).get
+    // parse the column data
+    while (colDictData.hasNext) {
+      dimensionParser.parseString(colDictData.next()(0))
+    }
+    Array((distinctValues._1,
+      ColumnDistinctValues(distinctValues._2.toArray, 0L))).iterator
   }
 }
