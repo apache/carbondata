@@ -264,6 +264,11 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
   private GenericDataType[] complexTypes;
 
   /**
+   * holds the value to be considered as null while dataload
+   */
+  private String serializationNullFormat;
+
+  /**
    * Constructor
    *
    * @param s
@@ -435,6 +440,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         if (null != getInputRowMeta()) {
           generateNoDictionaryAndComplexIndexMapping();
         }
+        serializationNullFormat = meta.getTableOptionWrapper().get("serialization.null.format");
       }
       // no more input to be expected...
       if (r == null) {
@@ -874,7 +880,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     int i = 0;
     for (Object obj : rowValue) {
       if (obj != null) {
-        if (obj.equals(valueToCheckAgainst)) {
+        if (obj.equals(serializationNullFormat) || obj.equals(valueToCheckAgainst)) {
           rowValue[i] = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
         }
       } else {
