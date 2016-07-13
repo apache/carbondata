@@ -34,12 +34,12 @@ import org.carbondata.scan.expression.logical.{AndExpression, OrExpression}
 import org.carbondata.spark.util.CarbonScalaUtil
 
 /**
- * All filter coversions are done here.
+ * All filter conversions are done here.
  */
 object CarbonFilters {
 
   /**
-   * Converts data sources filters to Parquet filter predicates.
+   * Converts data sources filters to carbon filter predicates.
    */
   def createCarbonFilter(schema: StructType,
       predicate: sources.Filter): Option[CarbonExpression] = {
@@ -60,6 +60,19 @@ object CarbonFilters {
             getCarbonLiteralExpression(name, value)))
         case sources.Not(sources.EqualNullSafe(name, value)) =>
           Some(new NotEqualsExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, value)))
+
+        case sources.GreaterThan(name, value) =>
+          Some(new GreaterThanExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, value)))
+        case sources.LessThan(name, value) =>
+          Some(new LessThanExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, value)))
+        case sources.GreaterThanOrEqual(name, value) =>
+          Some(new GreaterThanEqualToExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, value)))
+        case sources.LessThanOrEqual(name, value) =>
+          Some(new LessThanEqualToExpression(getCarbonExpression(name),
             getCarbonLiteralExpression(name, value)))
 
         case sources.In(name, values) =>
@@ -153,6 +166,42 @@ object CarbonFilters {
           val hSet = list.map(e => e.eval(EmptyRow))
           Some(sources.In(a.name, hSet.toArray))
 
+        case GreaterThan(a: Attribute, Literal(v, t)) =>
+          Some(sources.GreaterThan(a.name, v))
+        case GreaterThan(Literal(v, t), a: Attribute) =>
+          Some(sources.LessThan(a.name, v))
+        case GreaterThan(Cast(a: Attribute, _), Literal(v, t)) =>
+          Some(sources.GreaterThan(a.name, v))
+        case GreaterThan(Literal(v, t), Cast(a: Attribute, _)) =>
+          Some(sources.LessThan(a.name, v))
+
+        case LessThan(a: Attribute, Literal(v, t)) =>
+          Some(sources.LessThan(a.name, v))
+        case LessThan(Literal(v, t), a: Attribute) =>
+          Some(sources.GreaterThan(a.name, v))
+        case LessThan(Cast(a: Attribute, _), Literal(v, t)) =>
+          Some(sources.LessThan(a.name, v))
+        case LessThan(Literal(v, t), Cast(a: Attribute, _)) =>
+          Some(sources.GreaterThan(a.name, v))
+
+        case GreaterThanOrEqual(a: Attribute, Literal(v, t)) =>
+          Some(sources.GreaterThanOrEqual(a.name, v))
+        case GreaterThanOrEqual(Literal(v, t), a: Attribute) =>
+          Some(sources.LessThanOrEqual(a.name, v))
+        case GreaterThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
+          Some(sources.GreaterThanOrEqual(a.name, v))
+        case GreaterThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
+          Some(sources.LessThanOrEqual(a.name, v))
+
+        case LessThanOrEqual(a: Attribute, Literal(v, t)) =>
+          Some(sources.LessThanOrEqual(a.name, v))
+        case LessThanOrEqual(Literal(v, t), a: Attribute) =>
+          Some(sources.GreaterThanOrEqual(a.name, v))
+        case LessThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
+          Some(sources.LessThanOrEqual(a.name, v))
+        case LessThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
+          Some(sources.GreaterThanOrEqual(a.name, v))
+
         case others =>
           if (!or) {
             others.collect {
@@ -220,6 +269,50 @@ object CarbonFilters {
         case In(Cast(a: Attribute, _), list) if !list.exists(!_.isInstanceOf[Literal]) =>
           Some(new InExpression(transformExpression(a).get,
             new ListExpression(list.map(transformExpression(_).get).asJava)))
+
+        case GreaterThan(a: Attribute, l@Literal(v, t)) =>
+          Some(new GreaterThanExpression(transformExpression(a).get, transformExpression(l).get))
+        case GreaterThan(Cast(a: Attribute, _), l@Literal(v, t)) =>
+          Some(new GreaterThanExpression(transformExpression(a).get, transformExpression(l).get))
+        case GreaterThan(l@Literal(v, t), a: Attribute) =>
+          Some(new LessThanExpression(transformExpression(a).get, transformExpression(l).get))
+        case GreaterThan(l@Literal(v, t), Cast(a: Attribute, _)) =>
+          Some(new LessThanExpression(transformExpression(a).get, transformExpression(l).get))
+
+        case LessThan(a: Attribute, l@Literal(v, t)) =>
+          Some(new LessThanExpression(transformExpression(a).get, transformExpression(l).get))
+        case LessThan(Cast(a: Attribute, _), l@Literal(v, t)) =>
+          Some(new LessThanExpression(transformExpression(a).get, transformExpression(l).get))
+        case LessThan(l@Literal(v, t), a: Attribute) =>
+          Some(new GreaterThanExpression(transformExpression(a).get, transformExpression(l).get))
+        case LessThan(l@Literal(v, t), Cast(a: Attribute, _)) =>
+          Some(new GreaterThanExpression(transformExpression(a).get, transformExpression(l).get))
+
+        case GreaterThanOrEqual(a: Attribute, l@Literal(v, t)) =>
+          Some(new GreaterThanEqualToExpression(transformExpression(a).get,
+            transformExpression(l).get))
+        case GreaterThanOrEqual(Cast(a: Attribute, _), l@Literal(v, t)) =>
+          Some(new GreaterThanEqualToExpression(transformExpression(a).get,
+            transformExpression(l).get))
+        case GreaterThanOrEqual(l@Literal(v, t), a: Attribute) =>
+          Some(new LessThanEqualToExpression(transformExpression(a).get,
+            transformExpression(l).get))
+        case GreaterThanOrEqual(l@Literal(v, t), Cast(a: Attribute, _)) =>
+          Some(new LessThanEqualToExpression(transformExpression(a).get,
+            transformExpression(l).get))
+
+        case LessThanOrEqual(a: Attribute, l@Literal(v, t)) =>
+          Some(new LessThanEqualToExpression(transformExpression(a).get,
+            transformExpression(l).get))
+        case LessThanOrEqual(Cast(a: Attribute, _), l@Literal(v, t)) =>
+          Some(new LessThanEqualToExpression(transformExpression(a).get,
+            transformExpression(l).get))
+        case LessThanOrEqual(l@Literal(v, t), a: Attribute) =>
+          Some(new GreaterThanEqualToExpression(transformExpression(a).get,
+            transformExpression(l).get))
+        case LessThanOrEqual(l@Literal(v, t), Cast(a: Attribute, _)) =>
+          Some(new GreaterThanEqualToExpression(transformExpression(a).get,
+            transformExpression(l).get))
 
         case AttributeReference(name, dataType, _, _) =>
           Some(new CarbonColumnExpression(name,
