@@ -30,74 +30,16 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{IntegerType, StringType}
-import org.apache.spark.util.ScalaCompilerUtil
 
 import org.carbondata.spark.CarbonFilters
-
-
-abstract class AbstractCarbonOptimizerFactory {
-  def createOptimizer(optimizer: Optimizer, conf: CarbonSQLConf) : Optimizer
-}
-
 
 /**
  * Carbon Optimizer to add dictionary decoder.
  */
 object CarbonOptimizer {
 
-  val spark1_6_2_OptimizerString =
-    s"""
-       import org.apache.spark.sql._;
-       import org.apache.spark.sql.optimizer._;
-       import org.apache.spark.sql.catalyst.plans.logical._;
-       import org.apache.spark.sql.catalyst._;
-       import org.apache.spark.sql.catalyst.optimizer.Optimizer;
-
-       new AbstractCarbonOptimizerFactory {
-
-           override def createOptimizer(optimizer1: Optimizer, conf1: CarbonSQLConf): Optimizer = {
-              class CarbonOptimizer1(optimizer: Optimizer, conf: CarbonSQLConf)
-                extends Optimizer(conf) {
-                override val batches = Nil;
-                override def execute(plan: LogicalPlan): LogicalPlan = {
-                  CarbonOptimizer.execute(plan, optimizer);
-                }
-              }
-              new CarbonOptimizer1(optimizer1, conf1);
-           }
-       }
-    """
-
-  val default_OptimizerString =
-    s"""
-       import org.apache.spark.sql._;
-       import org.apache.spark.sql.optimizer._;
-       import org.apache.spark.sql.catalyst.plans.logical._;
-       import org.apache.spark.sql.catalyst._;
-       import org.apache.spark.sql.catalyst.optimizer.Optimizer;
-
-       new AbstractCarbonOptimizerFactory {
-
-           override def createOptimizer(optimizer1: Optimizer, conf1: CarbonSQLConf): Optimizer = {
-              class CarbonOptimizer2(optimizer: Optimizer, conf: CarbonSQLConf) extends Optimizer {
-                val batches = Nil;
-                override def execute(plan: LogicalPlan): LogicalPlan = {
-                  CarbonOptimizer.execute(plan, optimizer);
-                }
-              }
-              new CarbonOptimizer2(optimizer1, conf1);
-           }
-       }
-    """
-
   def optimizer(optimizer: Optimizer, conf: CarbonSQLConf, version: String): Optimizer = {
-    if (version.equals("1.6.2")) {
-      ScalaCompilerUtil.compiledCode(spark1_6_2_OptimizerString)
-        .asInstanceOf[AbstractCarbonOptimizerFactory].createOptimizer(optimizer, conf)
-    } else {
-      ScalaCompilerUtil.compiledCode(default_OptimizerString)
-        .asInstanceOf[AbstractCarbonOptimizerFactory].createOptimizer(optimizer, conf)
-    }
+    CodeGenerateFactory.getInstance().optimizerFactory.createOptimizer(optimizer, conf)
   }
 
   def execute(plan: LogicalPlan, optimizer: Optimizer): LogicalPlan = {
@@ -190,6 +132,9 @@ class ResolveCarbonFunctions(
               }
             case others =>
               others.collect {
+                case a@ Alias(attr: AttributeReference, _) => aliasMap.put(a.toAttribute, attr)
+                case a@Alias(exp, _) if !exp.isInstanceOf[AttributeReference] =>
+                  aliasMap.put(a.toAttribute, new AttributeReference("", StringType)())
                 case attr: AttributeReference
                   if isDictionaryEncoded(attr, relations, aliasMap) =>
                   attrsOndimAggs.add(aliasMap.getOrElse(attr, attr))
@@ -211,7 +156,35 @@ class ResolveCarbonFunctions(
           } else {
             Aggregate(agg.groupingExpressions, agg.aggregateExpressions, child)
           }
-
+        case expand: Expand if !expand.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
+          val attrsOnExpand = new util.HashSet[Attribute]
+          expand.projections.map {s =>
+            s.map {
+              case attr: AttributeReference =>
+              case a@Alias(attr: AttributeReference, name) => aliasMap.put(a.toAttribute, attr)
+              case others =>
+                others.collect {
+                  case attr: AttributeReference
+                    if isDictionaryEncoded(attr, relations, aliasMap) =>
+                    attrsOnExpand.add(aliasMap.getOrElse(attr, attr))
+                }
+            }
+          }
+          var child = expand.child
+          if (attrsOnExpand.size() > 0 && !child.isInstanceOf[Expand]) {
+            child = CarbonDictionaryTempDecoder(attrsOnExpand,
+              new util.HashSet[Attribute](),
+              expand.child)
+          }
+          if (!decoder) {
+            decoder = true
+            CarbonDictionaryTempDecoder(new util.HashSet[Attribute](),
+              new util.HashSet[Attribute](),
+              CodeGenerateFactory.getInstance().expandFactory.createExpand(expand, child),
+              isOuter = true)
+          } else {
+            CodeGenerateFactory.getInstance().expandFactory.createExpand(expand, child)
+          }
         case filter: Filter if !filter.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
           val attrsOnConds = new util.HashSet[Attribute]
           CarbonFilters
@@ -384,7 +357,6 @@ class ResolveCarbonFunctions(
         val filterExps = filter.condition transform {
           case attr: AttributeReference =>
             updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
-          case l: Literal => FakeCarbonCast(l, l.dataType)
         }
         Filter(filterExps, filter.child)
       case j: Join =>

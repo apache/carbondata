@@ -55,6 +55,7 @@ class CarbonContext(
   }
 
   CarbonContext.addInstance(sc, this)
+  CodeGenerateFactory.init(sc.version)
 
   var lastSchemaUpdatedTime = System.currentTimeMillis()
 
