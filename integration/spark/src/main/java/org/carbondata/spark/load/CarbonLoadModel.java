@@ -23,9 +23,11 @@
 package org.carbondata.spark.load;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
 
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.load.LoadMetadataDetails;
 
 public class CarbonLoadModel implements Serializable {
@@ -41,6 +43,8 @@ public class CarbonLoadModel implements Serializable {
   private String factFilePath;
 
   private String dimFolderPath;
+
+  private String colDictFilePath;
 
   private String partitionId;
 
@@ -66,6 +70,11 @@ public class CarbonLoadModel implements Serializable {
   private List<LoadMetadataDetails> loadMetadataDetails;
 
   private String blocksID;
+
+  /**
+   *  Map from carbon dimension to pre defined dict file path
+   */
+  private HashMap<CarbonDimension, String> predefDictMap;
 
   /**
    * task id, each spark task has a unique id
@@ -167,6 +176,16 @@ public class CarbonLoadModel implements Serializable {
     this.csvHeader = csvHeader;
   }
 
+  public void initPredefDictMap() {
+    predefDictMap = new HashMap<>();
+  }
+  public String getPredefDictFilePath(CarbonDimension dimension) {
+    return predefDictMap.get(dimension);
+  }
+
+  public void setPredefDictMap(CarbonDimension dimension, String predefDictFilePath) {
+    this.predefDictMap.put(dimension, predefDictFilePath);
+  }
   /**
    * @return carbon dataload schema
    */
@@ -221,6 +240,22 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setFactFilePath(String factFilePath) {
     this.factFilePath = factFilePath;
+  }
+
+  /**
+   *
+   * @return external column dictionary file path
+   */
+  public String getColDictFilePath() {
+    return colDictFilePath;
+  }
+
+  /**
+   * set external column dictionary file path
+   * @param colDictFilePath
+   */
+  public void setColDictFilePath(String colDictFilePath) {
+    this.colDictFilePath = colDictFilePath;
   }
 
   /**

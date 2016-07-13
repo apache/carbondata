@@ -25,12 +25,8 @@ import org.apache.spark.sql.common.util.CarbonHiveContext
 import org.apache.spark.sql.common.util.CarbonHiveContext.sql
 import org.apache.spark.sql.common.util.QueryTest
 
-import org.carbondata.core.carbon.ColumnIdentifier
-import org.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier
-import org.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier}
-import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.carbon.CarbonDataLoadSchema
 import org.carbondata.spark.load.CarbonLoadModel
-import org.carbondata.spark.load.CarbonLoaderUtil
 
 import org.scalatest.BeforeAndAfterAll
 
@@ -155,20 +151,6 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
       .asInstanceOf[CarbonRelation]
   }
 
-  def checkDictionary(relation: CarbonRelation, columnName: String, value: String) {
-    val table = relation.cubeMeta.carbonTable
-    val dimension = table.getDimensionByName(table.getFactTableName, columnName)
-    val tableIdentifier = new CarbonTableIdentifier(table.getDatabaseName, table.getFactTableName, "uniqueid")
-
-    val dictColumnIdentifier = new DictionaryColumnUniqueIdentifier(tableIdentifier,
-      dimension.getColumnIdentifier, dimension.getDataType
-    )
-    val dict = CarbonLoaderUtil.getDictionary(dictColumnIdentifier,
-      CarbonHiveContext.hdfsCarbonBasePath
-    )
-    assert(dict.getSurrogateKey(value) != CarbonCommonConstants.INVALID_SURROGATE_KEY)
-  }
-
   test("[issue-80]Global Dictionary Generation") {
 
     var carbonLoadModel = buildCarbonLoadModel(sampleRelation, filePath, null, null)
@@ -211,7 +193,8 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
         carbonLoadModel,
         sampleRelation.cubeMeta.storePath
       )
-    checkDictionary(incrementalLoadTableRelation, "deviceInformationId", "100010")
+    DictionaryTestCaseUtil.checkDictionary(
+        incrementalLoadTableRelation, "deviceInformationId", "100010")
 
     // load 2
     carbonLoadModel = buildCarbonLoadModel(incrementalLoadTableRelation,
@@ -224,7 +207,8 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
         carbonLoadModel,
         sampleRelation.cubeMeta.storePath
       )
-    checkDictionary(incrementalLoadTableRelation, "deviceInformationId", "100077")
+    DictionaryTestCaseUtil.checkDictionary(
+        incrementalLoadTableRelation, "deviceInformationId", "100077")
   }
 
 }
