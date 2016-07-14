@@ -119,13 +119,15 @@ class CarbonQueryRDD[V: ClassTag](
             confExecutors = sparkContext.getConf.get("spark.dynamicAllocation.maxExecutors")
           }
         }
+        val startTime = System.currentTimeMillis
         val activeNodes = DistributionUtil
           .ensureExecutorsAndGetNodeList(requiredExecutors, confExecutors, sparkContext)
         val nodeBlockMapping =
           CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism,
             activeNodes.toList.asJava
           )
-
+        val timeElapsed: Long = System.currentTimeMillis - startTime
+        LOGGER.info("Total Time taken in block allocation : " + timeElapsed)
         var i = 0
         // Create Spark Partition for each task and assign blocks
         nodeBlockMapping.asScala.foreach { entry =>

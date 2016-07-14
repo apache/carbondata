@@ -1233,10 +1233,20 @@ public final class CarbonLoaderUtil {
     // are assigned first
     Collections.sort(multiBlockRelations);
 
+    Set<String> validActiveNodes = new HashSet<String>();
+    // find all the valid active nodes
     for (NodeMultiBlockRelation nodeMultiBlockRelation : multiBlockRelations) {
       String nodeName = nodeMultiBlockRelation.getNode();
       //assign the block to the node only if the node is active
-      if (null != activeNodes && !isActiveExecutor(activeNodes, nodeName)) {
+      if (null != activeNodes && isActiveExecutor(activeNodes, nodeName)) {
+        validActiveNodes.add(nodeName);
+      }
+    }
+
+    for (NodeMultiBlockRelation nodeMultiBlockRelation : multiBlockRelations) {
+      String nodeName = nodeMultiBlockRelation.getNode();
+      //assign the block to the node only if the node is active
+      if (!validActiveNodes.isEmpty() && !validActiveNodes.contains(nodeName)) {
         continue;
       }
       // this loop will be for each NODE
@@ -1284,6 +1294,13 @@ public final class CarbonLoaderUtil {
       try {
         String hostName = InetAddress.getLocalHost().getHostName();
         isActiveNode = activeNode.contains(hostName);
+      } catch (UnknownHostException ue) {
+        isActiveNode = false;
+      }
+    } else {
+      try {
+        String hostAddress = InetAddress.getLocalHost().getHostAddress();
+        isActiveNode = activeNode.contains(hostAddress);
       } catch (UnknownHostException ue) {
         isActiveNode = false;
       }
