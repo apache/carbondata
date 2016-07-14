@@ -2,6 +2,7 @@ package org.carbondata.query.carbon.result.preparator.impl;
 
 import java.util.List;
 
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -42,21 +43,21 @@ public abstract class AbstractQueryResultPreparator<K, V> implements QueryResult
     }
   }
 
-
   protected void fillDimensionData(Object[][] convertedResult, List<QueryDimension> queryDimensions,
       int dimensionCount, Object[] row, int rowIndex) {
     QueryDimension queryDimension;
     for (int i = 0; i < dimensionCount; i++) {
       queryDimension = queryDimensions.get(i);
-      if (!CarbonUtil
-          .hasEncoding(queryDimension.getDimension().getEncoder(), Encoding.DICTIONARY)) {
+      if (!CarbonUtil.hasEncoding(queryDimension.getDimension().getEncoder(), Encoding.DICTIONARY)
+          || CarbonUtil.hasDataType(queryDimension.getDimension().getDataType(),
+          new DataType[] { DataType.ARRAY, DataType.STRUCT, DataType.MAP })) {
         row[queryDimension.getQueryOrder()] = convertedResult[i][rowIndex];
       } else if (CarbonUtil
           .hasEncoding(queryDimension.getDimension().getEncoder(), Encoding.DIRECT_DICTIONARY)) {
         DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(queryDimension.getDimension().getDataType());
-        row[queryDimension.getQueryOrder()] = directDictionaryGenerator
-            .getValueFromSurrogate((Integer) convertedResult[i][rowIndex]);
+        row[queryDimension.getQueryOrder()] =
+            directDictionaryGenerator.getValueFromSurrogate((Integer) convertedResult[i][rowIndex]);
       } else {
         if (queryExecuterProperties.sortDimIndexes[i] == 1) {
           row[queryDimension.getQueryOrder()] = DataTypeUtil.getDataBasedOnDataType(

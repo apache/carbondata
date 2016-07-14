@@ -231,6 +231,7 @@ public class SegmentProperties {
     while (index < complexDimensions.size()) {
       dimension = complexDimensions.get(index);
       dimensionOrdinalToBlockMapping.put(dimension.getOrdinal(), ++blockOrdinal);
+      blockOrdinal = fillComplexDimensionChildBlockIndex(blockOrdinal, dimension);
       index++;
     }
     fillBlockToDimensionOrdinalMapping();
@@ -251,6 +252,27 @@ public class SegmentProperties {
       }
       dimensionOrdinals.add(block.getKey());
     }
+  }
+
+  /**
+   * Below method will be used to add the complex dimension child
+   * block index.It is a recursive method which will be get the children
+   * add the block index
+   *
+   * @param blockOrdinal start block ordinal
+   * @param dimension    parent dimension
+   * @return last block index
+   */
+  private int fillComplexDimensionChildBlockIndex(int blockOrdinal, CarbonDimension dimension) {
+    for (int i = 0; i < dimension.numberOfChild(); i++) {
+      dimensionOrdinalToBlockMapping
+          .put(dimension.getListOfChildDimensions().get(i).getOrdinal(), ++blockOrdinal);
+      if (dimension.getListOfChildDimensions().get(i).numberOfChild() > 0) {
+        blockOrdinal = fillComplexDimensionChildBlockIndex(blockOrdinal,
+            dimension.getListOfChildDimensions().get(i));
+      }
+    }
+    return blockOrdinal;
   }
 
   /**
@@ -278,7 +300,7 @@ public class SegmentProperties {
       int[] columnCardinality) {
     ColumnSchema columnSchema = null;
     // ordinal will be required to read the data from file block
-    int dimensonOrdinal = -1;
+    int dimensonOrdinal = 0;
     int measureOrdinal = -1;
     // table ordinal is actually a schema ordinal this is required as
     // cardinality array
@@ -301,10 +323,11 @@ public class SegmentProperties {
     int previousColumnGroup = -1;
     // to store the ordinal of the column group ordinal
     int columnGroupOrdinal = 0;
-    for (int i = 0; i < columnsInTable.size(); i++) {
-      columnSchema = columnsInTable.get(i);
+    int counter = 0;
+    int complexTypeOrdinal = 0;
+    while (counter < columnsInTable.size()) {
+      columnSchema = columnsInTable.get(counter);
       if (columnSchema.isDimensionColumn()) {
-
         tableOrdinal++;
         // not adding the cardinality of the non dictionary
         // column as it was not the part of mdkey
@@ -315,7 +338,7 @@ public class SegmentProperties {
             // if it is a columnar dimension participated in mdkey then added
             // key ordinal and dimension ordinal
             carbonDimension =
-                new CarbonDimension(columnSchema, ++dimensonOrdinal, keyOrdinal++, -1);
+                new CarbonDimension(columnSchema, dimensonOrdinal++, keyOrdinal++, -1, -1);
           } else {
             // if not columnnar then it is a column group dimension
 
@@ -323,14 +346,14 @@ public class SegmentProperties {
             // in this case ordinal of the column group will be 0
             if (previousColumnGroup != columnSchema.getColumnGroupId()) {
               columnGroupOrdinal = 0;
-              carbonDimension = new CarbonDimension(columnSchema, ++dimensonOrdinal, keyOrdinal++,
-                  columnGroupOrdinal++);
+              carbonDimension = new CarbonDimension(columnSchema, dimensonOrdinal++, keyOrdinal++,
+                  columnGroupOrdinal++, -1);
             }
             // if previous dimension  column group id is same as current then
             // then its belongs to same row group
             else {
-              carbonDimension = new CarbonDimension(columnSchema, ++dimensonOrdinal, keyOrdinal++,
-                  columnGroupOrdinal++);
+              carbonDimension = new CarbonDimension(columnSchema, dimensonOrdinal++, keyOrdinal++,
+                  columnGroupOrdinal++, -1);
             }
             previousColumnGroup = columnSchema.getColumnGroupId();
           }
@@ -340,19 +363,34 @@ public class SegmentProperties {
         else if (isComplexDimensionStarted || CarbonUtil.hasDataType(columnSchema.getDataType(),
             new DataType[] { DataType.ARRAY, DataType.STRUCT, DataType.MAP })) {
           cardinalityIndexForComplexDimensionColumn.add(tableOrdinal);
-          carbonDimension = new CarbonDimension(columnSchema, ++dimensonOrdinal, -1, -1);
+          carbonDimension =
+              new CarbonDimension(columnSchema, dimensonOrdinal++, -1, -1, complexTypeOrdinal++);
+          carbonDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           complexDimensions.add(carbonDimension);
           isComplexDimensionStarted = true;
+          int previouseOrdinal = dimensonOrdinal;
+          dimensonOrdinal =
+              readAllComplexTypeChildrens(dimensonOrdinal, columnSchema.getNumberOfChild(),
+                  columnsInTable, carbonDimension, complexTypeOrdinal);
+          int numberOfChildrenDimensionAdded = dimensonOrdinal - previouseOrdinal;
+          for (int i = 0; i < numberOfChildrenDimensionAdded; i++) {
+            cardinalityIndexForComplexDimensionColumn.add(++tableOrdinal);
+          }
+          counter = dimensonOrdinal;
+          complexTypeOrdinal = carbonDimension.getListOfChildDimensions()
+              .get(carbonDimension.getListOfChildDimensions().size() - 1).getComplexTypeOrdinal();
+          complexTypeOrdinal++;
           continue;
         } else {
           // for no dictionary dimension
-          carbonDimension = new CarbonDimension(columnSchema, ++dimensonOrdinal, -1, -1);
+          carbonDimension = new CarbonDimension(columnSchema, dimensonOrdinal++, -1, -1, -1);
           numberOfNoDictionaryDimension++;
         }
         dimensions.add(carbonDimension);
       } else {
         measures.add(new CarbonMeasure(columnSchema, ++measureOrdinal));
       }
+      counter++;
     }
     dimColumnsCardinality = new int[cardinalityIndexForNormalDimensionColumn.size()];
     complexDimColumnCardinality = new int[cardinalityIndexForComplexDimensionColumn.size()];
@@ -368,6 +406,41 @@ public class SegmentProperties {
     for (Integer cardinalityArrayIndex : cardinalityIndexForComplexDimensionColumn) {
       complexDimColumnCardinality[index++] = columnCardinality[cardinalityArrayIndex];
     }
+  }
+
+  /**
+   * Read all primitive/complex children and set it as list of child carbon dimension to parent
+   * dimension
+   *
+   * @param dimensionOrdinal
+   * @param childCount
+   * @param listOfColumns
+   * @param parentDimension
+   * @return
+   */
+  private int readAllComplexTypeChildrens(int dimensionOrdinal, int childCount,
+      List<ColumnSchema> listOfColumns, CarbonDimension parentDimension,
+      int complexDimensionOrdianl) {
+    for (int i = 0; i < childCount; i++) {
+      ColumnSchema columnSchema = listOfColumns.get(dimensionOrdinal);
+      if (columnSchema.isDimensionColumn()) {
+        if (columnSchema.getNumberOfChild() > 0) {
+          CarbonDimension complexDimension =
+              new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1,
+                  complexDimensionOrdianl++);
+          complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
+          parentDimension.getListOfChildDimensions().add(complexDimension);
+          dimensionOrdinal =
+              readAllComplexTypeChildrens(dimensionOrdinal, columnSchema.getNumberOfChild(),
+                  listOfColumns, complexDimension, complexDimensionOrdianl);
+        } else {
+          parentDimension.getListOfChildDimensions().add(
+              new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1,
+                  complexDimensionOrdianl++));
+        }
+      }
+    }
+    return dimensionOrdinal;
   }
 
   /**
@@ -434,15 +507,18 @@ public class SegmentProperties {
       eachDimColumnValueSize[i] = dictionayDimColumnValueSize[++index];
     }
     if (complexDimensions.size() > 0) {
-      int[] complexDimesionParition = new int[complexDimensions.size()];
+      int[] complexDimesionParition = new int[complexDimColumnCardinality.length];
       // as complex dimension will be stored in column format add one
       Arrays.fill(complexDimesionParition, 1);
-      int[] complexDimensionBitLength = new int[complexDimesionParition.length];
-      // number of bits will be 64
-      Arrays.fill(complexDimensionBitLength, 64);
+      bitLength =
+          CarbonUtil.getDimensionBitLength(complexDimColumnCardinality, complexDimesionParition);
+      for (int i = 0; i < bitLength.length; i++) {
+        if (complexDimColumnCardinality[i] == 0) {
+          bitLength[i] = 64;
+        }
+      }
       ColumnarSplitter keySplitter =
-          new MultiDimKeyVarLengthVariableSplitGenerator(complexDimensionBitLength,
-              complexDimesionParition);
+          new MultiDimKeyVarLengthVariableSplitGenerator(bitLength, complexDimesionParition);
       eachComplexDimColumnValueSize = keySplitter.getBlockKeySize();
     } else {
       eachComplexDimColumnValueSize = new int[0];

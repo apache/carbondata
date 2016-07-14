@@ -43,13 +43,20 @@ public class RestructureUtil {
    * @param tableBlockDimensions
    * @return list of query dimension which is present in the table block
    */
-  public static List<QueryDimension> getUpdatedQueryDimension(
-      List<QueryDimension> queryDimensions, List<CarbonDimension> tableBlockDimensions) {
+  public static List<QueryDimension> getUpdatedQueryDimension(List<QueryDimension> queryDimensions,
+      List<CarbonDimension> tableBlockDimensions, List<CarbonDimension> tableComplexDimension) {
     List<QueryDimension> presentDimension =
         new ArrayList<QueryDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // selecting only those dimension which is present in the query
     for (QueryDimension queryDimimension : queryDimensions) {
       for (CarbonDimension tableDimension : tableBlockDimensions) {
+        if (tableDimension.equals(queryDimimension.getDimension())) {
+          presentDimension.add(queryDimimension);
+        }
+      }
+    }
+    for (QueryDimension queryDimimension : queryDimensions) {
+      for (CarbonDimension tableDimension : tableComplexDimension) {
         if (tableDimension.equals(queryDimimension.getDimension())) {
           presentDimension.add(queryDimimension);
         }

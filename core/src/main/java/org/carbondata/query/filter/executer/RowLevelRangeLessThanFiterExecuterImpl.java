@@ -45,7 +45,8 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, byte[][] filterRangeValues,
       SegmentProperties segmentProperties) {
-    super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier, segmentProperties);
+    super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier, segmentProperties,
+        null);
     this.filterRangeValues = filterRangeValues;
   }
 

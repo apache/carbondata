@@ -65,6 +65,7 @@ import org.carbondata.query.carbonfilterinterface.ExpressionType;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
 import org.carbondata.query.carbonfilterinterface.RowImpl;
 import org.carbondata.query.carbonfilterinterface.RowIntf;
+import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.evaluators.DimColumnExecuterFilterInfo;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
@@ -106,7 +107,8 @@ public final class FilterUtil {
    * @return FilterExecuter instance
    */
   private static FilterExecuter createFilterExecuterTree(
-      FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties) {
+      FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
+      Map<Integer, GenericQueryType> complexDimensionInfoMap) {
     FilterExecuterType filterExecuterType = filterExpressionResolverTree.getFilterExecuterType();
     if (null != filterExecuterType) {
       switch (filterExecuterType) {
@@ -118,12 +120,16 @@ public final class FilterUtil {
               filterExpressionResolverTree.getDimColResolvedFilterInfo(), segmentProperties);
         case OR:
           return new OrFilterExecuterImpl(
-              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties),
-              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties));
+              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties,
+                  complexDimensionInfoMap),
+              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties,
+                  complexDimensionInfoMap));
         case AND:
           return new AndFilterExecuterImpl(
-              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties),
-              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties));
+              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties,
+                  complexDimensionInfoMap),
+              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties,
+                  complexDimensionInfoMap));
         case RESTRUCTURE:
           return new RestructureFilterExecuterImpl(
               filterExpressionResolverTree.getDimColResolvedFilterInfo(),
@@ -144,7 +150,7 @@ public final class FilterUtil {
                   .getMsrColEvalutorInfoList(),
               ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
               ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
-              segmentProperties);
+              segmentProperties, complexDimensionInfoMap);
 
       }
     }
@@ -153,7 +159,7 @@ public final class FilterUtil {
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getMsrColEvalutorInfoList(),
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
-        segmentProperties);
+        segmentProperties, complexDimensionInfoMap);
 
   }
 
@@ -190,6 +196,7 @@ public final class FilterUtil {
       return new ExcludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
     }
   }
+
   /**
    * This method will check if a given expression contains a column expression
    * recursively.
@@ -613,6 +620,7 @@ public final class FilterUtil {
 
   /**
    * The method is used to get the single dictionary key's mask key
+   *
    * @param surrogate
    * @param carbonDimension
    * @param blockLevelKeyGenerator
@@ -949,8 +957,10 @@ public final class FilterUtil {
    * @return
    */
   public static FilterExecuter getFilterExecuterTree(
-      FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties) {
-    return createFilterExecuterTree(filterExpressionResolverTree, segmentProperties);
+      FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
+      Map<Integer, GenericQueryType> complexDimensionInfoMap) {
+    return createFilterExecuterTree(filterExpressionResolverTree, segmentProperties,
+        complexDimensionInfoMap);
   }
 
   /**
@@ -1296,7 +1306,7 @@ public final class FilterUtil {
    */
   public static void logError(Throwable e, boolean invalidRowsPresent) {
     if (!invalidRowsPresent) {
-      invalidRowsPresent=true;
+      invalidRowsPresent = true;
       LOGGER.error(e, CarbonCommonConstants.FILTER_INVALID_MEMBER + e.getMessage());
     }
   }

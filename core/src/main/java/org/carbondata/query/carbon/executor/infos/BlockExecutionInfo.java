@@ -30,6 +30,7 @@ import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.query.carbon.aggregator.dimension.DimensionDataAggregator;
 import org.carbondata.query.carbon.merger.ScannedResultMerger;
 import org.carbondata.query.carbon.model.CustomAggregateExpression;
+import org.carbondata.query.complex.querytypes.GenericQueryType;
 import org.carbondata.query.filter.executer.FilterExecuter;
 
 /**
@@ -219,6 +220,16 @@ public class BlockExecutionInfo {
    * whether dimensions exist in query.
    */
   private boolean isDimensionsExistInQuery;
+
+  /**
+   * complexParentIndexToQueryMap
+   */
+  private Map<Integer, GenericQueryType> complexParentIndexToQueryMap;
+
+  /**
+   * complex dimension parent block indexes;
+   */
+  private int[] complexColumnParentBlockIndexes;
 
   /**
    * @return the tableBlock
@@ -670,5 +681,34 @@ public class BlockExecutionInfo {
 
   public void setDimensionsExistInQuery(boolean dimensionsExistInQuery) {
     isDimensionsExistInQuery = dimensionsExistInQuery;
+  }
+
+  /**
+   * @return the complexParentIndexToQueryMap
+   */
+  public Map<Integer, GenericQueryType> getComlexDimensionInfoMap() {
+    return complexParentIndexToQueryMap;
+  }
+
+  /**
+   * @param complexDimensionInfoMap the complexParentIndexToQueryMap to set
+   */
+  public void setComplexDimensionInfoMap(
+      Map<Integer, GenericQueryType> complexDimensionInfoMap) {
+    this.complexParentIndexToQueryMap = complexDimensionInfoMap;
+  }
+
+  /**
+   * @return the complexColumnParentBlockIndexes
+   */
+  public int[] getComplexColumnParentBlockIndexes() {
+    return complexColumnParentBlockIndexes;
+  }
+
+  /**
+   * @param complexColumnParentBlockIndexes the complexColumnParentBlockIndexes to set
+   */
+  public void setComplexColumnParentBlockIndexes(int[] complexColumnParentBlockIndexes) {
+    this.complexColumnParentBlockIndexes = complexColumnParentBlockIndexes;
   }
 }

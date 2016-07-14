@@ -19,6 +19,7 @@
 package org.carbondata.query.carbon.result.preparator.impl;
 
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Iterator;
 import java.util.List;
@@ -26,6 +27,7 @@ import java.util.Map;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonUtil;
@@ -84,6 +86,7 @@ public class QueryResultPreparatorImpl
     int currentRow = 0;
     long[] surrogateResult = null;
     int noDictionaryColumnIndex = 0;
+    int complexTypeColumnIndex = 0;
     ByteArrayWrapper key = null;
     MeasureAggregator[] value = null;
     while (scannedResult.hasNext()) {
@@ -99,6 +102,12 @@ public class QueryResultPreparatorImpl
               new String(key.getNoDictionaryKeyByIndex(noDictionaryColumnIndex++),
                   Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),
               queryDimension.get(i).getDimension().getDataType());
+        } else if (CarbonUtil.hasDataType(queryDimension.get(i).getDimension().getDataType(),
+            new DataType[] { DataType.ARRAY, DataType.STRUCT, DataType.MAP })) {
+          resultData[currentRow][i] = queryExecuterProperties.complexDimensionInfoMap
+              .get(queryDimension.get(i).getDimension().getOrdinal())
+              .getDataBasedOnDataTypeFromSurrogates(
+                  ByteBuffer.wrap(key.getComplexTypeByIndex(complexTypeColumnIndex++)));
         } else {
           resultData[currentRow][i] =
               (int) surrogateResult[queryDimension.get(i).getDimension().getKeyOrdinal()];
@@ -124,6 +133,7 @@ public class QueryResultPreparatorImpl
       }
       currentRow++;
       noDictionaryColumnIndex = 0;
+      complexTypeColumnIndex = 0;
     }
     if (resultData.length > 0) {
       resultData = encodeToRows(resultData);
@@ -225,8 +235,8 @@ public class QueryResultPreparatorImpl
           countAggregator.setNewValue(value);
           v[index++] = countAggregator;
         } else {
-          if (surrogateResult[dimensionCount
-              + rowIndex][columnIndex] instanceof DistinctCountAggregator) {
+          if (surrogateResult[dimensionCount + rowIndex][columnIndex]
+              instanceof DistinctCountAggregator) {
 
             Iterator<Integer> iterator =
                 ((DistinctCountAggregator) surrogateResult[dimensionCount + rowIndex][columnIndex])

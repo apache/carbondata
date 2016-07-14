@@ -18,11 +18,13 @@
  */
 package org.carbondata.query.carbon.result.preparator.impl;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonUtil;
@@ -76,6 +78,7 @@ public class DetailQueryResultPreparatorImpl
     int currentRow = 0;
     long[] surrogateResult = null;
     int noDictionaryColumnIndex = 0;
+    int complexTypeColumnIndex = 0;
     ByteArrayWrapper key = null;
     Object[] value = null;
     while (scannedResult.hasNext()) {
@@ -92,6 +95,12 @@ public class DetailQueryResultPreparatorImpl
                 new String(key.getNoDictionaryKeyByIndex(noDictionaryColumnIndex++),
                     Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),
                 queryDimension.get(i).getDimension().getDataType());
+          } else if (CarbonUtil.hasDataType(queryDimension.get(i).getDimension().getDataType(),
+              new DataType[] { DataType.ARRAY, DataType.STRUCT, DataType.MAP })) {
+            resultData[currentRow][i] = queryExecuterProperties.complexDimensionInfoMap
+                .get(queryDimension.get(i).getDimension().getOrdinal())
+                .getDataBasedOnDataTypeFromSurrogates(
+                    ByteBuffer.wrap(key.getComplexTypeByIndex(complexTypeColumnIndex++)));
           } else {
             resultData[currentRow][i] =
                 (int) surrogateResult[queryDimension.get(i).getDimension().getKeyOrdinal()];
@@ -104,6 +113,7 @@ public class DetailQueryResultPreparatorImpl
       }
       currentRow++;
       noDictionaryColumnIndex = 0;
+      complexTypeColumnIndex = 0;
     }
     if (resultData.length > 0) {
       resultData = encodeToRows(resultData);

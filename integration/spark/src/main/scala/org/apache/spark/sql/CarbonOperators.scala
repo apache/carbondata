@@ -83,6 +83,7 @@ case class CarbonTableScan(
           m1.setQueryOrder(queryOrder)
           plan.addMeasure(m1)
         } else {
+          checkIfComplexDimension(attr.name)
           val dims = selectedDims.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
           if (dims.nonEmpty) {
             val d1 = new QueryDimension(attr.name)
@@ -101,6 +102,7 @@ case class CarbonTableScan(
           m1.setQueryOrder(queryOrder)
           plan.addMeasure(m1)
         } else {
+          checkIfComplexDimension(attr.name)
           val dims = selectedDims.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
           if (dims.nonEmpty) {
             val d1 = new QueryDimension(attr.name)
@@ -138,6 +140,7 @@ case class CarbonTableScan(
           m1.setQueryOrder(queryOrder)
           plan.addMeasure(m1)
         } else {
+          checkIfComplexDimension(attr.name)
           val dims = selectedDims.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
           if (dims.nonEmpty) {
             val d1 = new QueryDimension(attr.name)
@@ -156,6 +159,7 @@ case class CarbonTableScan(
           m1.setQueryOrder(queryOrder)
           plan.addMeasure(m1)
         } else {
+          checkIfComplexDimension(attr.name)
           val dims = selectedDims.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
           if (dims.nonEmpty) {
             val d1 = new QueryDimension(attr.name)
@@ -174,6 +178,7 @@ case class CarbonTableScan(
           m1.setQueryOrder(queryOrder)
           plan.addMeasure(m1)
         } else {
+          checkIfComplexDimension(attr.name)
           val dims = selectedDims.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
           if (dims != null) {
             val d1 = new QueryDimension(attr.name)
@@ -192,6 +197,7 @@ case class CarbonTableScan(
           m1.setQueryOrder(queryOrder)
           plan.addMeasure(m1)
         } else {
+          checkIfComplexDimension(attr.name)
           val dims = selectedDims.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
           if (dims.nonEmpty) {
             val d1 = new QueryDimension(attr.name)
@@ -213,6 +219,7 @@ case class CarbonTableScan(
           val dims = selectedDims.filter(m => m.getColumnName.equalsIgnoreCase(attr.name))
           if (dims != null) {
             //            plan.removeDimensionFromDimList(dims(0));
+            checkIfComplexDimension(attr.name)
             val d1 = new QueryDimension(attr.name)
             d1.setQueryOrder(queryOrder)
             plan.addAggDimAggInfo(d1.getColumnName, "sum-distinct", queryOrder)
@@ -226,6 +233,15 @@ case class CarbonTableScan(
     }
   }
 
+  private def checkIfComplexDimension(columnName: String) = {
+    val carbonDimension = carbonTable.getDimensionByName(columnName, carbonTable.getFactTableName)
+    if (carbonDimension.getNumberOfChild > 0) {
+      throw new
+          Exception(
+            " Aggregate functions cannot be pushed for complex dimensions, force to detailequery"
+          )
+    }
+  }
   val buildCarbonPlan: CarbonQueryPlan = {
     val plan: CarbonQueryPlan = new CarbonQueryPlan(relation.schemaName, relation.cubeName)
 

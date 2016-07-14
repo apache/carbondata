@@ -18,19 +18,28 @@
  */
 package org.carbondata.query.carbon.result;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Map;
 
+import org.carbondata.common.logging.LogService;
+import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
 import org.carbondata.query.carbon.executor.infos.KeyStructureInfo;
+import org.carbondata.query.complex.querytypes.GenericQueryType;
 
 /**
  * Scanned result class which will store and provide the result on request
  */
 public abstract class AbstractScannedResult {
 
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(AbstractScannedResult.class.getName());
   /**
    * current row number
    */
@@ -79,11 +88,23 @@ public abstract class AbstractScannedResult {
    */
   private Map<Integer, KeyStructureInfo> columnGroupKeyStructureInfo;
 
+  /**
+   *
+   */
+  private Map<Integer, GenericQueryType> complexParentIndexToQueryMap;
+
+  /**
+   * parent block indexes
+   */
+  private int[] complexParentBlockIndexes;
+
   public AbstractScannedResult(BlockExecutionInfo blockExecutionInfo) {
     this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
     this.noDictionaryColumnBlockIndexes = blockExecutionInfo.getNoDictionaryBlockIndexes();
     this.dictionaryColumnBlockIndexes = blockExecutionInfo.getDictionaryColumnBlockIndex();
     this.columnGroupKeyStructureInfo = blockExecutionInfo.getColumnGroupToKeyStructureInfo();
+    this.complexParentIndexToQueryMap = blockExecutionInfo.getComlexDimensionInfoMap();
+    this.complexParentBlockIndexes = blockExecutionInfo.getComplexColumnParentBlockIndexes();
   }
 
   /**
@@ -179,7 +200,23 @@ public abstract class AbstractScannedResult {
    * @return complex type key array for all the complex dimension selected in query
    */
   protected byte[][] getComplexTypeKeyArray(int rowId) {
-    return new byte[0][];
+    byte[][] complexTypeData = new byte[complexParentBlockIndexes.length][];
+    for (int i = 0; i < complexTypeData.length; i++) {
+      GenericQueryType genericQueryType =
+          complexParentIndexToQueryMap.get(complexParentBlockIndexes[i]);
+      ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+      DataOutputStream dataOutput = new DataOutputStream(byteStream);
+      try {
+        genericQueryType.parseBlocksAndReturnComplexColumnByteArray(dataChunks, rowId, dataOutput);
+        complexTypeData[i] = byteStream.toByteArray();
+      } catch (IOException e) {
+        LOGGER.error(e);
+      } finally {
+        CarbonUtil.closeStreams(dataOutput);
+        CarbonUtil.closeStreams(byteStream);
+      }
+    }
+    return complexTypeData;
   }
 
   /**

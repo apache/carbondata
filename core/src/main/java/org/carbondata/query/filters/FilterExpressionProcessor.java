@@ -119,11 +119,11 @@ public class FilterExpressionProcessor implements FilterProcessor {
     LOGGER.info("Successfully retrieved the start and end key");
     long startTimeInMillis = System.currentTimeMillis();
     DataRefNodeFinder blockFinder = new BTreeDataRefNodeFinder(
-        tableSegment.getSegmentProperties().getDimensionColumnsValueSize());
+        tableSegment.getSegmentProperties().getEachDimColumnValueSize());
     DataRefNode startBlock = blockFinder.findFirstDataBlock(btreeNode, searchStartKey);
     DataRefNode endBlock = blockFinder.findLastDataBlock(btreeNode, searchEndKey);
     FilterExecuter filterExecuter =
-        FilterUtil.getFilterExecuterTree(filterResolver, tableSegment.getSegmentProperties());
+        FilterUtil.getFilterExecuterTree(filterResolver, tableSegment.getSegmentProperties(),null);
     while (startBlock != endBlock) {
       addBlockBasedOnMinMaxValue(filterExecuter, listOfDataBlocksToScan, startBlock,
           tableSegment.getSegmentProperties());

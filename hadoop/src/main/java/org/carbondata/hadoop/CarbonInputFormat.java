@@ -515,8 +515,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       IndexKey endIndexKey = FilterUtil.prepareDefaultEndIndexKey(segmentProperties);
 
       // Add all blocks of btree into result
-      DataRefNodeFinder blockFinder =
-          new BTreeDataRefNodeFinder(segmentProperties.getDimensionColumnsValueSize());
+      DataRefNodeFinder blockFinder = new BTreeDataRefNodeFinder(
+          segmentProperties.getEachDimColumnValueSize());
       DataRefNode startBlock =
           blockFinder.findFirstDataBlock(abstractIndex.getDataRefNode(), startIndexKey);
       DataRefNode endBlock =
