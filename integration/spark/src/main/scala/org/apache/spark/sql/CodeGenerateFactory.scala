@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql
 
+import org.apache.spark.SparkContext
+import org.apache.spark.sql.catalyst.CatalystConf
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.{Expand, LogicalPlan}
 import org.apache.spark.util.{ScalaCompilerUtil, Utils}
@@ -50,6 +52,20 @@ class CodeGenerateFactory(version: String) {
     }
   }
 
+  def createDefaultOptimizer(conf: CatalystConf, sc: SparkContext): Optimizer = {
+    val name = "org.apache.spark.sql.catalyst.optimizer.DefaultOptimizer"
+    val loader = Utils.getContextOrSparkClassLoader
+    try {
+      val cons = loader.loadClass(name + "$").getDeclaredConstructors
+      cons.head.setAccessible(true)
+      cons.head.newInstance().asInstanceOf[Optimizer]
+    } catch {
+      case e: Exception =>
+        loader.loadClass(name).getConstructor(classOf[CatalystConf])
+          .newInstance(conf).asInstanceOf[Optimizer]
+    }
+  }
+
 }
 
 object CodeGenerateFactory {
@@ -63,6 +79,11 @@ object CodeGenerateFactory {
   }
 
   def getInstance(): CodeGenerateFactory = {
+    codeGenerateFactory
+  }
+
+  def getInstance(version: String): CodeGenerateFactory = {
+    init(version)
     codeGenerateFactory
   }
 

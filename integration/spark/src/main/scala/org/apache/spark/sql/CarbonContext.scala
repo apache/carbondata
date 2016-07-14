@@ -74,7 +74,7 @@ class CarbonContext(
   @transient
   override protected[sql] lazy val optimizer: Optimizer =
     CarbonOptimizer.optimizer(
-      CarbonContext.createDefaultOptimizer(conf, sc),
+      CodeGenerateFactory.getInstance(sc.version).createDefaultOptimizer(conf, sc),
       conf.asInstanceOf[CarbonSQLConf],
       sc.version)
 
@@ -197,17 +197,4 @@ object CarbonContext {
     cache(sc) = cc
   }
 
-  def createDefaultOptimizer(conf: CatalystConf, sc: SparkContext): Optimizer = {
-    val name = "org.apache.spark.sql.catalyst.optimizer.DefaultOptimizer"
-    val loader = Utils.getContextOrSparkClassLoader
-    try {
-      val cons = loader.loadClass(name + "$").getDeclaredConstructors
-      cons.head.setAccessible(true)
-      cons.head.newInstance().asInstanceOf[Optimizer]
-    } catch {
-      case e: Exception =>
-        loader.loadClass(name).getConstructor(classOf[CatalystConf])
-          .newInstance(conf).asInstanceOf[Optimizer]
-    }
-  }
 }
