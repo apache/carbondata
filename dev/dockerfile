@@ -1,0 +1,9 @@
+FROM sequenceiq/spark:1.6.0
+MAINTAINER QiangCai
+
+RUN mkdir ${SPARK_HOME}/carbondata
+ADD carbondata.jar ${SPARK_HOME}/lib
+COPY carbonplugins ${SPARK_HOME}/carbondata/carbonplugins
+ADD data.csv ${SPARK_HOME}/carbondata
+RUN chmod 755 ${SPARK_HOME}/carbondata/data.csv
+Run chmod 755 -R ${SPARK_HOME}/carbondata/carbonplugins
