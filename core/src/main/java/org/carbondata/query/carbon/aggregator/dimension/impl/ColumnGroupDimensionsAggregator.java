@@ -21,12 +21,15 @@ package org.carbondata.query.carbon.aggregator.dimension.impl;
 import java.util.List;
 
 import org.carbondata.core.cache.dictionary.Dictionary;
+import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.query.aggregator.MeasureAggregator;
 import org.carbondata.query.carbon.aggregator.dimension.DimensionDataAggregator;
 import org.carbondata.query.carbon.model.DimensionAggregatorInfo;
 import org.carbondata.query.carbon.result.AbstractScannedResult;
 import org.carbondata.query.carbon.util.DataTypeUtil;
+
+import org.apache.spark.sql.types.Decimal;
 
 /**
  * This class will be used to aggregate row group dimension This class will
@@ -99,6 +102,9 @@ public class ColumnGroupDimensionsAggregator implements DimensionDataAggregator 
               dimensionAggeragtorInfo.get(i).getDim().getDataType());
       if (null == actualData) {
         continue;
+      }
+      if(DataType.DECIMAL == dimensionAggeragtorInfo.get(i).getDim().getDataType()) {
+        actualData = ((Decimal) actualData).toJavaBigDecimal();
       }
       for (int j = 0; j < dimensionAggeragtorInfo.get(i).getAggList().size(); j++) {
         aggeragtor[aggStartIndex++].agg(actualData);

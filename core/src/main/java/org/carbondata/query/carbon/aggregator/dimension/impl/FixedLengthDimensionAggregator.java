@@ -31,6 +31,8 @@ import org.carbondata.query.carbon.model.DimensionAggregatorInfo;
 import org.carbondata.query.carbon.result.AbstractScannedResult;
 import org.carbondata.query.carbon.util.DataTypeUtil;
 
+import org.apache.spark.sql.types.Decimal;
+
 /**
  * Class which will be used to aggregate the fixed length dimension data
  */
@@ -106,6 +108,9 @@ public class FixedLengthDimensionAggregator implements DimensionDataAggregator {
     // if data is null then no need to aggregate
     if (null == dataBasedOnDataType) {
       return;
+    }
+    if(DataType.DECIMAL == dimensionAggeragtorInfo.getDim().getDataType()) {
+      dataBasedOnDataType = ((Decimal) dataBasedOnDataType).toJavaBigDecimal();
     }
     if (actualTypeAggregatorIndex.length > 0) {
       for (int j = 0; j < actualTypeAggregatorIndex.length; j++) {
