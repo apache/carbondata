@@ -44,11 +44,10 @@ object CarbonExample {
            """)
 
     cc.sql("""
-             SELECT country,name,salary,ROW_NUMBER() OVER
-             (PARTITION BY country ORDER BY salary DESC) as rank FROM t3
-           """).show()
-    cc.sql("""
-             SELECT ID, country, salary, SUM(salary) OVER (PARTITION BY country ) AS TopBorcT FROM t3 ORDER BY country
+           SELECT country, count(salary) AS amount
+           FROM t3
+           WHERE country IN ('china','france')
+           GROUP BY country
            """).show()
 
     cc.sql("DROP TABLE IF EXISTS t3")
