@@ -41,7 +41,7 @@ class CarbonSparkILoop extends SparkILoop {
          @transient val cc = {
            val _cc = {
              import java.io.File
-             val store = new File("../carbonshellstore")
+             val store = new File("./carbonshellstore")
              store.mkdirs()
              val storePath = sc.getConf.getOption("spark.carbon.storepath")
                   .getOrElse(store.getCanonicalPath)

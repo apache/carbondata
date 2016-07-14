@@ -63,7 +63,7 @@ object CarbonSQLCLIDriver extends Logging {
 
       sparkContext = new SparkContext(sparkConf)
       sparkContext.addSparkListener(new StatsReportListener())
-      val store = new File("../carbonsqlclistore")
+      val store = new File("./carbonsqlclistore")
       store.mkdirs()
       hiveContext = new CarbonContext(sparkContext,
         maybeStorePath.getOrElse(store.getCanonicalPath),
