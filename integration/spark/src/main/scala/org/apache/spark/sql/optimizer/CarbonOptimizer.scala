@@ -55,8 +55,8 @@ object CarbonOptimizer {
   // get the carbon relation from plan.
   def collectCarbonRelation(plan: LogicalPlan): Seq[CarbonDecoderRelation] = {
     plan collect {
-      case l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _) =>
-        CarbonDecoderRelation(l.attributeMap, carbonRelation)
+      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
+        CarbonDecoderRelation(l.attributeMap, l.relation.asInstanceOf[CarbonDatasourceRelation])
     }
   }
 }
@@ -289,7 +289,7 @@ class ResolveCarbonFunctions(
             Project(p.projectList, child)
           }
 
-        case l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _) =>
+        case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
           if (!decoder) {
             decoder = true
             CarbonDictionaryTempDecoder(new util.HashSet[Attribute](),
@@ -370,7 +370,7 @@ class ResolveCarbonFunctions(
           }
         }.asInstanceOf[Seq[NamedExpression]]
         Project(prExps, p.child)
-      case l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _) =>
+      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
         allAttrsNotDecode = marker.revokeJoin()
         l
       case others => others
