@@ -304,8 +304,9 @@ public class StoreCreator {
         		  columnIdentifier, dims.get(i).getDataType()));
       CarbonDictionarySortInfoPreparator preparator =
           new CarbonDictionarySortInfoPreparator();
+      List<String> newDistinctValues = new ArrayList<String>();
       CarbonDictionarySortInfo dictionarySortInfo =
-          preparator.getDictionarySortInfo(dict, dims.get(i).getDataType());
+          preparator.getDictionarySortInfo(newDistinctValues, dict, dims.get(i).getDataType());
       CarbonDictionarySortIndexWriter carbonDictionaryWriter =
           new CarbonDictionarySortIndexWriterImpl(
               absoluteTableIdentifier.getCarbonTableIdentifier(), columnIdentifier,

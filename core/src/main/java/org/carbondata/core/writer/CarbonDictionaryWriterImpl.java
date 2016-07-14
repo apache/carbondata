@@ -203,8 +203,6 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
       writeDictionaryFile();
       // close the thrift writer for dictionary file
       closeThriftWriter();
-      this.chunk_end_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
-      writeDictionaryMetadataFile();
     }
   }
 
@@ -409,5 +407,12 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   protected CarbonDictionaryMetadataReader getDictionaryMetadataReader() {
     return new CarbonDictionaryMetadataReaderImpl(hdfsStorePath, carbonTableIdentifier,
         columnIdentifier);
+  }
+
+  @Override public void commit() throws IOException {
+    if (null != dictionaryThriftWriter) {
+      this.chunk_end_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
+      writeDictionaryMetadataFile();
+    }
   }
 }

@@ -1019,10 +1019,18 @@ private[sql] case class LoadTable(
       LOGGER.audit("Data loading failed. table not found: " + dbName + "." + tableName)
       sys.error("Data loading failed. table not found: " + dbName + "." + tableName)
     }
+
+    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
+        .lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
+    if (relation == null) {
+        sys.error(s"Table $dbName.$tableName does not exist")
+    }
     CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
-    val carbonLock = CarbonLockFactory.getCarbonLockObj(org.carbondata.core.
-      carbon.metadata.CarbonMetadata.getInstance().getCarbonTable(dbName + "_" + tableName).
-      getMetaDataFilepath, LockUsage.METADATA_LOCK)
+    val carbonLock = CarbonLockFactory
+      .getCarbonLockObj(relation.cubeMeta.carbonTable.getAbsoluteTableIdentifier
+        .getCarbonTableIdentifier,
+        LockUsage.METADATA_LOCK
+      )
     try {
       if (carbonLock.lockWithRetries()) {
         logInfo("Successfully able to get the table metadata file lock")
@@ -1032,11 +1040,6 @@ private[sql] case class LoadTable(
       }
 
       val factPath = FileUtils.getPaths(CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser))
-      val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
-        .lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
-      if (relation == null) {
-        sys.error(s"Table $dbName.$tableName does not exist")
-      }
       val carbonLoadModel = new CarbonLoadModel()
       carbonLoadModel.setTableName(relation.cubeMeta.carbonTableIdentifier.getTableName)
       carbonLoadModel.setDatabaseName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
@@ -1247,7 +1250,9 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, schemaNameOp: Opt
     } else {
       CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
       val carbonLock = CarbonLockFactory
-        .getCarbonLockObj(tmpTable .getMetaDataFilepath, LockUsage.METADATA_LOCK)
+        .getCarbonLockObj(tmpTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+          LockUsage.METADATA_LOCK
+        )
       try {
         if (carbonLock.lockWithRetries()) {
           logInfo("Successfully able to get the table metadata file lock")
