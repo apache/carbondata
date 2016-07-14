@@ -247,7 +247,7 @@ class CarbonMergerRDD[K, V](
       + ", no.of.nodes where data present=" + nodeMapping.size())
     var nodes = DistributionUtil.getNodeList(sparkContext)
     var maxTimes = 30
-    while (nodes.length != requiredExecutors && maxTimes > 0) {
+    while (nodes.length < requiredExecutors && maxTimes > 0) {
       Thread.sleep(500)
       nodes = DistributionUtil.getNodeList(sparkContext)
       maxTimes = maxTimes - 1
