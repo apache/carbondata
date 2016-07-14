@@ -29,19 +29,17 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.LeafNode
 import org.apache.spark.sql.hive.CarbonMetastoreCatalog
+import org.apache.spark.sql.types._
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.{AbsoluteTableIdentifier}
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.hadoop.CarbonInputFormat
 import org.carbondata.query.aggregator.impl.CountAggregator
-import org.carbondata.query.carbon.model.{CarbonQueryPlan, QueryDimension, QueryMeasure, QueryModel, SortOrderType}
+import org.carbondata.query.carbon.model._
 import org.carbondata.query.carbon.result.RowResult
-import org.carbondata.query.expression.{ColumnExpression => CarbonColumnExpression}
-import org.carbondata.query.expression.{Expression => CarbonExpression}
-import org.carbondata.query.expression.{LiteralExpression => CarbonLiteralExpression}
+import org.carbondata.query.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
 import org.carbondata.query.expression.arithmetic.{AddExpression, DivideExpression, MultiplyExpression, SubstractExpression}
 import org.carbondata.query.expression.conditional._
 import org.carbondata.query.expression.logical.{AndExpression, OrExpression}
@@ -398,63 +396,108 @@ case class CarbonTableScan(
     }
   }
 
+
+  def isCarbonSupportedDataTypes(expr: Expression): Boolean = {
+    expr.dataType match {
+      case StringType => true
+      case IntegerType => true
+      case LongType => true
+      case DoubleType => true
+      case FloatType => true
+      case BooleanType => true
+      case TimestampType => true
+      case ArrayType(_, _) => true
+      case StructType(_) => true
+      case DecimalType() => true
+      case _ => false
+    }
+  }
+
   def transformExpression(expr: Expression): CarbonExpression = {
     expr match {
-      case Or(left, right) => new
+      case Or(left, right)
+        if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) => new
           OrExpression(transformExpression(left), transformExpression(right))
-      case And(left, right) => new
+      case And(left, right)
+        if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) => new
           AndExpression(transformExpression(left), transformExpression(right))
-      case EqualTo(left, right) => new
+      case EqualTo(left, right)
+        if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) => new
           EqualToExpression(transformExpression(left), transformExpression(right))
-      case Not(EqualTo(left, right)) => new
+      case Not(EqualTo(left, right))
+        if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) => new
           NotEqualsExpression(transformExpression(left), transformExpression(right))
-      case IsNotNull(child) => new
+      case IsNotNull(child)
+        if (isCarbonSupportedDataTypes(child)) => new
           NotEqualsExpression(transformExpression(child), transformExpression(Literal(null)))
-      case Not(In(left, right)) => new NotInExpression(transformExpression(left),
-        new ListExpression(right.map(transformExpression).asJava))
-      case In(left, right) => new InExpression(transformExpression(left),
-        new ListExpression(right.map(transformExpression).asJava))
-      case Add(left, right) => new
+      case Not(In(left, right))
+        if (isCarbonSupportedDataTypes(left)) => new
+          NotInExpression(transformExpression(left),
+            new ListExpression(right.map(transformExpression).asJava)
+          )
+      case In(left, right)
+        if (isCarbonSupportedDataTypes(left)) => new
+          InExpression(transformExpression(left),
+            new ListExpression(right.map(transformExpression).asJava)
+          )
+      case Add(left, right)
+        if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) => new
           AddExpression(transformExpression(left), transformExpression(right))
-      case Subtract(left, right) => new
+      case Subtract(left, right)
+        if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) => new
           SubstractExpression(transformExpression(left), transformExpression(right))
-      case Multiply(left, right) => new
+      case Multiply(left, right)
+        if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) => new
           MultiplyExpression(transformExpression(left), transformExpression(right))
-      case Divide(left, right) => new
+      case Divide(left, right)
+        if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) => new
           DivideExpression(transformExpression(left), transformExpression(right))
-      case GreaterThan(left, right) => new
+      case GreaterThan(left, right)
+        if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) => new
           GreaterThanExpression(transformExpression(left), transformExpression(right))
-      case LessThan(left, right) => new
+      case LessThan(left, right)
+        if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) => new
           LessThanExpression(transformExpression(left), transformExpression(right))
-      case GreaterThanOrEqual(left, right) => new
+      case GreaterThanOrEqual(left, right)
+        if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) => new
           GreaterThanEqualToExpression(transformExpression(left), transformExpression(right))
-      case LessThanOrEqual(left, right) => new
+      case LessThanOrEqual(left, right)
+        if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) => new
           LessThanEqualToExpression(transformExpression(left), transformExpression(right))
       // convert StartWith('abc') or like(col 'abc%') to col >= 'abc' and col < 'abd'
-      case StartsWith(left, right @ Literal(pattern, dataType)) if pattern.toString.nonEmpty =>
+      case StartsWith(left, right@Literal(pattern, dataType))
+        if (pattern.toString.size > 0 &&
+          isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) =>
         val l = new GreaterThanEqualToExpression(
-          transformExpression(left), transformExpression(right))
+          transformExpression(left), transformExpression(right)
+        )
         val value = pattern.toString
         val maxValueLimit = value.substring(0, value.length - 1) +
           (value.charAt(value.length - 1).toInt + 1).toChar
         val r = new LessThanExpression(
           transformExpression(left),
-            new CarbonLiteralExpression(maxValueLimit,
-              CarbonScalaUtil.convertSparkToCarbonDataType(dataType)))
+          new CarbonLiteralExpression(maxValueLimit,
+            CarbonScalaUtil.convertSparkToCarbonDataType(dataType)
+          )
+        )
         new AndExpression(l, r)
       case AttributeReference(name, dataType, _, _) => new CarbonColumnExpression(name.toString,
-        CarbonScalaUtil.convertSparkToCarbonDataType(dataType))
+        CarbonScalaUtil.convertSparkToCarbonDataType(dataType)
+      )
       case Literal(name, dataType) => new
           CarbonLiteralExpression(name, CarbonScalaUtil.convertSparkToCarbonDataType(dataType))
-      case Cast(left, right) if !left.isInstanceOf[Literal] => transformExpression(left)
+      // case Cast(left, right) if !left.isInstanceOf[Literal] => transformExpression(left)
       case aggExpr: AggregateExpression =>
-          throw new UnsupportedOperationException(s"Cannot evaluate expression: $aggExpr")
+        throw new UnsupportedOperationException(s"Cannot evaluate expression: $aggExpr")
       case _ =>
         new SparkUnknownExpression(expr.transform {
           case AttributeReference(name, dataType, _, _) =>
             CarbonBoundReference(new CarbonColumnExpression(name.toString,
-              CarbonScalaUtil.convertSparkToCarbonDataType(dataType)), dataType, expr.nullable)
-        })
+              CarbonScalaUtil.convertSparkToCarbonDataType(dataType)
+            ), dataType, expr.nullable
+            )
+        }
+        )
     }
   }
 
