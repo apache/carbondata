@@ -161,7 +161,7 @@ public final class DataTypeUtil {
         case LONG:
         case DOUBLE:
         case DECIMAL:
-          if (!NumberUtils.isDigits(data)) {
+          if (!NumberUtils.isNumber(data)) {
             return null;
           }
           return data;
