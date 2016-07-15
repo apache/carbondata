@@ -36,7 +36,7 @@ This command can be used to create carbon table by specifying the list of fields
        STORED BY 'org.apache.carbondata.format' 
        TBLPROPERTIES ('COLUMN_GROUPS'='(productName,productCategory)',
                      'DICTIONARY_EXCLUDE'='productName',
-                     'DICTIONARY_INCLUDE'='productNumber'
+                     'DICTIONARY_INCLUDE'='productNumber',
                      'NO_INVERTED_INDEX'='productBatch')
   ```
 
