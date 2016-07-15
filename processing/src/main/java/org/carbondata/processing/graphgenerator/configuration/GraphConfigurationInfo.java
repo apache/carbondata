@@ -190,6 +190,8 @@ public class GraphConfigurationInfo {
 
   private Boolean[] isNoDictionaryDimMapping;
 
+  private Boolean[] isUseInvertedIndex;
+
   private String columnPropertiesString;
 
   /**
@@ -206,6 +208,20 @@ public class GraphConfigurationInfo {
    */
   private String columnGroupsString;
   private String columnsDataTypeString;
+  /**
+   * @return isUseInvertedIndex
+   */
+  public Boolean[] getIsUseInvertedIndex() {
+    return isUseInvertedIndex;
+  }
+
+  /**
+   * @param isUseInvertedIndex the bool array whether use inverted index to set
+   */
+  public void setIsUseInvertedIndex(Boolean[] isUseInvertedIndex) {
+    this.isUseInvertedIndex = isUseInvertedIndex;
+  }
+
   /**
    * @return the connectionName
    */

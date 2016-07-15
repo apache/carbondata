@@ -80,6 +80,10 @@ public class CarbonFactDataHandlerModel {
    */
   private boolean isUpdateMemberRequest;
   /**
+   * flag to check whether use inverted index
+   */
+  private boolean[] isUseInvertedIndex;
+  /**
    * dimension cardinality
    */
   private int[] dimLens;
@@ -348,6 +352,13 @@ public class CarbonFactDataHandlerModel {
     isCompactionFlow = compactionFlow;
   }
 
+  public boolean[] getIsUseInvertedIndex() {
+    return isUseInvertedIndex;
+  }
+
+  public void setIsUseInvertedIndex(boolean[] isUseInvertedIndex) {
+    this.isUseInvertedIndex = isUseInvertedIndex;
+  }
   /**
    *
    * @return segmentProperties
