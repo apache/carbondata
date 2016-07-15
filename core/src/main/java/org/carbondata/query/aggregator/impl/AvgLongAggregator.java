@@ -89,10 +89,16 @@ public class AvgLongAggregator extends AbstractMeasureAggregatorBasic {
     return buffer.array();
   }
 
-  @Override public Long getLongValue() {
-    return aggVal / (long) count;
-  }
+  /**
+   * Return the average of the aggregate values
+   *
+   * @return average aggregate value
+   */
 
+  // using double type when calculate avg, to avoid lost precision
+  @Override public Double getDoubleValue() {
+    return aggVal / count;
+  }
   /**
    * This method merge the aggregated value, in average aggregator it will add
    * count and aggregate value
@@ -147,8 +153,8 @@ public class AvgLongAggregator extends AbstractMeasureAggregatorBasic {
   }
 
   @Override public int compareTo(MeasureAggregator o) {
-    long val = getLongValue();
-    long otherVal = o.getLongValue();
+    double val = getDoubleValue();
+    double otherVal = o.getDoubleValue();
     if (val > otherVal) {
       return 1;
     } else if (val < otherVal) {
@@ -163,11 +169,11 @@ public class AvgLongAggregator extends AbstractMeasureAggregatorBasic {
       return false;
     }
     AvgLongAggregator o = (AvgLongAggregator)obj;
-    return getLongValue().equals(o.getLongValue());
+    return getDoubleValue().equals(o.getDoubleValue());
   }
 
   @Override public int hashCode() {
-    return getLongValue().hashCode();
+    return getDoubleValue().hashCode();
   }
 
   @Override public void merge(byte[] value) {

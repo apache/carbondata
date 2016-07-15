@@ -368,7 +368,7 @@ case class AverageFunctionCarbon(expr: Expression, base: AggregateExpression1, f
           case avg: AvgBigDecimalAggregator =>
             Cast(Literal(avg.getBigDecimalValue), base.dataType).eval(null)
           case avg: AvgLongAggregator =>
-            Cast(Literal(avg.getLongValue), base.dataType).eval(null)
+            Cast(Literal(avg.getDoubleValue), base.dataType).eval(null)
           case avg: AvgTimestampAggregator =>
             Cast(Literal(avg.getDoubleValue), base.dataType).eval(null)
           case _ =>
