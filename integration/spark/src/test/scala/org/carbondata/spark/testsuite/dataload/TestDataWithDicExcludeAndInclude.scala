@@ -39,6 +39,10 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
     filePath = pwd + "/src/test/resources/emptyDimensionData.csv"
   }
 
+  def dropTable() = {
+    sql("DROP TABLE IF EXISTS t3")
+  }
+
   def buildTable() = {
     try {
       sql(
@@ -69,6 +73,7 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
   }
 
   override def beforeAll {
+    dropTable
     buildTestData
     buildTable
     loadTable
@@ -83,7 +88,7 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
   }
 
   override def afterAll {
-    sql("drop table t3")
+    dropTable
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }

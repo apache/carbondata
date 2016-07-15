@@ -293,6 +293,25 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t3")
   }
 
+  test("test data which contain column less than schema"){
+    sql("DROP TABLE IF EXISTS t3")
+
+    sql(
+      """
+           CREATE TABLE IF NOT EXISTS t3
+           (ID Int, date Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int)
+           STORED BY 'org.apache.carbondata.format'
+      """)
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    sql(s"""
+         LOAD DATA LOCAL INPATH './src/test/resources/lessthandatacolumndata.csv' into table t3
+        """)
+    checkAnswer(sql("select count(*) from t3"),Seq(Row(10)))
+  }
+
   override def afterAll {
     sql("drop table carbontable")
     sql("drop table hivetable")
