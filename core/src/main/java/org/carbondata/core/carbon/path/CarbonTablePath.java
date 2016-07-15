@@ -305,33 +305,51 @@ public class CarbonTablePath extends Path {
      * gets updated timestamp information from given carbon data file name
      */
     public static String getUpdateTimeStamp(String carbonDataFileName) {
+      // Get the filename from file path
+      String fileName = getFileName(carbonDataFileName);
       // + 1 for size of "-"
-      int firstDashPos = carbonDataFileName.indexOf("-");
-      int secondDashPos = carbonDataFileName.indexOf("-", firstDashPos + 1);
-      int startIndex = carbonDataFileName.indexOf("-", secondDashPos + 1) + 1;
-      int endIndex = carbonDataFileName.indexOf(".");
-      return carbonDataFileName.substring(startIndex, endIndex);
+      int firstDashPos = fileName.indexOf("-");
+      int secondDashPos = fileName.indexOf("-", firstDashPos + 1);
+      int startIndex = fileName.indexOf("-", secondDashPos + 1) + 1;
+      int endIndex = fileName.indexOf(".");
+      return fileName.substring(startIndex, endIndex);
     }
 
     /**
      * gets file part number information from given carbon data file name
      */
     public static String getPartNo(String carbonDataFileName) {
+      // Get the filename from file path
+      String fileName = getFileName(carbonDataFileName);
       // + 1 for size of "-"
-      int startIndex = carbonDataFileName.indexOf("-") + 1;
-      int endIndex = carbonDataFileName.indexOf("-", startIndex);
-      return carbonDataFileName.substring(startIndex, endIndex);
+      int startIndex = fileName.indexOf("-") + 1;
+      int endIndex = fileName.indexOf("-", startIndex);
+      return fileName.substring(startIndex, endIndex);
     }
 
     /**
      * gets updated timestamp information from given carbon data file name
      */
     public static String getTaskNo(String carbonDataFileName) {
+      // Get the filename from file path
+      String fileName = getFileName(carbonDataFileName);
       // + 1 for size of "-"
-      int firstDashPos = carbonDataFileName.indexOf("-");
-      int startIndex = carbonDataFileName.indexOf("-", firstDashPos + 1) + 1;
-      int endIndex = carbonDataFileName.indexOf("-", startIndex);
-      return carbonDataFileName.substring(startIndex, endIndex);
+      int firstDashPos = fileName.indexOf("-");
+      int startIndex = fileName.indexOf("-", firstDashPos + 1) + 1;
+      int endIndex = fileName.indexOf("-", startIndex);
+      return fileName.substring(startIndex, endIndex);
+    }
+  }
+
+  /**
+   * Gets the file name from file path
+   */
+  private static String getFileName(String carbonDataFileName) {
+    int endIndex = carbonDataFileName.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR);
+    if (endIndex > -1) {
+      return carbonDataFileName.substring(endIndex + 1, carbonDataFileName.length());
+    } else {
+      return carbonDataFileName;
     }
   }
 

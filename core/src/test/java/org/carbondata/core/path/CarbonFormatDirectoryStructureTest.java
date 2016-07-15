@@ -65,5 +65,9 @@ public class CarbonFormatDirectoryStructureTest {
     assertTrue(CarbonTablePath.DataFileUtil.getTaskNo("part-3-4-999.carbondata").equals("4"));
     assertTrue(
         CarbonTablePath.DataFileUtil.getUpdateTimeStamp("part-3-4-999.carbondata").equals("999"));
+    assertTrue(CarbonTablePath.DataFileUtil.getPartNo("/opt/apache-carbon/part-3-4-999.carbondata").equals("3"));
+    assertTrue(CarbonTablePath.DataFileUtil.getTaskNo("/opt/apache-carbon/part-3-4-999.carbondata").equals("4"));
+    assertTrue(
+        CarbonTablePath.DataFileUtil.getUpdateTimeStamp("/opt/apache-carbon/part-3-4-999.carbondata").equals("999"));
   }
 }

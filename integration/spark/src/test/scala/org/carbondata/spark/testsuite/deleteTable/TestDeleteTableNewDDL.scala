@@ -74,6 +74,17 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
 
   }
 
+  test("drop table using dbName and table name") {
+    // create table
+    sql(
+      "CREATE table default.table3 (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'" +
+      "TBLPROPERTIES('DICTIONARY_INCLUDE'='ID', 'DICTIONARY_INCLUDE'='salary')"
+    )
+    // table should drop without any error
+    sql("drop table default.table3")
+  }
 
   override def afterAll: Unit = {
 

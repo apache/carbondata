@@ -481,6 +481,12 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
       }
     }
 
+    metadata.cubesMeta -= metadata.cubesMeta.filter(
+      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(schemaName) &&
+           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))(0)
+    org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
+      .removeTable(schemaName + "_" + cubeName)
+
     try {
       sqlContext.sql(s"DROP TABLE $schemaName.$cubeName").collect()
     } catch {
@@ -489,11 +495,6 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
           s"Error While deleting the table $schemaName.$cubeName during drop Table" + e.getMessage)
     }
 
-    metadata.cubesMeta -= metadata.cubesMeta.filter(
-      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(schemaName) &&
-           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(cubeName))(0)
-    org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
-      .removeTable(schemaName + "_" + cubeName)
     logInfo(s"Table $cubeName of $schemaName Database dropped syccessfully.")
     LOGGER.info("Table " + cubeName + " of " + schemaName + " Database dropped syccessfully.")
 

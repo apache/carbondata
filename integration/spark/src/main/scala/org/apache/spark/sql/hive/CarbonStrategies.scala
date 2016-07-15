@@ -337,8 +337,14 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         ExecutedCommand(ShowAllTablesDetail(schemaName, plan.output)) :: Nil
       case DropTable(tableName, ifNotExists)
         if CarbonEnv.getInstance(sqlContext).carbonCatalog
-          .cubeExists(Seq(tableName.toLowerCase()))(sqlContext) =>
-        ExecutedCommand(DropCubeCommand(ifNotExists, None, tableName.toLowerCase())) :: Nil
+          .cubeExists(toTableIdentifier(tableName))(sqlContext) =>
+        val tblIdentifier = toTableIdentifier(tableName)
+        if(tblIdentifier.size == 2) {
+          ExecutedCommand(DropCubeCommand(ifNotExists,
+              Some(tblIdentifier(0)), tblIdentifier(1))) :: Nil
+        } else {
+          ExecutedCommand(DropCubeCommand(ifNotExists, None, tableName.toLowerCase())) :: Nil
+        }
       case ShowAggregateTablesCommand(schemaName) =>
         ExecutedCommand(ShowAggregateTables(schemaName, plan.output)) :: Nil
       case ShowLoadsCommand(schemaName, cube, limit) =>
@@ -390,6 +396,14 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         }
       case _ =>
         Nil
+    }
+
+    private def toTableIdentifier(name: String): Seq[String] = {
+      val identifier = name.toLowerCase.split("\\.")
+      identifier match {
+        case Array(tableName) => Seq(tableName)
+        case Array(dbName, tableName) => Seq(dbName, tableName)
+      }
     }
   }
 
