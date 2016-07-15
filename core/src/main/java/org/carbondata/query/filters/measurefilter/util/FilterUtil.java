@@ -222,12 +222,13 @@ public final class FilterUtil {
    *
    * @return
    */
-  public static boolean checkIfExpressionContainsUnknownExp(Expression expression) {
-    if (expression.getFilterExpressionType() == ExpressionType.UNKNOWN) {
+  public static boolean checkIfLeftExpressionRequireEvaluation(Expression expression) {
+    if (expression.getFilterExpressionType() == ExpressionType.UNKNOWN
+        || !(expression instanceof ColumnExpression)) {
       return true;
     }
     for (Expression child : expression.getChildren()) {
-      if (checkIfExpressionContainsUnknownExp(child)) {
+      if (checkIfLeftExpressionRequireEvaluation(child)) {
         return true;
       }
     }

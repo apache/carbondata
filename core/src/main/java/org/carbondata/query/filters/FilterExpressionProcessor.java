@@ -274,9 +274,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
               .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                 && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
-                FilterUtil.checkIfExpressionContainsUnknownExp(currentCondExpression.getRight())
+                FilterUtil.checkIfLeftExpressionRequireEvaluation(currentCondExpression.getRight())
                     || FilterUtil
-                    .checkIfExpressionContainsUnknownExp(currentCondExpression.getLeft()))) {
+                    .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, true,
                   tableIdentifier);
             }
@@ -306,9 +306,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
               .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                 && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
-                FilterUtil.checkIfExpressionContainsUnknownExp(currentCondExpression.getRight())
+                FilterUtil.checkIfLeftExpressionRequireEvaluation(currentCondExpression.getRight())
                     || FilterUtil
-                    .checkIfExpressionContainsUnknownExp(currentCondExpression.getLeft()))) {
+                    .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, false,
                   tableIdentifier);
             }

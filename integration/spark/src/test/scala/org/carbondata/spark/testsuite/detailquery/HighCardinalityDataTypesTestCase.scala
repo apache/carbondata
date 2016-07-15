@@ -26,7 +26,6 @@ import org.apache.spark.sql.Row
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
 
-
 /**
   * Test Class for verifying NO_DICTIONARY_COLUMN feature.
   *
@@ -157,7 +156,12 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row(4), Row(6))
     )
   }
-
+test("filter with arithmetic expression") {
+    checkAnswer(
+      sql("select id from filtertestTable " + "where id+2 = 6"),
+      Seq(Row(4))
+    )
+  }
   test("Detail Query with NO_DICTIONARY_COLUMN with equals multiple filter Compare With HIVE " +
     "RESULT"
   ) {
@@ -232,6 +236,7 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
       sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 ")
     )
   }
+        
 
   override def afterAll {
     //sql("drop cube NO_DICTIONARY_HIVE_1")
