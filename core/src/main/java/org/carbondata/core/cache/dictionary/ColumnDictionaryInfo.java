@@ -260,7 +260,7 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
       if (memberVal.equals(dictionaryVal)) {
         return 0;
       }
-      return -1;
+      return 1;
     }
   }
 
