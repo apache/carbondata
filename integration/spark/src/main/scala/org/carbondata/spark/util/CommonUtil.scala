@@ -46,6 +46,12 @@ object CommonUtil {
         throw new MalformedCarbonCommandException(
           "Column group doesn't support Timestamp datatype:" + x)
       }
+      // if invalid column is present
+      else if (dims.filter { dim => dim.column.equalsIgnoreCase(x) }.size == 0) {
+        throw new MalformedCarbonCommandException(
+          "column in column group is not a valid column :" + x
+        )
+      }
     }
     // check if given column is present in other groups
     def foundIndExistingColGrp(colName: String): Boolean = {
