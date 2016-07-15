@@ -2058,6 +2058,9 @@ private[sql] case class DescribeCommandFormatted(
     } else {
       results ++= Seq(("NONE", "", ""))
     }
+    val dimension = carbonTable
+      .getDimensionByTableName(relation.cubeMeta.carbonTableIdentifier.getTableName);
+    results ++= getColumnGroups(dimension.asScala.toList)
     results.map { case (name, dataType, comment) =>
       Row(f"$name%-36s $dataType%-80s $comment%-72s")
     }
