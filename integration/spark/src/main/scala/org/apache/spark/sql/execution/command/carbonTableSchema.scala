@@ -2084,19 +2084,6 @@ private[sql] case class DescribeCommandFormatted(
   }
 }
 
-private[sql] case class DescribeNativeCommand(sql: String,
-    override val output: Seq[Attribute])
-  extends RunnableCommand {
-  override def run(sqlContext: SQLContext): Seq[Row] = {
-    val output = sqlContext.asInstanceOf[HiveContext].catalog.client.runSqlHive(sql)
-    output.map(x => {
-      val row = x.split("\t", -3)
-      Row(row(0), row(1), row(2))
-    }
-    ).tail
-  }
-}
-
 private[sql] case class DeleteLoadByDate(
     schemaNameOp: Option[String],
     cubeName: String,

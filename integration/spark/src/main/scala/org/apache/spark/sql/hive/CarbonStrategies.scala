@@ -375,7 +375,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           ExecutedCommand(DescribeCommandFormatted(resultPlan, plan.output, tblIdentifier)) :: Nil
         }
         else {
-          ExecutedCommand(DescribeNativeCommand(sql, plan.output)) :: Nil
+          ExecutedCommand(HiveNativeCommand(sql)) :: Nil
         }
       case describe@LogicalDescribeCommand(table, isExtended) =>
         val resolvedTable = sqlContext.executePlan(describe.table).analyzed
