@@ -84,6 +84,11 @@ class ColumnGroupDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
       sql("select column1,column3,column4,column5,column6,column9,column10 from normal"))
   }
 
+  test("select count on column group") {
+    checkAnswer(
+      sql("select count(column2) from colgrp"),
+      sql("select count(column2) from normal"))
+  }
    test("##ColumnGroup_DictionaryExcludeBefore select all dimension on column group and dictionary exclude table") {
     checkAnswer(
       sql("select * from colgrp_dictexclude_before"),

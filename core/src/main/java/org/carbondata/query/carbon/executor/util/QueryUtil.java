@@ -770,7 +770,7 @@ public class QueryUtil {
       // be done
       // only once
       CarbonDimension dim = entry.getValue().get(0).getDim();
-      if (entry.getValue().size() > 1) {
+      if (entry.getValue().size() > 1 || !dim.isColumnar()) {
         // how many aggregator will be used for column group
         int numberOfAggregatorForColumnGroup = 0;
         List<Dictionary> dictionaryList = new ArrayList<Dictionary>();
