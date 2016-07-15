@@ -76,6 +76,7 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
   override def beforeAll {
     buildTestData
     buildTable
+    buildColGrpHighCardTable
   }
 
   def buildTestData() = {
@@ -106,9 +107,19 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
     }
   }
 
-  def relation: CarbonRelation = {
+  def buildColGrpHighCardTable() {
+    try {
+      sql("drop table if exists colgrp_highcard")
+      sql("""create table if not exists colgrp_highcard
+             (hc1 string, c2 string, c3 int)
+             STORED BY 'org.apache.carbondata.format' tblproperties('COLUMN_GROUPS'='(hc1,c2)')""")
+    } catch {
+      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+    }    
+  }
+  def relation(tableName: String): CarbonRelation = {
     CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
-        .lookupRelation1(Option("default"), "highcard", None)(CarbonHiveContext)
+        .lookupRelation1(Option("default"), tableName, None)(CarbonHiveContext)
         .asInstanceOf[CarbonRelation]
   }
   
@@ -136,15 +147,40 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
     assert(newC2.hasEncoding(Encoding.DICTIONARY))
   }
 
-  test("auto identify high cardinality column in first load #396") {
-    val oldTable = relation.cubeMeta.carbonTable
+ test("auto identify high cardinality column in first load #396") {
+    val oldTable = relation("highcard").cubeMeta.carbonTable
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table highcard")
-    val newTable = relation.cubeMeta.carbonTable
+    val newTable = relation("highcard").cubeMeta.carbonTable
     sql(s"select count(hc1) from highcard").show
 
     // check dictionary file
     checkDictFile(newTable)
     // check the meta data
     checkMetaData(oldTable, newTable)
+  }
+  
+  test("skip auto identify high cardinality column for column group") {
+    val oldTable = relation("colgrp_highcard").cubeMeta.carbonTable
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' into table colgrp_highcard")
+    val newTable = relation("colgrp_highcard").cubeMeta.carbonTable
+    sql(s"select hc1 from colgrp_highcard").show
+
+    // check dictionary file
+    val tableIdentifier = new CarbonTableIdentifier(newTable.getDatabaseName,
+        newTable.getFactTableName, "1")
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(CarbonHiveContext.hdfsCarbonBasePath,
+        tableIdentifier)
+    val newHc1 = newTable.getDimensionByName("colgrp_highcard", "hc1")
+    val newC2 = newTable.getDimensionByName("colgrp_highcard", "c2")
+    val dictFileHc1 = carbonTablePath.getDictionaryFilePath(newHc1.getColumnId)
+    val dictFileC2 = carbonTablePath.getDictionaryFilePath(newC2.getColumnId)
+    assert(CarbonUtil.isFileExists(dictFileHc1))
+    assert(CarbonUtil.isFileExists(dictFileC2))
+    // check the meta data
+    val hc1 = newTable.getDimensionByName("colgrp_highcard", "hc1")
+    val c2 = newTable.getDimensionByName("colgrp_highcard", "c2")
+    assert(hc1.hasEncoding(Encoding.DICTIONARY))
+    assert(c2.hasEncoding(Encoding.DICTIONARY))
+   
   }
 }

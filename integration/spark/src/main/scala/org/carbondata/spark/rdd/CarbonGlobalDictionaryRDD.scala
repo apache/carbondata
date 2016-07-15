@@ -32,6 +32,8 @@ import org.apache.spark.sql.Row
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.{CarbonTableIdentifier, ColumnIdentifier}
+import org.carbondata.core.carbon.metadata.datatype.DataType
+import org.carbondata.core.carbon.metadata.encoder.Encoding
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
@@ -257,7 +259,8 @@ class CarbonGlobalDictionaryGenerateRDD(
             rowCount += distinctValueList.rowCount
             // check high cardinality
             if (model.isFirstLoad && model.highCardIdentifyEnable
-                && !model.isComplexes(split.index)) {
+                && !model.isComplexes(split.index)
+                && model.dimensions(split.index).isColumnar()) {
               isHighCardinalityColumn = GlobalDictionaryUtil.isHighCardinalityColumn(
                 valuesBuffer.size, rowCount, model)
               if (isHighCardinalityColumn) {
