@@ -43,10 +43,7 @@ import org.carbondata.core.file.manager.composite.FileData;
 import org.carbondata.core.file.manager.composite.FileManager;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.core.util.CarbonUtilException;
-import org.carbondata.core.util.DataTypeUtil;
+import org.carbondata.core.util.*;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.store.CarbonDataFileAttributes;
 import org.carbondata.processing.store.CarbonFactDataHandlerColumnar;
@@ -177,6 +174,8 @@ public class MDKeyGenStep extends BaseStep {
     meta.initialize();
     Object[] row = getRow();
     if (first) {
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordMdkGenerateTotalTime(
+          meta.getPartitionID(), System.currentTimeMillis());
       first = false;
 
       data.outputRowMeta = new RowMeta();
@@ -198,6 +197,8 @@ public class MDKeyGenStep extends BaseStep {
       initDataHandler();
       dataHandler.initialise();
       finalMerger.startFinalMerge();
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordDictionaryValue2MdkAdd2FileTime(
+              meta.getPartitionID(), System.currentTimeMillis());
       while (finalMerger.hasNext()) {
         Object[] r = finalMerger.next();
         readCounter++;
@@ -224,7 +225,12 @@ public class MDKeyGenStep extends BaseStep {
     String logMessage =
         "Finished Carbon Mdkey Generation Step: Read: " + readCounter + ": Write: " + writeCounter;
     LOGGER.info(logMessage);
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordTotalRecords(writeCounter);
     processingComplete();
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordDictionaryValue2MdkAdd2FileTime(
+        meta.getPartitionID(), System.currentTimeMillis());
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordMdkGenerateTotalTime(
+        meta.getPartitionID(), System.currentTimeMillis());
     return false;
   }
 

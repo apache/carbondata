@@ -32,6 +32,7 @@ import org.carbondata.common.logging.impl.StandardLogService;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.load.BlockDetails;
 import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.carbondata.processing.graphgenerator.GraphGenerator;
 
 import org.pentaho.di.core.Const;
@@ -291,6 +292,10 @@ public class CsvInput extends BaseStep implements StepInterface {
     data = (CsvInputData) sdi;
 
     if (first) {
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordDictionaryValuesTotalTime(
+          meta.getPartitionID(), System.currentTimeMillis());
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordCsvInputStepTime(
+          meta.getPartitionID(), System.currentTimeMillis());
       first = false;
       data.outputRowMeta = new RowMeta();
       meta.getFields(data.outputRowMeta, getStepname(), null, null, this);
@@ -364,6 +369,8 @@ public class CsvInput extends BaseStep implements StepInterface {
     LOGGER.info("*****************Started ALL ALL csv reading***********");
     startProcess(numberOfNodes);
     LOGGER.info("*****************Completed ALL ALL csv reading***********");
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordCsvInputStepTime(
+        meta.getPartitionID(), System.currentTimeMillis());
     setOutputDone();
     return false;
   }

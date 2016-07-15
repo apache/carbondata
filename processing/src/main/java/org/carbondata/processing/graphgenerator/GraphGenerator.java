@@ -439,6 +439,7 @@ public class GraphGenerator {
         CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT));
     //set blocks info id
     csvInputMeta.setBlocksID(this.blocksID);
+    csvInputMeta.setPartitionID(this.partitionID);
     csvInputMeta.setEscapeCharacter(this.escapeCharacter);
     csvDataStep.setDraw(true);
     csvDataStep.setDescription("Read raw data from " + GraphGeneratorConstants.CSV_INPUT);

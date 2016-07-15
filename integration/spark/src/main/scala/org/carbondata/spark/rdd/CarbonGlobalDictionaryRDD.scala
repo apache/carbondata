@@ -37,7 +37,7 @@ import org.carbondata.core.carbon.metadata.encoder.Encoding
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
-import org.carbondata.processing.etl.DataLoadingException
+import org.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.carbondata.spark.load.{CarbonLoaderUtil, CarbonLoadModel}
 import org.carbondata.spark.partition.reader.{CSVParser, CSVReader}
 import org.carbondata.spark.util.GlobalDictionaryUtil
@@ -170,7 +170,7 @@ class CarbonBlockDistinctValuesCombineRDD(
   override def compute(split: Partition,
       context: TaskContext): Iterator[(Int, ColumnDistinctValues)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordLoadCsvfilesToDfTime()
     val distinctValuesList = new ArrayBuffer[(Int, HashSet[String])]
     var rowCount = 0L
     try {
@@ -203,6 +203,7 @@ class CarbonBlockDistinctValuesCombineRDD(
           }
         }
       }
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordLoadCsvfilesToDfTime()
     } catch {
       case ex: Exception =>
         LOGGER.error(ex)
@@ -252,6 +253,9 @@ class CarbonGlobalDictionaryGenerateRDD(
         val valuesBuffer = new mutable.HashSet[String]
         val rddIter = firstParent[(Int, ColumnDistinctValues)].iterator(split, context)
         var rowCount = 0L
+        val dicShuffleStartTime = System.currentTimeMillis()
+        CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordGlobalDicGenTotalTime(
+          dicShuffleStartTime)
         breakable {
           while (rddIter.hasNext) {
             val distinctValueList = rddIter.next()._2
@@ -291,6 +295,14 @@ class CarbonGlobalDictionaryGenerateRDD(
             GlobalDictionaryUtil.writeGlobalDictionaryColumnSortInfo(model, split.index,
               dictionaryForSortIndexWriting)
             val t5 = System.currentTimeMillis
+            val dicWriteStartTime = t4
+            CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordCsvlDicShuffleMaxTime(
+              dicWriteStartTime - dicShuffleStartTime)
+            val dicWriteEndTime = System.currentTimeMillis()
+            CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordDicWriteFileMaxTime(
+              dicWriteEndTime - dicWriteStartTime)
+            CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordGlobalDicGenTotalTime(
+              dicWriteEndTime)
             LOGGER.info("\n columnName:" + model.primDimensions(split.index).getColName +
               "\n columnId:" + model.primDimensions(split.index).getColumnId +
               "\n new distinct values count:" + distinctValueCount +

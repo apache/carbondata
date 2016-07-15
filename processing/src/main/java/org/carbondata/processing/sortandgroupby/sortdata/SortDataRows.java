@@ -305,7 +305,6 @@ public class SortDataRows {
         }
 
         LOGGER.debug("Sumitting request for intermediate merging no of files: " + fileList.length);
-
         startIntermediateMerging(fileList);
       }
       Object[][] recordHolderListLocal = recordHolderList;
