@@ -83,7 +83,7 @@ case class tableModel(
     columnGroups: Seq[String],
     colProps: Option[util.Map[String, util.List[ColumnProperty]]] = None)
 
-case class Field(column: String, dataType: Option[String], name: Option[String],
+case class Field(column: String, var dataType: Option[String], name: Option[String],
     children: Option[List[Field]], parent: String = null,
     storeType: Option[String] = Some("columnar"),
     var precision: Int = 0, var scale: Int = 0)

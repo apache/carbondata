@@ -300,7 +300,7 @@ class CarbonSqlParser()
     m.find()
     val matchedString: String = m.group(1)
     val scaleAndPrecision = matchedString.split(",")
-    (Integer.parseInt(scaleAndPrecision(0)), Integer.parseInt(scaleAndPrecision(1)))
+    (Integer.parseInt(scaleAndPrecision(0).trim), Integer.parseInt(scaleAndPrecision(1).trim))
   }
 
   /**
@@ -346,16 +346,21 @@ class CarbonSqlParser()
                 val dataType = Option(col.getType)
                 val name = Option(col.getName())
                 // This is to parse complex data types
-                val f: Field = anyFieldDef(new lexical.Scanner(col.getName + ' ' + col.getType))
+                val x = col.getName + ' ' + col.getType
+                val f: Field = anyFieldDef(new lexical.Scanner(x))
                 match {
                   case Success(field, _) => field
                   case failureOrError => new Field(columnName, dataType, name, None, null,
                     Some("columnar"))
                 }
-                if ("decimal".equalsIgnoreCase(f.dataType.getOrElse(""))) {
+                // the data type of the decimal type will be like decimal(10,0)
+                // so checking the start of the string and taking the precision and scale.
+                // resetting the data type with decimal
+                if (f.dataType.getOrElse("").startsWith("decimal")) {
                   val (precision, scale) = getScaleAndPrecision(col.getType)
                   f.precision = precision
                   f.scale = scale
+                  f.dataType = Some("decimal")
                 }
                 fields ++= Seq(f)
               }
@@ -1027,7 +1032,17 @@ class CarbonSqlParser()
   protected lazy val primitiveTypes =
     "(?i)string".r ^^^ "string" | "(?i)integer".r ^^^ "integer" | "(?i)timestamp".r ^^^
     "timestamp" | "(?i)numeric".r ^^^ "numeric" | "(?i)bigint".r ^^^ "bigint" |
-    "(?i)decimal".r ^^^ "decimal" | "(?i)int".r ^^^ "int" | "(?i)double".r ^^^ "double"
+       "(?i)int".r ^^^ "int" | "(?i)double".r ^^^ "double" | decimalType
+
+  /**
+   * Matching the decimal(10,0) data type and returning the same.
+   */
+  private lazy val decimalType =
+    "(?i)decimal".r ~ ("(" ~> numericLit <~",") ~ (numericLit <~ ")")  ^^ {
+      case decimal ~ precision ~scale =>
+        s"$decimal($precision, $scale)"
+    }
+
   protected lazy val nestedType: Parser[Field] = structFieldType | arrayFieldType |
     primitiveFieldType
 
@@ -1147,30 +1162,55 @@ class CarbonSqlParser()
         }
     }
   private def normalizeType(field: Field): Field = {
-    field.dataType.getOrElse("NIL") match {
+    val dataType = field.dataType.getOrElse("NIL")
+    dataType match {
       case "string" => Field(field.column, Some("String"), field.name, Some(null), field.parent,
-        field.storeType)
+        field.storeType
+      )
       case "integer" | "int" => Field(field.column, Some("Integer"), field.name, Some(null),
-        field.parent, field.storeType)
+        field.parent, field.storeType
+      )
       case "long" => Field(field.column, Some("Long"), field.name, Some(null), field.parent,
-        field.storeType)
+        field.storeType
+      )
       case "double" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
-        field.storeType)
+        field.storeType
+      )
       case "timestamp" => Field(field.column, Some("Timestamp"), field.name, Some(null),
-        field.parent, field.storeType)
+        field.parent, field.storeType
+      )
       case "numeric" => Field(field.column, Some("Numeric"), field.name, Some(null), field.parent,
-        field.storeType)
+        field.storeType
+      )
       case "array" => Field(field.column, Some("Array"), field.name,
         field.children.map(f => f.map(normalizeType(_))),
-        field.parent, field.storeType)
+        field.parent, field.storeType
+      )
       case "struct" => Field(field.column, Some("Struct"), field.name,
         field.children.map(f => f.map(normalizeType(_))),
-        field.parent, field.storeType)
+        field.parent, field.storeType
+      )
       case "bigint" => Field(field.column, Some("BigInt"), field.name, Some(null), field.parent,
-        field.storeType)
+        field.storeType
+      )
       case "decimal" => Field(field.column, Some("Decimal"), field.name, Some(null), field.parent,
-        field.storeType, field.precision, field.scale)
-      case _ => field
+        field.storeType, field.precision, field.scale
+      )
+      // checking if the nested data type contains the child type as decimal(10,0),
+      // if it is present then extracting the precision and scale. resetting the data type
+      // with Decimal.
+      case _ if (dataType.startsWith("decimal")) =>
+        val (precision, scale) = getScaleAndPrecision(dataType)
+        Field(field.column,
+          Some("Decimal"),
+          field.name,
+          Some(null),
+          field.parent,
+          field.storeType, precision,
+          scale
+        )
+      case _ =>
+        field
     }
   }
 
