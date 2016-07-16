@@ -108,6 +108,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     )
   }
   
+  
     test("Between  filter") {
     checkAnswer(
       sql("select date from filtertestTablesWithNull " + " where date between '2014-01-20 00:00:00' and '2014-01-28 00:00:00'"),
@@ -140,7 +141,20 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row(999), Row(1000))
     )
   }
+  
+    test("Greater Than equal to Filter with limit") {
+    checkAnswer(
+      sql("select id from filtertestTables " + "where id >=999 limit 1"),
+      Seq(Row(1000))
+    )
+  }
 
+      test("Greater Than equal to Filter with aggregation limit") {
+    checkAnswer(
+      sql("select count(id),country from filtertestTables " + "where id >=999 group by country limit 1"),
+      Seq(Row(2,"china"))
+    )
+  }
   test("Greater Than equal to Filter with decimal") {
     checkAnswer(
       sql("select id from filtertestTables " + "where id >=999"),

@@ -77,35 +77,6 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           isGroupByPresent = false,
           detailQuery = true) :: Nil
 
-      case Limit(IntegerLiteral(limit),
-      Sort(order, _,
-      p@PartialAggregation(namedGroupingAttributes,
-      rewrittenAggregateExpressions,
-      groupingExpressions,
-      partialComputation,
-      PhysicalOperation(
-      projectList,
-      predicates,
-      l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _))))) =>
-        val aggPlan = handleAggregation(plan, p, projectList, predicates, carbonRelation,
-          partialComputation, groupingExpressions, namedGroupingAttributes,
-          rewrittenAggregateExpressions)
-        org.apache.spark.sql.execution.TakeOrderedAndProject(limit,
-          order,
-          None,
-          aggPlan.head) :: Nil
-
-      case Limit(IntegerLiteral(limit), p@PartialAggregation(
-      namedGroupingAttributes,
-      rewrittenAggregateExpressions,
-      groupingExpressions,
-      partialComputation,
-      PhysicalOperation(projectList, predicates,
-      l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)))) =>
-        val aggPlan = handleAggregation(plan, p, projectList, predicates, carbonRelation,
-          partialComputation, groupingExpressions, namedGroupingAttributes,
-          rewrittenAggregateExpressions)
-        org.apache.spark.sql.execution.Limit(limit, aggPlan.head) :: Nil
 
       case PartialAggregation(
       namedGroupingAttributes,
@@ -126,17 +97,6 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           substitutesortExprs, limitExpr, isGroupByPresent = false, detailQuery = true)
         org.apache.spark.sql.execution.Limit(limit, s) :: Nil
 
-      case Limit(IntegerLiteral(limit),
-      Sort(order, _,
-      PhysicalOperation(projectList, predicates,
-      l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)))) =>
-        val (_, _, _, _, groupExprs, substitutesortExprs, limitExpr) = extractPlan(plan)
-        val s = carbonScan(projectList, predicates, carbonRelation.carbonRelation, groupExprs,
-          substitutesortExprs, limitExpr, isGroupByPresent = false, detailQuery = true)
-        org.apache.spark.sql.execution.TakeOrderedAndProject(limit,
-          order,
-          None,
-          s) :: Nil
 
       case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition,
       PhysicalOperation(projectList, predicates,
