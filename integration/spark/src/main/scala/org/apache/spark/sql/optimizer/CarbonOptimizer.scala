@@ -115,25 +115,50 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
             Sort(sort.order, sort.global, child)
           }
 
+        case union: Union
+          if !(union.left.isInstanceOf[CarbonDictionaryTempDecoder] ||
+               union.right.isInstanceOf[CarbonDictionaryTempDecoder]) =>
+          val leftCondAttrs = new util.HashSet[Attribute]
+          val rightCondAttrs = new util.HashSet[Attribute]
+          union.left.output.foreach(attr => leftCondAttrs.add(aliasMap.getOrElse(attr, attr)))
+          union.right.output.foreach(attr => rightCondAttrs.add(aliasMap.getOrElse(attr, attr)))
+          var leftPlan = union.left
+          var rightPlan = union.right
+          if (leftCondAttrs.size() > 0 &&
+              !leftPlan.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
+            leftPlan = CarbonDictionaryTempDecoder(leftCondAttrs,
+              new util.HashSet[Attribute](),
+              union.left)
+          }
+          if (rightCondAttrs.size() > 0 &&
+              !rightPlan.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
+            rightPlan = CarbonDictionaryTempDecoder(rightCondAttrs,
+              new util.HashSet[Attribute](),
+              union.right)
+          }
+          if (!decoder) {
+            decoder = true
+            CarbonDictionaryTempDecoder(new util.HashSet[Attribute](),
+              new util.HashSet[Attribute](),
+              Union(leftPlan, rightPlan),
+              isOuter = true)
+          } else {
+            Union(leftPlan, rightPlan)
+          }
+
         case agg: Aggregate if !agg.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
           val attrsOndimAggs = new util.HashSet[Attribute]
           agg.aggregateExpressions.map {
             case attr: AttributeReference =>
-            case a@Alias(attr: AttributeReference, name) => aliasMap.put(a.toAttribute, attr)
+            case a@Alias(attr: AttributeReference, name) =>
             case aggExp: AggregateExpression =>
               aggExp.transform {
                 case aggExp: AggregateExpression =>
                   collectDimensionAggregates(aggExp, attrsOndimAggs, aliasMap)
                   aggExp
-                case a@Alias(attr: Attribute, name) =>
-                  aliasMap.put(a.toAttribute, attr)
-                  a
               }
             case others =>
               others.collect {
-                case a@ Alias(attr: AttributeReference, _) => aliasMap.put(a.toAttribute, attr)
-                case a@Alias(exp, _) if !exp.isInstanceOf[AttributeReference] =>
-                  aliasMap.put(a.toAttribute, new AttributeReference("", StringType)())
                 case attr: AttributeReference
                   if isDictionaryEncoded(attr, relations, aliasMap) =>
                   attrsOndimAggs.add(aliasMap.getOrElse(attr, attr))
@@ -160,7 +185,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           expand.projections.map {s =>
             s.map {
               case attr: AttributeReference =>
-              case a@Alias(attr: AttributeReference, name) => aliasMap.put(a.toAttribute, attr)
+              case a@Alias(attr: AttributeReference, name) =>
               case others =>
                 others.collect {
                   case attr: AttributeReference
@@ -264,7 +289,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           val attrsOnProjects = new util.HashSet[Attribute]
           p.projectList.map {
             case attr: AttributeReference =>
-            case a@Alias(attr: AttributeReference, name) => aliasMap.put(a.toAttribute, attr)
+            case a@Alias(attr: AttributeReference, name) =>
             case others =>
               others.collect {
                 case attr: AttributeReference
@@ -417,8 +442,11 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
         }
         Filter(filterExps, filter.child)
       case j: Join =>
-        marker.pushJoinMarker(allAttrsNotDecode)
+        marker.pushBinaryMarker(allAttrsNotDecode)
         j
+      case u: Union =>
+        marker.pushBinaryMarker(allAttrsNotDecode)
+        u
       case p: Project if relations.nonEmpty =>
         val prExps = p.projectList.map { prExp =>
           prExp.transform {
@@ -487,31 +515,13 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
 
   private def collectInformationOnAttributes(plan: LogicalPlan,
       aliasMap: CarbonAliasDecoderRelation) {
-    plan transformUp {
-      case project: Project =>
-        project.projectList.map { p =>
-          p transform {
-            case a@Alias(attr: Attribute, name) =>
-              aliasMap.put(a.toAttribute, attr)
-              a
-            case a@Alias(_, name) =>
-              aliasMap.put(a.toAttribute, new AttributeReference("", StringType)())
-              a
-          }
+    plan transformAllExpressions  {
+      case a@Alias(exp, name) =>
+        exp match {
+          case attr: Attribute => aliasMap.put(a.toAttribute, attr)
+          case _ => aliasMap.put(a.toAttribute, new AttributeReference("", StringType)())
         }
-        project
-      case agg: Aggregate =>
-        agg.aggregateExpressions.map { aggExp =>
-          aggExp.transform {
-            case a@Alias(attr: Attribute, name) =>
-              aliasMap.put(a.toAttribute, attr)
-              a
-            case a@Alias(_, name) =>
-              aliasMap.put(a.toAttribute, new AttributeReference("", StringType)())
-              a
-          }
-        }
-        agg
+        a
     }
   }
 
@@ -522,7 +532,6 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
     aggExp collect {
       case attr: AttributeReference if isDictionaryEncoded(attr, relations, aliasMap) =>
         attrsOndimAggs.add(aliasMap.getOrElse(attr, attr))
-      case a@Alias(attr: Attribute, name) => aliasMap.put(a.toAttribute, attr)
     }
   }
 
