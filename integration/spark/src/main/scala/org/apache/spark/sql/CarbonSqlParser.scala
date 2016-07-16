@@ -81,6 +81,7 @@ class CarbonSqlParser()
   protected val FACT = Keyword("FACT")
   protected val FIELDS = Keyword("FIELDS")
   protected val FILEHEADER = Keyword("FILEHEADER")
+  protected val SERIALIZATION_NULL_FORMAT = Keyword("SERIALIZATION_NULL_FORMAT")
   protected val FILES = Keyword("FILES")
   protected val FROM = Keyword("FROM")
   protected val HIERARCHIES = Keyword("HIERARCHIES")
@@ -951,7 +952,8 @@ class CarbonSqlParser()
     // validate with all supported options
     val options = partionDataOptions.get.groupBy(x => x._1)
     val supportedOptions = Seq("DELIMITER", "QUOTECHAR", "FILEHEADER", "ESCAPECHAR", "MULTILINE",
-      "COMPLEX_DELIMITER_LEVEL_1", "COMPLEX_DELIMITER_LEVEL_2", "COLUMNDICT"
+      "COMPLEX_DELIMITER_LEVEL_1", "COMPLEX_DELIMITER_LEVEL_2", "COLUMNDICT",
+      "SERIALIZATION_NULL_FORMAT"
     )
     var isSupported = true
     val invalidOptions = StringBuilder.newBuilder

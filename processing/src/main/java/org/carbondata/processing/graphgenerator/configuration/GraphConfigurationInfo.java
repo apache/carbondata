@@ -22,6 +22,7 @@ package org.carbondata.processing.graphgenerator.configuration;
 import java.util.Map;
 
 import org.carbondata.processing.schema.metadata.ColumnSchemaDetailsWrapper;
+import org.carbondata.processing.schema.metadata.TableOptionWrapper;
 
 public class GraphConfigurationInfo {
   private String connectionName;
@@ -198,6 +199,11 @@ public class GraphConfigurationInfo {
    * wrapper object holding the columnschemadetails
    */
   private ColumnSchemaDetailsWrapper columnSchemaDetailsWrapper;
+
+  /**
+   * wrapper object holding the table options details needed while dataload
+   */
+  private TableOptionWrapper tableOptionWrapper;
 
   /**
    * It is column groups in below format
@@ -996,6 +1002,23 @@ public class GraphConfigurationInfo {
    */
   public ColumnSchemaDetailsWrapper getColumnSchemaDetails() {
     return columnSchemaDetailsWrapper;
+  }
+
+  /**
+   * set wraper object having table options needed while dataload
+   *
+   * @return
+   */
+  public void setTableOptionWrapper(TableOptionWrapper tableOptionWrapper) {
+    this.tableOptionWrapper = tableOptionWrapper;
+  }
+
+  /**
+   * method returns the table options detail wrapper instance.
+   * @return
+   */
+  public TableOptionWrapper getTableOptionWrapper() {
+    return tableOptionWrapper;
   }
 
   public void setColumnGroupsString(String columnGroups) {

@@ -1531,6 +1531,7 @@ private[sql] case class LoadCube(
       val fileHeader = partionValues.getOrElse("fileheader", "")
       val escapeChar = partionValues.getOrElse("escapechar", "\\")
       val columnDict = partionValues.getOrElse("columndict", null)
+      val serializationNullFormat = partionValues.getOrElse("serialization_null_format", "\\N")
       val complex_delimiter_level_1 = partionValues.getOrElse("complex_delimiter_level_1", "\\$")
       val complex_delimiter_level_2 = partionValues.getOrElse("complex_delimiter_level_2", "\\:")
       val multiLine = partionValues.getOrElse("multiline", "false").trim.toLowerCase match {
@@ -1543,6 +1544,8 @@ private[sql] case class LoadCube(
       }
 
       carbonLoadModel.setEscapeChar(escapeChar)
+      carbonLoadModel.setSerializationNullFormat("serialization_null_format" + "," +
+        serializationNullFormat)
       if (delimiter.equalsIgnoreCase(complex_delimiter_level_1) ||
           complex_delimiter_level_1.equalsIgnoreCase(complex_delimiter_level_2) ||
           delimiter.equalsIgnoreCase(complex_delimiter_level_2)) {

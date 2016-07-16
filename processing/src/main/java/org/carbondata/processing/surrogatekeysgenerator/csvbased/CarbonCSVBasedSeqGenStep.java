@@ -163,10 +163,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
    */
   private boolean[] dimPresentCsvOrder;
   /**
-   * ValueToCheckAgainst
-   */
-  private String valueToCheckAgainst;
-  /**
    * propMap
    */
   private Map<String, int[]> propMap;
@@ -436,6 +432,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         if (null != getInputRowMeta()) {
           generateNoDictionaryAndComplexIndexMapping();
         }
+        serializationNullFormat = meta.getTableOptionWrapper().get("serialization_null_format");
       }
       // no more input to be expected...
       if (r == null) {
@@ -545,6 +542,11 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     LOGGER.info(logMessage);
     return false;
   }
+
+  /**
+   * holds the value to be considered as null while dataload
+   */
+  private String serializationNullFormat;
 
   private List<String> getDenormalizedHierarchies() {
     List<String> hierList = Arrays.asList(meta.hierNames);
@@ -877,7 +879,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     int i = 0;
     for (Object obj : rowValue) {
       if (obj != null) {
-        if (obj.equals(valueToCheckAgainst)) {
+        //removed valueToCheckAgainst does not make sense to
+        // compare non null object with a null string
+        if (obj.toString().equalsIgnoreCase(serializationNullFormat)) {
           rowValue[i] = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
         }
       } else {

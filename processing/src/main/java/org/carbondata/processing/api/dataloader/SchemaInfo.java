@@ -59,6 +59,10 @@ public class SchemaInfo {
   private String complexDelimiterLevel1;
 
   private String complexDelimiterLevel2;
+  /**
+   * the value to be treated as null while data load
+   */
+  private String serializationNullFormat;
 
   public String getComplexDelimiterLevel1() {
     return complexDelimiterLevel1;
@@ -166,6 +170,22 @@ public class SchemaInfo {
    */
   public void setSchemaName(String schemaName) {
     this.schemaName = schemaName;
+  }
+
+  /**
+   * the method returns the value to be treated as null while data load
+   * @return
+   */
+  public String getSerializationNullFormat() {
+    return serializationNullFormat;
+  }
+
+  /**
+   * the method sets the value to be treated as null while data load
+   * @param serializationNullFormat
+   */
+  public void setSerializationNullFormat(String serializationNullFormat) {
+    this.serializationNullFormat = serializationNullFormat;
   }
 
 }

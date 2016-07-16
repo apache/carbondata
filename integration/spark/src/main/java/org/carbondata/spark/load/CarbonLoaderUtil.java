@@ -169,6 +169,7 @@ public final class CarbonLoaderUtil {
     info.setAutoAggregateRequest(loadModel.isAggLoadRequest());
     info.setComplexDelimiterLevel1(loadModel.getComplexDelimiterLevel1());
     info.setComplexDelimiterLevel2(loadModel.getComplexDelimiterLevel2());
+    info.setSerializationNullFormat(loadModel.getSerializationNullFormat());
 
     generateGraph(schmaModel, info, currentRestructNumber, loadModel, outPutLoc);
 

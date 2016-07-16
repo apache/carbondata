@@ -95,6 +95,11 @@ public class CarbonLoadModel implements Serializable {
   private String escapeChar;
 
   /**
+   * defines the string that should be treated as null while loadind data
+   */
+  private String serializationNullFormat;
+
+  /**
    * get escape char
    * @return
    */
@@ -301,6 +306,7 @@ public class CarbonLoadModel implements Serializable {
     copy.taskNo = taskNo;
     copy.factTimeStamp = factTimeStamp;
     copy.segmentId = segmentId;
+    copy.serializationNullFormat = serializationNullFormat;
     copy.escapeChar = escapeChar;
     return copy;
   }
@@ -338,6 +344,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.taskNo = taskNo;
     copyObj.factTimeStamp = factTimeStamp;
     copyObj.segmentId = segmentId;
+    copyObj.serializationNullFormat = serializationNullFormat;
     copyObj.escapeChar = escapeChar;
     return copyObj;
   }
@@ -490,5 +497,21 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setSegmentId(String segmentId) {
     this.segmentId = segmentId;
+  }
+
+  /**
+   * the method returns the value to be treated as null while data load
+   * @return
+   */
+  public String getSerializationNullFormat() {
+    return serializationNullFormat;
+  }
+
+  /**
+   * the method sets the value to be treated as null while data load
+   * @param serializationNullFormat
+   */
+  public void setSerializationNullFormat(String serializationNullFormat) {
+    this.serializationNullFormat = serializationNullFormat;
   }
 }
