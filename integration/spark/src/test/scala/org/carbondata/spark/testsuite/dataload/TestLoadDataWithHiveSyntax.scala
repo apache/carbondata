@@ -295,6 +295,23 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists complexcarbontable")
   }
 
+  test("array<string> and string datatype for same column is not working properly") {
+    sql("create table complexcarbontable(deviceInformationId int, MAC array<string>, channelsId string, "+ 
+        "ROMSize string, purchasedate string, gamePointId double,contractNumber double) STORED BY 'org.apache.carbondata.format' "+
+        "TBLPROPERTIES ('DICTIONARY_INCLUDE'='deviceInformationId')")
+    sql("LOAD DATA local inpath './src/test/resources/complexdatareordered.csv' INTO table complexcarbontable "+
+        "OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,MAC,channelsId,ROMSize,purchasedate,gamePointId,contractNumber',"+
+        "'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
+    sql("drop table if exists complexcarbontable")
+    sql("create table primitivecarbontable(deviceInformationId int, MAC string, channelsId string, "+ 
+        "ROMSize string, purchasedate string, gamePointId double,contractNumber double) STORED BY 'org.apache.carbondata.format' "+
+        "TBLPROPERTIES ('DICTIONARY_INCLUDE'='deviceInformationId')")
+    sql("LOAD DATA local inpath './src/test/resources/complexdatareordered.csv' INTO table primitivecarbontable "+
+        "OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,MAC,channelsId,ROMSize,purchasedate,gamePointId,contractNumber',"+
+        "'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
+    sql("drop table if exists primitivecarbontable")
+  }
+  
   test(
     "test carbon table data loading when table name is in different case with create table, for " +
       "UpperCase"

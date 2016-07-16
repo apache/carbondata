@@ -962,7 +962,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           out[memberMapping[dimLen + index]] = surrogate.doubleValue();
         } else {
           try {
-            out[memberMapping[dimLen - meta.complexTypes.size() + index]] =
+            out[memberMapping[dimLen + index] - meta.complexTypes.size()] =
                 (isNull || msr == null || msr.length() == 0) ?
                     null :
                     DataTypeUtil
@@ -971,13 +971,13 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           } catch (NumberFormatException e) {
             try {
               msr = msr.replaceAll(",", "");
-              out[memberMapping[dimLen + index]] = DataTypeUtil
+              out[memberMapping[dimLen + index] - meta.complexTypes.size()] = DataTypeUtil
                   .getMeasureValueBasedOnDataType(msr, msrDataType[meta.msrMapping[msrCount]],
                       meta.carbonMeasures[meta.msrMapping[msrCount]]);
             } catch (NumberFormatException ex) {
               LOGGER.warn("Cant not convert : " + msr
                   + " to Numeric type value. Value considered as null.");
-              out[memberMapping[dimLen - meta.complexTypes.size() + index]] = null;
+              out[memberMapping[dimLen + index] - meta.complexTypes.size()] = null;
             }
           }
         }
