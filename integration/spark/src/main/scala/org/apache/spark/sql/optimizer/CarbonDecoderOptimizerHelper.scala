@@ -29,7 +29,7 @@ abstract class AbstractNode
 
 case class Node(cd: CarbonDictionaryTempDecoder) extends AbstractNode
 
-case class JoinNode(left: util.List[AbstractNode], right: util.List[AbstractNode])
+case class BinaryCarbonNode(left: util.List[AbstractNode], right: util.List[AbstractNode])
   extends AbstractNode
 
 case class CarbonDictionaryTempDecoder(
@@ -58,7 +58,7 @@ class CarbonDecoderProcessor {
       case j: BinaryNode =>
         val leftList = new util.ArrayList[AbstractNode]
         val rightList = new util.ArrayList[AbstractNode]
-        nodeList.add(JoinNode(leftList, rightList))
+        nodeList.add(BinaryCarbonNode(leftList, rightList))
         process(j.left, leftList)
         process(j.right, rightList)
       case e: UnaryNode => process(e.child, nodeList)
@@ -79,7 +79,7 @@ class CarbonDecoderProcessor {
         decoderNotDecode.asScala.foreach(cd.attrsNotDecode.add)
         decoderNotDecode.asScala.foreach(cd.attrList.remove)
         decoderNotDecode.addAll(cd.attrList)
-      case JoinNode(left: util.List[AbstractNode], right: util.List[AbstractNode]) =>
+      case BinaryCarbonNode(left: util.List[AbstractNode], right: util.List[AbstractNode]) =>
         val leftNotDecode = new util.HashSet[Attribute]
         val rightNotDecode = new util.HashSet[Attribute]
         updateDecoderInternal(left.asScala, leftNotDecode)
@@ -91,7 +91,7 @@ class CarbonDecoderProcessor {
 
 }
 
-case class Marker(set: util.Set[Attribute], join: Boolean = false)
+case class Marker(set: util.Set[Attribute], binary: Boolean = false)
 
 class CarbonPlanMarker {
   val markerStack = new util.Stack[Marker]
@@ -101,8 +101,8 @@ class CarbonPlanMarker {
     markerStack.push(Marker(attrs))
   }
 
-  def pushJoinMarker(attrs: util.Set[Attribute]): Unit = {
-    markerStack.push(Marker(attrs, join = true))
+  def pushBinaryMarker(attrs: util.Set[Attribute]): Unit = {
+    markerStack.push(Marker(attrs, binary = true))
     joinCount = joinCount + 1
   }
 
@@ -110,7 +110,7 @@ class CarbonPlanMarker {
     if (joinCount > 0) {
       while (!markerStack.empty()) {
         val marker = markerStack.pop()
-        if (marker.join) {
+        if (marker.binary) {
           joinCount = joinCount - 1
           return marker.set
         }
