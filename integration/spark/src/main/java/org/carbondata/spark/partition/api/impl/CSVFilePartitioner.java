@@ -85,17 +85,10 @@ public class CSVFilePartitioner {
     return partialSuccess;
   }
 
-  /**
-   * @param sourceFilePath - Source raw data file in local disk
-   * @param targetFolder   - Target folder to save the partitioned files
-   * @param nodes
-   * @param properties
-   * @param i
-   */
-  @Deprecated public void splitFile(String schemaName, String tableName, List<String> sourceFilePath,
-      String targetFolder, List<String> nodes, int partitionCount, String[] partitionColumn,
-      String[] requiredColumns, String delimiter, String quoteChar, String fileHeader,
-      String escapeChar, boolean multiLine) throws Exception {
+  @Deprecated public void splitFile(String schemaName, String tableName,
+      List<String> sourceFilePath, String targetFolder, List<String> nodes, int partitionCount,
+      String[] partitionColumn, String[] requiredColumns, String delimiter, String quoteChar,
+      String fileHeader, String escapeChar, boolean multiLine) throws Exception {
     LOGGER
         .info("Processing file split: " + sourceFilePath);
 

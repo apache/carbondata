@@ -91,7 +91,8 @@ public class CarbonSliceMergerStep extends BaseStep {
     try {
       // carbon data writer step meta
       meta = (CarbonSliceMergerStepMeta) smi;
-      StandardLogService.setThreadName(StandardLogService.getPartitionID(meta.getTableName()), null);
+      StandardLogService.setThreadName(StandardLogService.getPartitionID(meta.getTableName()),
+          null);
       // carbon data writer step data
       data = (CarbonSliceMergerStepData) sdi;
 

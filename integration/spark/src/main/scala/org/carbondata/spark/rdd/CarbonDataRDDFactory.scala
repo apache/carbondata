@@ -130,8 +130,8 @@ object CarbonDataRDDFactory extends Logging {
       currentRestructNumber = 0
     }
     val segmentStatusManager = new SegmentStatusManager(table.getAbsoluteTableIdentifier)
-    val loadMetadataDetailsArray = segmentStatusManager.readLoadMetadata(table.getMetaDataFilepath())
-      .toList
+    val loadMetadataDetailsArray =
+      segmentStatusManager.readLoadMetadata(table.getMetaDataFilepath()).toList
     val resultMap = new CarbonDeleteLoadByDateRDD(
       sc.sparkContext,
       new DeletedLoadResultImpl(),

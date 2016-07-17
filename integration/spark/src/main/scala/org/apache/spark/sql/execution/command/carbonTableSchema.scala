@@ -565,7 +565,8 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       val name = f._1
       LOGGER.error(s"Duplicate dimensions found with name : $name")
       LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation for ${cm.schemaName}.${cm.tableName} " +
+        s"Validation failed for Create/Alter Table Operation " +
+        s"for ${cm.schemaName}.${cm.tableName} " +
         s"Duplicate dimensions found with name : $name")
       sys.error(s"Duplicate dimensions found with name : $name")
     })
@@ -574,7 +575,8 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       val name = f._1
       LOGGER.error(s"Duplicate dimensions found with column name : $name")
       LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation for ${cm.schemaName}.${cm.tableName} " +
+        s"Validation failed for Create/Alter Table Operation " +
+        s"for ${cm.schemaName}.${cm.tableName} " +
         s"Duplicate dimensions found with column name : $name")
       sys.error(s"Duplicate dimensions found with column name : $name")
     })
@@ -583,7 +585,8 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       val name = f._1
       LOGGER.error(s"Duplicate measures found with name : $name")
       LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation for ${cm.schemaName}.${cm.tableName} " +
+        s"Validation failed for Create/Alter Table Operation " +
+        s"for ${cm.schemaName}.${cm.tableName} " +
         s"Duplicate measures found with name : $name")
       sys.error(s"Duplicate measures found with name : $name")
     })
@@ -592,7 +595,8 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       val name = f._1
       LOGGER.error(s"Duplicate measures found with column name : $name")
       LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation for ${cm.schemaName}.${cm.tableName} " +
+        s"Validation failed for Create/Alter Table Operation " +
+        s"for ${cm.schemaName}.${cm.tableName} " +
         s"Duplicate measures found with column name : $name")
       sys.error(s"Duplicate measures found with column name : $name")
     })
@@ -616,7 +620,8 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       val name = f._1
       LOGGER.error(s"Dimension and Measure defined with same name : $name")
       LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation for ${cm.schemaName}.${cm.tableName} " +
+        s"Validation failed for Create/Alter Table Operation " +
+        s"for ${cm.schemaName}.${cm.tableName} " +
         s"Dimension and Measure defined with same name : $name")
       sys.error(s"Dimension and Measure defined with same name : $name")
     })
