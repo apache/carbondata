@@ -375,10 +375,11 @@ public class QueryUtil {
   private static void getChildDimensionDictionaryDetail(CarbonDimension queryDimensions,
       Set<String> dictionaryDimensionFromQuery) {
     for (int j = 0; j < queryDimensions.numberOfChild(); j++) {
+      List<Encoding> encodingList = queryDimensions.getListOfChildDimensions().get(j).getEncoder();
       if (queryDimensions.getListOfChildDimensions().get(j).numberOfChild() > 0) {
         getChildDimensionDictionaryDetail(queryDimensions.getListOfChildDimensions().get(j),
             dictionaryDimensionFromQuery);
-      } else {
+      } else if(!CarbonUtil.hasEncoding(encodingList, Encoding.DIRECT_DICTIONARY)) {
         dictionaryDimensionFromQuery
             .add(queryDimensions.getListOfChildDimensions().get(j).getColumnId());
       }
@@ -1077,13 +1078,17 @@ public class QueryUtil {
                   dimension.getColName(), ++parentBlockIndex));
           break;
         default:
+          boolean isDirectDictionary = CarbonUtil.hasEncoding(
+              dimension.getListOfChildDimensions().get(i).getEncoder(),
+              Encoding.DIRECT_DICTIONARY);
           parentQueryType.addChildren(
               new PrimitiveQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
                   dimension.getColName(), ++parentBlockIndex,
                   dimension.getListOfChildDimensions().get(i).getDataType(),
                   eachComplexColumnValueSize[dimension.getListOfChildDimensions().get(i)
                       .getComplexTypeOrdinal()], columnIdToDictionaryMap
-                  .get(dimension.getListOfChildDimensions().get(i).getColumnId())));
+                  .get(dimension.getListOfChildDimensions().get(i).getColumnId()),
+                  isDirectDictionary));
       }
       if (dimension.getListOfChildDimensions().get(i).getNumberOfChild() > 0) {
         parentBlockIndex = fillChildrenDetails(eachComplexColumnValueSize, columnIdToDictionaryMap,

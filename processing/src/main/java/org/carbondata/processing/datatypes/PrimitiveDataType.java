@@ -156,7 +156,7 @@ public class PrimitiveDataType implements GenericDataType {
       String[] delimiter, int delimiterIndex, DataOutputStream dataOutputStream,
       CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException {
     dataOutputStream.writeInt(surrogateKeyGen.generateSurrogateKeys(inputString, tableName
-        + CarbonCommonConstants.UNDERSCORE + name));
+        + CarbonCommonConstants.UNDERSCORE + name, this.getColumnId()));
   }
 
   /*

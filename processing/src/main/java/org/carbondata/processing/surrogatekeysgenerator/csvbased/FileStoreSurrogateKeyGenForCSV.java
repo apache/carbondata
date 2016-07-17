@@ -243,6 +243,10 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         List<GenericDataType> primitiveChild = new ArrayList<GenericDataType>();
         complexType.getAllPrimitiveChildren(primitiveChild);
         for (GenericDataType eachPrimitive : primitiveChild) {
+          details = columnSchemaDetailsWrapper.get(eachPrimitive.getColumnId());
+          if (details.isDirectDictionary()) {
+            continue;
+          }
           ColumnIdentifier columnIdentifier = new ColumnIdentifier(eachPrimitive.getColumnId(),
               columnsInfo.getColumnProperties(eachPrimitive.getName()), details.getColumnType());
           String dimColumnName =
