@@ -60,7 +60,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
     def apply(plan: LogicalPlan): Seq[SparkPlan] = {
       plan match {
         case PhysicalOperation(projectList, predicates, l: LogicalRelation)
-          if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
+            if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
           if (isStarQuery(plan)) {
             carbonRawScanForStarQuery(projectList, predicates, l)(sqlContext) :: Nil
           } else {
@@ -210,7 +210,8 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
     private def isStarQuery(plan: LogicalPlan) = {
       plan match {
         case LogicalFilter(condition, l: LogicalRelation)
-          if l.relation.isInstanceOf[CarbonDatasourceRelation] => true
+            if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
+          true
         case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] => true
         case _ => false
       }

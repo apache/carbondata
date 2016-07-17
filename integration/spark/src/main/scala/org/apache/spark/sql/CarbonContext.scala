@@ -74,7 +74,7 @@ class CarbonContext(
   @transient
   override protected[sql] lazy val optimizer: Optimizer =
     CarbonOptimizer.optimizer(
-      CodeGenerateFactory.getInstance(sc.version).createDefaultOptimizer(conf, sc),
+      CodeGenerateFactory.createDefaultOptimizer(conf, sc),
       conf.asInstanceOf[CarbonSQLConf],
       sc.version)
 

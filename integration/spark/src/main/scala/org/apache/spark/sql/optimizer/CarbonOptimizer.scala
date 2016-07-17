@@ -208,8 +208,8 @@ class ResolveCarbonFunctions(
           }
 
         case j: Join
-          if !(j.left.isInstanceOf[CarbonDictionaryTempDecoder] ||
-               j.right.isInstanceOf[CarbonDictionaryTempDecoder]) =>
+            if !(j.left.isInstanceOf[CarbonDictionaryTempDecoder] ||
+                 j.right.isInstanceOf[CarbonDictionaryTempDecoder]) =>
           val attrsOnJoin = new util.HashSet[Attribute]
           j.condition match {
             case Some(expression) =>
@@ -261,7 +261,7 @@ class ResolveCarbonFunctions(
           }
 
         case p: Project
-          if relations.nonEmpty && !p.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
+            if relations.nonEmpty && !p.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
           val attrsOnProjects = new util.HashSet[Attribute]
           p.projectList.map {
             case attr: AttributeReference =>
@@ -395,7 +395,8 @@ class ResolveCarbonFunctions(
     // Remove unnecessary decoders
     val finalPlan = transFormedPlan transform {
       case CarbonDictionaryCatalystDecoder(_, profile, _, false, child)
-        if profile.isInstanceOf[IncludeProfile] && profile.isEmpty => child
+          if profile.isInstanceOf[IncludeProfile] && profile.isEmpty =>
+        child
     }
     finalPlan
   }

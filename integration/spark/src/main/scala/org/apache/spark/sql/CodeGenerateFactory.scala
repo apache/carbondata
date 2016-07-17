@@ -23,20 +23,22 @@ import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.{Expand, LogicalPlan}
 import org.apache.spark.util.{ScalaCompilerUtil, Utils}
 
-class CodeGenerateFactory(version: String) {
+private[sql] class CodeGenerateFactory(version: String) {
 
   val optimizerFactory = if (version.equals("1.6.2")) {
     ScalaCompilerUtil.compiledCode(CodeTemplates.spark1_6_2_OptimizerString)
       .asInstanceOf[AbstractCarbonOptimizerFactory]
-  } else {
+  } else if (version.startsWith("1.6") || version.startsWith("1.5")) {
     ScalaCompilerUtil.compiledCode(CodeTemplates.defaultOptimizerString)
       .asInstanceOf[AbstractCarbonOptimizerFactory]
+  } else {
+    throw new UnsupportedOperationException(s"Spark version $version is not supported")
   }
 
   val expandFactory = if (version.startsWith("1.5")) {
     ScalaCompilerUtil.compiledCode(CodeTemplates.spark1_5ExpandString)
       .asInstanceOf[AbstractCarbonExpandFactory]
-  } else {
+  } else if (version.startsWith("1.6")) {
     new AbstractCarbonExpandFactory {
       override def createExpand(expand: Expand, child: LogicalPlan): Expand = {
         val loader = Utils.getContextOrSparkClassLoader
@@ -50,20 +52,8 @@ class CodeGenerateFactory(version: String) {
         }
       }
     }
-  }
-
-  def createDefaultOptimizer(conf: CatalystConf, sc: SparkContext): Optimizer = {
-    val name = "org.apache.spark.sql.catalyst.optimizer.DefaultOptimizer"
-    val loader = Utils.getContextOrSparkClassLoader
-    try {
-      val cons = loader.loadClass(name + "$").getDeclaredConstructors
-      cons.head.setAccessible(true)
-      cons.head.newInstance().asInstanceOf[Optimizer]
-    } catch {
-      case e: Exception =>
-        loader.loadClass(name).getConstructor(classOf[CatalystConf])
-          .newInstance(conf).asInstanceOf[Optimizer]
-    }
+  } else {
+    throw new UnsupportedOperationException(s"Spark version $version is not supported")
   }
 
 }
@@ -82,9 +72,18 @@ object CodeGenerateFactory {
     codeGenerateFactory
   }
 
-  def getInstance(version: String): CodeGenerateFactory = {
-    init(version)
-    codeGenerateFactory
+  def createDefaultOptimizer(conf: CatalystConf, sc: SparkContext): Optimizer = {
+    val name = "org.apache.spark.sql.catalyst.optimizer.DefaultOptimizer"
+    val loader = Utils.getContextOrSparkClassLoader
+    try {
+      val cons = loader.loadClass(name + "$").getDeclaredConstructors
+      cons.head.setAccessible(true)
+      cons.head.newInstance().asInstanceOf[Optimizer]
+    } catch {
+      case e: Exception =>
+        loader.loadClass(name).getConstructor(classOf[CatalystConf])
+          .newInstance(conf).asInstanceOf[Optimizer]
+    }
   }
 
 }
@@ -100,17 +99,16 @@ object CodeTemplates {
        import org.apache.spark.sql.catalyst.optimizer.Optimizer;
 
        new AbstractCarbonOptimizerFactory {
-
-           override def createOptimizer(optimizer1: Optimizer, conf1: CarbonSQLConf): Optimizer = {
-              class CarbonOptimizer1(optimizer: Optimizer, conf: CarbonSQLConf)
-                extends Optimizer(conf) {
-                override val batches = Nil;
-                override def execute(plan: LogicalPlan): LogicalPlan = {
-                  CarbonOptimizer.execute(plan, optimizer);
-                }
-              }
-              new CarbonOptimizer1(optimizer1, conf1);
+         override def createOptimizer(optimizer: Optimizer, conf: CarbonSQLConf): Optimizer = {
+           class CarbonOptimizer1(optimizer: Optimizer, conf: CarbonSQLConf)
+             extends Optimizer(conf) {
+             override val batches = Nil;
+             override def execute(plan: LogicalPlan): LogicalPlan = {
+               CarbonOptimizer.execute(plan, optimizer);
+             }
            }
+           new CarbonOptimizer1(optimizer, conf);
+         }
        }
     """
 
@@ -123,16 +121,15 @@ object CodeTemplates {
        import org.apache.spark.sql.catalyst.optimizer.Optimizer;
 
        new AbstractCarbonOptimizerFactory {
-
-           override def createOptimizer(optimizer1: Optimizer, conf1: CarbonSQLConf): Optimizer = {
-              class CarbonOptimizer2(optimizer: Optimizer, conf: CarbonSQLConf) extends Optimizer {
-                val batches = Nil;
-                override def execute(plan: LogicalPlan): LogicalPlan = {
-                  CarbonOptimizer.execute(plan, optimizer);
-                }
-              }
-              new CarbonOptimizer2(optimizer1, conf1);
+         override def createOptimizer(optimizer: Optimizer, conf: CarbonSQLConf): Optimizer = {
+           class CarbonOptimizer2(optimizer: Optimizer, conf: CarbonSQLConf) extends Optimizer {
+             val batches = Nil;
+             override def execute(plan: LogicalPlan): LogicalPlan = {
+               CarbonOptimizer.execute(plan, optimizer);
+             }
            }
+           new CarbonOptimizer2(optimizer, conf);
+         }
        }
     """
 
@@ -141,9 +138,9 @@ object CodeTemplates {
        import org.apache.spark.sql._
        import org.apache.spark.sql.catalyst.plans.logical.{Expand, LogicalPlan}
        new AbstractCarbonExpandFactory {
-           override def createExpand(expand: Expand, child: LogicalPlan): Expand = {
-             Expand(expand.bitmasks, expand.groupByExprs, expand.gid, child)
-           }
+         override def createExpand(expand: Expand, child: LogicalPlan): Expand = {
+           Expand(expand.bitmasks, expand.groupByExprs, expand.gid, child)
+         }
        }
     """
 }
