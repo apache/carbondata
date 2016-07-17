@@ -90,6 +90,7 @@ public class ExpressionAggregator {
             // if no null then get the data based on actual data
             // type
             switch (carbonColumn.getDataType()) {
+              case INT:
               case LONG:
                 row[j] = scannedResult.getLongMeasureValue(carbonColumn.getOrdinal());
                 break;

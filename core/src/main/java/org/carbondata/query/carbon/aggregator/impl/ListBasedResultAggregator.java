@@ -160,6 +160,7 @@ public class ListBasedResultAggregator implements ScannedResultAggregator {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
       Object msrVal;
       switch (dataType) {
+        case INT:
         case LONG:
           msrVal = dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
           break;

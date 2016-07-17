@@ -45,6 +45,10 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     sql("LOAD DATA LOCAL INPATH '"+currentDirectory+"/src/test/resources/100_olap.csv' INTO table Carbon_automation_test options('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName,deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict,deliveryStreet,oxSingleNumber,contractNumber,ActiveCheckTime,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId,Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber,Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer,Active_webTypeDataVerNumber,Active_operatorsVersion,Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR,Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district,Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion,Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer,Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription')");
 
+    //hive table
+    sql("create table Carbon_automation_test_hive (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string,contractNumber int, ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, Latest_DAY int, Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointId int,gamePointDescription string)row format delimited fields terminated by ','");
+    sql("LOAD DATA LOCAL INPATH '"+currentDirectory+"/src/test/resources/100_olap.csv' INTO table Carbon_automation_test_hive");
+
   }
 
   override def afterAll {
@@ -215,7 +219,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select sum(gamepointid) +10 as a ,series  from Carbon_automation_test group by series"),
-      Seq(Row(12932, "6Series"), Row(25890, "0Series"), Row(12354, "4Series"), Row(13577, "8Series"), Row(18601.197, "7Series"), Row(4011, "1Series"), Row(29081, "5Series"), Row(12930, "9Series"), Row(15245, "3Series"), Row(12364, "2Series")))
+      sql("select sum(gamepointid) +10 as a ,series  from Carbon_automation_test_hive group by series"))
   })  
   
   //Test-50
@@ -223,7 +227,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select sum(gamepointid) +10.36 as a ,series  from Carbon_automation_test group by series"),
-      Seq(Row(12932.36, "6Series"), Row(25890.36, "0Series"), Row(12354.36, "4Series"), Row(13577.36, "8Series"), Row(18601.557, "7Series"), Row(4011.36, "1Series"), Row(29081.36, "5Series"), Row(12930.36, "9Series"), Row(15245.36, "3Series"), Row(12364.36, "2Series")))
+      sql("select sum(gamepointid) +10.36 as a ,series  from Carbon_automation_test_hive group by series"))
   })
   
   //TC_055
@@ -318,7 +322,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   test("select sum(gamePointId) a  from Carbon_automation_test")({
     checkAnswer(
       sql("select sum(gamePointId) a  from Carbon_automation_test"),
-      Seq(Row(156885.197)))
+      sql("select sum(gamePointId) a  from Carbon_automation_test_hive"))
   })
     //TC_077
   test("select sum(DISTINCT  deviceInformationId) a  from Carbon_automation_test")({
@@ -513,7 +517,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   test("select series,sum(gamePointId) a from Carbon_automation_test group by series order by series")({
     checkAnswer(
       sql("select series,sum(gamePointId) a from Carbon_automation_test group by series order by series"),
-      Seq(Row("0Series", 25880.0), Row("1Series", 4001.0), Row("2Series", 12354.0), Row("3Series", 15235.0), Row("4Series", 12344.0), Row("5Series", 29071.0), Row("6Series", 12922.0), Row("7Series", 18591.197), Row("8Series", 13567.0), Row("9Series", 12920.0)))
+      sql("select series,sum(gamePointId) a from Carbon_automation_test_hive group by series order by series"))
   })
   
    //TC_162
@@ -611,56 +615,56 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   test("select series,sum(gamePointId) a from Carbon_automation_test group by series order by series desc")({
     checkAnswer(
       sql("select series,sum(gamePointId) a from Carbon_automation_test group by series order by series desc"),
-      Seq(Row("9Series", 12920.0), Row("8Series", 13567.0), Row("7Series", 18591.197), Row("6Series", 12922.0), Row("5Series", 29071.0), Row("4Series", 12344.0), Row("3Series", 15235.0), Row("2Series", 12354.0), Row("1Series", 4001.0), Row("0Series", 25880.0)))
+      sql("select series,sum(gamePointId) a from Carbon_automation_test_hive group by series order by series desc"))
   })
 
   //TC_181
   test("select series,sum(gamePointId) a from Carbon_automation_test group by series order by a desc")({
     checkAnswer(
       sql("select series,sum(gamePointId) a from Carbon_automation_test group by series order by a desc"),
-      Seq(Row("5Series", 29071.0), Row("0Series", 25880.0), Row("7Series", 18591.197), Row("3Series", 15235.0), Row("8Series", 13567.0), Row("6Series", 12922.0), Row("9Series", 12920.0), Row("2Series", 12354.0), Row("4Series", 12344.0), Row("1Series", 4001.0)))
+      sql("select series,sum(gamePointId) a from Carbon_automation_test_hive group by series order by a desc"))
   })
 
   //TC_182
   test("select series,sum(gamePointId) a from Carbon_automation_test group by series order by series desc ,a desc")({
     checkAnswer(
       sql("select series,sum(gamePointId) a from Carbon_automation_test group by series order by series desc ,a desc"),
-      Seq(Row("9Series", 12920.0), Row("8Series", 13567.0), Row("7Series", 18591.197), Row("6Series", 12922.0), Row("5Series", 29071.0), Row("4Series", 12344.0), Row("3Series", 15235.0), Row("2Series", 12354.0), Row("1Series", 4001.0), Row("0Series", 25880.0)))
+      sql("select series,sum(gamePointId) a from Carbon_automation_test_hive group by series order by series desc ,a desc"))
   })
 
   //TC_183
   test("select series,sum(gamePointId) a from Carbon_automation_test group by series order by series asc")({
     checkAnswer(
       sql("select series,sum(gamePointId) a from Carbon_automation_test group by series order by series asc"),
-      Seq(Row("0Series", 25880.0), Row("1Series", 4001.0), Row("2Series", 12354.0), Row("3Series", 15235.0), Row("4Series", 12344.0), Row("5Series", 29071.0), Row("6Series", 12922.0), Row("7Series", 18591.197), Row("8Series", 13567.0), Row("9Series", 12920.0)))
+      sql("select series,sum(gamePointId) a from Carbon_automation_test_hive group by series order by series asc"))
   })
 
   //TC_184
   test("select series,sum(gamePointId) a from Carbon_automation_test group by series order by a asc")({
     checkAnswer(
       sql("select series,sum(gamePointId) a from Carbon_automation_test group by series order by a asc"),
-      Seq(Row("1Series", 4001.0), Row("4Series", 12344.0), Row("2Series", 12354.0), Row("9Series", 12920.0), Row("6Series", 12922.0), Row("8Series", 13567.0), Row("3Series", 15235.0), Row("7Series", 18591.197), Row("0Series", 25880.0), Row("5Series", 29071.0)))
+      sql("select series,sum(gamePointId) a from Carbon_automation_test_hive group by series order by a asc"))
   })
 
   //TC_185
   test("select series,sum(gamePointId) a from Carbon_automation_test group by series order by series asc ,a asc")({
     checkAnswer(
       sql("select series,sum(gamePointId) a from Carbon_automation_test group by series order by series asc ,a asc"),
-      Seq(Row("0Series", 25880.0), Row("1Series", 4001.0), Row("2Series", 12354.0), Row("3Series", 15235.0), Row("4Series", 12344.0), Row("5Series", 29071.0), Row("6Series", 12922.0), Row("7Series", 18591.197), Row("8Series", 13567.0), Row("9Series", 12920.0)))
+      sql("select series,sum(gamePointId) a from Carbon_automation_test_hive group by series order by series asc ,a asc"))
   })
 
   //TC_186
   test("select series,sum(gamePointId) a from Carbon_automation_test group by series order by series desc ,a asc")({
     checkAnswer(
       sql("select series,sum(gamePointId) a from Carbon_automation_test group by series order by series desc ,a asc"),
-      Seq(Row("9Series", 12920.0), Row("8Series", 13567.0), Row("7Series", 18591.197), Row("6Series", 12922.0), Row("5Series", 29071.0), Row("4Series", 12344.0), Row("3Series", 15235.0), Row("2Series", 12354.0), Row("1Series", 4001.0), Row("0Series", 25880.0)))
+      sql("select series,sum(gamePointId) a from Carbon_automation_test_hive group by series order by series desc ,a asc"))
   })
 
   //TC_187
   test("select series,ActiveProvince,sum(gamePointId) a from Carbon_automation_test group by series,ActiveProvince order by series desc,ActiveProvince asc")({
     checkAnswer(
       sql("select series,ActiveProvince,sum(gamePointId) a from Carbon_automation_test group by series,ActiveProvince order by series desc,ActiveProvince asc"),
-      Seq(Row("9Series", "Guangdong Province", 2205.0), Row("9Series", "Hubei Province", 2530.0), Row("9Series", "Hunan Province", 8185.0), Row("8Series", "Guangdong Province", 2235.0), Row("8Series", "Hubei Province", 7962.0), Row("8Series", "Hunan Province", 3370.0), Row("7Series", "Guangdong Province", 8935.562), Row("7Series", "Hubei Province", 1714.635), Row("7Series", "Hunan Province", 7941.0), Row("6Series", "Guangdong Province", 907.0), Row("6Series", "Hubei Province", 6504.0), Row("6Series", "Hunan Province", 5511.0), Row("5Series", "Guangdong Province", 8963.0), Row("5Series", "Hubei Province", 6100.0), Row("5Series", "Hunan Province", 14008.0), Row("4Series", "Guangdong Province", 2488.0), Row("4Series", "Hubei Province", 2970.0), Row("4Series", "Hunan Province", 6886.0), Row("3Series", "Guangdong Province", 2586.0), Row("3Series", "Hubei Province", 3555.0), Row("3Series", "Hunan Province", 9094.0), Row("2Series", "Hubei Province", 4016.0), Row("2Series", "Hunan Province", 8338.0), Row("1Series", "Guangdong Province", 1408.0), Row("1Series", "Hunan Province", 2593.0), Row("0Series", "Guangdong Province", 2192.0), Row("0Series", "Hubei Province", 7500.0), Row("0Series", "Hunan Province", 16188.0)))
+      sql("select series,ActiveProvince,sum(gamePointId) a from Carbon_automation_test_hive group by series,ActiveProvince order by series desc,ActiveProvince asc"))
   })
   
    //TC_208
@@ -737,28 +741,28 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   test("SELECT AMSize, ActiveAreaId, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, ActiveAreaId ASC")({
     checkAnswer(
       sql("SELECT AMSize, ActiveAreaId, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, ActiveAreaId ASC"),
-      Seq(Row("0RAM size", "1", 2849.0), Row("0RAM size", "2", 79.0), Row("0RAM size", "3", 7663.0), Row("0RAM size", "5", 1341.0), Row("0RAM size", "6", 6082.0), Row("1RAM size", "1", 256.0), Row("1RAM size", "2", 1333.0), Row("1RAM size", "4", 7510.0), Row("1RAM size", "5", 2745.0), Row("1RAM size", "7", 3942.0), Row("2RAM size", "3", 1973.0), Row("2RAM size", "4", 1350.0), Row("3RAM size", "1", 6640.0), Row("3RAM size", "2", 1999.0), Row("3RAM size", "3", 2863.0), Row("3RAM size", "4", 3824.0), Row("3RAM size", "5", 5699.0), Row("3RAM size", "6", 2635.0), Row("3RAM size", "7", 1491.0), Row("4RAM size", "1", 2255.0), Row("4RAM size", "2", 1728.0), Row("4RAM size", "3", 9130.0), Row("4RAM size", "4", 11560.0), Row("4RAM size", "6", 5344.635), Row("4RAM size", "7", 1338.0), Row("5RAM size", "2", 4712.0), Row("5RAM size", "3", 2769.0), Row("5RAM size", "6", 2478.0), Row("6RAM size", "1", 2142.0), Row("6RAM size", "2", 1768.0), Row("6RAM size", "3", 2633.0), Row("6RAM size", "4", 866.0), Row("6RAM size", "5", 2952.0), Row("6RAM size", "6", 3257.0), Row("7RAM size", "3", 151.0), Row("7RAM size", "5", 2239.0), Row("7RAM size", "6", 3979.0), Row("7RAM size", "7", 2031.0), Row("8RAM size", "1", 355.0), Row("8RAM size", "2", 2738.562), Row("8RAM size", "4", 3102.0), Row("8RAM size", "5", 2684.0), Row("8RAM size", "6", 2970.0), Row("8RAM size", "7", 5166.0), Row("9RAM size", "1", 3065.0), Row("9RAM size", "3", 3239.0), Row("9RAM size", "4", 5821.0), Row("9RAM size", "6", 1567.0), Row("9RAM size", "7", 571.0)))
+      sql("SELECT AMSize, ActiveAreaId, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test_hive) SUB_QRY GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, ActiveAreaId ASC"))
   })
 
   //TC_265
   test("SELECT AMSize, ActiveAreaId, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test) SUB_QRY WHERE NOT(AMSize = \"\") GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, ActiveAreaId ASC")({
     checkAnswer(
       sql("SELECT AMSize, ActiveAreaId, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test) SUB_QRY WHERE NOT(AMSize = \"\") GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, ActiveAreaId ASC"),
-      Seq(Row("0RAM size", "1", 2849.0), Row("0RAM size", "2", 79.0), Row("0RAM size", "3", 7663.0), Row("0RAM size", "5", 1341.0), Row("0RAM size", "6", 6082.0), Row("1RAM size", "1", 256.0), Row("1RAM size", "2", 1333.0), Row("1RAM size", "4", 7510.0), Row("1RAM size", "5", 2745.0), Row("1RAM size", "7", 3942.0), Row("2RAM size", "3", 1973.0), Row("2RAM size", "4", 1350.0), Row("3RAM size", "1", 6640.0), Row("3RAM size", "2", 1999.0), Row("3RAM size", "3", 2863.0), Row("3RAM size", "4", 3824.0), Row("3RAM size", "5", 5699.0), Row("3RAM size", "6", 2635.0), Row("3RAM size", "7", 1491.0), Row("4RAM size", "1", 2255.0), Row("4RAM size", "2", 1728.0), Row("4RAM size", "3", 9130.0), Row("4RAM size", "4", 11560.0), Row("4RAM size", "6", 5344.635), Row("4RAM size", "7", 1338.0), Row("5RAM size", "2", 4712.0), Row("5RAM size", "3", 2769.0), Row("5RAM size", "6", 2478.0), Row("6RAM size", "1", 2142.0), Row("6RAM size", "2", 1768.0), Row("6RAM size", "3", 2633.0), Row("6RAM size", "4", 866.0), Row("6RAM size", "5", 2952.0), Row("6RAM size", "6", 3257.0), Row("7RAM size", "3", 151.0), Row("7RAM size", "5", 2239.0), Row("7RAM size", "6", 3979.0), Row("7RAM size", "7", 2031.0), Row("8RAM size", "1", 355.0), Row("8RAM size", "2", 2738.562), Row("8RAM size", "4", 3102.0), Row("8RAM size", "5", 2684.0), Row("8RAM size", "6", 2970.0), Row("8RAM size", "7", 5166.0), Row("9RAM size", "1", 3065.0), Row("9RAM size", "3", 3239.0), Row("9RAM size", "4", 5821.0), Row("9RAM size", "6", 1567.0), Row("9RAM size", "7", 571.0)))
+      sql("SELECT AMSize, ActiveAreaId, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test_hive) SUB_QRY WHERE NOT(AMSize = \"\") GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, ActiveAreaId ASC"))
   })
   
    //TC_274
   test("SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamepointid) AS Sum_gamepointid FROM  Carbon_automation_test group by ActiveCountry,ActiveDistrict,Activecity")({
     checkAnswer(
       sql("SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamepointid) AS Sum_gamepointid FROM  Carbon_automation_test group by ActiveCountry,ActiveDistrict,Activecity"),
-      Seq(Row("Chinese", "hongshan", "wuhan", 28312.635000000002), Row("Chinese", "longgang", "shenzhen", 17562.0), Row("Chinese", "yichang", "yichang", 14539.0), Row("Chinese", "tianyuan", "zhuzhou", 17660.0), Row("Chinese", "yuhua", "changsha", 30421.0), Row("Chinese", "xiangtan", "xiangtan", 34033.0), Row("Chinese", "longhua", "guangzhou", 14357.562)))
+      sql("SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamepointid) AS Sum_gamepointid FROM  Carbon_automation_test_hive group by ActiveCountry,ActiveDistrict,Activecity"))
   })
 
   //TC_275
   test("SELECT Latest_country, Latest_city, Latest_district, SUM(gamepointid) AS Sum_gamepointid FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY Latest_country, Latest_city, Latest_district ORDER BY Latest_country ASC, Latest_city ASC, Latest_district ASC")({
     checkAnswer(
       sql("SELECT Latest_country, Latest_city, Latest_district, SUM(gamepointid) AS Sum_gamepointid FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY Latest_country, Latest_city, Latest_district ORDER BY Latest_country ASC, Latest_city ASC, Latest_district ASC"),
-      Seq(Row("Chinese", "changsha", "yuhua", 26119.0), Row("Chinese", "guangzhou", "longhua", 31520.561999999998), Row("Chinese", "shenzhen", "longgang", 19969.0), Row("Chinese", "wuhan", "hongshan", 18381.0), Row("Chinese", "xiangtan", "xiangtan", 24753.635000000002), Row("Chinese", "yichang", "yichang", 28467.0), Row("Chinese", "zhuzhou", "tianyuan", 7675.0)))
+      sql("SELECT Latest_country, Latest_city, Latest_district, SUM(gamepointid) AS Sum_gamepointid FROM (select * from Carbon_automation_test_hive) SUB_QRY GROUP BY Latest_country, Latest_city, Latest_district ORDER BY Latest_country ASC, Latest_city ASC, Latest_district ASC"))
   })
 
   //TC_276
@@ -779,7 +783,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   test("SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamepointid) AS Sum_gamepointid FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry, ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity ASC")({
     checkAnswer(
       sql("SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamepointid) AS Sum_gamepointid FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry, ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity ASC"),
-      Seq(Row("Chinese", "hongshan", "wuhan", 28312.635000000002), Row("Chinese", "longgang", "shenzhen", 17562.0), Row("Chinese", "longhua", "guangzhou", 14357.562), Row("Chinese", "tianyuan", "zhuzhou", 17660.0), Row("Chinese", "xiangtan", "xiangtan", 34033.0), Row("Chinese", "yichang", "yichang", 14539.0), Row("Chinese", "yuhua", "changsha", 30421.0)))
+      sql("SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamepointid) AS Sum_gamepointid FROM (select * from Carbon_automation_test_hive) SUB_QRY GROUP BY ActiveCountry, ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity ASC"))
   })
   
     //TC_317
@@ -800,7 +804,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   test("SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry, ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity ASC")({
     checkAnswer(
       sql("SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry, ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity ASC"),
-      Seq(Row("Chinese", "hongshan", "wuhan", 28312.635000000002), Row("Chinese", "longgang", "shenzhen", 17562.0), Row("Chinese", "longhua", "guangzhou", 14357.562), Row("Chinese", "tianyuan", "zhuzhou", 17660.0), Row("Chinese", "xiangtan", "xiangtan", 34033.0), Row("Chinese", "yichang", "yichang", 14539.0), Row("Chinese", "yuhua", "changsha", 30421.0)))
+      sql("SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test_hive) SUB_QRY GROUP BY ActiveCountry, ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity ASC"))
   })
 
   //TC_321
@@ -814,7 +818,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   test("SELECT series, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY series ORDER BY series ASC")({
     checkAnswer(
       sql("SELECT series, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY series ORDER BY series ASC"),
-      Seq(Row("0Series", 25880.0), Row("1Series", 4001.0), Row("2Series", 12354.0), Row("3Series", 15235.0), Row("4Series", 12344.0), Row("5Series", 29071.0), Row("6Series", 12922.0), Row("7Series", 18591.197), Row("8Series", 13567.0), Row("9Series", 12920.0)))
+      sql("SELECT series, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test_hive) SUB_QRY GROUP BY series ORDER BY series ASC"))
   })
 
   //TC_386
@@ -828,7 +832,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   test("SELECT modelId, SUM(gamepointid) AS Sum_gamepointid FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY modelId ORDER BY modelId ASC")({
     checkAnswer(
       sql("SELECT modelId, SUM(gamepointid) AS Sum_gamepointid FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY modelId ORDER BY modelId ASC"),
-      Seq(Row("1017", 2483.0), Row("104", 1442.0), Row("1062", 2507.0), Row("1069", 151.0), Row("1085", 448.0), Row("109", 2738.562), Row("1121", 2239.0), Row("1160", 572.0), Row("1168", 901.0), Row("1184", 2399.0), Row("1185", 1608.0), Row("1195", 1491.0), Row("1198", 1053.0), Row("1210", 1655.0), Row("1232", 1697.0), Row("1234", 2061.0), Row("1326", 2071.0), Row("138", 865.0), Row("1386", 2194.0), Row("1429", 2478.0), Row("1447", 2863.0), Row("1511", 2970.0), Row("155", 1999.0), Row("1580", 2205.0), Row("1602", 2553.0), Row("1619", 2142.0), Row("1624", 813.0), Row("1650", 613.0), Row("1683", 1973.0), Row("1689", 1368.0), Row("1695", 1691.0), Row("1734", 1778.0), Row("1741", 1080.0), Row("1815", 136.0), Row("1835", 1750.0), Row("1841", 2826.0), Row("1845", 505.0), Row("1856", 2192.0), Row("187", 571.0), Row("1890", 412.0), Row("1969", 2078.0), Row("2008", 1341.0), Row("2069", 2572.0), Row("2074", 907.0), Row("2133", 2734.0), Row("2142", 1226.0), Row("2151", 2194.0), Row("2164", 1098.0), Row("2167", 355.0), Row("2176", 538.0), Row("2201", 2972.0), Row("2300", 845.0), Row("2319", 1077.0), Row("2320", 1407.0), Row("2355", 954.0), Row("2381", 1015.0), Row("2408", 2175.0), Row("2415", 2224.0), Row("2457", 29.0), Row("2479", 1600.0), Row("2531", 692.0), Row("2563", 1407.0), Row("2574", 256.0), Row("2591", 1271.0), Row("2594", 2952.0), Row("2597", 1717.0), Row("2644", 568.0), Row("2696", 79.0), Row("2705", 2890.0), Row("273", 760.0), Row("2759", 2593.0), Row("2761", 2348.0), Row("2765", 1434.0), Row("2797", 1350.0), Row("2799", 2077.0), Row("2823", 1728.0), Row("2828", 1864.0), Row("2930", 1768.0), Row("2940", 2436.0), Row("2963", 1873.0), Row("297", 2849.0), Row("396", 1991.0), Row("44", 1567.0), Row("446", 441.0), Row("466", 202.0), Row("47", 1724.0), Row("477", 1841.0), Row("499", 1337.0), Row("513", 1333.0), Row("546", 298.0), Row("631", 2745.0), Row("68", 750.0), Row("716", 2288.0), Row("776", 2488.0), Row("839", 1823.0), Row("864", 2635.0), Row("872", 1229.0), Row("93", 1714.635), Row("987", 732.0)))
+      sql("SELECT modelId, SUM(gamepointid) AS Sum_gamepointid FROM (select * from Carbon_automation_test_hive) SUB_QRY GROUP BY modelId ORDER BY modelId ASC"))
   })
 
   //TC_388

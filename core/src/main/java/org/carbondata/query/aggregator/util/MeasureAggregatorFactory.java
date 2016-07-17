@@ -95,6 +95,7 @@ public class MeasureAggregatorFactory {
     // get the MeasureAggregator based on aggregate type
     if (CarbonCommonConstants.MIN.equalsIgnoreCase(aggregatorType)) {
       switch (dataType) {
+        case INT:
         case LONG:
           return new MinLongAggregator();
         case DECIMAL:
@@ -108,6 +109,7 @@ public class MeasureAggregatorFactory {
     //
     else if (CarbonCommonConstants.MAX.equalsIgnoreCase(aggregatorType)) {
       switch (dataType) {
+        case INT:
         case LONG:
           return new MaxLongAggregator();
         case DECIMAL:
@@ -119,6 +121,7 @@ public class MeasureAggregatorFactory {
     //
     else if (CarbonCommonConstants.AVERAGE.equalsIgnoreCase(aggregatorType)) {
       switch (dataType) {
+        case INT:
         case LONG:
 
           return new AvgLongAggregator();
@@ -136,6 +139,7 @@ public class MeasureAggregatorFactory {
     //
     else if (CarbonCommonConstants.DISTINCT_COUNT.equalsIgnoreCase(aggregatorType)) {
       switch (dataType) {
+        case INT:
         case LONG:
           return new DistinctCountLongAggregatorObjectSet();
         case DECIMAL:
@@ -146,6 +150,7 @@ public class MeasureAggregatorFactory {
 
     } else if (CarbonCommonConstants.SUM.equalsIgnoreCase(aggregatorType)) {
       switch (dataType) {
+        case INT:
         case LONG:
 
           return new SumLongAggregator();
@@ -162,6 +167,7 @@ public class MeasureAggregatorFactory {
       }
     } else if (CarbonCommonConstants.SUM_DISTINCT.equalsIgnoreCase(aggregatorType)) {
       switch (dataType) {
+        case INT:
         case LONG:
 
           return new SumDistinctLongAggregator();
@@ -174,6 +180,7 @@ public class MeasureAggregatorFactory {
       }
     } else if (CarbonCommonConstants.DUMMY.equalsIgnoreCase(aggregatorType)) {
       switch (dataType) {
+        case INT:
         case LONG:
 
           return new DummyLongAggregator();

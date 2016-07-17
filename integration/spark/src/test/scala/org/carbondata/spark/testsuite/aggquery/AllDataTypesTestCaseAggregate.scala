@@ -44,6 +44,16 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
     sql(
       "LOAD DATA LOCAL INPATH './src/test/resources/data.csv' INTO TABLE alldatatypescubeAGG " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
+      
+    sql(
+      "CREATE TABLE alldatatypescubeAGG_hive (empno int, empname String, designation String, doj " +
+      "Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname " +
+      "String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance " +
+      "int,utilization int,salary int)row format delimited fields terminated by ','")
+    sql(
+      "LOAD DATA LOCAL INPATH './src/test/resources/datawithoutheader.csv' INTO TABLE alldatatypescubeAGG_hive")
+      
+       
   }
 
   test(
@@ -54,7 +64,9 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql(
         "select empno,empname,utilization,count(salary),sum(empno) from alldatatypescubeAGG where" +
         " empname in ('arvind','ayushi') group by empno,empname,utilization"),
-      Seq(Row(11, "arvind", 96.2, 1, 11), Row(15, "ayushi", 91.5, 1, 15)))
+      sql(
+        "select empno,empname,utilization,count(salary),sum(empno) from alldatatypescubeAGG_hive where" +
+        " empname in ('arvind','ayushi') group by empno,empname,utilization"))
   }
 
   test(
@@ -65,7 +77,9 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql(
         "select empname,trim(designation),avg(salary),avg(empno) from alldatatypescubeAGG where " +
         "empname in ('arvind','ayushi') group by empname,trim(designation)"),
-      Seq(Row("arvind", "SE", 5040.56, 11.0), Row("ayushi", "SSA", 13245.48, 15.0)))
+      sql(
+        "select empname,trim(designation),avg(salary),avg(empno) from alldatatypescubeAGG_hive where " +
+        "empname in ('arvind','ayushi') group by empname,trim(designation)"))
   }
 
   test(
@@ -78,7 +92,10 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
         "select empname,length(designation),max(empno),min(empno), avg(empno) from " +
         "alldatatypescubeAGG where empname in ('arvind','ayushi') group by empname,length" +
         "(designation) order by empname"),
-      Seq(Row("arvind", 2, 11, 11, 11.0), Row("ayushi", 3, 15, 15, 15.0)))
+      sql(
+        "select empname,length(designation),max(empno),min(empno), avg(empno) from " +
+        "alldatatypescubeAGG_hive where empname in ('arvind','ayushi') group by empname,length" +
+        "(designation) order by empname"))
   }
 
   override def afterAll {

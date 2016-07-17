@@ -185,6 +185,7 @@ public class QueryResultPreparatorImpl
           } else {
             Object msrVal;
             switch (msr.getMeasure().getDataType()) {
+              case INT:
               case LONG:
                 msrVal = msrAgg[queryExecuterProperties.measureStartIndex + i].getLongValue();
                 break;
