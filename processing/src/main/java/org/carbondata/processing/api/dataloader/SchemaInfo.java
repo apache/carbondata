@@ -47,9 +47,9 @@ public class SchemaInfo {
   private String srcPwd;
 
   /**
-   * cubeName
+   * tableName
    */
-  private String cubeName;
+  private String tableName;
 
   /**
    * isAutoAggregateRequest
@@ -133,11 +133,11 @@ public class SchemaInfo {
   }
 
   public String getCubeName() {
-    return cubeName;
+    return tableName;
   }
 
-  public void setCubeName(String cubeName) {
-    this.cubeName = cubeName;
+  public void setCubeName(String tableName) {
+    this.tableName = tableName;
   }
 
   /**

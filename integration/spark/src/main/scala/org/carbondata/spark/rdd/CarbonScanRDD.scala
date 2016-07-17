@@ -64,7 +64,7 @@ class CarbonScanRDD[V: ClassTag](
   filterExpression: Expression,
   keyClass: RawValue[V],
   @transient conf: Configuration,
-  cubeCreationTime: Long,
+  tableCreationTime: Long,
   schemaLastUpdatedTime: Long,
   baseStoreLocation: String)
   extends RDD[V](sc, Nil) with Logging {

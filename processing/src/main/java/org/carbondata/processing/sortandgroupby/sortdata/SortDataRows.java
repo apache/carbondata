@@ -67,10 +67,6 @@ public class SortDataRows {
    */
   private int entryCount;
   /**
-   * tableName
-   */
-  private String tableName;
-  /**
    * sortBufferSize
    */
   private int sortBufferSize;
@@ -135,7 +131,7 @@ public class SortDataRows {
    */
   private int bufferSize;
   private String schemaName;
-  private String cubeName;
+  private String tableName;
 
   private char[] aggType;
 
@@ -200,10 +196,10 @@ public class SortDataRows {
   /**
    * This method will be used to initialize
    */
-  public void initialize(String schemaName, String cubeName)
+  public void initialize(String schemaName, String tableName)
       throws CarbonSortKeyAndGroupByException {
     this.schemaName = schemaName;
-    this.cubeName = cubeName;
+    this.tableName = tableName;
 
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
     setSortConfiguration(carbonProperties);
@@ -502,7 +498,7 @@ public class SortDataRows {
     // get sort buffer size
     this.sortBufferSize = Integer.parseInt(instance
         .getProperty(CarbonCommonConstants.SORT_SIZE, CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
-    LOGGER.info("Sort size for cube: " + this.sortBufferSize);
+    LOGGER.info("Sort size for table: " + this.sortBufferSize);
     // set number of intermedaite file to merge
     this.numberOfIntermediateFileToBeMerged = Integer.parseInt(instance
         .getProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT,

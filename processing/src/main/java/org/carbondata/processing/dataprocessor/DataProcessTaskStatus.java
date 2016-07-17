@@ -59,8 +59,6 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
 
   private String schemaName;
 
-  private String cubeName;
-
   private String tableName;
 
   private String newSchemaFilePath;
@@ -89,9 +87,8 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
 
   private String escapeCharacter;
 
-  public DataProcessTaskStatus(String schemaName, String cubeName, String tableName) {
+  public DataProcessTaskStatus(String schemaName, String tableName) {
     this.schemaName = schemaName;
-    this.cubeName = cubeName;
     this.tableName = tableName;
     this.desc = "";
     this.setNewSchemaFilePath("");
@@ -162,17 +159,17 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
   }
 
   /**
-   * @return the cubeName
+   * @return the tableName
    */
   public String getCubeName() {
-    return cubeName;
+    return tableName;
   }
 
   /**
-   * @param cubeName the cubeName to set
+   * @param tableName the tableName to set
    */
-  public void setCubeName(String cubeName) {
-    this.cubeName = cubeName;
+  public void setCubeName(String tableName) {
+    this.tableName = tableName;
   }
 
   public String getDesc() {
@@ -268,7 +265,7 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
    */
   public IDataProcessStatus makeCopy() {
     IDataProcessStatus copy = new DataProcessTaskStatus();
-    copy.setCubeName(this.cubeName);
+    copy.setCubeName(this.tableName);
     copy.setDataloadstatusid(this.dataloadstatusid);
     copy.setDesc(this.desc);
     copy.setKey(this.key);

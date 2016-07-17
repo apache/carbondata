@@ -40,10 +40,10 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test data loading and validate query output") {
-    //Create test cube and hive table
+    //Create test table and hive table
     sql("CREATE table testtable (empno int, empname String, designation String, doj String, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate String, projectenddate String,attendance double,utilization double,salary double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate')")
     sql("create table testhivetable(empno int, empname String, designation string, doj String, workgroupcategory int, workgroupcategoryname String,deptno int, deptname String, projectcode int, projectjoindate String,projectenddate String, attendance double,utilization double,salary double)row format delimited fields terminated by ','")
-    //load data into test cube and hive table and validate query result
+    //load data into test table and hive table and validate query result
     sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table testtable")
     sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' overwrite INTO table testhivetable")
     checkAnswer(sql("select * from testtable"), sql("select * from testhivetable"))
@@ -51,24 +51,24 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO TABLE testtable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
     sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' INTO table testhivetable")
     checkAnswer(sql("select * from testtable"), sql("select * from testhivetable"))
-    //drop test cube and table
+    //drop test table and table
     sql("drop table testtable")
     sql("drop table testhivetable")
   }
 
   /**
-   * TODO: temporarily changing cube names to different names,
-    * however deletion and creation of cube with same name
+   * TODO: temporarily changing table names to different names,
+    * however deletion and creation of table with same name
    */
   test("test data loading with different case file header and validate query output") {
-    //Create test cube and hive table
+    //Create test table and hive table
     sql("CREATE table testtable1 (empno int, empname String, designation String, doj String, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate String, projectenddate String,attendance double,utilization double,salary double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate')")
     sql("create table testhivetable1(empno int, empname String, designation string, doj String, workgroupcategory int, workgroupcategoryname String,deptno int, deptname String, projectcode int, projectjoindate String,projectenddate String, attendance double,utilization double,salary double)row format delimited fields terminated by ','")
-    //load data into test cube and hive table and validate query result
+    //load data into test table and hive table and validate query result
     sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' INTO table testtable1 options('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='EMPno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,SALARY')")
     sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' overwrite INTO table testhivetable1")
     checkAnswer(sql("select * from testtable1"), sql("select * from testhivetable1"))
-    //drop test cube and table
+    //drop test table and table
     sql("drop table testtable1")
     sql("drop table testhivetable1")
   }
@@ -185,11 +185,11 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test carbon table data loading when table name is in different case with create table, for UpperCase") {
-    sql("create table UPPERCASEcube(empno Int, empname String, designation String, " +
+    sql("create table UPPERCASEtable(empno Int, empname String, designation String, " +
       "doj String, workgroupcategory Int, workgroupcategoryname String, deptno Int, " +
       "deptname String, projectcode Int, projectjoindate String, projectenddate String, " +
       "attendance Int,utilization Double,salary Double) STORED BY 'org.apache.carbondata.format'")
-    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table uppercasecube OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"')")
+    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table uppercasetable OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"')")
     sql("drop table UpperCaseCube")
   }
 
@@ -199,7 +199,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
       "deptname String, projectcode Int, projectjoindate String, projectenddate String, " +
       "attendance Int,utilization Double,salary Double) STORED BY 'org.apache.carbondata.format'")
     sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table LOWERCASECUBE OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"')")
-    sql("drop table LowErcasEcube")
+    sql("drop table LowErcasEtable")
   }
   
   test("test carbon table data loading using escape char 1") {

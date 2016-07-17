@@ -168,7 +168,7 @@ case class CarbonScan(
     // setting queryid
     buildCarbonPlan.setQueryId(ocRaw.getConf("queryId", System.nanoTime() + ""))
 
-    val cubeCreationTime = carbonCatalog
+    val tableCreationTime = carbonCatalog
       .getCubeCreationTime(relationRaw.schemaName, relationRaw.tableName)
     val schemaLastUpdatedTime = carbonCatalog
       .getSchemaLastUpdatedTime(relationRaw.schemaName, relationRaw.tableName)
@@ -178,7 +178,7 @@ case class CarbonScan(
       buildCarbonPlan.getFilterExpression,
       kv,
       conf,
-      cubeCreationTime,
+      tableCreationTime,
       schemaLastUpdatedTime,
       carbonCatalog.storePath)
     big

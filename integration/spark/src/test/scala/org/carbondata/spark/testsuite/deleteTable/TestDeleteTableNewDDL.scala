@@ -5,7 +5,7 @@ import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**
-  * test class for testing the create cube DDL.
+  * test class for testing the create table DDL.
   */
 class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
 

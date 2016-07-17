@@ -897,7 +897,7 @@ public final class FilterUtil {
     //    if (DataType.TIMESTAMP == carbonDimension.getDataType()) {
     //      return Integer.MAX_VALUE;
     //    }
-    // Get data from all the available slices of the cube
+    // Get data from all the available slices of the table
     if (null != dimCarinality) {
       return dimCarinality[carbonDimension.getKeyOrdinal()];
     }

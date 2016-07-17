@@ -536,7 +536,7 @@ class CarbonSqlParser()
   Option[Partitioner] = {
 
     // by default setting partition class empty.
-    // later in cube schema it is setting to default value.
+    // later in table schema it is setting to default value.
     var partitionClass: String = ""
     var partitionCount: Int = 1
     var partitionColNames: Array[String] = Array[String]()
@@ -890,15 +890,15 @@ class CarbonSqlParser()
     LOAD ~> DATA ~> opt(LOCAL) ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
       (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
       (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
-        case filePath ~ isOverwrite ~ cube ~ partionDataOptions =>
-          val (schema, cubename) = cube match {
-            case schemaName ~ cubeName => (schemaName, cubeName.toLowerCase())
+        case filePath ~ isOverwrite ~ table ~ partionDataOptions =>
+          val (schema, tablename) = table match {
+            case schemaName ~ tableName => (schemaName, tableName.toLowerCase())
           }
           if(partionDataOptions.isDefined) {
             validateOptions(partionDataOptions)
           }
           val patitionOptionsMap = partionDataOptions.getOrElse(List.empty[(String, String)]).toMap
-          LoadTable(schema, cubename, filePath, Seq(), patitionOptionsMap, isOverwrite.isDefined)
+          LoadTable(schema, tablename, filePath, Seq(), patitionOptionsMap, isOverwrite.isDefined)
       }
 
   private def validateOptions(partionDataOptions: Option[List[(String, String)]]): Unit = {
@@ -1161,8 +1161,8 @@ class CarbonSqlParser()
     SHOW ~> (LOADS|SEGMENTS) ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident ~
       (LIMIT ~> numericLit).? <~
       opt(";") ^^ {
-      case schemaName ~ cubeName ~ limit =>
-        ShowLoadsCommand(schemaName, cubeName.toLowerCase(), limit)
+      case schemaName ~ tableName ~ limit =>
+        ShowLoadsCommand(schemaName, tableName.toLowerCase(), limit)
     }
 
   protected lazy val segmentId: Parser[String] =
@@ -1175,8 +1175,8 @@ class CarbonSqlParser()
     DELETE ~> (LOAD|SEGMENT) ~> repsep(segmentId, ",") ~ (FROM ~> TABLE ~>
       (ident <~ ".").? ~ ident) <~
       opt(";") ^^ {
-      case loadids ~ cube => cube match {
-        case schemaName ~ cubeName => DeleteLoadsById(loadids, schemaName, cubeName.toLowerCase())
+      case loadids ~ table => table match {
+        case schemaName ~ tableName => DeleteLoadsById(loadids, schemaName, tableName.toLowerCase())
       }
     }
 
@@ -1184,16 +1184,16 @@ class CarbonSqlParser()
     DELETE ~> (LOADS|SEGMENTS) ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
       (WHERE ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
       opt(";") ^^ {
-      case schema ~ cube ~ condition =>
+      case schema ~ table ~ condition =>
         condition match {
           case dateField ~ dateValue =>
-            DeleteLoadsByLoadDate(schema, cube.toLowerCase(), dateField, dateValue)
+            DeleteLoadsByLoadDate(schema, table.toLowerCase(), dateField, dateValue)
         }
     }
 
   protected lazy val cleanFiles: Parser[LogicalPlan] =
     CLEAN ~> FILES ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
-      case schemaName ~ cubeName => CleanFiles(schemaName, cubeName.toLowerCase())
+      case schemaName ~ tableName => CleanFiles(schemaName, tableName.toLowerCase())
     }
 
 }

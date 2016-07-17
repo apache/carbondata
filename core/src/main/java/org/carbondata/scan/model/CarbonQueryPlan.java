@@ -48,10 +48,10 @@ public class CarbonQueryPlan implements Serializable {
 
   /**
    * Cube name .
-   * if user asks select * from datasight.employee. then employee is the cube name.
+   * if user asks select * from datasight.employee. then employee is the table name.
    * It is mandatory.
    */
-  private String cubeName;
+  private String tableName;
 
   /**
    * List of dimensions.
@@ -110,22 +110,22 @@ public class CarbonQueryPlan implements Serializable {
   private boolean rawDetailQuery;
 
   /**
-   * Constructor created with cube name.
+   * Constructor created with table name.
    *
-   * @param cubeName
+   * @param tableName
    */
-  public CarbonQueryPlan(String cubeName) {
-    this.cubeName = cubeName;
+  public CarbonQueryPlan(String tableName) {
+    this.tableName = tableName;
   }
 
   /**
-   * Constructor created with schema name and cube name.
+   * Constructor created with schema name and table name.
    *
    * @param schemaName
-   * @param cubeName
+   * @param tableName
    */
-  public CarbonQueryPlan(String schemaName, String cubeName) {
-    this.cubeName = cubeName;
+  public CarbonQueryPlan(String schemaName, String tableName) {
+    this.tableName = tableName;
     this.schemaName = schemaName;
   }
 
@@ -167,10 +167,10 @@ public class CarbonQueryPlan implements Serializable {
   }
 
   /**
-   * @return the cubeName
+   * @return the tableName
    */
   public String getCubeName() {
-    return cubeName;
+    return tableName;
   }
 
   /**

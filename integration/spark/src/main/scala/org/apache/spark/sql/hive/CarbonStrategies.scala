@@ -228,14 +228,14 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
             .tableExists(toTableIdentifier(tableName.toLowerCase))(sqlContext) =>
         val identifier = toTableIdentifier(tableName.toLowerCase)
         ExecutedCommand(DropTableCommand(ifNotExists, identifier.database, identifier.table)) :: Nil
-      case ShowLoadsCommand(schemaName, cube, limit) =>
-        ExecutedCommand(ShowLoads(schemaName, cube, limit, plan.output)) :: Nil
-      case LoadTable(schemaNameOp, cubeName, factPathFromUser, dimFilesPath,
+      case ShowLoadsCommand(schemaName, table, limit) =>
+        ExecutedCommand(ShowLoads(schemaName, table, limit, plan.output)) :: Nil
+      case LoadTable(schemaNameOp, tableName, factPathFromUser, dimFilesPath,
       partionValues, isOverwriteExist, inputSqlString) =>
         val isCarbonTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
-            .tableExists(TableIdentifier(cubeName, schemaNameOp))(sqlContext)
+            .tableExists(TableIdentifier(tableName, schemaNameOp))(sqlContext)
         if (isCarbonTable || partionValues.nonEmpty) {
-          ExecutedCommand(LoadTable(schemaNameOp, cubeName, factPathFromUser,
+          ExecutedCommand(LoadTable(schemaNameOp, tableName, factPathFromUser,
             dimFilesPath, partionValues, isOverwriteExist, inputSqlString)) :: Nil
         } else {
           ExecutedCommand(HiveNativeCommand(inputSqlString)) :: Nil

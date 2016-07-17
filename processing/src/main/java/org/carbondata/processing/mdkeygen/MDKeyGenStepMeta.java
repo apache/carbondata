@@ -66,11 +66,6 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
   private String numberOfCores;
 
   /**
-   * cubeName
-   */
-  private String cubeName;
-
-  /**
    * schemaName
    */
   private String schemaName;
@@ -156,7 +151,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     tableName = "";
     numberOfCores = "";
     aggregateLevels = "";
-    cubeName = "";
+    tableName = "";
     schemaName = "";
     columnGroupsString = "";
     noDictionaryDims = "";
@@ -175,7 +170,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     retval.append("    ").append(XMLHandler.addTagValue("TableName", tableName));
     retval.append("    ").append(XMLHandler.addTagValue("AggregateLevels", aggregateLevels));
     retval.append("    ").append(XMLHandler.addTagValue("NumberOfCores", numberOfCores));
-    retval.append("    ").append(XMLHandler.addTagValue("cubeName", cubeName));
+    retval.append("    ").append(XMLHandler.addTagValue("tableName", tableName));
     retval.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
     retval.append("    ").append(XMLHandler.addTagValue("noDictionaryDims", noDictionaryDims));
     retval.append("    ").append(XMLHandler.addTagValue("measureCount", measureCount));
@@ -205,7 +200,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       aggregateLevels = XMLHandler.getTagValue(stepnode, "AggregateLevels");
       numberOfCores = XMLHandler.getTagValue(stepnode, "NumberOfCores");
       schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
-      cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
+      tableName = XMLHandler.getTagValue(stepnode, "tableName");
       noDictionaryDims = XMLHandler.getTagValue(stepnode, "noDictionaryDims");
       measureCount = XMLHandler.getTagValue(stepnode, "measureCount");
       columnGroupsString = XMLHandler.getTagValue(stepnode, "dimensionsStoreType");
@@ -233,7 +228,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       rep.saveStepAttribute(idTransformation, idStep, "AggregateLevels", aggregateLevels);
       rep.saveStepAttribute(idTransformation, idStep, "NumberOfCores", numberOfCores);
       rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName);
-      rep.saveStepAttribute(idTransformation, idStep, "cubeName", cubeName);
+      rep.saveStepAttribute(idTransformation, idStep, "tableName", tableName);
       rep.saveStepAttribute(idTransformation, idStep, "noDictionaryDims", noDictionaryDims);
       rep.saveStepAttribute(idTransformation, idStep, "measureCount", measureCount);
       rep.saveStepAttribute(idTransformation, idStep, "dimensionsStoreType", columnGroupsString);
@@ -265,7 +260,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       aggregateLevels = rep.getStepAttributeString(idStep, "AggregateLevels");
       numberOfCores = rep.getStepAttributeString(idStep, "NumberOfCores");
       schemaName = rep.getStepAttributeString(idStep, "schemaName");
-      cubeName = rep.getStepAttributeString(idStep, "cubeName");
+      tableName = rep.getStepAttributeString(idStep, "tableName");
       noDictionaryDims = rep.getStepAttributeString(idStep, "noDictionaryDims");
       measureCount = rep.getStepAttributeString(idStep, "measureCount");
       columnGroupsString = rep.getStepAttributeString(idStep, "dimensionsStoreType");
@@ -335,17 +330,17 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
   }
 
   /**
-   * @return the cubeName
+   * @return the tableName
    */
   public String getCubeName() {
-    return cubeName;
+    return tableName;
   }
 
   /**
-   * @param cubeName the cubeName to set
+   * @param tableName the tableName to set
    */
-  public void setCubeName(String cubeName) {
-    this.cubeName = cubeName;
+  public void setCubeName(String tableName) {
+    this.tableName = tableName;
   }
 
   /**

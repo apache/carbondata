@@ -39,11 +39,6 @@ public class ColumnsInfo {
   private Map<String, KeyGenerator> keyGenerators;
 
   /**
-   * Cube name
-   */
-  private String cubeName;
-
-  /**
    * Hierarchy table names (Same will be file names for file store or
    * incremental load)
    */
@@ -88,7 +83,7 @@ public class ColumnsInfo {
   private int[][] propIndx;
 
   /**
-   * Dimension Index, Property column names from cube.
+   * Dimension Index, Property column names from table.
    * [0] - [col2,col3] [1] - [col4,col7,col8] [2] - []
    */
   private List<String>[] propColumns;
@@ -193,17 +188,17 @@ public class ColumnsInfo {
   }
 
   /**
-   * @return Returns the cubeName.
+   * @return Returns the tableName.
    */
   public String getCubeName() {
-    return cubeName;
+    return tableName;
   }
 
   /**
-   * @param cubeName The cubeName to set.
+   * @param tableName The tableName to set.
    */
-  public void setCubeName(String cubeName) {
-    this.cubeName = cubeName;
+  public void setCubeName(String tableName) {
+    this.tableName = tableName;
   }
 
   /**

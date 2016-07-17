@@ -130,9 +130,9 @@ public class GraphGenerator {
    */
   private String schemaName;
   /**
-   * cube
+   * table
    */
-  //    private Cube cube;
+  //    private Cube table;
   /**
    * instance
    */
@@ -269,7 +269,7 @@ public class GraphGenerator {
   private void initialise() {
     this.instance = CarbonProperties.getInstance();
     //TO-DO need to take care while supporting aggregate table using new schema.
-    //aggregateTable = CarbonSchemaParser.getAggregateTable(cube, schema);
+    //aggregateTable = CarbonSchemaParser.getAggregateTable(table, schema);
     this.factTableName = carbonDataLoadSchema.getCarbonTable().getFactTableName();
   }
 
@@ -860,7 +860,7 @@ public class GraphGenerator {
         .setActualDimensionColumns(CarbonSchemaParser.getActualDimensions(dimensions));
     graphConfiguration
     .setDimensionColumnsDataType(CarbonSchemaParser.getDimensionsDataTypes(dimensions));
-    //graphConfiguration.setNormHiers(CarbonSchemaParser.getNormHiers(cube, schema));
+    //graphConfiguration.setNormHiers(CarbonSchemaParser.getNormHiers(table, schema));
     graphConfiguration.setMeasureDataTypeInfo(CarbonSchemaParser.getMeasuresDataType(measures));
     graphConfiguration.setStoreLocation(
         this.schemaName + '/' + carbonDataLoadSchema.getCarbonTable().getFactTableName());

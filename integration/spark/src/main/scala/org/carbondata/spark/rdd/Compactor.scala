@@ -46,7 +46,7 @@ object Compactor {
     storeLocation: String,
     carbonTable: CarbonTable,
     kettleHomePath: String,
-    cubeCreationTime: Long,
+    tableCreationTime: Long,
     loadsToMerge: java.util.List[LoadMetadataDetails],
     sqlContext: SQLContext): Unit = {
 
@@ -65,7 +65,7 @@ object Compactor {
       carbonTable.getMetaDataFilepath(),
       mergedLoadName,
       kettleHomePath,
-      cubeCreationTime,
+      tableCreationTime,
       schemaName,
       factTableName,
       validSegments,

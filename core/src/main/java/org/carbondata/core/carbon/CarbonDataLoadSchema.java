@@ -84,7 +84,7 @@ public class CarbonDataLoadSchema implements Serializable {
 
   /**
    * Dimension Relation object which will be filled from
-   * Load DML Command to support normalized cube data load
+   * Load DML Command to support normalized table data load
    */
   public static class DimensionRelation implements Serializable {
     /**

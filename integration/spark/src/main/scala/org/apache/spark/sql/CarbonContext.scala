@@ -124,7 +124,7 @@ object CarbonContext {
 
   /**
    * @param schemaName - Schema Name
-   * @param cubeName   - Cube Name
+   * @param tableName   - Cube Name
    * @param factPath   - Raw CSV data path
    * @param targetPath - Target path where the file will be split as per partition
    * @param delimiter  - default file delimiter is comma(,)
@@ -143,7 +143,7 @@ object CarbonContext {
    */
   final def partitionData(
       schemaName: String = null,
-      cubeName: String,
+      tableName: String,
       factPath: String,
       targetPath: String,
       delimiter: String = ",",
@@ -156,7 +156,7 @@ object CarbonContext {
     if (schemaNameLocal == null) {
       schemaNameLocal = "default"
     }
-    val partitionDataClass = PartitionData(schemaName, cubeName, factPath, targetPath, delimiter,
+    val partitionDataClass = PartitionData(schemaName, tableName, factPath, targetPath, delimiter,
       quoteChar, fileHeader, escapeChar, multiLine)
     partitionDataClass.run(hiveContext)
     partitionDataClass.partitionStatus

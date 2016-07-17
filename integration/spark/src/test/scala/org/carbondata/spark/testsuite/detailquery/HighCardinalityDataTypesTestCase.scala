@@ -50,7 +50,7 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
       "load data local inpath './src/test/resources/datawithoutheader.csv' into table " +
         "NO_DICTIONARY_HIVE_6"
     );
-    //For Carbon cube creation.
+    //For Carbon table creation.
     sql("CREATE TABLE NO_DICTIONARY_CARBON_6 (empno Int, " +
       "doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, " +
       "deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, " +
@@ -234,7 +234,7 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    //sql("drop cube NO_DICTIONARY_HIVE_1")
-    //sql("drop cube NO_DICTIONARY_CARBON_1")
+    //sql("drop table NO_DICTIONARY_HIVE_1")
+    //sql("drop table NO_DICTIONARY_CARBON_1")
   }
 }

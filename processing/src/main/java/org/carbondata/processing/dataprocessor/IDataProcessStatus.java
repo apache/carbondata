@@ -59,7 +59,7 @@ public interface IDataProcessStatus {
   /**
    * This method is used to get the Key for saving status of data loading.
    *
-   * @return String - Key (schemaName + cubeName + tableName).
+   * @return String - Key (schemaName + tableName + tableName).
    */
   String getKey();
 
@@ -102,14 +102,14 @@ public interface IDataProcessStatus {
   void setSchemaName(String schemaName);
 
   /**
-   * @return the cubeName
+   * @return the tableName
    */
   String getCubeName();
 
   /**
-   * @param cubeName the cubeName to set
+   * @param tableName the tableName to set
    */
-  void setCubeName(String cubeName);
+  void setCubeName(String tableName);
 
   /**
    * @return the tableName

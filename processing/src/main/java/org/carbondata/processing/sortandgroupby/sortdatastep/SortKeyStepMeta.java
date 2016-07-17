@@ -60,9 +60,9 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
   private String outputRowSize;
 
   /**
-   * cubeName
+   * tableName
    */
-  private String cubeName;
+  private String tableName;
 
   /**
    * schemaName
@@ -128,7 +128,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
     schemaName = "";
     noDictionaryDims = "";
     noDictionaryDimsMapping = "";
-    cubeName = "";
+    tableName = "";
     dimensionCount = "";
     complexDimensionCount = "";
     measureCount = "";
@@ -151,7 +151,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
     retval.append("    ").append(XMLHandler.addTagValue("TableName", this.tabelName));
     retval.append("    ").append(XMLHandler.addTagValue("factDimLensString", factDimLensString));
     retval.append("    ").append(XMLHandler.addTagValue("outputRowSize", this.outputRowSize));
-    retval.append("    ").append(XMLHandler.addTagValue("cubeName", this.cubeName));
+    retval.append("    ").append(XMLHandler.addTagValue("tableName", this.tableName));
     retval.append("    ").append(XMLHandler.addTagValue("schemaName", this.schemaName));
     retval.append("    ").append(XMLHandler.addTagValue("dimensionCount", this.dimensionCount));
     retval.append("    ").append(XMLHandler.addTagValue("noDictionaryDims", this.noDictionaryDims));
@@ -185,7 +185,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
       this.tabelName = XMLHandler.getTagValue(stepnode, "TableName");
       this.outputRowSize = XMLHandler.getTagValue(stepnode, "outputRowSize");
       this.factDimLensString = XMLHandler.getTagValue(stepnode, "factDimLensString");
-      this.cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
+      this.tableName = XMLHandler.getTagValue(stepnode, "tableName");
       this.schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
       this.dimensionCount = XMLHandler.getTagValue(stepnode, "dimensionCount");
       this.noDictionaryDims = XMLHandler.getTagValue(stepnode, "noDictionaryDims");
@@ -219,7 +219,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
 
       rep.saveStepAttribute(idTransformation, idStep, "factDimLensString", factDimLensString);
       rep.saveStepAttribute(idTransformation, idStep, "outputRowSize", this.outputRowSize);
-      rep.saveStepAttribute(idTransformation, idStep, "cubeName", this.cubeName);
+      rep.saveStepAttribute(idTransformation, idStep, "tableName", this.tableName);
       rep.saveStepAttribute(idTransformation, idStep, "schemaName", this.schemaName);
       rep.saveStepAttribute(idTransformation, idStep, "dimensionCount", this.dimensionCount);
       rep.saveStepAttribute(idTransformation, idStep, "noDictionaryDims", this.noDictionaryDims);
@@ -258,7 +258,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
       this.tabelName = rep.getStepAttributeString(idStep, "TableName");
       this.outputRowSize = rep.getStepAttributeString(idStep, "outputRowSize");
       this.schemaName = rep.getStepAttributeString(idStep, "schemaName");
-      this.cubeName = rep.getStepAttributeString(idStep, "cubeName");
+      this.tableName = rep.getStepAttributeString(idStep, "tableName");
       this.dimensionCount = rep.getStepAttributeString(idStep, "dimensionCount");
       this.noDictionaryDims = rep.getStepAttributeString(idStep, "noDictionaryDims");
       this.noDictionaryDims = rep.getStepAttributeString(idStep, "noDictionaryDimsMapping");
@@ -358,17 +358,17 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
   }
 
   /**
-   * @return the cubeName
+   * @return the tableName
    */
   public String getCubeName() {
-    return cubeName;
+    return tableName;
   }
 
   /**
-   * @param cubeName the cubeName to set
+   * @param tableName the tableName to set
    */
-  public void setCubeName(String cubeName) {
-    this.cubeName = cubeName;
+  public void setCubeName(String tableName) {
+    this.tableName = tableName;
   }
 
   /**

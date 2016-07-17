@@ -58,10 +58,10 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
     dimensionFilePath: String,
     header: String): CarbonLoadModel = {
     val carbonLoadModel = new CarbonLoadModel
-    carbonLoadModel.setTableName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
-    carbonLoadModel.setDatabaseName(relation.cubeMeta.carbonTableIdentifier.getTableName)
-    // carbonLoadModel.setSchema(relation.cubeMeta.schema)
-    val table = relation.cubeMeta.carbonTable
+    carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
+    carbonLoadModel.setDatabaseName(relation.tableMeta.carbonTableIdentifier.getTableName)
+    // carbonLoadModel.setSchema(relation.tableMeta.schema)
+    val table = relation.tableMeta.carbonTable
     val carbonSchema = new CarbonDataLoadSchema(table)
     carbonLoadModel.setDatabaseName(table.getDatabaseName)
     carbonLoadModel.setTableName(table.getFactTableName)
@@ -72,7 +72,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
     carbonLoadModel.setCsvDelimiter(",")
     carbonLoadModel.setComplexDelimiterLevel1("\\$")
     carbonLoadModel.setComplexDelimiterLevel2("\\:")
-    carbonLoadModel.setStorePath(relation.cubeMeta.storePath)
+    carbonLoadModel.setStorePath(relation.tableMeta.storePath)
     carbonLoadModel
   }
 
@@ -156,7 +156,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   def checkDictionary(relation: CarbonRelation, columnName: String, value: String) {
-    val table = relation.cubeMeta.carbonTable
+    val table = relation.tableMeta.carbonTable
     val dimension = table.getDimensionByName(table.getFactTableName, columnName)
     val tableIdentifier = new CarbonTableIdentifier(table.getDatabaseName, table.getFactTableName, "uniqueid")
 
@@ -175,7 +175,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
     GlobalDictionaryUtil
       .generateGlobalDictionary(CarbonHiveContext,
         carbonLoadModel,
-        sampleRelation.cubeMeta.storePath
+        sampleRelation.tableMeta.storePath
       )
 
     // test for dimension table
@@ -183,7 +183,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
     // CarbonDataLoadModel
     // carbonLoadModel = buildCarbonLoadModel(dimSampleRelation, filePath, dimFilePath, null)
     // GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel,
-    // dimSampleRelation.cubeMeta.dataPath, false)
+    // dimSampleRelation.tableMeta.dataPath, false)
   }
 
   test("[Issue-190]load csv file without header And support complex type") {
@@ -193,7 +193,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
     GlobalDictionaryUtil
       .generateGlobalDictionary(CarbonHiveContext,
         carbonLoadModel,
-        complexRelation.cubeMeta.storePath
+        complexRelation.tableMeta.storePath
       )
   }
 
@@ -209,7 +209,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
     GlobalDictionaryUtil
       .generateGlobalDictionary(CarbonHiveContext,
         carbonLoadModel,
-        sampleRelation.cubeMeta.storePath
+        sampleRelation.tableMeta.storePath
       )
     checkDictionary(incrementalLoadTableRelation, "deviceInformationId", "100010")
 
@@ -222,7 +222,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
     GlobalDictionaryUtil
       .generateGlobalDictionary(CarbonHiveContext,
         carbonLoadModel,
-        sampleRelation.cubeMeta.storePath
+        sampleRelation.tableMeta.storePath
       )
     checkDictionary(incrementalLoadTableRelation, "deviceInformationId", "100077")
   }

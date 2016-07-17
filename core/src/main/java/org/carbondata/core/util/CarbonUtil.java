@@ -458,16 +458,16 @@ public final class CarbonUtil {
   }
 
   /**
-   * This function will rename the cube to be deleted
+   * This function will rename the table to be deleted
    *
    * @param partitionCount
    * @param storePath
    * @param schemaName
-   * @param cubeName
+   * @param tableName
    */
   public static void renameCubeForDeletion(int partitionCount, String storePath, String schemaName,
-      String cubeName) {
-    String cubeNameWithPartition = "";
+      String tableName) {
+    String tableNameWithPartition = "";
     String schemaNameWithPartition = "";
     String fullPath = "";
     String newFilePath = "";
@@ -478,10 +478,10 @@ public final class CarbonUtil {
     ExecutorService executorService = Executors.newFixedThreadPool(10);
     for (int i = 0; i < partitionCount; i++) {
       schemaNameWithPartition = schemaName + '_' + i;
-      cubeNameWithPartition = cubeName + '_' + i;
-      newFileName = cubeNameWithPartition + '_' + time;
+      tableNameWithPartition = tableName + '_' + i;
+      newFileName = tableNameWithPartition + '_' + time;
       fullPath = storePath + File.separator + schemaNameWithPartition + File.separator
-          + cubeNameWithPartition;
+          + tableNameWithPartition;
       newFilePath =
           storePath + File.separator + schemaNameWithPartition + File.separator + newFileName;
       fileType = FileFactory.getFileType(fullPath);
@@ -490,7 +490,7 @@ public final class CarbonUtil {
           CarbonFile file = FileFactory.getCarbonFile(fullPath, fileType);
           boolean isRenameSuccessfull = file.renameTo(newFilePath);
           if (!isRenameSuccessfull) {
-            LOGGER.error("Problem renaming the cube :: " + fullPath);
+            LOGGER.error("Problem renaming the table :: " + fullPath);
             c = new DeleteFolderAndFiles(file);
             executorService.submit(c);
           } else {
@@ -499,7 +499,7 @@ public final class CarbonUtil {
           }
         }
       } catch (IOException e) {
-        LOGGER.error("Problem renaming the cube :: " + fullPath);
+        LOGGER.error("Problem renaming the table :: " + fullPath);
       }
     }
     executorService.shutdown();
@@ -867,7 +867,7 @@ public final class CarbonUtil {
     }
   }
 
-  public static String getCarbonStorePath(String schemaName, String cubeName) {
+  public static String getCarbonStorePath(String schemaName, String tableName) {
     CarbonProperties prop = CarbonProperties.getInstance();
     if (null == prop) {
       return null;
@@ -1075,7 +1075,7 @@ public final class CarbonUtil {
   }
 
   /**
-   * Thread to delete the cubes
+   * Thread to delete the tables
    *
    */
   private static final class DeleteFolderAndFiles implements Callable<Void> {

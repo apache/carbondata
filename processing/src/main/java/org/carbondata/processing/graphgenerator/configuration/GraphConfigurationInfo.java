@@ -64,7 +64,7 @@ public class GraphConfigurationInfo {
 
   private String jndiName;
 
-  private Map<String, String> cubeMeasuresAndDataTypeMap;
+  private Map<String, String> tableMeasuresAndDataTypeMap;
 
   private String tableInputSqlQuery;
 
@@ -515,17 +515,17 @@ public class GraphConfigurationInfo {
   }
 
   /**
-   * @return the cubeMeasuresAndDataTypeMap
+   * @return the tableMeasuresAndDataTypeMap
    */
   public Map<String, String> getCubeMeasuresAndDataTypeMap() {
-    return cubeMeasuresAndDataTypeMap;
+    return tableMeasuresAndDataTypeMap;
   }
 
   /**
-   * @param cubeMeasuresAndDataTypeMap the cubeMeasuresAndDataTypeMap to set
+   * @param tableMeasuresAndDataTypeMap the tableMeasuresAndDataTypeMap to set
    */
-  public void setCubeMeasuresAndDataTypeMap(Map<String, String> cubeMeasuresAndDataTypeMap) {
-    this.cubeMeasuresAndDataTypeMap = cubeMeasuresAndDataTypeMap;
+  public void setCubeMeasuresAndDataTypeMap(Map<String, String> tableMeasuresAndDataTypeMap) {
+    this.tableMeasuresAndDataTypeMap = tableMeasuresAndDataTypeMap;
   }
 
   /**

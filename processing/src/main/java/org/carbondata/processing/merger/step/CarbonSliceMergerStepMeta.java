@@ -78,9 +78,9 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
   private String schemaName;
 
   /**
-   * cubeName
+   * tableName
    */
-  private String cubeName;
+  private String tableName;
 
   /**
    * isGroupByEnabled
@@ -133,7 +133,7 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
     mdkeySize = "";
     measureCount = "";
     heirAndKeySize = "";
-    cubeName = "";
+    tableName = "";
     schemaName = "";
     groupByEnabled = "";
     aggregatorClassString = "";
@@ -158,7 +158,7 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
     retval.append("    ").append(XMLHandler.addTagValue("MDKeySize", mdkeySize));
     retval.append("    ").append(XMLHandler.addTagValue("Measurecount", measureCount));
     retval.append("    ").append(XMLHandler.addTagValue("HeirAndKeySize", heirAndKeySize));
-    retval.append("    ").append(XMLHandler.addTagValue("cubeName", cubeName));
+    retval.append("    ").append(XMLHandler.addTagValue("tableName", tableName));
     retval.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
     retval.append("    ").append(XMLHandler.addTagValue("isGroupByEnabled", groupByEnabled));
     retval.append("    ")
@@ -191,7 +191,7 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
       mdkeySize = XMLHandler.getTagValue(stepnode, "MDKeySize");
       measureCount = XMLHandler.getTagValue(stepnode, "Measurecount");
       heirAndKeySize = XMLHandler.getTagValue(stepnode, "HeirAndKeySize");
-      cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
+      tableName = XMLHandler.getTagValue(stepnode, "tableName");
       groupByEnabled = XMLHandler.getTagValue(stepnode, "isGroupByEnabled");
       aggregatorClassString = XMLHandler.getTagValue(stepnode, "aggregatorClassString");
       aggregatorString = XMLHandler.getTagValue(stepnode, "aggregatorString");
@@ -223,7 +223,7 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
       rep.saveStepAttribute(idTransformation, idStep, "Measurecount", measureCount);
       rep.saveStepAttribute(idTransformation, idStep, "HeirAndKeySize",
           heirAndKeySize); //$NON-NLS-1$
-      rep.saveStepAttribute(idTransformation, idStep, "cubeName", cubeName); //$NON-NLS-1$
+      rep.saveStepAttribute(idTransformation, idStep, "tableName", tableName); //$NON-NLS-1$
       rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName); //$NON-NLS-1$
       rep.saveStepAttribute(idTransformation, idStep, "isGroupByEnabled", groupByEnabled);
       rep.saveStepAttribute(idTransformation, idStep, "aggregatorClassString",
@@ -272,7 +272,7 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
       measureCount = rep.getStepAttributeString(idStep, "Measurecount");
       heirAndKeySize = rep.getStepAttributeString(idStep, "HeirAndKeySize");
       schemaName = rep.getStepAttributeString(idStep, "schemaName");
-      cubeName = rep.getStepAttributeString(idStep, "cubeName");
+      tableName = rep.getStepAttributeString(idStep, "tableName");
       groupByEnabled = rep.getStepAttributeString(idStep, "isGroupByEnabled");
       aggregatorClassString = rep.getStepAttributeString(idStep, "aggregatorClassString");
       aggregatorString = rep.getStepAttributeString(idStep, "aggregatorString");
@@ -435,17 +435,17 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
   }
 
   /**
-   * @return the cubeName
+   * @return the tableName
    */
   public String getCubeName() {
-    return cubeName;
+    return tableName;
   }
 
   /**
-   * @param cubeName the cubeName to set
+   * @param tableName the tableName to set
    */
-  public void setCubeName(String cubeName) {
-    this.cubeName = cubeName;
+  public void setCubeName(String tableName) {
+    this.tableName = tableName;
   }
 
   /**
