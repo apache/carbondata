@@ -149,7 +149,7 @@ class DataCompactionTest extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    /* sql("drop cube normalcompaction") */
+    /* sql("drop table normalcompaction") */
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "false")

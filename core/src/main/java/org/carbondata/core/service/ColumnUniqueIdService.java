@@ -26,9 +26,9 @@ import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 public interface ColumnUniqueIdService {
 
   /**
-   * @param schemaName
+   * @param databaseName
    * @param columnSchema
    * @return generate unique id
    */
-  public String generateUniqueId(String schemaName, ColumnSchema columnSchema);
+  public String generateUniqueId(String databaseName, ColumnSchema columnSchema);
 }

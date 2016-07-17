@@ -252,7 +252,7 @@ public class MDKeyGenStep extends BaseStep {
   private boolean setStepConfiguration() {
     this.tableName = meta.getTableName();
     storeLocation = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(meta.getSchemaName(), meta.getTableName(),
+        .getLocalDataFolderLocation(meta.getDatabaseName(), meta.getTableName(),
             String.valueOf(meta.getTaskNo()), meta.getPartitionID(), meta.getSegmentId()+"");
     isNoDictionaryDimension =
         RemoveDictionaryUtil.convertStringToBooleanArr(meta.getNoDictionaryDimsMapping());
@@ -301,7 +301,7 @@ public class MDKeyGenStep extends BaseStep {
     }
 
     CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(meta.getSchemaName() + CarbonCommonConstants.UNDERSCORE + tableName);
+        .getCarbonTable(meta.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + tableName);
     wrapperColumnSchema = CarbonUtil
         .getColumnSchemaList(carbonTable.getDimensionByTableName(tableName),
             carbonTable.getMeasureByTableName(tableName));
@@ -376,7 +376,7 @@ public class MDKeyGenStep extends BaseStep {
    */
   private CarbonFactDataHandlerModel getCarbonFactDataHandlerModel() {
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
-    carbonFactDataHandlerModel.setDatabaseName(meta.getSchemaName());
+    carbonFactDataHandlerModel.setDatabaseName(meta.getDatabaseName());
     carbonFactDataHandlerModel.setTableName(tableName);
     carbonFactDataHandlerModel.setMeasureCount(measureCount);
     carbonFactDataHandlerModel.setMdKeyLength(data.generator.getKeySizeInBytes());
@@ -398,7 +398,7 @@ public class MDKeyGenStep extends BaseStep {
     aggType = new char[measureCount];
     Arrays.fill(aggType, 'n');
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        meta.getSchemaName() + CarbonCommonConstants.UNDERSCORE + meta.getTableName());
+        meta.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + meta.getTableName());
     List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(meta.getTableName());
     for (int i = 0; i < measureCount; i++) {
       aggType[i] = DataTypeUtil.getAggType(measures.get(i).getDataType());
@@ -482,7 +482,7 @@ public class MDKeyGenStep extends BaseStep {
     String carbonStorePath =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        meta.getSchemaName() + CarbonCommonConstants.UNDERSCORE + meta.getTableName());
+        meta.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + meta.getTableName());
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTable.getCarbonTableIdentifier());
     String carbonDataDirectoryPath =

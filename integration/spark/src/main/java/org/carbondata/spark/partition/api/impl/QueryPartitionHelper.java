@@ -97,7 +97,7 @@ public final class QueryPartitionHelper {
 
   }
 
-  private void checkInitialization(String cubeUniqueName, Partitioner partitioner) {
+  private void checkInitialization(String tableUniqueName, Partitioner partitioner) {
     //Initialise if not done earlier
 
     //String nodeListString = null;
@@ -114,7 +114,7 @@ public final class QueryPartitionHelper {
       LOGGER.info("nodeList : " + Arrays.toString(partitioner.nodeList()));
     }
 
-    if (partitionerMap.get(cubeUniqueName) == null) {
+    if (partitionerMap.get(tableUniqueName) == null) {
       DataPartitioner dataPartitioner;
       try {
         dataPartitioner =
@@ -124,8 +124,8 @@ public final class QueryPartitionHelper {
         List<Partition> partitions = dataPartitioner.getAllPartitions();
         DefaultLoadBalancer loadBalancer =
             new DefaultLoadBalancer(Arrays.asList(partitioner.nodeList()), partitions);
-        partitionerMap.put(cubeUniqueName, dataPartitioner);
-        loadBalancerMap.put(cubeUniqueName, loadBalancer);
+        partitionerMap.put(tableUniqueName, dataPartitioner);
+        loadBalancerMap.put(tableUniqueName, loadBalancer);
       } catch (ClassNotFoundException e) {
         LOGGER.error(e,
             e.getMessage());
@@ -143,47 +143,47 @@ public final class QueryPartitionHelper {
    * Get partitions applicable for query based on filters applied in query
    */
   public List<Partition> getPartitionsForQuery(CarbonQueryPlan queryPlan, Partitioner partitioner) {
-    String cubeUniqueName = queryPlan.getSchemaName() + '_' + queryPlan.getCubeName();
-    checkInitialization(cubeUniqueName, partitioner);
+    String tableUniqueName = queryPlan.getDatabaseName() + '_' + queryPlan.getTableName();
+    checkInitialization(tableUniqueName, partitioner);
 
-    DataPartitioner dataPartitioner = partitionerMap.get(cubeUniqueName);
+    DataPartitioner dataPartitioner = partitionerMap.get(tableUniqueName);
 
     List<Partition> queryPartitions = dataPartitioner.getPartitions(queryPlan);
     return queryPartitions;
   }
 
-  public List<Partition> getAllPartitions(String schemaName, String cubeName,
+  public List<Partition> getAllPartitions(String databaseName, String tableName,
       Partitioner partitioner) {
-    String cubeUniqueName = schemaName + '_' + cubeName;
-    checkInitialization(cubeUniqueName, partitioner);
+    String tableUniqueName = databaseName + '_' + tableName;
+    checkInitialization(tableUniqueName, partitioner);
 
-    DataPartitioner dataPartitioner = partitionerMap.get(cubeUniqueName);
+    DataPartitioner dataPartitioner = partitionerMap.get(tableUniqueName);
 
     return dataPartitioner.getAllPartitions();
   }
 
-  public void removePartition(String schemaName, String cubeName) {
-    String cubeUniqueName = schemaName + '_' + cubeName;
-    partitionerMap.remove(cubeUniqueName);
+  public void removePartition(String databaseName, String tableName) {
+    String tableUniqueName = databaseName + '_' + tableName;
+    partitionerMap.remove(tableUniqueName);
   }
 
   /**
    * Get the node name where the partition is assigned to.
    */
-  public String getLocation(Partition partition, String schemaName, String cubeName,
+  public String getLocation(Partition partition, String databaseName, String tableName,
       Partitioner partitioner) {
-    String cubeUniqueName = schemaName + '_' + cubeName;
-    checkInitialization(cubeUniqueName, partitioner);
+    String tableUniqueName = databaseName + '_' + tableName;
+    checkInitialization(tableUniqueName, partitioner);
 
-    DefaultLoadBalancer loadBalancer = loadBalancerMap.get(cubeUniqueName);
+    DefaultLoadBalancer loadBalancer = loadBalancerMap.get(tableUniqueName);
     return loadBalancer.getNodeForPartitions(partition);
   }
 
-  public String[] getPartitionedColumns(String schemaName, String cubeName,
+  public String[] getPartitionedColumns(String databaseName, String tableName,
       Partitioner partitioner) {
-    String cubeUniqueName = schemaName + '_' + cubeName;
-    checkInitialization(cubeUniqueName, partitioner);
-    DataPartitioner dataPartitioner = partitionerMap.get(cubeUniqueName);
+    String tableUniqueName = databaseName + '_' + tableName;
+    checkInitialization(tableUniqueName, partitioner);
+    DataPartitioner dataPartitioner = partitionerMap.get(tableUniqueName);
     return dataPartitioner.getPartitionedColumns();
   }
 }

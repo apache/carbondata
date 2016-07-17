@@ -56,14 +56,14 @@ public final class CarbonQueryUtil {
   /**
    * It creates the one split for each region server.
    */
-  public static synchronized TableSplit[] getTableSplits(String schemaName, String cubeName,
+  public static synchronized TableSplit[] getTableSplits(String databaseName, String tableName,
       CarbonQueryPlan queryPlan, Partitioner partitioner) throws IOException {
 
     //Just create splits depends on locations of region servers
     List<Partition> allPartitions = null;
     if (queryPlan == null) {
       allPartitions =
-          QueryPartitionHelper.getInstance().getAllPartitions(schemaName, cubeName, partitioner);
+          QueryPartitionHelper.getInstance().getAllPartitions(databaseName, tableName, partitioner);
     } else {
       allPartitions =
           QueryPartitionHelper.getInstance().getPartitionsForQuery(queryPlan, partitioner);
@@ -74,7 +74,7 @@ public final class CarbonQueryUtil {
       List<String> locations = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
       Partition partition = allPartitions.get(i);
       String location = QueryPartitionHelper.getInstance()
-          .getLocation(partition, schemaName, cubeName, partitioner);
+          .getLocation(partition, databaseName, tableName, partitioner);
       locations.add(location);
       splits[i].setPartition(partition);
       splits[i].setLocations(locations);

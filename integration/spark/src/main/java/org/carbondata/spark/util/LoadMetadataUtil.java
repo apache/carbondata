@@ -45,12 +45,12 @@ public final class LoadMetadataUtil {
   }
 
   public static boolean isLoadDeletionRequired(CarbonLoadModel loadModel) {
-    CarbonTable cube = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
+    CarbonTable table = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
         .getCarbonTable(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
 
-    String metaDataLocation = cube.getMetaDataFilepath();
+    String metaDataLocation = table.getMetaDataFilepath();
     SegmentStatusManager segmentStatusManager =
-        new SegmentStatusManager(cube.getAbsoluteTableIdentifier());
+        new SegmentStatusManager(table.getAbsoluteTableIdentifier());
     LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metaDataLocation);
     if (details != null && details.length != 0) {
       for (LoadMetadataDetails oneRow : details) {

@@ -39,11 +39,6 @@ public class ColumnsInfo {
   private Map<String, KeyGenerator> keyGenerators;
 
   /**
-   * Cube name
-   */
-  private String cubeName;
-
-  /**
    * Hierarchy table names (Same will be file names for file store or
    * incremental load)
    */
@@ -88,7 +83,7 @@ public class ColumnsInfo {
   private int[][] propIndx;
 
   /**
-   * Dimension Index, Property column names from cube.
+   * Dimension Index, Property column names from table.
    * [0] - [col2,col3] [1] - [col4,col7,col8] [2] - []
    */
   private List<String>[] propColumns;
@@ -140,7 +135,7 @@ public class ColumnsInfo {
 
   private boolean[] dimsPresent;
 
-  private String schemaName;
+  private String databaseName;
 
   private Map<String, GenericDataType> complexTypesMap;
 
@@ -193,17 +188,17 @@ public class ColumnsInfo {
   }
 
   /**
-   * @return Returns the cubeName.
+   * @return Returns the tableName.
    */
-  public String getCubeName() {
-    return cubeName;
+  public String getTableName() {
+    return tableName;
   }
 
   /**
-   * @param cubeName The cubeName to set.
+   * @param tableName The tableName to set.
    */
-  public void setCubeName(String cubeName) {
-    this.cubeName = cubeName;
+  public void setTableName(String tableName) {
+    this.tableName = tableName;
   }
 
   /**
@@ -414,20 +409,6 @@ public class ColumnsInfo {
   }
 
   /**
-   * @return Returns the tableName.
-   */
-  public String getTableName() {
-    return tableName;
-  }
-
-  /**
-   * @param tableName The tableName to set.
-   */
-  public void setTableName(String tableName) {
-    this.tableName = tableName;
-  }
-
-  /**
    * @return Returns the primaryKeyMap.
    */
   public Map<String, Boolean> getPrimaryKeyMap() {
@@ -473,12 +454,12 @@ public class ColumnsInfo {
     this.measureColumns = measureColumns;
   }
 
-  public String getSchemaName() {
-    return schemaName;
+  public String getDatabaseName() {
+    return databaseName;
   }
 
-  public void setSchemaName(String schemaName) {
-    this.schemaName = schemaName;
+  public void setDatabaseName(String databaseName) {
+    this.databaseName = databaseName;
   }
 
   /**

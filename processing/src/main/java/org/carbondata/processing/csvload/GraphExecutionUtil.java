@@ -195,7 +195,7 @@ public final class GraphExecutionUtil {
   /**
    * This method update the column Name
    *
-   * @param cube
+   * @param table
    * @param tableName
    * @param schema
    */

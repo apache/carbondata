@@ -107,7 +107,7 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
   }
 
   override def afterAll {
-    /* sql("drop cube cardinalityTest") */
+    /* sql("drop table cardinalityTest") */
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "false")

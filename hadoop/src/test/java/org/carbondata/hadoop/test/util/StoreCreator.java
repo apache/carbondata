@@ -131,8 +131,8 @@ public class StoreCreator {
       LoadModel loadModel = new LoadModel();
       String partitionId = "0";
       loadModel.setSchema(schema);
-      loadModel.setSchemaName(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName());
-      loadModel.setCubeName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
+      loadModel.setDatabaseName(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName());
+      loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
       loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
       loadModel.setFactFilePath(factFilePath);
       loadModel.setLoadMetadataDetails(new ArrayList<LoadMetadataDetails>());
@@ -334,9 +334,9 @@ public class StoreCreator {
     System.setProperty("KETTLE_HOME", kettleHomePath);
     new File(storeLocation).mkdirs();
     String outPutLoc = storeLocation + "/etl";
-    String schemaName = loadModel.getSchemaName();
-    String cubeName = loadModel.getCubeName();
-    String tempLocationKey = schemaName + '_' + cubeName + "_1";
+    String databaseName = loadModel.getDatabaseName();
+    String tableName = loadModel.getTableName();
+    String tempLocationKey = databaseName + '_' + tableName + "_1";
     CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation);
     CarbonProperties.getInstance().addProperty("store_output_location", outPutLoc);
     CarbonProperties.getInstance().addProperty("send.signal.load", "false");
@@ -349,18 +349,17 @@ public class StoreCreator {
     CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false");
     CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000");
 
-    String tableName = loadModel.getTableName();
     String fileNamePrefix = "";
 
     String graphPath =
-        outPutLoc + File.separator + loadModel.getSchemaName() + File.separator + tableName
+        outPutLoc + File.separator + loadModel.getDatabaseName() + File.separator + tableName
             + File.separator + 0 + File.separator + 1 + File.separator + tableName + ".ktr";
     File path = new File(graphPath);
     if (path.exists()) {
       path.delete();
     }
 
-    DataProcessTaskStatus schmaModel = new DataProcessTaskStatus(schemaName, cubeName, tableName);
+    DataProcessTaskStatus schmaModel = new DataProcessTaskStatus(databaseName, tableName);
     schmaModel.setCsvFilePath(loadModel.getFactFilePath());
     SchemaInfo info = new SchemaInfo();
     BlockDetails blockDetails = new BlockDetails(loadModel.getFactFilePath(),
@@ -368,8 +367,8 @@ public class StoreCreator {
     GraphGenerator.blockInfo.put("qwqwq", new BlockDetails[] { blockDetails });
     schmaModel.setBlocksID("qwqwq");
     schmaModel.setEscapeCharacter("\\");
-    info.setSchemaName(schemaName);
-    info.setCubeName(cubeName);
+    info.setDatabaseName(databaseName);
+    info.setTableName(tableName);
 
     generateGraph(schmaModel, info, loadModel.getTableName(), "0", loadModel.getSchema(), null,
         currentRestructNumber, loadModel.getLoadMetadataDetails());
@@ -380,11 +379,11 @@ public class StoreCreator {
             info, "0", loadModel.getSchema());
     //    LoadMetadataDetails[] loadDetails =
     //        CarbonUtil.readLoadMetadata(loadModel.schema.getCarbonTable().getMetaDataFilepath());
-    writeLoadMetadata(loadModel.schema, loadModel.getCubeName(), loadModel.getTableName(),
+    writeLoadMetadata(loadModel.schema, loadModel.getTableName(), loadModel.getTableName(),
         new ArrayList<LoadMetadataDetails>());
 
     String segLocation =
-        storeLocation + "/" + schemaName + "/" + tableName + "/Fact/Part0/Segment_0";
+        storeLocation + "/" + databaseName + "/" + tableName + "/Fact/Part0/Segment_0";
     File file = new File(segLocation);
     File factFile = null;
     File[] folderList = file.listFiles();
@@ -408,8 +407,8 @@ public class StoreCreator {
     }
   }
 
-  public static void writeLoadMetadata(CarbonDataLoadSchema schema, String schemaName,
-      String cubeName, List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
+  public static void writeLoadMetadata(CarbonDataLoadSchema schema, String databaseName,
+      String tableName, List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
     LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
     loadMetadataDetails.setTimestamp(readCurrentTime());
     loadMetadataDetails.setLoadStatus("SUCCESS");
@@ -511,8 +510,7 @@ public class StoreCreator {
 
     private CarbonDataLoadSchema schema;
     private String tableName;
-    private String cubeName;
-    private String schemaName;
+    private String databaseName;
     private List<LoadMetadataDetails> loadMetaDetail;
     private String factFilePath;
 
@@ -536,12 +534,8 @@ public class StoreCreator {
       return tableName;
     }
 
-    public String getCubeName() {
-      return cubeName;
-    }
-
-    public String getSchemaName() {
-      return schemaName;
+    public String getDatabaseName() {
+      return databaseName;
     }
 
     public void setLoadMetadataDetails(List<LoadMetadataDetails> loadMetaDetail) {
@@ -556,12 +550,8 @@ public class StoreCreator {
       this.tableName = tableName;
     }
 
-    public void setCubeName(String cubeName) {
-      this.cubeName = cubeName;
-    }
-
-    public void setSchemaName(String schemaName) {
-      this.schemaName = schemaName;
+    public void setDatabaseName(String databaseName) {
+      this.databaseName = databaseName;
     }
 
   }

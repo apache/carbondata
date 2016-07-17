@@ -56,7 +56,7 @@ public class TableInfo implements Serializable {
   private List<TableSchema> aggregateTableList;
 
   /**
-   * last updated time to update the cube if any changes
+   * last updated time to update the table if any changes
    */
   private long lastUpdatedTime;
 

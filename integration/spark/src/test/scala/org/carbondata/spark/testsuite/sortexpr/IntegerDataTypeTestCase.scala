@@ -33,17 +33,17 @@ import org.scalatest.BeforeAndAfterAll
 class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("CREATE TABLE inttypecubesort (empno int, workgroupcategory string, deptno int, projectcode int,attendance int) STORED BY 'org.apache.carbondata.format'")
-    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO TABLE inttypecubesort OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
+    sql("CREATE TABLE inttypetablesort (empno int, workgroupcategory string, deptno int, projectcode int,attendance int) STORED BY 'org.apache.carbondata.format'")
+    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO TABLE inttypetablesort OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
   }
 
-  test("select empno from inttypecubesort") {
+  test("select empno from inttypetablesort") {
     checkAnswer(
-      sql("select empno from inttypecubesort"),
+      sql("select empno from inttypetablesort"),
       Seq(Row(11), Row(12), Row(13), Row(14), Row(15), Row(16), Row(17), Row(18), Row(19), Row(20)))
   }
 
   override def afterAll {
-    sql("drop table inttypecubesort")
+    sql("drop table inttypetablesort")
   }
 }

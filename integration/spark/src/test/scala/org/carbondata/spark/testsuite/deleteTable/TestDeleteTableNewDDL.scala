@@ -5,7 +5,7 @@ import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**
-  * test class for testing the create cube DDL.
+  * test class for testing the create table DDL.
   */
 class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
 
@@ -54,6 +54,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
   }
 
   test("drop table using case insensitive table name") {
+    sql("drop table if exists CaseInsensitiveTable")
     // create table
     sql(
       "CREATE table CaseInsensitiveTable (ID int, date String, country String, name " +
@@ -71,7 +72,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
       "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'" +
       "TBLPROPERTIES('DICTIONARY_INCLUDE'='ID', 'DICTIONARY_INCLUDE'='salary')"
     )
-
+    sql("drop table if exists CaseInsensitiveTable")
   }
 
   test("drop table using dbName and table name") {

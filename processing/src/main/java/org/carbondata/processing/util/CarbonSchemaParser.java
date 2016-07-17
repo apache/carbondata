@@ -95,12 +95,6 @@ public final class CarbonSchemaParser {
     return columnstr;
   }
 
-  /**
-   * @param cube
-   * @param dimensions
-   * @param isQuotesRequired
-   * @return
-   */
   private static String getDimensionSQLQueries(List<CarbonDimension> dimensions,
       CarbonDataLoadSchema carbonDataLoadSchema) {
     //
@@ -148,7 +142,7 @@ public final class CarbonSchemaParser {
   }
 
   /**
-   * @param cube
+   * @param table
    * @param dimensions
    * @return
    */
@@ -344,10 +338,10 @@ public final class CarbonSchemaParser {
   }
 
   /**
-   * Get dimension string from a array of CubeDimension,which can be shared
-   * CubeDimension within schema or in a cube.
+   * Get dimension string from a array of TableDimension,which can be shared
+   * TableDimension within schema or in a table.
    *
-   * @param cube
+   * @param table
    * @param dimensions
    * @return
    */
@@ -535,7 +529,7 @@ public final class CarbonSchemaParser {
    * @param carbonDataLoadSchema
    * @return
    */
-  public static String[] getCubeDimensions(List<CarbonDimension> dimensions,
+  public static String[] getTableDimensions(List<CarbonDimension> dimensions,
       CarbonDataLoadSchema carbonDataLoadSchema) {
     List<String> list = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     for (CarbonDimension cDimension : dimensions) {
@@ -941,7 +935,7 @@ public final class CarbonSchemaParser {
   /**
    * Get Measure Name String
    *
-   * @param cube
+   * @param table
    * @return
    */
   public static String getMeasuresNamesString(List<CarbonMeasure> measures) {
@@ -966,7 +960,7 @@ public final class CarbonSchemaParser {
   /**
    * Get Measure Name String
    *
-   * @param cube
+   * @param table
    * @return
    */
   public static String getMeasuresUniqueColumnNamesString(List<CarbonMeasure> measures) {
@@ -991,7 +985,7 @@ public final class CarbonSchemaParser {
   /**
    * Get Measure Name String
    *
-   * @param cube
+   * @param table
    * @return
    */
   public static String getMeasuresNamesStringForAgg(String[] measures) {
@@ -1015,7 +1009,7 @@ public final class CarbonSchemaParser {
   /**
    * Get Measure Aggregator array
    *
-   * @param cube
+   * @param table
    * @return
    */
   public static String[] getMeasuresAggragatorArray(List<CarbonMeasure> measures) {
@@ -1030,7 +1024,7 @@ public final class CarbonSchemaParser {
 
   /**
    * @param schemaInfo
-   * @param cube
+   * @param table
    * @return
    */
   public static String getActualDimensions(List<CarbonDimension> dimensions) {
@@ -1057,7 +1051,7 @@ public final class CarbonSchemaParser {
   /**Method will prepare column name and its data type string inorder
    * to pass to the ETL steps.
    * @param schemaInfo
-   * @param cube
+   * @param table
    * @return
    */
   public static String getDimensionsDataTypes(List<CarbonDimension> dimensions) {
@@ -1073,7 +1067,7 @@ public final class CarbonSchemaParser {
   }
 
   /**
-   * @param cube
+   * @param table
    * @return
    */
   public static String getActualDimensionsForAggregate(String[] columns) {
@@ -1119,7 +1113,7 @@ public final class CarbonSchemaParser {
    *
    * @param dimensions
    * @param schema
-   * @param cube
+   * @param table
    * @return String
    */
   public static String getLevelAndDataTypeMapString(List<CarbonDimension> dimensions,
@@ -1140,7 +1134,7 @@ public final class CarbonSchemaParser {
    *
    * @param dimensions
    * @param schema
-   * @param cube
+   * @param table
    * @return String
    */
   public static String getComplexTypeString(List<CarbonDimension> dimensions) {
@@ -1206,10 +1200,10 @@ public final class CarbonSchemaParser {
   }
 
   /**
-   * Get dimension string from a array of CubeDimension,which can be shared
-   * CubeDimension within schema or in a cube.
+   * Get dimension string from a array of TableDimension,which can be shared
+   * TableDimension within schema or in a table.
    *
-   * @param cube
+   * @param table
    * @param dimensions
    * @return
    */

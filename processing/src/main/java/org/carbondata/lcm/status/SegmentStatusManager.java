@@ -165,15 +165,15 @@ public class SegmentStatusManager {
   /**
    * This method reads the load metadata file
    *
-   * @param cubeFolderPath
+   * @param tableFolderPath
    * @return
    */
-  public LoadMetadataDetails[] readLoadMetadata(String cubeFolderPath) {
+  public LoadMetadataDetails[] readLoadMetadata(String tableFolderPath) {
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
     InputStreamReader inStream = null;
-    String metadataFileName = cubeFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+    String metadataFileName = tableFolderPath + CarbonCommonConstants.FILE_SEPARATOR
         + CarbonCommonConstants.LOADMETADATA_FILENAME;
     LoadMetadataDetails[] listOfLoadFolderDetailsArray;
 
@@ -228,12 +228,12 @@ public class SegmentStatusManager {
   /**
    * updates deletion status
    * @param loadIds
-   * @param cubeFolderPath
+   * @param tableFolderPath
    * @return
    */
-  public List<String> updateDeletionStatus(List<String> loadIds, String cubeFolderPath) {
+  public List<String> updateDeletionStatus(List<String> loadIds, String tableFolderPath) {
     ICarbonLock carbonLock =
-        CarbonLockFactory.getCarbonLockObj(cubeFolderPath, LockUsage.METADATA_LOCK);
+        CarbonLockFactory.getCarbonLockObj(tableFolderPath, LockUsage.METADATA_LOCK);
     List<String> invalidLoadIds = new ArrayList<String>(0);
     try {
       if (carbonLock.lockWithRetries()) {
@@ -250,7 +250,7 @@ public class SegmentStatusManager {
           return loadIds;
         }
         // read existing metadata details in load metadata.
-        listOfLoadFolderDetailsArray = readLoadMetadata(cubeFolderPath);
+        listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath);
         if (listOfLoadFolderDetailsArray != null && listOfLoadFolderDetailsArray.length != 0) {
           updateDeletionStatus(loadIds, listOfLoadFolderDetailsArray, invalidLoadIds);
           if(invalidLoadIds.isEmpty())

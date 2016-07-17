@@ -67,10 +67,6 @@ public class SortDataRows {
    */
   private int entryCount;
   /**
-   * tableName
-   */
-  private String tableName;
-  /**
    * sortBufferSize
    */
   private int sortBufferSize;
@@ -134,8 +130,8 @@ public class SortDataRows {
    * bufferSize
    */
   private int bufferSize;
-  private String schemaName;
-  private String cubeName;
+  private String databaseName;
+  private String tableName;
 
   private char[] aggType;
 
@@ -200,10 +196,10 @@ public class SortDataRows {
   /**
    * This method will be used to initialize
    */
-  public void initialize(String schemaName, String cubeName)
+  public void initialize(String databaseName, String tableName)
       throws CarbonSortKeyAndGroupByException {
-    this.schemaName = schemaName;
-    this.cubeName = cubeName;
+    this.databaseName = databaseName;
+    this.tableName = tableName;
 
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
     setSortConfiguration(carbonProperties);
@@ -276,7 +272,7 @@ public class SortDataRows {
   private void initAggType() {
     Arrays.fill(aggType, 'n');
     CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(schemaName + CarbonCommonConstants.UNDERSCORE + tableName);
+        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
     for (int i = 0; i < measureColCount; i++) {
       aggType[i] = DataTypeUtil.getAggType(measures.get(i).getDataType());
@@ -502,7 +498,7 @@ public class SortDataRows {
     // get sort buffer size
     this.sortBufferSize = Integer.parseInt(instance
         .getProperty(CarbonCommonConstants.SORT_SIZE, CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
-    LOGGER.info("Sort size for cube: " + this.sortBufferSize);
+    LOGGER.info("Sort size for table: " + this.sortBufferSize);
     // set number of intermedaite file to merge
     this.numberOfIntermediateFileToBeMerged = Integer.parseInt(instance
         .getProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT,
@@ -525,7 +521,7 @@ public class SortDataRows {
    */
   private void updateSortTempFileLocation() {
     String carbonDataDirectoryPath = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(schemaName, tableName, taskNo, partitionID,
+        .getLocalDataFolderLocation(databaseName, tableName, taskNo, partitionID,
             segmentId);
     this.tempFileLocation =
         carbonDataDirectoryPath + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;

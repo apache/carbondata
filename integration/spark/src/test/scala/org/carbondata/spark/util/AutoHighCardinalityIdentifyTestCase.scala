@@ -56,10 +56,10 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
     dimensionFilePath: String,
     header: String): CarbonLoadModel = {
     val carbonLoadModel = new CarbonLoadModel
-    carbonLoadModel.setTableName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
-    carbonLoadModel.setDatabaseName(relation.cubeMeta.carbonTableIdentifier.getTableName)
-    // carbonLoadModel.setSchema(relation.cubeMeta.schema)
-    val table = relation.cubeMeta.carbonTable
+    carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
+    carbonLoadModel.setDatabaseName(relation.tableMeta.carbonTableIdentifier.getTableName)
+    // carbonLoadModel.setSchema(relation.tableMeta.schema)
+    val table = relation.tableMeta.carbonTable
     val carbonSchema = new CarbonDataLoadSchema(table)
     carbonLoadModel.setDatabaseName(table.getDatabaseName)
     carbonLoadModel.setTableName(table.getFactTableName)
@@ -137,9 +137,9 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
   }
 
   test("auto identify high cardinality column in first load #396") {
-    val oldTable = relation.cubeMeta.carbonTable
+    val oldTable = relation.tableMeta.carbonTable
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table highcard")
-    val newTable = relation.cubeMeta.carbonTable
+    val newTable = relation.tableMeta.carbonTable
     sql(s"select count(hc1) from highcard").show
 
     // check dictionary file

@@ -46,14 +46,14 @@ object Compactor {
     storeLocation: String,
     carbonTable: CarbonTable,
     kettleHomePath: String,
-    cubeCreationTime: Long,
+    tableCreationTime: Long,
     loadsToMerge: java.util.List[LoadMetadataDetails],
     sqlContext: SQLContext): Unit = {
 
     val startTime = System.nanoTime();
     val mergedLoadName = CarbonDataMergerUtil.getMergedLoadName(loadsToMerge)
     var finalMergeStatus = false
-    val schemaName: String = carbonLoadModel.getDatabaseName
+    val databaseName: String = carbonLoadModel.getDatabaseName
     val factTableName = carbonLoadModel.getTableName
     val storePath = hdfsStoreLocation
     val validSegments: Array[String] = CarbonDataMergerUtil
@@ -65,8 +65,8 @@ object Compactor {
       carbonTable.getMetaDataFilepath(),
       mergedLoadName,
       kettleHomePath,
-      cubeCreationTime,
-      schemaName,
+      tableCreationTime,
+      databaseName,
       factTableName,
       validSegments,
       carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId

@@ -50,7 +50,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   private static final String zooKeeperLocation = CarbonCommonConstants.ZOOKEEPER_LOCATION;
 
   /**
-   * Unique folder for each cube with SchemaName_CubeName
+   * Unique folder for each table with DatabaseName_TableName
    */
   private final String tableIdFolder;
 
@@ -75,17 +75,17 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     this.lockTypeFolder = zooKeeperLocation;
     location = location.replace("\\", "/");
     String tempStr = location.substring(0, location.lastIndexOf('/'));
-    String schemaName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
+    String databaseName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
 
-    String cubeName = location.substring(location.lastIndexOf('/') + 1, location.length());
+    String tableName = location.substring(location.lastIndexOf('/') + 1, location.length());
 
-    this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + schemaName
-        + '.' + cubeName;
+    this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + databaseName
+        + '.' + tableName;
 
     zk = ZookeeperInit.getInstance().getZookeeper();
 
-    this.lockTypeFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + schemaName
-        + '.' + cubeName + CarbonCommonConstants.FILE_SEPARATOR
+    this.lockTypeFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + databaseName
+        + '.' + tableName + CarbonCommonConstants.FILE_SEPARATOR
         + lockUsage.toString();
     try {
       createBaseNode();

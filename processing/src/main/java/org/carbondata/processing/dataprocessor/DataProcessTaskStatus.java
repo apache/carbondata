@@ -57,9 +57,7 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
    */
   private int taskType;
 
-  private String schemaName;
-
-  private String cubeName;
+  private String databaseName;
 
   private String tableName;
 
@@ -89,9 +87,8 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
 
   private String escapeCharacter;
 
-  public DataProcessTaskStatus(String schemaName, String cubeName, String tableName) {
-    this.schemaName = schemaName;
-    this.cubeName = cubeName;
+  public DataProcessTaskStatus(String databaseName, String tableName) {
+    this.databaseName = databaseName;
     this.tableName = tableName;
     this.desc = "";
     this.setNewSchemaFilePath("");
@@ -134,17 +131,17 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
   }
 
   /**
-   * @return the schemaName
+   * @return the databaseName
    */
-  public String getSchemaName() {
-    return schemaName;
+  public String getDatabaseName() {
+    return databaseName;
   }
 
   /**
-   * @param schemaName the schemaName to set
+   * @param databaseName the databaseName to set
    */
-  public void setSchemaName(String schemaName) {
-    this.schemaName = schemaName;
+  public void setDatabaseName(String databaseName) {
+    this.databaseName = databaseName;
   }
 
   /**
@@ -159,20 +156,6 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
    */
   public void setTableName(String tableName) {
     this.tableName = tableName;
-  }
-
-  /**
-   * @return the cubeName
-   */
-  public String getCubeName() {
-    return cubeName;
-  }
-
-  /**
-   * @param cubeName the cubeName to set
-   */
-  public void setCubeName(String cubeName) {
-    this.cubeName = cubeName;
   }
 
   public String getDesc() {
@@ -268,11 +251,11 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
    */
   public IDataProcessStatus makeCopy() {
     IDataProcessStatus copy = new DataProcessTaskStatus();
-    copy.setCubeName(this.cubeName);
+    copy.setTableName(this.tableName);
     copy.setDataloadstatusid(this.dataloadstatusid);
     copy.setDesc(this.desc);
     copy.setKey(this.key);
-    copy.setSchemaName(schemaName);
+    copy.setDatabaseName(databaseName);
     copy.setStatus(status);
     return copy;
   }

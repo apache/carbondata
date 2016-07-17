@@ -22,9 +22,9 @@ package org.carbondata.processing.api.dataloader;
 public class SchemaInfo {
 
   /**
-   * schemaName
+   * databaseName
    */
-  private String schemaName;
+  private String databaseName;
 
   /**
    * srcDriverName
@@ -47,9 +47,9 @@ public class SchemaInfo {
   private String srcPwd;
 
   /**
-   * cubeName
+   * tableName
    */
-  private String cubeName;
+  private String tableName;
 
   /**
    * isAutoAggregateRequest
@@ -132,12 +132,12 @@ public class SchemaInfo {
     this.srcPwd = srcPwd;
   }
 
-  public String getCubeName() {
-    return cubeName;
+  public String getTableName() {
+    return tableName;
   }
 
-  public void setCubeName(String cubeName) {
-    this.cubeName = cubeName;
+  public void setTableName(String tableName) {
+    this.tableName = tableName;
   }
 
   /**
@@ -155,17 +155,17 @@ public class SchemaInfo {
   }
 
   /**
-   * @return the schemaName
+   * @return the databaseName
    */
-  public String getSchemaName() {
-    return schemaName;
+  public String getDatabaseName() {
+    return databaseName;
   }
 
   /**
-   * @param schemaName the schemaName to set
+   * @param databaseName the databaseName to set
    */
-  public void setSchemaName(String schemaName) {
-    this.schemaName = schemaName;
+  public void setDatabaseName(String databaseName) {
+    this.databaseName = databaseName;
   }
 
 }
