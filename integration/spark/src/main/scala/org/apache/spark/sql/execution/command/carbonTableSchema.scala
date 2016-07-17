@@ -136,7 +136,7 @@ case class Dimension(name: String, hierarchies: Seq[Hierarchy], foreignKey: Opti
 
 case class FilterCols(includeKey: String, fieldList: Seq[String])
 
-case class Cube(schemaName: String, tableName: String, dimensions: Seq[Dimension],
+case class Table(schemaName: String, tableName: String, dimensions: Seq[Dimension],
     measures: Seq[Measure], partitioner: Partitioner)
 
 case class Default(key: String, value: String)
@@ -477,7 +477,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
 }
 
 object TableProcessor {
-  def apply(cm: tableModel, sqlContext: SQLContext): Cube = {
+  def apply(cm: tableModel, sqlContext: SQLContext): Table = {
     new TableProcessor(cm, sqlContext).process()
   }
 }
@@ -508,7 +508,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
     levels
   }
 
-  def process(): Cube = {
+  def process(): Table = {
 
     var levels = Seq[Level]()
     var measures = Seq[Measure]()
@@ -718,7 +718,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
           Array(""), 20, null)
     }
 
-    Cube(cm.schemaName, cm.tableName, dimensions, msrsUpdatedWithAggregators, partitioner)
+    Table(cm.schemaName, cm.tableName, dimensions, msrsUpdatedWithAggregators, partitioner)
   }
 
   // For filtering INCLUDE and EXCLUDE fields if any is defined for Dimention relation
@@ -843,7 +843,7 @@ private[sql] case class CreateTable(cm: tableModel) extends RunnableCommand {
       // Add Database to catalog and persist
       val catalog = CarbonEnv.getInstance(sqlContext).carbonCatalog
       // Need to fill partitioner class when we support partition
-      val tablePath = catalog.createCubeFromThrift(tableInfo, dbName, tbName, null)(sqlContext)
+      val tablePath = catalog.createTableFromThrift(tableInfo, dbName, tbName, null)(sqlContext)
       try {
         sqlContext.sql(
           s"""CREATE TABLE $dbName.$tbName USING carbondata""" +

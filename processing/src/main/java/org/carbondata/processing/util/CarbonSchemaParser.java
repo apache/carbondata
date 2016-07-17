@@ -338,8 +338,8 @@ public final class CarbonSchemaParser {
   }
 
   /**
-   * Get dimension string from a array of CubeDimension,which can be shared
-   * CubeDimension within schema or in a table.
+   * Get dimension string from a array of TableDimension,which can be shared
+   * TableDimension within schema or in a table.
    *
    * @param table
    * @param dimensions
@@ -529,7 +529,7 @@ public final class CarbonSchemaParser {
    * @param carbonDataLoadSchema
    * @return
    */
-  public static String[] getCubeDimensions(List<CarbonDimension> dimensions,
+  public static String[] getTableDimensions(List<CarbonDimension> dimensions,
       CarbonDataLoadSchema carbonDataLoadSchema) {
     List<String> list = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     for (CarbonDimension cDimension : dimensions) {
@@ -1200,8 +1200,8 @@ public final class CarbonSchemaParser {
   }
 
   /**
-   * Get dimension string from a array of CubeDimension,which can be shared
-   * CubeDimension within schema or in a table.
+   * Get dimension string from a array of TableDimension,which can be shared
+   * TableDimension within schema or in a table.
    *
    * @param table
    * @param dimensions

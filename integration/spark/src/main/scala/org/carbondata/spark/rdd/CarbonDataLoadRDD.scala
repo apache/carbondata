@@ -308,7 +308,7 @@ class CarbonDataLoadRDD[K, V](
             .addNewSliceNameToList(newSlice, listOfAllLoadFolders)
           val copyListOfLoadFolders = listOfLoadFolders.asScala.toList
           val copyListOfUpdatedLoadFolders = listOfUpdatedLoadFolders.asScala.toList
-          loadCubeSlices(listOfAllLoadFolders, details)
+          loadTableSlices(listOfAllLoadFolders, details)
           var loadFolders = Array[String]()
           val loadFolder = CarbonLoaderUtil
             .getAggLoadFolderLocation(newSlice, model.getDatabaseName, model.getTableName,
@@ -331,7 +331,7 @@ class CarbonDataLoadRDD[K, V](
         dataloadStatus
       }
 
-      def loadCubeSlices(listOfAllLoadFolders: java.util.List[String],
+      def loadTableSlices(listOfAllLoadFolders: java.util.List[String],
           loadMetadataDetails: Array[LoadMetadataDetails]) = {
         CarbonProperties.getInstance().addProperty("carbon.cache.used", "false")
         // TODO: Implement it
@@ -342,7 +342,7 @@ class CarbonDataLoadRDD[K, V](
         val listOfAllLoadFolders = CarbonQueryUtil.getListOfSlices(details)
         val listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
         val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
-        loadCubeSlices(listOfAllLoadFolders, details)
+        loadTableSlices(listOfAllLoadFolders, details)
         var loadFolders = Array[String]()
         var restructFolders = Array[String]()
         for (number <- 0 to currentRestructNumber) {
@@ -370,7 +370,7 @@ class CarbonDataLoadRDD[K, V](
           val listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
           val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
           val listOfAllLoadFolder = CarbonQueryUtil.getListOfSlices(details)
-          loadCubeSlices(listOfAllLoadFolder, details)
+          loadTableSlices(listOfAllLoadFolder, details)
           var loadFolders = Array[String]()
           listOfUpdatedLoadFolders.asScala.foreach { sliceNum =>
             val newSlice = CarbonCommonConstants.LOAD_FOLDER + sliceNum

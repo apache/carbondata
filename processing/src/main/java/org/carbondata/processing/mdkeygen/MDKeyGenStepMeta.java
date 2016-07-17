@@ -330,20 +330,6 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
   }
 
   /**
-   * @return the tableName
-   */
-  public String getCubeName() {
-    return tableName;
-  }
-
-  /**
-   * @param tableName the tableName to set
-   */
-  public void setCubeName(String tableName) {
-    this.tableName = tableName;
-  }
-
-  /**
    * @return the schemaName
    */
   public String getSchemaName() {

@@ -91,7 +91,7 @@ public class CarbonSliceMergerStep extends BaseStep {
     try {
       // carbon data writer step meta
       meta = (CarbonSliceMergerStepMeta) smi;
-      StandardLogService.setThreadName(StandardLogService.getPartitionID(meta.getCubeName()), null);
+      StandardLogService.setThreadName(StandardLogService.getPartitionID(meta.getTableName()), null);
       // carbon data writer step data
       data = (CarbonSliceMergerStepData) sdi;
 
@@ -128,7 +128,7 @@ public class CarbonSliceMergerStep extends BaseStep {
 
   private void renameFolders() {
     CarbonDataProcessorUtil.renameBadRecordsFromInProgressToNormal(
-        meta.getSchemaName() + File.separator + meta.getCubeName() + File.separator + meta
+        meta.getSchemaName() + File.separator + meta.getTableName() + File.separator + meta
             .getTaskNo());
   }
 

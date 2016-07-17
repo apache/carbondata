@@ -517,14 +517,14 @@ public class GraphConfigurationInfo {
   /**
    * @return the tableMeasuresAndDataTypeMap
    */
-  public Map<String, String> getCubeMeasuresAndDataTypeMap() {
+  public Map<String, String> getTableMeasuresAndDataTypeMap() {
     return tableMeasuresAndDataTypeMap;
   }
 
   /**
    * @param tableMeasuresAndDataTypeMap the tableMeasuresAndDataTypeMap to set
    */
-  public void setCubeMeasuresAndDataTypeMap(Map<String, String> tableMeasuresAndDataTypeMap) {
+  public void setTableMeasuresAndDataTypeMap(Map<String, String> tableMeasuresAndDataTypeMap) {
     this.tableMeasuresAndDataTypeMap = tableMeasuresAndDataTypeMap;
   }
 

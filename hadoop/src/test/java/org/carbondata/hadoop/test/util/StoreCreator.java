@@ -132,7 +132,7 @@ public class StoreCreator {
       String partitionId = "0";
       loadModel.setSchema(schema);
       loadModel.setSchemaName(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName());
-      loadModel.setCubeName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
+      loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
       loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
       loadModel.setFactFilePath(factFilePath);
       loadModel.setLoadMetadataDetails(new ArrayList<LoadMetadataDetails>());
@@ -335,7 +335,7 @@ public class StoreCreator {
     new File(storeLocation).mkdirs();
     String outPutLoc = storeLocation + "/etl";
     String schemaName = loadModel.getSchemaName();
-    String tableName = loadModel.getCubeName();
+    String tableName = loadModel.getTableName();
     String tempLocationKey = schemaName + '_' + tableName + "_1";
     CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation);
     CarbonProperties.getInstance().addProperty("store_output_location", outPutLoc);
@@ -368,7 +368,7 @@ public class StoreCreator {
     schmaModel.setBlocksID("qwqwq");
     schmaModel.setEscapeCharacter("\\");
     info.setSchemaName(schemaName);
-    info.setCubeName(tableName);
+    info.setTableName(tableName);
 
     generateGraph(schmaModel, info, loadModel.getTableName(), "0", loadModel.getSchema(), null,
         currentRestructNumber, loadModel.getLoadMetadataDetails());
@@ -379,7 +379,7 @@ public class StoreCreator {
             info, "0", loadModel.getSchema());
     //    LoadMetadataDetails[] loadDetails =
     //        CarbonUtil.readLoadMetadata(loadModel.schema.getCarbonTable().getMetaDataFilepath());
-    writeLoadMetadata(loadModel.schema, loadModel.getCubeName(), loadModel.getTableName(),
+    writeLoadMetadata(loadModel.schema, loadModel.getTableName(), loadModel.getTableName(),
         new ArrayList<LoadMetadataDetails>());
 
     String segLocation =
@@ -534,10 +534,6 @@ public class StoreCreator {
       return tableName;
     }
 
-    public String getCubeName() {
-      return tableName;
-    }
-
     public String getSchemaName() {
       return schemaName;
     }
@@ -551,10 +547,6 @@ public class StoreCreator {
     }
 
     public void setTableName(String tableName) {
-      this.tableName = tableName;
-    }
-
-    public void setCubeName(String tableName) {
       this.tableName = tableName;
     }
 

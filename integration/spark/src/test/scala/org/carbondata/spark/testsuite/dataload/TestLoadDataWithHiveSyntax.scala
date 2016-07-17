@@ -190,7 +190,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
       "deptname String, projectcode Int, projectjoindate String, projectenddate String, " +
       "attendance Int,utilization Double,salary Double) STORED BY 'org.apache.carbondata.format'")
     sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table uppercasetable OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"')")
-    sql("drop table UpperCaseCube")
+    sql("drop table UpperCaseTable")
   }
 
   test("test carbon table data loading when table name is in different case with create table ,for LowerCase") {

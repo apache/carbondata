@@ -132,7 +132,7 @@ public class GraphGenerator {
   /**
    * table
    */
-  //    private Cube table;
+  //    private Table table;
   /**
    * instance
    */
@@ -457,7 +457,7 @@ public class GraphGenerator {
     sliceMerger.setMdkeySize(configurationInfo.getMdkeySize());
     sliceMerger.setMeasureCount(configurationInfo.getMeasureCount());
     sliceMerger.setTabelName(configurationInfo.getTableName());
-    sliceMerger.setCubeName(schemaInfo.getCubeName());
+    sliceMerger.setTableName(schemaInfo.getTableName());
     sliceMerger.setSchemaName(schemaInfo.getSchemaName());
     if (null != this.factStoreLocation) {
       sliceMerger.setCurrentRestructNumber(
@@ -541,7 +541,7 @@ public class GraphGenerator {
     seqMeta.setBatchSize(Integer.parseInt(graphConfiguration.getBatchSize()));
     seqMeta.setNoDictionaryDims(graphConfiguration.getNoDictionaryDims());
     seqMeta.setDimensionColumnsDataType(graphConfiguration.getDimensionColumnsDataType());
-    seqMeta.setCubeName(schemaInfo.getCubeName());
+    seqMeta.setTableName(schemaInfo.getTableName());
     seqMeta.setSchemaName(schemaInfo.getSchemaName());
     seqMeta.setComplexDelimiterLevel1(schemaInfo.getComplexDelimiterLevel1());
     seqMeta.setComplexDelimiterLevel2(schemaInfo.getComplexDelimiterLevel2());
@@ -603,7 +603,7 @@ public class GraphGenerator {
     carbonMdKey.setNumberOfCores(graphConfiguration.getNumberOfCores());
     carbonMdKey.setTableName(graphConfiguration.getTableName());
     carbonMdKey.setSchemaName(schemaInfo.getSchemaName());
-    carbonMdKey.setCubeName(schemaInfo.getCubeName());
+    carbonMdKey.setTableName(schemaInfo.getTableName());
     carbonMdKey.setComplexTypeString(graphConfiguration.getComplexTypeString());
     carbonMdKey.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
     carbonMdKey.setAggregateLevels(CarbonDataProcessorUtil
@@ -747,7 +747,7 @@ public class GraphGenerator {
     sortRowsMeta.setSegmentId(segmentId);
     sortRowsMeta.setTaskNo(taskNo);
     sortRowsMeta.setTabelName(graphConfiguration.getTableName());
-    sortRowsMeta.setCubeName(schemaInfo.getCubeName());
+    sortRowsMeta.setTableName(schemaInfo.getTableName());
     sortRowsMeta.setSchemaName(schemaInfo.getSchemaName());
     sortRowsMeta.setOutputRowSize(actualMeasures.length + 1 + "");
     sortRowsMeta.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
@@ -787,9 +787,9 @@ public class GraphGenerator {
         .getDimensionByTableName(carbonDataLoadSchema.getCarbonTable().getFactTableName());
     prepareIsUseInvertedIndex(dimensions, graphConfiguration);
     graphConfiguration
-        .setDimensions(CarbonSchemaParser.getCubeDimensions(dimensions, carbonDataLoadSchema));
+        .setDimensions(CarbonSchemaParser.getTableDimensions(dimensions, carbonDataLoadSchema));
     graphConfiguration
-        .setActualDims(CarbonSchemaParser.getCubeDimensions(dimensions, carbonDataLoadSchema));
+        .setActualDims(CarbonSchemaParser.getTableDimensions(dimensions, carbonDataLoadSchema));
     graphConfiguration
         .setColumnPropertiesString(CarbonSchemaParser.getColumnPropertiesString(dimensions));
     graphConfiguration.setComplexTypeString(CarbonSchemaParser.getComplexTypeString(dimensions));
@@ -919,7 +919,7 @@ public class GraphGenerator {
     return CarbonSchemaParser.QUOTES;
   }
 
-  public CarbonTable getCube() {
+  public CarbonTable getTable() {
     return carbonDataLoadSchema.getCarbonTable();
   }
 

@@ -50,7 +50,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   private static final String zooKeeperLocation = CarbonCommonConstants.ZOOKEEPER_LOCATION;
 
   /**
-   * Unique folder for each table with SchemaName_CubeName
+   * Unique folder for each table with SchemaName_TableName
    */
   private final String tableIdFolder;
 

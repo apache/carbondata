@@ -190,14 +190,14 @@ public class ColumnsInfo {
   /**
    * @return Returns the tableName.
    */
-  public String getCubeName() {
+  public String getTableName() {
     return tableName;
   }
 
   /**
    * @param tableName The tableName to set.
    */
-  public void setCubeName(String tableName) {
+  public void setTableName(String tableName) {
     this.tableName = tableName;
   }
 
@@ -406,20 +406,6 @@ public class ColumnsInfo {
    */
   public void setDimHierRel(String[] dimHierRel) {
     this.dimHierRel = dimHierRel;
-  }
-
-  /**
-   * @return Returns the tableName.
-   */
-  public String getTableName() {
-    return tableName;
-  }
-
-  /**
-   * @param tableName The tableName to set.
-   */
-  public void setTableName(String tableName) {
-    this.tableName = tableName;
   }
 
   /**

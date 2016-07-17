@@ -158,20 +158,6 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
     this.tableName = tableName;
   }
 
-  /**
-   * @return the tableName
-   */
-  public String getCubeName() {
-    return tableName;
-  }
-
-  /**
-   * @param tableName the tableName to set
-   */
-  public void setCubeName(String tableName) {
-    this.tableName = tableName;
-  }
-
   public String getDesc() {
     return desc;
   }
@@ -265,7 +251,7 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
    */
   public IDataProcessStatus makeCopy() {
     IDataProcessStatus copy = new DataProcessTaskStatus();
-    copy.setCubeName(this.tableName);
+    copy.setTableName(this.tableName);
     copy.setDataloadstatusid(this.dataloadstatusid);
     copy.setDesc(this.desc);
     copy.setKey(this.key);

@@ -104,16 +104,6 @@ public interface IDataProcessStatus {
   /**
    * @return the tableName
    */
-  String getCubeName();
-
-  /**
-   * @param tableName the tableName to set
-   */
-  void setCubeName(String tableName);
-
-  /**
-   * @return the tableName
-   */
   String getTableName();
 
   /**

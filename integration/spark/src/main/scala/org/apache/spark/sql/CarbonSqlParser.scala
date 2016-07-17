@@ -197,10 +197,10 @@ class CarbonSqlParser()
     (aggregation).? ~ (",".? ~> partitioner).?
   protected lazy val aggOptions =
     (noDictionaryDims).? ~ (",".? ~> aggregation).? ~ (",".? ~> partitioner).?
-  protected lazy val showcreateCubeOptionDef =
+  protected lazy val showcreateTableOptionDef =
     ("(" ~> aggOptionsForShowCreate <~ ")")
 
-  protected lazy val createCubeOptionDef =
+  protected lazy val createTableOptionDef =
     ("(" ~> aggOptions <~ ")")
 
   protected val escapedIdentifier = "`([^`]+)`".r

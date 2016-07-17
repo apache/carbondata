@@ -177,7 +177,7 @@ public final class CarbonLoaderUtil {
     SchemaInfo info = new SchemaInfo();
 
     info.setSchemaName(databaseName);
-    info.setCubeName(tableName);
+    info.setTableName(tableName);
     info.setAutoAggregateRequest(loadModel.isAggLoadRequest());
     info.setComplexDelimiterLevel1(loadModel.getComplexDelimiterLevel1());
     info.setComplexDelimiterLevel2(loadModel.getComplexDelimiterLevel2());
@@ -261,12 +261,12 @@ public final class CarbonLoaderUtil {
       String aggTableName, String hdfsStoreLocation, int currentRestructNumber) {
     String aggTableLoc = null;
     String partitionSchemaName = null;
-    String partitionCubeName = null;
+    String partitionTableName = null;
     for (int i = 0; i < partitionCount; i++) {
       partitionSchemaName = schemaName + '_' + i;
-      partitionCubeName = tableName + '_' + i;
+      partitionTableName = tableName + '_' + i;
       for (int j = currentRestructNumber; j >= 0; j--) {
-        aggTableLoc = getTableLocation(partitionSchemaName, partitionCubeName, aggTableName,
+        aggTableLoc = getTableLocation(partitionSchemaName, partitionTableName, aggTableName,
             hdfsStoreLocation, j);
         deleteStorePath(aggTableLoc);
       }
@@ -288,12 +288,12 @@ public final class CarbonLoaderUtil {
       String hdfsStoreLocation, int currentRestructNumber, String loadFolder) {
     String tableLoc = null;
     String partitionSchemaName = null;
-    String partitionCubeName = null;
+    String partitionTableName = null;
     for (int i = 0; i < partitionCount; i++) {
       partitionSchemaName = schemaName + '_' + i;
-      partitionCubeName = tableName + '_' + i;
+      partitionTableName = tableName + '_' + i;
       tableLoc =
-          getTableLocation(partitionSchemaName, partitionCubeName, tableName, hdfsStoreLocation,
+          getTableLocation(partitionSchemaName, partitionTableName, tableName, hdfsStoreLocation,
               currentRestructNumber);
       tableLoc = tableLoc + File.separator + loadFolder;
       deleteStorePath(tableLoc);

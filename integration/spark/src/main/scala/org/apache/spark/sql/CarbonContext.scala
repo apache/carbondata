@@ -124,7 +124,7 @@ object CarbonContext {
 
   /**
    * @param schemaName - Schema Name
-   * @param tableName   - Cube Name
+   * @param tableName   - Table Name
    * @param factPath   - Raw CSV data path
    * @param targetPath - Target path where the file will be split as per partition
    * @param delimiter  - default file delimiter is comma(,)

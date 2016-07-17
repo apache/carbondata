@@ -465,7 +465,7 @@ public final class CarbonUtil {
    * @param schemaName
    * @param tableName
    */
-  public static void renameCubeForDeletion(int partitionCount, String storePath, String schemaName,
+  public static void renameTableForDeletion(int partitionCount, String storePath, String schemaName,
       String tableName) {
     String tableNameWithPartition = "";
     String schemaNameWithPartition = "";

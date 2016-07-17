@@ -256,7 +256,7 @@ object CarbonDataRDDFactory extends Logging {
       )
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val tableCreationTime = CarbonEnv.getInstance(sqlContext).carbonCatalog
-      .getCubeCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
+      .getTableCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
 
     if (null == carbonLoadModel.getLoadMetadataDetails) {
       readLoadMetadataDetails(carbonLoadModel, hdfsStoreLocation)
@@ -566,7 +566,7 @@ object CarbonDataRDDFactory extends Logging {
       val loadStartTime = CarbonLoaderUtil.readCurrentTime()
       carbonLoadModel.setFactTimeStamp(loadStartTime)
       val tableCreationTime = CarbonEnv.getInstance(sqlContext).carbonCatalog
-        .getCubeCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
+        .getTableCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
       val schemaLastUpdatedTime = CarbonEnv.getInstance(sqlContext).carbonCatalog
         .getSchemaLastUpdatedTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
 

@@ -252,9 +252,9 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           case e: Exception => ExecutedCommand(d) :: Nil
         }
       case DescribeFormattedCommand(sql, tblIdentifier) =>
-        val isCube = CarbonEnv.getInstance(sqlContext).carbonCatalog
+        val isTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
             .tableExists(tblIdentifier)(sqlContext)
-        if (isCube) {
+        if (isTable) {
           val describe =
             LogicalDescribeCommand(UnresolvedRelation(tblIdentifier, None), isExtended = false)
           val resolvedTable = sqlContext.executePlan(describe.table).analyzed

@@ -1553,14 +1553,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     this.columnAndTableNameColumnMapForAggString = columnAndTableNameColumnMapForAggString;
   }
 
-  public String getCubeName() {
-    return tableName;
-  }
-
-  public void setCubeName(String tableName) {
-    this.tableName = tableName;
-  }
-
   public String getSchemaName() {
     return schemaName;
   }

@@ -115,7 +115,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
   val metadata = loadMetadata(storePath)
 
 
-  def getCubeCreationTime(schemaName: String, tableName: String): Long = {
+  def getTableCreationTime(schemaName: String, tableName: String): Long = {
     val tableMeta = metadata.tablesMeta.filter(
       c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(schemaName) &&
            c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))
@@ -130,7 +130,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
 
   def lookupRelation1(tableIdentifier: TableIdentifier,
       alias: Option[String] = None)(sqlContext: SQLContext): LogicalPlan = {
-    checkSchemasModifiedTimeAndReloadCubes()
+    checkSchemasModifiedTimeAndReloadTables()
     val database = tableIdentifier.database.getOrElse(getDB.getDatabaseName(None, sqlContext))
     val tables = metadata.tablesMeta.filter(
       c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
@@ -145,7 +145,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
   }
 
   def tableExists(tableIdentifier: TableIdentifier)(sqlContext: SQLContext): Boolean = {
-    checkSchemasModifiedTimeAndReloadCubes()
+    checkSchemasModifiedTimeAndReloadTables()
     val database = tableIdentifier.database.getOrElse(getDB.getDatabaseName(None, sqlContext))
     val tables = metadata.tablesMeta.filter(
       c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
@@ -258,7 +258,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
    * Load CarbonTable from wrapper tableinfo
    *
    */
-  def createCubeFromThrift(tableInfo: org.carbondata.core.carbon.metadata.schema.table.TableInfo,
+  def createTableFromThrift(tableInfo: org.carbondata.core.carbon.metadata.schema.table.TableInfo,
       dbName: String, tableName: String, partitioner: Partitioner)
     (sqlContext: SQLContext): String = {
 
@@ -427,7 +427,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
    * Shows all schemas which has Database name like
    */
   def showDatabases(schemaLike: Option[String]): Seq[String] = {
-    checkSchemasModifiedTimeAndReloadCubes()
+    checkSchemasModifiedTimeAndReloadTables()
     metadata.tablesMeta.map { c =>
       schemaLike match {
         case Some(name) =>
@@ -450,7 +450,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
 
     val schemaName = databaseName
       .getOrElse(sqlContext.asInstanceOf[HiveContext].catalog.client.currentDatabase)
-    checkSchemasModifiedTimeAndReloadCubes()
+    checkSchemasModifiedTimeAndReloadTables()
     metadata.tablesMeta.filter { c =>
       c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(schemaName)
     }.map { c => (c.carbonTableIdentifier.getTableName, false) }
@@ -460,7 +460,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
    * Shows all tables in all schemas.
    */
   def getAllTables()(sqlContext: SQLContext): Seq[TableIdentifier] = {
-    checkSchemasModifiedTimeAndReloadCubes()
+    checkSchemasModifiedTimeAndReloadTables()
     metadata.tablesMeta.map { c =>
         TableIdentifier(c.carbonTableIdentifier.getTableName,
           Some(c.carbonTableIdentifier.getDatabaseName))
@@ -485,7 +485,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
 
       if (FileFactory.isFileExist(metadatFilePath, fileType)) {
         val file = FileFactory.getCarbonFile(metadatFilePath, fileType)
-        CarbonUtil.renameCubeForDeletion(partitionCount, tableStorePath, dbName, tableName)
+        CarbonUtil.renameTableForDeletion(partitionCount, tableStorePath, dbName, tableName)
         CarbonUtil.deleteFoldersAndFilesSilent(file.getParentFile)
       }
 
@@ -545,7 +545,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
       .setLastModifiedTime(System.currentTimeMillis())
   }
 
-  def checkSchemasModifiedTimeAndReloadCubes() {
+  def checkSchemasModifiedTimeAndReloadTables() {
     val (timestampFile, timestampFileType) = getTimestampFileAndType("", "")
     if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
       if (!(FileFactory.getCarbonFile(timestampFile, timestampFileType).
@@ -569,7 +569,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     schemaLastUpdatedTime
   }
 
-  def readCubeMetaDataFile(tableFolder: CarbonFile,
+  def readTableMetaDataFile(tableFolder: CarbonFile,
       fileType: FileFactory.FileType):
   (String, String, String, String, Partitioner, Long) = {
     val tableMetadataFile = tableFolder.getAbsolutePath + "/metadata"

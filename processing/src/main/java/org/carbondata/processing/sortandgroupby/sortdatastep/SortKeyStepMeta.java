@@ -360,14 +360,14 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
   /**
    * @return the tableName
    */
-  public String getCubeName() {
+  public String getTableName() {
     return tableName;
   }
 
   /**
    * @param tableName the tableName to set
    */
-  public void setCubeName(String tableName) {
+  public void setTableName(String tableName) {
     this.tableName = tableName;
   }
 

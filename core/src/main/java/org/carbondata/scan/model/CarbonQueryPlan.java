@@ -47,7 +47,7 @@ public class CarbonQueryPlan implements Serializable {
   private String schemaName;
 
   /**
-   * Cube name .
+   * Table name .
    * if user asks select * from datasight.employee. then employee is the table name.
    * It is mandatory.
    */
@@ -169,7 +169,7 @@ public class CarbonQueryPlan implements Serializable {
   /**
    * @return the tableName
    */
-  public String getCubeName() {
+  public String getTableName() {
     return tableName;
   }
 

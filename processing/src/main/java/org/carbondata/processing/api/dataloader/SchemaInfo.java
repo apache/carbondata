@@ -132,11 +132,11 @@ public class SchemaInfo {
     this.srcPwd = srcPwd;
   }
 
-  public String getCubeName() {
+  public String getTableName() {
     return tableName;
   }
 
-  public void setCubeName(String tableName) {
+  public void setTableName(String tableName) {
     this.tableName = tableName;
   }
 

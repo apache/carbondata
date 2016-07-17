@@ -123,7 +123,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
     baseStorePath = columnsInfo.getBaseStoreLocation();
     setStoreFolderWithLoadNumber(
         checkAndCreateLoadFolderNumber(columnsInfo.getSchemaName(),
-            columnsInfo.getCubeName()));
+            columnsInfo.getTableName()));
     fileManager = new FileManager();
     fileManager.setName(loadFolderName + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
 
