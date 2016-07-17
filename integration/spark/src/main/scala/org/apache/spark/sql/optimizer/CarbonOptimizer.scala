@@ -449,7 +449,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
   private def updateDataType(attr: Attribute,
       relations: Seq[CarbonDecoderRelation],
       allAttrsNotDecode: util.Set[Attribute],
-      aliasMap: CarbonAliasDecoderRelation) = {
+      aliasMap: CarbonAliasDecoderRelation): Attribute = {
     val uAttr = aliasMap.getOrElse(attr, attr)
     val relation = relations.find(p => p.contains(uAttr))
     if (relation.isDefined) {
