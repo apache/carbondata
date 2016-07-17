@@ -65,8 +65,7 @@ object CarbonOptimizer {
  * It does two jobs. 1. Change the datatype for dictionary encoded column 2. Add the dictionary
  * decoder plan.
  */
-class ResolveCarbonFunctions(
-    relations: Seq[CarbonDecoderRelation])
+class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
   extends Rule[LogicalPlan] with PredicateHelper {
 
   def apply(plan: LogicalPlan): LogicalPlan = {
