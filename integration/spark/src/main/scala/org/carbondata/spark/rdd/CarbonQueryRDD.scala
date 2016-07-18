@@ -108,20 +108,9 @@ class CarbonQueryRDD[V: ClassTag](
       )
       if (blockList.nonEmpty) {
         // group blocks to nodes, tasks
-        val requiredExecutors = CarbonLoaderUtil.getRequiredExecutors(blockList.asJava)
-        var confExecutors : String = null
-        if (sparkContext.getConf.contains("spark.executor.instances")) {
-          confExecutors = sparkContext.getConf.get("spark.executor.instances")
-        } else if (sparkContext.getConf.contains("spark.dynamicAllocation.enabled")
-          && sparkContext.getConf.get("spark.dynamicAllocation.enabled").trim
-          .equalsIgnoreCase("true")) {
-          if (sparkContext.getConf.contains("spark.dynamicAllocation.maxExecutors")) {
-            confExecutors = sparkContext.getConf.get("spark.dynamicAllocation.maxExecutors")
-          }
-        }
         val startTime = System.currentTimeMillis
         val activeNodes = DistributionUtil
-          .ensureExecutorsAndGetNodeList(requiredExecutors, confExecutors, sparkContext)
+          .ensureExecutorsAndGetNodeList(blockList.toArray, sparkContext)
         val nodeBlockMapping =
           CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism,
             activeNodes.toList.asJava

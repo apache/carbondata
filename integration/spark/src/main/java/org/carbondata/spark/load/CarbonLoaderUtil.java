@@ -1066,7 +1066,7 @@ public final class CarbonLoaderUtil {
    * @return
    */
   public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos,
-      int noOfNodesInput, List activeNodes) {
+      int noOfNodesInput, List<String> activeNodes) {
 
     Map<String, List<Distributable>> nodeBlocksMap =
         new HashMap<String, List<Distributable>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);

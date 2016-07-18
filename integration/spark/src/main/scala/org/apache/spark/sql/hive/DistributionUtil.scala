@@ -18,7 +18,6 @@ package org.apache.spark.sql.hive
 
 
 import java.net.{InetAddress, InterfaceAddress, NetworkInterface}
-import java.util
 
 import scala.collection.JavaConverters._
 
@@ -27,8 +26,7 @@ import org.apache.spark.sql.CarbonContext
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.datastore.block.Distributable
-
-
+import org.carbondata.spark.load.CarbonLoaderUtil
 
 /**
  *
@@ -108,15 +106,25 @@ object DistributionUtil {
    * Checking if the existing executors is greater than configured executors, if yes
    * returning configured executors.
    *
-   * @param nodeMapping
-   * @param confExecutorsTemp
+   * @param blockList
    * @param sparkContext
    * @return
    */
-  def ensureExecutorsAndGetNodeList(nodeMapping: util.Map[String, util.List[Distributable]],
-    confExecutorsTemp: String,
+  def ensureExecutorsAndGetNodeList(blockList: Array[Distributable],
     sparkContext: SparkContext):
   Array[String] = {
+    val nodeMapping = CarbonLoaderUtil.getRequiredExecutors(blockList.toSeq.asJava)
+    var confExecutorsTemp: String = null
+    if (sparkContext.getConf.contains("spark.executor.instances")) {
+      confExecutorsTemp = sparkContext.getConf.get("spark.executor.instances")
+    } else if (sparkContext.getConf.contains("spark.dynamicAllocation.enabled")
+      && sparkContext.getConf.get("spark.dynamicAllocation.enabled").trim
+      .equalsIgnoreCase("true")) {
+      if (sparkContext.getConf.contains("spark.dynamicAllocation.maxExecutors")) {
+        confExecutorsTemp = sparkContext.getConf.get("spark.dynamicAllocation.maxExecutors")
+      }
+    }
+
     val confExecutors = if (null != confExecutorsTemp) confExecutorsTemp.toInt else 1
     val requiredExecutors = if (nodeMapping.size > confExecutors) {
       confExecutors

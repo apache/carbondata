@@ -32,6 +32,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit
 import org.apache.spark.{Logging, Partition, SparkContext, SparkEnv}
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation, SQLContext}
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, Partitioner}
+import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.util.{FileUtils, SplitUtils}
 
 import org.carbondata.common.logging.LogServiceFactory
@@ -721,8 +722,15 @@ object CarbonDataRDDFactory extends Logging {
           }
           )
           // group blocks to nodes, tasks
+          val startTime = System.currentTimeMillis
+          val activeNodes = DistributionUtil
+            .ensureExecutorsAndGetNodeList(blockList, sc.sparkContext)
           val nodeBlockMapping =
-            CarbonLoaderUtil.nodeBlockMapping(blockList.toSeq.asJava, -1).asScala.toSeq
+            CarbonLoaderUtil
+              .nodeBlockMapping(blockList.toSeq.asJava, -1, activeNodes.toList.asJava).asScala
+              .toSeq
+          val timeElapsed: Long = System.currentTimeMillis - startTime
+          logInfo("Total Time taken in block allocation : " + timeElapsed)
           logInfo("Total no of blocks : " + blockList.size
             + ", No.of Nodes : " + nodeBlockMapping.size
           )
