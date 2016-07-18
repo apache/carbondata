@@ -8,9 +8,11 @@ import java.io.IOException;
 import java.net.ServerSocket;
 import java.util.Properties;
 
+import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.util.CarbonProperties;
 
 import mockit.NonStrictExpectations;
+
 import org.apache.zookeeper.server.ServerConfig;
 import org.apache.zookeeper.server.ZooKeeperServerMain;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
@@ -78,13 +80,14 @@ public class ZooKeeperLockingTest {
 
     ZookeeperInit zki = ZookeeperInit.getInstance("127.0.0.1:" + freePort);
 
+    CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("dbName", "tableName", "tableId");
     ZooKeeperLocking zkl =
-        new ZooKeeperLocking("D:/carbondata/examples/target/store/default/t3/Metadata",
+        new ZooKeeperLocking(tableIdentifier,
             LockUsage.METADATA_LOCK);
     Assert.assertTrue(zkl.lock());
 
     ZooKeeperLocking zk2 = new ZooKeeperLocking(
-        "D:/carbondata/examples/target/store/default/t3/Metadata", LockUsage.METADATA_LOCK);
+    		tableIdentifier, LockUsage.METADATA_LOCK);
     Assert.assertTrue(!zk2.lock());
 
     Assert.assertTrue(zkl.unlock());

@@ -5,6 +5,8 @@ package org.carbondata.core.locks;
 
 import java.io.File;
 
+import org.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -31,12 +33,13 @@ public class LocalFileLockTest {
 
   @Test public void testingLocalFileLockingByAcquiring2Locks() {
 
+	CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("databaseName", "tableName", "tableId");
     LocalFileLock localLock1 =
-        new LocalFileLock((new File(".").getAbsolutePath()) + "/src/test/resources",
+        new LocalFileLock(carbonTableIdentifier,
             LockUsage.METADATA_LOCK);
     Assert.assertTrue(localLock1.lock());
     LocalFileLock localLock2 =
-        new LocalFileLock((new File(".").getAbsolutePath()) + "/src/test/resources",
+        new LocalFileLock(carbonTableIdentifier,
             LockUsage.METADATA_LOCK);
     Assert.assertTrue(!localLock2.lock());
 

@@ -19,9 +19,10 @@
 package org.carbondata.core.locks;
 
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 
+import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 
 /**
@@ -35,22 +36,23 @@ public class HdfsFileLock extends AbstractCarbonLock {
    */
   private String location;
 
-  /**
-   * lockUsage is used to determine the type of the lock. according to this the lock
-   * folder will change.
-   */
-  private LockUsage lockUsage;
-
   private DataOutputStream dataOutputStream;
 
+  public static String tmpPath;
+
+  static {
+    tmpPath = System.getProperty("hadoop.tmp.dir");
+  }
+
   /**
-   * @param location
-   * @param lockUsage
+   * @param tableIdentifier
+   * @param lockFile
    */
-  public HdfsFileLock(String location, LockUsage lockUsage) {
-    this.location = location;
-    this.lockUsage = lockUsage;
-    this.location = location + File.separator + this.lockUsage;
+  public HdfsFileLock(CarbonTableIdentifier tableIdentifier, String lockFile) {
+    this.location =
+        tmpPath + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier.getDatabaseName()
+            + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier.getTableName()
+            + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
     initRetry();
   }
 

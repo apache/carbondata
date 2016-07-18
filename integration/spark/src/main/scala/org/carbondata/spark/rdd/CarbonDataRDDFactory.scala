@@ -185,7 +185,9 @@ object CarbonDataRDDFactory extends Logging {
 
       // Save the load metadata
       val carbonLock = CarbonLockFactory
-        .getCarbonLockObj(cube.getMetaDataFilepath, LockUsage.METADATA_LOCK)
+        .getCarbonLockObj(cube.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+          LockUsage.METADATA_LOCK
+        )
       try {
         if (carbonLock.lockWithRetries()) {
           logInfo("Successfully got the table metadata file lock")
@@ -325,7 +327,9 @@ object CarbonDataRDDFactory extends Logging {
     )
 
     val lock = CarbonLockFactory
-      .getCarbonLockObj(carbonTable.getMetaDataFilepath, LockUsage.COMPACTION_LOCK)
+      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+        LockUsage.COMPACTION_LOCK
+      )
 
     if (lock.lockWithRetries()) {
       logger
@@ -523,7 +527,9 @@ object CarbonDataRDDFactory extends Logging {
           cubeCreationTime
         )
         val lock = CarbonLockFactory
-          .getCarbonLockObj(carbonTable.getMetaDataFilepath, LockUsage.COMPACTION_LOCK)
+          .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+            LockUsage.COMPACTION_LOCK
+          )
 
         var storeLocation = ""
         var configuredStore = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
@@ -928,7 +934,9 @@ object CarbonDataRDDFactory extends Logging {
       currentRestructNumber = 0
     }
     val carbonLock = CarbonLockFactory
-      .getCarbonLockObj(cube.getMetaDataFilepath, LockUsage.METADATA_LOCK)
+      .getCarbonLockObj(cube.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+        LockUsage.METADATA_LOCK
+      )
     try {
       if (carbonLock.lockWithRetries()) {
         deleteLoadsAndUpdateMetadata(carbonLoadModel,

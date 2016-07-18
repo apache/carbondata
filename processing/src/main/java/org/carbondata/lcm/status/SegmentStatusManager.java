@@ -74,11 +74,8 @@ public class SegmentStatusManager {
    * @return
    */
   public ICarbonLock getTableStatusLock() {
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
-    String metaDataFilepath = carbonTablePath.getMetadataDirectoryPath();
-    return CarbonLockFactory.getCarbonLockObj(metaDataFilepath, LockUsage.TABLE_STATUS_LOCK);
+    return CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier(),
+        LockUsage.TABLE_STATUS_LOCK);
   }
 
   /**
@@ -243,8 +240,9 @@ public class SegmentStatusManager {
    * @return
    */
   public List<String> updateDeletionStatus(List<String> loadIds, String cubeFolderPath) {
-    ICarbonLock carbonLock =
-        CarbonLockFactory.getCarbonLockObj(cubeFolderPath, LockUsage.METADATA_LOCK);
+    ICarbonLock carbonLock = CarbonLockFactory
+        .getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier(),
+            LockUsage.METADATA_LOCK);
     List<String> invalidLoadIds = new ArrayList<String>(0);
     try {
       if (carbonLock.lockWithRetries()) {
@@ -300,8 +298,9 @@ public class SegmentStatusManager {
    */
   public List<String> updateDeletionStatus(String loadDate, String tableFolderPath,
       Long loadStartTime) {
-    ICarbonLock carbonLock =
-        CarbonLockFactory.getCarbonLockObj(tableFolderPath, LockUsage.METADATA_LOCK);
+    ICarbonLock carbonLock = CarbonLockFactory
+        .getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier(),
+            LockUsage.METADATA_LOCK);
     List<String> invalidLoadTimestamps = new ArrayList<String>(0);
     try {
       if (carbonLock.lockWithRetries()) {

@@ -18,6 +18,7 @@
  */
 package org.carbondata.core.locks;
 
+import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonProperties;
 
@@ -39,25 +40,25 @@ public class CarbonLockFactory {
   /**
    * This method will determine the lock type.
    *
-   * @param location
-   * @param lockUsage
+   * @param tableIdentifier
+   * @param lockFile
    * @return
    */
-  public static ICarbonLock getCarbonLockObj(String location, LockUsage lockUsage) {
+  public static ICarbonLock getCarbonLockObj(CarbonTableIdentifier tableIdentifier,
+      String lockFile) {
     switch (lockTypeConfigured.toUpperCase()) {
       case CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL:
-        return new LocalFileLock(location, lockUsage);
+        return new LocalFileLock(tableIdentifier, lockFile);
 
       case CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER:
-        return new ZooKeeperLocking(location, lockUsage);
+        return new ZooKeeperLocking(tableIdentifier, lockFile);
 
       case CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS:
-        return new HdfsFileLock(location, lockUsage);
+        return new HdfsFileLock(tableIdentifier, lockFile);
 
       default:
         throw new UnsupportedOperationException("Not supported the lock type");
     }
-
   }
 
   /**

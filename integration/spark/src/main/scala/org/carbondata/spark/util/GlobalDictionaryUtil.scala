@@ -167,33 +167,6 @@ object GlobalDictionaryUtil extends Logging {
   }
 
   /**
-   * invokes the CarbonDictionarySortIndexWriter to write column sort info
-   * sortIndex and sortIndexInverted data to sortinsex file.
-   *
-   * @param model  carbon Dictionary Model
-   * @param index  index for write
-   * @param dictionary  dictionary has already been generated
-   */
-  def writeGlobalDictionaryColumnSortInfo(model: DictionaryLoadModel,
-      index: Int,
-      dictionary: Dictionary): Unit = {
-    val preparator: CarbonDictionarySortInfoPreparator = new CarbonDictionarySortInfoPreparator
-    val dictService = CarbonCommonFactory.getDictionaryService
-    val dictionarySortInfo: CarbonDictionarySortInfo =
-      preparator.getDictionarySortInfo(dictionary,
-        model.primDimensions(index).getDataType)
-    val carbonDictionaryWriter: CarbonDictionarySortIndexWriter =
-      dictService.getDictionarySortIndexWriter(model.table, model.columnIdentifier(index),
-          model.hdfsLocation)
-    try {
-      carbonDictionaryWriter.writeSortIndex(dictionarySortInfo.getSortIndex)
-      carbonDictionaryWriter.writeInvertedSortIndex(dictionarySortInfo.getSortIndexInverted)
-    } finally {
-      carbonDictionaryWriter.close()
-    }
-  }
-
-  /**
    * read global dictionary from cache
    */
   def readGlobalDictionaryFromCache(model: DictionaryLoadModel): HashMap[String, Dictionary] = {
@@ -649,59 +622,5 @@ object GlobalDictionaryUtil extends Logging {
         logError("generate global dictionary failed")
         throw ex
     }
-  }
-
-  def generateAndWriteNewDistinctValueList(valuesBuffer: mutable.HashSet[String],
-      dictionary: Dictionary,
-      model: DictionaryLoadModel, columnIndex: Int): Int = {
-    val values = valuesBuffer.toArray
-    java.util.Arrays.sort(values, Ordering[String])
-    var distinctValueCount: Int = 0
-    val dictService = CarbonCommonFactory.getDictionaryService
-    val writer: CarbonDictionaryWriter = dictService.getDictionaryWriter(
-        model.table,
-        model.columnIdentifier(columnIndex),
-        model.hdfsLocation)
-    try {
-      if (!model.dictFileExists(columnIndex)) {
-        writer.write(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
-        distinctValueCount += 1
-      }
-
-      if (values.length >= 1) {
-        var preValue = values(0)
-        if (model.dictFileExists(columnIndex)) {
-          if (dictionary.getSurrogateKey(values(0)) == CarbonCommonConstants
-            .INVALID_SURROGATE_KEY) {
-            writer.write(values(0))
-            distinctValueCount += 1
-          }
-          for (i <- 1 until values.length) {
-            if (preValue != values(i)) {
-              if (dictionary.getSurrogateKey(values(i)) ==
-                  CarbonCommonConstants.INVALID_SURROGATE_KEY) {
-                writer.write(values(i))
-                preValue = values(i)
-                distinctValueCount += 1
-              }
-            }
-          }
-
-        } else {
-          writer.write(values(0))
-          distinctValueCount += 1
-          for (i <- 1 until values.length) {
-            if (preValue != values(i)) {
-              writer.write(values(i))
-              preValue = values(i)
-              distinctValueCount += 1
-            }
-          }
-        }
-      }
-    } finally {
-      writer.close()
-    }
-    distinctValueCount
   }
 }

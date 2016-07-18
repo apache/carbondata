@@ -22,9 +22,10 @@ package org.carbondata.core.locks;
  * This enum is used to define the usecase of the lock.
  * Each enum value is one specific lock case.
  */
-public enum LockUsage {
-  METADATA_LOCK,
-  COMPACTION_LOCK,
-  TABLE_STATUS_LOCK;
+public class LockUsage {
+  public static String LOCK = ".lock";
+  public static String METADATA_LOCK="meta.lock";
+  public static String COMPACTION_LOCK="compaction.lock";
+  public static String TABLE_STATUS_LOCK="tablestatus.lock";
 
 }

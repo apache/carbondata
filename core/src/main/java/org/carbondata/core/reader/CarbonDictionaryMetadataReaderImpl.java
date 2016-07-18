@@ -146,6 +146,7 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
   @Override public void close() throws IOException {
     if (null != dictionaryMetadataFileReader) {
       dictionaryMetadataFileReader.close();
+      dictionaryMetadataFileReader = null;
     }
   }
 
@@ -167,14 +168,17 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
   private void openThriftReader() throws IOException {
     // initialise dictionary file reader which will return dictionary thrift object
     // dictionary thrift object contains a list of byte buffer
-    dictionaryMetadataFileReader =
-        new ThriftReader(this.columnDictionaryMetadataFilePath, new ThriftReader.TBaseCreator() {
-          @Override public TBase create() {
-            return new ColumnDictionaryChunkMeta();
-          }
-        });
-    // Open it
-    dictionaryMetadataFileReader.open();
+    if (null == dictionaryMetadataFileReader) {
+      dictionaryMetadataFileReader =
+          new ThriftReader(this.columnDictionaryMetadataFilePath, new ThriftReader.TBaseCreator() {
+            @Override public TBase create() {
+              return new ColumnDictionaryChunkMeta();
+            }
+          });
+      // Open it
+      dictionaryMetadataFileReader.open();
+    }
+
   }
 
   /**

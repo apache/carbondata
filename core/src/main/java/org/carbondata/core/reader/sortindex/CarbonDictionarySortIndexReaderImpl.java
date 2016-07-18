@@ -27,7 +27,9 @@ import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.ColumnIdentifier;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
+import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.reader.ThriftReader;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.format.ColumnSortInfo;
 
 import org.apache.thrift.TBase;
@@ -149,8 +151,21 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
 
   protected void initPath() {
     CarbonTablePath carbonTablePath =
-         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
-    this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId());
+        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+    String dictionaryPath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId());
+    long dictOffset = CarbonUtil.getFileSize(dictionaryPath);
+    this.sortIndexFilePath =
+        carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId(), dictOffset);
+    try {
+      if (!FileFactory
+          .isFileExist(this.sortIndexFilePath, FileFactory.getFileType(this.sortIndexFilePath))) {
+        this.sortIndexFilePath =
+            carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId());
+      }
+    } catch (IOException e) {
+      this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId());
+    }
+
   }
 
   /**

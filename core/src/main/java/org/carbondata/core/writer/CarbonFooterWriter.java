@@ -48,9 +48,14 @@ public class CarbonFooterWriter {
 
     ThriftWriter thriftWriter = openThriftWriter(filePath);
     footer.setVersion(VERSION_NUMBER);
-    thriftWriter.write(footer);
-    thriftWriter.writeOffset(currentPosition);
-    thriftWriter.close();
+    try {
+      thriftWriter.write(footer);
+      thriftWriter.writeOffset(currentPosition);
+    } catch (Exception e) {
+      throw e;
+    } finally {
+      thriftWriter.close();
+    }
   }
 
   /**

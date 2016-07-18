@@ -18,7 +18,6 @@
  */
 package org.carbondata.core.locks;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -27,6 +26,8 @@ import java.nio.channels.OverlappingFileLockException;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.carbon.CarbonTableIdentifier;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 
 /**
@@ -38,12 +39,6 @@ public class LocalFileLock extends AbstractCarbonLock {
    * location is the location of the lock file.
    */
   private String location;
-
-  /**
-   * lockUsage will determine the lock folder. so that similar locks will try to acquire
-   * same lock file.
-   */
-  private LockUsage lockUsage;
 
   /**
    * fileOutputStream of the local lock file
@@ -60,11 +55,12 @@ public class LocalFileLock extends AbstractCarbonLock {
    */
   private FileLock fileLock;
 
+  /**
+   * lock file
+   */
+  private String lockFile;
+
   public static final String tmpPath;
-
-  private String cubeName;
-
-  private String schemaName;
 
   /**
    * LOGGER for  logging the messages.
@@ -77,19 +73,14 @@ public class LocalFileLock extends AbstractCarbonLock {
   }
 
   /**
-   * @param location
-   * @param lockUsage
+   * @param tableIdentifier
+   * @param lockFile
    */
-  public LocalFileLock(String location, LockUsage lockUsage) {
-    this.lockUsage = lockUsage;
-    location = location.replace("\\", "/");
-    String tempStr = location.substring(0, location.lastIndexOf('/'));
-    cubeName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
-    tempStr = tempStr.substring(0, tempStr.lastIndexOf('/'));
-    schemaName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
+  public LocalFileLock(CarbonTableIdentifier tableIdentifier, String lockFile) {
     this.location =
-        tmpPath + File.separator + schemaName + File.separator + cubeName + File.separator
-            + this.lockUsage;
+        tmpPath + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier.getDatabaseName()
+            + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier.getTableName();
+    this.lockFile = lockFile;
     initRetry();
   }
 
@@ -100,22 +91,16 @@ public class LocalFileLock extends AbstractCarbonLock {
    */
   @Override public boolean lock() {
     try {
-      String schemaFolderPath = tmpPath + File.separator + schemaName;
-      String cubeFolderPath = schemaFolderPath + File.separator + cubeName;
-      // create dir with schema name in tmp location.
-      if (!FileFactory.isFileExist(schemaFolderPath, FileFactory.getFileType(tmpPath))) {
-        FileFactory.mkdirs(schemaFolderPath, FileFactory.getFileType(tmpPath));
+      if (!FileFactory.isFileExist(location, FileFactory.getFileType(tmpPath))) {
+        FileFactory.mkdirs(location, FileFactory.getFileType(tmpPath));
+      }
+      String lockFilePath = location + CarbonCommonConstants.FILE_SEPARATOR +
+          lockFile;
+      if (!FileFactory.isFileExist(lockFilePath, FileFactory.getFileType(location))) {
+        FileFactory.createNewLockFile(lockFilePath, FileFactory.getFileType(location));
       }
 
-      // create dir with cube name in tmp location.
-      if (!FileFactory.isFileExist(cubeFolderPath, FileFactory.getFileType(tmpPath))) {
-        FileFactory.mkdirs(cubeFolderPath, FileFactory.getFileType(tmpPath));
-      }
-      if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
-        FileFactory.createNewLockFile(location, FileFactory.getFileType(location));
-      }
-
-      fileOutputStream = new FileOutputStream(location);
+      fileOutputStream = new FileOutputStream(lockFilePath);
       channel = fileOutputStream.getChannel();
       try {
         fileLock = channel.tryLock();

@@ -32,7 +32,7 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
   val dataPath: String = carbonTablePath.getMetadataDirectoryPath
 
   val carbonLock: ICarbonLock =
-    CarbonLockFactory.getCarbonLockObj(dataPath, LockUsage.TABLE_STATUS_LOCK)
+    CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK)
 
 
   override def beforeAll {

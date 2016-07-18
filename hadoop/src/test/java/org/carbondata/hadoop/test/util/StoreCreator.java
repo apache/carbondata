@@ -298,14 +298,15 @@ public class StoreCreator {
         writer.write(value);
       }
       writer.close();
-
+      writer.commit();
       Dictionary dict = (Dictionary) dictCache.get(
           new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier.getCarbonTableIdentifier(),
         		  columnIdentifier, dims.get(i).getDataType()));
       CarbonDictionarySortInfoPreparator preparator =
           new CarbonDictionarySortInfoPreparator();
+      List<String> newDistinctValues = new ArrayList<String>();
       CarbonDictionarySortInfo dictionarySortInfo =
-          preparator.getDictionarySortInfo(dict, dims.get(i).getDataType());
+          preparator.getDictionarySortInfo(newDistinctValues, dict, dims.get(i).getDataType());
       CarbonDictionarySortIndexWriter carbonDictionaryWriter =
           new CarbonDictionarySortIndexWriterImpl(
               absoluteTableIdentifier.getCarbonTableIdentifier(), columnIdentifier,

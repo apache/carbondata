@@ -144,6 +144,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
   @Override public void close() throws IOException {
     if (null != dictionaryFileReader) {
       dictionaryFileReader.close();
+      dictionaryFileReader = null;
     }
   }
 
@@ -294,15 +295,18 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    * @throws IOException thrift reader open method throws IOException
    */
   private void openThriftReader() throws IOException {
-    // initialise dictionary file reader which will return dictionary thrift object
-    // dictionary thrift object contains a list of byte buffer
-    dictionaryFileReader =
-        new ThriftReader(this.columnDictionaryFilePath, new ThriftReader.TBaseCreator() {
-          @Override public TBase create() {
-            return new ColumnDictionaryChunk();
-          }
-        });
-    // Open dictionary file reader
-    dictionaryFileReader.open();
+    if (null == dictionaryFileReader) {
+      // initialise dictionary file reader which will return dictionary thrift object
+      // dictionary thrift object contains a list of byte buffer
+      dictionaryFileReader =
+          new ThriftReader(this.columnDictionaryFilePath, new ThriftReader.TBaseCreator() {
+            @Override public TBase create() {
+              return new ColumnDictionaryChunk();
+            }
+          });
+      // Open dictionary file reader
+      dictionaryFileReader.open();
+    }
+
   }
 }
