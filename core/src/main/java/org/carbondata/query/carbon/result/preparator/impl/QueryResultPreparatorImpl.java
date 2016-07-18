@@ -29,6 +29,7 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.carbondata.core.carbon.querystatistics.QueryStatistic;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
@@ -58,9 +59,8 @@ import org.carbondata.query.carbon.wrappers.ByteArrayWrapper;
  * for example its implementation case return converted result or directly result with out
  * converting to actual value
  */
-public class QueryResultPreparatorImpl
-    extends AbstractQueryResultPreparator
-    <Map<ByteArrayWrapper, MeasureAggregator[]>, MeasureAggregator> {
+public class QueryResultPreparatorImpl extends
+    AbstractQueryResultPreparator<Map<ByteArrayWrapper, MeasureAggregator[]>, MeasureAggregator> {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(QueryResultPreparatorImpl.class.getName());
@@ -75,6 +75,7 @@ public class QueryResultPreparatorImpl
     if ((null == scannedResult || scannedResult.size() < 1)) {
       return new BatchResult();
     }
+    QueryStatistic statistic = new QueryStatistic();
     List<QueryDimension> queryDimension = queryModel.getQueryDimension();
     int dimensionCount = queryDimension.size();
     int totalNumberOfColumn = dimensionCount + queryExecuterProperties.measureAggregators.length;
@@ -138,7 +139,11 @@ public class QueryResultPreparatorImpl
     if (resultData.length > 0) {
       resultData = encodeToRows(resultData);
     }
-    return getResult(queryModel, resultData);
+    BatchResult result = getResult(queryModel, resultData);
+    statistic.addStatistics("Time take to prepare query result of size " + resultData[0].length,
+        System.currentTimeMillis());
+    queryModel.getStatisticsRecorder().recordStatistics(statistic);
+    return result;
   }
 
   private BatchResult getResult(QueryModel queryModel, Object[][] convertedResult) {
@@ -195,15 +200,15 @@ public class QueryResultPreparatorImpl
               default:
                 msrVal = msrAgg[queryExecuterProperties.measureStartIndex + i].getDoubleValue();
             }
-            row[msr.getQueryOrder()] = DataTypeUtil
-                .getMeasureDataBasedOnDataType(msrVal,msr.getMeasure().getDataType());
+            row[msr.getQueryOrder()] =
+                DataTypeUtil.getMeasureDataBasedOnDataType(msrVal, msr.getMeasure().getDataType());
           }
         }
       }
       rows[rowIndex] = row;
     }
-    LOGGER.info("###########################################------ Total Number of records"
-        + rowSize);
+    LOGGER.info(
+        "###########################################------ Total Number of records" + rowSize);
     BatchResult chunkResult = new BatchResult();
     chunkResult.setRows(rows);
     return chunkResult;
@@ -236,8 +241,8 @@ public class QueryResultPreparatorImpl
           countAggregator.setNewValue(value);
           v[index++] = countAggregator;
         } else {
-          if (surrogateResult[dimensionCount + rowIndex][columnIndex]
-              instanceof DistinctCountAggregator) {
+          if (surrogateResult[dimensionCount
+              + rowIndex][columnIndex] instanceof DistinctCountAggregator) {
 
             Iterator<Integer> iterator =
                 ((DistinctCountAggregator) surrogateResult[dimensionCount + rowIndex][columnIndex])

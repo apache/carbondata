@@ -37,4 +37,11 @@ public interface LogService {
   void error(Throwable throwable, String message);
 
   void audit(String message);
+
+  /**
+   * Below method will be used to log the statistic information
+   *
+   * @param message statistic message
+   */
+  void statistic(String message);
 }

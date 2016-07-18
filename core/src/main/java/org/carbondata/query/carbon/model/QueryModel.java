@@ -31,6 +31,7 @@ import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
+import org.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.query.expression.ColumnExpression;
@@ -50,73 +51,68 @@ public class QueryModel implements Serializable {
    * serialization version
    */
   private static final long serialVersionUID = -4674677234007089052L;
-
+  /**
+   * this will hold the information about the dictionary dimension
+   * which to
+   */
+  public transient Map<String, Dictionary> columnToDictionaryMapping;
+  /**
+   * Number of records to keep in memory.
+   */
+  public int inMemoryRecordSize;
   /**
    * list of dimension selected for in query
    */
   private List<QueryDimension> queryDimension;
-
   /**
    * list of dimension in which sorting is applied
    */
   private List<QueryDimension> sortDimension;
-
   /**
    * list of measure selected in query
    */
   private List<QueryMeasure> queryMeasures;
-
   /**
    * query id
    */
   private String queryId;
-
   /**
    * to check if it a aggregate table
    */
   private boolean isAggTable;
-
   /**
    * filter tree
    */
   private FilterResolverIntf filterExpressionResolverTree;
-
   /**
    * in case of lime query we need to know how many
    * records will passed from executor
    */
   private int limit;
-
   /**
    * for applying aggregation on dimension
    */
   private List<DimensionAggregatorInfo> dimAggregationInfo;
-
   /**
    * custom aggregate expression
    */
   private List<CustomAggregateExpression> expressions;
-
   /**
    * to check if it is a count star query , so processing will be different
    */
   private boolean isCountStarQuery;
-
   /**
    * to check whether aggregation is required during query execution
    */
   private boolean detailQuery;
-
   /**
    * table block information in which query will be executed
    */
   private List<TableBlockInfo> tableBlockInfos;
-
   /**
    * sort in which dimension will be get sorted
    */
   private byte[] sortOrder;
-
   /**
    * absolute table identifier
    */
@@ -126,29 +122,15 @@ public class QueryModel implements Serializable {
    * to this location will be used to write the temp file in this location
    */
   private String queryTempLocation;
-
   /**
    * To handle most of the computation in query engines like spark and hive, carbon should give
    * raw detailed records to it.
    */
   private boolean forcedDetailRawQuery;
-
   /**
    * paritition column list
    */
   private List<String> paritionColumns;
-
-  /**
-   * this will hold the information about the dictionary dimension
-   * which to
-   */
-  public transient Map<String, Dictionary> columnToDictionaryMapping;
-
-  /**
-   * Number of records to keep in memory.
-   */
-  public int inMemoryRecordSize;
-
   /**
    * table on which query will be executed
    * TODO need to remove this ad pass only the path
@@ -156,18 +138,17 @@ public class QueryModel implements Serializable {
    */
   private CarbonTable table;
 
+  private QueryStatisticsRecorder statisticsRecorder;
+
   public QueryModel() {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
-    dimAggregationInfo =
-        new ArrayList<DimensionAggregatorInfo>();
-    expressions =
-        new ArrayList<CustomAggregateExpression>();
+    dimAggregationInfo = new ArrayList<DimensionAggregatorInfo>();
+    expressions = new ArrayList<CustomAggregateExpression>();
     queryDimension = new ArrayList<QueryDimension>();
     queryMeasures = new ArrayList<QueryMeasure>();
     sortDimension = new ArrayList<QueryDimension>();
     sortOrder = new byte[0];
     paritionColumns = new ArrayList<String>();
-
   }
 
   public static QueryModel createModel(AbsoluteTableIdentifier absoluteTableIdentifier,
@@ -192,8 +173,7 @@ public class QueryModel implements Serializable {
     queryModel.setAbsoluteTableIdentifier(carbonTable.getAbsoluteTableIdentifier());
     queryModel.setQueryDimension(queryPlan.getDimensions());
     fillSortInfoInModel(queryModel, queryPlan.getSortedDimemsions());
-    queryModel.setQueryMeasures(
-        queryPlan.getMeasures());
+    queryModel.setQueryMeasures(queryPlan.getMeasures());
     if (null != queryPlan.getFilterExpression()) {
       processFilterExpression(queryPlan.getFilterExpression(),
           carbonTable.getDimensionByTableName(factTableName),
@@ -233,8 +213,8 @@ public class QueryModel implements Serializable {
     executorModel.setDimAggregationInfo(dimensionAggregatorInfos);
   }
 
-  public static void processFilterExpression(
-      Expression filterExpression, List<CarbonDimension> dimensions, List<CarbonMeasure> measures) {
+  public static void processFilterExpression(Expression filterExpression,
+      List<CarbonDimension> dimensions, List<CarbonMeasure> measures) {
     if (null != filterExpression) {
       if (null != filterExpression.getChildren() && filterExpression.getChildren().size() == 0) {
         if (filterExpression instanceof ConditionalExpression) {
@@ -295,8 +275,7 @@ public class QueryModel implements Serializable {
    */
   public CarbonColumn[] getProjectionColumns() {
     CarbonColumn[] carbonColumns =
-        new CarbonColumn[getQueryDimension().size() + getQueryMeasures()
-            .size()];
+        new CarbonColumn[getQueryDimension().size() + getQueryMeasures().size()];
     for (QueryDimension dimension : getQueryDimension()) {
       carbonColumns[dimension.getQueryOrder()] = dimension.getDimension();
     }
@@ -566,5 +545,13 @@ public class QueryModel implements Serializable {
 
   public void setInMemoryRecordSize(int inMemoryRecordSize) {
     this.inMemoryRecordSize = inMemoryRecordSize;
+  }
+
+  public QueryStatisticsRecorder getStatisticsRecorder() {
+    return statisticsRecorder;
+  }
+
+  public void setStatisticsRecorder(QueryStatisticsRecorder statisticsRecorder) {
+    this.statisticsRecorder = statisticsRecorder;
   }
 }

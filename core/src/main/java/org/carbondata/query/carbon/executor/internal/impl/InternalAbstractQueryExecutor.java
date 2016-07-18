@@ -31,6 +31,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
+import org.carbondata.core.carbon.querystatistics.QueryStatistic;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.infos.BlockExecutionInfo;
@@ -79,6 +80,9 @@ public abstract class InternalAbstractQueryExecutor implements InternalQueryExec
     BlockExecutionInfo latestInfo =
         tableBlockExecutionInfosList.get(tableBlockExecutionInfosList.size() - 1);
     execService = Executors.newFixedThreadPool(numberOfCores);
+
+    QueryStatistic statistic = new QueryStatistic();
+
     ScannedResultMerger scannedResultProcessor = null;
     if (null != latestInfo.getSortInfo()
         && latestInfo.getSortInfo().getSortDimensionIndex().length > 0) {
@@ -102,7 +106,6 @@ public abstract class InternalAbstractQueryExecutor implements InternalQueryExec
       }
       execService.shutdown();
       execService.awaitTermination(2, TimeUnit.DAYS);
-      LOGGER.info("Total time taken for scan " + (System.currentTimeMillis() - startTime));
       for (Future future : listFutureObjects) {
         try {
           future.get();
@@ -110,7 +113,12 @@ public abstract class InternalAbstractQueryExecutor implements InternalQueryExec
           throw new QueryExecutionException(e.getMessage());
         }
       }
-      return scannedResultProcessor.getQueryResultIterator();
+      CarbonIterator<Result> queryResultIterator = scannedResultProcessor.getQueryResultIterator();
+      statistic
+          .addStatistics("Time taken to scan " + tableBlockExecutionInfosList.size() + " block(s) ",
+              System.currentTimeMillis());
+      latestInfo.getStatisticsRecorder().recordStatistics(statistic);
+      return queryResultIterator;
     } catch (QueryExecutionException e) {
       LOGGER.error(e, e.getMessage());
       throw new QueryExecutionException(e);

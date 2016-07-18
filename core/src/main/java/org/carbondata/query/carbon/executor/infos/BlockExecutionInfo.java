@@ -25,6 +25,7 @@ import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
+import org.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.query.carbon.aggregator.dimension.DimensionDataAggregator;
@@ -230,6 +231,11 @@ public class BlockExecutionInfo {
    * complex dimension parent block indexes;
    */
   private int[] complexColumnParentBlockIndexes;
+
+  /**
+   * to record the statistics
+   */
+  private QueryStatisticsRecorder statisticsRecorder;
 
   /**
    * @return the tableBlock
@@ -693,8 +699,7 @@ public class BlockExecutionInfo {
   /**
    * @param complexDimensionInfoMap the complexParentIndexToQueryMap to set
    */
-  public void setComplexDimensionInfoMap(
-      Map<Integer, GenericQueryType> complexDimensionInfoMap) {
+  public void setComplexDimensionInfoMap(Map<Integer, GenericQueryType> complexDimensionInfoMap) {
     this.complexParentIndexToQueryMap = complexDimensionInfoMap;
   }
 
@@ -710,5 +715,13 @@ public class BlockExecutionInfo {
    */
   public void setComplexColumnParentBlockIndexes(int[] complexColumnParentBlockIndexes) {
     this.complexColumnParentBlockIndexes = complexColumnParentBlockIndexes;
+  }
+
+  public QueryStatisticsRecorder getStatisticsRecorder() {
+    return statisticsRecorder;
+  }
+
+  public void setStatisticsRecorder(QueryStatisticsRecorder statisticsRecorder) {
+    this.statisticsRecorder = statisticsRecorder;
   }
 }

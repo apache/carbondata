@@ -20,8 +20,6 @@ package org.carbondata.query.carbon.result.iterator;
 
 import java.util.List;
 
-import org.carbondata.common.logging.LogService;
-import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbon.executor.impl.QueryExecutorProperties;
@@ -40,12 +38,6 @@ import org.carbondata.query.carbon.result.preparator.impl.DetailQueryResultPrepa
  * call will come it will execute the block and return the result
  */
 public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator {
-
-  /**
-   * LOGGER.
-   */
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DetailQueryResultIterator.class.getName());
 
   /**
    * to prepare the result
@@ -78,6 +70,7 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
     if (null != result) {
       Result next = result.next();
       if (next.size() > 0) {
+        totalNumberOfOutputRecords += next.size();
         return queryResultPreparator.prepareQueryResult(next);
       } else {
         return new BatchResult();

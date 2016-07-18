@@ -26,6 +26,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
+import org.carbondata.core.carbon.querystatistics.QueryStatistic;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.iterator.CarbonIterator;
 import org.carbondata.core.util.CarbonProperties;
@@ -56,36 +57,38 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
    * executor which will execute the query
    */
   protected InternalQueryExecutor executor;
-
-  /**
-   * number of cores which can be used
-   */
-  private long numberOfCores;
-
-  /**
-   * keep track of number of blocklet per block
-   */
-  private long[] totalNumberBlockletPerSlice;
-
-  /**
-   * total number of blocklet to be executed
-   */
-  private long totalNumberOfNode;
-
   /**
    * current counter to check how blocklet has been executed
    */
   protected long currentCounter;
-
-  /**
-   * keep the track of number of blocklet of a block has been executed
-   */
-  private long[] numberOfBlockletExecutedPerBlock;
-
   /**
    * block index to be executed
    */
   protected int[] blockIndexToBeExecuted;
+  /**
+   * to store the statistics
+   */
+  protected QueryStatistic statistic;
+  /**
+   * total number of records processed
+   */
+  protected long totalNumberOfOutputRecords;
+  /**
+   * number of cores which can be used
+   */
+  private long numberOfCores;
+  /**
+   * keep track of number of blocklet per block
+   */
+  private long[] totalNumberBlockletPerSlice;
+  /**
+   * total number of blocklet to be executed
+   */
+  private long totalNumberOfNode;
+  /**
+   * keep the track of number of blocklet of a block has been executed
+   */
+  private long[] numberOfBlockletExecutedPerBlock;
 
   public AbstractDetailQueryResultIterator(List<BlockExecutionInfo> infos,
       QueryExecutorProperties executerProperties, QueryModel queryModel,
@@ -110,6 +113,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     executor = queryExecutor;
     this.blockExecutionInfos = infos;
     this.blockIndexToBeExecuted = new int[(int) numberOfCores];
+    statistic = new QueryStatistic();
     intialiseInfos();
   }
 
@@ -135,7 +139,14 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
   }
 
   @Override public boolean hasNext() {
-    return currentCounter < totalNumberOfNode;
+    if (currentCounter < totalNumberOfNode) {
+      return true;
+    }
+    statistic.addStatistics("Time taken to processed " + blockExecutionInfos.size()
+            + " block(s) of output record size: " + totalNumberOfOutputRecords,
+        System.currentTimeMillis());
+    blockExecutionInfos.get(0).getStatisticsRecorder().recordStatistics(statistic);
+    return false;
   }
 
   protected int updateSliceIndexToBeExecuted() {

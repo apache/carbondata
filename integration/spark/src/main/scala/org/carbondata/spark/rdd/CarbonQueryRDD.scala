@@ -18,6 +18,7 @@
 
 package org.carbondata.spark.rdd
 
+
 import java.util
 
 import scala.collection.JavaConverters._
@@ -32,6 +33,7 @@ import org.apache.spark.sql.hive.DistributionUtil
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.cache.dictionary.Dictionary
 import org.carbondata.core.carbon.datastore.block.{Distributable, TableBlockInfo}
+import org.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsRecorder}
 import org.carbondata.core.iterator.CarbonIterator
 import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
 import org.carbondata.query.carbon.executor.QueryExecutorFactory
@@ -73,6 +75,7 @@ class CarbonQueryRDD[V: ClassTag](
   val defaultParallelism = sc.defaultParallelism
 
   override def getPartitions: Array[Partition] = {
+    val statisticRecorder = new QueryStatisticsRecorder(queryModel.getQueryId)
     val startTime = System.currentTimeMillis()
     val (carbonInputFormat: CarbonInputFormat[RowResult], job: Job) =
       QueryPlanUtil.createCarbonInputFormat(queryModel.getAbsoluteTableIdentifier)
@@ -109,6 +112,7 @@ class CarbonQueryRDD[V: ClassTag](
       if (blockList.nonEmpty) {
         // group blocks to nodes, tasks
         val startTime = System.currentTimeMillis
+        var statistic = new QueryStatistic
         val activeNodes = DistributionUtil
           .ensureExecutorsAndGetNodeList(blockList.toArray, sparkContext)
         val nodeBlockMapping =
@@ -116,7 +120,9 @@ class CarbonQueryRDD[V: ClassTag](
             activeNodes.toList.asJava
           )
         val timeElapsed: Long = System.currentTimeMillis - startTime
-        LOGGER.info("Total Time taken in block allocation : " + timeElapsed)
+        statistic.addStatistics("Total Time taken in block(s) allocation", System.currentTimeMillis)
+        statisticRecorder.recordStatistics(statistic);
+        statistic = new QueryStatistic
         var i = 0
         // Create Spark Partition for each task and assign blocks
         nodeBlockMapping.asScala.foreach { entry =>
@@ -126,7 +132,8 @@ class CarbonQueryRDD[V: ClassTag](
               result
                 .add(new CarbonSparkPartition(id, i, Seq(entry._1).toArray, tableBlockInfo.asJava))
               i += 1
-            }}
+            }
+          }
           }
         }
         val noOfBlocks = blockList.size
@@ -136,9 +143,9 @@ class CarbonQueryRDD[V: ClassTag](
           + s"parallelism: $defaultParallelism , " +
           s"no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks"
         )
-        logInfo("Time taken to identify Blocks to scan : " +
-          (System.currentTimeMillis() - startTime)
-        )
+        statistic.addStatistics("Time taken to identify Block(s) to scan", System.currentTimeMillis)
+        statisticRecorder.recordStatistics(statistic);
+        statisticRecorder.logStatistics
         result.asScala.foreach { r =>
           val cp = r.asInstanceOf[CarbonSparkPartition]
           logInfo(s"Node : " + cp.locations.toSeq.mkString(",")
@@ -209,6 +216,9 @@ class CarbonQueryRDD[V: ClassTag](
         }
         if (finished) {
           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
+          if(null!=queryModel.getStatisticsRecorder) {
+            queryModel.getStatisticsRecorder.logStatistics();
+          }
         }
         !finished
       }
@@ -221,6 +231,9 @@ class CarbonQueryRDD[V: ClassTag](
         recordCount += 1
         if (queryModel.getLimit != -1 && recordCount >= queryModel.getLimit) {
           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
+           if(null!=queryModel.getStatisticsRecorder) {
+            queryModel.getStatisticsRecorder.logStatistics();
+          }
         }
         valueClass.getValue(rowIterator.next())
       }
@@ -231,10 +244,6 @@ class CarbonQueryRDD[V: ClassTag](
             .clearColumnDictionaryCache(columnToDictionaryMap)
         }
       }
-
-      logInfo("*************************** Total Time Taken to execute the query in Carbon Side: " +
-        (System.currentTimeMillis - queryStartTime)
-      )
     }
     iter
   }
