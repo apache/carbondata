@@ -21,14 +21,15 @@ package org.carbondata.core.reader.sortindex;
 import java.io.IOException;
 import java.util.List;
 
+import org.carbondata.common.factory.CarbonCommonFactory;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.ColumnIdentifier;
-import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.reader.ThriftReader;
+import org.carbondata.core.service.PathService;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.format.ColumnSortInfo;
 
@@ -150,8 +151,9 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
   }
 
   protected void initPath() {
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+    PathService pathService = CarbonCommonFactory.getPathService();
+    CarbonTablePath carbonTablePath = pathService
+            .getCarbonTablePath(columnIdentifier, carbonStorePath, carbonTableIdentifier);
     String dictionaryPath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId());
     long dictOffset = CarbonUtil.getFileSize(dictionaryPath);
     this.sortIndexFilePath =

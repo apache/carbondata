@@ -23,7 +23,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
-import org.carbondata.common.ext.PathFactory;
+import org.carbondata.common.factory.CarbonCommonFactory;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
@@ -32,6 +32,7 @@ import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
+import org.carbondata.core.service.PathService;
 import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.writer.ThriftWriter;
@@ -150,7 +151,8 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
   }
 
   protected void initPath() {
-    CarbonTablePath carbonTablePath = PathFactory.getInstance()
+    PathService pathService = CarbonCommonFactory.getPathService();
+    CarbonTablePath carbonTablePath = pathService
         .getCarbonTablePath(columnIdentifier, carbonStorePath, carbonTableIdentifier);
     String dictionaryPath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId());
     long dictOffset = CarbonUtil.getFileSize(dictionaryPath);
@@ -164,7 +166,7 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
    *
    * @param carbonTablePath
    */
-  private void cleanUpOldSortIndex(CarbonTablePath carbonTablePath) {
+  protected void cleanUpOldSortIndex(CarbonTablePath carbonTablePath) {
     CarbonFile sortIndexFile =
         FileFactory.getCarbonFile(sortIndexFilePath, FileFactory.getFileType(sortIndexFilePath));
     CarbonFile[] files =

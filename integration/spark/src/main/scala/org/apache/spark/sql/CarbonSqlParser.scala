@@ -527,7 +527,7 @@ class CarbonSqlParser()
         splittedColGrps :+= arrangedColGrp
       }
       // This will  be furthur handled.
-      splittedColGrps
+      CommonUtil.arrangeColGrpsInSchemaOrder(splittedColGrps, dims)
     }
     else {
       null
