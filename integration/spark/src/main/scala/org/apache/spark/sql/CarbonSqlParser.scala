@@ -49,74 +49,74 @@ import org.carbondata.spark.util.CommonUtil
 class CarbonSqlParser()
   extends AbstractSparkSQLParser with Logging {
 
-  protected val AGGREGATE = Keyword("AGGREGATE")
-  protected val AS = Keyword("AS")
-  protected val AGGREGATION = Keyword("AGGREGATION")
-  protected val ALL = Keyword("ALL")
-  protected val HIGH_CARDINALITY_DIMS = Keyword("NO_DICTIONARY")
-  protected val BEFORE = Keyword("BEFORE")
-  protected val BY = Keyword("BY")
-  protected val CARDINALITY = Keyword("CARDINALITY")
-  protected val CLASS = Keyword("CLASS")
-  protected val CLEAN = Keyword("CLEAN")
-  protected val COLS = Keyword("COLS")
-  protected val COLUMNS = Keyword("COLUMNS")
-  protected val CREATE = Keyword("CREATE")
-  protected val CUBE = Keyword("CUBE")
-  protected val CUBES = Keyword("CUBES")
-  protected val DATA = Keyword("DATA")
-  protected val DATABASES = Keyword("DATABASES")
-  protected val DELETE = Keyword("DELETE")
-  protected val DELIMITER = Keyword("DELIMITER")
-  protected val DESCRIBE = Keyword("DESCRIBE")
-  protected val DESC = Keyword("DESC")
-  protected val DETAIL = Keyword("DETAIL")
-  protected val DIMENSIONS = Keyword("DIMENSIONS")
-  protected val DIMFOLDERPATH = Keyword("DIMFOLDERPATH")
-  protected val DROP = Keyword("DROP")
-  protected val ESCAPECHAR = Keyword("ESCAPECHAR")
-  protected val EXCLUDE = Keyword("EXCLUDE")
-  protected val EXTENDED = Keyword("EXTENDED")
-  protected val FORMATTED = Keyword("FORMATTED")
-  protected val FACT = Keyword("FACT")
-  protected val FIELDS = Keyword("FIELDS")
-  protected val FILEHEADER = Keyword("FILEHEADER")
-  protected val SERIALIZATION_NULL_FORMAT = Keyword("SERIALIZATION_NULL_FORMAT")
-  protected val FILES = Keyword("FILES")
-  protected val FROM = Keyword("FROM")
-  protected val HIERARCHIES = Keyword("HIERARCHIES")
-  protected val IN = Keyword("IN")
-  protected val INCLUDE = Keyword("INCLUDE")
-  protected val INPATH = Keyword("INPATH")
-  protected val INTO = Keyword("INTO")
-  protected val LEVELS = Keyword("LEVELS")
-  protected val LIKE = Keyword("LIKE")
-  protected val LOAD = Keyword("LOAD")
-  protected val LOADS = Keyword("LOADS")
-  protected val LOCAL = Keyword("LOCAL")
-  protected val MAPPED = Keyword("MAPPED")
-  protected val MEASURES = Keyword("MEASURES")
-  protected val MULTILINE = Keyword("MULTILINE")
-  protected val COMPLEX_DELIMITER_LEVEL_1 = Keyword("COMPLEX_DELIMITER_LEVEL_1")
-  protected val COMPLEX_DELIMITER_LEVEL_2 = Keyword("COMPLEX_DELIMITER_LEVEL_2")
-  protected val OPTIONS = Keyword("OPTIONS")
-  protected val OUTPATH = Keyword("OUTPATH")
-  protected val OVERWRITE = Keyword("OVERWRITE")
-  protected val PARTITION_COUNT = Keyword("PARTITION_COUNT")
-  protected val PARTITIONDATA = Keyword("PARTITIONDATA")
-  protected val PARTITIONER = Keyword("PARTITIONER")
-  protected val QUOTECHAR = Keyword("QUOTECHAR")
-  protected val RELATION = Keyword("RELATION")
-  protected val SCHEMAS = Keyword("SCHEMAS")
-  protected val SHOW = Keyword("SHOW")
-  protected val TABLES = Keyword("TABLES")
-  protected val TABLE = Keyword("TABLE")
-  protected val TERMINATED = Keyword("TERMINATED")
-  protected val TYPE = Keyword("TYPE")
-  protected val USE = Keyword("USE")
-  protected val WHERE = Keyword("WHERE")
-  protected val WITH = Keyword("WITH")
-  protected val AGGREGATETABLE = Keyword("AGGREGATETABLE")
+  protected val AGGREGATE = carbonKeyWord("AGGREGATE")
+  protected val AS = carbonKeyWord("AS")
+  protected val AGGREGATION = carbonKeyWord("AGGREGATION")
+  protected val ALL = carbonKeyWord("ALL")
+  protected val HIGH_CARDINALITY_DIMS = carbonKeyWord("NO_DICTIONARY")
+  protected val BEFORE = carbonKeyWord("BEFORE")
+  protected val BY = carbonKeyWord("BY")
+  protected val CARDINALITY = carbonKeyWord("CARDINALITY")
+  protected val CLASS = carbonKeyWord("CLASS")
+  protected val CLEAN = carbonKeyWord("CLEAN")
+  protected val COLS = carbonKeyWord("COLS")
+  protected val COLUMNS = carbonKeyWord("COLUMNS")
+  protected val CREATE = carbonKeyWord("CREATE")
+  protected val CUBE = carbonKeyWord("CUBE")
+  protected val CUBES = carbonKeyWord("CUBES")
+  protected val DATA = carbonKeyWord("DATA")
+  protected val DATABASES = carbonKeyWord("DATABASES")
+  protected val DELETE = carbonKeyWord("DELETE")
+  protected val DELIMITER = carbonKeyWord("DELIMITER")
+  protected val DESCRIBE = carbonKeyWord("DESCRIBE")
+  protected val DESC = carbonKeyWord("DESC")
+  protected val DETAIL = carbonKeyWord("DETAIL")
+  protected val DIMENSIONS = carbonKeyWord("DIMENSIONS")
+  protected val DIMFOLDERPATH = carbonKeyWord("DIMFOLDERPATH")
+  protected val DROP = carbonKeyWord("DROP")
+  protected val ESCAPECHAR = carbonKeyWord("ESCAPECHAR")
+  protected val EXCLUDE = carbonKeyWord("EXCLUDE")
+  protected val EXTENDED = carbonKeyWord("EXTENDED")
+  protected val FORMATTED = carbonKeyWord("FORMATTED")
+  protected val FACT = carbonKeyWord("FACT")
+  protected val FIELDS = carbonKeyWord("FIELDS")
+  protected val FILEHEADER = carbonKeyWord("FILEHEADER")
+  protected val SERIALIZATION_NULL_FORMAT = carbonKeyWord("SERIALIZATION_NULL_FORMAT")
+  protected val FILES = carbonKeyWord("FILES")
+  protected val FROM = carbonKeyWord("FROM")
+  protected val HIERARCHIES = carbonKeyWord("HIERARCHIES")
+  protected val IN = carbonKeyWord("IN")
+  protected val INCLUDE = carbonKeyWord("INCLUDE")
+  protected val INPATH = carbonKeyWord("INPATH")
+  protected val INTO = carbonKeyWord("INTO")
+  protected val LEVELS = carbonKeyWord("LEVELS")
+  protected val LIKE = carbonKeyWord("LIKE")
+  protected val LOAD = carbonKeyWord("LOAD")
+  protected val LOADS = carbonKeyWord("LOADS")
+  protected val LOCAL = carbonKeyWord("LOCAL")
+  protected val MAPPED = carbonKeyWord("MAPPED")
+  protected val MEASURES = carbonKeyWord("MEASURES")
+  protected val MULTILINE = carbonKeyWord("MULTILINE")
+  protected val COMPLEX_DELIMITER_LEVEL_1 = carbonKeyWord("COMPLEX_DELIMITER_LEVEL_1")
+  protected val COMPLEX_DELIMITER_LEVEL_2 = carbonKeyWord("COMPLEX_DELIMITER_LEVEL_2")
+  protected val OPTIONS = carbonKeyWord("OPTIONS")
+  protected val OUTPATH = carbonKeyWord("OUTPATH")
+  protected val OVERWRITE = carbonKeyWord("OVERWRITE")
+  protected val PARTITION_COUNT = carbonKeyWord("PARTITION_COUNT")
+  protected val PARTITIONDATA = carbonKeyWord("PARTITIONDATA")
+  protected val PARTITIONER = carbonKeyWord("PARTITIONER")
+  protected val QUOTECHAR = carbonKeyWord("QUOTECHAR")
+  protected val RELATION = carbonKeyWord("RELATION")
+  protected val SCHEMAS = carbonKeyWord("SCHEMAS")
+  protected val SHOW = carbonKeyWord("SHOW")
+  protected val TABLES = carbonKeyWord("TABLES")
+  protected val TABLE = carbonKeyWord("TABLE")
+  protected val TERMINATED = carbonKeyWord("TERMINATED")
+  protected val TYPE = carbonKeyWord("TYPE")
+  protected val USE = carbonKeyWord("USE")
+  protected val WHERE = carbonKeyWord("WHERE")
+  protected val WITH = carbonKeyWord("WITH")
+  protected val AGGREGATETABLE = carbonKeyWord("AGGREGATETABLE")
   protected val SUM = Keyword("sum")
   protected val COUNT = Keyword("count")
   protected val AVG = Keyword("avg")
@@ -125,23 +125,34 @@ class CarbonSqlParser()
   protected val DISTINCT = Keyword("distinct")
   protected val DISTINCT_COUNT = Keyword("distinct-count")
   protected val SUM_DISTINCT = Keyword("sum-distinct")
-  protected val ABS = Keyword("abs")
+  protected val ABS = carbonKeyWord("abs")
 
-  protected val FOR = Keyword("FOR")
-  protected val SCRIPTS = Keyword("SCRIPTS")
-  protected val USING = Keyword("USING")
-  protected val LIMIT = Keyword("LIMIT")
-  protected val DEFAULTS = Keyword("DEFAULTS")
-  protected val ALTER = Keyword("ALTER")
-  protected val ADD = Keyword("ADD")
+  protected val FOR = carbonKeyWord("FOR")
+  protected val SCRIPTS = carbonKeyWord("SCRIPTS")
+  protected val USING = carbonKeyWord("USING")
+  protected val LIMIT = carbonKeyWord("LIMIT")
+  protected val DEFAULTS = carbonKeyWord("DEFAULTS")
+  protected val ALTER = carbonKeyWord("ALTER")
+  protected val ADD = carbonKeyWord("ADD")
 
-  protected val IF = Keyword("IF")
-  protected val NOT = Keyword("NOT")
-  protected val EXISTS = Keyword("EXISTS")
-  protected val DIMENSION = Keyword("DIMENSION")
-  protected val STARTTIME = Keyword("STARTTIME")
-  protected val SEGMENTS = Keyword("SEGMENTS")
-  protected val SEGMENT = Keyword("SEGMENT")
+  protected val IF = carbonKeyWord("IF")
+  protected val NOT = carbonKeyWord("NOT")
+  protected val EXISTS = carbonKeyWord("EXISTS")
+  protected val DIMENSION = carbonKeyWord("DIMENSION")
+  protected val STARTTIME = carbonKeyWord("STARTTIME")
+  protected val SEGMENTS = carbonKeyWord("SEGMENTS")
+  protected val SEGMENT = carbonKeyWord("SEGMENT")
+
+  protected val STRING = carbonKeyWord("STRING")
+  protected val INTEGER = carbonKeyWord("INTEGER")
+  protected val TIMESTAMP = carbonKeyWord("TIMESTAMP")
+  protected val NUMERIC = carbonKeyWord("NUMERIC")
+  protected val DECIMAL = carbonKeyWord("DECIMAL")
+  protected val DOUBLE = carbonKeyWord("DOUBLE")
+  protected val INT = carbonKeyWord("INT")
+  protected val BIGINT = carbonKeyWord("BIGINT")
+  protected val ARRAY = carbonKeyWord("ARRAY")
+  protected val STRUCT = carbonKeyWord("STRUCT")
 
   protected val doubleQuotedString = "\"([^\"]+)\"".r
   protected val singleQuotedString = "'([^']+)'".r
@@ -177,6 +188,14 @@ class CarbonSqlParser()
       case failureOrError => sys.error(failureOrError.toString)
     }
   }
+
+  /**
+   * This will convert key word to regular expression.
+   * @param keys
+   * @return
+   */
+  private def carbonKeyWord(keys: String) =
+    ("(?i)" + keys).r
 
   override protected lazy val start: Parser[LogicalPlan] =
     loadManagement | describeTable | showLoads | alterTable | createTable
@@ -1033,15 +1052,15 @@ class CarbonSqlParser()
   protected lazy val dimCol: Parser[Field] = anyFieldDef
 
   protected lazy val primitiveTypes =
-    "(?i)string".r ^^^ "string" | "(?i)integer".r ^^^ "integer" | "(?i)timestamp".r ^^^
-    "timestamp" | "(?i)numeric".r ^^^ "numeric" | "(?i)bigint".r ^^^ "bigint" |
-       "(?i)int".r ^^^ "int" | "(?i)double".r ^^^ "double" | decimalType
+    STRING ^^^ "string" | INTEGER ^^^ "integer" | TIMESTAMP ^^^
+    "timestamp" | NUMERIC ^^^ "numeric" | BIGINT ^^^ "bigint" |
+       INT ^^^ "int" | DOUBLE ^^^ "double" | decimalType
 
   /**
    * Matching the decimal(10,0) data type and returning the same.
    */
   private lazy val decimalType =
-    "(?i)decimal".r ~ ("(" ~> numericLit <~",") ~ (numericLit <~ ")")  ^^ {
+    DECIMAL ~ ("(" ~> numericLit <~",") ~ (numericLit <~ ")")  ^^ {
       case decimal ~ precision ~scale =>
         s"$decimal($precision, $scale)"
     }
@@ -1062,7 +1081,7 @@ class CarbonSqlParser()
     }
 
   protected lazy val arrayFieldType: Parser[Field] =
-    (("(?i)array".r ^^^ "array") ~> "<" ~> nestedType <~ ">") ^^ {
+    ((ARRAY ^^^ "array") ~> "<" ~> nestedType <~ ">") ^^ {
       case e1 =>
         Field("unknown", Some("array"), Some("unknown"),
           Some(List(Field("val", e1.dataType, Some("val"),
@@ -1070,14 +1089,14 @@ class CarbonSqlParser()
     }
 
   protected lazy val structFieldType: Parser[Field] =
-    (("(?i)struct".r ^^^ "struct") ~> "<" ~> repsep(anyFieldDef, ",") <~ ">") ^^ {
+    ((STRUCT ^^^ "struct") ~> "<" ~> repsep(anyFieldDef, ",") <~ ">") ^^ {
       case e1 =>
         Field("unknown", Some("struct"), Some("unknown"), Some(e1))
     }
 
   protected lazy val measureCol: Parser[Field] =
-    (ident | stringLit) ~ ("(?i)integer".r ^^^ "integer" | "(?i)numeric".r ^^^ "numeric" |
-      "(?i)bigint".r ^^^ "bigint" | "(?i)decimal".r ^^^ "decimal").? ~
+    (ident | stringLit) ~ (INTEGER ^^^ "integer" | NUMERIC ^^^ "numeric" |
+      BIGINT ^^^ "bigint" | DECIMAL ^^^ "decimal").? ~
       (AS ~> (ident | stringLit)).? ~ (IN ~> (ident | stringLit)).? ^^ {
       case e1 ~ e2 ~ e3 ~ e4 => Field(e1, e2, e3, Some(null))
     }
