@@ -30,9 +30,15 @@ import org.carbondata.query.expression.exception.FilterUnsupportedException;
 public class EqualToExpression extends BinaryConditionalExpression {
 
   private static final long serialVersionUID = 1L;
+  private boolean isNull;
 
   public EqualToExpression(Expression left, Expression right) {
     super(left, right);
+  }
+
+  public EqualToExpression(Expression left, Expression right, boolean isNull) {
+    super(left, right);
+    this.isNull = isNull;
   }
 
   @Override public ExpressionResult evaluate(RowIntf value)
@@ -46,9 +52,12 @@ public class EqualToExpression extends BinaryConditionalExpression {
     ExpressionResult val2 = erRes;
 
     if (elRes.isNull() || erRes.isNull()) {
-      result = elRes.isNull() && erRes.isNull();
-      val1.set(DataType.BooleanType, result);
-      return val1;
+      if (isNull) {
+        elRes.set(DataType.BooleanType, elRes.isNull() == erRes.isNull());
+      } else {
+        elRes.set(DataType.BooleanType, false);
+      }
+      return elRes;
     }
     //default implementation if the data types are different for the resultsets
     if (elRes.getDataType() != erRes.getDataType()) {

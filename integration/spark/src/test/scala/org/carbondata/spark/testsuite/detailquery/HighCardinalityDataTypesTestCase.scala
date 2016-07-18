@@ -36,6 +36,7 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     //For the Hive table creation and data loading
+    sql("drop table if exists filtertestTables")
     sql(
       "create table NO_DICTIONARY_HIVE_6(empno int,empname string,designation string,doj " +
         "Timestamp,workgroupcategory int, " +
@@ -239,7 +240,7 @@ test("filter with arithmetic expression") {
         
 
   override def afterAll {
-    //sql("drop cube NO_DICTIONARY_HIVE_1")
+    sql("drop table if exists filtertestTables")
     //sql("drop cube NO_DICTIONARY_CARBON_1")
   }
 }

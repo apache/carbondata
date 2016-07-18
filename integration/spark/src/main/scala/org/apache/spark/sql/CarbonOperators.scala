@@ -429,7 +429,10 @@ case class CarbonTableScan(
           NotEqualsExpression(transformExpression(left), transformExpression(right))
       case IsNotNull(child)
         if (isCarbonSupportedDataTypes(child)) => new
-          NotEqualsExpression(transformExpression(child), transformExpression(Literal(null)))
+          NotEqualsExpression(transformExpression(child), transformExpression(Literal(null)), true)
+        case IsNull(child)
+        if (isCarbonSupportedDataTypes(child)) => new
+          EqualToExpression(transformExpression(child), transformExpression(Literal(null)), true)
       case Not(In(left, right))
         if (isCarbonSupportedDataTypes(left)) => new
           NotInExpression(transformExpression(left),

@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.expression.exception.FilterIllegalMemberException;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.resolver.metadata.FilterResolverMetadata;
@@ -51,6 +52,12 @@ public class NoDictionaryTypeVisitor implements ResolvedFilterInfoVisitorIntf {
     List<String> evaluateResultListFinal;
     try {
       evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
+      // Adding default  null member inorder to not display the same while
+      // displaying the report as per hive compatibility.
+      if (!metadata.isIncludeFilter() && !evaluateResultListFinal
+          .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+        evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
+      }
     } catch (FilterIllegalMemberException e) {
       throw new FilterUnsupportedException(e);
     }

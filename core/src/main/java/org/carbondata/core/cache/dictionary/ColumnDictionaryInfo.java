@@ -186,7 +186,12 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
     List<Integer> sortedSurrogates = sortOrderReference.get();
     int low = 0;
     for (byte[] byteValueOfFilterMember : byteValuesOfFilterMembers) {
-      String filterKey = new String(byteValueOfFilterMember);
+      String filterKey = new String(byteValueOfFilterMember,
+          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+      if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterKey)) {
+        surrogates.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
+        continue;
+      }
       int high = sortedSurrogates.size() - 1;
       while (low <= high) {
         int mid = (low + high) >>> 1;

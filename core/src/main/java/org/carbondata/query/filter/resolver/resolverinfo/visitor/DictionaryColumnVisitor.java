@@ -18,6 +18,7 @@
  */
 package org.carbondata.query.filter.resolver.resolverinfo.visitor;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.carbondata.common.logging.LogService;
@@ -57,6 +58,12 @@ public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
       resolvedFilterObject = FilterUtil
           .getFilterValues(metadata.getTableIdentifier(), metadata.getColumnExpression(),
               evaluateResultListFinal, metadata.isIncludeFilter());
+      if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
+        // Adding default surrogate key of null member inorder to not display the same while
+        // displaying the report as per hive compatibility.
+        resolvedFilterObject.getFilterList().add(1);
+        Collections.sort(resolvedFilterObject.getFilterList());
+      }
     } catch (QueryExecutionException e) {
       throw new FilterUnsupportedException(e);
     }

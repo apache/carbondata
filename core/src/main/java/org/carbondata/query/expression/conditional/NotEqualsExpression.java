@@ -30,6 +30,11 @@ import org.carbondata.query.expression.exception.FilterUnsupportedException;
 public class NotEqualsExpression extends BinaryConditionalExpression {
 
   private static final long serialVersionUID = 8684006025540863973L;
+  private boolean isNotNull = false;
+  public NotEqualsExpression(Expression left, Expression right, boolean isNotNull) {
+    super(left, right);
+    this.isNotNull = isNotNull;
+  }
 
   public NotEqualsExpression(Expression left, Expression right) {
     super(left, right);
@@ -43,13 +48,14 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
     boolean result = false;
     ExpressionResult val1 = elRes;
     ExpressionResult val2 = erRes;
-
     if (elRes.isNull() || erRes.isNull()) {
-      result = elRes.isNull() != erRes.isNull();
-      val1.set(DataType.BooleanType, result);
-      return val1;
+      if (isNotNull) {
+        elRes.set(DataType.BooleanType, elRes.isNull() != erRes.isNull());
+      } else {
+        elRes.set(DataType.BooleanType, false);
+      }
+      return elRes;
     }
-
     //default implementation if the data types are different for the resultsets
     if (elRes.getDataType() != erRes.getDataType()) {
       //            result = elRes.getString().equals(erRes.getString());
