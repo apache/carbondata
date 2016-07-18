@@ -59,15 +59,12 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
 
     def apply(plan: LogicalPlan): Seq[SparkPlan] = {
       plan match {
-        case PhysicalOperation(projectList, predicates,
-        l@LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)) =>
+        case PhysicalOperation(projectList, predicates, l: LogicalRelation)
+            if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
           if (isStarQuery(plan)) {
-            carbonRawScanForStarQuery(projectList, predicates, carbonRelation, l)(sqlContext) :: Nil
+            carbonRawScanForStarQuery(projectList, predicates, l)(sqlContext) :: Nil
           } else {
-            carbonRawScan(projectList,
-              predicates,
-              carbonRelation,
-              l)(sqlContext) :: Nil
+            carbonRawScan(projectList, predicates, l)(sqlContext) :: Nil
           }
         case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
           CarbonDictionaryDecoder(relations,
@@ -84,9 +81,9 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
      */
     private def carbonRawScan(projectList: Seq[NamedExpression],
       predicates: Seq[Expression],
-      relation: CarbonDatasourceRelation,
       logicalRelation: LogicalRelation)(sc: SQLContext): SparkPlan = {
 
+      val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceRelation]
       val tableName: String =
         relation.carbonRelation.metaData.carbonTable.getFactTableName.toLowerCase
       // Check out any expressions are there in project list. if they are present then we need to
@@ -128,9 +125,8 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
      */
     private def carbonRawScanForStarQuery(projectList: Seq[NamedExpression],
       predicates: Seq[Expression],
-      relation: CarbonDatasourceRelation,
       logicalRelation: LogicalRelation)(sc: SQLContext): SparkPlan = {
-
+      val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceRelation]
       val tableName: String =
         relation.carbonRelation.metaData.carbonTable.getFactTableName.toLowerCase
       // Check out any expressions are there in project list. if they are present then we need to
@@ -213,9 +209,10 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
 
     private def isStarQuery(plan: LogicalPlan) = {
       plan match {
-        case LogicalFilter(condition,
-        LogicalRelation(carbonRelation: CarbonDatasourceRelation, _)) => true
-        case LogicalRelation(carbonRelation: CarbonDatasourceRelation, _) => true
+        case LogicalFilter(condition, l: LogicalRelation)
+            if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
+          true
+        case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] => true
         case _ => false
       }
     }

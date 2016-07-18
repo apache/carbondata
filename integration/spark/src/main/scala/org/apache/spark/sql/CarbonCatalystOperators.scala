@@ -93,17 +93,3 @@ abstract class CarbonProfile(attributes: Seq[Attribute]) extends Serializable {
 case class IncludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attributes)
 
 case class ExcludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attributes)
-
-case class FakeCarbonCast(child: Literal, dataType: DataType)
-  extends LeafExpression with CodegenFallback {
-
-  override def toString: String = s"FakeCarbonCast($child as ${ dataType.simpleString })"
-
-  override def checkInputDataTypes(): TypeCheckResult = {
-    TypeCheckResult.TypeCheckSuccess
-  }
-
-  override def nullable: Boolean = child.nullable
-
-  override def eval(input: InternalRow): Any = child.value
-}

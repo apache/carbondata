@@ -18,13 +18,11 @@
 package org.carbondata.spark
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.sql.sources
-import org.apache.spark.sql.FakeCarbonCast
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.optimizer.CarbonAliasDecoderRelation
+import org.apache.spark.sql.sources
 import org.apache.spark.sql.types.StructType
 
 import org.carbondata.core.carbon.metadata.datatype.DataType
@@ -125,7 +123,7 @@ object CarbonFilters {
 
         case EqualTo(a: Attribute, Literal(v, t)) =>
           Some(sources.EqualTo(a.name, v))
-        case EqualTo(FakeCarbonCast(l@Literal(v, t), b), a: Attribute) =>
+        case EqualTo(l@Literal(v, t), a: Attribute) =>
           Some(sources.EqualTo(a.name, v))
         case EqualTo(Cast(a: Attribute, _), Literal(v, t)) =>
           Some(sources.EqualTo(a.name, v))
@@ -191,35 +189,35 @@ object CarbonFilters {
           (transformExpression(left) ++ transformExpression(right)).reduceOption(new
               AndExpression(_, _))
 
-        case EqualTo(a: Attribute, FakeCarbonCast(l@Literal(v, t), b)) => new
+        case EqualTo(a: Attribute, l@Literal(v, t)) => new
             Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-        case EqualTo(FakeCarbonCast(l@Literal(v, t), b), a: Attribute) => new
+        case EqualTo(l@Literal(v, t), a: Attribute) => new
             Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-        case EqualTo(Cast(a: Attribute, _), FakeCarbonCast(l@Literal(v, t), b)) => new
+        case EqualTo(Cast(a: Attribute, _), l@Literal(v, t)) => new
             Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-        case EqualTo(FakeCarbonCast(l@Literal(v, t), b), Cast(a: Attribute, _)) => new
+        case EqualTo(l@Literal(v, t), Cast(a: Attribute, _)) => new
             Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
 
-        case Not(EqualTo(a: Attribute, FakeCarbonCast(l@Literal(v, t), b))) => new
+        case Not(EqualTo(a: Attribute, l@Literal(v, t))) => new
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case Not(EqualTo(FakeCarbonCast(l@Literal(v, t), b), a: Attribute)) => new
+        case Not(EqualTo(l@Literal(v, t), a: Attribute)) => new
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case Not(EqualTo(Cast(a: Attribute, _), FakeCarbonCast(l@Literal(v, t), b))) => new
+        case Not(EqualTo(Cast(a: Attribute, _), l@Literal(v, t))) => new
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case Not(EqualTo(FakeCarbonCast(l@Literal(v, t), b), Cast(a: Attribute, _))) => new
+        case Not(EqualTo(l@Literal(v, t), Cast(a: Attribute, _))) => new
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
 
-        case Not(In(a: Attribute, list)) if !list.exists(!_.isInstanceOf[FakeCarbonCast]) =>
+        case Not(In(a: Attribute, list)) if !list.exists(!_.isInstanceOf[Literal]) =>
           Some(new NotInExpression(transformExpression(a).get,
             new ListExpression(list.map(transformExpression(_).get).asJava)))
-        case In(a: Attribute, list) if !list.exists(!_.isInstanceOf[FakeCarbonCast]) =>
+        case In(a: Attribute, list) if !list.exists(!_.isInstanceOf[Literal]) =>
           Some(new InExpression(transformExpression(a).get,
             new ListExpression(list.map(transformExpression(_).get).asJava)))
         case Not(In(Cast(a: Attribute, _), list))
-          if !list.exists(!_.isInstanceOf[FakeCarbonCast]) =>
+          if !list.exists(!_.isInstanceOf[Literal]) =>
           Some(new NotInExpression(transformExpression(a).get,
             new ListExpression(list.map(transformExpression(_).get).asJava)))
-        case In(Cast(a: Attribute, _), list) if !list.exists(!_.isInstanceOf[FakeCarbonCast]) =>
+        case In(Cast(a: Attribute, _), list) if !list.exists(!_.isInstanceOf[Literal]) =>
           Some(new InExpression(transformExpression(a).get,
             new ListExpression(list.map(transformExpression(_).get).asJava)))
 
@@ -227,7 +225,6 @@ object CarbonFilters {
           Some(new CarbonColumnExpression(name,
             CarbonScalaUtil.convertSparkToCarbonDataType(
               getActualCarbonDataType(name, carbonTable))))
-        case FakeCarbonCast(literal, dataType) => transformExpression(literal)
         case Literal(name, dataType) => Some(new
             CarbonLiteralExpression(name, CarbonScalaUtil.convertSparkToCarbonDataType(dataType)))
         case Cast(left, right) if !left.isInstanceOf[Literal] => transformExpression(left)
