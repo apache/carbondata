@@ -365,12 +365,15 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         case IntegerType:
           result = this.getInt().equals(objToCompare.getInt());
           break;
-
+        case LongType:
+        case TimestampType:
+          result = this.getLong().equals(objToCompare.getLong());
+          break;
         case DoubleType:
           result = this.getDouble().equals(objToCompare.getDouble());
           break;
-        case TimestampType:
-          result = this.getLong().equals(objToCompare.getLong());
+        case DecimalType:
+          result = this.getDecimal().equals(objToCompare.getDecimal());
           break;
         default:
           break;

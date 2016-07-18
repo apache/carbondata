@@ -71,6 +71,7 @@ import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.ExpressionResult;
 import org.carbondata.query.expression.LiteralExpression;
+import org.carbondata.query.expression.conditional.ListExpression;
 import org.carbondata.query.expression.exception.FilterIllegalMemberException;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.executer.AndFilterExecuterImpl;
@@ -229,6 +230,45 @@ public final class FilterUtil {
     }
     for (Expression child : expression.getChildren()) {
       if (checkIfLeftExpressionRequireEvaluation(child)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * This method will check if a given literal expression is not a timestamp datatype
+   * recursively.
+   *
+   * @return
+   */
+  public static boolean checkIfDataTypeNotTimeStamp(Expression expression) {
+    if (expression.getFilterExpressionType() == ExpressionType.LITERAL) {
+      if (!(((LiteralExpression) expression).getLiteralExpDataType()
+          == org.carbondata.query.expression.DataType.TimestampType)) {
+        return true;
+      }
+    }
+    for (Expression child : expression.getChildren()) {
+      if (checkIfDataTypeNotTimeStamp(child)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  /**
+   * This method will check if a given expression contains a column expression
+   * recursively.
+   *
+   * @return
+   */
+  public static boolean checkIfRightExpressionRequireEvaluation(Expression expression) {
+    if (expression.getFilterExpressionType() == ExpressionType.UNKNOWN
+        || !(expression instanceof LiteralExpression) && !(expression instanceof ListExpression)) {
+      return true;
+    }
+    for (Expression child : expression.getChildren()) {
+      if (checkIfRightExpressionRequireEvaluation(child)) {
         return true;
       }
     }

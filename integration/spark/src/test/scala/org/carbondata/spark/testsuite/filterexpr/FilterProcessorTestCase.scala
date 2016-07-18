@@ -42,6 +42,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists filtertestTablesWithNull")
     sql("drop table if exists filterTimestampDataType")
     sql("drop table if exists noloadtable")
+
     sql("CREATE TABLE filtertestTables (ID int, date Timestamp, country String, " +
       "name String, phonetype String, serialname String, salary int) " +
         "STORED BY 'org.apache.carbondata.format'"
@@ -90,6 +91,13 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
         "name String, phonetype String, serialname String,salary int) " +
       "STORED BY 'org.apache.carbondata.format'"
     )
+    
+        sql(
+      "CREATE TABLE filtertestTablesWithNullJoin (ID int, date Timestamp, country " +
+        "String, " +
+        "name String, phonetype String, serialname String,salary int) " +
+      "STORED BY 'org.apache.carbondata.format'"
+    )
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
     sql(
@@ -98,8 +106,43 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
         s"OPTIONS('DELIMITER'= ',', " +
         s"'FILEHEADER'= '')"
     )
+        sql(
+      s"LOAD DATA LOCAL INPATH './src/test/resources/data2.csv' INTO TABLE " +
+        s"filtertestTablesWithNullJoin " +
+        s"OPTIONS('DELIMITER'= ',', " +
+        s"'FILEHEADER'= '')"
+    )
   }
 
+         sql("CREATE TABLE big_int_basicc (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp,enddate timestamp,PointId double,score decimal(10,3))STORED BY 'org.apache.carbondata.format'")
+        sql("CREATE TABLE big_int_basicc_1 (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp,enddate timestamp,PointId double,score decimal(10,3))STORED BY 'org.apache.carbondata.format'")
+        
+        sql("CREATE TABLE big_int_basicc_Hive (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate date,enddate date,PointId double,score decimal(10,3))row format delimited fields terminated by ',' " +
+        "tblproperties(\"skip.header.line.count\"=\"1\") " +
+        ""
+    )
+        sql("CREATE TABLE big_int_basicc_Hive_1 (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate date,enddate date,PointId double,score decimal(10,3))row format delimited fields terminated by ',' " +
+        "tblproperties(\"skip.header.line.count\"=\"1\") " +
+        ""
+    )
+        CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
+  sql(
+        "LOAD DATA INPATH './src/test/resources/big_int_Decimal.csv'  INTO TABLE big_int_basicc options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$','COMPLEX_DELIMITER_LEVEL_2'=':', 'FILEHEADER'= '')"
+    );
+        
+    sql(
+        "LOAD DATA INPATH './src/test/resources/big_int_Decimal.csv'  INTO TABLE big_int_basicc_1 options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$','COMPLEX_DELIMITER_LEVEL_2'=':', 'FILEHEADER'= '')"
+    );
+    
+        sql(
+      "load data local inpath './src/test/resources/big_int_Decimal.csv' into table " +
+        "big_int_basicc_Hive"
+    );
+      sql(
+      "load data local inpath './src/test/resources/big_int_Decimal.csv' into table " +
+        "big_int_basicc_Hive_1"
+    );
     
   test("Is not null filter") {
     checkAnswer(
@@ -108,6 +151,12 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     )
   }
   
+    test("join filter") {
+    checkAnswer(
+      sql("select b.name from filtertestTablesWithNull a join filtertestTablesWithNullJoin b  " + "on a.name=b.name"),
+      Seq(Row("aaa4"), Row("aaa5"),Row("aaa6"))
+    )
+  }
   
     test("Between  filter") {
     checkAnswer(
@@ -219,6 +268,21 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
       sql("select date  from filterTimestampDataType where date >= '2014-07-20 00:00:00'"),
       Seq(Row(Timestamp.valueOf("2014-07-20 00:00:00.0")),Row(Timestamp.valueOf("2014-07-25 00:00:00.0"))
       )
+    )
+  }
+    test("join query with bigdecimal filter") {
+
+    checkAnswer(
+      sql("select b.level from big_int_basicc_Hive a join big_int_basicc_Hive_1 b on a.level=b.level order by level"),
+      sql("select b.level from big_int_basicc a join big_int_basicc_1 b on a.level=b.level order by level")
+    )
+  }
+    
+        test("join query with bigint filter") {
+
+    checkAnswer(
+      sql("select b.task from big_int_basicc_Hive a join big_int_basicc_Hive_1 b on a.task=b.task"),
+      sql("select b.task from big_int_basicc a join big_int_basicc_1 b on a.task=b.task")
     )
   }
 

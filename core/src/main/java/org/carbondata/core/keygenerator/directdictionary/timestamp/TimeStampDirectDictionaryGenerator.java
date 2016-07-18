@@ -129,13 +129,17 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
    * @return dictionary value
    */
   public int generateDirectSurrogateKey(String memberStr, String format) {
-    SimpleDateFormat timeParser = new SimpleDateFormat(format);
-    timeParser.setLenient(false);
-    if (null == memberStr || memberStr.trim().isEmpty() || memberStr
-        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-      return 1;
+    if (null == format) {
+      return generateDirectSurrogateKeyForNonTimestampType(memberStr);
+    } else {
+      SimpleDateFormat timeParser = new SimpleDateFormat(format);
+      timeParser.setLenient(false);
+      if (null == memberStr || memberStr.trim().isEmpty() || memberStr
+          .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+        return 1;
+      }
+      return getDirectSurrogateForMember(memberStr, timeParser);
     }
-    return getDirectSurrogateForMember(memberStr, timeParser);
   }
 
   private int getDirectSurrogateForMember(String memberStr, SimpleDateFormat timeParser) {
@@ -143,21 +147,16 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     try {
       dateToStr = timeParser.parse(memberStr);
     } catch (ParseException e) {
-      LOGGER.debug("Cannot convert " + memberStr
-          + " to Time/Long type value. Value considered as null." + e.getMessage());
+      LOGGER.debug(
+          "Cannot convert " + memberStr + " to Time/Long type value. Value considered as null." + e
+              .getMessage());
       dateToStr = null;
     }
     //adding +2 to reserve the first cuttOffDiff value for null or empty date
     if (null == dateToStr) {
       return 1;
     } else {
-      if (cutOffTimeStamp >= 0) {
-        int keyValue = (int) ((dateToStr.getTime() - cutOffTimeStamp) / granularityFactor);
-        return keyValue < 0 ? 1 : keyValue + 2;
-      } else {
-        int keyValue = (int) (dateToStr.getTime() / granularityFactor);
-        return keyValue < 0 ? 1 : keyValue + 2;
-      }
+      return generateKey(dateToStr.getTime());
     }
   }
 
@@ -179,4 +178,31 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     }
     return timeStamp * 1000L;
   }
+
+  private int generateDirectSurrogateKeyForNonTimestampType(String memberStr) {
+    long timeValue = -1;
+    try {
+      timeValue = Long.valueOf(memberStr) / 1000;
+    } catch (NumberFormatException e) {
+      LOGGER.debug(
+          "Cannot convert " + memberStr + " Long type value. Value considered as null." + e
+              .getMessage());
+    }
+    if (timeValue == -1) {
+      return 1;
+    } else {
+      return generateKey(timeValue);
+    }
+  }
+
+  private int generateKey(long timeValue) {
+    if (cutOffTimeStamp >= 0) {
+      int keyValue = (int) ((timeValue - cutOffTimeStamp) / granularityFactor);
+      return keyValue < 0 ? 1 : keyValue + 2;
+    } else {
+      int keyValue = (int) (timeValue / granularityFactor);
+      return keyValue < 0 ? 1 : keyValue + 2;
+    }
+  }
+
 }

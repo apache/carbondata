@@ -33,6 +33,7 @@ import org.carbondata.query.expression.exception.FilterIllegalMemberException;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
 import org.carbondata.query.filter.resolver.metadata.FilterResolverMetadata;
 import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
+import org.carbondata.query.filters.measurefilter.util.FilterUtil;
 import org.carbondata.query.schema.metadata.DimColumnFilterInfo;
 
 public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorIntf {
@@ -47,7 +48,7 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
    * @param visitableObj
    * @param metadata
    * @throws FilterUnsupportedException,thrown out if exception occurs while evaluating
-   * filter models.
+   *                                           filter models.
    */
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
@@ -59,22 +60,23 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
     } catch (FilterIllegalMemberException e) {
       throw new FilterUnsupportedException(e);
     }
+    boolean isNotTimestampType = FilterUtil.checkIfDataTypeNotTimeStamp(metadata.getExpression());
     resolvedFilterObject = getDirectDictionaryValKeyMemberForFilter(metadata.getTableIdentifier(),
-        metadata.getColumnExpression(), evaluateResultListFinal, metadata.isIncludeFilter());
+        metadata.getColumnExpression(), evaluateResultListFinal, metadata.isIncludeFilter(),
+        isNotTimestampType);
     visitableObj.setFilterValues(resolvedFilterObject);
   }
 
   private DimColumnFilterInfo getDirectDictionaryValKeyMemberForFilter(
       AbsoluteTableIdentifier tableIdentifier, ColumnExpression columnExpression,
-      List<String> evaluateResultListFinal, boolean isIncludeFilter) {
+      List<String> evaluateResultListFinal, boolean isIncludeFilter, boolean isNotTimestampType) {
     List<Integer> surrogates = new ArrayList<Integer>(20);
     DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
         .getDirectDictionaryGenerator(columnExpression.getDimension().getDataType());
     // Reading the dictionary value direct
-    for (String filterMember : evaluateResultListFinal) {
-      surrogates.add(directDictionaryGenerator.generateDirectSurrogateKey(filterMember,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
-    }
+    getSurrogateValuesForDictionary(evaluateResultListFinal, surrogates, isNotTimestampType,
+        directDictionaryGenerator);
+
     Collections.sort(surrogates);
     DimColumnFilterInfo columnFilterInfo = null;
     if (surrogates.size() > 0) {
@@ -85,4 +87,16 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
     return columnFilterInfo;
   }
 
+  private void getSurrogateValuesForDictionary(List<String> evaluateResultListFinal,
+      List<Integer> surrogates, boolean isNotTimestampType,
+      DirectDictionaryGenerator directDictionaryGenerator) {
+    String timeFormat = CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT;
+    if (isNotTimestampType) {
+      timeFormat = null;
+    }
+    for (String filterMember : evaluateResultListFinal) {
+      surrogates
+          .add(directDictionaryGenerator.generateDirectSurrogateKey(filterMember, timeFormat));
+    }
+  }
 }

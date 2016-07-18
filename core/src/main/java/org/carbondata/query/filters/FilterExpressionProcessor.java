@@ -274,7 +274,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
               .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                 && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
-                FilterUtil.checkIfLeftExpressionRequireEvaluation(currentCondExpression.getRight())
+                FilterUtil.checkIfRightExpressionRequireEvaluation(currentCondExpression.getRight())
                     || FilterUtil
                     .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, true,
@@ -306,7 +306,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
               .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                 && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
-                FilterUtil.checkIfLeftExpressionRequireEvaluation(currentCondExpression.getRight())
+                FilterUtil.checkIfRightExpressionRequireEvaluation(currentCondExpression.getRight())
                     || FilterUtil
                     .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, false,
