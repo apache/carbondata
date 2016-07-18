@@ -161,6 +161,69 @@ case class DictionaryLoadModel(table: CarbonTableIdentifier,
 case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends Serializable
 
 /**
+ * A RDD to combine all dictionary distinct values.
+ *
+ * @constructor create a RDD with RDD[(String, Iterable[String])]
+ * @param prev the input RDD[(String, Iterable[String])]
+ * @param model a model package load info
+ */
+class CarbonAllDictionaryCombineRDD(
+                                       prev: RDD[(String, Iterable[String])],
+                                       model: DictionaryLoadModel)
+  extends RDD[(Int, ColumnDistinctValues)](prev) with Logging {
+
+  override def getPartitions: Array[Partition] =
+    firstParent[(String, Iterable[String])].partitions
+
+  override def compute(split: Partition, context: TaskContext
+                      ): Iterator[(Int, ColumnDistinctValues)] = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass().getName())
+
+    val distinctValuesList = new ArrayBuffer[(Int, HashSet[String])]
+    /*
+     * for all dictionary, all columns need to encoding and checking
+     * isHighCardinalityColumn, so no need to calculate rowcount
+     */
+    val rowCount = 0L
+    try {
+      val dimensionParsers =
+        GlobalDictionaryUtil.createDimensionParsers(model, distinctValuesList)
+      val dimNum = model.dimensions.length
+      // Map[dimColName -> dimColNameIndex]
+      val columnIndexMap = new HashMap[String, Int]()
+      for (j <- 0 until dimNum) {
+        columnIndexMap.put(model.dimensions(j).getColName, j)
+      }
+
+      var row: (String, Iterable[String]) = null
+      val rddIter = firstParent[(String, Iterable[String])].iterator(split, context)
+      // generate block distinct value set
+      while (rddIter.hasNext) {
+        row = rddIter.next()
+        if (row != null) {
+          columnIndexMap.get(row._1) match {
+            case Some(index) =>
+              for (record <- row._2) {
+                dimensionParsers(index).parseString(record)
+              }
+            case None =>
+          }
+        }
+      }
+    } catch {
+      case ex: Exception =>
+        LOGGER.error(ex)
+        throw ex
+    }
+
+    distinctValuesList.map { iter =>
+      val valueList = iter._2.toArray
+      (iter._1, ColumnDistinctValues(valueList, rowCount))
+    }.iterator
+  }
+}
+
+/**
  * A RDD to combine distinct values in block.
  *
  * @constructor create a RDD with RDD[Row]
@@ -181,23 +244,9 @@ class CarbonBlockDistinctValuesCombineRDD(
     val distinctValuesList = new ArrayBuffer[(Int, HashSet[String])]
     var rowCount = 0L
     try {
-      // local combine set
+      val dimensionParsers =
+        GlobalDictionaryUtil.createDimensionParsers(model, distinctValuesList)
       val dimNum = model.dimensions.length
-      val primDimNum = model.primDimensions.length
-      val columnValues = new Array[HashSet[String]](primDimNum)
-      val mapColumnValuesWithId = new HashMap[String, HashSet[String]]
-      for (i <- 0 until primDimNum) {
-        columnValues(i) = new HashSet[String]
-        distinctValuesList += ((i, columnValues(i)))
-        mapColumnValuesWithId.put(model.primDimensions(i).getColumnId, columnValues(i))
-      }
-      val dimensionParsers = new Array[GenericParser](dimNum)
-      for (j <- 0 until dimNum) {
-        dimensionParsers(j) = GlobalDictionaryUtil.generateParserForDimension(
-          Some(model.dimensions(j)),
-          GlobalDictionaryUtil.createDataFormat(model.delimiters),
-          mapColumnValuesWithId).get
-      }
       var row: Row = null
       val rddIter = firstParent[Row].iterator(split, context)
       // generate block distinct value set
@@ -216,6 +265,7 @@ class CarbonBlockDistinctValuesCombineRDD(
         LOGGER.error(ex)
         throw ex
     }
+
     distinctValuesList.map { iter =>
       val valueList = iter._2.toArray
       (iter._1, ColumnDistinctValues(valueList, rowCount))
@@ -373,7 +423,6 @@ class CarbonGlobalDictionaryGenerateRDD(
     iter
   }
 }
-
 /**
  * Set column dictionry patition format
  *
@@ -444,7 +493,7 @@ class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
         } catch {
           case ex: Exception =>
             logError(s"Error in closing csvReader of " +
-            s"pre-defined dictionary file:${ex.getMessage}")
+              s"pre-defined dictionary file:${ex.getMessage}")
         }
       }
       if (inputStream != null) {
@@ -453,7 +502,7 @@ class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
         } catch {
           case ex: Exception =>
             logError(s"Error in closing inputStream of " +
-            s"pre-defined dictionary file:${ex.getMessage}")
+              s"pre-defined dictionary file:${ex.getMessage}")
         }
       }
     }
