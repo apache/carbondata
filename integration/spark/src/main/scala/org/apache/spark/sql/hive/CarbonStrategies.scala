@@ -343,17 +343,6 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         else {
           ExecutedCommand(HiveNativeCommand(sql)) :: Nil
         }
-      case describe@LogicalDescribeCommand(table, isExtended) =>
-        val resolvedTable = sqlContext.executePlan(describe.table).analyzed
-        resolvedTable match {
-          case t: MetastoreRelation =>
-            ExecutedCommand(
-              DescribeHiveTableCommand(t, describe.output, describe.isExtended)) :: Nil
-          case o: LogicalPlan =>
-            val resultPlan = sqlContext.executePlan(o).executedPlan
-            ExecutedCommand(
-              RunnableDescribeCommand(resultPlan, describe.output, describe.isExtended)) :: Nil
-        }
       case _ =>
         Nil
     }
