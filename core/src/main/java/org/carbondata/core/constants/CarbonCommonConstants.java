@@ -666,6 +666,11 @@ public final class CarbonCommonConstants {
    */
   public static final int INVALID_SURROGATE_KEY = -1;
 
+  /**
+   * surrogate key for MEMBER_DEFAULT_VAL
+   */
+  public static final int MEMBER_DEFAULT_VAL_SURROGATE_KEY = 1;
+
   public static final String INVALID_SEGMENT_ID = "-1";
 
   /**

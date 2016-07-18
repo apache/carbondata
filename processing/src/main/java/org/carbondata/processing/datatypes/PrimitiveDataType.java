@@ -155,8 +155,13 @@ public class PrimitiveDataType implements GenericDataType {
   public void parseStringAndWriteByteArray(String tableName, String inputString,
       String[] delimiter, int delimiterIndex, DataOutputStream dataOutputStream,
       CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException {
-    dataOutputStream.writeInt(surrogateKeyGen.generateSurrogateKeys(inputString, tableName
-        + CarbonCommonConstants.UNDERSCORE + name, this.getColumnId()));
+    Integer surrogateKey = surrogateKeyGen
+        .generateSurrogateKeys(inputString, tableName + CarbonCommonConstants.UNDERSCORE + name,
+            this.getColumnId());
+    if (surrogateKey == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
+      surrogateKey = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
+    }
+    dataOutputStream.writeInt(surrogateKey);
   }
 
   /*

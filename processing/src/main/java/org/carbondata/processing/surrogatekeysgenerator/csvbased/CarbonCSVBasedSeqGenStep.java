@@ -1146,8 +1146,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             }
           }
           if (surrogateKeyForHrrchy[0] == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
-            addEntryToBadRecords(r, inputColumnsSize, j, columnName);
-            return null;
+            surrogateKeyForHrrchy[0] = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
           }
         }
         for (int k = 0; k < surrogateKeyForHrrchy.length; k++) {
