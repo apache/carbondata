@@ -90,6 +90,7 @@ public class UnivocityCsvParser {
     parserSettings.setNullValue("");
     parserSettings.setIgnoreLeadingWhitespaces(false);
     parserSettings.setIgnoreTrailingWhitespaces(false);
+    parserSettings.setSkipEmptyLines(false);
     parserSettings.getFormat().setQuoteEscape(null == csvParserVo.getEscapeCharacter() ?
         '\\' :
         csvParserVo.getEscapeCharacter().charAt(0));

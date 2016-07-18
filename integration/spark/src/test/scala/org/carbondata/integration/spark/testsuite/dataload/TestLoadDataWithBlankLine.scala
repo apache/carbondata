@@ -40,7 +40,7 @@ class TestLoadDataWithBlankLine extends QueryTest with BeforeAndAfterAll {
   }
   test("test carbon table data loading when there are  blank lines in data") {
     checkAnswer(sql("select count(*) from carbontable"),
-      Seq(Row(12)))
+      Seq(Row(18)))
   }
 
   override def afterAll {
