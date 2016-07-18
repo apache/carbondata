@@ -152,9 +152,9 @@ public final class QueryPartitionHelper {
     return queryPartitions;
   }
 
-  public List<Partition> getAllPartitions(String schemaName, String tableName,
+  public List<Partition> getAllPartitions(String databaseName, String tableName,
       Partitioner partitioner) {
-    String tableUniqueName = schemaName + '_' + tableName;
+    String tableUniqueName = databaseName + '_' + tableName;
     checkInitialization(tableUniqueName, partitioner);
 
     DataPartitioner dataPartitioner = partitionerMap.get(tableUniqueName);
@@ -162,26 +162,26 @@ public final class QueryPartitionHelper {
     return dataPartitioner.getAllPartitions();
   }
 
-  public void removePartition(String schemaName, String tableName) {
-    String tableUniqueName = schemaName + '_' + tableName;
+  public void removePartition(String databaseName, String tableName) {
+    String tableUniqueName = databaseName + '_' + tableName;
     partitionerMap.remove(tableUniqueName);
   }
 
   /**
    * Get the node name where the partition is assigned to.
    */
-  public String getLocation(Partition partition, String schemaName, String tableName,
+  public String getLocation(Partition partition, String databaseName, String tableName,
       Partitioner partitioner) {
-    String tableUniqueName = schemaName + '_' + tableName;
+    String tableUniqueName = databaseName + '_' + tableName;
     checkInitialization(tableUniqueName, partitioner);
 
     DefaultLoadBalancer loadBalancer = loadBalancerMap.get(tableUniqueName);
     return loadBalancer.getNodeForPartitions(partition);
   }
 
-  public String[] getPartitionedColumns(String schemaName, String tableName,
+  public String[] getPartitionedColumns(String databaseName, String tableName,
       Partitioner partitioner) {
-    String tableUniqueName = schemaName + '_' + tableName;
+    String tableUniqueName = databaseName + '_' + tableName;
     checkInitialization(tableUniqueName, partitioner);
     DataPartitioner dataPartitioner = partitionerMap.get(tableUniqueName);
     return dataPartitioner.getPartitionedColumns();

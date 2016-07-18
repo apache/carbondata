@@ -194,12 +194,13 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test carbon table data loading when table name is in different case with create table ,for LowerCase") {
+    sql("drop table if exists lowercaseCUBE")
     sql("create table lowercaseCUBE(empno Int, empname String, designation String, " +
       "doj String, workgroupcategory Int, workgroupcategoryname String, deptno Int, " +
       "deptname String, projectcode Int, projectjoindate String, projectenddate String, " +
       "attendance Int,utilization Double,salary Double) STORED BY 'org.apache.carbondata.format'")
     sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table LOWERCASECUBE OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"')")
-    sql("drop table LowErcasEtable")
+    sql("drop table LowErcasEcube")
   }
   
   test("test carbon table data loading using escape char 1") {

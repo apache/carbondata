@@ -63,8 +63,8 @@ import org.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
 
 case class tableModel(
     ifNotExistsSet: Boolean,
-    var schemaName: String,
-    schemaNameOp: Option[String],
+    var databaseName: String,
+    databaseNameOp: Option[String],
     tableName: String,
     dimCols: Seq[Field],
     msrCols: Seq[Field],
@@ -136,7 +136,7 @@ case class Dimension(name: String, hierarchies: Seq[Hierarchy], foreignKey: Opti
 
 case class FilterCols(includeKey: String, fieldList: Seq[String])
 
-case class Table(schemaName: String, tableName: String, dimensions: Seq[Dimension],
+case class Table(databaseName: String, tableName: String, dimensions: Seq[Dimension],
     measures: Seq[Measure], partitioner: Partitioner)
 
 case class Default(key: String, value: String)
@@ -145,7 +145,7 @@ case class DataLoadTableFileMapping(table: String, loadPath: String)
 
 case class CarbonMergerMapping(storeLocation: String, hdfsStoreLocation: String,
   partitioner: Partitioner, metadataFilePath: String, mergedLoadName: String,
-  kettleHomePath: String, tableCreationTime: Long, schemaName: String,
+  kettleHomePath: String, tableCreationTime: Long, databaseName: String,
   factTableName: String, validSegments: Array[String], tableId: String)
 
 case class AlterTableModel(dbName: Option[String], tableName: String, compactionType: String)
@@ -207,7 +207,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     columnSchema.setColumnProperties(colPropMap)
     columnSchema.setEncodingList(encoders)
     val colUniqueIdGenerator = CarbonCommonFactory.getColumnUniqueIdGenerator
-    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(cm.schemaName,
+    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(cm.databaseName,
       columnSchema)
     columnSchema.setColumnUniqueId(columnUniqueId)
     columnSchema.setColumnReferenceId(columnUniqueId)
@@ -269,7 +269,8 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
       val name = f._1
       LOGGER.error(s"Duplicate column found with name : $name")
       LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation for ${cm.schemaName}.${cm.tableName}" +
+        s"Validation failed for Create/Alter Table Operation " +
+        s"for ${cm.databaseName}.${cm.tableName}" +
         s"Duplicate column found with name : $name")
       sys.error(s"Duplicate dimensions found with name : $name")
     })
@@ -364,7 +365,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
           LOGGER.error(s"partition columns specified are not part of Dimension columns : $msg")
           LOGGER.audit(
             s"Validation failed for Create/Alter Table Operation for " +
-              s"${cm.schemaName}.${cm.tableName} " +
+              s"${cm.databaseName}.${cm.tableName} " +
             s"partition columns specified are not part of Dimension columns : $msg")
           sys.error(s"partition columns specified are not part of Dimension columns : $msg")
         }
@@ -377,7 +378,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
               val cl = part.partitionClass
               LOGGER.audit(
                 s"Validation failed for Create/Alter Table Operation for " +
-                  s"${cm.schemaName}.${cm.tableName} " +
+                  s"${cm.databaseName}.${cm.tableName} " +
                 s"partition class specified can not be found or loaded : $cl")
               sys.error(s"partition class specified can not be found or loaded : $cl")
           }
@@ -397,8 +398,8 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     tableSchema.setTableName(cm.tableName)
     tableSchema.setListOfColumns(allColumns.asJava)
     tableSchema.setSchemaEvalution(schemaEvol)
-    tableInfo.setDatabaseName(cm.schemaName)
-    tableInfo.setTableUniqueName(cm.schemaName + "_" + cm.tableName)
+    tableInfo.setDatabaseName(cm.databaseName)
+    tableInfo.setTableUniqueName(cm.databaseName + "_" + cm.tableName)
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
     tableInfo.setAggregateTableList(new util.ArrayList[TableSchema]())
@@ -566,7 +567,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       LOGGER.error(s"Duplicate dimensions found with name : $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Table Operation " +
-        s"for ${cm.schemaName}.${cm.tableName} " +
+        s"for ${cm.databaseName}.${cm.tableName} " +
         s"Duplicate dimensions found with name : $name")
       sys.error(s"Duplicate dimensions found with name : $name")
     })
@@ -576,7 +577,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       LOGGER.error(s"Duplicate dimensions found with column name : $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Table Operation " +
-        s"for ${cm.schemaName}.${cm.tableName} " +
+        s"for ${cm.databaseName}.${cm.tableName} " +
         s"Duplicate dimensions found with column name : $name")
       sys.error(s"Duplicate dimensions found with column name : $name")
     })
@@ -586,7 +587,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       LOGGER.error(s"Duplicate measures found with name : $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Table Operation " +
-        s"for ${cm.schemaName}.${cm.tableName} " +
+        s"for ${cm.databaseName}.${cm.tableName} " +
         s"Duplicate measures found with name : $name")
       sys.error(s"Duplicate measures found with name : $name")
     })
@@ -596,7 +597,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       LOGGER.error(s"Duplicate measures found with column name : $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Table Operation " +
-        s"for ${cm.schemaName}.${cm.tableName} " +
+        s"for ${cm.databaseName}.${cm.tableName} " +
         s"Duplicate measures found with column name : $name")
       sys.error(s"Duplicate measures found with column name : $name")
     })
@@ -610,7 +611,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
         LOGGER.error(s"Aggregator should not be defined for dimension fields [$fault]")
         LOGGER.audit(
           s"Validation failed for Create/Alter Table Operation for " +
-            s"${cm.schemaName}.${cm.tableName} " +
+            s"${cm.databaseName}.${cm.tableName} " +
           s"Aggregator should not be defined for dimension fields [$fault]")
         sys.error(s"Aggregator should not be defined for dimension fields [$fault]")
       }
@@ -621,7 +622,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       LOGGER.error(s"Dimension and Measure defined with same name : $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Table Operation " +
-        s"for ${cm.schemaName}.${cm.tableName} " +
+        s"for ${cm.databaseName}.${cm.tableName} " +
         s"Dimension and Measure defined with same name : $name")
       sys.error(s"Dimension and Measure defined with same name : $name")
     })
@@ -711,7 +712,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
               val cl = part.partitionClass
               LOGGER.audit(
                 s"Validation failed for Create/Alter Table Operation for " +
-                  s"${cm.schemaName}.${cm.tableName} " +
+                  s"${cm.databaseName}.${cm.tableName} " +
                 s"partition class specified can not be found or loaded : $cl")
               sys.error(s"partition class specified can not be found or loaded : $cl")
           }
@@ -723,7 +724,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
           Array(""), 20, null)
     }
 
-    Table(cm.schemaName, cm.tableName, dimensions, msrsUpdatedWithAggregators, partitioner)
+    Table(cm.databaseName, cm.tableName, dimensions, msrsUpdatedWithAggregators, partitioner)
   }
 
   // For filtering INCLUDE and EXCLUDE fields if any is defined for Dimention relation
@@ -764,19 +765,19 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
   def run(sqlContext: SQLContext): Seq[Row] = {
     // TODO : Implement it.
     var tableName = alterTableModel.tableName
-    val schemaName = getDB.getDatabaseName(alterTableModel.dbName, sqlContext)
+    val databaseName = getDB.getDatabaseName(alterTableModel.dbName, sqlContext)
     if (null == org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
-      .getCarbonTable(schemaName + "_" + tableName)) {
-      logError("alter table failed. table not found: " + schemaName + "." + tableName)
-      sys.error("alter table failed. table not found: " + schemaName + "." + tableName)
+      .getCarbonTable(databaseName + "_" + tableName)) {
+      logError("alter table failed. table not found: " + databaseName + "." + tableName)
+      sys.error("alter table failed. table not found: " + databaseName + "." + tableName)
     }
 
     val relation =
       CarbonEnv.getInstance(sqlContext).carbonCatalog
-        .lookupRelation1(Option(schemaName), tableName)(sqlContext)
+        .lookupRelation1(Option(databaseName), tableName)(sqlContext)
         .asInstanceOf[CarbonRelation]
     if (relation == null) {
-      sys.error(s"Table $schemaName.$tableName does not exist")
+      sys.error(s"Table $databaseName.$tableName does not exist")
     }
     val carbonLoadModel = new CarbonLoadModel()
 
@@ -824,9 +825,9 @@ private[sql] case class CreateTable(cm: tableModel) extends RunnableCommand {
 
   def run(sqlContext: SQLContext): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    cm.schemaName = getDB.getDatabaseName(cm.schemaNameOp, sqlContext)
+    cm.databaseName = getDB.getDatabaseName(cm.databaseNameOp, sqlContext)
     val tbName = cm.tableName
-    val dbName = cm.schemaName
+    val dbName = cm.databaseName
     LOGGER.audit(s"Creating Table with Database name [$dbName] and Table name [$tbName]")
 
     val tableInfo: TableInfo = TableNewProcessor(cm, sqlContext)
@@ -888,19 +889,19 @@ private[sql] case class CreateTable(cm: tableModel) extends RunnableCommand {
 
 private[sql] case class DeleteLoadsById(
     loadids: Seq[String],
-    schemaNameOp: Option[String],
+    databaseNameOp: Option[String],
     tableName: String) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def run(sqlContext: SQLContext): Seq[Row] = {
 
-    val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
-    LOGGER.audit(s"Delete load by Id request has been received for $schemaName.$tableName")
+    val databaseName = getDB.getDatabaseName(databaseNameOp, sqlContext)
+    LOGGER.audit(s"Delete load by Id request has been received for $databaseName.$tableName")
 
     // validate load ids first
     validateLoadIds
-    val dbName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
 
     val identifier = TableIdentifier(tableName, Option(dbName))
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
@@ -925,7 +926,7 @@ private[sql] case class DeleteLoadsById(
 
     if (invalidLoadIds.isEmpty) {
 
-      LOGGER.audit(s"Delete load by Id is successfull for $schemaName.$tableName.")
+      LOGGER.audit(s"Delete load by Id is successfull for $databaseName.$tableName.")
     }
     else {
       sys.error("Delete load by Id is failed. No matching load id found. SegmentSeqId(s) - "
@@ -947,7 +948,7 @@ private[sql] case class DeleteLoadsById(
 }
 
 private[sql] case class DeleteLoadsByLoadDate(
-   schemaNameOp: Option[String],
+   databaseNameOp: Option[String],
   tableName: String,
   dateField: String,
   loadDate: String) extends RunnableCommand {
@@ -957,7 +958,7 @@ private[sql] case class DeleteLoadsByLoadDate(
   def run(sqlContext: SQLContext): Seq[Row] = {
 
     LOGGER.audit("The delete load by load date request has been received.")
-    val dbName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     val identifier = TableIdentifier(tableName, Option(dbName))
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
       .lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
@@ -999,7 +1000,7 @@ private[sql] case class DeleteLoadsByLoadDate(
 }
 
 private[sql] case class LoadTable(
-    schemaNameOp: Option[String],
+    databaseNameOp: Option[String],
     tableName: String,
     factPathFromUser: String,
     dimFilesPath: Seq[DataLoadTableFileMapping],
@@ -1012,7 +1013,7 @@ private[sql] case class LoadTable(
 
   def run(sqlContext: SQLContext): Seq[Row] = {
 
-    val dbName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     val identifier = TableIdentifier(tableName, Option(dbName))
     if (isOverwriteExist) {
       sys.error("Overwrite is not supported for carbon table with " + dbName + "." + tableName)
@@ -1217,13 +1218,13 @@ private[sql] case class PartitionData(databaseName: String, tableName: String, f
   }
 }
 
-private[sql] case class DropTableCommand(ifExistsSet: Boolean, schemaNameOp: Option[String],
+private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: Option[String],
     tableName: String)
   extends RunnableCommand {
 
   def run(sqlContext: SQLContext): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    val dbName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     val identifier = TableIdentifier(tableName, Option(dbName))
     val tmpTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(dbName + "_" + tableName)
@@ -1312,19 +1313,19 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, schemaNameOp: Opt
 }
 
 private[sql] case class ShowLoads(
-    schemaNameOp: Option[String],
+    databaseNameOp: Option[String],
     tableName: String,
     limit: Option[String],
     override val output: Seq[Attribute]) extends RunnableCommand {
 
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
-    val schemaName = getDB.getDatabaseName(schemaNameOp, sqlContext)
-    val tableUniqueName = schemaName + "_" + tableName
+    val databaseName = getDB.getDatabaseName(databaseNameOp, sqlContext)
+    val tableUniqueName = databaseName + "_" + tableName
     val carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
       .getCarbonTable(tableUniqueName)
     if (carbonTable == null) {
-      sys.error(s"$schemaName.$tableName is not found")
+      sys.error(s"$databaseName.$tableName is not found")
     }
     val path = carbonTable.getMetaDataFilepath()
 
@@ -1478,7 +1479,7 @@ private[sql] case class DescribeNativeCommand(sql: String,
 }
 
 private[sql] case class DeleteLoadByDate(
-    schemaNameOp: Option[String],
+    databaseNameOp: Option[String],
     tableName: String,
     dateField: String,
     dateValue: String
@@ -1488,7 +1489,7 @@ private[sql] case class DeleteLoadByDate(
 
   def run(sqlContext: SQLContext): Seq[Row] = {
 
-    val dbName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     LOGGER.audit(s"The delete load by date request has been received for $dbName.$tableName")
     val identifier = TableIdentifier(tableName, Option(dbName))
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
@@ -1533,13 +1534,13 @@ private[sql] case class DeleteLoadByDate(
 }
 
 private[sql] case class CleanFiles(
-    schemaNameOp: Option[String],
+    databaseNameOp: Option[String],
     tableName: String) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def run(sqlContext: SQLContext): Seq[Row] = {
-    val dbName = getDB.getDatabaseName(schemaNameOp, sqlContext)
+    val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     LOGGER.audit(s"The clean files request has been received for $dbName.$tableName")
     val identifier = TableIdentifier(tableName, Option(dbName))
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog

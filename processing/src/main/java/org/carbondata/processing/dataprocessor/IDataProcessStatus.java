@@ -59,7 +59,7 @@ public interface IDataProcessStatus {
   /**
    * This method is used to get the Key for saving status of data loading.
    *
-   * @return String - Key (schemaName + tableName + tableName).
+   * @return String - Key (databaseName + tableName + tableName).
    */
   String getKey();
 
@@ -92,14 +92,14 @@ public interface IDataProcessStatus {
   void setTaskType(int taskType);
 
   /**
-   * @return the schemaName
+   * @return the databaseName
    */
   String getSchemaName();
 
   /**
-   * @param schemaName the schemaName to set
+   * @param databaseName the databaseName to set
    */
-  void setSchemaName(String schemaName);
+  void setSchemaName(String databaseName);
 
   /**
    * @return the tableName

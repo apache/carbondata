@@ -50,7 +50,7 @@ object getDB {
 /**
  * Shows Loads in a table
  */
-case class ShowLoadsCommand(schemaNameOp: Option[String], table: String, limit: Option[String])
+case class ShowLoadsCommand(databaseNameOp: Option[String], table: String, limit: Option[String])
   extends LogicalPlan with Command {
 
   override def children: Seq[LogicalPlan] = Seq.empty

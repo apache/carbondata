@@ -126,9 +126,9 @@ public class GraphGenerator {
    */
   private int yAxixLocation = 100;
   /**
-   * schemaName
+   * databaseName
    */
-  private String schemaName;
+  private String databaseName;
   /**
    * table
    */
@@ -203,7 +203,7 @@ public class GraphGenerator {
     this.isAutoAggRequest = schemaInfo.isAutoAggregateRequest();
     //this.schema = schema;
     this.carbonDataLoadSchema = carbonDataLoadSchema;
-    this.schemaName = carbonDataLoadSchema.getCarbonTable().getDatabaseName();
+    this.databaseName = carbonDataLoadSchema.getCarbonTable().getDatabaseName();
     this.partitionID = partitionID;
     this.factStoreLocation = factStoreLocation;
     this.isColumnar = Boolean.parseBoolean(CarbonCommonConstants.IS_COLUMNAR_STORAGE_DEFAULTVALUE);
@@ -863,7 +863,7 @@ public class GraphGenerator {
     //graphConfiguration.setNormHiers(CarbonSchemaParser.getNormHiers(table, schema));
     graphConfiguration.setMeasureDataTypeInfo(CarbonSchemaParser.getMeasuresDataType(measures));
     graphConfiguration.setStoreLocation(
-        this.schemaName + '/' + carbonDataLoadSchema.getCarbonTable().getFactTableName());
+        this.databaseName + '/' + carbonDataLoadSchema.getCarbonTable().getFactTableName());
     graphConfiguration.setBlockletSize(
         (instance.getProperty("com.huawei.unibi.carbon.blocklet.size", DEFAUL_BLOCKLET_SIZE)));
     graphConfiguration.setMaxBlockletInFile(

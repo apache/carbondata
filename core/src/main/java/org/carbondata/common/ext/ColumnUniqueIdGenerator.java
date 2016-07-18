@@ -30,7 +30,7 @@ public class ColumnUniqueIdGenerator implements ColumnUniqueIdService {
 
   private static ColumnUniqueIdService columnUniqueIdService = new ColumnUniqueIdGenerator();
 
-  @Override public String generateUniqueId(String schemaName, ColumnSchema columnSchema) {
+  @Override public String generateUniqueId(String databaseName, ColumnSchema columnSchema) {
     return UUID.randomUUID().toString();
   }
 

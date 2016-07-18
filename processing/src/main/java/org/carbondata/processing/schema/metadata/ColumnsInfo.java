@@ -135,7 +135,7 @@ public class ColumnsInfo {
 
   private boolean[] dimsPresent;
 
-  private String schemaName;
+  private String databaseName;
 
   private Map<String, GenericDataType> complexTypesMap;
 
@@ -455,11 +455,11 @@ public class ColumnsInfo {
   }
 
   public String getSchemaName() {
-    return schemaName;
+    return databaseName;
   }
 
-  public void setSchemaName(String schemaName) {
-    this.schemaName = schemaName;
+  public void setSchemaName(String databaseName) {
+    this.databaseName = databaseName;
   }
 
   /**

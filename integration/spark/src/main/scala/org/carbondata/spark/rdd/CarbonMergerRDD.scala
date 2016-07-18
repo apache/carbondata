@@ -58,7 +58,7 @@ class CarbonMergerRDD[K, V](
   val hdfsStoreLocation = carbonMergerMapping.hdfsStoreLocation
   val metadataFilePath = carbonMergerMapping.metadataFilePath
   val mergedLoadName = carbonMergerMapping.mergedLoadName
-  val schemaName = carbonMergerMapping.schemaName
+  val databaseName = carbonMergerMapping.databaseName
   val factTableName = carbonMergerMapping.factTableName
   val tableId = carbonMergerMapping.tableId
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
@@ -97,7 +97,7 @@ class CarbonMergerRDD[K, V](
         colCardinality
       )
 
-      val exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties, schemaName,
+      val exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties, databaseName,
         factTableName, hdfsStoreLocation, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
         dataFileMetadataSegMapping
       )
@@ -122,7 +122,7 @@ class CarbonMergerRDD[K, V](
           CarbonCommonConstants.LOAD_FOLDER.length(), mergedLoadName.length()
         )
 
-      val tempStoreLoc = CarbonDataProcessorUtil.getLocalDataFolderLocation(schemaName,
+      val tempStoreLoc = CarbonDataProcessorUtil.getLocalDataFolderLocation(databaseName,
         factTableName,
         carbonLoadModel.getTaskNo,
         "0",
@@ -133,7 +133,7 @@ class CarbonMergerRDD[K, V](
       carbonLoadModel.setPartitionId("0")
       val merger =
         new RowResultMerger(result2,
-        schemaName,
+        databaseName,
         factTableName,
         segmentProperties,
         tempStoreLoc,
@@ -171,7 +171,7 @@ class CarbonMergerRDD[K, V](
   override def getPartitions: Array[Partition] = {
     val startTime = System.currentTimeMillis()
     val absoluteTableIdentifier: AbsoluteTableIdentifier = new AbsoluteTableIdentifier(
-      hdfsStoreLocation, new CarbonTableIdentifier(schemaName, factTableName, tableId)
+      hdfsStoreLocation, new CarbonTableIdentifier(databaseName, factTableName, tableId)
     )
     val (carbonInputFormat: CarbonInputFormat[Array[Object]], job: Job) =
       QueryPlanUtil.createCarbonInputFormat(absoluteTableIdentifier)

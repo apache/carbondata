@@ -31,7 +31,7 @@ import org.carbondata.spark.util.CarbonQueryUtil
 class CarbonCleanFilesRDD[V: ClassTag](
     sc: SparkContext,
     valueClass: Value[V],
-    schemaName: String,
+    databaseName: String,
     tableName: String,
     partitioner: Partitioner)
   extends RDD[V](sc, Nil) with Logging {
@@ -39,7 +39,7 @@ class CarbonCleanFilesRDD[V: ClassTag](
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
   override def getPartitions: Array[Partition] = {
-    val splits = CarbonQueryUtil.getTableSplits(schemaName, tableName, null, partitioner)
+    val splits = CarbonQueryUtil.getTableSplits(databaseName, tableName, null, partitioner)
     splits.zipWithIndex.map(s => new CarbonLoadPartition(id, s._2, s._1))
   }
 

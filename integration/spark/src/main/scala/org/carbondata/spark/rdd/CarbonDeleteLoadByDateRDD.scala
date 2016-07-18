@@ -33,7 +33,7 @@ import org.carbondata.spark.util.CarbonQueryUtil
 class CarbonDeleteLoadByDateRDD[K, V](
     sc: SparkContext,
     result: DeletedLoadResult[K, V],
-    schemaName: String,
+    databaseName: String,
     tableName: String,
     dateField: String,
     dateFieldActualName: String,
@@ -49,7 +49,7 @@ class CarbonDeleteLoadByDateRDD[K, V](
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
   override def getPartitions: Array[Partition] = {
-    val splits = CarbonQueryUtil.getTableSplits(schemaName, tableName, null, partitioner)
+    val splits = CarbonQueryUtil.getTableSplits(databaseName, tableName, null, partitioner)
     splits.zipWithIndex.map {s =>
       new CarbonLoadPartition(id, s._2, s._1)
     }

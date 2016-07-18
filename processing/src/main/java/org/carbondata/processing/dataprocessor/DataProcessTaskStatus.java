@@ -57,7 +57,7 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
    */
   private int taskType;
 
-  private String schemaName;
+  private String databaseName;
 
   private String tableName;
 
@@ -87,8 +87,8 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
 
   private String escapeCharacter;
 
-  public DataProcessTaskStatus(String schemaName, String tableName) {
-    this.schemaName = schemaName;
+  public DataProcessTaskStatus(String databaseName, String tableName) {
+    this.databaseName = databaseName;
     this.tableName = tableName;
     this.desc = "";
     this.setNewSchemaFilePath("");
@@ -131,17 +131,17 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
   }
 
   /**
-   * @return the schemaName
+   * @return the databaseName
    */
   public String getSchemaName() {
-    return schemaName;
+    return databaseName;
   }
 
   /**
-   * @param schemaName the schemaName to set
+   * @param databaseName the databaseName to set
    */
-  public void setSchemaName(String schemaName) {
-    this.schemaName = schemaName;
+  public void setSchemaName(String databaseName) {
+    this.databaseName = databaseName;
   }
 
   /**
@@ -255,7 +255,7 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
     copy.setDataloadstatusid(this.dataloadstatusid);
     copy.setDesc(this.desc);
     copy.setKey(this.key);
-    copy.setSchemaName(schemaName);
+    copy.setSchemaName(databaseName);
     copy.setStatus(status);
     return copy;
   }

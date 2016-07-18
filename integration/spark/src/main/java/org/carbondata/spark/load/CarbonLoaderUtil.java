@@ -190,12 +190,12 @@ public final class CarbonLoaderUtil {
             info, loadModel.getPartitionId(), loadModel.getCarbonDataLoadSchema());
   }
 
-  public static String[] getStorelocs(String schemaName, String tableName, String factTableName,
+  public static String[] getStorelocs(String databaseName, String tableName, String factTableName,
       String hdfsStoreLocation, int currentRestructNumber) {
     String[] loadFolders;
 
     String baseStorelocation =
-        hdfsStoreLocation + File.separator + schemaName + File.separator + tableName;
+        hdfsStoreLocation + File.separator + databaseName + File.separator + tableName;
 
     String factStorepath =
         baseStorelocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
@@ -230,11 +230,11 @@ public final class CarbonLoaderUtil {
     return activeSlices;
   }
 
-  public static String getAggLoadFolderLocation(String loadFolderName, String schemaName,
+  public static String getAggLoadFolderLocation(String loadFolderName, String databaseName,
       String tableName, String aggTableName, String hdfsStoreLocation, int currentRestructNumber) {
     for (int i = currentRestructNumber; i >= 0; i--) {
       String aggTableLocation =
-          getTableLocation(schemaName, tableName, aggTableName, hdfsStoreLocation, i);
+          getTableLocation(databaseName, tableName, aggTableName, hdfsStoreLocation, i);
       String aggStorepath = aggTableLocation + File.separator + loadFolderName;
       try {
         if (FileFactory.isFileExist(aggStorepath, FileFactory.getFileType(aggStorepath))) {
@@ -247,23 +247,23 @@ public final class CarbonLoaderUtil {
     return null;
   }
 
-  public static String getTableLocation(String schemaName, String tableName, String aggTableName,
+  public static String getTableLocation(String databaseName, String tableName, String aggTableName,
       String hdfsStoreLocation, int currentRestructNumber) {
     String baseStorelocation =
-        hdfsStoreLocation + File.separator + schemaName + File.separator + tableName;
+        hdfsStoreLocation + File.separator + databaseName + File.separator + tableName;
     String aggTableLocation =
         baseStorelocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
             + currentRestructNumber + File.separator + aggTableName;
     return aggTableLocation;
   }
 
-  public static void deleteTable(int partitionCount, String schemaName, String tableName,
+  public static void deleteTable(int partitionCount, String databaseName, String tableName,
       String aggTableName, String hdfsStoreLocation, int currentRestructNumber) {
     String aggTableLoc = null;
     String partitionSchemaName = null;
     String partitionTableName = null;
     for (int i = 0; i < partitionCount; i++) {
-      partitionSchemaName = schemaName + '_' + i;
+      partitionSchemaName = databaseName + '_' + i;
       partitionTableName = tableName + '_' + i;
       for (int j = currentRestructNumber; j >= 0; j--) {
         aggTableLoc = getTableLocation(partitionSchemaName, partitionTableName, aggTableName,
@@ -284,13 +284,13 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  public static void deleteSlice(int partitionCount, String schemaName, String tableName,
+  public static void deleteSlice(int partitionCount, String databaseName, String tableName,
       String hdfsStoreLocation, int currentRestructNumber, String loadFolder) {
     String tableLoc = null;
     String partitionSchemaName = null;
     String partitionTableName = null;
     for (int i = 0; i < partitionCount; i++) {
-      partitionSchemaName = schemaName + '_' + i;
+      partitionSchemaName = databaseName + '_' + i;
       partitionTableName = tableName + '_' + i;
       tableLoc =
           getTableLocation(partitionSchemaName, partitionTableName, tableName, hdfsStoreLocation,
@@ -415,7 +415,7 @@ public final class CarbonLoaderUtil {
     return updatedSlices;
   }
 
-  public static void removeSliceFromMemory(String schemaName, String tableName, String loadName) {
+  public static void removeSliceFromMemory(String databaseName, String tableName, String loadName) {
     // TODO: Remove from memory
   }
 
@@ -678,7 +678,7 @@ public final class CarbonLoaderUtil {
    * in the metadata.
    */
   public static String getLoadFolderPath(CarbonLoadModel loadModel, String tableName,
-      String schemaName, int currentRestructNumber) {
+      String databaseName, int currentRestructNumber) {
 
     //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_005
 
@@ -686,8 +686,8 @@ public final class CarbonLoaderUtil {
         Boolean.valueOf(CarbonProperties.getInstance().getProperty("dataload.hdfs.copy", "true"));
 
     // CHECKSTYLE:ON
-    if (null == tableName && null == schemaName) {
-      schemaName = loadModel.getDatabaseName();
+    if (null == tableName && null == databaseName) {
+      databaseName = loadModel.getDatabaseName();
       tableName = loadModel.getTableName();
     }
     String factTable = loadModel.getTableName();
@@ -702,7 +702,7 @@ public final class CarbonLoaderUtil {
       if (!hdfsLocation.equals(localStore)) {
         String hdfsStoreLocation = hdfsLocation;
         hdfsStoreLocation =
-            hdfsStoreLocation + File.separator + schemaName + File.separator + tableName;
+            hdfsStoreLocation + File.separator + databaseName + File.separator + tableName;
 
         int rsCounter = currentRestructNumber;
         if (rsCounter == -1) {
@@ -803,7 +803,7 @@ public final class CarbonLoaderUtil {
   }
 
   public static void writeLoadMetadata(CarbonDataLoadSchema schema,
-      String schemaName, String tableName,
+      String databaseName, String tableName,
       List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(schema.getCarbonTable().getStorePath(),
@@ -881,7 +881,7 @@ public final class CarbonLoaderUtil {
     boolean copyStore =
         Boolean.valueOf(CarbonProperties.getInstance().getProperty("dataload.hdfs.copy", "true"));
 
-    String schemaName = loadModel.getDatabaseName();
+    String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
     String factTable = loadModel.getTableName();
     String aggTableName = loadModel.getAggTableName();
@@ -894,23 +894,23 @@ public final class CarbonLoaderUtil {
           .getProperty(CarbonCommonConstants.STORE_LOCATION,
               CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
       if (!loadModel.isAggLoadRequest()) {
-        copyMergeToHDFS(schemaName, tableName, factTable, hdfsLocation, localStore,
+        copyMergeToHDFS(databaseName, tableName, factTable, hdfsLocation, localStore,
             currentRestructNumber, mergedLoadName);
       }
       if (null != aggTableName) {
-        copyMergeToHDFS(schemaName, tableName, aggTableName, hdfsLocation, localStore,
+        copyMergeToHDFS(databaseName, tableName, aggTableName, hdfsLocation, localStore,
             currentRestructNumber, mergedLoadName);
       }
       try {
         CarbonUtil.deleteFoldersAndFiles(new File[] {
-            new File(localStore + File.separator + schemaName + File.separator + tableName) });
+            new File(localStore + File.separator + databaseName + File.separator + tableName) });
       } catch (CarbonUtilException e) {
         LOGGER.error("Error while CarbonUtil.deleteFoldersAndFiles ");
       }
     }
   }
 
-  public static void copyMergeToHDFS(String schemaName, String tableName, String factTable,
+  public static void copyMergeToHDFS(String databaseName, String tableName, String factTable,
       String hdfsLocation, String localStore, int currentRestructNumber, String mergedLoadName) {
     try {
       //If the hdfs store and the local store configured differently, then copy
@@ -920,7 +920,7 @@ public final class CarbonLoaderUtil {
          */
         String currentloadedStore = localStore;
         currentloadedStore =
-            currentloadedStore + File.separator + schemaName + File.separator + tableName;
+            currentloadedStore + File.separator + databaseName + File.separator + tableName;
 
         int rsCounter = currentRestructNumber;
 
@@ -951,7 +951,7 @@ public final class CarbonLoaderUtil {
         //Identify the Load_X folder in the HDFS store
         String hdfsStoreLocation = hdfsLocation;
         hdfsStoreLocation =
-            hdfsStoreLocation + File.separator + schemaName + File.separator + tableName;
+            hdfsStoreLocation + File.separator + databaseName + File.separator + tableName;
 
         rsCounter = currentRestructNumber;
         if (rsCounter == -1) {

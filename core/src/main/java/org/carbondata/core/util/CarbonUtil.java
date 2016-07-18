@@ -462,13 +462,13 @@ public final class CarbonUtil {
    *
    * @param partitionCount
    * @param storePath
-   * @param schemaName
+   * @param databaseName
    * @param tableName
    */
-  public static void renameTableForDeletion(int partitionCount, String storePath, String schemaName,
-      String tableName) {
+  public static void renameTableForDeletion(int partitionCount, String storePath,
+      String databaseName, String tableName) {
     String tableNameWithPartition = "";
-    String schemaNameWithPartition = "";
+    String databaseNameWithPartition = "";
     String fullPath = "";
     String newFilePath = "";
     String newFileName = "";
@@ -477,13 +477,13 @@ public final class CarbonUtil {
     FileFactory.FileType fileType = null;
     ExecutorService executorService = Executors.newFixedThreadPool(10);
     for (int i = 0; i < partitionCount; i++) {
-      schemaNameWithPartition = schemaName + '_' + i;
+      databaseNameWithPartition = databaseName + '_' + i;
       tableNameWithPartition = tableName + '_' + i;
       newFileName = tableNameWithPartition + '_' + time;
-      fullPath = storePath + File.separator + schemaNameWithPartition + File.separator
+      fullPath = storePath + File.separator + databaseNameWithPartition + File.separator
           + tableNameWithPartition;
       newFilePath =
-          storePath + File.separator + schemaNameWithPartition + File.separator + newFileName;
+          storePath + File.separator + databaseNameWithPartition + File.separator + newFileName;
       fileType = FileFactory.getFileType(fullPath);
       try {
         if (FileFactory.isFileExist(fullPath, fileType)) {
@@ -867,7 +867,7 @@ public final class CarbonUtil {
     }
   }
 
-  public static String getCarbonStorePath(String schemaName, String tableName) {
+  public static String getCarbonStorePath(String databaseName, String tableName) {
     CarbonProperties prop = CarbonProperties.getInstance();
     if (null == prop) {
       return null;

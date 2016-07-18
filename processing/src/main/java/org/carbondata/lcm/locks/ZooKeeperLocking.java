@@ -75,16 +75,16 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     this.lockTypeFolder = zooKeeperLocation;
     location = location.replace("\\", "/");
     String tempStr = location.substring(0, location.lastIndexOf('/'));
-    String schemaName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
+    String databaseName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
 
     String tableName = location.substring(location.lastIndexOf('/') + 1, location.length());
 
-    this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + schemaName
+    this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + databaseName
         + '.' + tableName;
 
     zk = ZookeeperInit.getInstance().getZookeeper();
 
-    this.lockTypeFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + schemaName
+    this.lockTypeFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + databaseName
         + '.' + tableName + CarbonCommonConstants.FILE_SEPARATOR
         + lockUsage.toString();
     try {

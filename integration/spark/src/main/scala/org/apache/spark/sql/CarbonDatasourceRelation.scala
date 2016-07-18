@@ -164,7 +164,7 @@ private[sql] case class CarbonDatasourceRelation(
  * Represents logical plan for one carbon table
  */
 case class CarbonRelation(
-    schemaName: String,
+    databaseName: String,
     tableName: String,
     metaData: CarbonMetaData,
     tableMeta: TableMeta,
@@ -210,7 +210,7 @@ case class CarbonRelation(
   }
 
   override def newInstance(): LogicalPlan = {
-    CarbonRelation(schemaName, tableName, metaData, tableMeta, alias)(sqlContext)
+    CarbonRelation(databaseName, tableName, metaData, tableMeta, alias)(sqlContext)
       .asInstanceOf[this.type]
   }
 
@@ -261,7 +261,7 @@ case class CarbonRelation(
   override def equals(other: Any): Boolean = {
     other match {
       case p: CarbonRelation =>
-        p.schemaName == schemaName && p.output == output && p.tableName == tableName
+        p.databaseName == databaseName && p.output == output && p.tableName == tableName
       case _ => false
     }
   }

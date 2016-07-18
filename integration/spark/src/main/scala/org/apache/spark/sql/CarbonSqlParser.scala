@@ -892,7 +892,7 @@ class CarbonSqlParser()
       (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
         case filePath ~ isOverwrite ~ table ~ partionDataOptions =>
           val (schema, tablename) = table match {
-            case schemaName ~ tableName => (schemaName, tableName.toLowerCase())
+            case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
           }
           if(partionDataOptions.isDefined) {
             validateOptions(partionDataOptions)
@@ -1161,8 +1161,8 @@ class CarbonSqlParser()
     SHOW ~> (LOADS|SEGMENTS) ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident ~
       (LIMIT ~> numericLit).? <~
       opt(";") ^^ {
-      case schemaName ~ tableName ~ limit =>
-        ShowLoadsCommand(schemaName, tableName.toLowerCase(), limit)
+      case databaseName ~ tableName ~ limit =>
+        ShowLoadsCommand(databaseName, tableName.toLowerCase(), limit)
     }
 
   protected lazy val segmentId: Parser[String] =
@@ -1176,7 +1176,8 @@ class CarbonSqlParser()
       (ident <~ ".").? ~ ident) <~
       opt(";") ^^ {
       case loadids ~ table => table match {
-        case schemaName ~ tableName => DeleteLoadsById(loadids, schemaName, tableName.toLowerCase())
+        case databaseName ~ tableName =>
+          DeleteLoadsById(loadids, databaseName, tableName.toLowerCase())
       }
     }
 
@@ -1193,7 +1194,7 @@ class CarbonSqlParser()
 
   protected lazy val cleanFiles: Parser[LogicalPlan] =
     CLEAN ~> FILES ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
-      case schemaName ~ tableName => CleanFiles(schemaName, tableName.toLowerCase())
+      case databaseName ~ tableName => CleanFiles(databaseName, tableName.toLowerCase())
     }
 
 }

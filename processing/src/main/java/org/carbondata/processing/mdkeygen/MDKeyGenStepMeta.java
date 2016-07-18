@@ -66,9 +66,9 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
   private String numberOfCores;
 
   /**
-   * schemaName
+   * databaseName
    */
-  private String schemaName;
+  private String databaseName;
 
   /**
    * aggregateLevels
@@ -152,7 +152,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     numberOfCores = "";
     aggregateLevels = "";
     tableName = "";
-    schemaName = "";
+    databaseName = "";
     columnGroupsString = "";
     noDictionaryDims = "";
     currentRestructNumber = -1;
@@ -171,7 +171,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     retval.append("    ").append(XMLHandler.addTagValue("AggregateLevels", aggregateLevels));
     retval.append("    ").append(XMLHandler.addTagValue("NumberOfCores", numberOfCores));
     retval.append("    ").append(XMLHandler.addTagValue("tableName", tableName));
-    retval.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
+    retval.append("    ").append(XMLHandler.addTagValue("databaseName", databaseName));
     retval.append("    ").append(XMLHandler.addTagValue("noDictionaryDims", noDictionaryDims));
     retval.append("    ").append(XMLHandler.addTagValue("measureCount", measureCount));
     retval.append("    ").append(XMLHandler.addTagValue("dimensionsStoreType", columnGroupsString));
@@ -199,7 +199,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       tableName = XMLHandler.getTagValue(stepnode, "TableName");
       aggregateLevels = XMLHandler.getTagValue(stepnode, "AggregateLevels");
       numberOfCores = XMLHandler.getTagValue(stepnode, "NumberOfCores");
-      schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
+      databaseName = XMLHandler.getTagValue(stepnode, "databaseName");
       tableName = XMLHandler.getTagValue(stepnode, "tableName");
       noDictionaryDims = XMLHandler.getTagValue(stepnode, "noDictionaryDims");
       measureCount = XMLHandler.getTagValue(stepnode, "measureCount");
@@ -227,7 +227,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       rep.saveStepAttribute(idTransformation, idStep, "TableName", tableName);
       rep.saveStepAttribute(idTransformation, idStep, "AggregateLevels", aggregateLevels);
       rep.saveStepAttribute(idTransformation, idStep, "NumberOfCores", numberOfCores);
-      rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName);
+      rep.saveStepAttribute(idTransformation, idStep, "databaseName", databaseName);
       rep.saveStepAttribute(idTransformation, idStep, "tableName", tableName);
       rep.saveStepAttribute(idTransformation, idStep, "noDictionaryDims", noDictionaryDims);
       rep.saveStepAttribute(idTransformation, idStep, "measureCount", measureCount);
@@ -259,7 +259,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       tableName = rep.getStepAttributeString(idStep, "TableName");
       aggregateLevels = rep.getStepAttributeString(idStep, "AggregateLevels");
       numberOfCores = rep.getStepAttributeString(idStep, "NumberOfCores");
-      schemaName = rep.getStepAttributeString(idStep, "schemaName");
+      databaseName = rep.getStepAttributeString(idStep, "databaseName");
       tableName = rep.getStepAttributeString(idStep, "tableName");
       noDictionaryDims = rep.getStepAttributeString(idStep, "noDictionaryDims");
       measureCount = rep.getStepAttributeString(idStep, "measureCount");
@@ -330,17 +330,17 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
   }
 
   /**
-   * @return the schemaName
+   * @return the databaseName
    */
   public String getSchemaName() {
-    return schemaName;
+    return databaseName;
   }
 
   /**
-   * @param schemaName the schemaName to set
+   * @param databaseName the databaseName to set
    */
-  public void setSchemaName(String schemaName) {
-    this.schemaName = schemaName;
+  public void setSchemaName(String databaseName) {
+    this.databaseName = databaseName;
   }
 
   /**

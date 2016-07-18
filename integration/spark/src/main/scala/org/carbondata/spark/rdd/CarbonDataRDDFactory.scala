@@ -63,7 +63,7 @@ object CarbonDataRDDFactory extends Logging {
 
   // scalastyle:off
   def partitionCarbonData(sc: SparkContext,
-      schemaName: String,
+      databaseName: String,
       tableName: String,
       sourcePath: String,
       targetFolder: String,
@@ -76,12 +76,12 @@ object CarbonDataRDDFactory extends Logging {
       partitioner: Partitioner): String = {
     // scalastyle:on
     val status = new
-        CarbonDataPartitionRDD(sc, new PartitionResultImpl(), schemaName, tableName, sourcePath,
+        CarbonDataPartitionRDD(sc, new PartitionResultImpl(), databaseName, tableName, sourcePath,
           targetFolder, requiredColumns, headers, delimiter, quoteChar, escapeChar, multiLine,
           partitioner
         ).collect
     CarbonDataProcessorUtil
-      .renameBadRecordsFromInProgressToNormal("partition/" + schemaName + '/' + tableName)
+      .renameBadRecordsFromInProgressToNormal("partition/" + databaseName + '/' + tableName)
     var loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
     status.foreach {
       case (key, value) =>
@@ -111,7 +111,7 @@ object CarbonDataRDDFactory extends Logging {
   def deleteLoadByDate(
       sqlContext: SQLContext,
       schema: CarbonDataLoadSchema,
-      schemaName: String,
+      databaseName: String,
       tableName: String,
       hdfsStoreLocation: String,
       dateField: String,
@@ -122,7 +122,7 @@ object CarbonDataRDDFactory extends Logging {
     val sc = sqlContext
     // Delete the records based on data
     val table = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
-      .getCarbonTable(schemaName + "_" + tableName)
+      .getCarbonTable(databaseName + "_" + tableName)
 
     var currentRestructNumber = CarbonUtil
       .checkAndReturnCurrentRestructFolderNumber(table.getMetaDataFilepath, "RS_", false)
@@ -135,7 +135,7 @@ object CarbonDataRDDFactory extends Logging {
     val resultMap = new CarbonDeleteLoadByDateRDD(
       sc.sparkContext,
       new DeletedLoadResultImpl(),
-      schemaName,
+      databaseName,
       table.getDatabaseName,
       dateField,
       dateFieldActualName,
@@ -195,7 +195,7 @@ object CarbonDataRDDFactory extends Logging {
           // write
           CarbonLoaderUtil.writeLoadMetadata(
             schema,
-            schemaName,
+            databaseName,
             table.getDatabaseName,
             updatedloadMetadataDetails.asJava
           )
@@ -209,7 +209,7 @@ object CarbonDataRDDFactory extends Logging {
       }
     } else {
       logError("Delete by Date request is failed")
-      logger.audit(s"The delete load by date is failed for $schemaName.$tableName")
+      logger.audit(s"The delete load by date is failed for $databaseName.$tableName")
       sys.error("Delete by Date request is failed, potential causes " +
                 "Empty store or Invalid column type, For more details please refer logs.")
     }

@@ -130,7 +130,7 @@ public class SortDataRows {
    * bufferSize
    */
   private int bufferSize;
-  private String schemaName;
+  private String databaseName;
   private String tableName;
 
   private char[] aggType;
@@ -196,9 +196,9 @@ public class SortDataRows {
   /**
    * This method will be used to initialize
    */
-  public void initialize(String schemaName, String tableName)
+  public void initialize(String databaseName, String tableName)
       throws CarbonSortKeyAndGroupByException {
-    this.schemaName = schemaName;
+    this.databaseName = databaseName;
     this.tableName = tableName;
 
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
@@ -272,7 +272,7 @@ public class SortDataRows {
   private void initAggType() {
     Arrays.fill(aggType, 'n');
     CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(schemaName + CarbonCommonConstants.UNDERSCORE + tableName);
+        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
     for (int i = 0; i < measureColCount; i++) {
       aggType[i] = DataTypeUtil.getAggType(measures.get(i).getDataType());
@@ -521,7 +521,7 @@ public class SortDataRows {
    */
   private void updateSortTempFileLocation() {
     String carbonDataDirectoryPath = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(schemaName, tableName, taskNo, partitionID,
+        .getLocalDataFolderLocation(databaseName, tableName, taskNo, partitionID,
             segmentId);
     this.tempFileLocation =
         carbonDataDirectoryPath + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;

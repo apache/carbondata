@@ -85,7 +85,7 @@ public class CSVFilePartitioner {
     return partialSuccess;
   }
 
-  @Deprecated public void splitFile(String schemaName, String tableName,
+  @Deprecated public void splitFile(String databaseName, String tableName,
       List<String> sourceFilePath, String targetFolder, List<String> nodes, int partitionCount,
       String[] partitionColumn, String[] requiredColumns, String delimiter, String quoteChar,
       String fileHeader, String escapeChar, boolean multiLine) throws Exception {
@@ -100,9 +100,9 @@ public class CSVFilePartitioner {
     HashMap<Partition, CSVWriter> outputStreamsMap =
         new HashMap<Partition, CSVWriter>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    String key = schemaName + '_' + tableName;
+    String key = databaseName + '_' + tableName;
     badRecordslogger = new BadRecordslogger(key, "Partition_" + System.currentTimeMillis() + ".log",
-        getBadLogStoreLocation("partition/" + schemaName + '/' + tableName));
+        getBadLogStoreLocation("partition/" + databaseName + '/' + tableName));
 
     CSVReader dataInputStream = null;
 

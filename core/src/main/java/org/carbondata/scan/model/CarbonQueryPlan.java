@@ -44,7 +44,7 @@ public class CarbonQueryPlan implements Serializable {
    * then datasight is the schame name.
    * Remains null if the user does not select schema name.
    */
-  private String schemaName;
+  private String databaseName;
 
   /**
    * Table name .
@@ -121,12 +121,12 @@ public class CarbonQueryPlan implements Serializable {
   /**
    * Constructor created with schema name and table name.
    *
-   * @param schemaName
+   * @param databaseName
    * @param tableName
    */
-  public CarbonQueryPlan(String schemaName, String tableName) {
+  public CarbonQueryPlan(String databaseName, String tableName) {
     this.tableName = tableName;
-    this.schemaName = schemaName;
+    this.databaseName = databaseName;
   }
 
   /**
@@ -160,10 +160,10 @@ public class CarbonQueryPlan implements Serializable {
   }
 
   /**
-   * @return the schemaName
+   * @return the databaseName
    */
   public String getSchemaName() {
-    return schemaName;
+    return databaseName;
   }
 
   /**

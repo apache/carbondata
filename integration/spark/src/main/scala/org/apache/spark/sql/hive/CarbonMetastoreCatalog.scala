@@ -115,9 +115,9 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
   val metadata = loadMetadata(storePath)
 
 
-  def getTableCreationTime(schemaName: String, tableName: String): Long = {
+  def getTableCreationTime(databaseName: String, tableName: String): Long = {
     val tableMeta = metadata.tablesMeta.filter(
-      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(schemaName) &&
+      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(databaseName) &&
            c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))
     val tableCreationTime = tableMeta.head.carbonTable.getTableLastUpdatedTime
     tableCreationTime
@@ -448,11 +448,11 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
    */
   def getTables(databaseName: Option[String])(sqlContext: SQLContext): Seq[(String, Boolean)] = {
 
-    val schemaName = databaseName
-      .getOrElse(sqlContext.asInstanceOf[HiveContext].catalog.client.currentDatabase)
+    val dbName =
+      databaseName.getOrElse(sqlContext.asInstanceOf[HiveContext].catalog.client.currentDatabase)
     checkSchemasModifiedTimeAndReloadTables()
     metadata.tablesMeta.filter { c =>
-      c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(schemaName)
+      c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(dbName)
     }.map { c => (c.carbonTableIdentifier.getTableName, false) }
   }
 
@@ -516,7 +516,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
 
   }
 
-  private def getTimestampFileAndType(schemaName: String, tableName: String) = {
+  private def getTimestampFileAndType(databaseName: String, tableName: String) = {
 
     val timestampFile = storePath + "/" + CarbonCommonConstants.SCHEMAS_MODIFIED_TIME_FILE
 
@@ -524,23 +524,23 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     (timestampFile, timestampFileType)
   }
 
-  def updateSchemasUpdatedTime(schemaName: String, tableName: String) {
-    val (timestampFile, timestampFileType) = getTimestampFileAndType(schemaName, tableName)
+  def updateSchemasUpdatedTime(databaseName: String, tableName: String) {
+    val (timestampFile, timestampFileType) = getTimestampFileAndType(databaseName, tableName)
 
     if (!FileFactory.isFileExist(timestampFile, timestampFileType)) {
-      LOGGER.audit(s"Creating timestamp file for $schemaName.$tableName")
+      LOGGER.audit(s"Creating timestamp file for $databaseName.$tableName")
       FileFactory.createNewFile(timestampFile, timestampFileType)
     }
 
-    touchSchemasTimestampFile(schemaName, tableName)
+    touchSchemasTimestampFile(databaseName, tableName)
 
     tableModifiedTimeStore.put("default",
       FileFactory.getCarbonFile(timestampFile, timestampFileType).getLastModifiedTime)
 
   }
 
-  def touchSchemasTimestampFile(schemaName: String, tableName: String) {
-    val (timestampFile, timestampFileType) = getTimestampFileAndType(schemaName, tableName)
+  def touchSchemasTimestampFile(databaseName: String, tableName: String) {
+    val (timestampFile, timestampFileType) = getTimestampFileAndType(databaseName, tableName)
     FileFactory.getCarbonFile(timestampFile, timestampFileType)
       .setLastModifiedTime(System.currentTimeMillis())
   }
@@ -559,9 +559,9 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     metadata.tablesMeta = loadMetadata(storePath).tablesMeta
   }
 
-  def getSchemaLastUpdatedTime(schemaName: String, tableName: String): Long = {
+  def getSchemaLastUpdatedTime(databaseName: String, tableName: String): Long = {
     var schemaLastUpdatedTime = System.currentTimeMillis
-    val (timestampFile, timestampFileType) = getTimestampFileAndType(schemaName, tableName)
+    val (timestampFile, timestampFileType) = getTimestampFileAndType(databaseName, tableName)
     if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
       schemaLastUpdatedTime = FileFactory.getCarbonFile(timestampFile, timestampFileType)
         .getLastModifiedTime
@@ -575,7 +575,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     val tableMetadataFile = tableFolder.getAbsolutePath + "/metadata"
 
     var schema: String = ""
-    var schemaName: String = ""
+    var databaseName: String = ""
     var tableName: String = ""
     var dataPath: String = ""
     var partitioner: Partitioner = null
@@ -593,10 +593,10 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
       }
 
       while (len > 0) {
-        val schemaNameBytes = new Array[Byte](len)
-        in.readFully(schemaNameBytes)
+        val databaseNameBytes = new Array[Byte](len)
+        in.readFully(databaseNameBytes)
 
-        schemaName = new String(schemaNameBytes, "UTF8")
+        databaseName = new String(databaseNameBytes, "UTF8")
         val tableNameLen = in.readInt()
         val tableNameBytes = new Array[Byte](tableNameLen)
         in.readFully(tableNameBytes)
@@ -635,7 +635,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
       in.close()
     }
 
-    (schemaName, tableName, dataPath, schema, partitioner, tableCreationTime)
+    (databaseName, tableName, dataPath, schema, partitioner, tableCreationTime)
   }
 
 }

@@ -22,9 +22,9 @@ package org.carbondata.processing.api.dataloader;
 public class SchemaInfo {
 
   /**
-   * schemaName
+   * databaseName
    */
-  private String schemaName;
+  private String databaseName;
 
   /**
    * srcDriverName
@@ -155,17 +155,17 @@ public class SchemaInfo {
   }
 
   /**
-   * @return the schemaName
+   * @return the databaseName
    */
   public String getSchemaName() {
-    return schemaName;
+    return databaseName;
   }
 
   /**
-   * @param schemaName the schemaName to set
+   * @param databaseName the databaseName to set
    */
-  public void setSchemaName(String schemaName) {
-    this.schemaName = schemaName;
+  public void setSchemaName(String databaseName) {
+    this.databaseName = databaseName;
   }
 
 }

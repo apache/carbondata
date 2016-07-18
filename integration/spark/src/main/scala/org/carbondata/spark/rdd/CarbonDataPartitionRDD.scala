@@ -49,7 +49,7 @@ class CarbonSparkRawDataPartition(rddId: Int, val idx: Int, @transient val table
 class CarbonDataPartitionRDD[K, V](
     sc: SparkContext,
     results: PartitionResult[K, V],
-    schemaName: String,
+    databaseName: String,
     tableName: String,
     sourcePath: String,
     targetFolder: String,
@@ -80,7 +80,7 @@ class CarbonDataPartitionRDD[K, V](
       logInfo("Input split: " + split.serializableHadoopSplit.value)
 
       val csvPart = new CSVFilePartitioner(partitioner.partitionClass, sourcePath)
-      csvPart.splitFile(schemaName, tableName,
+      csvPart.splitFile(databaseName, tableName,
         split.serializableHadoopSplit.value.getPartition.getFilesPath, targetFolder,
         partitioner.nodeList.toList.asJava, partitioner.partitionCount, partitioner.partitionColumn,
         requiredColumns, delimiter, quoteChar, headers, escapeChar, multiLine)

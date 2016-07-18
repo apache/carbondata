@@ -64,7 +64,7 @@ public class LocalFileLock extends AbstractCarbonLock {
 
   private String tableName;
 
-  private String schemaName;
+  private String databaseName;
 
   /**
    * LOGGER for  logging the messages.
@@ -86,9 +86,9 @@ public class LocalFileLock extends AbstractCarbonLock {
     String tempStr = location.substring(0, location.lastIndexOf('/'));
     tableName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
     tempStr = tempStr.substring(0, tempStr.lastIndexOf('/'));
-    schemaName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
+    databaseName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
     this.location =
-        tmpPath + File.separator + schemaName + File.separator + tableName + File.separator
+        tmpPath + File.separator + databaseName + File.separator + tableName + File.separator
             + this.lockUsage;
     initRetry();
   }
@@ -100,7 +100,7 @@ public class LocalFileLock extends AbstractCarbonLock {
    */
   @Override public boolean lock() {
     try {
-      String schemaFolderPath = tmpPath + File.separator + schemaName;
+      String schemaFolderPath = tmpPath + File.separator + databaseName;
       String tableFolderPath = schemaFolderPath + File.separator + tableName;
       // create dir with schema name in tmp location.
       if (!FileFactory.isFileExist(schemaFolderPath, FileFactory.getFileType(tmpPath))) {

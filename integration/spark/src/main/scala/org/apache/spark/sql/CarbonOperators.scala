@@ -50,7 +50,7 @@ case class CarbonScan(
   val unprocessedExprs = new ArrayBuffer[Expression]()
 
   val buildCarbonPlan: CarbonQueryPlan = {
-    val plan: CarbonQueryPlan = new CarbonQueryPlan(relationRaw.schemaName, relationRaw.tableName)
+    val plan: CarbonQueryPlan = new CarbonQueryPlan(relationRaw.databaseName, relationRaw.tableName)
 
     val dimensions = carbonTable.getDimensionByTableName(carbonTable.getFactTableName)
     val measures = carbonTable.getMeasureByTableName(carbonTable.getFactTableName)
@@ -169,9 +169,9 @@ case class CarbonScan(
     buildCarbonPlan.setQueryId(ocRaw.getConf("queryId", System.nanoTime() + ""))
 
     val tableCreationTime = carbonCatalog
-      .getTableCreationTime(relationRaw.schemaName, relationRaw.tableName)
+      .getTableCreationTime(relationRaw.databaseName, relationRaw.tableName)
     val schemaLastUpdatedTime = carbonCatalog
-      .getSchemaLastUpdatedTime(relationRaw.schemaName, relationRaw.tableName)
+      .getSchemaLastUpdatedTime(relationRaw.databaseName, relationRaw.tableName)
     val big = new CarbonScanRDD(
       ocRaw.sparkContext,
       model,

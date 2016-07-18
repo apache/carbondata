@@ -73,9 +73,9 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
   private String heirAndKeySize;
 
   /**
-   * schemaName
+   * databaseName
    */
-  private String schemaName;
+  private String databaseName;
 
   /**
    * tableName
@@ -134,7 +134,7 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
     measureCount = "";
     heirAndKeySize = "";
     tableName = "";
-    schemaName = "";
+    databaseName = "";
     groupByEnabled = "";
     aggregatorClassString = "";
     aggregatorString = "";
@@ -159,7 +159,7 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
     retval.append("    ").append(XMLHandler.addTagValue("Measurecount", measureCount));
     retval.append("    ").append(XMLHandler.addTagValue("HeirAndKeySize", heirAndKeySize));
     retval.append("    ").append(XMLHandler.addTagValue("tableName", tableName));
-    retval.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
+    retval.append("    ").append(XMLHandler.addTagValue("databaseName", databaseName));
     retval.append("    ").append(XMLHandler.addTagValue("isGroupByEnabled", groupByEnabled));
     retval.append("    ")
         .append(XMLHandler.addTagValue("aggregatorClassString", aggregatorClassString));
@@ -186,7 +186,7 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
   @Override public void loadXML(Node stepnode, List<DatabaseMeta> databases,
       Map<String, Counter> counters) throws KettleXMLException {
     try {
-      schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
+      databaseName = XMLHandler.getTagValue(stepnode, "databaseName");
       tabelName = XMLHandler.getTagValue(stepnode, "TableName");
       mdkeySize = XMLHandler.getTagValue(stepnode, "MDKeySize");
       measureCount = XMLHandler.getTagValue(stepnode, "Measurecount");
@@ -224,7 +224,7 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
       rep.saveStepAttribute(idTransformation, idStep, "HeirAndKeySize",
           heirAndKeySize); //$NON-NLS-1$
       rep.saveStepAttribute(idTransformation, idStep, "tableName", tableName); //$NON-NLS-1$
-      rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName); //$NON-NLS-1$
+      rep.saveStepAttribute(idTransformation, idStep, "databaseName", databaseName); //$NON-NLS-1$
       rep.saveStepAttribute(idTransformation, idStep, "isGroupByEnabled", groupByEnabled);
       rep.saveStepAttribute(idTransformation, idStep, "aggregatorClassString",
           aggregatorClassString);
@@ -271,7 +271,7 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
       mdkeySize = rep.getStepAttributeString(idStep, "MDKeySize");
       measureCount = rep.getStepAttributeString(idStep, "Measurecount");
       heirAndKeySize = rep.getStepAttributeString(idStep, "HeirAndKeySize");
-      schemaName = rep.getStepAttributeString(idStep, "schemaName");
+      databaseName = rep.getStepAttributeString(idStep, "databaseName");
       tableName = rep.getStepAttributeString(idStep, "tableName");
       groupByEnabled = rep.getStepAttributeString(idStep, "isGroupByEnabled");
       aggregatorClassString = rep.getStepAttributeString(idStep, "aggregatorClassString");
@@ -421,17 +421,17 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
   }
 
   /**
-   * @return the schemaName
+   * @return the databaseName
    */
   public String getSchemaName() {
-    return schemaName;
+    return databaseName;
   }
 
   /**
-   * @param schemaName the schemaName to set
+   * @param databaseName the databaseName to set
    */
-  public void setSchemaName(String schemaName) {
-    this.schemaName = schemaName;
+  public void setSchemaName(String databaseName) {
+    this.databaseName = databaseName;
   }
 
   /**
