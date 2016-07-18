@@ -131,13 +131,13 @@ public class CarbonTable implements Serializable {
               new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1, complexTypeOrdinal++);
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           dimensions.add(complexDimension);
+          int lastDimensionOrdianl=dimensionOrdinal;
           dimensionOrdinal =
               readAllComplexTypeChildrens(dimensionOrdinal, columnSchema.getNumberOfChild(),
                   listOfColumns, complexDimension, complexTypeOrdinal);
           i = dimensionOrdinal - 1;
-          complexTypeOrdinal = complexDimension.getListOfChildDimensions()
-              .get(complexDimension.getListOfChildDimensions().size() - 1).getComplexTypeOrdinal();
-          complexTypeOrdinal++;
+          int incrementInOrdinal=dimensionOrdinal-lastDimensionOrdianl;
+          complexTypeOrdinal+=incrementInOrdinal;
         } else {
           if (!columnSchema.getEncodingList().contains(Encoding.DICTIONARY)) {
             dimensions.add(new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1, -1));
