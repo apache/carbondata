@@ -214,6 +214,7 @@ class CarbonBlockDistinctValuesCombineRDD(
     } catch {
       case ex: Exception =>
         LOGGER.error(ex)
+        throw ex
     }
     distinctValuesList.map { iter =>
       val valueList = iter._2.toArray
@@ -333,8 +334,8 @@ class CarbonGlobalDictionaryGenerateRDD(
         }
       } catch {
         case ex: Exception =>
-          status = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
           LOGGER.error(ex)
+          throw ex
       } finally {
         if (!dictionaryForDistinctValueLookUpCleared) {
           org.carbondata.core.util.CarbonUtil
@@ -435,6 +436,7 @@ class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
       case ex: Exception =>
         logError(s"Error in reading pre-defined " +
           s"dictionary file:${ex.getMessage}")
+        throw ex
     } finally {
       if (csvReader != null) {
         try {
