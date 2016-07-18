@@ -158,7 +158,7 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
     long dictOffset = CarbonUtil.getFileSize(dictionaryPath);
     this.sortIndexFilePath =
         carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId(), dictOffset);
-    cleanUpOldSortIndex(carbonTablePath);
+    cleanUpOldSortIndex(carbonTablePath, dictionaryPath);
   }
 
   /**
@@ -166,11 +166,11 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
    *
    * @param carbonTablePath
    */
-  protected void cleanUpOldSortIndex(CarbonTablePath carbonTablePath) {
-    CarbonFile sortIndexFile =
-        FileFactory.getCarbonFile(sortIndexFilePath, FileFactory.getFileType(sortIndexFilePath));
+  protected void cleanUpOldSortIndex(CarbonTablePath carbonTablePath, String dictPath) {
+    CarbonFile dictFile =
+        FileFactory.getCarbonFile(dictPath, FileFactory.getFileType(dictPath));
     CarbonFile[] files =
-        carbonTablePath.getSortIndexFiles(sortIndexFile.getParentFile(),
+        carbonTablePath.getSortIndexFiles(dictFile.getParentFile(),
             columnIdentifier.getColumnId());
     int maxTime;
     try {
