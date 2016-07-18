@@ -674,12 +674,13 @@ object GlobalDictionaryUtil extends Logging {
         logInfo("Generate global dictionary from source data files!")
         // load data by using dataSource com.databricks.spark.csv
         var df = loadDataFrame(sqlContext, carbonLoadModel)
-        val headers = if (StringUtils.isEmpty(carbonLoadModel.getCsvHeader)) {
+        var headers = if (StringUtils.isEmpty(carbonLoadModel.getCsvHeader)) {
           df.columns
         }
         else {
           carbonLoadModel.getCsvHeader.split("" + CSVWriter.DEFAULT_SEPARATOR)
         }
+        headers = headers.map(headerName => headerName.trim)
         val colDictFilePath = carbonLoadModel.getColDictFilePath
         if (colDictFilePath != null) {
           // generate predefined dictionary

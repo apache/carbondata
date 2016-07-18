@@ -109,9 +109,9 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     //load data into test cube and hive table and validate query result
     sql(
       "LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' INTO table testtable1 " +
-        "options('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='EMPno,empname,designation,doj," +
-        "workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate," +
-        "projectenddate,attendance,utilization,SALARY')"
+        "options('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='EMPno, empname,designation,doj," +
+        "workgroupcategory,workgroupcategoryname,   deptno,deptname,projectcode,projectjoindate," +
+        "projectenddate,  attendance,   utilization,SALARY')"
     )
     sql(
       "LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' overwrite INTO table " +
