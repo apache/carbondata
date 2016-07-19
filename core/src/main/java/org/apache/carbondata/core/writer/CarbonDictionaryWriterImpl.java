@@ -38,7 +38,6 @@ import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReader;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
 import org.apache.carbondata.core.service.PathService;
-import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.ColumnDictionaryChunk;
 import org.apache.carbondata.format.ColumnDictionaryChunkMeta;
@@ -263,16 +262,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    * initialize the value of dictionary chunk that can be kept in memory at a time
    */
   private void initDictionaryChunkSize() {
-    try {
-      dictionary_one_chunk_size = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE,
-              CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE_DEFAULT));
-    } catch (NumberFormatException e) {
-      dictionary_one_chunk_size =
-          Integer.parseInt(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE_DEFAULT);
-      LOGGER.error("Dictionary chunk size not configured properly. Taking default size "
-              + dictionary_one_chunk_size);
-    }
+    dictionary_one_chunk_size = CarbonUtil.getDictionaryChunkSize();
   }
 
   /**

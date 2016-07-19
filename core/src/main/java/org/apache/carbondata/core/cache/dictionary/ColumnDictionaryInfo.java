@@ -30,6 +30,7 @@ import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * class that implements methods specific for dictionary data look up
@@ -112,10 +113,50 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
   /**
    * This method will add a new dictionary chunk to existing list of dictionary chunks
    *
-   * @param dictionaryChunk
+   * @param newDictionaryChunk
    */
-  @Override public void addDictionaryChunk(List<byte[]> dictionaryChunk) {
-    dictionaryChunks.add(dictionaryChunk);
+  @Override public void addDictionaryChunk(List<byte[]> newDictionaryChunk) {
+    if (dictionaryChunks.size() > 0) {
+      // Ensure that each time a new dictionary chunk is getting added to the
+      // dictionary chunks list, equal distribution of dictionary values should
+      // be there in the sublists of dictionary chunk list
+      List<byte[]> lastDictionaryChunk = dictionaryChunks.get(dictionaryChunks.size() - 1);
+      int dictionaryOneChunkSize = CarbonUtil.getDictionaryChunkSize();
+      int differenceInLastDictionaryAndOneChunkSize =
+          dictionaryOneChunkSize - lastDictionaryChunk.size();
+      if (differenceInLastDictionaryAndOneChunkSize > 0) {
+        // if difference is greater than new dictionary size then copy a part of list
+        // else copy the complete new dictionary chunk list in the last dictionary chunk list
+        if (differenceInLastDictionaryAndOneChunkSize >= newDictionaryChunk.size()) {
+          lastDictionaryChunk.addAll(newDictionaryChunk);
+        } else {
+          List<byte[]> subListOfNewDictionaryChunk =
+              newDictionaryChunk.subList(0, differenceInLastDictionaryAndOneChunkSize);
+          lastDictionaryChunk.addAll(subListOfNewDictionaryChunk);
+          List<byte[]> remainingNewDictionaryChunk = newDictionaryChunk
+              .subList(differenceInLastDictionaryAndOneChunkSize, newDictionaryChunk.size());
+          dictionaryChunks.add(remainingNewDictionaryChunk);
+        }
+      } else {
+        dictionaryChunks.add(newDictionaryChunk);
+      }
+    } else {
+      dictionaryChunks.add(newDictionaryChunk);
+    }
+  }
+
+  /**
+   * This method will return the size of of last dictionary chunk so that only that many
+   * values are read from the dictionary reader
+   *
+   * @return size of last dictionary chunk
+   */
+  @Override public int getSizeOfLastDictionaryChunk() {
+    int lastDictionaryChunkSize = 0;
+    if (dictionaryChunks.size() > 0) {
+      lastDictionaryChunkSize = dictionaryChunks.get(dictionaryChunks.size() - 1).size();
+    }
+    return lastDictionaryChunkSize;
   }
 
   /**

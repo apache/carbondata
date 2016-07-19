@@ -21,6 +21,7 @@ package org.apache.carbondata.core.reader;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -63,8 +64,8 @@ public interface CarbonDictionaryReader extends Closeable {
    *
    * @param startOffset start offset of dictionary file
    * @param endOffset   end offset of dictionary file
-   * @return list of byte array. Each byte array is unique dictionary value
+   * @return iterator over byte array. Each byte array is unique dictionary value
    * @throws IOException if an I/O error occurs
    */
-  List<byte[]> read(long startOffset, long endOffset) throws IOException;
+  Iterator<byte[]> read(long startOffset, long endOffset) throws IOException;
 }
