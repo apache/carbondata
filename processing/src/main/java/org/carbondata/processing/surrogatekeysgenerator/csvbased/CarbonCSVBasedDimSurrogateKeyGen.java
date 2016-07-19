@@ -357,6 +357,8 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
               columnsInfo.getColumnSchemaDetailsWrapper().get(eachPrimitive.getColumnId());
           if (columnSchemaDetails.isDirectDictionary()) {
             isDirectDictionary.add(true);
+          } else {
+            isDirectDictionary.add(false);
           }
         }
       } else {
