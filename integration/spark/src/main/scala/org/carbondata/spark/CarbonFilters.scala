@@ -34,12 +34,12 @@ import org.carbondata.scan.expression.logical.{AndExpression, OrExpression}
 import org.carbondata.spark.util.CarbonScalaUtil
 
 /**
- * All filter coversions are done here.
+ * All filter conversions are done here.
  */
 object CarbonFilters {
 
   /**
-   * Converts data sources filters to Parquet filter predicates.
+   * Converts data sources filters to carbon filter predicates.
    */
   def createCarbonFilter(schema: StructType,
       predicate: sources.Filter): Option[CarbonExpression] = {
@@ -60,6 +60,19 @@ object CarbonFilters {
             getCarbonLiteralExpression(name, value)))
         case sources.Not(sources.EqualNullSafe(name, value)) =>
           Some(new NotEqualsExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, value)))
+
+        case sources.GreaterThan(name, value) =>
+          Some(new GreaterThanExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, value)))
+        case sources.LessThan(name, value) =>
+          Some(new LessThanExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, value)))
+        case sources.GreaterThanOrEqual(name, value) =>
+          Some(new GreaterThanEqualToExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, value)))
+        case sources.LessThanOrEqual(name, value) =>
+          Some(new LessThanEqualToExpression(getCarbonExpression(name),
             getCarbonLiteralExpression(name, value)))
 
         case sources.In(name, values) =>
