@@ -1,34 +1,34 @@
 ### Building CarbonData
 Prerequisites for building CarbonData:
 * Unix-like environment (Linux, Mac OS X)
-* git
-* Apache Maven (we recommend version 3.3 or later)
-* Java 7 or 8
+* [Git](https://git-scm.com/book/en/v2/Getting-Started-Installing-Git)
+* [Apache Maven (we recommend version 3.3 or later)](https://maven.apache.org/download.cgi)
+* [Java 7 or 8](http://www.oracle.com/technetwork/java/javase/downloads/index.html)
 * Scala 2.10
-* Apache Thrift 0.9.3
+* [Apache Thrift 0.9.3](https://thrift.apache.org/download)
 
 I. Clone CarbonData
 ```
 $ git clone https://github.com/apache/incubator-carbondata.git
 ```
 II. Build the project 
-* Build without test:
+* Build without test.By default carbon takes Spark 1.5.2 to build the project
 ```
 $ mvn -DskipTests clean package 
 ```
-* Build along with test:
+* Build with different spark versions
+```
+$ mvn -DskipTests -Pspark-1.5 -Dspark.version=1.5.0 clean package
+$ mvn -DskipTests -Pspark-1.5 -Dspark.version=1.5.1 clean package
+$ mvn -DskipTests -Pspark-1.5 -Dspark.version=1.5.2 clean package
+ 
+$ mvn -DskipTests -Pspark-1.6 -Dspark.version=1.6.0 clean package
+$ mvn -DskipTests -Pspark-1.6 -Dspark.version=1.6.1 clean package
+$ mvn -DskipTests -Pspark-1.6 -Dspark.version=1.6.2 clean package
+```
+* Build with test
 ```
 $ mvn clean package
-```
-* Build with different spark versions (Default it takes Spark 1.5.2 version)
-```
-$ mvn -Pspark-1.5.2 clean package
-            or
-$ mvn -Pspark-1.6.1 clean install
-```
-* Build along with integration test cases: (Note : It takes more time to build)
-```
-$ mvn -Pintegration-test clean package
 ```
 
 ### Developing CarbonData
@@ -48,19 +48,3 @@ You can also make those setting to be the default by setting to the "Defaults ->
 #### Eclipse
 * Download the Scala IDE (preferred) or install the scala plugin to Eclipse.
 * Import the CarbonData Maven projects ("File" -> "Import" -> "Maven" -> "Existing Maven Projects" -> locate the CarbonData source directory).
-
-### Getting Started
-Read the [quick start](https://github.com/HuaweiBigData/carbondata/wiki/Quick-Start).
-
-### Fork and Contribute
-This is an open source project for everyone, and we are always open to people who want to use this system or contribute to it. 
-This guide document introduce [how to contribute to CarbonData](https://github.com/HuaweiBigData/carbondata/wiki/How-to-contribute-and-Code-Style).
-
-### Contact us
-To get involved in CarbonData:
-
-* [Subscribe](mailto:dev-subscribe@carbondata.incubator.apache.org) then [mail](mailto:dev@carbondata.incubator.apache.org) to us
-* Report issues on [Jira](https://issues.apache.org/jira/browse/CARBONDATA).
-
-### About
-CarbonData project original contributed from the [Huawei](http://www.huawei.com)

@@ -6,8 +6,7 @@
 ***
 
 # LOAD DATA
-### Function
- This command loads the user data in raw format to the Carbon specific data format store, this way Carbon provides good performance while querying the data.
+ This command loads the user data in raw format to the Carbon specific data format store, this way Carbon provides good performance while querying the data.Please visit [Data Management](Carbondata-Management.md) for more details on LOAD
 
 ### Syntax
 
@@ -16,29 +15,14 @@
               OPTIONS(property_name=property_value, ...)
   ```
 
-**Example:**
-
-  ```ruby
-  LOAD DATA local inpath '/opt/rawdata/data.csv' INTO table carbontable
-                         options('DELIMITER'=',', 'QUOTECHAR'='"',
-                                 'FILEHEADER'='empno,empname,
-                                  designation,doj,workgroupcategory,
-                                  workgroupcategoryname,deptno,deptname,projectcode,
-                                  projectjoindate,projectenddate,attendance,utilization,salary',
-                                 'MULTILINE'='true', 'ESCAPECHAR'='\', 
-                                 'COMPLEX_DELIMITER_LEVEL_1'='$', 
-                                 'COMPLEX_DELIMITER_LEVEL_2'=':',
-                                 'LOCAL_DICTIONARY_PATH'='/opt/localdictionary/',
-                                 'DICTIONARY_FILE_EXTENSION'='.dictionary') 
-  ```
-
 ### Parameter Description
 
-| Parameter | Description |
-| ------------- | -----|
-| folder_path | Path of raw csv data folder or file. |
-| db_name | Database name, if it is not specified then it uses current database. |
-| table_name | The name of the table in provided database.|
+| Parameter | Description | Optional |
+| ------------- | -----| -------- |
+| folder_path | Path of raw csv data folder or file. | NO |
+| db_name | Database name, if it is not specified then it uses current database. | YES |
+| table_name | The name of the table in provided database.| NO |
+| OPTIONS | Extra options provided to Load | YES |
  
 
 ### Usage Guideline
@@ -89,41 +73,38 @@ Following are the options that can be used in load data:
     OPTIONS('DICTIONARY_FILE_EXTENSION'='.dictionary') 
     ```
 
-### Scenarios
-
-#### Load from CSV files
-
-To load carbon table from CSV file, use the following syntax.
+**Example:**
 
   ```ruby
-  LOAD DATA [LOCAL] INPATH 'folder path' INTO TABLE tablename OPTIONS(property_name=property_value, ...)
-  ```
-
- **Example:**
-  
-  ```ruby
-  LOAD DATA local inpath './src/test/resources/data.csv' INTO table carbontable 
-                      options('DELIMITER'=',', 'QUOTECHAR'='"', 
-                              'FILEHEADER'='empno,empname,designation,doj,
-                               workgroupcategory,workgroupcategoryname,
-                               deptno,deptname,projectcode,projectjoindate,
-                               projectenddate,attendance,utilization,salary', 
-                              'MULTILINE'='true', 'ESCAPECHAR'='\', 
-                              'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':', 
-                              'LOCAL_DICTIONARY_PATH'='/opt/localdictionary/','DICTIONARY_FILE_EXTENSION'='.dictionary')
+  LOAD DATA local inpath '/opt/rawdata/data.csv' INTO table carbontable
+                         options('DELIMITER'=',', 'QUOTECHAR'='"',
+                                 'FILEHEADER'='empno,empname,
+                                  designation,doj,workgroupcategory,
+                                  workgroupcategoryname,deptno,deptname,projectcode,
+                                  projectjoindate,projectenddate,attendance,utilization,salary',
+                                 'MULTILINE'='true', 'ESCAPECHAR'='\', 
+                                 'COMPLEX_DELIMITER_LEVEL_1'='$', 
+                                 'COMPLEX_DELIMITER_LEVEL_2'=':',
+                                 'LOCAL_DICTIONARY_PATH'='/opt/localdictionary/',
+                                 'DICTIONARY_FILE_EXTENSION'='.dictionary') 
   ```
 
 ***
 
 # SHOW SEGMENTS
-### Function
 This command is to show the segments of carbon table to the user.
-
-### Syntax
 
   ```ruby
   SHOW SEGMENTS FOR TABLE [db_name.]table_name LIMIT number_of_segments;
   ```
+
+### Parameter Description
+
+| Parameter | Description | Optional |
+| ------------- | -----| --------- |
+| db_name | Database name, if it is not specified then it uses current database. | YES |
+| table_name | The name of the table in provided database.| NO |
+| number_of_loads | limit the output to this number. | YES |
 
 **Example:**
 
@@ -131,32 +112,23 @@ This command is to show the segments of carbon table to the user.
   SHOW SEGMENTS FOR TABLE CarbonDatabase.CarbonTable LIMIT 2;
   ```
 
-### Parameter Description
-
-| Parameter | Description |
-| ------------- | -----|
-| db_name | Database name, if it is not specified then it uses current database. |
-| table_name | The name of the table in provided database.|
-| number_of_loads | limit the output to this number. |
-
-### Usage Guideline
-NA
-
-### Scenarios
-NA
-
 ***
 
 # DELETE SEGMENT BY ID
-### Function
 
 This command is to delete segment by using the segment ID.
-
-### Syntax
 
   ```ruby
   DELETE SEGMENT segment_id1,segment_id2 FROM TABLE [db_name.]table_name;
   ```
+
+### Parameter Description
+
+| Parameter | Description | Optional |
+| ------------- | -----| --------- |
+| segment_id | Segment Id of the load. | NO |
+| db_name | Database name, if it is not specified then it uses current database. | YES |
+| table_name | The name of the table in provided database.| NO |
 
 **Example:**
 
@@ -166,51 +138,27 @@ This command is to delete segment by using the segment ID.
   Note: Here 0.1 is compacted segment sequence id.  
   ```
 
-### Parameter Description
-
-| Parameter | Description |
-| ------------- | -----|
-| segment_id | Segment Id of the load. |
-| db_name | Database name, if it is not specified then it uses current database. |
-| table_name | The name of the table in provided database.|
-
-### Usage Guideline
-NA
-
-### Scenarios
-NA
-
 ***
 
 # DELETE SEGMENT BY DATE
-### Function
-
 This command will allow to deletes the Carbon segment(s) from the store based on the date provided by the user in the DML command. The segment created before the particular date will be removed from the specific stores.
-
-### Syntax
 
   ```ruby
   DELETE SEGMENTS FROM TABLE [db_name.]table_name WHERE STARTTIME BEFORE [DATE_VALUE];
   ```
+
+### Parameter Description
+
+| Parameter | Description | Optional |
+| ------------- | -----| ------ |
+| DATE_VALUE | Valid segement load start time value. All the segments before this specified date will be deleted. | NO |
+| db_name | Database name, if it is not specified then it uses current database. | YES |
+| table_name | The name of the table in provided database.| NO |
 
 **Example:**
 
   ```ruby
   DELETE SEGMENTS FROM TABLE CarbonDatabase.CarbonTable WHERE STARTTIME BEFORE '2017-06-01 12:05:06';  
   ```
-
-### Parameter Description
-
-| Parameter | Description |
-| ------------- | -----|
-| DATE_VALUE | Valid segement load start time value. All the segments before this specified date will be deleted. |
-| db_name | Database name, if it is not specified then it uses current database. |
-| table_name | The name of the table in provided database.|
-
-### Usage Guideline
-NA
-
-### Scenarios
-NA
 
 ***
