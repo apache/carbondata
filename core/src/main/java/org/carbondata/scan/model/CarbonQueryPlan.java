@@ -40,18 +40,14 @@ public class CarbonQueryPlan implements Serializable {
   private static final long serialVersionUID = -9036044826928017164L;
 
   /**
-   * Schema name , if user asks select * from datasight.employee.
-   * then datasight is the schame name.
-   * Remains null if the user does not select schema name.
+   * Database name
    */
-  private String schemaName;
+  private String databaseName;
 
   /**
-   * Cube name .
-   * if user asks select * from datasight.employee. then employee is the cube name.
-   * It is mandatory.
+   * Table name
    */
-  private String cubeName;
+  private String tableName;
 
   /**
    * List of dimensions.
@@ -110,23 +106,23 @@ public class CarbonQueryPlan implements Serializable {
   private boolean rawDetailQuery;
 
   /**
-   * Constructor created with cube name.
+   * Constructor created with table name.
    *
-   * @param cubeName
+   * @param tableName
    */
-  public CarbonQueryPlan(String cubeName) {
-    this.cubeName = cubeName;
+  public CarbonQueryPlan(String tableName) {
+    this.tableName = tableName;
   }
 
   /**
-   * Constructor created with schema name and cube name.
+   * Constructor created with database name and table name.
    *
-   * @param schemaName
-   * @param cubeName
+   * @param databaseName
+   * @param tableName
    */
-  public CarbonQueryPlan(String schemaName, String cubeName) {
-    this.cubeName = cubeName;
-    this.schemaName = schemaName;
+  public CarbonQueryPlan(String databaseName, String tableName) {
+    this.tableName = tableName;
+    this.databaseName = databaseName;
   }
 
   /**
@@ -160,17 +156,17 @@ public class CarbonQueryPlan implements Serializable {
   }
 
   /**
-   * @return the schemaName
+   * @return the databaseName
    */
-  public String getSchemaName() {
-    return schemaName;
+  public String getDatabaseName() {
+    return databaseName;
   }
 
   /**
-   * @return the cubeName
+   * @return the tableName
    */
-  public String getCubeName() {
-    return cubeName;
+  public String getTableName() {
+    return tableName;
   }
 
   /**

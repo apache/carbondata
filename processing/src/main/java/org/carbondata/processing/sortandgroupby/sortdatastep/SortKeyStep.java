@@ -175,7 +175,7 @@ public class SortKeyStep extends BaseStep {
           meta.getTaskNo(), this.noDictionaryColMaping);
       try {
         // initialize sort
-        this.sortDataRows.initialize(meta.getSchemaName(), meta.getCubeName());
+        this.sortDataRows.initialize(meta.getDatabaseName(), meta.getTableName());
       } catch (CarbonSortKeyAndGroupByException e) {
         throw new KettleException(e);
       }

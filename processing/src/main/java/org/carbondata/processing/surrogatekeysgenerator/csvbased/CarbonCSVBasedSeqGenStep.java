@@ -293,7 +293,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         first = false;
         meta.initialize();
         final Object dataProcessingLockObject = CarbonDataProcessorManager.getInstance()
-            .getDataProcessingLockObject(meta.getSchemaName() + '_' + meta.getCubeName());
+            .getDataProcessingLockObject(meta.getDatabaseName() + '_' + meta.getTableName());
         synchronized (dataProcessingLockObject) {
           // observer of writing file in thread
           this.threadStatusObserver = new ThreadStatusObserver();
@@ -347,8 +347,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           columnsInfo.setDims(meta.dims);
           columnsInfo.setDimColNames(meta.dimColNames);
           columnsInfo.setKeyGenerators(data.getKeyGenerators());
-          columnsInfo.setSchemaName(meta.getSchemaName());
-          columnsInfo.setCubeName(meta.getCubeName());
+          columnsInfo.setDatabaseName(meta.getDatabaseName());
+          columnsInfo.setTableName(meta.getTableName());
           columnsInfo.setHierTables(meta.hirches.keySet());
           columnsInfo.setBatchSize(meta.getBatchSize());
           columnsInfo.setStoreType(meta.getStoreType());
@@ -369,9 +369,10 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           columnsInfo.setColumnSchemaDetailsWrapper(meta.getColumnSchemaDetailsWrapper());
           columnsInfo.setColumnProperties(meta.getColumnPropertiesMap());
           updateBagLogFileName();
-          String key = meta.getSchemaName() + '/' + meta.getCubeName() + '_' + meta.getTableName();
+          String key = meta.getDatabaseName() + '/' + meta.getTableName() +
+              '_' + meta.getTableName();
           badRecordslogger = new BadRecordslogger(key, csvFilepath, getBadLogStoreLocation(
-              meta.getSchemaName() + '/' + meta.getCubeName() + "/" + meta.getTaskNo()));
+              meta.getDatabaseName() + '/' + meta.getTableName() + "/" + meta.getTaskNo()));
 
           columnsInfo.setTimeOrdinalIndices(meta.timeOrdinalIndices);
           surrogateKeyGen = new FileStoreSurrogateKeyGenForCSV(columnsInfo, meta.getPartitionID(),
@@ -696,7 +697,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
    */
   private void updateStoreLocation() {
     loadFolderLoc = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(meta.getSchemaName(), meta.getTableName(), meta.getTaskNo(),
+        .getLocalDataFolderLocation(meta.getDatabaseName(), meta.getTableName(), meta.getTaskNo(),
             meta.getPartitionID(), meta.getSegmentId()+"");
   }
 
@@ -724,7 +725,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     Callable<Void> callable = new Callable<Void>() {
       @Override public Void call() throws RuntimeException {
         StandardLogService
-            .setThreadName(StandardLogService.getPartitionID(meta.getCubeName()), null);
+            .setThreadName(StandardLogService.getPartitionID(meta.getTableName()), null);
         try {
             doProcess();
         } catch (Throwable e) {
@@ -843,7 +844,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
   private String getCarbonLocalBaseStoreLocation() {
     String tempLocationKey =
-        meta.getSchemaName() + CarbonCommonConstants.UNDERSCORE + meta.getCubeName()
+        meta.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + meta.getTableName()
             + CarbonCommonConstants.UNDERSCORE + meta.getTaskNo();
     String strLoc = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
@@ -1805,7 +1806,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
    */
   private void populateCarbonMeasures(String[] measures) {
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        meta.getSchemaName() + CarbonCommonConstants.UNDERSCORE + meta.getTableName());
+        meta.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + meta.getTableName());
     meta.carbonMeasures = new CarbonMeasure[measures.length];
     msrDataType = new DataType[measures.length];
     for (int i = 0; i < measures.length; i++) {

@@ -85,17 +85,10 @@ public class CSVFilePartitioner {
     return partialSuccess;
   }
 
-  /**
-   * @param sourceFilePath - Source raw data file in local disk
-   * @param targetFolder   - Target folder to save the partitioned files
-   * @param nodes
-   * @param properties
-   * @param i
-   */
-  @Deprecated public void splitFile(String schemaName, String cubeName, List<String> sourceFilePath,
-      String targetFolder, List<String> nodes, int partitionCount, String[] partitionColumn,
-      String[] requiredColumns, String delimiter, String quoteChar, String fileHeader,
-      String escapeChar, boolean multiLine) throws Exception {
+  @Deprecated public void splitFile(String databaseName, String tableName,
+      List<String> sourceFilePath, String targetFolder, List<String> nodes, int partitionCount,
+      String[] partitionColumn, String[] requiredColumns, String delimiter, String quoteChar,
+      String fileHeader, String escapeChar, boolean multiLine) throws Exception {
     LOGGER
         .info("Processing file split: " + sourceFilePath);
 
@@ -107,9 +100,9 @@ public class CSVFilePartitioner {
     HashMap<Partition, CSVWriter> outputStreamsMap =
         new HashMap<Partition, CSVWriter>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    String key = schemaName + '_' + cubeName;
+    String key = databaseName + '_' + tableName;
     badRecordslogger = new BadRecordslogger(key, "Partition_" + System.currentTimeMillis() + ".log",
-        getBadLogStoreLocation("partition/" + schemaName + '/' + cubeName));
+        getBadLogStoreLocation("partition/" + databaseName + '/' + tableName));
 
     CSVReader dataInputStream = null;
 
@@ -290,8 +283,8 @@ public class CSVFilePartitioner {
         partialSuccess = true;
         skippedLines++;
         badRecordslogger.addBadRecordsToBilder(record, record.length,
-            "No. of columns not matched with cube columns", null);
-        LOGGER.error("BAD Record Found: No. of columns not matched with cube columns, "
+            "No. of columns not matched with table columns", null);
+        LOGGER.error("BAD Record Found: No. of columns not matched with table columns, "
             + "Skipping line: (" + (recordCounter + 1) + ") in File :" + fileAbsolutePath);
       } catch (Exception e) {
         partialSuccess = true;

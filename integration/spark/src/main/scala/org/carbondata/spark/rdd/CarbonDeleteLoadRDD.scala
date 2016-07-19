@@ -31,14 +31,14 @@ class CarbonDeleteLoadRDD[V: ClassTag](
     sc: SparkContext,
     valueClass: Value[V],
     loadId: Int,
-    schemaName: String,
-    cubeName: String,
+    databaseName: String,
+    tableName: String,
     partitioner: Partitioner)
   extends RDD[V](sc, Nil) with Logging {
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
   override def getPartitions: Array[Partition] = {
-    val splits = CarbonQueryUtil.getTableSplits(schemaName, cubeName, null, partitioner)
+    val splits = CarbonQueryUtil.getTableSplits(databaseName, tableName, null, partitioner)
     splits.zipWithIndex.map {f =>
       new CarbonLoadPartition(id, f._2, f._1)
     }

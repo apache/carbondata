@@ -122,8 +122,8 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
 
     baseStorePath = columnsInfo.getBaseStoreLocation();
     setStoreFolderWithLoadNumber(
-        checkAndCreateLoadFolderNumber(columnsInfo.getSchemaName(),
-            columnsInfo.getCubeName()));
+        checkAndCreateLoadFolderNumber(columnsInfo.getDatabaseName(),
+            columnsInfo.getTableName()));
     fileManager = new FileManager();
     fileManager.setName(loadFolderName + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
 
@@ -217,7 +217,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
     String[] dimColumnNames = columnsInfo.getDimColNames();
     String[] dimColumnIds = columnsInfo.getDimensionColumnIds();
-    String databaseName = columnsInfo.getSchemaName();
+    String databaseName = columnsInfo.getDatabaseName();
     String tableName = columnsInfo.getTableName();
     CarbonTable carbonTable = CarbonMetadata.getInstance()
         .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);

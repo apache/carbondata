@@ -125,8 +125,8 @@ public final class StandardLogService implements LogService {
     StandardLogService.doLog = doLog;
   }
 
-  public static String getPartitionID(String cubeName) {
-    return cubeName.substring(cubeName.lastIndexOf('_') + 1, cubeName.length());
+  public static String getPartitionID(String tableName) {
+    return tableName.substring(tableName.lastIndexOf('_') + 1, tableName.length());
   }
 
   public static void setThreadName(String partitionID, String queryID) {

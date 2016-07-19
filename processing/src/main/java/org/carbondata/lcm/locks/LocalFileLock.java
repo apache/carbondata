@@ -62,9 +62,9 @@ public class LocalFileLock extends AbstractCarbonLock {
 
   public static final String tmpPath;
 
-  private String cubeName;
+  private String tableName;
 
-  private String schemaName;
+  private String databaseName;
 
   /**
    * LOGGER for  logging the messages.
@@ -84,11 +84,11 @@ public class LocalFileLock extends AbstractCarbonLock {
     this.lockUsage = lockUsage;
     location = location.replace("\\", "/");
     String tempStr = location.substring(0, location.lastIndexOf('/'));
-    cubeName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
+    tableName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
     tempStr = tempStr.substring(0, tempStr.lastIndexOf('/'));
-    schemaName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
+    databaseName = tempStr.substring(tempStr.lastIndexOf('/') + 1, tempStr.length());
     this.location =
-        tmpPath + File.separator + schemaName + File.separator + cubeName + File.separator
+        tmpPath + File.separator + databaseName + File.separator + tableName + File.separator
             + this.lockUsage;
     initRetry();
   }
@@ -100,16 +100,16 @@ public class LocalFileLock extends AbstractCarbonLock {
    */
   @Override public boolean lock() {
     try {
-      String schemaFolderPath = tmpPath + File.separator + schemaName;
-      String cubeFolderPath = schemaFolderPath + File.separator + cubeName;
-      // create dir with schema name in tmp location.
-      if (!FileFactory.isFileExist(schemaFolderPath, FileFactory.getFileType(tmpPath))) {
-        FileFactory.mkdirs(schemaFolderPath, FileFactory.getFileType(tmpPath));
+      String databaseFolderPath = tmpPath + File.separator + databaseName;
+      String tableFolderPath = databaseFolderPath + File.separator + tableName;
+      // create dir with database name in tmp location.
+      if (!FileFactory.isFileExist(databaseFolderPath, FileFactory.getFileType(tmpPath))) {
+        FileFactory.mkdirs(databaseFolderPath, FileFactory.getFileType(tmpPath));
       }
 
-      // create dir with cube name in tmp location.
-      if (!FileFactory.isFileExist(cubeFolderPath, FileFactory.getFileType(tmpPath))) {
-        FileFactory.mkdirs(cubeFolderPath, FileFactory.getFileType(tmpPath));
+      // create dir with table name in tmp location.
+      if (!FileFactory.isFileExist(tableFolderPath, FileFactory.getFileType(tmpPath))) {
+        FileFactory.mkdirs(tableFolderPath, FileFactory.getFileType(tmpPath));
       }
       if (!FileFactory.isFileExist(location, FileFactory.getFileType(location))) {
         FileFactory.createNewLockFile(location, FileFactory.getFileType(location));

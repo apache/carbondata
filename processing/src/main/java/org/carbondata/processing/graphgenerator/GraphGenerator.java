@@ -126,13 +126,13 @@ public class GraphGenerator {
    */
   private int yAxixLocation = 100;
   /**
-   * schemaName
+   * databaseName
    */
-  private String schemaName;
+  private String databaseName;
   /**
-   * cube
+   * table
    */
-  //    private Cube cube;
+  //    private Table table;
   /**
    * instance
    */
@@ -203,7 +203,7 @@ public class GraphGenerator {
     this.isAutoAggRequest = schemaInfo.isAutoAggregateRequest();
     //this.schema = schema;
     this.carbonDataLoadSchema = carbonDataLoadSchema;
-    this.schemaName = carbonDataLoadSchema.getCarbonTable().getDatabaseName();
+    this.databaseName = carbonDataLoadSchema.getCarbonTable().getDatabaseName();
     this.partitionID = partitionID;
     this.factStoreLocation = factStoreLocation;
     this.isColumnar = Boolean.parseBoolean(CarbonCommonConstants.IS_COLUMNAR_STORAGE_DEFAULTVALUE);
@@ -269,7 +269,7 @@ public class GraphGenerator {
   private void initialise() {
     this.instance = CarbonProperties.getInstance();
     //TO-DO need to take care while supporting aggregate table using new schema.
-    //aggregateTable = CarbonSchemaParser.getAggregateTable(cube, schema);
+    //aggregateTable = CarbonSchemaParser.getAggregateTable(table, schema);
     this.factTableName = carbonDataLoadSchema.getCarbonTable().getFactTableName();
   }
 
@@ -282,7 +282,7 @@ public class GraphGenerator {
 
   private void validateAndInitialiseKettelEngine() throws GraphGeneratorException {
     File file = new File(
-        outputLocation + File.separator + schemaInfo.getSchemaName() + File.separator
+        outputLocation + File.separator + schemaInfo.getDatabaseName() + File.separator
             + this.tableName + File.separator + this.segmentId + File.separator + this.taskNo
             + File.separator);
     boolean isDirCreated = false;
@@ -388,7 +388,7 @@ public class GraphGenerator {
     trans.addTransHop(mdkeyToSliceMerger);
 
     String graphFilePath =
-        outputLocation + File.separator + schemaInfo.getSchemaName() + File.separator
+        outputLocation + File.separator + schemaInfo.getDatabaseName() + File.separator
             + this.tableName + File.separator + segmentId + File.separator + this.taskNo
             + File.separator + this.tableName + ".ktr";
     generateGraphFile(trans, graphFilePath);
@@ -457,8 +457,8 @@ public class GraphGenerator {
     sliceMerger.setMdkeySize(configurationInfo.getMdkeySize());
     sliceMerger.setMeasureCount(configurationInfo.getMeasureCount());
     sliceMerger.setTabelName(configurationInfo.getTableName());
-    sliceMerger.setCubeName(schemaInfo.getCubeName());
-    sliceMerger.setSchemaName(schemaInfo.getSchemaName());
+    sliceMerger.setTableName(schemaInfo.getTableName());
+    sliceMerger.setDatabaseName(schemaInfo.getDatabaseName());
     if (null != this.factStoreLocation) {
       sliceMerger.setCurrentRestructNumber(
           CarbonUtil.getRestructureNumber(this.factStoreLocation, this.factTableName));
@@ -541,8 +541,8 @@ public class GraphGenerator {
     seqMeta.setBatchSize(Integer.parseInt(graphConfiguration.getBatchSize()));
     seqMeta.setNoDictionaryDims(graphConfiguration.getNoDictionaryDims());
     seqMeta.setDimensionColumnsDataType(graphConfiguration.getDimensionColumnsDataType());
-    seqMeta.setCubeName(schemaInfo.getCubeName());
-    seqMeta.setSchemaName(schemaInfo.getSchemaName());
+    seqMeta.setTableName(schemaInfo.getTableName());
+    seqMeta.setDatabaseName(schemaInfo.getDatabaseName());
     seqMeta.setComplexDelimiterLevel1(schemaInfo.getComplexDelimiterLevel1());
     seqMeta.setComplexDelimiterLevel2(schemaInfo.getComplexDelimiterLevel2());
     seqMeta.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
@@ -602,8 +602,8 @@ public class GraphGenerator {
     carbonMdKey.setSegmentId(segmentId);
     carbonMdKey.setNumberOfCores(graphConfiguration.getNumberOfCores());
     carbonMdKey.setTableName(graphConfiguration.getTableName());
-    carbonMdKey.setSchemaName(schemaInfo.getSchemaName());
-    carbonMdKey.setCubeName(schemaInfo.getCubeName());
+    carbonMdKey.setDatabaseName(schemaInfo.getDatabaseName());
+    carbonMdKey.setTableName(schemaInfo.getTableName());
     carbonMdKey.setComplexTypeString(graphConfiguration.getComplexTypeString());
     carbonMdKey.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
     carbonMdKey.setAggregateLevels(CarbonDataProcessorUtil
@@ -747,8 +747,8 @@ public class GraphGenerator {
     sortRowsMeta.setSegmentId(segmentId);
     sortRowsMeta.setTaskNo(taskNo);
     sortRowsMeta.setTabelName(graphConfiguration.getTableName());
-    sortRowsMeta.setCubeName(schemaInfo.getCubeName());
-    sortRowsMeta.setSchemaName(schemaInfo.getSchemaName());
+    sortRowsMeta.setTableName(schemaInfo.getTableName());
+    sortRowsMeta.setDatabaseName(schemaInfo.getDatabaseName());
     sortRowsMeta.setOutputRowSize(actualMeasures.length + 1 + "");
     sortRowsMeta.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
     sortRowsMeta.setDimensionCount(graphConfiguration.getDimensions().length + "");
@@ -787,9 +787,9 @@ public class GraphGenerator {
         .getDimensionByTableName(carbonDataLoadSchema.getCarbonTable().getFactTableName());
     prepareIsUseInvertedIndex(dimensions, graphConfiguration);
     graphConfiguration
-        .setDimensions(CarbonSchemaParser.getCubeDimensions(dimensions, carbonDataLoadSchema));
+        .setDimensions(CarbonSchemaParser.getTableDimensions(dimensions, carbonDataLoadSchema));
     graphConfiguration
-        .setActualDims(CarbonSchemaParser.getCubeDimensions(dimensions, carbonDataLoadSchema));
+        .setActualDims(CarbonSchemaParser.getTableDimensions(dimensions, carbonDataLoadSchema));
     graphConfiguration
         .setColumnPropertiesString(CarbonSchemaParser.getColumnPropertiesString(dimensions));
     graphConfiguration.setComplexTypeString(CarbonSchemaParser.getComplexTypeString(dimensions));
@@ -860,10 +860,10 @@ public class GraphGenerator {
         .setActualDimensionColumns(CarbonSchemaParser.getActualDimensions(dimensions));
     graphConfiguration
     .setDimensionColumnsDataType(CarbonSchemaParser.getDimensionsDataTypes(dimensions));
-    //graphConfiguration.setNormHiers(CarbonSchemaParser.getNormHiers(cube, schema));
+    //graphConfiguration.setNormHiers(CarbonSchemaParser.getNormHiers(table, schema));
     graphConfiguration.setMeasureDataTypeInfo(CarbonSchemaParser.getMeasuresDataType(measures));
     graphConfiguration.setStoreLocation(
-        this.schemaName + '/' + carbonDataLoadSchema.getCarbonTable().getFactTableName());
+        this.databaseName + '/' + carbonDataLoadSchema.getCarbonTable().getFactTableName());
     graphConfiguration.setBlockletSize(
         (instance.getProperty("com.huawei.unibi.carbon.blocklet.size", DEFAUL_BLOCKLET_SIZE)));
     graphConfiguration.setMaxBlockletInFile(
@@ -919,7 +919,7 @@ public class GraphGenerator {
     return CarbonSchemaParser.QUOTES;
   }
 
-  public CarbonTable getCube() {
+  public CarbonTable getTable() {
     return carbonDataLoadSchema.getCarbonTable();
   }
 

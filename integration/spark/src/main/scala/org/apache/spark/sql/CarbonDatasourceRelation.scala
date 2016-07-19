@@ -147,10 +147,10 @@ private[sql] case class CarbonDatasourceRelation(
   def sqlContext: SQLContext = context
 
   override val sizeInBytes: Long = {
-    val tablePath = carbonRelation.cubeMeta.storePath + CarbonCommonConstants.FILE_SEPARATOR +
-                    carbonRelation.cubeMeta.carbonTableIdentifier.getDatabaseName +
+    val tablePath = carbonRelation.tableMeta.storePath + CarbonCommonConstants.FILE_SEPARATOR +
+                    carbonRelation.tableMeta.carbonTableIdentifier.getDatabaseName +
                     CarbonCommonConstants.FILE_SEPARATOR +
-                    carbonRelation.cubeMeta.carbonTableIdentifier.getTableName
+                    carbonRelation.tableMeta.carbonTableIdentifier.getTableName
     val fileType = FileFactory.getFileType
     if(FileFactory.isFileExist(tablePath, fileType)) {
       FileFactory.getDirectorySize(tablePath)
@@ -161,17 +161,15 @@ private[sql] case class CarbonDatasourceRelation(
 }
 
 /**
- * Represents logical plan for one carbon cube
+ * Represents logical plan for one carbon table
  */
 case class CarbonRelation(
-    schemaName: String,
-    cubeName: String,
+    databaseName: String,
+    tableName: String,
     metaData: CarbonMetaData,
-    cubeMeta: TableMeta,
+    tableMeta: TableMeta,
     alias: Option[String])(@transient sqlContext: SQLContext)
   extends LeafNode with MultiInstanceRelation {
-
-  def tableName: String = cubeName
 
   def recursiveMethod(dimName: String, childDim: CarbonDimension): String = {
     childDim.getDataType.toString.toLowerCase match {
@@ -212,13 +210,13 @@ case class CarbonRelation(
   }
 
   override def newInstance(): LogicalPlan = {
-    CarbonRelation(schemaName, cubeName, metaData, cubeMeta, alias)(sqlContext)
+    CarbonRelation(databaseName, tableName, metaData, tableMeta, alias)(sqlContext)
       .asInstanceOf[this.type]
   }
 
   val dimensionsAttr = {
     val sett = new LinkedHashSet(
-      cubeMeta.carbonTable.getDimensionByTableName(cubeMeta.carbonTableIdentifier.getTableName)
+      tableMeta.carbonTable.getDimensionByTableName(tableMeta.carbonTableIdentifier.getTableName)
         .asScala.asJava)
     sett.asScala.toSeq.filter(!_.getColumnSchema.isInvisible).map(dim => {
       val output: DataType = metaData.carbonTable
@@ -239,10 +237,10 @@ case class CarbonRelation(
   }
 
   val measureAttr = {
-    val factTable = cubeMeta.carbonTable.getFactTableName
+    val factTable = tableMeta.carbonTable.getFactTableName
     new LinkedHashSet(
-      cubeMeta.carbonTable.
-        getMeasureByTableName(cubeMeta.carbonTable.getFactTableName).
+      tableMeta.carbonTable.
+        getMeasureByTableName(tableMeta.carbonTable.getFactTableName).
         asScala.asJava).asScala.toSeq.filter(!_.getColumnSchema.isInvisible)
         .map(x => AttributeReference(x.getColName, CarbonMetastoreTypes.toDataType(
         metaData.carbonTable.getMeasureByName(factTable, x.getColName).getDataType.toString
@@ -263,7 +261,7 @@ case class CarbonRelation(
   override def equals(other: Any): Boolean = {
     other match {
       case p: CarbonRelation =>
-        p.schemaName == schemaName && p.output == output && p.cubeName == cubeName
+        p.databaseName == databaseName && p.output == output && p.tableName == tableName
       case _ => false
     }
   }

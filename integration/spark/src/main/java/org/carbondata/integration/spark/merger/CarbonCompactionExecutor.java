@@ -55,7 +55,7 @@ public class CarbonCompactionExecutor {
   private final Map<String, List<DataFileFooter>> dataFileMetadataSegMapping;
   private QueryExecutor queryExecutor;
   private final SegmentProperties destinationSegProperties;
-  private final String schemaName;
+  private final String databaseName;
   private final String factTableName;
   private final Map<String, TaskBlockInfo> segmentMapping;
   private final String storePath;
@@ -70,13 +70,13 @@ public class CarbonCompactionExecutor {
    * Constructor
    * @param segmentMapping
    * @param segmentProperties
-   * @param schemaName
+   * @param databaseName
    * @param factTableName
    * @param storePath
    * @param carbonTable
    */
   public CarbonCompactionExecutor(Map<String, TaskBlockInfo> segmentMapping,
-      SegmentProperties segmentProperties, String schemaName, String factTableName,
+      SegmentProperties segmentProperties, String databaseName, String factTableName,
       String storePath, CarbonTable carbonTable,
       Map<String, List<DataFileFooter>> dataFileMetadataSegMapping) {
 
@@ -84,7 +84,7 @@ public class CarbonCompactionExecutor {
 
     this.destinationSegProperties = segmentProperties;
 
-    this.schemaName = schemaName;
+    this.databaseName = databaseName;
 
     this.factTableName = factTableName;
 

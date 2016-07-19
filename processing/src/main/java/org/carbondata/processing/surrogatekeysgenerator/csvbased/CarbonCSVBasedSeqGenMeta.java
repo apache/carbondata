@@ -343,14 +343,11 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    * denormColumNames
    */
   private String denormColumNames;
+
   /**
-   * cubeName
+   * databaseName
    */
-  private String cubeName;
-  /**
-   * schemaName
-   */
-  private String schemaName;
+  private String databaseName;
   private int currentRestructNumber;
   /**
    * partitionID
@@ -699,8 +696,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     retval.append("    ").append(XMLHandler.addTagValue("measureDataType", measureDataType));
     retval.append("    ").append(XMLHandler.addTagValue("columnAndTableName_ColumnMapForAggString",
         columnAndTableNameColumnMapForAggString));
-    retval.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
-    retval.append("    ").append(XMLHandler.addTagValue("cubeName", cubeName));
+    retval.append("    ").append(XMLHandler.addTagValue("databaseName", databaseName));
+    retval.append("    ").append(XMLHandler.addTagValue("tableName", tableName));
     retval.append("    ").append(XMLHandler.addTagValue("denormColumNames", denormColumNames));
     retval.append("    ")
         .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
@@ -749,8 +746,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       noDictionaryDims = XMLHandler.getTagValue(stepnode, "dimNoDictionary");
       columnsDataTypeString = XMLHandler.getTagValue(stepnode, "dimColDataTypes");
       tableName = XMLHandler.getTagValue(stepnode, "factOrAggTable");
-      cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
-      schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
+      tableName = XMLHandler.getTagValue(stepnode, "tableName");
+      databaseName = XMLHandler.getTagValue(stepnode, "databaseName");
       denormColumNames = XMLHandler.getTagValue(stepnode, "denormColumNames");
       currentRestructNumber =
           Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
@@ -1315,9 +1312,9 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       measureDataType = rep.getStepAttributeString(idStep, "measureDataType");
       columnAndTableNameColumnMapForAggString =
           rep.getStepAttributeString(idStep, "columnAndTableName_ColumnMapForAggString");
-      schemaName = rep.getStepAttributeString(idStep, "schemaName");
+      databaseName = rep.getStepAttributeString(idStep, "databaseName");
 
-      cubeName = rep.getStepAttributeString(idStep, "cubeName");
+      tableName = rep.getStepAttributeString(idStep, "tableName");
       denormColumNames = rep.getStepAttributeString(idStep, "denormColumNames");
       currentRestructNumber = (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
       partitionID = rep.getStepAttributeString(idStep, "partitionID");
@@ -1369,8 +1366,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       rep.saveStepAttribute(idTransformation, idStep, "heirNadDimsLensString",
           heirNadDimsLensString);
       rep.saveStepAttribute(idTransformation, idStep, "measureDataType", measureDataType);
-      rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName);
-      rep.saveStepAttribute(idTransformation, idStep, "cubeName", cubeName);
+      rep.saveStepAttribute(idTransformation, idStep, "databaseName", databaseName);
+      rep.saveStepAttribute(idTransformation, idStep, "tableName", tableName);
       rep.saveStepAttribute(idTransformation, idStep, "denormColumNames", denormColumNames);
       rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
           currentRestructNumber);
@@ -1556,20 +1553,12 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     this.columnAndTableNameColumnMapForAggString = columnAndTableNameColumnMapForAggString;
   }
 
-  public String getCubeName() {
-    return cubeName;
+  public String getDatabaseName() {
+    return databaseName;
   }
 
-  public void setCubeName(String cubeName) {
-    this.cubeName = cubeName;
-  }
-
-  public String getSchemaName() {
-    return schemaName;
-  }
-
-  public void setSchemaName(String schemaName) {
-    this.schemaName = schemaName;
+  public void setDatabaseName(String databaseName) {
+    this.databaseName = databaseName;
   }
 
   public String getDenormColumNames() {

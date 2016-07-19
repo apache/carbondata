@@ -225,14 +225,14 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
             .tableExists(toTableIdentifier(tableName.toLowerCase))(sqlContext) =>
         val identifier = toTableIdentifier(tableName.toLowerCase)
         ExecutedCommand(DropTableCommand(ifNotExists, identifier.database, identifier.table)) :: Nil
-      case ShowLoadsCommand(schemaName, cube, limit) =>
-        ExecutedCommand(ShowLoads(schemaName, cube, limit, plan.output)) :: Nil
-      case LoadTable(schemaNameOp, cubeName, factPathFromUser, dimFilesPath,
+      case ShowLoadsCommand(databaseName, table, limit) =>
+        ExecutedCommand(ShowLoads(databaseName, table, limit, plan.output)) :: Nil
+      case LoadTable(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
       partionValues, isOverwriteExist, inputSqlString) =>
         val isCarbonTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
-            .tableExists(TableIdentifier(cubeName, schemaNameOp))(sqlContext)
+            .tableExists(TableIdentifier(tableName, databaseNameOp))(sqlContext)
         if (isCarbonTable || partionValues.nonEmpty) {
-          ExecutedCommand(LoadTable(schemaNameOp, cubeName, factPathFromUser,
+          ExecutedCommand(LoadTable(databaseNameOp, tableName, factPathFromUser,
             dimFilesPath, partionValues, isOverwriteExist, inputSqlString)) :: Nil
         } else {
           ExecutedCommand(HiveNativeCommand(inputSqlString)) :: Nil
@@ -249,9 +249,9 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           case e: Exception => ExecutedCommand(d) :: Nil
         }
       case DescribeFormattedCommand(sql, tblIdentifier) =>
-        val isCube = CarbonEnv.getInstance(sqlContext).carbonCatalog
+        val isTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
             .tableExists(tblIdentifier)(sqlContext)
-        if (isCube) {
+        if (isTable) {
           val describe =
             LogicalDescribeCommand(UnresolvedRelation(tblIdentifier, None), isExtended = false)
           val resolvedTable = sqlContext.executePlan(describe.table).analyzed

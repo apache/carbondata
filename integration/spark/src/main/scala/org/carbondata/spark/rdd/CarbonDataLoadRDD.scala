@@ -84,7 +84,7 @@ class CarbonNodePartition(rddId: Int, val idx: Int, host: String,
  * @param columinar             whether it is columinar
  * @param currentRestructNumber current restruct number
  * @param loadCount             Current load count
- * @param cubeCreationTime      Time of creating cube
+ * @param tableCreationTime      Time of creating table
  * @param schemaLastUpdatedTime Time of last schema update
  * @param blocksGroupBy         Blocks Array which is group by partition or host
  * @param isTableSplitPartition Whether using table split partition
@@ -102,7 +102,7 @@ class CarbonDataLoadRDD[K, V](
     columinar: Boolean,
     currentRestructNumber: Integer,
     loadCount: Integer,
-    cubeCreationTime: Long,
+    tableCreationTime: Long,
     schemaLastUpdatedTime: Long,
     blocksGroupBy: Array[(String, Array[BlockDetails])],
     isTableSplitPartition: Boolean)
@@ -308,7 +308,7 @@ class CarbonDataLoadRDD[K, V](
             .addNewSliceNameToList(newSlice, listOfAllLoadFolders)
           val copyListOfLoadFolders = listOfLoadFolders.asScala.toList
           val copyListOfUpdatedLoadFolders = listOfUpdatedLoadFolders.asScala.toList
-          loadCubeSlices(listOfAllLoadFolders, details)
+          loadTableSlices(listOfAllLoadFolders, details)
           var loadFolders = Array[String]()
           val loadFolder = CarbonLoaderUtil
             .getAggLoadFolderLocation(newSlice, model.getDatabaseName, model.getTableName,
@@ -319,7 +319,7 @@ class CarbonDataLoadRDD[K, V](
           dataloadStatus = iterateOverAggTables(aggTables, copyListOfLoadFolders.asJava,
             copyListOfUpdatedLoadFolders.asJava, loadFolders)
           if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
-            // remove the current slice from memory not the cube
+            // remove the current slice from memory not the table
             CarbonLoaderUtil
               .removeSliceFromMemory(model.getDatabaseName, model.getTableName, newSlice)
             logInfo(s"Aggregate table creation failed")
@@ -331,7 +331,7 @@ class CarbonDataLoadRDD[K, V](
         dataloadStatus
       }
 
-      def loadCubeSlices(listOfAllLoadFolders: java.util.List[String],
+      def loadTableSlices(listOfAllLoadFolders: java.util.List[String],
           loadMetadataDetails: Array[LoadMetadataDetails]) = {
         CarbonProperties.getInstance().addProperty("carbon.cache.used", "false")
         // TODO: Implement it
@@ -342,7 +342,7 @@ class CarbonDataLoadRDD[K, V](
         val listOfAllLoadFolders = CarbonQueryUtil.getListOfSlices(details)
         val listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
         val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
-        loadCubeSlices(listOfAllLoadFolders, details)
+        loadTableSlices(listOfAllLoadFolders, details)
         var loadFolders = Array[String]()
         var restructFolders = Array[String]()
         for (number <- 0 to currentRestructNumber) {
@@ -370,7 +370,7 @@ class CarbonDataLoadRDD[K, V](
           val listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
           val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
           val listOfAllLoadFolder = CarbonQueryUtil.getListOfSlices(details)
-          loadCubeSlices(listOfAllLoadFolder, details)
+          loadTableSlices(listOfAllLoadFolder, details)
           var loadFolders = Array[String]()
           listOfUpdatedLoadFolders.asScala.foreach { sliceNum =>
             val newSlice = CarbonCommonConstants.LOAD_FOLDER + sliceNum

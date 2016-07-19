@@ -59,7 +59,7 @@ import org.carbondata.spark.load.CarbonLoadModel;
  */
 public class RowResultMerger {
 
-  private final String schemaName;
+  private final String databaseName;
   private final String tableName;
   private final String tempStoreLocation;
   private final int measureCount;
@@ -78,9 +78,9 @@ public class RowResultMerger {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(RowResultMerger.class.getName());
 
-  public RowResultMerger(List<RawResultIterator> iteratorList, String schemaName, String tableName,
-      SegmentProperties segProp, String tempStoreLocation, CarbonLoadModel loadModel,
-      int[] colCardinality) {
+  public RowResultMerger(List<RawResultIterator> iteratorList, String databaseName,
+      String tableName, SegmentProperties segProp, String tempStoreLocation,
+      CarbonLoadModel loadModel, int[] colCardinality) {
 
     this.rawResultIteratorList = iteratorList;
     // create the List of RawResultIterator.
@@ -97,7 +97,7 @@ public class RowResultMerger {
       LOGGER.error("Error while new File(tempStoreLocation).mkdirs() ");
     }
 
-    this.schemaName = schemaName;
+    this.databaseName = databaseName;
     this.tableName = tableName;
 
     this.measureCount = segprop.getMeasures().size();
@@ -212,7 +212,7 @@ public class RowResultMerger {
    */
   private CarbonFactDataHandlerModel getCarbonFactDataHandlerModel(CarbonLoadModel loadModel) {
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
-    carbonFactDataHandlerModel.setDatabaseName(schemaName);
+    carbonFactDataHandlerModel.setDatabaseName(databaseName);
     carbonFactDataHandlerModel.setTableName(tableName);
     carbonFactDataHandlerModel.setMeasureCount(segprop.getMeasures().size());
     carbonFactDataHandlerModel.setCompactionFlow(true);
@@ -225,7 +225,7 @@ public class RowResultMerger {
     carbonFactDataHandlerModel.setDimensionCount(
         segprop.getDimensions().size() - carbonFactDataHandlerModel.getNoDictionaryCount());
     CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(schemaName + CarbonCommonConstants.UNDERSCORE + tableName);
+        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     List<ColumnSchema> wrapperColumnSchema = CarbonUtil
         .getColumnSchemaList(carbonTable.getDimensionByTableName(tableName),
             carbonTable.getMeasureByTableName(tableName));
@@ -246,7 +246,7 @@ public class RowResultMerger {
     carbonFactDataHandlerModel.setFactDimLens(segprop.getDimColumnsCardinality());
 
     String carbonDataDirectoryPath =
-        checkAndCreateCarbonStoreLocation(this.factStoreLocation, schemaName, tableName,
+        checkAndCreateCarbonStoreLocation(this.factStoreLocation, databaseName, tableName,
             loadModel.getPartitionId(), loadModel.getSegmentId());
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
 
@@ -258,11 +258,11 @@ public class RowResultMerger {
    *
    * @return data directory path
    */
-  private String checkAndCreateCarbonStoreLocation(String factStoreLocation, String schemaName,
+  private String checkAndCreateCarbonStoreLocation(String factStoreLocation, String databaseName,
       String tableName, String partitionId, String segmentId) {
     String carbonStorePath = factStoreLocation;
     CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(schemaName + CarbonCommonConstants.UNDERSCORE + tableName);
+        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);

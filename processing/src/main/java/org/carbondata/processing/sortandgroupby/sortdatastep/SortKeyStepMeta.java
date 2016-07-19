@@ -60,14 +60,14 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
   private String outputRowSize;
 
   /**
-   * cubeName
+   * tableName
    */
-  private String cubeName;
+  private String tableName;
 
   /**
-   * schemaName
+   * databaseName
    */
-  private String schemaName;
+  private String databaseName;
 
   /**
    * Dimension Count
@@ -125,10 +125,10 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
     this.tabelName = "";
     factDimLensString = "";
     outputRowSize = "";
-    schemaName = "";
+    databaseName = "";
     noDictionaryDims = "";
     noDictionaryDimsMapping = "";
-    cubeName = "";
+    tableName = "";
     dimensionCount = "";
     complexDimensionCount = "";
     measureCount = "";
@@ -151,8 +151,8 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
     retval.append("    ").append(XMLHandler.addTagValue("TableName", this.tabelName));
     retval.append("    ").append(XMLHandler.addTagValue("factDimLensString", factDimLensString));
     retval.append("    ").append(XMLHandler.addTagValue("outputRowSize", this.outputRowSize));
-    retval.append("    ").append(XMLHandler.addTagValue("cubeName", this.cubeName));
-    retval.append("    ").append(XMLHandler.addTagValue("schemaName", this.schemaName));
+    retval.append("    ").append(XMLHandler.addTagValue("tableName", this.tableName));
+    retval.append("    ").append(XMLHandler.addTagValue("databaseName", this.databaseName));
     retval.append("    ").append(XMLHandler.addTagValue("dimensionCount", this.dimensionCount));
     retval.append("    ").append(XMLHandler.addTagValue("noDictionaryDims", this.noDictionaryDims));
     retval.append("    ")
@@ -185,8 +185,8 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
       this.tabelName = XMLHandler.getTagValue(stepnode, "TableName");
       this.outputRowSize = XMLHandler.getTagValue(stepnode, "outputRowSize");
       this.factDimLensString = XMLHandler.getTagValue(stepnode, "factDimLensString");
-      this.cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
-      this.schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
+      this.tableName = XMLHandler.getTagValue(stepnode, "tableName");
+      this.databaseName = XMLHandler.getTagValue(stepnode, "databaseName");
       this.dimensionCount = XMLHandler.getTagValue(stepnode, "dimensionCount");
       this.noDictionaryDims = XMLHandler.getTagValue(stepnode, "noDictionaryDims");
       this.noDictionaryDimsMapping = XMLHandler.getTagValue(stepnode, "noDictionaryDimsMapping");
@@ -219,8 +219,8 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
 
       rep.saveStepAttribute(idTransformation, idStep, "factDimLensString", factDimLensString);
       rep.saveStepAttribute(idTransformation, idStep, "outputRowSize", this.outputRowSize);
-      rep.saveStepAttribute(idTransformation, idStep, "cubeName", this.cubeName);
-      rep.saveStepAttribute(idTransformation, idStep, "schemaName", this.schemaName);
+      rep.saveStepAttribute(idTransformation, idStep, "tableName", this.tableName);
+      rep.saveStepAttribute(idTransformation, idStep, "databaseName", this.databaseName);
       rep.saveStepAttribute(idTransformation, idStep, "dimensionCount", this.dimensionCount);
       rep.saveStepAttribute(idTransformation, idStep, "noDictionaryDims", this.noDictionaryDims);
       rep.saveStepAttribute(idTransformation, idStep, "noDictionaryDimsMapping",
@@ -257,8 +257,8 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
     try {
       this.tabelName = rep.getStepAttributeString(idStep, "TableName");
       this.outputRowSize = rep.getStepAttributeString(idStep, "outputRowSize");
-      this.schemaName = rep.getStepAttributeString(idStep, "schemaName");
-      this.cubeName = rep.getStepAttributeString(idStep, "cubeName");
+      this.databaseName = rep.getStepAttributeString(idStep, "databaseName");
+      this.tableName = rep.getStepAttributeString(idStep, "tableName");
       this.dimensionCount = rep.getStepAttributeString(idStep, "dimensionCount");
       this.noDictionaryDims = rep.getStepAttributeString(idStep, "noDictionaryDims");
       this.noDictionaryDims = rep.getStepAttributeString(idStep, "noDictionaryDimsMapping");
@@ -358,31 +358,31 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
   }
 
   /**
-   * @return the cubeName
+   * @return the tableName
    */
-  public String getCubeName() {
-    return cubeName;
+  public String getTableName() {
+    return tableName;
   }
 
   /**
-   * @param cubeName the cubeName to set
+   * @param tableName the tableName to set
    */
-  public void setCubeName(String cubeName) {
-    this.cubeName = cubeName;
+  public void setTableName(String tableName) {
+    this.tableName = tableName;
   }
 
   /**
-   * @return the schemaName
+   * @return the databaseName
    */
-  public String getSchemaName() {
-    return schemaName;
+  public String getDatabaseName() {
+    return databaseName;
   }
 
   /**
-   * @param schemaName the schemaName to set
+   * @param databaseName the databaseName to set
    */
-  public void setSchemaName(String schemaName) {
-    this.schemaName = schemaName;
+  public void setDatabaseName(String databaseName) {
+    this.databaseName = databaseName;
   }
 
   /**

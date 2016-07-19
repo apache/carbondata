@@ -44,7 +44,7 @@ public final class CarbonLRUCache {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonLRUCache.class.getName());
   /**
-   * Map that will contain key as cube unique name and value as cache Holder
+   * Map that will contain key as table unique name and value as cache Holder
    * object
    */
   private Map<String, Cacheable> lruCacheMap;

@@ -38,14 +38,14 @@ public class CompactionCallable implements Callable<Void> {
   private final String storeLocation;
   private final CarbonTable carbonTable;
   private final String kettleHomePath;
-  private final Long cubeCreationTime;
+  private final Long tableCreationTime;
   private final List<LoadMetadataDetails> loadsToMerge;
   private final SQLContext sqlContext;
   private final CarbonLoadModel carbonLoadModel;
 
   public CompactionCallable(String hdfsStoreLocation, CarbonLoadModel carbonLoadModel,
       Partitioner partitioner, String storeLocation, CarbonTable carbonTable, String kettleHomePath,
-      Long cubeCreationTime, List<LoadMetadataDetails> loadsToMerge, SQLContext sqlContext) {
+      Long tableCreationTime, List<LoadMetadataDetails> loadsToMerge, SQLContext sqlContext) {
 
     this.hdfsStoreLocation = hdfsStoreLocation;
     this.carbonLoadModel = carbonLoadModel;
@@ -53,7 +53,7 @@ public class CompactionCallable implements Callable<Void> {
     this.storeLocation = storeLocation;
     this.carbonTable = carbonTable;
     this.kettleHomePath = kettleHomePath;
-    this.cubeCreationTime = cubeCreationTime;
+    this.tableCreationTime = tableCreationTime;
     this.loadsToMerge = loadsToMerge;
     this.sqlContext = sqlContext;
   }
@@ -61,7 +61,7 @@ public class CompactionCallable implements Callable<Void> {
   @Override public Void call() throws Exception {
 
     Compactor.triggerCompaction(hdfsStoreLocation, carbonLoadModel, partitioner, storeLocation,
-        carbonTable, kettleHomePath, cubeCreationTime, loadsToMerge, sqlContext);
+        carbonTable, kettleHomePath, tableCreationTime, loadsToMerge, sqlContext);
     return null;
 
   }

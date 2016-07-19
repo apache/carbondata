@@ -73,14 +73,14 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
   private String heirAndKeySize;
 
   /**
-   * schemaName
+   * databaseName
    */
-  private String schemaName;
+  private String databaseName;
 
   /**
-   * cubeName
+   * tableName
    */
-  private String cubeName;
+  private String tableName;
 
   /**
    * isGroupByEnabled
@@ -133,8 +133,8 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
     mdkeySize = "";
     measureCount = "";
     heirAndKeySize = "";
-    cubeName = "";
-    schemaName = "";
+    tableName = "";
+    databaseName = "";
     groupByEnabled = "";
     aggregatorClassString = "";
     aggregatorString = "";
@@ -158,8 +158,8 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
     retval.append("    ").append(XMLHandler.addTagValue("MDKeySize", mdkeySize));
     retval.append("    ").append(XMLHandler.addTagValue("Measurecount", measureCount));
     retval.append("    ").append(XMLHandler.addTagValue("HeirAndKeySize", heirAndKeySize));
-    retval.append("    ").append(XMLHandler.addTagValue("cubeName", cubeName));
-    retval.append("    ").append(XMLHandler.addTagValue("schemaName", schemaName));
+    retval.append("    ").append(XMLHandler.addTagValue("tableName", tableName));
+    retval.append("    ").append(XMLHandler.addTagValue("databaseName", databaseName));
     retval.append("    ").append(XMLHandler.addTagValue("isGroupByEnabled", groupByEnabled));
     retval.append("    ")
         .append(XMLHandler.addTagValue("aggregatorClassString", aggregatorClassString));
@@ -186,12 +186,12 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
   @Override public void loadXML(Node stepnode, List<DatabaseMeta> databases,
       Map<String, Counter> counters) throws KettleXMLException {
     try {
-      schemaName = XMLHandler.getTagValue(stepnode, "schemaName");
+      databaseName = XMLHandler.getTagValue(stepnode, "databaseName");
       tabelName = XMLHandler.getTagValue(stepnode, "TableName");
       mdkeySize = XMLHandler.getTagValue(stepnode, "MDKeySize");
       measureCount = XMLHandler.getTagValue(stepnode, "Measurecount");
       heirAndKeySize = XMLHandler.getTagValue(stepnode, "HeirAndKeySize");
-      cubeName = XMLHandler.getTagValue(stepnode, "cubeName");
+      tableName = XMLHandler.getTagValue(stepnode, "tableName");
       groupByEnabled = XMLHandler.getTagValue(stepnode, "isGroupByEnabled");
       aggregatorClassString = XMLHandler.getTagValue(stepnode, "aggregatorClassString");
       aggregatorString = XMLHandler.getTagValue(stepnode, "aggregatorString");
@@ -223,8 +223,8 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
       rep.saveStepAttribute(idTransformation, idStep, "Measurecount", measureCount);
       rep.saveStepAttribute(idTransformation, idStep, "HeirAndKeySize",
           heirAndKeySize); //$NON-NLS-1$
-      rep.saveStepAttribute(idTransformation, idStep, "cubeName", cubeName); //$NON-NLS-1$
-      rep.saveStepAttribute(idTransformation, idStep, "schemaName", schemaName); //$NON-NLS-1$
+      rep.saveStepAttribute(idTransformation, idStep, "tableName", tableName); //$NON-NLS-1$
+      rep.saveStepAttribute(idTransformation, idStep, "databaseName", databaseName); //$NON-NLS-1$
       rep.saveStepAttribute(idTransformation, idStep, "isGroupByEnabled", groupByEnabled);
       rep.saveStepAttribute(idTransformation, idStep, "aggregatorClassString",
           aggregatorClassString);
@@ -271,8 +271,8 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
       mdkeySize = rep.getStepAttributeString(idStep, "MDKeySize");
       measureCount = rep.getStepAttributeString(idStep, "Measurecount");
       heirAndKeySize = rep.getStepAttributeString(idStep, "HeirAndKeySize");
-      schemaName = rep.getStepAttributeString(idStep, "schemaName");
-      cubeName = rep.getStepAttributeString(idStep, "cubeName");
+      databaseName = rep.getStepAttributeString(idStep, "databaseName");
+      tableName = rep.getStepAttributeString(idStep, "tableName");
       groupByEnabled = rep.getStepAttributeString(idStep, "isGroupByEnabled");
       aggregatorClassString = rep.getStepAttributeString(idStep, "aggregatorClassString");
       aggregatorString = rep.getStepAttributeString(idStep, "aggregatorString");
@@ -421,31 +421,31 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
   }
 
   /**
-   * @return the schemaName
+   * @return the databaseName
    */
-  public String getSchemaName() {
-    return schemaName;
+  public String getDatabaseName() {
+    return databaseName;
   }
 
   /**
-   * @param schemaName the schemaName to set
+   * @param databaseName the databaseName to set
    */
-  public void setSchemaName(String schemaName) {
-    this.schemaName = schemaName;
+  public void setDatabaseName(String databaseName) {
+    this.databaseName = databaseName;
   }
 
   /**
-   * @return the cubeName
+   * @return the tableName
    */
-  public String getCubeName() {
-    return cubeName;
+  public String getTableName() {
+    return tableName;
   }
 
   /**
-   * @param cubeName the cubeName to set
+   * @param tableName the tableName to set
    */
-  public void setCubeName(String cubeName) {
-    this.cubeName = cubeName;
+  public void setTableName(String tableName) {
+    this.tableName = tableName;
   }
 
   /**
