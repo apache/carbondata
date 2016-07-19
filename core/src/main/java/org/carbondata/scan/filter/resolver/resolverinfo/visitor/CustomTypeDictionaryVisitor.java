@@ -32,6 +32,7 @@ import org.carbondata.scan.expression.ColumnExpression;
 import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.carbondata.scan.filter.DimColumnFilterInfo;
+import org.carbondata.scan.filter.FilterUtil;
 import org.carbondata.scan.filter.resolver.metadata.FilterResolverMetadata;
 import org.carbondata.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 

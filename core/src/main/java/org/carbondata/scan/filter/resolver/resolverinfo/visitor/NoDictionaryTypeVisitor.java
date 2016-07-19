@@ -16,12 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.filter.resolver.resolverinfo.visitor;
+package org.carbondata.scan.filter.resolver.resolverinfo.visitor;
 
 import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.carbondata.scan.filter.DimColumnFilterInfo;

@@ -181,28 +181,32 @@ public final class DataTypeUtil {
     if (null == data) {
       return false;
     }
-    switch (actualDataType) {
-      case SHORT:
-      case INT:
-      case LONG:
-      case DOUBLE:
-      case DECIMAL:
-        return NumberUtils.isDigits(data);
-      case TIMESTAMP:
-        if (data.isEmpty()) {
-          return false;
-        }
-        SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
-        try {
-          parser.parse(data);
+    try {
+      switch (actualDataType) {
+        case SHORT:
+        case INT:
+        case LONG:
+        case DOUBLE:
+        case DECIMAL:
+          return NumberUtils.isNumber(data);
+        case TIMESTAMP:
+          if (data.isEmpty()) {
+            return false;
+          }
+          SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+          try {
+            parser.parse(data);
+            return true;
+          } catch (ParseException e) {
+            return false;
+          }
+        default:
           return true;
-        } catch (ParseException e) {
-          return false;
-        }
-      default:
-        return false;
+      }
+    } catch (NumberFormatException ex) {
+      return false;
     }
   }
 
@@ -216,20 +220,35 @@ public final class DataTypeUtil {
    */
   public static Object getDataBasedOnDataType(String data, DataType actualDataType) {
 
-    if (null == data || data.isEmpty() || CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(data)) {
+    if (null == data || CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(data)) {
       return null;
     }
     try {
       switch (actualDataType) {
         case INT:
+          if (data.isEmpty()) {
+            return null;
+          }
           return Integer.parseInt(data);
         case SHORT:
+          if (data.isEmpty()) {
+            return null;
+          }
           return Short.parseShort(data);
         case DOUBLE:
+          if (data.isEmpty()) {
+            return null;
+          }
           return Double.parseDouble(data);
         case LONG:
+          if (data.isEmpty()) {
+            return null;
+          }
           return Long.parseLong(data);
         case TIMESTAMP:
+          if (data.isEmpty()) {
+            return null;
+          }
           SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
                   CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
@@ -242,11 +261,14 @@ public final class DataTypeUtil {
             return null;
           }
         case DECIMAL:
+          if (data.isEmpty()) {
+            return null;
+          }
           java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data);
           scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
           org.apache.spark.sql.types.Decimal decConverter =
               new org.apache.spark.sql.types.Decimal();
-          return decConverter.set(scalaDecVal);
+          return decConverter.set(scalaDecVal, 19, 2);
         default:
           return UTF8String.fromString(data);
       }

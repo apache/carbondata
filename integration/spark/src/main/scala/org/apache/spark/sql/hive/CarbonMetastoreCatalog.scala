@@ -285,7 +285,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
       storePath,
       CarbonMetadata.getInstance().getCarbonTable(dbName + "_" + tableName),
       Partitioner("org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
-        Array(""), 1, DistributionUtil.getNodeList(hive.sparkContext)))
+        Array(""), 1, DistributionUtil.getNodeList(hiveContext.sparkContext)))
 
     val fileType = FileFactory.getFileType(schemaMetadataPath)
     if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {

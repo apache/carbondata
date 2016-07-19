@@ -152,6 +152,7 @@ public class ListBasedResultCollector implements ScannedResultCollector {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
       Object msrVal;
       switch (dataType) {
+        case INT:
         case LONG:
           msrVal = dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
           break;
@@ -171,10 +172,13 @@ public class ListBasedResultCollector implements ScannedResultCollector {
    */
   @Override public Result getCollectedResult() {
     Result<List<ListBasedResultWrapper>, Object> result = new ListBasedResult();
-    if (!tableBlockExecutionInfos.isFixedKeyUpdateRequired()) {
-      updateKeyWithLatestBlockKeyGenerator();
+    if (tableBlockExecutionInfos.isFixedKeyUpdateRequired() && tableBlockExecutionInfos
+        .isDimensionsExistInQuery()) {
+      updateKeyWithLatestBlockKeygenerator();
+      result.addScannedResult(listBasedResult);
+    } else {
+      result.addScannedResult(listBasedResult);
     }
-    result.addScannedResult(listBasedResult);
     return result;
   }
 
@@ -186,7 +190,7 @@ public class ListBasedResultCollector implements ScannedResultCollector {
    *
    * @return updated block
    */
-  private void updateKeyWithLatestBlockKeyGenerator() {
+  private void updateKeyWithLatestBlockKeygenerator() {
     try {
       long[] data = null;
       ByteArrayWrapper key = null;

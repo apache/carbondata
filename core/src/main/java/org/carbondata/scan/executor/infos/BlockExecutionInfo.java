@@ -27,6 +27,7 @@ import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.scan.filter.GenericQueryType;
 import org.carbondata.scan.filter.executer.FilterExecuter;
 
 /**

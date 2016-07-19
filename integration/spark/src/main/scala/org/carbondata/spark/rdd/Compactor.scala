@@ -85,14 +85,14 @@ object Compactor {
     )
     var execInstance = "1"
     // in case of non dynamic executor allocation, number of executors are fixed.
-    if (sc.sparkContext.getConf.contains("spark.executor.instances")) {
-      execInstance = sc.sparkContext.getConf.get("spark.executor.instances")
+    if (sqlContext.sparkContext.getConf.contains("spark.executor.instances")) {
+      execInstance = sqlContext.sparkContext.getConf.get("spark.executor.instances")
       logger.info("spark.executor.instances property is set to =" + execInstance)
     } // in case of dynamic executor allocation, taking the max executors of the dynamic allocation.
-    else if (sc.sparkContext.getConf.contains("spark.dynamicAllocation.enabled")) {
-      if (sc.sparkContext.getConf.get("spark.dynamicAllocation.enabled").trim
+    else if (sqlContext.sparkContext.getConf.contains("spark.dynamicAllocation.enabled")) {
+      if (sqlContext.sparkContext.getConf.get("spark.dynamicAllocation.enabled").trim
         .equalsIgnoreCase("true")) {
-        execInstance = sc.sparkContext.getConf.get("spark.dynamicAllocation.maxExecutors")
+        execInstance = sqlContext.sparkContext.getConf.get("spark.dynamicAllocation.maxExecutors")
         logger.info("spark.dynamicAllocation.maxExecutors property is set to =" + execInstance)
       }
     }

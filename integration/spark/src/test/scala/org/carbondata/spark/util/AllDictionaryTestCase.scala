@@ -47,9 +47,9 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
     header: String,
     allDictFilePath: String): CarbonLoadModel = {
     val carbonLoadModel = new CarbonLoadModel
-    carbonLoadModel.setTableName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
-    carbonLoadModel.setDatabaseName(relation.cubeMeta.carbonTableIdentifier.getTableName)
-    val table = relation.cubeMeta.carbonTable
+    carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
+    carbonLoadModel.setDatabaseName(relation.tableMeta.carbonTableIdentifier.getTableName)
+    val table = relation.tableMeta.carbonTable
     val carbonSchema = new CarbonDataLoadSchema(table)
     carbonLoadModel.setDatabaseName(table.getDatabaseName)
     carbonLoadModel.setTableName(table.getFactTableName)
@@ -105,8 +105,8 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
 
   def buildRelation() = {
     val catalog = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
-    sampleRelation = catalog.lookupRelation1(Option("default"), "sample", None)(CarbonHiveContext).asInstanceOf[CarbonRelation]
-    complexRelation = catalog.lookupRelation1(Option("default"), "complextypes", None)(CarbonHiveContext).asInstanceOf[CarbonRelation]
+    sampleRelation = catalog.lookupRelation1(Option("default"), "sample")(CarbonHiveContext).asInstanceOf[CarbonRelation]
+    complexRelation = catalog.lookupRelation1(Option("default"), "complextypes")(CarbonHiveContext).asInstanceOf[CarbonRelation]
   }
 
   test("Support generate global dictionary from all dictionary files") {
@@ -115,7 +115,7 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
     GlobalDictionaryUtil
       .generateGlobalDictionary(CarbonHiveContext,
         carbonLoadModel,
-        sampleRelation.cubeMeta.storePath)
+        sampleRelation.tableMeta.storePath)
 
     DictionaryTestCaseUtil.
       checkDictionary(sampleRelation, "city", "shenzhen")
@@ -127,7 +127,7 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
     GlobalDictionaryUtil
       .generateGlobalDictionary(CarbonHiveContext,
       carbonLoadModel,
-      complexRelation.cubeMeta.storePath)
+      complexRelation.tableMeta.storePath)
 
     DictionaryTestCaseUtil.
       checkDictionary(complexRelation, "channelsId", "1650")

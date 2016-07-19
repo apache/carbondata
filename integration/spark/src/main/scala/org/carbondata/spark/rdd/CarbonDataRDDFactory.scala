@@ -671,7 +671,7 @@ object CarbonDataRDDFactory extends Logging {
           // group blocks to nodes, tasks
           val startTime = System.currentTimeMillis
           val activeNodes = DistributionUtil
-            .ensureExecutorsAndGetNodeList(blockList, sc.sparkContext)
+            .ensureExecutorsAndGetNodeList(blockList, sqlContext.sparkContext)
           val nodeBlockMapping =
             CarbonLoaderUtil
               .nodeBlockMapping(blockList.toSeq.asJava, -1, activeNodes.toList.asJava).asScala

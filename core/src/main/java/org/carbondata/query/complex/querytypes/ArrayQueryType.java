@@ -25,11 +25,11 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import org.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
-import org.carbondata.query.carbon.processor.BlocksChunkHolder;
+import org.carbondata.scan.filter.GenericQueryType;
+import org.carbondata.scan.processor.BlocksChunkHolder;
 
-import org.apache.spark.sql.types.ArrayType;
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.GenericArrayData;
+import org.apache.spark.sql.catalyst.util.*; // Don't remove it, used for spark 1.6 compatability
+import org.apache.spark.sql.types.*;
 
 public class ArrayQueryType extends ComplexQueryType implements GenericQueryType {
 

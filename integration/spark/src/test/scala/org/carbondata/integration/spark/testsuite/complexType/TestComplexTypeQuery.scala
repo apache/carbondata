@@ -52,17 +52,17 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
      checkAnswer(sql("select mobile, proddate, deviceInformationId  from complexcarbontable"),
      sql("select mobile, proddate, deviceInformationId  from complexhivetable"))
   }
-  
+
   test("select mobile, MAC, deviceInformationId, purchasedate from complexcarbontable") {
      checkAnswer(sql("select mobile, MAC, deviceInformationId, purchasedate from complexcarbontable"),
      sql("select mobile, MAC, deviceInformationId, purchasedate from complexhivetable"))
   }
- 
+
    test("select mobile, ROMSize, deviceInformationId from complexcarbontable") {
      checkAnswer(sql("select mobile, ROMSize, deviceInformationId from complexcarbontable"),
      sql("select mobile, ROMSize, deviceInformationId from complexhivetable"))
   }
-   
+
    test("select locationinfo, purchasedate, deviceInformationId from complexcarbontable") {
      checkAnswer(sql("select locationinfo, purchasedate, deviceInformationId from complexcarbontable"),
      sql("select locationinfo, purchasedate, deviceInformationId from complexhivetable"))
@@ -79,8 +79,8 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
      checkAnswer(sql("select mobile from complexcarbontable where mobile.imei like '1AA%'"),
      sql("select mobile from complexhivetable where mobile.imei like '1AA%'"))
   }
-      
-      
+
+
      test("select locationinfo from complexcarbontable where locationinfo[0].ActiveAreaId > 2 AND locationinfo[0].ActiveAreaId < 7") {
      checkAnswer(sql("select locationinfo from complexcarbontable where locationinfo[0].ActiveAreaId > 2 AND locationinfo[0].ActiveAreaId < 7"),
      sql("select locationinfo from complexhivetable where locationinfo[0].ActiveAreaId > 2 AND locationinfo[0].ActiveAreaId < 7"))
@@ -97,7 +97,7 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
      checkAnswer(sql("select count(mobile),channelsId from complexcarbontable group by mobile,channelsId"),
      sql("select count(mobile),channelsId from complexhivetable group by mobile,channelsId"))
   }
-              
+
                 test("select count(mobile),channelsId from complexcarbontable group by mobile,channelsId order by channelsId") {
      checkAnswer(sql("select count(mobile),channelsId from complexcarbontable group by mobile,channelsId order by channelsId"),
      sql("select count(mobile),channelsId from complexhivetable group by mobile,channelsId order by channelsId"))

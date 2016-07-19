@@ -22,7 +22,6 @@ package org.carbondata.query.complex.querytypes;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.List;
 
 import org.carbondata.core.cache.dictionary.Dictionary;
@@ -30,8 +29,9 @@ import org.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.keygenerator.mdkey.Bits;
-import org.carbondata.query.carbon.processor.BlocksChunkHolder;
-import org.carbondata.query.carbon.util.DataTypeUtil;
+import org.carbondata.core.util.DataTypeUtil;
+import org.carbondata.scan.filter.GenericQueryType;
+import org.carbondata.scan.processor.BlocksChunkHolder;
 
 import org.apache.spark.sql.types.BooleanType;
 import org.apache.spark.sql.types.DataType;
@@ -39,7 +39,6 @@ import org.apache.spark.sql.types.DoubleType;
 import org.apache.spark.sql.types.IntegerType;
 import org.apache.spark.sql.types.LongType;
 import org.apache.spark.sql.types.TimestampType;
-import org.apache.spark.unsafe.types.UTF8String;
 
 public class PrimitiveQueryType extends ComplexQueryType implements GenericQueryType {
 
@@ -175,11 +174,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     } else {
       String dictionaryValueForKey = dictionary.getDictionaryValueForKey(surrgateValue);
       actualData = DataTypeUtil.getDataBasedOnDataType(dictionaryValueForKey, this.dataType);
-    }
-    if (null != actualData
-        && this.dataType == org.carbondata.core.carbon.metadata.datatype.DataType.STRING) {
-      byte[] dataBytes = ((String) actualData).getBytes(Charset.defaultCharset());
-      return UTF8String.fromBytes(dataBytes);
     }
     return actualData;
   }

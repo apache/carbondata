@@ -28,8 +28,10 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.carbondata.scan.executor.infos.KeyStructureInfo;
+import org.carbondata.scan.filter.GenericQueryType;
 
 /**
  * Scanned result class which will store and provide the result on request

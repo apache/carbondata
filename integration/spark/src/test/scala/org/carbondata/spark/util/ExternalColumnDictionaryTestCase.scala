@@ -126,9 +126,9 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       extColFilePath: String,
       csvDelimiter: String = ","): CarbonLoadModel = {
     val carbonLoadModel = new CarbonLoadModel
-    carbonLoadModel.setTableName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
-    carbonLoadModel.setDatabaseName(relation.cubeMeta.carbonTableIdentifier.getTableName)
-    val table = relation.cubeMeta.carbonTable
+    carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
+    carbonLoadModel.setDatabaseName(relation.tableMeta.carbonTableIdentifier.getTableName)
+    val table = relation.tableMeta.carbonTable
     val carbonSchema = new CarbonDataLoadSchema(table)
     carbonLoadModel.setDatabaseName(table.getDatabaseName)
     carbonLoadModel.setTableName(table.getFactTableName)
@@ -153,7 +153,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     var carbonLoadModel = buildCarbonLoadModel(extComplexRelation, complexFilePath1,
       header, extColDictFilePath1)
     GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel,
-      extComplexRelation.cubeMeta.storePath)
+      extComplexRelation.tableMeta.storePath)
     // check whether the dictionary is generated
     DictionaryTestCaseUtil.checkDictionary(
       extComplexRelation, "deviceInformationId", "10086")
@@ -162,7 +162,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     carbonLoadModel = buildCarbonLoadModel(extComplexRelation, complexFilePath1,
       header, extColDictFilePath2)
     GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel,
-      extComplexRelation.cubeMeta.storePath)
+      extComplexRelation.tableMeta.storePath)
     // check the old dictionary and whether the new distinct value is generated
     DictionaryTestCaseUtil.checkDictionary(
       extComplexRelation, "deviceInformationId", "10086")
@@ -175,7 +175,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     var carbonLoadModel = buildCarbonLoadModel(extComplexRelation, complexFilePath1,
       header, extColDictFilePath3)
     GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel,
-      extComplexRelation.cubeMeta.storePath)
+      extComplexRelation.tableMeta.storePath)
     // check whether the dictionary is generated
     DictionaryTestCaseUtil.checkDictionary(
       extComplexRelation, "channelsId", "1421|")
@@ -184,7 +184,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     carbonLoadModel = buildCarbonLoadModel(verticalDelimiteRelation, complexFilePath2,
       header2, extColDictFilePath3, "|")
     GlobalDictionaryUtil.generateGlobalDictionary(CarbonHiveContext, carbonLoadModel,
-      verticalDelimiteRelation.cubeMeta.storePath)
+      verticalDelimiteRelation.tableMeta.storePath)
     // check whether the dictionary is generated
     DictionaryTestCaseUtil.checkDictionary(
       verticalDelimiteRelation, "channelsId", "1431,")

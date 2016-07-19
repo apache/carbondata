@@ -29,7 +29,6 @@ import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.carbondata.scan.filter.DimColumnFilterInfo;
-import org.carbondata.scan.filter.GenericQueryType;
 import org.carbondata.scan.filter.resolver.metadata.FilterResolverMetadata;
 import org.carbondata.scan.filter.resolver.resolverinfo.visitable.ResolvedFilterInfoVisitable;
 import org.carbondata.scan.filter.resolver.resolverinfo.visitor.ResolvedFilterInfoVisitorIntf;

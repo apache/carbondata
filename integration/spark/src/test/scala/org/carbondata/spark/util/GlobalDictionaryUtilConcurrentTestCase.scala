@@ -53,10 +53,10 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
                            dimensionFilePath: String,
                            header: String): CarbonLoadModel = {
     val carbonLoadModel = new CarbonLoadModel
-    carbonLoadModel.setTableName(relation.cubeMeta.carbonTableIdentifier.getDatabaseName)
-    carbonLoadModel.setDatabaseName(relation.cubeMeta.carbonTableIdentifier.getTableName)
+    carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
+    carbonLoadModel.setDatabaseName(relation.tableMeta.carbonTableIdentifier.getTableName)
     // carbonLoadModel.setSchema(relation.cubeMeta.schema)
-    val table = relation.cubeMeta.carbonTable
+    val table = relation.tableMeta.carbonTable
     val carbonSchema = new CarbonDataLoadSchema(table)
     carbonLoadModel.setDatabaseName(table.getDatabaseName)
     carbonLoadModel.setTableName(table.getFactTableName)
@@ -67,7 +67,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     carbonLoadModel.setCsvDelimiter(",")
     carbonLoadModel.setComplexDelimiterLevel1("\\$")
     carbonLoadModel.setComplexDelimiterLevel2("\\:")
-    carbonLoadModel.setStorePath(relation.cubeMeta.storePath)
+    carbonLoadModel.setStorePath(relation.tableMeta.storePath)
     carbonLoadModel
   }
 
@@ -92,7 +92,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
 
   def buildRelation() = {
     val catalog = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
-    sampleRelation = catalog.lookupRelation1(Option("default"), "employee", None)(CarbonHiveContext)
+    sampleRelation = catalog.lookupRelation1(Option("default"), "employee")(CarbonHiveContext)
       .asInstanceOf[CarbonRelation]
   }
   def writedummydata(filePath: String, recCount: Int) = {
@@ -132,10 +132,10 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
         ex.printStackTrace()
         assert(false)
     }
-    val carbonTableIdentifier = sampleRelation.cubeMeta.carbonTable.getCarbonTableIdentifier
-    val columnIdentifier = sampleRelation.cubeMeta.carbonTable.getDimensionByName("employee", "empid").getColumnIdentifier
+    val carbonTableIdentifier = sampleRelation.tableMeta.carbonTable.getCarbonTableIdentifier
+    val columnIdentifier = sampleRelation.tableMeta.carbonTable.getDimensionByName("employee", "empid").getColumnIdentifier
     val carbonTablePath = PathFactory.getInstance()
-        .getCarbonTablePath(columnIdentifier, sampleRelation.cubeMeta.storePath, carbonTableIdentifier);
+        .getCarbonTablePath(columnIdentifier, sampleRelation.tableMeta.storePath, carbonTableIdentifier);
     val dictPath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId)
     val dictFile = FileFactory.getCarbonFile(dictPath, FileFactory.getFileType(dictPath))
     val offSet = dictFile.getSize
@@ -165,7 +165,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
         GlobalDictionaryUtil
           .generateGlobalDictionary(CarbonHiveContext,
             loadModel,
-            sampleRelation.cubeMeta.storePath)
+            sampleRelation.tableMeta.storePath)
       } catch {
         case ex: Exception => 
           result = ex.getMessage

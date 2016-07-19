@@ -1038,6 +1038,23 @@ public final class CarbonUtil {
   }
 
   /**
+   * below method is to check whether it is complex data type
+   *
+   * @param dataType  data type to be searched
+   * @return if data type is present
+   */
+  public static boolean hasComplexDataType(DataType dataType) {
+    switch (dataType) {
+      case ARRAY :
+      case STRUCT:
+      case MAP:
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /**
    * Below method will be used to read the data file matadata
    *
    * @param filePath file path

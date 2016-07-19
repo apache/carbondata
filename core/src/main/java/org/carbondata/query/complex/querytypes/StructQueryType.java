@@ -26,7 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
-import org.carbondata.query.carbon.processor.BlocksChunkHolder;
+import org.carbondata.scan.filter.GenericQueryType;
+import org.carbondata.scan.processor.BlocksChunkHolder;
 
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRowWithSchema;
 import org.apache.spark.sql.types.DataType;

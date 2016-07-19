@@ -20,7 +20,9 @@
 package org.carbondata.query.complex.querytypes;
 
 import org.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
-import org.carbondata.query.carbon.processor.BlocksChunkHolder;
+import org.carbondata.scan.filter.GenericQueryType;
+import org.carbondata.scan.processor.BlocksChunkHolder;
+
 public class ComplexQueryType {
   protected GenericQueryType children;
 
@@ -48,7 +50,6 @@ public class ComplexQueryType {
    * Method will copy the block chunk holder data to the passed
    * byte[], this method is also used by child
    *
-   * @param columnarKeyStoreDataHolder
    * @param rowNumber
    * @param input
    */

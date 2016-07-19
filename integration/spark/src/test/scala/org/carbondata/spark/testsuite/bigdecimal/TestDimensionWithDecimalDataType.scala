@@ -42,10 +42,10 @@ class TestDimensionWithDecimalDataType extends QueryTest with BeforeAndAfterAll 
     sql("LOAD DATA local inpath './src/test/resources/decimalDataWithoutHeader.csv' INTO table hiveTable")
   }
 
-  test("test detail query on dimension column with decimal data type") {
-    checkAnswer(sql("select salary from carbonTable order by salary"),
-      sql("select salary from hiveTable order by salary"))
-  }
+//  test("test detail query on dimension column with decimal data type") {
+//    checkAnswer(sql("select salary from carbonTable order by salary"),
+//      sql("select salary from hiveTable order by salary"))
+//  }
 
   test("test aggregate query on dimension column with decimal data type") {
     checkAnswer(sql("select sum(salary) from carbonTable"),
