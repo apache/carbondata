@@ -25,6 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * class that implements cacheable interface and methods specific to column dictionary
@@ -62,6 +63,11 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
   private long dictionaryMetaFileLength;
 
   /**
+   * size of one dictionary bucket
+   */
+  private final int dictionaryOneChunkSize = CarbonUtil.getDictionaryChunkSize();
+
+  /**
    * This method will return the timestamp of file based on which decision
    * the decision will be taken whether to read that file or not
    *
@@ -96,6 +102,16 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    */
   @Override public void incrementAccessCount() {
     accessCount.incrementAndGet();
+  }
+
+  /**
+   * This method will return the size of of last dictionary chunk so that only that many
+   * values are read from the dictionary reader
+   *
+   * @return size of last dictionary chunk
+   */
+  @Override public int getSizeOfLastDictionaryChunk() {
+    return 0;
   }
 
   /**
@@ -241,22 +257,19 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    */
   protected byte[] getDictionaryBytesFromSurrogate(int surrogateKey) {
     byte[] dictionaryValueInBytes = null;
-    int totalSizeOfDictionaryChunksTraversed = 0;
-    for (List<byte[]> oneDictionaryChunk : dictionaryChunks) {
-      totalSizeOfDictionaryChunksTraversed =
-          totalSizeOfDictionaryChunksTraversed + oneDictionaryChunk.size();
-      // skip the dictionary chunk till surrogate key is lesser than size of
-      // dictionary chunks traversed
-      if (totalSizeOfDictionaryChunksTraversed < surrogateKey) {
-        continue;
+    // surrogate key starts from 1 and list index will start from 0, so lets say if surrogate
+    // key is 10 then value will present at index 9 of the dictionary chunk list
+    int actualSurrogateIndex = surrogateKey - 1;
+    // lets say dictionaryOneChunkSize = 10, surrogateKey = 10, so bucket index will
+    // be 0 and dictionary chunk index will be 9 to get the value
+    int dictionaryBucketIndex = actualSurrogateIndex / dictionaryOneChunkSize;
+    if (dictionaryChunks.size() > dictionaryBucketIndex) {
+      int indexInsideBucket = actualSurrogateIndex % dictionaryOneChunkSize;
+      List<byte[]> dictionaryBucketContainingSurrogateValue =
+          dictionaryChunks.get(dictionaryBucketIndex);
+      if (dictionaryBucketContainingSurrogateValue.size() > indexInsideBucket) {
+        dictionaryValueInBytes = dictionaryBucketContainingSurrogateValue.get(indexInsideBucket);
       }
-      // lets say surrogateKey = 26, total size traversed is 28, dictionary chunk size = 12
-      // then surrogate position in dictionary chunk list is = 26 - (28-12) - 1 = 9
-      // -1 because list index starts from 0
-      int surrogatePositionInDictionaryChunk =
-          surrogateKey - (totalSizeOfDictionaryChunksTraversed - oneDictionaryChunk.size()) - 1;
-      dictionaryValueInBytes = oneDictionaryChunk.get(surrogatePositionInDictionaryChunk);
-      break;
     }
     return dictionaryValueInBytes;
   }
