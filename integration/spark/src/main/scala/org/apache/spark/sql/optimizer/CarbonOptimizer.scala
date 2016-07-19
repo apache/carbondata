@@ -207,8 +207,8 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           }
 
         case j: Join
-            if !(j.left.isInstanceOf[CarbonDictionaryTempDecoder] ||
-                 j.right.isInstanceOf[CarbonDictionaryTempDecoder]) =>
+          if !(j.left.isInstanceOf[CarbonDictionaryTempDecoder] ||
+               j.right.isInstanceOf[CarbonDictionaryTempDecoder]) =>
           val attrsOnJoin = new util.HashSet[Attribute]
           j.condition match {
             case Some(expression) =>
@@ -260,7 +260,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           }
 
         case p: Project
-            if relations.nonEmpty && !p.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
+          if relations.nonEmpty && !p.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
           val attrsOnProjects = new util.HashSet[Attribute]
           p.projectList.map {
             case attr: AttributeReference =>
@@ -286,6 +286,64 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
               isOuter = true)
           } else {
             Project(p.projectList, child)
+          }
+
+        case wd: Window if !wd.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
+          val attrsOnProjects = new util.HashSet[Attribute]
+          wd.projectList.map {
+            case attr: AttributeReference =>
+            case others =>
+              others.collect {
+                case attr: AttributeReference
+                  if isDictionaryEncoded(attr, relations, aliasMap) =>
+                  attrsOnProjects.add(aliasMap.getOrElse(attr, attr))
+              }
+          }
+          wd.windowExpressions.map {
+            case others =>
+              others.collect {
+                case attr: AttributeReference
+                  if isDictionaryEncoded(attr, relations, aliasMap) =>
+                  attrsOnProjects.add(aliasMap.getOrElse(attr, attr))
+              }
+          }
+          wd.partitionSpec.map{
+            case attr: AttributeReference =>
+            case others =>
+              others.collect {
+                case attr: AttributeReference
+                  if isDictionaryEncoded(attr, relations, aliasMap) =>
+                  attrsOnProjects.add(aliasMap.getOrElse(attr, attr))
+              }
+          }
+          wd.orderSpec.map { s =>
+            s.collect {
+              case attr: AttributeReference
+                if isDictionaryEncoded(attr, relations, aliasMap) =>
+                attrsOnProjects.add(aliasMap.getOrElse(attr, attr))
+            }
+          }
+          wd.partitionSpec.map { s =>
+            s.collect {
+              case attr: AttributeReference
+                if isDictionaryEncoded(attr, relations, aliasMap) =>
+                attrsOnProjects.add(aliasMap.getOrElse(attr, attr))
+            }
+          }
+          var child = wd.child
+          if (attrsOnProjects.size() > 0 && !child.isInstanceOf[Project]) {
+            child = CarbonDictionaryTempDecoder(attrsOnProjects,
+              new util.HashSet[Attribute](),
+              wd.child)
+          }
+          if (!decoder) {
+            decoder = true
+            CarbonDictionaryTempDecoder(new util.HashSet[Attribute](),
+              new util.HashSet[Attribute](),
+              Window(wd.projectList, wd.windowExpressions, wd.partitionSpec, wd.orderSpec, child),
+              isOuter = true)
+          } else {
+            Window(wd.projectList, wd.windowExpressions, wd.partitionSpec, wd.orderSpec, child)
           }
 
         case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
@@ -369,6 +427,33 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           }
         }.asInstanceOf[Seq[NamedExpression]]
         Project(prExps, p.child)
+      case wd: Window if relations.nonEmpty =>
+        val prExps = wd.projectList.map { prExp =>
+          prExp.transform {
+            case attr: AttributeReference =>
+              updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
+          }
+        }.asInstanceOf[Seq[Attribute]]
+        val wdExps = wd.windowExpressions.map { gexp =>
+          gexp.transform {
+            case attr: AttributeReference =>
+              updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
+          }
+        }.asInstanceOf[Seq[NamedExpression]]
+        val partitionSpec = wd.partitionSpec.map{ exp =>
+          exp.transform {
+            case attr: AttributeReference =>
+              updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
+          }
+        }
+        val orderSpec = wd.orderSpec.map { exp =>
+          exp.transform {
+            case attr: AttributeReference =>
+              updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
+          }
+        }.asInstanceOf[Seq[SortOrder]]
+        Window(prExps, wdExps, partitionSpec, orderSpec, wd.child)
+
       case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
         allAttrsNotDecode = marker.revokeJoin()
         l
@@ -394,7 +479,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
     // Remove unnecessary decoders
     val finalPlan = transFormedPlan transform {
       case CarbonDictionaryCatalystDecoder(_, profile, _, false, child)
-          if profile.isInstanceOf[IncludeProfile] && profile.isEmpty =>
+        if profile.isInstanceOf[IncludeProfile] && profile.isEmpty =>
         child
     }
     finalPlan
@@ -505,12 +590,12 @@ case class CarbonDecoderRelation(
   def contains(attr: Attribute): Boolean = {
     var exists =
       attributeMap.exists(entry => entry._1.name.equalsIgnoreCase(attr.name) &&
-                        entry._1.exprId.equals(attr.exprId)) ||
+                                   entry._1.exprId.equals(attr.exprId)) ||
       extraAttrs.exists(entry => entry.name.equalsIgnoreCase(attr.name) &&
-                                entry.exprId.equals(attr.exprId))
+                                 entry.exprId.equals(attr.exprId))
     if(!exists) {
       exists = attributeMap.exists(entry => entry._1.name.equalsIgnoreCase(attr.name)) ||
-        extraAttrs.exists(entry => entry.name.equalsIgnoreCase(attr.name) )
+               extraAttrs.exists(entry => entry.name.equalsIgnoreCase(attr.name) )
     }
     exists
   }

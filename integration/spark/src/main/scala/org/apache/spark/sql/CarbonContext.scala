@@ -26,7 +26,9 @@ import org.apache.spark.sql.catalyst.{CatalystConf, ParserDialect}
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog}
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.ExtractPythonUDFs
 import org.apache.spark.sql.execution.command.PartitionData
+import org.apache.spark.sql.execution.datasources.{PreInsertCastAndRename, PreWriteCheck}
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.optimizer.CarbonOptimizer
 import org.apache.spark.util.Utils
@@ -69,7 +71,21 @@ class CarbonContext(
   }
 
   @transient
-  override protected[sql] lazy val analyzer = new Analyzer(catalog, functionRegistry, conf)
+  override protected[sql] lazy val analyzer =
+    new Analyzer(catalog, functionRegistry, conf) {
+      override val extendedResolutionRules =
+        catalog.ParquetConversions ::
+        catalog.CreateTables ::
+        catalog.PreInsertionCasts ::
+        ExtractPythonUDFs ::
+        ResolveHiveWindowFunction ::
+        PreInsertCastAndRename ::
+        Nil
+
+      override val extendedCheckRules = Seq(
+        PreWriteCheck(catalog)
+      )
+    }
 
   @transient
   override protected[sql] lazy val optimizer: Optimizer =
