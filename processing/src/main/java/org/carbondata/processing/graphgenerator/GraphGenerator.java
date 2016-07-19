@@ -282,7 +282,7 @@ public class GraphGenerator {
 
   private void validateAndInitialiseKettelEngine() throws GraphGeneratorException {
     File file = new File(
-        outputLocation + File.separator + schemaInfo.getSchemaName() + File.separator
+        outputLocation + File.separator + schemaInfo.getDatabaseName() + File.separator
             + this.tableName + File.separator + this.segmentId + File.separator + this.taskNo
             + File.separator);
     boolean isDirCreated = false;
@@ -388,7 +388,7 @@ public class GraphGenerator {
     trans.addTransHop(mdkeyToSliceMerger);
 
     String graphFilePath =
-        outputLocation + File.separator + schemaInfo.getSchemaName() + File.separator
+        outputLocation + File.separator + schemaInfo.getDatabaseName() + File.separator
             + this.tableName + File.separator + segmentId + File.separator + this.taskNo
             + File.separator + this.tableName + ".ktr";
     generateGraphFile(trans, graphFilePath);
@@ -458,7 +458,7 @@ public class GraphGenerator {
     sliceMerger.setMeasureCount(configurationInfo.getMeasureCount());
     sliceMerger.setTabelName(configurationInfo.getTableName());
     sliceMerger.setTableName(schemaInfo.getTableName());
-    sliceMerger.setSchemaName(schemaInfo.getSchemaName());
+    sliceMerger.setDatabaseName(schemaInfo.getDatabaseName());
     if (null != this.factStoreLocation) {
       sliceMerger.setCurrentRestructNumber(
           CarbonUtil.getRestructureNumber(this.factStoreLocation, this.factTableName));
@@ -542,7 +542,7 @@ public class GraphGenerator {
     seqMeta.setNoDictionaryDims(graphConfiguration.getNoDictionaryDims());
     seqMeta.setDimensionColumnsDataType(graphConfiguration.getDimensionColumnsDataType());
     seqMeta.setTableName(schemaInfo.getTableName());
-    seqMeta.setSchemaName(schemaInfo.getSchemaName());
+    seqMeta.setDatabaseName(schemaInfo.getDatabaseName());
     seqMeta.setComplexDelimiterLevel1(schemaInfo.getComplexDelimiterLevel1());
     seqMeta.setComplexDelimiterLevel2(schemaInfo.getComplexDelimiterLevel2());
     seqMeta.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
@@ -602,7 +602,7 @@ public class GraphGenerator {
     carbonMdKey.setSegmentId(segmentId);
     carbonMdKey.setNumberOfCores(graphConfiguration.getNumberOfCores());
     carbonMdKey.setTableName(graphConfiguration.getTableName());
-    carbonMdKey.setSchemaName(schemaInfo.getSchemaName());
+    carbonMdKey.setDatabaseName(schemaInfo.getDatabaseName());
     carbonMdKey.setTableName(schemaInfo.getTableName());
     carbonMdKey.setComplexTypeString(graphConfiguration.getComplexTypeString());
     carbonMdKey.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
@@ -748,7 +748,7 @@ public class GraphGenerator {
     sortRowsMeta.setTaskNo(taskNo);
     sortRowsMeta.setTabelName(graphConfiguration.getTableName());
     sortRowsMeta.setTableName(schemaInfo.getTableName());
-    sortRowsMeta.setSchemaName(schemaInfo.getSchemaName());
+    sortRowsMeta.setDatabaseName(schemaInfo.getDatabaseName());
     sortRowsMeta.setOutputRowSize(actualMeasures.length + 1 + "");
     sortRowsMeta.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
     sortRowsMeta.setDimensionCount(graphConfiguration.getDimensions().length + "");

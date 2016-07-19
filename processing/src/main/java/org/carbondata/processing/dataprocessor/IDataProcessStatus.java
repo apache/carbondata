@@ -94,12 +94,12 @@ public interface IDataProcessStatus {
   /**
    * @return the databaseName
    */
-  String getSchemaName();
+  String getDatabaseName();
 
   /**
    * @param databaseName the databaseName to set
    */
-  void setSchemaName(String databaseName);
+  void setDatabaseName(String databaseName);
 
   /**
    * @return the tableName

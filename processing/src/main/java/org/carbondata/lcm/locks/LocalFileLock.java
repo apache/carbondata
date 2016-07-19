@@ -100,11 +100,11 @@ public class LocalFileLock extends AbstractCarbonLock {
    */
   @Override public boolean lock() {
     try {
-      String schemaFolderPath = tmpPath + File.separator + databaseName;
-      String tableFolderPath = schemaFolderPath + File.separator + tableName;
-      // create dir with schema name in tmp location.
-      if (!FileFactory.isFileExist(schemaFolderPath, FileFactory.getFileType(tmpPath))) {
-        FileFactory.mkdirs(schemaFolderPath, FileFactory.getFileType(tmpPath));
+      String databaseFolderPath = tmpPath + File.separator + databaseName;
+      String tableFolderPath = databaseFolderPath + File.separator + tableName;
+      // create dir with database name in tmp location.
+      if (!FileFactory.isFileExist(databaseFolderPath, FileFactory.getFileType(tmpPath))) {
+        FileFactory.mkdirs(databaseFolderPath, FileFactory.getFileType(tmpPath));
       }
 
       // create dir with table name in tmp location.

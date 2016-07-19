@@ -246,7 +246,7 @@ public class DataGraphExecuter {
     }
 
     //Don't change the logic of creating key
-    String key = model.getSchemaName() + '/' + model.getTableName() + '_' + model.getTableName();
+    String key = model.getDatabaseName() + '/' + model.getTableName() + '_' + model.getTableName();
 
     if (trans.getErrors() > 0) {
       LOGGER.error("Graph Execution had errors");

@@ -129,7 +129,7 @@ public class CarbonSliceMergerStep extends BaseStep {
 
   private void renameFolders() {
     CarbonDataProcessorUtil.renameBadRecordsFromInProgressToNormal(
-        meta.getSchemaName() + File.separator + meta.getTableName() + File.separator + meta
+        meta.getDatabaseName() + File.separator + meta.getTableName() + File.separator + meta
             .getTaskNo());
   }
 

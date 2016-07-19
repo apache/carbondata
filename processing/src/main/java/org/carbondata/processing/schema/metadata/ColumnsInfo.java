@@ -454,11 +454,11 @@ public class ColumnsInfo {
     this.measureColumns = measureColumns;
   }
 
-  public String getSchemaName() {
+  public String getDatabaseName() {
     return databaseName;
   }
 
-  public void setSchemaName(String databaseName) {
+  public void setDatabaseName(String databaseName) {
     this.databaseName = databaseName;
   }
 

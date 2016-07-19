@@ -123,7 +123,7 @@ object CarbonContext {
   val datasourceShortName: String = "carbondata"
 
   /**
-   * @param databaseName - Schema Name
+   * @param databaseName - Database Name
    * @param tableName   - Table Name
    * @param factPath   - Raw CSV data path
    * @param targetPath - Target path where the file will be split as per partition

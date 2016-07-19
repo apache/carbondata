@@ -176,7 +176,7 @@ public final class CarbonLoaderUtil {
     schmaModel.setEscapeCharacter(loadModel.getEscapeChar());
     SchemaInfo info = new SchemaInfo();
 
-    info.setSchemaName(databaseName);
+    info.setDatabaseName(databaseName);
     info.setTableName(tableName);
     info.setAutoAggregateRequest(loadModel.isAggLoadRequest());
     info.setComplexDelimiterLevel1(loadModel.getComplexDelimiterLevel1());
@@ -260,13 +260,13 @@ public final class CarbonLoaderUtil {
   public static void deleteTable(int partitionCount, String databaseName, String tableName,
       String aggTableName, String hdfsStoreLocation, int currentRestructNumber) {
     String aggTableLoc = null;
-    String partitionSchemaName = null;
+    String partitionDatabaseName = null;
     String partitionTableName = null;
     for (int i = 0; i < partitionCount; i++) {
-      partitionSchemaName = databaseName + '_' + i;
+      partitionDatabaseName = databaseName + '_' + i;
       partitionTableName = tableName + '_' + i;
       for (int j = currentRestructNumber; j >= 0; j--) {
-        aggTableLoc = getTableLocation(partitionSchemaName, partitionTableName, aggTableName,
+        aggTableLoc = getTableLocation(partitionDatabaseName, partitionTableName, aggTableName,
             hdfsStoreLocation, j);
         deleteStorePath(aggTableLoc);
       }
@@ -287,13 +287,13 @@ public final class CarbonLoaderUtil {
   public static void deleteSlice(int partitionCount, String databaseName, String tableName,
       String hdfsStoreLocation, int currentRestructNumber, String loadFolder) {
     String tableLoc = null;
-    String partitionSchemaName = null;
+    String partitionDatabaseName = null;
     String partitionTableName = null;
     for (int i = 0; i < partitionCount; i++) {
-      partitionSchemaName = databaseName + '_' + i;
+      partitionDatabaseName = databaseName + '_' + i;
       partitionTableName = tableName + '_' + i;
       tableLoc =
-          getTableLocation(partitionSchemaName, partitionTableName, tableName, hdfsStoreLocation,
+          getTableLocation(partitionDatabaseName, partitionTableName, tableName, hdfsStoreLocation,
               currentRestructNumber);
       tableLoc = tableLoc + File.separator + loadFolder;
       deleteStorePath(tableLoc);

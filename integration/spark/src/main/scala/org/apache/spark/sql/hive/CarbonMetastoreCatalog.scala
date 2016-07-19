@@ -177,20 +177,20 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
 
   private def fillMetaData(basePath: String, fileType: FileType,
       metaDataBuffer: ArrayBuffer[TableMeta]): Unit = {
-    val schemasPath = basePath // + "/schemas"
+    val databasePath = basePath // + "/schemas"
     try {
-      if (FileFactory.isFileExist(schemasPath, fileType)) {
-        val file = FileFactory.getCarbonFile(schemasPath, fileType)
-        val schemaFolders = file.listFiles()
+      if (FileFactory.isFileExist(databasePath, fileType)) {
+        val file = FileFactory.getCarbonFile(databasePath, fileType)
+        val databaseFolders = file.listFiles()
 
-        schemaFolders.foreach(schemaFolder => {
-          if (schemaFolder.isDirectory) {
-            val dbName = schemaFolder.getName
-            val tableFolders = schemaFolder.listFiles()
+        databaseFolders.foreach(databaseFolder => {
+          if (databaseFolder.isDirectory) {
+            val dbName = databaseFolder.getName
+            val tableFolders = databaseFolder.listFiles()
 
             tableFolders.foreach(tableFolder => {
               if (tableFolder.isDirectory) {
-                val carbonTableIdentifier = new CarbonTableIdentifier(schemaFolder.getName,
+                val carbonTableIdentifier = new CarbonTableIdentifier(databaseFolder.getName,
                     tableFolder.getName, UUID.randomUUID().toString)
                 val carbonTablePath = CarbonStorePath.getCarbonTablePath(basePath,
                   carbonTableIdentifier)
@@ -198,7 +198,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
 
                 if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
                   val tableName = tableFolder.getName
-                  val tableUniqueName = schemaFolder.getName + "_" + tableFolder.getName
+                  val tableUniqueName = databaseFolder.getName + "_" + tableFolder.getName
 
 
                   val createTBase = new ThriftReader.TBaseCreator() {
@@ -239,14 +239,14 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
       }
       else {
         // Create folders and files.
-        FileFactory.mkdirs(schemasPath, fileType)
+        FileFactory.mkdirs(databasePath, fileType)
 
       }
     }
     catch {
       case s: java.io.FileNotFoundException =>
         // Create folders and files.
-        FileFactory.mkdirs(schemasPath, fileType)
+        FileFactory.mkdirs(databasePath, fileType)
 
     }
   }

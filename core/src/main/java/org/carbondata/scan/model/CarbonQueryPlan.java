@@ -40,16 +40,12 @@ public class CarbonQueryPlan implements Serializable {
   private static final long serialVersionUID = -9036044826928017164L;
 
   /**
-   * Schema name , if user asks select * from datasight.employee.
-   * then datasight is the schame name.
-   * Remains null if the user does not select schema name.
+   * Database name
    */
   private String databaseName;
 
   /**
-   * Table name .
-   * if user asks select * from datasight.employee. then employee is the table name.
-   * It is mandatory.
+   * Table name
    */
   private String tableName;
 
@@ -119,7 +115,7 @@ public class CarbonQueryPlan implements Serializable {
   }
 
   /**
-   * Constructor created with schema name and table name.
+   * Constructor created with database name and table name.
    *
    * @param databaseName
    * @param tableName
@@ -162,7 +158,7 @@ public class CarbonQueryPlan implements Serializable {
   /**
    * @return the databaseName
    */
-  public String getSchemaName() {
+  public String getDatabaseName() {
     return databaseName;
   }
 

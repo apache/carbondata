@@ -143,7 +143,7 @@ public final class QueryPartitionHelper {
    * Get partitions applicable for query based on filters applied in query
    */
   public List<Partition> getPartitionsForQuery(CarbonQueryPlan queryPlan, Partitioner partitioner) {
-    String tableUniqueName = queryPlan.getSchemaName() + '_' + queryPlan.getTableName();
+    String tableUniqueName = queryPlan.getDatabaseName() + '_' + queryPlan.getTableName();
     checkInitialization(tableUniqueName, partitioner);
 
     DataPartitioner dataPartitioner = partitionerMap.get(tableUniqueName);

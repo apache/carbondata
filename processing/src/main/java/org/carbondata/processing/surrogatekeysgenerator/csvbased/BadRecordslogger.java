@@ -67,7 +67,7 @@ public class BadRecordslogger {
    */
   private CarbonFile logFile;
   /**
-   * task key which is Schemaname/TableName/tablename
+   * task key which is DatabaseName/TableName/tablename
    */
   private String taskKey;
 
@@ -81,7 +81,7 @@ public class BadRecordslogger {
   }
 
   /**
-   * @param key Schemaname/TableName/tablename
+   * @param key DatabaseName/TableName/tablename
    * @return return "Partially" and remove from map
    */
   public static String hasBadRecord(String key) {

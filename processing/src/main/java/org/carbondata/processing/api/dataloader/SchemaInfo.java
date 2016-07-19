@@ -157,14 +157,14 @@ public class SchemaInfo {
   /**
    * @return the databaseName
    */
-  public String getSchemaName() {
+  public String getDatabaseName() {
     return databaseName;
   }
 
   /**
    * @param databaseName the databaseName to set
    */
-  public void setSchemaName(String databaseName) {
+  public void setDatabaseName(String databaseName) {
     this.databaseName = databaseName;
   }
 

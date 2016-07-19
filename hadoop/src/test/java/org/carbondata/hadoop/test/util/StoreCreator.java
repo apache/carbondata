@@ -131,7 +131,7 @@ public class StoreCreator {
       LoadModel loadModel = new LoadModel();
       String partitionId = "0";
       loadModel.setSchema(schema);
-      loadModel.setSchemaName(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName());
+      loadModel.setDatabaseName(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName());
       loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
       loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
       loadModel.setFactFilePath(factFilePath);
@@ -334,7 +334,7 @@ public class StoreCreator {
     System.setProperty("KETTLE_HOME", kettleHomePath);
     new File(storeLocation).mkdirs();
     String outPutLoc = storeLocation + "/etl";
-    String databaseName = loadModel.getSchemaName();
+    String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
     String tempLocationKey = databaseName + '_' + tableName + "_1";
     CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation);
@@ -352,7 +352,7 @@ public class StoreCreator {
     String fileNamePrefix = "";
 
     String graphPath =
-        outPutLoc + File.separator + loadModel.getSchemaName() + File.separator + tableName
+        outPutLoc + File.separator + loadModel.getDatabaseName() + File.separator + tableName
             + File.separator + 0 + File.separator + 1 + File.separator + tableName + ".ktr";
     File path = new File(graphPath);
     if (path.exists()) {
@@ -367,7 +367,7 @@ public class StoreCreator {
     GraphGenerator.blockInfo.put("qwqwq", new BlockDetails[] { blockDetails });
     schmaModel.setBlocksID("qwqwq");
     schmaModel.setEscapeCharacter("\\");
-    info.setSchemaName(databaseName);
+    info.setDatabaseName(databaseName);
     info.setTableName(tableName);
 
     generateGraph(schmaModel, info, loadModel.getTableName(), "0", loadModel.getSchema(), null,
@@ -534,7 +534,7 @@ public class StoreCreator {
       return tableName;
     }
 
-    public String getSchemaName() {
+    public String getDatabaseName() {
       return databaseName;
     }
 
@@ -550,7 +550,7 @@ public class StoreCreator {
       this.tableName = tableName;
     }
 
-    public void setSchemaName(String databaseName) {
+    public void setDatabaseName(String databaseName) {
       this.databaseName = databaseName;
     }
 

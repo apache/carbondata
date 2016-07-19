@@ -133,14 +133,14 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
   /**
    * @return the databaseName
    */
-  public String getSchemaName() {
+  public String getDatabaseName() {
     return databaseName;
   }
 
   /**
    * @param databaseName the databaseName to set
    */
-  public void setSchemaName(String databaseName) {
+  public void setDatabaseName(String databaseName) {
     this.databaseName = databaseName;
   }
 
@@ -255,7 +255,7 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
     copy.setDataloadstatusid(this.dataloadstatusid);
     copy.setDesc(this.desc);
     copy.setKey(this.key);
-    copy.setSchemaName(databaseName);
+    copy.setDatabaseName(databaseName);
     copy.setStatus(status);
     return copy;
   }
