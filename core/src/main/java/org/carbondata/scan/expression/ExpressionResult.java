@@ -259,7 +259,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         case LONG:
           return new BigDecimal((long) value);
         case DOUBLE:
-          return new BigDecimal((double) value);
+          return new BigDecimal(value.toString());
         case DECIMAL:
           return new BigDecimal(value.toString());
         case TIMESTAMP:
@@ -413,11 +413,15 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         case INT:
           result = this.getInt().equals(objToCompare.getInt());
           break;
+        case LONG:
+        case TIMESTAMP:
+          result = this.getLong().equals(objToCompare.getLong());
+          break;
         case DOUBLE:
           result = this.getDouble().equals(objToCompare.getDouble());
           break;
-        case TIMESTAMP:
-          result = this.getLong().equals(objToCompare.getLong());
+        case DECIMAL:
+          result = this.getDecimal().equals(objToCompare.getDecimal());
           break;
         default:
           break;

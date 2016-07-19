@@ -29,7 +29,8 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
  * class will be used to pass the block detail detail will be passed form driver
  * to all the executor to load the b+ tree
  */
-public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> {
+public class TableBlockInfo extends Distributable
+    implements Serializable, Comparable<Distributable> {
 
   /**
    * serialization id
@@ -56,10 +57,8 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
    */
   private String segmentId;
 
-  /**
-   * locations to store the host name and other detail
-   */
   private String[] locations;
+
 
   public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
       long blockLength) {
@@ -90,13 +89,6 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
    */
   public String getSegmentId() {
     return segmentId;
-  }
-
-  /**
-   * @return the locations
-   */
-  public String[] getLocations() {
-    return locations;
   }
 
   /**
@@ -148,14 +140,14 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
    * is same 2. compare task id if task id is same 3. compare offsets of the
    * block
    */
-  @Override public int compareTo(TableBlockInfo other) {
+  @Override public int compareTo(Distributable other) {
 
     int compareResult = 0;
     // get the segment id
     // converr seg ID to double.
 
     double seg1 = Double.parseDouble(segmentId);
-    double seg2 = Double.parseDouble(other.segmentId);
+    double seg2 = Double.parseDouble(((TableBlockInfo) other).segmentId);
     if (seg1 - seg2 < 0) {
       return -1;
     }
@@ -169,25 +161,28 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
     // the file
     if (CarbonTablePath.isCarbonDataFile(filePath)) {
       int firstTaskId = Integer.parseInt(DataFileUtil.getTaskNo(filePath));
-      int otherTaskId = Integer.parseInt(DataFileUtil.getTaskNo(other.filePath));
+      int otherTaskId = Integer.parseInt(DataFileUtil.getTaskNo(((TableBlockInfo) other).filePath));
       if (firstTaskId != otherTaskId) {
         return firstTaskId - otherTaskId;
       }
       // compare the part no of both block info
       int firstPartNo = Integer.parseInt(DataFileUtil.getPartNo(filePath));
-      int SecondPartNo = Integer.parseInt(DataFileUtil.getPartNo(other.filePath));
+      int SecondPartNo =
+          Integer.parseInt(DataFileUtil.getPartNo(((TableBlockInfo) other).filePath));
       compareResult = firstPartNo - SecondPartNo;
     } else {
-      compareResult = filePath.compareTo(other.getFilePath());
+      compareResult = filePath.compareTo(((TableBlockInfo) other).getFilePath());
     }
     if (compareResult != 0) {
       return compareResult;
     }
     //compare result is not 0 then return
     // if part no is also same then compare the offset and length of the block
-    if (blockOffset + blockLength < other.blockOffset + other.blockLength) {
+    if (blockOffset + blockLength
+        < ((TableBlockInfo) other).blockOffset + ((TableBlockInfo) other).blockLength) {
       return -1;
-    } else if (blockOffset + blockLength > other.blockOffset + other.blockLength) {
+    } else if (blockOffset + blockLength
+        > ((TableBlockInfo) other).blockOffset + ((TableBlockInfo) other).blockLength) {
       return 1;
     }
     return 0;
@@ -200,6 +195,10 @@ public class TableBlockInfo implements Serializable, Comparable<TableBlockInfo> 
     result = 31 * result + segmentId.hashCode();
     result = 31 * result + Arrays.hashCode(locations);
     return result;
+  }
+
+  @Override public String[] getLocations() {
+    return locations;
   }
 
 }

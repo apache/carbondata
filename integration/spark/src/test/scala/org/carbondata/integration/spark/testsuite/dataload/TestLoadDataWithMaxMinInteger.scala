@@ -48,9 +48,9 @@ class TestLoadDataWithMaxMinInteger extends QueryTest with BeforeAndAfterAll {
         'QUOTECHAR'='"')
       """)
     checkAnswer(sql("select age from integer_table_01"),
-      Seq(Row(10.0), Row(26.0), Row(10.0), Row(10.0), Row(20.0),
-        Row(10.0), Row(10.0), Row(10.0), Row(10.0), Row(10.0),
-        Row(-2147483648.0)))
+      Seq(Row(10), Row(26), Row(10), Row(10), Row(20),
+        Row(10), Row(10), Row(10), Row(10), Row(10),
+        Row(-2147483648)))
   }
 
   test("test carbon table data loading when the int column " +
@@ -67,9 +67,9 @@ class TestLoadDataWithMaxMinInteger extends QueryTest with BeforeAndAfterAll {
         'QUOTECHAR'='"')
       """)
     checkAnswer(sql("select age from integer_table_02"),
-      Seq(Row(10.0), Row(26.0), Row(10.0), Row(10.0), Row(20.0),
-        Row(10.0), Row(10.0), Row(10.0), Row(10.0), Row(10.0),
-        Row(2147483647.0)))
+      Seq(Row(10), Row(26), Row(10), Row(10), Row(20),
+        Row(10), Row(10), Row(10), Row(10), Row(10),
+        Row(2147483647)))
   }
 
   test("test carbon table data loading when the int column " +
@@ -86,9 +86,9 @@ class TestLoadDataWithMaxMinInteger extends QueryTest with BeforeAndAfterAll {
         'QUOTECHAR'='"')
       """)
     checkAnswer(sql("select age from integer_table_03"),
-      Seq(Row(10.0), Row(26.0), Row(10.0), Row(10.0), Row(20.0),
-        Row(10.0), Row(10.0), Row(10.0), Row(10.0), Row(10.0),
-        Row(-2147483648.0), Row(2147483647.0)))
+      Seq(Row(10), Row(26), Row(10), Row(10), Row(20),
+        Row(10), Row(10), Row(10), Row(10), Row(10),
+        Row(-2147483648), Row(2147483647)))
   }
   override def afterAll {
     sql("drop table if exists integer_table_01")

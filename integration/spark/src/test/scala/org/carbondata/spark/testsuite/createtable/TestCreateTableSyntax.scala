@@ -86,6 +86,18 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
       }
     }
   }
+  
+  test("describe formatted on hive table and carbon table") {
+    sql("create table carbontable(id int, username struct<sur_name:string," +
+        "actual_name:struct<first_name:string,last_name:string>>, country string, salary double)" +
+        "STORED BY 'org.apache.carbondata.format'")
+    sql("describe formatted carbontable").show(50)
+    sql("drop table if exists carbontable")
+    sql("create table hivetable(id int, username struct<sur_name:string," +
+        "actual_name:struct<first_name:string,last_name:string>>, country string, salary double)")
+    sql("describe formatted hivetable").show(50)
+    sql("drop table if exists hivetable")
+  }
 
   override def afterAll {
     sql("drop table if exists carbontable")

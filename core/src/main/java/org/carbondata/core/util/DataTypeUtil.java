@@ -58,6 +58,8 @@ public final class DataTypeUtil {
         BigDecimal bigDecimal =
             new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
         return normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
+      case INT:
+        return Double.valueOf(msrValue).longValue();
       case LONG:
         return Long.valueOf(msrValue);
       default:
@@ -89,6 +91,7 @@ public final class DataTypeUtil {
     switch (dataType) {
       case DECIMAL:
         return CarbonCommonConstants.BIG_DECIMAL_MEASURE;
+      case INT:
       case LONG:
         return CarbonCommonConstants.BIG_INT_MEASURE;
       default:
@@ -279,5 +282,42 @@ public final class DataTypeUtil {
       return null;
     }
 
+  }
+
+  /**
+   * This method will parse a given string value corresponding to its datatype
+   *
+   * @param value    value to parse
+   * @param dataType datatype for that value
+   * @return
+   */
+  public static boolean validateColumnValueForItsDataType(String value, DataType dataType) {
+    try {
+      Object parsedValue = null;
+      // validation will not be done for timestamp datatype as for timestamp direct dictionary
+      // is generated. No dictionary file is created for timestamp datatype column
+      switch (dataType) {
+        case DECIMAL:
+          parsedValue = new BigDecimal(value);
+          break;
+        case INT:
+          parsedValue = Integer.parseInt(value);
+          break;
+        case LONG:
+          parsedValue = Long.valueOf(value);
+          break;
+        case DOUBLE:
+          parsedValue = Double.valueOf(value);
+          break;
+        default:
+          return true;
+      }
+      if (null != parsedValue) {
+        return true;
+      }
+      return false;
+    } catch (Exception e) {
+      return false;
+    }
   }
 }

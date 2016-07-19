@@ -81,17 +81,6 @@ public class DataGraphExecuter {
   }
 
   /**
-   * This method check whether then CSV file has header or not.
-   *
-   * @param columnNames
-   * @param csvFilePath
-   * @return
-   */
-  private boolean checkHeaderExist(String[] columnNames, String csvFilePath, String delimiter) {
-    return GraphExecutionUtil.checkHeaderExist(csvFilePath, columnNames, delimiter);
-  }
-
-  /**
    * This Method checks whether csv file provided and the column name in schema are same
    * or not
    *
@@ -148,13 +137,6 @@ public class DataGraphExecuter {
           "CSV File provided is not proper. Column names in schema and csv header are not same. "
               + "CSVFile Name : "
               + f.getName());
-    }
-
-    if (!checkHeaderExist(columnNames, f.getAbsolutePath(), delimiter)) {
-      LOGGER.error("Header Columns are not present in the provided CSV File :" + f.getName());
-      throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
-          "Header Columns are not present in the provided CSV File:" + f.getName());
-
     }
   }
 
@@ -648,16 +630,6 @@ public class DataGraphExecuter {
               + dimFile.getName());
     }
 
-    if (!checkDimHeaderExist(columnNames, dimFile.getAbsolutePath(), delimiter)) {
-      LOGGER.error(
-          "Header Columns are not present in the provided CSV File For Dimension Table Load :"
-              + dimFile.getName());
-      throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
-          "Header Columns are not present in the provided CSV File For Dimension Table Load :"
-              + dimFile.getName());
-
-    }
-
   }
 
   /**
@@ -669,13 +641,6 @@ public class DataGraphExecuter {
   private boolean checkAllColumnsPresent(String[] columnNames, String dimFilePath,
       String delimiter) {
     return GraphExecutionUtil.checkCSVAndRequestedTableColumns(dimFilePath, columnNames, delimiter);
-  }
-
-  /**
-   * Check the dimension csv file is having all the dimension.
-   */
-  private boolean checkDimHeaderExist(String[] columnNames, String dimFilePath, String delimiter) {
-    return GraphExecutionUtil.checkHeaderExist(dimFilePath, columnNames, delimiter);
   }
 
   /**

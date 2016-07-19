@@ -59,9 +59,8 @@ public interface GenericQueryType {
 
   void setKeyOrdinalForQuery(int keyOrdinalForQuery);
 
-  void parseBlocksAndReturnComplexColumnByteArray(
-      ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolder, int rowNumber,
-      DataOutputStream dataOutputStream) throws IOException;
+  void parseBlocksAndReturnComplexColumnByteArray(DimensionColumnDataChunk[] dimensionDataChunks,
+      int rowNumber, DataOutputStream dataOutputStream) throws IOException;
 
   DataType getSchemaType();
 
@@ -69,5 +68,7 @@ public interface GenericQueryType {
       throws IOException;
 
   void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder);
+
+  Object getDataBasedOnDataTypeFromSurrogates(ByteBuffer surrogateData);
 
 }

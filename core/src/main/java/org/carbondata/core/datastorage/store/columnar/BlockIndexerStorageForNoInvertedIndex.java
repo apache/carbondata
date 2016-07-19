@@ -34,7 +34,7 @@ public class BlockIndexerStorageForNoInvertedIndex implements IndexStorage<int[]
   private int[] dataIndexMap;
 
   public BlockIndexerStorageForNoInvertedIndex(byte[][] keyBlockInput, boolean compressData,
-                                               boolean isNoDictionary) {
+      boolean isNoDictionary) {
     // without invertedindex but can be RLE
     if (compressData) {
       // with RLE

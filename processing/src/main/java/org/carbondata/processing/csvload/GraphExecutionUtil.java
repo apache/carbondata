@@ -253,34 +253,6 @@ public final class GraphExecutionUtil {
 
   /**
    * @param csvFilePath
-   * @param columnNames
-   */
-  public static boolean checkHeaderExist(String csvFilePath, String[] columnNames,
-      String delimiter) {
-
-    String readLine = readCSVFile(csvFilePath);
-
-    if (null != readLine) {
-      String[] columnFromCSV = readLine.toLowerCase().split(delimiter);
-
-      List<String> csvColumnsList = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-
-      for (String column : columnFromCSV) {
-        csvColumnsList.add(column.replaceAll("\"", ""));
-      }
-
-      for (String columns : columnNames) {
-        if (csvColumnsList.contains(columns)) {
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  /**
-   * @param csvFilePath
    * @return
    */
   private static String readCSVFile(String csvFilePath) {

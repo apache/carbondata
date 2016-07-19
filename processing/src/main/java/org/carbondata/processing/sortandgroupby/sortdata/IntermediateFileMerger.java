@@ -97,6 +97,8 @@ public class IntermediateFileMerger implements Callable<Void> {
   }
 
   @Override public Void call() throws Exception {
+    long intermediateMergeStartTime = System.currentTimeMillis();
+    int fileConterConst = fileCounter;
     boolean isFailed = false;
     try {
       startSorting();
@@ -117,6 +119,10 @@ public class IntermediateFileMerger implements Callable<Void> {
           }
         }
       }
+      double intermediateMergeCostTime = (System.currentTimeMillis() -
+          intermediateMergeStartTime)/1000.0;
+      LOGGER.info("============================== Intermediate Merge of " + fileConterConst +
+          " Sort Temp Files Cost Time: " + intermediateMergeCostTime + "(s)");
     } catch (Exception e) {
       LOGGER.error(e, "Problem while intermediate merging");
       isFailed = true;

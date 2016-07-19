@@ -245,9 +245,15 @@ public class CarbonDictionaryWriterImplTest {
   private void overwriteDictionaryMetaFile(ColumnDictionaryChunkMeta firstDictionaryChunkMeta,
       String dictionaryFile) throws IOException {
     ThriftWriter thriftMetaChunkWriter = new ThriftWriter(dictionaryFile, false);
-    thriftMetaChunkWriter.open();
-    thriftMetaChunkWriter.write(firstDictionaryChunkMeta);
-    thriftMetaChunkWriter.close();
+    try {
+      thriftMetaChunkWriter.open();
+      thriftMetaChunkWriter.write(firstDictionaryChunkMeta);
+    } catch (IOException e) {
+
+    } finally {
+      thriftMetaChunkWriter.close();
+    }
+
   }
 
   /**
@@ -345,6 +351,7 @@ public class CarbonDictionaryWriterImplTest {
       }
     } finally {
       writer.close();
+      writer.commit();
     }
   }
 
@@ -361,6 +368,8 @@ public class CarbonDictionaryWriterImplTest {
     writer.write(convertStringListToByteArray(dataSet1));
     // close the writer
     writer.close();
+    //write metadata
+    writer.commit();
     // record end offset of file
     long end_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
     // read dictionary chunk from dictionary file

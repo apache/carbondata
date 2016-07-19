@@ -35,14 +35,18 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
 import org.carbondata.processing.datatypes.GenericDataType;
 import org.carbondata.processing.mdkeygen.file.IFileManagerComposite;
 import org.carbondata.processing.schema.metadata.ArrayWrapper;
+import org.carbondata.processing.schema.metadata.ColumnSchemaDetails;
 import org.carbondata.processing.schema.metadata.ColumnsInfo;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+
 import org.pentaho.di.core.exception.KettleException;
 
 public abstract class CarbonCSVBasedDimSurrogateKeyGen {
@@ -145,6 +149,29 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
     key = dicCache.getSurrogateKey(tuple);
     return key;
   }
+
+  /**
+   * @param tuple         The string value whose surrogate key will be gennerated.
+   * @param tabColumnName The K of dictionaryCaches Map, for example "tablename_columnname"
+   */
+  public Integer generateSurrogateKeys(String tuple, String tabColumnName, String columnId)
+      throws KettleException {
+    Integer key = null;
+    Dictionary dicCache = dictionaryCaches.get(tabColumnName);
+    if (null == dicCache) {
+      ColumnSchemaDetails columnSchemaDetails =
+          this.columnsInfo.getColumnSchemaDetailsWrapper().get(columnId);
+      if (columnSchemaDetails.isDirectDictionary()) {
+        DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+            .getDirectDictionaryGenerator(columnSchemaDetails.getColumnType());
+        key = directDictionaryGenerator.generateDirectSurrogateKey(tuple);
+      }
+    } else {
+      key = dicCache.getSurrogateKey(tuple);
+    }
+    return key;
+  }
+
 
   public Integer generateSurrogateKeysForTimeDims(String tuple, String columnName, int index,
       Object[] props) throws KettleException {
@@ -312,6 +339,7 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
   private void setDimensionTables(String[] dimeFileNames) {
     int noOfPrimitiveDims = 0;
     List<String> dimFilesForPrimitives = new ArrayList<String>();
+    List<Boolean> isDirectDictionary = new ArrayList<Boolean>();
     dictionaryCaches = new ConcurrentHashMap<String, Dictionary>();
     for (int i = 0; i < dimeFileNames.length; i++) {
       GenericDataType complexType = columnsInfo.getComplexTypesMap()
@@ -325,13 +353,24 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
                   .getName());
           eachPrimitive.setSurrogateIndex(noOfPrimitiveDims);
           noOfPrimitiveDims++;
+          ColumnSchemaDetails columnSchemaDetails =
+              columnsInfo.getColumnSchemaDetailsWrapper().get(eachPrimitive.getColumnId());
+          if (columnSchemaDetails.isDirectDictionary()) {
+            isDirectDictionary.add(true);
+          }
         }
       } else {
         dimFilesForPrimitives.add(dimeFileNames[i]);
         noOfPrimitiveDims++;
+        isDirectDictionary.add(false);
       }
     }
     max = new int[noOfPrimitiveDims];
+    for(int i = 0; i < isDirectDictionary.size(); i++) {
+      if (isDirectDictionary.get(i)) {
+        max[i] = Integer.MAX_VALUE;
+      }
+    }
     this.dimsFiles = dimFilesForPrimitives.toArray(new String[dimFilesForPrimitives.size()]);
 
     createRespectiveDimFilesForDimTables();

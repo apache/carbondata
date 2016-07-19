@@ -24,11 +24,12 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.carbondata.common.factory.CarbonCommonFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.ColumnIdentifier;
-import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.service.PathService;
 import org.carbondata.format.ColumnDictionaryChunk;
 
 import org.apache.thrift.TBase;
@@ -144,6 +145,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
   @Override public void close() throws IOException {
     if (null != dictionaryFileReader) {
       dictionaryFileReader.close();
+      dictionaryFileReader = null;
     }
   }
 
@@ -198,8 +200,9 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    * This method will form the path for dictionary file for a given column
    */
   protected void initFileLocation() {
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(this.hdfsStorePath, carbonTableIdentifier);
+    PathService pathService = CarbonCommonFactory.getPathService();
+    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(columnIdentifier,
+                this.hdfsStorePath, carbonTableIdentifier);
     this.columnDictionaryFilePath = carbonTablePath
         .getDictionaryFilePath(columnIdentifier.getColumnId());
   }
@@ -294,15 +297,18 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    * @throws IOException thrift reader open method throws IOException
    */
   private void openThriftReader() throws IOException {
-    // initialise dictionary file reader which will return dictionary thrift object
-    // dictionary thrift object contains a list of byte buffer
-    dictionaryFileReader =
-        new ThriftReader(this.columnDictionaryFilePath, new ThriftReader.TBaseCreator() {
-          @Override public TBase create() {
-            return new ColumnDictionaryChunk();
-          }
-        });
-    // Open dictionary file reader
-    dictionaryFileReader.open();
+    if (null == dictionaryFileReader) {
+      // initialise dictionary file reader which will return dictionary thrift object
+      // dictionary thrift object contains a list of byte buffer
+      dictionaryFileReader =
+          new ThriftReader(this.columnDictionaryFilePath, new ThriftReader.TBaseCreator() {
+            @Override public TBase create() {
+              return new ColumnDictionaryChunk();
+            }
+          });
+      // Open dictionary file reader
+      dictionaryFileReader.open();
+    }
+
   }
 }

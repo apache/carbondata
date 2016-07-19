@@ -23,9 +23,11 @@
 package org.carbondata.spark.load;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
 
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.load.LoadMetadataDetails;
 
 public class CarbonLoadModel implements Serializable {
@@ -41,6 +43,8 @@ public class CarbonLoadModel implements Serializable {
   private String factFilePath;
 
   private String dimFolderPath;
+
+  private String colDictFilePath;
 
   private String partitionId;
 
@@ -68,6 +72,11 @@ public class CarbonLoadModel implements Serializable {
   private String blocksID;
 
   /**
+   *  Map from carbon dimension to pre defined dict file path
+   */
+  private HashMap<CarbonDimension, String> predefDictMap;
+
+  /**
    * task id, each spark task has a unique id
    */
   private String taskNo;
@@ -80,10 +89,17 @@ public class CarbonLoadModel implements Serializable {
    */
   private String segmentId;
 
+  private String allDictPath;
+
   /**
    * escape Char
    */
   private String escapeChar;
+
+  /**
+   * defines the string that should be treated as null while loadind data
+   */
+  private String serializationNullFormat;
 
   /**
    * get escape char
@@ -151,6 +167,14 @@ public class CarbonLoadModel implements Serializable {
     this.isDirectLoad = isDirectLoad;
   }
 
+  public String getAllDictPath() {
+    return allDictPath;
+  }
+
+  public void setAllDictPath(String allDictPath) {
+    this.allDictPath = allDictPath;
+  }
+
   public List<String> getFactFilesToProcess() {
     return factFilesToProcess;
   }
@@ -165,6 +189,18 @@ public class CarbonLoadModel implements Serializable {
 
   public void setCsvHeader(String csvHeader) {
     this.csvHeader = csvHeader;
+  }
+
+  public void initPredefDictMap() {
+    predefDictMap = new HashMap<>();
+  }
+
+  public String getPredefDictFilePath(CarbonDimension dimension) {
+    return predefDictMap.get(dimension);
+  }
+
+  public void setPredefDictMap(CarbonDimension dimension, String predefDictFilePath) {
+    this.predefDictMap.put(dimension, predefDictFilePath);
   }
 
   /**
@@ -224,6 +260,22 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
+   *
+   * @return external column dictionary file path
+   */
+  public String getColDictFilePath() {
+    return colDictFilePath;
+  }
+
+  /**
+   * set external column dictionary file path
+   * @param colDictFilePath
+   */
+  public void setColDictFilePath(String colDictFilePath) {
+    this.colDictFilePath = colDictFilePath;
+  }
+
+  /**
    * @return the dimFolderPath
    */
   public String getDimFolderPath() {
@@ -264,6 +316,7 @@ public class CarbonLoadModel implements Serializable {
     copy.taskNo = taskNo;
     copy.factTimeStamp = factTimeStamp;
     copy.segmentId = segmentId;
+    copy.serializationNullFormat = serializationNullFormat;
     copy.escapeChar = escapeChar;
     return copy;
   }
@@ -301,6 +354,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.taskNo = taskNo;
     copyObj.factTimeStamp = factTimeStamp;
     copyObj.segmentId = segmentId;
+    copyObj.serializationNullFormat = serializationNullFormat;
     copyObj.escapeChar = escapeChar;
     return copyObj;
   }
@@ -453,5 +507,21 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setSegmentId(String segmentId) {
     this.segmentId = segmentId;
+  }
+
+  /**
+   * the method returns the value to be treated as null while data load
+   * @return
+   */
+  public String getSerializationNullFormat() {
+    return serializationNullFormat;
+  }
+
+  /**
+   * the method sets the value to be treated as null while data load
+   * @param serializationNullFormat
+   */
+  public void setSerializationNullFormat(String serializationNullFormat) {
+    this.serializationNullFormat = serializationNullFormat;
   }
 }

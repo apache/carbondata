@@ -105,7 +105,8 @@ public final class FilterUtil {
    * @return FilterExecuter instance
    */
   private static FilterExecuter createFilterExecuterTree(
-      FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties) {
+      FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
+      Map<Integer, GenericQueryType> complexDimensionInfoMap) {
     FilterExecuterType filterExecuterType = filterExpressionResolverTree.getFilterExecuterType();
     if (null != filterExecuterType) {
       switch (filterExecuterType) {
@@ -117,12 +118,16 @@ public final class FilterUtil {
               filterExpressionResolverTree.getDimColResolvedFilterInfo(), segmentProperties);
         case OR:
           return new OrFilterExecuterImpl(
-              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties),
-              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties));
+              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties,
+                  complexDimensionInfoMap),
+              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties,
+                  complexDimensionInfoMap));
         case AND:
           return new AndFilterExecuterImpl(
-              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties),
-              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties));
+              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties,
+                  complexDimensionInfoMap),
+              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties,
+                  complexDimensionInfoMap));
         case RESTRUCTURE:
           return new RestructureFilterExecuterImpl(
               filterExpressionResolverTree.getDimColResolvedFilterInfo(),
@@ -143,7 +148,7 @@ public final class FilterUtil {
                   .getMsrColEvalutorInfoList(),
               ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
               ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
-              segmentProperties);
+              segmentProperties, complexDimensionInfoMap);
 
       }
     }
@@ -152,7 +157,7 @@ public final class FilterUtil {
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getMsrColEvalutorInfoList(),
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
-        segmentProperties);
+        segmentProperties, complexDimensionInfoMap);
 
   }
 
@@ -189,6 +194,7 @@ public final class FilterUtil {
       return new ExcludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
     }
   }
+
   /**
    * This method will check if a given expression contains a column expression
    * recursively.
@@ -214,12 +220,52 @@ public final class FilterUtil {
    *
    * @return
    */
-  public static boolean checkIfExpressionContainsUnknownExp(Expression expression) {
-    if (expression.getFilterExpressionType() == ExpressionType.UNKNOWN) {
+  public static boolean checkIfLeftExpressionRequireEvaluation(Expression expression) {
+    if (expression.getFilterExpressionType() == ExpressionType.UNKNOWN
+        || !(expression instanceof ColumnExpression)) {
       return true;
     }
     for (Expression child : expression.getChildren()) {
-      if (checkIfExpressionContainsUnknownExp(child)) {
+      if (checkIfLeftExpressionRequireEvaluation(child)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * This method will check if a given literal expression is not a timestamp datatype
+   * recursively.
+   *
+   * @return
+   */
+  public static boolean checkIfDataTypeNotTimeStamp(Expression expression) {
+    if (expression.getFilterExpressionType() == ExpressionType.LITERAL) {
+      if (!(((LiteralExpression) expression).getLiteralExpDataType()
+          == org.carbondata.query.expression.DataType.TimestampType)) {
+        return true;
+      }
+    }
+    for (Expression child : expression.getChildren()) {
+      if (checkIfDataTypeNotTimeStamp(child)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  /**
+   * This method will check if a given expression contains a column expression
+   * recursively.
+   *
+   * @return
+   */
+  public static boolean checkIfRightExpressionRequireEvaluation(Expression expression) {
+    if (expression.getFilterExpressionType() == ExpressionType.UNKNOWN
+        || !(expression instanceof LiteralExpression) && !(expression instanceof ListExpression)) {
+      return true;
+    }
+    for (Expression child : expression.getChildren()) {
+      if (checkIfRightExpressionRequireEvaluation(child)) {
         return true;
       }
     }
@@ -612,6 +658,7 @@ public final class FilterUtil {
 
   /**
    * The method is used to get the single dictionary key's mask key
+   *
    * @param surrogate
    * @param carbonDimension
    * @param blockLevelKeyGenerator
@@ -948,8 +995,10 @@ public final class FilterUtil {
    * @return
    */
   public static FilterExecuter getFilterExecuterTree(
-      FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties) {
-    return createFilterExecuterTree(filterExpressionResolverTree, segmentProperties);
+      FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
+      Map<Integer, GenericQueryType> complexDimensionInfoMap) {
+    return createFilterExecuterTree(filterExpressionResolverTree, segmentProperties,
+        complexDimensionInfoMap);
   }
 
   /**
@@ -1297,7 +1346,7 @@ public final class FilterUtil {
    */
   public static void logError(Throwable e, boolean invalidRowsPresent) {
     if (!invalidRowsPresent) {
-      invalidRowsPresent=true;
+      invalidRowsPresent = true;
       LOGGER.error(e, CarbonCommonConstants.FILTER_INVALID_MEMBER + e.getMessage());
     }
   }

@@ -24,6 +24,7 @@ import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.carbon.datastore.IndexKey;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
+import org.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.scan.filter.executer.FilterExecuter;
@@ -199,6 +200,21 @@ public class BlockExecutionInfo {
    * whether dimensions exist in query.
    */
   private boolean isDimensionsExistInQuery;
+
+  /**
+   * complexParentIndexToQueryMap
+   */
+  private Map<Integer, GenericQueryType> complexParentIndexToQueryMap;
+
+  /**
+   * complex dimension parent block indexes;
+   */
+  private int[] complexColumnParentBlockIndexes;
+
+  /**
+   * to record the statistics
+   */
+  private QueryStatisticsRecorder statisticsRecorder;
 
   /**
    * @return the tableBlock
@@ -607,5 +623,41 @@ public class BlockExecutionInfo {
 
   public void setDimensionsExistInQuery(boolean dimensionsExistInQuery) {
     isDimensionsExistInQuery = dimensionsExistInQuery;
+  }
+
+  /**
+   * @return the complexParentIndexToQueryMap
+   */
+  public Map<Integer, GenericQueryType> getComlexDimensionInfoMap() {
+    return complexParentIndexToQueryMap;
+  }
+
+  /**
+   * @param complexDimensionInfoMap the complexParentIndexToQueryMap to set
+   */
+  public void setComplexDimensionInfoMap(Map<Integer, GenericQueryType> complexDimensionInfoMap) {
+    this.complexParentIndexToQueryMap = complexDimensionInfoMap;
+  }
+
+  /**
+   * @return the complexColumnParentBlockIndexes
+   */
+  public int[] getComplexColumnParentBlockIndexes() {
+    return complexColumnParentBlockIndexes;
+  }
+
+  /**
+   * @param complexColumnParentBlockIndexes the complexColumnParentBlockIndexes to set
+   */
+  public void setComplexColumnParentBlockIndexes(int[] complexColumnParentBlockIndexes) {
+    this.complexColumnParentBlockIndexes = complexColumnParentBlockIndexes;
+  }
+
+  public QueryStatisticsRecorder getStatisticsRecorder() {
+    return statisticsRecorder;
+  }
+
+  public void setStatisticsRecorder(QueryStatisticsRecorder statisticsRecorder) {
+    this.statisticsRecorder = statisticsRecorder;
   }
 }

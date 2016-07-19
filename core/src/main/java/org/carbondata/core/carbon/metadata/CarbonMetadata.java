@@ -128,6 +128,37 @@ public final class CarbonMetadata {
       if (dimension.getColumnId().equals(columnIdentifier)) {
         return dimension;
       }
+      if (dimension.numberOfChild() > 0) {
+        CarbonDimension childDim =
+            getCarbonChildDimsBasedOnColIdentifier(columnIdentifier, dimension);
+        if (null != childDim) {
+          return childDim;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Below method will be used to get the dimension based on column identifier
+   * for complex dimension children
+   *
+   * @param columnIdentifier column identifier
+   * @param dimension        parent dimension
+   * @return children dimension
+   */
+  private CarbonDimension getCarbonChildDimsBasedOnColIdentifier(String columnIdentifier,
+      CarbonDimension dimension) {
+    for (int i = 0; i < dimension.numberOfChild(); i++) {
+      if (dimension.getListOfChildDimensions().get(i).getColumnId().equals(columnIdentifier)) {
+        return dimension.getListOfChildDimensions().get(i);
+      } else if (dimension.getListOfChildDimensions().get(i).numberOfChild() > 0) {
+        CarbonDimension childDim = getCarbonChildDimsBasedOnColIdentifier(columnIdentifier,
+            dimension.getListOfChildDimensions().get(i));
+        if (null != childDim) {
+          return childDim;
+        }
+      }
     }
     return null;
   }

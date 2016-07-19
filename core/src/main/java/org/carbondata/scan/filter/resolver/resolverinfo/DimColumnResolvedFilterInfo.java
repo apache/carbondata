@@ -61,8 +61,6 @@ public class DimColumnResolvedFilterInfo implements Serializable, ResolvedFilter
 
   private String defaultValue;
 
-  private transient Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex;
-
   private CarbonDimension dimension;
 
   /**
@@ -117,15 +115,6 @@ public class DimColumnResolvedFilterInfo implements Serializable, ResolvedFilter
 
   public Map<CarbonDimension, List<DimColumnFilterInfo>> getDimensionResolvedFilterInstance() {
     return dimensionResolvedFilter;
-  }
-
-  public Map<Integer, GenericQueryType> getComplexTypesWithBlockStartIndex() {
-    return complexTypesWithBlockStartIndex;
-  }
-
-  public void setComplexTypesWithBlockStartIndex(
-      Map<Integer, GenericQueryType> complexTypesWithBlockStartIndex) {
-    this.complexTypesWithBlockStartIndex = complexTypesWithBlockStartIndex;
   }
 
   public CarbonDimension getDimension() {

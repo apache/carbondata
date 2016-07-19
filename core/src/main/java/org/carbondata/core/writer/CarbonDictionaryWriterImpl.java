@@ -203,8 +203,6 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
       writeDictionaryFile();
       // close the thrift writer for dictionary file
       closeThriftWriter();
-      this.chunk_end_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
-      writeDictionaryMetadataFile();
     }
   }
 
@@ -240,9 +238,13 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   private void init() throws IOException {
     initDictionaryChunkSize();
     initPaths();
-    if (CarbonUtil.isFileExists(this.dictionaryFilePath)) {
+    boolean dictFileExists = CarbonUtil.isFileExists(this.dictionaryFilePath);
+    if (dictFileExists && CarbonUtil.isFileExists(this.dictionaryMetaFilePath)) {
       this.chunk_start_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
       validateDictionaryFileOffsetWithLastSegmentEntryOffset();
+    } else if (dictFileExists) {
+      FileFactory.getCarbonFile(dictionaryFilePath, FileFactory.getFileType(dictionaryFilePath))
+          .delete();
     }
     openThriftWriter(this.dictionaryFilePath);
     createChunkList();
@@ -409,5 +411,12 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   protected CarbonDictionaryMetadataReader getDictionaryMetadataReader() {
     return new CarbonDictionaryMetadataReaderImpl(hdfsStorePath, carbonTableIdentifier,
         columnIdentifier);
+  }
+
+  @Override public void commit() throws IOException {
+    if (null != dictionaryThriftWriter) {
+      this.chunk_end_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
+      writeDictionaryMetadataFile();
+    }
   }
 }

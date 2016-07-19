@@ -204,6 +204,8 @@ public final class StandardLogService implements LogService {
           logWarnMessage(throwable, message);
         } else if (Level.AUDIT.toString().equalsIgnoreCase(logLevel.toString())) {
           audit(message);
+        } else if (Level.STATISTICS == logLevel) {
+          statistic(message);
         }
 
       } catch (Throwable t) {
@@ -283,9 +285,12 @@ public final class StandardLogService implements LogService {
     } catch (IOException e) {
       username = "unknown";
     }
-    logger.log(AuditLevel.AUDIT, "[" + hostName + "]"
-        + "[" + username + "]"
-        + "[Thread-" +  threadid + "]" + msg);
+    logger.log(AuditLevel.AUDIT,
+        "[" + hostName + "]" + "[" + username + "]" + "[Thread-" + threadid + "]" + msg);
+  }
+
+  @Override public void statistic(String message) {
+    logger.log(StatisticLevel.STATISTIC, message);
   }
 
   /**
@@ -296,9 +301,10 @@ public final class StandardLogService implements LogService {
     NONE(0),
     DEBUG(1),
     INFO(2),
-    ERROR(3),
-    AUDIT(4),
-    WARN(5);
+    STATISTICS(3),
+    ERROR(4),
+    AUDIT(5),
+    WARN(6);
 
     /**
      * Constructor.

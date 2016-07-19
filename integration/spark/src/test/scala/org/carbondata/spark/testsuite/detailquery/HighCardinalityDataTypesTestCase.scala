@@ -26,7 +26,6 @@ import org.apache.spark.sql.Row
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.CarbonProperties
 
-
 /**
   * Test Class for verifying NO_DICTIONARY_COLUMN feature.
   *
@@ -36,15 +35,10 @@ import org.carbondata.core.util.CarbonProperties
 class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-
-    sql("drop table if exists NO_DICTIONARY_HIVE_1")
-    sql("drop table if exists NO_DICTIONARY_CARBON_1")
-    sql("drop table if exists NO_DICTIONARY_CARBON_8")
-    sql("drop table if exists filtertestTable")
-
     //For the Hive table creation and data loading
+    sql("drop table if exists filtertestTables")
     sql(
-      "create table NO_DICTIONARY_HIVE_1(empno int,empname string,designation string,doj " +
+      "create table NO_DICTIONARY_HIVE_6(empno int,empname string,designation string,doj " +
         "Timestamp,workgroupcategory int, " +
         "workgroupcategoryname string,deptno int, deptname string, projectcode int, " +
         "projectjoindate Timestamp,projectenddate Timestamp,attendance int, "
@@ -54,10 +48,10 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
     )
     sql(
       "load data local inpath './src/test/resources/datawithoutheader.csv' into table " +
-        "NO_DICTIONARY_HIVE_1"
+        "NO_DICTIONARY_HIVE_6"
     );
-    //For Carbon table creation.
-    sql("CREATE TABLE NO_DICTIONARY_CARBON_1 (empno Int, " +
+    //For Carbon cube creation.
+    sql("CREATE TABLE NO_DICTIONARY_CARBON_6 (empno Int, " +
       "doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, " +
       "deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, " +
       "projectenddate Timestamp, designation String,attendance Int,utilization " +
@@ -65,11 +59,11 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
         "TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno,empname,designation')"
     )
     sql(
-      "LOAD DATA LOCAL INPATH './src/test/resources/data.csv' INTO TABLE NO_DICTIONARY_CARBON_1 " +
+      "LOAD DATA LOCAL INPATH './src/test/resources/data.csv' INTO TABLE NO_DICTIONARY_CARBON_6 " +
         "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
 
-    sql("CREATE TABLE NO_DICTIONARY_CARBON_8 (empno string, " +
+    sql("CREATE TABLE NO_DICTIONARY_CARBON_7 (empno string, " +
       "doj Timestamp, workgroupcategory Int, empname String,workgroupcategoryname String, " +
       "deptno Int, deptname String, projectcode Int, projectjoindate Timestamp, " +
       "projectenddate Timestamp, designation String,attendance Int,utilization " +
@@ -77,7 +71,7 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
       "TBLPROPERTIES('DICTIONARY_EXCLUDE'='empno,empname,designation')"
     )
     sql(
-      "LOAD DATA LOCAL INPATH './src/test/resources/data.csv' INTO TABLE NO_DICTIONARY_CARBON_8 " +
+      "LOAD DATA LOCAL INPATH './src/test/resources/data.csv' INTO TABLE NO_DICTIONARY_CARBON_7 " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
     sql("CREATE TABLE filtertestTable (ID Int,date Timestamp, country String, " +
@@ -96,7 +90,7 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
 
   test("Count (*) with filter") {
     checkAnswer(
-      sql("select count(*) from NO_DICTIONARY_CARBON_1 where empno=11"),
+      sql("select count(*) from NO_DICTIONARY_CARBON_6 where empno=11"),
       Seq(Row(1))
     )
   }
@@ -105,7 +99,7 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
 
 
     checkAnswer(
-      sql("select empno from NO_DICTIONARY_CARBON_1"),
+      sql("select empno from NO_DICTIONARY_CARBON_6"),
       Seq(Row(11), Row(12), Row(13), Row(14), Row(15), Row(16), Row(17), Row(18), Row(19), Row(20))
     )
 
@@ -116,7 +110,7 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
 
 
     checkAnswer(
-      sql("select empno from NO_DICTIONARY_CARBON_8 where empno like '12%'"),
+      sql("select empno from NO_DICTIONARY_CARBON_7 where empno like '12%'"),
       Seq(Row("12"))
     )
   }
@@ -125,7 +119,7 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
 
 
     checkAnswer(
-      sql("select empno from NO_DICTIONARY_CARBON_8 where empno>'19'"),
+      sql("select empno from NO_DICTIONARY_CARBON_7 where empno>'19'"),
       Seq(Row("20"))
     )
   }
@@ -134,7 +128,7 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
 
 
     checkAnswer(
-      sql("select empno from NO_DICTIONARY_CARBON_1 where empno in(11,12,13)"),
+      sql("select empno from NO_DICTIONARY_CARBON_6 where empno in(11,12,13)"),
       Seq(Row(11), Row(12), Row(13))
     )
   }
@@ -142,7 +136,7 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
 
 
     checkAnswer(
-      sql("select empno from NO_DICTIONARY_CARBON_1 where empno not in(11,12,13,14,15,16,17)"),
+      sql("select empno from NO_DICTIONARY_CARBON_6 where empno not in(11,12,13,14,15,16,17)"),
       Seq(Row(18), Row(19), Row(20))
     )
   }
@@ -151,7 +145,7 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
 
 
     checkAnswer(
-      sql("select empno from NO_DICTIONARY_CARBON_1 where empno=17"),
+      sql("select empno from NO_DICTIONARY_CARBON_6 where empno=17"),
       Seq(Row(17))
     )
   }
@@ -163,15 +157,20 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row(4), Row(6))
     )
   }
-
+test("filter with arithmetic expression") {
+    checkAnswer(
+      sql("select id from filtertestTable " + "where id+2 = 6"),
+      Seq(Row(4))
+    )
+  }
   test("Detail Query with NO_DICTIONARY_COLUMN with equals multiple filter Compare With HIVE " +
     "RESULT"
   ) {
 
 
     checkAnswer(
-      sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_1 where empno=17"),
-      sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_1 where empno=17")
+      sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 where empno=17"),
+      sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 where empno=17")
     )
   }
 
@@ -179,8 +178,8 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
   test("ORDER Query with NO_DICTIONARY_COLUMN Compare With HIVE RESULT") {
 
     checkAnswer(
-      sql("select empno from NO_DICTIONARY_HIVE_1 order by empno"),
-      sql("select empno from NO_DICTIONARY_CARBON_1 order by empno")
+      sql("select empno from NO_DICTIONARY_HIVE_6 order by empno"),
+      sql("select empno from NO_DICTIONARY_CARBON_6 order by empno")
     )
   }
   //TODO need to add filter test cases for no dictionary columns
@@ -189,30 +188,30 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
   // RESULT") {
   //
   //     checkAnswer(
-  //      sql("select empno from NO_DICTIONARY_HIVE_1 where empno=15 and deptno=12"),
-  //      sql("select empno from NO_DICTIONARY_CARBON_1 where empno=15 and deptno=12"))
+  //      sql("select empno from NO_DICTIONARY_HIVE_6 where empno=15 and deptno=12"),
+  //      sql("select empno from NO_DICTIONARY_CARBON_6 where empno=15 and deptno=12"))
   //   }
 
   test("Distinct Query with NO_DICTIONARY_COLUMN  Compare With HIVE RESULT") {
 
     checkAnswer(
-      sql("select count(distinct empno) from NO_DICTIONARY_HIVE_1"),
-      sql("select count(distinct empno) from NO_DICTIONARY_CARBON_1")
+      sql("select count(distinct empno) from NO_DICTIONARY_HIVE_6"),
+      sql("select count(distinct empno) from NO_DICTIONARY_CARBON_6")
     )
   }
   test("Sum Query with NO_DICTIONARY_COLUMN  Compare With HIVE RESULT") {
 
     checkAnswer(
-      sql("select sum(empno) from NO_DICTIONARY_HIVE_1"),
-      sql("select sum(empno) from NO_DICTIONARY_CARBON_1")
+      sql("select sum(empno) from NO_DICTIONARY_HIVE_6"),
+      sql("select sum(empno) from NO_DICTIONARY_CARBON_6")
     )
   }
 
   test("average Query with NO_DICTIONARY_COLUMN  Compare With HIVE RESULT") {
 
     checkAnswer(
-      sql("select avg(empno) from NO_DICTIONARY_HIVE_1"),
-      sql("select avg(empno) from NO_DICTIONARY_CARBON_1")
+      sql("select avg(empno) from NO_DICTIONARY_HIVE_6"),
+      sql("select avg(empno) from NO_DICTIONARY_CARBON_6")
     )
   }
 
@@ -221,11 +220,11 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql(
-        "select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_1 group by empno,empname," +
+        "select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6 group by empno,empname," +
           "workgroupcategory"
       ),
       sql(
-        "select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_1 group by empno," +
+        "select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 group by empno," +
           "empname,workgroupcategory"
       )
     )
@@ -234,15 +233,14 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
   test("Multiple column  Detail Query with NO_DICTIONARY_COLUMN  Compare With HIVE RESULT") {
 
     checkAnswer(
-      sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_1"),
-      sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_1 ")
+      sql("select empno,empname,workgroupcategory from NO_DICTIONARY_HIVE_6"),
+      sql("select empno,empname,workgroupcategory from NO_DICTIONARY_CARBON_6 ")
     )
   }
+        
 
   override def afterAll {
-    sql("drop table NO_DICTIONARY_HIVE_1")
-    sql("drop table NO_DICTIONARY_CARBON_1")
-    sql("drop table NO_DICTIONARY_CARBON_8")
-    sql("drop table filtertestTable")
+    sql("drop table if exists filtertestTables")
+    //sql("drop cube NO_DICTIONARY_CARBON_1")
   }
 }

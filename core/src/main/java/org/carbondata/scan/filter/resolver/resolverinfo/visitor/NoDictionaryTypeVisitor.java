@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.scan.filter.resolver.resolverinfo.visitor;
+package org.carbondata.query.filter.resolver.resolverinfo.visitor;
 
 import java.util.List;
 
@@ -51,6 +51,12 @@ public class NoDictionaryTypeVisitor implements ResolvedFilterInfoVisitorIntf {
     List<String> evaluateResultListFinal;
     try {
       evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
+      // Adding default  null member inorder to not display the same while
+      // displaying the report as per hive compatibility.
+      if (!metadata.isIncludeFilter() && !evaluateResultListFinal
+          .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+        evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
+      }
     } catch (FilterIllegalMemberException e) {
       throw new FilterUnsupportedException(e);
     }

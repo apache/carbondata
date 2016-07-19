@@ -32,11 +32,12 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit
 import org.apache.spark.{Logging, Partition, SparkContext, SparkEnv}
 import org.apache.spark.sql.{CarbonEnv, SQLContext}
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, Partitioner}
+import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.util.{FileUtils, SplitUtils}
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.CarbonDataLoadSchema
-import org.carbondata.core.carbon.datastore.block.TableBlockInfo
+import org.carbondata.core.carbon.datastore.block.{Distributable, TableBlockInfo}
 import org.carbondata.core.carbon.metadata.CarbonMetadata
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.core.constants.CarbonCommonConstants
@@ -184,7 +185,9 @@ object CarbonDataRDDFactory extends Logging {
 
       // Save the load metadata
       val carbonLock = CarbonLockFactory
-        .getCarbonLockObj(table.getMetaDataFilepath, LockUsage.METADATA_LOCK)
+        .getCarbonLockObj(table.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+          LockUsage.METADATA_LOCK
+        )
       try {
         if (carbonLock.lockWithRetries()) {
           logInfo("Successfully got the table metadata file lock")
@@ -272,7 +275,9 @@ object CarbonDataRDDFactory extends Logging {
     )
 
     val lock = CarbonLockFactory
-      .getCarbonLockObj(carbonTable.getMetaDataFilepath, LockUsage.COMPACTION_LOCK)
+      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+        LockUsage.COMPACTION_LOCK
+      )
 
     if (lock.lockWithRetries()) {
       logger
@@ -470,7 +475,9 @@ object CarbonDataRDDFactory extends Logging {
           tableCreationTime
         )
         val lock = CarbonLockFactory
-          .getCarbonLockObj(carbonTable.getMetaDataFilepath, LockUsage.COMPACTION_LOCK)
+          .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+            LockUsage.COMPACTION_LOCK
+          )
 
         var storeLocation = ""
         var configuredStore = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
@@ -658,12 +665,19 @@ object CarbonDataRDDFactory extends Logging {
             new TableBlockInfo(fileSplit.getPath.toString,
               fileSplit.getStart, "1",
               fileSplit.getLocations, fileSplit.getLength
-            )
+            ).asInstanceOf[Distributable]
           }
           )
           // group blocks to nodes, tasks
+          val startTime = System.currentTimeMillis
+          val activeNodes = DistributionUtil
+            .ensureExecutorsAndGetNodeList(blockList, sc.sparkContext)
           val nodeBlockMapping =
-            CarbonLoaderUtil.nodeBlockMapping(blockList.toSeq.asJava, -1).asScala.toSeq
+            CarbonLoaderUtil
+              .nodeBlockMapping(blockList.toSeq.asJava, -1, activeNodes.toList.asJava).asScala
+              .toSeq
+          val timeElapsed: Long = System.currentTimeMillis - startTime
+          logInfo("Total Time taken in block allocation : " + timeElapsed)
           logInfo("Total no of blocks : " + blockList.size
             + ", No.of Nodes : " + nodeBlockMapping.size
           )
@@ -685,11 +699,12 @@ object CarbonDataRDDFactory extends Logging {
           logInfo(str)
           blocksGroupBy = nodeBlockMapping.map(entry => {
             val blockDetailsList =
-              entry._2.asScala.map(tableBlock =>
+              entry._2.asScala.map(distributable => {
+                val tableBlock = distributable.asInstanceOf[TableBlockInfo]
                 new BlockDetails(tableBlock.getFilePath,
                   tableBlock.getBlockOffset, tableBlock.getBlockLength
                 )
-              ).toArray
+              }).toArray
             (entry._1, blockDetailsList)
           }
           ).toArray
@@ -863,7 +878,9 @@ object CarbonDataRDDFactory extends Logging {
       currentRestructNumber = 0
     }
     val carbonLock = CarbonLockFactory
-      .getCarbonLockObj(table.getMetaDataFilepath, LockUsage.METADATA_LOCK)
+      .getCarbonLockObj(table.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+        LockUsage.METADATA_LOCK
+      )
     try {
       if (carbonLock.lockWithRetries()) {
         deleteLoadsAndUpdateMetadata(carbonLoadModel,

@@ -1189,14 +1189,24 @@ public final class CarbonSchemaParser {
     ColumnSchemaDetailsWrapper columnSchemaDetailsWrapper = new ColumnSchemaDetailsWrapper();
     Map<String, ColumnSchemaDetails> columnSchemaDetailsMap =
         new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    fillColumnSchemaDetailsWithComplex(dimensions, columnSchemaDetailsMap);
+    columnSchemaDetailsWrapper.setColumnSchemaDetailsMap(columnSchemaDetailsMap);
+    return columnSchemaDetailsWrapper;
+  }
+
+  private static void fillColumnSchemaDetailsWithComplex(
+      List<CarbonDimension> dimensions,
+      Map<String, ColumnSchemaDetails> columnSchemaDetailsMap) {
     for (CarbonDimension cDimension : dimensions) {
       ColumnSchemaDetails details =
           new ColumnSchemaDetails(cDimension.getColName(), cDimension.getDataType(),
-              CarbonUtil.hasEncoding(cDimension.getEncoder(), Encoding.DIRECT_DICTIONARY));
+          CarbonUtil.hasEncoding(cDimension.getEncoder(), Encoding.DIRECT_DICTIONARY));
       columnSchemaDetailsMap.put(cDimension.getColumnSchema().getColumnUniqueId(), details);
+      if (cDimension.isComplex()) {
+        fillColumnSchemaDetailsWithComplex(cDimension.getListOfChildDimensions(),
+            columnSchemaDetailsMap);
+      }
     }
-    columnSchemaDetailsWrapper.setColumnSchemaDetailsMap(columnSchemaDetailsMap);
-    return columnSchemaDetailsWrapper;
   }
 
   /**

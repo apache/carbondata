@@ -118,11 +118,11 @@ public class FilterExpressionProcessor implements FilterProcessor {
     LOGGER.info("Successfully retrieved the start and end key");
     long startTimeInMillis = System.currentTimeMillis();
     DataRefNodeFinder blockFinder = new BTreeDataRefNodeFinder(
-        tableSegment.getSegmentProperties().getDimensionColumnsValueSize());
+        tableSegment.getSegmentProperties().getEachDimColumnValueSize());
     DataRefNode startBlock = blockFinder.findFirstDataBlock(btreeNode, searchStartKey);
     DataRefNode endBlock = blockFinder.findLastDataBlock(btreeNode, searchEndKey);
     FilterExecuter filterExecuter =
-        FilterUtil.getFilterExecuterTree(filterResolver, tableSegment.getSegmentProperties());
+        FilterUtil.getFilterExecuterTree(filterResolver, tableSegment.getSegmentProperties(),null);
     while (startBlock != endBlock) {
       addBlockBasedOnMinMaxValue(filterExecuter, listOfDataBlocksToScan, startBlock,
           tableSegment.getSegmentProperties());
@@ -273,9 +273,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
               .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                 && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
-                FilterUtil.checkIfExpressionContainsUnknownExp(currentCondExpression.getRight())
+                FilterUtil.checkIfRightExpressionRequireEvaluation(currentCondExpression.getRight())
                     || FilterUtil
-                    .checkIfExpressionContainsUnknownExp(currentCondExpression.getLeft()))) {
+                    .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, true,
                   tableIdentifier);
             }
@@ -305,9 +305,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
               .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
                 && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
-                FilterUtil.checkIfExpressionContainsUnknownExp(currentCondExpression.getRight())
+                FilterUtil.checkIfRightExpressionRequireEvaluation(currentCondExpression.getRight())
                     || FilterUtil
-                    .checkIfExpressionContainsUnknownExp(currentCondExpression.getLeft()))) {
+                    .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, false,
                   tableIdentifier);
             }

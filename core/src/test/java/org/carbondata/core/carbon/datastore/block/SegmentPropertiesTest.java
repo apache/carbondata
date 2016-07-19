@@ -123,7 +123,7 @@ public class SegmentPropertiesTest extends TestCase {
   }
 
   @Test public void testNumberOfComplexDimensionIsCorrect() {
-    assertEquals(2, blockMetadataInfos.getComplexDimensions().size());
+    assertEquals(1, blockMetadataInfos.getComplexDimensions().size());
   }
 
   @Test public void testEachColumnValueSizeHasProperValue() {
@@ -140,7 +140,7 @@ public class SegmentPropertiesTest extends TestCase {
   }
 
   @Test public void testEachComplexColumnValueSizeHasProperValue() {
-    int[] size = { 8, 8 };
+    int[] size = { 1, 1 };
     int[] eachDimColumnValueSize = blockMetadataInfos.getEachComplexDimColumnValueSize();
     boolean isEqual = false;
     for (int i = 0; i < size.length; i++) {

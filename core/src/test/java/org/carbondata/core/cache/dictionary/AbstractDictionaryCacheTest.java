@@ -121,6 +121,7 @@ public class AbstractDictionaryCacheTest {
       carbonDictionaryWriter.write(valueList);
     } finally {
       carbonDictionaryWriter.close();
+      carbonDictionaryWriter.commit();
     }
   }
 

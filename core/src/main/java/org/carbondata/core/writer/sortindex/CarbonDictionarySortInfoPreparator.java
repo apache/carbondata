@@ -20,6 +20,7 @@ package org.carbondata.core.writer.sortindex;
 
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import org.carbondata.core.cache.dictionary.Dictionary;
@@ -39,14 +40,16 @@ public class CarbonDictionarySortInfoPreparator {
   /**
    * The method returns the column Sort Info
    *
-   * @param dataType DataType of columns
+   * @param newDistinctValues new distinct value to be added
+   * @param dictionary        old distinct values
+   * @param dataType          DataType of columns
    * @return CarbonDictionarySortInfo returns the column Sort Info
    * @throws CarbonUtilException
    */
-  public CarbonDictionarySortInfo getDictionarySortInfo(Dictionary dictionary, DataType dataType)
-      throws CarbonUtilException {
+  public CarbonDictionarySortInfo getDictionarySortInfo(List<String> newDistinctValues,
+      Dictionary dictionary, DataType dataType) throws CarbonUtilException {
     CarbonDictionarySortModel[] dictionarySortModels =
-        prepareDictionarySortModels(dictionary, dataType);
+        prepareDictionarySortModels(newDistinctValues, dictionary, dataType);
     return createColumnSortInfo(dictionarySortModels);
   }
 
@@ -95,6 +98,7 @@ public class CarbonDictionarySortInfoPreparator {
   /**
    * The method returns the array of CarbonDictionarySortModel
    *
+   * @param distinctValues new distinct values
    * @param dictionary The wrapper wraps the list<list<bye[]>> and provide the
    *                   iterator to retrieve the chunks members.
    * @param dataType   DataType of columns
@@ -102,22 +106,45 @@ public class CarbonDictionarySortInfoPreparator {
    * CarbonDictionarySortModel contains the  member's surrogate and
    * its byte value
    */
-  private CarbonDictionarySortModel[] prepareDictionarySortModels(Dictionary dictionary,
-      DataType dataType) {
+  private CarbonDictionarySortModel[] prepareDictionarySortModels(List<String> distinctValues,
+      Dictionary dictionary, DataType dataType) {
     CarbonDictionarySortModel[] dictionarySortModels = null;
     //The wrapper wraps the list<list<bye[]>> and provide the iterator to
     // retrieve the chunks members.
-    DictionaryChunksWrapper dictionaryChunksWrapper = dictionary.getDictionaryChunks();
-    dictionarySortModels = new CarbonDictionarySortModel[dictionaryChunksWrapper.getSize()];
     int surrogate = 1;
-    while (dictionaryChunksWrapper.hasNext()) {
-      String memberValue = new String(dictionaryChunksWrapper.next(),
-          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-      CarbonDictionarySortModel dictionarySortModel =
-          new CarbonDictionarySortModel(surrogate, dataType, memberValue);
-      dictionarySortModels[surrogate - 1] = dictionarySortModel;
+    if (null != dictionary) {
+      DictionaryChunksWrapper dictionaryChunksWrapper = dictionary.getDictionaryChunks();
+      dictionarySortModels =
+          new CarbonDictionarySortModel[dictionaryChunksWrapper.getSize() + distinctValues.size()];
+      while (dictionaryChunksWrapper.hasNext()) {
+        dictionarySortModels[surrogate - 1] =
+            createDictionarySortModel(surrogate, dataType, dictionaryChunksWrapper.next());
+        surrogate++;
+      }
+    } else {
+      dictionarySortModels = new CarbonDictionarySortModel[distinctValues.size()];
+    }
+    // for new distinct values
+    Iterator<String> distinctValue = distinctValues.iterator();
+    while (distinctValue.hasNext()) {
+      dictionarySortModels[surrogate - 1] =
+          createDictionarySortModel(surrogate, dataType, distinctValue.next().getBytes());
       surrogate++;
     }
     return dictionarySortModels;
   }
+
+  /**
+   *
+   * @param surrogate
+   * @param dataType
+   * @param value member value
+   * @return CarbonDictionarySortModel
+   */
+  private CarbonDictionarySortModel createDictionarySortModel(int surrogate, DataType dataType,
+      byte[] value) {
+    String memberValue = new String(value, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+    return new CarbonDictionarySortModel(surrogate, dataType, memberValue);
+  }
 }
+

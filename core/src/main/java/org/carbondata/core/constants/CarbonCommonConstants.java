@@ -415,6 +415,14 @@ public final class CarbonCommonConstants {
    */
   public static final String AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE = "true";
   /**
+   * TIME_STAT_UTIL_TYPE
+   */
+  public static final String ENABLE_DATA_LOADING_STATISTICS = "enable.data.loading.statistics";
+  /**
+   * TIME_STAT_UTIL_TYPE_DEFAULT
+   */
+  public static final String ENABLE_DATA_LOADING_STATISTICS_DEFAULT = "false";
+  /**
    * IS_INT_BASED_INDEXER
    */
   public static final String HIGH_CARDINALITY_VALUE = "high.cardinality.value";
@@ -665,6 +673,11 @@ public final class CarbonCommonConstants {
    */
   public static final int INVALID_SURROGATE_KEY = -1;
 
+  /**
+   * surrogate key for MEMBER_DEFAULT_VAL
+   */
+  public static final int MEMBER_DEFAULT_VAL_SURROGATE_KEY = 1;
+
   public static final String INVALID_SEGMENT_ID = "-1";
 
   /**
@@ -833,6 +846,11 @@ public final class CarbonCommonConstants {
    * hive connection url
    */
   public static final String HIVE_CONNECTION_URL = "javax.jdo.option.ConnectionURL";
+
+  /**
+   * Rocord size in case of compaction.
+   */
+  public static final int COMPACTION_INMEMORY_RECORD_SIZE = 120000;
 
   private CarbonCommonConstants() {
   }

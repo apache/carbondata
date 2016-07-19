@@ -48,18 +48,24 @@ public class CarbonDimension extends CarbonColumn {
    */
   private int columnGroupOrdinal;
 
+  /**
+   * to store complex type dimension ordinal
+   */
+  private int complexTypeOrdinal;
+
   public CarbonDimension(ColumnSchema columnSchema, int ordinal, int keyOrdinal,
-      int columnGroupOrdinal) {
+      int columnGroupOrdinal, int complexTypeOrdinal) {
     super(columnSchema, ordinal);
     this.keyOrdinal = keyOrdinal;
     this.columnGroupOrdinal = columnGroupOrdinal;
+    this.complexTypeOrdinal = complexTypeOrdinal;
   }
 
   /**
    * this method will initialize list based on number of child dimensions Count
    */
-  public void initializeChildDimensionsList(int childDimensions) {
-    listOfChildDimensions = new ArrayList<CarbonDimension>(childDimensions);
+  public void initializeChildDimensionsList(int childDimension) {
+    listOfChildDimensions = new ArrayList<CarbonDimension>(childDimension);
   }
 
   /**
@@ -99,6 +105,13 @@ public class CarbonDimension extends CarbonColumn {
    */
   public int getColumnGroupOrdinal() {
     return columnGroupOrdinal;
+  }
+
+  /**
+   * @return the complexTypeOrdinal
+   */
+  public int getComplexTypeOrdinal() {
+    return complexTypeOrdinal;
   }
 
   /**

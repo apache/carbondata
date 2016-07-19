@@ -43,6 +43,7 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.carbondata.core.util.CarbonUtilException;
 import org.carbondata.core.writer.ByteArrayHolder;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
@@ -242,6 +243,10 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         List<GenericDataType> primitiveChild = new ArrayList<GenericDataType>();
         complexType.getAllPrimitiveChildren(primitiveChild);
         for (GenericDataType eachPrimitive : primitiveChild) {
+          details = columnSchemaDetailsWrapper.get(eachPrimitive.getColumnId());
+          if (details.isDirectDictionary()) {
+            continue;
+          }
           ColumnIdentifier columnIdentifier = new ColumnIdentifier(eachPrimitive.getColumnId(),
               columnsInfo.getColumnProperties(eachPrimitive.getName()), details.getColumnType());
           String dimColumnName =
@@ -277,6 +282,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
   private void initDictionaryCacheInfo(List<String> dictionaryKeys,
       List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers,
       Cache reverseDictionaryCache, String carbonStorePath) throws KettleException {
+    long lruCacheStartTime = System.currentTimeMillis();
     try {
       List reverseDictionaries = reverseDictionaryCache.getAll(dictionaryColumnUniqueIdentifiers);
       for (int i = 0; i < reverseDictionaries.size(); i++) {
@@ -284,6 +290,8 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
         getDictionaryCaches().put(dictionaryKeys.get(i), reverseDictionary);
         updateMaxKeyInfo(dictionaryKeys.get(i), reverseDictionary.getDictionaryChunks().getSize());
       }
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordLruCacheLoadTime(
+          (System.currentTimeMillis() - lruCacheStartTime)/1000.0);
     } catch (CarbonUtilException e) {
       throw new KettleException(e.getMessage());
     }
