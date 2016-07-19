@@ -21,84 +21,65 @@
 
 This tutorial provides a quick introduction to using CarbonData.
 
-## Examples
 
-Firstly suggest you go through
-all [examples](https://github.com/apache/incubator-carbondata/tree/master/examples), to understand
-how to create table, how to load data, how to make query.
+## Install
 
-## Interactive Query with the Spark Shell
+* Download released package of [Spark 1.5.0 or later](http://spark.apache.org/downloads.html)
+* Download and install Apache Thrift 0.9.3, make sure thrift is added to system path.
+* Download [Apache CarbonData code](https://github.com/apache/incubator-carbondata) and build it. Please visit [Building CarbonData And IDE Configuration](Installing-CarbonData-And-IDE-Configuartion.md) for more information.
 
-### 1.Install
+## Interactive Data Query
 
-* Download a packaged release of  [Spark 1.5.0 or later](http://spark.apache.org/downloads.html)
-* Configure the Hive Metastore using Mysql (you can use this key words to search:mysql hive metastore)
-and move mysql-connector-java jar to ${SPARK_HOME}/lib
-* Download [thrift](https://thrift.apache.org/), rename to thrift and add to path.
-* Download [Apache CarbonData code](https://github.com/apache/incubator-carbondata) and build it
+### Prerequisite
+Create sample.csv file in carbondata directory
 ```
-$ git clone https://github.com/apache/incubator-carbondata.git carbondata
 $ cd carbondata
-$ mvn clean install -DskipTests
-$ cp assembly/target/scala-2.10/carbondata_*.jar ${SPARK_HOME}/lib
-$ mkdir ${SPARK_HOME}/carbondata
-$ cp -r processing/carbonplugins ${SPARK_HOME}/carbondata
+$ cat > sample.csv << EOF
+  id,name,city,age
+  1,david,shenzhen,31
+  2,eason,shenzhen,27
+  3,jarry,wuhan,35
+  EOF
 ```
 
-### 2 Interactive Data Query
+### Carbon Spark Shell
+Carbon Spark shell is a wrapper around Apache Spark Shell, it provides a simple way to learn the API, as well as a powerful tool to analyze data interactively. Please visit Apache Spark Documentation for more details on Spark shell.
+Start Spark shell by running the following in the Carbon directory:
+```
+./bin/carbon-spark-shell
+```
+*Note*: In this shell SparkContext is readily available as sc and CarbonContext is available as cc.
 
-* Run spark shell
-```
-$ cd ${SPARK_HOME}
-$ carbondata_jar=./lib/$(ls -1 lib |grep "^carbondata_.*\.jar$")
-$ mysql_jar=./lib/$(ls -1 lib |grep "^mysql.*\.jar$")
-$ ./bin/spark-shell --master local --jars ${carbondata_jar},${mysql_jar}
-```
-
-* Create CarbonContext instance
-```
-import org.apache.spark.sql.CarbonContext
-import java.io.File
-import org.apache.hadoop.hive.conf.HiveConf
-val storePath = "hdfs://hacluster/Opt/CarbonStore"
-val cc = new CarbonContext(sc, storePath)
-cc.setConf("carbon.kettle.home","./carbondata/carbonplugins")
-val metadata = new File("").getCanonicalPath + "/carbondata/metadata"
-cc.setConf("hive.metastore.warehouse.dir", metadata)
-cc.setConf(HiveConf.ConfVars.HIVECHECKFILEFORMAT.varname, "false")
-```
-*Note*: `storePath` can be a hdfs path or a local path , the path is used to store table data.
-
-* Create table
+**Create table**
 
 ```
-cc.sql("create table if not exists table1 (id string, name string, city string, age Int) STORED BY 'org.apache.carbondata.format'")
+scala>cc.sql("create table if not exists test_table (id string, name string, city string, age Int) STORED BY 'carbondata'")
 ```
 
-* Create sample.csv file in ${SPARK_HOME}/carbondata directory
-
+**Load data to table**
 ```
-cd ${SPARK_HOME}/carbondata
-cat > sample.csv << EOF
-id,name,city,age
-1,david,shenzhen,31
-2,eason,shenzhen,27
-3,jarry,wuhan,35
-EOF
+scala>val dataFilePath = new File("../carbondata/sample.csv").getCanonicalPath
+scala>cc.sql("load data inpath '$dataFilePath' into table test_table")
 ```
 
-* Load data to table1 in spark shell
+**Query data from table**
 
 ```
-val dataFilePath = new File("").getCanonicalPath + "/carbondata/sample.csv"
-cc.sql(s"load data inpath '$dataFilePath' into table table1")
+scala>cc.sql("select * from test_table").show
+scala>cc.sql("select city, avg(age), sum(age) from test_table group by city").show
 ```
 
-Note: Carbondata also support `LOAD DATA LOCAL INPATH 'folder_path' INTO TABLE [db_name.]table_name OPTIONS(property_name=property_value, ...)` syntax, but right now there is no significant meaning to local in carbondata.We just keep it to align with hive syntax. `dataFilePath` can be hdfs path as well like `val dataFilePath = hdfs://hacluster//carbondata/sample.csv`  
-
-* Query data from table1
+### Carbon SQL CLI
+The Carbon Spark SQL CLI is a wrapper around Apache Spark SQL CLI. It is a convenient tool to execute queries input from the command line. Please visit Apache Spark Documentation for more information Spark SQL CLI.
+Start the Carbon Spark SQL CLI, run the following in the Carbon directory
 
 ```
-cc.sql("select * from table1").show
-cc.sql("select city, avg(age), sum(age) from table1 group by city").show
+./bin/carbon-spark-sql
+```
+
+**Execute Queries in CLI**
+```
+spark-sql> create table if not exists test_table (id string, name string, city string, age Int) STORED BY 'carbondata'
+spark-sql> load data inpath '../sample.csv' into table test_table
+spark-sql> select city, avg(age), sum(age) from test_table group by city
 ```

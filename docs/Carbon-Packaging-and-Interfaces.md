@@ -3,13 +3,13 @@ Carbon provides following JAR packages:
 
 ![carbon modules2](https://cloud.githubusercontent.com/assets/6500698/14255195/831c6e90-fac5-11e5-87ab-3b16d84918fb.png)
 
-- carbon-store.jar or carbondata-assembly.jar: This is the main Jar for carbon project, the target user of it are both user and developer. 
+- **carbon-store.jar or carbondata-assembly.jar:** This is the main Jar for carbon project, the target user of it are both user and developer. 
       - For MapReduce application users, this jar provides API to read and write carbon files through CarbonInput/OutputFormat in carbon-hadoop module.
       - For developer, this jar can be used to integrate carbon with processing engine like spark and hive, by leveraging API in carbon-processing module.
 
-- carbon-spark.jar(Currently it is part of assembly jar): provides support for spark user, spark user can manipulate carbon data files by using native spark DataFrame/SQL interface. Apart from this, in order to leverage carbon's builtin lifecycle management function, higher level concept like Managed Carbon Table, Database and corresponding DDL are introduced.
+- **carbon-spark.jar(Currently it is part of assembly jar):** provides support for spark user, spark user can manipulate carbon data files by using native spark DataFrame/SQL interface. Apart from this, in order to leverage carbon's builtin lifecycle management function, higher level concept like Managed Carbon Table, Database and corresponding DDL are introduced.
 
-- carbon-hive.jar(not yet provided): similar to carbon-spark, which provides integration to carbon and hive.
+- **carbon-hive.jar(not yet provided):** similar to carbon-spark, which provides integration to carbon and hive.
 
 ## API
 Carbon can be used in following scenarios:
@@ -29,7 +29,7 @@ val df = ...
 // Write data
 // User can write a DataFrame to a carbon file
  df.write
-   .format("org.apache.spark.sql.CarbonSource")
+   .format("carbondata")
    .option("tableName", "carbontable")
    .mode(SaveMode.Overwrite)
    .save()
@@ -37,7 +37,7 @@ val df = ...
 
 // read carbon data by data source API
 df = carbonContext.read
-  .format("org.apache.spark.sql.CarbonSource")
+  .format("carbondata")
   .option("tableName", "carbontable")
   .load("/path")
 
@@ -58,12 +58,12 @@ Since carbon has builtin support for high level concept like Table, Database, an
 For example:
 ```
 // Use SQL to manage table and query data
-carbonContext.sql("create database db1")
-carbonContext.sql("use database db1")
-carbonContext.sql("show databases")
-carbonContext.sql("create table tbl1 using org.carbondata.spark")
-carbonContext.sql("load data into table tlb1 path 'some_files'")
-carbonContext.sql("select count(*) from tbl1")
+create database db1;
+use database db1;
+show databases;
+create table tbl1 using org.carbondata.spark;
+load data into table tlb1 path 'some_files';
+select count(*) from tbl1;
 ```
 
 ### 3. For developer

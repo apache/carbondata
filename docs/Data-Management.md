@@ -13,10 +13,6 @@ Once the table is created, data can be loaded into table using LOAD DATA command
 The same command can be used for loading the new data or to update the existing data.
 Only one data load can be triggered for one table. The high cardinality columns of the dictionary encoding are automatically recognized and these columns will not be used as dictionary encoding.
 
-### Prerequisite
-
- The Table must be created.
-
 ### Procedure
 
 Data loading is a process that involves execution of various steps to read, sort, and encode the date in Carbon store format. Each step will be executed in different threads.
@@ -33,12 +29,11 @@ Details of loads can be seen with SHOW SEGMENTS command.
 * Load End time
 Following steps needs to be performed for invoking data load.
 Run the following command for historical data load:
-Command:
 ```ruby
 LOAD DATA [LOCAL] INPATH 'folder_path' [OVERWRITE] INTO TABLE [db_name.]table_name
 OPTIONS(property_name=property_value, ...)
 ```
-OPTIONS are also mandatory for data loading process. Inside OPTIONS user can provide either of any options like DELIMITER,QUOTECHAR, ESCAPERCHAR,MULTILINE as per need.
+OPTIONS are not mandatory for data loading process. Inside OPTIONS user can provide either of any options like DELIMITER,QUOTECHAR, ESCAPERCHAR,MULTILINE as per need.
 
 Note: The path shall be canonical path.
 
@@ -52,7 +47,6 @@ If you have loaded wrong data into the table, or too many bad records and wanted
 
 Each segment has a unique segment ID associated with it. Using this segment ID, you can remove the segment.
 Run the following command to get the segmentID.
-Command:
 ```ruby
 SHOW SEGMENTS FOR Table dbname.tablename LIMIT number_of_segments
 ```
@@ -125,12 +119,13 @@ Frequent data ingestion results in several fragmented carbon files in the store 
 ### Procedure
 
 There are two types of compaction Minor and Major compaction.
-Minor Compaction:
+**Minor Compaction:**
 In minor compaction the user can specify how many loads to be merged. Minor compaction triggers for every data load if the parameter carbon.enable.auto.load.merge is set. If any segments are available to be merged, then compaction will run parallel with data load.
 There are 2 levels in minor compaction.
-* Level 1: Merging of the segments which are not yet compacted.
-* Level 2: Merging of the compacted segments again to form a bigger segment.
-Major Compaction:
+    * Level 1: Merging of the segments which are not yet compacted.
+    * Level 2: Merging of the compacted segments again to form a bigger segment.
+    
+**Major Compaction:**
 In Major compaction, many segments can be merged into one big segment. User will specify the compaction size until which segments can be merged. Major compaction is usually done during the off-peak time.
 
 ### Parameters of Compaction
