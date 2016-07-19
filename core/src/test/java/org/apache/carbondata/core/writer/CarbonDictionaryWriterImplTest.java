@@ -28,6 +28,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
@@ -457,7 +458,10 @@ public class CarbonDictionaryWriterImplTest {
       if (0 == dictionaryEndOffset) {
         dictionaryValues = dictionaryReader.read(dictionaryStartOffset);
       } else {
-        dictionaryValues = dictionaryReader.read(dictionaryStartOffset, dictionaryEndOffset);
+        Iterator<byte[]> itr = dictionaryReader.read(dictionaryStartOffset, dictionaryEndOffset);
+        while (itr.hasNext()) {
+          dictionaryValues.add(itr.next());
+        }
       }
     } finally {
       dictionaryReader.close();

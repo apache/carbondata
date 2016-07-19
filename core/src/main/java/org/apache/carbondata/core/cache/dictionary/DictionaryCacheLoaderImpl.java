@@ -20,6 +20,8 @@
 package org.apache.carbondata.core.cache.dictionary;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.common.factory.CarbonCommonFactory;
@@ -28,6 +30,7 @@ import org.apache.carbondata.core.carbon.ColumnIdentifier;
 import org.apache.carbondata.core.reader.CarbonDictionaryReader;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReader;
 import org.apache.carbondata.core.service.DictionaryService;
+import org.carbondata.core.util.CarbonUtil;
 
 /**
  * This class is responsible for loading the dictionary data for given columns
@@ -71,12 +74,44 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
   @Override public void load(DictionaryInfo dictionaryInfo, ColumnIdentifier columnIdentifier,
       long dictionaryChunkStartOffset, long dictionaryChunkEndOffset, boolean loadSortIndex)
       throws IOException {
-    List<byte[]> dictionaryChunk =
+    Iterator<byte[]> columnDictionaryChunkWrapper =
         load(columnIdentifier, dictionaryChunkStartOffset, dictionaryChunkEndOffset);
     if (loadSortIndex) {
       readSortIndexFile(dictionaryInfo, columnIdentifier);
     }
-    dictionaryInfo.addDictionaryChunk(dictionaryChunk);
+    fillDictionaryValuesAndAddToDictionaryChunks(dictionaryInfo, columnDictionaryChunkWrapper);
+  }
+
+  /**
+   * This method will fill the dictionary values according to dictionary bucket size and
+   * add to the dictionary chunk list
+   *
+   * @param dictionaryInfo
+   * @param columnDictionaryChunkWrapper
+   */
+  private void fillDictionaryValuesAndAddToDictionaryChunks(DictionaryInfo dictionaryInfo,
+      Iterator<byte[]> columnDictionaryChunkWrapper) {
+    int dictionaryChunkSize = CarbonUtil.getDictionaryChunkSize();
+    int sizeOfLastDictionaryChunk = dictionaryInfo.getSizeOfLastDictionaryChunk();
+    int sizeOfOneDictionaryChunk = dictionaryChunkSize - sizeOfLastDictionaryChunk;
+    if (sizeOfOneDictionaryChunk == 0) {
+      sizeOfOneDictionaryChunk = dictionaryChunkSize;
+    }
+    List<List<byte[]>> dictionaryChunks =
+        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    List<byte[]> oneDictionaryChunk = new ArrayList<>(sizeOfOneDictionaryChunk);
+    dictionaryChunks.add(oneDictionaryChunk);
+    while (columnDictionaryChunkWrapper.hasNext()) {
+      oneDictionaryChunk.add(columnDictionaryChunkWrapper.next());
+      if (oneDictionaryChunk.size() >= sizeOfOneDictionaryChunk) {
+        sizeOfOneDictionaryChunk = dictionaryChunkSize;
+        oneDictionaryChunk = new ArrayList<>(sizeOfOneDictionaryChunk);
+        dictionaryChunks.add(oneDictionaryChunk);
+      }
+    }
+    for (List<byte[]> dictionaryChunk : dictionaryChunks) {
+      dictionaryInfo.addDictionaryChunk(dictionaryChunk);
+    }
   }
 
   /**
@@ -85,19 +120,18 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
    * @param columnIdentifier column unique identifier
    * @param startOffset      start offset of dictionary file
    * @param endOffset        end offset of dictionary file
-   * @return list of dictionary value
+   * @return iterator over dictionary values
    * @throws IOException
    */
-  private List<byte[]> load(ColumnIdentifier columnIdentifier, long startOffset, long endOffset)
+  private Iterator<byte[]> load(ColumnIdentifier columnIdentifier, long startOffset, long endOffset)
       throws IOException {
     CarbonDictionaryReader dictionaryReader = getDictionaryReader(columnIdentifier);
-    List<byte[]> dictionaryValue = null;
     try {
-      dictionaryValue = dictionaryReader.read(startOffset, endOffset);
+      Iterator<byte[]> columnDictionaryChunkWrapper = dictionaryReader.read(startOffset, endOffset);
+      return columnDictionaryChunkWrapper;
     } finally {
       dictionaryReader.close();
     }
-    return dictionaryValue;
   }
 
   /**

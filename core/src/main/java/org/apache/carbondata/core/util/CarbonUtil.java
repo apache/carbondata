@@ -1443,6 +1443,5 @@ public final class CarbonUtil {
     }
     return dictionaryOneChunkSize;
   }
-
 }
 

@@ -133,8 +133,9 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
           List<byte[]> subListOfNewDictionaryChunk =
               newDictionaryChunk.subList(0, differenceInLastDictionaryAndOneChunkSize);
           lastDictionaryChunk.addAll(subListOfNewDictionaryChunk);
-          subListOfNewDictionaryChunk.clear();
-          dictionaryChunks.add(newDictionaryChunk);
+          List<byte[]> remainingNewDictionaryChunk = newDictionaryChunk
+              .subList(differenceInLastDictionaryAndOneChunkSize, newDictionaryChunk.size());
+          dictionaryChunks.add(remainingNewDictionaryChunk);
         }
       } else {
         dictionaryChunks.add(newDictionaryChunk);
@@ -142,6 +143,20 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
     } else {
       dictionaryChunks.add(newDictionaryChunk);
     }
+  }
+
+  /**
+   * This method will return the size of of last dictionary chunk so that only that many
+   * values are read from the dictionary reader
+   *
+   * @return size of last dictionary chunk
+   */
+  @Override public int getSizeOfLastDictionaryChunk() {
+    int lastDictionaryChunkSize = 0;
+    if (dictionaryChunks.size() > 0) {
+      lastDictionaryChunkSize = dictionaryChunks.get(dictionaryChunks.size() - 1).size();
+    }
+    return lastDictionaryChunkSize;
   }
 
   /**
