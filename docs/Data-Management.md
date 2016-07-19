@@ -119,13 +119,15 @@ Frequent data ingestion results in several fragmented carbon files in the store 
 ### Procedure
 
 There are two types of compaction Minor and Major compaction.
-**Minor Compaction:**
-In minor compaction the user can specify how many loads to be merged. Minor compaction triggers for every data load if the parameter carbon.enable.auto.load.merge is set. If any segments are available to be merged, then compaction will run parallel with data load.
+
+#### Minor Compaction:
+In minor compaction the user can specify how many loads to be merged. Minor compaction triggers for every data load if the parameter carbon.enable.auto.load.merge is set. If any segments are available to be merged, then compaction will run parallel with data load. 
+
 There are 2 levels in minor compaction.
-    * Level 1: Merging of the segments which are not yet compacted.
-    * Level 2: Merging of the compacted segments again to form a bigger segment.
+* Level 1: Merging of the segments which are not yet compacted.
+* Level 2: Merging of the compacted segments again to form a bigger segment.
     
-**Major Compaction:**
+#### Major Compaction:
 In Major compaction, many segments can be merged into one big segment. User will specify the compaction size until which segments can be merged. Major compaction is usually done during the off-peak time.
 
 ### Parameters of Compaction
