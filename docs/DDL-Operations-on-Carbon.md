@@ -8,47 +8,26 @@
 
 
 # CREATE TABLE
-### Function
 This command can be used to create carbon table by specifying the list of fields along with the table properties.
 
-### Syntax
-
-  ```ruby
+  ```
   CREATE TABLE [IF NOT EXISTS] [db_name.]table_name 
                [(col_name data_type , ...)]               
-         STORED BY 'org.apache.carbondata.format'
+         STORED BY 'carbondata'
                [TBLPROPERTIES (property_name=property_value, ...)]
                // All Carbon's additional table options will go into properties
   ```
      
-**Example:**
-
-  ```ruby
-  CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
-                  productNumber Int,
-                  productName String, 
-                  storeCity String, 
-                  storeProvince String, 
-                  productCategory String, 
-                  productBatch String,
-                  saleQuantity Int,
-                  revenue Int)       
-       STORED BY 'org.apache.carbondata.format' 
-       TBLPROPERTIES ('COLUMN_GROUPS'='(productName,productCategory)',
-                     'DICTIONARY_EXCLUDE'='productName',
-                     'DICTIONARY_INCLUDE'='productNumber',
-                     'NO_INVERTED_INDEX'='productBatch')
-  ```
 
 ### Parameter Description
 
-| Parameter | Description |
-| ------------- | -----|
-| db_name | Name of the Database. Database name should consist of Alphanumeric characters and underscore(_) special character. |
-| field_list | Comma separated List of fields with data type. The field names should consist of Alphanumeric characters and underscore(_) special character.|
-|table_name | The name of the table in Database. Table Name should consist of Alphanumeric characters and underscore(_) special character. |
-| STORED BY | "org.apache.carbondata.format", identifies and creates carbon table. |
-| TBLPROPERTIES | List of carbon table properties. |
+| Parameter | Description | Optional |
+| ------------- | -----| ---------- |
+| db_name | Name of the Database. Database name should consist of Alphanumeric characters and underscore(_) special character. | YES |
+| field_list | Comma separated List of fields with data type. The field names should consist of Alphanumeric characters and underscore(_) special character.| NO |
+|table_name | The name of the table in Database. Table Name should consist of Alphanumeric characters and underscore(_) special character. | NO |
+| STORED BY | "org.apache.carbondata.format", identifies and creates carbon table. | NO |
+| TBLPROPERTIES | List of carbon table properties. | YES |
 
 ### Usage Guideline
 Following are the table properties usage.
@@ -79,28 +58,41 @@ Here, DICTIONARY_EXCLUDE will exclude dictionary creation. This is applicable fo
   TBLPROPERTIES ("NO_INVERTED_INDEX"="column1,column3")
   ```
 Here, NO_INVERTED_INDEX will not use inverted index for the specified columns. This is applicable for high-cardinality columns and is a optional parameter.
-### Scenarios
-#### Create table by specifying schema
 
- The create table command is same as the Hive DDL. The Carbon's extra configurations are given as table properties.
+*Note : By default all columns except numeric datatype columns are treated as dimensions and all numeric datatype columns are treated as measures. All dimensions except complex datatype columns are part of multi dimensional key(MDK). This behavior can be overridden by using TBLPROPERTIES, If user wants to keep any column (except complex datatype) in multi dimensional key then he can keep the columns either in DICTIONARY_EXCLUDE or DICTIONARY_INCLUDE*
 
-  ```ruby
-  CREATE TABLE [IF NOT EXISTS] [db_name.]table_name
-               [(col_name data_type , ...)]
-         STORED BY ‘org.carbondata.hive.CarbonHanlder’
-               [TBLPROPERTIES (property_name=property_value ,...)]             
+
+**Example:**
+
+  ```
+  CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
+                  productNumber Int,
+                  productName String, 
+                  storeCity String, 
+                  storeProvince String, 
+                  productCategory String, 
+                  productBatch String,
+                  saleQuantity Int,
+                  revenue Int)       
+       STORED BY 'carbondata' 
+       TBLPROPERTIES ('COLUMN_GROUPS'='(productName,productCategory)',
+                     'DICTIONARY_EXCLUDE'='productName',
+                     'DICTIONARY_INCLUDE'='productNumber',
+                     'NO_INVERTED_INDEX'='productBatch')
   ```
 ***
 
 # SHOW TABLE
-### Function
 This command can be used to list all the tables in current database or all the tables of a specific database.
-
-### Syntax
 
   ```ruby
   SHOW TABLES [IN db_Name];
   ```
+
+### Parameter Description
+| Parameter | Description | Optional |
+|-----------|-------------| -------- |
+| IN db_Name | Name of the database. Required only if tables of this specific database are to be listed. | YES |
 
 **Example:**
 
@@ -108,28 +100,20 @@ This command can be used to list all the tables in current database or all the t
   SHOW TABLES IN ProductSchema;
   ```
 
-### Parameter Description
-| Parameter | Description |
-|-----------|-------------|
-| IN db_Name | Name of the database. Required only if tables of this specific database are to be listed. |
-
-### Usage Guideline
-IN db_Name is optional.
-
-### Scenarios
-NA
-
 ***
 
 # DROP TABLE
-### Function
 This command can be used to delete the existing table.
-
-### Syntax
 
   ```ruby
   DROP TABLE [IF EXISTS] [db_name.]table_name;
   ```
+
+### Parameter Description
+| Parameter | Description | Optional |
+|-----------|-------------| -------- |
+| db_Name | Name of the database. If not specified, current database will be selected. | YES |
+| table_name | Name of the table to be deleted. | NO |
 
 **Example:**
 
@@ -137,29 +121,22 @@ This command can be used to delete the existing table.
   DROP TABLE IF EXISTS productSchema.productSalesTable;
   ```
 
-### Parameter Description
-| Parameter | Description |
-|-----------|-------------|
-| db_Name | Name of the database. If not specified, current database will be selected. |
-| table_name | Name of the table to be deleted. |
-
-### Usage Guideline
-In this command IF EXISTS and db_name are optional.
-
-### Scenarios
-NA
-
 ***
 
 # COMPACTION
-### Function
  This command will merge the specified number of segments into one segment. This will enhance the query performance of the table.
-
-### Syntax
 
   ```ruby
   ALTER TABLE [db_name.]table_name COMPACT 'MINOR/MAJOR'
   ```
+
+### Parameter Description
+
+| Parameter | Description | Optional |
+| ------------- | -----| ----------- |
+| db_name | Database name, if it is not specified then it uses current database. | YES |
+| table_name | The name of the table in provided database.| NO |
+ 
 
 **Example:**
 
@@ -167,19 +144,5 @@ NA
   ALTER TABLE carbontable COMPACT MINOR
   ALTER TABLE carbontable COMPACT MAJOR
   ```
-
-### Parameter Description
-
-| Parameter | Description |
-| ------------- | -----|
-| db_name | Database name, if it is not specified then it uses current database. |
-| table_name | The name of the table in provided database.|
- 
-
-### Usage Guideline
-NA
-
-### Scenarios
-NA
 
 ***
