@@ -79,6 +79,17 @@ class TestCarbonSqlParser extends QueryTest {
     assert(colgrps.lift(2).get.equalsIgnoreCase("col7,col8"))
 
   }
+  test("Test-updateColumnGroupsInField_disordered") {
+    val colGroupStr = "(col5,col6),(col2,col3),(col7,col8)"
+    val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr)
+    var fields: Seq[Field] = loadAllFields
+    val stub = new TestCarbonSqlParserStub()
+    val colgrps = stub.updateColumnGroupsInFieldTest(fields, tableProperties)
+    assert(colgrps.lift(0).get.equalsIgnoreCase("col2,col3"))
+    assert(colgrps.lift(1).get.equalsIgnoreCase("col5,col6"))
+    assert(colgrps.lift(2).get.equalsIgnoreCase("col7,col8"))
+
+  }
   test("Test-ColumnGroupsInvalidField_Shouldnotallow") {
     val colGroupStr = "(col1,col2),(col10,col6),(col7,col8)"
     val tableProperties = Map(CarbonCommonConstants.COLUMN_GROUPS -> colGroupStr)

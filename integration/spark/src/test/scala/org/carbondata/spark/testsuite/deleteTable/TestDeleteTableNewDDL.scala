@@ -5,20 +5,20 @@ import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**
-  * test class for testing the create table DDL.
-  */
+ * test class for testing the create cube DDL.
+ */
 class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
 
     sql("CREATE TABLE IF NOT EXISTS table1(empno Int, empname Array<String>, designation String, doj Timestamp, "
-      + "workgroupcategory Int, workgroupcategoryname String, deptno Int, deptname String, projectcode Int, "
-      + "projectjoindate Timestamp, projectenddate Timestamp , attendance Int,utilization Int,salary Int )"
-      + " STORED BY 'org.apache.carbondata.format' ")
+        + "workgroupcategory Int, workgroupcategoryname String, deptno Int, deptname String, projectcode Int, "
+        + "projectjoindate Timestamp, projectenddate Timestamp , attendance Int,utilization Int,salary Int )"
+        + " STORED BY 'org.apache.carbondata.format' ")
     sql("CREATE TABLE IF NOT EXISTS table2(empno Int, empname Array<String>, designation String, doj Timestamp, "
-      + "workgroupcategory Int, workgroupcategoryname String, deptno Int, deptname String, projectcode Int, "
-      + "projectjoindate Timestamp, projectenddate Timestamp , attendance Int,utilization Int,salary Int )"
-      + " STORED BY 'org.apache.carbondata.format' ")
+        + "workgroupcategory Int, workgroupcategoryname String, deptno Int, deptname String, projectcode Int, "
+        + "projectjoindate Timestamp, projectenddate Timestamp , attendance Int,utilization Int,salary Int )"
+        + " STORED BY 'org.apache.carbondata.format' ")
 
   }
 
@@ -54,7 +54,6 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
   }
 
   test("drop table using case insensitive table name") {
-    sql("drop table if exists CaseInsensitiveTable")
     // create table
     sql(
       "CREATE table CaseInsensitiveTable (ID int, date String, country String, name " +
@@ -72,7 +71,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
       "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'" +
       "TBLPROPERTIES('DICTIONARY_INCLUDE'='ID', 'DICTIONARY_INCLUDE'='salary')"
     )
-    sql("drop table if exists CaseInsensitiveTable")
+
   }
 
   test("drop table using dbName and table name") {
@@ -83,11 +82,9 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
       "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'" +
       "TBLPROPERTIES('DICTIONARY_INCLUDE'='ID', 'DICTIONARY_INCLUDE'='salary')"
     )
-    // table should drop wihout any error
+    // table should drop without any error
     sql("drop table default.table3")
-
   }
-
 
   override def afterAll: Unit = {
 

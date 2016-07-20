@@ -18,23 +18,11 @@
  */
 package org.carbondata.spark.load;
 
-import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
@@ -47,7 +35,7 @@ import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.ColumnIdentifier;
-import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
+import org.carbondata.core.carbon.datastore.block.Distributable;
 import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
@@ -134,8 +122,7 @@ public final class CarbonLoaderUtil {
       String hdfsStoreLocation, String kettleHomePath, int currentRestructNumber) throws Exception {
     System.setProperty("KETTLE_HOME", kettleHomePath);
     if (!new File(storeLocation).mkdirs()) {
-      LOGGER.error("Error while creating the temp store path: " +
-          storeLocation);
+      LOGGER.error("Error while creating the temp store path: " + storeLocation);
     }
     String outPutLoc = storeLocation + "/etl";
     String databaseName = loadModel.getDatabaseName();
@@ -181,6 +168,7 @@ public final class CarbonLoaderUtil {
     info.setAutoAggregateRequest(loadModel.isAggLoadRequest());
     info.setComplexDelimiterLevel1(loadModel.getComplexDelimiterLevel1());
     info.setComplexDelimiterLevel2(loadModel.getComplexDelimiterLevel2());
+    info.setSerializationNullFormat(loadModel.getSerializationNullFormat());
 
     generateGraph(schmaModel, info, currentRestructNumber, loadModel, outPutLoc);
 
@@ -275,11 +263,11 @@ public final class CarbonLoaderUtil {
 
   public static void deleteSegment(CarbonLoadModel loadModel, int currentLoad) {
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
-    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(loadModel.getStorePath(),
-        carbonTable.getCarbonTableIdentifier());
+    CarbonTablePath carbonTablePath = CarbonStorePath
+        .getCarbonTablePath(loadModel.getStorePath(), carbonTable.getCarbonTableIdentifier());
 
     for (int i = 0; i < carbonTable.getPartitionCount(); i++) {
-      String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(i+"",currentLoad+"");
+      String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(i + "", currentLoad + "");
       deleteStorePath(segmentPath);
     }
   }
@@ -750,8 +738,7 @@ public final class CarbonLoaderUtil {
 
     String tableStatusPath = carbonTablePath.getTableStatusFilePath();
 
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(
-        absoluteTableIdentifier);
+    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
 
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
 
@@ -802,9 +789,8 @@ public final class CarbonLoaderUtil {
     return status;
   }
 
-  public static void writeLoadMetadata(CarbonDataLoadSchema schema,
-      String databaseName, String tableName,
-      List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
+  public static void writeLoadMetadata(CarbonDataLoadSchema schema, String databaseName,
+      String tableName, List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(schema.getCarbonTable().getStorePath(),
             schema.getCarbonTable().getCarbonTableIdentifier());
@@ -1013,11 +999,12 @@ public final class CarbonLoaderUtil {
    * @param parallelism    total no of tasks to execute in parallel
    * @return
    */
-  public static Map<String, List<List<TableBlockInfo>>> nodeBlockTaskMapping(
-      List<TableBlockInfo> blockInfos, int noOfNodesInput, int parallelism) {
+  public static Map<String, List<List<Distributable>>> nodeBlockTaskMapping(
+      List<Distributable> blockInfos, int noOfNodesInput, int parallelism,
+      List<String> activeNode) {
 
-    Map<String, List<TableBlockInfo>> mapOfNodes =
-        CarbonLoaderUtil.nodeBlockMapping(blockInfos, noOfNodesInput);
+    Map<String, List<Distributable>> mapOfNodes =
+        CarbonLoaderUtil.nodeBlockMapping(blockInfos, noOfNodesInput, activeNode);
     int taskPerNode = parallelism / mapOfNodes.size();
     //assigning non zero value to noOfTasksPerNode
     int noOfTasksPerNode = taskPerNode == 0 ? 1 : taskPerNode;
@@ -1031,10 +1018,47 @@ public final class CarbonLoaderUtil {
    * @param blockInfos
    * @return
    */
-  public static Map<String, List<TableBlockInfo>> nodeBlockMapping(
-      List<TableBlockInfo> blockInfos) {
+  public static Map<String, List<Distributable>> nodeBlockMapping(
+      List<Distributable> blockInfos, int noOfNodesInput) {
+    return nodeBlockMapping(blockInfos, noOfNodesInput, null);
+  }
+
+  /**
+   * This method will divide the blocks among the nodes as per the data locality
+   *
+   * @param blockInfos
+   * @return
+   */
+  public static Map<String, List<Distributable>> nodeBlockMapping(
+      List<Distributable> blockInfos) {
     // -1 if number of nodes has to be decided based on block location information
     return nodeBlockMapping(blockInfos, -1);
+  }
+
+  /**
+   * the method returns the number of required executors
+   *
+   * @param blockInfos
+   * @return
+   */
+  public static Map<String, List<Distributable>> getRequiredExecutors(
+      List<Distributable> blockInfos) {
+    List<NodeBlockRelation> flattenedList =
+        new ArrayList<NodeBlockRelation>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    for (Distributable blockInfo : blockInfos) {
+      for (String eachNode : blockInfo.getLocations()) {
+        NodeBlockRelation nbr = new NodeBlockRelation(blockInfo, eachNode);
+        flattenedList.add(nbr);
+      }
+    }
+    // sort the flattened data.
+    Collections.sort(flattenedList);
+    Map<String, List<Distributable>> nodeAndBlockMapping =
+        new LinkedHashMap<String, List<Distributable>>(
+            CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    // from the flattened list create a mapping of node vs Data blocks.
+    createNodeVsBlockMapping(flattenedList, nodeAndBlockMapping);
+    return nodeAndBlockMapping;
   }
 
   /**
@@ -1045,36 +1069,39 @@ public final class CarbonLoaderUtil {
    *                       based on block location information
    * @return
    */
-  public static Map<String, List<TableBlockInfo>> nodeBlockMapping(List<TableBlockInfo> blockInfos,
-      int noOfNodesInput) {
+  public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos,
+      int noOfNodesInput, List<String> activeNodes) {
 
-    Map<String, List<TableBlockInfo>> nodeBlocksMap =
-        new HashMap<String, List<TableBlockInfo>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    Map<String, List<Distributable>> nodeBlocksMap =
+        new HashMap<String, List<Distributable>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     List<NodeBlockRelation> flattenedList =
         new ArrayList<NodeBlockRelation>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    Set<TableBlockInfo> uniqueBlocks =
-        new HashSet<TableBlockInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    Set<Distributable> uniqueBlocks =
+        new HashSet<Distributable>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     Set<String> nodes = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     createFlattenedListFromMap(blockInfos, flattenedList, uniqueBlocks, nodes);
 
     int noofNodes = (-1 == noOfNodesInput) ? nodes.size() : noOfNodesInput;
+    if (null != activeNodes) {
+      noofNodes = activeNodes.size();
+    }
     int blocksPerNode = blockInfos.size() / noofNodes;
 
     // sort the flattened data.
     Collections.sort(flattenedList);
 
-    Map<String, List<TableBlockInfo>> nodeAndBlockMapping =
-        new LinkedHashMap<String, List<TableBlockInfo>>(
+    Map<String, List<Distributable>> nodeAndBlockMapping =
+        new LinkedHashMap<String, List<Distributable>>(
             CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     // from the flattened list create a mapping of node vs Data blocks.
     createNodeVsBlockMapping(flattenedList, nodeAndBlockMapping);
 
     // so now we have a map of node vs blocks. allocate the block as per the order
-    createOutputMap(nodeBlocksMap, blocksPerNode, uniqueBlocks, nodeAndBlockMapping);
+    createOutputMap(nodeBlocksMap, blocksPerNode, uniqueBlocks, nodeAndBlockMapping, activeNodes);
 
     // if any blocks remain then assign them to nodes in round robin.
     assignLeftOverBlocks(nodeBlocksMap, uniqueBlocks, blocksPerNode);
@@ -1089,16 +1116,16 @@ public final class CarbonLoaderUtil {
    * @param noOfTasksPerNode
    * @return
    */
-  private static Map<String, List<List<TableBlockInfo>>> assignBlocksToTasksPerNode(
-      Map<String, List<TableBlockInfo>> nodeBlocksMap, int noOfTasksPerNode) {
-    Map<String, List<List<TableBlockInfo>>> outputMap =
-        new HashMap<String, List<List<TableBlockInfo>>>(
+  private static Map<String, List<List<Distributable>>> assignBlocksToTasksPerNode(
+      Map<String, List<Distributable>> nodeBlocksMap, int noOfTasksPerNode) {
+    Map<String, List<List<Distributable>>> outputMap =
+        new HashMap<String, List<List<Distributable>>>(
             CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     // for each node
-    for (Map.Entry<String, List<TableBlockInfo>> eachNode : nodeBlocksMap.entrySet()) {
+    for (Map.Entry<String, List<Distributable>> eachNode : nodeBlocksMap.entrySet()) {
 
-      List<TableBlockInfo> blockOfEachNode = eachNode.getValue();
+      List<Distributable> blockOfEachNode = eachNode.getValue();
 
       // create the task list for each node.
       createTaskListForNode(outputMap, noOfTasksPerNode, eachNode.getKey());
@@ -1117,13 +1144,13 @@ public final class CarbonLoaderUtil {
    * @param key
    * @param blockOfEachNode
    */
-  private static void divideBlockToTasks(Map<String, List<List<TableBlockInfo>>> outputMap,
-      String key, List<TableBlockInfo> blockOfEachNode) {
+  private static void divideBlockToTasks(Map<String, List<List<Distributable>>> outputMap,
+      String key, List<Distributable> blockOfEachNode) {
 
-    List<List<TableBlockInfo>> taskLists = outputMap.get(key);
+    List<List<Distributable>> taskLists = outputMap.get(key);
     int tasksOfNode = taskLists.size();
     int i = 0;
-    for (TableBlockInfo block : blockOfEachNode) {
+    for (Distributable block : blockOfEachNode) {
 
       taskLists.get(i % tasksOfNode).add(block);
       i++;
@@ -1138,13 +1165,13 @@ public final class CarbonLoaderUtil {
    * @param noOfTasksPerNode
    * @param key
    */
-  private static void createTaskListForNode(Map<String, List<List<TableBlockInfo>>> outputMap,
+  private static void createTaskListForNode(Map<String, List<List<Distributable>>> outputMap,
       int noOfTasksPerNode, String key) {
-    List<List<TableBlockInfo>> nodeTaskList =
-        new ArrayList<List<TableBlockInfo>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    List<List<Distributable>> nodeTaskList =
+        new ArrayList<List<Distributable>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (int i = 0; i < noOfTasksPerNode; i++) {
-      List<TableBlockInfo> eachTask =
-          new ArrayList<TableBlockInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+      List<Distributable> eachTask =
+          new ArrayList<Distributable>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
       nodeTaskList.add(eachTask);
 
     }
@@ -1158,14 +1185,18 @@ public final class CarbonLoaderUtil {
    * @param outputMap
    * @param uniqueBlocks
    */
-  private static void assignLeftOverBlocks(Map<String, List<TableBlockInfo>> outputMap,
-      Set<TableBlockInfo> uniqueBlocks, int noOfBlocksPerNode) {
+  private static void assignLeftOverBlocks(Map<String, List<Distributable>> outputMap,
+      Set<Distributable> uniqueBlocks, int noOfBlocksPerNode) {
 
-    for (Map.Entry<String, List<TableBlockInfo>> entry : outputMap.entrySet()) {
-      Iterator<TableBlockInfo> blocks = uniqueBlocks.iterator();
-      List<TableBlockInfo> blockLst = entry.getValue();
+    for (Map.Entry<String, List<Distributable>> entry : outputMap.entrySet()) {
+      Iterator<Distributable> blocks = uniqueBlocks.iterator();
+      List<Distributable> blockLst = entry.getValue();
+      //if the node is already having the per block nodes then avoid assign the extra blocks
+      if (blockLst.size() == noOfBlocksPerNode){
+        continue;
+      }
       while (blocks.hasNext()) {
-        TableBlockInfo block = blocks.next();
+        Distributable block = blocks.next();
         blockLst.add(block);
         blocks.remove();
         if (blockLst.size() >= noOfBlocksPerNode) {
@@ -1174,11 +1205,11 @@ public final class CarbonLoaderUtil {
       }
     }
 
-    for (Map.Entry<String, List<TableBlockInfo>> entry : outputMap.entrySet()) {
-      Iterator<TableBlockInfo> blocks = uniqueBlocks.iterator();
+    for (Map.Entry<String, List<Distributable>> entry : outputMap.entrySet()) {
+      Iterator<Distributable> blocks = uniqueBlocks.iterator();
       if (blocks.hasNext()) {
-        TableBlockInfo block = blocks.next();
-        List<TableBlockInfo> blockLst = entry.getValue();
+        Distributable block = blocks.next();
+        List<Distributable> blockLst = entry.getValue();
         blockLst.add(block);
         blocks.remove();
       }
@@ -1192,38 +1223,53 @@ public final class CarbonLoaderUtil {
    * @param blocksPerNode
    * @param uniqueBlocks
    * @param nodeAndBlockMapping
+   * @param activeNodes
    */
-  private static void createOutputMap(Map<String, List<TableBlockInfo>> outputMap,
-      int blocksPerNode, Set<TableBlockInfo> uniqueBlocks,
-      Map<String, List<TableBlockInfo>> nodeAndBlockMapping) {
+  private static void createOutputMap(Map<String, List<Distributable>> outputMap,
+      int blocksPerNode, Set<Distributable> uniqueBlocks,
+      Map<String, List<Distributable>> nodeAndBlockMapping, List<String> activeNodes) {
 
     ArrayList<NodeMultiBlockRelation> multiBlockRelations =
-            new ArrayList<>(nodeAndBlockMapping.size());
-    for (Map.Entry<String, List<TableBlockInfo>> entry : nodeAndBlockMapping.entrySet()) {
+        new ArrayList<>(nodeAndBlockMapping.size());
+    for (Map.Entry<String, List<Distributable>> entry : nodeAndBlockMapping.entrySet()) {
       multiBlockRelations.add(new NodeMultiBlockRelation(entry.getKey(), entry.getValue()));
     }
     // sort nodes based on number of blocks per node, so that nodes having lesser blocks
     // are assigned first
     Collections.sort(multiBlockRelations);
 
+    Set<String> validActiveNodes = new HashSet<String>();
+    // find all the valid active nodes
     for (NodeMultiBlockRelation nodeMultiBlockRelation : multiBlockRelations) {
       String nodeName = nodeMultiBlockRelation.getNode();
+      //assign the block to the node only if the node is active
+      if (null != activeNodes && isActiveExecutor(activeNodes, nodeName)) {
+        validActiveNodes.add(nodeName);
+      }
+    }
+
+    for (NodeMultiBlockRelation nodeMultiBlockRelation : multiBlockRelations) {
+      String nodeName = nodeMultiBlockRelation.getNode();
+      //assign the block to the node only if the node is active
+      if (!validActiveNodes.isEmpty() && !validActiveNodes.contains(nodeName)) {
+        continue;
+      }
       // this loop will be for each NODE
       int nodeCapacity = 0;
       // loop thru blocks of each Node
-      for (TableBlockInfo block : nodeMultiBlockRelation.getBlocks()) {
+      for (Distributable block : nodeMultiBlockRelation.getBlocks()) {
 
         // check if this is already assigned.
         if (uniqueBlocks.contains(block)) {
 
           if (null == outputMap.get(nodeName)) {
-            List<TableBlockInfo> list =
-                new ArrayList<TableBlockInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+            List<Distributable> list =
+                new ArrayList<Distributable>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
             outputMap.put(nodeName, list);
           }
           // assign this block to this node if node has capacity left
           if (nodeCapacity < blocksPerNode) {
-            List<TableBlockInfo> infos = outputMap.get(nodeName);
+            List<Distributable> infos = outputMap.get(nodeName);
             infos.add(block);
             nodeCapacity++;
             uniqueBlocks.remove(block);
@@ -1237,19 +1283,50 @@ public final class CarbonLoaderUtil {
   }
 
   /**
+   * method validates whether the node is active or not.
+   *
+   * @param activeNode
+   * @param nodeName
+   * @return returns true if active else false.
+   */
+  private static boolean isActiveExecutor(List activeNode, String nodeName) {
+    boolean isActiveNode = activeNode.contains(nodeName);
+    if (isActiveNode) {
+      return isActiveNode;
+    }
+    //if localhost then retrieve the localhost name then do the check
+    else if (nodeName.equals("localhost")) {
+      try {
+        String hostName = InetAddress.getLocalHost().getHostName();
+        isActiveNode = activeNode.contains(hostName);
+      } catch (UnknownHostException ue) {
+        isActiveNode = false;
+      }
+    } else {
+      try {
+        String hostAddress = InetAddress.getLocalHost().getHostAddress();
+        isActiveNode = activeNode.contains(hostAddress);
+      } catch (UnknownHostException ue) {
+        isActiveNode = false;
+      }
+    }
+    return isActiveNode;
+  }
+
+  /**
    * Create the Node and its related blocks Mapping and put in a Map
    *
    * @param flattenedList
    * @param nodeAndBlockMapping
    */
   private static void createNodeVsBlockMapping(List<NodeBlockRelation> flattenedList,
-      Map<String, List<TableBlockInfo>> nodeAndBlockMapping) {
+      Map<String, List<Distributable>> nodeAndBlockMapping) {
     for (NodeBlockRelation nbr : flattenedList) {
       String node = nbr.getNode();
-      List<TableBlockInfo> list;
+      List<Distributable> list;
 
       if (null == nodeAndBlockMapping.get(node)) {
-        list = new ArrayList<TableBlockInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        list = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         list.add(nbr.getBlock());
         Collections.sort(list);
         nodeAndBlockMapping.put(node, list);
@@ -1268,10 +1345,10 @@ public final class CarbonLoaderUtil {
    * @param flattenedList
    * @param uniqueBlocks
    */
-  private static void createFlattenedListFromMap(List<TableBlockInfo> blockInfos,
-      List<NodeBlockRelation> flattenedList, Set<TableBlockInfo> uniqueBlocks,
+  private static void createFlattenedListFromMap(List<Distributable> blockInfos,
+      List<NodeBlockRelation> flattenedList, Set<Distributable> uniqueBlocks,
       Set<String> nodeList) {
-    for (TableBlockInfo blockInfo : blockInfos) {
+    for (Distributable blockInfo : blockInfos) {
       // put the blocks in the set
       uniqueBlocks.add(blockInfo);
 

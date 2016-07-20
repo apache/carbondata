@@ -47,41 +47,74 @@ import org.carbondata.spark.util.CommonUtil
 class CarbonSqlParser()
   extends AbstractSparkSQLParser with Logging {
 
-  protected val AS = Keyword("AS")
-  protected val AGGREGATION = Keyword("AGGREGATION")
-  protected val ALL = Keyword("ALL")
-  protected val HIGH_CARDINALITY_DIMS = Keyword("NO_DICTIONARY")
-  protected val BEFORE = Keyword("BEFORE")
-  protected val CARDINALITY = Keyword("CARDINALITY")
-  protected val CLASS = Keyword("CLASS")
-  protected val CLEAN = Keyword("CLEAN")
-  protected val COLUMNS = Keyword("COLUMNS")
-  protected val DATA = Keyword("DATA")
-  protected val DELETE = Keyword("DELETE")
-  protected val DESCRIBE = Keyword("DESCRIBE")
-  protected val DESC = Keyword("DESC")
-  protected val DETAIL = Keyword("DETAIL")
-  protected val DROP = Keyword("DROP")
-  protected val EXTENDED = Keyword("EXTENDED")
-  protected val FORMATTED = Keyword("FORMATTED")
-  protected val FILES = Keyword("FILES")
-  protected val FROM = Keyword("FROM")
-  protected val HIERARCHIES = Keyword("HIERARCHIES")
-  protected val IN = Keyword("IN")
-  protected val INPATH = Keyword("INPATH")
-  protected val INTO = Keyword("INTO")
-  protected val LEVELS = Keyword("LEVELS")
-  protected val LOAD = Keyword("LOAD")
-  protected val LOADS = Keyword("LOADS")
-  protected val LOCAL = Keyword("LOCAL")
-  protected val OPTIONS = Keyword("OPTIONS")
-  protected val OVERWRITE = Keyword("OVERWRITE")
-  protected val PARTITION_COUNT = Keyword("PARTITION_COUNT")
-  protected val PARTITIONER = Keyword("PARTITIONER")
-  protected val SHOW = Keyword("SHOW")
-  protected val TABLE = Keyword("TABLE")
-  protected val TYPE = Keyword("TYPE")
-  protected val WHERE = Keyword("WHERE")
+  protected val AGGREGATE = carbonKeyWord("AGGREGATE")
+  protected val AS = carbonKeyWord("AS")
+  protected val AGGREGATION = carbonKeyWord("AGGREGATION")
+  protected val ALL = carbonKeyWord("ALL")
+  protected val HIGH_CARDINALITY_DIMS = carbonKeyWord("NO_DICTIONARY")
+  protected val BEFORE = carbonKeyWord("BEFORE")
+  protected val BY = carbonKeyWord("BY")
+  protected val CARDINALITY = carbonKeyWord("CARDINALITY")
+  protected val CLASS = carbonKeyWord("CLASS")
+  protected val CLEAN = carbonKeyWord("CLEAN")
+  protected val COLS = carbonKeyWord("COLS")
+  protected val COLUMNS = carbonKeyWord("COLUMNS")
+  protected val CREATE = carbonKeyWord("CREATE")
+  protected val CUBE = carbonKeyWord("CUBE")
+  protected val CUBES = carbonKeyWord("CUBES")
+  protected val DATA = carbonKeyWord("DATA")
+  protected val DATABASES = carbonKeyWord("DATABASES")
+  protected val DELETE = carbonKeyWord("DELETE")
+  protected val DELIMITER = carbonKeyWord("DELIMITER")
+  protected val DESCRIBE = carbonKeyWord("DESCRIBE")
+  protected val DESC = carbonKeyWord("DESC")
+  protected val DETAIL = carbonKeyWord("DETAIL")
+  protected val DIMENSIONS = carbonKeyWord("DIMENSIONS")
+  protected val DIMFOLDERPATH = carbonKeyWord("DIMFOLDERPATH")
+  protected val DROP = carbonKeyWord("DROP")
+  protected val ESCAPECHAR = carbonKeyWord("ESCAPECHAR")
+  protected val EXCLUDE = carbonKeyWord("EXCLUDE")
+  protected val EXTENDED = carbonKeyWord("EXTENDED")
+  protected val FORMATTED = carbonKeyWord("FORMATTED")
+  protected val FACT = carbonKeyWord("FACT")
+  protected val FIELDS = carbonKeyWord("FIELDS")
+  protected val FILEHEADER = carbonKeyWord("FILEHEADER")
+  protected val SERIALIZATION_NULL_FORMAT = carbonKeyWord("SERIALIZATION_NULL_FORMAT")
+  protected val FILES = carbonKeyWord("FILES")
+  protected val FROM = carbonKeyWord("FROM")
+  protected val HIERARCHIES = carbonKeyWord("HIERARCHIES")
+  protected val IN = carbonKeyWord("IN")
+  protected val INCLUDE = carbonKeyWord("INCLUDE")
+  protected val INPATH = carbonKeyWord("INPATH")
+  protected val INTO = carbonKeyWord("INTO")
+  protected val LEVELS = carbonKeyWord("LEVELS")
+  protected val LIKE = carbonKeyWord("LIKE")
+  protected val LOAD = carbonKeyWord("LOAD")
+  protected val LOADS = carbonKeyWord("LOADS")
+  protected val LOCAL = carbonKeyWord("LOCAL")
+  protected val MAPPED = carbonKeyWord("MAPPED")
+  protected val MEASURES = carbonKeyWord("MEASURES")
+  protected val MULTILINE = carbonKeyWord("MULTILINE")
+  protected val COMPLEX_DELIMITER_LEVEL_1 = carbonKeyWord("COMPLEX_DELIMITER_LEVEL_1")
+  protected val COMPLEX_DELIMITER_LEVEL_2 = carbonKeyWord("COMPLEX_DELIMITER_LEVEL_2")
+  protected val OPTIONS = carbonKeyWord("OPTIONS")
+  protected val OUTPATH = carbonKeyWord("OUTPATH")
+  protected val OVERWRITE = carbonKeyWord("OVERWRITE")
+  protected val PARTITION_COUNT = carbonKeyWord("PARTITION_COUNT")
+  protected val PARTITIONDATA = carbonKeyWord("PARTITIONDATA")
+  protected val PARTITIONER = carbonKeyWord("PARTITIONER")
+  protected val QUOTECHAR = carbonKeyWord("QUOTECHAR")
+  protected val RELATION = carbonKeyWord("RELATION")
+  protected val SCHEMAS = carbonKeyWord("SCHEMAS")
+  protected val SHOW = carbonKeyWord("SHOW")
+  protected val TABLES = carbonKeyWord("TABLES")
+  protected val TABLE = carbonKeyWord("TABLE")
+  protected val TERMINATED = carbonKeyWord("TERMINATED")
+  protected val TYPE = carbonKeyWord("TYPE")
+  protected val USE = carbonKeyWord("USE")
+  protected val WHERE = carbonKeyWord("WHERE")
+  protected val WITH = carbonKeyWord("WITH")
+  protected val AGGREGATETABLE = carbonKeyWord("AGGREGATETABLE")
   protected val SUM = Keyword("sum")
   protected val COUNT = Keyword("count")
   protected val AVG = Keyword("avg")
@@ -90,16 +123,34 @@ class CarbonSqlParser()
   protected val DISTINCT = Keyword("distinct")
   protected val DISTINCT_COUNT = Keyword("distinct-count")
   protected val SUM_DISTINCT = Keyword("sum-distinct")
-  protected val ABS = Keyword("abs")
+  protected val ABS = carbonKeyWord("abs")
 
-  protected val FOR = Keyword("FOR")
-  protected val LIMIT = Keyword("LIMIT")
-  protected val DEFAULTS = Keyword("DEFAULTS")
-  protected val ALTER = Keyword("ALTER")
+  protected val FOR = carbonKeyWord("FOR")
+  protected val SCRIPTS = carbonKeyWord("SCRIPTS")
+  protected val USING = carbonKeyWord("USING")
+  protected val LIMIT = carbonKeyWord("LIMIT")
+  protected val DEFAULTS = carbonKeyWord("DEFAULTS")
+  protected val ALTER = carbonKeyWord("ALTER")
+  protected val ADD = carbonKeyWord("ADD")
 
-  protected val STARTTIME = Keyword("STARTTIME")
-  protected val SEGMENTS = Keyword("SEGMENTS")
-  protected val SEGMENT = Keyword("SEGMENT")
+  protected val IF = carbonKeyWord("IF")
+  protected val NOT = carbonKeyWord("NOT")
+  protected val EXISTS = carbonKeyWord("EXISTS")
+  protected val DIMENSION = carbonKeyWord("DIMENSION")
+  protected val STARTTIME = carbonKeyWord("STARTTIME")
+  protected val SEGMENTS = carbonKeyWord("SEGMENTS")
+  protected val SEGMENT = carbonKeyWord("SEGMENT")
+
+  protected val STRING = carbonKeyWord("STRING")
+  protected val INTEGER = carbonKeyWord("INTEGER")
+  protected val TIMESTAMP = carbonKeyWord("TIMESTAMP")
+  protected val NUMERIC = carbonKeyWord("NUMERIC")
+  protected val DECIMAL = carbonKeyWord("DECIMAL")
+  protected val DOUBLE = carbonKeyWord("DOUBLE")
+  protected val INT = carbonKeyWord("INT")
+  protected val BIGINT = carbonKeyWord("BIGINT")
+  protected val ARRAY = carbonKeyWord("ARRAY")
+  protected val STRUCT = carbonKeyWord("STRUCT")
 
   protected val doubleQuotedString = "\"([^\"]+)\"".r
   protected val singleQuotedString = "'([^']+)'".r
@@ -135,6 +186,14 @@ class CarbonSqlParser()
       case failureOrError => sys.error(failureOrError.toString)
     }
   }
+
+  /**
+   * This will convert key word to regular expression.
+   * @param keys
+   * @return
+   */
+  private def carbonKeyWord(keys: String) =
+    ("(?i)" + keys).r
 
   override protected lazy val start: Parser[LogicalPlan] =
     loadManagement | describeTable | showLoads | alterTable | createTable
@@ -259,7 +318,7 @@ class CarbonSqlParser()
     m.find()
     val matchedString: String = m.group(1)
     val scaleAndPrecision = matchedString.split(",")
-    (Integer.parseInt(scaleAndPrecision(0)), Integer.parseInt(scaleAndPrecision(1)))
+    (Integer.parseInt(scaleAndPrecision(0).trim), Integer.parseInt(scaleAndPrecision(1).trim))
   }
 
   /**
@@ -305,16 +364,21 @@ class CarbonSqlParser()
                 val dataType = Option(col.getType)
                 val name = Option(col.getName())
                 // This is to parse complex data types
-                val f: Field = anyFieldDef(new lexical.Scanner(col.getName + ' ' + col.getType))
+                val x = col.getName + ' ' + col.getType
+                val f: Field = anyFieldDef(new lexical.Scanner(x))
                 match {
                   case Success(field, _) => field
                   case failureOrError => new Field(columnName, dataType, name, None, null,
                     Some("columnar"))
                 }
-                if ("decimal".equalsIgnoreCase(f.dataType.getOrElse(""))) {
+                // the data type of the decimal type will be like decimal(10,0)
+                // so checking the start of the string and taking the precision and scale.
+                // resetting the data type with decimal
+                if (f.dataType.getOrElse("").startsWith("decimal")) {
                   val (precision, scale) = getScaleAndPrecision(col.getType)
                   f.precision = precision
                   f.scale = scale
+                  f.dataType = Some("decimal")
                 }
                 fields ++= Seq(f)
               }
@@ -481,7 +545,7 @@ class CarbonSqlParser()
         splittedColGrps :+= arrangedColGrp
       }
       // This will  be furthur handled.
-      splittedColGrps
+      CommonUtil.arrangeColGrpsInSchemaOrder(splittedColGrps, dims)
     }
     else {
       null
@@ -621,7 +685,7 @@ class CarbonSqlParser()
    * @return
    */
   protected def extractNoInvertedIndexColumns(fields: Seq[Field],
-                                              tableProperties: Map[String, String]):
+    tableProperties: Map[String, String]):
   Seq[String] = {
     // check whether the column name is in fields
     var noInvertedIdxColsProps: Array[String] = Array[String]()
@@ -906,7 +970,9 @@ class CarbonSqlParser()
     // validate with all supported options
     val options = partionDataOptions.get.groupBy(x => x._1)
     val supportedOptions = Seq("DELIMITER", "QUOTECHAR", "FILEHEADER", "ESCAPECHAR", "MULTILINE",
-      "COMPLEX_DELIMITER_LEVEL_1", "COMPLEX_DELIMITER_LEVEL_2"
+      "COMPLEX_DELIMITER_LEVEL_1", "COMPLEX_DELIMITER_LEVEL_2", "COLUMNDICT",
+      "SERIALIZATION_NULL_FORMAT",
+      "ALL_DICTIONARY_PATH"
     )
     var isSupported = true
     val invalidOptions = StringBuilder.newBuilder
@@ -963,9 +1029,19 @@ class CarbonSqlParser()
   protected lazy val dimCol: Parser[Field] = anyFieldDef
 
   protected lazy val primitiveTypes =
-    "(?i)string".r ^^^ "string" | "(?i)integer".r ^^^ "integer" | "(?i)timestamp".r ^^^
-    "timestamp" | "(?i)numeric".r ^^^ "numeric" | "(?i)bigint".r ^^^ "bigint" |
-    "(?i)decimal".r ^^^ "decimal" | "(?i)int".r ^^^ "int" | "(?i)double".r ^^^ "double"
+    STRING ^^^ "string" | INTEGER ^^^ "integer" | TIMESTAMP ^^^
+    "timestamp" | NUMERIC ^^^ "numeric" | BIGINT ^^^ "bigint" |
+       INT ^^^ "int" | DOUBLE ^^^ "double" | decimalType
+
+  /**
+   * Matching the decimal(10,0) data type and returning the same.
+   */
+  private lazy val decimalType =
+    DECIMAL ~ ("(" ~> numericLit <~",") ~ (numericLit <~ ")")  ^^ {
+      case decimal ~ precision ~scale =>
+        s"$decimal($precision, $scale)"
+    }
+
   protected lazy val nestedType: Parser[Field] = structFieldType | arrayFieldType |
     primitiveFieldType
 
@@ -982,7 +1058,7 @@ class CarbonSqlParser()
     }
 
   protected lazy val arrayFieldType: Parser[Field] =
-    (("(?i)array".r ^^^ "array") ~> "<" ~> nestedType <~ ">") ^^ {
+    ((ARRAY ^^^ "array") ~> "<" ~> nestedType <~ ">") ^^ {
       case e1 =>
         Field("unknown", Some("array"), Some("unknown"),
           Some(List(Field("val", e1.dataType, Some("val"),
@@ -990,14 +1066,14 @@ class CarbonSqlParser()
     }
 
   protected lazy val structFieldType: Parser[Field] =
-    (("(?i)struct".r ^^^ "struct") ~> "<" ~> repsep(anyFieldDef, ",") <~ ">") ^^ {
+    ((STRUCT ^^^ "struct") ~> "<" ~> repsep(anyFieldDef, ",") <~ ">") ^^ {
       case e1 =>
         Field("unknown", Some("struct"), Some("unknown"), Some(e1))
     }
 
   protected lazy val measureCol: Parser[Field] =
-    (ident | stringLit) ~ ("(?i)integer".r ^^^ "integer" | "(?i)numeric".r ^^^ "numeric" |
-      "(?i)bigint".r ^^^ "bigint" | "(?i)decimal".r ^^^ "decimal").? ~
+    (ident | stringLit) ~ (INTEGER ^^^ "integer" | NUMERIC ^^^ "numeric" |
+      BIGINT ^^^ "bigint" | DECIMAL ^^^ "decimal").? ~
       (AS ~> (ident | stringLit)).? ~ (IN ~> (ident | stringLit)).? ^^ {
       case e1 ~ e2 ~ e3 ~ e4 => Field(e1, e2, e3, Some(null))
     }
@@ -1085,30 +1161,55 @@ class CarbonSqlParser()
         }
     }
   private def normalizeType(field: Field): Field = {
-    field.dataType.getOrElse("NIL") match {
+    val dataType = field.dataType.getOrElse("NIL")
+    dataType match {
       case "string" => Field(field.column, Some("String"), field.name, Some(null), field.parent,
-        field.storeType)
+        field.storeType
+      )
       case "integer" | "int" => Field(field.column, Some("Integer"), field.name, Some(null),
-        field.parent, field.storeType)
+        field.parent, field.storeType
+      )
       case "long" => Field(field.column, Some("Long"), field.name, Some(null), field.parent,
-        field.storeType)
+        field.storeType
+      )
       case "double" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
-        field.storeType)
+        field.storeType
+      )
       case "timestamp" => Field(field.column, Some("Timestamp"), field.name, Some(null),
-        field.parent, field.storeType)
+        field.parent, field.storeType
+      )
       case "numeric" => Field(field.column, Some("Numeric"), field.name, Some(null), field.parent,
-        field.storeType)
+        field.storeType
+      )
       case "array" => Field(field.column, Some("Array"), field.name,
         field.children.map(f => f.map(normalizeType(_))),
-        field.parent, field.storeType)
+        field.parent, field.storeType
+      )
       case "struct" => Field(field.column, Some("Struct"), field.name,
         field.children.map(f => f.map(normalizeType(_))),
-        field.parent, field.storeType)
+        field.parent, field.storeType
+      )
       case "bigint" => Field(field.column, Some("BigInt"), field.name, Some(null), field.parent,
-        field.storeType)
+        field.storeType
+      )
       case "decimal" => Field(field.column, Some("Decimal"), field.name, Some(null), field.parent,
-        field.storeType, field.precision, field.scale)
-      case _ => field
+        field.storeType, field.precision, field.scale
+      )
+      // checking if the nested data type contains the child type as decimal(10,0),
+      // if it is present then extracting the precision and scale. resetting the data type
+      // with Decimal.
+      case _ if (dataType.startsWith("decimal")) =>
+        val (precision, scale) = getScaleAndPrecision(dataType)
+        Field(field.column,
+          Some("Decimal"),
+          field.name,
+          Some(null),
+          field.parent,
+          field.storeType, precision,
+          scale
+        )
+      case _ =>
+        field
     }
   }
 

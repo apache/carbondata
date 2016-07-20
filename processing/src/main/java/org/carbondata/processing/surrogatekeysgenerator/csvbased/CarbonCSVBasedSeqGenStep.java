@@ -54,9 +54,7 @@ import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.core.util.CarbonProperties;
-import org.carbondata.core.util.CarbonUtil;
-import org.carbondata.core.util.DataTypeUtil;
+import org.carbondata.core.util.*;
 import org.carbondata.core.writer.ByteArrayHolder;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
 import org.carbondata.processing.dataprocessor.manager.CarbonDataProcessorManager;
@@ -164,10 +162,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
    * dimPresentCsvOrder - Dim present In CSV order
    */
   private boolean[] dimPresentCsvOrder;
-  /**
-   * ValueToCheckAgainst
-   */
-  private String valueToCheckAgainst;
   /**
    * propMap
    */
@@ -290,6 +284,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
       Object[] r = getRow();  // get row, blocks when needed!
       if (first) {
+        CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
+                .recordGeneratingDictionaryValuesTime(meta.getPartitionID(),
+                        System.currentTimeMillis());
         first = false;
         meta.initialize();
         final Object dataProcessingLockObject = CarbonDataProcessorManager.getInstance()
@@ -436,6 +433,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         if (null != getInputRowMeta()) {
           generateNoDictionaryAndComplexIndexMapping();
         }
+        serializationNullFormat = meta.getTableOptionWrapper().get("serialization_null_format");
       }
       // no more input to be expected...
       if (r == null) {
@@ -472,6 +470,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       String logMessage =
           "Summary: Carbon CSV Based Seq Gen Step : " + readCounter + ": Write: " + writeCounter;
       LOGGER.info(logMessage);
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordGeneratingDictionaryValuesTime(
+          meta.getPartitionID(), System.currentTimeMillis());
       setOutputDone();
 
     } catch (RuntimeException ex) {
@@ -543,6 +543,11 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     LOGGER.info(logMessage);
     return false;
   }
+
+  /**
+   * holds the value to be considered as null while dataload
+   */
+  private String serializationNullFormat;
 
   private List<String> getDenormalizedHierarchies() {
     List<String> hierList = Arrays.asList(meta.hierNames);
@@ -875,7 +880,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     int i = 0;
     for (Object obj : rowValue) {
       if (obj != null) {
-        if (obj.equals(valueToCheckAgainst)) {
+        //removed valueToCheckAgainst does not make sense to
+        // compare non null object with a null string
+        if (obj.toString().equalsIgnoreCase(serializationNullFormat)) {
           rowValue[i] = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
         }
       } else {
@@ -960,7 +967,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           out[memberMapping[dimLen + index]] = surrogate.doubleValue();
         } else {
           try {
-            out[memberMapping[dimLen - meta.complexTypes.size() + index]] =
+            out[memberMapping[dimLen + index] - meta.complexTypes.size()] =
                 (isNull || msr == null || msr.length() == 0) ?
                     null :
                     DataTypeUtil
@@ -969,13 +976,13 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           } catch (NumberFormatException e) {
             try {
               msr = msr.replaceAll(",", "");
-              out[memberMapping[dimLen + index]] = DataTypeUtil
+              out[memberMapping[dimLen + index] - meta.complexTypes.size()] = DataTypeUtil
                   .getMeasureValueBasedOnDataType(msr, msrDataType[meta.msrMapping[msrCount]],
                       meta.carbonMeasures[meta.msrMapping[msrCount]]);
             } catch (NumberFormatException ex) {
               LOGGER.warn("Cant not convert : " + msr
                   + " to Numeric type value. Value considered as null.");
-              out[memberMapping[dimLen - meta.complexTypes.size() + index]] = null;
+              out[memberMapping[dimLen + index] - meta.complexTypes.size()] = null;
             }
           }
         }
@@ -1140,8 +1147,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             }
           }
           if (surrogateKeyForHrrchy[0] == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
-            addEntryToBadRecords(r, inputColumnsSize, j, columnName);
-            return null;
+            surrogateKeyForHrrchy[0] = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
           }
         }
         for (int k = 0; k < surrogateKeyForHrrchy.length; k++) {

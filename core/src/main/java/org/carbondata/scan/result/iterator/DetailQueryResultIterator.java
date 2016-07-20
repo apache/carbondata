@@ -73,7 +73,7 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
     } catch (Exception ex) {
       fileReader.finish();
       execService.shutdown();
-      throw new RuntimeException(ex.getCause().getMessage());
+      throw new RuntimeException(ex);
     }
     return result;
   }

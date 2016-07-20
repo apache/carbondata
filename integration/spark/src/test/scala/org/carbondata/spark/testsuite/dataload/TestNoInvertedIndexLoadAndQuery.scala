@@ -30,9 +30,9 @@ import org.carbondata.core.constants.CarbonCommonConstants
 import org.scalatest.BeforeAndAfterAll
 
 /**
- * Test Class for no inverted index load and query
- *
- */
+  * Test Class for no inverted index load and query
+  *
+  */
 
 class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
 
@@ -55,7 +55,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
            (id Int, name String, city String)
            STORED BY 'org.apache.carbondata.format'
            TBLPROPERTIES('NO_INVERTED_INDEX'='name,city')
-           """)
+        """)
     sql(s"""
            LOAD DATA LOCAL INPATH '$testData1' into table index1
            """)

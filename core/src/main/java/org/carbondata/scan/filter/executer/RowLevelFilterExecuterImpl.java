@@ -18,11 +18,15 @@
  */
 package org.carbondata.scan.filter.executer;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import java.util.Map;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
@@ -66,15 +70,18 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    */
   private int[] blocksIndex;
 
+  private Map<Integer, GenericQueryType> complexDimensionInfoMap;
+
   public RowLevelFilterExecuterImpl(List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
-      AbsoluteTableIdentifier tableIdentifier, SegmentProperties segmentProperties) {
+      AbsoluteTableIdentifier tableIdentifier, SegmentProperties segmentProperties,
+      Map<Integer, GenericQueryType> complexDimensionInfoMap) {
     this.dimColEvaluatorInfoList = dimColEvaluatorInfoList;
     this.segmentProperties = segmentProperties;
     this.blocksIndex = new int[dimColEvaluatorInfoList.size()];
-    for (int i=0;i<dimColEvaluatorInfoList.size();i++) {
+    for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
       this.blocksIndex[i] = segmentProperties.getDimensionOrdinalToBlockMapping()
-              .get(dimColEvaluatorInfoList.get(i).getColumnIndex());
+          .get(dimColEvaluatorInfoList.get(i).getColumnIndex());
     }
     if (null == msrColEvalutorInfoList) {
       this.msrColEvalutorInfoList = new ArrayList<MeasureColumnResolvedFilterInfo>(20);
@@ -83,6 +90,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     }
     this.exp = exp;
     this.tableIdentifier = tableIdentifier;
+    this.complexDimensionInfoMap = complexDimensionInfoMap;
   }
 
   @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder)
@@ -96,8 +104,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
               .getDimensionChunk(blockChunkHolder.getFileReader(), blocksIndex[i]);
         }
       } else {
-        GenericQueryType complexType = dimColumnEvaluatorInfo.getComplexTypesWithBlockStartIndex()
-            .get(blocksIndex[i]);
+        GenericQueryType complexType = complexDimensionInfoMap.get(blocksIndex[i]);
         complexType.fillRequiredBlockData(blockChunkHolder);
       }
     }
@@ -155,7 +162,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       throws QueryExecutionException {
     Object[] record = new Object[dimColEvaluatorInfoList.size() + msrColEvalutorInfoList.size()];
     String memberString = null;
-    for (int i=0;i<dimColEvaluatorInfoList.size();i++) {
+    for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = dimColEvaluatorInfoList.get(i);
       if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.ARRAY
           && dimColumnEvaluatorInfo.getDimension().getDataType() != DataType.STRUCT) {
@@ -205,6 +212,20 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
             record[dimColumnEvaluatorInfo.getRowIndex()] = member;
           }
         }
+      } else {
+        try {
+          GenericQueryType complexType = complexDimensionInfoMap.get(blocksIndex[i]);
+          ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+          DataOutputStream dataOutputStream = new DataOutputStream(byteStream);
+          complexType
+              .parseBlocksAndReturnComplexColumnByteArray(blockChunkHolder.getDimensionDataChunk(),
+                  index, dataOutputStream);
+          record[dimColumnEvaluatorInfo.getRowIndex()] = complexType
+              .getDataBasedOnDataTypeFromSurrogates(ByteBuffer.wrap(byteStream.toByteArray()));
+          byteStream.close();
+        } catch (IOException e) {
+          LOGGER.info(e.getMessage());
+        }
       }
     }
 
@@ -212,6 +233,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
     for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
       switch (msrColumnEvalutorInfo.getType()) {
+        case INT:
         case LONG:
           msrType = DataType.LONG;
           break;
@@ -227,6 +249,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       } else {
         Object msrValue;
         switch (msrType) {
+          case INT:
           case LONG:
             msrValue =
                 blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]

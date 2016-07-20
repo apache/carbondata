@@ -1,5 +1,6 @@
 package org.carbondata.scan.result.preparator.impl;
 
+import java.nio.ByteBuffer;
 import java.util.List;
 
 import org.carbondata.common.logging.LogService;
@@ -7,6 +8,7 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.scan.executor.impl.QueryExecutorProperties;
 import org.carbondata.scan.model.QueryDimension;
@@ -90,6 +92,7 @@ public class RawQueryResultPreparatorImpl
           long[] surrogateResult = querySchemaInfo.getKeyGenerator()
               .getKeyArray(key.getDictionaryKey(), querySchemaInfo.getMaskedByteIndexes());
           int noDictionaryColumnIndex = 0;
+          int complexTypeColumnIndex = 0;
           for (int i = 0; i < dimSize; i++) {
             if (!queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)) {
               row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
@@ -103,6 +106,12 @@ public class RawQueryResultPreparatorImpl
                 row[order[i]] = directDictionaryGenerator.getValueFromSurrogate(
                     (int) surrogateResult[queryDimensions[i].getDimension().getKeyOrdinal()]);
               }
+            } else if (CarbonUtil
+                .hasComplexDataType(queryDimensions[i].getDimension().getDataType())) {
+              row[order[i]] = queryExecuterProperties.complexDimensionInfoMap
+                  .get(queryDimensions[i].getDimension().getOrdinal())
+                  .getDataBasedOnDataTypeFromSurrogates(
+                      ByteBuffer.wrap(key.getComplexTypeByIndex(complexTypeColumnIndex++)));
             } else {
               row[order[i]] =
                   (int) surrogateResult[queryDimensions[i].getDimension().getKeyOrdinal()];

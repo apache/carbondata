@@ -1257,7 +1257,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     private boolean isNoDictionary;
 
     private BlockSortThread(int index, byte[][] data, boolean isSortRequired,
-                            boolean isUseInvertedIndex) {
+        boolean isUseInvertedIndex) {
       this.index = index;
       this.data = data;
       isCompressionReq = aggKeyBlock[this.index];

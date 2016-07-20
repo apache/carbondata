@@ -23,19 +23,7 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.SortedMap;
-import java.util.TreeMap;
-import java.util.TreeSet;
+import java.util.*;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
@@ -65,19 +53,10 @@ import org.carbondata.scan.expression.ColumnExpression;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
 import org.carbondata.scan.expression.LiteralExpression;
+import org.carbondata.scan.expression.conditional.ListExpression;
 import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.carbondata.scan.expression.exception.FilterUnsupportedException;
-import org.carbondata.scan.filter.executer.AndFilterExecuterImpl;
-import org.carbondata.scan.filter.executer.DimColumnExecuterFilterInfo;
-import org.carbondata.scan.filter.executer.ExcludeColGroupFilterExecuterImpl;
-import org.carbondata.scan.filter.executer.ExcludeFilterExecuterImpl;
-import org.carbondata.scan.filter.executer.FilterExecuter;
-import org.carbondata.scan.filter.executer.IncludeColGroupFilterExecuterImpl;
-import org.carbondata.scan.filter.executer.IncludeFilterExecuterImpl;
-import org.carbondata.scan.filter.executer.OrFilterExecuterImpl;
-import org.carbondata.scan.filter.executer.RestructureFilterExecuterImpl;
-import org.carbondata.scan.filter.executer.RowLevelFilterExecuterImpl;
-import org.carbondata.scan.filter.executer.RowLevelRangeTypeExecuterFacory;
+import org.carbondata.scan.filter.executer.*;
 import org.carbondata.scan.filter.intf.ExpressionType;
 import org.carbondata.scan.filter.intf.FilterExecuterType;
 import org.carbondata.scan.filter.intf.RowImpl;
@@ -105,7 +84,8 @@ public final class FilterUtil {
    * @return FilterExecuter instance
    */
   private static FilterExecuter createFilterExecuterTree(
-      FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties) {
+      FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
+      Map<Integer, GenericQueryType> complexDimensionInfoMap) {
     FilterExecuterType filterExecuterType = filterExpressionResolverTree.getFilterExecuterType();
     if (null != filterExecuterType) {
       switch (filterExecuterType) {
@@ -117,12 +97,16 @@ public final class FilterUtil {
               filterExpressionResolverTree.getDimColResolvedFilterInfo(), segmentProperties);
         case OR:
           return new OrFilterExecuterImpl(
-              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties),
-              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties));
+              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties,
+                  complexDimensionInfoMap),
+              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties,
+                  complexDimensionInfoMap));
         case AND:
           return new AndFilterExecuterImpl(
-              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties),
-              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties));
+              createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties,
+                  complexDimensionInfoMap),
+              createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties,
+                  complexDimensionInfoMap));
         case RESTRUCTURE:
           return new RestructureFilterExecuterImpl(
               filterExpressionResolverTree.getDimColResolvedFilterInfo(),
@@ -143,7 +127,7 @@ public final class FilterUtil {
                   .getMsrColEvalutorInfoList(),
               ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
               ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
-              segmentProperties);
+              segmentProperties, complexDimensionInfoMap);
 
       }
     }
@@ -152,7 +136,7 @@ public final class FilterUtil {
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getMsrColEvalutorInfoList(),
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
-        segmentProperties);
+        segmentProperties, complexDimensionInfoMap);
 
   }
 
@@ -189,6 +173,7 @@ public final class FilterUtil {
       return new ExcludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
     }
   }
+
   /**
    * This method will check if a given expression contains a column expression
    * recursively.
@@ -214,12 +199,52 @@ public final class FilterUtil {
    *
    * @return
    */
-  public static boolean checkIfExpressionContainsUnknownExp(Expression expression) {
-    if (expression.getFilterExpressionType() == ExpressionType.UNKNOWN) {
+  public static boolean checkIfLeftExpressionRequireEvaluation(Expression expression) {
+    if (expression.getFilterExpressionType() == ExpressionType.UNKNOWN
+        || !(expression instanceof ColumnExpression)) {
       return true;
     }
     for (Expression child : expression.getChildren()) {
-      if (checkIfExpressionContainsUnknownExp(child)) {
+      if (checkIfLeftExpressionRequireEvaluation(child)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * This method will check if a given literal expression is not a timestamp datatype
+   * recursively.
+   *
+   * @return
+   */
+  public static boolean checkIfDataTypeNotTimeStamp(Expression expression) {
+    if (expression.getFilterExpressionType() == ExpressionType.LITERAL) {
+      if (!(((LiteralExpression) expression).getLiteralExpDataType()
+          == DataType.TIMESTAMP)) {
+        return true;
+      }
+    }
+    for (Expression child : expression.getChildren()) {
+      if (checkIfDataTypeNotTimeStamp(child)) {
+        return true;
+      }
+    }
+    return false;
+  }
+  /**
+   * This method will check if a given expression contains a column expression
+   * recursively.
+   *
+   * @return
+   */
+  public static boolean checkIfRightExpressionRequireEvaluation(Expression expression) {
+    if (expression.getFilterExpressionType() == ExpressionType.UNKNOWN
+        || !(expression instanceof LiteralExpression) && !(expression instanceof ListExpression)) {
+      return true;
+    }
+    for (Expression child : expression.getChildren()) {
+      if (checkIfRightExpressionRequireEvaluation(child)) {
         return true;
       }
     }
@@ -612,6 +637,7 @@ public final class FilterUtil {
 
   /**
    * The method is used to get the single dictionary key's mask key
+   *
    * @param surrogate
    * @param carbonDimension
    * @param blockLevelKeyGenerator
@@ -646,7 +672,7 @@ public final class FilterUtil {
       SegmentProperties segmentProperties, long[] startKey) {
     Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter =
         dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();
-    for (Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
+    for (Map.Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
       List<DimColumnFilterInfo> values = entry.getValue();
       if (null == values || !entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
         continue;
@@ -688,7 +714,7 @@ public final class FilterUtil {
     Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter =
         dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();
     // step 1
-    for (Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
+    for (Map.Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
       if (!entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
         List<DimColumnFilterInfo> listOfDimColFilterInfo = entry.getValue();
         if (null == listOfDimColFilterInfo) {
@@ -744,7 +770,7 @@ public final class FilterUtil {
     Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter =
         dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();
     // step 1
-    for (Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
+    for (Map.Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
       if (!entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
         List<DimColumnFilterInfo> listOfDimColFilterInfo = entry.getValue();
         if (null == listOfDimColFilterInfo) {
@@ -807,7 +833,7 @@ public final class FilterUtil {
    */
   private static void getStartKeyBasedOnFilterResoverInfo(
       Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter, long[] startKey) {
-    for (Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
+    for (Map.Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
       List<DimColumnFilterInfo> values = entry.getValue();
       if (null == values) {
         continue;
@@ -859,7 +885,7 @@ public final class FilterUtil {
 
   private static void getEndKeyWithFilter(
       Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter, long[] endKey) {
-    for (Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
+    for (Map.Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
       List<DimColumnFilterInfo> values = entry.getValue();
       if (null == values || !entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
         continue;
@@ -948,8 +974,10 @@ public final class FilterUtil {
    * @return
    */
   public static FilterExecuter getFilterExecuterTree(
-      FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties) {
-    return createFilterExecuterTree(filterExpressionResolverTree, segmentProperties);
+      FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
+      Map<Integer, GenericQueryType> complexDimensionInfoMap) {
+    return createFilterExecuterTree(filterExpressionResolverTree, segmentProperties,
+        complexDimensionInfoMap);
   }
 
   /**
@@ -1297,7 +1325,7 @@ public final class FilterUtil {
    */
   public static void logError(Throwable e, boolean invalidRowsPresent) {
     if (!invalidRowsPresent) {
-      invalidRowsPresent=true;
+      invalidRowsPresent = true;
       LOGGER.error(e, CarbonCommonConstants.FILTER_INVALID_MEMBER + e.getMessage());
     }
   }

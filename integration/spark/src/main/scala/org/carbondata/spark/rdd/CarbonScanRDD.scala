@@ -26,10 +26,13 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.hive.DistributionUtil
 
 import org.carbondata.common.CarbonIterator
 import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.datastore.block.TableBlockInfo
+import org.carbondata.core.cache.dictionary.Dictionary
+import org.carbondata.core.carbon.datastore.block.{Distributable, TableBlockInfo}
+import org.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsRecorder}
 import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
 import org.carbondata.scan.executor.QueryExecutorFactory
 import org.carbondata.scan.expression.Expression
@@ -72,6 +75,7 @@ class CarbonScanRDD[V: ClassTag](
   val defaultParallelism = sc.defaultParallelism
 
   override def getPartitions: Array[Partition] = {
+    val statisticRecorder = new QueryStatisticsRecorder(queryModel.getQueryId)
     val startTime = System.currentTimeMillis()
     val (carbonInputFormat: CarbonInputFormat[Array[Object]], job: Job) =
       QueryPlanUtil.createCarbonInputFormat(queryModel.getAbsoluteTableIdentifier)
@@ -103,37 +107,49 @@ class CarbonScanRDD[V: ClassTag](
         new TableBlockInfo(inputSplit.getPath.toString,
           inputSplit.getStart, inputSplit.getSegmentId,
           inputSplit.getLocations, inputSplit.getLength
-        )
+        ).asInstanceOf[Distributable]
       )
       if (blockList.nonEmpty) {
         // group blocks to nodes, tasks
+        val startTime = System.currentTimeMillis
+        var statistic = new QueryStatistic
+        val activeNodes = DistributionUtil
+          .ensureExecutorsAndGetNodeList(blockList.toArray, sparkContext)
         val nodeBlockMapping =
-          CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism)
-
+          CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism,
+            activeNodes.toList.asJava
+          )
+        val timeElapsed: Long = System.currentTimeMillis - startTime
+        statistic.addStatistics("Total Time taken in block(s) allocation", System.currentTimeMillis)
+        statisticRecorder.recordStatistics(statistic);
+        statistic = new QueryStatistic
         var i = 0
         // Create Spark Partition for each task and assign blocks
         nodeBlockMapping.asScala.foreach { entry =>
-          entry._2.asScala.foreach { blocksPerTask =>
+          entry._2.asScala.foreach { blocksPerTask => {
+            val tableBlockInfo = blocksPerTask.asScala.map(_.asInstanceOf[TableBlockInfo])
             if (blocksPerTask.size() != 0) {
-              result.add(new CarbonSparkPartition(id, i, Seq(entry._1).toArray, blocksPerTask))
+              result
+                .add(new CarbonSparkPartition(id, i, Seq(entry._1).toArray, tableBlockInfo.asJava))
               i += 1
             }
+          }
           }
         }
         val noOfBlocks = blockList.size
         val noOfNodes = nodeBlockMapping.size
         val noOfTasks = result.size()
         logInfo(s"Identified  no.of.Blocks: $noOfBlocks,"
-          + s"parallelism: $defaultParallelism , " +
-          s"no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks"
+                + s"parallelism: $defaultParallelism , " +
+                s"no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks"
         )
-        logInfo("Time taken to identify Blocks to scan : " +
-          (System.currentTimeMillis() - startTime)
-        )
+        statistic.addStatistics("Time taken to identify Block(s) to scan", System.currentTimeMillis)
+        statisticRecorder.recordStatistics(statistic);
+        statisticRecorder.logStatistics
         result.asScala.foreach { r =>
           val cp = r.asInstanceOf[CarbonSparkPartition]
           logInfo(s"Node : " + cp.locations.toSeq.mkString(",")
-            + ", No.Of Blocks : " + cp.tableBlockInfos.size()
+                  + ", No.Of Blocks : " + cp.tableBlockInfos.size()
           )
         }
       } else {
@@ -187,11 +203,18 @@ class CarbonScanRDD[V: ClassTag](
 
        var havePair = false
        var finished = false
+       var recordCount = 0
 
        override def hasNext: Boolean = {
          if (!finished && !havePair) {
            finished = (null == rowIterator) || (!rowIterator.hasNext)
            havePair = !finished
+         }
+         if (finished) {
+           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
+           if(null!=queryModel.getStatisticsRecorder) {
+             queryModel.getStatisticsRecorder.logStatistics();
+           }
          }
          !finished
        }
@@ -201,12 +224,21 @@ class CarbonScanRDD[V: ClassTag](
            throw new java.util.NoSuchElementException("End of stream")
          }
          havePair = false
+         recordCount += 1
+         if (queryModel.getLimit != -1 && recordCount >= queryModel.getLimit) {
+           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
+           if(null!=queryModel.getStatisticsRecorder) {
+             queryModel.getStatisticsRecorder.logStatistics();
+           }
+         }
          keyClass.getValue(rowIterator.next())
        }
-
-       logInfo("********************** Total Time Taken to execute the query in Carbon Side: " +
-           (System.currentTimeMillis - queryStartTime)
-       )
+       def clearDictionaryCache(columnToDictionaryMap: java.util.Map[String, Dictionary]) = {
+         if (null != columnToDictionaryMap) {
+           org.carbondata.spark.util.CarbonQueryUtil
+             .clearColumnDictionaryCache(columnToDictionaryMap)
+         }
+       }
      }
      iter
    }

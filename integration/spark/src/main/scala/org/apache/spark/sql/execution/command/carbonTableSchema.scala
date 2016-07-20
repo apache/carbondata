@@ -81,7 +81,7 @@ case class tableModel(
     columnGroups: Seq[String],
     colProps: Option[util.Map[String, util.List[ColumnProperty]]] = None)
 
-case class Field(column: String, dataType: Option[String], name: Option[String],
+case class Field(column: String, var dataType: Option[String], name: Option[String],
     children: Option[List[Field]], parent: String = null,
     storeType: Option[String] = Some("columnar"),
     var precision: Int = 0, var scale: Int = 0)
@@ -147,6 +147,9 @@ case class CarbonMergerMapping(storeLocation: String, hdfsStoreLocation: String,
   partitioner: Partitioner, metadataFilePath: String, mergedLoadName: String,
   kettleHomePath: String, tableCreationTime: Long, databaseName: String,
   factTableName: String, validSegments: Array[String], tableId: String)
+
+case class NodeInfo(TaskId: String, noOfBlocks: Int)
+
 
 case class AlterTableModel(dbName: Option[String], tableName: String, compactionType: String)
 
@@ -1024,10 +1027,19 @@ private[sql] case class LoadTable(
       LOGGER.audit("Data loading failed. table not found: " + dbName + "." + tableName)
       sys.error("Data loading failed. table not found: " + dbName + "." + tableName)
     }
+
+    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
+        .lookupRelation1(Option(dbName), tableName)(sqlContext)
+        .asInstanceOf[CarbonRelation]
+    if (relation == null) {
+        sys.error(s"Table $dbName.$tableName does not exist")
+    }
     CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
-    val carbonLock = CarbonLockFactory.getCarbonLockObj(org.carbondata.core.
-      carbon.metadata.CarbonMetadata.getInstance().getCarbonTable(dbName + "_" + tableName).
-      getMetaDataFilepath, LockUsage.METADATA_LOCK)
+    val carbonLock = CarbonLockFactory
+      .getCarbonLockObj(relation.tableMeta.carbonTable.getAbsoluteTableIdentifier
+        .getCarbonTableIdentifier,
+        LockUsage.METADATA_LOCK
+      )
     try {
       if (carbonLock.lockWithRetries()) {
         logInfo("Successfully able to get the table metadata file lock")
@@ -1037,11 +1049,6 @@ private[sql] case class LoadTable(
       }
 
       val factPath = FileUtils.getPaths(CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser))
-      val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
-        .lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
-      if (relation == null) {
-        sys.error(s"Table $dbName.$tableName does not exist")
-      }
       val carbonLoadModel = new CarbonLoadModel()
       carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
       carbonLoadModel.setDatabaseName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
@@ -1088,6 +1095,9 @@ private[sql] case class LoadTable(
       val quoteChar = partionValues.getOrElse("quotechar", "\"")
       val fileHeader = partionValues.getOrElse("fileheader", "")
       val escapeChar = partionValues.getOrElse("escapechar", "\\")
+      val columnDict = partionValues.getOrElse("columndict", null)
+      val serializationNullFormat = partionValues.getOrElse("serialization_null_format", "\\N")
+      val allDictionaryPath = partionValues.getOrElse("all_dictionary_path", "")
       val complex_delimiter_level_1 = partionValues.getOrElse("complex_delimiter_level_1", "\\$")
       val complex_delimiter_level_2 = partionValues.getOrElse("complex_delimiter_level_2", "\\:")
       val multiLine = partionValues.getOrElse("multiline", "false").trim.toLowerCase match {
@@ -1100,6 +1110,8 @@ private[sql] case class LoadTable(
       }
 
       carbonLoadModel.setEscapeChar(escapeChar)
+      carbonLoadModel.setSerializationNullFormat("serialization_null_format" + "," +
+        serializationNullFormat)
       if (delimiter.equalsIgnoreCase(complex_delimiter_level_1) ||
           complex_delimiter_level_1.equalsIgnoreCase(complex_delimiter_level_2) ||
           delimiter.equalsIgnoreCase(complex_delimiter_level_2)) {
@@ -1111,6 +1123,8 @@ private[sql] case class LoadTable(
         carbonLoadModel.setComplexDelimiterLevel2(
           CarbonUtil.escapeComplexDelimiterChar(complex_delimiter_level_2))
       }
+      // set local dictionary path, and dictionary file extension
+      carbonLoadModel.setAllDictPath(allDictionaryPath)
 
       var partitionStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
       try {
@@ -1122,6 +1136,7 @@ private[sql] case class LoadTable(
           carbonLoadModel.setFactFilePath(factPath)
           carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimiter))
           carbonLoadModel.setCsvHeader(fileHeader)
+          carbonLoadModel.setColDictFilePath(columnDict)
           carbonLoadModel.setDirectLoad(true)
         }
         else {
@@ -1144,6 +1159,7 @@ private[sql] case class LoadTable(
             fileHeader,
             escapeChar, multiLine)(sqlContext.asInstanceOf[HiveContext])
           carbonLoadModel.setFactFilePath(FileUtils.getPaths(partitionLocation))
+          carbonLoadModel.setColDictFilePath(columnDict)
         }
         GlobalDictionaryUtil
           .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.tableMeta.storePath)
@@ -1252,7 +1268,9 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
     } else {
       CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
       val carbonLock = CarbonLockFactory
-        .getCarbonLockObj(tmpTable .getMetaDataFilepath, LockUsage.METADATA_LOCK)
+        .getCarbonLockObj(tmpTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+          LockUsage.METADATA_LOCK
+        )
       try {
         if (carbonLock.lockWithRetries()) {
           logInfo("Successfully able to get the table metadata file lock")
@@ -1442,6 +1460,9 @@ private[sql] case class DescribeCommandFormatted(
     } else {
       results ++= Seq(("NONE", "", ""))
     }
+    val dimension = carbonTable
+      .getDimensionByTableName(relation.tableMeta.carbonTableIdentifier.getTableName);
+    results ++= getColumnGroups(dimension.asScala.toList)
     results.map { case (name, dataType, comment) =>
       Row(f"$name%-36s $dataType%-80s $comment%-72s")
     }
@@ -1462,19 +1483,6 @@ private[sql] case class DescribeCommandFormatted(
       index = index + 1
     }
     results
-  }
-}
-
-private[sql] case class DescribeNativeCommand(sql: String,
-    override val output: Seq[Attribute])
-  extends RunnableCommand {
-  override def run(sqlContext: SQLContext): Seq[Row] = {
-    val output = sqlContext.asInstanceOf[HiveContext].catalog.client.runSqlHive(sql)
-    output.map(x => {
-      val row = x.split("\t", -3)
-      Row(row(0), row(1), row(2))
-    }
-    ).tail
   }
 }
 

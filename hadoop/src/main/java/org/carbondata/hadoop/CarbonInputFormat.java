@@ -47,6 +47,8 @@ import org.carbondata.core.carbon.datastore.impl.btree.BlockBTreeLeafNode;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
+import org.carbondata.core.carbon.querystatistics.QueryStatistic;
+import org.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.util.CarbonProperties;
@@ -440,6 +442,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       AbsoluteTableIdentifier absoluteTableIdentifier, FilterResolverIntf resolver,
       String segmentId) throws IndexBuilderException, IOException {
 
+    QueryStatisticsRecorder recorder = new QueryStatisticsRecorder("");
+    QueryStatistic statistic = new QueryStatistic();
     Map<String, AbstractIndex> segmentIndexMap =
         getSegmentAbstractIndexs(job, absoluteTableIdentifier, segmentId);
 
@@ -464,6 +468,10 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       }
       resultFilterredBlocks.addAll(filterredBlocks);
     }
+    statistic.addStatistics("Time taken to load the Block(s) in Driver Side",
+        System.currentTimeMillis());
+    recorder.recordStatistics(statistic);
+    recorder.logStatistics();
     return resultFilterredBlocks;
   }
 
@@ -516,7 +524,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
       // Add all blocks of btree into result
       DataRefNodeFinder blockFinder =
-          new BTreeDataRefNodeFinder(segmentProperties.getDimensionColumnsValueSize());
+          new BTreeDataRefNodeFinder(segmentProperties.getEachDimColumnValueSize());
       DataRefNode startBlock =
           blockFinder.findFirstDataBlock(abstractIndex.getDataRefNode(), startIndexKey);
       DataRefNode endBlock =

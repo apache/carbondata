@@ -46,6 +46,12 @@ object CommonUtil {
         throw new MalformedCarbonCommandException(
           "Column group doesn't support Timestamp datatype:" + x)
       }
+      // if invalid column is present
+      else if (dims.filter { dim => dim.column.equalsIgnoreCase(x) }.size == 0) {
+        throw new MalformedCarbonCommandException(
+          "column in column group is not a valid column :" + x
+        )
+      }
     }
     // check if given column is present in other groups
     def foundIndExistingColGrp(colName: String): Boolean = {
@@ -160,5 +166,37 @@ object CommonUtil {
     } else {
       false
     }
+  }
+
+  /**
+   * @param colGrps
+   * @param dims
+   * @return columns of column groups in schema order
+   */
+  def arrangeColGrpsInSchemaOrder(colGrps: Seq[String], dims: Seq[Field]): Seq[String] = {
+    def sortByIndex(colGrp1: String, colGrp2: String) = {
+      val firstCol1 = colGrp1.split(",")(0)
+      val firstCol2 = colGrp2.split(",")(0)
+      val dimIndex1: Int = getDimIndex(firstCol1, dims)
+      val dimIndex2: Int = getDimIndex(firstCol2, dims)
+      dimIndex1 < dimIndex2
+    }
+    val sortedColGroups: Seq[String] = colGrps.sortWith(sortByIndex)
+    sortedColGroups
+  }
+
+  /**
+   * @param colName
+   * @param dims
+   * @return return index for given column in dims
+   */
+  def getDimIndex(colName: String, dims: Seq[Field]): Int = {
+    var index: Int = -1
+    dims.zipWithIndex.foreach { h =>
+      if (h._1.column.equalsIgnoreCase(colName)) {
+        index = h._2.toInt
+      }
+    }
+    index
   }
 }

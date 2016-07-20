@@ -22,6 +22,7 @@ import java.io.File
 import scala.language.implicitConversions
 
 import org.apache.spark.{Logging, SparkContext}
+import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.catalyst.{CatalystConf, ParserDialect}
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog}
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
@@ -143,6 +144,8 @@ object CarbonContext {
 
   val datasourceShortName: String = "carbondata"
 
+  @transient
+  val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)
   /**
    * @param databaseName - Database Name
    * @param tableName   - Table Name
@@ -213,4 +216,28 @@ object CarbonContext {
     cache(sc) = cc
   }
 
+  /**
+   *
+   * Requesting the extra executors other than the existing ones.
+   * @param sc
+   * @param numExecutors
+   * @return
+   */
+  final def ensureExecutors(sc: SparkContext, numExecutors: Int): Boolean = {
+    sc.schedulerBackend match {
+      case b: CoarseGrainedSchedulerBackend =>
+        val requiredExecutors = numExecutors -  b.numExistingExecutors
+        LOGGER
+          .info("number of executors is =" + numExecutors + " existing executors are =" + b
+            .numExistingExecutors
+          )
+        if(requiredExecutors > 0) {
+          b.requestExecutors(requiredExecutors)
+        }
+        true
+      case _ =>
+        false
+    }
+
+  }
 }

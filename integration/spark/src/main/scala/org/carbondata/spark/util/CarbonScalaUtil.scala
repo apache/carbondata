@@ -27,6 +27,7 @@ import org.carbondata.core.carbon.metadata.datatype.{DataType => CarbonDataType}
 import org.carbondata.core.carbon.metadata.encoder.Encoding
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.util.CarbonUtil
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(
@@ -88,7 +89,8 @@ object CarbonScalaUtil {
       val dictionary =
         carbonTable.getDimensionByTableName(carbonTable.getFactTableName).asScala.map { f =>
         (f.getColName.toLowerCase,
-          f.hasEncoding(Encoding.DICTIONARY) && !f.hasEncoding(Encoding.DIRECT_DICTIONARY))
+          f.hasEncoding(Encoding.DICTIONARY) && !f.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
+          !CarbonUtil.hasComplexDataType(f.getDataType))
       }
       CarbonMetaData(dimensionsAttr, measureAttr, carbonTable, DictionaryMap(dictionary.toMap))
     }

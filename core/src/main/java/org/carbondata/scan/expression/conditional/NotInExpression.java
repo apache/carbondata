@@ -41,50 +41,44 @@ public class NotInExpression extends BinaryConditionalExpression {
   @Override public ExpressionResult evaluate(RowIntf value)
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ExpressionResult leftRsult = left.evaluate(value);
-
     if (setOfExprResult == null) {
       ExpressionResult val = null;
-
       ExpressionResult rightRsult = right.evaluate(value);
       setOfExprResult = new HashSet<ExpressionResult>(10);
       for (ExpressionResult exprResVal : rightRsult.getList()) {
-
-        if (leftRsult.getDataType().name().equals(exprResVal.getDataType().name())) {
-          if (exprResVal.getDataType().getPresedenceOrder() < leftRsult.getDataType()
-              .getPresedenceOrder()) {
-            val = leftRsult;
-          } else {
-            val = exprResVal;
-          }
-          switch (val.getDataType()) {
-            case STRING:
-              val = new ExpressionResult(val.getDataType(), exprResVal.getString());
-              break;
-            case SHORT:
-              val = new ExpressionResult(val.getDataType(), exprResVal.getShort());
-              break;
-            case INT:
-              val = new ExpressionResult(val.getDataType(), exprResVal.getInt());
-              break;
-            case DOUBLE:
-              val = new ExpressionResult(val.getDataType(), exprResVal.getDouble());
-              break;
-            case TIMESTAMP:
-              val = new ExpressionResult(val.getDataType(), exprResVal.getTime());
-              break;
-            case LONG:
-              val = new ExpressionResult(val.getDataType(), exprResVal.getLong());
-              break;
-            case DECIMAL:
-              val = new ExpressionResult(val.getDataType(), exprResVal.getDecimal());
-              break;
-            default:
-              throw new FilterUnsupportedException(
-                  "DataType: " + val.getDataType() + " not supported for the filter expression");
-          }
+        if (exprResVal.getDataType().getPresedenceOrder() < leftRsult.getDataType()
+            .getPresedenceOrder()) {
+          val = leftRsult;
+        } else {
+          val = exprResVal;
+        }
+        switch (val.getDataType()) {
+          case STRING:
+            val = new ExpressionResult(val.getDataType(), exprResVal.getString());
+            break;
+          case SHORT:
+            val = new ExpressionResult(val.getDataType(), exprResVal.getShort());
+            break;
+          case INT:
+            val = new ExpressionResult(val.getDataType(), exprResVal.getInt());
+            break;
+          case DOUBLE:
+            val = new ExpressionResult(val.getDataType(), exprResVal.getDouble());
+            break;
+          case TIMESTAMP:
+            val = new ExpressionResult(val.getDataType(), exprResVal.getTime());
+            break;
+          case LONG:
+            val = new ExpressionResult(val.getDataType(), exprResVal.getLong());
+            break;
+          case DECIMAL:
+            val = new ExpressionResult(val.getDataType(), exprResVal.getDecimal());
+            break;
+          default:
+            throw new FilterUnsupportedException(
+                "DataType: " + val.getDataType() + " not supported for the filter expression");
         }
         setOfExprResult.add(val);
-
       }
     }
     leftRsult.set(DataType.BOOLEAN, !setOfExprResult.contains(leftRsult));

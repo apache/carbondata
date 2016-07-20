@@ -20,11 +20,15 @@ package org.carbondata.scan.executor.impl;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.carbondata.scan.executor.infos.KeyStructureInfo;
+import org.carbondata.scan.filter.GenericQueryType;
 
 /**
  * Holds all the properties required for query execution
@@ -32,33 +36,24 @@ import org.carbondata.scan.executor.infos.KeyStructureInfo;
 public class QueryExecutorProperties {
 
   /**
-   * list of blocks in which query will be executed
-   */
-  protected List<AbstractIndex> dataBlocks;
-
-  /**
    * holds the information required for updating the order block
    * dictionary key
    */
   public KeyStructureInfo keyStructureInfo;
-
   /**
    * as we have multiple type of column aggregation like
    * dimension,expression,measure so this will be used to for getting the
    * measure aggregation start index
    */
   public int measureStartIndex;
-
   /**
    * query like count(1),count(*) ,etc will used this parameter
    */
   public boolean isFunctionQuery;
-
   /**
    * aggExpressionStartIndex
    */
   public int aggExpressionStartIndex;
-
   /**
    * index of the dimension which is present in the order by
    * in a query
@@ -75,4 +70,21 @@ public class QueryExecutorProperties {
    * Measure datatypes
    */
   public DataType[] measureDataTypes;
+  /**
+   * complex parent index to query mapping
+   */
+  public Map<Integer, GenericQueryType> complexDimensionInfoMap;
+  /**
+   * all the complex dimension which is on filter
+   */
+  public Set<CarbonDimension> complexFilterDimension;
+  /**
+   * to record the query execution details phase wise
+   */
+  public QueryStatisticsRecorder queryStatisticsRecorder;
+  /**
+   * list of blocks in which query will be executed
+   */
+  protected List<AbstractIndex> dataBlocks;
+
 }

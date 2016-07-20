@@ -33,7 +33,8 @@ public enum DataType {
   NULL(7),
   DECIMAL(8),
   ARRAY(9),
-  STRUCT(10);
+  STRUCT(10),
+  MAP(11);
 
   private int presedenceOrder;
 

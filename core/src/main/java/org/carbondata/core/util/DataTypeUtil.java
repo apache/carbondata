@@ -58,6 +58,8 @@ public final class DataTypeUtil {
         BigDecimal bigDecimal =
             new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
         return normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
+      case INT:
+        return Double.valueOf(msrValue).longValue();
       case LONG:
         return Long.valueOf(msrValue);
       default:
@@ -89,6 +91,7 @@ public final class DataTypeUtil {
     switch (dataType) {
       case DECIMAL:
         return CarbonCommonConstants.BIG_DECIMAL_MEASURE;
+      case INT:
       case LONG:
         return CarbonCommonConstants.BIG_INT_MEASURE;
       default:
@@ -178,28 +181,32 @@ public final class DataTypeUtil {
     if (null == data) {
       return false;
     }
-    switch (actualDataType) {
-      case SHORT:
-      case INT:
-      case LONG:
-      case DOUBLE:
-      case DECIMAL:
-        return NumberUtils.isDigits(data);
-      case TIMESTAMP:
-        if (data.isEmpty()) {
-          return false;
-        }
-        SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
-        try {
-          parser.parse(data);
+    try {
+      switch (actualDataType) {
+        case SHORT:
+        case INT:
+        case LONG:
+        case DOUBLE:
+        case DECIMAL:
+          return NumberUtils.isNumber(data);
+        case TIMESTAMP:
+          if (data.isEmpty()) {
+            return false;
+          }
+          SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+          try {
+            parser.parse(data);
+            return true;
+          } catch (ParseException e) {
+            return false;
+          }
+        default:
           return true;
-        } catch (ParseException e) {
-          return false;
-        }
-      default:
-        return false;
+      }
+    } catch (NumberFormatException ex) {
+      return false;
     }
   }
 
@@ -213,20 +220,35 @@ public final class DataTypeUtil {
    */
   public static Object getDataBasedOnDataType(String data, DataType actualDataType) {
 
-    if (null == data || data.isEmpty() || CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(data)) {
+    if (null == data || CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(data)) {
       return null;
     }
     try {
       switch (actualDataType) {
         case INT:
+          if (data.isEmpty()) {
+            return null;
+          }
           return Integer.parseInt(data);
         case SHORT:
+          if (data.isEmpty()) {
+            return null;
+          }
           return Short.parseShort(data);
         case DOUBLE:
+          if (data.isEmpty()) {
+            return null;
+          }
           return Double.parseDouble(data);
         case LONG:
+          if (data.isEmpty()) {
+            return null;
+          }
           return Long.parseLong(data);
         case TIMESTAMP:
+          if (data.isEmpty()) {
+            return null;
+          }
           SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
                   CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
@@ -239,11 +261,14 @@ public final class DataTypeUtil {
             return null;
           }
         case DECIMAL:
+          if (data.isEmpty()) {
+            return null;
+          }
           java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data);
           scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
           org.apache.spark.sql.types.Decimal decConverter =
               new org.apache.spark.sql.types.Decimal();
-          return decConverter.set(scalaDecVal);
+          return decConverter.set(scalaDecVal, 19, 2);
         default:
           return UTF8String.fromString(data);
       }
@@ -279,5 +304,42 @@ public final class DataTypeUtil {
       return null;
     }
 
+  }
+
+  /**
+   * This method will parse a given string value corresponding to its datatype
+   *
+   * @param value    value to parse
+   * @param dataType datatype for that value
+   * @return
+   */
+  public static boolean validateColumnValueForItsDataType(String value, DataType dataType) {
+    try {
+      Object parsedValue = null;
+      // validation will not be done for timestamp datatype as for timestamp direct dictionary
+      // is generated. No dictionary file is created for timestamp datatype column
+      switch (dataType) {
+        case DECIMAL:
+          parsedValue = new BigDecimal(value);
+          break;
+        case INT:
+          parsedValue = Integer.parseInt(value);
+          break;
+        case LONG:
+          parsedValue = Long.valueOf(value);
+          break;
+        case DOUBLE:
+          parsedValue = Double.valueOf(value);
+          break;
+        default:
+          return true;
+      }
+      if (null != parsedValue) {
+        return true;
+      }
+      return false;
+    } catch (Exception e) {
+      return false;
+    }
   }
 }

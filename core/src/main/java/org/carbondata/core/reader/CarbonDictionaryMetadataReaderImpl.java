@@ -23,11 +23,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.carbondata.common.factory.CarbonCommonFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.ColumnIdentifier;
-import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.service.PathService;
 import org.carbondata.format.ColumnDictionaryChunkMeta;
 
 import org.apache.thrift.TBase;
@@ -146,6 +147,7 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
   @Override public void close() throws IOException {
     if (null != dictionaryMetadataFileReader) {
       dictionaryMetadataFileReader.close();
+      dictionaryMetadataFileReader = null;
     }
   }
 
@@ -153,8 +155,9 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
    * This method will form the path for dictionary metadata file for a given column
    */
   protected void initFileLocation() {
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(this.hdfsStorePath, carbonTableIdentifier);
+    PathService pathService = CarbonCommonFactory.getPathService();
+    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(columnIdentifier,
+                this.hdfsStorePath, carbonTableIdentifier);
     this.columnDictionaryMetadataFilePath =
         carbonTablePath.getDictionaryMetaFilePath(columnIdentifier.getColumnId());
   }
@@ -167,14 +170,17 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
   private void openThriftReader() throws IOException {
     // initialise dictionary file reader which will return dictionary thrift object
     // dictionary thrift object contains a list of byte buffer
-    dictionaryMetadataFileReader =
-        new ThriftReader(this.columnDictionaryMetadataFilePath, new ThriftReader.TBaseCreator() {
-          @Override public TBase create() {
-            return new ColumnDictionaryChunkMeta();
-          }
-        });
-    // Open it
-    dictionaryMetadataFileReader.open();
+    if (null == dictionaryMetadataFileReader) {
+      dictionaryMetadataFileReader =
+          new ThriftReader(this.columnDictionaryMetadataFilePath, new ThriftReader.TBaseCreator() {
+            @Override public TBase create() {
+              return new ColumnDictionaryChunkMeta();
+            }
+          });
+      // Open it
+      dictionaryMetadataFileReader.open();
+    }
+
   }
 
   /**

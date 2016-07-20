@@ -40,6 +40,11 @@ class HadoopFSRelationTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       "LOAD DATA local inpath './src/test/resources/data.csv' INTO TABLE hadoopfsrelation " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
+    
+    sql("CREATE TABLE hadoopfsrelation_hive (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int)row format delimited fields terminated by ','")
+    
+    sql(
+      "LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' INTO TABLE hadoopfsrelation_hive ");
   }
 
   test("hadoopfsrelation select all test") {
@@ -54,10 +59,11 @@ class HadoopFSRelationTestCase extends QueryTest with BeforeAndAfterAll {
       .select("empno", "empname", "utilization").where("empname in ('arvind','ayushi')")
     checkAnswer(
       rdd,
-      Seq(Row(11, "arvind", 96.2), Row(15, "ayushi", 91.5)))
+      sql("select empno,empname,utilization from hadoopfsrelation_hive where empname in ('arvind','ayushi')"))
   }
 
   override def afterAll {
     sql("drop table hadoopfsrelation")
+    sql("drop table hadoopfsrelation_hive")
   }
 }

@@ -19,14 +19,21 @@
 package org.carbondata.core.writer.sortindex;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
+import org.carbondata.common.factory.CarbonCommonFactory;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.ColumnIdentifier;
-import org.carbondata.core.carbon.path.CarbonStorePath;
 import org.carbondata.core.carbon.path.CarbonTablePath;
+import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.carbondata.core.datastorage.store.impl.FileFactory;
+import org.carbondata.core.service.PathService;
+import org.carbondata.core.util.CarbonProperties;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.writer.ThriftWriter;
 import org.carbondata.format.ColumnSortInfo;
@@ -144,9 +151,52 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
   }
 
   protected void initPath() {
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
-    this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId());
+    PathService pathService = CarbonCommonFactory.getPathService();
+    CarbonTablePath carbonTablePath = pathService
+        .getCarbonTablePath(columnIdentifier, carbonStorePath, carbonTableIdentifier);
+    String dictionaryPath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId());
+    long dictOffset = CarbonUtil.getFileSize(dictionaryPath);
+    this.sortIndexFilePath =
+        carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId(), dictOffset);
+    cleanUpOldSortIndex(carbonTablePath, dictionaryPath);
+  }
+
+  /**
+   * It cleans up old unused sortindex file
+   *
+   * @param carbonTablePath
+   */
+  protected void cleanUpOldSortIndex(CarbonTablePath carbonTablePath, String dictPath) {
+    CarbonFile dictFile =
+        FileFactory.getCarbonFile(dictPath, FileFactory.getFileType(dictPath));
+    CarbonFile[] files =
+        carbonTablePath.getSortIndexFiles(dictFile.getParentFile(),
+            columnIdentifier.getColumnId());
+    int maxTime;
+    try {
+      maxTime = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME));
+    } catch (NumberFormatException e) {
+      maxTime = CarbonCommonConstants.DEFAULT_MAX_QUERY_EXECUTION_TIME;
+    }
+    if (null != files) {
+      Arrays.sort(files, new Comparator<CarbonFile>() {
+        @Override public int compare(CarbonFile o1, CarbonFile o2) {
+          return o1.getName().compareTo(o2.getName());
+        }
+      });
+      for (int i = 0; i < files.length - 1; i++) {
+        long difference = System.currentTimeMillis() - files[i].getLastModifiedTime();
+        long minutesElapsed = (difference / (1000 * 60));
+        if (minutesElapsed > maxTime) {
+          if (!files[i].delete()) {
+            LOGGER.warn("Failed to delete sortindex file." + files[i].getAbsolutePath());
+          } else {
+            LOGGER.info("Sort index file is deleted." + files[i].getAbsolutePath());
+          }
+        }
+      }
+    }
   }
 
   /**

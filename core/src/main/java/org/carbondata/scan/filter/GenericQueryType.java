@@ -24,7 +24,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import org.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
+import org.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.carbondata.scan.processor.BlocksChunkHolder;
 
 import org.apache.spark.sql.types.DataType;
@@ -59,9 +59,8 @@ public interface GenericQueryType {
 
   void setKeyOrdinalForQuery(int keyOrdinalForQuery);
 
-  void parseBlocksAndReturnComplexColumnByteArray(
-      ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolder, int rowNumber,
-      DataOutputStream dataOutputStream) throws IOException;
+  void parseBlocksAndReturnComplexColumnByteArray(DimensionColumnDataChunk[] dimensionDataChunks,
+      int rowNumber, DataOutputStream dataOutputStream) throws IOException;
 
   DataType getSchemaType();
 
@@ -70,4 +69,5 @@ public interface GenericQueryType {
 
   void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder);
 
+  Object getDataBasedOnDataTypeFromSurrogates(ByteBuffer surrogateData);
 }
