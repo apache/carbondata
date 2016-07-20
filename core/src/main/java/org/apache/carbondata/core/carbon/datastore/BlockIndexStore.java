@@ -20,7 +20,6 @@ package org.apache.carbondata.core.carbon.datastore;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -108,10 +107,7 @@ public class BlockIndexStore {
       AbsoluteTableIdentifier absoluteTableIdentifier) throws IndexBuilderException {
     AbstractIndex[] loadedBlock = new AbstractIndex[tableBlocksInfos.size()];
     addTableLockObject(absoluteTableIdentifier);
-    // sort the block info
-    // so block will be loaded in sorted order this will be required for
-    // query execution
-    Collections.sort(tableBlocksInfos);
+
     // get the instance
     Object lockObject = tableLockMap.get(absoluteTableIdentifier);
     Map<TableBlockInfo, AbstractIndex> tableBlockMapTemp = null;

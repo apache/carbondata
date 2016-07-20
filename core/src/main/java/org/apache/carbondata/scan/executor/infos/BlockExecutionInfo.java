@@ -200,6 +200,16 @@ public class BlockExecutionInfo {
   private boolean isRawRecordDetailQuery;
 
   /**
+   * start index of blocklets
+   */
+  private int startBlockletIndex;
+
+  /**
+   * number of blocklet to be scanned
+   */
+  private int numberOfBlockletToScan;
+
+  /**
    * complexParentIndexToQueryMap
    */
   private Map<Integer, GenericQueryType> complexParentIndexToQueryMap;
@@ -677,5 +687,41 @@ public class BlockExecutionInfo {
 
   public void setQueryMeasures(QueryMeasure[] queryMeasures) {
     this.queryMeasures = queryMeasures;
+  }
+
+  /**
+   * The method to set the number of blocklets to be scanned
+   *
+   * @param numberOfBlockletToScan
+   */
+  public void setNumberOfBlockletToScan(int numberOfBlockletToScan) {
+    this.numberOfBlockletToScan = numberOfBlockletToScan;
+  }
+
+  /**
+   * get the no of blocklet  to be scanned
+   *
+   * @return
+   */
+  public int getNumberOfBlockletToScan() {
+    return numberOfBlockletToScan;
+  }
+
+  /**
+   * returns the blocklet index to be scanned
+   *
+   * @return
+   */
+  public int getStartBlockletIndex() {
+    return startBlockletIndex;
+  }
+
+  /**
+   * set the blocklet index to be scanned
+   *
+   * @param startBlockletIndex
+   */
+  public void setStartBlockletIndex(int startBlockletIndex) {
+    this.startBlockletIndex = startBlockletIndex;
   }
 }
