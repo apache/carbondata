@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.query.complex.querytypes;
+package org.carbondata.scan.complextypes;
 
 import java.io.DataOutputStream;
 import java.io.IOException;

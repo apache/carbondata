@@ -17,7 +17,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.query.complex.querytypes;
+package org.carbondata.scan.complextypes;
 
 import org.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.carbondata.scan.filter.GenericQueryType;
