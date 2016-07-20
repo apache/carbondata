@@ -67,7 +67,10 @@ val metadata = new File("").getCanonicalPath + "/carbondata/metadata"
 cc.setConf("hive.metastore.warehouse.dir", metadata)
 cc.setConf(HiveConf.ConfVars.HIVECHECKFILEFORMAT.varname, "false")
 ```
-*Note*: `storePath` can be a hdfs path or a local path , the path is used to store table data.
+*Note*: `storePath` can be a hdfs path or a local path , the path is used to store table data . And you can provide your own store location by providing configuration using --conf option like:
+```
+$./bin/spark-shell --master local --jars ${carbondata_jar},${mysql_jar} --conf spark.carbon.storepath=/home/root/carbonstore
+```
 
 * Create table
 
