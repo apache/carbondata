@@ -85,6 +85,8 @@ carbon.enable.quick.filter=false
 #carbon.load.metadata.lock.retries=3
 ##Maximum number of blocklets written in a single file :Min=1:Max=1000
 #carbon.max.file.size=100
+##Minimum blocklets needed for distribution.
+#carbon.blockletdistribution.min.blocklet.size=10
 ##Interval between the retries to get the lock
 #carbon.load.metadata.lock.retry.timeout.sec=5
 ##Temporary store location, By default it will take System.getProperty("java.io.tmpdir")

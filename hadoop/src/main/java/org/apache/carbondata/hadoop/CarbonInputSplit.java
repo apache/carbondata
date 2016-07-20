@@ -34,6 +34,10 @@ public class CarbonInputSplit extends FileSplit implements Serializable, Writabl
 
   private static final long serialVersionUID = 3520344046772190207L;
   private String segmentId;
+  /**
+   * Number of BlockLets in a block
+   */
+  private int numberOfBlocklets = 0;
 
   public CarbonInputSplit() {
     super(null, 0, 0, new String[0]);
@@ -43,6 +47,12 @@ public class CarbonInputSplit extends FileSplit implements Serializable, Writabl
       String[] locations) {
     super(path, start, length, locations);
     this.segmentId = segmentId;
+  }
+
+  public CarbonInputSplit(String segmentId, Path path, long start, long length,
+      String[] locations, int numberOfBlocklets) {
+    this(segmentId, path, start, length, locations);
+    this.numberOfBlocklets = numberOfBlocklets;
   }
 
   public static CarbonInputSplit from(String segmentId, FileSplit split) throws IOException {
@@ -64,6 +74,14 @@ public class CarbonInputSplit extends FileSplit implements Serializable, Writabl
   @Override public void write(DataOutput out) throws IOException {
     super.write(out);
     out.writeUTF(segmentId);
+  }
+
+  /**
+   * returns the number of blocklets
+   * @return
+   */
+  public int getNumberOfBlocklets() {
+    return numberOfBlocklets;
   }
 
 }
