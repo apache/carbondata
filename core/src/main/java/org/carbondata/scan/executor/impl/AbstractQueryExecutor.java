@@ -48,7 +48,6 @@ import org.carbondata.scan.executor.exception.QueryExecutionException;
 import org.carbondata.scan.executor.infos.AggregatorInfo;
 import org.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.carbondata.scan.executor.infos.KeyStructureInfo;
-import org.carbondata.scan.executor.infos.SortInfo;
 import org.carbondata.scan.executor.util.QueryUtil;
 import org.carbondata.scan.executor.util.RestructureUtil;
 import org.carbondata.scan.filter.FilterUtil;
@@ -229,7 +228,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         QueryUtil.getMaskedByteRange(updatedQueryDimension, blockKeyGenerator);
     int[] maksedByte =
         QueryUtil.getMaskedByte(blockKeyGenerator.getKeySizeInBytes(), maskByteRangesForBlock);
-    blockExecutionInfo.setDimensionsExistInQuery(updatedQueryDimension.size() > 0);
+    blockExecutionInfo.setQueryDimensions(
+        updatedQueryDimension.toArray(new QueryDimension[updatedQueryDimension.size()]));
+    blockExecutionInfo.setQueryMeasures(queryModel.getQueryMeasures()
+        .toArray(new QueryMeasure[queryModel.getQueryMeasures().size()]));
     blockExecutionInfo.setDataBlock(blockIndex);
     blockExecutionInfo.setBlockKeyGenerator(blockKeyGenerator);
     // adding aggregation info for query
@@ -370,37 +372,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           .getKeySizeByBlock(dictioanryColumnOrdinal);
     }
     return 0;
-  }
-
-  /**
-   * Below method will be used to get the sort information which will be
-   * required during sorting the data on dimension column
-   *
-   * @param queryModel query model
-   * @return Sort infos
-   * @throws QueryExecutionException if problem while
-   */
-  protected SortInfo getSortInfos(QueryModel queryModel) throws QueryExecutionException {
-
-    // get the masked by range for order by dimension
-    int[][] maskedByteRangeForSorting = QueryUtil
-        .getMaskedByteRangeForSorting(queryModel.getSortDimension(),
-            queryProperties.keyStructureInfo.getKeyGenerator(),
-            queryProperties.keyStructureInfo.getMaskByteRanges());
-    // get masked key for sorting
-    byte[][] maksedKeyForSorting = QueryUtil.getMaksedKeyForSorting(queryModel.getSortDimension(),
-        queryProperties.keyStructureInfo.getKeyGenerator(), maskedByteRangeForSorting,
-        queryProperties.keyStructureInfo.getMaskByteRanges());
-    // fill sort dimension indexes
-    queryProperties.sortDimIndexes = QueryUtil
-        .getSortDimensionIndexes(queryModel.getSortDimension(), queryModel.getQueryDimension());
-    SortInfo sortInfos = new SortInfo();
-    sortInfos.setDimensionMaskKeyForSorting(maksedKeyForSorting);
-    sortInfos.setDimensionSortOrder(queryModel.getSortOrder());
-    sortInfos.setMaskedByteRangeForSorting(maskedByteRangeForSorting);
-    sortInfos.setSortDimensionIndex(queryProperties.sortDimIndexes);
-    sortInfos.setSortDimension(queryModel.getSortDimension());
-    return sortInfos;
   }
 
   /**

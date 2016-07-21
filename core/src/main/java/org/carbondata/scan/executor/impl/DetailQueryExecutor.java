@@ -24,9 +24,7 @@ import org.carbondata.common.CarbonIterator;
 import org.carbondata.scan.executor.exception.QueryExecutionException;
 import org.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.carbondata.scan.model.QueryModel;
-import org.carbondata.scan.result.iterator.ChunkRowIterator;
 import org.carbondata.scan.result.iterator.DetailQueryResultIterator;
-import org.carbondata.scan.result.preparator.impl.DetailQueryResultPreparatorImpl;
 
 /**
  * Below class will be used to execute the detail query
@@ -38,9 +36,7 @@ public class DetailQueryExecutor extends AbstractQueryExecutor {
   @Override public CarbonIterator<Object[]> execute(QueryModel queryModel)
       throws QueryExecutionException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
-    return new ChunkRowIterator(
-        new DetailQueryResultIterator(blockExecutionInfoList, queryModel,
-            new DetailQueryResultPreparatorImpl(queryProperties, queryModel)));
+    return new DetailQueryResultIterator(blockExecutionInfoList, queryModel);
   }
 
 }

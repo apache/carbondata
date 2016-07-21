@@ -19,6 +19,8 @@
 
 package org.carbondata.scan.result;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.NoSuchElementException;
 
 import org.carbondata.common.CarbonIterator;
@@ -31,7 +33,7 @@ public class BatchResult extends CarbonIterator<Object[]> {
   /**
    * list of keys
    */
-  protected Object[][] rows;
+  protected List<Object[]> rows;
 
   /**
    * counter to check whether all the records are processed or not
@@ -39,7 +41,7 @@ public class BatchResult extends CarbonIterator<Object[]> {
   protected int counter;
 
   public BatchResult() {
-    this.rows = new Object[0][];
+    this.rows = new ArrayList<>();
   }
 
   /**
@@ -47,7 +49,7 @@ public class BatchResult extends CarbonIterator<Object[]> {
    *
    * @return
    */
-  public Object[][] getRows() {
+  public List<Object[]> getRows() {
     return rows;
   }
 
@@ -56,8 +58,25 @@ public class BatchResult extends CarbonIterator<Object[]> {
    *
    * @param rows
    */
-  public void setRows(Object[][] rows) {
+  public void setRows(List<Object[]> rows) {
     this.rows = rows;
+  }
+
+  /**
+   * This method will return one row at a time based on the counter given.
+   * @param counter
+   * @return
+   */
+  public Object[] getRawRow(int counter) {
+    return rows.get(counter);
+  }
+
+  /**
+   * For getting the total size.
+   * @return
+   */
+  public int getSize() {
+    return rows.size();
   }
 
 
@@ -67,7 +86,7 @@ public class BatchResult extends CarbonIterator<Object[]> {
    * @return {@code true} if the iteration has more elements
    */
   @Override public boolean hasNext() {
-    return counter < rows.length;
+    return counter < rows.size();
   }
 
   /**
@@ -79,7 +98,7 @@ public class BatchResult extends CarbonIterator<Object[]> {
     if (!hasNext()) {
       throw new NoSuchElementException();
     }
-    Object[] row = rows[counter];
+    Object[] row = rows.get(counter);
     counter++;
     return row;
   }

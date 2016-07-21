@@ -55,7 +55,7 @@ public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<b
    * @param data             data to filed
    * @param offset           offset from which data need to be filed
    * @param rowId            row id of the chunk
-   * @param keyStructureInfo define the structure of the key
+   * @param restructuringInfo define the structure of the key
    * @return how many bytes was copied
    */
   @Override public int fillChunkData(byte[] data, int offset, int rowId,
@@ -67,10 +67,22 @@ public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<b
   }
 
   /**
-   * Below method to get the data based in row id
+   * Converts to column dictionary integer value
+   */
+  @Override public int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
+      KeyStructureInfo info) {
+    int start = rowId * chunkAttributes.getColumnValueSize();
+    long[] keyArray = info.getKeyGenerator().getKeyArray(dataChunk, start);
+    int[] ordinal = info.getMdkeyQueryDimensionOrdinal();
+    for (int i = 0; i < ordinal.length; i++) {
+      row[columnIndex++] = (int)keyArray[ordinal[i]];
+    }
+    return columnIndex;
+  }
+
+  /**
+   * Below method masks key
    *
-   * @param row id row id of the data
-   * @return chunk
    */
   public byte[] getMaskedKey(byte[] data, int offset, KeyStructureInfo info) {
     byte[] maskedKey = new byte[info.getMaskByteRanges().length];
@@ -86,7 +98,7 @@ public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<b
   /**
    * Below method to get the data based in row id
    *
-   * @param row id row id of the data
+   * @param rowId row id of the data
    * @return chunk
    */
   @Override public byte[] getChunkData(int rowId) {

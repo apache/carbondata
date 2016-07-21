@@ -44,6 +44,15 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
   }
 
   /**
+   * @return dictionary key integer array for all the dictionary dimension
+   * selected in query
+   */
+  @Override public int[] getDictionaryKeyIntegerArray() {
+    ++currentRow;
+    return getDictionaryKeyIntegerArray(rowMapping[currentRow]);
+  }
+
+  /**
    * Below method will be used to get the complex type key array
    *
    * @return complex type key array
@@ -60,6 +69,16 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
    */
   @Override public byte[][] getNoDictionaryKeyArray() {
     return getNoDictionaryKeyArray(rowMapping[currentRow]);
+  }
+
+  /**
+   * Below method will be used to get the no dictionary key
+   * string array for all the no dictionary dimension selected in query
+   *
+   * @return no dictionary key array for all the no dictionary dimension
+   */
+  @Override public String[] getNoDictionaryKeyStringArray() {
+    return getNoDictionaryKeyStringArray(rowMapping[currentRow]);
   }
 
   /**

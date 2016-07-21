@@ -77,7 +77,6 @@ public class CarbonInputFormatUtil {
     }
 
     plan.setLimit(-1);
-    plan.setRawDetailQuery(true);
     plan.setQueryId(System.nanoTime() + "");
     return plan;
   }

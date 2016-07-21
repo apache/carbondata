@@ -29,8 +29,6 @@ import org.carbondata.scan.executor.exception.QueryExecutionException;
 import org.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.carbondata.scan.model.QueryModel;
 import org.carbondata.scan.result.BatchResult;
-import org.carbondata.scan.result.ListBasedResultWrapper;
-import org.carbondata.scan.result.preparator.QueryResultPreparator;
 
 /**
  * In case of detail query we cannot keep all the records in memory so for
@@ -39,19 +37,12 @@ import org.carbondata.scan.result.preparator.QueryResultPreparator;
  */
 public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator {
 
-  /**
-   * to prepare the result
-   */
-  private QueryResultPreparator<List<ListBasedResultWrapper>, Object> queryResultPreparator;
-
   private ExecutorService execService = Executors.newFixedThreadPool(1);
 
   private Future<BatchResult> future;
 
-  public DetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
-      QueryResultPreparator queryResultPreparator) {
+  public DetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel) {
     super(infos, queryModel);
-    this.queryResultPreparator = queryResultPreparator;
   }
 
   @Override public BatchResult next() {
@@ -81,7 +72,9 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
   private Future<BatchResult> execute() {
     return execService.submit(new Callable<BatchResult>() {
       @Override public BatchResult call() throws QueryExecutionException {
-        return queryResultPreparator.prepareQueryResult(dataBlockIterator.next());
+        BatchResult batchResult = new BatchResult();
+        batchResult.setRows(dataBlockIterator.next());
+        return batchResult;
       }
     });
   }

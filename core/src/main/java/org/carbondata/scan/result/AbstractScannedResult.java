@@ -93,6 +93,8 @@ public abstract class AbstractScannedResult {
    */
   private Map<Integer, GenericQueryType> complexParentIndexToQueryMap;
 
+  private int totalDimensionsSize;
+
   /**
    * parent block indexes
    */
@@ -105,6 +107,7 @@ public abstract class AbstractScannedResult {
     this.columnGroupKeyStructureInfo = blockExecutionInfo.getColumnGroupToKeyStructureInfo();
     this.complexParentIndexToQueryMap = blockExecutionInfo.getComlexDimensionInfoMap();
     this.complexParentBlockIndexes = blockExecutionInfo.getComplexColumnParentBlockIndexes();
+    this.totalDimensionsSize = blockExecutionInfo.getQueryDimensions().length;
   }
 
   /**
@@ -156,6 +159,25 @@ public abstract class AbstractScannedResult {
   }
 
   /**
+   * Below method will be used to get the key for all the dictionary dimensions
+   * in integer array format which is present in the query
+   *
+   * @param rowId row id selected after scanning
+   * @return return the dictionary key
+   */
+  protected int[] getDictionaryKeyIntegerArray(int rowId) {
+    int[] completeKey = new int[totalDimensionsSize];
+    int column = 0;
+    for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
+      column = dataChunks[dictionaryColumnBlockIndexes[i]]
+          .fillConvertedChunkData(rowId, column, completeKey,
+              columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
+    }
+    rowCounter++;
+    return completeKey;
+  }
+
+  /**
    * Just increment the counter incase of query only on measures.
    */
   public void incrementCounter() {
@@ -188,6 +210,23 @@ public abstract class AbstractScannedResult {
     for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
       noDictionaryColumnsKeys[position++] =
           dataChunks[noDictionaryColumnBlockIndexes[i]].getChunkData(rowId);
+    }
+    return noDictionaryColumnsKeys;
+  }
+
+  /**
+   * Below method will be used to get the dimension key array
+   * for all the no dictionary dimension present in the query
+   *
+   * @param rowId row number
+   * @return no dictionary keys for all no dictionary dimension
+   */
+  protected String[] getNoDictionaryKeyStringArray(int rowId) {
+    String[] noDictionaryColumnsKeys = new String[noDictionaryColumnBlockIndexes.length];
+    int position = 0;
+    for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
+      noDictionaryColumnsKeys[position++] =
+          new String(dataChunks[noDictionaryColumnBlockIndexes[i]].getChunkData(rowId));
     }
     return noDictionaryColumnsKeys;
   }
@@ -324,6 +363,12 @@ public abstract class AbstractScannedResult {
   public abstract byte[] getDictionaryKeyArray();
 
   /**
+   * @return dictionary key array for all the dictionary dimension in integer array forat
+   * selected in query
+   */
+  public abstract int[] getDictionaryKeyIntegerArray();
+
+  /**
    * Return the dimension data based on dimension ordinal
    *
    * @param dimensionOrdinal dimension ordinal
@@ -345,6 +390,14 @@ public abstract class AbstractScannedResult {
    * @return no dictionary key array for all the no dictionary dimension
    */
   public abstract byte[][] getNoDictionaryKeyArray();
+
+  /**
+   * Below method will be used to get the no dictionary key
+   * array in string array format for all the no dictionary dimension selected in query
+   *
+   * @return no dictionary key array for all the no dictionary dimension
+   */
+  public abstract String[] getNoDictionaryKeyStringArray();
 
   /**
    * Below method will be used to to check whether measure value
