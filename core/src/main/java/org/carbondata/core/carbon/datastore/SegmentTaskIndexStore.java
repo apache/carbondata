@@ -143,7 +143,6 @@ public class SegmentTaskIndexStore {
             if (null == taskIdToSegmentIndexMap) {
               // creating a map of take if to table segment
               taskIdToSegmentIndexMap = new HashMap<String, AbstractIndex>();
-              tableSegmentMapTemp.put(next.getKey(), taskIdToSegmentIndexMap);
               Iterator<Entry<String, List<TableBlockInfo>>> iterator =
                   taskIdToTableBlockInfoMap.entrySet().iterator();
               while (iterator.hasNext()) {
@@ -152,6 +151,7 @@ public class SegmentTaskIndexStore {
                 taskIdToSegmentIndexMap.put(taskId,
                     loadBlocks(taskId, taskToBlockInfoList.getValue(), absoluteTableIdentifier));
               }
+              tableSegmentMapTemp.put(next.getKey(), taskIdToSegmentIndexMap);
               // removing from segment lock map as once segment is loaded
               //if concurrent query is coming for same segment
               // it will wait on the lock so after this segment will be already
