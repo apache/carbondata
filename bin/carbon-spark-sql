@@ -51,6 +51,7 @@ fi
 
 ASSEMBLY_JAR="${ASSEMBLY_DIR}/${ASSEMBLY_JARS}"
 export JAR="$ASSEMBLY_JAR"
+export CARBON_HOME=$CARBON_SOURCE
 
 function usage {
   if [ -n "$1" ]; then
