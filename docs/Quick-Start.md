@@ -76,6 +76,10 @@ Start the Carbon Spark SQL CLI, run the following in the Carbon directory
 ```
 ./bin/carbon-spark-sql
 ```
+And you can provide your own store location by providing configuration using --conf option like:
+```
+./bin/carbon-spark-sql --conf spark.carbon.storepath=/home/root/carbonstore
+```
 
 **Execute Queries in CLI**
 ```
