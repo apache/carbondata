@@ -797,10 +797,7 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
 
     val partitioner = relation.tableMeta.partitioner
 
-    var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
-    if (null == kettleHomePath) {
-      kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home")
-    }
+    var kettleHomePath = CarbonScalaUtil.getKettleHomePath(sqlContext)
     if (kettleHomePath == null) {
       sys.error(s"carbon.kettle.home is not set")
     }
@@ -1083,10 +1080,7 @@ private[sql] case class LoadTable(
       storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
       val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
-      var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
-      if (null == kettleHomePath) {
-        kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home")
-      }
+      var kettleHomePath = CarbonScalaUtil.getKettleHomePath(sqlContext)
       if (kettleHomePath == null) {
         sys.error(s"carbon.kettle.home is not set")
       }
