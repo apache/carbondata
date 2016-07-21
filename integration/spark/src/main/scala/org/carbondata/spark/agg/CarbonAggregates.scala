@@ -17,6 +17,8 @@
 
 package org.carbondata.spark.agg
 
+import java.math.BigDecimal
+
 import scala.language.implicitConversions
 
 import org.apache.spark.sql.catalyst.InternalRow
@@ -26,6 +28,7 @@ import org.apache.spark.sql.types._
 
 import org.carbondata.query.aggregator.MeasureAggregator
 import org.carbondata.query.aggregator.impl._
+import org.carbondata.spark.util.CarbonScalaUtil
 
 case class CountCarbon(child: Expression) extends UnaryExpression with PartialAggregate1 {
   override def references: AttributeSet = child.references
@@ -366,7 +369,10 @@ case class AverageFunctionCarbon(expr: Expression, base: AggregateExpression1, f
       } else {
         avg match {
           case avg: AvgBigDecimalAggregator =>
-            Cast(Literal(avg.getBigDecimalValue), base.dataType).eval(null)
+            val decimalValue: BigDecimal = avg.getBigDecimalValue
+            val updatedDataType = CarbonScalaUtil
+              .getDecimalDataTypeWithUpdatedPrecision(decimalValue, base.dataType)
+            Cast(Literal(decimalValue), updatedDataType).eval(null)
           case avg: AvgLongAggregator =>
             Cast(Literal(avg.getDoubleValue), base.dataType).eval(null)
           case avg: AvgTimestampAggregator =>
@@ -483,7 +489,10 @@ case class SumFunctionCarbon(expr: Expression, base: AggregateExpression1, final
       } else {
         sum match {
           case s: SumBigDecimalAggregator =>
-            Cast(Literal(sum.getBigDecimalValue), base.dataType).eval(input)
+            val decimalValue: BigDecimal = sum.getBigDecimalValue
+            val updatedDataType = CarbonScalaUtil
+              .getDecimalDataTypeWithUpdatedPrecision(decimalValue, base.dataType)
+            Cast(Literal(decimalValue), updatedDataType).eval(input)
           case s: SumLongAggregator =>
             Cast(Literal(sum.getLongValue), base.dataType).eval(input)
           case _ =>
@@ -680,7 +689,13 @@ case class SumDisctinctFunctionCarbon(expr: Expression, base: AggregateExpressio
         null
       }
       else {
-      Cast(Literal(distinct.getValueObject), base.dataType).eval(null)
+        val updatedDataType = base.dataType match {
+          case decimal: DecimalType =>
+            CarbonScalaUtil
+              .getDecimalDataTypeWithUpdatedPrecision(distinct.getBigDecimalValue, base.dataType)
+          case _ => base.dataType
+        }
+        Cast(Literal(distinct.getValueObject), updatedDataType).eval(null)
       }
     }
     else {

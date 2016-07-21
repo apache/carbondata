@@ -108,6 +108,24 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select salary from carbonTable where salary<=45234525465882.24"),
       sql("select salary from hiveTable where salary<=45234525465882.24"))
   }
+
+  test("test aggregation on big decimal column with increased precision") {
+    sql("drop table if exists carbonBigDecimal")
+    sql("drop table if exists hiveBigDecimal")
+    sql("create table if not exists carbonBigDecimal (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(27, 10)) STORED BY 'org.apache.carbondata.format'")
+    sql("create table if not exists hiveBigDecimal(ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(27, 10))row format delimited fields terminated by ','")
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/decimalBoundaryDataCarbon.csv' into table carbonBigDecimal")
+    sql("LOAD DATA local inpath './src/test/resources/decimalBoundaryDataHive.csv' INTO table hiveBigDecimal")
+
+    checkAnswer(sql("select sum(salary) from carbonBigDecimal"),
+      sql("select sum(salary) from hiveBigDecimal"))
+
+    checkAnswer(sql("select sum(distinct salary) from carbonBigDecimal"),
+      sql("select sum(distinct salary) from hiveBigDecimal"))
+
+    sql("drop table if exists carbonBigDecimal")
+    sql("drop table if exists hiveBigDecimal")
+  }
   
 
   override def afterAll {
