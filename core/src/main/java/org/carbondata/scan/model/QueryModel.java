@@ -130,12 +130,6 @@ public class QueryModel implements Serializable {
    */
   private CarbonTable table;
 
-  /**
-   * This is used only whne [forcedDetailRawQuery = true]. By default forcedDetailRawQuery returns
-   * dictionary values. But user wants in detail raw bytes the user set this field to true.
-   */
-  private boolean rawBytesDetailQuery;
-
   private QueryStatisticsRecorder statisticsRecorder;
 
   public QueryModel() {
@@ -493,14 +487,6 @@ public class QueryModel implements Serializable {
    */
   public void setColumnToDictionaryMapping(Map<String, Dictionary> columnToDictionaryMapping) {
     this.columnToDictionaryMapping = columnToDictionaryMapping;
-  }
-
-  public boolean isRawBytesDetailQuery() {
-    return rawBytesDetailQuery;
-  }
-
-  public void setRawBytesDetailQuery(boolean rawBytesDetailQuery) {
-    this.rawBytesDetailQuery = rawBytesDetailQuery;
   }
 
   public int getInMemoryRecordSize() {

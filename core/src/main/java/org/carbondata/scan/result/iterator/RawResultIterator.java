@@ -23,7 +23,7 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.core.keygenerator.KeyGenException;
-import org.carbondata.scan.result.BatchRawResult;
+import org.carbondata.scan.result.BatchResult;
 import org.carbondata.scan.wrappers.ByteArrayWrapper;
 
 /**
@@ -39,7 +39,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
   /**
    * Iterator of the Batch raw result.
    */
-  private CarbonIterator<BatchRawResult> detailRawQueryResultIterator;
+  private CarbonIterator<BatchResult> detailRawQueryResultIterator;
 
   /**
    * Counter to maintain the row counter.
@@ -57,9 +57,9 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
   /**
    * batch of the result.
    */
-  private BatchRawResult batch;
+  private BatchResult batch;
 
-  public RawResultIterator(CarbonIterator<BatchRawResult> detailRawQueryResultIterator,
+  public RawResultIterator(CarbonIterator<BatchResult> detailRawQueryResultIterator,
       SegmentProperties sourceSegProperties, SegmentProperties destinationSegProperties) {
     this.detailRawQueryResultIterator = detailRawQueryResultIterator;
     this.sourceSegProperties = sourceSegProperties;
@@ -157,7 +157,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
    * @param batch
    * @return
    */
-  private boolean checkIfBatchIsProcessedCompletely(BatchRawResult batch){
+  private boolean checkIfBatchIsProcessedCompletely(BatchResult batch){
     if(counter < batch.getSize())
     {
       return false;

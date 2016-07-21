@@ -39,8 +39,8 @@ public class VariableLengthDimensionDataChunk implements DimensionColumnDataChun
    *
    * @param data             data to filed
    * @param offset           offset from which data need to be filed
-   * @param rowId            row id of the chunk
-   * @param keyStructureInfo define the structure of the key
+   * @param index            row id of the chunk
+   * @param restructuringInfo define the structure of the key
    * @return how many bytes was copied
    */
   @Override public int fillChunkData(byte[] data, int offset, int index,
@@ -51,9 +51,21 @@ public class VariableLengthDimensionDataChunk implements DimensionColumnDataChun
   }
 
   /**
+   * Converts to column dictionary integer value
+   * @param rowId
+   * @param columnIndex
+   * @param row
+   * @param restructuringInfo  @return
+   */
+  @Override public int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
+      KeyStructureInfo restructuringInfo) {
+    return columnIndex + 1;
+  }
+
+  /**
    * Below method to get the data based in row id
    *
-   * @param row id row id of the data
+   * @param index row id of the data
    * @return chunk
    */
   @Override public byte[] getChunkData(int index) {

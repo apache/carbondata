@@ -18,8 +18,9 @@
  */
 package org.carbondata.scan.collector;
 
+import java.util.List;
+
 import org.carbondata.scan.result.AbstractScannedResult;
-import org.carbondata.scan.result.Result;
 
 /**
  * Interface which will be used to aggregate the scan result
@@ -39,5 +40,5 @@ public interface ScannedResultCollector {
    *
    * @return
    */
-  Result getCollectedResult();
+  List<Object[]> getCollectedResult();
 }

@@ -43,7 +43,7 @@ import org.carbondata.scan.executor.exception.QueryExecutionException;
 import org.carbondata.scan.model.QueryDimension;
 import org.carbondata.scan.model.QueryMeasure;
 import org.carbondata.scan.model.QueryModel;
-import org.carbondata.scan.result.BatchRawResult;
+import org.carbondata.scan.result.BatchResult;
 import org.carbondata.scan.result.iterator.RawResultIterator;
 
 /**
@@ -143,12 +143,12 @@ public class CarbonCompactionExecutor {
    * @param blockList
    * @return
    */
-  private CarbonIterator<BatchRawResult> executeBlockList(List<TableBlockInfo> blockList)
+  private CarbonIterator<BatchResult> executeBlockList(List<TableBlockInfo> blockList)
       throws QueryExecutionException {
 
     queryModel.setTableBlockInfos(blockList);
     this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
-    CarbonIterator<BatchRawResult> iter = null;
+    CarbonIterator<BatchResult> iter = null;
     try {
       iter = queryExecutor.execute(queryModel);
     } catch (QueryExecutionException e) {
@@ -187,7 +187,6 @@ public class CarbonCompactionExecutor {
     model.setCountStarQuery(false);
     model.setDetailQuery(true);
     model.setForcedDetailRawQuery(true);
-    model.setRawBytesDetailQuery(true);
     model.setFilterExpressionResolverTree(null);
 
     List<QueryDimension> dims = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);

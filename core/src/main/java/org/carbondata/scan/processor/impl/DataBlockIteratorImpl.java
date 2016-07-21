@@ -18,10 +18,11 @@
  */
 package org.carbondata.scan.processor.impl;
 
+import java.util.List;
+
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.carbondata.scan.processor.AbstractDataBlockIterator;
-import org.carbondata.scan.result.Result;
 
 /**
  * Below class will be used to process the block for detail query
@@ -43,14 +44,14 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
    *
    * @return Result of @batchSize
    */
-  public Result next() {
+  public List<Object[]> next() {
     this.scannerResultAggregator.collectData(scannedResult, batchSize);
-    Result result = this.scannerResultAggregator.getCollectedResult();
-    while (result.size() < batchSize && hasNext()) {
-      this.scannerResultAggregator.collectData(scannedResult, batchSize-result.size());
-      result.merge(this.scannerResultAggregator.getCollectedResult());
+    List<Object[]> collectedResult = this.scannerResultAggregator.getCollectedResult();
+    while (collectedResult.size() < batchSize && hasNext()) {
+      this.scannerResultAggregator.collectData(scannedResult, batchSize-collectedResult.size());
+      collectedResult.addAll(this.scannerResultAggregator.getCollectedResult());
     }
-    return result;
+    return collectedResult;
   }
 
 }

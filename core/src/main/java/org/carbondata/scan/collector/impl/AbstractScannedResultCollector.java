@@ -18,7 +18,6 @@
  */
 package org.carbondata.scan.collector.impl;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import org.carbondata.common.logging.LogService;
@@ -32,30 +31,20 @@ import org.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.carbondata.scan.executor.util.QueryUtil;
 import org.carbondata.scan.result.AbstractScannedResult;
-import org.carbondata.scan.result.ListBasedResultWrapper;
-import org.carbondata.scan.result.Result;
-import org.carbondata.scan.result.impl.ListBasedResult;
 import org.carbondata.scan.wrappers.ByteArrayWrapper;
 
 /**
  * It is not a collector it is just a scanned result holder.
- *
  */
-public class ListBasedResultCollector implements ScannedResultCollector {
+public abstract class AbstractScannedResultCollector implements ScannedResultCollector {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(ListBasedResultCollector.class.getName());
-
-  /**
-   * to keep a track of number of row processed to handle limit push down in
-   * case of detail query scenario
-   */
-  private int rowCounter;
+      LogServiceFactory.getLogService(AbstractScannedResultCollector.class.getName());
 
   /**
    * dimension values list
    */
-  private List<ListBasedResultWrapper> listBasedResult;
+  protected List<Object[]> listBasedResult;
 
   /**
    * restructuring info
@@ -65,15 +54,18 @@ public class ListBasedResultCollector implements ScannedResultCollector {
   /**
    * table block execution infos
    */
-  private BlockExecutionInfo tableBlockExecutionInfos;
+  protected BlockExecutionInfo tableBlockExecutionInfos;
 
-  private int[] measuresOrdinal;
+  /**
+   * Measure ordinals
+   */
+  protected int[] measuresOrdinal;
 
   /**
    * to check whether measure exists in current table block or not this to
    * handle restructuring scenario
    */
-  private boolean[] isMeasureExistsInCurrentBlock;
+  protected boolean[] isMeasureExistsInCurrentBlock;
 
   /**
    * default value of the measures in case of restructuring some measure wont
@@ -85,9 +77,9 @@ public class ListBasedResultCollector implements ScannedResultCollector {
   /**
    * measure datatypes.
    */
-  private DataType[] measureDatatypes;
+  protected DataType[] measureDatatypes;
 
-  public ListBasedResultCollector(BlockExecutionInfo blockExecutionInfos) {
+  public AbstractScannedResultCollector(BlockExecutionInfo blockExecutionInfos) {
     this.tableBlockExecutionInfos = blockExecutionInfos;
     restructureInfos = blockExecutionInfos.getKeyStructureInfo();
     measuresOrdinal = tableBlockExecutionInfos.getAggregatorInfo().getMeasureOrdinals();
@@ -96,54 +88,17 @@ public class ListBasedResultCollector implements ScannedResultCollector {
     this.measureDatatypes = tableBlockExecutionInfos.getAggregatorInfo().getMeasureDataTypes();
   }
 
-  @Override
-  /**
-   * This method will add a record both key and value to list object
-   * it will keep track of how many record is processed, to handle limit scenario
-   * @param scanned result
-   *
-   */
-  public int collectData(AbstractScannedResult scannedResult, int batchSize) {
-    this.listBasedResult =
-        new ArrayList<>(batchSize);
-    boolean isMsrsPresent = measureDatatypes.length > 0;
-    ByteArrayWrapper wrapper = null;
-    // scan the record and add to list
-    ListBasedResultWrapper resultWrapper;
-    int rowCounter = 0;
-    while (scannedResult.hasNext() && rowCounter < batchSize) {
-      resultWrapper = new ListBasedResultWrapper();
-      if(tableBlockExecutionInfos.isDimensionsExistInQuery()) {
-        wrapper = new ByteArrayWrapper();
-        wrapper.setDictionaryKey(scannedResult.getDictionaryKeyArray());
-        wrapper.setNoDictionaryKeys(scannedResult.getNoDictionaryKeyArray());
-        wrapper.setComplexTypesKeys(scannedResult.getComplexTypeKeyArray());
-        resultWrapper.setKey(wrapper);
-      } else {
-        scannedResult.incrementCounter();
-      }
-      if(isMsrsPresent) {
-        Object[] msrValues = new Object[measureDatatypes.length];
-        fillMeasureData(msrValues, scannedResult);
-        resultWrapper.setValue(msrValues);
-      }
-      listBasedResult.add(resultWrapper);
-      rowCounter++;
-    }
-    return rowCounter;
-  }
-
-  private void fillMeasureData(Object[] msrValues, AbstractScannedResult scannedResult) {
+  protected void fillMeasureData(Object[] msrValues, int offset,
+      AbstractScannedResult scannedResult) {
     for (short i = 0; i < measuresOrdinal.length; i++) {
       // if measure exists is block then pass measure column
       // data chunk to the collector
       if (isMeasureExistsInCurrentBlock[i]) {
-        msrValues[i] =
-            getMeasureData(scannedResult.getMeasureChunk(measuresOrdinal[i]),
-                scannedResult.getCurrenrRowId(),measureDatatypes[i]);
+        msrValues[i + offset] = getMeasureData(scannedResult.getMeasureChunk(measuresOrdinal[i]),
+            scannedResult.getCurrenrRowId(), measureDatatypes[i]);
       } else {
         // if not then get the default value and use that value in aggregation
-        msrValues[i] = measureDefaultValue[i];
+        msrValues[i + offset] = measureDefaultValue[i];
       }
     }
   }
@@ -170,19 +125,12 @@ public class ListBasedResultCollector implements ScannedResultCollector {
   /**
    * Below method will used to get the result
    */
-  @Override public Result getCollectedResult() {
-    Result<List<ListBasedResultWrapper>, Object> result = new ListBasedResult();
-    if (tableBlockExecutionInfos.isFixedKeyUpdateRequired() && tableBlockExecutionInfos
-        .isDimensionsExistInQuery()) {
+  @Override public List<Object[]> getCollectedResult() {
+    if (tableBlockExecutionInfos.isFixedKeyUpdateRequired()) {
       updateKeyWithLatestBlockKeygenerator();
-      result.addScannedResult(listBasedResult);
-    } else {
-      result.addScannedResult(listBasedResult);
     }
-    return result;
+    return listBasedResult;
   }
-
-
 
   /**
    * Below method will be used to update the fixed length key with the
@@ -196,7 +144,7 @@ public class ListBasedResultCollector implements ScannedResultCollector {
       ByteArrayWrapper key = null;
       for (int i = 0; i < listBasedResult.size(); i++) {
         // get the key
-        key = listBasedResult.get(i).getKey();
+        key = (ByteArrayWrapper)listBasedResult.get(i)[0];
         // unpack the key with table block key generator
         data = tableBlockExecutionInfos.getBlockKeyGenerator()
             .getKeyArray(key.getDictionaryKey(), tableBlockExecutionInfos.getMaskedByteForBlock());
@@ -206,7 +154,6 @@ public class ListBasedResultCollector implements ScannedResultCollector {
             .getMaskedKey(restructureInfos.getKeyGenerator().generateKey(data),
                 restructureInfos.getMaxKey(), restructureInfos.getMaskByteRanges(),
                 restructureInfos.getMaskByteRanges().length));
-        listBasedResult.get(i).setKey(key);
       }
     } catch (KeyGenException e) {
       LOGGER.error(e);

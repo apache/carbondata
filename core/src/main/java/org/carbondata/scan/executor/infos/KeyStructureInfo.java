@@ -49,6 +49,11 @@ public class KeyStructureInfo {
   private byte[] maxKey;
 
   /**
+   * dimension ordinals inside the column group
+   */
+  private int[] mdkeyQueryDimensionOrdinal;
+
+  /**
    * @return the keyGenerator
    */
   public KeyGenerator getKeyGenerator() {
@@ -104,4 +109,11 @@ public class KeyStructureInfo {
     this.maxKey = maxKey;
   }
 
+  public int[] getMdkeyQueryDimensionOrdinal() {
+    return mdkeyQueryDimensionOrdinal;
+  }
+
+  public void setMdkeyQueryDimensionOrdinal(int[] mdkeyQueryDimensionOrdinal) {
+    this.mdkeyQueryDimensionOrdinal = mdkeyQueryDimensionOrdinal;
+  }
 }

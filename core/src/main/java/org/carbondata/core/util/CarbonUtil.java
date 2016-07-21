@@ -20,11 +20,21 @@
 
 package org.carbondata.core.util;
 
-import java.io.*;
+import java.io.Closeable;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.security.PrivilegedExceptionAction;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -55,6 +65,7 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.carbondata.core.metadata.ValueEncoderMeta;
+import org.carbondata.scan.model.QueryDimension;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -1052,6 +1063,33 @@ public final class CarbonUtil {
       default:
         return false;
     }
+  }
+
+  public static boolean[] getDictionaryEncodingArray(QueryDimension[] queryDimensions) {
+    boolean[] dictionaryEncodingArray = new boolean[queryDimensions.length];
+    for (int i = 0; i < queryDimensions.length; i++) {
+      dictionaryEncodingArray[i] =
+          queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY);
+    }
+    return dictionaryEncodingArray;
+  }
+
+  public static boolean[] getDirectDictionaryEncodingArray(QueryDimension[] queryDimensions) {
+    boolean[] dictionaryEncodingArray = new boolean[queryDimensions.length];
+    for (int i = 0; i < queryDimensions.length; i++) {
+      dictionaryEncodingArray[i] =
+          queryDimensions[i].getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY);
+    }
+    return dictionaryEncodingArray;
+  }
+
+  public static boolean[] getComplexDataTypeArray(QueryDimension[] queryDimensions) {
+    boolean[] dictionaryEncodingArray = new boolean[queryDimensions.length];
+    for (int i = 0; i < queryDimensions.length; i++) {
+      dictionaryEncodingArray[i] =
+          CarbonUtil.hasComplexDataType(queryDimensions[i].getDimension().getDataType());
+    }
+    return dictionaryEncodingArray;
   }
 
   /**

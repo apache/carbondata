@@ -36,6 +36,16 @@ public interface DimensionColumnDataChunk<T> {
   int fillChunkData(byte[] data, int offset, int columnIndex, KeyStructureInfo restructuringInfo);
 
   /**
+   * It uses to convert column data to dictionary integer value
+   * @param rowId
+   * @param columnIndex
+   * @param row
+   * @param restructuringInfo  @return
+   */
+  int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
+      KeyStructureInfo restructuringInfo);
+
+  /**
    * Below method to get  the data based in row id
    *
    * @param row id

@@ -100,7 +100,6 @@ case class CarbonScan(
 
     plan.setSortedDimemsions(new ArrayList[QueryDimension])
 
-    plan.setRawDetailQuery(true)
     plan.setOutLocationPath(
       CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS))
     plan.setQueryId(System.nanoTime() + "")
