@@ -113,7 +113,7 @@ case class CarbonTableScan(
 
       case CountCarbon(posLiteral@PositionLiteral(Literal(star, _), _)) if star == "*" =>
         val m1 = new QueryMeasure("count(*)")
-        m1.setAggregateFunction(CarbonCommonConstants.COUNT)
+        m1.setAggregateFunction(CarbonCommonConstants.COUNT_STAR)
         m1.setQueryOrder(queryOrder)
         posLiteral.setPosition(queryOrder)
         plan.addMeasure(m1)
@@ -123,7 +123,7 @@ case class CarbonTableScan(
 
       case curr@CountCarbon(posLiteral@PositionLiteral(one, _)) =>
         val m1 = new QueryMeasure("count(*)")
-        m1.setAggregateFunction(CarbonCommonConstants.COUNT)
+        m1.setAggregateFunction(CarbonCommonConstants.COUNT_STAR)
         m1.setQueryOrder(queryOrder)
         posLiteral.setPosition(queryOrder)
         plan.addMeasure(m1)

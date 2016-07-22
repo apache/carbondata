@@ -42,7 +42,7 @@ public class CountAggregator implements MeasureAggregator {
   /**
    * aggregate value
    */
-  private double aggVal;
+  protected double aggVal;
 
   /**
    * Count Aggregate function which update the total count

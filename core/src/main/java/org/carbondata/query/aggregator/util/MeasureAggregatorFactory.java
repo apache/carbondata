@@ -24,30 +24,7 @@ import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.query.aggregator.CustomMeasureAggregator;
 import org.carbondata.query.aggregator.MeasureAggregator;
-import org.carbondata.query.aggregator.impl.AvgBigDecimalAggregator;
-import org.carbondata.query.aggregator.impl.AvgDoubleAggregator;
-import org.carbondata.query.aggregator.impl.AvgLongAggregator;
-import org.carbondata.query.aggregator.impl.AvgTimestampAggregator;
-import org.carbondata.query.aggregator.impl.CountAggregator;
-import org.carbondata.query.aggregator.impl.DistinctCountAggregatorObjectSet;
-import org.carbondata.query.aggregator.impl.DistinctCountBigDecimalAggregatorObjectSet;
-import org.carbondata.query.aggregator.impl.DistinctCountLongAggregatorObjectSet;
-import org.carbondata.query.aggregator.impl.DummyBigDecimalAggregator;
-import org.carbondata.query.aggregator.impl.DummyDoubleAggregator;
-import org.carbondata.query.aggregator.impl.DummyLongAggregator;
-import org.carbondata.query.aggregator.impl.MaxAggregator;
-import org.carbondata.query.aggregator.impl.MaxBigDecimalAggregator;
-import org.carbondata.query.aggregator.impl.MaxLongAggregator;
-import org.carbondata.query.aggregator.impl.MinAggregator;
-import org.carbondata.query.aggregator.impl.MinBigDecimalAggregator;
-import org.carbondata.query.aggregator.impl.MinLongAggregator;
-import org.carbondata.query.aggregator.impl.SumBigDecimalAggregator;
-import org.carbondata.query.aggregator.impl.SumDistinctBigDecimalAggregator;
-import org.carbondata.query.aggregator.impl.SumDistinctDoubleAggregator;
-import org.carbondata.query.aggregator.impl.SumDistinctLongAggregator;
-import org.carbondata.query.aggregator.impl.SumDoubleAggregator;
-import org.carbondata.query.aggregator.impl.SumLongAggregator;
-import org.carbondata.query.aggregator.impl.SumTimestampAggregator;
+import org.carbondata.query.aggregator.impl.*;
 import org.carbondata.query.carbon.model.CustomAggregateExpression;
 
 /**
@@ -105,6 +82,9 @@ public class MeasureAggregatorFactory {
       }
     } else if (CarbonCommonConstants.COUNT.equalsIgnoreCase(aggregatorType)) {
       return new CountAggregator();
+    }
+    else if (CarbonCommonConstants.COUNT_STAR.equalsIgnoreCase(aggregatorType)) {
+      return new CountStarAggregator();
     }
     //
     else if (CarbonCommonConstants.MAX.equalsIgnoreCase(aggregatorType)) {

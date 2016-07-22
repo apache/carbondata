@@ -155,6 +155,10 @@ public final class CarbonCommonConstants {
    */
   public static final String COUNT = "count";
   /**
+   * Count constant
+   */
+  public static final String COUNT_STAR = "countstar";
+  /**
    * Max constant
    */
   public static final String MAX = "max";
