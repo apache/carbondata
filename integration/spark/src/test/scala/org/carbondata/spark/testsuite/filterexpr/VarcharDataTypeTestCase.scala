@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.spark.testsuite.filterexpr
+package org.carbondata.spark.testsuite.filterexpr
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
@@ -25,23 +25,31 @@ import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**
- * Test Class for filter expression query on Integer datatypes
- *
- */
-class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
+  * Test Class for varchar data type
+  *
+  */
+class VarcharDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("CREATE TABLE integertypetableFilter (empno int, workgroupcategory string, deptno int, projectcode int,attendance int) STORED BY 'org.apache.carbondata.format'")
-    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO TABLE integertypetableFilter OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
+    sql("""
+        CREATE TABLE varchar_test (empno int, designation varchar(10), deptno int, projectcode int,attendance int)
+        STORED BY 'org.apache.carbondata.format'
+      """)
+    sql("""
+        LOAD DATA local inpath './src/test/resources/data.csv' INTO TABLE
+        varchar_test OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')
+      """)
   }
 
-  test("select empno from integertypetableFilter") {
+  test("select designation from varchar_test") {
     checkAnswer(
-      sql("select empno from integertypetableFilter"),
-      Seq(Row(11), Row(12), Row(13), Row(14), Row(15), Row(16), Row(17), Row(18), Row(19), Row(20)))
+      sql("select designation from varchar_test"),
+      Seq(Row("SE"), Row("SSE"), Row("TPL"), Row("SA"), Row("SSA"),
+        Row("SE"), Row("PL"), Row("TL"), Row("PL"), Row("PM"))
+    )
   }
 
   override def afterAll {
-    sql("drop table integertypetableFilter")
+    sql("drop table varchar_test")
   }
 }

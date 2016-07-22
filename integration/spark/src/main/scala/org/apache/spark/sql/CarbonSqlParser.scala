@@ -150,6 +150,7 @@ class CarbonSqlParser()
   protected val BIGINT = carbonKeyWord("BIGINT")
   protected val ARRAY = carbonKeyWord("ARRAY")
   protected val STRUCT = carbonKeyWord("STRUCT")
+  protected val VARCHAR = carbonKeyWord("VARCHAR")
 
   protected val doubleQuotedString = "\"([^\"]+)\"".r
   protected val singleQuotedString = "'([^']+)'".r
@@ -1004,7 +1005,10 @@ class CarbonSqlParser()
   protected lazy val primitiveTypes =
     STRING ^^^ "string" | INTEGER ^^^ "integer" | TIMESTAMP ^^^
     "timestamp" | NUMERIC ^^^ "numeric" | BIGINT ^^^ "bigint" |
-       INT ^^^ "int" | DOUBLE ^^^ "double" | decimalType
+       INT ^^^ "int" | DOUBLE ^^^ "double" | decimalType | varchar
+
+  protected lazy val varchar =
+    VARCHAR ~> "(" ~> (numericLit <~ ")") ^^^ "string"
 
   /**
    * Matching the decimal(10,0) data type and returning the same.
