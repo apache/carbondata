@@ -52,6 +52,7 @@ fi
 ASSEMBLY_JAR="${ASSEMBLY_DIR}/${ASSEMBLY_JARS}"
 export JAR="$ASSEMBLY_JAR"
 export SPARK_CLASSPATH=$SPARK_CLASSPATH:$JAR
+export CARBON_HOME=$CARBON_SOURCE
 
 
 # SPARK-4161: scala does not assume use of the java classpath,

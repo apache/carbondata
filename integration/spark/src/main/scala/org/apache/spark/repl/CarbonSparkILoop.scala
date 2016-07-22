@@ -41,7 +41,8 @@ class CarbonSparkILoop extends SparkILoop {
          @transient val cc = {
            val _cc = {
              import java.io.File
-             val store = new File("./carbonshellstore")
+             val path = System.getenv("CARBON_HOME") + "/bin/carbonshellstore"
+             val store = new File(path)
              store.mkdirs()
              val storePath = sc.getConf.getOption("spark.carbon.storepath")
                   .getOrElse(store.getCanonicalPath)
@@ -51,7 +52,18 @@ class CarbonSparkILoop extends SparkILoop {
            _cc
          }
               """)
-      command("""cc.setConf("carbon.kettle.home", "../processing/carbonplugins")""")
+
+      command("import org.apache.spark.sql.SQLContext")
+      command("""
+         @transient val sqlContext = {
+           val _sqlContext = new SQLContext(sc)
+           println("SQL context available as sqlContext.")
+           _sqlContext
+         }
+              """)
+      command("import sqlContext.implicits._")
+      command("import sqlContext.sql")
+
       command("import cc.implicits._")
       command("import cc.sql")
       command("import org.apache.spark.sql.functions._")

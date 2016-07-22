@@ -27,7 +27,7 @@ import org.carbondata.core.carbon.metadata.datatype.{DataType => CarbonDataType}
 import org.carbondata.core.carbon.metadata.encoder.Encoding
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.util.CarbonUtil
+import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(
@@ -77,6 +77,21 @@ object CarbonScalaUtil {
       case CarbonDataType.DECIMAL => DecimalType.SYSTEM_DEFAULT
       case CarbonDataType.TIMESTAMP => TimestampType
     }
+  }
+
+  def getKettleHomePath(sqlContext: SQLContext): String = {
+    val carbonHome = System.getenv("CARBON_HOME")
+    var kettleHomePath: String = null
+    if (carbonHome != null) {
+      kettleHomePath = System.getenv("CARBON_HOME") + "/processing/carbonplugins"
+    }
+    if (kettleHomePath == null) {
+      kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
+    }
+    if (null == kettleHomePath) {
+      kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home")
+    }
+    kettleHomePath
   }
 
   object CarbonSparkUtil {
