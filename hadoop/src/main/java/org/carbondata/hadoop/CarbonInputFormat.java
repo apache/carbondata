@@ -75,6 +75,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.BlockLocation;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
@@ -609,6 +610,20 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
     getFileStatusOfSegments(job, segmentsToConsider, result);
     return result;
+  }
+
+  @Override protected boolean isSplitable(JobContext context, Path filename) {
+    try {
+      // Don't split the file if it is local file system
+      FileSystem fileSystem = filename.getFileSystem(context.getConfiguration());
+      if (fileSystem instanceof LocalFileSystem)
+      {
+        return false;
+      }
+    } catch (Exception e) {
+      return true;
+    }
+    return true;
   }
 
   private void getFileStatusOfSegments(JobContext job, String[] segmentsToConsider,
