@@ -252,19 +252,22 @@ public class QueryUtil {
       blockIndex =
           dimensionOrdinalToBlockMapping.get(queryDimensions.get(i).getDimension().getOrdinal());
       dimensionBlockIndex.add(blockIndex);
-      addChildrenBlockIndex(blockIndex, dimensionBlockIndex, queryDimensions.get(i).getDimension());
+      if (queryDimensions.get(i).getDimension().numberOfChild() > 0) {
+        addChildrenBlockIndex(dimensionBlockIndex, queryDimensions.get(i).getDimension());
+      }
     }
     for (int i = 0; i < dimAggInfo.size(); i++) {
       blockIndex = dimensionOrdinalToBlockMapping.get(dimAggInfo.get(i).getDim().getOrdinal());
+      // not adding the children dimension as dimension aggregation
+      // is not push down in case of complex dimension
       dimensionBlockIndex.add(blockIndex);
-      addChildrenBlockIndex(blockIndex, dimensionBlockIndex, dimAggInfo.get(i).getDim());
-
     }
     for (int i = 0; i < customAggregationDimension.size(); i++) {
       blockIndex =
           dimensionOrdinalToBlockMapping.get(customAggregationDimension.get(i).getOrdinal());
+      // not adding the children dimension as dimension aggregation
+      // is not push down in case of complex dimension
       dimensionBlockIndex.add(blockIndex);
-      addChildrenBlockIndex(blockIndex, dimensionBlockIndex, customAggregationDimension.get(i));
     }
     return ArrayUtils
         .toPrimitive(dimensionBlockIndex.toArray(new Integer[dimensionBlockIndex.size()]));
@@ -274,16 +277,13 @@ public class QueryUtil {
    * Below method will be used to add the children block index
    * this will be basically for complex dimension which will have children
    *
-   * @param startBlockIndex start block index
-   * @param blockIndexList  block index list
-   * @param dimension       parent dimension
+   * @param blockIndexes block indexes
+   * @param dimension    parent dimension
    */
-  private static void addChildrenBlockIndex(int startBlockIndex, Set<Integer> blockIndexList,
-      CarbonDimension dimension) {
+  private static void addChildrenBlockIndex(Set<Integer> blockIndexes, CarbonDimension dimension) {
     for (int i = 0; i < dimension.numberOfChild(); i++) {
-      blockIndexList.add(++startBlockIndex);
-      addChildrenBlockIndex(startBlockIndex, blockIndexList,
-          dimension.getListOfChildDimensions().get(i));
+      addChildrenBlockIndex(blockIndexes, dimension.getListOfChildDimensions().get(i));
+      blockIndexes.add(dimension.getListOfChildDimensions().get(i).getOrdinal());
     }
   }
 
@@ -379,7 +379,7 @@ public class QueryUtil {
       if (queryDimensions.getListOfChildDimensions().get(j).numberOfChild() > 0) {
         getChildDimensionDictionaryDetail(queryDimensions.getListOfChildDimensions().get(j),
             dictionaryDimensionFromQuery);
-      } else if(!CarbonUtil.hasEncoding(encodingList, Encoding.DIRECT_DICTIONARY)) {
+      } else if (!CarbonUtil.hasEncoding(encodingList, Encoding.DIRECT_DICTIONARY)) {
         dictionaryDimensionFromQuery
             .add(queryDimensions.getListOfChildDimensions().get(j).getColumnId());
       }
@@ -873,7 +873,7 @@ public class QueryUtil {
           && queryDimension.getDimension().numberOfChild() == 0) {
         dictionaryDimensionBlockIndex
             .add(columnOrdinalToBlockIndexMapping.get(queryDimension.getDimension().getOrdinal()));
-      } else if(queryDimension.getDimension().numberOfChild() == 0){
+      } else if (queryDimension.getDimension().numberOfChild() == 0) {
         noDictionaryDimensionBlockIndex
             .add(columnOrdinalToBlockIndexMapping.get(queryDimension.getDimension().getOrdinal()));
       }
@@ -1078,9 +1078,9 @@ public class QueryUtil {
                   dimension.getColName(), ++parentBlockIndex));
           break;
         default:
-          boolean isDirectDictionary = CarbonUtil.hasEncoding(
-              dimension.getListOfChildDimensions().get(i).getEncoder(),
-              Encoding.DIRECT_DICTIONARY);
+          boolean isDirectDictionary = CarbonUtil
+              .hasEncoding(dimension.getListOfChildDimensions().get(i).getEncoder(),
+                  Encoding.DIRECT_DICTIONARY);
           parentQueryType.addChildren(
               new PrimitiveQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
                   dimension.getColName(), ++parentBlockIndex,

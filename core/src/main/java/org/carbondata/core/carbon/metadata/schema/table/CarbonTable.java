@@ -121,23 +121,20 @@ public class CarbonTable implements Serializable {
     int columnGroupOrdinal = -1;
     int previousColumnGroupId = -1;
     List<ColumnSchema> listOfColumns = tableSchema.getListOfColumns();
-    int complexTypeOrdinal = 0;
-    ;
+    int complexTypeOrdinal = -1;
     for (int i = 0; i < listOfColumns.size(); i++) {
       ColumnSchema columnSchema = listOfColumns.get(i);
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
           CarbonDimension complexDimension =
-              new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1, complexTypeOrdinal++);
+              new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1, ++complexTypeOrdinal);
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           dimensions.add(complexDimension);
-          int lastDimensionOrdianl=dimensionOrdinal;
           dimensionOrdinal =
               readAllComplexTypeChildrens(dimensionOrdinal, columnSchema.getNumberOfChild(),
-                  listOfColumns, complexDimension, complexTypeOrdinal);
+                  listOfColumns, complexDimension);
           i = dimensionOrdinal - 1;
-          int incrementInOrdinal=dimensionOrdinal-lastDimensionOrdianl;
-          complexTypeOrdinal+=incrementInOrdinal;
+          complexTypeOrdinal = assignComplexOrdinal(complexDimension, complexTypeOrdinal);
         } else {
           if (!columnSchema.getEncodingList().contains(Encoding.DICTIONARY)) {
             dimensions.add(new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1, -1));
@@ -171,28 +168,49 @@ public class CarbonTable implements Serializable {
    * @return
    */
   private int readAllComplexTypeChildrens(int dimensionOrdinal, int childCount,
-      List<ColumnSchema> listOfColumns, CarbonDimension parentDimension,
-      int complexDimensionOrdianl) {
+      List<ColumnSchema> listOfColumns, CarbonDimension parentDimension) {
     for (int i = 0; i < childCount; i++) {
       ColumnSchema columnSchema = listOfColumns.get(dimensionOrdinal);
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
           CarbonDimension complexDimension =
-              new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1,
-                  complexDimensionOrdianl++);
+              new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1, -1);
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           parentDimension.getListOfChildDimensions().add(complexDimension);
           dimensionOrdinal =
               readAllComplexTypeChildrens(dimensionOrdinal, columnSchema.getNumberOfChild(),
-                  listOfColumns, complexDimension, complexDimensionOrdianl);
+                  listOfColumns, complexDimension);
         } else {
-          parentDimension.getListOfChildDimensions().add(
-              new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1,
-                  complexDimensionOrdianl++));
+          parentDimension.getListOfChildDimensions()
+              .add(new CarbonDimension(columnSchema, dimensionOrdinal++, -1, -1, -1));
         }
       }
     }
     return dimensionOrdinal;
+  }
+
+  /**
+   * Read all primitive/complex children and set it as list of child carbon dimension to parent
+   * dimension
+   *
+   * @param dimensionOrdinal
+   * @param childCount
+   * @param listOfColumns
+   * @param parentDimension
+   * @return
+   */
+  private int assignComplexOrdinal(CarbonDimension parentDimension, int complexDimensionOrdianl) {
+    for (int i = 0; i < parentDimension.getNumberOfChild(); i++) {
+      CarbonDimension dimension = parentDimension.getListOfChildDimensions().get(i);
+      if (dimension.getNumberOfChild() > 0) {
+        dimension.setComplexTypeOridnal(++complexDimensionOrdianl);
+        complexDimensionOrdianl = assignComplexOrdinal(dimension, complexDimensionOrdianl);
+      } else {
+        parentDimension.getListOfChildDimensions().get(i)
+            .setComplexTypeOridnal(++complexDimensionOrdianl);
+      }
+    }
+    return complexDimensionOrdianl;
   }
 
   /**
