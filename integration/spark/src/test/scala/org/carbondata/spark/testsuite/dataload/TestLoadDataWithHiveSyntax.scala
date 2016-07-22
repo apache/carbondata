@@ -47,6 +47,9 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
         "projectcode int, projectjoindate String,projectenddate String, attendance String," +
         "utilization String,salary String)row format delimited fields terminated by ','"
     )
+
+    sql("drop table if exists carbontable1")
+    sql("drop table if exists hivetable1")
   }
 
   test("test data loading and validate query output") {
@@ -547,11 +550,38 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select id from t3 where salary = 15000"),Seq(Row(1)))
   }
 
+  test("test data loading when delimiter is '|' and data with header") {
+    sql(
+      "CREATE table carbontable1 (empno int, empname String, designation String, doj String, " +
+        "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
+        "projectcode int, projectjoindate String, projectenddate String,attendance double," +
+        "utilization double,salary double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES" +
+        "('DICTIONARY_EXCLUDE'='empno,empname,designation,doj,workgroupcategory," +
+        "workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate')"
+    )
+    sql(
+      "create table hivetable1 (empno int, empname String, designation string, doj String, " +
+        "workgroupcategory int, workgroupcategoryname String,deptno int, deptname String, " +
+        "projectcode int, projectjoindate String,projectenddate String, attendance double," +
+        "utilization double,salary double)row format delimited fields terminated by ','"
+    )
+
+    sql(
+      "LOAD DATA local inpath './src/test/resources/datadelimiter.csv' INTO TABLE carbontable1 OPTIONS" +
+        "('DELIMITER'= '|', 'QUOTECHAR'= '\"')"
+    )
+
+    sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' INTO table hivetable1")
+
+    checkAnswer(sql("select * from carbontable1"), sql("select * from hivetable1"))
+  }
+
   override def afterAll {
     sql("drop table carbontable")
     sql("drop table hivetable")
     sql("drop table if exists header_test")
     sql("drop table if exists mixed_header_test")
-
+    sql("drop table carbontable1")
+    sql("drop table hivetable1")
   }
 }
