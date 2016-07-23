@@ -18,7 +18,6 @@
 
 package org.carbondata.spark.rdd
 
-
 import java.util
 
 import scala.collection.JavaConverters._
@@ -43,6 +42,7 @@ import org.carbondata.query.expression.Expression
 import org.carbondata.spark.Value
 import org.carbondata.spark.load.CarbonLoaderUtil
 import org.carbondata.spark.util.QueryPlanUtil
+
 
 class CarbonSparkPartition(rddId: Int, val idx: Int,
   val locations: Array[String],
@@ -216,7 +216,13 @@ class CarbonQueryRDD[V: ClassTag](
         }
         if (finished) {
           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
-          if(null!=queryModel.getStatisticsRecorder) {
+          if (null != queryModel.getStatisticsRecorder) {
+            val queryStatistic = new QueryStatistic
+            queryStatistic
+              .addStatistics("Total Time taken to execute the query in executor Side",
+                System.currentTimeMillis - queryStartTime
+              )
+            queryModel.getStatisticsRecorder.recordStatistics(queryStatistic);
             queryModel.getStatisticsRecorder.logStatistics();
           }
         }
@@ -231,7 +237,13 @@ class CarbonQueryRDD[V: ClassTag](
         recordCount += 1
         if (queryModel.getLimit != -1 && recordCount >= queryModel.getLimit) {
           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
-           if(null!=queryModel.getStatisticsRecorder) {
+          if (null != queryModel.getStatisticsRecorder) {
+            val queryStatistic = new QueryStatistic
+            queryStatistic
+              .addStatistics("Total Time taken to execute the query in executor Side",
+                System.currentTimeMillis - queryStartTime
+              )
+            queryModel.getStatisticsRecorder.recordStatistics(queryStatistic);
             queryModel.getStatisticsRecorder.logStatistics();
           }
         }

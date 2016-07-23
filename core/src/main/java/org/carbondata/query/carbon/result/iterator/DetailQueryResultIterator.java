@@ -55,8 +55,11 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
   @Override public BatchResult next() {
     currentCounter += updateSliceIndexToBeExecuted();
     CarbonIterator<Result> result = null;
+    long startTime = System.currentTimeMillis();
+    BatchResult batchResult = null;
     try {
       result = executor.executeQuery(blockExecutionInfos, blockIndexToBeExecuted);
+      totalScanTime+=System.currentTimeMillis()-startTime;
     } catch (QueryExecutionException e) {
       throw new RuntimeException(e.getCause().getMessage());
     }
@@ -71,7 +74,10 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
       Result next = result.next();
       if (next.size() > 0) {
         totalNumberOfOutputRecords += next.size();
-        return queryResultPreparator.prepareQueryResult(next);
+        startTime=System.currentTimeMillis();
+        batchResult = queryResultPreparator.prepareQueryResult(next);
+        totalResultPreparationTime+=System.currentTimeMillis()-startTime;
+        return batchResult;
       } else {
         return new BatchResult();
       }

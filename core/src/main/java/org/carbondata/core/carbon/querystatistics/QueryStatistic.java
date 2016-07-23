@@ -61,6 +61,18 @@ public class QueryStatistic implements Serializable {
   }
 
   /**
+   * Below method will be used to add fixed time statistic.
+   * For example total time taken for scan or result preparation
+   *
+   * @param message   statistic message
+   * @param timetaken
+   */
+  public void addFixedTimeStatistic(String message, long timetaken) {
+    this.timeTaken = timetaken;
+    this.message = message;
+  }
+
+  /**
    * Below method will be used to get the statistic message, which will
    * be used to log
    *
