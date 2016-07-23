@@ -203,14 +203,22 @@ case class CarbonRelation(
       cubeMeta.carbonTable.getDimensionByTableName(cubeMeta.carbonTableIdentifier.getTableName)
         .asScala.asJava)
     sett.asScala.toSeq.filter(!_.getColumnSchema.isInvisible).map(dim => {
-      val output: DataType = metaData.carbonTable
-        .getDimensionByName(metaData.carbonTable.getFactTableName, dim.getColName).getDataType
+      val dimval = metaData.carbonTable
+        .getDimensionByName(metaData.carbonTable.getFactTableName, dim.getColName)
+      val output: DataType = dimval.getDataType
         .toString.toLowerCase match {
         case "array" => CarbonMetastoreTypes
           .toDataType(s"array<${ getArrayChildren(dim.getColName) }>")
         case "struct" => CarbonMetastoreTypes
           .toDataType(s"struct<${ getStructChildren(dim.getColName) }>")
-        case dType => CarbonMetastoreTypes.toDataType(dType)
+        case dType =>
+          var dataType = dType
+          if (dimval.getDataType == org.carbondata.core.carbon.metadata.datatype.DataType.DECIMAL) {
+            dataType +=
+              "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema
+                .getScale + ")"
+          }
+          CarbonMetastoreTypes.toDataType(dataType)
       }
 
       AttributeReference(
