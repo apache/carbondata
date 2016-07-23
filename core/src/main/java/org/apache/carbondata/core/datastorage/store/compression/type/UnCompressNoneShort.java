@@ -48,6 +48,12 @@ public class UnCompressNoneShort implements ValueCompressonHolder.UnCompressValu
    */
   private short[] shortValue;
 
+  private DataType actualDataType;
+
+  public UnCompressNoneShort(DataType actualDataType) {
+    this.actualDataType = actualDataType;
+  }
+
   @Override public void setValue(short[] shortValue) {
     this.shortValue = shortValue;
 
@@ -64,7 +70,7 @@ public class UnCompressNoneShort implements ValueCompressonHolder.UnCompressValu
 
   @Override public ValueCompressonHolder.UnCompressValue compress() {
 
-    UnCompressNoneByte byte1 = new UnCompressNoneByte();
+    UnCompressNoneByte byte1 = new UnCompressNoneByte(this.actualDataType);
     byte1.setValue(shortCompressor.compress(shortValue));
 
     return byte1;
@@ -88,17 +94,39 @@ public class UnCompressNoneShort implements ValueCompressonHolder.UnCompressValu
    * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
    */
   @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-    return new UnCompressNoneByte();
+    return new UnCompressNoneByte(this.actualDataType);
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
+    switch (actualDataType) {
+      case DATA_BIGINT:
+        return unCompressLong();
+      default:
+        return unCompressDouble();
+    }
+  }
+
+  private CarbonReadDataHolder unCompressDouble() {
+    CarbonReadDataHolder dataHldr = new CarbonReadDataHolder();
+
     double[] vals = new double[shortValue.length];
+
     for (int i = 0; i < vals.length; i++) {
       vals[i] = shortValue[i];
     }
-    dataHolder.setReadableDoubleValues(vals);
-    return dataHolder;
+    dataHldr.setReadableDoubleValues(vals);
+    return dataHldr;
   }
 
+  private CarbonReadDataHolder unCompressLong() {
+    CarbonReadDataHolder dataHldr = new CarbonReadDataHolder();
+
+    long[] vals = new long[shortValue.length];
+
+    for (int i = 0; i < vals.length; i++) {
+      vals[i] = shortValue[i];
+    }
+    dataHldr.setReadableLongValues(vals);
+    return dataHldr;
+  }
 }

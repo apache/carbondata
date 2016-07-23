@@ -48,6 +48,15 @@ public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompress
    */
   private double[] value;
 
+  /**
+   * actual data type
+   */
+  private DataType actualDataType;
+
+  public UnCompressMaxMinDefault(DataType actualDataType) {
+    this.actualDataType = actualDataType;
+  }
+
   @Override public void setValue(double[] value) {
     this.value = (double[]) value;
 
@@ -63,7 +72,7 @@ public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompress
   }
 
   @Override public ValueCompressonHolder.UnCompressValue compress() {
-    UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte();
+    UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte(actualDataType);
     byte1.setValue(doubleCompressor.compress(value));
     return byte1;
   }
@@ -85,7 +94,7 @@ public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompress
    * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
    */
   @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-    return new UnCompressMaxMinByte();
+    return new UnCompressMaxMinByte(actualDataType);
   }
 
   //TODO SIMIAN

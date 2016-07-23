@@ -25,11 +25,13 @@ import java.util.Arrays;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.compression.BigIntCompressor;
+import org.apache.carbondata.core.compression.DoubleCompressor;
+import org.apache.carbondata.core.compression.ValueCompressor;
 import org.apache.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.compression.type.UnCompressByteArray;
-import org.apache.carbondata.core.datastorage.store.compression.type.UnCompressDefaultLong;
 import org.apache.carbondata.core.datastorage.store.compression.type.UnCompressMaxMinByte;
 import org.apache.carbondata.core.datastorage.store.compression.type.UnCompressMaxMinDefault;
 import org.apache.carbondata.core.datastorage.store.compression.type.UnCompressMaxMinFloat;
@@ -149,8 +151,8 @@ public final class ValueCompressionUtil {
         return new CompressionFinder(COMPRESSION_TYPE.CUSTOM_BIGDECIMAL, DataType.DATA_BYTE,
             DataType.DATA_BYTE);
       case 'l':
-        return new CompressionFinder(COMPRESSION_TYPE.NONE,
-                DataType.DATA_BIGINT, DataType.DATA_BIGINT);
+        return getLongCompressorFinder(maxValue, minValue, decimal, aggregatorType,
+            dataTypeSelected);
       default:
         break;
     }
@@ -199,6 +201,22 @@ public final class ValueCompressionUtil {
     }
   }
 
+  private static CompressionFinder getLongCompressorFinder(Object maxValue, Object minValue,
+      int decimal, char aggregatorType, byte dataTypeSelected) {
+    if (getSize(getDataType((long) maxValue, decimal, dataTypeSelected)) > getSize(
+        getDataType((long) maxValue - (long) minValue, decimal, dataTypeSelected))) {
+      return new CompressionFinder(COMPRESSION_TYPE.MAX_MIN, DataType.DATA_BIGINT,
+          getDataType((long) maxValue - (long) minValue, decimal, dataTypeSelected));
+    } else if (getSize(getDataType((long) maxValue, decimal, dataTypeSelected)) < getSize(
+        getDataType((long) maxValue - (long) minValue, decimal, dataTypeSelected))) {
+      return new CompressionFinder(COMPRESSION_TYPE.NONE, DataType.DATA_BIGINT,
+          getDataType((long) maxValue - (long) minValue, decimal, dataTypeSelected));
+    } else {
+      return new CompressionFinder(COMPRESSION_TYPE.NONE, DataType.DATA_BIGINT,
+          getDataType((long) maxValue, decimal, dataTypeSelected));
+    }
+  }
+
   /**
    * @param compType        : compression type
    * @param values          : the data of one measure
@@ -240,6 +258,20 @@ public final class ValueCompressionUtil {
       case NONE:
       default:
         return values;
+    }
+  }
+
+  /**
+   *
+   * @param actualDataType
+   * @return compressor based on actualdatatype
+   */
+  public static ValueCompressor getValueCompressor(DataType actualDataType) {
+    switch (actualDataType) {
+      case DATA_BIGINT:
+        return new BigIntCompressor();
+      default:
+        return new DoubleCompressor();
     }
   }
 
@@ -569,34 +601,30 @@ public final class ValueCompressionUtil {
    */
   public static ValueCompressonHolder.UnCompressValue unCompressNone(DataType compDataType,
       DataType actualDataType) {
-    if (actualDataType == DataType.DATA_BIGINT) {
-      return new UnCompressDefaultLong();
-    } else {
-      switch (compDataType) {
-        case DATA_BYTE:
+    switch (compDataType) {
+      case DATA_BYTE:
 
-          return new UnCompressNoneByte();
+        return new UnCompressNoneByte(actualDataType);
 
-        case DATA_SHORT:
+      case DATA_SHORT:
 
-          return new UnCompressNoneShort();
+        return new UnCompressNoneShort(actualDataType);
 
-        case DATA_INT:
+      case DATA_INT:
 
-          return new UnCompressNoneInt();
+        return new UnCompressNoneInt(actualDataType);
 
-        case DATA_LONG:
+      case DATA_LONG:
 
-          return new UnCompressNoneLong();
+        return new UnCompressNoneLong(actualDataType);
 
-        case DATA_FLOAT:
+      case DATA_FLOAT:
 
-          return new UnCompressNoneFloat();
+        return new UnCompressNoneFloat(actualDataType);
 
-        default:
+      default:
 
-          return new UnCompressNoneDefault();
-      }
+        return new UnCompressNoneDefault(actualDataType);
     }
   }
 
@@ -608,27 +636,27 @@ public final class ValueCompressionUtil {
     switch (compDataType) {
       case DATA_BYTE:
 
-        return new UnCompressMaxMinByte();
+        return new UnCompressMaxMinByte(actualDataType);
 
       case DATA_SHORT:
 
-        return new UnCompressMaxMinShort();
+        return new UnCompressMaxMinShort(actualDataType);
 
       case DATA_INT:
 
-        return new UnCompressMaxMinInt();
+        return new UnCompressMaxMinInt(actualDataType);
 
       case DATA_LONG:
 
-        return new UnCompressMaxMinLong();
+        return new UnCompressMaxMinLong(actualDataType);
 
       case DATA_FLOAT:
 
-        return new UnCompressMaxMinFloat();
+        return new UnCompressMaxMinFloat(actualDataType);
 
       default:
 
-        return new UnCompressMaxMinDefault();
+        return new UnCompressMaxMinDefault(actualDataType);
 
     }
   }
