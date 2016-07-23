@@ -201,12 +201,10 @@ class CarbonDataLoadRDD[K, V](
               dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
               logInfo("Bad Record Found")
             } else {
-              dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-              LOGGER.error(e)
+              throw e
             }
             case e: Exception =>
-              dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-              LOGGER.error(e)
+              throw e
           } finally {
             if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
               val newSlice = CarbonCommonConstants.LOAD_FOLDER + loadCount
@@ -216,10 +214,7 @@ class CarbonDataLoadRDD[K, V](
                 case e: Exception =>
                   LOGGER.error(e)
               }
-              dataloadStatus = checkAndLoadAggregationTable
-              if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
-                logInfo("DataLoad failure")
-              } else if (CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+              if (CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
                   .equals(dataloadStatus)) {
                 logInfo("DataLoad complete")
                 logInfo("Data Load partially successful with LoadCount:" + loadCount)
@@ -229,15 +224,14 @@ class CarbonDataLoadRDD[K, V](
                 CarbonTimeStatisticsFactory.getLoadStatisticsInstance.printStatisticsInfo(
                   model.getPartitionId)
               }
-            } else {
-              logInfo("DataLoad failure")
             }
           }
         }
       } catch {
         case e: Exception =>
-          dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
           logInfo("DataLoad failure")
+          LOGGER.error(e)
+          throw e
       }
 
       def setModelAndBlocksInfo(): Unit = {

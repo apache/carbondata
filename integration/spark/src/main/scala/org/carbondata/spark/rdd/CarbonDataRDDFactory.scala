@@ -766,50 +766,59 @@ object CarbonDataRDDFactory extends Logging {
       CarbonLoaderUtil.checkAndCreateCarbonDataLocation(hdfsStoreLocation,
         carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName,
         partitioner.partitionCount, currentLoadCount.toString)
-      val status = new
-          CarbonDataLoadRDD(sc.sparkContext,
-            new DataLoadResultImpl(),
-            carbonLoadModel,
-            storeLocation,
-            hdfsStoreLocation,
-            kettleHomePath,
-            partitioner,
-            columinar,
-            currentRestructNumber,
-            currentLoadCount,
-            cubeCreationTime,
-            schemaLastUpdatedTime,
-            blocksGroupBy,
-            isTableSplitPartition
-          ).collect()
-      val newStatusMap = scala.collection.mutable.Map.empty[String, String]
-      status.foreach { eachLoadStatus =>
-        val state = newStatusMap.get(eachLoadStatus._1)
-        state match {
-          case Some(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) =>
-            newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
-          case Some(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
-            if eachLoadStatus._2.getLoadStatus == CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS =>
-            newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
-          case _ =>
-            newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
-        }
-      }
-
       var loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
-      newStatusMap.foreach {
-        case (key, value) =>
-          if (value == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
-            loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-          } else if (value == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS &&
-            !loadStatus.equals(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)) {
-            loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+      var status: Array[(String, LoadMetadataDetails)] = null
+      try {
+        status = new
+            CarbonDataLoadRDD(sc.sparkContext,
+              new DataLoadResultImpl(),
+              carbonLoadModel,
+              storeLocation,
+              hdfsStoreLocation,
+              kettleHomePath,
+              partitioner,
+              columinar,
+              currentRestructNumber,
+              currentLoadCount,
+              cubeCreationTime,
+              schemaLastUpdatedTime,
+              blocksGroupBy,
+              isTableSplitPartition
+            ).collect()
+        val newStatusMap = scala.collection.mutable.Map.empty[String, String]
+        status.foreach { eachLoadStatus =>
+          val state = newStatusMap.get(eachLoadStatus._1)
+          state match {
+            case Some(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) =>
+              newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
+            case Some(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+              if eachLoadStatus._2.getLoadStatus ==
+                 CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS =>
+              newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
+            case _ =>
+              newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
           }
-      }
+        }
 
-      if (loadStatus != CarbonCommonConstants.STORE_LOADSTATUS_FAILURE &&
-        partitionStatus == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS) {
-        loadStatus = partitionStatus
+        newStatusMap.foreach {
+          case (key, value) =>
+            if (value == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
+              loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
+            } else if (value == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS &&
+                       !loadStatus.equals(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)) {
+              loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+            }
+        }
+
+        if (loadStatus != CarbonCommonConstants.STORE_LOADSTATUS_FAILURE &&
+            partitionStatus == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS) {
+          loadStatus = partitionStatus
+        }
+      } catch {
+        case ex: Throwable =>
+          loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
+          logInfo("DataLoad failure")
+          logger.error(ex)
       }
 
       if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
@@ -823,12 +832,12 @@ object CarbonDataRDDFactory extends Logging {
           )
           message = "Aggregate table creation failure"
         } else {
-          val (result, _) = status(0)
-          val newSlice = CarbonCommonConstants.LOAD_FOLDER + result
           CarbonLoaderUtil.deleteSegment(carbonLoadModel, currentLoadCount)
           val aggTables = carbonTable.getAggregateTablesName
           if (null != aggTables && !aggTables.isEmpty) {
             // TODO:need to clean aggTable
+            val (result, _) = status(0)
+            val newSlice = CarbonCommonConstants.LOAD_FOLDER + result
             aggTables.asScala.foreach { aggTableName =>
               CarbonLoaderUtil
                 .deleteSlice(partitioner.partitionCount, carbonLoadModel.getDatabaseName,
@@ -837,12 +846,12 @@ object CarbonDataRDDFactory extends Logging {
                 )
             }
           }
-          message = "Dataload failure"
+          message = "DataLoad failure"
         }
         logInfo("********clean up done**********")
         logger.audit(s"Data load is failed for " +
           s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}")
-        logWarning("Unable to write load metadata file")
+        logWarning("Cannot write load metadata file as data load failed")
         throw new Exception(message)
       } else {
         val metadataDetails = status(0)._2
