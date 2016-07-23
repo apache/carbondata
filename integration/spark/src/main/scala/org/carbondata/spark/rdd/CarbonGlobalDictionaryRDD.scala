@@ -30,6 +30,7 @@ import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 
+import org.carbondata.common.factory.CarbonCommonFactory
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.{CarbonTableIdentifier, ColumnIdentifier}
 import org.carbondata.core.carbon.metadata.datatype.DataType
@@ -295,8 +296,12 @@ class CarbonGlobalDictionaryGenerateRDD(
       var dictionaryForDistinctValueLookUp: org.carbondata.core.cache.dictionary.Dictionary = _
       var dictionaryForSortIndexWriting: org.carbondata.core.cache.dictionary.Dictionary = _
       var dictionaryForDistinctValueLookUpCleared: Boolean = false
-      val dictLock = CarbonLockFactory.getCarbonLockObj(model.table,
-        model.columnIdentifier(split.index).getColumnId + LockUsage.LOCK)
+      val pathService = CarbonCommonFactory.getPathService
+      val carbonTablePath = pathService.getCarbonTablePath(model.columnIdentifier(split.index),
+          model.hdfsLocation, model.table)
+      val dictLock = CarbonLockFactory
+        .getCarbonLockObj(carbonTablePath.getRelativeDictionaryDirectory,
+          model.columnIdentifier(split.index).getColumnId + LockUsage.LOCK)
       // generate distinct value list
       try {
         val t1 = System.currentTimeMillis

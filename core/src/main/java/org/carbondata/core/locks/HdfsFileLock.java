@@ -45,14 +45,22 @@ public class HdfsFileLock extends AbstractCarbonLock {
   }
 
   /**
+   * @param lockFileLocation
+   * @param lockFile
+   */
+  public HdfsFileLock(String lockFileLocation, String lockFile) {
+    this.location = tmpPath + CarbonCommonConstants.FILE_SEPARATOR + lockFileLocation
+        + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
+    initRetry();
+  }
+
+  /**
    * @param tableIdentifier
    * @param lockFile
    */
   public HdfsFileLock(CarbonTableIdentifier tableIdentifier, String lockFile) {
-    this.location =
-        tmpPath + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier.getDatabaseName()
-            + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier.getTableName()
-            + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
+    this(tableIdentifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier
+        .getTableName(), lockFile);
     initRetry();
   }
 

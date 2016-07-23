@@ -73,14 +73,22 @@ public class LocalFileLock extends AbstractCarbonLock {
   }
 
   /**
+   * @param lockFileLocation
+   * @param lockFile
+   */
+  public LocalFileLock(String lockFileLocation, String lockFile) {
+    this.location = tmpPath + CarbonCommonConstants.FILE_SEPARATOR + lockFileLocation;
+    this.lockFile = lockFile;
+    initRetry();
+  }
+
+  /**
    * @param tableIdentifier
    * @param lockFile
    */
   public LocalFileLock(CarbonTableIdentifier tableIdentifier, String lockFile) {
-    this.location =
-        tmpPath + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier.getDatabaseName()
-            + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier.getTableName();
-    this.lockFile = lockFile;
+    this(tableIdentifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier
+        .getTableName(), lockFile);
     initRetry();
   }
 

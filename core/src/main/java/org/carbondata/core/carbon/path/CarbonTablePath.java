@@ -20,6 +20,7 @@ package org.carbondata.core.carbon.path;
 
 import java.io.File;
 
+import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
@@ -50,9 +51,16 @@ public class CarbonTablePath extends Path {
   protected static final String INDEX_FILE_EXT = ".carbonindex";
 
   protected String tablePath;
+  protected CarbonTableIdentifier carbonTableIdentifier;
 
-  public CarbonTablePath(String tablePathString) {
+  /**
+   *
+   * @param carbonTableIdentifier
+   * @param tablePathString
+   */
+  public CarbonTablePath(CarbonTableIdentifier carbonTableIdentifier, String tablePathString) {
     super(tablePathString);
+    this.carbonTableIdentifier = carbonTableIdentifier;
     this.tablePath = tablePathString;
   }
 
@@ -124,6 +132,14 @@ public class CarbonTablePath extends Path {
    */
   public String getDictionaryFilePath(String columnId) {
     return getMetaDataDir() + File.separator + getDictionaryFileName(columnId);
+  }
+
+  /**
+   * @return it return relative directory
+   */
+  public String getRelativeDictionaryDirectory() {
+    return carbonTableIdentifier.getDatabaseName() + File.separator + carbonTableIdentifier
+        .getTableName();
   }
 
   /**

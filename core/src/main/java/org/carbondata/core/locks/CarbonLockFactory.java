@@ -62,6 +62,28 @@ public class CarbonLockFactory {
   }
 
   /**
+   *
+   * @param locFileLocation
+   * @param lockFile
+   * @return carbon lock
+   */
+  public static ICarbonLock getCarbonLockObj(String locFileLocation, String lockFile) {
+    switch (lockTypeConfigured.toUpperCase()) {
+      case CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL:
+        return new LocalFileLock(locFileLocation, lockFile);
+
+      case CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER:
+        return new ZooKeeperLocking(locFileLocation, lockFile);
+
+      case CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS:
+        return new HdfsFileLock(locFileLocation, lockFile);
+
+      default:
+        throw new UnsupportedOperationException("Not supported the lock type");
+    }
+  }
+
+  /**
    * This method will set the zookeeper status whether zookeeper to be used for locking or not.
    */
   private static void updateZooKeeperLockingStatus() {
