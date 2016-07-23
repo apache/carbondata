@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datastorage.store.compression.SnappyCompressio
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
+import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
 public class UnCompressNoneFloat implements ValueCompressonHolder.UnCompressValue<float[]> {
   /**
@@ -45,6 +46,12 @@ public class UnCompressNoneFloat implements ValueCompressonHolder.UnCompressValu
    */
   private float[] value;
 
+  private DataType actualDataType;
+
+  public UnCompressNoneFloat(DataType actualDataType) {
+    this.actualDataType = actualDataType;
+  }
+
   @Override public void setValue(float[] value) {
     this.value = value;
 
@@ -60,7 +67,7 @@ public class UnCompressNoneFloat implements ValueCompressonHolder.UnCompressValu
   }
 
   @Override public ValueCompressonHolder.UnCompressValue compress() {
-    UnCompressNoneByte byte1 = new UnCompressNoneByte();
+    UnCompressNoneByte byte1 = new UnCompressNoneByte(this.actualDataType);
     byte1.setValue(floatCompressor.compress(value));
 
     return byte1;
@@ -76,7 +83,7 @@ public class UnCompressNoneFloat implements ValueCompressonHolder.UnCompressValu
    * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
    */
   @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-    return new UnCompressNoneByte();
+    return new UnCompressNoneByte(this.actualDataType);
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {

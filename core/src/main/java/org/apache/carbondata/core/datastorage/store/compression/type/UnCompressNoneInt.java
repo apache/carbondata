@@ -45,6 +45,12 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
    */
   private int[] value;
 
+  private DataType actualDataType;
+
+  public UnCompressNoneInt(DataType actualDataType) {
+    this.actualDataType = actualDataType;
+  }
+
   @Override public void setValue(int[] value) {
     this.value = value;
 
@@ -64,7 +70,7 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
   }
 
   @Override public ValueCompressonHolder.UnCompressValue compress() {
-    UnCompressNoneByte byte1 = new UnCompressNoneByte();
+    UnCompressNoneByte byte1 = new UnCompressNoneByte(this.actualDataType);
     byte1.setValue(intCompressor.compress(value));
 
     return byte1;
@@ -84,10 +90,19 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
    * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
    */
   @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-    return new UnCompressNoneByte();
+    return new UnCompressNoneByte(this.actualDataType);
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
+    switch (actualDataType) {
+      case DATA_BIGINT:
+        return unCompressLong();
+      default:
+        return unCompressDouble();
+    }
+  }
+
+  private CarbonReadDataHolder unCompressDouble() {
     CarbonReadDataHolder dataHolderInfoObj = new CarbonReadDataHolder();
     double[] vals = new double[value.length];
     for (int i = 0; i < vals.length; i++) {
@@ -98,4 +113,14 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
     return dataHolderInfoObj;
   }
 
+  private CarbonReadDataHolder unCompressLong() {
+    CarbonReadDataHolder dataHolderInfoObj = new CarbonReadDataHolder();
+    long[] vals = new long[value.length];
+    for (int i = 0; i < vals.length; i++) {
+      vals[i] = value[i];
+    }
+
+    dataHolderInfoObj.setReadableLongValues(vals);
+    return dataHolderInfoObj;
+  }
 }

@@ -46,6 +46,12 @@ public class UnCompressMaxMinShort implements ValueCompressonHolder.UnCompressVa
    */
   private short[] value;
 
+  private DataType actualDataType;
+
+  public UnCompressMaxMinShort(DataType actualDataType) {
+    this.actualDataType = actualDataType;
+  }
+
   @Override public void setValue(short[] value) {
     this.value = value;
 
@@ -70,7 +76,7 @@ public class UnCompressMaxMinShort implements ValueCompressonHolder.UnCompressVa
 
   @Override public ValueCompressonHolder.UnCompressValue compress() {
 
-    UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte();
+    UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte(actualDataType);
     byte1.setValue(shortCompressor.compress(value));
     return byte1;
   }
@@ -84,10 +90,20 @@ public class UnCompressMaxMinShort implements ValueCompressonHolder.UnCompressVa
    * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
    */
   @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-    return new UnCompressMaxMinByte();
+    return new UnCompressMaxMinByte(actualDataType);
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
+    switch (actualDataType) {
+      case DATA_BIGINT:
+        return unCompressLong(decimal, maxValueObject);
+      default:
+        return unCompressDouble(decimal, maxValueObject);
+    }
+
+  }
+
+  private CarbonReadDataHolder unCompressDouble(int decimal, Object maxValueObject) {
     double maxValue = (double) maxValueObject;
     double[] vals = new double[value.length];
     CarbonReadDataHolder carbonDataHolderObj = new CarbonReadDataHolder();
@@ -100,6 +116,22 @@ public class UnCompressMaxMinShort implements ValueCompressonHolder.UnCompressVa
 
     }
     carbonDataHolderObj.setReadableDoubleValues(vals);
+    return carbonDataHolderObj;
+  }
+
+  private CarbonReadDataHolder unCompressLong(int decimal, Object maxValueObject) {
+    long maxValue = (long) maxValueObject;
+    long[] vals = new long[value.length];
+    CarbonReadDataHolder carbonDataHolderObj = new CarbonReadDataHolder();
+    for (int i = 0; i < vals.length; i++) {
+      if (value[i] == 0) {
+        vals[i] = maxValue;
+      } else {
+        vals[i] = maxValue - value[i];
+      }
+
+    }
+    carbonDataHolderObj.setReadableLongValues(vals);
     return carbonDataHolderObj;
   }
 
