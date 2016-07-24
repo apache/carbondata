@@ -21,7 +21,6 @@ package org.carbondata.processing.csvload;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -42,16 +41,12 @@ import org.carbondata.processing.dataprocessor.IDataProcessStatus;
 import org.carbondata.processing.etl.DataLoadingException;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordslogger;
 
-import org.apache.commons.vfs.FileSystemException;
-import org.apache.commons.vfs.FileSystemManager;
-import org.apache.commons.vfs.impl.DefaultFileSystemManager;
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.exception.KettleXMLException;
 import org.pentaho.di.core.logging.LogLevel;
 import org.pentaho.di.core.logging.LoggingObjectInterface;
 import org.pentaho.di.core.logging.LoggingRegistry;
-import org.pentaho.di.core.vfs.KettleVFS;
 import org.pentaho.di.core.xml.XMLHandlerCache;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
@@ -59,7 +54,6 @@ import org.pentaho.di.trans.step.StepMeta;
 import org.pentaho.di.trans.steps.getfilenames.GetFileNamesMeta;
 import org.pentaho.di.trans.steps.hadoopfileinput.HadoopFileInputMeta;
 import org.pentaho.di.trans.steps.textfileinput.TextFileInputField;
-import org.pentaho.hdfs.vfs.HDFSFileProvider;
 
 public class DataGraphExecuter {
   /**
@@ -171,23 +165,6 @@ public class DataGraphExecuter {
         // Register HDFS as a file system type with VFS to make HadoopFileInputMeta work
         boolean hdfsReadMode =
             model.getCsvFilePath() != null && model.getCsvFilePath().startsWith("hdfs:");
-        if (hdfsReadMode) {
-          try {
-            FileSystemManager fsm = KettleVFS.getInstance().getFileSystemManager();
-            if (fsm instanceof DefaultFileSystemManager) {
-              if (!Arrays.asList(fsm.getSchemes()).contains("hdfs")
-                  && !((DefaultFileSystemManager) fsm).hasProvider("hdfs")) {
-                ((DefaultFileSystemManager) fsm).addProvider("hdfs", new HDFSFileProvider());
-              }
-            }
-          } catch (FileSystemException e) {
-            if (!e.getMessage().contains("Multiple providers registered for URL scheme")) {
-              LOGGER.error(e,
-                  e.getMessage());
-            }
-          }
-        }
-
         trans.setVariable("modifiedDimNames", model.getDimTables());
         trans.setVariable("csvInputFilePath", model.getCsvFilePath());
         trans.setVariable("dimFileLocDir", model.getDimCSVDirLoc());
