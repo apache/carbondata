@@ -1108,6 +1108,8 @@ public class QueryUtil {
     if (filterExpression instanceof BinaryLogicalExpression) {
       BinaryLogicalExpression logicalExpression = (BinaryLogicalExpression) filterExpression;
       dimensionResolvedInfos.addAll(logicalExpression.getColumnList());
+    } else {
+      addColumnDimensions(filterExpression, filterDimensions);
     }
     for (ColumnExpression info : dimensionResolvedInfos) {
       if (info.isDimension() && info.getDimension().getNumberOfChild() > 0) {
@@ -1118,4 +1120,22 @@ public class QueryUtil {
 
   }
 
+  /**
+   * This method will check if a given expression contains a column expression
+   * recursively and add the dimension instance to the set which holds the dimension
+   * instances of the complex filter expressions.
+   *
+   * @param filterDimensions
+   * @return
+   */
+  private static void addColumnDimensions(Expression expression,
+      Set<CarbonDimension> filterDimensions) {
+    if (null != expression && expression instanceof ColumnExpression) {
+      filterDimensions.add(((ColumnExpression) expression).getDimension());
+      return;
+    }
+    for (Expression child : expression.getChildren()) {
+      addColumnDimensions(child, filterDimensions);
+    }
+  }
 }

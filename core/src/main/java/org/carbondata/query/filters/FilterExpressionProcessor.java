@@ -41,7 +41,6 @@ import org.carbondata.query.expression.Expression;
 import org.carbondata.query.expression.conditional.BinaryConditionalExpression;
 import org.carbondata.query.expression.conditional.ConditionalExpression;
 import org.carbondata.query.expression.exception.FilterUnsupportedException;
-import org.carbondata.query.expression.logical.BinaryLogicalExpression;
 import org.carbondata.query.filter.executer.FilterExecuter;
 import org.carbondata.query.filter.resolver.ConditionalFilterResolverImpl;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
@@ -213,7 +212,6 @@ public class FilterExpressionProcessor implements FilterProcessor {
       AbsoluteTableIdentifier tableIdentifier, Expression intermediateExpression) {
     ExpressionType filterExpressionType = expressionTree.getFilterExpressionType();
     BinaryExpression currentExpression = null;
-    BinaryLogicalExpression logicalExpression = null;
     switch (filterExpressionType) {
       case OR:
         currentExpression = (BinaryExpression) expressionTree;
@@ -221,14 +219,14 @@ public class FilterExpressionProcessor implements FilterProcessor {
             createFilterResolverTree(currentExpression.getLeft(), tableIdentifier,
                 currentExpression),
             createFilterResolverTree(currentExpression.getRight(), tableIdentifier,
-                currentExpression), filterExpressionType);
+                currentExpression),currentExpression);
       case AND:
-        logicalExpression = (BinaryLogicalExpression) expressionTree;
+        currentExpression = (BinaryExpression) expressionTree;
         return new LogicalFilterResolverImpl(
-            createFilterResolverTree(logicalExpression.getLeft(), tableIdentifier,
+            createFilterResolverTree(currentExpression.getLeft(), tableIdentifier,
                 currentExpression),
-            createFilterResolverTree(logicalExpression.getRight(), tableIdentifier,
-                currentExpression), filterExpressionType);
+            createFilterResolverTree(currentExpression.getRight(), tableIdentifier,
+                currentExpression), currentExpression);
       case EQUALS:
       case IN:
         return getFilterResolverBasedOnExpressionType(ExpressionType.EQUALS, false, expressionTree,

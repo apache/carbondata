@@ -25,6 +25,7 @@ import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbonfilterinterface.ExpressionType;
 import org.carbondata.query.carbonfilterinterface.FilterExecuterType;
+import org.carbondata.query.expression.BinaryExpression;
 import org.carbondata.query.expression.Expression;
 import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
@@ -40,11 +41,14 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
 
   protected ExpressionType filterExpressionType;
 
+  private BinaryExpression filterExpression;
+
   public LogicalFilterResolverImpl(FilterResolverIntf leftEvalutor,
-      FilterResolverIntf rightEvalutor, ExpressionType filterExpressionType) {
+      FilterResolverIntf rightEvalutor,BinaryExpression currentExpression) {
     this.leftEvalutor = leftEvalutor;
     this.rightEvalutor = rightEvalutor;
-    this.filterExpressionType = filterExpressionType;
+    this.filterExpressionType = currentExpression.getFilterExpressionType();
+    this.filterExpression=currentExpression;
   }
 
   /**
@@ -104,7 +108,6 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
   }
 
   @Override public Expression getFilterExpression() {
-    // TODO Auto-generated method stub
-    return null;
+    return filterExpression;
   }
 }

@@ -24,6 +24,7 @@ import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.query.carbon.executor.exception.QueryExecutionException;
 import org.carbondata.query.carbonfilterinterface.ExpressionType;
+import org.carbondata.query.expression.BinaryExpression;
 
 public class AndFilterResolverImpl extends LogicalFilterResolverImpl {
 
@@ -33,8 +34,8 @@ public class AndFilterResolverImpl extends LogicalFilterResolverImpl {
   private static final long serialVersionUID = -761688076874662001L;
 
   public AndFilterResolverImpl(FilterResolverIntf leftEvalutor, FilterResolverIntf rightEvalutor,
-      ExpressionType filterExpressionType) {
-    super(leftEvalutor, rightEvalutor, filterExpressionType);
+      ExpressionType filterExpressionType,BinaryExpression expression) {
+    super(leftEvalutor, rightEvalutor, expression);
   }
 
   @Override public void getStartKey(SegmentProperties segmentProperties, long[] startKeys,
