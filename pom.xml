@@ -22,20 +22,7 @@
   <artifactId>carbondata-parent</artifactId>
   <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>carbondata</name>
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <spark.version>1.5.2</spark.version>
-    <scala.binary.version>2.10</scala.binary.version>
-    <snappy.version>1.1.1.7</snappy.version>
-    <hadoop.version>2.2.0</hadoop.version>
-    <scala.version>2.10.4</scala.version>
-    <kettle.version>4.4.0-stable</kettle.version>
-    <hadoop.deps.scope>compile</hadoop.deps.scope>
-    <spark.deps.scope>compile</spark.deps.scope>
-    <scala.deps.scope>compile</scala.deps.scope>
-    <dev.path>${basedir}/dev</dev.path>
-  </properties>
+  <name>CarbonData Parent POM</name>
   <modules>
     <module>common</module>
     <module>format</module>
@@ -46,6 +33,96 @@
     <module>assembly</module>
     <module>examples</module>
   </modules>
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <spark.version>1.5.2</spark.version>
+    <scala.binary.version>2.10</scala.binary.version>
+    <snappy.version>1.1.2.6</snappy.version>
+    <hadoop.version>2.2.0</hadoop.version>
+    <scala.version>2.10.4</scala.version>
+    <kettle.version>4.4.0-stable</kettle.version>
+    <hadoop.deps.scope>compile</hadoop.deps.scope>
+    <spark.deps.scope>compile</spark.deps.scope>
+    <scala.deps.scope>compile</scala.deps.scope>
+    <dev.path>${basedir}/dev</dev.path>
+  </properties>
+
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-common</artifactId>
+        <version>${hadoop.version}</version>
+        <scope>${hadoop.deps.scope}</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-hdfs</artifactId>
+        <version>${hadoop.version}</version>
+        <scope>${hadoop.deps.scope}</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hadoop</groupId>
+        <artifactId>hadoop-mapreduce-client-core</artifactId>
+        <version>${hadoop.version}</version>
+        <scope>${hadoop.deps.scope}</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-sql_${scala.binary.version}</artifactId>
+        <version>${spark.version}</version>
+        <scope>${spark.deps.scope}</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>
+        <version>${spark.version}</version>
+        <scope>${spark.deps.scope}</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.spark</groupId>
+        <artifactId>spark-repl_${scala.binary.version}</artifactId>
+        <version>${spark.version}</version>
+        <scope>${spark.deps.scope}</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.scala-lang</groupId>
+        <artifactId>scala-compiler</artifactId>
+        <version>${scala.version}</version>
+        <scope>${scala.deps.scope}</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.scala-lang</groupId>
+        <artifactId>scala-reflect</artifactId>
+        <version>${scala.version}</version>
+        <scope>${scala.deps.scope}</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.scala-lang</groupId>
+        <artifactId>scala-library</artifactId>
+        <version>${scala.version}</version>
+        <scope>${scala.deps.scope}</scope>
+      </dependency>
+      <dependency>
+        <groupId>org.jmockit</groupId>
+        <artifactId>jmockit</artifactId>
+        <version>1.10</version>
+        <exclusions>
+          <exclusion>
+            <groupId>*</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+        </exclusions>
+        <scope>test</scope>
+      </dependency>
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>4.11</version>
+        <scope>test</scope>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
   <build>
     <plugins>
       <plugin>
@@ -159,6 +236,12 @@
           </plugin>
         </plugins>
       </build>
+    </profile>
+    <profile>
+      <id>provided</id>
+    </profile>
+    <profile>
+      <id>include-all</id>
     </profile>
   </profiles>
 </project>

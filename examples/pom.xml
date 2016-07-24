@@ -20,9 +20,8 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.carbondata</groupId>
   <artifactId>carbon-examples</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
-  <name>carbon-examples</name>
+  <name>CarbonData Examples</name>
   <parent>
     <groupId>org.carbondata</groupId>
     <version>0.1.0-SNAPSHOT</version>
@@ -71,50 +70,20 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>it.unimi.dsi</groupId>
-      <artifactId>fastutil</artifactId>
-      <version>6.5.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>pentaho</groupId>
-      <artifactId>pentaho-hdfs-vfs</artifactId>
-      <version>1.0.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-compiler</artifactId>
-      <version>${scala.version}</version>
-      <scope>${scala.deps.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-reflect</artifactId>
-      <version>${scala.version}</version>
-      <scope>${scala.deps.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.scala-lang</groupId>
       <artifactId>scala-library</artifactId>
-      <version>${scala.version}</version>
-      <scope>${scala.deps.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>
-      <version>${spark.version}</version>
-      <scope>${spark.deps.scope}</scope>
     </dependency>
   </dependencies>
   <build>
