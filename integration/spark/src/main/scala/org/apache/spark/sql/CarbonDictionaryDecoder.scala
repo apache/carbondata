@@ -138,8 +138,11 @@ case class CarbonDictionaryDecoder(
     dictIds
   }
 
-
   override def outputsUnsafeRows: Boolean = true
+
+  override def canProcessUnsafeRows: Boolean = true
+
+  override def canProcessSafeRows: Boolean = true
 
   override def doExecute(): RDD[InternalRow] = {
     attachTree(this, "execute") {
@@ -154,8 +157,7 @@ case class CarbonDictionaryDecoder(
         child.execute().mapPartitions { iter =>
           val cacheProvider: CacheProvider = CacheProvider.getInstance
           val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-            cacheProvider
-              .createCache(CacheType.FORWARD_DICTIONARY, storePath)
+            cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
           val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
             forwardDictionaryCache)
           val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
