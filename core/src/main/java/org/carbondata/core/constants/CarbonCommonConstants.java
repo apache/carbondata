@@ -736,6 +736,11 @@ public final class CarbonCommonConstants {
   public static final String CARBON_MERGE_SORT_PREFETCH = "carbon.merge.sort.prefetch";
   public static final String CARBON_MERGE_SORT_PREFETCH_DEFAULT = "true";
 
+  /**
+   *  default name of data base
+   */
+  public static final String DATABASE_DEFAULT_NAME = "default";
+
   // tblproperties
   public static final String COLUMN_GROUPS = "column_groups";
   public static final String DICTIONARY_EXCLUDE = "dictionary_exclude";

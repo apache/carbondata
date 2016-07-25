@@ -99,6 +99,19 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hivetable")
   }
 
+  test("create carbon table without dimensions") {
+    try {
+      sql("create table carbontable(msr1 int, msr2 double, msr3 bigint, msr4 decimal)" +
+        " stored by 'org.apache.carbondata.format'")
+      assert(false)
+    } catch {
+      case e : MalformedCarbonCommandException => {
+        assert(e.getMessage.equals("Table default.carbontable can not be created without " +
+          "key columns. Please use DICTIONARY_INCLUDE or DICTIONARY_EXCLUDE to " +
+          "set at least one key column if all specified columns are numeric types"))
+      }
+    }
+  }
   override def afterAll {
     sql("drop table if exists carbontable")
   }
