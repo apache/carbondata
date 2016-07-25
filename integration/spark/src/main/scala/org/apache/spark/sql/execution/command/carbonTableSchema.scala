@@ -1254,7 +1254,7 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
   }
 }
 
-private[sql] case class CreateCube(cm: tableModel) extends RunnableCommand {
+private[sql] case class CreateTable(cm: tableModel) extends RunnableCommand {
 
   def run(sqlContext: SQLContext): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)

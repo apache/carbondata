@@ -435,7 +435,7 @@ class CarbonSqlParser()
         tableProperties)
 
         // get logical plan.
-        CreateCube(tableModel)
+        CreateTable(tableModel)
 
     }
   }
