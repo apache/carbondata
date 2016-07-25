@@ -61,10 +61,9 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
       val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
         .getCanonicalPath
-      var csvFilePath = currentDirectory + "/src/test/resources/datasample.csv"
+      val csvFilePath = currentDirectory + "/src/test/resources/datasample.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryCube OPTIONS" +
         "('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
-
     } catch {
       case x: Throwable => CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")

@@ -174,7 +174,7 @@ class CarbonDataLoadRDD[K, V](
         CarbonProperties.getInstance().addProperty("high.cardinality.value", "100000")
         CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false")
         CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000")
-        var storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+        val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
         if (null != storeLocations && storeLocations.length > 0) {
           storeLocation = storeLocations(Random.nextInt(storeLocations.length))
         }

@@ -216,7 +216,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     )
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
-    var csvFilePath = currentDirectory + "/src/test/resources/data_withCAPSHeader.csv"
+    val csvFilePath = currentDirectory + "/src/test/resources/data_withCAPSHeader.csv"
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO table header_test OPTIONS " +
       "('DELIMITER'=',', 'QUOTECHAR'='\"')");
     checkAnswer(sql("select empno from header_test"),
@@ -248,7 +248,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     )
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
-    var csvFilePath = currentDirectory + "/src/test/resources/data_withMixedHeader.csv"
+    val csvFilePath = currentDirectory + "/src/test/resources/data_withMixedHeader.csv"
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO table mixed_header_test OPTIONS " +
       "('DELIMITER'=',', 'QUOTECHAR'='\"')");
     checkAnswer(sql("select empno from mixed_header_test"),

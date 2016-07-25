@@ -33,12 +33,12 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
 
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
-    var csvFilePath1 = currentDirectory + "/src/test/resources/compaction/compaction1.csv"
+    val csvFilePath1 = currentDirectory + "/src/test/resources/compaction/compaction1.csv"
 
     // loading the rows greater than 256. so that the column cardinality crosses byte boundary.
-    var csvFilePath2 = currentDirectory + "/src/test/resources/compaction/compactioncard2.csv"
+    val csvFilePath2 = currentDirectory + "/src/test/resources/compaction/compactioncard2.csv"
 
-    var csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
+    val csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
 
 
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE cardinalityTest OPTIONS" +

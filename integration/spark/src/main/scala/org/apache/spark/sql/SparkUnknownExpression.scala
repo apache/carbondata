@@ -90,7 +90,7 @@ class SparkUnknownExpression(sparkExp: SparkExpression)
   }
 
   def isSingleDimension(): Boolean = {
-    var lst = new java.util.ArrayList[ColumnExpression]()
+    val lst = new java.util.ArrayList[ColumnExpression]()
     getAllColumnListFromExpressionTree(sparkExp, lst)
     if (lst.size == 1 && lst.get(0).isDimension) {
       true
@@ -127,7 +127,7 @@ class SparkUnknownExpression(sparkExp: SparkExpression)
   }
 
   def isDirectDictionaryColumns(): Boolean = {
-    var lst = new ArrayList[ColumnExpression]()
+    val lst = new ArrayList[ColumnExpression]()
     getAllColumnListFromExpressionTree(sparkExp, lst)
     if (lst.get(0).getCarbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
       true

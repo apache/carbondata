@@ -533,7 +533,7 @@ object CarbonDataRDDFactory extends Logging {
           )
 
         var storeLocation = ""
-        var configuredStore = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+        val configuredStore = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
         if (null != configuredStore && configuredStore.length > 0) {
           storeLocation = configuredStore(Random.nextInt(configuredStore.length))
         }
