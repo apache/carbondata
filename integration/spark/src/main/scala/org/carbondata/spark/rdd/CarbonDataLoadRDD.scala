@@ -206,14 +206,15 @@ class CarbonDataLoadRDD[K, V](
             case e: Exception =>
               throw e
           } finally {
+            // delete temp location data
+            val newSlice = CarbonCommonConstants.LOAD_FOLDER + loadCount
+            try {
+              CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, newSlice)
+            } catch {
+              case e: Exception =>
+                LOGGER.error(e)
+            }
             if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
-              val newSlice = CarbonCommonConstants.LOAD_FOLDER + loadCount
-              try {
-                CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, newSlice)
-              } catch {
-                case e: Exception =>
-                  LOGGER.error(e)
-              }
               if (CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
                   .equals(dataloadStatus)) {
                 logInfo("DataLoad complete")

@@ -445,6 +445,20 @@ public final class CarbonLoaderUtil {
     } catch (CarbonUtilException e) {
       LOGGER.error(e, "Failed to delete local data load folder location");
     }
+
+    // delete ktr file.
+    String graphPath = CarbonProperties.getInstance()
+        .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL)
+        + File.separator + "/etl" + File.separator + databaseName + File.separator + tableName
+        + File.separator + loadModel.getSegmentId() + File.separator + loadModel.getTaskNo()
+        + File.separator + tableName + ".ktr";
+    File path = new File(graphPath);
+    if (path.exists()) {
+      if (!path.delete()) {
+        LOGGER.error("failed to delete the ktr file in path " + path);
+      }
+    }
+
   }
 
   /**
