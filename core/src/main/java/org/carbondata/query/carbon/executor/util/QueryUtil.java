@@ -70,7 +70,6 @@ import org.carbondata.query.complex.querytypes.PrimitiveQueryType;
 import org.carbondata.query.complex.querytypes.StructQueryType;
 import org.carbondata.query.expression.ColumnExpression;
 import org.carbondata.query.expression.Expression;
-import org.carbondata.query.expression.logical.BinaryLogicalExpression;
 import org.carbondata.query.filter.resolver.FilterResolverIntf;
 import org.carbondata.query.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
@@ -1105,12 +1104,7 @@ public class QueryUtil {
     }
     List<ColumnExpression> dimensionResolvedInfos = new ArrayList<ColumnExpression>();
     Expression filterExpression = filterResolverTree.getFilterExpression();
-    if (filterExpression instanceof BinaryLogicalExpression) {
-      BinaryLogicalExpression logicalExpression = (BinaryLogicalExpression) filterExpression;
-      dimensionResolvedInfos.addAll(logicalExpression.getColumnList());
-    } else {
-      addColumnDimensions(filterExpression, filterDimensions);
-    }
+    addColumnDimensions(filterExpression, filterDimensions);
     for (ColumnExpression info : dimensionResolvedInfos) {
       if (info.isDimension() && info.getDimension().getNumberOfChild() > 0) {
         filterDimensions.add(info.getDimension());
@@ -1130,7 +1124,8 @@ public class QueryUtil {
    */
   private static void addColumnDimensions(Expression expression,
       Set<CarbonDimension> filterDimensions) {
-    if (null != expression && expression instanceof ColumnExpression) {
+    if (null != expression && expression instanceof ColumnExpression
+        && ((ColumnExpression) expression).isDimension()) {
       filterDimensions.add(((ColumnExpression) expression).getDimension());
       return;
     }
