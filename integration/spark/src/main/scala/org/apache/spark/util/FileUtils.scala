@@ -57,7 +57,7 @@ object FileUtils extends Logging {
    */
   def getPaths(inputPath: String): String = {
     if (inputPath == null || inputPath.isEmpty) {
-      throw new DataLoadingException("input file path cannot be empty.")
+      throw new DataLoadingException("Input file path cannot be empty.")
     } else {
       val stringBuild = new StringBuilder()
       val filePaths = inputPath.split(",")
@@ -65,14 +65,14 @@ object FileUtils extends Logging {
         val fileType = FileFactory.getFileType(filePaths(i))
         val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType)
         if (!carbonFile.exists()) {
-          throw new DataLoadingException(s"the input file does not exist: ${filePaths(i)}" )
+          throw new DataLoadingException(s"The input file does not exist: ${filePaths(i)}" )
         }
         getPathsFromCarbonFile(carbonFile, stringBuild)
       }
       if (stringBuild.nonEmpty) {
         stringBuild.substring(0, stringBuild.size - 1)
       } else {
-        throw new DataLoadingException("please check your input path and make sure " +
+        throw new DataLoadingException("Please check your input path and make sure " +
           "that files end with '.csv' and content is not empty.")
       }
     }

@@ -52,6 +52,7 @@ import org.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.integration.spark.merger.CompactionType
 import org.carbondata.lcm.status.SegmentStatusManager
+import org.carbondata.processing.etl.DataLoadingException
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 import org.carbondata.spark.load._
 import org.carbondata.spark.partition.api.impl.QueryPartitionHelper
@@ -1626,6 +1627,13 @@ private[sql] case class LoadCube(
         }
 
       }
+    } catch {
+      case dle: DataLoadingException =>
+        LOGGER.audit(s"Dataload failed for $schemaName.$tableName. " + dle.getMessage)
+        throw dle
+      case mce: MalformedCarbonCommandException =>
+        LOGGER.audit(s"Dataload failed for $schemaName.$tableName. " + mce.getMessage)
+        throw mce
     } finally {
       if (carbonLock != null) {
         if (carbonLock.unlock()) {

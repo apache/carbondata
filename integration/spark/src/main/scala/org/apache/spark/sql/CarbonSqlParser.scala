@@ -36,9 +36,11 @@ import org.apache.spark.sql.execution.command.{DimensionRelation, _}
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
 
+import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.metadata.datatype.DataType
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.DataTypeUtil
+import org.carbondata.processing.etl.DataLoadingException
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 import org.carbondata.spark.util.CommonUtil
 
@@ -48,6 +50,7 @@ import org.carbondata.spark.util.CommonUtil
 class CarbonSqlParser()
   extends AbstractSparkSQLParser with Logging {
 
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   protected val AGGREGATE = carbonKeyWord("AGGREGATE")
   protected val AS = carbonKeyWord("AS")
   protected val AGGREGATION = carbonKeyWord("AGGREGATION")
@@ -333,108 +336,124 @@ class CarbonSqlParser()
       // if create table taken is found then only we will handle.
       case Token("TOK_CREATETABLE", children) =>
 
-        var fields: Seq[Field] = Seq[Field]()
-        var tableComment: String = ""
-        var tableProperties = Map[String, String]()
-        var partitionCols: Seq[PartitionerField] = Seq[PartitionerField]()
-        var likeTableName: String = ""
-        var storedBy: String = ""
-        var ifNotExistPresent: Boolean = false
-        var dbName: Option[String] = None
-        var tableName: String = ""
 
-        children.collect {
-          // collecting all the field  list
-          case list@Token("TOK_TABCOLLIST", _) =>
-            val cols = BaseSemanticAnalyzer.getColumns(list, true)
-            if (cols != null) {
-              val dupColsGrp = cols.asScala
-                                 .groupBy(x => x.getName) filter { case (_, colList) => colList
-                                                                                          .size > 1
-                               }
-              if (dupColsGrp.size > 0) {
-                var columnName: String = ""
-                dupColsGrp.toSeq.foreach(columnName += _._1 + ", ")
-                columnName = columnName.substring(0, columnName.lastIndexOf(", "))
-                val errorMessage = "Duplicate column name: " + columnName + " found in table " +
-                                   ".Please check create table statement."
-                throw new MalformedCarbonCommandException(errorMessage)
-              }
-              cols.asScala.map { col =>
-                val columnName = col.getName()
-                val dataType = Option(col.getType)
-                val name = Option(col.getName())
-                // This is to parse complex data types
-                val x = col.getName + ' ' + col.getType
-                val f: Field = anyFieldDef(new lexical.Scanner(x))
-                match {
-                  case Success(field, _) => field
-                  case failureOrError => new Field(columnName, dataType, name, None, null,
-                    Some("columnar"))
+          var fields: Seq[Field] = Seq[Field]()
+          var tableComment: String = ""
+          var tableProperties = Map[String, String]()
+          var partitionCols: Seq[PartitionerField] = Seq[PartitionerField]()
+          var likeTableName: String = ""
+          var storedBy: String = ""
+          var ifNotExistPresent: Boolean = false
+          var dbName: Option[String] = None
+          var tableName: String = ""
+
+          try {
+
+          children.collect {
+            // collecting all the field  list
+            case list@Token("TOK_TABCOLLIST", _) =>
+              val cols = BaseSemanticAnalyzer.getColumns(list, true)
+              if (cols != null) {
+                val dupColsGrp = cols.asScala
+                                   .groupBy(x => x.getName) filter { case (_, colList) => colList
+                                                                                            .size >
+                                                                                          1
+                                 }
+                if (dupColsGrp.size > 0) {
+                  var columnName: String = ""
+                  dupColsGrp.toSeq.foreach(columnName += _._1 + ", ")
+                  columnName = columnName.substring(0, columnName.lastIndexOf(", "))
+                  val errorMessage = "Duplicate column name: " + columnName + " found in table " +
+                                     ".Please check create table statement."
+                  throw new MalformedCarbonCommandException(errorMessage)
                 }
-                // the data type of the decimal type will be like decimal(10,0)
-                // so checking the start of the string and taking the precision and scale.
-                // resetting the data type with decimal
-                if (f.dataType.getOrElse("").startsWith("decimal")) {
-                  val (precision, scale) = getScaleAndPrecision(col.getType)
-                  f.precision = precision
-                  f.scale = scale
-                  f.dataType = Some("decimal")
+                cols.asScala.map { col =>
+                  val columnName = col.getName()
+                  val dataType = Option(col.getType)
+                  val name = Option(col.getName())
+                  // This is to parse complex data types
+                  val x = col.getName + ' ' + col.getType
+                  val f: Field = anyFieldDef(new lexical.Scanner(x))
+                  match {
+                    case Success(field, _) => field
+                    case failureOrError => new Field(columnName, dataType, name, None, null,
+                      Some("columnar"))
+                  }
+                  // the data type of the decimal type will be like decimal(10,0)
+                  // so checking the start of the string and taking the precision and scale.
+                  // resetting the data type with decimal
+                  if (f.dataType.getOrElse("").startsWith("decimal")) {
+                    val (precision, scale) = getScaleAndPrecision(col.getType)
+                    f.precision = precision
+                    f.scale = scale
+                    f.dataType = Some("decimal")
+                  }
+                  fields ++= Seq(f)
                 }
-                fields ++= Seq(f)
               }
-            }
 
-          case Token("TOK_IFNOTEXISTS", _) =>
-            ifNotExistPresent = true
+            case Token("TOK_IFNOTEXISTS", _) =>
+              ifNotExistPresent = true
 
-          case t@Token("TOK_TABNAME", _) =>
-            val (db, tblName) = extractDbNameTableName(t)
-            dbName = db
-            tableName = tblName.toLowerCase()
+            case t@Token("TOK_TABNAME", _) =>
+              val (db, tblName) = extractDbNameTableName(t)
+              dbName = db
+              tableName = tblName.toLowerCase()
 
-          case Token("TOK_TABLECOMMENT", child :: Nil) =>
-            tableComment = BaseSemanticAnalyzer.unescapeSQLString(child.getText)
+            case Token("TOK_TABLECOMMENT", child :: Nil) =>
+              tableComment = BaseSemanticAnalyzer.unescapeSQLString(child.getText)
 
-          case Token("TOK_TABLEPARTCOLS", list@Token("TOK_TABCOLLIST", _) :: Nil) =>
-            val cols = BaseSemanticAnalyzer.getColumns(list(0), false)
-            if (cols != null) {
-              cols.asScala.map { col =>
-                val columnName = col.getName()
-                val dataType = Option(col.getType)
-                val comment = col.getComment
-                val partitionCol = new PartitionerField(columnName, dataType, comment)
-                partitionCols ++= Seq(partitionCol)
+            case Token("TOK_TABLEPARTCOLS", list@Token("TOK_TABCOLLIST", _) :: Nil) =>
+              val cols = BaseSemanticAnalyzer.getColumns(list(0), false)
+              if (cols != null) {
+                cols.asScala.map { col =>
+                  val columnName = col.getName()
+                  val dataType = Option(col.getType)
+                  val comment = col.getComment
+                  val partitionCol = new PartitionerField(columnName, dataType, comment)
+                  partitionCols ++= Seq(partitionCol)
+                }
               }
-            }
-          case Token("TOK_TABLEPROPERTIES", list :: Nil) =>
-            tableProperties ++= getProperties(list)
+            case Token("TOK_TABLEPROPERTIES", list :: Nil) =>
+              tableProperties ++= getProperties(list)
 
-          case Token("TOK_LIKETABLE", child :: Nil) =>
-            likeTableName = child.getChild(0).getText()
+            case Token("TOK_LIKETABLE", child :: Nil) =>
+              likeTableName = child.getChild(0).getText()
 
-          case Token("TOK_STORAGEHANDLER", child :: Nil) =>
-            storedBy = BaseSemanticAnalyzer.unescapeSQLString(child.getText)
+            case Token("TOK_STORAGEHANDLER", child :: Nil) =>
+              storedBy = BaseSemanticAnalyzer.unescapeSQLString(child.getText)
 
-          case _ => // Unsupport features
+            case _ => // Unsupport features
+          }
+
+          if (!storedBy.equals(CarbonContext.datasourceName)) {
+            // TODO: should execute by Hive instead of error
+            sys.error("Not a carbon format request")
+          }
+
+          // validate tblProperties
+          if (!CommonUtil.validateTblProperties(tableProperties, fields)) {
+            throw new MalformedCarbonCommandException("Invalid table properties")
+          }
+          // prepare table model of the collected tokens
+          val tableModel: tableModel = prepareTableModel(ifNotExistPresent,
+            dbName,
+            tableName,
+            fields,
+            partitionCols,
+            tableProperties)
+
+          // get logical plan.
+          CreateTable(tableModel)
         }
-
-        if (!storedBy.equals(CarbonContext.datasourceName)) {
-          // TODO: should execute by Hive instead of error
-          sys.error("Not a carbon format request")
+        catch {
+          case ce: MalformedCarbonCommandException =>
+            val message = if (tableName.isEmpty) "Create table command failed. "
+            else if (!dbName.isDefined) s"Create table command failed for $tableName. "
+            else s"Create table command failed for ${dbName.get}.$tableName. "
+            LOGGER.audit(message + ce.getMessage)
+            throw ce
         }
-
-      // validate tblProperties
-      if (!CommonUtil.validateTblProperties(tableProperties, fields)) {
-        throw new MalformedCarbonCommandException("Invalid table properties")
-      }
-      // prepare table model of the collected tokens
-      val tableModel: tableModel = prepareTableModel(ifNotExistPresent, dbName, tableName, fields,
-        partitionCols,
-        tableProperties)
-
-        // get logical plan.
-        CreateTable(tableModel)
 
     }
   }

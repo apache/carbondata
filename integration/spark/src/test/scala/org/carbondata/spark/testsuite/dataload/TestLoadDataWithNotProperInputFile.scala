@@ -44,7 +44,7 @@ class TestLoadDataWithNotProperInputFile extends QueryTest {
       GlobalDictionaryUtil.loadDataFrame(CarbonHiveContext, carbonLoadModel)
     } catch {
       case e: Throwable =>
-        assert(e.getMessage.contains("please check your input path and make sure " +
+        assert(e.getMessage.contains("Please check your input path and make sure " +
           "that files end with '.csv' and content is not empty"))
     }
   }
@@ -58,7 +58,7 @@ class TestLoadDataWithNotProperInputFile extends QueryTest {
       GlobalDictionaryUtil.loadDataFrame(CarbonHiveContext, carbonLoadModel)
     } catch {
       case e: Throwable =>
-        assert(e.getMessage.contains("please check your input path and make sure " +
+        assert(e.getMessage.contains("Please check your input path and make sure " +
           "that files end with '.csv' and content is not empty"))
     }
   }
@@ -72,7 +72,7 @@ class TestLoadDataWithNotProperInputFile extends QueryTest {
       GlobalDictionaryUtil.loadDataFrame(CarbonHiveContext, carbonLoadModel)
     } catch {
       case e: Throwable =>
-        assert(e.getMessage.contains("the input file does not exist"))
+        assert(e.getMessage.contains("The input file does not exist"))
     }
   }
 }
