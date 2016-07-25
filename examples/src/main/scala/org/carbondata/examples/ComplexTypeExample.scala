@@ -55,10 +55,10 @@ object ComplexTypeExample {
                                  activeDeactivedate: array<string>>,
                   gamePointId double,
                   contractNumber double)
-                row format delimited fields terminated by ','
-                collection items terminated by '$$' map keys terminated by ':' """)
+              STORED BY 'org.apache.carbondata.format' """)
 
-    cc.sql(s"LOAD DATA LOCAL INPATH '$dataPath' INTO TABLE $tableName")
+    cc.sql(s"load data local inpath '$dataPath' into table $tableName " +
+      "options ('COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')")
 
     // filter on complex ARRAY type with index filter
     cc.sql(s"SELECT mobile, proddate.activeDeactivedate, MAC[0] FROM $tableName " +
