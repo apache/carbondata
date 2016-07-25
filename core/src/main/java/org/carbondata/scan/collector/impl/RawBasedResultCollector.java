@@ -19,11 +19,11 @@
 package org.carbondata.scan.collector.impl;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.scan.executor.infos.BlockExecutionInfo;
-import org.carbondata.scan.model.QueryDimension;
 import org.carbondata.scan.model.QueryMeasure;
 import org.carbondata.scan.result.AbstractScannedResult;
 import org.carbondata.scan.wrappers.ByteArrayWrapper;
@@ -44,9 +44,8 @@ public class RawBasedResultCollector extends AbstractScannedResultCollector {
    * This method will add a record both key and value to list object
    * it will keep track of how many record is processed, to handle limit scenario
    */
-  @Override public int collectData(AbstractScannedResult scannedResult, int batchSize) {
-    this.listBasedResult = new ArrayList<>(batchSize);
-    QueryDimension[] queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
+  @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
+    List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     QueryMeasure[] queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
     ByteArrayWrapper wrapper = null;
     // scan the record and add to list
@@ -62,6 +61,7 @@ public class RawBasedResultCollector extends AbstractScannedResultCollector {
       listBasedResult.add(row);
       rowCounter++;
     }
-    return rowCounter;
+    updateData(listBasedResult);
+    return listBasedResult;
   }
 }

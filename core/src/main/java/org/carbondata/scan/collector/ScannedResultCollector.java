@@ -33,12 +33,6 @@ public interface ScannedResultCollector {
    * @param scannedResult scanned result
    * @return how many records was aggregated
    */
-  int collectData(AbstractScannedResult scannedResult, int batchSize);
+  List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize);
 
-  /**
-   * Below method will be used to get the aggregated result
-   *
-   * @return
-   */
-  List<Object[]> getCollectedResult();
 }

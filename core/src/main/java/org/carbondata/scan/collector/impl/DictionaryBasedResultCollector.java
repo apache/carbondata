@@ -51,8 +51,8 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
    * This method will add a record both key and value to list object
    * it will keep track of how many record is processed, to handle limit scenario
    */
-  @Override public int collectData(AbstractScannedResult scannedResult, int batchSize) {
-    this.listBasedResult = new ArrayList<>(batchSize);
+  @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
+    List<Object[]> listBasedResult = new ArrayList<>(batchSize);
     boolean isMsrsPresent = measureDatatypes.length > 0;
     QueryDimension[] queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
     QueryMeasure[] queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
@@ -124,13 +124,6 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
       listBasedResult.add(row);
       rowCounter++;
     }
-    return rowCounter;
-  }
-
-  /**
-   * Below method will used to get the result
-   */
-  @Override public List<Object[]> getCollectedResult() {
     return listBasedResult;
   }
 

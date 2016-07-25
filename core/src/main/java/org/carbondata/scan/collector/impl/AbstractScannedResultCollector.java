@@ -42,11 +42,6 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
       LogServiceFactory.getLogService(AbstractScannedResultCollector.class.getName());
 
   /**
-   * dimension values list
-   */
-  protected List<Object[]> listBasedResult;
-
-  /**
    * restructuring info
    */
   private KeyStructureInfo restructureInfos;
@@ -125,11 +120,10 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
   /**
    * Below method will used to get the result
    */
-  @Override public List<Object[]> getCollectedResult() {
+  protected void updateData(List<Object[]> listBasedResult) {
     if (tableBlockExecutionInfos.isFixedKeyUpdateRequired()) {
-      updateKeyWithLatestBlockKeygenerator();
+      updateKeyWithLatestBlockKeygenerator(listBasedResult);
     }
-    return listBasedResult;
   }
 
   /**
@@ -138,7 +132,7 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
    *
    * @return updated block
    */
-  private void updateKeyWithLatestBlockKeygenerator() {
+  private void updateKeyWithLatestBlockKeygenerator(List<Object[]> listBasedResult) {
     try {
       long[] data = null;
       ByteArrayWrapper key = null;

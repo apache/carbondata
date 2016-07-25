@@ -34,8 +34,8 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
    *
    * @param blockExecutionInfo execution information
    */
-  public DataBlockIteratorImpl(BlockExecutionInfo blockExecutionInfo,
-      FileHolder fileReader, int batchSize) {
+  public DataBlockIteratorImpl(BlockExecutionInfo blockExecutionInfo, FileHolder fileReader,
+      int batchSize) {
     super(blockExecutionInfo, fileReader, batchSize);
   }
 
@@ -45,11 +45,12 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
    * @return Result of @batchSize
    */
   public List<Object[]> next() {
-    this.scannerResultAggregator.collectData(scannedResult, batchSize);
-    List<Object[]> collectedResult = this.scannerResultAggregator.getCollectedResult();
+    List<Object[]> collectedResult =
+        this.scannerResultAggregator.collectData(scannedResult, batchSize);
     while (collectedResult.size() < batchSize && hasNext()) {
-      this.scannerResultAggregator.collectData(scannedResult, batchSize-collectedResult.size());
-      collectedResult.addAll(this.scannerResultAggregator.getCollectedResult());
+      List<Object[]> data = this.scannerResultAggregator
+          .collectData(scannedResult, batchSize - collectedResult.size());
+      collectedResult.addAll(data);
     }
     return collectedResult;
   }
