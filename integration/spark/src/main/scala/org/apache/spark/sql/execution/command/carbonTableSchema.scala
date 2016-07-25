@@ -20,7 +20,7 @@ package org.apache.spark.sql.execution.command
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util
-import java.util.{Date, UUID}
+import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
@@ -29,10 +29,7 @@ import scala.util.Random
 
 import org.apache.spark.SparkEnv
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.analysis.TypeCheckResult
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Cast, Literal}
-import org.apache.spark.sql.catalyst.util.DateTimeUtils
-import org.apache.spark.sql.catalyst.util.DateTimeUtils.SQLTimestamp
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.types.TimestampType
@@ -59,7 +56,7 @@ import org.carbondata.spark.exception.MalformedCarbonCommandException
 import org.carbondata.spark.load._
 import org.carbondata.spark.partition.api.impl.QueryPartitionHelper
 import org.carbondata.spark.rdd.CarbonDataRDDFactory
-import org.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, GlobalDictionaryUtil}
+import org.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
 import org.carbondata.spark.CarbonSparkFactory
 
 

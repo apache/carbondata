@@ -188,7 +188,7 @@ class CarbonMergerRDD[K, V](
 
     var noOfBlocks = 0
 
-    var taskInfoList = new util.ArrayList[Distributable]
+    val taskInfoList = new util.ArrayList[Distributable]
 
     // for each valid segment.
     for (eachSeg <- carbonMergerMapping.validSegments) {
@@ -227,15 +227,13 @@ class CarbonMergerRDD[K, V](
       )
 
       noOfBlocks += blocksOfOneSegment.size
-      var index = 0
-       taskIdMapping.asScala.foreach(
+      taskIdMapping.asScala.foreach(
         entry =>
           taskInfoList.add(new TableTaskInfo(entry._1, entry._2).asInstanceOf[Distributable])
       )
     }
     // send complete list of blocks to the mapping util.
-      nodeMapping =
-        CarbonLoaderUtil.nodeBlockMapping(taskInfoList, -1)
+    nodeMapping = CarbonLoaderUtil.nodeBlockMapping(taskInfoList, -1)
 
     val confExecutors = confExecutorsTemp.toInt
     val requiredExecutors = if (nodeMapping.size > confExecutors) {
@@ -273,13 +271,7 @@ class CarbonMergerRDD[K, V](
           .add(new NodeInfo(blocksPerNode.getTaskId, blocksPerNode.getTableBlockInfoList.size))
        })
       if (list.size() != 0) {
-           result
-             .add(new CarbonSparkPartition(id,
-               i,
-               Seq(entry._1).toArray,
-               list
-             )
-             )
+           result.add(new CarbonSparkPartition(id, i, Seq(entry._1).toArray, list))
            i += 1
          }
     }
@@ -287,14 +279,13 @@ class CarbonMergerRDD[K, V](
     // print the node info along with task and number of blocks for the task.
 
     nodeTaskBlocksMap.asScala.foreach((entry : (String, List[NodeInfo])) => {
-      logInfo(s"for the node $entry._1" )
+      logInfo(s"for the node ${entry._1}" )
       for (elem <- entry._2.asScala) {
         logInfo("Task ID is " + elem.TaskId + "no. of blocks is " + elem.noOfBlocks)
       }
     } )
 
-    // val noOfBlocks = blockList.size
-    val noOfNodes = nodes.size
+    val noOfNodes = nodes.length
     val noOfTasks = result.size
     logInfo(s"Identified  no.of.Blocks: $noOfBlocks,"
             + s"parallelism: $defaultParallelism , no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks"

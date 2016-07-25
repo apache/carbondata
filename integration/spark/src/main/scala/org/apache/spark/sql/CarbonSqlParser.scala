@@ -17,7 +17,6 @@
 
 package org.apache.spark.sql
 
-import java.nio.charset.Charset
 import java.util
 import java.util.regex.{Matcher, Pattern}
 
