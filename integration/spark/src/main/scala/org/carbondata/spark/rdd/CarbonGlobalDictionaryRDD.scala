@@ -342,6 +342,9 @@ class CarbonGlobalDictionaryGenerateRDD(
               } is locked for updation. Please try after some time")
           }
           val t2 = System.currentTimeMillis
+          val fileType = FileFactory.getFileType(model.dictFilePaths(split.index))
+          model.dictFileExists(split.index) = FileFactory
+            .isFileExist(model.dictFilePaths(split.index), fileType)
           dictionaryForDistinctValueLookUp = if (model.dictFileExists(split.index)) {
             CarbonLoaderUtil.getDictionary(model.table,
               model.columnIdentifier(split.index),
