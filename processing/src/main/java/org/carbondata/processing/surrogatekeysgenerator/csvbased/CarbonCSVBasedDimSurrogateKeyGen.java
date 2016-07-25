@@ -33,6 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.cache.dictionary.Dictionary;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.file.manager.composite.IFileManagerComposite;
 import org.carbondata.core.keygenerator.KeyGenException;
@@ -115,6 +116,10 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
   private Map<String, Map<ArrayWrapper, Integer>> hierCacheReverse =
       new HashMap<String, Map<ArrayWrapper, Integer>>(
           CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  /**
+   * dimension name to dimension mapping
+   */
+  private Map<String, CarbonDimension> dimensionNameToDimensionMapping;
   /**
    * rwLock2
    */
@@ -512,4 +517,18 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
     this.measureMaxSurroagetMap = measureMaxSurroagetMap;
   }
 
+  /**
+   * @return
+   */
+  public Map<String, CarbonDimension> getDimensionNameToDimensionMapping() {
+    return dimensionNameToDimensionMapping;
+  }
+
+  /**
+   * @param dimensionNameToDimensionMapping
+   */
+  public void setDimensionNameToDimensionMapping(
+      Map<String, CarbonDimension> dimensionNameToDimensionMapping) {
+    this.dimensionNameToDimensionMapping = dimensionNameToDimensionMapping;
+  }
 }

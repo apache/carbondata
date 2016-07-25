@@ -34,12 +34,15 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")
+    sql("drop table if exists hiveBigDecimal")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql("CREATE TABLE IF NOT EXISTS carbonTable (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary Decimal(17,2))STORED BY 'org.apache.carbondata.format'")
     sql("create table if not exists hiveTable(ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary Decimal(17,2))row format delimited fields terminated by ','")
     sql("LOAD DATA LOCAL INPATH './src/test/resources/decimalDataWithHeader.csv' into table carbonTable")
     sql("LOAD DATA local inpath './src/test/resources/decimalDataWithoutHeader.csv' INTO table hiveTable")
+    sql("create table if not exists hiveBigDecimal(ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(27, 10))row format delimited fields terminated by ','")
+    sql("LOAD DATA local inpath './src/test/resources/decimalBoundaryDataHive.csv' INTO table hiveBigDecimal")
   }
 
   test("test detail query on big decimal column") {
@@ -111,11 +114,8 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
 
   test("test aggregation on big decimal column with increased precision") {
     sql("drop table if exists carbonBigDecimal")
-    sql("drop table if exists hiveBigDecimal")
     sql("create table if not exists carbonBigDecimal (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(27, 10)) STORED BY 'org.apache.carbondata.format'")
-    sql("create table if not exists hiveBigDecimal(ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(27, 10))row format delimited fields terminated by ','")
     sql("LOAD DATA LOCAL INPATH './src/test/resources/decimalBoundaryDataCarbon.csv' into table carbonBigDecimal")
-    sql("LOAD DATA local inpath './src/test/resources/decimalBoundaryDataHive.csv' INTO table hiveBigDecimal")
 
     checkAnswer(sql("select sum(salary) from carbonBigDecimal"),
       sql("select sum(salary) from hiveBigDecimal"))
@@ -124,13 +124,24 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
       sql("select sum(distinct salary) from hiveBigDecimal"))
 
     sql("drop table if exists carbonBigDecimal")
-    sql("drop table if exists hiveBigDecimal")
+  }
+
+  test("test big decimal for dictionary look up") {
+    sql("drop table if exists decimalDictLookUp")
+    sql("create table if not exists decimalDictLookUp (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(27, 10)) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('dictionary_include'='salary')")
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/decimalBoundaryDataCarbon.csv' into table decimalDictLookUp")
+
+    checkAnswer(sql("select sum(salary) from decimalDictLookUp"),
+      sql("select sum(salary) from hiveBigDecimal"))
+
+    sql("drop table if exists decimalDictLookUp")
   }
   
 
   override def afterAll {
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")
+    sql("drop table if exists hiveBigDecimal")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
