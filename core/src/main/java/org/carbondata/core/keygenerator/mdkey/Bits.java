@@ -252,7 +252,7 @@ public class Bits implements Serializable {
     return getBytesVal(words);
   }
 
-  public long[] getKeyArray(byte[] key) {
+  public long[] getKeyArray(byte[] key, int offset) {
 
     int length = 8;
     int ls = byteSize;
@@ -269,7 +269,7 @@ public class Bits implements Serializable {
       }
       for (int j = ls; j < m; j++) {
         l <<= 8;
-        l ^= key[j] & 0xFF;
+        l ^= key[j + offset] & 0xFF;
       }
       words[i] = l;
     }

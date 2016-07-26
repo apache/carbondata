@@ -68,18 +68,11 @@ public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<b
 
   /**
    * Converts to column dictionary integer value
-   * @param rowId
-   * @param columnIndex
-   * @param row
-   * @param info  @return
    */
   @Override public int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
       KeyStructureInfo info) {
     int start = rowId * chunkAttributes.getColumnValueSize();
-    int sizeInBytes = info.getKeyGenerator().getKeySizeInBytes();
-    byte[] key = new byte[sizeInBytes];
-    System.arraycopy(dataChunk, start, key, 0, sizeInBytes);
-    long[] keyArray = info.getKeyGenerator().getKeyArray(key);
+    long[] keyArray = info.getKeyGenerator().getKeyArray(dataChunk, start);
     int[] ordinal = info.getMdkeyQueryDimensionOrdinal();
     for (int i = 0; i < ordinal.length; i++) {
       row[columnIndex++] = (int)keyArray[ordinal[i]];

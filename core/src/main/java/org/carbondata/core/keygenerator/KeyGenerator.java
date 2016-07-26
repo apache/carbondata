@@ -58,6 +58,15 @@ public interface KeyGenerator extends Serializable, Comparator<byte[]> {
    * It gets array of keys out of single key aka byte array
    *
    * @param key
+   * @param offset
+   * @return array of keys.
+   */
+  long[] getKeyArray(byte[] key, int offset);
+
+  /**
+   * It gets array of keys out of single key aka byte array
+   *
+   * @param key
    * @param maskedByteRanges
    * @return array of keys
    */

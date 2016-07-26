@@ -70,10 +70,6 @@ public class FixedLengthDimensionDataChunk implements DimensionColumnDataChunk<b
 
   /**
    * Converts to column dictionary integer value
-   * @param rowId
-   * @param columnIndex
-   * @param row
-   * @param restructuringInfo  @return
    */
   @Override public int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
       KeyStructureInfo restructuringInfo) {
