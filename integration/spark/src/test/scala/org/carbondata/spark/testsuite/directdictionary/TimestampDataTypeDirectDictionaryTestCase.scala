@@ -70,15 +70,40 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
     }
   }
 
-  test("select doj from directDictionaryCube") {
+  test("test direct dictionary for not null condition") {
     checkAnswer(
-      sql("select doj from directDictionaryCube"),
+      sql("select doj from directDictionaryCube where doj is not null"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
         Row(Timestamp.valueOf("2016-04-14 15:00:09.0"))
       )
     )
   }
 
+  test("test direct dictionary for getting all the values") {
+    checkAnswer(
+      sql("select doj from directDictionaryCube"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
+        Row(Timestamp.valueOf("2016-04-14 15:00:09.0")),
+        Row(null)
+      )
+    )
+  }
+
+  test("test direct dictionary for not equals condition") {
+    checkAnswer(
+      sql("select doj from directDictionaryCube where doj != '2016-04-14 15:00:09.0'"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0"))
+      )
+    )
+  }
+
+  test("test direct dictionary for null condition") {
+    checkAnswer(
+      sql("select doj from directDictionaryCube where doj is null"),
+      Seq(Row(null)
+      )
+    )
+  }
 
   test("select doj from directDictionaryCube with equals filter") {
     checkAnswer(

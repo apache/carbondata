@@ -74,7 +74,8 @@ class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with
     checkAnswer(
       sql("select doj from directDictionaryTable"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
-        Row(Timestamp.valueOf("2016-04-14 15:00:09.0"))
+        Row(Timestamp.valueOf("2016-04-14 15:00:09.0")),
+        Row(null)
       )
     )
   }
