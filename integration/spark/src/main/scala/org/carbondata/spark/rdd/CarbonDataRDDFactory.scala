@@ -400,53 +400,44 @@ object CarbonDataRDDFactory extends Logging {
       new Thread {
         override def run(): Unit = {
 
-          while (loadsToMerge.size() > 1) {
-          // Deleting the any partially loaded data if present.
-          // in some case the segment folder which is present in store will not have entry in
-          // status.
-          // so deleting those folders.
           try {
-            CarbonLoaderUtil.deletePartialLoadDataIfExist(carbonLoadModel, true)
+            while (loadsToMerge.size() > 1) {
+              deletePartialLoadsInCompaction(carbonLoadModel)
+              val futureList: util.List[Future[Void]] = new util.ArrayList[Future[Void]](
+                CarbonCommonConstants
+                  .DEFAULT_COLLECTION_SIZE
+              )
+
+              scanSegmentsAndSubmitJob(futureList)
+
+              futureList.asScala.foreach(future => {
+                future.get
+              }
+              )
+              // scan again and deterrmine if anything is there to merge again.
+              readLoadMetadataDetails(carbonLoadModel, hdfsStoreLocation)
+              segList = carbonLoadModel.getLoadMetadataDetails
+
+              loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
+                hdfsStoreLocation,
+                carbonLoadModel,
+                partitioner.partitionCount,
+                compactionModel.compactionSize,
+                segList,
+                compactionModel.compactionType
+              )
+            }
           }
           catch {
             case e: Exception =>
-              logger
-                .error("Exception in compaction thread while clean up of stale segments " + e
-                  .getMessage
-                )
+              logger.error("Exception in compaction thread " + e.getMessage)
+              throw e
           }
-            val futureList: util.List[Future[Void]] = new util.ArrayList[Future[Void]](
-              CarbonCommonConstants
-                .DEFAULT_COLLECTION_SIZE
-            )
-
-            scanSegmentsAndSubmitJob(futureList)
-
-            futureList.asScala.foreach(future => {
-              try {
-                future.get
-              }
-              catch {
-                case e: Exception =>
-                  logger.error("Exception in compaction thread " + e.getMessage)
-              }
-            }
-            )
-            // scan again and deterrmine if anything is there to merge again.
-            readLoadMetadataDetails(carbonLoadModel, hdfsStoreLocation)
-            segList = carbonLoadModel.getLoadMetadataDetails
-
-            loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
-              hdfsStoreLocation,
-              carbonLoadModel,
-              partitioner.partitionCount,
-              compactionModel.compactionSize,
-              segList,
-              compactionModel.compactionType
-            )
+          finally {
+            executor.shutdownNow()
+            deletePartialLoadsInCompaction(carbonLoadModel)
+            compactionLock.unlock()
           }
-          executor.shutdown()
-          compactionLock.unlock()
         }
       }.start
     }
@@ -501,6 +492,23 @@ object CarbonDataRDDFactory extends Logging {
           }
         }
       }
+    }
+  }
+
+  def deletePartialLoadsInCompaction(carbonLoadModel: CarbonLoadModel): Unit = {
+    // Deleting the any partially loaded data if present.
+    // in some case the segment folder which is present in store will not have entry in
+    // status.
+    // so deleting those folders.
+    try {
+      CarbonLoaderUtil.deletePartialLoadDataIfExist(carbonLoadModel, true)
+    }
+    catch {
+      case e: Exception =>
+        logger
+          .error("Exception in compaction thread while clean up of stale segments " + e
+            .getMessage
+          )
     }
   }
 

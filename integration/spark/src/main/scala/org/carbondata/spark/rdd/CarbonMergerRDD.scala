@@ -57,6 +57,7 @@ class CarbonMergerRDD[K, V](
 
   val defaultParallelism = sc.defaultParallelism
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
+  sc.setLocalProperty("spark.job.interruptOnCancel", "true")
 
   val storeLocation = carbonMergerMapping.storeLocation
   val hdfsStoreLocation = carbonMergerMapping.hdfsStoreLocation
@@ -68,83 +69,94 @@ class CarbonMergerRDD[K, V](
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
-      var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-      carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
-      val carbonSparkPartition = theSplit.asInstanceOf[CarbonSparkPartition]
 
-      val tempLocationKey: String = carbonLoadModel.getDatabaseName + '_' + carbonLoadModel
-        .getTableName + carbonLoadModel.getTaskNo
-      CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation)
-
-      // sorting the table block info List.
-      var tableBlockInfoList = carbonSparkPartition.tableBlockInfos
-
-      Collections.sort(tableBlockInfoList)
-
-      val segmentMapping: java.util.Map[String, TaskBlockInfo] =
-        CarbonCompactionUtil.createMappingForSegments(tableBlockInfoList)
-
-      val dataFileMetadataSegMapping: java.util.Map[String, List[DataFileFooter]] =
-        CarbonCompactionUtil.createDataFileFooterMappingForSegments(tableBlockInfoList)
-
-      carbonLoadModel.setStorePath(hdfsStoreLocation)
-
-      // taking the last table block info for getting the segment properties.
-      val listMetadata = dataFileMetadataSegMapping.get(tableBlockInfoList.get
-      (tableBlockInfoList.size()-1).getSegmentId())
-
-      val colCardinality: Array[Int] = listMetadata.get(listMetadata.size() - 1).getSegmentInfo
-        .getColumnCardinality
-
-      val segmentProperties = new SegmentProperties(
-        listMetadata.get(listMetadata.size() - 1).getColumnInTable,
-        colCardinality
-      )
-
-      val exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties, schemaName,
-        factTableName, hdfsStoreLocation, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
-        dataFileMetadataSegMapping
-      )
-
-      // fire a query and get the results.
-      var result2: util.List[RawResultIterator] = null
+      var mergeStatus = false
       try {
-        result2 = exec.processTableBlocks()
-      } catch {
-        case e: Throwable =>
-          exec.clearDictionaryFromQueryModel
-          LOGGER.error(e)
-          if (null != e.getMessage) {
-            sys.error("Exception occurred in query execution :: " + e.getMessage)
-          } else {
-            sys.error("Exception occurred in query execution.Please check logs.")
-          }
-      }
+        var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
+        carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
+        val carbonSparkPartition = theSplit.asInstanceOf[CarbonSparkPartition]
 
-      val mergeNumber = mergedLoadName
-        .substring(mergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER) +
-          CarbonCommonConstants.LOAD_FOLDER.length(), mergedLoadName.length()
+        val tempLocationKey: String = carbonLoadModel.getDatabaseName + '_' + carbonLoadModel
+          .getTableName + carbonLoadModel.getTaskNo
+        CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation)
+
+        // sorting the table block info List.
+        var tableBlockInfoList = carbonSparkPartition.tableBlockInfos
+
+        Collections.sort(tableBlockInfoList)
+
+        val segmentMapping: java.util.Map[String, TaskBlockInfo] =
+          CarbonCompactionUtil.createMappingForSegments(tableBlockInfoList)
+
+        val dataFileMetadataSegMapping: java.util.Map[String, List[DataFileFooter]] =
+          CarbonCompactionUtil.createDataFileFooterMappingForSegments(tableBlockInfoList)
+
+        carbonLoadModel.setStorePath(hdfsStoreLocation)
+
+        // taking the last table block info for getting the segment properties.
+        val listMetadata = dataFileMetadataSegMapping.get(tableBlockInfoList.get
+        (tableBlockInfoList.size() - 1).getSegmentId()
         )
 
-      val tempStoreLoc = CarbonDataProcessorUtil.getLocalDataFolderLocation(schemaName,
-        factTableName,
-        carbonLoadModel.getTaskNo,
-        "0",
-        mergeNumber
-      )
+        val colCardinality: Array[Int] = listMetadata.get(listMetadata.size() - 1).getSegmentInfo
+          .getColumnCardinality
 
-      carbonLoadModel.setSegmentId(mergeNumber)
-      carbonLoadModel.setPartitionId("0")
-      val merger =
-        new RowResultMerger(result2,
-        schemaName,
-        factTableName,
-        segmentProperties,
-        tempStoreLoc,
-        carbonLoadModel,
-        colCardinality
-      )
-      val mergeStatus = merger.mergerSlice()
+        val segmentProperties = new SegmentProperties(
+          listMetadata.get(listMetadata.size() - 1).getColumnInTable,
+          colCardinality
+        )
+
+        val exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties, schemaName,
+          factTableName, hdfsStoreLocation, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
+          dataFileMetadataSegMapping
+        )
+
+        // fire a query and get the results.
+        var result2: util.List[RawResultIterator] = null
+        try {
+          result2 = exec.processTableBlocks()
+        } catch {
+          case e: Throwable =>
+            exec.clearDictionaryFromQueryModel
+            LOGGER.error(e)
+            if (null != e.getMessage) {
+              sys.error("Exception occurred in query execution :: " + e.getMessage)
+            } else {
+              sys.error("Exception occurred in query execution.Please check logs.")
+            }
+        }
+
+        val mergeNumber = mergedLoadName
+          .substring(mergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER) +
+            CarbonCommonConstants.LOAD_FOLDER.length(), mergedLoadName.length()
+          )
+
+        val tempStoreLoc = CarbonDataProcessorUtil.getLocalDataFolderLocation(schemaName,
+          factTableName,
+          carbonLoadModel.getTaskNo,
+          "0",
+          mergeNumber
+        )
+
+        carbonLoadModel.setSegmentId(mergeNumber)
+        carbonLoadModel.setPartitionId("0")
+        val merger =
+          new RowResultMerger(result2,
+            schemaName,
+            factTableName,
+            segmentProperties,
+            tempStoreLoc,
+            carbonLoadModel,
+            colCardinality
+          )
+        mergeStatus = merger.mergerSlice()
+
+      }
+      catch {
+        case e: Exception =>
+          LOGGER.error(e)
+          throw e
+      }
 
       var finished = false
 
