@@ -136,7 +136,28 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
 
     sql("drop table if exists decimalDictLookUp")
   }
-  
+
+  test("test sum aggregation on big decimal column with high precision") {
+    sql("drop table if exists carbonBigDecimal")
+    sql("create table if not exists carbonBigDecimal (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(30, 10)) STORED BY 'org.apache.carbondata.format'")
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/decimalBoundaryDataCarbon.csv' into table carbonBigDecimal")
+
+    checkAnswer(sql("select sum(salary)+10 from carbonBigDecimal"),
+      sql("select sum(salary)+10 from hiveBigDecimal"))
+
+    sql("drop table if exists carbonBigDecimal")
+  }
+
+  test("test sum-distinct aggregation on big decimal column with high precision") {
+    sql("drop table if exists carbonBigDecimal")
+    sql("create table if not exists carbonBigDecimal (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(30, 10)) STORED BY 'org.apache.carbondata.format'")
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/decimalBoundaryDataCarbon.csv' into table carbonBigDecimal")
+
+    checkAnswer(sql("select sum(distinct(salary))+10 from carbonBigDecimal"),
+      sql("select sum(distinct(salary))+10 from hiveBigDecimal"))
+
+    sql("drop table if exists carbonBigDecimal")
+  }
 
   override def afterAll {
     sql("drop table if exists carbonTable")

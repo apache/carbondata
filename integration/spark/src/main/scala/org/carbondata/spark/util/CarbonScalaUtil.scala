@@ -105,18 +105,16 @@ object CarbonScalaUtil {
     }
   }
 
-  def getDecimalDataTypeWithUpdatedPrecision(decimalValue: java.math.BigDecimal,
+  def updateDataType(
       currentDataType: org.apache.spark.sql.types.DataType): org.apache.spark.sql.types.DataType = {
-    var newDataType: org.apache.spark.sql.types.DataType = currentDataType
-    if (null != decimalValue) {
-      val precision = decimalValue.precision
-      if (precision <= DecimalType.MAX_PRECISION) {
-        newDataType = DecimalType(precision, decimalValue.scale())
-      }
+    currentDataType match {
+      case decimal: DecimalType =>
+        val scale = currentDataType.asInstanceOf[DecimalType].scale
+        DecimalType(DecimalType.MAX_PRECISION, scale)
+      case _ =>
+        currentDataType
     }
-    newDataType
   }
-
 
   case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
 
