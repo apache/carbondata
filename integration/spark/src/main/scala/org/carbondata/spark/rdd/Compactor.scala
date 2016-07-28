@@ -115,18 +115,29 @@ object Compactor {
     if (finalMergeStatus) {
       val endTime = System.nanoTime();
       logger.info("time taken to merge " + mergedLoadName + " is " + (endTime - startTime))
-      CarbonDataMergerUtil
+      if (!CarbonDataMergerUtil
         .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath(),
           mergedLoadName, carbonLoadModel, mergeLoadStartTime, compactionType
-        )
-      logger
-        .audit("Compaction request completed for table " + carbonLoadModel
-          .getDatabaseName + "." + carbonLoadModel.getTableName
-        )
-      logger
-        .info("Compaction request completed for table " + carbonLoadModel
-          .getDatabaseName + "." + carbonLoadModel.getTableName
-        )
+        )) {
+        logger
+          .audit("Compaction request failed for table " + carbonLoadModel
+            .getDatabaseName + "." + carbonLoadModel.getTableName
+          )
+        logger
+          .error("Compaction request failed for table " + carbonLoadModel
+            .getDatabaseName + "." + carbonLoadModel.getTableName
+          )
+      }
+      else {
+        logger
+          .audit("Compaction request completed for table " + carbonLoadModel
+            .getDatabaseName + "." + carbonLoadModel.getTableName
+          )
+        logger
+          .info("Compaction request completed for table " + carbonLoadModel
+            .getDatabaseName + "." + carbonLoadModel.getTableName
+          )
+      }
     }
     else {
       logger
