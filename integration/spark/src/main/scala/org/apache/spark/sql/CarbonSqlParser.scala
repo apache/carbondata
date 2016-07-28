@@ -32,6 +32,7 @@ import org.apache.spark.sql.catalyst.{SqlLexical, _}
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
+import org.apache.spark.sql.execution.ExplainCommand
 import org.apache.spark.sql.execution.command.{DimensionRelation, _}
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
@@ -78,6 +79,7 @@ class CarbonSqlParser()
   protected val DROP = carbonKeyWord("DROP")
   protected val ESCAPECHAR = carbonKeyWord("ESCAPECHAR")
   protected val EXCLUDE = carbonKeyWord("EXCLUDE")
+  protected val EXPLAIN = carbonKeyWord("EXPLAIN")
   protected val EXTENDED = carbonKeyWord("EXTENDED")
   protected val FORMATTED = carbonKeyWord("FORMATTED")
   protected val FACT = carbonKeyWord("FACT")
@@ -199,7 +201,9 @@ class CarbonSqlParser()
   private def carbonKeyWord(keys: String) =
     ("(?i)" + keys).r
 
-  override protected lazy val start: Parser[LogicalPlan] =
+  override protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
+
+  protected lazy val startCommand: Parser[LogicalPlan] =
     loadManagement | describeTable | showLoads | alterTable | createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] = deleteLoadsByID | deleteLoadsByLoadDate |
@@ -1340,6 +1344,15 @@ class CarbonSqlParser()
   protected lazy val cleanFiles: Parser[LogicalPlan] =
     CLEAN ~> FILES ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
       case schemaName ~ cubeName => CleanFiles(schemaName, cubeName.toLowerCase())
+    }
+
+  protected lazy val explainPlan: Parser[LogicalPlan] =
+    (EXPLAIN ~> opt(EXTENDED)) ~ startCommand ^^ {
+      case isExtended ~ logicalPlan =>
+        logicalPlan match {
+          case plan: CreateTable => ExplainCommand(logicalPlan, extended = isExtended.isDefined)
+          case _ => ExplainCommand(OneRowRelation)
+      }
     }
 
 }
