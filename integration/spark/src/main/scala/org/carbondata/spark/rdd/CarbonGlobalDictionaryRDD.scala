@@ -33,15 +33,12 @@ import org.apache.spark.sql.Row
 import org.carbondata.common.factory.CarbonCommonFactory
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.{CarbonTableIdentifier, ColumnIdentifier}
-import org.carbondata.core.carbon.metadata.datatype.DataType
-import org.carbondata.core.carbon.metadata.encoder.Encoding
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.locks.CarbonLockFactory
 import org.carbondata.core.locks.LockUsage
 import org.carbondata.core.util.CarbonTimeStatisticsFactory
-import org.carbondata.processing.etl.DataLoadingException
 import org.carbondata.spark.load.{CarbonLoaderUtil, CarbonLoadModel}
 import org.carbondata.spark.partition.reader.{CSVParser, CSVReader}
 import org.carbondata.spark.tasks.DictionaryWriterTask

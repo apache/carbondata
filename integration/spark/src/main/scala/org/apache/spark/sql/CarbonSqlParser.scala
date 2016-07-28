@@ -354,11 +354,9 @@ class CarbonSqlParser()
             case list@Token("TOK_TABCOLLIST", _) =>
               val cols = BaseSemanticAnalyzer.getColumns(list, true)
               if (cols != null) {
-                val dupColsGrp = cols.asScala
-                                   .groupBy(x => x.getName) filter { case (_, colList) => colList
-                                                                                            .size >
-                                                                                          1
-                                 }
+                val dupColsGrp = cols.asScala.groupBy(x => x.getName) filter {
+                  case (_, colList) => colList.size > 1
+                }
                 if (dupColsGrp.size > 0) {
                   var columnName: String = ""
                   dupColsGrp.toSeq.foreach(columnName += _._1 + ", ")
