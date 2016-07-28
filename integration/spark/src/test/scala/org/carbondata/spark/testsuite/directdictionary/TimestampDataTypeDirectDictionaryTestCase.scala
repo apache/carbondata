@@ -113,12 +113,25 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
 
   }
   
-    test("select doj from directDictionaryCube with greater than filter") {
+  test("select doj from directDictionaryCube with regexp_replace equals filter") {
+    checkAnswer(
+      sql("select doj from directDictionaryCube where regexp_replace(doj, '-', '/') = '2016/03/14 15:00:09'"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09")))
+    )
+  }
+  
+  test("select doj from directDictionaryCube with regexp_replace NOT IN filter") {
+    checkAnswer(
+      sql("select doj from directDictionaryCube where regexp_replace(doj, '-', '/') NOT IN ('2016/03/14 15:00:09')"),
+      Seq(Row(Timestamp.valueOf("2016-04-14 15:00:09")), Row(null))
+    )
+  }
+  
+  test("select doj from directDictionaryCube with greater than filter") {
     checkAnswer(
       sql("select doj from directDictionaryCube where doj>'2016-03-14 15:00:09'"),
       Seq(Row(Timestamp.valueOf("2016-04-14 15:00:09")))
     )
-
   }
 
   test("select count(doj) from directDictionaryCube") {

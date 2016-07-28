@@ -570,8 +570,14 @@ case class CarbonTableScan(
       conf,
       cubeCreationTime,
       schemaLastUpdatedTime,
-      carbonCatalog.storePath)
+      carbonCatalog.storePath,
+      this)
     big
+  }
+
+  def newProjection(expression: org.apache.spark.sql.catalyst.expressions.Expression):
+      InternalRow => Any = {
+    super.newProjection(Seq(expression), output)
   }
 
   def doExecute(): RDD[InternalRow] = {
