@@ -163,8 +163,7 @@ public class PrimitiveDataType implements GenericDataType {
       String[] delimiter, int delimiterIndex, DataOutputStream dataOutputStream,
       CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException {
     String parsedValue = DataTypeUtil.parseValue(inputString,
-        surrogateKeyGen.getDimensionNameToDimensionMapping()
-            .get(tableName + CarbonCommonConstants.UNDERSCORE + name));
+        surrogateKeyGen.getDimensionOrdinalToDimensionMapping()[dimensionOrdinal]);
     Integer surrogateKey = null;
     if (null == parsedValue) {
       surrogateKey = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;

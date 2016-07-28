@@ -435,7 +435,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         if (null != getInputRowMeta()) {
           generateNoDictionaryAndComplexIndexMapping();
           data.getSurrogateKeyGen()
-              .setDimensionNameToDimensionMapping(populateNameToCarbonDimensionMap());
+              .setDimensionOrdinalToDimensionMapping(populateNameToCarbonDimensionMap());
         }
         serializationNullFormat = meta.getTableOptionWrapper().get("serialization_null_format");
       }
@@ -1147,10 +1147,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
               surrogateKeyGen.max[m] = Integer.MAX_VALUE;
 
             } else {
-              String parsedValue = DataTypeUtil.parseValue(tuple,
-                  data.getSurrogateKeyGen().getDimensionNameToDimensionMapping().get(
-                      meta.getTableName() + CarbonCommonConstants.UNDERSCORE + columnName
-                          .toLowerCase()));
+              String parsedValue = DataTypeUtil.parseValue(tuple, data.getSurrogateKeyGen()
+                  .getDimensionOrdinalToDimensionMapping()[memberMapping[i]]);
               if(null == parsedValue) {
                 surrogateKeyForHrrchy[0] = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
               } else {
@@ -1838,34 +1836,42 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     }
   }
 
-  private Map<String, CarbonDimension> populateNameToCarbonDimensionMap() {
+  private CarbonDimension[] populateNameToCarbonDimensionMap() {
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
         meta.getSchemaName() + CarbonCommonConstants.UNDERSCORE + meta.getTableName());
     List<CarbonDimension> dimensionsList = carbonTable.getDimensionByTableName(meta.getTableName());
-    Map<String, CarbonDimension> dimensionNameToDimensionMapping =
-        new HashMap<>(dimensionsList.size());
-    for (CarbonDimension dimension : dimensionsList) {
-      if (dimension.isComplex()) {
-        populateComplexDimension(dimensionNameToDimensionMapping, dimension);
-      } else {
-        dimensionNameToDimensionMapping.put(
-            meta.getTableName() + CarbonCommonConstants.UNDERSCORE + dimension.getColName()
-                .toLowerCase(), dimension);
+    CarbonDimension[] dimensionOrdinalToDimensionMapping =
+        new CarbonDimension[meta.getColumnSchemaDetailsWrapper().getColumnSchemaDetailsMap()
+            .size()];
+    List<CarbonDimension> dimListExcludingNoDictionaryColumn = dimensionsList;
+    if (null != meta.getNoDictionaryDims() && meta.getNoDictionaryDims().length() > 0) {
+      dimListExcludingNoDictionaryColumn =
+          new ArrayList<>(dimensionsList.size() - meta.noDictionaryCols.length);
+      for (CarbonDimension dimension : dimensionsList) {
+        if (!dimension.getEncoder().isEmpty()) {
+          dimListExcludingNoDictionaryColumn.add(dimension);
+        }
       }
     }
-    return dimensionNameToDimensionMapping;
+    for (int i = 0; i < dimListExcludingNoDictionaryColumn.size(); i++) {
+      CarbonDimension dimension = dimListExcludingNoDictionaryColumn.get(meta.memberMapping[i]);
+      if (dimension.isComplex()) {
+        populateComplexDimension(dimensionOrdinalToDimensionMapping, dimension);
+      } else {
+        dimensionOrdinalToDimensionMapping[meta.memberMapping[i]] = dimension;
+      }
+    }
+    return dimensionOrdinalToDimensionMapping;
   }
 
-  private void populateComplexDimension(
-      Map<String, CarbonDimension> dimensionNameToDimensionMapping, CarbonDimension dimension) {
+  private void populateComplexDimension(CarbonDimension[] dimensionOrdinalToDimensionMapping,
+      CarbonDimension dimension) {
     List<CarbonDimension> listOfChildDimensions = dimension.getListOfChildDimensions();
     for (CarbonDimension childDimension : listOfChildDimensions) {
       if (childDimension.isComplex()) {
-        populateComplexDimension(dimensionNameToDimensionMapping, childDimension);
+        populateComplexDimension(dimensionOrdinalToDimensionMapping, childDimension);
       } else {
-        dimensionNameToDimensionMapping.put(
-            meta.getTableName() + CarbonCommonConstants.UNDERSCORE + childDimension.getColName(),
-            childDimension);
+        dimensionOrdinalToDimensionMapping[childDimension.getOrdinal()] = childDimension;
       }
     }
   }

@@ -117,9 +117,9 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
       new HashMap<String, Map<ArrayWrapper, Integer>>(
           CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   /**
-   * dimension name to dimension mapping
+   * dimension ordinal to dimension mapping
    */
-  private Map<String, CarbonDimension> dimensionNameToDimensionMapping;
+  private CarbonDimension[] dimensionOrdinalToDimensionMapping;
   /**
    * rwLock2
    */
@@ -520,15 +520,15 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
   /**
    * @return
    */
-  public Map<String, CarbonDimension> getDimensionNameToDimensionMapping() {
-    return dimensionNameToDimensionMapping;
+  public CarbonDimension[] getDimensionOrdinalToDimensionMapping() {
+    return dimensionOrdinalToDimensionMapping;
   }
 
   /**
-   * @param dimensionNameToDimensionMapping
+   * @param dimensionOrdinalToDimensionMapping
    */
-  public void setDimensionNameToDimensionMapping(
-      Map<String, CarbonDimension> dimensionNameToDimensionMapping) {
-    this.dimensionNameToDimensionMapping = dimensionNameToDimensionMapping;
+  public void setDimensionOrdinalToDimensionMapping(
+      CarbonDimension[] dimensionOrdinalToDimensionMapping) {
+    this.dimensionOrdinalToDimensionMapping = dimensionOrdinalToDimensionMapping;
   }
 }
