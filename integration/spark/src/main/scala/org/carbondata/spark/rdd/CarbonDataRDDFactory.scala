@@ -31,7 +31,8 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.FileSplit
 import org.apache.spark.{Logging, Partition, SparkContext, SparkEnv}
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation, SQLContext}
-import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, Partitioner}
+import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel,
+CompactionModel, Partitioner}
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.util.{FileUtils, SplitUtils}
 
@@ -476,7 +477,7 @@ object CarbonDataRDDFactory extends Logging {
             }
             )
 
-            val future: Future[Void] = executor.submit(new CompactionCallable(hdfsStoreLocation,
+            val compactionCallableModel = CompactionCallableModel(hdfsStoreLocation,
               carbonLoadModel,
               partitioner,
               storeLocation,
@@ -484,9 +485,13 @@ object CarbonDataRDDFactory extends Logging {
               kettleHomePath,
               compactionModel.cubeCreationTime,
               loadsToMerge,
-              sqlContext
-            )
-            )
+              sqlContext,
+              compactionModel.compactionType)
+
+            val future: Future[Void] = executor
+              .submit(new CompactionCallable(compactionCallableModel
+              )
+              )
             futureList.add(future)
             segList = CarbonDataMergerUtil
               .filterOutAlreadyMergedSegments(segList, loadsToMerge)

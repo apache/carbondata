@@ -48,6 +48,7 @@ import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
+import org.carbondata.core.load.LoadMetadataDetails
 import org.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.integration.spark.merger.CompactionType
@@ -157,6 +158,11 @@ case class CompactionModel(compactionSize: Long,
   compactionType: CompactionType,
   carbonTable: CarbonTable,
   cubeCreationTime: Long)
+
+case class CompactionCallableModel(hdfsStoreLocation: String, carbonLoadModel: CarbonLoadModel,
+  partitioner: Partitioner, storeLocation: String, carbonTable: CarbonTable, kettleHomePath: String,
+  cubeCreationTime: Long, loadsToMerge: util.List[LoadMetadataDetails], sqlContext: SQLContext,
+  compactionType: CompactionType)
 
 object TableNewProcessor {
   def apply(cm: tableModel, sqlContext: SQLContext): TableInfo = {

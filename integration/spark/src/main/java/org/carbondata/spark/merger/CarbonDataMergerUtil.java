@@ -128,7 +128,7 @@ public final class CarbonDataMergerUtil {
 
   public static boolean updateLoadMetadataWithMergeStatus(List<LoadMetadataDetails> loadsToMerge,
       String metaDataFilepath, String MergedLoadName, CarbonLoadModel carbonLoadModel,
-      String mergeLoadStartTime) {
+      String mergeLoadStartTime, CompactionType compactionType) {
 
     boolean tableStatusUpdationStatus = false;
     AbsoluteTableIdentifier absoluteTableIdentifier =
@@ -176,6 +176,10 @@ public final class CarbonDataMergerUtil {
         loadMetadataDetails.setLoadName(mergedLoadNumber);
         loadMetadataDetails.setLoadStartTime(mergeLoadStartTime);
         loadMetadataDetails.setPartitionCount("0");
+        // if this is a major compaction then set the segment as major compaction.
+        if (compactionType == CompactionType.MAJOR_COMPACTION) {
+          loadMetadataDetails.setMajorCompacted("true");
+        }
 
         List<LoadMetadataDetails> updatedDetailsList = new ArrayList<>(Arrays.asList(loadDetails));
 
@@ -514,7 +518,10 @@ public final class CarbonDataMergerUtil {
 
       // if a segment is already merged 2 levels then it s name will become .2
       // need to exclude those segments from minor compaction.
-      if (segName.endsWith(".2")) {
+      // if a segment is major compacted then should not be considered for minor.
+      if (segName.endsWith(CarbonCommonConstants.LEVEL2_COMPACTION_INDEX) || (
+          segment.isMajorCompacted() != null && segment.isMajorCompacted()
+              .equalsIgnoreCase("true"))) {
         continue;
       }
 

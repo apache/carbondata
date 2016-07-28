@@ -107,7 +107,6 @@ public class SegmentStatusManager {
         .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
     String dataPath = carbonTablePath.getTableStatusFilePath();
-
     DataInputStream dataInputStream = null;
     Gson gsonObjectToRead = new Gson();
     AtomicFileOperations fileOperation =
@@ -134,7 +133,6 @@ public class SegmentStatusManager {
               .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) {
             // check for merged loads.
             if (null != loadMetadataDetails.getMergedLoadName()) {
-
               if (!listOfValidSegments.contains(loadMetadataDetails.getMergedLoadName())) {
                 listOfValidSegments.add(loadMetadataDetails.getMergedLoadName());
               }

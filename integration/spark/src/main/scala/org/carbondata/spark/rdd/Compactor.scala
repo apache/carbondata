@@ -19,17 +19,14 @@ package org.carbondata.spark.rdd
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.execution.command.{CarbonMergerMapping, Partitioner}
+import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel}
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
-import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.load.LoadMetadataDetails
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.lcm.status.SegmentStatusManager
-import org.carbondata.spark.load.{CarbonLoaderUtil, CarbonLoadModel}
+import org.carbondata.spark.load.CarbonLoaderUtil
 import org.carbondata.spark.MergeResultImpl
 import org.carbondata.spark.merger.CarbonDataMergerUtil
 
@@ -40,15 +37,18 @@ object Compactor {
 
   val logger = LogServiceFactory.getLogService(Compactor.getClass.getName)
 
-  def triggerCompaction(hdfsStoreLocation: String,
-    carbonLoadModel: CarbonLoadModel,
-    partitioner: Partitioner,
-    storeLocation: String,
-    carbonTable: CarbonTable,
-    kettleHomePath: String,
-    cubeCreationTime: Long,
-    loadsToMerge: java.util.List[LoadMetadataDetails],
-    sc: SQLContext): Unit = {
+  def triggerCompaction(compactionCallableModel: CompactionCallableModel): Unit = {
+
+    val hdfsStoreLocation = compactionCallableModel.hdfsStoreLocation
+    val partitioner = compactionCallableModel.partitioner
+    val storeLocation = compactionCallableModel.storeLocation
+    val carbonTable = compactionCallableModel.carbonTable
+    val kettleHomePath = compactionCallableModel.kettleHomePath
+    val cubeCreationTime = compactionCallableModel.cubeCreationTime
+    val loadsToMerge = compactionCallableModel.loadsToMerge
+    val sc = compactionCallableModel.sqlContext
+    val carbonLoadModel = compactionCallableModel.carbonLoadModel
+    val compactionType = compactionCallableModel.compactionType
 
     val startTime = System.nanoTime();
     val mergedLoadName = CarbonDataMergerUtil.getMergedLoadName(loadsToMerge)
@@ -117,7 +117,7 @@ object Compactor {
       logger.info("time taken to merge " + mergedLoadName + " is " + (endTime - startTime))
       CarbonDataMergerUtil
         .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath(),
-          mergedLoadName, carbonLoadModel, mergeLoadStartTime
+          mergedLoadName, carbonLoadModel, mergeLoadStartTime, compactionType
         )
       logger
         .audit("Compaction request completed for table " + carbonLoadModel

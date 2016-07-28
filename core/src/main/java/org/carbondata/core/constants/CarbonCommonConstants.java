@@ -844,6 +844,11 @@ public final class CarbonCommonConstants {
    */
   public static final int COMPACTION_INMEMORY_RECORD_SIZE = 120000;
 
+  /**
+   * If the level 2 compaction is done in minor then new compacted segment will end with .2
+   */
+  public static String LEVEL2_COMPACTION_INDEX = ".2";
+
   private CarbonCommonConstants() {
   }
 }
