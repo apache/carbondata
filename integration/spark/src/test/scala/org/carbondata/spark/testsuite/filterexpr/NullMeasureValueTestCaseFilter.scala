@@ -10,8 +10,9 @@ import org.scalatest.BeforeAndAfterAll
 class NullMeasureValueTestCaseFilter extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    sql("drop table if exists t3")
     sql(
-      "CREATE TABLE IF NOT EXISTS t3 (ID Int, date Timestamp, country String, name String, " +
+      "CREATE TABLE t3 (ID bigInt, date Timestamp, country String, name String, " +
         "phonetype String, serialname String, salary Int) STORED BY 'org.apache.carbondata.format'"
     )
     CarbonProperties.getInstance()
@@ -22,13 +23,13 @@ class NullMeasureValueTestCaseFilter extends QueryTest with BeforeAndAfterAll {
   test("select ID from t3 where salary is not null") {
     checkAnswer(
       sql("select ID from t3 where salary is not null"),
-      Seq(Row(1.0),Row(4.0)))
+      Seq(Row(1),Row(4)))
   }
 
   test("select ID from t3 where salary is null") {
     checkAnswer(
       sql("select ID from t3 where salary is null"),
-      Seq(Row(2.0),Row(3.0)))
+      Seq(Row(2),Row(3)))
   }
 
   override def afterAll {

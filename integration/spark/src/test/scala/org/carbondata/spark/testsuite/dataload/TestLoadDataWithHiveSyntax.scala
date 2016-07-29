@@ -529,25 +529,38 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test data which contain column with decimal data type in array of struct."){
-    sql("DROP TABLE IF EXISTS t3")
+    sql("DROP TABLE IF EXISTS complex_t3")
+    sql("DROP TABLE IF EXISTS complex_hive_t3")
 
     sql(
       """
-           CREATE TABLE IF NOT EXISTS t3
+           CREATE TABLE complex_t3
            (ID decimal, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int, complex
            array<struct<a:decimal(4,2),str:string>>)
            STORED BY 'org.apache.carbondata.format'
       """
     )
+    sql(
+      """
+           CREATE TABLE complex_hive_t3
+           (ID decimal, date Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int, complex
+           array<struct<a:decimal(4,2),str:string>>)
+           row format delimited fields terminated by ','
+      """
+    )
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(s"""
-         LOAD DATA LOCAL INPATH './src/test/resources/complexTypeDecimalNested.csv' into table t3
+         LOAD DATA LOCAL INPATH './src/test/resources/complexTypeDecimalNested.csv' into table complex_t3
         """)
-    checkAnswer(sql("select count(*) from t3"),Seq(Row(8)))
-    checkAnswer(sql("select id from t3 where salary = 15000"),Seq(Row(1)))
+    sql(s"""
+         LOAD DATA LOCAL INPATH './src/test/resources/complexTypeDecimalNestedHive.csv' into table complex_hive_t3
+        """)
+    checkAnswer(sql("select count(*) from complex_t3"),sql("select count(*) from complex_hive_t3"))
+    checkAnswer(sql("select id from complex_t3 where salary = 15000"),sql("select id from complex_hive_t3 where salary = 15000"))
   }
 
   test("test data loading when delimiter is '|' and data with header") {

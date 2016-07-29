@@ -495,17 +495,7 @@ class CarbonMetastoreCatalog(hive: HiveContext, val storePath: String, client: C
     org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .removeTable(schemaName + "_" + cubeName)
 
-    try {
-      sqlContext.sql(s"DROP TABLE $schemaName.$cubeName").collect()
-    } catch {
-      case e: Exception =>
-        LOGGER.audit(
-          s"Error While deleting the table $schemaName.$cubeName during drop Table" + e.getMessage)
-    }
-
-    logInfo(s"Table $cubeName of $schemaName Database dropped syccessfully.")
-    LOGGER.info("Table " + cubeName + " of " + schemaName + " Database dropped syccessfully.")
-
+    sqlContext.asInstanceOf[HiveContext].runSqlHive(s"DROP TABLE IF EXISTS $schemaName.$cubeName")
   }
 
   private def getTimestampFileAndType(schemaName: String, cubeName: String) = {

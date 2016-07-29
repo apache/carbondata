@@ -156,7 +156,7 @@ case class DictionaryLoadModel(table: CarbonTableIdentifier,
     rowCountPercentage: Double,
     columnIdentifier: Array[ColumnIdentifier],
     isFirstLoad: Boolean,
-    hdfstemplocation: String,
+    hdfsTempLocation: String,
     lockType: String,
     zooKeeperUrl: String) extends Serializable
 
@@ -301,11 +301,11 @@ class CarbonGlobalDictionaryGenerateRDD(
       val carbonTablePath = pathService.getCarbonTablePath(model.columnIdentifier(split.index),
           model.hdfsLocation, model.table)
       CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
-              model.hdfstemplocation)
+        model.hdfsTempLocation)
       CarbonProperties.getInstance.addProperty(CarbonCommonConstants.LOCK_TYPE,
-              model.lockType)
-       CarbonProperties.getInstance.addProperty(CarbonCommonConstants.ZOOKEEPER_URL,
-              model.zooKeeperUrl)
+        model.lockType)
+      CarbonProperties.getInstance.addProperty(CarbonCommonConstants.ZOOKEEPER_URL,
+        model.zooKeeperUrl)
       val dictLock = CarbonLockFactory
         .getCarbonLockObj(carbonTablePath.getRelativeDictionaryDirectory,
           model.columnIdentifier(split.index).getColumnId + LockUsage.LOCK)
@@ -408,8 +408,8 @@ class CarbonGlobalDictionaryGenerateRDD(
             .clearDictionaryCache(dictionaryForDistinctValueLookUp);
         }
         org.carbondata.core.util.CarbonUtil.clearDictionaryCache(dictionaryForSortIndexWriting);
-        if (dictLock != null) {
-          if (isDictionaryLocked && dictLock.unlock()) {
+        if (dictLock != null && isDictionaryLocked) {
+          if (dictLock.unlock()) {
             logInfo(s"Dictionary ${
               model.primDimensions(split.index).getColName
             } Unlocked Successfully.")

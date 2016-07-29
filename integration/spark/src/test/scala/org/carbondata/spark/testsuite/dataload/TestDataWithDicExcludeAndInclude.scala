@@ -40,14 +40,22 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
   }
 
   def dropTable() = {
-    sql("DROP TABLE IF EXISTS t3")
+    sql("DROP TABLE IF EXISTS exclude_include_t3")
+    sql("DROP TABLE IF EXISTS exclude_include_hive_t3")
   }
 
   def buildTable() = {
     try {
       sql(
         """
-           CREATE TABLE IF NOT EXISTS t3
+           CREATE TABLE exclude_include_hive_t3
+           (ID Int, date Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int)
+           row format delimited fields terminated by ','
+        """)
+      sql(
+        """
+           CREATE TABLE exclude_include_t3
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            STORED BY 'org.apache.carbondata.format'
@@ -65,7 +73,11 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
       sql(
         s"""
-           LOAD DATA LOCAL INPATH '$filePath' into table t3
+           LOAD DATA LOCAL INPATH '$filePath' into table exclude_include_t3
+           """)
+      sql(
+        s"""
+           LOAD DATA LOCAL INPATH './src/test/resources/emptyDimensionDataHive.csv' into table exclude_include_hive_t3
            """)
     } catch {
       case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
@@ -81,9 +93,7 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
 
   test("test load data with dictionary exclude & include and with empty dimension") {
     checkAnswer(
-      sql("select ID from t3"), Seq(Row(1), Row(2), Row(3), Row(4), Row(5), Row(6), Row(7),
-        Row(8), Row(9), Row(10), Row(11), Row(12), Row(13), Row(14), Row(15), Row(16), Row
-        (17), Row(18), Row(19), Row(20))
+      sql("select ID from exclude_include_t3"), sql("select ID from exclude_include_hive_t3")
     )
   }
 

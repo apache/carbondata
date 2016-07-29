@@ -297,8 +297,8 @@ object GlobalDictionaryUtil extends Logging {
     val dictFilePaths = dictDetail.dictFilePaths
     val dictFileExists = dictDetail.dictFileExists
     val columnIdentifier = dictDetail.columnIdentifiers
-    val hdfstemplocation = CarbonProperties.getInstance.getProperty(
-        CarbonCommonConstants.HDFS_TEMP_LOCATION, System.getProperty("java.io.tmpdir"))
+    val hdfsTempLocation = CarbonProperties.getInstance.
+      getProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION, System.getProperty("java.io.tmpdir"))
     val lockType = CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
     val zookeeperUrl = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.ZOOKEEPER_URL)
@@ -331,7 +331,7 @@ object GlobalDictionaryUtil extends Logging {
       rowCountPercentage,
       columnIdentifier,
       carbonLoadModel.getLoadMetadataDetails.size() == 0,
-      hdfstemplocation,
+      hdfsTempLocation,
       lockType,
       zookeeperUrl)
   }
