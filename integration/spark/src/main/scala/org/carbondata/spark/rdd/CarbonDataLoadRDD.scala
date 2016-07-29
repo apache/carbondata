@@ -19,6 +19,7 @@
 package org.carbondata.spark.rdd
 
 import java.lang.Long
+import java.util
 import java.util.UUID
 
 import scala.collection.JavaConverters._
@@ -452,9 +453,31 @@ class CarbonDataLoadRDD[K, V](
       case false =>
         // for node partition
         val theSplit = split.asInstanceOf[CarbonNodePartition]
-        val location: Seq[String] = List(theSplit.serializableHadoopSplit)
-        logInfo("Prefered Location for split : " + location(0))
-        location
+        val firstOptionLocation: Seq[String] = List(theSplit.serializableHadoopSplit)
+        logInfo("Preferred Location for split : " + firstOptionLocation(0))
+        val blockMap = new util.LinkedHashMap[String, Integer]()
+        val tableBlocks = theSplit.blocksDetails
+        tableBlocks.foreach(tableBlock => tableBlock.getLocations.foreach(
+          location => {
+            if (!firstOptionLocation.exists(location.equalsIgnoreCase(_))) {
+              val currentCount = blockMap.get(location)
+              if (currentCount == null) {
+                blockMap.put(location, 1)
+              } else {
+                blockMap.put(location, currentCount + 1)
+              }
+            }
+          }
+        )
+        )
+
+        val sortedList = blockMap.entrySet().asScala.toSeq.sortWith((nodeCount1, nodeCount2) => {
+          nodeCount1.getValue > nodeCount2.getValue
+        }
+        )
+
+        val sortedNodesList = sortedList.map(nodeCount => nodeCount.getKey).take(2)
+        firstOptionLocation ++ sortedNodesList
     }
   }
 }

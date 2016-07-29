@@ -365,7 +365,7 @@ public class StoreCreator {
     schmaModel.setCsvFilePath(loadModel.getFactFilePath());
     SchemaInfo info = new SchemaInfo();
     BlockDetails blockDetails = new BlockDetails(loadModel.getFactFilePath(),
-        0, new File(loadModel.getFactFilePath()).length());
+        0, new File(loadModel.getFactFilePath()).length(), new String[] {"localhost"});
     GraphGenerator.blockInfo.put("qwqwq", new BlockDetails[] { blockDetails });
     schmaModel.setBlocksID("qwqwq");
     schmaModel.setEscapeCharacter("\\");

@@ -768,7 +768,7 @@ object CarbonDataRDDFactory extends Logging {
               entry._2.asScala.map(distributable => {
                 val tableBlock = distributable.asInstanceOf[TableBlockInfo]
                 new BlockDetails(tableBlock.getFilePath,
-                  tableBlock.getBlockOffset, tableBlock.getBlockLength
+                  tableBlock.getBlockOffset, tableBlock.getBlockLength, tableBlock.getLocations
                 )
               }).toArray
             (entry._1, blockDetailsList)
