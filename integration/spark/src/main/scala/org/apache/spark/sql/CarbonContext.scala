@@ -119,7 +119,7 @@ class CarbonContext(
   @transient
   val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)
 
-  override def sql(sql: String): SchemaRDD = {
+  override def sql(sql: String): DataFrame = {
     // queryId will be unique for each query, creting query detail holder
     val queryId: String = System.nanoTime() + ""
     this.setConf("queryId", queryId)

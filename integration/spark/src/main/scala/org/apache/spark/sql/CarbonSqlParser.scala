@@ -421,8 +421,8 @@ class CarbonSqlParser()
             case Token("TOK_LIKETABLE", child :: Nil) =>
               likeTableName = child.getChild(0).getText()
 
-            case Token("TOK_STORAGEHANDLER", child :: Nil) =>
-              storedBy = BaseSemanticAnalyzer.unescapeSQLString(child.getText)
+          case Token("TOK_STORAGEHANDLER", child :: Nil) =>
+            storedBy = BaseSemanticAnalyzer.unescapeSQLString(child.getText).trim.toLowerCase
 
             case _ => // Unsupport features
           }
