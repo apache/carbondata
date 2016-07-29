@@ -208,7 +208,9 @@ class CarbonDataLoadRDD[K, V](
             // delete temp location data
             val newSlice = CarbonCommonConstants.LOAD_FOLDER + loadCount
             try {
-              CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, newSlice)
+              val isCompaction = false
+              CarbonLoaderUtil
+                .deleteLocalDataLoadFolderLocation(model, newSlice, isCompaction)
             } catch {
               case e: Exception =>
                 LOGGER.error(e)

@@ -21,6 +21,7 @@ import java.util
 import java.util.{Collections, List}
 
 import scala.collection.JavaConverters._
+import scala.util.Random
 
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark._
@@ -59,7 +60,7 @@ class CarbonMergerRDD[K, V](
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
   sc.setLocalProperty("spark.job.interruptOnCancel", "true")
 
-  val storeLocation = carbonMergerMapping.storeLocation
+  var storeLocation: String = null
   val hdfsStoreLocation = carbonMergerMapping.hdfsStoreLocation
   val metadataFilePath = carbonMergerMapping.metadataFilePath
   val mergedLoadName = carbonMergerMapping.mergedLoadName
@@ -70,15 +71,27 @@ class CarbonMergerRDD[K, V](
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
 
+      carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
+      val tempLocationKey: String = CarbonCommonConstants
+        .COMPACTION_KEY_WORD + '_' + carbonLoadModel
+        .getDatabaseName + '_' + carbonLoadModel
+        .getTableName + '_' + carbonLoadModel.getTaskNo
+
+      val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+      if (null != storeLocations && storeLocations.length > 0) {
+        storeLocation = storeLocations(Random.nextInt(storeLocations.length))
+      }
+      if (storeLocation == null) {
+        storeLocation = System.getProperty("java.io.tmpdir")
+      }
+      storeLocation = storeLocation + '/' + System.nanoTime() + '/' + theSplit.index
+      CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation)
+      LOGGER.info("Temp storeLocation taken is " + storeLocation)
       var mergeStatus = false
+      var mergeNumber = ""
       try {
         var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-        carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
         val carbonSparkPartition = theSplit.asInstanceOf[CarbonSparkPartition]
-
-        val tempLocationKey: String = carbonLoadModel.getDatabaseName + '_' + carbonLoadModel
-          .getTableName + carbonLoadModel.getTaskNo
-        CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation)
 
         // sorting the table block info List.
         var tableBlockInfoList = carbonSparkPartition.tableBlockInfos
@@ -126,7 +139,7 @@ class CarbonMergerRDD[K, V](
             }
         }
 
-        val mergeNumber = mergedLoadName
+        mergeNumber = mergedLoadName
           .substring(mergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER) +
             CarbonCommonConstants.LOAD_FOLDER.length(), mergedLoadName.length()
           )
@@ -135,7 +148,8 @@ class CarbonMergerRDD[K, V](
           factTableName,
           carbonLoadModel.getTaskNo,
           "0",
-          mergeNumber
+          mergeNumber,
+          true
         )
 
         carbonLoadModel.setSegmentId(mergeNumber)
@@ -156,6 +170,18 @@ class CarbonMergerRDD[K, V](
         case e: Exception =>
           LOGGER.error(e)
           throw e
+      }
+      finally {
+        // delete temp location data
+        val newSlice = CarbonCommonConstants.LOAD_FOLDER + mergeNumber
+        try {
+          val isCompactionFlow = true
+          CarbonLoaderUtil
+            .deleteLocalDataLoadFolderLocation(carbonLoadModel, newSlice, isCompactionFlow)
+        } catch {
+          case e: Exception =>
+            LOGGER.error(e)
+        }
       }
 
       var finished = false

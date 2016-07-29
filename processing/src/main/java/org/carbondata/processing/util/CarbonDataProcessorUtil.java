@@ -262,9 +262,14 @@ public final class CarbonDataProcessorUtil {
    * @return
    */
   public static String getLocalDataFolderLocation(String databaseName, String tableName,
-      String taskId, String partitionId, String segmentId) {
+      String taskId, String partitionId, String segmentId, boolean isCompactionFlow) {
     String tempLocationKey = databaseName + CarbonCommonConstants.UNDERSCORE + tableName
         + CarbonCommonConstants.UNDERSCORE + taskId;
+    if(isCompactionFlow){
+      tempLocationKey = CarbonCommonConstants
+          .COMPACTION_KEY_WORD + '_' + tempLocationKey;
+    }
+
     String baseStorePath = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
     CarbonTable carbonTable = CarbonMetadata.getInstance()

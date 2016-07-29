@@ -849,6 +849,11 @@ public final class CarbonCommonConstants {
    */
   public static String LEVEL2_COMPACTION_INDEX = ".2";
 
+  /**
+   * Indicates compaction
+   */
+  public static String COMPACTION_KEY_WORD = "COMPACTION";
+
   private CarbonCommonConstants() {
   }
 }

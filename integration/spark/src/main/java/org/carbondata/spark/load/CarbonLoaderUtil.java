@@ -428,7 +428,7 @@ public final class CarbonLoaderUtil {
    * @param segmentName
    */
   public static void deleteLocalDataLoadFolderLocation(CarbonLoadModel loadModel,
-      String segmentName) {
+      String segmentName, boolean isCompactionFlow) {
     String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
     CarbonTableIdentifier carbonTableIdentifier =
@@ -436,26 +436,32 @@ public final class CarbonLoaderUtil {
     String segmentId = segmentName.substring(CarbonCommonConstants.LOAD_FOLDER.length());
     String tempLocationKey = databaseName + CarbonCommonConstants.UNDERSCORE + tableName
         + CarbonCommonConstants.UNDERSCORE + loadModel.getTaskNo();
+    if (isCompactionFlow) {
+      tempLocationKey = CarbonCommonConstants.COMPACTION_KEY_WORD + '_' + tempLocationKey;
+    }
     // form local store location
     String localStoreLocation = getStoreLocation(CarbonProperties.getInstance()
             .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL),
         carbonTableIdentifier, segmentId, loadModel.getPartitionId());
     try {
       CarbonUtil.deleteFoldersAndFiles(new File[] { new File(localStoreLocation) });
+      LOGGER.info("Deleted the local store location" + localStoreLocation);
     } catch (CarbonUtilException e) {
       LOGGER.error(e, "Failed to delete local data load folder location");
     }
 
     // delete ktr file.
-    String graphPath = CarbonProperties.getInstance()
-        .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL)
-        + File.separator + "/etl" + File.separator + databaseName + File.separator + tableName
-        + File.separator + loadModel.getSegmentId() + File.separator + loadModel.getTaskNo()
-        + File.separator + tableName + ".ktr";
-    File path = new File(graphPath);
-    if (path.exists()) {
-      if (!path.delete()) {
-        LOGGER.error("failed to delete the ktr file in path " + path);
+    if (!isCompactionFlow) {
+      String graphPath = CarbonProperties.getInstance()
+          .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL)
+          + File.separator + "/etl" + File.separator + databaseName + File.separator + tableName
+          + File.separator + loadModel.getSegmentId() + File.separator + loadModel.getTaskNo()
+          + File.separator + tableName + ".ktr";
+      File path = new File(graphPath);
+      if (path.exists()) {
+        if (!path.delete()) {
+          LOGGER.error("failed to delete the ktr file in path " + path);
+        }
       }
     }
 
