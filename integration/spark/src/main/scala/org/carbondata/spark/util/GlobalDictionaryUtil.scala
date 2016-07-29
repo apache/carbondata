@@ -297,7 +297,11 @@ object GlobalDictionaryUtil extends Logging {
     val dictFilePaths = dictDetail.dictFilePaths
     val dictFileExists = dictDetail.dictFileExists
     val columnIdentifier = dictDetail.columnIdentifiers
-
+    val hdfstemplocation = CarbonProperties.getInstance.
+                      getProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION)
+    val lockType = CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
+    val zookeeperUrl = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.ZOOKEEPER_URL)
     // load high cardinality identify configure
     val highCardIdentifyEnable = CarbonProperties.getInstance().getProperty(
         CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE,
@@ -326,7 +330,10 @@ object GlobalDictionaryUtil extends Logging {
       highCardThreshold,
       rowCountPercentage,
       columnIdentifier,
-      carbonLoadModel.getLoadMetadataDetails.size() == 0)
+      carbonLoadModel.getLoadMetadataDetails.size() == 0,
+      hdfstemplocation,
+      lockType,
+      zookeeperUrl)
   }
 
   /**

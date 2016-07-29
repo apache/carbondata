@@ -18,6 +18,7 @@
  */
 package org.carbondata.core.locks;
 
+import java.io.File;
 import java.util.Collections;
 import java.util.List;
 
@@ -25,6 +26,7 @@ import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.constants.CarbonCommonConstants;
+import org.carbondata.core.util.CarbonProperties;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -69,7 +71,8 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   private String lockTypeFolder;
 
   public ZooKeeperLocking(CarbonTableIdentifier tableIdentifier, String lockFile) {
-    this(tableIdentifier.getDatabaseName() + '.' + tableIdentifier.getTableName(), lockFile);
+    this(tableIdentifier.getDatabaseName() + File.separator + tableIdentifier.getTableName(),
+        lockFile);
   }
 
   /**
@@ -80,7 +83,9 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     this.lockName = lockFile;
     this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockLocation;
 
-    zk = ZookeeperInit.getInstance().getZookeeper();
+    String zooKeeperUrl =
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.ZOOKEEPER_URL);
+    zk = ZookeeperInit.getInstance(zooKeeperUrl).getZookeeper();
 
     this.lockTypeFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockLocation
         + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
@@ -88,7 +93,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
       createBaseNode();
       // if exists returns null then path doesnt exist. so creating.
       if (null == zk.exists(this.tableIdFolder, true)) {
-        zk.create(this.tableIdFolder, new byte[1], Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        createRecursivly(this.tableIdFolder);
       }
       // if exists returns null then path doesnt exist. so creating.
       if (null == zk.exists(this.lockTypeFolder, true)) {
@@ -110,6 +115,28 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     }
   }
 
+  /**
+   * Create zookeepr node if not exist
+   * @param path
+   * @throws KeeperException
+   * @throws InterruptedException
+   */
+  private void createRecursivly(String path) throws KeeperException, InterruptedException {
+    try {
+      if (zk.exists(path, true) == null && path.length() > 0) {
+        String temp = path.substring(0, path.lastIndexOf(File.separator));
+        createRecursivly(temp);
+        zk.create(path, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+      } else {
+        return;
+      }
+    } catch (KeeperException e) {
+      throw e;
+    } catch (InterruptedException e) {
+      throw e;
+    }
+
+  }
   /**
    * Handling of the locking mechanism using zoo keeper.
    */

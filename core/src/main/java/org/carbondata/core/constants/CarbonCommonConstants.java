@@ -854,6 +854,16 @@ public final class CarbonCommonConstants {
    */
   public static String COMPACTION_KEY_WORD = "COMPACTION";
 
+  /**
+   * hdfs temporary directory key
+   */
+  public static final String HDFS_TEMP_LOCATION = "hadoop.tmp.dir";
+
+  /**
+   * zookeeper url key
+   */
+  public static final String ZOOKEEPER_URL = "spark.deploy.zookeeper.url";
+
   private CarbonCommonConstants() {
   }
 }

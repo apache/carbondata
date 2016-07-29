@@ -38,6 +38,7 @@ import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.locks.CarbonLockFactory
 import org.carbondata.core.locks.LockUsage
+import org.carbondata.core.util.CarbonProperties
 import org.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.carbondata.spark.load.{CarbonLoaderUtil, CarbonLoadModel}
 import org.carbondata.spark.partition.reader.{CSVParser, CSVReader}
@@ -154,7 +155,10 @@ case class DictionaryLoadModel(table: CarbonTableIdentifier,
     highCardThreshold: Int,
     rowCountPercentage: Double,
     columnIdentifier: Array[ColumnIdentifier],
-    isFirstLoad: Boolean) extends Serializable
+    isFirstLoad: Boolean,
+    hdfstemplocation: String,
+    lockType: String,
+    zooKeeperUrl: String) extends Serializable
 
 case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends Serializable
 
@@ -296,9 +300,16 @@ class CarbonGlobalDictionaryGenerateRDD(
       val pathService = CarbonCommonFactory.getPathService
       val carbonTablePath = pathService.getCarbonTablePath(model.columnIdentifier(split.index),
           model.hdfsLocation, model.table)
+      CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
+              model.hdfstemplocation)
+      CarbonProperties.getInstance.addProperty(CarbonCommonConstants.LOCK_TYPE,
+              model.lockType)
+       CarbonProperties.getInstance.addProperty(CarbonCommonConstants.ZOOKEEPER_URL,
+              model.zooKeeperUrl)
       val dictLock = CarbonLockFactory
         .getCarbonLockObj(carbonTablePath.getRelativeDictionaryDirectory,
           model.columnIdentifier(split.index).getColumnId + LockUsage.LOCK)
+      var isDictionaryLocked = false
       // generate distinct value list
       try {
         val t1 = System.currentTimeMillis
@@ -328,7 +339,8 @@ class CarbonGlobalDictionaryGenerateRDD(
           LOGGER.info("column " + model.table.getTableUniqueName + "." +
                       model.primDimensions(split.index).getColName + " is high cardinality column")
         } else {
-          if (dictLock.lockWithRetries()) {
+          isDictionaryLocked = dictLock.lockWithRetries()
+          if (isDictionaryLocked) {
             logInfo(s"Successfully able to get the dictionary lock for ${
               model.primDimensions(split.index).getColName
             }")
@@ -397,7 +409,7 @@ class CarbonGlobalDictionaryGenerateRDD(
         }
         org.carbondata.core.util.CarbonUtil.clearDictionaryCache(dictionaryForSortIndexWriting);
         if (dictLock != null) {
-          if (dictLock.unlock()) {
+          if (isDictionaryLocked && dictLock.unlock()) {
             logInfo(s"Dictionary ${
               model.primDimensions(split.index).getColName
             } Unlocked Successfully.")
