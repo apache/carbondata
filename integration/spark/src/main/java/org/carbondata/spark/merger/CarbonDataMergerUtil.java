@@ -233,20 +233,8 @@ public final class CarbonDataMergerUtil {
       List<LoadMetadataDetails> segments, CompactionType compactionType) {
 
     List sortedSegments = new ArrayList(segments);
-    // sort the segment details.
-    Collections.sort(sortedSegments, new Comparator<LoadMetadataDetails>() {
-      @Override public int compare(LoadMetadataDetails seg1, LoadMetadataDetails seg2) {
-        double seg1Id = Double.parseDouble(seg1.getLoadName());
-        double seg2Id = Double.parseDouble(seg2.getLoadName());
-        if (seg1Id - seg2Id < 0) {
-          return -1;
-        }
-        if (seg1Id - seg2Id > 0) {
-          return 1;
-        }
-        return 0;
-      }
-    });
+
+    sortSegments(sortedSegments);
 
     // check preserve property and preserve the configured number of latest loads.
 
@@ -270,6 +258,27 @@ public final class CarbonDataMergerUtil {
     }
 
     return listOfSegmentsToBeMerged;
+  }
+
+  /**
+   * Sorting of the segments.
+   * @param segments
+   */
+  public static void sortSegments(List segments) {
+    // sort the segment details.
+    Collections.sort(segments, new Comparator<LoadMetadataDetails>() {
+      @Override public int compare(LoadMetadataDetails seg1, LoadMetadataDetails seg2) {
+        double seg1Id = Double.parseDouble(seg1.getLoadName());
+        double seg2Id = Double.parseDouble(seg2.getLoadName());
+        if (seg1Id - seg2Id < 0) {
+          return -1;
+        }
+        if (seg1Id - seg2Id > 0) {
+          return 1;
+        }
+        return 0;
+      }
+    });
   }
 
   /**
@@ -691,16 +700,30 @@ public final class CarbonDataMergerUtil {
     return combinedMap;
   }
 
-  public static List<LoadMetadataDetails> filterOutAlreadyMergedSegments(
-      List<LoadMetadataDetails> segments, List<LoadMetadataDetails> loadsToMerge) {
+  /**
+   * Removing the already merged segments from list.
+   * @param segments
+   * @param loadsToMerge
+   * @return
+   */
+  public static List<LoadMetadataDetails> filterOutNewlyAddedSegments(
+      List<LoadMetadataDetails> segments, List<LoadMetadataDetails> loadsToMerge,
+      LoadMetadataDetails lastSeg) {
 
-    ArrayList<LoadMetadataDetails> list = new ArrayList<>(segments);
+    // take complete list of segments.
+    List<LoadMetadataDetails> list = new ArrayList<>(segments);
 
-    for (LoadMetadataDetails mergedSegs : loadsToMerge) {
-      list.remove(mergedSegs);
-    }
+    List<LoadMetadataDetails> trimmedList =
+        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    return list;
+    // sort list
+    CarbonDataMergerUtil.sortSegments(list);
+
+    // first filter out newly added segments.
+    trimmedList = list.subList(0, list.indexOf(lastSeg) + 1);
+
+    return trimmedList;
 
   }
+
 }
