@@ -21,7 +21,7 @@ package org.carbondata.spark.testsuite.createtable
 
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
-
+import org.apache.spark.sql.{CarbonContext, Row}
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 
 import org.scalatest.BeforeAndAfterAll
@@ -99,6 +99,20 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hivetable")
   }
 
+    test("describe command carbon table for decimal scale and precision test") {
+            sql("create table carbontablePrecision(id int, name string, dept string, mobile array<string>, "+
+        "country string, salary decimal(10,6)) STORED BY 'org.apache.carbondata.format' " +
+        "TBLPROPERTIES('DICTIONARY_INCLUDE'='salary,id')")
+    checkAnswer(
+      sql("describe carbontablePrecision"),
+      Seq(Row("country","string",""),
+        Row("dept","string",""),Row("id","int",""),Row("mobile","array<string>",""),Row("name","string",""),
+        Row("salary","decimal(10,6)","")
+      )
+    )
+     sql("drop table if exists carbontablePrecision")
+  }
+  
   test("create carbon table without dimensions") {
     try {
       sql("create table carbontable(msr1 int, msr2 double, msr3 bigint, msr4 decimal)" +

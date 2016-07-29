@@ -172,7 +172,7 @@ case class CarbonRelation(
       childDim.getDataType.toString.toLowerCase match {
         case "array" => s"array<${ getArrayChildren(childDim.getColName) }>"
         case "struct" => s"struct<${ getStructChildren(childDim.getColName) }>"
-        case dType => dType
+        case dType => addDecimalScaleAndPrecision(childDim, dType)
       }
     }).mkString(",")
   }
@@ -188,7 +188,8 @@ case class CarbonRelation(
         }:struct<${ metaData.carbonTable.getChildren(childDim.getColName)
             .asScala.map(f => s"${ recursiveMethod(childDim.getColName, f) }").mkString(",")
         }>"
-        case dType => s"${ childDim.getColName.substring(dimName.length() + 1) }:${ dType }"
+        case dType => s"${ childDim.getColName
+          .substring(dimName.length() + 1) }:${ addDecimalScaleAndPrecision(childDim, dType) }"
       }
     }).mkString(",")
   }
@@ -212,12 +213,7 @@ case class CarbonRelation(
         case "struct" => CarbonMetastoreTypes
           .toDataType(s"struct<${ getStructChildren(dim.getColName) }>")
         case dType =>
-          var dataType = dType
-          if (dimval.getDataType == org.carbondata.core.carbon.metadata.datatype.DataType.DECIMAL) {
-            dataType +=
-              "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema
-                .getScale + ")"
-          }
+          var dataType = addDecimalScaleAndPrecision(dimval, dType)
           CarbonMetastoreTypes.toDataType(dataType)
       }
 
@@ -255,6 +251,16 @@ case class CarbonRelation(
         p.schemaName == schemaName && p.output == output && p.cubeName == cubeName
       case _ => false
     }
+  }
+
+  def addDecimalScaleAndPrecision(dimval: CarbonDimension, dataType: String): String = {
+    var dType = dataType
+    if (dimval.getDataType == org.carbondata.core.carbon.metadata.datatype.DataType.DECIMAL) {
+      dType +=
+        "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema
+          .getScale + ")"
+    }
+    dType
   }
 
   private var tableStatusLastUpdateTime = 0L
