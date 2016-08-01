@@ -306,7 +306,10 @@ public final class GraphExecutionUtil {
           count++;
         }
       }
-
+      if (0 == count) {
+        LOGGER.error("There is No proper CSV file header found." +
+            " Either the ddl or the CSV file should provide CSV file header. ");
+      }
       return (count == columnNames.length);
     }
 
