@@ -52,7 +52,7 @@ import org.carbondata.spark._
 import org.carbondata.spark.load._
 import org.carbondata.spark.merger.CarbonDataMergerUtil
 import org.carbondata.spark.splits.TableSplit
-import org.carbondata.spark.util.{CarbonQueryUtil, LoadMetadataUtil}
+import org.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil, LoadMetadataUtil}
 
 
 /**
@@ -255,13 +255,7 @@ object CarbonDataRDDFactory extends Logging {
         )
       storeLocation = storeLocation + "/carbonstore/" + System.currentTimeMillis()
       val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
-      var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
-      if (null == kettleHomePath) {
-        kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home")
-      }
-      if (kettleHomePath == null) {
-        sys.error(s"carbon.kettle.home is not set")
-      }
+      val kettleHomePath = CarbonScalaUtil.getKettleHome(sqlContext)
       CarbonDataRDDFactory.loadCarbonData(
         sqlContext,
         carbonLoadModel,

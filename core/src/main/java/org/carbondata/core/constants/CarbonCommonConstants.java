@@ -73,6 +73,10 @@ public final class CarbonCommonConstants {
    */
   public static final String STORE_LOCATION_DEFAULT_VAL = "../carbon.store";
   /**
+   * the folder name of kettle home path
+   */
+  public static final String KETTLE_HOME_NAME = "carbonplugins";
+  /**
    * CARDINALITY_INCREMENT_DEFAULT_VALUE
    */
   public static final int CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL = 10;

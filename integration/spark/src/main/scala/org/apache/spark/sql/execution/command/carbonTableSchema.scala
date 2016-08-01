@@ -1230,14 +1230,8 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
     carbonLoadModel.setStorePath(relation.cubeMeta.storePath)
 
     val partitioner = relation.cubeMeta.partitioner
+    val kettleHomePath = CarbonScalaUtil.getKettleHome(sqlContext)
 
-    var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
-    if (null == kettleHomePath) {
-      kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home")
-    }
-    if (kettleHomePath == null) {
-      sys.error(s"carbon.kettle.home is not set")
-    }
     var storeLocation = CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
         System.getProperty("java.io.tmpdir")
@@ -1524,13 +1518,7 @@ private[sql] case class LoadCube(
       storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
       val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
-      var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
-      if (null == kettleHomePath) {
-        kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home")
-      }
-      if (kettleHomePath == null) {
-        sys.error(s"carbon.kettle.home is not set")
-      }
+      val kettleHomePath = CarbonScalaUtil.getKettleHome(sqlContext)
 
       val delimiter = partionValues.getOrElse("delimiter", ",")
       val quoteChar = partionValues.getOrElse("quotechar", "\"")
@@ -1721,13 +1709,8 @@ private[sql] case class LoadAggregationTable(
         System.getProperty("java.io.tmpdir"))
     storeLocation = storeLocation + "/carbonstore/" + System.currentTimeMillis()
     val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
-    var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
-    if (null == kettleHomePath) {
-      kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home")
-    }
-    if (kettleHomePath == null) {
-      sys.error(s"carbon.kettle.home is not set")
-    }
+    val kettleHomePath = CarbonScalaUtil.getKettleHome(sqlContext)
+
     CarbonDataRDDFactory.loadCarbonData(
       sqlContext,
       carbonLoadModel,

@@ -17,8 +17,11 @@
 
 package org.carbondata.spark.util
 
+import java.io.File
+
 import scala.collection.JavaConverters._
 
+import org.apache.spark.Logging
 import org.apache.spark.sql._
 import org.apache.spark.sql.execution.command.Level
 import org.apache.spark.sql.hive.{CarbonMetaData, DictionaryMap}
@@ -28,9 +31,11 @@ import org.carbondata.core.carbon.metadata.datatype.DataType
 import org.carbondata.core.carbon.metadata.encoder.Encoding
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.core.constants.CarbonCommonConstants
+import org.carbondata.core.datastorage.store.impl.FileFactory
+import org.carbondata.core.util.CarbonProperties
 import org.carbondata.query.expression.{DataType => CarbonDataType}
 
-object CarbonScalaUtil {
+object CarbonScalaUtil extends Logging {
   def convertSparkToCarbonDataType(
       dataType: org.apache.spark.sql.types.DataType): CarbonDataType = {
     dataType match {
@@ -142,4 +147,48 @@ object CarbonScalaUtil {
     }
   }
 
+  def getKettleHome(sqlContext: SQLContext): String = {
+    var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
+    if (null == kettleHomePath) {
+      kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home")
+    }
+    if (kettleHomePath != null) {
+      val sparkMaster = sqlContext.sparkContext.getConf.get("spark.master").toLowerCase()
+      // get spark master, if local, need to correct the kettle home
+      // e.g: --master local, the executor running in local machine
+      if (sparkMaster.startsWith("local")) {
+        val kettleHomeFileType = FileFactory.getFileType(kettleHomePath)
+        val kettleHomeFile = FileFactory.getCarbonFile(kettleHomePath, kettleHomeFileType)
+        // check if carbon.kettle.home path is exists
+        if (!kettleHomeFile.exists()) {
+          // get the path of this class
+          // e.g: file:/srv/bigdata/install/spark/sparkJdbc/carbonlib/carbon-
+          // xxx.jar!/org/carbondata/spark/rdd/
+          var jarFilePath = this.getClass.getResource("").getPath
+          val endIndex = jarFilePath.indexOf(".jar!") + 4
+          // get the jar file path
+          // e.g: file:/srv/bigdata/install/spark/sparkJdbc/carbonlib/carbon-*.jar
+          jarFilePath = jarFilePath.substring(0, endIndex)
+          val jarFileType = FileFactory.getFileType(jarFilePath)
+          val jarFile = FileFactory.getCarbonFile(jarFilePath, jarFileType)
+          // get the parent folder of the jar file
+          // e.g:file:/srv/bigdata/install/spark/sparkJdbc/carbonlib
+          val carbonLibPath = jarFile.getParentFile.getPath
+          // find the kettle home under the previous folder
+          // e.g:file:/srv/bigdata/install/spark/sparkJdbc/carbonlib/cabonplugins
+          kettleHomePath = carbonLibPath + File.separator + CarbonCommonConstants.KETTLE_HOME_NAME
+          logInfo(s"carbon.kettle.home path is not exists, reset it as $kettleHomePath")
+          val newKettleHomeFileType = FileFactory.getFileType(kettleHomePath)
+          val newKettleHomeFile = FileFactory.getCarbonFile(kettleHomePath, newKettleHomeFileType)
+          // check if the found kettle home exists
+          if (!newKettleHomeFile.exists()) {
+            sys.error("Kettle home not found. Failed to reset carbon.kettle.home")
+          }
+        }
+      }
+    } else {
+      sys.error("carbon.kettle.home is not set")
+    }
+    kettleHomePath
+  }
 }
