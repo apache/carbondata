@@ -300,12 +300,18 @@ class CarbonGlobalDictionaryGenerateRDD(
       val pathService = CarbonCommonFactory.getPathService
       val carbonTablePath = pathService.getCarbonTablePath(model.columnIdentifier(split.index),
           model.hdfsLocation, model.table)
-      CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
-        model.hdfsTempLocation)
-      CarbonProperties.getInstance.addProperty(CarbonCommonConstants.LOCK_TYPE,
-        model.lockType)
-      CarbonProperties.getInstance.addProperty(CarbonCommonConstants.ZOOKEEPER_URL,
-        model.zooKeeperUrl)
+      if (null != model.hdfsTempLocation) {
+         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
+           model.hdfsTempLocation)
+      }
+      if (null != model.lockType) {
+         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.LOCK_TYPE,
+           model.lockType)
+      }
+      if (null != model.zooKeeperUrl) {
+         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.ZOOKEEPER_URL,
+          model.zooKeeperUrl)
+      }
       val dictLock = CarbonLockFactory
         .getCarbonLockObj(carbonTablePath.getRelativeDictionaryDirectory,
           model.columnIdentifier(split.index).getColumnId + LockUsage.LOCK)
