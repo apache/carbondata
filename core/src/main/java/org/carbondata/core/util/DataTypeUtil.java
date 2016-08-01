@@ -29,6 +29,7 @@ import java.util.Date;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
 
@@ -268,7 +269,7 @@ public final class DataTypeUtil {
           scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
           org.apache.spark.sql.types.Decimal decConverter =
               new org.apache.spark.sql.types.Decimal();
-          return decConverter.set(scalaDecVal, 19, 2);
+          return decConverter.set(scalaDecVal);
         default:
           return UTF8String.fromString(data);
       }
@@ -307,39 +308,103 @@ public final class DataTypeUtil {
   }
 
   /**
-   * This method will parse a given string value corresponding to its datatype
+   * Below method will be used to basically to know whether any non parseable
+   * data is present or not. if present then return null so that system can
+   * process to default null member value.
    *
-   * @param value    value to parse
-   * @param dataType datatype for that value
+   * @param data           data
+   * @param actualDataType actual data type
+   * @return actual data after conversion
+   */
+  public static Object normalizeIntAndLongValues(String data, DataType actualDataType) {
+    if (null == data) {
+      return null;
+    }
+    try {
+      Object parsedValue = null;
+      switch (actualDataType) {
+        case INT:
+          parsedValue = Integer.parseInt(data);
+          break;
+        case LONG:
+          parsedValue = Long.parseLong(data);
+          break;
+        default:
+          return data;
+      }
+      if(null != parsedValue) {
+        return data;
+      }
+      return null;
+    } catch (NumberFormatException ex) {
+      return null;
+    }
+  }
+
+  /**
+   * This method will parse a given string value corresponding to its data type
+   *
+   * @param value     value to parse
+   * @param dimension dimension to get data type and precision and scale in case of decimal
+   *                  data type
    * @return
    */
-  public static boolean validateColumnValueForItsDataType(String value, DataType dataType) {
+  public static String normalizeColumnValueForItsDataType(String value, CarbonDimension dimension) {
     try {
       Object parsedValue = null;
       // validation will not be done for timestamp datatype as for timestamp direct dictionary
       // is generated. No dictionary file is created for timestamp datatype column
-      switch (dataType) {
+      switch (dimension.getDataType()) {
         case DECIMAL:
-          parsedValue = new BigDecimal(value);
-          break;
+          return parseStringToBigDecimal(value, dimension);
         case INT:
-          parsedValue = Integer.parseInt(value);
-          break;
         case LONG:
-          parsedValue = Long.valueOf(value);
+          parsedValue = normalizeIntAndLongValues(value, dimension.getDataType());
           break;
         case DOUBLE:
-          parsedValue = Double.valueOf(value);
+          parsedValue = Double.parseDouble(value);
           break;
         default:
-          return true;
+          return value;
       }
       if (null != parsedValue) {
-        return true;
+        return value;
       }
-      return false;
+      return null;
     } catch (Exception e) {
-      return false;
+      return null;
     }
+  }
+
+  /**
+   * This method will parse a value to its datatype if datatype is decimal else will return
+   * the value passed
+   *
+   * @param value     value to be parsed
+   * @param dimension
+   * @return
+   */
+  public static String parseValue(String value, CarbonDimension dimension) {
+    try {
+      switch (dimension.getDataType()) {
+        case DECIMAL:
+          return parseStringToBigDecimal(value, dimension);
+        default:
+          return value;
+      }
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  private static String parseStringToBigDecimal(String value, CarbonDimension dimension) {
+    BigDecimal bigDecimal = new BigDecimal(value)
+        .setScale(dimension.getColumnSchema().getScale(), RoundingMode.HALF_UP);
+    BigDecimal normalizedValue =
+        normalizeDecimalValue(bigDecimal, dimension.getColumnSchema().getPrecision());
+    if (null != normalizedValue) {
+      return normalizedValue.toString();
+    }
+    return null;
   }
 }

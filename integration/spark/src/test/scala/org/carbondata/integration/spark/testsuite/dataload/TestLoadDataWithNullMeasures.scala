@@ -29,6 +29,7 @@ import org.scalatest.BeforeAndAfterAll
  */
 class TestLoadDataWithNullMeasures extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
+    sql("DROP TABLE IF EXISTS carbontable")
     sql(
       "CREATE TABLE carbontable (empno int, empname String, designation String, doj String, " +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +

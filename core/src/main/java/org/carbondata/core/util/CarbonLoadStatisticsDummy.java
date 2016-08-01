@@ -35,22 +35,12 @@ public class CarbonLoadStatisticsDummy implements LoadStatistics {
   }
 
   @Override
-  public void recordGlobalDicGenTotalTime(Long glblDicTimePoint) {
+  public void recordDicShuffleAndWriteTime() {
 
   }
 
   @Override
   public void recordLoadCsvfilesToDfTime() {
-
-  }
-
-  @Override
-  public void recordCsvlDicShuffleMaxTime(Long csvlDicShuffleTimePart) {
-
-  }
-
-  @Override
-  public void recordDicWriteFileMaxTime(Long dicWriteFileTimePart) {
 
   }
 

@@ -21,6 +21,7 @@ import java.util.{ArrayList, List}
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericMutableRow}
 
 import org.carbondata.core.carbon.metadata.encoder.Encoding
@@ -30,9 +31,11 @@ import org.carbondata.scan.expression.exception.FilterUnsupportedException
 import org.carbondata.scan.filter.intf.{ExpressionType, RowIntf}
 import org.carbondata.spark.util.CarbonScalaUtil
 
-class SparkUnknownExpression(sparkExp: SparkExpression)
+class SparkUnknownExpression(var sparkExp: SparkExpression)
   extends UnknownExpression with ConditionalExpression {
 
+  private var evaluateExpression: (InternalRow) => Any = sparkExp.eval
+  private var isExecutor: Boolean = false
   children.addAll(getColumnList())
 
   override def evaluate(carbonRowInstance: RowIntf): ExpressionResult = {
@@ -49,10 +52,13 @@ class SparkUnknownExpression(sparkExp: SparkExpression)
       }
     }
     try {
-      val sparkRes = sparkExp.eval(
-        new GenericMutableRow(values.map(a => a.asInstanceOf[Any]).toArray)
-      )
-
+      val result = evaluateExpression(
+          new GenericMutableRow(values.map(a => a.asInstanceOf[Any]).toArray))
+      val sparkRes = if (isExecutor) {
+        result.asInstanceOf[InternalRow].get(0, sparkExp.dataType)
+      } else {
+        result
+      }
       new ExpressionResult(CarbonScalaUtil.convertSparkToCarbonDataType(sparkExp.dataType),
         sparkRes
       )
@@ -70,6 +76,10 @@ class SparkUnknownExpression(sparkExp: SparkExpression)
     sparkExp.toString()
   }
 
+  def setEvaluateExpression(evaluateExpression: (InternalRow) => Any): Unit = {
+    this.evaluateExpression = evaluateExpression
+    isExecutor = true
+  }
 
   def getColumnList(): java.util.List[ColumnExpression] = {
 
@@ -90,7 +100,7 @@ class SparkUnknownExpression(sparkExp: SparkExpression)
   }
 
   def isSingleDimension(): Boolean = {
-    var lst = new java.util.ArrayList[ColumnExpression]()
+    val lst = new java.util.ArrayList[ColumnExpression]()
     getAllColumnListFromExpressionTree(sparkExp, lst)
     if (lst.size == 1 && lst.get(0).isDimension) {
       true
@@ -127,7 +137,7 @@ class SparkUnknownExpression(sparkExp: SparkExpression)
   }
 
   def isDirectDictionaryColumns(): Boolean = {
-    var lst = new ArrayList[ColumnExpression]()
+    val lst = new ArrayList[ColumnExpression]()
     getAllColumnListFromExpressionTree(sparkExp, lst)
     if (lst.get(0).getCarbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
       true

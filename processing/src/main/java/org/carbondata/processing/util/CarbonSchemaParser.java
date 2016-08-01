@@ -1173,6 +1173,7 @@ public final class CarbonSchemaParser {
             childDim.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER + childDim
                 .getDataType() + CarbonCommonConstants.COLON_SPC_CHARACTER + dimension.getColName()
                 + CarbonCommonConstants.COLON_SPC_CHARACTER + childDim.getColumnId()
+                + CarbonCommonConstants.COLON_SPC_CHARACTER + childDim.getOrdinal()
                 + CarbonCommonConstants.HASH_SPC_CHARACTER);
       }
     }

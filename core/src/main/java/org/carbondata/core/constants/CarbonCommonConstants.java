@@ -155,6 +155,10 @@ public final class CarbonCommonConstants {
    */
   public static final String COUNT = "count";
   /**
+   * Count constant
+   */
+  public static final String COUNT_STAR = "countstar";
+  /**
    * Max constant
    */
   public static final String MAX = "max";
@@ -739,6 +743,11 @@ public final class CarbonCommonConstants {
   public static final String CARBON_MERGE_SORT_PREFETCH = "carbon.merge.sort.prefetch";
   public static final String CARBON_MERGE_SORT_PREFETCH_DEFAULT = "true";
 
+  /**
+   *  default name of data base
+   */
+  public static final String DATABASE_DEFAULT_NAME = "default";
+
   // tblproperties
   public static final String COLUMN_GROUPS = "column_groups";
   public static final String DICTIONARY_EXCLUDE = "dictionary_exclude";
@@ -851,6 +860,26 @@ public final class CarbonCommonConstants {
    * Rocord size in case of compaction.
    */
   public static final int COMPACTION_INMEMORY_RECORD_SIZE = 120000;
+
+  /**
+   * If the level 2 compaction is done in minor then new compacted segment will end with .2
+   */
+  public static String LEVEL2_COMPACTION_INDEX = ".2";
+
+  /**
+   * Indicates compaction
+   */
+  public static String COMPACTION_KEY_WORD = "COMPACTION";
+
+  /**
+   * hdfs temporary directory key
+   */
+  public static final String HDFS_TEMP_LOCATION = "hadoop.tmp.dir";
+
+  /**
+   * zookeeper url key
+   */
+  public static final String ZOOKEEPER_URL = "spark.deploy.zookeeper.url";
 
   private CarbonCommonConstants() {
   }

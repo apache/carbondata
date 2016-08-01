@@ -119,12 +119,7 @@ public class UnivocityCsvParser {
     // calculate the end offset the block
     long endOffset =
         this.csvParserVo.getBlockDetailsList().get(blockCounter).getBlockLength() + startOffset;
-    // if start offset is not 0 then we need to set the offset to the start of a line
-    // so if offset is not zero we are setting to -1 so to check if current position itself is
-    // start of the block so -1 will ensure whether last character is new line character or not
-    if (startOffset != 0) {
-      startOffset -= 1;
-    }
+
     // create a input stream for the block
     DataInputStream dataInputStream = FileFactory
         .getDataInputStream(this.csvParserVo.getBlockDetailsList().get(blockCounter).getFilePath(),
@@ -134,10 +129,8 @@ public class UnivocityCsvParser {
       LineReader lineReader = new LineReader(dataInputStream, 1);
       startOffset += lineReader.readLine(new Text(), 0);
     }
-    CustomReader reader =
-        new CustomReader(new BufferedReader(new InputStreamReader(dataInputStream)));
-    reader.setLimit(endOffset - startOffset);
-    inputStreamReader = reader;
+    inputStreamReader = new BufferedReader(new InputStreamReader(
+        new CustomDataStream(dataInputStream, endOffset - startOffset)));
   }
 
   /**

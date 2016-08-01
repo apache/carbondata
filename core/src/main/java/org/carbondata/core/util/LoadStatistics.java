@@ -24,13 +24,9 @@ public interface LoadStatistics {
   void  initPartitonInfo(String PartitionId);
 
   //Record the time
-  void recordGlobalDicGenTotalTime(Long glblDicTimePoint);
+  void recordDicShuffleAndWriteTime();
 
   void recordLoadCsvfilesToDfTime();
-
-  void recordCsvlDicShuffleMaxTime(Long csvlDicShuffleTimePart);
-
-  void recordDicWriteFileMaxTime(Long dicWriteFileTimePart);
 
   void recordDictionaryValuesTotalTime(String partitionID,
       Long dictionaryValuesTotalTimeTimePoint);

@@ -17,51 +17,27 @@
 
 package org.carbondata.integration.spark.merger;
 
-import java.util.List;
 import java.util.concurrent.Callable;
 
-import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
-import org.carbondata.core.load.LoadMetadataDetails;
-import org.carbondata.spark.load.CarbonLoadModel;
 import org.carbondata.spark.rdd.Compactor;
 
-import org.apache.spark.sql.SQLContext;
-import org.apache.spark.sql.execution.command.Partitioner;
+import org.apache.spark.sql.execution.command.CompactionCallableModel;
 
 /**
- *
+ * Callable class which is used to trigger the compaction in a separate callable.
  */
 public class CompactionCallable implements Callable<Void> {
 
-  private final String hdfsStoreLocation;
-  private final Partitioner partitioner;
-  private final String storeLocation;
-  private final CarbonTable carbonTable;
-  private final String kettleHomePath;
-  private final Long tableCreationTime;
-  private final List<LoadMetadataDetails> loadsToMerge;
-  private final SQLContext sqlContext;
-  private final CarbonLoadModel carbonLoadModel;
+  private final CompactionCallableModel compactionCallableModel;
 
-  public CompactionCallable(String hdfsStoreLocation, CarbonLoadModel carbonLoadModel,
-      Partitioner partitioner, String storeLocation, CarbonTable carbonTable, String kettleHomePath,
-      Long tableCreationTime, List<LoadMetadataDetails> loadsToMerge, SQLContext sqlContext) {
+  public CompactionCallable(CompactionCallableModel compactionCallableModel) {
 
-    this.hdfsStoreLocation = hdfsStoreLocation;
-    this.carbonLoadModel = carbonLoadModel;
-    this.partitioner = partitioner;
-    this.storeLocation = storeLocation;
-    this.carbonTable = carbonTable;
-    this.kettleHomePath = kettleHomePath;
-    this.tableCreationTime = tableCreationTime;
-    this.loadsToMerge = loadsToMerge;
-    this.sqlContext = sqlContext;
+    this.compactionCallableModel = compactionCallableModel;
   }
 
   @Override public Void call() throws Exception {
 
-    Compactor.triggerCompaction(hdfsStoreLocation, carbonLoadModel, partitioner, storeLocation,
-        carbonTable, kettleHomePath, tableCreationTime, loadsToMerge, sqlContext);
+    Compactor.triggerCompaction(compactionCallableModel);
     return null;
 
   }

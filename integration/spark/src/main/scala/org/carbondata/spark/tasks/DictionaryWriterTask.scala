@@ -61,52 +61,28 @@ class DictionaryWriterTask(valuesBuffer: mutable.HashSet[String],
       }
 
       if (values.length >= 1) {
-        var preValue = values(0)
         if (model.dictFileExists(columnIndex)) {
-          if (dictionary.getSurrogateKey(values(0)) == CarbonCommonConstants
-            .INVALID_SURROGATE_KEY) {
-            val parseSuccess = org.carbondata.core.util.DataTypeUtil
-              .validateColumnValueForItsDataType(values(0),
-                model.primDimensions(columnIndex).getDataType);
-            if (parseSuccess) {
-              writer.write(values(0))
-              distinctValues.add(values(0))
-            }
-          }
-          for (i <- 1 until values.length) {
-            if (preValue != values(i)) {
-              if (dictionary.getSurrogateKey(values(i)) ==
-                  CarbonCommonConstants.INVALID_SURROGATE_KEY) {
-                val parseSuccess = org.carbondata.core.util.DataTypeUtil
-                  .validateColumnValueForItsDataType(values(i),
-                    model.primDimensions(columnIndex).getDataType);
-                if (parseSuccess) {
-                  writer.write(values(i))
-                  distinctValues.add(values(i))
-                  preValue = values(i)
-                }
+          for (value <- values) {
+            if (dictionary.getSurrogateKey(value) ==
+                CarbonCommonConstants.INVALID_SURROGATE_KEY) {
+              val parsedValue = org.carbondata.core.util.DataTypeUtil
+                .normalizeColumnValueForItsDataType(value,
+                  model.primDimensions(columnIndex))
+              if (null != parsedValue) {
+                writer.write(parsedValue)
+                distinctValues.add(parsedValue)
               }
             }
           }
 
         } else {
-          val parseSuccess = org.carbondata.core.util.DataTypeUtil
-            .validateColumnValueForItsDataType(values(0),
-              model.primDimensions(columnIndex).getDataType);
-          if (parseSuccess) {
-            writer.write(values(0))
-            distinctValues.add(values(0))
-          }
-          for (i <- 1 until values.length) {
-            if (preValue != values(i)) {
-              val parseSuccess = org.carbondata.core.util.DataTypeUtil
-                .validateColumnValueForItsDataType(values(i),
-                  model.primDimensions(columnIndex).getDataType);
-              if (parseSuccess) {
-                writer.write(values(i))
-                distinctValues.add(values(i))
-                preValue = values(i)
-              }
+          for (value <- values) {
+            val parsedValue = org.carbondata.core.util.DataTypeUtil
+              .normalizeColumnValueForItsDataType(value,
+                model.primDimensions(columnIndex))
+            if (null != parsedValue) {
+              writer.write(parsedValue)
+              distinctValues.add(parsedValue)
             }
           }
         }

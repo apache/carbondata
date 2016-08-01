@@ -179,7 +179,7 @@ case class CarbonRelation(
       childDim.getDataType.toString.toLowerCase match {
         case "array" => s"array<${ getArrayChildren(childDim.getColName) }>"
         case "struct" => s"struct<${ getStructChildren(childDim.getColName) }>"
-        case dType => dType
+        case dType => addDecimalScaleAndPrecision(childDim, dType)
       }
     }).mkString(",")
   }
@@ -195,7 +195,8 @@ case class CarbonRelation(
         }:struct<${ metaData.carbonTable.getChildren(childDim.getColName)
             .asScala.map(f => s"${ recursiveMethod(childDim.getColName, f) }").mkString(",")
         }>"
-        case dType => s"${ childDim.getColName.substring(dimName.length() + 1) }:${ dType }"
+        case dType => s"${ childDim.getColName
+          .substring(dimName.length() + 1) }:${ addDecimalScaleAndPrecision(childDim, dType) }"
       }
     }).mkString(",")
   }
@@ -210,14 +211,17 @@ case class CarbonRelation(
       tableMeta.carbonTable.getDimensionByTableName(tableMeta.carbonTableIdentifier.getTableName)
         .asScala.asJava)
     sett.asScala.toSeq.filter(!_.getColumnSchema.isInvisible).map(dim => {
-      val output: DataType = metaData.carbonTable
-        .getDimensionByName(metaData.carbonTable.getFactTableName, dim.getColName).getDataType
+      val dimval = metaData.carbonTable
+        .getDimensionByName(metaData.carbonTable.getFactTableName, dim.getColName)
+      val output: DataType = dimval.getDataType
         .toString.toLowerCase match {
         case "array" => CarbonMetastoreTypes
           .toDataType(s"array<${ getArrayChildren(dim.getColName) }>")
         case "struct" => CarbonMetastoreTypes
           .toDataType(s"struct<${ getStructChildren(dim.getColName) }>")
-        case dType => CarbonMetastoreTypes.toDataType(dType)
+        case dType =>
+          var dataType = addDecimalScaleAndPrecision(dimval, dType)
+          CarbonMetastoreTypes.toDataType(dataType)
       }
 
       AttributeReference(
@@ -255,6 +259,16 @@ case class CarbonRelation(
         p.databaseName == databaseName && p.output == output && p.tableName == tableName
       case _ => false
     }
+  }
+
+  def addDecimalScaleAndPrecision(dimval: CarbonDimension, dataType: String): String = {
+    var dType = dataType
+    if (dimval.getDataType == org.carbondata.core.carbon.metadata.datatype.DataType.DECIMAL) {
+      dType +=
+        "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema
+          .getScale + ")"
+    }
+    dType
   }
 
   private var tableStatusLastUpdateTime = 0L

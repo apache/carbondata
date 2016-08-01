@@ -521,7 +521,7 @@ public class SortDataRows {
   private void updateSortTempFileLocation() {
     String carbonDataDirectoryPath = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(databaseName, tableName, taskNo, partitionID,
-            segmentId);
+            segmentId, false);
     this.tempFileLocation =
         carbonDataDirectoryPath + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
     LOGGER.info("temp file location" + this.tempFileLocation);

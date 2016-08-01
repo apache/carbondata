@@ -28,6 +28,7 @@ import java.util.List;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.KeyGenerator;
+import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -58,6 +59,11 @@ public class PrimitiveDataType implements GenericDataType {
   private String columnId;
 
   /**
+   * dimension ordinal of primitive type column
+   */
+  private int dimensionOrdinal;
+
+  /**
    * key size
    */
   private int keySize;
@@ -74,14 +80,16 @@ public class PrimitiveDataType implements GenericDataType {
 
   /**
    * constructor
+   *
    * @param name
    * @param parentname
    * @param columnId
    */
-  public PrimitiveDataType(String name, String parentname, String columnId) {
+  public PrimitiveDataType(String name, String parentname, String columnId, int dimensionOrdinal) {
     this.name = name;
     this.parentname = parentname;
     this.columnId = columnId;
+    this.dimensionOrdinal = dimensionOrdinal;
   }
 
   /*
@@ -151,15 +159,21 @@ public class PrimitiveDataType implements GenericDataType {
   /*
    * parse string and generate surrogate
    */
-  @Override
-  public void parseStringAndWriteByteArray(String tableName, String inputString,
+  @Override public void parseStringAndWriteByteArray(String tableName, String inputString,
       String[] delimiter, int delimiterIndex, DataOutputStream dataOutputStream,
       CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException {
-    Integer surrogateKey = surrogateKeyGen
-        .generateSurrogateKeys(inputString, tableName + CarbonCommonConstants.UNDERSCORE + name,
-            this.getColumnId());
-    if (surrogateKey == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
+    String parsedValue = DataTypeUtil.parseValue(inputString,
+        surrogateKeyGen.getDimensionOrdinalToDimensionMapping()[dimensionOrdinal]);
+    Integer surrogateKey = null;
+    if (null == parsedValue) {
       surrogateKey = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
+    } else {
+      surrogateKey = surrogateKeyGen
+          .generateSurrogateKeys(parsedValue, tableName + CarbonCommonConstants.UNDERSCORE + name,
+              this.getColumnId());
+      if (surrogateKey == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
+        surrogateKey = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
+      }
     }
     dataOutputStream.writeInt(surrogateKey);
   }

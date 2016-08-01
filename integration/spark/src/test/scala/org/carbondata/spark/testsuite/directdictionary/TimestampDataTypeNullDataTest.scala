@@ -59,7 +59,7 @@ class TimestampDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
       val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
         .getCanonicalPath
-      var csvFilePath = currentDirectory + "/src/test/resources/datasamplenull.csv"
+      val csvFilePath = currentDirectory + "/src/test/resources/datasamplenull.csv"
       sql("LOAD DATA LOCAL INPATH '" + csvFilePath + "' INTO TABLE timestampTyeNullData").collect();
 
     } catch {

@@ -34,10 +34,10 @@ class DataCompactionTest extends QueryTest with BeforeAndAfterAll {
 
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
-    var csvFilePath1 = currentDirectory + "/src/test/resources/compaction/compaction1.csv"
+    val csvFilePath1 = currentDirectory + "/src/test/resources/compaction/compaction1.csv"
 
-    var csvFilePath2 = currentDirectory + "/src/test/resources/compaction/compaction2.csv"
-    var csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
+    val csvFilePath2 = currentDirectory + "/src/test/resources/compaction/compaction2.csv"
+    val csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
 
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE normalcompaction OPTIONS" +
       "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"

@@ -101,7 +101,11 @@ case class CarbonDictionaryDecoder(
       case DataType.DECIMAL =>
         val scale: Int = carbonDimension.getColumnSchema.getScale
         val precision: Int = carbonDimension.getColumnSchema.getPrecision
-        DecimalType(18, 2)
+        if (scale == 0 && precision == 0) {
+          DecimalType(18, 2)
+        } else {
+          DecimalType(precision, scale)
+        }
       case DataType.TIMESTAMP => TimestampType
       case DataType.STRUCT =>
         CarbonMetastoreTypes

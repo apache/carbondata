@@ -47,6 +47,9 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
         "projectcode int, projectjoindate String,projectenddate String, attendance String," +
         "utilization String,salary String)row format delimited fields terminated by ','"
     )
+
+    sql("drop table if exists carbontable1")
+    sql("drop table if exists hivetable1")
   }
 
   test("test data loading and validate query output") {
@@ -213,7 +216,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     )
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
-    var csvFilePath = currentDirectory + "/src/test/resources/data_withCAPSHeader.csv"
+    val csvFilePath = currentDirectory + "/src/test/resources/data_withCAPSHeader.csv"
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO table header_test OPTIONS " +
       "('DELIMITER'=',', 'QUOTECHAR'='\"')");
     checkAnswer(sql("select empno from header_test"),
@@ -245,7 +248,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     )
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
-    var csvFilePath = currentDirectory + "/src/test/resources/data_withMixedHeader.csv"
+    val csvFilePath = currentDirectory + "/src/test/resources/data_withMixedHeader.csv"
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO table mixed_header_test OPTIONS " +
       "('DELIMITER'=',', 'QUOTECHAR'='\"')");
     checkAnswer(sql("select empno from mixed_header_test"),
@@ -526,25 +529,64 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test data which contain column with decimal data type in array of struct."){
-    sql("DROP TABLE IF EXISTS t3")
+    sql("DROP TABLE IF EXISTS complex_t3")
+    sql("DROP TABLE IF EXISTS complex_hive_t3")
 
     sql(
       """
-           CREATE TABLE IF NOT EXISTS t3
+           CREATE TABLE complex_t3
            (ID decimal, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int, complex
            array<struct<a:decimal(4,2),str:string>>)
            STORED BY 'org.apache.carbondata.format'
       """
     )
+    sql(
+      """
+           CREATE TABLE complex_hive_t3
+           (ID decimal, date Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int, complex
+           array<struct<a:decimal(4,2),str:string>>)
+           row format delimited fields terminated by ','
+      """
+    )
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(s"""
-         LOAD DATA LOCAL INPATH './src/test/resources/complexTypeDecimalNested.csv' into table t3
+         LOAD DATA LOCAL INPATH './src/test/resources/complexTypeDecimalNested.csv' into table complex_t3
         """)
-    checkAnswer(sql("select count(*) from t3"),Seq(Row(8)))
-    checkAnswer(sql("select id from t3 where salary = 15000"),Seq(Row(1)))
+    sql(s"""
+         LOAD DATA LOCAL INPATH './src/test/resources/complexTypeDecimalNestedHive.csv' into table complex_hive_t3
+        """)
+    checkAnswer(sql("select count(*) from complex_t3"),sql("select count(*) from complex_hive_t3"))
+    checkAnswer(sql("select id from complex_t3 where salary = 15000"),sql("select id from complex_hive_t3 where salary = 15000"))
+  }
+
+  test("test data loading when delimiter is '|' and data with header") {
+    sql(
+      "CREATE table carbontable1 (empno int, empname String, designation String, doj String, " +
+        "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
+        "projectcode int, projectjoindate String, projectenddate String,attendance double," +
+        "utilization double,salary double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES" +
+        "('DICTIONARY_EXCLUDE'='empno,empname,designation,doj,workgroupcategory," +
+        "workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate')"
+    )
+    sql(
+      "create table hivetable1 (empno int, empname String, designation string, doj String, " +
+        "workgroupcategory int, workgroupcategoryname String,deptno int, deptname String, " +
+        "projectcode int, projectjoindate String,projectenddate String, attendance double," +
+        "utilization double,salary double)row format delimited fields terminated by ','"
+    )
+
+    sql(
+      "LOAD DATA local inpath './src/test/resources/datadelimiter.csv' INTO TABLE carbontable1 OPTIONS" +
+        "('DELIMITER'= '|', 'QUOTECHAR'= '\"')"
+    )
+
+    sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' INTO table hivetable1")
+
+    checkAnswer(sql("select * from carbontable1"), sql("select * from hivetable1"))
   }
 
   override def afterAll {
@@ -552,6 +594,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql("drop table hivetable")
     sql("drop table if exists header_test")
     sql("drop table if exists mixed_header_test")
-
+    sql("drop table carbontable1")
+    sql("drop table hivetable1")
   }
 }

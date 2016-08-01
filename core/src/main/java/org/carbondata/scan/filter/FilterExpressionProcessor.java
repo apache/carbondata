@@ -40,7 +40,6 @@ import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.conditional.BinaryConditionalExpression;
 import org.carbondata.scan.expression.conditional.ConditionalExpression;
 import org.carbondata.scan.expression.exception.FilterUnsupportedException;
-import org.carbondata.scan.expression.logical.BinaryLogicalExpression;
 import org.carbondata.scan.filter.executer.FilterExecuter;
 import org.carbondata.scan.filter.intf.ExpressionType;
 import org.carbondata.scan.filter.resolver.ConditionalFilterResolverImpl;
@@ -94,7 +93,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
     List<DataRefNode> listOfDataBlocksToScan = new ArrayList<DataRefNode>();
     // getting the start and end index key based on filter for hitting the
     // selected block reference nodes based on filter resolver tree.
-    LOGGER.info("preparing the start and end key for finding"
+    LOGGER.debug("preparing the start and end key for finding"
         + "start and end block as per filter resolver");
     List<IndexKey> listOfStartEndKeys = new ArrayList<IndexKey>(2);
     FilterUtil.traverseResolverTreeAndGetStartAndEndKey(tableSegment.getSegmentProperties(),
@@ -115,7 +114,11 @@ public class FilterExpressionProcessor implements FilterProcessor {
       }
     }
 
-    LOGGER.info("Successfully retrieved the start and end key");
+    LOGGER.debug(
+        "Successfully retrieved the start and end key" + "Dictionary Start Key: " + searchStartKey
+            .getDictionaryKeys() + "No Dictionary Start Key " + searchStartKey.getNoDictionaryKeys()
+            + "Dictionary End Key: " + searchEndKey.getDictionaryKeys() + "No Dictionary End Key "
+            + searchEndKey.getNoDictionaryKeys());
     long startTimeInMillis = System.currentTimeMillis();
     DataRefNodeFinder blockFinder = new BTreeDataRefNodeFinder(
         tableSegment.getSegmentProperties().getEachDimColumnValueSize());
@@ -212,7 +215,6 @@ public class FilterExpressionProcessor implements FilterProcessor {
       AbsoluteTableIdentifier tableIdentifier, Expression intermediateExpression) {
     ExpressionType filterExpressionType = expressionTree.getFilterExpressionType();
     BinaryExpression currentExpression = null;
-    BinaryLogicalExpression logicalExpression = null;
     switch (filterExpressionType) {
       case OR:
         currentExpression = (BinaryExpression) expressionTree;
@@ -220,14 +222,14 @@ public class FilterExpressionProcessor implements FilterProcessor {
             createFilterResolverTree(currentExpression.getLeft(), tableIdentifier,
                 currentExpression),
             createFilterResolverTree(currentExpression.getRight(), tableIdentifier,
-                currentExpression), filterExpressionType);
+                currentExpression),currentExpression);
       case AND:
-        logicalExpression = (BinaryLogicalExpression) expressionTree;
+        currentExpression = (BinaryExpression) expressionTree;
         return new LogicalFilterResolverImpl(
-            createFilterResolverTree(logicalExpression.getLeft(), tableIdentifier,
+            createFilterResolverTree(currentExpression.getLeft(), tableIdentifier,
                 currentExpression),
-            createFilterResolverTree(logicalExpression.getRight(), tableIdentifier,
-                currentExpression), filterExpressionType);
+            createFilterResolverTree(currentExpression.getRight(), tableIdentifier,
+                currentExpression), currentExpression);
       case EQUALS:
       case IN:
         return getFilterResolverBasedOnExpressionType(ExpressionType.EQUALS, false, expressionTree,

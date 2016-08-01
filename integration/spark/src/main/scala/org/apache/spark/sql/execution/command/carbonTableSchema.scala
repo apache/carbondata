@@ -49,10 +49,12 @@ import org.carbondata.core.carbon.metadata.schema.table.{CarbonTable, TableInfo,
 import org.carbondata.core.carbon.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
+import org.carbondata.core.load.LoadMetadataDetails
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.integration.spark.merger.CompactionType
 import org.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
 import org.carbondata.lcm.status.SegmentStatusManager
+import org.carbondata.processing.etl.DataLoadingException
 import org.carbondata.spark.CarbonSparkFactory
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 import org.carbondata.spark.load._
@@ -158,6 +160,11 @@ case class CompactionModel(compactionSize: Long,
   carbonTable: CarbonTable,
   tableCreationTime: Long)
 
+case class CompactionCallableModel(hdfsStoreLocation: String, carbonLoadModel: CarbonLoadModel,
+  partitioner: Partitioner, storeLocation: String, carbonTable: CarbonTable, kettleHomePath: String,
+  cubeCreationTime: Long, loadsToMerge: util.List[LoadMetadataDetails], sqlContext: SQLContext,
+  compactionType: CompactionType)
+
 object TableNewProcessor {
   def apply(cm: tableModel, sqlContext: SQLContext): TableInfo = {
     new TableNewProcessor(cm, sqlContext).process
@@ -202,7 +209,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     if (dataType == DataType.TIMESTAMP) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
-    var colPropMap = new java.util.HashMap[String, String]()
+    val colPropMap = new java.util.HashMap[String, String]()
     if (None != cm.colProps && null != cm.colProps.get.get(colName)) {
       val colProps = cm.colProps.get.get(colName)
       colProps.asScala.foreach { x => colPropMap.put(x.key, x.value) }
@@ -767,7 +774,7 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
 
   def run(sqlContext: SQLContext): Seq[Row] = {
     // TODO : Implement it.
-    var tableName = alterTableModel.tableName
+    val tableName = alterTableModel.tableName
     val databaseName = getDB.getDatabaseName(alterTableModel.dbName, sqlContext)
     if (null == org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(databaseName + "_" + tableName)) {
@@ -919,7 +926,7 @@ private[sql] case class DeleteLoadsById(
     }
     val path = carbonTable.getMetaDataFilepath
 
-    var segmentStatusManager =
+    val segmentStatusManager =
       new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
 
     val invalidLoadIds = segmentStatusManager.updateDeletionStatus(loadids.asJava, path).asScala
@@ -975,17 +982,17 @@ private[sql] case class DeleteLoadsByLoadDate(
       throw new MalformedCarbonCommandException(errorMessage)
     }
 
-    var carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
+    val carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
       .getCarbonTable(dbName + '_' + tableName)
-    var segmentStatusManager = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
+    val segmentStatusManager = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
 
     if (null == carbonTable) {
       var relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
         .lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
     }
-    var path = carbonTable.getMetaDataFilepath()
+    val path = carbonTable.getMetaDataFilepath()
 
-    var invalidLoadTimestamps = segmentStatusManager
+    val invalidLoadTimestamps = segmentStatusManager
       .updateDeletionStatus(loadDate, path, timeObj.asInstanceOf[java.lang.Long]).asScala
     if(invalidLoadTimestamps.isEmpty) {
       LOGGER.audit(s"Delete load by load date is successfull for $dbName.$tableName.")
@@ -1065,7 +1072,7 @@ private[sql] case class LoadTable(
       // Need to fill dimension relation
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
       var storeLocation = ""
-      var configuredStore = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+      val configuredStore = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
       if (null != configuredStore && configuredStore.length > 0) {
         storeLocation = configuredStore(Random.nextInt(configuredStore.length))
       }
@@ -1186,6 +1193,13 @@ private[sql] case class LoadTable(
         }
 
       }
+    } catch {
+      case dle: DataLoadingException =>
+        LOGGER.audit(s"Dataload failed for $dbName.$tableName. " + dle.getMessage)
+        throw dle
+      case mce: MalformedCarbonCommandException =>
+        LOGGER.audit(s"Dataload failed for $dbName.$tableName. " + mce.getMessage)
+        throw mce
     } finally {
       if (carbonLock != null) {
         if (carbonLock.unlock()) {
@@ -1341,7 +1355,7 @@ private[sql] case class ShowLoads(
     }
     val path = carbonTable.getMetaDataFilepath()
 
-    var segmentStatusManager = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
+    val segmentStatusManager = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
 
     val loadMetadataDetailsArray = segmentStatusManager.readLoadMetadata(path)
 
@@ -1497,7 +1511,7 @@ private[sql] case class DeleteLoadByDate(
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
       .lookupRelation1(identifier)(sqlContext).asInstanceOf[CarbonRelation]
     var level: String = ""
-    var carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata
+    val carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata
          .getInstance().getCarbonTable(dbName + '_' + tableName)
     if (relation == null) {
       LOGGER.audit(s"The delete load by date is failed. Table $dbName.$tableName does not exist")

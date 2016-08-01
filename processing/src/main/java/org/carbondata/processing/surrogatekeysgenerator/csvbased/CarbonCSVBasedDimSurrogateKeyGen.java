@@ -33,6 +33,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.cache.dictionary.Dictionary;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenException;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
@@ -115,6 +116,10 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
   private Map<String, Map<ArrayWrapper, Integer>> hierCacheReverse =
       new HashMap<String, Map<ArrayWrapper, Integer>>(
           CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  /**
+   * dimension ordinal to dimension mapping
+   */
+  private CarbonDimension[] dimensionOrdinalToDimensionMapping;
   /**
    * rwLock2
    */
@@ -357,6 +362,8 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
               columnsInfo.getColumnSchemaDetailsWrapper().get(eachPrimitive.getColumnId());
           if (columnSchemaDetails.isDirectDictionary()) {
             isDirectDictionary.add(true);
+          } else {
+            isDirectDictionary.add(false);
           }
         }
       } else {
@@ -510,4 +517,18 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
     this.measureMaxSurroagetMap = measureMaxSurroagetMap;
   }
 
+  /**
+   * @return
+   */
+  public CarbonDimension[] getDimensionOrdinalToDimensionMapping() {
+    return dimensionOrdinalToDimensionMapping;
+  }
+
+  /**
+   * @param dimensionOrdinalToDimensionMapping
+   */
+  public void setDimensionOrdinalToDimensionMapping(
+      CarbonDimension[] dimensionOrdinalToDimensionMapping) {
+    this.dimensionOrdinalToDimensionMapping = dimensionOrdinalToDimensionMapping;
+  }
 }

@@ -56,6 +56,11 @@ public class LoadMetadataDetails implements Serializable {
    */
   private String visibility = "true";
 
+  /**
+   * To know if the segment is a major compacted segment or not.
+   */
+  private String majorCompacted;
+
   public String getPartitionCount() {
     return partitionCount;
   }
@@ -203,4 +208,19 @@ public class LoadMetadataDetails implements Serializable {
     this.visibility = visibility;
   }
 
+  /**
+   * Return true if it is a major compacted segment.
+   * @return
+   */
+  public String isMajorCompacted() {
+    return majorCompacted;
+  }
+
+  /**
+   * Set true if it is a major compacted segment.
+   * @param majorCompacted
+   */
+  public void setMajorCompacted(String majorCompacted) {
+    this.majorCompacted = majorCompacted;
+  }
 }

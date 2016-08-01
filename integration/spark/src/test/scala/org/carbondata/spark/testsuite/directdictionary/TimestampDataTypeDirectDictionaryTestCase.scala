@@ -51,34 +51,65 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
         )
       CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "true")
       sql(
-        "CREATE TABLE directDictionaryTable (empno int,doj Timestamp, " +
+        "CREATE TABLE if not exists directDictionaryTable (empno int,doj Timestamp, " +
           "salary int) " +
           "STORED BY 'org.apache.carbondata.format'"
+      )
+
+      sql(
+        "CREATE TABLE if not exists directDictionaryTable_hive (empno int,doj Timestamp, " +
+        "salary int) " +
+        "row format delimited fields terminated by ','"
       )
 
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
       val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
         .getCanonicalPath
-      var csvFilePath = currentDirectory + "/src/test/resources/datasample.csv"
+      val csvFilePath = currentDirectory + "/src/test/resources/datasample.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable OPTIONS" +
         "('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
-
+      sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable_hive");
     } catch {
       case x: Throwable => CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     }
   }
 
-  test("select doj from directDictionaryTable") {
+  test("test direct dictionary for not null condition") {
     checkAnswer(
-      sql("select doj from directDictionaryTable"),
+      sql("select doj from directDictionaryTable where doj is not null"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
         Row(Timestamp.valueOf("2016-04-14 15:00:09.0"))
       )
     )
   }
 
+  test("test direct dictionary for getting all the values") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
+        Row(Timestamp.valueOf("2016-04-14 15:00:09.0")),
+        Row(null)
+      )
+    )
+  }
+
+  test("test direct dictionary for not equals condition") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj != '2016-04-14 15:00:09.0'"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0"))
+      )
+    )
+  }
+
+  test("test direct dictionary for null condition") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj is null"),
+      Seq(Row(null)
+      )
+    )
+  }
 
   test("select doj from directDictionaryTable with equals filter") {
     checkAnswer(
@@ -87,13 +118,26 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
     )
 
   }
-  
-    test("select doj from directDictionaryTable with greater than filter") {
+
+  test("select doj from directDictionaryTable with regexp_replace equals filter") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable where regexp_replace(doj, '-', '/') = '2016/03/14 15:00:09'"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09")))
+    )
+  }
+
+  test("select doj from directDictionaryTable with regexp_replace NOT IN filter") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable where regexp_replace(doj, '-', '/') NOT IN ('2016/03/14 15:00:09')"),
+      sql("select doj from directDictionaryTable_hive where regexp_replace(doj, '-', '/') NOT IN ('2016/03/14 15:00:09')")
+    )
+  }
+
+  test("select doj from directDictionaryTable with greater than filter") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj>'2016-03-14 15:00:09'"),
       Seq(Row(Timestamp.valueOf("2016-04-14 15:00:09")))
     )
-
   }
 
   test("select count(doj) from directDictionaryTable") {
@@ -105,6 +149,7 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
 
   override def afterAll {
     sql("drop table directDictionaryTable")
+    sql("drop table directDictionaryTable_hive")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
