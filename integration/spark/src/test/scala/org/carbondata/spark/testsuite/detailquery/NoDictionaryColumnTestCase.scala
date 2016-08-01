@@ -31,6 +31,8 @@ import org.scalatest.BeforeAndAfterAll
 class NoDictionaryColumnTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    sql("DROP TABLE IF EXISTS carbonTable")
+    sql("DROP TABLE IF EXISTS hiveTable")
     sql("CREATE TABLE carbonTable (imei String, age Int, num BigInt) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='age,num')")
     sql("LOAD DATA LOCAL INPATH './src/test/resources/datawithNegtiveNumber.csv' INTO TABLE carbonTable")
     sql("CREATE TABLE hiveTable (imei String, age Int, num BigInt) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','")
@@ -52,7 +54,7 @@ class NoDictionaryColumnTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("DROP TABLE carbonTable")
-    sql("DROP TABLE hiveTable")
+    sql("DROP TABLE IF EXISTS carbonTable")
+    sql("DROP TABLE IF EXISTS hiveTable")
   }
 }

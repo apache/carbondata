@@ -128,7 +128,7 @@ public final class CarbonDataMergerUtil {
 
   public static boolean updateLoadMetadataWithMergeStatus(List<LoadMetadataDetails> loadsToMerge,
       String metaDataFilepath, String MergedLoadName, CarbonLoadModel carbonLoadModel,
-      String mergeLoadStartTime) {
+      String mergeLoadStartTime, CompactionType compactionType) {
 
     boolean tableStatusUpdationStatus = false;
     AbsoluteTableIdentifier absoluteTableIdentifier =
@@ -161,6 +161,14 @@ public final class CarbonDataMergerUtil {
         for (LoadMetadataDetails loadDetail : loadDetails) {
           // check if this segment is merged.
           if (loadsToMerge.contains(loadDetail)) {
+            // if the compacted load is deleted after the start of the compaction process,
+            // then need to discard the compaction process and treat it as failed compaction.
+            if (loadDetail.getLoadStatus()
+                .equalsIgnoreCase(CarbonCommonConstants.MARKED_FOR_DELETE)) {
+              LOGGER.error("Compaction is aborted as the segment " + loadDetail.getLoadName()
+                  + " is deleted after the compaction is started.");
+              return tableStatusUpdationStatus;
+            }
             loadDetail.setLoadStatus(CarbonCommonConstants.SEGMENT_COMPACTED);
             loadDetail.setModificationOrdeletionTimesStamp(modificationOrDeletionTimeStamp);
             loadDetail.setMergedLoadName(mergedLoadNumber);
@@ -176,6 +184,10 @@ public final class CarbonDataMergerUtil {
         loadMetadataDetails.setLoadName(mergedLoadNumber);
         loadMetadataDetails.setLoadStartTime(mergeLoadStartTime);
         loadMetadataDetails.setPartitionCount("0");
+        // if this is a major compaction then set the segment as major compaction.
+        if (compactionType == CompactionType.MAJOR_COMPACTION) {
+          loadMetadataDetails.setMajorCompacted("true");
+        }
 
         List<LoadMetadataDetails> updatedDetailsList = new ArrayList<>(Arrays.asList(loadDetails));
 
@@ -221,20 +233,8 @@ public final class CarbonDataMergerUtil {
       List<LoadMetadataDetails> segments, CompactionType compactionType) {
 
     List sortedSegments = new ArrayList(segments);
-    // sort the segment details.
-    Collections.sort(sortedSegments, new Comparator<LoadMetadataDetails>() {
-      @Override public int compare(LoadMetadataDetails seg1, LoadMetadataDetails seg2) {
-        double seg1Id = Double.parseDouble(seg1.getLoadName());
-        double seg2Id = Double.parseDouble(seg2.getLoadName());
-        if (seg1Id - seg2Id < 0) {
-          return -1;
-        }
-        if (seg1Id - seg2Id > 0) {
-          return 1;
-        }
-        return 0;
-      }
-    });
+
+    sortSegments(sortedSegments);
 
     // check preserve property and preserve the configured number of latest loads.
 
@@ -258,6 +258,27 @@ public final class CarbonDataMergerUtil {
     }
 
     return listOfSegmentsToBeMerged;
+  }
+
+  /**
+   * Sorting of the segments.
+   * @param segments
+   */
+  public static void sortSegments(List segments) {
+    // sort the segment details.
+    Collections.sort(segments, new Comparator<LoadMetadataDetails>() {
+      @Override public int compare(LoadMetadataDetails seg1, LoadMetadataDetails seg2) {
+        double seg1Id = Double.parseDouble(seg1.getLoadName());
+        double seg2Id = Double.parseDouble(seg2.getLoadName());
+        if (seg1Id - seg2Id < 0) {
+          return -1;
+        }
+        if (seg1Id - seg2Id > 0) {
+          return 1;
+        }
+        return 0;
+      }
+    });
   }
 
   /**
@@ -514,7 +535,10 @@ public final class CarbonDataMergerUtil {
 
       // if a segment is already merged 2 levels then it s name will become .2
       // need to exclude those segments from minor compaction.
-      if (segName.endsWith(".2")) {
+      // if a segment is major compacted then should not be considered for minor.
+      if (segName.endsWith(CarbonCommonConstants.LEVEL2_COMPACTION_INDEX) || (
+          segment.isMajorCompacted() != null && segment.isMajorCompacted()
+              .equalsIgnoreCase("true"))) {
         continue;
       }
 
@@ -676,16 +700,30 @@ public final class CarbonDataMergerUtil {
     return combinedMap;
   }
 
-  public static List<LoadMetadataDetails> filterOutAlreadyMergedSegments(
-      List<LoadMetadataDetails> segments, List<LoadMetadataDetails> loadsToMerge) {
+  /**
+   * Removing the already merged segments from list.
+   * @param segments
+   * @param loadsToMerge
+   * @return
+   */
+  public static List<LoadMetadataDetails> filterOutNewlyAddedSegments(
+      List<LoadMetadataDetails> segments, List<LoadMetadataDetails> loadsToMerge,
+      LoadMetadataDetails lastSeg) {
 
-    ArrayList<LoadMetadataDetails> list = new ArrayList<>(segments);
+    // take complete list of segments.
+    List<LoadMetadataDetails> list = new ArrayList<>(segments);
 
-    for (LoadMetadataDetails mergedSegs : loadsToMerge) {
-      list.remove(mergedSegs);
-    }
+    List<LoadMetadataDetails> trimmedList =
+        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    return list;
+    // sort list
+    CarbonDataMergerUtil.sortSegments(list);
+
+    // first filter out newly added segments.
+    trimmedList = list.subList(0, list.indexOf(lastSeg) + 1);
+
+    return trimmedList;
 
   }
+
 }

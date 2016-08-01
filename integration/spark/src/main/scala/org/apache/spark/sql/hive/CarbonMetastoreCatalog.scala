@@ -155,11 +155,19 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
 
     // creating zookeeper instance once.
     // if zookeeper is configured as carbon lock type.
-    if (CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.LOCK_TYPE_DEFAULT)
-      .equalsIgnoreCase(CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER)) {
-      val zookeeperUrl = hiveContext.getConf("spark.deploy.zookeeper.url", "127.0.0.1:2181")
+    val zookeeperUrl: String = hiveContext.getConf(CarbonCommonConstants.ZOOKEEPER_URL, null)
+    if (zookeeperUrl != null) {
+      CarbonProperties.getInstance.addProperty(CarbonCommonConstants.ZOOKEEPER_URL, zookeeperUrl)
       ZookeeperInit.getInstance(zookeeperUrl)
+      LOGGER.info("Zookeeper url is configured. Taking the zookeeper as lock type.")
+      var configuredLockType = CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.LOCK_TYPE)
+      if (null == configuredLockType) {
+        configuredLockType = CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER
+        CarbonProperties.getInstance
+            .addProperty(CarbonCommonConstants.LOCK_TYPE,
+                configuredLockType)
+      }
     }
 
     if (metadataPath == null) {
@@ -435,16 +443,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .removeTable(dbName + "_" + tableName)
 
-    try {
-      sqlContext.sql(s"DROP TABLE $dbName.$tableName").collect()
-    } catch {
-      case e: Exception =>
-        LOGGER.audit(
-          s"Error While deleting the table $dbName.$tableName during drop Table" + e.getMessage)
-    }
-    logInfo(s"Table $tableName of $dbName Database dropped syccessfully.")
-    LOGGER.info("Table " + tableName + " of " + dbName + " Database dropped syccessfully.")
-
+    sqlContext.asInstanceOf[HiveContext].runSqlHive(s"DROP TABLE IF EXISTS $dbName.$tableName")
   }
 
   private def getTimestampFileAndType(databaseName: String, tableName: String) = {

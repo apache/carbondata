@@ -21,9 +21,12 @@ package org.carbondata.lcm.locks;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import org.carbondata.common.logging.LogService;
+import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
+import org.carbondata.core.util.CarbonProperties;
 
 /**
  * This class is used to handle the HDFS File locking.
@@ -31,6 +34,8 @@ import org.carbondata.core.datastorage.store.impl.FileFactory;
  */
 public class HdfsFileLock extends AbstractCarbonLock {
 
+  private static final LogService LOGGER =
+             LogServiceFactory.getLogService(HdfsFileLock.class.getName());
   /**
    * location hdfs file location
    */
@@ -41,7 +46,19 @@ public class HdfsFileLock extends AbstractCarbonLock {
   public static String tmpPath;
 
   static {
-    tmpPath = System.getProperty("hadoop.tmp.dir");
+    tmpPath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
+               System.getProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION));
+  }
+
+  /**
+   * @param lockFileLocation
+   * @param lockFile
+   */
+  public HdfsFileLock(String lockFileLocation, String lockFile) {
+    this.location = tmpPath + CarbonCommonConstants.FILE_SEPARATOR + lockFileLocation
+        + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
+    LOGGER.info("HDFS lock path:"+this.location);
+    initRetry();
   }
 
   /**
@@ -49,10 +66,8 @@ public class HdfsFileLock extends AbstractCarbonLock {
    * @param lockFile
    */
   public HdfsFileLock(CarbonTableIdentifier tableIdentifier, String lockFile) {
-    this.location =
-        tmpPath + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier.getDatabaseName()
-            + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier.getTableName()
-            + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
+    this(tableIdentifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier
+        .getTableName(), lockFile);
     initRetry();
   }
 

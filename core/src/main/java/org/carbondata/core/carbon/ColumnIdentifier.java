@@ -106,4 +106,8 @@ public class ColumnIdentifier implements Serializable {
     return true;
   }
 
+  @Override public String toString() {
+    return "ColumnIdentifier [columnId=" + columnId + "]";
+  }
+
 }

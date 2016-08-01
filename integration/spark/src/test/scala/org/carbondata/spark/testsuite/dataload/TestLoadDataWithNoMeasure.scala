@@ -48,7 +48,7 @@ class TestLoadDataWithNoMeasure extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select empno from nomeasureTest"),
-      Seq(Row("11"), Row("12"))
+      Seq(Row("11"), Row("12"), Row("13"))
     )
   }
 

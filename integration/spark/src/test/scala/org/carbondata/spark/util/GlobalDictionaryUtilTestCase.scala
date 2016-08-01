@@ -153,7 +153,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("[issue-80]Global Dictionary Generation") {
 
-    var carbonLoadModel = buildCarbonLoadModel(sampleRelation, filePath, null, null)
+    val carbonLoadModel = buildCarbonLoadModel(sampleRelation, filePath, null, null)
     GlobalDictionaryUtil
       .generateGlobalDictionary(CarbonHiveContext,
         carbonLoadModel,
@@ -171,7 +171,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
   test("[Issue-190]load csv file without header And support complex type") {
     val header = "deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC,locationinfo," +
       "proddate,gamePointId,contractNumber"
-    var carbonLoadModel = buildCarbonLoadModel(complexRelation, complexfilePath, null, header)
+    val carbonLoadModel = buildCarbonLoadModel(complexRelation, complexfilePath, null, header)
     GlobalDictionaryUtil
       .generateGlobalDictionary(CarbonHiveContext,
         carbonLoadModel,

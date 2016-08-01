@@ -94,6 +94,19 @@ object CarbonScalaUtil {
     kettleHomePath
   }
 
+  def updateDataType(
+      currentDataType: org.apache.spark.sql.types.DataType): org.apache.spark.sql.types.DataType = {
+    currentDataType match {
+      case decimal: DecimalType =>
+        val scale = currentDataType.asInstanceOf[DecimalType].scale
+        DecimalType(DecimalType.MAX_PRECISION, scale)
+      case _ =>
+        currentDataType
+    }
+  }
+
+  case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
+
   object CarbonSparkUtil {
 
     def createSparkMeta(carbonTable: CarbonTable): CarbonMetaData = {

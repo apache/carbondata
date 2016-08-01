@@ -61,10 +61,9 @@ class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
       val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
         .getCanonicalPath
-      var csvFilePath = currentDirectory + "/src/test/resources/datasample.csv"
+      val csvFilePath = currentDirectory + "/src/test/resources/datasample.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable OPTIONS"
         + "('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
-
     } catch {
       case x: Throwable => CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
@@ -75,7 +74,8 @@ class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with
     checkAnswer(
       sql("select doj from directDictionaryTable"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
-        Row(Timestamp.valueOf("2016-04-14 15:00:09.0"))
+        Row(Timestamp.valueOf("2016-04-14 15:00:09.0")),
+        Row(null)
       )
     )
   }

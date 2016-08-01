@@ -60,25 +60,49 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
       val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
         .getCanonicalPath
-      var csvFilePath = currentDirectory + "/src/test/resources/datasample.csv"
+      val csvFilePath = currentDirectory + "/src/test/resources/datasample.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable OPTIONS" +
         "('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
-
     } catch {
       case x: Throwable => CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     }
   }
 
-  test("select doj from directDictionaryTable") {
+  test("test direct dictionary for not null condition") {
     checkAnswer(
-      sql("select doj from directDictionaryTable"),
+      sql("select doj from directDictionaryTable where doj is not null"),
       Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
         Row(Timestamp.valueOf("2016-04-14 15:00:09.0"))
       )
     )
   }
 
+  test("test direct dictionary for getting all the values") {
+    checkAnswer(
+      sql("select doj from directDictionaryCube"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
+        Row(Timestamp.valueOf("2016-04-14 15:00:09.0")),
+        Row(null)
+      )
+    )
+  }
+
+  test("test direct dictionary for not equals condition") {
+    checkAnswer(
+      sql("select doj from directDictionaryCube where doj != '2016-04-14 15:00:09.0'"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0"))
+      )
+    )
+  }
+
+  test("test direct dictionary for null condition") {
+    checkAnswer(
+      sql("select doj from directDictionaryCube where doj is null"),
+      Seq(Row(null)
+      )
+    )
+  }
 
   test("select doj from directDictionaryTable with equals filter") {
     checkAnswer(
@@ -88,12 +112,25 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
 
   }
   
-    test("select doj from directDictionaryTable with greater than filter") {
+  test("select doj from directDictionaryTable with regexp_replace equals filter") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable where regexp_replace(doj, '-', '/') = '2016/03/14 15:00:09'"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09")))
+    )
+  }
+
+  test("select doj from directDictionaryTable with regexp_replace NOT IN filter") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable where regexp_replace(doj, '-', '/') NOT IN ('2016/03/14 15:00:09')"),
+      Seq(Row(Timestamp.valueOf("2016-04-14 15:00:09")), Row(null))
+    )
+  }
+
+  test("select doj from directDictionaryTable with greater than filter") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj>'2016-03-14 15:00:09'"),
       Seq(Row(Timestamp.valueOf("2016-04-14 15:00:09")))
     )
-
   }
 
   test("select count(doj) from directDictionaryTable") {

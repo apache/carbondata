@@ -22,7 +22,6 @@ import java.nio.charset.Charset
 import java.util.regex.Pattern
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 import scala.language.implicitConversions
 import scala.util.control.Breaks.{break, breakable}
@@ -48,12 +47,11 @@ import org.carbondata.core.datastorage.store.impl.FileFactory
 import org.carbondata.core.reader.CarbonDictionaryReader
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.core.writer.CarbonDictionaryWriter
-import org.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
 import org.carbondata.processing.etl.DataLoadingException
 import org.carbondata.spark.load.CarbonLoaderUtil
 import org.carbondata.spark.load.CarbonLoadModel
 import org.carbondata.spark.partition.reader.CSVWriter
-import org.carbondata.spark.rdd.{ArrayParser, CarbonAllDictionaryCombineRDD, CarbonBlockDistinctValuesCombineRDD, CarbonColumnDictGenerateRDD, CarbonDataRDDFactory, CarbonGlobalDictionaryGenerateRDD, ColumnPartitioner, DataFormat, DictionaryLoadModel, GenericParser, PrimitiveParser, StructParser}
+import org.carbondata.spark.rdd._
 import org.carbondata.spark.CarbonSparkFactory
 
 /**
@@ -100,7 +98,6 @@ object GlobalDictionaryUtil extends Logging {
       encoding: Encoding,
       excludeEncoding: Encoding): Boolean = {
     if (dimension.isComplex()) {
-      var has = false
       val children = dimension.getListOfChildDimensions
       children.asScala.exists(hasEncoding(_, encoding, excludeEncoding))
     } else {
@@ -300,7 +297,11 @@ object GlobalDictionaryUtil extends Logging {
     val dictFilePaths = dictDetail.dictFilePaths
     val dictFileExists = dictDetail.dictFileExists
     val columnIdentifier = dictDetail.columnIdentifiers
-
+    val hdfsTempLocation = CarbonProperties.getInstance.
+      getProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION, System.getProperty("java.io.tmpdir"))
+    val lockType = CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
+    val zookeeperUrl = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.ZOOKEEPER_URL)
     // load high cardinality identify configure
     val highCardIdentifyEnable = CarbonProperties.getInstance().getProperty(
         CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE,
@@ -329,7 +330,10 @@ object GlobalDictionaryUtil extends Logging {
       highCardThreshold,
       rowCountPercentage,
       columnIdentifier,
-      carbonLoadModel.getLoadMetadataDetails.size() == 0)
+      carbonLoadModel.getLoadMetadataDetails.size() == 0,
+      hdfsTempLocation,
+      lockType,
+      zookeeperUrl)
   }
 
   /**

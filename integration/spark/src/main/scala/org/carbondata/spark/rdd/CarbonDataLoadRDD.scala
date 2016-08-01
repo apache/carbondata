@@ -19,6 +19,7 @@
 package org.carbondata.spark.rdd
 
 import java.lang.Long
+import java.util
 import java.util.UUID
 
 import scala.collection.JavaConverters._
@@ -174,13 +175,12 @@ class CarbonDataLoadRDD[K, V](
         CarbonProperties.getInstance().addProperty("high.cardinality.value", "100000")
         CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false")
         CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000")
-        var storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+        val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
         if (null != storeLocations && storeLocations.length > 0) {
           storeLocation = storeLocations(Random.nextInt(storeLocations.length))
         }
         if (storeLocation == null) {
           storeLocation = System.getProperty("java.io.tmpdir")
-          // storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
         }
         storeLocation = storeLocation + '/' + System.nanoTime() + '/' + theSplit.index
         dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
@@ -201,25 +201,23 @@ class CarbonDataLoadRDD[K, V](
               dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
               logInfo("Bad Record Found")
             } else {
-              dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-              LOGGER.error(e)
+              throw e
             }
             case e: Exception =>
-              dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-              LOGGER.error(e)
+              throw e
           } finally {
+            // delete temp location data
+            val newSlice = CarbonCommonConstants.LOAD_FOLDER + loadCount
+            try {
+              val isCompaction = false
+              CarbonLoaderUtil
+                .deleteLocalDataLoadFolderLocation(model, newSlice, isCompaction)
+            } catch {
+              case e: Exception =>
+                LOGGER.error(e)
+            }
             if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
-              val newSlice = CarbonCommonConstants.LOAD_FOLDER + loadCount
-              try {
-                CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, newSlice)
-              } catch {
-                case e: Exception =>
-                  LOGGER.error(e)
-              }
-              dataloadStatus = checkAndLoadAggregationTable
-              if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
-                logInfo("DataLoad failure")
-              } else if (CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+              if (CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
                   .equals(dataloadStatus)) {
                 logInfo("DataLoad complete")
                 logInfo("Data Load partially successful with LoadCount:" + loadCount)
@@ -229,15 +227,14 @@ class CarbonDataLoadRDD[K, V](
                 CarbonTimeStatisticsFactory.getLoadStatisticsInstance.printStatisticsInfo(
                   model.getPartitionId)
               }
-            } else {
-              logInfo("DataLoad failure")
             }
           }
         }
       } catch {
         case e: Exception =>
-          dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
           logInfo("DataLoad failure")
+          LOGGER.error(e)
+          throw e
       }
 
       def setModelAndBlocksInfo(): Unit = {
@@ -456,9 +453,31 @@ class CarbonDataLoadRDD[K, V](
       case false =>
         // for node partition
         val theSplit = split.asInstanceOf[CarbonNodePartition]
-        val location: Seq[String] = List(theSplit.serializableHadoopSplit)
-        logInfo("Prefered Location for split : " + location(0))
-        location
+        val firstOptionLocation: Seq[String] = List(theSplit.serializableHadoopSplit)
+        logInfo("Preferred Location for split : " + firstOptionLocation(0))
+        val blockMap = new util.LinkedHashMap[String, Integer]()
+        val tableBlocks = theSplit.blocksDetails
+        tableBlocks.foreach(tableBlock => tableBlock.getLocations.foreach(
+          location => {
+            if (!firstOptionLocation.exists(location.equalsIgnoreCase(_))) {
+              val currentCount = blockMap.get(location)
+              if (currentCount == null) {
+                blockMap.put(location, 1)
+              } else {
+                blockMap.put(location, currentCount + 1)
+              }
+            }
+          }
+        )
+        )
+
+        val sortedList = blockMap.entrySet().asScala.toSeq.sortWith((nodeCount1, nodeCount2) => {
+          nodeCount1.getValue > nodeCount2.getValue
+        }
+        )
+
+        val sortedNodesList = sortedList.map(nodeCount => nodeCount.getKey).take(2)
+        firstOptionLocation ++ sortedNodesList
     }
   }
 }

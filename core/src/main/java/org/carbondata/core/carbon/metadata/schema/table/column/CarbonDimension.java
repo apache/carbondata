@@ -114,6 +114,10 @@ public class CarbonDimension extends CarbonColumn {
     return complexTypeOrdinal;
   }
 
+  public void setComplexTypeOridnal(int complexTypeOrdinal) {
+    this.complexTypeOrdinal = complexTypeOrdinal;
+  }
+
   /**
    * to generate the hash code for this class
    */

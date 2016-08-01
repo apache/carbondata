@@ -1023,7 +1023,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
             g.addChildren(new StructDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
             break;
           default:
-            g.addChildren(new PrimitiveDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
+            g.addChildren(new PrimitiveDataType(levelInfo[0], levelInfo[2], levelInfo[3],
+                Integer.parseInt(levelInfo[4])));
         }
       }
     }

@@ -48,6 +48,7 @@ import org.carbondata.core.cache.dictionary.Dictionary;
 import org.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
 import org.carbondata.core.carbon.metadata.schema.table.CarbonTable;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.keygenerator.KeyGenerator;
@@ -375,7 +376,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           surrogateKeyGen = new FileStoreSurrogateKeyGenForCSV(columnsInfo, meta.getPartitionID(),
               meta.getSegmentId(), meta.getTaskNo());
           data.setSurrogateKeyGen(surrogateKeyGen);
-
           updateStoreLocation();
 
           // Check the insert hierarchies required or not based on that
@@ -432,6 +432,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         columnSchemaDetailsWrapper = meta.getColumnSchemaDetailsWrapper();
         if (null != getInputRowMeta()) {
           generateNoDictionaryAndComplexIndexMapping();
+          data.getSurrogateKeyGen()
+              .setDimensionOrdinalToDimensionMapping(populateNameToCarbonDimensionMap());
         }
         serializationNullFormat = meta.getTableOptionWrapper().get("serialization_null_format");
       }
@@ -703,7 +705,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
   private void updateStoreLocation() {
     loadFolderLoc = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(meta.getDatabaseName(), meta.getTableName(), meta.getTaskNo(),
-            meta.getPartitionID(), meta.getSegmentId()+"");
+            meta.getPartitionID(), meta.getSegmentId()+"", false);
   }
 
   private String getBadLogStoreLocation(String storeLocation) {
@@ -934,8 +936,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       String columnName = metaColumnNames[j];
       String foreignKeyColumnName = foreignKeyMappingColumns[j];
       // check if it is ignore dictionary dimension or not . if yes directly write byte buffer
+      String tuple = (String) r[j];
       if (isNoDictionaryColumn[j]) {
-        processnoDictionaryDim(noDictionaryAndComplexIndexMapping[j], (String) r[j], dataTypes[j],
+        processnoDictionaryDim(noDictionaryAndComplexIndexMapping[j], tuple, dataTypes[j],
             isStringDataType[j], byteBufferArr);
         continue;
       }
@@ -1029,7 +1032,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           int[] surrogateKeyForHierarchy = null;
           if (null != cache) {
 
-            Integer keyFromCsv = dicCache.getSurrogateKey(((String) r[j]));
+            Integer keyFromCsv = dicCache.getSurrogateKey(tuple);
 
             if (null != keyFromCsv) {
               surrogateKeyForHierarchy = cache.get(keyFromCsv);
@@ -1050,7 +1053,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           } else {
             surrogateKeyForHierarchy = new int[1];
             surrogateKeyForHierarchy[0] =
-                surrogateKeyGen.generateSurrogateKeys((String) r[j], foreignKeyColumnName);
+                surrogateKeyGen.generateSurrogateKeys(tuple, foreignKeyColumnName);
           }
           for (int k = 0; k < surrogateKeyForHierarchy.length; k++) {
             if (dimPresentCsvOrder[i]) {
@@ -1070,7 +1073,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
               complexTypes[noDictionaryAndComplexIndexMapping[j] - meta.noDictionaryCols.length];
           ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
           DataOutputStream dataOutputStream = new DataOutputStream(byteArray);
-          complexType.parseStringAndWriteByteArray(meta.getTableName(), (String) r[j],
+          complexType.parseStringAndWriteByteArray(meta.getTableName(), tuple,
               new String[] { meta.getComplexDelimiterLevel1(), meta.getComplexDelimiterLevel2() },
               0, dataOutputStream, surrogateKeyGen);
           byteBufferArr[noDictionaryAndComplexIndexMapping[j]] =
@@ -1095,7 +1098,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         Int2ObjectMap<int[]> cache = surrogateKeyGen.getHierCache().get(actualHierName);
         int[] surrogateKeyForHrrchy = null;
         if (null != cache) {
-          Integer keyFromCsv = dicCache.getSurrogateKey(((String) r[j]));
+          Integer keyFromCsv = dicCache.getSurrogateKey(tuple);
 
           if (null != keyFromCsv) {
             surrogateKeyForHrrchy = cache.get(keyFromCsv);
@@ -1138,12 +1141,18 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
                   DirectDictionaryKeyGeneratorFactory
                       .getDirectDictionaryGenerator(details.getColumnType());
               surrogateKeyForHrrchy[0] =
-                  directDictionaryGenerator1.generateDirectSurrogateKey(((String) r[j]));
+                  directDictionaryGenerator1.generateDirectSurrogateKey(tuple);
               surrogateKeyGen.max[m] = Integer.MAX_VALUE;
 
             } else {
-              surrogateKeyForHrrchy[0] =
-                  surrogateKeyGen.generateSurrogateKeys(((String) r[j]), foreignKeyColumnName);
+              String parsedValue = DataTypeUtil.parseValue(tuple, data.getSurrogateKeyGen()
+                  .getDimensionOrdinalToDimensionMapping()[memberMapping[i]]);
+              if(null == parsedValue) {
+                surrogateKeyForHrrchy[0] = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
+              } else {
+                surrogateKeyForHrrchy[0] =
+                    surrogateKeyGen.generateSurrogateKeys(parsedValue, foreignKeyColumnName);
+              }
             }
           }
           if (surrogateKeyForHrrchy[0] == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
@@ -1763,7 +1772,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
   private void processnoDictionaryDim(int index, String dimensionValue, String dataType,
       boolean isStringDataType, ByteBuffer[] out) {
     if (!(isStringDataType)) {
-      if (!DataTypeUtil.isValidData(dimensionValue, DataTypeUtil.getDataType(dataType))) {
+      if (null == DataTypeUtil
+          .normalizeIntAndLongValues(dimensionValue, DataTypeUtil.getDataType(dataType))) {
         dimensionValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
       }
     }
@@ -1820,6 +1830,46 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       msrDataType[i] = carbonMeasure.getDataType();
       if(DataType.DECIMAL == carbonMeasure.getDataType()) {
         meta.carbonMeasures[i] = carbonMeasure;
+      }
+    }
+  }
+
+  private CarbonDimension[] populateNameToCarbonDimensionMap() {
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+        meta.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + meta.getTableName());
+    List<CarbonDimension> dimensionsList = carbonTable.getDimensionByTableName(meta.getTableName());
+    CarbonDimension[] dimensionOrdinalToDimensionMapping =
+        new CarbonDimension[meta.getColumnSchemaDetailsWrapper().getColumnSchemaDetailsMap()
+            .size()];
+    List<CarbonDimension> dimListExcludingNoDictionaryColumn = dimensionsList;
+    if (null != meta.getNoDictionaryDims() && meta.getNoDictionaryDims().length() > 0) {
+      dimListExcludingNoDictionaryColumn =
+          new ArrayList<>(dimensionsList.size() - meta.noDictionaryCols.length);
+      for (CarbonDimension dimension : dimensionsList) {
+        if (!dimension.getEncoder().isEmpty()) {
+          dimListExcludingNoDictionaryColumn.add(dimension);
+        }
+      }
+    }
+    for (int i = 0; i < dimListExcludingNoDictionaryColumn.size(); i++) {
+      CarbonDimension dimension = dimListExcludingNoDictionaryColumn.get(meta.memberMapping[i]);
+      if (dimension.isComplex()) {
+        populateComplexDimension(dimensionOrdinalToDimensionMapping, dimension);
+      } else {
+        dimensionOrdinalToDimensionMapping[meta.memberMapping[i]] = dimension;
+      }
+    }
+    return dimensionOrdinalToDimensionMapping;
+  }
+
+  private void populateComplexDimension(CarbonDimension[] dimensionOrdinalToDimensionMapping,
+      CarbonDimension dimension) {
+    List<CarbonDimension> listOfChildDimensions = dimension.getListOfChildDimensions();
+    for (CarbonDimension childDimension : listOfChildDimensions) {
+      if (childDimension.isComplex()) {
+        populateComplexDimension(dimensionOrdinalToDimensionMapping, childDimension);
+      } else {
+        dimensionOrdinalToDimensionMapping[childDimension.getOrdinal()] = childDimension;
       }
     }
   }

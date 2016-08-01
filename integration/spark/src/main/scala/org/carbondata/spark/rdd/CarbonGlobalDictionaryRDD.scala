@@ -30,11 +30,15 @@ import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 
+import org.carbondata.common.factory.CarbonCommonFactory
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.{CarbonTableIdentifier, ColumnIdentifier}
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
+import org.carbondata.core.locks.CarbonLockFactory
+import org.carbondata.core.locks.LockUsage
+import org.carbondata.core.util.CarbonProperties
 import org.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
 import org.carbondata.spark.load.{CarbonLoaderUtil, CarbonLoadModel}
@@ -152,7 +156,10 @@ case class DictionaryLoadModel(table: CarbonTableIdentifier,
     highCardThreshold: Int,
     rowCountPercentage: Double,
     columnIdentifier: Array[ColumnIdentifier],
-    isFirstLoad: Boolean) extends Serializable
+    isFirstLoad: Boolean,
+    hdfsTempLocation: String,
+    lockType: String,
+    zooKeeperUrl: String) extends Serializable
 
 case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends Serializable
 
@@ -291,17 +298,26 @@ class CarbonGlobalDictionaryGenerateRDD(
       var dictionaryForDistinctValueLookUp: org.carbondata.core.cache.dictionary.Dictionary = _
       var dictionaryForSortIndexWriting: org.carbondata.core.cache.dictionary.Dictionary = _
       var dictionaryForDistinctValueLookUpCleared: Boolean = false
-      val dictLock = CarbonLockFactory.getCarbonLockObj(model.table,
-        model.columnIdentifier(split.index).getColumnId + LockUsage.LOCK)
+      val pathService = CarbonCommonFactory.getPathService
+      val carbonTablePath = pathService.getCarbonTablePath(model.columnIdentifier(split.index),
+          model.hdfsLocation, model.table)
+      CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
+        model.hdfsTempLocation)
+      CarbonProperties.getInstance.addProperty(CarbonCommonConstants.LOCK_TYPE,
+        model.lockType)
+      CarbonProperties.getInstance.addProperty(CarbonCommonConstants.ZOOKEEPER_URL,
+        model.zooKeeperUrl)
+      val dictLock = CarbonLockFactory
+        .getCarbonLockObj(carbonTablePath.getRelativeDictionaryDirectory,
+          model.columnIdentifier(split.index).getColumnId + LockUsage.LOCK)
+      var isDictionaryLocked = false
       // generate distinct value list
       try {
         val t1 = System.currentTimeMillis
         val valuesBuffer = new mutable.HashSet[String]
         val rddIter = firstParent[(Int, ColumnDistinctValues)].iterator(split, context)
         var rowCount = 0L
-        val dicShuffleStartTime = System.currentTimeMillis()
-        CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordGlobalDicGenTotalTime(
-          dicShuffleStartTime)
+        CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordDicShuffleAndWriteTime()
         breakable {
           while (rddIter.hasNext) {
             val distinctValueList = rddIter.next()._2
@@ -324,7 +340,8 @@ class CarbonGlobalDictionaryGenerateRDD(
           LOGGER.info("column " + model.table.getTableUniqueName + "." +
                       model.primDimensions(split.index).getColName + " is high cardinality column")
         } else {
-          if (dictLock.lockWithRetries()) {
+          isDictionaryLocked = dictLock.lockWithRetries()
+          if (isDictionaryLocked) {
             logInfo(s"Successfully able to get the dictionary lock for ${
               model.primDimensions(split.index).getColName
             }")
@@ -335,6 +352,9 @@ class CarbonGlobalDictionaryGenerateRDD(
               } is locked for updation. Please try after some time")
           }
           val t2 = System.currentTimeMillis
+          val fileType = FileFactory.getFileType(model.dictFilePaths(split.index))
+          model.dictFileExists(split.index) = FileFactory
+            .isFileExist(model.dictFilePaths(split.index), fileType)
           dictionaryForDistinctValueLookUp = if (model.dictFileExists(split.index)) {
             CarbonLoaderUtil.getDictionary(model.table,
               model.columnIdentifier(split.index),
@@ -363,6 +383,7 @@ class CarbonGlobalDictionaryGenerateRDD(
             sortIndexWriteTask.execute()
           }
           val sortIndexWriteTime = (System.currentTimeMillis() - t4)
+          CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordDicShuffleAndWriteTime()
           // After sortIndex writing, update dictionaryMeta
           dictWriteTask.updateMetaData()
           // clear the value buffer after writing dictionary data
@@ -388,7 +409,7 @@ class CarbonGlobalDictionaryGenerateRDD(
             .clearDictionaryCache(dictionaryForDistinctValueLookUp);
         }
         org.carbondata.core.util.CarbonUtil.clearDictionaryCache(dictionaryForSortIndexWriting);
-        if (dictLock != null) {
+        if (dictLock != null && isDictionaryLocked) {
           if (dictLock.unlock()) {
             logInfo(s"Dictionary ${
               model.primDimensions(split.index).getColName

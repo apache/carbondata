@@ -50,13 +50,6 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
   private long dicShuffleAndWriteFileTotalStartTime = 0;
   private long dicShuffleAndWriteFileTotalCostTime = 0;
 
-  //Due to thread thread blocking in each task, we only record the max
-  //csvlDicShuffle Time of each single thread
-  private long csvlDicShuffleCostTime = 0;
-  //Due to thread thread blocking in each task, we only record the max
-  //dicWriteFile Time of each single thread
-  private long dicWriteFileCostTime = 0;
-
   //LRU cache load one time
   private double lruCacheLoadTime = 0;
 
@@ -90,7 +83,7 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
   private double totalTime = 0;
 
   @Override
-  public void  initPartitonInfo(String PartitionId) {
+  public void initPartitonInfo(String PartitionId) {
     parDictionaryValuesTotalTimeMap.put(PartitionId, new Long[2]);
     parCsvInputStepTimeMap.put(PartitionId, new Long[2]);
     parSortRowsStepTotalTimeMap.put(PartitionId, new Long[2]);
@@ -100,13 +93,15 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
   }
 
   //Record the time
-  public void recordGlobalDicGenTotalTime(Long glblDicTimePoint) {
+  public void recordDicShuffleAndWriteTime() {
+    Long dicShuffleAndWriteTimePoint = System.currentTimeMillis();
     if (0 == dicShuffleAndWriteFileTotalStartTime) {
-      dicShuffleAndWriteFileTotalStartTime = glblDicTimePoint;
+      dicShuffleAndWriteFileTotalStartTime = dicShuffleAndWriteTimePoint;
     }
-    if (glblDicTimePoint - dicShuffleAndWriteFileTotalStartTime >
+    if (dicShuffleAndWriteTimePoint - dicShuffleAndWriteFileTotalStartTime >
             dicShuffleAndWriteFileTotalCostTime) {
-      dicShuffleAndWriteFileTotalCostTime = glblDicTimePoint - dicShuffleAndWriteFileTotalStartTime;
+      dicShuffleAndWriteFileTotalCostTime =
+          dicShuffleAndWriteTimePoint - dicShuffleAndWriteFileTotalStartTime;
     }
   }
 
@@ -119,19 +114,6 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
       loadCsvfilesToDfCostTime = loadCsvfilesToDfTimePoint - loadCsvfilesToDfStartTime;
     }
   }
-
-  public void recordCsvlDicShuffleMaxTime(Long csvlDicShuffleTimePart) {
-    if (csvlDicShuffleTimePart > csvlDicShuffleCostTime) {
-      csvlDicShuffleCostTime = csvlDicShuffleTimePart;
-    }
-  }
-
-  public void recordDicWriteFileMaxTime(Long dicWriteFileTimePart) {
-    if (dicWriteFileTimePart > dicWriteFileCostTime) {
-      dicWriteFileCostTime = dicWriteFileTimePart;
-    }
-  }
-
 
   public double getLruCacheLoadTime() {
     return lruCacheLoadTime;
@@ -260,14 +242,6 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
     return loadCsvfilesToDfCostTime / 1000.0;
   }
 
-  private double getCsvlDicShuffleMaxTime() {
-    return csvlDicShuffleCostTime / 1000.0;
-  }
-
-  private double getDicWriteFileMaxTime() {
-    return dicWriteFileCostTime / 1000.0;
-  }
-
   private double getDictionaryValuesTotalTime(String partitionID) {
     return parDictionaryValuesTotalTimeMap.get(partitionID)[1] / 1000.0;
   }
@@ -342,12 +316,6 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
     double dicShuffleAndWriteFileTotalTime = getDicShuffleAndWriteFileTotalTime();
     LOGGER.audit("STAGE 2 ->Global dict shuffle and write dict file: " +
             + dicShuffleAndWriteFileTotalTime + "(s)");
-    double csvShuffleMaxTime = getCsvlDicShuffleMaxTime();
-    LOGGER.audit("STAGE 2.1 ->  |_maximum distinct column shuffle time: "
-            + csvShuffleMaxTime + "(s)");
-    double dicWriteFileMaxTime = getDicWriteFileMaxTime();
-    LOGGER.audit("STAGE 2.2 ->  |_maximum distinct column write dict file time: "
-            + dicWriteFileMaxTime + "(s)");
   }
 
   private void printLruCacheLoadTimeInfo() {
@@ -420,7 +388,26 @@ public class CarbonLoadStatisticsImpl implements LoadStatistics {
       printLoadSpeedInfo(partitionID);
     } catch (Exception e) {
       LOGGER.audit("Can't print Statistics Information");
+    } finally {
+      resetLoadStatistics();
     }
+  }
+
+  //Reset the load statistics values
+  private void resetLoadStatistics() {
+    loadCsvfilesToDfStartTime = 0;
+    loadCsvfilesToDfCostTime = 0;
+    dicShuffleAndWriteFileTotalStartTime = 0;
+    dicShuffleAndWriteFileTotalCostTime = 0;
+    lruCacheLoadTime = 0;
+    totalRecords = 0;
+    totalTime = 0;
+    parDictionaryValuesTotalTimeMap.clear();
+    parCsvInputStepTimeMap.clear();
+    parSortRowsStepTotalTimeMap.clear();
+    parGeneratingDictionaryValuesTimeMap.clear();
+    parMdkGenerateTotalTimeMap.clear();
+    parDictionaryValue2MdkAdd2FileTime.clear();
   }
 
 }

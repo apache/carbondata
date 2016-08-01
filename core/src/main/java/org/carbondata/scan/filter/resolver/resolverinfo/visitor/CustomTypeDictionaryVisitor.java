@@ -64,6 +64,14 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
     resolvedFilterObject = getDirectDictionaryValKeyMemberForFilter(metadata.getTableIdentifier(),
         metadata.getColumnExpression(), evaluateResultListFinal, metadata.isIncludeFilter(),
         isNotTimestampType);
+    if (!metadata.isIncludeFilter() && null != resolvedFilterObject && !resolvedFilterObject
+        .getFilterList().contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
+      // Adding default surrogate key of null member inorder to not display the same while
+      // displaying the report as per hive compatibility.
+      resolvedFilterObject.getFilterList()
+          .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
+      Collections.sort(resolvedFilterObject.getFilterList());
+    }
     visitableObj.setFilterValues(resolvedFilterObject);
   }
 

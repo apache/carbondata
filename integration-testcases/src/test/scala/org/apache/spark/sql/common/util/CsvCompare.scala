@@ -24,7 +24,6 @@ class CsvCompare {
     val carbon = new HashMap[String, Integer]()
     val hivefile = new BufferedReader(new FileReader(hive))
     val olapfile = new BufferedReader(new FileReader(olap))
-    var line: String = null
     
  
       for(line <- Source.fromFile(file1).getLines())

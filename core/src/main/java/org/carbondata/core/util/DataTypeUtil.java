@@ -342,4 +342,71 @@ public final class DataTypeUtil {
       return false;
     }
   }
+
+  /**
+   * This method will parse a given string value corresponding to its data type
+   *
+   * @param value     value to parse
+   * @param dimension dimension to get data type and precision and scale in case of decimal
+   *                  data type
+   * @return
+   */
+  public static String normalizeColumnValueForItsDataType(String value, CarbonDimension dimension) {
+    try {
+      Object parsedValue = null;
+      // validation will not be done for timestamp datatype as for timestamp direct dictionary
+      // is generated. No dictionary file is created for timestamp datatype column
+      switch (dimension.getDataType()) {
+        case DECIMAL:
+          return parseStringToBigDecimal(value, dimension);
+        case INT:
+        case LONG:
+          parsedValue = normalizeIntAndLongValues(value, dimension.getDataType());
+          break;
+        case DOUBLE:
+          parsedValue = Double.parseDouble(value);
+          break;
+        default:
+          return value;
+      }
+      if (null != parsedValue) {
+        return value;
+      }
+      return null;
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  /**
+   * This method will parse a value to its datatype if datatype is decimal else will return
+   * the value passed
+   *
+   * @param value     value to be parsed
+   * @param dimension
+   * @return
+   */
+  public static String parseValue(String value, CarbonDimension dimension) {
+    try {
+      switch (dimension.getDataType()) {
+        case DECIMAL:
+          return parseStringToBigDecimal(value, dimension);
+        default:
+          return value;
+      }
+    } catch (Exception e) {
+      return null;
+    }
+  }
+
+  private static String parseStringToBigDecimal(String value, CarbonDimension dimension) {
+    BigDecimal bigDecimal = new BigDecimal(value)
+        .setScale(dimension.getColumnSchema().getScale(), RoundingMode.HALF_UP);
+    BigDecimal normalizedValue =
+        normalizeDecimalValue(bigDecimal, dimension.getColumnSchema().getPrecision());
+    if (null != normalizedValue) {
+      return normalizedValue.toString();
+    }
+    return null;
+  }
 }

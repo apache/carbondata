@@ -53,6 +53,7 @@ import org.carbondata.scan.expression.ColumnExpression;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.ExpressionResult;
 import org.carbondata.scan.expression.LiteralExpression;
+import org.carbondata.scan.expression.UnknownExpression;
 import org.carbondata.scan.expression.conditional.ListExpression;
 import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.carbondata.scan.expression.exception.FilterUnsupportedException;
@@ -1329,4 +1330,35 @@ public final class FilterUtil {
       LOGGER.error(e, CarbonCommonConstants.FILTER_INVALID_MEMBER + e.getMessage());
     }
   }
+
+  /**
+   * This method will return list of all the unknown expressions
+   *
+   * @param expression
+   */
+  public static List<UnknownExpression> getUnknownExpressionsList(Expression expression) {
+    List<UnknownExpression> listOfExp =
+        new ArrayList<UnknownExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    getUnknownExpressionsList(expression, listOfExp);
+    return listOfExp;
+  }
+
+  /**
+   * This method will prepare the list with all unknown expressions
+   *
+   * @param expression
+   * @param lst
+   */
+  private static void getUnknownExpressionsList(Expression expression,
+      List<UnknownExpression> lst) {
+    if (expression instanceof UnknownExpression) {
+      UnknownExpression colExp = (UnknownExpression) expression;
+      lst.add(colExp);
+      return;
+    }
+    for (Expression child : expression.getChildren()) {
+      getUnknownExpressionsList(child, lst);
+    }
+  }
+
 }

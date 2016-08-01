@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
+import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.scan.executor.exception.QueryExecutionException;
 import org.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.carbondata.scan.expression.exception.FilterUnsupportedException;
@@ -61,7 +62,8 @@ public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
       if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
         // Adding default surrogate key of null member inorder to not display the same while
         // displaying the report as per hive compatibility.
-        resolvedFilterObject.getFilterList().add(1);
+        resolvedFilterObject.getFilterList()
+            .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
         Collections.sort(resolvedFilterObject.getFilterList());
       }
     } catch (QueryExecutionException e) {

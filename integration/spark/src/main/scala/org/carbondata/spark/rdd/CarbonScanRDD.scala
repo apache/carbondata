@@ -87,7 +87,7 @@ class CarbonScanRDD[V: ClassTag](
       // before applying filter check whether segments are available in the table.
       val splits = carbonInputFormat.getSplits(job)
       if (!splits.isEmpty) {
-        var filterResolver = carbonInputFormat
+        val filterResolver = carbonInputFormat
           .getResolvedFilter(job.getConfiguration, filterExpression)
         CarbonInputFormat.setFilterPredicates(job.getConfiguration, filterResolver)
         queryModel.setFilterExpressionResolverTree(filterResolver)
@@ -212,7 +212,13 @@ class CarbonScanRDD[V: ClassTag](
          }
          if (finished) {
            clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
-           if(null!=queryModel.getStatisticsRecorder) {
+           if (null != queryModel.getStatisticsRecorder) {
+             val queryStatistic = new QueryStatistic
+             queryStatistic
+               .addStatistics("Total Time taken to execute the query in executor Side",
+                 System.currentTimeMillis - queryStartTime
+               )
+             queryModel.getStatisticsRecorder.recordStatistics(queryStatistic);
              queryModel.getStatisticsRecorder.logStatistics();
            }
          }
@@ -227,7 +233,13 @@ class CarbonScanRDD[V: ClassTag](
          recordCount += 1
          if (queryModel.getLimit != -1 && recordCount >= queryModel.getLimit) {
            clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
-           if(null!=queryModel.getStatisticsRecorder) {
+           if (null != queryModel.getStatisticsRecorder) {
+             val queryStatistic = new QueryStatistic
+             queryStatistic
+               .addStatistics("Total Time taken to execute the query in executor Side",
+                 System.currentTimeMillis - queryStartTime
+               )
+             queryModel.getStatisticsRecorder.recordStatistics(queryStatistic);
              queryModel.getStatisticsRecorder.logStatistics();
            }
          }
@@ -246,8 +258,33 @@ class CarbonScanRDD[V: ClassTag](
    /**
     * Get the preferred locations where to launch this task.
     */
-  override def getPreferredLocations(partition: Partition): Seq[String] = {
-    val theSplit = partition.asInstanceOf[CarbonSparkPartition]
-    theSplit.locations.filter(_ != "localhost")
-  }
+   override def getPreferredLocations(partition: Partition): Seq[String] = {
+     val theSplit = partition.asInstanceOf[CarbonSparkPartition]
+     val firstOptionLocation = theSplit.locations.filter(_ != "localhost")
+     val tableBlocks = theSplit.tableBlockInfos
+     // node name and count mapping
+     val blockMap = new util.LinkedHashMap[String, Integer]()
+
+     tableBlocks.asScala.foreach(tableBlock => tableBlock.getLocations.foreach(
+       location => {
+         if (!firstOptionLocation.exists(location.equalsIgnoreCase(_))) {
+           val currentCount = blockMap.get(location)
+           if (currentCount == null) {
+             blockMap.put(location, 1)
+           } else {
+             blockMap.put(location, currentCount + 1)
+           }
+         }
+       }
+     )
+     )
+
+     val sortedList = blockMap.entrySet().asScala.toSeq.sortWith((nodeCount1, nodeCount2) => {
+       nodeCount1.getValue > nodeCount2.getValue
+     }
+     )
+
+     val sortedNodesList = sortedList.map(nodeCount => nodeCount.getKey).take(2)
+     firstOptionLocation ++ sortedNodesList
+   }
 }

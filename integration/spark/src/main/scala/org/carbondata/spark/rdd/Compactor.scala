@@ -19,17 +19,14 @@ package org.carbondata.spark.rdd
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.execution.command.{CarbonMergerMapping, Partitioner}
+import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel}
 
 import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
-import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.load.LoadMetadataDetails
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.lcm.status.SegmentStatusManager
-import org.carbondata.spark.load.{CarbonLoaderUtil, CarbonLoadModel}
+import org.carbondata.spark.load.CarbonLoaderUtil
 import org.carbondata.spark.MergeResultImpl
 import org.carbondata.spark.merger.CarbonDataMergerUtil
 
@@ -40,20 +37,23 @@ object Compactor {
 
   val logger = LogServiceFactory.getLogService(Compactor.getClass.getName)
 
-  def triggerCompaction(hdfsStoreLocation: String,
-    carbonLoadModel: CarbonLoadModel,
-    partitioner: Partitioner,
-    storeLocation: String,
-    carbonTable: CarbonTable,
-    kettleHomePath: String,
-    tableCreationTime: Long,
-    loadsToMerge: java.util.List[LoadMetadataDetails],
-    sqlContext: SQLContext): Unit = {
+  def triggerCompaction(compactionCallableModel: CompactionCallableModel): Unit = {
+
+    val hdfsStoreLocation = compactionCallableModel.hdfsStoreLocation
+    val partitioner = compactionCallableModel.partitioner
+    val storeLocation = compactionCallableModel.storeLocation
+    val carbonTable = compactionCallableModel.carbonTable
+    val kettleHomePath = compactionCallableModel.kettleHomePath
+    val cubeCreationTime = compactionCallableModel.cubeCreationTime
+    val loadsToMerge = compactionCallableModel.loadsToMerge
+    val sc = compactionCallableModel.sqlContext
+    val carbonLoadModel = compactionCallableModel.carbonLoadModel
+    val compactionType = compactionCallableModel.compactionType
 
     val startTime = System.nanoTime();
     val mergedLoadName = CarbonDataMergerUtil.getMergedLoadName(loadsToMerge)
     var finalMergeStatus = false
-    val databaseName: String = carbonLoadModel.getDatabaseName
+    val schemaName: String = carbonLoadModel.getDatabaseName
     val factTableName = carbonLoadModel.getTableName
     val storePath = hdfsStoreLocation
     val validSegments: Array[String] = CarbonDataMergerUtil
@@ -65,8 +65,8 @@ object Compactor {
       carbonTable.getMetaDataFilepath(),
       mergedLoadName,
       kettleHomePath,
-      tableCreationTime,
-      databaseName,
+      cubeCreationTime,
+      schemaName,
       factTableName,
       validSegments,
       carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId
@@ -85,20 +85,20 @@ object Compactor {
     )
     var execInstance = "1"
     // in case of non dynamic executor allocation, number of executors are fixed.
-    if (sqlContext.sparkContext.getConf.contains("spark.executor.instances")) {
-      execInstance = sqlContext.sparkContext.getConf.get("spark.executor.instances")
+    if (sc.sparkContext.getConf.contains("spark.executor.instances")) {
+      execInstance = sc.sparkContext.getConf.get("spark.executor.instances")
       logger.info("spark.executor.instances property is set to =" + execInstance)
     } // in case of dynamic executor allocation, taking the max executors of the dynamic allocation.
-    else if (sqlContext.sparkContext.getConf.contains("spark.dynamicAllocation.enabled")) {
-      if (sqlContext.sparkContext.getConf.get("spark.dynamicAllocation.enabled").trim
+    else if (sc.sparkContext.getConf.contains("spark.dynamicAllocation.enabled")) {
+      if (sc.sparkContext.getConf.get("spark.dynamicAllocation.enabled").trim
         .equalsIgnoreCase("true")) {
-        execInstance = sqlContext.sparkContext.getConf.get("spark.dynamicAllocation.maxExecutors")
+        execInstance = sc.sparkContext.getConf.get("spark.dynamicAllocation.maxExecutors")
         logger.info("spark.dynamicAllocation.maxExecutors property is set to =" + execInstance)
       }
     }
 
     val mergeStatus = new CarbonMergerRDD(
-      sqlContext.sparkContext,
+      sc.sparkContext,
       new MergeResultImpl(),
       carbonLoadModel,
       carbonMergerMapping,
@@ -115,18 +115,29 @@ object Compactor {
     if (finalMergeStatus) {
       val endTime = System.nanoTime();
       logger.info("time taken to merge " + mergedLoadName + " is " + (endTime - startTime))
-      CarbonDataMergerUtil
+      if (!CarbonDataMergerUtil
         .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath(),
-          mergedLoadName, carbonLoadModel, mergeLoadStartTime
-        )
-      logger
-        .audit("Compaction request completed for table " + carbonLoadModel
-          .getDatabaseName + "." + carbonLoadModel.getTableName
-        )
-      logger
-        .info("Compaction request completed for table " + carbonLoadModel
-          .getDatabaseName + "." + carbonLoadModel.getTableName
-        )
+          mergedLoadName, carbonLoadModel, mergeLoadStartTime, compactionType
+        )) {
+        logger
+          .audit("Compaction request failed for table " + carbonLoadModel
+            .getDatabaseName + "." + carbonLoadModel.getTableName
+          )
+        logger
+          .error("Compaction request failed for table " + carbonLoadModel
+            .getDatabaseName + "." + carbonLoadModel.getTableName
+          )
+      }
+      else {
+        logger
+          .audit("Compaction request completed for table " + carbonLoadModel
+            .getDatabaseName + "." + carbonLoadModel.getTableName
+          )
+        logger
+          .info("Compaction request completed for table " + carbonLoadModel
+            .getDatabaseName + "." + carbonLoadModel.getTableName
+          )
+      }
     }
     else {
       logger

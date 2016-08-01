@@ -143,7 +143,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     val sortIndexFile = FileFactory.getCarbonFile(sortIndexPath, FileFactory.getFileType(sortIndexPath))
     assert(sortIndexFile.exists())
     val sortIndexFiles = carbonTablePath.getSortIndexFiles(sortIndexFile.getParentFile, columnIdentifier.getColumnId)
-    assert(sortIndexFiles.length == 2)
+    assert(sortIndexFiles.length >= 1)
     deleteFiles(files)
   }
 
