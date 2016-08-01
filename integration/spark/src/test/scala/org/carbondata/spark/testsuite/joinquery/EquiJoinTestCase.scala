@@ -7,6 +7,10 @@ import org.apache.spark.sql.execution.joins.BroadCastFilterPushJoin
 
 class EquiJoinTestCase extends QueryTest with BeforeAndAfterAll  {
    override def beforeAll {
+    sql("drop table if exists employee_hive")
+    sql("drop table if exists mobile_hive")
+    sql("drop table if exists employee")
+    sql("drop table if exists mobile")
     //loading to hive table
     sql("create table employee_hive (empid string,empname string,mobilename string,mobilecolor string,salary int)row format delimited fields terminated by ','")
     sql("create table mobile_hive (mobileid string,mobilename string, mobilecolor string, sales int)row format delimited fields terminated by ','");
