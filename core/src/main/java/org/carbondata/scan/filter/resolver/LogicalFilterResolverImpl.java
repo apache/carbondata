@@ -24,6 +24,7 @@ import java.util.SortedMap;
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.carbondata.scan.executor.exception.QueryExecutionException;
+import org.carbondata.scan.expression.BinaryExpression;
 import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.filter.intf.ExpressionType;
 import org.carbondata.scan.filter.intf.FilterExecuterType;

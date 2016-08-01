@@ -29,6 +29,7 @@ import java.util.Date;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.metadata.datatype.DataType;
+import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.carbondata.core.constants.CarbonCommonConstants;
 
@@ -268,7 +269,7 @@ public final class DataTypeUtil {
           scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
           org.apache.spark.sql.types.Decimal decConverter =
               new org.apache.spark.sql.types.Decimal();
-          return decConverter.set(scalaDecVal, 19, 2);
+          return decConverter.set(scalaDecVal);
         default:
           return UTF8String.fromString(data);
       }
@@ -307,39 +308,36 @@ public final class DataTypeUtil {
   }
 
   /**
-   * This method will parse a given string value corresponding to its datatype
+   * Below method will be used to basically to know whether any non parseable
+   * data is present or not. if present then return null so that system can
+   * process to default null member value.
    *
-   * @param value    value to parse
-   * @param dataType datatype for that value
-   * @return
+   * @param data           data
+   * @param actualDataType actual data type
+   * @return actual data after conversion
    */
-  public static boolean validateColumnValueForItsDataType(String value, DataType dataType) {
+  public static Object normalizeIntAndLongValues(String data, DataType actualDataType) {
+    if (null == data) {
+      return null;
+    }
     try {
       Object parsedValue = null;
-      // validation will not be done for timestamp datatype as for timestamp direct dictionary
-      // is generated. No dictionary file is created for timestamp datatype column
-      switch (dataType) {
-        case DECIMAL:
-          parsedValue = new BigDecimal(value);
-          break;
+      switch (actualDataType) {
         case INT:
-          parsedValue = Integer.parseInt(value);
+          parsedValue = Integer.parseInt(data);
           break;
         case LONG:
-          parsedValue = Long.valueOf(value);
-          break;
-        case DOUBLE:
-          parsedValue = Double.valueOf(value);
+          parsedValue = Long.parseLong(data);
           break;
         default:
-          return true;
+          return data;
       }
-      if (null != parsedValue) {
-        return true;
+      if(null != parsedValue) {
+        return data;
       }
-      return false;
-    } catch (Exception e) {
-      return false;
+      return null;
+    } catch (NumberFormatException ex) {
+      return null;
     }
   }
 

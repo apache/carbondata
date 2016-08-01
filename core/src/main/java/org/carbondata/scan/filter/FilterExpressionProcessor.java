@@ -40,7 +40,6 @@ import org.carbondata.scan.expression.Expression;
 import org.carbondata.scan.expression.conditional.BinaryConditionalExpression;
 import org.carbondata.scan.expression.conditional.ConditionalExpression;
 import org.carbondata.scan.expression.exception.FilterUnsupportedException;
-import org.carbondata.scan.expression.logical.BinaryLogicalExpression;
 import org.carbondata.scan.filter.executer.FilterExecuter;
 import org.carbondata.scan.filter.intf.ExpressionType;
 import org.carbondata.scan.filter.resolver.ConditionalFilterResolverImpl;

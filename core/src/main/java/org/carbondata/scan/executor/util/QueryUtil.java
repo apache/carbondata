@@ -57,7 +57,6 @@ import org.carbondata.scan.executor.exception.QueryExecutionException;
 import org.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.carbondata.scan.expression.ColumnExpression;
 import org.carbondata.scan.expression.Expression;
-import org.carbondata.scan.expression.logical.BinaryLogicalExpression;
 import org.carbondata.scan.filter.GenericQueryType;
 import org.carbondata.scan.filter.resolver.FilterResolverIntf;
 import org.carbondata.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;

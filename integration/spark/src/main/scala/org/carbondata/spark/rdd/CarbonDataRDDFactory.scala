@@ -19,7 +19,7 @@
 package org.carbondata.spark.rdd
 
 import java.util
-import java.util.concurrent.{Executors, ExecutorService, Future}
+import java.util.concurrent._
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
@@ -31,7 +31,7 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.FileSplit
 import org.apache.spark.{Logging, Partition, SparkContext, SparkEnv}
 import org.apache.spark.sql.{CarbonEnv, SQLContext}
-import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, Partitioner}
+import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel, CompactionModel, Partitioner}
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.util.{FileUtils, SplitUtils}
 

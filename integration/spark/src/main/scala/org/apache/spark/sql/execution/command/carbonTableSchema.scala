@@ -49,10 +49,12 @@ import org.carbondata.core.carbon.metadata.schema.table.{CarbonTable, TableInfo,
 import org.carbondata.core.carbon.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
+import org.carbondata.core.load.LoadMetadataDetails
 import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.carbondata.integration.spark.merger.CompactionType
 import org.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
 import org.carbondata.lcm.status.SegmentStatusManager
+import org.carbondata.processing.etl.DataLoadingException
 import org.carbondata.spark.CarbonSparkFactory
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 import org.carbondata.spark.load._
@@ -1193,10 +1195,10 @@ private[sql] case class LoadTable(
       }
     } catch {
       case dle: DataLoadingException =>
-        LOGGER.audit(s"Dataload failed for $schemaName.$tableName. " + dle.getMessage)
+        LOGGER.audit(s"Dataload failed for $dbName.$tableName. " + dle.getMessage)
         throw dle
       case mce: MalformedCarbonCommandException =>
-        LOGGER.audit(s"Dataload failed for $schemaName.$tableName. " + mce.getMessage)
+        LOGGER.audit(s"Dataload failed for $dbName.$tableName. " + mce.getMessage)
         throw mce
     } finally {
       if (carbonLock != null) {

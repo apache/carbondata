@@ -36,8 +36,6 @@ import org.carbondata.core.carbon.{CarbonTableIdentifier, ColumnIdentifier}
 import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.datastorage.store.impl.FileFactory
-import org.carbondata.core.locks.CarbonLockFactory
-import org.carbondata.core.locks.LockUsage
 import org.carbondata.core.util.CarbonProperties
 import org.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
