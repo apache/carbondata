@@ -21,7 +21,6 @@ package org.carbondata.processing.surrogatekeysgenerator.csvbased;
 
 import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,9 +43,6 @@ import org.carbondata.processing.mdkeygen.file.IFileManagerComposite;
 import org.carbondata.processing.schema.metadata.ArrayWrapper;
 import org.carbondata.processing.schema.metadata.ColumnSchemaDetails;
 import org.carbondata.processing.schema.metadata.ColumnsInfo;
-
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 import org.pentaho.di.core.exception.KettleException;
 
@@ -108,8 +104,8 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
   /**
    * hierCache
    */
-  private Map<String, Int2ObjectMap<int[]>> hierCache =
-      new HashMap<String, Int2ObjectMap<int[]>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  private Map<String, Map<Integer, int[]>> hierCache =
+      new HashMap<String, Map<Integer, int[]>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   /**
    *
    */
@@ -206,23 +202,6 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
     return key;
   }
 
-  public void checkHierExists(int[] val, String hier, int primaryKey) throws KettleException {
-    Int2ObjectMap<int[]> cache = hierCache.get(hier);
-
-    int[] hCache = cache.get(primaryKey);
-    if (hCache != null && Arrays.equals(hCache, val)) {
-      return;
-    } else {
-      wLock2.lock();
-      try {
-        // Store in cache
-        cache.put(primaryKey, val);
-      } finally {
-        wLock2.unlock();
-      }
-    }
-  }
-
   public void checkNormalizedHierExists(int[] val, String hier,
       HierarchyValueWriterForCSV hierWriter) throws KettleException {
     Map<ArrayWrapper, Integer> cache = hierCacheReverse.get(hier);
@@ -309,10 +288,10 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
   public abstract int getSurrogateForMeasure(String tuple, String columnName)
       throws KettleException;
 
-  private Int2ObjectMap<int[]> getHCache(String hName) {
-    Int2ObjectMap<int[]> hCache = hierCache.get(hName);
+  private Map<Integer, int[]> getHCache(String hName) {
+    Map<Integer, int[]> hCache = hierCache.get(hName);
     if (hCache == null) {
-      hCache = new Int2ObjectOpenHashMap<int[]>();
+      hCache = new HashMap<Integer, int[]>();
       hierCache.put(hName, hCache);
     }
 
@@ -456,14 +435,14 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
   /**
    * @return Returns the hierCache.
    */
-  public Map<String, Int2ObjectMap<int[]>> getHierCache() {
+  public Map<String, Map<Integer, int[]>> getHierCache() {
     return hierCache;
   }
 
   /**
    * @param hierCache The hierCache to set.
    */
-  public void setHierCache(Map<String, Int2ObjectMap<int[]>> hierCache) {
+  public void setHierCache(Map<String, Map<Integer, int[]>> hierCache) {
     this.hierCache = hierCache;
   }
 

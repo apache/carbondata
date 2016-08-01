@@ -18,11 +18,10 @@
  -->
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.huawei.datasight</groupId>
+  <groupId>org.carbondata</groupId>
   <artifactId>carbon-assembly</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
   <packaging>pom</packaging>
-  <name>carbon-assembly</name>
+  <name>CarbonData Assembly</name>
   <parent>
     <groupId>org.carbondata</groupId>
     <version>0.1.0-SNAPSHOT</version>
@@ -123,6 +122,25 @@
     </plugins>
   </build>
   <profiles>
+    <profile>
+      <id>provided</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
+      <properties>
+        <hadoop.deps.scope>provided</hadoop.deps.scope>
+        <spark.deps.scope>provided</spark.deps.scope>
+        <scala.deps.scope>provided</scala.deps.scope>
+      </properties>
+    </profile>
+    <profile>
+      <id>include-all</id>
+      <properties>
+        <hadoop.deps.scope>compile</hadoop.deps.scope>
+        <spark.deps.scope>compile</spark.deps.scope>
+        <scala.deps.scope>compile</scala.deps.scope>
+      </properties>
+    </profile>
     <profile>
       <id>dist</id>
       <build>

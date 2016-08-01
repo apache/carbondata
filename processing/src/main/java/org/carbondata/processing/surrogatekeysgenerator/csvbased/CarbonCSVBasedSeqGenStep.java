@@ -55,7 +55,10 @@ import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
-import org.carbondata.core.util.*;
+import org.carbondata.core.util.CarbonProperties;
+import org.carbondata.core.util.CarbonTimeStatisticsFactory;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.core.writer.ByteArrayHolder;
 import org.carbondata.core.writer.HierarchyValueWriterForCSV;
 import org.carbondata.processing.dataprocessor.manager.CarbonDataProcessorManager;
@@ -70,7 +73,6 @@ import org.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
@@ -1028,7 +1030,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
           }
 
-          Int2ObjectMap<int[]> cache = surrogateKeyGen.getHierCache().get(actualHierName);
+          Map<Integer, int[]> cache = surrogateKeyGen.getHierCache().get(actualHierName);
           int[] surrogateKeyForHierarchy = null;
           if (null != cache) {
 
@@ -1095,7 +1097,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
         }
 
-        Int2ObjectMap<int[]> cache = surrogateKeyGen.getHierCache().get(actualHierName);
+        Map<Integer, int[]> cache = surrogateKeyGen.getHierCache().get(actualHierName);
         int[] surrogateKeyForHrrchy = null;
         if (null != cache) {
           Integer keyFromCsv = dicCache.getSurrogateKey(tuple);

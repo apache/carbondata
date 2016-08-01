@@ -20,9 +20,8 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>org.carbondata</groupId>
   <artifactId>carbon-core</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
   <packaging>jar</packaging>
-  <name>carbon-core</name>
+  <name>CarbonData Core</name>
   <parent>
     <groupId>org.carbondata</groupId>
     <version>0.1.0-SNAPSHOT</version>
@@ -39,6 +38,11 @@
     </repository>
   </repositories>
   <dependencies>
+    <dependency>
+      <groupId>org.carbondata</groupId>
+      <artifactId>carbon-format</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.carbondata</groupId>
       <artifactId>carbon-common</artifactId>
@@ -60,43 +64,17 @@
       <version>${kettle.version}</version>
     </dependency>
     <dependency>
-      <groupId>it.unimi.dsi</groupId>
-      <artifactId>fastutil</artifactId>
-      <version>6.5.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <version>2.3.1</version>
     </dependency>
     <dependency>
-      <groupId>commons-vfs</groupId>
-      <artifactId>commons-vfs</artifactId>
-      <version>1.0</version>
-      <exclusions>
-        <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-common</artifactId>
-      <version>${hadoop.version}</version>
-      <scope>${hadoop.deps.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-hdfs</artifactId>
-      <version>${hadoop.version}</version>
-      <scope>${hadoop.deps.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.xerial.snappy</groupId>
@@ -106,35 +84,19 @@
     <dependency>
       <groupId>org.jmockit</groupId>
       <artifactId>jmockit</artifactId>
-      <version>1.10</version>
-      <exclusions>
-        <exclusion>
-          <groupId>*</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.11</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-sql_${scala.binary.version}</artifactId>
-      <version>${spark.version}</version>
-      <scope>${spark.deps.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.carbondata</groupId>
       <artifactId>carbon-format</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.thrift</groupId>
-      <artifactId>libthrift</artifactId>
-      <version>0.9.3</version>
     </dependency>
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
