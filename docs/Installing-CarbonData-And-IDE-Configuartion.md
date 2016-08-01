@@ -26,6 +26,10 @@ $ mvn -DskipTests -Pspark-1.6 -Dspark.version=1.6.0 clean package
 $ mvn -DskipTests -Pspark-1.6 -Dspark.version=1.6.1 clean package
 $ mvn -DskipTests -Pspark-1.6 -Dspark.version=1.6.2 clean package
 ```
+* Build the assembly jar which includes Spark and Hadoop jars
+```
+mvn clean -DskipTests -Pinclude-all package
+```
 * Build with test
 ```
 $ mvn clean package
