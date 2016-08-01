@@ -40,7 +40,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
 
-    sql("create table Carbon_automation_test (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, Latest_DAY int, Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointDescription string, gamePointId int,contractNumber int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='Latest_MONTH,Latest_DAY,deviceInformationId')");
+    sql("create table if not exists Carbon_automation_test (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, Latest_DAY int, Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointDescription string, gamePointId int,contractNumber int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='Latest_MONTH,Latest_DAY,deviceInformationId')");
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     sql("LOAD DATA LOCAL INPATH '"+currentDirectory+"/src/test/resources/100_olap.csv' INTO table Carbon_automation_test options('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName,deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict,deliveryStreet,oxSingleNumber,contractNumber,ActiveCheckTime,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId,Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber,Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer,Active_webTypeDataVerNumber,Active_operatorsVersion,Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR,Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district,Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion,Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer,Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription')");
@@ -48,7 +48,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
     sql("LOAD DATA LOCAL INPATH '"+currentDirectory+"/src/test/resources/100_olap.csv' INTO table Carbon_automation_hive ");
 
     //hive table
-    sql("create table Carbon_automation_test_hive (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string,contractNumber int, ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, Latest_DAY int, Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointId int,gamePointDescription string)row format delimited fields terminated by ','");
+    sql("create table if not exists Carbon_automation_test_hive (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string,contractNumber int, ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, Latest_DAY int, Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointId int,gamePointDescription string)row format delimited fields terminated by ','");
     sql("LOAD DATA LOCAL INPATH '"+currentDirectory+"/src/test/resources/100_olap.csv' INTO table Carbon_automation_test_hive");
 
   }
@@ -56,6 +56,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table Carbon_automation_test")
     sql("drop table Carbon_automation_hive")
+    sql("drop table Carbon_automation_test_hive")
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
@@ -68,7 +69,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       Seq(Row("1", 132), Row("2", 110), Row("3", 176), Row("4", 132), Row("5", 132), Row("6", 209), Row("7", 198)))
 
   }
-  
+
   test("select channelsId, Latest_DAY from Carbon_automation_test where count(channelsId) = 1") {
     try {
       sql("select channelsId, Latest_DAY from Carbon_automation_test where count(channelsId) = 1").collect
@@ -77,7 +78,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       case ce: Exception => ce.getMessage
     }
   }
-  
+
   //Test-24
   test("select channelsId, sum(channelsId+ 10)  Total from Carbon_automation_test group by  channelsId order by Total") {
     checkAnswer(
@@ -109,7 +110,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       Seq(Row("1", 11), Row("2", 11), Row("3", 11), Row("4", 11), Row("5", 11), Row("6", 11), Row("7", 11)))
 
   }
-  
+
   //Test-29
   test("select channelsId, avg(channelsId+ 10)  Total from Carbon_automation_test group by  channelsId order by Total") {
     checkAnswer(
@@ -134,8 +135,8 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       Seq(Row("1", 12), Row("2", 10), Row("3", 16), Row("4", 12), Row("5", 12), Row("6", 19), Row("7", 18)))
 
   }
-  
-  
+
+
   //Test-33
   test("select channelsId, count(channelsId+ 10) Total from Carbon_automation_test group by  channelsId order by channelsId") {
     checkAnswer(
@@ -159,8 +160,8 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       Seq(Row("1", 11), Row("2", 11), Row("3", 11), Row("4", 11), Row("5", 11), Row("6", 11), Row("7", 11)))
 
   }
-  
-  
+
+
   //Test-37
   test("select channelsId, min(channelsId+ 10) Total from Carbon_automation_test group by  channelsId order by Total") {
     checkAnswer(
@@ -184,8 +185,8 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       Seq(Row("1", 11), Row("2", 11), Row("3", 11), Row("4", 11), Row("5", 11), Row("6", 11), Row("7", 11)))
 
   }
-  
-  
+
+
   //Test-41
   test("select channelsId, max(channelsId+ 10) Total from Carbon_automation_test group by  channelsId order by Total")({
 
@@ -218,15 +219,15 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select Latest_YEAR ,sum(distinct Latest_YEAR)+10 from Carbon_automation_test group by Latest_YEAR"),
       Seq(Row(2015, 2025)))
   })
-  
+
     //Test-47
   test("select sum(gamepointid) +10 as a ,series  from Carbon_automation_test group by series")({
 
     checkAnswer(
       sql("select sum(gamepointid) +10 as a ,series  from Carbon_automation_test group by series"),
       sql("select sum(gamepointid) +10 as a ,series  from Carbon_automation_test_hive group by series"))
-  })  
-  
+  })
+
   //Test-50
   test("select sum(gamepointid) +10.36 as a ,series  from Carbon_automation_test group by series")({
 
@@ -234,7 +235,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select sum(gamepointid) +10.36 as a ,series  from Carbon_automation_test group by series"),
       sql("select sum(gamepointid) +10.36 as a ,series  from Carbon_automation_test_hive group by series"))
   })
-  
+
   //TC_055
   test("select count(deviceinformationid)+10.32 as a ,series  from Carbon_automation_test group by series")({
     checkAnswer(
@@ -348,7 +349,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select sum( DISTINCT Latest_MONTH)  a from Carbon_automation_test"),
       Seq(Row(7)))
   })
-  
+
     //TC_088
   test("select avg (if(deviceInformationId>100,NULL,deviceInformationId))  a from Carbon_automation_test")({
     checkAnswer(
@@ -382,7 +383,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select min(Latest_MONTH)  a  from Carbon_automation_test"),
       Seq(Row(7)))
   })
-  
+
    //TC_095
   test("select min (if(deviceInformationId>100,NULL,deviceInformationId))  a from Carbon_automation_test")({
     checkAnswer(
@@ -416,7 +417,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select max(Latest_MONTH)  a  from Carbon_automation_test"),
       Seq(Row(7)))
   })
-  
+
   //TC_102
   test("select max (if(deviceInformationId>100,NULL,deviceInformationId))  a from Carbon_automation_test")({
     checkAnswer(
@@ -503,7 +504,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select series,count(imei) a from Carbon_automation_test group by series order by series"),
       Seq(Row("0Series", 15), Row("1Series", 3), Row("2Series", 9), Row("3Series", 8), Row("4Series", 8), Row("5Series", 17), Row("6Series", 9), Row("7Series", 11), Row("8Series", 11), Row("9Series", 8)))
   })
-  
+
   //TC_138
   test("select series,ActiveProvince,count(imei)  a from Carbon_automation_test group by ActiveProvince,series order by series,ActiveProvince")({
     checkAnswer(
@@ -517,14 +518,14 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select count(distinct deviceColor) a,deliveryProvince from Carbon_automation_test group by deliveryProvince"),
       Seq(Row(10, "Hunan Province"), Row(10, "Guangdong Province"), Row(10, "Hubei Province")))
   })
-  
+
     //TC_141
   test("select series,sum(gamePointId) a from Carbon_automation_test group by series order by series")({
     checkAnswer(
       sql("select series,sum(gamePointId) a from Carbon_automation_test group by series order by series"),
       sql("select series,sum(gamePointId) a from Carbon_automation_test_hive group by series order by series"))
   })
-  
+
    //TC_162
   test("select imei,series from Carbon_automation_test where Carbon_automation_test.series IN ('1Series','7Series')")({
     checkAnswer(
@@ -538,7 +539,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select imei,series from Carbon_automation_test where Carbon_automation_test.series  NOT IN ('1Series','7Series')"),
       Seq(Row("1AA100", "5Series"), Row("1AA1000", "5Series"), Row("1AA100000", "9Series"), Row("1AA100001", "0Series"), Row("1AA100002", "0Series"), Row("1AA100003", "5Series"), Row("1AA100004", "4Series"), Row("1AA100006", "6Series"), Row("1AA100007", "9Series"), Row("1AA100008", "8Series"), Row("1AA100009", "0Series"), Row("1AA10001", "2Series"), Row("1AA100010", "3Series"), Row("1AA100011", "0Series"), Row("1AA100012", "4Series"), Row("1AA100014", "5Series"), Row("1AA100015", "4Series"), Row("1AA100016", "3Series"), Row("1AA100017", "9Series"), Row("1AA100018", "8Series"), Row("1AA100019", "5Series"), Row("1AA10002", "0Series"), Row("1AA100020", "5Series"), Row("1AA100021", "0Series"), Row("1AA100022", "5Series"), Row("1AA100023", "5Series"), Row("1AA100024", "6Series"), Row("1AA100025", "0Series"), Row("1AA100027", "0Series"), Row("1AA100028", "5Series"), Row("1AA100029", "2Series"), Row("1AA100033", "8Series"), Row("1AA100034", "2Series"), Row("1AA100035", "5Series"), Row("1AA100036", "5Series"), Row("1AA100038", "6Series"), Row("1AA100039", "8Series"), Row("1AA10004", "5Series"), Row("1AA100040", "8Series"), Row("1AA100041", "5Series"), Row("1AA100042", "3Series"), Row("1AA100043", "9Series"), Row("1AA100044", "8Series"), Row("1AA100045", "2Series"), Row("1AA100046", "3Series"), Row("1AA100047", "9Series"), Row("1AA100048", "3Series"), Row("1AA100049", "0Series"), Row("1AA10005", "8Series"), Row("1AA100050", "2Series"), Row("1AA100051", "2Series"), Row("1AA100052", "6Series"), Row("1AA100053", "2Series"), Row("1AA100056", "6Series"), Row("1AA100057", "9Series"), Row("1AA100058", "5Series"), Row("1AA100059", "4Series"), Row("1AA10006", "3Series"), Row("1AA100060", "8Series"), Row("1AA100061", "6Series"), Row("1AA100062", "9Series"), Row("1AA100063", "2Series"), Row("1AA100064", "6Series"), Row("1AA100065", "0Series"), Row("1AA100066", "6Series"), Row("1AA100067", "4Series"), Row("1AA100068", "8Series"), Row("1AA100069", "8Series"), Row("1AA10007", "8Series"), Row("1AA100070", "0Series"), Row("1AA100071", "0Series"), Row("1AA100072", "4Series"), Row("1AA100073", "4Series"), Row("1AA100074", "6Series"), Row("1AA100075", "3Series"), Row("1AA100076", "0Series"), Row("1AA100077", "3Series"), Row("1AA100078", "2Series"), Row("1AA100079", "4Series"), Row("1AA10008", "5Series"), Row("1AA100080", "9Series"), Row("1AA100081", "5Series"), Row("1AA100082", "5Series"), Row("1AA100083", "0Series"), Row("1AA100084", "0Series")))
   })
-  
+
    //TC_166
   test("select Upper(series) a  from Carbon_automation_test")({
     checkAnswer(
@@ -559,7 +560,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select imei,series from Carbon_automation_test limit 10"),
       Seq(Row("1AA1", "7Series"), Row("1AA10", "7Series"), Row("1AA100", "5Series"), Row("1AA1000", "5Series"), Row("1AA10000", "7Series"), Row("1AA100000", "9Series"), Row("1AA1000000", "7Series"), Row("1AA100001", "0Series"), Row("1AA100002", "0Series"), Row("1AA100003", "5Series")))
   })
-  
+
   //TC_171
   test("select Lower(series) a  from Carbon_automation_test")({
     checkAnswer(
@@ -580,7 +581,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select distinct  Latest_DAY from Carbon_automation_test"),
       Seq(Row(1)))
   })
-  
+
     //TC_175
   test("select distinct  channelsId from Carbon_automation_test")({
     checkAnswer(
@@ -671,14 +672,14 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select series,ActiveProvince,sum(gamePointId) a from Carbon_automation_test group by series,ActiveProvince order by series desc,ActiveProvince asc"),
       sql("select series,ActiveProvince,sum(gamePointId) a from Carbon_automation_test_hive group by series,ActiveProvince order by series desc,ActiveProvince asc"))
   })
-  
+
    //TC_208
   test("select Latest_DAY as a from Carbon_automation_test where Latest_DAY<=>Latest_areaId")({
     checkAnswer(
       sql("select Latest_DAY as a from Carbon_automation_test where Latest_DAY<=>Latest_areaId"),
       Seq(Row(1), Row(1), Row(1), Row(1), Row(1), Row(1), Row(1), Row(1), Row(1), Row(1), Row(1), Row(1)))
   })
-  
+
     //TC_210
   test("select Latest_DAY  from Carbon_automation_test where Latest_DAY<>Latest_areaId")({
     checkAnswer(
@@ -720,7 +721,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select imei, Latest_DAY from Carbon_automation_test where Latest_DAY NOT BETWEEN Latest_areaId AND  Latest_HOUR"),
       Seq(Row("1AA1", 1), Row("1AA10", 1), Row("1AA100", 1), Row("1AA1000", 1), Row("1AA10000", 1), Row("1AA100000", 1), Row("1AA100001", 1), Row("1AA100002", 1), Row("1AA100003", 1), Row("1AA100004", 1), Row("1AA100006", 1), Row("1AA100007", 1), Row("1AA100008", 1), Row("1AA100009", 1), Row("1AA10001", 1), Row("1AA100010", 1), Row("1AA100011", 1), Row("1AA100012", 1), Row("1AA100013", 1), Row("1AA100014", 1), Row("1AA100015", 1), Row("1AA100016", 1), Row("1AA100017", 1), Row("1AA100018", 1), Row("1AA100019", 1), Row("1AA10002", 1), Row("1AA100020", 1), Row("1AA100021", 1), Row("1AA100022", 1), Row("1AA100023", 1), Row("1AA100024", 1), Row("1AA100029", 1), Row("1AA10003", 1), Row("1AA100030", 1), Row("1AA100031", 1), Row("1AA100032", 1), Row("1AA100033", 1), Row("1AA100035", 1), Row("1AA100036", 1), Row("1AA100037", 1), Row("1AA100038", 1), Row("1AA10004", 1), Row("1AA100040", 1), Row("1AA100041", 1), Row("1AA100042", 1), Row("1AA100043", 1), Row("1AA100044", 1), Row("1AA100045", 1), Row("1AA100046", 1), Row("1AA100047", 1), Row("1AA100048", 1), Row("1AA100049", 1), Row("1AA10005", 1), Row("1AA100051", 1), Row("1AA100053", 1), Row("1AA100054", 1), Row("1AA100055", 1), Row("1AA100056", 1), Row("1AA100057", 1), Row("1AA100058", 1), Row("1AA100059", 1), Row("1AA10006", 1), Row("1AA100060", 1), Row("1AA100062", 1), Row("1AA100063", 1), Row("1AA100064", 1), Row("1AA100065", 1), Row("1AA100066", 1), Row("1AA100067", 1), Row("1AA100068", 1), Row("1AA100069", 1), Row("1AA10007", 1), Row("1AA100070", 1), Row("1AA100071", 1), Row("1AA100072", 1), Row("1AA100073", 1), Row("1AA100075", 1), Row("1AA100076", 1), Row("1AA100077", 1), Row("1AA100078", 1), Row("1AA100079", 1), Row("1AA10008", 1), Row("1AA100080", 1), Row("1AA100081", 1), Row("1AA100082", 1), Row("1AA100083", 1), Row("1AA100084", 1)))
   })
-  
+
     //TC_219
   test("select imei, Latest_DAY from Carbon_automation_test where Latest_DAY IS NOT NULL")({
     checkAnswer(
@@ -734,14 +735,14 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select imei, Latest_DAY from Carbon_automation_test where imei IS NOT NULL"),
       Seq(Row("1AA1", 1), Row("1AA10", 1), Row("1AA100", 1), Row("1AA1000", 1), Row("1AA10000", 1), Row("1AA100000", 1), Row("1AA1000000", 1), Row("1AA100001", 1), Row("1AA100002", 1), Row("1AA100003", 1), Row("1AA100004", 1), Row("1AA100005", 1), Row("1AA100006", 1), Row("1AA100007", 1), Row("1AA100008", 1), Row("1AA100009", 1), Row("1AA10001", 1), Row("1AA100010", 1), Row("1AA100011", 1), Row("1AA100012", 1), Row("1AA100013", 1), Row("1AA100014", 1), Row("1AA100015", 1), Row("1AA100016", 1), Row("1AA100017", 1), Row("1AA100018", 1), Row("1AA100019", 1), Row("1AA10002", 1), Row("1AA100020", 1), Row("1AA100021", 1), Row("1AA100022", 1), Row("1AA100023", 1), Row("1AA100024", 1), Row("1AA100025", 1), Row("1AA100026", 1), Row("1AA100027", 1), Row("1AA100028", 1), Row("1AA100029", 1), Row("1AA10003", 1), Row("1AA100030", 1), Row("1AA100031", 1), Row("1AA100032", 1), Row("1AA100033", 1), Row("1AA100034", 1), Row("1AA100035", 1), Row("1AA100036", 1), Row("1AA100037", 1), Row("1AA100038", 1), Row("1AA100039", 1), Row("1AA10004", 1), Row("1AA100040", 1), Row("1AA100041", 1), Row("1AA100042", 1), Row("1AA100043", 1), Row("1AA100044", 1), Row("1AA100045", 1), Row("1AA100046", 1), Row("1AA100047", 1), Row("1AA100048", 1), Row("1AA100049", 1), Row("1AA10005", 1), Row("1AA100050", 1), Row("1AA100051", 1), Row("1AA100052", 1), Row("1AA100053", 1), Row("1AA100054", 1), Row("1AA100055", 1), Row("1AA100056", 1), Row("1AA100057", 1), Row("1AA100058", 1), Row("1AA100059", 1), Row("1AA10006", 1), Row("1AA100060", 1), Row("1AA100061", 1), Row("1AA100062", 1), Row("1AA100063", 1), Row("1AA100064", 1), Row("1AA100065", 1), Row("1AA100066", 1), Row("1AA100067", 1), Row("1AA100068", 1), Row("1AA100069", 1), Row("1AA10007", 1), Row("1AA100070", 1), Row("1AA100071", 1), Row("1AA100072", 1), Row("1AA100073", 1), Row("1AA100074", 1), Row("1AA100075", 1), Row("1AA100076", 1), Row("1AA100077", 1), Row("1AA100078", 1), Row("1AA100079", 1), Row("1AA10008", 1), Row("1AA100080", 1), Row("1AA100081", 1), Row("1AA100082", 1), Row("1AA100083", 1), Row("1AA100084", 1)))
   })
-  
+
    //TC_223
   test("select * from (select if( Latest_areaId=7,7,NULL) as babu,Latest_MONTH from Carbon_automation_test) qq where babu LIKE   Latest_MONTH")({
     checkAnswer(
       sql("select * from (select if( Latest_areaId=7,7,NULL) as babu,Latest_MONTH from Carbon_automation_test) qq where babu LIKE   Latest_MONTH"),
       Seq(Row(7, 7), Row(7, 7), Row(7, 7), Row(7, 7), Row(7, 7), Row(7, 7), Row(7, 7), Row(7, 7), Row(7, 7), Row(7, 7), Row(7, 7), Row(7, 7), Row(7, 7), Row(7, 7), Row(7, 7), Row(7, 7), Row(7, 7)))
   })
-  
+
     //TC_263
   test("SELECT AMSize, ActiveAreaId, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, ActiveAreaId ASC")({
     checkAnswer(
@@ -755,7 +756,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("SELECT AMSize, ActiveAreaId, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test) SUB_QRY WHERE NOT(AMSize = \"\") GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, ActiveAreaId ASC"),
       sql("SELECT AMSize, ActiveAreaId, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test_hive) SUB_QRY WHERE NOT(AMSize = \"\") GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, ActiveAreaId ASC"))
   })
-  
+
    //TC_274
   test("SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamepointid) AS Sum_gamepointid FROM  Carbon_automation_test group by ActiveCountry,ActiveDistrict,Activecity")({
     checkAnswer(
@@ -783,14 +784,14 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("SELECT ActiveCountry, COUNT(DISTINCT imei) AS DistinctCount_imei FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry ORDER BY ActiveCountry ASC"),
       Seq(Row("Chinese", 99)))
   })
-  
+
     //TC_282
   test("SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamepointid) AS Sum_gamepointid FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry, ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity ASC")({
     checkAnswer(
       sql("SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamepointid) AS Sum_gamepointid FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry, ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity ASC"),
       sql("SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamepointid) AS Sum_gamepointid FROM (select * from Carbon_automation_test_hive) SUB_QRY GROUP BY ActiveCountry, ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity ASC"))
   })
-  
+
     //TC_317
   test("select channelsId from Carbon_automation_test order by  channelsId")({
     checkAnswer(
@@ -818,7 +819,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test) SUB_QRY WHERE imei = \"1AA100000\" GROUP BY ActiveCountry, ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity ASC"),
       Seq(Row("Chinese", "yichang", "yichang", 136.0)))
   })
-  
+
     //TC_384
   test("SELECT series, SUM(gamePointId) AS Sum_gamePointId FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY series ORDER BY series ASC")({
     checkAnswer(
@@ -846,7 +847,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("SELECT imei, channelsId, COUNT(deliveryTime) AS Count_deliveryTime FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY imei, channelsId ORDER BY imei ASC, channelsId ASC"),
       Seq(Row("1AA1", "4", 1), Row("1AA10", "4", 1), Row("1AA100", "6", 1), Row("1AA1000", "3", 1), Row("1AA10000", "1", 1), Row("1AA100000", "6", 1), Row("1AA1000000", "6", 1), Row("1AA100001", "7", 1), Row("1AA100002", "3", 1), Row("1AA100003", "3", 1), Row("1AA100004", "2", 1), Row("1AA100005", "1", 1), Row("1AA100006", "2", 1), Row("1AA100007", "3", 1), Row("1AA100008", "1", 1), Row("1AA100009", "3", 1), Row("1AA10001", "5", 1), Row("1AA100010", "6", 1), Row("1AA100011", "1", 1), Row("1AA100012", "2", 1), Row("1AA100013", "6", 1), Row("1AA100014", "3", 1), Row("1AA100015", "1", 1), Row("1AA100016", "3", 1), Row("1AA100017", "3", 1), Row("1AA100018", "4", 1), Row("1AA100019", "3", 1), Row("1AA10002", "5", 1), Row("1AA100020", "7", 1), Row("1AA100021", "6", 1), Row("1AA100022", "5", 1), Row("1AA100023", "3", 1), Row("1AA100024", "2", 1), Row("1AA100025", "1", 1), Row("1AA100026", "7", 1), Row("1AA100027", "4", 1), Row("1AA100028", "5", 1), Row("1AA100029", "5", 1), Row("1AA10003", "4", 1), Row("1AA100030", "3", 1), Row("1AA100031", "1", 1), Row("1AA100032", "7", 1), Row("1AA100033", "6", 1), Row("1AA100034", "6", 1), Row("1AA100035", "7", 1), Row("1AA100036", "5", 1), Row("1AA100037", "6", 1), Row("1AA100038", "3", 1), Row("1AA100039", "1", 1), Row("1AA10004", "4", 1), Row("1AA100040", "7", 1), Row("1AA100041", "1", 1), Row("1AA100042", "5", 1), Row("1AA100043", "6", 1), Row("1AA100044", "2", 1), Row("1AA100045", "6", 1), Row("1AA100046", "4", 1), Row("1AA100047", "1", 1), Row("1AA100048", "1", 1), Row("1AA100049", "6", 1), Row("1AA10005", "2", 1), Row("1AA100050", "1", 1), Row("1AA100051", "7", 1), Row("1AA100052", "7", 1), Row("1AA100053", "3", 1), Row("1AA100054", "2", 1), Row("1AA100055", "7", 1), Row("1AA100056", "5", 1), Row("1AA100057", "6", 1), Row("1AA100058", "4", 1), Row("1AA100059", "7", 1), Row("1AA10006", "5", 1), Row("1AA100060", "4", 1), Row("1AA100061", "6", 1), Row("1AA100062", "6", 1), Row("1AA100063", "3", 1), Row("1AA100064", "7", 1), Row("1AA100065", "7", 1), Row("1AA100066", "4", 1), Row("1AA100067", "7", 1), Row("1AA100068", "7", 1), Row("1AA100069", "5", 1), Row("1AA10007", "3", 1), Row("1AA100070", "3", 1), Row("1AA100071", "5", 1), Row("1AA100072", "7", 1), Row("1AA100073", "2", 1), Row("1AA100074", "7", 1), Row("1AA100075", "6", 1), Row("1AA100076", "7", 1), Row("1AA100077", "6", 1), Row("1AA100078", "5", 1), Row("1AA100079", "6", 1), Row("1AA10008", "4", 1), Row("1AA100080", "6", 1), Row("1AA100081", "2", 1), Row("1AA100082", "7", 1), Row("1AA100083", "2", 1), Row("1AA100084", "4", 1)))
   })
-  
+
     //TC_408
   test("select imei,series from Carbon_automation_test where series='7Series' order by imei limit 10")({
     checkAnswer(
@@ -874,7 +875,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select  avg(channelsName) from Carbon_automation_test where  modelId is  null"),
       Seq(Row(null)))
   })
-  
+
    //TC_424
   test("SELECT count(DISTINCT gamePointId) FROM Carbon_automation_test where imei is null")({
     checkAnswer(
@@ -937,14 +938,14 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select  channelsName from Carbon_automation_test where latest_day is NOT null"),
       Seq(Row("guomei"), Row("guomei"), Row("yidong"), Row("shuling"), Row("taobao"), Row("yidong"), Row("yidong"), Row("liantong"), Row("shuling"), Row("shuling"), Row("jingdong"), Row("taobao"), Row("jingdong"), Row("shuling"), Row("taobao"), Row("shuling"), Row("shishang"), Row("yidong"), Row("taobao"), Row("jingdong"), Row("yidong"), Row("shuling"), Row("taobao"), Row("shuling"), Row("shuling"), Row("guomei"), Row("shuling"), Row("shishang"), Row("liantong"), Row("yidong"), Row("shishang"), Row("shuling"), Row("jingdong"), Row("taobao"), Row("liantong"), Row("guomei"), Row("shishang"), Row("shishang"), Row("guomei"), Row("shuling"), Row("taobao"), Row("liantong"), Row("yidong"), Row("yidong"), Row("liantong"), Row("shishang"), Row("yidong"), Row("shuling"), Row("taobao"), Row("guomei"), Row("liantong"), Row("taobao"), Row("shishang"), Row("yidong"), Row("jingdong"), Row("yidong"), Row("guomei"), Row("taobao"), Row("taobao"), Row("yidong"), Row("jingdong"), Row("taobao"), Row("liantong"), Row("liantong"), Row("shuling"), Row("jingdong"), Row("liantong"), Row("shishang"), Row("yidong"), Row("guomei"), Row("liantong"), Row("shishang"), Row("guomei"), Row("yidong"), Row("yidong"), Row("shuling"), Row("liantong"), Row("liantong"), Row("guomei"), Row("liantong"), Row("liantong"), Row("shishang"), Row("shuling"), Row("shuling"), Row("shishang"), Row("liantong"), Row("jingdong"), Row("liantong"), Row("yidong"), Row("liantong"), Row("yidong"), Row("shishang"), Row("yidong"), Row("guomei"), Row("yidong"), Row("jingdong"), Row("liantong"), Row("jingdong"), Row("guomei")))
   })
-  
+
    //TC_439
   test("SELECT min(AMSize) FROM Carbon_automation_test where imei is NOT null")({
     checkAnswer(
       sql("SELECT min(AMSize) FROM Carbon_automation_test where imei is NOT null"),
       Seq(Row("0RAM size")))
   })
-  
+
     //TC_448
   test("select var_samp(Latest_YEAR) from Carbon_automation_test")({
     checkAnswer(
@@ -958,7 +959,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select var_samp(AMSize) from Carbon_automation_test"),
       Seq(Row(null)))
   })
-  
+
    //TC_451
   test("select stddev_pop(bomcode)from Carbon_automation_test")({
     checkAnswer(
@@ -979,7 +980,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select stddev_pop(AMSIZE)from Carbon_automation_test"),
       Seq(Row(null)))
   })
-  
+
   //TC_457
   test("select stddev_samp(deviceInformationId)from Carbon_automation_test1")({
     checkAnswer(
@@ -1034,8 +1035,8 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("Select percentile(1,1.0) from Carbon_automation_test"),
       Seq(Row(1.0)))
-  })  
-  
+  })
+
   //TC_481
   test("select percentile_approx(1, 0.5 ,5000) from Carbon_automation_test")({
     checkAnswer(
@@ -1056,7 +1057,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select percentile_approx(1, 0.5 ,700) from Carbon_automation_test"),
       Seq(Row(1.0)))
   })
-  
+
   //TC_484
   test("select percentile_approx(1, 0.5 ,500) from Carbon_automation_test")({
     checkAnswer(
@@ -1098,7 +1099,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select c1,count(c1) from (select c1 as c1,c2 as c2 from carbonunion union all select c2 as c1,c1 as c2 from carbonunion)t where c1='200' group by c1"),
       sql("select c1,count(c1) from (select c1 as c1,c2 as c2 from sparkunion union all select c2 as c1,c1 as c2 from sparkunion)t where c1='200' group by c1"))
+    sql("drop table if exists carbonunion")
   })
-  sql("drop table if exists carbonunion")
 
 }
