@@ -37,6 +37,10 @@ class NO_DICTIONARY_COL_TestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     //For the Hive table creation and data loading
     sql("drop table if exists filtertestTables")
+    sql("drop table if exists NO_DICTIONARY_HIVE_6")
+    sql("drop table if exists NO_DICTIONARY_CARBON_6")
+    sql("drop table if exists NO_DICTIONARY_CARBON_7")
+    
     sql(
       "create table NO_DICTIONARY_HIVE_6(empno int,empname string,designation string,doj " +
         "Timestamp,workgroupcategory int, " +
