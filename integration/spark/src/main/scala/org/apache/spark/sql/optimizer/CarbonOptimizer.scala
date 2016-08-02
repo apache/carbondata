@@ -28,6 +28,7 @@ import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.execution.RunnableCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{IntegerType, StringType}
 
@@ -82,6 +83,9 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
    */
   def transformCarbonPlan(plan: LogicalPlan,
       relations: Seq[CarbonDecoderRelation]): LogicalPlan = {
+    if (plan.isInstanceOf[RunnableCommand]) {
+      return plan
+    }
     var decoder = false
     val aliasMap = CarbonAliasDecoderRelation()
     // collect alias information before hand.

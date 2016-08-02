@@ -29,6 +29,8 @@ import org.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.carbondata.core.keygenerator.KeyGenerator;
 import org.carbondata.scan.filter.GenericQueryType;
 import org.carbondata.scan.filter.executer.FilterExecuter;
+import org.carbondata.scan.model.QueryDimension;
+import org.carbondata.scan.model.QueryMeasure;
 
 /**
  * Below class will have all the properties which needed during query execution
@@ -198,11 +200,6 @@ public class BlockExecutionInfo {
   private boolean isRawRecordDetailQuery;
 
   /**
-   * whether dimensions exist in query.
-   */
-  private boolean isDimensionsExistInQuery;
-
-  /**
    * complexParentIndexToQueryMap
    */
   private Map<Integer, GenericQueryType> complexParentIndexToQueryMap;
@@ -223,6 +220,16 @@ public class BlockExecutionInfo {
   public AbstractIndex getDataBlock() {
     return blockIndex;
   }
+
+  /**
+   * list of dimension selected for in query
+   */
+  private QueryDimension[] queryDimensions;
+
+  /**
+   * list of measure selected in query
+   */
+  private QueryMeasure[] queryMeasures;
 
   /**
    * @param blockIndex the tableBlock to set
@@ -335,6 +342,8 @@ public class BlockExecutionInfo {
   public int[] getMaskedByteForBlock() {
     return maskedByteForBlock;
   }
+
+
 
   /**
    * @param maskedByteForBlock the maskedByteForBlock to set
@@ -618,14 +627,6 @@ public class BlockExecutionInfo {
     isRawRecordDetailQuery = rawRecordDetailQuery;
   }
 
-  public boolean isDimensionsExistInQuery() {
-    return isDimensionsExistInQuery;
-  }
-
-  public void setDimensionsExistInQuery(boolean dimensionsExistInQuery) {
-    isDimensionsExistInQuery = dimensionsExistInQuery;
-  }
-
   /**
    * @return the complexParentIndexToQueryMap
    */
@@ -660,5 +661,21 @@ public class BlockExecutionInfo {
 
   public void setStatisticsRecorder(QueryStatisticsRecorder statisticsRecorder) {
     this.statisticsRecorder = statisticsRecorder;
+  }
+
+  public QueryDimension[] getQueryDimensions() {
+    return queryDimensions;
+  }
+
+  public void setQueryDimensions(QueryDimension[] queryDimensions) {
+    this.queryDimensions = queryDimensions;
+  }
+
+  public QueryMeasure[] getQueryMeasures() {
+    return queryMeasures;
+  }
+
+  public void setQueryMeasures(QueryMeasure[] queryMeasures) {
+    this.queryMeasures = queryMeasures;
   }
 }

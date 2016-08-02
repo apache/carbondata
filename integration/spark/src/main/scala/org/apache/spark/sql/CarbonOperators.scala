@@ -46,61 +46,14 @@ case class CarbonScan(
   val selectedMsrs = scala.collection.mutable.MutableList[QueryMeasure]()
   @transient val carbonCatalog = ocRaw.catalog.asInstanceOf[CarbonMetastoreCatalog]
 
-  val attributesNeedToDecode = new java.util.HashSet[AttributeReference]()
+  val attributesNeedToDecode = new java.util.LinkedHashSet[AttributeReference]()
   val unprocessedExprs = new ArrayBuffer[Expression]()
 
   val buildCarbonPlan: CarbonQueryPlan = {
     val plan: CarbonQueryPlan = new CarbonQueryPlan(relationRaw.databaseName, relationRaw.tableName)
 
-    val dimensions = carbonTable.getDimensionByTableName(carbonTable.getFactTableName)
-    val measures = carbonTable.getMeasureByTableName(carbonTable.getFactTableName)
-    val dimAttr = new Array[Attribute](dimensions.size())
-    val msrAttr = new Array[Attribute](measures.size())
-    attributesRaw.foreach { attr =>
-      val carbonDimension =
-        carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
-      if(carbonDimension != null) {
-        dimAttr(dimensions.indexOf(carbonDimension)) = attr
-      } else {
-        val carbonMeasure =
-          carbonTable.getMeasureByName(carbonTable.getFactTableName, attr.name)
-        if(carbonMeasure != null) {
-          msrAttr(measures.indexOf(carbonMeasure)) = attr
-        }
-      }
-    }
-
-    attributesRaw = dimAttr.filter(f => f != null) ++ msrAttr.filter(f => f != null)
-
-    var queryOrder: Integer = 0
-    attributesRaw.foreach { attr =>
-        val carbonDimension =
-          carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
-        if (carbonDimension != null) {
-          val dim = new QueryDimension(attr.name)
-          dim.setQueryOrder(queryOrder)
-          queryOrder = queryOrder + 1
-          selectedDims += dim
-        } else {
-          val carbonMeasure =
-            carbonTable.getMeasureByName(carbonTable.getFactTableName, attr.name)
-          if (carbonMeasure != null) {
-            val m1 = new QueryMeasure(attr.name)
-            m1.setQueryOrder(queryOrder)
-            queryOrder = queryOrder + 1
-            selectedMsrs += m1
-          }
-        }
-      }
-
-    // Fill the selected dimensions & measures obtained from
-    // attributes to query plan  for detailed query
-    selectedDims.foreach(plan.addDimension)
-    selectedMsrs.foreach(plan.addMeasure)
-
     plan.setSortedDimemsions(new ArrayList[QueryDimension])
 
-    plan.setRawDetailQuery(true)
     plan.setOutLocationPath(
       CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS))
     plan.setQueryId(System.nanoTime() + "")
@@ -129,32 +82,59 @@ case class CarbonScan(
     if (attributesNeedToDecode.size() > 0) {
       val attributeOut = new ArrayBuffer[Attribute]() ++ attributesRaw
 
-      attributesNeedToDecode.asScala.map { attr =>
-        val dims = plan.getDimensions.asScala.filter(f => f.getColumnName.equals(attr.name))
-        val msrs = plan.getMeasures.asScala.filter(f => f.getColumnName.equals(attr.name))
-        var order = plan.getDimensions.size() + plan.getMeasures.size()
-        if (dims.isEmpty && msrs.isEmpty) {
-          val dimension = carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
-          if (dimension != null) {
-            val qDim = new QueryDimension(dimension.getColName)
-            qDim.setQueryOrder(order)
-            plan.addDimension(qDim)
-            attributeOut += attr
-            order += 1
-          } else {
-            val measure = carbonTable.getMeasureByName(carbonTable.getFactTableName, attr.name)
-            if (measure != null) {
-              val qMsr = new QueryMeasure(measure.getColName)
-              qMsr.setQueryOrder(order)
-              plan.addMeasure(qMsr)
-              order += 1
-              attributeOut += attr
-            }
-          }
+      attributesNeedToDecode.asScala.foreach { attr =>
+        if (!attributesRaw.exists(_.name.equalsIgnoreCase(attr.name))) {
+          attributeOut += attr
         }
       }
       attributesRaw = attributeOut
     }
+
+    val dimensions = carbonTable.getDimensionByTableName(carbonTable.getFactTableName)
+    val measures = carbonTable.getMeasureByTableName(carbonTable.getFactTableName)
+    val dimAttr = new Array[Attribute](dimensions.size())
+    val msrAttr = new Array[Attribute](measures.size())
+    attributesRaw.foreach { attr =>
+      val carbonDimension =
+        carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
+      if(carbonDimension != null) {
+        dimAttr(dimensions.indexOf(carbonDimension)) = attr
+      } else {
+        val carbonMeasure =
+          carbonTable.getMeasureByName(carbonTable.getFactTableName, attr.name)
+        if(carbonMeasure != null) {
+          msrAttr(measures.indexOf(carbonMeasure)) = attr
+        }
+      }
+    }
+
+    attributesRaw = dimAttr.filter(f => f != null) ++ msrAttr.filter(f => f != null)
+
+    var queryOrder: Integer = 0
+    attributesRaw.foreach { attr =>
+      val carbonDimension =
+        carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
+      if (carbonDimension != null) {
+        val dim = new QueryDimension(attr.name)
+        dim.setQueryOrder(queryOrder)
+        queryOrder = queryOrder + 1
+        selectedDims += dim
+      } else {
+        val carbonMeasure =
+          carbonTable.getMeasureByName(carbonTable.getFactTableName, attr.name)
+        if (carbonMeasure != null) {
+          val m1 = new QueryMeasure(attr.name)
+          m1.setQueryOrder(queryOrder)
+          queryOrder = queryOrder + 1
+          selectedMsrs += m1
+        }
+      }
+    }
+
+    // Fill the selected dimensions & measures obtained from
+    // attributes to query plan  for detailed query
+    selectedDims.foreach(plan.addDimension)
+    selectedMsrs.foreach(plan.addMeasure)
   }
 
 

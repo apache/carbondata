@@ -19,7 +19,6 @@
 package org.carbondata.scan.executor;
 
 import org.carbondata.scan.executor.impl.DetailQueryExecutor;
-import org.carbondata.scan.executor.impl.DetailRawRecordQueryExecutor;
 import org.carbondata.scan.model.QueryModel;
 
 /**
@@ -29,10 +28,6 @@ import org.carbondata.scan.model.QueryModel;
 public class QueryExecutorFactory {
 
   public static QueryExecutor getQueryExecutor(QueryModel queryModel) {
-    if (queryModel.isForcedDetailRawQuery()) {
-      return new DetailRawRecordQueryExecutor();
-    } else {
-      return new DetailQueryExecutor();
-    }
+    return new DetailQueryExecutor();
   }
 }

@@ -18,8 +18,9 @@
  */
 package org.carbondata.scan.collector;
 
+import java.util.List;
+
 import org.carbondata.scan.result.AbstractScannedResult;
-import org.carbondata.scan.result.Result;
 
 /**
  * Interface which will be used to aggregate the scan result
@@ -32,12 +33,6 @@ public interface ScannedResultCollector {
    * @param scannedResult scanned result
    * @return how many records was aggregated
    */
-  int collectData(AbstractScannedResult scannedResult, int batchSize);
+  List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize);
 
-  /**
-   * Below method will be used to get the aggregated result
-   *
-   * @return
-   */
-  Result getCollectedResult();
 }

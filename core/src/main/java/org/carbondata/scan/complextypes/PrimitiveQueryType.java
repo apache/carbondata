@@ -33,12 +33,7 @@ import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.scan.filter.GenericQueryType;
 import org.carbondata.scan.processor.BlocksChunkHolder;
 
-import org.apache.spark.sql.types.BooleanType;
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.DoubleType;
-import org.apache.spark.sql.types.IntegerType;
-import org.apache.spark.sql.types.LongType;
-import org.apache.spark.sql.types.TimestampType;
+import org.apache.spark.sql.types.*;
 
 public class PrimitiveQueryType extends ComplexQueryType implements GenericQueryType {
 
@@ -135,17 +130,17 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
   @Override public DataType getSchemaType() {
     switch (dataType) {
       case INT:
-        return new IntegerType();
+        return IntegerType$.MODULE$;
       case DOUBLE:
-        return new DoubleType();
+        return DoubleType$.MODULE$;
       case LONG:
-        return new LongType();
+        return LongType$.MODULE$;
       case BOOLEAN:
-        return new BooleanType();
+        return BooleanType$.MODULE$;
       case TIMESTAMP:
-        return new TimestampType();
+        return TimestampType$.MODULE$;
       default:
-        return new IntegerType();
+        return IntegerType$.MODULE$;
     }
   }
 
@@ -165,7 +160,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     byte[] data = new byte[keySize];
     surrogateData.get(data);
     Bits bit = new Bits(new int[]{keySize * 8});
-    int surrgateValue = (int)bit.getKeyArray(data)[0];
+    int surrgateValue = (int)bit.getKeyArray(data, 0)[0];
     Object actualData = null;
     if (isDirectDictionary) {
       DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory

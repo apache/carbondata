@@ -546,8 +546,11 @@ public class QueryUtil {
       // sort the ordinal
       List<Integer> ordinal = next.getValue();
       List<Integer> mdKeyOrdinal = new ArrayList<Integer>();
+      //Un sorted
+      List<Integer> mdKeyOrdinalForQuery = new ArrayList<Integer>();
       for (Integer ord : ordinal) {
         mdKeyOrdinal.add(segmentProperties.getColumnGroupMdKeyOrdinal(next.getKey(), ord));
+        mdKeyOrdinalForQuery.add(segmentProperties.getColumnGroupMdKeyOrdinal(next.getKey(), ord));
       }
       Collections.sort(mdKeyOrdinal);
       // get the masked byte range for column group
@@ -560,6 +563,8 @@ public class QueryUtil {
       restructureInfos.setMaskByteRanges(maskByteRanges);
       restructureInfos.setMaxKey(maxKey);
       restructureInfos.setMaskedBytes(maksedByte);
+      restructureInfos.setMdkeyQueryDimensionOrdinal(ArrayUtils
+          .toPrimitive(mdKeyOrdinalForQuery.toArray(new Integer[mdKeyOrdinalForQuery.size()])));
       rowGroupToItsRSInfo
           .put(segmentProperties.getDimensionOrdinalToBlockMapping().get(ordinal.get(0)),
               restructureInfos);

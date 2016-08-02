@@ -18,17 +18,19 @@
  */
 package org.carbondata.scan.processor;
 
+import java.util.List;
+
 import org.carbondata.common.CarbonIterator;
 import org.carbondata.common.logging.LogService;
 import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.carbon.datastore.DataRefNode;
 import org.carbondata.core.datastorage.store.FileHolder;
 import org.carbondata.scan.collector.ScannedResultCollector;
-import org.carbondata.scan.collector.impl.ListBasedResultCollector;
+import org.carbondata.scan.collector.impl.DictionaryBasedResultCollector;
+import org.carbondata.scan.collector.impl.RawBasedResultCollector;
 import org.carbondata.scan.executor.exception.QueryExecutionException;
 import org.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.carbondata.scan.result.AbstractScannedResult;
-import org.carbondata.scan.result.Result;
 import org.carbondata.scan.scanner.BlockletScanner;
 import org.carbondata.scan.scanner.impl.FilterScanner;
 import org.carbondata.scan.scanner.impl.NonFilterScanner;
@@ -37,7 +39,7 @@ import org.carbondata.scan.scanner.impl.NonFilterScanner;
  * This abstract class provides a skeletal implementation of the
  * Block iterator.
  */
-public abstract class AbstractDataBlockIterator extends CarbonIterator<Result> {
+public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Object[]>> {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(AbstractDataBlockIterator.class.getName());
@@ -88,9 +90,13 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<Result> {
     } else {
       blockletScanner = new NonFilterScanner(blockExecutionInfo);
     }
-
-    this.scannerResultAggregator =
-        new ListBasedResultCollector(blockExecutionInfo);
+    if (blockExecutionInfo.isRawRecordDetailQuery()) {
+      this.scannerResultAggregator =
+          new RawBasedResultCollector(blockExecutionInfo);
+    } else {
+      this.scannerResultAggregator =
+          new DictionaryBasedResultCollector(blockExecutionInfo);
+    }
     this.batchSize = batchSize;
   }
 
