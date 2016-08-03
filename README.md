@@ -18,8 +18,8 @@
 -->
 
 # Apache CarbonData
-CarbonData is a new Apache Hadoop native file format for faster 
-interactive query using advanced columnar storage, index, compression 
+![CarbonData](/docs/images/format/CarbonData_logo.png?raw=true) is a new Apache Hadoop native file format for faster
+interactive query using advanced columnar storage, index, compression
 and encoding techniques to improve computing efficiency, in turn it will 
 help speedup queries an order of magnitude faster over PetaBytes of data. 
 
@@ -59,7 +59,7 @@ This guide document introduce [how to contribute to CarbonData](https://cwiki.ap
 ### Contact us
 To get involved in CarbonData:
 
-* We discuss design and implementation issues on [dev@carbondata.incubator.apache.org](mailto:dev@carbondata.incubator.apache.org) Join by emailing [dev-subscribe@carbondata.incubator.apache.org](mailto:dev-subscribe@carbondata.incubator.apache.org)
+* First join by emailing [dev-subscribe@carbondata.incubator.apache.org](mailto:dev-subscribe@carbondata.incubator.apache.org),then discuss design and implementation issues on [dev@carbondata.incubator.apache.org](mailto:dev@carbondata.incubator.apache.org)
 * Report issues on [Jira](https://issues.apache.org/jira/browse/CARBONDATA).
 
 ## About
