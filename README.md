@@ -17,7 +17,7 @@
     under the License.
 -->
 
-# Apache <img src="/docs/images/format/CarbonData_logo.png" width="100" height="30">
+<img src="/docs/images/format/CarbonData_logo.png" width="150" height="30">
 
 Apache CarbonData is a new Apache Hadoop native file format for faster
 interactive query using advanced columnar storage, index, compression
