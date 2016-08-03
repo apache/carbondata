@@ -17,8 +17,8 @@
     under the License.
 -->
 
-# Apache CarbonData
-![CarbonData](/docs/images/format/CarbonData_logo.png?raw=true) is a new Apache Hadoop native file format for faster
+![CarbonData](/docs/images/format/CarbonData_logo.png?raw=true)
+Apache CarbonData is a new Apache Hadoop native file format for faster
 interactive query using advanced columnar storage, index, compression
 and encoding techniques to improve computing efficiency, in turn it will 
 help speedup queries an order of magnitude faster over PetaBytes of data. 
