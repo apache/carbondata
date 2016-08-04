@@ -28,10 +28,10 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.datastorage.store.FileHolder;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+
 
 public class DFSFileHolderImpl implements FileHolder {
 
@@ -66,7 +66,7 @@ public class DFSFileHolderImpl implements FileHolder {
     try {
       if (null == fileChannel) {
         Path pt = new Path(filePath);
-        FileSystem fs = pt.getFileSystem(new Configuration());
+        FileSystem fs = FileSystem.get(FileFactory.getConfiguration());
         fileChannel = fs.open(pt);
         fileNameAndStreamCache.put(filePath, fileChannel);
       }
