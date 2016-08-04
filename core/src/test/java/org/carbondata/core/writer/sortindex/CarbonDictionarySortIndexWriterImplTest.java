@@ -18,6 +18,7 @@
  */
 package org.carbondata.core.writer.sortindex;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -29,6 +30,9 @@ import org.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
 import org.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReader;
 import org.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReaderImpl;
+import org.carbondata.core.util.CarbonUtil;
+import org.carbondata.core.writer.CarbonDictionaryWriter;
+import org.carbondata.core.writer.CarbonDictionaryWriterImpl;
 import org.apache.commons.lang.ArrayUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -62,9 +66,20 @@ public class CarbonDictionarySortIndexWriterImplTest {
     CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("testSchema", "carbon", UUID.randomUUID().toString());
     ColumnIdentifier columnIdentifier = new ColumnIdentifier("Name", null, null);
 
+    String metaFolderPath =hdfsStorePath+File.separator+carbonTableIdentifier.getDatabaseName()+File.separator+carbonTableIdentifier.getTableName()+File.separator+"Metadata";
+    CarbonUtil.checkAndCreateFolder(metaFolderPath);
+    CarbonDictionaryWriter dictionaryWriter = new CarbonDictionaryWriterImpl(hdfsStorePath,
+    	       carbonTableIdentifier, columnIdentifier);
     CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
         new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, columnIdentifier, storePath);
     List<int[]> indexList = prepareExpectedData();
+    int[] data = indexList.get(0);
+    for(int i=0;i<data.length;i++) {
+    	dictionaryWriter.write(String.valueOf(data[i]));
+    }
+    dictionaryWriter.close();
+    dictionaryWriter.commit();
+    
     List<Integer> sortIndex = Arrays.asList(ArrayUtils.toObject(indexList.get(0)));
     List<Integer> invertedSortIndex = Arrays.asList(ArrayUtils.toObject(indexList.get(1)));
     dictionarySortIndexWriter.writeSortIndex(sortIndex);
