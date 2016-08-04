@@ -25,10 +25,14 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
+import static java.lang.Math.min;
+
 import org.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.query.aggregator.MeasureAggregator;
+
+import org.apache.spark.sql.types.DecimalType;
 
 public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
 
@@ -115,7 +119,9 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
    * @return average aggregate value
    */
   @Override public BigDecimal getBigDecimalValue() {
-    return aggVal.divide(new BigDecimal(count), 6);
+    // increase scale to avoid any precision lost in the data
+    int updatedScale = min(aggVal.scale() + 4, DecimalType.MAX_SCALE());
+    return aggVal.divide(new BigDecimal(count), updatedScale, BigDecimal.ROUND_HALF_EVEN);
   }
 
   /**
@@ -139,7 +145,9 @@ public class AvgBigDecimalAggregator extends AbstractMeasureAggregatorBasic {
    * @return average value as an object
    */
   @Override public Object getValueObject() {
-    return aggVal.divide(new BigDecimal(count));
+    // increase scale to avoid any precision lost in the data
+    int updatedScale = min(aggVal.scale() + 4, DecimalType.MAX_SCALE());
+    return aggVal.divide(new BigDecimal(count), updatedScale, BigDecimal.ROUND_HALF_EVEN);
   }
 
   /**

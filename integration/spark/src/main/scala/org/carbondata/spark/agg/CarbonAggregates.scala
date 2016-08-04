@@ -17,9 +17,8 @@
 
 package org.carbondata.spark.agg
 
-import java.math.BigDecimal
-
 import scala.language.implicitConversions
+import scala.math.min
 
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
@@ -116,7 +115,14 @@ case class AverageCarbon(child: Expression, castedDataType: DataType = null)
       AverageCarbonFinal(partialSum.toAttribute,
         child.dataType match {
           case IntegerType | StringType | LongType | TimestampType => DoubleType
-          case _ => CarbonScalaUtil.updateDataType(child.dataType)
+          case decimal: DecimalType =>
+            val precision = decimal.asInstanceOf[DecimalType].precision
+            val scale = decimal.asInstanceOf[DecimalType].scale
+            // increase precision and scale to avoid any precision lost in the data
+            val updatedPrecision = min(precision + 4, DecimalType.MAX_PRECISION)
+            val updatedScale = min(scale + 4, DecimalType.MAX_SCALE)
+            DecimalType(updatedPrecision, updatedScale)
+          case _ => child.dataType
         }),
       partialSum :: Nil)
   }
