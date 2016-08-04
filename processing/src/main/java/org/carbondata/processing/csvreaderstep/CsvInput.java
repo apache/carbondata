@@ -22,6 +22,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -397,27 +398,16 @@ public class CsvInput extends BaseStep implements StepInterface {
     }
 
     resultArray = results.toArray(new Future[results.size()]);
-    boolean completed = false;
     try {
-      while (!completed) {
-        completed = true;
-        for (int j = 0; j < resultArray.length; j++) {
-          if (!resultArray[j].isDone()) {
-            completed = false;
-          }
-
-        }
-        if (isTerminated) {
-          exec.shutdownNow();
-          throw new RuntimeException("Interrupted due to failing of other threads");
-        }
-        Thread.sleep(100);
-
+      for (int j = 0; j < resultArray.length; j++) {
+        resultArray[j].get();
       }
-    } catch (InterruptedException e) {
+    } catch (InterruptedException | ExecutionException e) {
       throw new RuntimeException("Thread InterruptedException", e);
     }
-    exec.shutdown();
+    finally {
+      exec.shutdownNow();
+    }
   }
 
   private void doProcessUnivocity() {

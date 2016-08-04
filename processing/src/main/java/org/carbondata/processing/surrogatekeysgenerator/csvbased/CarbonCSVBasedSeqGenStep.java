@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -750,27 +751,15 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     }
 
     this.resultArray = results.toArray(new Future[results.size()]);
-    boolean completed = false;
     try {
-      while (!completed) {
-        completed = true;
-        for (int j = 0; j < this.resultArray.length; j++) {
-          if (!this.resultArray[j].isDone()) {
-            completed = false;
-          }
-
-        }
-        if (isTerminated) {
-          exec.shutdownNow();
-          throw new RuntimeException("Interrupted due to failing of other threads");
-        }
-        Thread.sleep(100);
-
+      for (int j = 0; j < this.resultArray.length; j++) {
+        this.resultArray[j].get();
       }
-    } catch (InterruptedException e) {
+    } catch (InterruptedException | ExecutionException e) {
       throw new RuntimeException("Thread InterruptedException", e);
+    } finally {
+      exec.shutdownNow();
     }
-    exec.shutdown();
   }
 
   private int[] getUpdatedLens(int[] lens, boolean[] presentDims) {
