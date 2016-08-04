@@ -232,7 +232,7 @@ class CarbonQueryRDD[V: ClassTag](
           if (null != queryModel.getStatisticsRecorder) {
             val queryStatistic = new QueryStatistic
             queryStatistic
-              .addStatistics("Total Time taken to execute the query in executor Side",
+              .addFixedTimeStatistic("Total Time taken to execute the query in executor Side",
                 System.currentTimeMillis - queryStartTime
               )
             queryModel.getStatisticsRecorder.recordStatistics(queryStatistic);
@@ -253,7 +253,7 @@ class CarbonQueryRDD[V: ClassTag](
           if (null != queryModel.getStatisticsRecorder) {
             val queryStatistic = new QueryStatistic
             queryStatistic
-              .addStatistics("Total Time taken to execute the query in executor Side",
+              .addFixedTimeStatistic("Total Time taken to execute the query in executor Side",
                 System.currentTimeMillis - queryStartTime
               )
             queryModel.getStatisticsRecorder.recordStatistics(queryStatistic);
