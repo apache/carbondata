@@ -14,22 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.spark.sql
 
 import java.util.{ArrayList, List}
 
-import scala.collection.JavaConverters._
+import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
+import org.apache.carbondata.scan.expression.conditional.ConditionalExpression
+import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException
+import org.apache.carbondata.scan.expression.{ColumnExpression, ExpressionResult, UnknownExpression}
+import org.apache.carbondata.scan.filter.intf.{ExpressionType, RowIntf}
+import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.catalyst.expressions.{Expression => SparkExpression, GenericMutableRow}
+import org.apache.spark.sql.catalyst.expressions.{GenericMutableRow, Expression => SparkExpression}
 
-import org.carbondata.core.carbon.metadata.encoder.Encoding
-import org.carbondata.scan.expression.{ColumnExpression, ExpressionResult, UnknownExpression}
-import org.carbondata.scan.expression.conditional.ConditionalExpression
-import org.carbondata.scan.expression.exception.FilterUnsupportedException
-import org.carbondata.scan.filter.intf.{ExpressionType, RowIntf}
-import org.carbondata.spark.util.CarbonScalaUtil
+import scala.collection.JavaConverters._
 
 class SparkUnknownExpression(var sparkExp: SparkExpression)
   extends UnknownExpression with ConditionalExpression {

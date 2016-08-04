@@ -18,9 +18,9 @@
  */
 
 /**
- * File format description for the carbon file format
+ * File format description for the carbondata file format
  */
-namespace java org.carbondata.format
+namespace java org.apache.carbondata.format
 
 include "schema.thrift"
 include "carbondata.thrift"

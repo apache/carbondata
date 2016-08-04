@@ -23,5 +23,5 @@
    description="Carbon InMemory Fact Reader"
    tooltip="Carbon InMemory Fact Reader"
    category="Carbon"
-   classname="org.carbondata.processing.factreader.inmemory.step.CarbonInMemoryFactReaderMeta">
+   classname="org.apache.carbondata.processing.factreader.inmemory.step.CarbonInMemoryFactReaderMeta">
 </plugin>

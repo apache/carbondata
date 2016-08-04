@@ -18,13 +18,12 @@
 
 package org.apache.spark.util
 
+import org.apache.carbondata.core.load.BlockDetails
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.{LongWritable, Text}
 import org.apache.hadoop.mapreduce.lib.input.FileSplit
 import org.apache.spark.rdd.{NewHadoopPartition, NewHadoopRDD}
 import org.apache.spark.SparkContext
-
-import org.carbondata.core.load.BlockDetails
 
 /*
  * this object use to handle file splits

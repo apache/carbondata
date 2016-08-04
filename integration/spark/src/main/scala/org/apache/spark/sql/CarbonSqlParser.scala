@@ -14,36 +14,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.spark.sql
 
-import java.util
 import java.util.regex.{Matcher, Pattern}
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable.LinkedHashSet
-import scala.language.implicitConversions
-import scala.util.matching.Regex
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.carbon.metadata.datatype.DataType
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.util.CommonUtil
 
 import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
+
 import org.apache.spark.Logging
-import org.apache.spark.sql.catalyst.{SqlLexical, _}
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
+import org.apache.spark.sql.catalyst.{SqlLexical, _}
 import org.apache.spark.sql.execution.ExplainCommand
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
 
-import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.metadata.datatype.DataType
-import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.util.DataTypeUtil
-import org.carbondata.processing.etl.DataLoadingException
-import org.carbondata.spark.exception.MalformedCarbonCommandException
-import org.carbondata.spark.util.CommonUtil
+import scala.collection.JavaConverters._
+import scala.collection.mutable.LinkedHashSet
+import scala.language.implicitConversions
+import scala.util.matching.Regex
 
 /**
  * Parser for All Carbon DDL, DML cases in Unified context

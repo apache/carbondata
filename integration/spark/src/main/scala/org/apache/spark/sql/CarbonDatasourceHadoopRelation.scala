@@ -14,35 +14,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.spark.sql
 
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import scala.reflect.ClassTag
+import org.apache.carbondata.core.carbon.CarbonTableIdentifier
+import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
+import org.apache.carbondata.scan.expression.logical.AndExpression
+import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
+import org.apache.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
+import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.{Job, JobID}
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
+import org.apache.hadoop.mapreduce.{Job, JobID}
+
 import org.apache.spark._
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.mapreduce.SparkHadoopMapReduceUtil
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
-import org.apache.spark.sql.hive.{CarbonMetastoreCatalog, DistributionUtil, TableMeta}
+import org.apache.spark.sql.hive.{DistributionUtil, TableMeta}
 import org.apache.spark.sql.sources.{Filter, HadoopFsRelation, OutputWriterFactory}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
-import org.carbondata.core.carbon.CarbonTableIdentifier
-import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
-import org.carbondata.scan.expression.logical.AndExpression
-import org.carbondata.spark.{CarbonFilters, CarbonOption}
-import org.carbondata.spark.readsupport.SparkRowReadSupportImpl
-import org.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
+import scala.reflect.ClassTag
 
 private[sql] case class CarbonDatasourceHadoopRelation(sqlContext: SQLContext,
     paths: Array[String],

@@ -23,6 +23,6 @@
    description="MD Key Gen"
    tooltip="MD Key Gen"
    category="Carbon"
-   classname="org.carbondata.processing.mdkeygen.MDKeyGenStepMeta">
+   classname="org.apache.carbondata.processing.mdkeygen.MDKeyGenStepMeta">
 
 </plugin>

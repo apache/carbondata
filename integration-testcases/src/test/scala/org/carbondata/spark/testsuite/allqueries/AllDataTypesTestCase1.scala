@@ -16,15 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-package org.carbondata.spark.testsuite.allqueries
+package org.apache.carbondata.spark.testsuite.allqueries
 
 import java.io.File
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
-import org.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.CarbonProperties
 import org.scalatest.BeforeAndAfterAll
 
 /**

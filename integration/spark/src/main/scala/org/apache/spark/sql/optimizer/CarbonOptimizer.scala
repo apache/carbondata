@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.spark.sql.optimizer
 
 import java.util
@@ -31,7 +30,7 @@ import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{IntegerType, StringType}
 
-import org.carbondata.spark.CarbonFilters
+import org.apache.carbondata.spark.CarbonFilters
 
 /**
  * Carbon Optimizer to add dictionary decoder.

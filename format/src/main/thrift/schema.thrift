@@ -18,9 +18,9 @@
  */
 
 /**
- * File format description for carbon schema file
+ * File format description for carbondata schema file
  */
-namespace java org.carbondata.format
+namespace java org.apache.carbondata.format
 
 /**
 *	The types supported by Carbon Data.

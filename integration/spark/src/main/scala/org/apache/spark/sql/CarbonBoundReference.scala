@@ -17,12 +17,11 @@
 
 package org.apache.spark.sql
 
+import org.apache.carbondata.scan.expression.ColumnExpression
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions.{Attribute, ExprId, LeafExpression, NamedExpression}
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.types.DataType
-
-import org.carbondata.scan.expression.ColumnExpression
 
 
 case class CarbonBoundReference(colExp: ColumnExpression, dataType: DataType, nullable: Boolean)

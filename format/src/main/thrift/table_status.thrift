@@ -18,9 +18,9 @@
  */
 
 /**
- * File format description for carbon table status file
+ * File format description for carbondata table status file
  */
-namespace java org.carbondata.format
+namespace java org.apache.carbondata.format
 
 enum SegmentState {
 	LOAD_PROGRESS = 0; // Loading is in progress

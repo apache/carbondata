@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.spark.sql.execution.command
 
 import java.io.File
@@ -22,45 +21,44 @@ import java.text.SimpleDateFormat
 import java.util
 import java.util.UUID
 
-import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
-import scala.language.implicitConversions
-import scala.util.Random
+import org.apache.carbondata.common.factory.CarbonCommonFactory
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
+import org.apache.carbondata.core.carbon.metadata.datatype.DataType
+import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
+import org.apache.carbondata.core.carbon.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
+import org.apache.carbondata.core.carbon.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import org.apache.carbondata.core.load.LoadMetadataDetails
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.integration.spark.merger.CompactionType
+import org.apache.carbondata.lcm.status.SegmentStatusManager
+import org.apache.carbondata.processing.etl.DataLoadingException
+import org.apache.carbondata.spark.CarbonSparkFactory
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.load.{CarbonLoaderUtil, _}
+import org.apache.carbondata.spark.partition.api.impl.QueryPartitionHelper
+import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
 
 import org.apache.spark.SparkEnv
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.TableIdentifier._
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Cast, Literal}
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
 import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.util.FileUtils
+
 import org.codehaus.jackson.map.ObjectMapper
 
-import org.carbondata.common.factory.CarbonCommonFactory
-import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.CarbonDataLoadSchema
-import org.carbondata.core.carbon.metadata.CarbonMetadata
-import org.carbondata.core.carbon.metadata.datatype.DataType
-import org.carbondata.core.carbon.metadata.encoder.Encoding
-import org.carbondata.core.carbon.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
-import org.carbondata.core.carbon.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
-import org.carbondata.core.carbon.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
-import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.datastorage.store.impl.FileFactory
-import org.carbondata.core.load.LoadMetadataDetails
-import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.carbondata.integration.spark.merger.CompactionType
-import org.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
-import org.carbondata.lcm.status.SegmentStatusManager
-import org.carbondata.processing.etl.DataLoadingException
-import org.carbondata.spark.CarbonSparkFactory
-import org.carbondata.spark.exception.MalformedCarbonCommandException
-import org.carbondata.spark.load._
-import org.carbondata.spark.partition.api.impl.QueryPartitionHelper
-import org.carbondata.spark.rdd.CarbonDataRDDFactory
-import org.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
+import scala.collection.JavaConverters._
+import scala.collection.mutable.ArrayBuffer
+import scala.language.implicitConversions
+import scala.util.Random
 
 
 case class tableModel(
@@ -359,14 +357,14 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
         if (part.partitionClass.isEmpty) {
           if (part.partitionColumn(0).isEmpty) {
             Partitioner(
-              "org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
+              "org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
               Array(""), part.partitionCount, null)
           }
           else {
             // case where partition cols are set and partition class is not set.
             // so setting the default value.
             Partitioner(
-              "org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
+              "org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
               part.partitionColumn, part.partitionCount, null)
           }
         }
@@ -396,7 +394,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
           Partitioner(part.partitionClass, columnBuffer.toArray, part.partitionCount, null)
         }
       case None =>
-        Partitioner("org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
+        Partitioner("org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
           Array(""), 20, null)
     }
     val tableInfo = new TableInfo()
@@ -702,7 +700,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
         // Special Case, where Partition count alone is sent to Carbon for dataloading
         if (part.partitionClass.isEmpty && part.partitionColumn(0).isEmpty) {
           Partitioner(
-            "org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
+            "org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
             Array(""), part.partitionCount, null)
         }
         else if (definedpartCols.nonEmpty) {
@@ -730,7 +728,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
           Partitioner(part.partitionClass, columnBuffer.toArray, part.partitionCount, null)
         }
       case None =>
-        Partitioner("org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
+        Partitioner("org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
           Array(""), 20, null)
     }
 
@@ -776,7 +774,7 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
     // TODO : Implement it.
     val tableName = alterTableModel.tableName
     val databaseName = getDB.getDatabaseName(alterTableModel.dbName, sqlContext)
-    if (null == org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
+    if (null == org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(databaseName + "_" + tableName)) {
       logError("alter table failed. table not found: " + databaseName + "." + tableName)
       sys.error("alter table failed. table not found: " + databaseName + "." + tableName)
@@ -982,7 +980,7 @@ private[sql] case class DeleteLoadsByLoadDate(
       throw new MalformedCarbonCommandException(errorMessage)
     }
 
-    val carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
+    val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
       .getCarbonTable(dbName + '_' + tableName)
     val segmentStatusManager = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
 
@@ -1025,7 +1023,7 @@ private[sql] case class LoadTable(
     if (isOverwriteExist) {
       sys.error("Overwrite is not supported for carbon table with " + dbName + "." + tableName)
     }
-    if (null == org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
+    if (null == org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(dbName + "_" + tableName)) {
       logError("Data loading failed. table not found: " + dbName + "." + tableName)
       LOGGER.audit("Data loading failed. table not found: " + dbName + "." + tableName)
@@ -1250,7 +1248,7 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     val identifier = TableIdentifier(tableName, Option(dbName))
-    val tmpTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
+    val tmpTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(dbName + "_" + tableName)
     if (null == tmpTable) {
       if (!ifExistsSet) {
@@ -1348,7 +1346,7 @@ private[sql] case class ShowLoads(
   override def run(sqlContext: SQLContext): Seq[Row] = {
     val databaseName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     val tableUniqueName = databaseName + "_" + tableName
-    val carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
+    val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
       .getCarbonTable(tableUniqueName)
     if (carbonTable == null) {
       sys.error(s"$databaseName.$tableName is not found")
@@ -1511,7 +1509,7 @@ private[sql] case class DeleteLoadByDate(
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
       .lookupRelation1(identifier)(sqlContext).asInstanceOf[CarbonRelation]
     var level: String = ""
-    val carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata
+    val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata
          .getInstance().getCarbonTable(dbName + '_' + tableName)
     if (relation == null) {
       LOGGER.audit(s"The delete load by date is failed. Table $dbName.$tableName does not exist")
