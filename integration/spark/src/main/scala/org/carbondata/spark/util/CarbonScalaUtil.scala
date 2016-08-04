@@ -83,21 +83,6 @@ object CarbonScalaUtil extends Logging {
     }
   }
 
-  def getKettleHomePath(sqlContext: SQLContext): String = {
-    val carbonHome = System.getenv("CARBON_HOME")
-    var kettleHomePath: String = null
-    if (carbonHome != null) {
-      kettleHomePath = System.getenv("CARBON_HOME") + "/processing/carbonplugins"
-    }
-    if (kettleHomePath == null) {
-      kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
-    }
-    if (null == kettleHomePath) {
-      kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home")
-    }
-    kettleHomePath
-  }
-
   def updateDataType(
       currentDataType: org.apache.spark.sql.types.DataType): org.apache.spark.sql.types.DataType = {
     currentDataType match {
@@ -132,6 +117,12 @@ object CarbonScalaUtil extends Logging {
     var kettleHomePath = sqlContext.getConf("carbon.kettle.home", null)
     if (null == kettleHomePath) {
       kettleHomePath = CarbonProperties.getInstance.getProperty("carbon.kettle.home")
+    }
+    if (null == kettleHomePath) {
+      val carbonHome = System.getenv("CARBON_HOME")
+      if (null != carbonHome) {
+        kettleHomePath = carbonHome + "/processing/carbonplugins"
+      }
     }
     if (kettleHomePath != null) {
       val sparkMaster = sqlContext.sparkContext.getConf.get("spark.master").toLowerCase()
