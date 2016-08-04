@@ -97,10 +97,18 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
   public AbstractDetailQueryResultIterator(List<BlockExecutionInfo> infos,
       QueryExecutorProperties executerProperties, QueryModel queryModel,
       InternalQueryExecutor queryExecutor) {
+    // below code will be used to update the number of cores based on number
+    // records we
+    // can keep in memory while executing the query execution
     int recordSize = 0;
-    String defaultInMemoryRecordsSize =
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.INMEMORY_REOCRD_SIZE);
-    if (null != defaultInMemoryRecordsSize) {
+
+    // in case of compaction we will pass the in memory record size.
+    int inMemoryRecordSizeInModel = queryModel.getInMemoryRecordSize();
+    if (inMemoryRecordSizeInModel > 0) {
+      recordSize = inMemoryRecordSizeInModel;
+    } else {
+      String defaultInMemoryRecordsSize =
+          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.INMEMORY_REOCRD_SIZE);
       try {
         recordSize = Integer.parseInt(defaultInMemoryRecordsSize);
       } catch (NumberFormatException ne) {

@@ -64,19 +64,16 @@ public class InternalDetailQueryExecutor implements InternalQueryExecutor {
 
     // in case of compaction we will pass the in memory record size.
     int inMemoryRecordSizeInModel = queryModel.getInMemoryRecordSize();
-    if(inMemoryRecordSizeInModel > 0){
+    if (inMemoryRecordSizeInModel > 0) {
       recordSize = inMemoryRecordSizeInModel;
-    }
-    else {
+    } else {
       String defaultInMemoryRecordsSize =
           CarbonProperties.getInstance().getProperty(CarbonCommonConstants.INMEMORY_REOCRD_SIZE);
-      if (null != defaultInMemoryRecordsSize) {
-        try {
-          recordSize = Integer.parseInt(defaultInMemoryRecordsSize);
-        } catch (NumberFormatException ne) {
-          LOGGER.error("Invalid inmemory records size. Using default value");
-          recordSize = CarbonCommonConstants.INMEMORY_REOCRD_SIZE_DEFAULT;
-        }
+      try {
+        recordSize = Integer.parseInt(defaultInMemoryRecordsSize);
+      } catch (NumberFormatException ne) {
+        LOGGER.error("Invalid inmemory records size. Using default value");
+        recordSize = CarbonCommonConstants.INMEMORY_REOCRD_SIZE_DEFAULT;
       }
     }
     LOGGER.info("In memory record size considered is: " + recordSize);
@@ -97,8 +94,7 @@ public class InternalDetailQueryExecutor implements InternalQueryExecutor {
    * @param sliceIndexes   slice indexes to be executed
    * @return query result
    */
-  @Override public CarbonIterator<Result> executeQuery(
-      List<BlockExecutionInfo> executionInfos,
+  @Override public CarbonIterator<Result> executeQuery(List<BlockExecutionInfo> executionInfos,
       int[] sliceIndexes) throws QueryExecutionException {
     long startTime = System.currentTimeMillis();
     QueryRunner task;
