@@ -28,7 +28,8 @@ import org.carbondata.core.util.CarbonUtil;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TCompactProtocol;
+import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TIOStreamTransport;
 
 /**
@@ -54,7 +55,7 @@ public class ThriftWriter {
   /**
    * For binary serialization of objects.
    */
-  private TBinaryProtocol binaryOut;
+  private TProtocol binaryOut;
 
   /**
    * flag to append to existing file
@@ -75,7 +76,7 @@ public class ThriftWriter {
   public void open() throws IOException {
     FileFactory.FileType fileType = FileFactory.getFileType(fileName);
     dataOutputStream = FileFactory.getDataOutputStream(fileName, fileType, bufferSize, append);
-    binaryOut = new TBinaryProtocol(new TIOStreamTransport(dataOutputStream));
+    binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
   }
 
   /**
