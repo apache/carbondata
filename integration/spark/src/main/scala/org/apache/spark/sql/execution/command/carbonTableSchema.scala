@@ -803,11 +803,8 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
     carbonLoadModel.setStorePath(relation.tableMeta.storePath)
 
     val partitioner = relation.tableMeta.partitioner
+    val kettleHomePath = CarbonScalaUtil.getKettleHome(sqlContext)
 
-    var kettleHomePath = CarbonScalaUtil.getKettleHomePath(sqlContext)
-    if (kettleHomePath == null) {
-      sys.error(s"carbon.kettle.home is not set")
-    }
     var storeLocation = CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
         System.getProperty("java.io.tmpdir")
@@ -1087,10 +1084,7 @@ private[sql] case class LoadTable(
       storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
       val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
-      var kettleHomePath = CarbonScalaUtil.getKettleHomePath(sqlContext)
-      if (kettleHomePath == null) {
-        sys.error(s"carbon.kettle.home is not set")
-      }
+      val kettleHomePath = CarbonScalaUtil.getKettleHome(sqlContext)
 
       val delimiter = partionValues.getOrElse("delimiter", ",")
       val quoteChar = partionValues.getOrElse("quotechar", "\"")

@@ -76,6 +76,8 @@ import org.carbondata.processing.store.writer.NodeHolder;
 import org.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
+import org.apache.spark.sql.types.Decimal;
+
 /**
  * Fact data handler class to handle the fact data
  */
@@ -260,6 +262,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * Segment properties
    */
   private SegmentProperties segmentProperties;
+  /**
+   * flag to check for compaction flow
+   */
+  private boolean compactionFlow;
 
   /**
    * CarbonFactDataHandler constructor
@@ -353,7 +359,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     dimensionType =
         CarbonUtil.identifyDimensionType(carbonTable.getDimensionByTableName(tableName));
 
-    if (carbonFactDataHandlerModel.isCompactionFlow()) {
+    this.compactionFlow = carbonFactDataHandlerModel.isCompactionFlow();
+    // in compaction flow the measure with decimal type will come as spark decimal.
+    // need to convert it to byte array.
+    if (compactionFlow) {
       try {
         numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
             .getProperty(CarbonCommonConstants.NUM_CORES_COMPACTING,
@@ -562,7 +571,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           b = DataTypeUtil.bigDecimalToByte(val);
           nullValueIndexBitSet[customMeasureIndex[i]].set(count);
         } else {
-          b = (byte[]) row[customMeasureIndex[i]];
+          if (this.compactionFlow) {
+            BigDecimal bigDecimal = ((Decimal) row[customMeasureIndex[i]]).toJavaBigDecimal();
+            b = DataTypeUtil.bigDecimalToByte(bigDecimal);
+          } else {
+            b = (byte[]) row[customMeasureIndex[i]];
+          }
         }
         byteBuffer = ByteBuffer.allocate(b.length + CarbonCommonConstants.INT_SIZE_IN_BYTE);
         byteBuffer.putInt(b.length);
@@ -889,7 +903,15 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           int num = (value % 1 == 0) ? 0 : CarbonCommonConstants.CARBON_DECIMAL_POINTERS_DEFAULT;
           decimal[count] = (decimal[count] > num ? decimal[count] : num);
         } else if (type[count] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-          byte[] buff = (byte[]) row[count];
+          byte[] buff = null;
+          // in compaction flow the measure with decimal type will come as spark decimal.
+          // need to convert it to byte array.
+          if (this.compactionFlow) {
+            BigDecimal bigDecimal = ((Decimal) row[count]).toJavaBigDecimal();
+            buff = DataTypeUtil.bigDecimalToByte(bigDecimal);
+          } else {
+            buff = (byte[]) row[count];
+          }
           BigDecimal value = DataTypeUtil.byteToBigDecimal(buff);
           BigDecimal minVal = (BigDecimal) min[count];
           min[count] = minVal.min(value);

@@ -1785,7 +1785,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
   test("TC_1252") {
     sql("create table table7 (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId decimal,deviceInformationId INT) stored by 'org.apache.carbondata.format'")
     checkAnswer(
-      sql("show loads for table table7"),
+      sql("show segments for table table7"),
       Seq())
     sql("drop table table7")
   }
@@ -1794,7 +1794,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
   test("TC_1253") {
     sql("create table table123 (imei string,deviceInformationId INT,MAC string,deviceColor string, device_backColor string,modelId string, marketName string, AMSize string, ROMSize string, CUPAudit string, CPIClocked string, series string, productionDate string, bomCode string, internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince  string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict  string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR  INT, Latest_MONTH INT, Latest_DAY INT, Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointDescription string,gamePointId decimal,contractNumber decimal) stored by 'org.apache.carbondata.format'")
     checkAnswer(
-      sql("show loads for table table123"),
+      sql("show segments for table table123"),
       Seq())
     sql("drop table table123")
   }
@@ -1805,7 +1805,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
     sql("LOAD DATA LOCAL INPATH  './src/test/resources/TestData1.csv' INTO table table9 OPTIONS('DELIMITER'= ',' ,'QUOTECHAR'= '\"\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId')")
     sql("LOAD DATA LOCAL INPATH  './src/test/resources/TestData1.csv' INTO table table9 OPTIONS('DELIMITER'= ',' ,'QUOTECHAR'= '\"\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId')")
     checkAnswer(
-      sql("show loads for table table9"),
+      sql("show segments for table table9"),
       Seq(Row("0","Success","2015-11-05 17:43:21.0"," 2015-11-05 17:43:22.0"),Row("1","Success","2015-11-05 17:43:43.0"," 2015-11-05 17:43:44.0")))
     sql("drop table table9")
   }
@@ -1814,7 +1814,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
   test("TC_1257") {
     sql("create table table12 (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId decimal,deviceInformationId INT) stored by 'org.apache.carbondata.format'")
     checkAnswer(
-      sql("show loads for table table12"),
+      sql("show segments for table table12"),
       Seq())
     sql("drop table table12")
   }
@@ -1824,7 +1824,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
     sql("create table table13 (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId decimal,deviceInformationId INT) stored by 'org.apache.carbondata.format'")
     sql("LOAD DATA LOCAL INPATH  './src/test/resources/TestData1.csv' INTO table table13 OPTIONS('DELIMITER'= ',' ,'QUOTECHAR'= '\"\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId')")
     checkAnswer(
-      sql("sHOw LoaDs for table table13"),
+      sql("sHOw segMents for table table13"),
       Seq(Row("0","Success","2015-11-05 18:09:40.0"," 2015-11-05 18:09:41.0")))
     sql("drop table table13")
   }
@@ -1837,7 +1837,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
     sql("LOAD DATA LOCAL INPATH  './src/test/resources/TestData1.csv' INTO table table14 OPTIONS('DELIMITER'= ',' ,'QUOTECHAR'= '\"\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId')")
     sql("select * from table14")
     checkAnswer(
-      sql("show loads for table table14"),
+      sql("show segments for table table14"),
       Seq(Row("1","Success","2015-11-05 17:43:21.0"," 2015-11-05 17:43:22.0"),Row("0","Success","2015-11-05 17:43:43.0"," 2015-11-05 17:43:44.0")))
     sql("drop table table14")
   }
@@ -1850,7 +1850,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
     sql("LOAD DATA LOCAL INPATH  './src/test/resources/TestData1.csv' INTO table table15 OPTIONS('DELIMITER'= ',' ,'QUOTECHAR'= '\"\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId')")
     sql("LOAD DATA LOCAL INPATH  './src/test/resources/TestData1.csv' INTO table table15 OPTIONS('DELIMITER'= ',' ,'QUOTECHAR'= '\"\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId')")
     checkAnswer(
-      sql("show loads for table table15"),
+      sql("show segments for table table15"),
       Seq(Row("3","Success","2015-11-05 17:43:21.0"," 2015-11-05 17:43:22.0"),Row("2","Success","2015-11-05 17:43:21.0"," 2015-11-05 17:43:22.0"),Row("1","Success","2015-11-05 17:43:21.0"," 2015-11-05 17:43:22.0"),Row("0","Success","2015-11-05 17:43:43.0"," 2015-11-05 17:43:44.0")))
     sql("drop table table15")
   }
@@ -1860,7 +1860,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
     sql("create table t202 (imei string,deviceInformationId INT,mac string,productdate timestamp,updatetime timestamp,gamePointId decimal,contractNumber decimal) stored by 'org.apache.carbondata.format'")
     sql("LOAD DATA LOCAL INPATH './src/test/resources/test1t.csv' INTO table t202 OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"\"', 'FILEHEADER'= 'imei,deviceInformationId,mac,productdate,updatetime,gamePointId,contractNumber')")
     checkAnswer(
-      sql("show loads for table t202"),
+      sql("show segments for table t202"),
       Seq())
     sql("drop table t202")
   }

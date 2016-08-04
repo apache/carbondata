@@ -25,7 +25,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.AbstractQueue;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
@@ -35,7 +34,6 @@ import org.carbondata.common.logging.LogServiceFactory;
 import org.carbondata.core.constants.CarbonCommonConstants;
 import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.core.util.CarbonUtilException;
-import org.carbondata.core.util.DataTypeUtil;
 import org.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.carbondata.processing.util.RemoveDictionaryUtil;
 
@@ -341,8 +339,7 @@ public class IntermediateFileMerger implements Callable<Void> {
             Long val = (Long) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
             stream.writeLong(val);
           } else if (aggType[counter] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-            BigDecimal val = (BigDecimal) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
-            byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
+            byte[] bigDecimalInBytes = (byte[]) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
             stream.writeInt(bigDecimalInBytes.length);
             stream.write(bigDecimalInBytes);
           }

@@ -23,7 +23,7 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
     sql(
-      "CREATE TABLE IF NOT EXISTS stopmajor (country String, ID Int, date Timestamp, name " +
+      "CREATE TABLE IF NOT EXISTS stopmajor (country String, ID decimal(7,4), date Timestamp, name " +
         "String, " +
         "phonetype String, serialname String, salary Int) STORED BY 'org.apache.carbondata" +
         ".format'"

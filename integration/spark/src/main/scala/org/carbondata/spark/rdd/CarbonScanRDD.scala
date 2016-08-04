@@ -44,8 +44,8 @@ import org.carbondata.spark.load.CarbonLoaderUtil
 import org.carbondata.spark.util.QueryPlanUtil
 
 class CarbonSparkPartition(rddId: Int, val idx: Int,
-  val locations: Array[String],
-  val tableBlockInfos: util.List[TableBlockInfo])
+    val locations: Array[String],
+    val tableBlockInfos: util.List[TableBlockInfo])
   extends Partition {
 
   override val index: Int = idx
@@ -56,20 +56,20 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
   }
 }
 
- /**
-  * This RDD is used to perform query on CarbonData file. Before sending tasks to scan
-  * CarbonData file, this RDD will leverage CarbonData's index information to do CarbonData file
-  * level filtering in driver side.
-  */
+/**
+ * This RDD is used to perform query on CarbonData file. Before sending tasks to scan
+ * CarbonData file, this RDD will leverage CarbonData's index information to do CarbonData file
+ * level filtering in driver side.
+ */
 class CarbonScanRDD[V: ClassTag](
-  sc: SparkContext,
-  queryModel: QueryModel,
-  filterExpression: Expression,
-  keyClass: RawValue[V],
-  @transient conf: Configuration,
-  tableCreationTime: Long,
-  schemaLastUpdatedTime: Long,
-  baseStoreLocation: String)
+    sc: SparkContext,
+    queryModel: QueryModel,
+    filterExpression: Expression,
+    keyClass: RawValue[V],
+    @transient conf: Configuration,
+    tableCreationTime: Long,
+    schemaLastUpdatedTime: Long,
+    baseStoreLocation: String)
   extends RDD[V](sc, Nil) with Logging {
 
   val defaultParallelism = sc.defaultParallelism
@@ -166,125 +166,125 @@ class CarbonScanRDD[V: ClassTag](
     result.toArray(new Array[Partition](result.size()))
   }
 
-   override def compute(thepartition: Partition, context: TaskContext): Iterator[V] = {
-     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-     val iter = new Iterator[V] {
-       var rowIterator: CarbonIterator[Array[Any]] = _
-       var queryStartTime: Long = 0
-       try {
-         val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
-         if(!carbonSparkPartition.tableBlockInfos.isEmpty) {
-           queryModel.setQueryId(queryModel.getQueryId + "_" + carbonSparkPartition.idx)
-           // fill table block info
-           queryModel.setTableBlockInfos(carbonSparkPartition.tableBlockInfos)
-           queryStartTime = System.currentTimeMillis
+  override def compute(thepartition: Partition, context: TaskContext): Iterator[V] = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    val iter = new Iterator[V] {
+      var rowIterator: CarbonIterator[Array[Any]] = _
+      var queryStartTime: Long = 0
+      try {
+        val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
+        if(!carbonSparkPartition.tableBlockInfos.isEmpty) {
+          queryModel.setQueryId(queryModel.getQueryId + "_" + carbonSparkPartition.idx)
+          // fill table block info
+          queryModel.setTableBlockInfos(carbonSparkPartition.tableBlockInfos)
+          queryStartTime = System.currentTimeMillis
 
-           val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
-           logInfo("*************************" + carbonPropertiesFilePath)
-           if (null == carbonPropertiesFilePath) {
-             System.setProperty("carbon.properties.filepath",
-               System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties")
-           }
-           // execute query
-           rowIterator = new ChunkRowIterator(
-             QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel).
-               asInstanceOf[CarbonIterator[BatchResult]]).asInstanceOf[CarbonIterator[Array[Any]]]
+          val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
+          logInfo("*************************" + carbonPropertiesFilePath)
+          if (null == carbonPropertiesFilePath) {
+            System.setProperty("carbon.properties.filepath",
+              System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties")
+          }
+          // execute query
+          rowIterator = new ChunkRowIterator(
+            QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel).
+              asInstanceOf[CarbonIterator[BatchResult]]).asInstanceOf[CarbonIterator[Array[Any]]]
 
-         }
-       } catch {
-         case e: Exception =>
-           LOGGER.error(e)
-           if (null != e.getMessage) {
-             sys.error("Exception occurred in query execution :: " + e.getMessage)
-           } else {
-             sys.error("Exception occurred in query execution.Please check logs.")
-           }
-       }
+        }
+      } catch {
+        case e: Exception =>
+          LOGGER.error(e)
+          if (null != e.getMessage) {
+            sys.error("Exception occurred in query execution :: " + e.getMessage)
+          } else {
+            sys.error("Exception occurred in query execution.Please check logs.")
+          }
+      }
 
-       var havePair = false
-       var finished = false
-       var recordCount = 0
+      var havePair = false
+      var finished = false
+      var recordCount = 0
 
-       override def hasNext: Boolean = {
-         if (!finished && !havePair) {
-           finished = (null == rowIterator) || (!rowIterator.hasNext)
-           havePair = !finished
-         }
-         if (finished) {
-           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
-           if (null != queryModel.getStatisticsRecorder) {
-             val queryStatistic = new QueryStatistic
-             queryStatistic
-               .addStatistics("Total Time taken to execute the query in executor Side",
-                 System.currentTimeMillis - queryStartTime
-               )
-             queryModel.getStatisticsRecorder.recordStatistics(queryStatistic);
-             queryModel.getStatisticsRecorder.logStatistics();
-           }
-         }
-         !finished
-       }
+      override def hasNext: Boolean = {
+        if (!finished && !havePair) {
+          finished = (null == rowIterator) || (!rowIterator.hasNext)
+          havePair = !finished
+        }
+        if (finished) {
+          clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
+          if (null != queryModel.getStatisticsRecorder) {
+            val queryStatistic = new QueryStatistic
+            queryStatistic
+              .addFixedTimeStatistic("Total Time taken to execute the query in executor Side",
+                System.currentTimeMillis - queryStartTime
+              )
+            queryModel.getStatisticsRecorder.recordStatistics(queryStatistic);
+            queryModel.getStatisticsRecorder.logStatistics();
+          }
+        }
+        !finished
+      }
 
-       override def next(): V = {
-         if (!hasNext) {
-           throw new java.util.NoSuchElementException("End of stream")
-         }
-         havePair = false
-         recordCount += 1
-         if (queryModel.getLimit != -1 && recordCount >= queryModel.getLimit) {
-           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
-           if (null != queryModel.getStatisticsRecorder) {
-             val queryStatistic = new QueryStatistic
-             queryStatistic
-               .addStatistics("Total Time taken to execute the query in executor Side",
-                 System.currentTimeMillis - queryStartTime
-               )
-             queryModel.getStatisticsRecorder.recordStatistics(queryStatistic);
-             queryModel.getStatisticsRecorder.logStatistics();
-           }
-         }
-         keyClass.getValue(rowIterator.next())
-       }
-       def clearDictionaryCache(columnToDictionaryMap: java.util.Map[String, Dictionary]) = {
-         if (null != columnToDictionaryMap) {
-           org.carbondata.spark.util.CarbonQueryUtil
-             .clearColumnDictionaryCache(columnToDictionaryMap)
-         }
-       }
-     }
-     iter
-   }
+      override def next(): V = {
+        if (!hasNext) {
+          throw new java.util.NoSuchElementException("End of stream")
+        }
+        havePair = false
+        recordCount += 1
+        if (queryModel.getLimit != -1 && recordCount >= queryModel.getLimit) {
+          clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
+          if (null != queryModel.getStatisticsRecorder) {
+            val queryStatistic = new QueryStatistic
+            queryStatistic
+              .addFixedTimeStatistic("Total Time taken to execute the query in executor Side",
+                System.currentTimeMillis - queryStartTime
+              )
+            queryModel.getStatisticsRecorder.recordStatistics(queryStatistic);
+            queryModel.getStatisticsRecorder.logStatistics();
+          }
+        }
+        keyClass.getValue(rowIterator.next())
+      }
+      def clearDictionaryCache(columnToDictionaryMap: java.util.Map[String, Dictionary]) = {
+        if (null != columnToDictionaryMap) {
+          org.carbondata.spark.util.CarbonQueryUtil
+            .clearColumnDictionaryCache(columnToDictionaryMap)
+        }
+      }
+    }
+    iter
+  }
 
-   /**
-    * Get the preferred locations where to launch this task.
-    */
-   override def getPreferredLocations(partition: Partition): Seq[String] = {
-     val theSplit = partition.asInstanceOf[CarbonSparkPartition]
-     val firstOptionLocation = theSplit.locations.filter(_ != "localhost")
-     val tableBlocks = theSplit.tableBlockInfos
-     // node name and count mapping
-     val blockMap = new util.LinkedHashMap[String, Integer]()
+  /**
+   * Get the preferred locations where to launch this task.
+   */
+  override def getPreferredLocations(partition: Partition): Seq[String] = {
+    val theSplit = partition.asInstanceOf[CarbonSparkPartition]
+    val firstOptionLocation = theSplit.locations.filter(_ != "localhost")
+    val tableBlocks = theSplit.tableBlockInfos
+    // node name and count mapping
+    val blockMap = new util.LinkedHashMap[String, Integer]()
 
-     tableBlocks.asScala.foreach(tableBlock => tableBlock.getLocations.foreach(
-       location => {
-         if (!firstOptionLocation.exists(location.equalsIgnoreCase(_))) {
-           val currentCount = blockMap.get(location)
-           if (currentCount == null) {
-             blockMap.put(location, 1)
-           } else {
-             blockMap.put(location, currentCount + 1)
-           }
-         }
-       }
-     )
-     )
+    tableBlocks.asScala.foreach(tableBlock => tableBlock.getLocations.foreach(
+      location => {
+        if (!firstOptionLocation.exists(location.equalsIgnoreCase(_))) {
+          val currentCount = blockMap.get(location)
+          if (currentCount == null) {
+            blockMap.put(location, 1)
+          } else {
+            blockMap.put(location, currentCount + 1)
+          }
+        }
+      }
+    )
+    )
 
-     val sortedList = blockMap.entrySet().asScala.toSeq.sortWith((nodeCount1, nodeCount2) => {
-       nodeCount1.getValue > nodeCount2.getValue
-     }
-     )
+    val sortedList = blockMap.entrySet().asScala.toSeq.sortWith((nodeCount1, nodeCount2) => {
+      nodeCount1.getValue > nodeCount2.getValue
+    }
+    )
 
-     val sortedNodesList = sortedList.map(nodeCount => nodeCount.getKey).take(2)
-     firstOptionLocation ++ sortedNodesList
-   }
+    val sortedNodesList = sortedList.map(nodeCount => nodeCount.getKey).take(2)
+    firstOptionLocation ++ sortedNodesList
+  }
 }

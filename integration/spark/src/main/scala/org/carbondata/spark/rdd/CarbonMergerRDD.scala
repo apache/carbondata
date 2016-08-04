@@ -76,11 +76,22 @@ class CarbonMergerRDD[K, V](
         .getDatabaseName + '_' + carbonLoadModel
         .getTableName + '_' + carbonLoadModel.getTaskNo
 
-      val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
-      if (null != storeLocations && storeLocations.length > 0) {
-        storeLocation = storeLocations(Random.nextInt(storeLocations.length))
+      // this property is used to determine whether temp location for carbon is inside
+      // container temp dir or is yarn application directory.
+      val carbonUseLocalDir = CarbonProperties.getInstance()
+        .getProperty("carbon.use.local.dir", "false")
+
+      if(carbonUseLocalDir.equalsIgnoreCase("true")) {
+
+        val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+        if (null != storeLocations && storeLocations.length > 0) {
+          storeLocation = storeLocations(Random.nextInt(storeLocations.length))
+        }
+        if (storeLocation == null) {
+          storeLocation = System.getProperty("java.io.tmpdir")
+        }
       }
-      if (storeLocation == null) {
+      else {
         storeLocation = System.getProperty("java.io.tmpdir")
       }
       storeLocation = storeLocation + '/' + System.nanoTime() + '/' + theSplit.index
@@ -176,7 +187,7 @@ class CarbonMergerRDD[K, V](
         try {
           val isCompactionFlow = true
           CarbonLoaderUtil
-            .deleteLocalDataLoadFolderLocation(carbonLoadModel, newSlice, isCompactionFlow)
+            .deleteLocalDataLoadFolderLocation(carbonLoadModel, isCompactionFlow)
         } catch {
           case e: Exception =>
             LOGGER.error(e)

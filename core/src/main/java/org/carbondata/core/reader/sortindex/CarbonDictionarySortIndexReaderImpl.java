@@ -28,9 +28,11 @@ import org.carbondata.core.carbon.CarbonTableIdentifier;
 import org.carbondata.core.carbon.ColumnIdentifier;
 import org.carbondata.core.carbon.path.CarbonTablePath;
 import org.carbondata.core.datastorage.store.impl.FileFactory;
+import org.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
+import org.carbondata.core.reader.CarbonDictionaryMetadataReader;
+import org.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
 import org.carbondata.core.reader.ThriftReader;
 import org.carbondata.core.service.PathService;
-import org.carbondata.core.util.CarbonUtil;
 import org.carbondata.format.ColumnSortInfo;
 
 import org.apache.thrift.TBase;
@@ -152,13 +154,14 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
 
   protected void initPath() {
     PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService
-            .getCarbonTablePath(columnIdentifier, carbonStorePath, carbonTableIdentifier);
-    String dictionaryPath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId());
-    long dictOffset = CarbonUtil.getFileSize(dictionaryPath);
-    this.sortIndexFilePath =
-        carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId(), dictOffset);
+    CarbonTablePath carbonTablePath =
+        pathService.getCarbonTablePath(columnIdentifier, carbonStorePath, carbonTableIdentifier);
     try {
+      CarbonDictionaryColumnMetaChunk chunkMetaObjectForLastSegmentEntry =
+          getChunkMetaObjectForLastSegmentEntry();
+      long dictOffset = chunkMetaObjectForLastSegmentEntry.getEnd_offset();
+      this.sortIndexFilePath =
+          carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId(), dictOffset);
       if (!FileFactory
           .isFileExist(this.sortIndexFilePath, FileFactory.getFileType(this.sortIndexFilePath))) {
         this.sortIndexFilePath =
@@ -168,6 +171,32 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
       this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId());
     }
 
+  }
+
+  /**
+   * This method will read the dictionary chunk metadata thrift object for last entry
+   *
+   * @return last entry of dictionary meta chunk
+   * @throws IOException if an I/O error occurs
+   */
+  private CarbonDictionaryColumnMetaChunk getChunkMetaObjectForLastSegmentEntry()
+      throws IOException {
+    CarbonDictionaryMetadataReader columnMetadataReaderImpl = getDictionaryMetadataReader();
+    try {
+      // read the last segment entry for dictionary metadata
+      return columnMetadataReaderImpl.readLastEntryOfDictionaryMetaChunk();
+    } finally {
+      // Close metadata reader
+      columnMetadataReaderImpl.close();
+    }
+  }
+
+  /**
+   * @return
+   */
+  protected CarbonDictionaryMetadataReader getDictionaryMetadataReader() {
+    return new CarbonDictionaryMetadataReaderImpl(carbonStorePath, carbonTableIdentifier,
+        columnIdentifier);
   }
 
   /**

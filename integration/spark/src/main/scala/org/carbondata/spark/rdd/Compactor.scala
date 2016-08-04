@@ -148,6 +148,7 @@ object Compactor {
         .error("Compaction request failed for table " + carbonLoadModel
           .getDatabaseName + "." + carbonLoadModel.getTableName
         )
+      throw new Exception("Compaction Failure in Merger Rdd.")
     }
   }
 }
