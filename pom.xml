@@ -314,6 +314,46 @@
     <profile>
       <id>include-all</id>
     </profile>
+    <profile>
+      <id>rat</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.rat</groupId>
+            <artifactId>apache-rat-plugin</artifactId>
+            <version>0.11</version>
+            <executions>
+              <execution>
+                <phase>verify</phase>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <reportFile>${project.build.directory}/${project.build.finalName}.rat</reportFile>
+              <excludeSubProjects>false</excludeSubProjects>
+              <useDefaultExcludes>true</useDefaultExcludes>
+              <excludes>
+                <exclude>**/*.iml</exclude>
+                <exclude>**/*.csv</exclude>
+                <exclude>**/*.dictionary</exclude>
+                <exclude>**/*.ktr</exclude>
+                <exclude>**/_SUCCESS</exclude>
+                <exclude>**/non-csv</exclude>
+                <exclude>**/.invisibilityfile</exclude>
+                <exclude>**/noneCsvFormat.cs</exclude>
+                <exclude>**/org.apache.spark.sql.sources.DataSourceRegister</exclude>
+                <exclude>**/derby.log</exclude>
+                <exclude>**/meta.lock</exclude>
+                <exclude>**/loadmetadata.metadata</exclude>
+                <exclude>**/modifiedTime.mdt</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 
 </project>
