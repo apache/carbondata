@@ -57,10 +57,11 @@ Please refer [CarbonData File Format](https://cwiki.apache.org/confluence/displa
 This is an active open source project for everyone, and we are always open to people who want to use this system or contribute to it. 
 This guide document introduce [how to contribute to CarbonData](https://cwiki.apache.org/confluence/display/CARBONDATA/Contributing+to+CarbonData).
 
-### Contact us
-To get involved in CarbonData:
+### Community
+To get involved in Apache CarbonData:
 
-* First join by emailing [dev-subscribe@carbondata.incubator.apache.org](mailto:dev-subscribe@carbondata.incubator.apache.org),then discuss design and implementation issues on [dev@carbondata.incubator.apache.org](mailto:dev@carbondata.incubator.apache.org)
+* You can ask any question or open a discussion through dev mailing website forum : http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com
+* Subscribe dev emailing to timely get community information, mail to [dev-subscribe@carbondata.incubator.apache.org](mailto:dev-subscribe@carbondata.incubator.apache.org)
 * Report issues on [Jira](https://issues.apache.org/jira/browse/CARBONDATA).
 
 ## About
