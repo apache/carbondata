@@ -58,7 +58,7 @@ This is an active open source project for everyone, and we are always open to pe
 This guide document introduce [how to contribute to CarbonData](https://cwiki.apache.org/confluence/display/CARBONDATA/Contributing+to+CarbonData).
 
 ### Community
-To get involved in Apache CarbonData:
+To get involved in Apache CarbonData: 
 
 * You can ask any question or open a discussion through dev mailing website forum : http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com
 * Subscribe dev emailing to timely get community information, mail to [dev-subscribe@carbondata.incubator.apache.org](mailto:dev-subscribe@carbondata.incubator.apache.org)
