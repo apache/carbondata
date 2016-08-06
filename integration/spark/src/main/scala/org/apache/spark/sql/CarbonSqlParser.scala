@@ -28,7 +28,8 @@ import scala.util.matching.Regex
 import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
 import org.apache.spark.Logging
-import org.apache.spark.sql.catalyst.{SqlLexical, _}
+import org.apache.spark.sql.catalyst._
+import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
@@ -41,7 +42,6 @@ import org.carbondata.common.logging.LogServiceFactory
 import org.carbondata.core.carbon.metadata.datatype.DataType
 import org.carbondata.core.constants.CarbonCommonConstants
 import org.carbondata.core.util.DataTypeUtil
-import org.carbondata.processing.etl.DataLoadingException
 import org.carbondata.spark.exception.MalformedCarbonCommandException
 import org.carbondata.spark.util.CommonUtil
 
@@ -1178,7 +1178,7 @@ class CarbonSqlParser()
           case Some(dbName) =>
             TableIdentifier(tbl.toLowerCase, Some(dbName))
           case None =>
-            TableIdentifier(tbl.toLowerCase)
+            TableIdentifier(tbl.toLowerCase, None)
         }
         if (ef.isDefined && "FORMATTED".equalsIgnoreCase(ef.get)) {
           new DescribeFormattedCommand("describe formatted " + tblIdentifier,

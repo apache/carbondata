@@ -70,11 +70,8 @@ case class DescribeFormattedCommand(sql: String, tblIdentifier: TableIdentifier)
   extends LogicalPlan with Command {
   override def children: Seq[LogicalPlan] = Seq.empty
 
-  override def output: Seq[AttributeReference] = {
-    Seq(AttributeReference("col_name", StringType, nullable = false)(),
-      AttributeReference("data_type", StringType, nullable = false)(),
-      AttributeReference("comment", StringType, nullable = false)())
-  }
+  override def output: Seq[AttributeReference] =
+    Seq(AttributeReference("result", StringType, nullable = false)())
 }
 
 case class CarbonDictionaryCatalystDecoder(
