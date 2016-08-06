@@ -1,28 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <!--
- ~ Licensed to the Apache Software Foundation (ASF) under one
- ~ or more contributor license agreements.  See the NOTICE file
- ~ distributed with this work for additional information
- ~ regarding copyright ownership.  The ASF licenses this file
- ~ to you under the Apache License, Version 2.0 (the
- ~ "License"); you may not use this file except in compliance
- ~ with the License.  You may obtain a copy of the License at
- ~
- ~    http://www.apache.org/licenses/LICENSE-2.0
- ~
- ~ Unless required by applicable law or agreed to in writing,
- ~ software distributed under the License is distributed on an
- ~ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- ~ KIND, either express or implied.  See the License for the
- ~ specific language governing permissions and limitations
- ~ under the License.
- -->
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    Licensed to the Apache Software Foundation (ASF) under one or more
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership.
+    The ASF licenses this file to You under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with
+    the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
   <modelVersion>4.0.0</modelVersion>
-  <groupId>org.carbondata</groupId>
+
+  <parent>
+    <groupId>org.apache</groupId>
+    <artifactId>apache</artifactId>
+    <version>17</version>
+  </parent>
+
+  <groupId>org.apache.carbondata</groupId>
   <artifactId>carbondata-parent</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <name>Apache CarbonData :: Parent</name>
+  <description>CarbonData is a new Apache Hadoop native file format for faster
+    interactive query using advanced columnar storage, index, compression
+    and encoding techniques to improve computing efficiency, in turn it will
+    help speedup queries an order of magnitude faster over PetaBytes of data.</description>
+  <url>http://carbondata.incubator.apache.org</url>
+  <inceptionYear>2016</inceptionYear>
   <packaging>pom</packaging>
-  <name>CarbonData Parent POM</name>
+
+  <version>0.1.0-incubating-SNAPSHOT</version>
+
+  <licenses>
+    <license>
+      <name>Apache License, Version 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <scm>
+    <connection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-carbondata.git</connection>
+    <developerConnection>scm:git:https://git-wip-us.apache.org/repos/asf/incubator-carbondata.git</developerConnection>
+    <url>https://git-wip-us.apache.org/repos/asf/incubator-carbondata.git</url>
+  </scm>
+
+  <issueManagement>
+    <system>jira</system>
+    <url>https://issues.apache.org/jira/browse/CARBONDATA</url>
+  </issueManagement>
+
+  <mailingLists>
+    <mailingList>
+      <name>CarbonData Dev</name>
+      <subscribe>dev-subscribe@carbondata.incubator.apache.org</subscribe>
+      <unsubscribe>dev-unsubscribe@carbondata.incubator.apache.org</unsubscribe>
+      <post>dev@carbondata.incubator.apache.org</post>
+      <archive>http://www.mail-archive.com/dev%carbondata.incubator.apache.org</archive>
+    </mailingList>
+    <mailingList>
+      <name>CarbonData User</name>
+      <subscribe>user-subscribe@carbondata.incubator.apache.org</subscribe>
+      <unsubscribe>user-unsubscribe@carbondata.incubator.apache.org</unsubscribe>
+      <post>user@carbondata.incubator.apache.org</post>
+      <archive>http://www.mail-archive.com/user%carbondata.incubator.apache.org</archive>
+    </mailingList>
+    <mailingList>
+      <name>CarbonData Commits</name>
+      <subscribe>commits-subscribe@carbondata.incubator.apache.org</subscribe>
+      <unsubscribe>commits-unsubscribe@carbondata.incubator.apache.org</unsubscribe>
+      <post>commits@carbondata.incubator.apache.org</post>
+      <archive>http://www.mail-archive.com/commits%carbondata.incubator.apache.org</archive>
+    </mailingList>
+  </mailingLists>
+
+  <developers>
+    <developer>
+      <name>The Apache CarbonData Team</name>
+      <email>dev@carbondata.incubator.apache.org</email>
+      <url>http://carbondata.incubator.apache.org</url>
+      <organization>Apache Software Foundation</organization>
+      <organizationUrl>http://www.apache.org</organizationUrl>
+    </developer>
+  </developers>
+
   <modules>
     <module>common</module>
     <module>format</module>
@@ -33,6 +101,7 @@
     <module>assembly</module>
     <module>examples</module>
   </modules>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <spark.version>1.5.2</spark.version>
@@ -123,6 +192,7 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+
   <build>
     <plugins>
       <plugin>
@@ -176,6 +246,7 @@
       </plugin>
     </plugins>
   </build>
+
   <profiles>
     <profile>
       <id>hadoop-2.2.0</id>
@@ -243,5 +314,46 @@
     <profile>
       <id>include-all</id>
     </profile>
+    <profile>
+      <id>rat</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.rat</groupId>
+            <artifactId>apache-rat-plugin</artifactId>
+            <version>0.11</version>
+            <executions>
+              <execution>
+                <phase>verify</phase>
+                <goals>
+                  <goal>check</goal>
+                </goals>
+              </execution>
+            </executions>
+            <configuration>
+              <reportFile>${project.build.directory}/${project.build.finalName}.rat</reportFile>
+              <excludeSubProjects>false</excludeSubProjects>
+              <useDefaultExcludes>true</useDefaultExcludes>
+              <excludes>
+                <exclude>**/*.iml</exclude>
+                <exclude>**/*.csv</exclude>
+                <exclude>**/*.dictionary</exclude>
+                <exclude>**/*.ktr</exclude>
+                <exclude>**/_SUCCESS</exclude>
+                <exclude>**/non-csv</exclude>
+                <exclude>**/.invisibilityfile</exclude>
+                <exclude>**/noneCsvFormat.cs</exclude>
+                <exclude>**/org.apache.spark.sql.sources.DataSourceRegister</exclude>
+                <exclude>**/derby.log</exclude>
+                <exclude>**/meta.lock</exclude>
+                <exclude>**/loadmetadata.metadata</exclude>
+                <exclude>**/modifiedTime.mdt</exclude>
+              </excludes>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
+
 </project>
