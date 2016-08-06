@@ -437,10 +437,11 @@ public class DataGraphExecuter {
     }
 
     if (count != columnNames.length) {
-      LOGGER.error(
-          "CSV File provided is not proper. Column names in schema and CSV header are not same.");
+      LOGGER.error("CSV header provided in DDL is not proper." +
+          " Column names in schema and CSV header are not the same.");
       throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
-          "CSV File provided is not proper. Column names in schema and csv header are not same.");
+          "CSV header provided in DDL is not proper. Column names in schema and CSV header are " +
+              "not the same.");
     }
   }
 

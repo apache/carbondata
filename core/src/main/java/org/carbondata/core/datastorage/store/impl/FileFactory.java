@@ -124,7 +124,7 @@ public final class FileFactory {
       case HDFS:
       case VIEWFS:
         Path pt = new Path(path);
-        FileSystem fs = pt.getFileSystem(configuration);
+        FileSystem fs = FileSystem.get(configuration);
         FSDataInputStream stream = fs.open(pt);
         return new DataInputStream(new BufferedInputStream(stream));
       default:
@@ -141,7 +141,7 @@ public final class FileFactory {
       case HDFS:
       case VIEWFS:
         Path pt = new Path(path);
-        FileSystem fs = pt.getFileSystem(configuration);
+        FileSystem fs = FileSystem.get(configuration);
         FSDataInputStream stream = fs.open(pt, bufferSize);
         return new DataInputStream(new BufferedInputStream(stream));
       default:
@@ -166,7 +166,7 @@ public final class FileFactory {
       case HDFS:
       case VIEWFS:
         Path pt = new Path(path);
-        FileSystem fs = pt.getFileSystem(configuration);
+        FileSystem fs = FileSystem.get(configuration);
         FSDataInputStream stream = fs.open(pt, bufferSize);
         stream.seek(offset);
         return new DataInputStream(new BufferedInputStream(stream));

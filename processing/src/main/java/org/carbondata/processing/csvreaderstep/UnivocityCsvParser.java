@@ -153,6 +153,7 @@ public class UnivocityCsvParser {
   public boolean hasMoreRecords() throws IOException {
     row = parser.parseNext();
     if (row == null && blockCounter + 1 >= this.csvParserVo.getBlockDetailsList().size()) {
+      close();
       return false;
     }
     if (row == null) {

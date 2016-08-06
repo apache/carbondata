@@ -175,11 +175,22 @@ class CarbonDataLoadRDD[K, V](
         CarbonProperties.getInstance().addProperty("high.cardinality.value", "100000")
         CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false")
         CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000")
-        val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
-        if (null != storeLocations && storeLocations.length > 0) {
-          storeLocation = storeLocations(Random.nextInt(storeLocations.length))
+
+        // this property is used to determine whether temp location for carbon is inside
+        // container temp dir or is yarn application directory.
+        val carbonUseLocalDir = CarbonProperties.getInstance()
+          .getProperty("carbon.use.local.dir", "false")
+
+        if(carbonUseLocalDir.equalsIgnoreCase("true")) {
+          val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+          if (null != storeLocations && storeLocations.length > 0) {
+            storeLocation = storeLocations(Random.nextInt(storeLocations.length))
+          }
+          if (storeLocation == null) {
+            storeLocation = System.getProperty("java.io.tmpdir")
+          }
         }
-        if (storeLocation == null) {
+        else {
           storeLocation = System.getProperty("java.io.tmpdir")
         }
         storeLocation = storeLocation + '/' + System.nanoTime() + '/' + theSplit.index
@@ -211,7 +222,7 @@ class CarbonDataLoadRDD[K, V](
             try {
               val isCompaction = false
               CarbonLoaderUtil
-                .deleteLocalDataLoadFolderLocation(model, newSlice, isCompaction)
+                .deleteLocalDataLoadFolderLocation(model, isCompaction)
             } catch {
               case e: Exception =>
                 LOGGER.error(e)

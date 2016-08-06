@@ -51,7 +51,7 @@ import org.carbondata.spark._
 import org.carbondata.spark.load._
 import org.carbondata.spark.merger.CarbonDataMergerUtil
 import org.carbondata.spark.splits.TableSplit
-import org.carbondata.spark.util.{CarbonQueryUtil, LoadMetadataUtil}
+import org.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil, LoadMetadataUtil}
 
 
 /**

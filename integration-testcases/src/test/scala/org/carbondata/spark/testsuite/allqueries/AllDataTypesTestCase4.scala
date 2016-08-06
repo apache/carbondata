@@ -1447,7 +1447,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "stored by 'org.apache.carbondata.format'"
       )
       checkAnswer(
-        sql("show loads for table tabledoesnotexist"),
+        sql("show segments for table tabledoesnotexist"),
         Seq()
       )
       fail("Unexpected behavior")
@@ -1467,7 +1467,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
         "stored by 'org.apache.carbondata.format'"
       )
       checkAnswer(
-        sql("show loads for table"),
+        sql("show segments for table"),
         Seq()
       )
       fail("Unexpected behavior")

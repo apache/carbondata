@@ -27,7 +27,8 @@ import org.carbondata.core.util.CarbonUtil;
 
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
-import org.apache.thrift.protocol.TBinaryProtocol;
+import org.apache.thrift.protocol.TCompactProtocol;
+import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TIOStreamTransport;
 
 /**
@@ -53,7 +54,7 @@ public class ThriftReader {
   /**
    * For reading the binary thrift objects.
    */
-  private TBinaryProtocol binaryIn;
+  private TProtocol binaryIn;
 
   /**
    * Constructor.
@@ -76,7 +77,7 @@ public class ThriftReader {
   public void open() throws IOException {
     FileFactory.FileType fileType = FileFactory.getFileType(fileName);
     dataInputStream = FileFactory.getDataInputStream(fileName, fileType, bufferSize);
-    binaryIn = new TBinaryProtocol(new TIOStreamTransport(dataInputStream));
+    binaryIn = new TCompactProtocol(new TIOStreamTransport(dataInputStream));
   }
 
   /**

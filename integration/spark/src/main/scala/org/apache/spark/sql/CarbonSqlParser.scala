@@ -96,7 +96,6 @@ class CarbonSqlParser()
   protected val LEVELS = carbonKeyWord("LEVELS")
   protected val LIKE = carbonKeyWord("LIKE")
   protected val LOAD = carbonKeyWord("LOAD")
-  protected val LOADS = carbonKeyWord("LOADS")
   protected val LOCAL = carbonKeyWord("LOCAL")
   protected val MAPPED = carbonKeyWord("MAPPED")
   protected val MEASURES = carbonKeyWord("MEASURES")
@@ -1288,7 +1287,7 @@ class CarbonSqlParser()
   }
 
   protected lazy val showLoads: Parser[LogicalPlan] =
-    SHOW ~> (LOADS|SEGMENTS) ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident ~
+    SHOW ~> SEGMENTS ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident ~
       (LIMIT ~> numericLit).? <~
       opt(";") ^^ {
       case databaseName ~ tableName ~ limit =>
@@ -1302,7 +1301,7 @@ class CarbonSqlParser()
         p.getClass.getSimpleName.equals("DecimalLit") } ) ^^ (_.chars)
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
-    DELETE ~> (LOAD|SEGMENT) ~> repsep(segmentId, ",") ~ (FROM ~> TABLE ~>
+    DELETE ~> SEGMENT ~> repsep(segmentId, ",") ~ (FROM ~> TABLE ~>
       (ident <~ ".").? ~ ident) <~
       opt(";") ^^ {
       case loadids ~ table => table match {
@@ -1312,7 +1311,7 @@ class CarbonSqlParser()
     }
 
   protected lazy val deleteLoadsByLoadDate: Parser[LogicalPlan] =
-    DELETE ~> (LOADS|SEGMENTS) ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
+    DELETE ~> SEGMENTS ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
       (WHERE ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
       opt(";") ^^ {
       case schema ~ table ~ condition =>
