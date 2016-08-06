@@ -60,7 +60,7 @@ This guide document introduce [how to contribute to CarbonData](https://cwiki.ap
 ### Community
 To get involved in Apache CarbonData: 
 
-* You can ask any question or open a discussion through dev mailing website forum : http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com
+* You can ask any question or start a discussion through dev mailing website forum : http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com
 * Subscribe dev emailing to timely get community information, mail to [dev-subscribe@carbondata.incubator.apache.org](mailto:dev-subscribe@carbondata.incubator.apache.org)
 * Report issues on [Jira](https://issues.apache.org/jira/browse/CARBONDATA).
 
