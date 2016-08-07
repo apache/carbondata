@@ -35,6 +35,9 @@ object CarbonThriftServer {
       System.setProperty("carbon.properties.filepath",
         sparkHome + '/' + "conf" + '/' + "carbon.properties")
     }
+    if (org.apache.spark.SPARK_VERSION.startsWith("1.6")) {
+      conf.set("spark.sql.hive.thriftServer.singleSession", "true")
+    }
     val sc = new SparkContext(conf)
     val warmUpTime = CarbonProperties.getInstance().getProperty("carbon.spark.warmUpTime", "5000")
     try {

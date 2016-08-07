@@ -441,6 +441,11 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           }
         }
         Aggregate(grpExps, aggExps, agg.child)
+      case expand: Expand =>
+        expand.transformExpressions {
+          case attr: AttributeReference =>
+            updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
+        }
       case filter: Filter =>
         val filterExps = filter.condition transform {
           case attr: AttributeReference =>
@@ -528,6 +533,21 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           case _ => aliasMap.put(a.toAttribute, new AttributeReference("", StringType)())
         }
         a
+    }
+    // collect the output of expand and add projections attributes as alias to it.
+    plan.collect {
+      case expand: Expand =>
+        expand.projections.foreach {s =>
+          s.zipWithIndex.foreach { f =>
+            f._1 match {
+              case attr: AttributeReference =>
+                aliasMap.put(expand.output(f._2).toAttribute, attr)
+              case a@Alias(attr: AttributeReference, name) =>
+                aliasMap.put(expand.output(f._2).toAttribute, attr)
+              case others =>
+            }
+          }
+        }
     }
   }
 
