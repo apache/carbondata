@@ -1102,4 +1102,10 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonunion")
   })
 
+  test("select Min(imei) from (select imei from Carbon_automation_test order by imei) t")({
+    checkAnswer(
+      sql("select Min(imei) from (select imei from Carbon_automation_test order by imei) t"),
+      sql("select Min(imei) from (select imei from Carbon_automation_hive order by imei) t"))
+  })
+
 }

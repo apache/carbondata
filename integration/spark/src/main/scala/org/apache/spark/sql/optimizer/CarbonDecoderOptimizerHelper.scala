@@ -33,11 +33,23 @@ case class BinaryCarbonNode(left: util.List[AbstractNode], right: util.List[Abst
   extends AbstractNode
 
 case class CarbonDictionaryTempDecoder(
-    attrList: util.Set[Attribute],
-    attrsNotDecode: util.Set[Attribute],
+    attrList: util.Set[AttributeReferenceWrapper],
+    attrsNotDecode: util.Set[AttributeReferenceWrapper],
     child: LogicalPlan,
     isOuter: Boolean = false) extends UnaryNode {
   var processed = false
+
+  def getAttrsNotDecode: util.Set[Attribute] = {
+    val set = new util.HashSet[Attribute]()
+    attrsNotDecode.asScala.foreach(f => set.add(f.attr))
+    set
+  }
+
+  def getAttrList: util.Set[Attribute] = {
+    val set = new util.HashSet[Attribute]()
+    attrList.asScala.foreach(f => set.add(f.attr))
+    set
+  }
 
   override def output: Seq[Attribute] = child.output
 }
@@ -68,26 +80,42 @@ class CarbonDecoderProcessor {
 
   def updateDecoders(nodeList: util.List[AbstractNode]): Unit = {
     val scalaList = nodeList.asScala
-    val decoderNotDecode = new util.HashSet[Attribute]
+    val decoderNotDecode = new util.HashSet[AttributeReferenceWrapper]
     updateDecoderInternal(scalaList, decoderNotDecode)
   }
 
   private def updateDecoderInternal(scalaList: mutable.Buffer[AbstractNode],
-      decoderNotDecode: util.HashSet[Attribute]): Unit = {
+      decoderNotDecode: util.HashSet[AttributeReferenceWrapper]): Unit = {
     scalaList.reverseMap {
       case Node(cd: CarbonDictionaryTempDecoder) =>
         decoderNotDecode.asScala.foreach(cd.attrsNotDecode.add)
         decoderNotDecode.asScala.foreach(cd.attrList.remove)
         decoderNotDecode.addAll(cd.attrList)
       case BinaryCarbonNode(left: util.List[AbstractNode], right: util.List[AbstractNode]) =>
-        val leftNotDecode = new util.HashSet[Attribute]
-        val rightNotDecode = new util.HashSet[Attribute]
+        val leftNotDecode = new util.HashSet[AttributeReferenceWrapper]
+        val rightNotDecode = new util.HashSet[AttributeReferenceWrapper]
         updateDecoderInternal(left.asScala, leftNotDecode)
         updateDecoderInternal(right.asScala, rightNotDecode)
         decoderNotDecode.addAll(leftNotDecode)
         decoderNotDecode.addAll(rightNotDecode)
     }
   }
+
+}
+
+case class AttributeReferenceWrapper(attr: Attribute) {
+
+  override def equals(other: Any): Boolean = other match {
+    case ar: AttributeReferenceWrapper =>
+      attr.name == ar.attr.name && attr.exprId == ar.attr.exprId
+    case _ => false
+  }
+  override def hashCode: Int = {
+    var h = 17
+    h = h * 37 + attr.exprId.hashCode()
+    h
+  }
+
 
 }
 
