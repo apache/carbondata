@@ -97,7 +97,7 @@ public class ObjectSerializationUtil {
       ois = new ObjectInputStream(gis);
       return ois.readObject();
     } catch (ClassNotFoundException e) {
-      throw new IOException("Could not read object");
+      throw new IOException("Could not read object", e);
     } finally {
       try {
         if (ois != null) {
