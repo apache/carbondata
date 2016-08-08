@@ -98,6 +98,13 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
         "(designation) order by empname"))
   }
 
+  test("select count(empno), count(distinct(empno)) from alldatatypestableAGG")
+  {
+    checkAnswer(
+      sql("select count(empno), count(distinct(empno)) from alldatatypestableAGG"),
+      sql("select count(empno), count(distinct(empno)) from alldatatypescubeAGG_hive"))
+  }
+
   override def afterAll {
     sql("drop table alldatatypestableAGG")
   }
