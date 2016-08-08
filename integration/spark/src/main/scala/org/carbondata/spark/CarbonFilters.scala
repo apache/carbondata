@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.optimizer.CarbonAliasDecoderRelation
+import org.apache.spark.sql.optimizer.{AttributeReferenceWrapper, CarbonAliasDecoderRelation}
 import org.apache.spark.sql.sources
 import org.apache.spark.sql.types.StructType
 
@@ -114,7 +114,7 @@ object CarbonFilters {
   // Check out which filters can be pushed down to carbon, remaining can be handled in spark layer.
   // Mostly dimension filters are only pushed down since it is faster in carbon.
   def selectFilters(filters: Seq[Expression],
-      attrList: java.util.HashSet[Attribute],
+      attrList: java.util.HashSet[AttributeReferenceWrapper],
       aliasMap: CarbonAliasDecoderRelation): Unit = {
     def translate(expr: Expression, or: Boolean = false): Option[sources.Filter] = {
       expr match {
@@ -126,7 +126,8 @@ object CarbonFilters {
             Some( sources.Or(leftFilter.get, rightFilter.get))
           } else {
             or.collect {
-              case attr: AttributeReference => attrList.add(aliasMap.getOrElse(attr, attr))
+              case attr: AttributeReference =>
+                attrList.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
             }
             None
           }
@@ -206,7 +207,7 @@ object CarbonFilters {
           if (!or) {
             others.collect {
               case attr: AttributeReference =>
-                attrList.add(aliasMap.getOrElse(attr, attr))
+                attrList.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
             }
           }
           None
