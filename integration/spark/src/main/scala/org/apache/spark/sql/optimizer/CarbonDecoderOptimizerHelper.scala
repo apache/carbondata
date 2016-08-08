@@ -107,7 +107,7 @@ case class AttributeReferenceWrapper(attr: Attribute) {
 
   override def equals(other: Any): Boolean = other match {
     case ar: AttributeReferenceWrapper =>
-      attr.name == ar.attr.name && attr.exprId == ar.attr.exprId
+      attr.name.equalsIgnoreCase(ar.attr.name) && attr.exprId == ar.attr.exprId
     case _ => false
   }
   override def hashCode: Int = {

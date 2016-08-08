@@ -1108,4 +1108,10 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select Min(imei) from (select imei from Carbon_automation_hive order by imei) t"))
   })
 
+  test("select b.IMEI from Carbon_automation_test a join Carbon_automation_test b on a.imei=b.imei")({
+    checkAnswer(
+      sql("select b.IMEI from Carbon_automation_test a join Carbon_automation_test b on a.imei=b.imei"),
+      sql("select b.IMEI from Carbon_automation_hive a join Carbon_automation_hive b on a.imei=b.imei"))
+  })
+
 }
