@@ -17,7 +17,6 @@
 
 package org.carbondata.spark
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.catalyst.expressions._
@@ -77,10 +76,12 @@ object CarbonFilters {
 
         case sources.In(name, values) =>
           Some(new InExpression(getCarbonExpression(name),
-            new ListExpression(values.map(f => getCarbonLiteralExpression(name, f)).toList.asJava)))
+            new ListExpression(
+              convertToJavaList(values.map(f => getCarbonLiteralExpression(name, f)).toList))))
         case sources.Not(sources.In(name, values)) =>
           Some(new NotInExpression(getCarbonExpression(name),
-            new ListExpression(values.map(f => getCarbonLiteralExpression(name, f)).toList.asJava)))
+            new ListExpression(
+              convertToJavaList(values.map(f => getCarbonLiteralExpression(name, f)).toList))))
 
         case sources.And(lhs, rhs) =>
           (createFilter(lhs) ++ createFilter(rhs)).reduceOption(new AndExpression(_, _))
@@ -259,17 +260,17 @@ object CarbonFilters {
 
         case Not(In(a: Attribute, list)) if !list.exists(!_.isInstanceOf[Literal]) =>
           Some(new NotInExpression(transformExpression(a).get,
-            new ListExpression(list.map(transformExpression(_).get).asJava)))
+            new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
         case In(a: Attribute, list) if !list.exists(!_.isInstanceOf[Literal]) =>
           Some(new InExpression(transformExpression(a).get,
-            new ListExpression(list.map(transformExpression(_).get).asJava)))
+            new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
         case Not(In(Cast(a: Attribute, _), list))
           if !list.exists(!_.isInstanceOf[Literal]) =>
           Some(new NotInExpression(transformExpression(a).get,
-            new ListExpression(list.map(transformExpression(_).get).asJava)))
+            new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
         case In(Cast(a: Attribute, _), list) if !list.exists(!_.isInstanceOf[Literal]) =>
           Some(new InExpression(transformExpression(a).get,
-            new ListExpression(list.map(transformExpression(_).get).asJava)))
+            new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
 
         case GreaterThan(a: Attribute, l@Literal(v, t)) =>
           Some(new GreaterThanExpression(transformExpression(a).get, transformExpression(l).get))
@@ -350,5 +351,14 @@ object CarbonFilters {
       }
     }
     CarbonScalaUtil.convertCarbonToSparkDataType(dataType)
+  }
+
+  // Convert scala list to java list, Cannot use scalaList.asJava as while deserializing it is
+  // not able find the classes inside scala list and gives ClassNotFoundException.
+  private def convertToJavaList(
+      scalaList: Seq[CarbonExpression]): java.util.List[CarbonExpression] = {
+    val javaList = new java.util.ArrayList[CarbonExpression]()
+    scalaList.foreach(javaList.add)
+    javaList
   }
 }
