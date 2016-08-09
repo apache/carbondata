@@ -574,7 +574,8 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
     val relation = relations.find(p => p.contains(uAttr))
     if (relation.isDefined) {
       relation.get.carbonRelation.carbonRelation.metaData.dictionaryMap.get(uAttr.name) match {
-        case Some(true) if !allAttrsNotDecode.asScala.exists(p => p.name.equals(uAttr.name)) =>
+        case Some(true)
+          if !allAttrsNotDecode.asScala.exists(p => p.name.equalsIgnoreCase(uAttr.name)) =>
           val newAttr = AttributeReference(attr.name,
             IntegerType,
             attr.nullable,
