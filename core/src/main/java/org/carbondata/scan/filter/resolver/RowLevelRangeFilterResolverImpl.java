@@ -99,13 +99,17 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    *
    * @return start IndexKey
    */
-  public void getStartKey(SegmentProperties segmentProperties, long[] startKey,
-      SortedMap<Integer, byte[]> noDictStartKeys) {
+  public void getStartKey(long[] startKey,
+      SortedMap<Integer, byte[]> noDictStartKeys, List<long[]> startKeyList) {
     if (null == dimColEvaluatorInfoList.get(0).getStarIndexKey()) {
-      FilterUtil.getStartKey(dimColEvaluatorInfoList.get(0), segmentProperties, startKey);
-      FilterUtil
-          .getStartKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), segmentProperties,
-              noDictStartKeys);
+      try {
+        FilterUtil.getStartKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
+            startKey, startKeyList);
+        FilterUtil
+            .getStartKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), noDictStartKeys);
+      } catch (QueryExecutionException e) {
+        LOGGER.error("Can not get the start key during block prune");
+      }
     }
   }
 
@@ -116,17 +120,16 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    */
   @Override public void getEndKey(SegmentProperties segmentProperties,
       AbsoluteTableIdentifier absoluteTableIdentifier, long[] endKeys,
-      SortedMap<Integer, byte[]> noDicEndKeys) {
+      SortedMap<Integer, byte[]> noDicEndKeys, List<long[]> endKeyList) {
     if (null == dimColEvaluatorInfoList.get(0).getEndIndexKey()) {
       try {
         FilterUtil.getEndKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
-            absoluteTableIdentifier, endKeys, segmentProperties);
+            absoluteTableIdentifier, endKeys, segmentProperties, endKeyList);
         FilterUtil
-            .getEndKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), segmentProperties,
-                noDicEndKeys);
+            .getEndKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), noDicEndKeys);
       } catch (QueryExecutionException e) {
         // TODO Auto-generated catch block
-        e.printStackTrace();
+        LOGGER.error("Can not get the end key during block prune");
       }
     }
   }
