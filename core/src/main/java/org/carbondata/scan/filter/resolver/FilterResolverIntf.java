@@ -19,6 +19,7 @@
 package org.carbondata.scan.filter.resolver;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.SortedMap;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
@@ -72,8 +73,9 @@ public interface FilterResolverIntf extends Serializable {
    * @param startKey
    * @param setOfStartKeyByteArray
    */
-  void getStartKey(SegmentProperties segmentProperties, long[] startKey,
-      SortedMap<Integer, byte[]> setOfStartKeyByteArray);
+  void getStartKey(SegmentProperties segmentProperties, AbsoluteTableIdentifier tableIdentifier,
+      long[] startKey, SortedMap<Integer, byte[]> setOfStartKeyByteArray, List<long[]> startKeyList)
+      throws QueryExecutionException;
 
   /**
    * API will read the end key based on the max surrogate of
@@ -85,7 +87,7 @@ public interface FilterResolverIntf extends Serializable {
    * @throws QueryExecutionException
    */
   void getEndKey(SegmentProperties segmentProperties, AbsoluteTableIdentifier tableIdentifier,
-      long[] endKeys, SortedMap<Integer, byte[]> setOfEndKeyByteArray)
+      long[] endKeys, SortedMap<Integer, byte[]> setOfEndKeyByteArray, List<long[]> endKeyList)
       throws QueryExecutionException;
 
   /**
