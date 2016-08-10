@@ -1114,4 +1114,49 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
       sql("select b.IMEI from Carbon_automation_hive a join Carbon_automation_hive b on a.imei=b.imei"))
   })
 
+  test("Right join with filter issue1") {
+
+    checkAnswer(
+      sql("""SELECT Carbon_automation_test.AMSize AS AMSize, Carbon_automation_test.ActiveCountry AS
+       ActiveCountry, Carbon_automation_test.Activecity AS Activecity, SUM(Carbon_automation_test
+       .gamePointId) AS Sum_gamePointId FROM ( SELECT AMSize, ActiveCountry, Activecity,
+       gamePointId FROM (select * from Carbon_automation_test) SUB_QRY ) Carbon_automation_test RIGHT JOIN
+       ( SELECT AMSize, ActiveCountry, Activecity, gamePointId FROM (select * from
+       Carbon_automation_test) SUB_QRY ) Carbon_automation_test1 ON Carbon_automation_test.gamePointId =
+       Carbon_automation_test1.gamePointId WHERE Carbon_automation_test.AMSize IN ("6RAM size","8RAM size")
+        GROUP BY Carbon_automation_test.AMSize, Carbon_automation_test.ActiveCountry, Carbon_automation_test
+        .Activecity ORDER BY Carbon_automation_test.AMSize ASC, Carbon_automation_test.ActiveCountry ASC,
+        Carbon_automation_test.Activecity ASC"""),
+      sql("""SELECT Carbon_automation_test_hive.AMSize AS AMSize, Carbon_automation_test_hive.ActiveCountry AS
+       ActiveCountry, Carbon_automation_test_hive.Activecity AS Activecity, SUM(Carbon_automation_test_hive
+       .gamePointId) AS Sum_gamePointId FROM ( SELECT AMSize, ActiveCountry, Activecity,
+       gamePointId FROM (select * from Carbon_automation_test_hive) SUB_QRY ) Carbon_automation_test_hive RIGHT JOIN
+       ( SELECT AMSize, ActiveCountry, Activecity, gamePointId FROM (select * from
+       Carbon_automation_test_hive) SUB_QRY ) Carbon_automation_test_hive1 ON Carbon_automation_test_hive.gamePointId =
+       Carbon_automation_test_hive1.gamePointId WHERE Carbon_automation_test_hive.AMSize IN ("6RAM size","8RAM size")
+        GROUP BY Carbon_automation_test_hive.AMSize, Carbon_automation_test_hive.ActiveCountry, Carbon_automation_test_hive
+        .Activecity ORDER BY Carbon_automation_test_hive.AMSize ASC, Carbon_automation_test_hive.ActiveCountry ASC,
+        Carbon_automation_test_hive.Activecity ASC """))
+  }
+
+  test("Right join with filter issue2") {
+
+    checkAnswer(
+      sql("""SELECT Carbon_automation_test.AMSize AS AMSize, Carbon_automation_test.gamePointId AS
+       gamePointId, Carbon_automation_test.ActiveCountry AS ActiveCountry, Carbon_automation_test
+       .Activecity AS Activecity FROM ( SELECT AMSize,  ActiveCountry,  Activecity, gamePointId
+       FROM (select * from Carbon_automation_test) SUB_QRY ) Carbon_automation_test RIGHT JOIN ( SELECT
+       AMSize,  ActiveCountry,  Activecity,  gamePointId FROM (select * from Carbon_automation_test)
+       SUB_QRY ) Carbon_automation_test1 ON Carbon_automation_test.gamePointId = Carbon_automation_test1
+       .gamePointId WHERE Carbon_automation_test.AMSize > "5RAM size" """),
+      sql("""SELECT Carbon_automation_test_hive.AMSize AS AMSize, Carbon_automation_test_hive.gamePointId AS
+       gamePointId, Carbon_automation_test_hive.ActiveCountry AS ActiveCountry, Carbon_automation_test_hive
+       .Activecity AS Activecity FROM ( SELECT AMSize,  ActiveCountry,  Activecity, gamePointId
+       FROM (select * from Carbon_automation_test_hive) SUB_QRY ) Carbon_automation_test_hive RIGHT JOIN ( SELECT
+       AMSize,  ActiveCountry,  Activecity,  gamePointId FROM (select * from Carbon_automation_test_hive)
+       SUB_QRY ) Carbon_automation_test_hive1 ON Carbon_automation_test_hive.gamePointId = Carbon_automation_test_hive1
+       .gamePointId WHERE Carbon_automation_test_hive.AMSize > "5RAM size" """))
+
+  }
+
 }
