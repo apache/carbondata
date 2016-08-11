@@ -60,7 +60,7 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
         future = execute();
       } else {
         execService.shutdown();
-        execService.awaitTermination(2, TimeUnit.HOURS);
+        execService.awaitTermination(1, TimeUnit.HOURS);
         fileReader.finish();
       }
     } catch (Exception ex) {
@@ -76,6 +76,7 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
       @Override public BatchResult call() throws QueryExecutionException {
         BatchResult batchResult = new BatchResult();
         synchronized (lock) {
+          updateDataBlockIterator();
           batchResult.setRows(dataBlockIterator.next());
         }
         return batchResult;
