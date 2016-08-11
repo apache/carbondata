@@ -41,6 +41,8 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
 
   private Future<BatchResult> future;
 
+  private final Object lock = new Object();
+
   public DetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel) {
     super(infos, queryModel);
   }
@@ -57,13 +59,13 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
         nextBatch = true;
         future = execute();
       } else {
-        fileReader.finish();
         execService.shutdown();
         execService.awaitTermination(2, TimeUnit.HOURS);
+        fileReader.finish();
       }
     } catch (Exception ex) {
-      fileReader.finish();
       execService.shutdown();
+      fileReader.finish();
       throw new RuntimeException(ex);
     }
     return result;
@@ -73,7 +75,9 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
     return execService.submit(new Callable<BatchResult>() {
       @Override public BatchResult call() throws QueryExecutionException {
         BatchResult batchResult = new BatchResult();
-        batchResult.setRows(dataBlockIterator.next());
+        synchronized (lock) {
+          batchResult.setRows(dataBlockIterator.next());
+        }
         return batchResult;
       }
     });
