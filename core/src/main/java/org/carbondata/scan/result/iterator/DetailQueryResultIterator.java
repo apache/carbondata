@@ -77,7 +77,9 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
         BatchResult batchResult = new BatchResult();
         synchronized (lock) {
           updateDataBlockIterator();
-          batchResult.setRows(dataBlockIterator.next());
+          if (dataBlockIterator != null) {
+            batchResult.setRows(dataBlockIterator.next());
+          }
         }
         return batchResult;
       }
