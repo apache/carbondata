@@ -104,14 +104,16 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     if ((dataBlockIterator != null && dataBlockIterator.hasNext()) || nextBatch) {
       return true;
     } else {
+      return blockExecutionInfos.size() > 0;
+    }
+  }
+
+  protected void updateDataBlockIterator() {
+    if (dataBlockIterator == null || !dataBlockIterator.hasNext()) {
       dataBlockIterator = getDataBlockIterator();
-      while (dataBlockIterator != null) {
-        if (dataBlockIterator.hasNext()) {
-          return true;
-        }
+      while (dataBlockIterator != null && !dataBlockIterator.hasNext()) {
         dataBlockIterator = getDataBlockIterator();
       }
-      return false;
     }
   }
 
