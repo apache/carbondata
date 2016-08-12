@@ -670,8 +670,7 @@ public final class FilterUtil {
    * @return long[] start key
    */
   public static void getStartKey(Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter,
-      AbsoluteTableIdentifier tableIdentifier, long[] startKey, SegmentProperties segmentProperties,
-      List<long[]> startKeyList) throws QueryExecutionException {
+      long[] startKey, List<long[]> startKeyList) throws QueryExecutionException {
     for(int i = 0; i < startKey.length; i++) {
       // The min surrogate key is 1, set it as the init value for starkey of each column level
       startKey[i] = 1;
@@ -697,8 +696,8 @@ public final class FilterUtil {
    * @return
    */
   public static void getStartKeyForNoDictionaryDimension(
-      DimColumnResolvedFilterInfo dimColResolvedFilterInfo, SegmentProperties segmentProperties,
-      SortedMap<Integer, byte[]> setOfStartKeyByteArray, List<long[]> startKeyList) {
+      DimColumnResolvedFilterInfo dimColResolvedFilterInfo,
+      SortedMap<Integer, byte[]> setOfStartKeyByteArray) {
     Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter =
         dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();
     // step 1
@@ -752,8 +751,8 @@ public final class FilterUtil {
    * @return end key array
    */
   public static void getEndKeyForNoDictionaryDimension(
-      DimColumnResolvedFilterInfo dimColResolvedFilterInfo, SegmentProperties segmentProperties,
-      SortedMap<Integer, byte[]> setOfEndKeyByteArray, List<long[]> endKeyList) {
+      DimColumnResolvedFilterInfo dimColResolvedFilterInfo,
+      SortedMap<Integer, byte[]> setOfEndKeyByteArray) {
 
     Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter =
         dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();

@@ -192,9 +192,9 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
       throws QueryExecutionException {
     if (null == dimColResolvedFilterInfo.getStarIndexKey()) {
       FilterUtil.getStartKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(),
-          absoluteTableIdentifier, startKey, segmentProperties, startKeyList);
-      FilterUtil.getStartKeyForNoDictionaryDimension(dimColResolvedFilterInfo, segmentProperties,
-          setOfStartKeyByteArray, startKeyList);
+          startKey, startKeyList);
+      FilterUtil.getStartKeyForNoDictionaryDimension(dimColResolvedFilterInfo,
+          setOfStartKeyByteArray);
     }
   }
 
@@ -211,8 +211,8 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     if (null == dimColResolvedFilterInfo.getEndIndexKey()) {
       FilterUtil.getEndKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(),
           absoluteTableIdentifier, endKeys, segmentProperties, endKeyList);
-      FilterUtil.getEndKeyForNoDictionaryDimension(dimColResolvedFilterInfo, segmentProperties,
-          setOfEndKeyByteArray, endKeyList);
+      FilterUtil.getEndKeyForNoDictionaryDimension(dimColResolvedFilterInfo,
+          setOfEndKeyByteArray);
     }
   }
 

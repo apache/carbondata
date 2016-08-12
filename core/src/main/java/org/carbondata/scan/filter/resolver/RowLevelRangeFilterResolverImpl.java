@@ -105,10 +105,9 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
     if (null == dimColEvaluatorInfoList.get(0).getStarIndexKey()) {
       try {
         FilterUtil.getStartKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
-            absoluteTableIdentifier, startKey, segmentProperties, startKeyList);
+            startKey, startKeyList);
         FilterUtil
-            .getStartKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), segmentProperties,
-                noDictStartKeys, startKeyList);
+            .getStartKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), noDictStartKeys);
       } catch (QueryExecutionException e) {
         LOGGER.error("Can not get the start key during block prune");
       }
@@ -128,8 +127,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
         FilterUtil.getEndKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
             absoluteTableIdentifier, endKeys, segmentProperties, endKeyList);
         FilterUtil
-            .getEndKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), segmentProperties,
-                noDicEndKeys, endKeyList);
+            .getEndKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), noDicEndKeys);
       } catch (QueryExecutionException e) {
         // TODO Auto-generated catch block
         LOGGER.error("Can not get the end key during block prune");
