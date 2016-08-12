@@ -583,7 +583,8 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
     if (relation.isDefined) {
       relation.get.carbonRelation.carbonRelation.metaData.dictionaryMap.get(uAttr.name) match {
         case Some(true)
-          if !allAttrsNotDecode.asScala.exists(p => p.name.equalsIgnoreCase(uAttr.name)) =>
+          if !allAttrsNotDecode.asScala
+            .exists(p => p.name.equalsIgnoreCase(uAttr.name) && p.exprId.equals(uAttr.exprId)) =>
           val newAttr = AttributeReference(attr.name,
             IntegerType,
             attr.nullable,
@@ -632,15 +633,11 @@ case class CarbonDecoderRelation(
   }
 
   def contains(attr: Attribute): Boolean = {
-    var exists =
+    val exists =
       attributeMap.exists(entry => entry._1.name.equalsIgnoreCase(attr.name) &&
                                    entry._1.exprId.equals(attr.exprId)) ||
       extraAttrs.exists(entry => entry.name.equalsIgnoreCase(attr.name) &&
                                  entry.exprId.equals(attr.exprId))
-    if(!exists) {
-      exists = attributeMap.exists(entry => entry._1.name.equalsIgnoreCase(attr.name)) ||
-               extraAttrs.exists(entry => entry.name.equalsIgnoreCase(attr.name) )
-    }
     exists
   }
 }

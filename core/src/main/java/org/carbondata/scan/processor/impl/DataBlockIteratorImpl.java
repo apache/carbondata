@@ -18,6 +18,7 @@
  */
 package org.carbondata.scan.processor.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.carbondata.core.datastorage.store.FileHolder;
@@ -45,12 +46,16 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
    * @return Result of @batchSize
    */
   public List<Object[]> next() {
-    List<Object[]> collectedResult =
-        this.scannerResultAggregator.collectData(scannedResult, batchSize);
-    while (collectedResult.size() < batchSize && hasNext()) {
-      List<Object[]> data = this.scannerResultAggregator
-          .collectData(scannedResult, batchSize - collectedResult.size());
-      collectedResult.addAll(data);
+    List<Object[]> collectedResult = null;
+    if (updateScanner()) {
+      collectedResult = this.scannerResultAggregator.collectData(scannedResult, batchSize);
+      while (collectedResult.size() < batchSize && updateScanner()) {
+        List<Object[]> data = this.scannerResultAggregator
+            .collectData(scannedResult, batchSize - collectedResult.size());
+        collectedResult.addAll(data);
+      }
+    } else {
+      collectedResult = new ArrayList<>();
     }
     return collectedResult;
   }
