@@ -299,15 +299,15 @@ class CarbonGlobalDictionaryGenerateRDD(
       val pathService = CarbonCommonFactory.getPathService
       val carbonTablePath = pathService.getCarbonTablePath(model.columnIdentifier(split.index),
           model.hdfsLocation, model.table)
-      if (null != model.hdfsTempLocation) {
+      if (StringUtils.isNotBlank(model.hdfsTempLocation )) {
          CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
            model.hdfsTempLocation)
       }
-      if (null != model.lockType) {
+      if (StringUtils.isNotBlank(model.lockType)) {
          CarbonProperties.getInstance.addProperty(CarbonCommonConstants.LOCK_TYPE,
            model.lockType)
       }
-      if (null != model.zooKeeperUrl) {
+      if (StringUtils.isNotBlank(model.zooKeeperUrl)) {
          CarbonProperties.getInstance.addProperty(CarbonCommonConstants.ZOOKEEPER_URL,
           model.zooKeeperUrl)
       }
