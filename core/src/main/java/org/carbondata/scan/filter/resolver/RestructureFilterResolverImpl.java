@@ -174,8 +174,7 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
    * For restructure resolver no implementation is required for getting
    * the start key since it already has default values
    */
-  @Override public void getStartKey(SegmentProperties segmentProperties,
-      AbsoluteTableIdentifier tableIdentifier, long[] startKeys,
+  @Override public void getStartKey(long[] startKeys,
       SortedMap<Integer, byte[]> noDicStartKeys, List<long[]> startKeyList) {
 
   }

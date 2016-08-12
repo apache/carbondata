@@ -39,14 +39,11 @@ public class AndFilterResolverImpl extends LogicalFilterResolverImpl {
     super(leftEvalutor, rightEvalutor, expression);
   }
 
-  @Override public void getStartKey(SegmentProperties segmentProperties,
-      AbsoluteTableIdentifier tableIdentifier, long[] startKeys,
+  @Override public void getStartKey(long[] startKeys,
       SortedMap<Integer, byte[]> noDicStartKeys, List<long[]> startKeyList)
       throws QueryExecutionException {
-    leftEvalutor.getStartKey(segmentProperties, tableIdentifier, startKeys, noDicStartKeys,
-        startKeyList);
-    rightEvalutor.getStartKey(segmentProperties, tableIdentifier, startKeys, noDicStartKeys,
-        startKeyList);
+    leftEvalutor.getStartKey(startKeys, noDicStartKeys, startKeyList);
+    rightEvalutor.getStartKey(startKeys, noDicStartKeys, startKeyList);
   }
 
   @Override public void getEndKey(SegmentProperties segmentProperties,

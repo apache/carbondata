@@ -186,8 +186,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
   /**
    * method will calculates the start key based on the filter surrogates
    */
-  public void getStartKey(SegmentProperties segmentProperties,
-      AbsoluteTableIdentifier absoluteTableIdentifier, long[] startKey,
+  public void getStartKey(long[] startKey,
       SortedMap<Integer, byte[]> setOfStartKeyByteArray, List<long[]> startKeyList)
       throws QueryExecutionException {
     if (null == dimColResolvedFilterInfo.getStarIndexKey()) {

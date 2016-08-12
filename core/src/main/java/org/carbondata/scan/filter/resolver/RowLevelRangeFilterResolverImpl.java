@@ -99,8 +99,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    *
    * @return start IndexKey
    */
-  public void getStartKey(SegmentProperties segmentProperties,
-      AbsoluteTableIdentifier absoluteTableIdentifier, long[] startKey,
+  public void getStartKey(long[] startKey,
       SortedMap<Integer, byte[]> noDictStartKeys, List<long[]> startKeyList) {
     if (null == dimColEvaluatorInfoList.get(0).getStarIndexKey()) {
       try {

@@ -73,9 +73,8 @@ public interface FilterResolverIntf extends Serializable {
    * @param startKey
    * @param setOfStartKeyByteArray
    */
-  void getStartKey(SegmentProperties segmentProperties, AbsoluteTableIdentifier tableIdentifier,
-      long[] startKey, SortedMap<Integer, byte[]> setOfStartKeyByteArray, List<long[]> startKeyList)
-      throws QueryExecutionException;
+  void getStartKey(long[] startKey, SortedMap<Integer, byte[]> setOfStartKeyByteArray,
+      List<long[]> startKeyList) throws QueryExecutionException;
 
   /**
    * API will read the end key based on the max surrogate of
