@@ -18,6 +18,7 @@
  */
 package org.carbondata.scan.filter.resolver;
 
+import java.util.List;
 import java.util.SortedMap;
 
 import org.carbondata.core.carbon.AbsoluteTableIdentifier;
@@ -38,16 +39,18 @@ public class AndFilterResolverImpl extends LogicalFilterResolverImpl {
     super(leftEvalutor, rightEvalutor, expression);
   }
 
-  @Override public void getStartKey(SegmentProperties segmentProperties, long[] startKeys,
-      SortedMap<Integer, byte[]> noDicStartKeys) {
-    leftEvalutor.getStartKey(segmentProperties, startKeys, noDicStartKeys);
-    rightEvalutor.getStartKey(segmentProperties, startKeys, noDicStartKeys);
+  @Override public void getStartKey(long[] startKeys,
+      SortedMap<Integer, byte[]> noDicStartKeys, List<long[]> startKeyList)
+      throws QueryExecutionException {
+    leftEvalutor.getStartKey(startKeys, noDicStartKeys, startKeyList);
+    rightEvalutor.getStartKey(startKeys, noDicStartKeys, startKeyList);
   }
 
   @Override public void getEndKey(SegmentProperties segmentProperties,
       AbsoluteTableIdentifier tableIdentifier, long[] endKeys,
-      SortedMap<Integer, byte[]> noDicEndKeys) throws QueryExecutionException {
-    leftEvalutor.getEndKey(segmentProperties, tableIdentifier, endKeys, noDicEndKeys);
-    rightEvalutor.getEndKey(segmentProperties, tableIdentifier, endKeys, noDicEndKeys);
+      SortedMap<Integer, byte[]> noDicEndKeys, List<long[]> endKeyList)
+      throws QueryExecutionException {
+    leftEvalutor.getEndKey(segmentProperties, tableIdentifier, endKeys, noDicEndKeys, endKeyList);
+    rightEvalutor.getEndKey(segmentProperties, tableIdentifier, endKeys, noDicEndKeys, endKeyList);
   }
 }

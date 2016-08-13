@@ -186,10 +186,13 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
   /**
    * method will calculates the start key based on the filter surrogates
    */
-  public void getStartKey(SegmentProperties segmentProperties, long[] startKey,
-      SortedMap<Integer, byte[]> setOfStartKeyByteArray) {
+  public void getStartKey(long[] startKey,
+      SortedMap<Integer, byte[]> setOfStartKeyByteArray, List<long[]> startKeyList)
+      throws QueryExecutionException {
     if (null == dimColResolvedFilterInfo.getStarIndexKey()) {
-      FilterUtil.getStartKeyForNoDictionaryDimension(dimColResolvedFilterInfo, segmentProperties,
+      FilterUtil.getStartKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(),
+          startKey, startKeyList);
+      FilterUtil.getStartKeyForNoDictionaryDimension(dimColResolvedFilterInfo,
           setOfStartKeyByteArray);
     }
   }
@@ -202,11 +205,12 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
    */
   @Override public void getEndKey(SegmentProperties segmentProperties,
       AbsoluteTableIdentifier absoluteTableIdentifier, long[] endKeys,
-      SortedMap<Integer, byte[]> setOfEndKeyByteArray) throws QueryExecutionException {
+      SortedMap<Integer, byte[]> setOfEndKeyByteArray, List<long[]> endKeyList)
+      throws QueryExecutionException {
     if (null == dimColResolvedFilterInfo.getEndIndexKey()) {
       FilterUtil.getEndKey(dimColResolvedFilterInfo.getDimensionResolvedFilterInstance(),
-          absoluteTableIdentifier, endKeys, segmentProperties);
-      FilterUtil.getEndKeyForNoDictionaryDimension(dimColResolvedFilterInfo, segmentProperties,
+          absoluteTableIdentifier, endKeys, segmentProperties, endKeyList);
+      FilterUtil.getEndKeyForNoDictionaryDimension(dimColResolvedFilterInfo,
           setOfEndKeyByteArray);
     }
   }
