@@ -24,6 +24,6 @@
    description="Carbon CSV Based Surrogate Key Generator"
    tooltip="Carbon CSV based Surrogate Key Generator"
    category="Carbon"
-   classname="org.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedSeqGenMeta">
+   classname="org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedSeqGenMeta">
 
 </plugin>

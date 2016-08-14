@@ -23,6 +23,6 @@
    description="Carbon Sort And Group By"
    tooltip="Carbon Sort And Group By"
    category="Carbon"
-   classname="org.carbondata.processing.sortandgroupby.step.CarbonSortKeyAndGroupByStepMeta">
+   classname="org.apache.carbondata.processing.sortandgroupby.step.CarbonSortKeyAndGroupByStepMeta">
 
 </plugin>

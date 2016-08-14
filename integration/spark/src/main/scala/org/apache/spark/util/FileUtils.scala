@@ -19,10 +19,10 @@ package org.apache.spark.util
 
 import org.apache.spark.Logging
 
-import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.datastorage.store.filesystem.CarbonFile
-import org.carbondata.core.datastorage.store.impl.FileFactory
-import org.carbondata.processing.etl.DataLoadingException
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile
+import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import org.apache.carbondata.processing.etl.DataLoadingException
 
 object FileUtils extends Logging {
   /**

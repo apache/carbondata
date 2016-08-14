@@ -20,7 +20,7 @@
 /**
  * File format description for the carbon file format
  */
-namespace java org.carbondata.format
+namespace java org.apache.carbondata.format
 
 include "schema.thrift"
 include "dictionary.thrift"

@@ -144,7 +144,7 @@
         <module name="ImportOrder">
             <property name="separated" value="true"/>
             <!--<property name="ordered" value="true"/>-->
-            <property name="groups" value="/^javax?\./,org.carbondata,*"/>
+            <property name="groups" value="/^javax?\./,org.apache.carbondata,*"/>
         </module>
         
         <module name="MethodParamPad"/>

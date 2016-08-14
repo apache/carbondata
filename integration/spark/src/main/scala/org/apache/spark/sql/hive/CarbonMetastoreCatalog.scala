@@ -18,8 +18,7 @@
 package org.apache.spark.sql.hive
 
 import java.io._
-import java.util.GregorianCalendar
-import java.util.UUID
+import java.util.{GregorianCalendar, UUID}
 
 import scala.Array.canBuildFrom
 import scala.collection.mutable.ArrayBuffer
@@ -35,22 +34,22 @@ import org.apache.spark.sql.execution.command.{AggregateTableAttributes, Partiti
 import org.apache.spark.sql.hive.client.ClientInterface
 import org.apache.spark.sql.types._
 
-import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.CarbonTableIdentifier
-import org.carbondata.core.carbon.metadata.CarbonMetadata
-import org.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl
-import org.carbondata.core.carbon.metadata.schema.table.CarbonTable
-import org.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
-import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.datastorage.store.filesystem.CarbonFile
-import org.carbondata.core.datastorage.store.impl.FileFactory
-import org.carbondata.core.datastorage.store.impl.FileFactory.FileType
-import org.carbondata.core.reader.ThriftReader
-import org.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.carbondata.core.writer.ThriftWriter
-import org.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-import org.carbondata.lcm.locks.ZookeeperInit
-import org.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.carbon.CarbonTableIdentifier
+import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
+import org.apache.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl
+import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile
+import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType
+import org.apache.carbondata.core.reader.ThriftReader
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.writer.ThriftWriter
+import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
+import org.apache.carbondata.lcm.locks.ZookeeperInit
+import org.apache.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
 
 case class MetaData(var tablesMeta: ArrayBuffer[TableMeta])
 
@@ -226,7 +225,8 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
                   wrapperTableInfo
                     .setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath))
                   CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
-                  val carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
+                  val carbonTable =
+                    org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
                       .getCarbonTable(tableUniqueName)
                   metaDataBuffer += TableMeta(
                     carbonTable.getCarbonTableIdentifier,
@@ -234,7 +234,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
                     carbonTable,
                     // TODO: Need to update Database thirft to hold partitioner
                     // information and reload when required.
-                    Partitioner("org.carbondata.spark.partition.api.impl." +
+                    Partitioner("org.apache.carbondata.spark.partition.api.impl." +
                                 "SampleDataPartitionerImpl",
                       Array(""), 1, Array("")))
                 }
@@ -264,7 +264,8 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
    * Load CarbonTable from wrapper tableinfo
    *
    */
-  def createTableFromThrift(tableInfo: org.carbondata.core.carbon.metadata.schema.table.TableInfo,
+  def createTableFromThrift(
+      tableInfo: org.apache.carbondata.core.carbon.metadata.schema.table.TableInfo,
       dbName: String, tableName: String, partitioner: Partitioner)
     (sqlContext: SQLContext): String = {
 
@@ -292,7 +293,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
       carbonTableIdentifier,
       storePath,
       CarbonMetadata.getInstance().getCarbonTable(dbName + "_" + tableName),
-      Partitioner("org.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
+      Partitioner("org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
         Array(""), 1, DistributionUtil.getNodeList(hiveContext.sparkContext)))
 
     val fileType = FileFactory.getFileType(schemaMetadataPath)
@@ -313,7 +314,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
   }
 
   private def updateMetadataByWrapperTable(
-      wrapperTableInfo: org.carbondata.core.carbon.metadata.schema.table.TableInfo): Unit = {
+      wrapperTableInfo: org.apache.carbondata.core.carbon.metadata.schema.table.TableInfo): Unit = {
 
     CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
@@ -415,7 +416,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
       sys.error(s"Table with $dbName.$tableName does not exist")
     }
 
-    val carbonTable = org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
+    val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(dbName + "_" + tableName)
 
     if (null != carbonTable) {
@@ -440,7 +441,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     metadata.tablesMeta -= metadata.tablesMeta.filter(
       c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(dbName) &&
            c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))(0)
-    org.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
+    org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .removeTable(dbName + "_" + tableName)
 
     sqlContext.asInstanceOf[HiveContext].runSqlHive(s"DROP TABLE IF EXISTS $dbName.$tableName")

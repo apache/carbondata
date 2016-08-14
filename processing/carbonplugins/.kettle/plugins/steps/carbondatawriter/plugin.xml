@@ -23,5 +23,5 @@
    description="Carbon Data Writer"
    tooltip="Carbon Data Writer"
    category="Carbon"
-   classname="org.carbondata.processing.store.CarbonDataWriterStepMeta">
+   classname="org.apache.carbondata.processing.store.CarbonDataWriterStepMeta">
 </plugin>

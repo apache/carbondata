@@ -37,7 +37,7 @@
       <package name="javax" withSubpackages="true" static="false" />
       <package name="java" withSubpackages="true" static="false" />
       <emptyLine />
-      <package name="org.carbondata" withSubpackages="true" static="false" />
+      <package name="org.apache.carbondata" withSubpackages="true" static="false" />
       <emptyLine />
       <package name="" withSubpackages="true" static="false" />
       <emptyLine />
@@ -60,7 +60,7 @@
         <option value="_______ blank line _______" />
         <option value="all other imports" />
         <option value="_______ blank line _______" />
-        <option value="org.carbondata" />
+        <option value="org.apache.carbondata" />
       </array>
     </option>
     <option name="METHOD_BRACE_FORCE" value="1" />

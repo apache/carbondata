@@ -24,9 +24,9 @@ import scala.collection.JavaConverters._
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.CarbonContext
 
-import org.carbondata.common.logging.LogServiceFactory
-import org.carbondata.core.carbon.datastore.block.Distributable
-import org.carbondata.spark.load.CarbonLoaderUtil
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.carbon.datastore.block.Distributable
+import org.apache.carbondata.spark.load.CarbonLoaderUtil
 
 /**
  *

@@ -24,6 +24,6 @@
    description="Carbon CSVReader"
    tooltip="Carbon CSVReader"
    category="Carbon"
-   classname="org.carbondata.processing.csvreader.CsvReaderMeta">
+   classname="org.apache.carbondata.processing.csvreader.CsvReaderMeta">
 
 </plugin>

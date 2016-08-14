@@ -20,7 +20,7 @@
 /**
  * File format description for carbon dictionary file
  */
-namespace java org.carbondata.format
+namespace java org.apache.carbondata.format
 
 struct ColumnDictionaryChunkMeta {
 	1: required i32 min_surrogate_key; //The least surrogate key in this dictionary, in most cases min will be 0, but after history data deletion, min can be non-zero

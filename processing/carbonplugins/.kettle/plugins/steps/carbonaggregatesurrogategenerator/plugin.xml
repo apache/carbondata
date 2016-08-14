@@ -23,6 +23,6 @@
    description="Carbon Agg Surrogate Generator"
    tooltip="Carbon Agg Surrogate Generator"
    category="Carbon"
-   classname="org.carbondata.processing.aggregatesurrogategenerator.step.CarbonAggregateSurrogateGeneratorMeta">
+   classname="org.apache.carbondata.processing.aggregatesurrogategenerator.step.CarbonAggregateSurrogateGeneratorMeta">
 
 </plugin>

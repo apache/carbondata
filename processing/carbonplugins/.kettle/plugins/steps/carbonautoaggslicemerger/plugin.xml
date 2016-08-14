@@ -23,6 +23,6 @@
    description="Carbon Auto Agg Slice Merger"
    tooltip="Carbon Auto Agg Slice Merger"
    category="Carbon"
-   classname="org.carbondata.processing.merger.step.autoaggregate.CarbonAutoAggregateSliceMergerMeta">
+   classname="org.apache.carbondata.processing.merger.step.autoaggregate.CarbonAutoAggregateSliceMergerMeta">
 
 </plugin>
