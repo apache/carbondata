@@ -17,9 +17,10 @@
     under the License.
 -->
 
-# Apache CarbonData
-CarbonData is a new Apache Hadoop native file format for faster 
-interactive query using advanced columnar storage, index, compression 
+<img src="/docs/images/format/CarbonData_logo.png" width="200" height="40">
+
+Apache CarbonData is a new big data file format for faster
+interactive query using advanced columnar storage, index, compression
 and encoding techniques to improve computing efficiency, in turn it will 
 help speedup queries an order of magnitude faster over PetaBytes of data. 
 
@@ -56,10 +57,11 @@ Please refer [CarbonData File Format](https://cwiki.apache.org/confluence/displa
 This is an active open source project for everyone, and we are always open to people who want to use this system or contribute to it. 
 This guide document introduce [how to contribute to CarbonData](https://cwiki.apache.org/confluence/display/CARBONDATA/Contributing+to+CarbonData).
 
-### Contact us
-To get involved in CarbonData:
+### Community
+To get involved in Apache CarbonData: 
 
-* We discuss design and implementation issues on [dev@carbondata.incubator.apache.org](mailto:dev@carbondata.incubator.apache.org) Join by emailing [dev-subscribe@carbondata.incubator.apache.org](mailto:dev-subscribe@carbondata.incubator.apache.org)
+* You can ask any question or start a discussion through dev mailing website forum : http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com
+* Subscribe dev emailing to timely get community information, mail to [dev-subscribe@carbondata.incubator.apache.org](mailto:dev-subscribe@carbondata.incubator.apache.org)
 * Report issues on [Jira](https://issues.apache.org/jira/browse/CARBONDATA).
 
 ## About
