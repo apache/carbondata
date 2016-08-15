@@ -22,7 +22,7 @@ import org.apache.spark.sql.catalyst.expressions.{Attribute, ExprId, LeafExpress
 import org.apache.spark.sql.catalyst.expressions.codegen.CodegenFallback
 import org.apache.spark.sql.types.DataType
 
-import org.carbondata.scan.expression.ColumnExpression
+import org.apache.carbondata.scan.expression.ColumnExpression
 
 
 case class CarbonBoundReference(colExp: ColumnExpression, dataType: DataType, nullable: Boolean)

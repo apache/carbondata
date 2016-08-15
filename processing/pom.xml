@@ -112,11 +112,11 @@
       <resource>
         <directory>src/main/java</directory>
         <includes>
-          <include>org/carbondata/processing/csvreader/step-attributes.xml</include>
-          <include>org/carbondata/processing/csvreaderstep/step-attributes.xml</include>
-          <include>org/carbondata/processing/surrogatekeysgenerator/dbbased/messages/messages_en_US.properties</include>
-          <include>org/carbondata/processing/mdkeygen/messages/messages_en_US.properties</include>
-          <include>org/carbondata/processing/store/messages/messages_en_US.properties</include>
+          <include>org/apache/carbondata/processing/csvreader/step-attributes.xml</include>
+          <include>org/apache/carbondata/processing/csvreaderstep/step-attributes.xml</include>
+          <include>org/apache/carbondata/processing/surrogatekeysgenerator/dbbased/messages/messages_en_US.properties</include>
+          <include>org/apache/carbondata/processing/mdkeygen/messages/messages_en_US.properties</include>
+          <include>org/apache/carbondata/processing/store/messages/messages_en_US.properties</include>
           <include>org/pentaho/di/trans/steps/hadoopfileinput/messages/messages_en_US.properties</include>
         </includes>
       </resource>

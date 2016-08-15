@@ -32,7 +32,7 @@ import org.apache.spark.sql.execution.RunnableCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{IntegerType, StringType}
 
-import org.carbondata.spark.CarbonFilters
+import org.apache.carbondata.spark.CarbonFilters
 
 /**
  * Carbon Optimizer to add dictionary decoder.

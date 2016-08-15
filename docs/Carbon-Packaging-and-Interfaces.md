@@ -80,7 +80,7 @@ For example:
 create database db1;
 use database db1;
 show databases;
-create table tbl1 using org.carbondata.spark;
+create table tbl1 using org.apache.carbondata.spark;
 load data into table tlb1 path 'some_files';
 select count(*) from tbl1;
 ```

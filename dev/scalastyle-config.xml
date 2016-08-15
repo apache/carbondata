@@ -215,8 +215,8 @@ This file is divided into 3 sections:
    <parameter name="groups">java,scala,3rdParty,carbondata</parameter>
    <parameter name="group.java">javax?\..*</parameter>
    <parameter name="group.scala">scala\..*</parameter>
-   <parameter name="group.3rdParty">(?!org\.carbondata\.).*</parameter>
-   <parameter name="group.carbondata">org\.carbondata\..*</parameter>
+   <parameter name="group.3rdParty">(?!org\.apache\.carbondata\.).*</parameter>
+   <parameter name="group.carbondata">org\.apache\.carbondata\..*</parameter>
   </parameters>
  </check>
 

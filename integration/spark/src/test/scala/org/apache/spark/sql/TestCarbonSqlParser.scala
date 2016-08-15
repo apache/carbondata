@@ -20,7 +20,7 @@ package org.apache.spark.sql
 
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.execution.command.Field
-import org.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 /**
   * Stub class for calling the CarbonSqlParser

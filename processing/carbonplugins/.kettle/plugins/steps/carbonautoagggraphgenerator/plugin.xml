@@ -23,6 +23,6 @@
    description="Carbon Auto Agg Graph Generator"
    tooltip="Carbon Auto Agg Graph Generator"
    category="Carbon"
-   classname="org.carbondata.processing.autoaggregategraphgenerator.step.CarbonAutoAGGGraphGeneratorMeta">
+   classname="org.apache.carbondata.processing.autoaggregategraphgenerator.step.CarbonAutoAGGGraphGeneratorMeta">
 
 </plugin>

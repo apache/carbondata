@@ -23,5 +23,5 @@
    description="Carbon Group By"
    tooltip="Carbon Group By"
    category="Carbon"
-   classname="org.carbondata.processing.groupby.step.CarbonGroupByStepMeta">
+   classname="org.apache.carbondata.processing.groupby.step.CarbonGroupByStepMeta">
 </plugin>

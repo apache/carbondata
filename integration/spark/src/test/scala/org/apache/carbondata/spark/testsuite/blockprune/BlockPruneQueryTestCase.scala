@@ -1,0 +1,115 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.carbondata.spark.testsuite.blockprune
+
+import java.io.{DataOutputStream, File}
+
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.common.util.CarbonHiveContext._
+import org.apache.spark.sql.common.util.QueryTest
+import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import org.scalatest.BeforeAndAfterAll
+
+/**
+  * This class contains test cases for block prune query
+  */
+class BlockPruneQueryTestCase extends QueryTest with BeforeAndAfterAll {
+  def currentPath: String = new File(this.getClass.getResource("/").getPath + "/../../")
+    .getCanonicalPath
+  val outputPath = currentPath + "/src/test/resources/block_prune_test.csv"
+  override def beforeAll {
+    // Since the data needed for plock prune is big, need to create a temp data file
+    val testData: Array[String]= new Array[String](3);
+    testData(0) = "a"
+    testData(1) = "b"
+    testData(2) = "c"
+    var writer: DataOutputStream = null
+    try {
+      val fileType = FileFactory.getFileType(outputPath)
+      val file = FileFactory.getCarbonFile(outputPath, fileType)
+      if (!file.exists()) {
+        file.createNewFile()
+      }
+      writer = FileFactory.getDataOutputStream(outputPath, fileType)
+      for (i <- 0 to 2) {
+        for (j <- 0 to 240000) {
+          writer.writeBytes(testData(i) + "," + j + "\n")
+        }
+      }
+    } catch {
+      case ex: Exception =>
+        logError("Build test file for block prune failed" + ex)
+    } finally {
+      if (writer != null) {
+        try {
+          writer.close()
+        } catch {
+          case ex: Exception =>
+            logError("Close output stream catching exception:" + ex)
+        }
+      }
+    }
+
+    sql("DROP TABLE IF EXISTS blockprune")
+  }
+
+  test("test block prune query") {
+    sql(
+      """
+        CREATE TABLE IF NOT EXISTS blockprune (name string, id int)
+        STORED BY 'org.apache.carbondata.format'
+      """)
+    sql(
+        s"LOAD DATA LOCAL INPATH '$outputPath' INTO table blockprune options('FILEHEADER'='name,id')"
+      )
+    // data is in all 7 blocks
+    checkAnswer(
+      sql(
+        """
+          select name,count(name) as amount from blockprune
+          where name='c' or name='b' or name='a' group by name
+        """),
+      Seq(Row("a", 240001), Row("b", 240001), Row("c", 240001)))
+
+    // data only in middle 3/4/5 blocks
+    checkAnswer(
+      sql(
+        """
+          select name,count(name) as amount from blockprune
+          where name='b' group by name
+        """),
+      Seq(Row("b", 240001)))
+  }
+
+  override def afterAll {
+    // delete the temp data file
+    try {
+      val fileType = FileFactory.getFileType(outputPath)
+      val file = FileFactory.getCarbonFile(outputPath, fileType)
+      if (file.exists()) {
+        file.delete()
+      }
+    } catch {
+      case ex: Exception =>
+        logError("Delete temp test data file for block prune catching exception:" + ex)
+    }
+    sql("DROP TABLE IF EXISTS blockprune")
+  }
+
+}

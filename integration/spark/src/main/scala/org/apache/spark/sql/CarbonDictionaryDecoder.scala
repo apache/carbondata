@@ -26,13 +26,13 @@ import org.apache.spark.sql.hive.{CarbonMetastoreCatalog, CarbonMetastoreTypes}
 import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
 import org.apache.spark.sql.types._
 
-import org.carbondata.core.cache.{Cache, CacheProvider, CacheType}
-import org.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
-import org.carbondata.core.carbon.{AbsoluteTableIdentifier, ColumnIdentifier}
-import org.carbondata.core.carbon.metadata.datatype.DataType
-import org.carbondata.core.carbon.metadata.encoder.Encoding
-import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
-import org.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
+import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
+import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, ColumnIdentifier}
+import org.apache.carbondata.core.carbon.metadata.datatype.DataType
+import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.util.DataTypeUtil
 
 /**
  * It decodes the data.

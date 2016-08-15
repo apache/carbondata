@@ -28,13 +28,12 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.LeafNode
 import org.apache.spark.sql.hive.CarbonMetastoreCatalog
-import org.apache.spark.unsafe.types.UTF8String
 
-import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.util.CarbonProperties
-import org.carbondata.scan.model._
-import org.carbondata.spark.{CarbonFilters, RawValue, RawValueImpl}
-import org.carbondata.spark.rdd.CarbonScanRDD
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.scan.model._
+import org.apache.carbondata.spark.{CarbonFilters, RawValue, RawValueImpl}
+import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 case class CarbonScan(
     var attributesRaw: Seq[Attribute],

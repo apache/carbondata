@@ -23,6 +23,6 @@
    description="Carbon Fact Reader"
    tooltip="Carbon Fact Reader"
    category="Carbon"
-   classname="org.carbondata.processing.factreader.step.CarbonFactReaderMeta">
+   classname="org.apache.carbondata.processing.factreader.step.CarbonFactReaderMeta">
 
 </plugin>

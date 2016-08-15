@@ -24,6 +24,6 @@
    description="Carbon CSV Reader Step"
    tooltip="Carbon CSV Reader Step"
    category="Carbon"
-   classname="org.carbondata.processing.csvreaderstep.CsvInputMeta">
+   classname="org.apache.carbondata.processing.csvreaderstep.CsvInputMeta">
 
 </plugin>

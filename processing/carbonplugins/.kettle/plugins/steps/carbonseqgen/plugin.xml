@@ -24,5 +24,5 @@
    description="Carbon Surrogate Key Generator"
    tooltip="Carbon Surrogate Key Generator"
    category="Carbon"
-   classname="org.carbondata.processing.surrogatekeysgenerator.dbbased.CarbonSeqGenStepMeta">
+   classname="org.apache.carbondata.processing.surrogatekeysgenerator.dbbased.CarbonSeqGenStepMeta">
 </plugin>

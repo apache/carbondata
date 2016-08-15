@@ -37,12 +37,12 @@ import org.apache.spark.sql.sources.{Filter, HadoopFsRelation, OutputWriterFacto
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
-import org.carbondata.core.carbon.CarbonTableIdentifier
-import org.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
-import org.carbondata.scan.expression.logical.AndExpression
-import org.carbondata.spark.{CarbonFilters, CarbonOption}
-import org.carbondata.spark.readsupport.SparkRowReadSupportImpl
-import org.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
+import org.apache.carbondata.core.carbon.CarbonTableIdentifier
+import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
+import org.apache.carbondata.scan.expression.logical.AndExpression
+import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
+import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
+import org.apache.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
 
 private[sql] case class CarbonDatasourceHadoopRelation(sqlContext: SQLContext,
     paths: Array[String],

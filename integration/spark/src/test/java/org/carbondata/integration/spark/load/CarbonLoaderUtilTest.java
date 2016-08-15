@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.carbondata.integration.spark.load;
+package org.apache.carbondata.integration.spark.load;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,8 +24,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.carbondata.core.carbon.datastore.block.TableBlockInfo;
-import org.carbondata.spark.load.CarbonLoaderUtil;
+import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
+import org.apache.carbondata.spark.load.CarbonLoaderUtil;
 import org.junit.Test;
 import org.pentaho.di.core.util.Assert;
 

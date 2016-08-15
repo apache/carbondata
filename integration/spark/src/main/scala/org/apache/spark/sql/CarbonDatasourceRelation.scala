@@ -32,12 +32,11 @@ import org.apache.spark.sql.hive.{CarbonMetaData, CarbonMetastoreTypes, TableMet
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.{DataType, StructType}
 
-import org.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
-import org.carbondata.core.carbon.path.CarbonStorePath
-import org.carbondata.core.constants.CarbonCommonConstants
-import org.carbondata.core.datastorage.store.impl.FileFactory
-import org.carbondata.lcm.status.SegmentStatusManager
-import org.carbondata.spark.{CarbonOption, _}
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.carbon.path.CarbonStorePath
+import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import org.apache.carbondata.lcm.status.SegmentStatusManager
+import org.apache.carbondata.spark.{CarbonOption, _}
 
 /**
  * Carbon relation provider compliant to data source api.
@@ -263,7 +262,8 @@ case class CarbonRelation(
 
   def addDecimalScaleAndPrecision(dimval: CarbonDimension, dataType: String): String = {
     var dType = dataType
-    if (dimval.getDataType == org.carbondata.core.carbon.metadata.datatype.DataType.DECIMAL) {
+    if (dimval.getDataType
+        == org.apache.carbondata.core.carbon.metadata.datatype.DataType.DECIMAL) {
       dType +=
         "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema
           .getScale + ")"
