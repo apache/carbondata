@@ -29,7 +29,7 @@ import scala.util.control.Breaks._
 import org.apache.hadoop.conf.{Configurable, Configuration}
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.FileSplit
-import org.apache.spark.{Logging, Partition, SparkContext, SparkEnv}
+import org.apache.spark.{Logging, Partition, SparkContext, SparkEnv, SparkException}
 import org.apache.spark.sql.{CarbonEnv, SQLContext}
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel, CompactionModel, Partitioner}
 import org.apache.spark.sql.hive.DistributionUtil
@@ -46,6 +46,7 @@ import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.integration.spark.merger.{CompactionCallable, CompactionType}
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
+import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark._
 import org.apache.carbondata.spark.load._
@@ -724,6 +725,8 @@ object CarbonDataRDDFactory extends Logging {
         partitioner.partitionCount, currentLoadCount.toString)
       var loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
       var status: Array[(String, LoadMetadataDetails)] = null
+      var errorMessage: String = "DataLoad failure"
+      var executorMessage: String = ""
       try {
         status = new
             CarbonDataLoadRDD(sqlContext.sparkContext,
@@ -773,12 +776,21 @@ object CarbonDataRDDFactory extends Logging {
       } catch {
         case ex: Throwable =>
           loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-          logInfo("DataLoad failure")
+          ex match {
+            case sparkException: SparkException =>
+              if (sparkException.getCause.isInstanceOf[DataLoadingException]) {
+                executorMessage = sparkException.getCause.getMessage
+                errorMessage = errorMessage + ": " + executorMessage
+              }
+            case _ =>
+              executorMessage = ex.getCause.getMessage
+              errorMessage = errorMessage + ": " + executorMessage
+          }
+          logInfo(errorMessage)
           logger.error(ex)
       }
 
       if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
-        var message: String = ""
         logInfo("********starting clean up**********")
         if (isAgg) {
           // TODO:need to clean aggTable
@@ -786,7 +798,7 @@ object CarbonDataRDDFactory extends Logging {
             carbonLoadModel.getTableName, carbonLoadModel.getAggTableName, hdfsStoreLocation,
             currentRestructNumber
           )
-          message = "Aggregate table creation failure"
+          errorMessage = "Aggregate table creation failure"
         } else {
           CarbonLoaderUtil.deleteSegment(carbonLoadModel, currentLoadCount)
           val aggTables = carbonTable.getAggregateTablesName
@@ -800,13 +812,12 @@ object CarbonDataRDDFactory extends Logging {
                   carbonLoadModel.getTableName, hdfsStoreLocation, currentRestructNumber, newSlice)
             }
           }
-          message = "DataLoad failure"
         }
         logInfo("********clean up done**********")
         logger.audit(s"Data load is failed for " +
           s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}")
         logWarning("Cannot write load metadata file as data load failed")
-        throw new Exception(message)
+        throw new Exception(errorMessage)
       } else {
         val metadataDetails = status(0)._2
         if (!isAgg) {
@@ -818,11 +829,11 @@ object CarbonDataRDDFactory extends Logging {
               loadStartTime
             )
           if (!status) {
-            val message = "Dataload failed due to failure in table status updation."
+            val errorMessage = "Dataload failed due to failure in table status updation."
             logger.audit("Data load is failed for " +
               s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}")
             logger.error("Dataload failed due to failure in table status updation.")
-            throw new Exception(message)
+            throw new Exception(errorMessage)
           }
         } else if (!carbonLoadModel.isRetentionRequest) {
           // TODO : Handle it
