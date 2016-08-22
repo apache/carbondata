@@ -29,7 +29,7 @@ import scala.util.control.Breaks._
 import org.apache.hadoop.conf.{Configurable, Configuration}
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.FileSplit
-import org.apache.spark.{Logging, Partition, SparkContext, SparkEnv}
+import org.apache.spark.{Logging, Partition, SparkContext, SparkEnv, SparkException}
 import org.apache.spark.sql.{CarbonEnv, SQLContext}
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel, CompactionModel, Partitioner}
 import org.apache.spark.sql.hive.DistributionUtil
@@ -46,6 +46,7 @@ import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.integration.spark.merger.{CompactionCallable, CompactionType}
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
+import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark._
 import org.apache.carbondata.spark.load._
@@ -724,6 +725,7 @@ object CarbonDataRDDFactory extends Logging {
         partitioner.partitionCount, currentLoadCount.toString)
       var loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
       var status: Array[(String, LoadMetadataDetails)] = null
+      var executorMessage: String = ""
       try {
         status = new
             CarbonDataLoadRDD(sqlContext.sparkContext,
@@ -775,6 +777,13 @@ object CarbonDataRDDFactory extends Logging {
           loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
           logInfo("DataLoad failure")
           logger.error(ex)
+          ex match {
+            case sparkException: SparkException =>
+              if (sparkException.getCause.isInstanceOf[DataLoadingException]) {
+                executorMessage = sparkException.getCause.getMessage
+              }
+            case _ =>
+          }
       }
 
       if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
@@ -800,7 +809,7 @@ object CarbonDataRDDFactory extends Logging {
                   carbonLoadModel.getTableName, hdfsStoreLocation, currentRestructNumber, newSlice)
             }
           }
-          message = "DataLoad failure"
+          message = "DataLoad failure: " + executorMessage
         }
         logInfo("********clean up done**********")
         logger.audit(s"Data load is failed for " +
