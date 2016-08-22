@@ -43,7 +43,7 @@ import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.reader.CarbonDictionaryReader
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.spark.CarbonSparkFactory
@@ -583,8 +583,8 @@ object GlobalDictionaryUtil extends Logging {
    * @return allDictionaryRdd
    */
   private def readAllDictionaryFiles(sqlContext: SQLContext,
-                                       csvFileColumns: Array[String],
-                                       requireColumns: Array[String],
+                                     csvFileColumns: Array[String],
+                                     requireColumns: Array[String],
                                      allDictionaryPath: String) = {
     var allDictionaryRdd: RDD[(String, Iterable[String])] = null
     try {
@@ -648,6 +648,31 @@ object GlobalDictionaryUtil extends Logging {
         false
       }
     }
+  }
+
+  /**
+   * get file headers from fact file
+   *
+   * @param carbonLoadModel
+   * @return headers
+   */
+  private def getHeaderFormFactFile(carbonLoadModel: CarbonLoadModel): Array[String] = {
+    var headers: Array[String] = null
+    val factFile: String = carbonLoadModel.getFactFilePath.split(",")(0)
+    val readLine = CarbonUtil.readHeader(factFile)
+
+    if (null != readLine) {
+      val delimiter = if (StringUtils.isEmpty(carbonLoadModel.getCsvDelimiter)) {
+        "" + CSVWriter.DEFAULT_SEPARATOR
+      } else {
+        carbonLoadModel.getCsvDelimiter
+      }
+      headers = readLine.toLowerCase().split(delimiter);
+    } else {
+      logError("Not found file header! Please set fileheader")
+      throw new IOException("Failed to get file header")
+    }
+    headers
   }
 
   /**
@@ -736,27 +761,20 @@ object GlobalDictionaryUtil extends Logging {
         logInfo("Generate global dictionary from all dictionary files!")
         val isNonempty = validateAllDictionaryPath(allDictionaryPath)
         if(isNonempty) {
-          // fill the map[columnIndex -> columnName]
-          var fileHeaders : Array[String] = null
-          if(!StringUtils.isEmpty(carbonLoadModel.getCsvHeader)) {
-            val splitColumns = carbonLoadModel.getCsvHeader.split("" + CSVWriter.DEFAULT_SEPARATOR)
-            val fileHeadersArr = new ArrayBuffer[String]()
-            for(i <- 0 until splitColumns.length) {
-              fileHeadersArr += splitColumns(i).trim.toLowerCase()
-            }
-            fileHeaders = fileHeadersArr.toArray
+          var headers = if (StringUtils.isEmpty(carbonLoadModel.getCsvHeader)) {
+            getHeaderFormFactFile(carbonLoadModel)
           } else {
-            logError("Not found file header! Please set fileheader")
-            throw new IOException("Failed to get file header")
+            carbonLoadModel.getCsvHeader.toLowerCase.split("" + CSVWriter.DEFAULT_SEPARATOR)
           }
+          headers = headers.map(headerName => headerName.trim)
           // prune columns according to the CSV file header, dimension columns
           val (requireDimension, requireColumnNames) =
-            pruneDimensions(dimensions, fileHeaders, fileHeaders)
+            pruneDimensions(dimensions, headers, headers)
           if (requireDimension.nonEmpty) {
             val model = createDictionaryLoadModel(carbonLoadModel, table, requireDimension,
               hdfsLocation, dictfolderPath, false)
             // read local dictionary file, and group by key
-            val allDictionaryRdd = readAllDictionaryFiles(sqlContext, fileHeaders,
+            val allDictionaryRdd = readAllDictionaryFiles(sqlContext, headers,
               requireColumnNames, allDictionaryPath)
             // read exist dictionary and combine
             val inputRDD = new CarbonAllDictionaryCombineRDD(allDictionaryRdd, model)
