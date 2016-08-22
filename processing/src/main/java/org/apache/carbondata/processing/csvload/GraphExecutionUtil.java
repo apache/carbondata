@@ -254,40 +254,13 @@ public final class GraphExecutionUtil {
 
   /**
    * @param csvFilePath
-   * @return
-   */
-  private static String readCSVFile(String csvFilePath) {
-
-    DataInputStream fileReader = null;
-    BufferedReader bufferedReader = null;
-    String readLine = null;
-
-    try {
-      fileReader =
-          FileFactory.getDataInputStream(csvFilePath, FileFactory.getFileType(csvFilePath));
-      bufferedReader =
-          new BufferedReader(new InputStreamReader(fileReader, Charset.defaultCharset()));
-      readLine = bufferedReader.readLine();
-
-    } catch (FileNotFoundException e) {
-      LOGGER.error(e, "CSV Input File not found  " + e.getMessage());
-    } catch (IOException e) {
-      LOGGER.error(e, "Not able to read CSV input File  " + e.getMessage());
-    } finally {
-      CarbonUtil.closeStreams(fileReader, bufferedReader);
-    }
-    return readLine;
-  }
-
-  /**
-   * @param csvFilePath
    * @param columnNames
    * @return
    */
   public static boolean checkCSVAndRequestedTableColumns(String csvFilePath, String[] columnNames,
       String delimiter) {
 
-    String readLine = readCSVFile(csvFilePath);
+    String readLine = CarbonUtil.readHeader(csvFilePath);
 
     if (null != readLine) {
       delimiter = CarbonUtil.delimiterConverter(delimiter);

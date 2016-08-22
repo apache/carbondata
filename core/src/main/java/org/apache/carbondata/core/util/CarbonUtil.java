@@ -20,14 +20,17 @@
 
 package org.apache.carbondata.core.util;
 
+import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1460,6 +1463,33 @@ public final class CarbonUtil {
           + dictionaryOneChunkSize);
     }
     return dictionaryOneChunkSize;
+  }
+
+  /**
+   * @param csvFilePath
+   * @return
+   */
+  public static String readHeader(String csvFilePath) {
+
+    DataInputStream fileReader = null;
+    BufferedReader bufferedReader = null;
+    String readLine = null;
+
+    try {
+      fileReader =
+          FileFactory.getDataInputStream(csvFilePath, FileFactory.getFileType(csvFilePath));
+      bufferedReader =
+          new BufferedReader(new InputStreamReader(fileReader, Charset.defaultCharset()));
+      readLine = bufferedReader.readLine();
+
+    } catch (FileNotFoundException e) {
+      LOGGER.error(e, "CSV Input File not found  " + e.getMessage());
+    } catch (IOException e) {
+      LOGGER.error(e, "Not able to read CSV input File  " + e.getMessage());
+    } finally {
+      CarbonUtil.closeStreams(fileReader, bufferedReader);
+    }
+    return readLine;
   }
 }
 
