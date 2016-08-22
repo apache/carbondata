@@ -1019,6 +1019,14 @@ class CarbonSqlParser()
       throw new MalformedCarbonCommandException(errorMessage)
     }
 
+    //  COLUMNDICT and ALL_DICTIONARY_PATH can not be used together.
+    if (options.exists(_._1.equalsIgnoreCase("COLUMNDICT")) &&
+      options.exists(_._1.equalsIgnoreCase("ALL_DICTIONARY_PATH"))) {
+      val errorMessage = "Error: COLUMNDICT and ALL_DICTIONARY_PATH can not be used together" +
+        " in options"
+      throw new MalformedCarbonCommandException(errorMessage)
+    }
+
     // check for duplicate options
     val duplicateOptions = options filter {
       case (_, optionlist) => optionlist.size > 1
