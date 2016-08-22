@@ -27,10 +27,11 @@ import java.util.List;
 import org.apache.carbondata.common.factory.CarbonCommonFactory;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.ColumnIdentifier;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.reader.CarbonDictionaryReader;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReader;
 import org.apache.carbondata.core.service.DictionaryService;
-import org.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * This class is responsible for loading the dictionary data for given columns

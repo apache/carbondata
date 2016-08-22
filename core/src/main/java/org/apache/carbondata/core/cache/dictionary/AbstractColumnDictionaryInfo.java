@@ -25,7 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * class that implements cacheable interface and methods specific to column dictionary

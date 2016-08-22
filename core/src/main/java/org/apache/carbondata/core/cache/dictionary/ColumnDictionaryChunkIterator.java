@@ -17,13 +17,13 @@
  * under the License.
  */
 
-package org.carbondata.core.cache.dictionary;
+package org.apache.carbondata.core.cache.dictionary;
 
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import org.carbondata.common.CarbonIterator;
-import org.carbondata.format.ColumnDictionaryChunk;
+import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.format.ColumnDictionaryChunk;
 
 /**
  * This class is a wrapper over column dictionary chunk thrift object.

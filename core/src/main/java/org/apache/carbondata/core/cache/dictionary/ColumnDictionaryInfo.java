@@ -30,7 +30,7 @@ import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * class that implements methods specific for dictionary data look up

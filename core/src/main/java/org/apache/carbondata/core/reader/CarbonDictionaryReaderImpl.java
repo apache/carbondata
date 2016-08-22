@@ -26,10 +26,10 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.common.factory.CarbonCommonFactory;
+import org.apache.carbondata.core.cache.dictionary.ColumnDictionaryChunkIterator;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.ColumnIdentifier;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.format.ColumnDictionaryChunk;
 
