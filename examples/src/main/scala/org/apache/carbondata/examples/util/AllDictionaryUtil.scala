@@ -35,7 +35,7 @@ object AllDictionaryUtil extends Logging{
     val fileHeaderArr = fileHeader.split(",")
     val isDictCol = new Array[Boolean](fileHeaderArr.length)
     for (i <- 0 until fileHeaderArr.length) {
-      if (dictCol.contains("|" + fileHeaderArr(i) + "|")) {
+      if (dictCol.contains("|" + fileHeaderArr(i).toLowerCase() + "|")) {
         isDictCol(i) = true
       } else {
         isDictCol(i) = false

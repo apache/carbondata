@@ -23,11 +23,10 @@ import org.apache.carbondata.examples.util.{AllDictionaryUtil, InitForExamples}
 object AllDictionaryExample {
   def main(args: Array[String]) {
     val cc = InitForExamples.createCarbonContext("CarbonExample")
-    val testData = InitForExamples.currentPath + "/src/main/resources/datawithoutheader.csv"
-    val csvHeader = "id,date,country,name,phonetype,serialname,salary"
+    val testData = InitForExamples.currentPath + "/src/main/resources/data.csv"
+    val csvHeader = "ID,date,country,name,phonetype,serialname,salary"
     val dictCol = "|date|country|name|phonetype|serialname|"
-    val allDictFile = InitForExamples.currentPath +
-      "/src/main/resources/datawithoutheader.dictionary"
+    val allDictFile = InitForExamples.currentPath + "/src/main/resources/data.dictionary"
     // extract all dictionary files from source data
     AllDictionaryUtil.extractDictionary(cc.sparkContext,
       testData, allDictFile, csvHeader, dictCol)
@@ -41,13 +40,12 @@ object AllDictionaryExample {
            CREATE TABLE IF NOT EXISTS t3
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
-           STORED BY 'org.apache.carbondata.format'
+           STORED BY 'carbondata'
            """)
 
     cc.sql(s"""
            LOAD DATA LOCAL INPATH '$testData' into table t3
-           options('FILEHEADER'='id,date,country,name,phonetype,serialname,salary',
-           'ALL_DICTIONARY_PATH'='$allDictFile')
+           options('ALL_DICTIONARY_PATH'='$allDictFile')
            """)
 
     cc.sql("""
