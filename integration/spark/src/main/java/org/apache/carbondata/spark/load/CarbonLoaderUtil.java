@@ -1118,7 +1118,7 @@ public final class CarbonLoaderUtil {
     createOutputMap(nodeBlocksMap, blocksPerNode, uniqueBlocks, nodeAndBlockMapping, activeNodes);
 
     // if any blocks remain then assign them to nodes in round robin.
-    assignLeftOverBlocks(nodeBlocksMap, uniqueBlocks, blocksPerNode);
+    assignLeftOverBlocks(nodeBlocksMap, uniqueBlocks, blocksPerNode, activeNodes);
 
     return nodeBlocksMap;
   }
@@ -1200,23 +1200,23 @@ public final class CarbonLoaderUtil {
    * @param uniqueBlocks
    */
   private static void assignLeftOverBlocks(Map<String, List<Distributable>> outputMap,
-      Set<Distributable> uniqueBlocks, int noOfBlocksPerNode) {
+      Set<Distributable> uniqueBlocks, int noOfBlocksPerNode, List<String> activeNodes) {
 
-    for (Map.Entry<String, List<Distributable>> entry : outputMap.entrySet()) {
-      Iterator<Distributable> blocks = uniqueBlocks.iterator();
-      List<Distributable> blockLst = entry.getValue();
-      //if the node is already having the per block nodes then avoid assign the extra blocks
-      if (blockLst.size() == noOfBlocksPerNode) {
-        continue;
-      }
-      while (blocks.hasNext()) {
-        Distributable block = blocks.next();
-        blockLst.add(block);
-        blocks.remove();
-        if (blockLst.size() >= noOfBlocksPerNode) {
-          break;
+    if (activeNodes != null) {
+      for (String activeNode : activeNodes) {
+        List<Distributable> blockLst = outputMap.get(activeNode);
+        if (null == blockLst) {
+          blockLst = new ArrayList<Distributable>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+          outputMap.put(activeNode, blockLst);
         }
+        populateBlocks(uniqueBlocks, noOfBlocksPerNode, blockLst);
       }
+    } else {
+      for (Map.Entry<String, List<Distributable>> entry : outputMap.entrySet()) {
+        List<Distributable> blockLst = entry.getValue();
+        populateBlocks(uniqueBlocks, noOfBlocksPerNode, blockLst);
+      }
+
     }
 
     for (Map.Entry<String, List<Distributable>> entry : outputMap.entrySet()) {
@@ -1226,6 +1226,29 @@ public final class CarbonLoaderUtil {
         List<Distributable> blockLst = entry.getValue();
         blockLst.add(block);
         blocks.remove();
+      }
+    }
+  }
+
+  /**
+   * The method populate the blockLst to be allocate to a specific node.
+   * @param uniqueBlocks
+   * @param noOfBlocksPerNode
+   * @param blockLst
+   */
+  private static void populateBlocks(Set<Distributable> uniqueBlocks, int noOfBlocksPerNode,
+      List<Distributable> blockLst) {
+    Iterator<Distributable> blocks = uniqueBlocks.iterator();
+    //if the node is already having the per block nodes then avoid assign the extra blocks
+    if (blockLst.size() == noOfBlocksPerNode) {
+      return;
+    }
+    while (blocks.hasNext()) {
+      Distributable block = blocks.next();
+      blockLst.add(block);
+      blocks.remove();
+      if (blockLst.size() >= noOfBlocksPerNode) {
+        break;
       }
     }
   }
