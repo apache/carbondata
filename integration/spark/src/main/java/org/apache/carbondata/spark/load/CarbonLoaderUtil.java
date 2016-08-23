@@ -25,11 +25,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1204,12 +1208,14 @@ public final class CarbonLoaderUtil {
 
     if (activeNodes != null) {
       for (String activeNode : activeNodes) {
-        List<Distributable> blockLst = outputMap.get(activeNode);
+        List<Distributable> blockLst = getBlockList(outputMap, activeNode);;
         if (null == blockLst) {
           blockLst = new ArrayList<Distributable>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-          outputMap.put(activeNode, blockLst);
         }
         populateBlocks(uniqueBlocks, noOfBlocksPerNode, blockLst);
+        if (blockLst.size() > 0) {
+          outputMap.put(activeNode, blockLst);
+        }
       }
     } else {
       for (Map.Entry<String, List<Distributable>> entry : outputMap.entrySet()) {
@@ -1230,6 +1236,38 @@ public final class CarbonLoaderUtil {
     }
   }
 
+  /**
+   * returns the list of Blocks for the specificed nodes.
+   * @param outputMap
+   * @param activeNode
+   * @return
+   */
+  private static List<Distributable> getBlockList(Map<String, List<Distributable>> outputMap,
+      String activeNode) {
+    List<Distributable> distributables = outputMap.get(activeNode);
+    if (null == distributables) {
+      List<String> address = new ArrayList<>();
+      try {
+        Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+        while (networkInterfaces.hasMoreElements()) {
+          List<InterfaceAddress> interfaceAddresses =
+              networkInterfaces.nextElement().getInterfaceAddresses();
+          for (InterfaceAddress interfaceAddress : interfaceAddresses) {
+            address.add(interfaceAddress.getAddress().getHostAddress());
+          }
+        }
+        InetAddress inetAddress = InetAddress.getByName(activeNode);
+        if (address.contains(inetAddress.getHostAddress())) {
+          return outputMap.get("localhost");
+        }
+      } catch (SocketException e) {
+        return null;
+      } catch (UnknownHostException e) {
+        return null;
+      }
+    }
+    return distributables;
+  }
   /**
    * The method populate the blockLst to be allocate to a specific node.
    * @param uniqueBlocks
