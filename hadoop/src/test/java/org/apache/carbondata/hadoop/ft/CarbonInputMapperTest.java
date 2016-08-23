@@ -52,7 +52,8 @@ import org.junit.Test;
 
 public class CarbonInputMapperTest extends TestCase {
 
-  @Before public void setUp() throws Exception {
+  // changed setUp to static init block to avoid un wanted multiple time store creation
+  static {
     StoreCreator.createCarbonStore();
   }
 

@@ -885,6 +885,17 @@ public final class CarbonCommonConstants {
    */
   public static final String ZOOKEEPER_URL = "spark.deploy.zookeeper.url";
 
+  /**
+   * configure the minimum blocklet size eligible for blocklet distribution
+   */
+  public static final String CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE =
+      "carbon.blockletdistribution.min.blocklet.size";
+
+  /**
+   * default blocklet size eligible for blocklet distribution
+   */
+  public static final int DEFAULT_CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE = 2;
+
   private CarbonCommonConstants() {
   }
 }

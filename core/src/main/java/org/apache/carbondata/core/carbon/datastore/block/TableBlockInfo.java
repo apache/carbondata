@@ -58,7 +58,10 @@ public class TableBlockInfo extends Distributable
   private String segmentId;
 
   private String[] locations;
-
+  /**
+   * The class holds the blockletsinfo
+   */
+  private BlockletInfos blockletInfos = new BlockletInfos();
 
   public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
       long blockLength) {
@@ -67,6 +70,25 @@ public class TableBlockInfo extends Distributable
     this.segmentId = segmentId;
     this.locations = locations;
     this.blockLength = blockLength;
+  }
+
+  /**
+   * constructor to initialize the TbaleBlockInfo with BlockletInfos
+   * @param filePath
+   * @param blockOffset
+   * @param segmentId
+   * @param locations
+   * @param blockLength
+   * @param blockletInfos
+   */
+  public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
+      long blockLength, BlockletInfos blockletInfos) {
+    this.filePath = FileFactory.getUpdatedFilePath(filePath);
+    this.blockOffset = blockOffset;
+    this.segmentId = segmentId;
+    this.locations = locations;
+    this.blockLength = blockLength;
+    this.blockletInfos = blockletInfos;
   }
 
   /**
@@ -185,6 +207,16 @@ public class TableBlockInfo extends Distributable
         > ((TableBlockInfo) other).blockOffset + ((TableBlockInfo) other).blockLength) {
       return 1;
     }
+    //compare the startBlockLetNumber
+    int diffStartBlockLetNumber =
+        blockletInfos.getStartBlockletNumber() - ((TableBlockInfo) other).blockletInfos
+            .getStartBlockletNumber();
+    if (diffStartBlockLetNumber < 0) {
+      return -1;
+    }
+    if (diffStartBlockLetNumber > 0) {
+      return 1;
+    }
     return 0;
   }
 
@@ -194,6 +226,7 @@ public class TableBlockInfo extends Distributable
     result = 31 * result + (int) (blockLength ^ (blockLength >>> 32));
     result = 31 * result + segmentId.hashCode();
     result = 31 * result + Arrays.hashCode(locations);
+    result = 31 * result + blockletInfos.getStartBlockletNumber();
     return result;
   }
 
@@ -201,4 +234,19 @@ public class TableBlockInfo extends Distributable
     return locations;
   }
 
+  /**
+   * returns BlockletInfos
+   * @return
+   */
+  public BlockletInfos getBlockletInfos() {
+    return blockletInfos;
+  }
+
+  /**
+   * set the blocklestinfos
+   * @param blockletInfos
+   */
+  public void setBlockletInfos(BlockletInfos blockletInfos) {
+    this.blockletInfos = blockletInfos;
+  }
 }

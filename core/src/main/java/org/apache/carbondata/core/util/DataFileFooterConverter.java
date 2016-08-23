@@ -44,6 +44,7 @@ import org.apache.carbondata.core.carbon.metadata.blocklet.sort.SortState;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
@@ -70,7 +71,7 @@ public class DataFileFooterConverter {
    * @throws IOException problem while reading the index file
    */
   public List<DataFileFooter> getIndexInfo(String filePath, List<TableBlockInfo> tableBlockInfoList)
-      throws IOException {
+      throws IOException, CarbonUtilException {
     CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
     List<DataFileFooter> dataFileFooters = new ArrayList<DataFileFooter>();
     try {
@@ -94,10 +95,13 @@ public class DataFileFooterConverter {
         BlockIndex readBlockIndexInfo = indexReader.readBlockIndexInfo();
         blockletIndex = getBlockletIndex(readBlockIndexInfo.getBlock_index());
         dataFileFooter = new DataFileFooter();
+        TableBlockInfo tableBlockInfo = tableBlockInfoList.get(counter++);
+        int blockletSize = getBlockletSize(readBlockIndexInfo);
+        tableBlockInfo.getBlockletInfos().setNoOfBlockLets(blockletSize);
         dataFileFooter.setBlockletIndex(blockletIndex);
         dataFileFooter.setColumnInTable(columnSchemaList);
         dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
-        dataFileFooter.setTableBlockInfo(tableBlockInfoList.get(counter++));
+        dataFileFooter.setTableBlockInfo(tableBlockInfo);
         dataFileFooter.setSegmentInfo(segmentInfo);
         dataFileFooters.add(dataFileFooter);
       }
@@ -105,6 +109,26 @@ public class DataFileFooterConverter {
       indexReader.closeThriftReader();
     }
     return dataFileFooters;
+  }
+
+  /**
+   * the methods returns the number of blocklets in a block
+   * @param readBlockIndexInfo
+   * @return
+   */
+  private int getBlockletSize(BlockIndex readBlockIndexInfo) {
+    long num_rows = readBlockIndexInfo.getNum_rows();
+    int blockletSize = Integer.parseInt(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
+            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
+    int remainder = (int) (num_rows % blockletSize);
+    int noOfBlockLet = (int) (num_rows / blockletSize);
+    // there could be some blocklets which will not
+    // contain the total records equal to the blockletSize
+    if (remainder > 0) {
+      noOfBlockLet = noOfBlockLet + 1;
+    }
+    return noOfBlockLet;
   }
 
   /**
