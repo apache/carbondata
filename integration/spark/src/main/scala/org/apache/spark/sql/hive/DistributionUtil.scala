@@ -130,7 +130,7 @@ object DistributionUtil {
       confExecutors
     } else {nodeMapping.size()}
 
-    var startTime = System.currentTimeMillis();
+    val startTime = System.currentTimeMillis();
     CarbonContext.ensureExecutors(sparkContext, requiredExecutors)
     var nodes = DistributionUtil.getNodeList(sparkContext)
     var maxTimes = 30;
@@ -139,9 +139,9 @@ object DistributionUtil {
       nodes = DistributionUtil.getNodeList(sparkContext)
       maxTimes = maxTimes - 1;
     }
-    var timDiff = System.currentTimeMillis() - startTime;
+    val timDiff = System.currentTimeMillis() - startTime;
     LOGGER.info("Total Time taken to ensure the required executors : " + timDiff)
     LOGGER.info("Time elapsed to allocate the required executors : " + (30 - maxTimes) * 500)
-    nodes
+    nodes.distinct
   }
 }
