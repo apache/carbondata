@@ -68,7 +68,6 @@ public class HdfsFileLock extends AbstractCarbonLock {
   public HdfsFileLock(CarbonTableIdentifier tableIdentifier, String lockFile) {
     this(tableIdentifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier
         .getTableName(), lockFile);
-    initRetry();
   }
 
   /* (non-Javadoc)
@@ -98,6 +97,12 @@ public class HdfsFileLock extends AbstractCarbonLock {
         dataOutputStream.close();
       } catch (IOException e) {
         return false;
+      } finally {
+        if (FileFactory.getCarbonFile(location, FileFactory.getFileType(location)).delete()) {
+          LOGGER.info("Deleted the lock file " + location);
+        } else {
+          LOGGER.error("Not able to delete the lock file " + location);
+        }
       }
     }
     return true;
