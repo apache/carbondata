@@ -17,17 +17,21 @@
 
 package org.apache.carbondata.spark
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.spark.sql.CarbonBoundReference
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.optimizer.{AttributeReferenceWrapper, CarbonAliasDecoderRelation}
 import org.apache.spark.sql.sources
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.SparkUnknownExpression
+import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
+import org.apache.carbondata.scan.expression.arithmetic.{AddExpression, DivideExpression, MultiplyExpression, SubstractExpression}
 import org.apache.carbondata.scan.expression.conditional._
 import org.apache.carbondata.scan.expression.logical.{AndExpression, OrExpression}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
@@ -153,7 +157,9 @@ object CarbonFilters {
             Some(sources.Not(sources.EqualTo(a.name, v)))
         case Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) => new
             Some(sources.Not(sources.EqualTo(a.name, v)))
-
+        case IsNotNull(child)
+            if (isCarbonSupportedDataTypes(child)) =>
+            Some(sources.IsNotNull(null))
         case Not(In(a: Attribute, list)) if !list.exists(!_.isInstanceOf[Literal]) =>
           val hSet = list.map(e => e.eval(EmptyRow))
           Some(sources.Not(sources.In(a.name, hSet.toArray)))
@@ -218,122 +224,125 @@ object CarbonFilters {
   }
 
   def processExpression(exprs: Seq[Expression],
-      attributesNeedToDecode: java.util.HashSet[AttributeReference],
-      unprocessedExprs: ArrayBuffer[Expression],
       carbonTable: CarbonTable): Option[CarbonExpression] = {
     def transformExpression(expr: Expression, or: Boolean = false): Option[CarbonExpression] = {
       expr match {
-        case or@ Or(left, right) =>
-          val leftFilter = transformExpression(left, true)
-          val rightFilter = transformExpression(right, true)
-          if (leftFilter.isDefined && rightFilter.isDefined) {
-            Some(new OrExpression(leftFilter.get, rightFilter.get))
-          } else {
-            or.collect {
-              case attr: AttributeReference => attributesNeedToDecode.add(attr)
-            }
-            unprocessedExprs += or
-            None
-          }
-
-        case And(left, right) =>
-          (transformExpression(left) ++ transformExpression(right)).reduceOption(new
-              AndExpression(_, _))
-
-        case EqualTo(a: Attribute, l@Literal(v, t)) => new
-            Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-        case EqualTo(l@Literal(v, t), a: Attribute) => new
-            Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-        case EqualTo(Cast(a: Attribute, _), l@Literal(v, t)) => new
-            Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-        case EqualTo(l@Literal(v, t), Cast(a: Attribute, _)) => new
-            Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-
-        case Not(EqualTo(a: Attribute, l@Literal(v, t))) => new
-            Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case Not(EqualTo(l@Literal(v, t), a: Attribute)) => new
-            Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case Not(EqualTo(Cast(a: Attribute, _), l@Literal(v, t))) => new
-            Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case Not(EqualTo(l@Literal(v, t), Cast(a: Attribute, _))) => new
-            Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-
+        case or@Or(left, right)
+          if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) =>
+          Some(new OrExpression(transformExpression(left).get, transformExpression(right).get))
+        case And(left, right)
+          if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) =>
+          Some(new AndExpression(transformExpression(left).get, transformExpression(right).get))
+        case EqualTo(left, right)
+          if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) =>
+          Some(new EqualToExpression(transformExpression(left).get, transformExpression(right).get))
+        case Not(EqualTo(left, right))
+          if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) =>
+          Some(new NotEqualsExpression(transformExpression(left).get,
+            transformExpression(right).get))
+        case IsNotNull(child)
+          if (isCarbonSupportedDataTypes(child)) =>
+          Some(new NotEqualsExpression(transformExpression(child).get,
+            transformExpression(Literal(null)).get,
+            true))
+        case IsNull(child)
+          if (isCarbonSupportedDataTypes(child)) =>
+          Some(new EqualToExpression(transformExpression(child).get,
+            transformExpression(Literal(null)).get,
+            true))
         case Not(In(a: Attribute, list)) if !list.exists(!_.isInstanceOf[Literal]) =>
           Some(new NotInExpression(transformExpression(a).get,
             new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
-        case In(a: Attribute, list) if !list.exists(!_.isInstanceOf[Literal]) =>
-          Some(new InExpression(transformExpression(a).get,
-            new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
-        case Not(In(Cast(a: Attribute, _), list))
-          if !list.exists(!_.isInstanceOf[Literal]) =>
-          Some(new NotInExpression(transformExpression(a).get,
-            new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
-        case In(Cast(a: Attribute, _), list) if !list.exists(!_.isInstanceOf[Literal]) =>
-          Some(new InExpression(transformExpression(a).get,
-            new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
-
-        case GreaterThan(a: Attribute, l@Literal(v, t)) =>
-          Some(new GreaterThanExpression(transformExpression(a).get, transformExpression(l).get))
-        case GreaterThan(Cast(a: Attribute, _), l@Literal(v, t)) =>
-          Some(new GreaterThanExpression(transformExpression(a).get, transformExpression(l).get))
-        case GreaterThan(l@Literal(v, t), a: Attribute) =>
-          Some(new LessThanExpression(transformExpression(a).get, transformExpression(l).get))
-        case GreaterThan(l@Literal(v, t), Cast(a: Attribute, _)) =>
-          Some(new LessThanExpression(transformExpression(a).get, transformExpression(l).get))
-
-        case LessThan(a: Attribute, l@Literal(v, t)) =>
-          Some(new LessThanExpression(transformExpression(a).get, transformExpression(l).get))
-        case LessThan(Cast(a: Attribute, _), l@Literal(v, t)) =>
-          Some(new LessThanExpression(transformExpression(a).get, transformExpression(l).get))
-        case LessThan(l@Literal(v, t), a: Attribute) =>
-          Some(new GreaterThanExpression(transformExpression(a).get, transformExpression(l).get))
-        case LessThan(l@Literal(v, t), Cast(a: Attribute, _)) =>
-          Some(new GreaterThanExpression(transformExpression(a).get, transformExpression(l).get))
-
-        case GreaterThanOrEqual(a: Attribute, l@Literal(v, t)) =>
-          Some(new GreaterThanEqualToExpression(transformExpression(a).get,
-            transformExpression(l).get))
-        case GreaterThanOrEqual(Cast(a: Attribute, _), l@Literal(v, t)) =>
-          Some(new GreaterThanEqualToExpression(transformExpression(a).get,
-            transformExpression(l).get))
-        case GreaterThanOrEqual(l@Literal(v, t), a: Attribute) =>
-          Some(new LessThanEqualToExpression(transformExpression(a).get,
-            transformExpression(l).get))
-        case GreaterThanOrEqual(l@Literal(v, t), Cast(a: Attribute, _)) =>
-          Some(new LessThanEqualToExpression(transformExpression(a).get,
-            transformExpression(l).get))
-
-        case LessThanOrEqual(a: Attribute, l@Literal(v, t)) =>
-          Some(new LessThanEqualToExpression(transformExpression(a).get,
-            transformExpression(l).get))
-        case LessThanOrEqual(Cast(a: Attribute, _), l@Literal(v, t)) =>
-          Some(new LessThanEqualToExpression(transformExpression(a).get,
-            transformExpression(l).get))
-        case LessThanOrEqual(l@Literal(v, t), a: Attribute) =>
-          Some(new GreaterThanEqualToExpression(transformExpression(a).get,
-            transformExpression(l).get))
-        case LessThanOrEqual(l@Literal(v, t), Cast(a: Attribute, _)) =>
-          Some(new GreaterThanEqualToExpression(transformExpression(a).get,
-            transformExpression(l).get))
-
-        case AttributeReference(name, dataType, _, _) =>
-          Some(new CarbonColumnExpression(name,
-            CarbonScalaUtil.convertSparkToCarbonDataType(
-              getActualCarbonDataType(name, carbonTable))))
-        case Literal(name, dataType) => Some(new
-            CarbonLiteralExpression(name, CarbonScalaUtil.convertSparkToCarbonDataType(dataType)))
-        case Cast(left, right) if !left.isInstanceOf[Literal] => transformExpression(left)
-        case others =>
-          if (!or) {
-            others.collect {
-              case attr: AttributeReference => attributesNeedToDecode.add(attr)
-            }
-            unprocessedExprs += others
-          }
-          None
+        case In(left, right)
+          if (isCarbonSupportedDataTypes(left)) =>
+          Some(new InExpression(transformExpression(left).get,
+            new ListExpression(right.map(transformExpression(_).get).asJava)
+          ))
+        case Add(left, right)
+          if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) =>
+          Some(new AddExpression(transformExpression(left).get, transformExpression(right).get))
+        case Subtract(left, right)
+          if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) =>
+          Some(new SubstractExpression(transformExpression(left).get,
+            transformExpression(right).get))
+        case Multiply(left, right)
+          if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) =>
+          Some(new MultiplyExpression(transformExpression(left).get,
+            transformExpression(right).get))
+        case Divide(left, right)
+          if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) =>
+          Some(new DivideExpression(transformExpression(left).get, transformExpression(right).get))
+        case GreaterThan(left, right)
+          if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) =>
+          Some(new GreaterThanExpression(transformExpression(left).get,
+            transformExpression(right).get))
+        case LessThan(left, right)
+          if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) =>
+          Some(new LessThanExpression(transformExpression(left).get,
+            transformExpression(right).get))
+        case GreaterThanOrEqual(left, right)
+          if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) =>
+          Some(new GreaterThanEqualToExpression(transformExpression(left).get,
+            transformExpression(right).get))
+        case LessThanOrEqual(left, right)
+          if (isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) =>
+          Some(new LessThanEqualToExpression(transformExpression(left).get,
+            transformExpression(right).get))
+        // convert StartWith('abc') or like(col 'abc%') to col >= 'abc' and col < 'abd'
+        case StartsWith(left, right@Literal(pattern, dataType))
+          if (pattern.toString.size > 0 &&
+              isCarbonSupportedDataTypes(left) && isCarbonSupportedDataTypes(right)) =>
+          val l = new GreaterThanEqualToExpression(
+            transformExpression(left).get, transformExpression(right).get
+          )
+          val value = pattern.toString
+          val maxValueLimit = value.substring(0, value.length - 1) +
+                              (value.charAt(value.length - 1).toInt + 1).toChar
+          val r = new LessThanExpression(
+            transformExpression(left).get,
+            new CarbonLiteralExpression(maxValueLimit,
+              CarbonScalaUtil.convertSparkToCarbonDataType(dataType)
+            )
+          )
+          Some(new AndExpression(l, r))
+        case AttributeReference(name, dataType, _, _) => Some(new CarbonColumnExpression(name
+          .toString,
+          CarbonScalaUtil.convertSparkToCarbonDataType(getActualCarbonDataType(name, carbonTable))
+        ))
+        case Literal(name, dataType) =>
+          Some(new CarbonLiteralExpression(name,
+            CarbonScalaUtil.convertSparkToCarbonDataType(dataType)))
+        case StringTrim(child) => transformExpression(child)
+        case aggExpr: AggregateExpression =>
+          throw new UnsupportedOperationException(s"Cannot evaluate expression: $aggExpr")
+        case _ =>
+          Some(new SparkUnknownExpression(expr.transform {
+            case AttributeReference(name, dataType, _, _) =>
+              CarbonBoundReference(new CarbonColumnExpression(name.toString,
+                CarbonScalaUtil.convertSparkToCarbonDataType(dataType)
+              ), dataType, expr.nullable
+              )
+          })
+          )
       }
     }
     exprs.flatMap(transformExpression(_, false)).reduceOption(new AndExpression(_, _))
+  }
+
+  def isCarbonSupportedDataTypes(expr: Expression): Boolean = {
+    expr.dataType match {
+      case StringType => true
+      case IntegerType => true
+      case LongType => true
+      case DoubleType => true
+      case FloatType => true
+      case BooleanType => true
+      case TimestampType => true
+      case ArrayType(_, _) => true
+      case StructType(_) => true
+      case DecimalType() => true
+      case _ => false
+    }
   }
 
   private def getActualCarbonDataType(column: String, carbonTable: CarbonTable) = {
@@ -360,5 +369,14 @@ object CarbonFilters {
     val javaList = new java.util.ArrayList[CarbonExpression]()
     scalaList.foreach(javaList.add)
     javaList
+  }
+
+  def preProcessExpressions(expressions: Seq[Expression]): Seq[Expression] = {
+    expressions match {
+      case left :: right :: rest => preProcessExpressions(List(And(left, right)) ::: rest)
+      case List(left, right) => List(And(left, right))
+
+      case _ => expressions
+    }
   }
 }
