@@ -26,6 +26,8 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.CarbonScan
+import org.apache.spark.sql.SparkUnknownExpression
 import org.apache.spark.sql.hive.DistributionUtil
 
 import org.apache.carbondata.common.CarbonIterator
@@ -36,6 +38,7 @@ import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryS
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
 import org.apache.carbondata.scan.executor.QueryExecutorFactory
 import org.apache.carbondata.scan.expression.Expression
+import org.apache.carbondata.scan.filter.FilterUtil
 import org.apache.carbondata.scan.model.QueryModel
 import org.apache.carbondata.scan.result.BatchResult
 import org.apache.carbondata.scan.result.iterator.ChunkRowIterator
@@ -69,7 +72,8 @@ class CarbonScanRDD[V: ClassTag](
     @transient conf: Configuration,
     tableCreationTime: Long,
     schemaLastUpdatedTime: Long,
-    baseStoreLocation: String)
+    baseStoreLocation: String,
+    sparkPlan: CarbonScan = null)
   extends RDD[V](sc, Nil) with Logging {
 
   val defaultParallelism = sc.defaultParallelism
@@ -171,6 +175,16 @@ class CarbonScanRDD[V: ClassTag](
 
   override def compute(thepartition: Partition, context: TaskContext): Iterator[V] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    val filterResolverTree = this.queryModel.getFilterExpressionResolverTree
+    if (null != filterResolverTree && null != sparkPlan) {
+      FilterUtil.getUnknownExpressionsList(filterResolverTree.getFilterExpression).
+          asScala.foreach(unknownExpression => {
+        val unKnownSparkExpression = unknownExpression.
+            asInstanceOf[org.apache.spark.sql.SparkUnknownExpression]
+        unKnownSparkExpression.setEvaluateExpression(
+            sparkPlan.newProjection(unKnownSparkExpression.sparkExp))
+      })
+    }
     val iter = new Iterator[V] {
       var rowIterator: CarbonIterator[Array[Any]] = _
       var queryStartTime: Long = 0

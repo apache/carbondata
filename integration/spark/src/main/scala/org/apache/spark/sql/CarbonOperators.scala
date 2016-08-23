@@ -31,6 +31,7 @@ import org.apache.spark.sql.hive.CarbonMetastoreCatalog
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.scan.expression.logical.AndExpression
 import org.apache.carbondata.scan.model._
 import org.apache.carbondata.spark.{CarbonFilters, RawValue, RawValueImpl}
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
@@ -44,6 +45,7 @@ case class CarbonScan(
   val selectedDims = scala.collection.mutable.MutableList[QueryDimension]()
   val selectedMsrs = scala.collection.mutable.MutableList[QueryMeasure]()
   @transient val carbonCatalog = ocRaw.catalog.asInstanceOf[CarbonMetastoreCatalog]
+  var extraPreds: Seq[Expression] = Nil
 
   val attributesNeedToDecode = new java.util.LinkedHashSet[AttributeReference]()
   val unprocessedExprs = new ArrayBuffer[Expression]()
@@ -63,10 +65,7 @@ case class CarbonScan(
   def processFilterExpressions(plan: CarbonQueryPlan) {
     if (dimensionPredicatesRaw.nonEmpty) {
       val expressionVal = CarbonFilters.processExpression(
-        dimensionPredicatesRaw,
-        attributesNeedToDecode,
-        unprocessedExprs,
-        carbonTable)
+        dimensionPredicatesRaw, carbonTable)
       expressionVal match {
         case Some(ce) =>
           // adding dimension used in expression in querystats
@@ -137,8 +136,50 @@ case class CarbonScan(
   }
 
 
+  def addPushdownFilters(keys: Seq[Expression], filters: Array[Array[Expression]],
+      conditions: Option[Expression]) {
+
+    // TODO Values in the IN filter is duplicate. replace the list with set
+    val buffer = new ArrayBuffer[Expression]
+    keys.zipWithIndex.foreach { a =>
+      buffer += In(a._1, filters(a._2)).asInstanceOf[Expression]
+    }
+
+    // Let's not pushdown condition. Only filter push down is sufficient.
+    // Conditions can be applied on hash join result.
+    val cond = if (buffer.size > 1) {
+      val e = buffer.remove(0)
+      buffer.fold(e)(And(_, _))
+    } else {
+      buffer.asJava.get(0)
+    }
+
+    extraPreds = Seq(cond)
+  }
+
   def inputRdd: CarbonScanRDD[Array[Any]] = {
 
+    // Update the FilterExpressions with extra conditions added through join pushdown
+    if (extraPreds.nonEmpty) {
+      val exps = CarbonFilters.preProcessExpressions(extraPreds)
+      val expressionVal = CarbonFilters.processExpression(exps, carbonTable)
+      val oldExpressionVal = buildCarbonPlan.getFilterExpression
+      if (null == oldExpressionVal) {
+        expressionVal match {
+        case Some(ce) =>
+          // adding dimension used in expression in querystats
+          buildCarbonPlan.setFilterExpression(ce)
+        case _ =>
+        }
+      } else {
+        expressionVal match {
+        case Some(ce) =>
+          // adding dimension used in expression in querystats
+          buildCarbonPlan.setFilterExpression(new AndExpression(oldExpressionVal, ce))
+        case _ =>
+        }
+      }
+    }
     val conf = new Configuration()
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val model = QueryModel.createModel(
@@ -159,7 +200,8 @@ case class CarbonScan(
       conf,
       tableCreationTime,
       schemaLastUpdatedTime,
-      carbonCatalog.storePath)
+      carbonCatalog.storePath,
+      this)
     big
   }
 
@@ -167,6 +209,10 @@ case class CarbonScan(
   override def outputsUnsafeRows: Boolean =
     (attributesNeedToDecode.size() == 0) && useUnsafeCoversion
 
+  def newProjection(expression: org.apache.spark.sql.catalyst.expressions.Expression):
+      InternalRow => Any = {
+    super.newProjection(Seq(expression), output)
+  }
   override def doExecute(): RDD[InternalRow] = {
     val outUnsafeRows: Boolean = (attributesNeedToDecode.size() == 0) && useUnsafeCoversion
     inputRdd.mapPartitions { iter =>
