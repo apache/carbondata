@@ -62,9 +62,7 @@ public class LocalFileLock extends AbstractCarbonLock {
 
   public static final String tmpPath;
 
-  private String tableName;
-
-  private String databaseName;
+  private  String lockFilePath;
 
   /**
    * LOGGER for  logging the messages.
@@ -106,7 +104,7 @@ public class LocalFileLock extends AbstractCarbonLock {
       if (!FileFactory.isFileExist(location, FileFactory.getFileType(tmpPath))) {
         FileFactory.mkdirs(location, FileFactory.getFileType(tmpPath));
       }
-      String lockFilePath = location + CarbonCommonConstants.FILE_SEPARATOR +
+      lockFilePath = location + CarbonCommonConstants.FILE_SEPARATOR +
           lockFile;
       if (!FileFactory.isFileExist(lockFilePath, FileFactory.getFileType(location))) {
         FileFactory.createNewLockFile(lockFilePath, FileFactory.getFileType(location));
@@ -148,6 +146,13 @@ public class LocalFileLock extends AbstractCarbonLock {
       if (null != fileOutputStream) {
         try {
           fileOutputStream.close();
+          // deleting the lock file after releasing the lock.
+          if (FileFactory.getCarbonFile(lockFilePath, FileFactory.getFileType(lockFilePath))
+              .delete()) {
+            LOGGER.info("Successfully deleted the lock file " + lockFilePath);
+          } else {
+            LOGGER.error("Not able to delete the lock file " + lockFilePath);
+          }
         } catch (IOException e) {
           LOGGER.error(e.getMessage());
         }
