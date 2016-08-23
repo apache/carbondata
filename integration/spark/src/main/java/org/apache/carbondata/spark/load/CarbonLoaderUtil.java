@@ -25,15 +25,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
-import java.net.InterfaceAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -1208,7 +1204,7 @@ public final class CarbonLoaderUtil {
 
     if (activeNodes != null) {
       for (String activeNode : activeNodes) {
-        List<Distributable> blockLst = getBlockList(outputMap, activeNode);;
+        List<Distributable> blockLst = outputMap.get(activeNode);
         if (null == blockLst) {
           blockLst = new ArrayList<Distributable>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         }
@@ -1236,38 +1232,6 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  /**
-   * returns the list of Blocks for the specificed nodes.
-   * @param outputMap
-   * @param activeNode
-   * @return
-   */
-  private static List<Distributable> getBlockList(Map<String, List<Distributable>> outputMap,
-      String activeNode) {
-    List<Distributable> distributables = outputMap.get(activeNode);
-    if (null == distributables) {
-      List<String> address = new ArrayList<>();
-      try {
-        Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-        while (networkInterfaces.hasMoreElements()) {
-          List<InterfaceAddress> interfaceAddresses =
-              networkInterfaces.nextElement().getInterfaceAddresses();
-          for (InterfaceAddress interfaceAddress : interfaceAddresses) {
-            address.add(interfaceAddress.getAddress().getHostAddress());
-          }
-        }
-        InetAddress inetAddress = InetAddress.getByName(activeNode);
-        if (address.contains(inetAddress.getHostAddress())) {
-          return outputMap.get("localhost");
-        }
-      } catch (SocketException e) {
-        return null;
-      } catch (UnknownHostException e) {
-        return null;
-      }
-    }
-    return distributables;
-  }
   /**
    * The method populate the blockLst to be allocate to a specific node.
    * @param uniqueBlocks
@@ -1313,21 +1277,15 @@ public final class CarbonLoaderUtil {
     // are assigned first
     Collections.sort(multiBlockRelations);
 
-    Set<String> validActiveNodes = new HashSet<String>();
-    // find all the valid active nodes
     for (NodeMultiBlockRelation nodeMultiBlockRelation : multiBlockRelations) {
       String nodeName = nodeMultiBlockRelation.getNode();
       //assign the block to the node only if the node is active
-      if (null != activeNodes && isActiveExecutor(activeNodes, nodeName)) {
-        validActiveNodes.add(nodeName);
-      }
-    }
-
-    for (NodeMultiBlockRelation nodeMultiBlockRelation : multiBlockRelations) {
-      String nodeName = nodeMultiBlockRelation.getNode();
-      //assign the block to the node only if the node is active
-      if (!validActiveNodes.isEmpty() && !validActiveNodes.contains(nodeName)) {
-        continue;
+      String activeExecutor = nodeName;
+      if (null != activeNodes) {
+        activeExecutor = getActiveExecutor(activeNodes, nodeName);
+        if (null == activeExecutor) {
+          continue;
+        }
       }
       // this loop will be for each NODE
       int nodeCapacity = 0;
@@ -1337,14 +1295,14 @@ public final class CarbonLoaderUtil {
         // check if this is already assigned.
         if (uniqueBlocks.contains(block)) {
 
-          if (null == outputMap.get(nodeName)) {
+          if (null == outputMap.get(activeExecutor)) {
             List<Distributable> list =
                 new ArrayList<Distributable>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-            outputMap.put(nodeName, list);
+            outputMap.put(activeExecutor, list);
           }
           // assign this block to this node if node has capacity left
           if (nodeCapacity < blocksPerNode) {
-            List<Distributable> infos = outputMap.get(nodeName);
+            List<Distributable> infos = outputMap.get(activeExecutor);
             infos.add(block);
             nodeCapacity++;
             uniqueBlocks.remove(block);
@@ -1364,16 +1322,19 @@ public final class CarbonLoaderUtil {
    * @param nodeName
    * @return returns true if active else false.
    */
-  private static boolean isActiveExecutor(List activeNode, String nodeName) {
+  private static String getActiveExecutor(List activeNode, String nodeName) {
     boolean isActiveNode = activeNode.contains(nodeName);
     if (isActiveNode) {
-      return isActiveNode;
+      return nodeName;
     }
     //if localhost then retrieve the localhost name then do the check
     else if (nodeName.equals("localhost")) {
       try {
         String hostName = InetAddress.getLocalHost().getHostName();
         isActiveNode = activeNode.contains(hostName);
+        if(isActiveNode){
+          return hostName;
+        }
       } catch (UnknownHostException ue) {
         isActiveNode = false;
       }
@@ -1381,11 +1342,14 @@ public final class CarbonLoaderUtil {
       try {
         String hostAddress = InetAddress.getLocalHost().getHostAddress();
         isActiveNode = activeNode.contains(hostAddress);
+        if(isActiveNode){
+          return hostAddress;
+        }
       } catch (UnknownHostException ue) {
         isActiveNode = false;
       }
     }
-    return isActiveNode;
+    return null;
   }
 
   /**
