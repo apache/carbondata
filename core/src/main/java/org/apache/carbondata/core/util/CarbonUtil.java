@@ -1424,5 +1424,24 @@ public final class CarbonUtil {
     }
   }
 
+  /**
+   * initialize the value of dictionary chunk that can be kept in memory at a time
+   *
+   * @return
+   */
+  public static int getDictionaryChunkSize() {
+    int dictionaryOneChunkSize = 0;
+    try {
+      dictionaryOneChunkSize = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE,
+              CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE_DEFAULT));
+    } catch (NumberFormatException e) {
+      dictionaryOneChunkSize =
+          Integer.parseInt(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE_DEFAULT);
+      LOGGER.error("Dictionary chunk size not configured properly. Taking default size "
+          + dictionaryOneChunkSize);
+    }
+    return dictionaryOneChunkSize;
+  }
 }
 

@@ -58,6 +58,14 @@ public interface DictionaryInfo extends Cacheable, Dictionary {
   void addDictionaryChunk(List<byte[]> dictionaryChunk);
 
   /**
+   * This method will return the size of of last dictionary chunk so that only that many
+   * values are read from the dictionary reader
+   *
+   * @return size of last dictionary chunk
+   */
+  int getSizeOfLastDictionaryChunk();
+
+  /**
    * This method will set the sort order index of a dictionary column.
    * Sort order index if the index of dictionary values after they are sorted.
    *
