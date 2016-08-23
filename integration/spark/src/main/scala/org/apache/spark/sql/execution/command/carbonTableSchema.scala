@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.command
 
 import java.io.File
+import java.lang.reflect.UndeclaredThrowableException
 import java.text.SimpleDateFormat
 import java.util
 import java.util.UUID
@@ -26,7 +27,6 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.util.Random
-
 import org.apache.spark.SparkEnv
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -36,7 +36,6 @@ import org.apache.spark.sql.hive.HiveContext
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
-
 import org.apache.carbondata.common.factory.CarbonCommonFactory
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
@@ -1193,6 +1192,10 @@ private[sql] case class LoadTable(
       case mce: MalformedCarbonCommandException =>
         LOGGER.audit(s"Dataload failed for $dbName.$tableName. " + mce.getMessage)
         throw mce
+      case ude: UndeclaredThrowableException =>
+        LOGGER.audit(s"Dataload failed for $dbName.$tableName. " +
+          ude.getUndeclaredThrowable.getMessage)
+        throw ude.getUndeclaredThrowable
     } finally {
       if (carbonLock != null) {
         if (carbonLock.unlock()) {
