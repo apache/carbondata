@@ -20,13 +20,13 @@ package org.apache.carbondata.spark.util
 
 import java.io.File
 
+import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.load.CarbonLoadModel
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.apache.spark.sql.common.util.CarbonHiveContext
 import org.apache.spark.sql.common.util.CarbonHiveContext.sql
 import org.apache.spark.sql.common.util.QueryTest
-
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
-import org.apache.carbondata.spark.load.CarbonLoadModel
 
 import org.scalatest.BeforeAndAfterAll
 
@@ -203,6 +203,20 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     }
     DictionaryTestCaseUtil.checkDictionary(
       loadSqlRelation, "deviceInformationId", "10086")
+  }
+
+  test("COLUMNDICT and ALL_DICTIONARY_PATH can not be used together") {
+    try {
+      sql(s"""
+        LOAD DATA LOCAL INPATH "$complexFilePath1" INTO TABLE loadSqlTest
+        OPTIONS('COLUMNDICT'='$extColDictFilePath1',"ALL_DICTIONARY_PATH"='$extColDictFilePath1')
+        """)
+      assert(false)
+    } catch {
+      case ex: MalformedCarbonCommandException =>
+        assertResult(ex.getMessage)("Error: COLUMNDICT and ALL_DICTIONARY_PATH can not be used together " +
+          "in options")
+    }
   }
 
   override def afterAll: Unit = {
