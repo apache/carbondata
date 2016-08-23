@@ -885,6 +885,16 @@ public final class CarbonCommonConstants {
    */
   public static final String ZOOKEEPER_URL = "spark.deploy.zookeeper.url";
 
+  /**
+   * default broadcast record size
+   */
+  public static final String DEFAULT_BROADCAST_RECORD_SIZE = "100";
+
+  /**
+   * key to get broadcast record size from properties
+   */
+  public static final String BROADCAST_RECORD_SIZE = "broadcast.record.size";
+
   private CarbonCommonConstants() {
   }
 }
