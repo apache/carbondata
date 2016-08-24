@@ -783,6 +783,8 @@ object CarbonDataRDDFactory extends Logging {
                 errorMessage = errorMessage + ": " + executorMessage
               }
             case _ =>
+              executorMessage = ex.getCause.getMessage
+              errorMessage = errorMessage + ": " + executorMessage
           }
           logInfo(errorMessage)
           logger.error(ex)
