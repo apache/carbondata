@@ -30,18 +30,18 @@ object CarbonExample {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
 
-//    cc.sql("DROP TABLE IF EXISTS t3")
-//
-//    cc.sql("""
-//           CREATE TABLE IF NOT EXISTS t3
-//           (ID Int, date Timestamp, country String,
-//           name String, phonetype String, serialname String, salary Int)
-//           STORED BY 'carbondata'
-//           """)
-//
-//    cc.sql(s"""
-//           LOAD DATA LOCAL INPATH '$testData' into table t3
-//           """)
+    cc.sql("DROP TABLE IF EXISTS t3")
+
+    cc.sql("""
+           CREATE TABLE IF NOT EXISTS t3
+           (ID Int, date Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int)
+           STORED BY 'carbondata'
+           """)
+
+    cc.sql(s"""
+           LOAD DATA LOCAL INPATH '$testData' into table t3
+           """)
 
     cc.sql("""
            SELECT country, count(salary) AS amount
@@ -50,6 +50,6 @@ object CarbonExample {
            GROUP BY country
            """).show()
 
-//    cc.sql("DROP TABLE IF EXISTS t3")
+    cc.sql("DROP TABLE IF EXISTS t3")
   }
 }
