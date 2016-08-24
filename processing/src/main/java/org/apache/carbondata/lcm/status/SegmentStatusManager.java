@@ -410,6 +410,14 @@ public class SegmentStatusManager {
       for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
 
         if (loadId.equalsIgnoreCase(loadMetadata.getLoadName())) {
+          // if the segment is compacted then no need to delete that.
+          if (CarbonCommonConstants.SEGMENT_COMPACTED
+              .equalsIgnoreCase(loadMetadata.getLoadStatus())) {
+            LOG.error("Cannot delete the load which is compacted.");
+            loadFound = true;
+            invalidLoadIds.add(loadId);
+            break;
+          }
           if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())) {
             loadFound = true;
             loadMetadata.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
