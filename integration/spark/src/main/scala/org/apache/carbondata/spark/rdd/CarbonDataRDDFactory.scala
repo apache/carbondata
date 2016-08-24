@@ -725,6 +725,7 @@ object CarbonDataRDDFactory extends Logging {
         partitioner.partitionCount, currentLoadCount.toString)
       var loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
       var status: Array[(String, LoadMetadataDetails)] = null
+      var errorMessage: String = "DataLoad failure"
       var executorMessage: String = ""
       try {
         status = new
@@ -775,19 +776,19 @@ object CarbonDataRDDFactory extends Logging {
       } catch {
         case ex: Throwable =>
           loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-          logInfo("DataLoad failure")
-          logger.error(ex)
           ex match {
             case sparkException: SparkException =>
               if (sparkException.getCause.isInstanceOf[DataLoadingException]) {
                 executorMessage = sparkException.getCause.getMessage
+                errorMessage = errorMessage + ": " + executorMessage
               }
             case _ =>
           }
+          logInfo(errorMessage)
+          logger.error(ex)
       }
 
       if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
-        var message: String = ""
         logInfo("********starting clean up**********")
         if (isAgg) {
           // TODO:need to clean aggTable
@@ -795,7 +796,7 @@ object CarbonDataRDDFactory extends Logging {
             carbonLoadModel.getTableName, carbonLoadModel.getAggTableName, hdfsStoreLocation,
             currentRestructNumber
           )
-          message = "Aggregate table creation failure"
+          errorMessage = "Aggregate table creation failure"
         } else {
           CarbonLoaderUtil.deleteSegment(carbonLoadModel, currentLoadCount)
           val aggTables = carbonTable.getAggregateTablesName
@@ -809,13 +810,12 @@ object CarbonDataRDDFactory extends Logging {
                   carbonLoadModel.getTableName, hdfsStoreLocation, currentRestructNumber, newSlice)
             }
           }
-          message = "DataLoad failure: " + executorMessage
         }
         logInfo("********clean up done**********")
         logger.audit(s"Data load is failed for " +
           s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}")
         logWarning("Cannot write load metadata file as data load failed")
-        throw new Exception(message)
+        throw new Exception(errorMessage)
       } else {
         val metadataDetails = status(0)._2
         if (!isAgg) {
@@ -827,11 +827,11 @@ object CarbonDataRDDFactory extends Logging {
               loadStartTime
             )
           if (!status) {
-            val message = "Dataload failed due to failure in table status updation."
+            val errorMessage = "Dataload failed due to failure in table status updation."
             logger.audit("Data load is failed for " +
               s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}")
             logger.error("Dataload failed due to failure in table status updation.")
-            throw new Exception(message)
+            throw new Exception(errorMessage)
           }
         } else if (!carbonLoadModel.isRetentionRequest) {
           // TODO : Handle it
