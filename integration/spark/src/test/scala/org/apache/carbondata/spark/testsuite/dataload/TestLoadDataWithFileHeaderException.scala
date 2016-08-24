@@ -34,7 +34,7 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
            """)
   }
 
-  test("test load data with file header exception") {
+  test("test load data both file and ddl without fileheader exception") {
     try {
       sql(s"""
            LOAD DATA LOCAL INPATH './src/test/resources/windows.csv' into table t3
@@ -44,6 +44,20 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
       case e: Exception =>
         assert(e.getMessage.equals("DataLoad failure: CSV File provided is not proper. " +
           "Column names in schema and csv header are not same. CSVFile Name : windows.csv"))
+    }
+  }
+
+  test("test load data ddl provided  wrong fileheader exception") {
+    try {
+      sql(s"""
+           LOAD DATA LOCAL INPATH './src/test/resources/windows.csv' into table t3
+           options('fileheader'='no_column')
+           """)
+      assert(false)
+    } catch {
+      case e: Exception =>
+        assert(e.getMessage.equals("DataLoad failure: CSV header provided in DDL is not proper. " +
+          "Column names in schema and CSV header are not the same."))
     }
   }
 
