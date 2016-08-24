@@ -142,6 +142,14 @@ public final class CarbonCommonConstants {
    */
   public static final String LOAD_FOLDER = "Segment_";
   /**
+   * HDFSURL_PREFIX
+   */
+  public static final String HDFSURL_PREFIX = "hdfs://";
+  /**
+   * FS_DEFAULT_FS
+   */
+  public static final String FS_DEFAULT_FS = "fs.defaultFS";
+  /**
    * RESTructure Folder
    */
   public static final String RESTRUCTRE_FOLDER = "RS_";
