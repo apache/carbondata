@@ -499,9 +499,10 @@ object GlobalDictionaryUtil extends Logging {
     val preDictDimensionOption = dimensions.filter(
       _.getColName.equalsIgnoreCase(dimParent))
     if (preDictDimensionOption.length == 0) {
-      logError(s"No column $dimParent exists in ${table.getDatabaseName}.${table.getTableName}")
-      throw new DataLoadingException(s"No column $colName exists " +
-      s"in ${table.getDatabaseName}.${table.getTableName}")
+      logError(s"Column $dimParent is not a key column " +
+        s"in ${table.getDatabaseName}.${table.getTableName}")
+      throw new DataLoadingException(s"Column $dimParent is not a key column. " +
+        s"Only key column can be part of dictionary and used in COLUMNDICT option.")
     }
     val preDictDimension = preDictDimensionOption(0)
     if (preDictDimension.isComplex) {
