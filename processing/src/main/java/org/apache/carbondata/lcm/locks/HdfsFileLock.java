@@ -28,6 +28,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * This class is used to handle the HDFS File locking.
  * This is acheived using the concept of acquiring the data out stream using Append option.
@@ -46,8 +48,15 @@ public class HdfsFileLock extends AbstractCarbonLock {
   public static String tmpPath;
 
   static {
-    tmpPath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
+    Configuration conf = new Configuration(true);
+    String hdfsPath = conf.get(CarbonCommonConstants.FS_DEFAULT_FS);
+    // By default, we put the hdfs lock meta file for one table inside this table's store folder.
+    // If can not get the STORE_LOCATION, then use hadoop.tmp.dir .
+    tmpPath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION,
                System.getProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION));
+    if (!tmpPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
+      tmpPath = hdfsPath + tmpPath;
+    }
   }
 
   /**
