@@ -34,6 +34,7 @@ import org.apache.spark.sql.hive._
 import org.apache.spark.sql.optimizer.CarbonOptimizer
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsRecorder}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.rdd.CarbonDataFrameRDD
@@ -73,6 +74,7 @@ class CarbonContext(
   @transient
   override protected[sql] lazy val analyzer =
     new Analyzer(catalog, functionRegistry, conf) {
+
       override val extendedResolutionRules =
         catalog.ParquetConversions ::
         catalog.CreateTables ::
@@ -126,7 +128,12 @@ class CarbonContext(
     CarbonContext.updateCarbonPorpertiesPath(this)
     val sqlString = sql.toUpperCase
     LOGGER.info(s"Query [$sqlString]")
+    val recorder = new QueryStatisticsRecorder("")
+    val statistic = new QueryStatistic()
     val logicPlan: LogicalPlan = parseSql(sql)
+    statistic.addStatistics("Time taken to parse sql In Driver Side", System.currentTimeMillis())
+    recorder.recordStatistics(statistic)
+    recorder.logStatistics()
     val result = new CarbonDataFrameRDD(this, logicPlan)
 
     // We force query optimization to happen right away instead of letting it happen lazily like

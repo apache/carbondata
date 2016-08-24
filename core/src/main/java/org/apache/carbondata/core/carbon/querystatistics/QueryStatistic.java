@@ -20,6 +20,8 @@ package org.apache.carbondata.core.carbon.querystatistics;
 
 import java.io.Serializable;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Wrapper class to maintain the query statistics for each phase of the query
  */
@@ -44,6 +46,11 @@ public class QueryStatistic implements Serializable {
    * starttime of the phase
    */
   private long startTime;
+
+  /**
+   * number of count
+   */
+  private long count;
 
   public QueryStatistic() {
     this.startTime = System.currentTimeMillis();
@@ -72,6 +79,12 @@ public class QueryStatistic implements Serializable {
     this.message = message;
   }
 
+  public void addCountStatistic(String message, long count) {
+    this.timeTaken = -1;
+    this.count = count;
+    this.message = message;
+  }
+
   /**
    * Below method will be used to get the statistic message, which will
    * be used to log
@@ -80,6 +93,11 @@ public class QueryStatistic implements Serializable {
    * @return statistic message
    */
   public String getStatistics(String queryWithTaskId) {
-    return message + " for the taskid : " + queryWithTaskId + " Is : " + timeTaken;
+    if (StringUtils.isEmpty(queryWithTaskId)) {
+      return message + " Is: " + timeTaken + " ms";
+    } else if(timeTaken == -1) {
+      return message + " for the taskid : " + queryWithTaskId + " Is: " + count ;
+    }
+    return message + " for the taskid : " + queryWithTaskId + " Is: " + timeTaken + " ms";
   }
 }

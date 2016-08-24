@@ -483,7 +483,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       }
       resultFilterredBlocks.addAll(filterredBlocks);
     }
-    statistic.addStatistics("Time taken to load the Block(s) in Driver Side",
+    statistic.addStatistics("Time taken to load the Block(s) In Driver Side",
         System.currentTimeMillis());
     recorder.recordStatistics(statistic);
     recorder.logStatistics();

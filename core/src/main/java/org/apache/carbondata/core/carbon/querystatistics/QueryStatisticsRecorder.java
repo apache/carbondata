@@ -47,11 +47,11 @@ public class QueryStatisticsRecorder implements Serializable {
   /**
    * query with taskd
    */
-  private String queryIWthTask;
+  private String queryIdWthTask;
 
   public QueryStatisticsRecorder(String queryId) {
     queryStatistics = new ArrayList<QueryStatistic>();
-    this.queryIWthTask = queryId;
+    this.queryIdWthTask = queryId;
   }
 
   /**
@@ -68,7 +68,7 @@ public class QueryStatisticsRecorder implements Serializable {
    */
   public void logStatistics() {
     for (QueryStatistic statistic : queryStatistics) {
-      LOGGER.statistic(statistic.getStatistics(queryIWthTask));
+      LOGGER.statistic(statistic.getStatistics(queryIdWthTask));
     }
   }
 }
