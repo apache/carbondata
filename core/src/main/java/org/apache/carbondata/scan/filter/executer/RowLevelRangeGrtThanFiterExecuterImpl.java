@@ -178,10 +178,12 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
         start = CarbonUtil.getFirstIndexUsingBinarySearch(
             (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, startIndex, numerOfRows - 1,
             filterValues[k], true);
-        start = CarbonUtil.nextGreaterValueToTarget(start,
-            (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, filterValues[k], numerOfRows);
+
         if (start < 0) {
           start = -(start + 1);
+          start = CarbonUtil.nextGreaterValueToTarget(start,
+              (FixedLengthDimensionDataChunk) dimensionColumnDataChunk, filterValues[k],
+              numerOfRows);
           if (start == numerOfRows) {
             start = start - 1;
           }
