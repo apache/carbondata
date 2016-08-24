@@ -45,6 +45,11 @@ public class QueryStatistic implements Serializable {
    */
   private long startTime;
 
+  /**
+   * number of count
+   */
+  private long count;
+
   public QueryStatistic() {
     this.startTime = System.currentTimeMillis();
   }
@@ -72,6 +77,12 @@ public class QueryStatistic implements Serializable {
     this.message = message;
   }
 
+  public void addCountStatistic(String message, long count) {
+    this.timeTaken = -1;
+    this.count = count;
+    this.message = message;
+  }
+
   /**
    * Below method will be used to get the statistic message, which will
    * be used to log
@@ -82,4 +93,17 @@ public class QueryStatistic implements Serializable {
   public String getStatistics(String queryWithTaskId) {
     return message + " for the taskid : " + queryWithTaskId + " Is : " + timeTaken;
   }
+
+  public String getMessage() {
+    return this.message;
+  }
+
+  public double getTimeTaken() {
+    return (double)this.timeTaken/1000;
+  }
+
+  public long getCount() {
+    return this.count;
+  }
+
 }

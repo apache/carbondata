@@ -1415,5 +1415,20 @@ public final class CarbonUtil {
     }
     return readLine;
   }
+
+  /**
+   * Below method will create string like "***********"
+   *
+   * @param a
+   * @param num
+   */
+  public static String printLine(String a, int num)
+  {
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < num; i++) {
+      builder.append(a);
+    }
+    return builder.toString();
+  }
 }
 
