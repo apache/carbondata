@@ -19,6 +19,7 @@
 
 package org.apache.carbondata.core.util;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -482,13 +483,16 @@ public final class ValueCompressionUtil {
   private static Object compressNonDecimalMaxMin(DataType changedDataType, double[] value,
       int decimal, double maxValue) {
     int i = 0;
+    BigDecimal max = BigDecimal.valueOf(maxValue);
     switch (changedDataType) {
       case DATA_BYTE:
 
         byte[] result = new byte[value.length];
 
         for (double a : value) {
-          result[i] = (byte) (Math.round((maxValue - a) * Math.pow(10, decimal)));
+          BigDecimal val = BigDecimal.valueOf(a);
+          double diff = max.subtract(val).doubleValue();
+          result[i] = (byte) (Math.round(diff * Math.pow(10, decimal)));
           i++;
         }
         return result;
@@ -498,7 +502,9 @@ public final class ValueCompressionUtil {
         short[] shortResult = new short[value.length];
 
         for (double a : value) {
-          shortResult[i] = (byte) (Math.round((maxValue - a) * Math.pow(10, decimal)));
+          BigDecimal val = BigDecimal.valueOf(a);
+          double diff = max.subtract(val).doubleValue();
+          shortResult[i] = (short) (Math.round(diff * Math.pow(10, decimal)));
           i++;
         }
         return shortResult;
@@ -508,7 +514,9 @@ public final class ValueCompressionUtil {
         int[] intResult = new int[value.length];
 
         for (double a : value) {
-          intResult[i] = (byte) (Math.round((maxValue - a) * Math.pow(10, decimal)));
+          BigDecimal val = BigDecimal.valueOf(a);
+          double diff = max.subtract(val).doubleValue();
+          intResult[i] = (int) (Math.round(diff * Math.pow(10, decimal)));
           i++;
         }
         return intResult;
@@ -518,7 +526,9 @@ public final class ValueCompressionUtil {
         long[] longResult = new long[value.length];
 
         for (double a : value) {
-          longResult[i] = (byte) (Math.round((maxValue - a) * Math.pow(10, decimal)));
+          BigDecimal val = BigDecimal.valueOf(a);
+          double diff = max.subtract(val).doubleValue();
+          longResult[i] = (long) (Math.round(diff * Math.pow(10, decimal)));
           i++;
         }
         return longResult;
@@ -528,7 +538,9 @@ public final class ValueCompressionUtil {
         float[] floatResult = new float[value.length];
 
         for (double a : value) {
-          floatResult[i] = (byte) (Math.round((maxValue - a) * Math.pow(10, decimal)));
+          BigDecimal val = BigDecimal.valueOf(a);
+          double diff = max.subtract(val).doubleValue();
+          floatResult[i] = (float) (Math.round(diff * Math.pow(10, decimal)));
           i++;
         }
         return floatResult;
@@ -538,7 +550,9 @@ public final class ValueCompressionUtil {
         double[] defaultResult = new double[value.length];
 
         for (double a : value) {
-          defaultResult[i] = (byte) (Math.round((maxValue - a) * Math.pow(10, decimal)));
+          BigDecimal val = BigDecimal.valueOf(a);
+          double diff = max.subtract(val).doubleValue();
+          defaultResult[i] =  (Math.round(diff * Math.pow(10, decimal)));
           i++;
         }
         return defaultResult;
