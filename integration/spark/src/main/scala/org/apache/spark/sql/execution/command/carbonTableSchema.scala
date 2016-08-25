@@ -1341,6 +1341,13 @@ private[sql] case class ShowLoads(
   override def run(sqlContext: SQLContext): Seq[Row] = {
     val databaseName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     val tableUniqueName = databaseName + "_" + tableName
+    // Here using checkSchemasModifiedTimeAndReloadTables in tableExists to reload metadata if
+    // schema is changed by other process, so that tableInfoMap woulb be refilled.
+    val tableExists = CarbonEnv.getInstance(sqlContext).carbonCatalog
+      .tableExists(TableIdentifier(tableName, databaseNameOp))(sqlContext)
+    if (!tableExists) {
+      sys.error(s"$databaseName.$tableName is not found")
+    }
     val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
       .getCarbonTable(tableUniqueName)
     if (carbonTable == null) {
