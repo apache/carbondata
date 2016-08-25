@@ -445,6 +445,8 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
       .removeTable(dbName + "_" + tableName)
 
     sqlContext.asInstanceOf[HiveContext].runSqlHive(s"DROP TABLE IF EXISTS $dbName.$tableName")
+    // discard cached table info in cachedDataSourceTables
+    sqlContext.catalog.refreshTable(tableIdentifier)
   }
 
   private def getTimestampFileAndType(databaseName: String, tableName: String) = {
