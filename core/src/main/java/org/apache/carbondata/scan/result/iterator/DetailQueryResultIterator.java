@@ -26,6 +26,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsCommonConstants;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.model.QueryModel;
@@ -58,9 +59,8 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
   @Override public boolean hasNext() {
     flag = super.hasNext();
     if(!flag && total > 0) {
-      QueryStatistic statistic = new QueryStatistic();
-      statistic.addFixedTimeStatistic("Total Time taken to Scan(read data from file " +
-          "and process)", total);
+      QueryStatistic statistic = new QueryStatistic(queryModel.getQueryId());
+      statistic.addFixedTimeStatistic(QueryStatisticsCommonConstants.SCAN_DATA, total);
       queryModel.getStatisticsRecorder().recordStatistics(statistic);
     }
     return flag;

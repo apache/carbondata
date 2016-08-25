@@ -32,8 +32,8 @@ import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, ColumnIdentif
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
-import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsRecorder}
-import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsCommonConstants, QueryStatisticsRecorder}
+import org.apache.carbondata.core.util.{CarbonTimeStatisticsFactory, DataTypeUtil}
 
 /**
  * It decodes the data.
@@ -157,7 +157,7 @@ case class CarbonDictionaryDecoder(
         val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
         (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
       }.toMap
-      val recorder = new QueryStatisticsRecorder("")
+      val recorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance()
       if (isRequiredToDecode) {
         val dataTypes = child.output.map { attr => attr.dataType }
         child.execute().mapPartitions { iter =>
@@ -174,13 +174,14 @@ case class CarbonDictionaryDecoder(
             override final def hasNext: Boolean = {
               flag = iter.hasNext
               if (!flag && total > 0) {
-                val queryStatistic = new QueryStatistic()
+                val queryStatistic = new QueryStatistic("")
                 queryStatistic
-                  .addFixedTimeStatistic("Total Time taken to prepare query result (Decoding)",
+                  .addFixedTimeStatistic(QueryStatisticsCommonConstants.PREPARE_RESULT,
                     total/1000000 + 1
                   )
                 recorder.recordStatistics(queryStatistic)
                 recorder.logStatistics()
+                recorder.logStatisticsTable()
               }
               flag
             }

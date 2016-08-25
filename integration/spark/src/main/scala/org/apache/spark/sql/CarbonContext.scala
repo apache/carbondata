@@ -34,9 +34,9 @@ import org.apache.spark.sql.hive._
 import org.apache.spark.sql.optimizer.CarbonOptimizer
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsRecorder}
+import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsCommonConstants, QueryStatisticsRecorder}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
 import org.apache.carbondata.spark.rdd.CarbonDataFrameRDD
 
 class CarbonContext(
@@ -68,7 +68,7 @@ class CarbonContext(
   override lazy val catalog = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
-    new CarbonMetastoreCatalog(this, storePath, metadataHive) with OverrideCatalog
+    new CarbonMetastoreCatalog(this, storePath, metadataHive, queryId) with OverrideCatalog
   }
 
   @transient
@@ -120,20 +120,21 @@ class CarbonContext(
   @transient
   val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)
 
+  var queryId: String = ""
+
   override def sql(sql: String): DataFrame = {
     // queryId will be unique for each query, creting query detail holder
-    val queryId: String = System.nanoTime() + ""
+    queryId = System.nanoTime() + ""
     this.setConf("queryId", queryId)
 
     CarbonContext.updateCarbonPorpertiesPath(this)
     val sqlString = sql.toUpperCase
     LOGGER.info(s"Query [$sqlString]")
-    val recorder = new QueryStatisticsRecorder("")
-    val statistic = new QueryStatistic()
+    val recorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance()
+    val statistic = new QueryStatistic(queryId)
     val logicPlan: LogicalPlan = parseSql(sql)
-    statistic.addStatistics("Time taken to parse sql In Driver Side", System.currentTimeMillis())
+    statistic.addStatistics(QueryStatisticsCommonConstants.SQL_PARSE, System.currentTimeMillis())
     recorder.recordStatistics(statistic)
-    recorder.logStatistics()
     val result = new CarbonDataFrameRDD(this, logicPlan)
 
     // We force query optimization to happen right away instead of letting it happen lazily like

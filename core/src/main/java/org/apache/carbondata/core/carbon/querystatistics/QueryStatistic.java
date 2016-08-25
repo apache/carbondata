@@ -52,8 +52,11 @@ public class QueryStatistic implements Serializable {
    */
   private long count;
 
-  public QueryStatistic() {
+  private String queryIdWthTask;
+
+  public QueryStatistic(String queryId) {
     this.startTime = System.currentTimeMillis();
+    this.queryIdWthTask = queryId;
   }
 
   /**
@@ -89,15 +92,35 @@ public class QueryStatistic implements Serializable {
    * Below method will be used to get the statistic message, which will
    * be used to log
    *
-   * @param queryWithTaskId query with task id to append in the message
    * @return statistic message
    */
-  public String getStatistics(String queryWithTaskId) {
-    if (StringUtils.isEmpty(queryWithTaskId)) {
+  public String getStatistics() {
+    if (StringUtils.isEmpty(queryIdWthTask)) {
       return message + " Is: " + timeTaken + " ms";
     } else if(timeTaken == -1) {
-      return message + " for the taskid : " + queryWithTaskId + " Is: " + count ;
+      return message + " for the taskid : " + queryIdWthTask + " Is: " + count ;
     }
-    return message + " for the taskid : " + queryWithTaskId + " Is: " + timeTaken + " ms";
+    return message + " for the taskid : " + queryIdWthTask + " Is: " + timeTaken + " ms";
   }
+
+  public static String sameCharBuilder(String a, int num) {
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < num; i++){
+      builder.append(a);
+    }
+    return builder.toString();
+  }
+
+  public String getQueryId() {
+    return this.queryIdWthTask;
+  }
+
+  public String getMessage() {
+    return this.message;
+  }
+
+  public String getTimeTaken() {
+    return (double)this.timeTaken/1000 + " ";
+  }
+
 }

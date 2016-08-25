@@ -17,15 +17,18 @@
 
 package org.apache.carbondata.core.util;
 
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 public class CarbonTimeStatisticsFactory {
   private static String LoadStatisticsInstanceType;
   private static LoadStatistics LoadStatisticsInstance;
+  private static QueryStatisticsRecorder QueryStatisticsRecorderInstance;
 
   static {
     CarbonTimeStatisticsFactory.updateTimeStatisticsUtilStatus();
     LoadStatisticsInstance = genLoadStatisticsInstance();
+    QueryStatisticsRecorderInstance = genQueryStatisticsRecorderInstance();
   }
 
   private static void updateTimeStatisticsUtilStatus() {
@@ -47,6 +50,14 @@ public class CarbonTimeStatisticsFactory {
 
   public static LoadStatistics getLoadStatisticsInstance() {
     return LoadStatisticsInstance;
+  }
+
+  private static QueryStatisticsRecorder genQueryStatisticsRecorderInstance() {
+    return QueryStatisticsRecorder.getInstance();
+  }
+
+  public static QueryStatisticsRecorder getQueryStatisticsRecorderInstance() {
+    return QueryStatisticsRecorderInstance;
   }
 
 }

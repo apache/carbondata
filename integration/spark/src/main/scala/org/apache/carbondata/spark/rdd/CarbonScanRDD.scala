@@ -32,7 +32,8 @@ import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.Dictionary
 import org.apache.carbondata.core.carbon.datastore.block.{BlockletInfos, TableBlockInfo}
-import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsRecorder}
+import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsCommonConstants, QueryStatisticsRecorder}
+import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
 import org.apache.carbondata.scan.executor.QueryExecutorFactory
 import org.apache.carbondata.scan.expression.Expression
@@ -75,7 +76,7 @@ class CarbonScanRDD[V: ClassTag](
   val defaultParallelism = sc.defaultParallelism
 
   override def getPartitions: Array[Partition] = {
-    val statisticRecorder = new QueryStatisticsRecorder(queryModel.getQueryId)
+    val statisticRecorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance()
     val (carbonInputFormat: CarbonInputFormat[Array[Object]], job: Job) =
       QueryPlanUtil.createCarbonInputFormat(queryModel.getAbsoluteTableIdentifier)
 
@@ -112,11 +113,11 @@ class CarbonScanRDD[V: ClassTag](
       val blockList = CarbonLoaderUtil.
         distributeBlockLets(blockListTemp.asJava, defaultParallelism).asScala
       if (blockList.nonEmpty) {
-        var statistic = new QueryStatistic()
+        var statistic = new QueryStatistic(queryModel.getQueryId)
         statistic.addCountStatistic("Total number of blocks Be Hit", blockList.size)
         statisticRecorder.recordStatistics(statistic)
         // group blocks to nodes, tasks
-        statistic = new QueryStatistic()
+        statistic = new QueryStatistic(queryModel.getQueryId)
         val activeNodes = DistributionUtil
           .ensureExecutorsAndGetNodeList(blockList.toArray, sparkContext)
         val nodeBlockMapping =
@@ -125,7 +126,7 @@ class CarbonScanRDD[V: ClassTag](
           )
         statistic.addStatistics("Total Time taken in block(s) allocation", System.currentTimeMillis)
         statisticRecorder.recordStatistics(statistic)
-        statistic = new QueryStatistic()
+        statistic = new QueryStatistic(queryModel.getQueryId)
         var i = 0
         // Create Spark Partition for each task and assign blocks
         nodeBlockMapping.asScala.foreach { entry =>
@@ -146,9 +147,9 @@ class CarbonScanRDD[V: ClassTag](
                 + s"parallelism: $defaultParallelism , " +
                 s"no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks"
         )
-        statistic.addStatistics("Time taken to identify Block(s) to scan", System.currentTimeMillis)
+        statistic.addStatistics(QueryStatisticsCommonConstants.BLOCK_IDENTIFICATION,
+          System.currentTimeMillis)
         statisticRecorder.recordStatistics(statistic)
-        statisticRecorder.logStatistics()
         result.asScala.foreach { r =>
           val cp = r.asInstanceOf[CarbonSparkPartition]
           logInfo(s"Node : " + cp.locations.toSeq.mkString(",")
@@ -212,13 +213,12 @@ class CarbonScanRDD[V: ClassTag](
         if (finished) {
           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
           if (null != queryModel.getStatisticsRecorder) {
-            val queryStatistic = new QueryStatistic()
+            val queryStatistic = new QueryStatistic(queryModel.getQueryId)
             queryStatistic
-              .addFixedTimeStatistic("Total Time taken to execute the query in executor Side",
+              .addFixedTimeStatistic(QueryStatisticsCommonConstants.EXECUTOR_PART,
                 System.currentTimeMillis - queryStartTime
               )
             queryModel.getStatisticsRecorder.recordStatistics(queryStatistic)
-            queryModel.getStatisticsRecorder.logStatistics()
           }
         }
         !finished
@@ -233,13 +233,12 @@ class CarbonScanRDD[V: ClassTag](
         if (queryModel.getLimit != -1 && recordCount >= queryModel.getLimit) {
           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
           if (null != queryModel.getStatisticsRecorder) {
-            val queryStatistic = new QueryStatistic()
+            val queryStatistic = new QueryStatistic(queryModel.getQueryId)
             queryStatistic
-              .addFixedTimeStatistic("Total Time taken to execute the query in executor Side",
+              .addFixedTimeStatistic(QueryStatisticsCommonConstants.EXECUTOR_PART,
                 System.currentTimeMillis - queryStartTime
               )
             queryModel.getStatisticsRecorder.recordStatistics(queryStatistic)
-            queryModel.getStatisticsRecorder.logStatistics()
           }
         }
         keyClass.getValue(rowIterator.next())

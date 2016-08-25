@@ -40,13 +40,13 @@ import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
-import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsRecorder}
+import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsCommonConstants, QueryStatisticsRecorder}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType
 import org.apache.carbondata.core.reader.ThriftReader
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
 import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.lcm.locks.ZookeeperInit
@@ -100,7 +100,7 @@ case class DictionaryMap(dictionaryMap: Map[String, Boolean]) {
 }
 
 class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
-    client: ClientInterface)
+    client: ClientInterface, queryId: String)
   extends HiveMetastoreCatalog(client, hiveContext)
     with spark.Logging {
 
@@ -152,8 +152,8 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
   }
 
   def loadMetadata(metadataPath: String): MetaData = {
-    val recorder = new QueryStatisticsRecorder("")
-    val statistic = new QueryStatistic()
+    val recorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance()
+    val statistic = new QueryStatistic(queryId)
     // creating zookeeper instance once.
     // if zookeeper is configured as carbon lock type.
     val zookeeperUrl: String = hiveContext.getConf(CarbonCommonConstants.ZOOKEEPER_URL, null)
@@ -178,10 +178,9 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     val metaDataBuffer = new ArrayBuffer[TableMeta]
     fillMetaData(metadataPath, fileType, metaDataBuffer)
     updateSchemasUpdatedTime("", "")
-    statistic.addStatistics("Time taken to load meta data In Driver Side",
+    statistic.addStatistics(QueryStatisticsCommonConstants.LOAD_META,
       System.currentTimeMillis())
     recorder.recordStatistics(statistic)
-    recorder.logStatistics()
     MetaData(metaDataBuffer)
   }
 

@@ -38,11 +38,12 @@ import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
-import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsCommonConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.scan.executor.QueryExecutor;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
@@ -91,10 +92,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .getCarbonTableIdentifier().getTableName());
     // Initializing statistics list to record the query statistics
     // creating copy on write to handle concurrent scenario
-    queryProperties.queryStatisticsRecorder = new QueryStatisticsRecorder(queryModel.getQueryId());
+    queryProperties.queryStatisticsRecorder =
+        CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance();
     queryModel.setStatisticsRecorder(queryProperties.queryStatisticsRecorder);
     QueryUtil.resolveQueryModel(queryModel);
-    QueryStatistic queryStatistic = new QueryStatistic();
+    QueryStatistic queryStatistic = new QueryStatistic(queryModel.getQueryId());
     // sort the block info
     // so block will be loaded in sorted order this will be required for
     // query execution
@@ -108,7 +110,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       throw new QueryExecutionException(e);
     }
     queryStatistic
-        .addStatistics("Time taken to load the Block(s) In Executor", System.currentTimeMillis());
+        .addStatistics(QueryStatisticsCommonConstants.LOAD_INDEX, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
     //
     // // updating the restructuring infos for the query
@@ -143,14 +145,14 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
 
     queryProperties.complexFilterDimension =
         QueryUtil.getAllFilterDimensions(queryModel.getFilterExpressionResolverTree());
-    queryStatistic = new QueryStatistic();
+    queryStatistic = new QueryStatistic(queryModel.getQueryId());
     // dictionary column unique column id to dictionary mapping
     // which will be used to get column actual data
     queryProperties.columnToDictionayMapping = QueryUtil
         .getDimensionDictionaryDetail(queryModel.getQueryDimension(),
             queryProperties.complexFilterDimension, queryModel.getAbsoluteTableIdentifier());
     queryStatistic
-        .addStatistics("Time taken to load the Dictionary In Executor", System.currentTimeMillis());
+        .addStatistics(QueryStatisticsCommonConstants.DICTIONARY_LOAD, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
     queryModel.setColumnToDictionaryMapping(queryProperties.columnToDictionayMapping);
     // setting the sort dimension index. as it will be updated while getting the sort info
