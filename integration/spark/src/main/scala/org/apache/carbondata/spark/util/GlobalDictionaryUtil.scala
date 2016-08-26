@@ -727,6 +727,12 @@ object GlobalDictionaryUtil extends Logging {
           generatePredefinedColDictionary(colDictFilePath, table,
             dimensions, carbonLoadModel, sqlContext, hdfsLocation, dictfolderPath)
         }
+        if (headers.length > df.columns.length) {
+          val msg = "The number of columns in the file header do not match the number of " +
+            "columns in the data file; Either delimiter or fileheader provided is not correct"
+          logError(msg)
+          throw new DataLoadingException(msg)
+        }
         // use fact file to generate global dict
         val (requireDimension, requireColumnNames) = pruneDimensions(dimensions,
           headers, df.columns)
@@ -743,7 +749,7 @@ object GlobalDictionaryUtil extends Logging {
           // check result status
           checkStatus(carbonLoadModel, sqlContext, model, statusList)
         } else {
-          logInfo("have no column need to generate global dictionary in Fact file")
+          logInfo("No column found for generating global dictionary in source data files")
         }
         // generate global dict from dimension file
         if (carbonLoadModel.getDimFolderPath != null) {
@@ -802,7 +808,7 @@ object GlobalDictionaryUtil extends Logging {
       }
     } catch {
       case ex: Exception =>
-        logError("generate global dictionary failed")
+        logError("generate global dictionary failed", ex)
         throw ex
     }
   }
