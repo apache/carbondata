@@ -126,7 +126,7 @@ public final class GraphExecutionUtil {
     }
 
     if (null != readLine) {
-      delimiter = delimiterConverter(delimiter);
+      delimiter = CarbonUtil.delimiterConverter(delimiter);
       String[] columnNames = readLine.split(delimiter);
       TextFileInputField[] textFileInputFields = new TextFileInputField[columnNames.length];
 
@@ -290,7 +290,7 @@ public final class GraphExecutionUtil {
     String readLine = readCSVFile(csvFilePath);
 
     if (null != readLine) {
-      delimiter = delimiterConverter(delimiter);
+      delimiter = CarbonUtil.delimiterConverter(delimiter);
       String[] columnFromCSV = readLine.toLowerCase().split(delimiter);
 
       List<String> csvColumnsList = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
@@ -329,34 +329,5 @@ public final class GraphExecutionUtil {
       }
     }
     return columnNames;
-  }
-
-  /**
-   * special char delimiter Converter
-   *
-   * @param delimiter
-   * @return delimiter
-   */
-  public static String delimiterConverter(String delimiter) {
-    switch (delimiter) {
-      case "|":
-      case "*":
-      case ".":
-      case ":":
-      case "^":
-      case "\\":
-      case"$":
-      case "+":
-      case "?":
-      case "(":
-      case ")":
-      case "{":
-      case "}":
-      case "[":
-      case "]":
-        return "\\" + delimiter;
-      default:
-        return delimiter;
-    }
   }
 }

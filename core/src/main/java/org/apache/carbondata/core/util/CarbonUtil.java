@@ -807,14 +807,32 @@ public final class CarbonUtil {
     }
   }
 
-  public static String escapeComplexDelimiterChar(String parseStr) {
-    switch (parseStr) {
-      case "$":
-        return "\\$";
+  /**
+   * special char delimiter Converter
+   *
+   * @param delimiter
+   * @return delimiter
+   */
+  public static String delimiterConverter(String delimiter) {
+    switch (delimiter) {
+      case "|":
+      case "*":
+      case ".":
       case ":":
-        return "\\:";
+      case "^":
+      case "\\":
+      case"$":
+      case "+":
+      case "?":
+      case "(":
+      case ")":
+      case "{":
+      case "}":
+      case "[":
+      case "]":
+        return "\\" + delimiter;
       default:
-        return parseStr;
+        return delimiter;
     }
   }
 
