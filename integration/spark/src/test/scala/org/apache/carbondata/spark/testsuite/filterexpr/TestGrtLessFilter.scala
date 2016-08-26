@@ -62,28 +62,28 @@ class TestGrtLessFilter extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  test("select * from carbonTable where date > '2017-7-25 12:07:29'") {
+  test("select * from carbonTable where date > cast('2017-7-25 12:07:29' as timestamp)") {
     checkAnswer(
-      sql("select * from carbonTable where date > '2017-7-25 12:07:29'"),
-      sql("select * from hiveTable where date > '2017-7-25 12:07:29'")
+      sql("select * from carbonTable where date > cast('2017-7-25 12:07:29' as timestamp)"),
+      sql("select * from hiveTable where date > cast('2017-7-25 12:07:29' as timestamp)")
     )
   }
-  test("select * from carbonTable where date < '2017-7-25 12:07:29'") {
+  test("select * from carbonTable where date < cast('2017-7-25 12:07:29' as timestamp)") {
     checkAnswer(
-      sql("select * from carbonTable where date < '2017-7-25 12:07:29'"),
-      sql("select * from hiveTable where date < '2017-7-25 12:07:29'")
+      sql("select * from carbonTable where date < cast('2017-7-25 12:07:29' as timestamp)"),
+      sql("select * from hiveTable where date < cast('2017-7-25 12:07:29' as timestamp)")
     )
   }
-  test("select * from carbonTable where date > '2018-7-24 12:07:28'") {
+  test("select * from carbonTable where date > cast('2018-7-24 12:07:28' as timestamp)") {
     checkAnswer(
-      sql("select * from carbonTable where date > '2018-7-24 12:07:28'"),
-      sql("select * from hiveTable where date > '2018-7-24 12:07:28'")
+      sql("select * from carbonTable where date > cast('2018-7-24 12:07:28' as timestamp)"),
+      sql("select * from hiveTable where date > cast('2018-7-24 12:07:28' as timestamp)")
     )
   }
-  test("select * from carbonTable where date < '2018-7-24 12:07:28'") {
+  test("select * from carbonTable where date < cast('2018-7-24 12:07:28' as timestamp)") {
     checkAnswer(
-      sql("select * from carbonTable where date < '2018-7-24 12:07:28'"),
-      sql("select * from hiveTable where date < '2018-7-24 12:07:28'")
+      sql("select * from carbonTable where date < cast('2018-7-24 12:07:28' as timestamp)"),
+      sql("select * from hiveTable where date < cast('2018-7-24 12:07:28' as timestamp)")
     )
   }
 
