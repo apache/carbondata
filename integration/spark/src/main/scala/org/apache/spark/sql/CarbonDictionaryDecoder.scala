@@ -32,7 +32,7 @@ import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, ColumnIdentif
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
-import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsCommonConstants, QueryStatisticsRecorder}
+import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsCommonConstants}
 import org.apache.carbondata.core.util.{CarbonTimeStatisticsFactory, DataTypeUtil}
 
 /**
@@ -153,6 +153,7 @@ case class CarbonDictionaryDecoder(
   override def doExecute(): RDD[InternalRow] = {
     attachTree(this, "execute") {
       val storePath = sqlContext.catalog.asInstanceOf[CarbonMetastoreCatalog].storePath
+      val queryId = sqlContext.getConf("queryId", System.nanoTime() + "")
       val absoluteTableIdentifiers = relations.map { relation =>
         val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
         (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
@@ -174,7 +175,7 @@ case class CarbonDictionaryDecoder(
             override final def hasNext: Boolean = {
               flag = iter.hasNext
               if (!flag && total > 0) {
-                val queryStatistic = new QueryStatistic("")
+                val queryStatistic = new QueryStatistic(queryId)
                 queryStatistic
                   .addFixedTimeStatistic(QueryStatisticsCommonConstants.PREPARE_RESULT,
                     total/1000000 + 1

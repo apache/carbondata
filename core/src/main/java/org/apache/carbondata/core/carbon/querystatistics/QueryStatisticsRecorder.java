@@ -207,7 +207,7 @@ public class QueryStatisticsRecorder implements Serializable {
               sql_parse_time + "|" + "\n");
           tableInfo.append("|" + QueryStatistic.sameCharBuilder(" ", len1) +
               "+" + col2 + "+" + QueryStatistic.sameCharBuilder(" ", len3) +
-              "+" + col4 + "|" + "\n");
+              "+" + col4 + "+" + "\n");
           tableInfo.append("|" +
               QueryStatistic.sameCharBuilder(" ", len1) + "|" +
               QueryStatistic.sameCharBuilder(" ", (len2 - "Connect time to Hive".length())) +
@@ -224,7 +224,7 @@ public class QueryStatisticsRecorder implements Serializable {
               QueryStatistic.sameCharBuilder(" ", len4) + "|" + "\n");
           tableInfo.append("|" + QueryStatistic.sameCharBuilder(" ", len1) +
               "+" + col2 + "+" + QueryStatistic.sameCharBuilder(" ", len3) +
-              "+" + col4 + "|" + "\n");
+              "+" + col4 + "+" + "\n");
           tableInfo.append("|" +
               QueryStatistic.sameCharBuilder(" ", (len1 - "Part".length())) + "Part" + "|" +
               QueryStatistic.sameCharBuilder(" ", (len2 - "Block identification".length())) +
@@ -234,7 +234,7 @@ public class QueryStatisticsRecorder implements Serializable {
               block_identification_time + "|" + "\n");
           tableInfo.append("|" + QueryStatistic.sameCharBuilder(" ", len1) +
               "+" + col2 + "+" + QueryStatistic.sameCharBuilder(" ", len3) +
-              "+" + col4 + "|" + "\n");
+              "+" + col4 + "+" + "\n");
           tableInfo.append("|" +
               QueryStatistic.sameCharBuilder(" ", len1) + "|" +
               QueryStatistic.sameCharBuilder(" ", (len2 - "Schedule task to".length())) +
@@ -259,7 +259,7 @@ public class QueryStatisticsRecorder implements Serializable {
               load_index_time + "|" + "\n");
           tableInfo.append("|" + QueryStatistic.sameCharBuilder(" ", len1) +
               "+" + col2 + "+" + QueryStatistic.sameCharBuilder(" ", len3) +
-              "+" + col4 + "|" + "\n");
+              "+" + col4 + "+" + "\n");
           tableInfo.append("|" +
               QueryStatistic.sameCharBuilder(" ", (len1 - "Executor".length())) +
               "Executor" + "|" +
@@ -282,7 +282,7 @@ public class QueryStatisticsRecorder implements Serializable {
               QueryStatistic.sameCharBuilder(" ", len4) + "|" + "\n");
           tableInfo.append("|" + QueryStatistic.sameCharBuilder(" ", len1) +
               "+" + col2 + "+" + QueryStatistic.sameCharBuilder(" ", len3) +
-              "+" + col4 + "|" + "\n");
+              "+" + col4 + "+" + "\n");
           tableInfo.append("|" +
               QueryStatistic.sameCharBuilder(" ", len1) + "|" +
               QueryStatistic.sameCharBuilder(" ", (len2 - "Dictionary load".length())) +
@@ -292,7 +292,7 @@ public class QueryStatisticsRecorder implements Serializable {
               dictionary_load_time + "|" + "\n");
           tableInfo.append("|" + QueryStatistic.sameCharBuilder(" ", len1) +
               "+" + col2 + "+" + QueryStatistic.sameCharBuilder(" ", len3) +
-              "" + "+" + col4 + "|" + "\n");
+              "" + "+" + col4 + "+" + "\n");
           tableInfo.append("|" +
               QueryStatistic.sameCharBuilder(" ", len1) + "|" +
               QueryStatistic.sameCharBuilder(" ", (len2 - "Prepare query result".length())) +
