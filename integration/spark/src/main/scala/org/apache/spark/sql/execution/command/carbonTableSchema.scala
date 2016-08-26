@@ -1113,9 +1113,9 @@ private[sql] case class LoadTable(
       }
       else {
         carbonLoadModel.setComplexDelimiterLevel1(
-          CarbonUtil.escapeComplexDelimiterChar(complex_delimiter_level_1))
+          CarbonUtil.delimiterConverter(complex_delimiter_level_1))
         carbonLoadModel.setComplexDelimiterLevel2(
-          CarbonUtil.escapeComplexDelimiterChar(complex_delimiter_level_2))
+          CarbonUtil.delimiterConverter(complex_delimiter_level_2))
       }
       // set local dictionary path, and dictionary file extension
       carbonLoadModel.setAllDictPath(allDictionaryPath)
