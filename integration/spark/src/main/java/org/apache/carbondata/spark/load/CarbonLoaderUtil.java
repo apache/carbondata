@@ -1121,6 +1121,7 @@ public final class CarbonLoaderUtil {
       noofNodes = activeNodes.size();
     }
     int blocksPerNode = blockInfos.size() / noofNodes;
+    blocksPerNode = blocksPerNode <=0 ? 1 : blocksPerNode;
 
     // sort the flattened data.
     Collections.sort(flattenedList);
@@ -1358,7 +1359,7 @@ public final class CarbonLoaderUtil {
       }
     } else {
       try {
-        String hostAddress = InetAddress.getLocalHost().getHostAddress();
+        String hostAddress = InetAddress.getByName(nodeName).getHostAddress();
         isActiveNode = activeNode.contains(hostAddress);
         if(isActiveNode){
           return hostAddress;
