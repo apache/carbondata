@@ -61,7 +61,15 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
      
   }
   
-   
+  test("Test ^ * special character data loading for complex types") {
+    sql("create table complexcarbonwithspecialchardelimeter(deviceInformationId int, channelsId string, ROMSize string, ROMName String, purchasedate string, mobile struct<imei:string, imsi:string>, MAC array<string>, locationinfo array<struct<ActiveAreaId:int, ActiveCountry:string, ActiveProvince:string, Activecity:string, ActiveDistrict:string, ActiveStreet:string>>, proddate struct<productionDate:string,activeDeactivedate:array<string>>, gamePointId double,contractNumber double)  STORED BY 'org.apache.carbondata.format'  TBLPROPERTIES ('DICTIONARY_INCLUDE'='deviceInformationId', 'DICTIONARY_EXCLUDE'='channelsId','COLUMN_GROUP'='(ROMSize,ROMName)')");
+    sql("LOAD DATA local inpath './src/test/resources/complextypespecialchardelimiter.csv' INTO table complexcarbonwithspecialchardelimeter  OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,channelsId,ROMSize,ROMName,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber', 'COMPLEX_DELIMITER_LEVEL_1'='^', 'COMPLEX_DELIMITER_LEVEL_2'='*')");
+    sql("create table complexhivewithspecialchardelimeter(deviceInformationId int, channelsId string, ROMSize string, ROMName String, purchasedate string, mobile struct<imei:string, imsi:string>, MAC array<string>, locationinfo array<struct<ActiveAreaId:int, ActiveCountry:string, ActiveProvince:string, Activecity:string, ActiveDistrict:string, ActiveStreet:string>>, proddate struct<productionDate:string,activeDeactivedate:array<string>>, gamePointId double,contractNumber double)row format delimited fields terminated by ',' collection items terminated by '^' map keys terminated by '*'")
+    sql("LOAD DATA local inpath './src/test/resources/complextypespecialchardelimiter.csv' INTO table complexhivewithspecialchardelimeter");
+    checkAnswer(sql("select * from complexcarbonwithspecialchardelimeter"), sql("select * from complexhivewithspecialchardelimeter"))
+    sql("drop table if exists complexcarbonwithspecialchardelimeter")
+    sql("drop table if exists complexhivewithspecialchardelimeter")
+  }
  
    test("complex filter set1") {
     checkAnswer(
