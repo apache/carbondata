@@ -157,14 +157,10 @@ class CarbonScanRDD[V: ClassTag](
         }
       } else {
         logInfo("No blocks identified to scan")
-        val nodesPerBlock = new util.ArrayList[TableBlockInfo]()
-        result.add(new CarbonSparkPartition(id, 0, Seq("").toArray, nodesPerBlock))
       }
     }
     else {
       logInfo("No valid segments found to scan")
-      val nodesPerBlock = new util.ArrayList[TableBlockInfo]()
-      result.add(new CarbonSparkPartition(id, 0, Seq("").toArray, nodesPerBlock))
     }
     result.toArray(new Array[Partition](result.size()))
   }
