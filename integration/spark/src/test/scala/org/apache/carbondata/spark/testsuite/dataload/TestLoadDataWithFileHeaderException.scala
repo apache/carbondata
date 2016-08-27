@@ -34,7 +34,7 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
            """)
   }
 
-  test("test load data both file and ddl without fileheader exception") {
+  test("test load data both file and ddl without file header exception") {
     try {
       sql(s"""
            LOAD DATA LOCAL INPATH './src/test/resources/windows.csv' into table t3
@@ -47,7 +47,7 @@ class TestLoadDataWithFileHeaderException extends QueryTest with BeforeAndAfterA
     }
   }
 
-  test("test load data ddl provided  wrong fileheader exception") {
+  test("test load data ddl provided  wrong file header exception") {
     try {
       sql(s"""
            LOAD DATA LOCAL INPATH './src/test/resources/windows.csv' into table t3
