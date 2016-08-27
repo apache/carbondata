@@ -86,7 +86,10 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   @Override public boolean exists() {
-    return file.exists();
+    if (file != null) {
+      return file.exists();
+    }
+    return false;
   }
 
   @Override public String getCanonicalPath() {
