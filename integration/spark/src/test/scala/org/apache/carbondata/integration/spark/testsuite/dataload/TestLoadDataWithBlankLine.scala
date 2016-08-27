@@ -30,20 +30,37 @@ import org.apache.spark.sql.Row
   */
 class TestLoadDataWithBlankLine extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
+    sql("drop table if exists carbontable")
     sql("CREATE TABLE carbontable (empno int, empname String, designation String, " +
       "doj String, workgroupcategory int, workgroupcategoryname String, deptno int, " +
       "deptname String, projectcode int, projectjoindate String, projectenddate String, " +
       "attendance int,utilization int,salary int) " +
         "STORED BY 'org.apache.carbondata.format'")
     sql("LOAD DATA LOCAL INPATH './src/test/resources/datawithblanklines.csv' INTO TABLE" +
-        " carbontable OPTIONS('DELIMITER'= ',')");
+        " carbontable OPTIONS('DELIMITER'= ',')")
+
+    sql("drop table if exists carbontable2")
+    sql("CREATE TABLE carbontable2 (empno int, empname String, designation String, " +
+      "doj String, workgroupcategory int, workgroupcategoryname String, deptno int, " +
+      "deptname String, projectcode int, projectjoindate String, projectenddate String, " +
+      "attendance int,utilization int,salary int) " +
+      "STORED BY 'org.apache.carbondata.format'")
   }
   test("test carbon table data loading when there are  blank lines in data") {
     checkAnswer(sql("select count(*) from carbontable"),
       Seq(Row(18)))
   }
 
+  test("test carbon table data loading when the first line is blank") {
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/dataWithNullFirstLine.csv' INTO TABLE " +
+      "carbontable2 OPTIONS('DELIMITER'= ',','FILEHEADER'='empno,empname,designation,doj,workgroupcategory,workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate,attendance,utilization,salary')")
+
+    checkAnswer(sql("select count(*) from carbontable2"),
+      Seq(Row(11)))
+  }
+
   override def afterAll {
-    sql("drop table carbontable")
+    sql("drop table if exists carbontable")
+    sql("drop table if exists carbontable2")
   }
 }
