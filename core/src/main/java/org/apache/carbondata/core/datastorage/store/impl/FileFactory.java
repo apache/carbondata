@@ -27,6 +27,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.zip.GZIPInputStream;
 
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
@@ -41,6 +43,8 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.compress.CompressionInputStream;
+import org.apache.hadoop.io.compress.GzipCodec;
 
 public final class FileFactory {
   private static Configuration configuration = null;
@@ -132,21 +136,43 @@ public final class FileFactory {
     }
   }
 
-  public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize)
-      throws IOException {
+  public static DataInputStream getCompressedDataInputStream(String path,
+      FileType fileType, int bufferSize) throws IOException {
     path = path.replace("\\", "/");
     switch (fileType) {
       case LOCAL:
-        return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
+        return new DataInputStream(new BufferedInputStream(
+            new GZIPInputStream(new FileInputStream(path))));
       case HDFS:
       case VIEWFS:
         Path pt = new Path(path);
         FileSystem fs = FileSystem.get(configuration);
-        FSDataInputStream stream = fs.open(pt, bufferSize);
-        return new DataInputStream(new BufferedInputStream(stream));
+        GzipCodec codec = new GzipCodec();
+        return new DataInputStream(new BufferedInputStream(
+            codec.createInputStream(fs.open(pt, bufferSize))));
       default:
-        return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
+        throw new UnsupportedOperationException("unsupported file system");
     }
+  }
+
+  public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize)
+      throws IOException {
+    path = path.replace("\\", "/");
+    InputStream stream;
+    switch (fileType) {
+      case LOCAL:
+          stream = new FileInputStream(path);
+        break;
+      case HDFS:
+      case VIEWFS:
+        Path pt = new Path(path);
+        FileSystem fs = FileSystem.get(configuration);
+        stream = fs.open(pt, bufferSize);
+        break;
+      default:
+        throw new UnsupportedOperationException("unsupported file system");
+    }
+    return new DataInputStream(new BufferedInputStream(stream));
   }
 
   /**

@@ -19,11 +19,9 @@ package org.apache.carbondata.examples.util
 
 import java.io.File
 
-import org.apache.hadoop.hive.conf.HiveConf
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.CarbonContext
-
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.CarbonContext
+import org.apache.spark.{SparkConf, SparkContext}
 
 // scalastyle:off println
 

@@ -19,14 +19,12 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
-import scala.util.Random
-
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.{CarbonContext, DataFrame, Row, SaveMode, SQLContext}
-import org.apache.spark.sql.types.{DataTypes, StructType}
-
 import org.apache.carbondata.examples.PerfTest._
 import org.apache.carbondata.examples.util.InitForExamples
+import org.apache.spark.sql.types.{DataTypes, StructType}
+import org.apache.spark.sql.{CarbonContext, DataFrame, Row, SQLContext, SaveMode}
+
+import scala.util.Random
 
 // scalastyle:off println
 

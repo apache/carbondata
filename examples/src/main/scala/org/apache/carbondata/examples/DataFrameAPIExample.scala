@@ -17,10 +17,9 @@
 
 package org.apache.carbondata.examples
 
-import org.apache.spark.sql.SaveMode
-
 import org.apache.carbondata.examples.util.InitForExamples
 
+// scalastyle:off println
 object DataFrameAPIExample {
 
   def main(args: Array[String]) {
@@ -29,37 +28,46 @@ object DataFrameAPIExample {
 
     import cc.implicits._
     // create a dataframe
-    val df = sc.parallelize(1 to 1000)
+    val df = sc.parallelize(1 to 1000 * 1000)
       .map(x => ("a", "b", x))
       .toDF("c1", "c2", "c3")
 
-    // save dataframe to carbon file
-    df.write
-      .format("carbondata")
-      .option("tableName", "carbon1")
-      .mode(SaveMode.Overwrite)
-      .save()
+    import org.apache.carbondata.spark._
+    df.saveAsCarbonFile(Map("tableName" -> "carbon2", "compress"->"true"))
+    cc.sql("SELECT count(*) FROM carbon2 WHERE c3 > 100").show
+    cc.sql("DROP TABLE IF EXISTS carbon2")
 
-    // use datasource api to read
-    val in = cc.read
-      .format("carbondata")
-      .option("tableName", "carbon1")
-      .load()
-
-    val count = in.where($"c3" > 500).select($"*").count()
-
-    // scalastyle:off println
-    println(s"count using dataframe.read: $count")
-    // scalastyle:on println
-
-    // use SQL to read
-    cc.sql("SELECT count(*) FROM carbon1 WHERE c3 > 500").show
-    cc.sql("DROP TABLE IF EXISTS carbon1")
-
-    // also support a implicit function for easier access
     import org.apache.carbondata.spark._
     df.saveAsCarbonFile(Map("tableName" -> "carbon2"))
     cc.sql("SELECT count(*) FROM carbon2 WHERE c3 > 100").show
     cc.sql("DROP TABLE IF EXISTS carbon2")
+
+//    // save dataframe to carbon file
+//    df.write
+//      .format("carbondata")
+//      .option("tableName", "carbon1")
+//      //.option("compress", "true")
+//      .mode(SaveMode.Overwrite)
+//      .save()
+//
+//    // use datasource api to read
+//    val in = cc.read
+//      .format("carbondata")
+//      .option("tableName", "carbon1")
+//      .load()
+//
+//    val count = in.where($"c3" > 500).select($"*").count()
+//    println(s"count using dataframe.read: $count")
+//
+//    // use SQL to read
+//    cc.sql("SELECT count(*) FROM carbon1 WHERE c3 > 500").show
+//    cc.sql("DROP TABLE IF EXISTS carbon1")
+//
+//    // also support a implicit function for easier access
+//    import org.apache.carbondata.spark._
+//    df.saveAsCarbonFile(Map("tableName" -> "carbon2", "compress"->"true"))
+//    cc.sql("SELECT count(*) FROM carbon2 WHERE c3 > 100").show
+//    cc.sql("DROP TABLE IF EXISTS carbon2")
   }
 }
+// scalastyle:on println
