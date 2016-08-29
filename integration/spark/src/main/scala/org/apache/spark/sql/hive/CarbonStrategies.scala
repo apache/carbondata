@@ -236,6 +236,21 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         } else {
           ExecutedCommand(HiveNativeCommand(inputSqlString)) :: Nil
         }
+      case alterTable@AlterTableCompaction(altertablemodel) =>
+        val isCarbonTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
+            .tableExists(TableIdentifier(altertablemodel.tableName,
+                 altertablemodel.dbName))(sqlContext)
+        if (isCarbonTable) {
+          if (altertablemodel.compactionType.equalsIgnoreCase("minor") ||
+              altertablemodel.compactionType.equalsIgnoreCase("major")) {
+            ExecutedCommand(alterTable) :: Nil
+          } else {
+            throw new MalformedCarbonCommandException(
+                "Unsupported alter operation on carbon table")
+          }
+        } else {
+          ExecutedCommand(HiveNativeCommand(altertablemodel.alterSql)) :: Nil
+        }
       case d: HiveNativeCommand =>
         try {
           val resolvedTable = sqlContext.executePlan(CarbonHiveSyntax.parse(d.sql)).optimizedPlan
