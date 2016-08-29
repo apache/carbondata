@@ -592,7 +592,7 @@ object GlobalDictionaryUtil extends Logging {
         .map(x => {
         val tokens = x.split("" + CSVWriter.DEFAULT_SEPARATOR)
         if (tokens.size != 2) {
-          logError("[ALL_DICTIONARY] Read a bad dictionary record: " + x)
+          logError("Read a bad dictionary record: " + x)
         }
         var columnName: String = CarbonCommonConstants.DEFAULT_COLUMN_NAME
         var value: String = ""
@@ -601,7 +601,7 @@ object GlobalDictionaryUtil extends Logging {
           value = tokens(1)
         } catch {
           case ex: Exception =>
-            logError("[ALL_DICTIONARY] Reset bad dictionary record as default value")
+            logError("Reset bad dictionary record as default value")
         }
         (columnName, value)
       })
@@ -613,7 +613,7 @@ object GlobalDictionaryUtil extends Logging {
         .filter(x => requireColumnsList.contains(x._1))
     } catch {
       case ex: Exception =>
-        logError("[ALL_DICTIONARY] Read dictionary files failed. Caused by" + ex.getMessage)
+        logError("Read dictionary files failed. Caused by: " + ex.getMessage)
         throw ex
     }
     allDictionaryRdd
@@ -637,26 +637,26 @@ object GlobalDictionaryUtil extends Logging {
           file.getName.endsWith(dictExt) && file.getSize > 0)) {
           true
         } else {
-          logWarning("[ALL_DICTIONARY] No dictionary files found or empty dictionary files! " +
+          logWarning("No dictionary files found or empty dictionary files! " +
             "Won't generate new dictionary.")
           false
         }
       } else {
         throw new FileNotFoundException(
-          "[ALL_DICTIONARY] The given dictionary file path not found!")
+          "The given dictionary file path is not found!")
       }
     } else {
       if (filePath.exists()) {
         if (filePath.getSize > 0) {
           true
         } else {
-          logWarning("[ALL_DICTIONARY] No dictionary files found or empty dictionary files! " +
+          logWarning("No dictionary files found or empty dictionary files! " +
             "Won't generate new dictionary.")
           false
         }
       } else {
         throw new FileNotFoundException(
-          "[ALL_DICTIONARY] The given dictionary file path not found!")
+          "The given dictionary file path is not found!")
       }
     }
   }
@@ -744,7 +744,7 @@ object GlobalDictionaryUtil extends Logging {
           }
         }
       } else {
-        logInfo("[ALL_DICTIONARY] Generate global dictionary from dictionary files!")
+        logInfo("Generate global dictionary from dictionary files!")
         val isNonempty = validateAllDictionaryPath(allDictionaryPath)
         if(isNonempty) {
           // fill the map[columnIndex -> columnName]
@@ -777,7 +777,7 @@ object GlobalDictionaryUtil extends Logging {
             // check result status
             checkStatus(carbonLoadModel, sqlContext, model, statusList)
           } else {
-            logInfo("[ALL_DICTIONARY] have no column need to generate global dictionary")
+            logInfo("have no column need to generate global dictionary")
           }
         }
       }
