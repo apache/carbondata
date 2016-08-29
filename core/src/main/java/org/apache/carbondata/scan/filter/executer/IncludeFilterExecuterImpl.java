@@ -42,9 +42,9 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     this.dimColumnEvaluatorInfo = dimColumnEvaluatorInfo;
     this.segmentProperties = segmentProperties;
     dimColumnExecuterInfo = new DimColumnExecuterFilterInfo();
-    FilterUtil.prepareKeysFromSurrogates(dimColumnEvaluatorInfo.getFilterValues(),
-        segmentProperties.getDimensionKeyGenerator(), dimColumnEvaluatorInfo.getDimension(),
-        dimColumnExecuterInfo);
+    FilterUtil
+        .prepareKeysFromSurrogates(dimColumnEvaluatorInfo.getFilterValues(), segmentProperties,
+            dimColumnEvaluatorInfo.getDimension(), dimColumnExecuterInfo);
 
   }
 

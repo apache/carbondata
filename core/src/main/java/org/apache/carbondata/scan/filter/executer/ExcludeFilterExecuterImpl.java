@@ -42,9 +42,8 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     this.dimColEvaluatorInfo = dimColEvaluatorInfo;
     dimColumnExecuterInfo = new DimColumnExecuterFilterInfo();
     this.segmentProperties = segmentProperties;
-    FilterUtil.prepareKeysFromSurrogates(dimColEvaluatorInfo.getFilterValues(),
-        segmentProperties.getDimensionKeyGenerator(), dimColEvaluatorInfo.getDimension(),
-        dimColumnExecuterInfo);
+    FilterUtil.prepareKeysFromSurrogates(dimColEvaluatorInfo.getFilterValues(), segmentProperties,
+        dimColEvaluatorInfo.getDimension(), dimColumnExecuterInfo);
   }
 
   @Override public BitSet applyFilter(BlocksChunkHolder blockChunkHolder) {
@@ -58,8 +57,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
       blockChunkHolder.getDimensionDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
           .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
     }
-    return getFilteredIndexes(
-        blockChunkHolder.getDimensionDataChunk()[blockIndex],
+    return getFilteredIndexes(blockChunkHolder.getDimensionDataChunk()[blockIndex],
         blockChunkHolder.getDataBlock().nodeSize());
   }
 

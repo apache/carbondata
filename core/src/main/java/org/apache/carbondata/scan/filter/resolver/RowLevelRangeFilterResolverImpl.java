@@ -88,7 +88,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
         .get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
       return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(),
           this.dimColEvaluatorInfoList.get(0).getDimension(),
-          segmentProperties.getDimensionKeyGenerator());
+          segmentProperties);
     }
     return null;
 
