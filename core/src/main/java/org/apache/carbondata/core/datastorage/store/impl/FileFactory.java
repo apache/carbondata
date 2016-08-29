@@ -43,7 +43,6 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.compress.CompressionInputStream;
 import org.apache.hadoop.io.compress.GzipCodec;
 
 public final class FileFactory {
@@ -161,7 +160,7 @@ public final class FileFactory {
     InputStream stream;
     switch (fileType) {
       case LOCAL:
-          stream = new FileInputStream(path);
+        stream = new FileInputStream(path);
         break;
       case HDFS:
       case VIEWFS:

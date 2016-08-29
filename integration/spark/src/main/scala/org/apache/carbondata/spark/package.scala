@@ -17,11 +17,12 @@
 
 package org.apache.carbondata
 
-import org.apache.carbondata.core.carbon.metadata.datatype.{DataType => CarbonType}
 import org.apache.hadoop.fs.Path
 import org.apache.spark.Logging
 import org.apache.spark.sql._
 import org.apache.spark.sql.types._
+
+import org.apache.carbondata.core.carbon.metadata.datatype.{DataType => CarbonType}
 
 package object spark extends Logging {
 
@@ -49,8 +50,9 @@ package object spark extends Logging {
                  .option("header", "false")
                  .mode(SaveMode.Overwrite)
 
-      if (options.compress.equals("true"))
+      if (options.compress.equals("true")) {
         writer = writer.option("codec", "gzip")
+      }
 
       writer.save(tempCSVFolder)
 
