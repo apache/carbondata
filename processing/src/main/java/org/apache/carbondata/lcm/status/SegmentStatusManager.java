@@ -414,8 +414,6 @@ public class SegmentStatusManager {
           if (CarbonCommonConstants.SEGMENT_COMPACTED
               .equalsIgnoreCase(loadMetadata.getLoadStatus())) {
             LOG.error("Cannot delete the Segment which is compacted. Segment is " + loadId);
-            loadFound = true;
-            invalidLoadIds.add(loadId);
             break;
           }
           if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())) {
