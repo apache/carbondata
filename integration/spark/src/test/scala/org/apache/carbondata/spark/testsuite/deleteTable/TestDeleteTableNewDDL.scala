@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.spark.testsuite.deleteTable
 
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -44,6 +45,19 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
   test("drop table Test with new DDL") {
     sql("drop table table1")
 
+  }
+  
+  test("test drop database cascade command") {
+    sql("create database testdb")
+    try {
+      sql("drop database testdb cascade")
+      assert(false)
+    } catch {
+      case e : MalformedCarbonCommandException => {
+        assert(e.getMessage.equals("Unsupported cascade operation in drop database command"))
+      }
+    }
+    sql("drop database testdb")
   }
 
   // deletion case with if exists
