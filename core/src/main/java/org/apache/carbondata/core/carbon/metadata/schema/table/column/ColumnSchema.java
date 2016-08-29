@@ -77,7 +77,7 @@ public class ColumnSchema implements Serializable {
   /**
    * Whether the column should use inverted index
    */
-  private boolean useInvertedIndex;
+  private boolean useInvertedIndex = true;
 
   /**
    * The group ID for column used for row format columns,
