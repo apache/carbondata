@@ -290,10 +290,11 @@ class CarbonSqlParser()
     ALTER ~> TABLE ~> restInput ^^ {
       case statement =>
         try {
+          val alterSql = "alter table " + statement
           // DDl will be parsed and we get the AST tree from the HiveQl
-          val node = HiveQlWrapper.getAst("alter table " + statement)
+          val node = HiveQlWrapper.getAst(alterSql)
           // processing the AST tree
-          nodeToPlanForAlterTable(node)
+          nodeToPlanForAlterTable(node, alterSql)
         } catch {
           // MalformedCarbonCommandException need to be throw directly, parser will catch it
           case ce: MalformedCarbonCommandException =>
@@ -468,7 +469,7 @@ class CarbonSqlParser()
    * @param node
    * @return LogicalPlan
    */
-  protected def nodeToPlanForAlterTable(node: Node): LogicalPlan = {
+  protected def nodeToPlanForAlterTable(node: Node, alterSql: String): LogicalPlan = {
     node match {
       // if create table taken is found then only we will handle.
       case Token("TOK_ALTERTABLE", children) =>
@@ -490,14 +491,8 @@ class CarbonSqlParser()
           case _ => // Unsupport features
         }
 
-        if (compactionType.equalsIgnoreCase("minor") || compactionType.equalsIgnoreCase("major")) {
-          val altertablemodel = AlterTableModel(dbName, tableName, compactionType)
-          AlterTableCompaction(altertablemodel)
-        }
-        else {
-          sys.error("Invalid compaction type, supported values are 'major' and 'minor'")
-        }
-
+        val altertablemodel = AlterTableModel(dbName, tableName, compactionType, alterSql)
+        AlterTableCompaction(altertablemodel)
     }
   }
 
