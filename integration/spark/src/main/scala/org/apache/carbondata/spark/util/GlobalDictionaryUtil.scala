@@ -658,27 +658,7 @@ object GlobalDictionaryUtil extends Logging {
    */
   private def getHeaderFormFactFile(carbonLoadModel: CarbonLoadModel): Array[String] = {
     var headers: Array[String] = null
-    var factFile: String = null
-    val fileType = FileFactory.getFileType(carbonLoadModel.getFactFilePath)
-    val filePath = FileFactory.getCarbonFile(carbonLoadModel.getFactFilePath, fileType)
-    if (filePath.isDirectory) {
-      val listFiles = filePath.getParentFile.listFiles()
-      breakable {
-        for (file <- listFiles) {
-          if (file.getSize > 0) {
-            factFile = file.getAbsolutePath
-            break
-          }
-        }
-      }
-    } else {
-      if (filePath.getSize > 0) {
-        factFile = filePath.getAbsolutePath
-      } else {
-        logError("The Fact file is empty")
-        throw new IOException("Failed to get file header")
-      }
-    }
+    val factFile: String = carbonLoadModel.getFactFilePath.split(",")(0)
     val readLine = CarbonUtil.readHeader(factFile)
 
     if (null != readLine) {
