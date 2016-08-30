@@ -1478,8 +1478,8 @@ public final class CarbonUtil {
     try {
       fileReader =
           FileFactory.getDataInputStream(csvFilePath, FileFactory.getFileType(csvFilePath));
-      bufferedReader =
-          new BufferedReader(new InputStreamReader(fileReader, Charset.defaultCharset()));
+      bufferedReader = new BufferedReader(new InputStreamReader(fileReader,
+              Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       readLine = bufferedReader.readLine();
 
     } catch (FileNotFoundException e) {
