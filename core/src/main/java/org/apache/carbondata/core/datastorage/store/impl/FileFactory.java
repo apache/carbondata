@@ -120,53 +120,35 @@ public final class FileFactory {
 
   public static DataInputStream getDataInputStream(String path, FileType fileType)
       throws IOException {
-    path = path.replace("\\", "/");
-    switch (fileType) {
-      case LOCAL:
-        return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
-      case HDFS:
-      case VIEWFS:
-        Path pt = new Path(path);
-        FileSystem fs = FileSystem.get(configuration);
-        FSDataInputStream stream = fs.open(pt);
-        return new DataInputStream(new BufferedInputStream(stream));
-      default:
-        return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
-    }
-  }
-
-  public static DataInputStream getCompressedDataInputStream(String path,
-      FileType fileType, int bufferSize) throws IOException {
-    path = path.replace("\\", "/");
-    switch (fileType) {
-      case LOCAL:
-        return new DataInputStream(new BufferedInputStream(
-            new GZIPInputStream(new FileInputStream(path))));
-      case HDFS:
-      case VIEWFS:
-        Path pt = new Path(path);
-        FileSystem fs = FileSystem.get(configuration);
-        GzipCodec codec = new GzipCodec();
-        return new DataInputStream(new BufferedInputStream(
-            codec.createInputStream(fs.open(pt, bufferSize))));
-      default:
-        throw new UnsupportedOperationException("unsupported file system");
-    }
+    return getDataInputStream(path, fileType, -1);
   }
 
   public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize)
       throws IOException {
     path = path.replace("\\", "/");
+    boolean gzip = path.endsWith(".gz");
     InputStream stream;
     switch (fileType) {
       case LOCAL:
-        stream = new FileInputStream(path);
+        if (gzip) {
+          stream = new GZIPInputStream(new FileInputStream(path));
+        } else {
+          stream = new FileInputStream(path);
+        }
         break;
       case HDFS:
       case VIEWFS:
         Path pt = new Path(path);
         FileSystem fs = FileSystem.get(configuration);
-        stream = fs.open(pt, bufferSize);
+        if (bufferSize == -1) {
+          stream = fs.open(pt);
+        } else {
+          stream = fs.open(pt, bufferSize);
+        }
+        if (gzip) {
+          GzipCodec codec = new GzipCodec();
+          stream = codec.createInputStream(stream);
+        }
         break;
       default:
         throw new UnsupportedOperationException("unsupported file system");

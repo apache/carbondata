@@ -120,16 +120,15 @@ public class UnivocityCsvParser {
     String path = this.csvParserVo.getBlockDetailsList().get(blockCounter).getFilePath();
     FileType fileType = FileFactory.getFileType(path);
 
+    DataInputStream dataInputStream =
+        FileFactory.getDataInputStream(path, fileType, bufferSize);
+
     if (path.endsWith(".gz")) {
-      DataInputStream dataInputStream =
-          FileFactory.getCompressedDataInputStream(path, fileType, bufferSize);
       inputStreamReader = new BufferedReader(new InputStreamReader(dataInputStream));
     } else {
       long startOffset = this.csvParserVo.getBlockDetailsList().get(blockCounter).getBlockOffset();
       long blockLength = this.csvParserVo.getBlockDetailsList().get(blockCounter).getBlockLength();
       long endOffset = blockLength + startOffset;
-
-      DataInputStream dataInputStream = FileFactory.getDataInputStream(path, fileType, bufferSize);
 
       // if start offset is not 0 then reading then reading and ignoring the extra line
       if (startOffset != 0) {
