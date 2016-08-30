@@ -205,6 +205,34 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
 
   }
 
+  test("drop table and create table with same name but different cols") {
+
+    sql(
+      "CREATE TABLE dropTableTest4 (imei string,age int,task bigint,name string,country string," +
+      "city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp," +
+      "enddate timestamp,PointId double,score decimal(10,3))STORED BY 'org.apache.carbondata" +
+      ".format'")
+    sql(
+      "LOAD DATA INPATH './src/test/resources/big_int_Decimal.csv'  INTO TABLE dropTableTest4 " +
+      "options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$'," +
+      "'COMPLEX_DELIMITER_LEVEL_2'=':', 'FILEHEADER'= '')")
+    sql("select * from dropTableTest4")
+    sql("drop table dropTableTest4")
+    sql(
+      "CREATE table dropTableTest4 (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary decimal) stored by 'org.apache.carbondata" +
+      ".format' " +
+      "TBLPROPERTIES('DICTIONARY_EXCLUDE'='date')"
+    )
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dropTableTest4 " +
+      "OPTIONS('DELIMITER' =  ',')")
+    sql("select * from dropTableTest4")
+
+
+  }
+
 
   override def afterAll: Unit = {
 
@@ -213,6 +241,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql("drop table dropTableTest2")
     sql("drop table test.dropTableTest3")
     sql("drop database test")
+    sql("drop table dropTableTest4")
   }
 
 }
