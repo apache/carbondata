@@ -54,7 +54,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
       assert(false)
     } catch {
       case e : MalformedCarbonCommandException => {
-        assert(e.getMessage.equals("Unsupported cascade operation in drop database command"))
+        assert(e.getMessage.equals("Unsupported cascade operation in drop database/schema command"))
       }
     }
     sql("drop database testdb")

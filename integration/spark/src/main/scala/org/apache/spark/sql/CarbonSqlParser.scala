@@ -1348,6 +1348,6 @@ class CarbonSqlParser()
   protected lazy val dropDatabaseCascade: Parser[LogicalPlan] =
     DROP ~> (DATABASE|SCHEMA) ~> opt(IF ~> EXISTS) ~> ident ~> CASCADE <~ opt(";") ^^ {
       case cascade => throw new MalformedCarbonCommandException(
-          "Unsupported cascade operation in drop database command")
+          "Unsupported cascade operation in drop database/schema command")
     }
 }
