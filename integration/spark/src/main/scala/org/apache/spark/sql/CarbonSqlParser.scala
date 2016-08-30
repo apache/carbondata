@@ -59,6 +59,7 @@ class CarbonSqlParser()
   protected val BEFORE = carbonKeyWord("BEFORE")
   protected val BY = carbonKeyWord("BY")
   protected val CARDINALITY = carbonKeyWord("CARDINALITY")
+  protected val CASCADE = carbonKeyWord("CASCADE")
   protected val CLASS = carbonKeyWord("CLASS")
   protected val CLEAN = carbonKeyWord("CLEAN")
   protected val COLS = carbonKeyWord("COLS")
@@ -67,6 +68,7 @@ class CarbonSqlParser()
   protected val CUBE = carbonKeyWord("CUBE")
   protected val CUBES = carbonKeyWord("CUBES")
   protected val DATA = carbonKeyWord("DATA")
+  protected val DATABASE = carbonKeyWord("DATABASE")
   protected val DATABASES = carbonKeyWord("DATABASES")
   protected val DELETE = carbonKeyWord("DELETE")
   protected val DELIMITER = carbonKeyWord("DELIMITER")
@@ -109,6 +111,7 @@ class CarbonSqlParser()
   protected val PARTITIONER = carbonKeyWord("PARTITIONER")
   protected val QUOTECHAR = carbonKeyWord("QUOTECHAR")
   protected val RELATION = carbonKeyWord("RELATION")
+  protected val SCHEMA = carbonKeyWord("SCHEMA")
   protected val SCHEMAS = carbonKeyWord("SCHEMAS")
   protected val SHOW = carbonKeyWord("SHOW")
   protected val TABLES = carbonKeyWord("TABLES")
@@ -202,7 +205,7 @@ class CarbonSqlParser()
   override protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
 
   protected lazy val startCommand: Parser[LogicalPlan] =
-    loadManagement | describeTable | showLoads | alterTable | createTable
+    dropDatabaseCascade | loadManagement | describeTable | showLoads | alterTable | createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] = deleteLoadsByID | deleteLoadsByLoadDate |
     cleanFiles | loadDataNew
@@ -1342,4 +1345,9 @@ class CarbonSqlParser()
       }
     }
 
+  protected lazy val dropDatabaseCascade: Parser[LogicalPlan] =
+    DROP ~> (DATABASE|SCHEMA) ~> opt(IF ~> EXISTS) ~> ident ~> CASCADE <~ opt(";") ^^ {
+      case cascade => throw new MalformedCarbonCommandException(
+          "Unsupported cascade operation in drop database/schema command")
+    }
 }
