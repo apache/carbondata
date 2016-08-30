@@ -18,6 +18,8 @@
  */
 package org.apache.carbondata.spark.testsuite.deleteTable
 
+import java.io.File
+
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
@@ -27,6 +29,10 @@ import org.scalatest.BeforeAndAfterAll
  * test class for testing the create cube DDL.
  */
 class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
+
+  val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
+    .getCanonicalPath
+  val resource = currentDirectory + "/src/test/resources/"
 
   override def beforeAll: Unit = {
 
@@ -118,9 +124,95 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql("drop table default.table3")
   }
 
+
+  test("drop table and create table with different data type") {
+    sql(
+      "CREATE table dropTableTest1 (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format' "
+
+    )
+
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dropTableTest1 " +
+      "OPTIONS('DELIMITER' =  ',')")
+    sql("select * from dropTableTest1")
+    sql("drop table dropTableTest1")
+
+    sql(
+      "CREATE table dropTableTest1 (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary String) stored by 'org.apache.carbondata.format' "
+    )
+
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dropTableTest1 " +
+      "OPTIONS('DELIMITER' =  ',')")
+
+    sql("select * from dropTableTest1")
+
+  }
+
+
+  test("drop table and create table with dictionary exclude integer scenario") {
+    sql(
+      "CREATE table dropTableTest2 (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format' " +
+      "TBLPROPERTIES('DICTIONARY_EXCLUDE'='salary')"
+    )
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dropTableTest2 " +
+      "OPTIONS('DELIMITER' =  ',')")
+    sql("select * from dropTableTest2")
+    sql("drop table dropTableTest2")
+    sql(
+      "CREATE table dropTableTest2 (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary decimal) stored by 'org.apache.carbondata.format' " +
+      "TBLPROPERTIES('DICTIONARY_EXCLUDE'='date')"
+    )
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dropTableTest2 " +
+      "OPTIONS('DELIMITER' =  ',')")
+    sql("select * from dropTableTest2")
+
+  }
+
+  test("drop table and create table with dictionary exclude string scenario") {
+    sql("create database if not exists test")
+    sql(
+      "CREATE table test.dropTableTest3 (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format' " +
+      "TBLPROPERTIES('DICTIONARY_EXCLUDE'='salary')"
+    )
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE test.dropTableTest3 " +
+      "OPTIONS('DELIMITER' =  ',')")
+    sql("select * from test.dropTableTest3")
+    sql("drop table test.dropTableTest3")
+    sql(
+      "CREATE table test.dropTableTest3 (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary decimal) stored by 'org.apache.carbondata.format' " +
+      "TBLPROPERTIES('DICTIONARY_EXCLUDE'='date')"
+    )
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE test.dropTableTest3 " +
+      "OPTIONS('DELIMITER' =  ',')")
+    sql("select * from test.dropTableTest3")
+
+  }
+
+
   override def afterAll: Unit = {
 
-    sql("drop table CaseSensitiveTable")
+    sql("drop table CaseInsensitiveTable")
+    sql("drop table dropTableTest1")
+    sql("drop table dropTableTest2")
+    sql("drop table test.dropTableTest3")
+    sql("drop database test")
   }
 
 }

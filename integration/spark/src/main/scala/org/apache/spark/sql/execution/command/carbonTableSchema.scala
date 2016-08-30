@@ -32,11 +32,10 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Cast, Literal}
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
-import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.sql.hive.{CarbonHiveMetadataUtil, HiveContext}
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
-
 import org.apache.carbondata.common.factory.CarbonCommonFactory
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
@@ -1254,15 +1253,7 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
       }
       if (sqlContext.tableNames(dbName).map(x => x.toLowerCase())
         .contains(tableName.toLowerCase())) {
-        try {
-          sqlContext.asInstanceOf[HiveContext].catalog.client.
-            runSqlHive(s"DROP TABLE IF EXISTS $dbName.$tableName")
-        } catch {
-          case e: RuntimeException =>
-            LOGGER.audit(
-              s"Error While deleting the table $dbName.$tableName during drop carbon table" +
-              e.getMessage)
-        }
+          CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sqlContext)
       } else if (!ifExistsSet) {
         sys.error(s"Carbon Table $dbName.$tableName does not exist")
       }
