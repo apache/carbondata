@@ -443,8 +443,8 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
            c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))(0)
     org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .removeTable(dbName + "_" + tableName)
+    CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sqlContext)
 
-    sqlContext.asInstanceOf[HiveContext].runSqlHive(s"DROP TABLE IF EXISTS $dbName.$tableName")
     // discard cached table info in cachedDataSourceTables
     sqlContext.catalog.refreshTable(tableIdentifier)
   }
