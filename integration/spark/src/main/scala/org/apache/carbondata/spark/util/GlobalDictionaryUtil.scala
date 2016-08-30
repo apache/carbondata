@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.spark.util
 
-import java.io.IOException
+import java.io.{FileNotFoundException, IOException}
 import java.nio.charset.Charset
 import java.util.regex.Pattern
 
@@ -592,29 +592,31 @@ object GlobalDictionaryUtil extends Logging {
       val basicRdd = sqlContext.sparkContext.textFile(allDictionaryPath)
         .map(x => {
         val tokens = x.split("" + CSVWriter.DEFAULT_SEPARATOR)
-        var index: Int = 0
+        if (tokens.size != 2) {
+          logError("Read a bad dictionary record: " + x)
+        }
+        var columnName: String = CarbonCommonConstants.DEFAULT_COLUMN_NAME
         var value: String = ""
         try {
-          index = tokens(0).toInt
+          columnName = csvFileColumns(tokens(0).toInt)
           value = tokens(1)
         } catch {
           case ex: Exception =>
-            logError("read a bad dictionary record" + x)
+            logError("Reset bad dictionary record as default value")
         }
-        (index, value)
+        (columnName, value)
       })
+
       // group by column index, and filter required columns
       val requireColumnsList = requireColumns.toList
       allDictionaryRdd = basicRdd
         .groupByKey()
-        .map(x => (csvFileColumns(x._1), x._2))
         .filter(x => requireColumnsList.contains(x._1))
     } catch {
       case ex: Exception =>
-        logError("read local dictionary files failed")
+        logError("Read dictionary files failed. Caused by: " + ex.getMessage)
         throw ex
     }
-
     allDictionaryRdd
   }
 
@@ -630,22 +632,32 @@ object GlobalDictionaryUtil extends Logging {
     // filepath regex, look like "/path/*.dictionary"
     if (filePath.getName.startsWith("*")) {
       val dictExt = filePath.getName.substring(1)
-      val listFiles = filePath.getParentFile.listFiles()
-      if (listFiles.exists(file =>
-        file.getName.endsWith(dictExt) && file.getSize > 0)) {
-        true
+      if (filePath.getParentFile.exists()) {
+        val listFiles = filePath.getParentFile.listFiles()
+        if (listFiles.exists(file =>
+          file.getName.endsWith(dictExt) && file.getSize > 0)) {
+          true
+        } else {
+          logWarning("No dictionary files found or empty dictionary files! " +
+            "Won't generate new dictionary.")
+          false
+        }
       } else {
-        logInfo("No dictionary files found or empty dictionary files! " +
-          "Won't generate new dictionary.")
-        false
+        throw new FileNotFoundException(
+          "The given dictionary file path is not found!")
       }
     } else {
-      if (filePath.exists() && filePath.getSize > 0) {
-        true
+      if (filePath.exists()) {
+        if (filePath.getSize > 0) {
+          true
+        } else {
+          logWarning("No dictionary files found or empty dictionary files! " +
+            "Won't generate new dictionary.")
+          false
+        }
       } else {
-        logInfo("No dictionary files found or empty dictionary files! " +
-          "Won't generate new dictionary.")
-        false
+        throw new FileNotFoundException(
+          "The given dictionary file path is not found!")
       }
     }
   }
@@ -733,7 +745,7 @@ object GlobalDictionaryUtil extends Logging {
           }
         }
       } else {
-        logInfo("Generate global dictionary from all dictionary files!")
+        logInfo("Generate global dictionary from dictionary files!")
         val isNonempty = validateAllDictionaryPath(allDictionaryPath)
         if(isNonempty) {
           // fill the map[columnIndex -> columnName]
