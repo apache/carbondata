@@ -158,7 +158,8 @@ case class AlterTableModel(dbName: Option[String], tableName: String,
 case class CompactionModel(compactionSize: Long,
   compactionType: CompactionType,
   carbonTable: CarbonTable,
-  tableCreationTime: Long)
+  tableCreationTime: Long,
+  isDDLTrigger: Boolean)
 
 case class CompactionCallableModel(hdfsStoreLocation: String, carbonLoadModel: CarbonLoadModel,
   partitioner: Partitioner, storeLocation: String, carbonTable: CarbonTable, kettleHomePath: String,
