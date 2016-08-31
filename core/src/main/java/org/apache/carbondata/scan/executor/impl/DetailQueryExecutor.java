@@ -18,7 +18,7 @@
  */
 package org.apache.carbondata.scan.executor.impl;
 
-import java.util.List;
+import java.util.Queue;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
@@ -35,7 +35,7 @@ public class DetailQueryExecutor extends AbstractQueryExecutor {
 
   @Override public CarbonIterator<Object[]> execute(QueryModel queryModel)
       throws QueryExecutionException {
-    List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
+    Queue<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
     return new DetailQueryResultIterator(blockExecutionInfoList, queryModel);
   }
 

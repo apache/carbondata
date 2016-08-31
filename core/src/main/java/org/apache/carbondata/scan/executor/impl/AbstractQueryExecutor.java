@@ -18,12 +18,7 @@
  */
 package org.apache.carbondata.scan.executor.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -192,22 +187,27 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     return restructureInfos;
   }
 
-  protected List<BlockExecutionInfo> getBlockExecutionInfos(QueryModel queryModel)
+  protected Queue<BlockExecutionInfo> getBlockExecutionInfos(QueryModel queryModel)
       throws QueryExecutionException {
     initQuery(queryModel);
-    List<BlockExecutionInfo> blockExecutionInfoList = new ArrayList<BlockExecutionInfo>();
+    Queue<BlockExecutionInfo> blockExecutionInfoList =
+        new ArrayDeque<BlockExecutionInfo>(queryProperties.dataBlocks.size());
+    BlockExecutionInfo blockExecutionInfoForBlock = null;
     // fill all the block execution infos for all the blocks selected in
     // query
     // and query will be executed based on that infos
     for (int i = 0; i < queryProperties.dataBlocks.size(); i++) {
-      blockExecutionInfoList.add(
+      blockExecutionInfoForBlock =
           getBlockExecutionInfoForBlock(queryModel, queryProperties.dataBlocks.get(i),
               queryModel.getTableBlockInfos().get(i).getBlockletInfos().getStartBlockletNumber(),
               queryModel.getTableBlockInfos().get(i).getBlockletInfos()
-                  .getNumberOfBlockletToScan()));
+                  .getNumberOfBlockletToScan());
+      blockExecutionInfoList.add(blockExecutionInfoForBlock);
+      if (i == queryProperties.dataBlocks.size() - 1) {
+        queryProperties.complexDimensionInfoMap =
+            blockExecutionInfoForBlock.getComlexDimensionInfoMap();
+      }
     }
-    queryProperties.complexDimensionInfoMap =
-        blockExecutionInfoList.get(blockExecutionInfoList.size() - 1).getComlexDimensionInfoMap();
     if (null != queryModel.getStatisticsRecorder()) {
       QueryStatistic queryStatistic = new QueryStatistic();
       queryStatistic.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKS_NUM,

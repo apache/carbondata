@@ -18,7 +18,7 @@
  */
 package org.apache.carbondata.scan.result.iterator;
 
-import java.util.List;
+import java.util.Queue;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
@@ -54,7 +54,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
   /**
    * execution info of the block
    */
-  protected List<BlockExecutionInfo> blockExecutionInfos;
+  protected Queue<BlockExecutionInfo> blockExecutionInfos;
 
   /**
    * number of cores which can be used
@@ -70,6 +70,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
 
   protected boolean nextBatch = false;
 
+  
   /**
    * total time scan the blocks
    */
@@ -85,7 +86,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
    */
   protected QueryStatisticsRecorder recorder;
 
-  public AbstractDetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel) {
+  public AbstractDetailQueryResultIterator(Queue<BlockExecutionInfo> infos, QueryModel queryModel) {
     String batchSizeString =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE);
     if (null != batchSizeString) {
@@ -137,9 +138,9 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
         statistic.addFixedTimeStatistic(QueryStatisticsConstants.SCAN_BLOCKS_TIME, totalScanTime);
         recorder.recordStatistics(statistic);
         isStatisticsRecorded = true;
-      }
-      return false;
     }
+      return false;
+  }
   }
 
   protected void updateDataBlockIterator() {
@@ -153,8 +154,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
 
   private DataBlockIteratorImpl getDataBlockIterator() {
     if(blockExecutionInfos.size() > 0) {
-      BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
-      blockExecutionInfos.remove(executionInfo);
+      BlockExecutionInfo executionInfo = blockExecutionInfos.poll();
       return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize);
     }
     return null;
