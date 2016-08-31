@@ -54,7 +54,6 @@ import org.apache.carbondata.core.datastorage.store.compression.type.UnCompressN
 import org.apache.carbondata.core.datastorage.store.compression.type.UnCompressNoneInt;
 import org.apache.carbondata.core.datastorage.store.compression.type.UnCompressNoneLong;
 import org.apache.carbondata.core.datastorage.store.compression.type.UnCompressNoneShort;
-import org.apache.carbondata.core.datastorage.store.impl.data.uncompressed.DoubleArrayDataFileStore;
 
 public final class ValueCompressionUtil {
 
