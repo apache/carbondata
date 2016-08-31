@@ -81,6 +81,28 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
     }
   }
 
+  test("When the values of Double datatype are negative values") {
+    val tempFilePath = "./src/test/resources/temp/doubleISnegtive.csv"
+    try {
+      sql("CREATE TABLE doubleISnegtive (name String, value double) STORED BY 'org.apache.carbondata.format'")
+      sql("CREATE TABLE doubleISnegtive_hive (name String, value double)row format delimited fields terminated by ','")
+      val data ="a,-7489.7976000000\nb,-11234567489.797\nc,-11234567489.7\nd,-1.2\ne,-2\nf,-11234567489.7976000000\ng,-11234567489.7976000000"
+      writedata(tempFilePath, data)
+      sql(s"LOAD data local inpath '${tempFilePath}' into table doubleISnegtive options('fileheader'='name,value')")
+      sql(s"LOAD data local inpath '${tempFilePath}' into table doubleISnegtive_hive")
+
+      checkAnswer(sql("select * from doubleISnegtive"),
+        sql("select * from doubleISnegtive_hive"))
+    } catch{
+      case ex:Exception => ex.printStackTrace()
+        assert(false)
+    } finally {
+      sql("drop table if exists doubleISnegtive")
+      sql("drop table if exists doubleISnegtive_hive")
+      deleteFile(tempFilePath)
+    }
+  }
+
   def writedata(filePath: String, data: String) = {
     val dis = FileFactory.getDataOutputStream(filePath, FileFactory.getFileType(filePath))
     dis.writeBytes(data.toString())
