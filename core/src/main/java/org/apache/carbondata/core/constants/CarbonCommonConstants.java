@@ -904,6 +904,27 @@ public final class CarbonCommonConstants {
    */
   public static final int DEFAULT_CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE = 2;
 
+  /**
+   * File created in case of minor compaction request
+   */
+  public static String minorCompactionRequiredFile = "compactionRequired_minor";
+
+  /**
+   * File created in case of major compaction request
+   */
+  public static String majorCompactionRequiredFile = "compactionRequired_major";
+
+  /**
+   * Property for enabling system level compaction lock.1 compaction can run at once.
+   */
+  public static String ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK =
+      "carbon.enable.systemlevel.compaction.lock";
+
+  /**
+   * Compaction system level lock folder.
+   */
+  public static String SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER = "SystemCompactionLock";
+
   private CarbonCommonConstants() {
   }
 }
