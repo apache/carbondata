@@ -997,7 +997,7 @@ class CarbonSqlParser()
     val supportedOptions = Seq("DELIMITER", "QUOTECHAR", "FILEHEADER", "ESCAPECHAR", "MULTILINE",
       "COMPLEX_DELIMITER_LEVEL_1", "COMPLEX_DELIMITER_LEVEL_2", "COLUMNDICT",
       "SERIALIZATION_NULL_FORMAT",
-      "ALL_DICTIONARY_PATH"
+      "ALL_DICTIONARY_PATH", "MAXCOLUMNS"
     )
     var isSupported = true
     val invalidOptions = StringBuilder.newBuilder
@@ -1020,6 +1020,17 @@ class CarbonSqlParser()
       val errorMessage = "Error: COLUMNDICT and ALL_DICTIONARY_PATH can not be used together" +
         " in options"
       throw new MalformedCarbonCommandException(errorMessage)
+    }
+
+    if (options.exists(_._1.equalsIgnoreCase("MAXCOLUMNS"))) {
+      val maxColumns: String = options.get("maxcolumns").get(0)._2
+      try {
+        maxColumns.toInt
+      } catch {
+        case ex: NumberFormatException =>
+          throw new MalformedCarbonCommandException(
+            "option MAXCOLUMNS can only contain integer values")
+      }
     }
 
     // check for duplicate options

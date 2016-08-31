@@ -199,6 +199,10 @@ public class GraphGenerator {
    * new load start time
    */
   private String factTimeStamp;
+  /**
+   * max number of columns configured by user to be parsed in a row
+   */
+  private String maxColumns;
 
   public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
       String factStoreLocation, int currentRestructNum, int allocate,
@@ -221,6 +225,7 @@ public class GraphGenerator {
     this.factTimeStamp = dataLoadModel.getFactTimeStamp();
     this.segmentId = segmentId;
     this.escapeCharacter = dataLoadModel.getEscapeCharacter();
+    this.maxColumns = dataLoadModel.getMaxColumns();
     initialise();
     LOGGER.info("************* Is Columnar Storage" + isColumnar);
   }
@@ -436,6 +441,7 @@ public class GraphGenerator {
     csvInputMeta.setEncoding("UTF-8");
     csvInputMeta.setEnclosure("\"");
     csvInputMeta.setHeaderPresent(true);
+    csvInputMeta.setMaxColumns(maxColumns);
     csvInputMeta.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
     StepMeta csvDataStep =
         new StepMeta(GraphGeneratorConstants.CSV_INPUT, (StepMetaInterface) csvInputMeta);

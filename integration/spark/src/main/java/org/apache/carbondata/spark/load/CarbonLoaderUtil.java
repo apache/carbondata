@@ -141,6 +141,7 @@ public final class CarbonLoaderUtil {
     model.setEscapeCharacter(schmaModel.getEscapeCharacter());
     model.setTaskNo(loadModel.getTaskNo());
     model.setFactTimeStamp(loadModel.getFactTimeStamp());
+    model.setMaxColumns(loadModel.getMaxColumns());
     boolean hdfsReadMode =
         schmaModel.getCsvFilePath() != null && schmaModel.getCsvFilePath().startsWith("hdfs:");
     int allocate = null != schmaModel.getCsvFilePath() ? 1 : schmaModel.getFilesToProcess().size();
