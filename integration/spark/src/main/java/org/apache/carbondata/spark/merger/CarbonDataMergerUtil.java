@@ -707,7 +707,7 @@ public final class CarbonDataMergerUtil {
    * @return
    */
   public static List<LoadMetadataDetails> filterOutNewlyAddedSegments(
-      List<LoadMetadataDetails> segments, List<LoadMetadataDetails> loadsToMerge,
+      List<LoadMetadataDetails> segments,
       LoadMetadataDetails lastSeg) {
 
     // take complete list of segments.
