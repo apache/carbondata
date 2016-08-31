@@ -78,18 +78,18 @@ public final class ValueCompressionUtil {
   private static DataType getDataType(double value, int decimal, byte dataTypeSelected) {
     DataType dataType = DataType.DATA_DOUBLE;
     if (decimal == 0) {
-      if (value < Byte.MAX_VALUE && value > Byte.MIN_VALUE) {
+      if (value < Byte.MAX_VALUE) {
         dataType = DataType.DATA_BYTE;
-      } else if (value < Short.MAX_VALUE && value > Short.MIN_VALUE) {
+      } else if (value < Short.MAX_VALUE) {
         dataType = DataType.DATA_SHORT;
-      } else if (value < Integer.MAX_VALUE && value > Integer.MIN_VALUE) {
+      } else if (value < Integer.MAX_VALUE) {
         dataType = DataType.DATA_INT;
-      } else if (value < Long.MAX_VALUE && value > Long.MIN_VALUE) {
+      } else if (value < Long.MAX_VALUE) {
         dataType = DataType.DATA_LONG;
       }
     } else {
       if (dataTypeSelected == 1) {
-        if (value < Float.MAX_VALUE && value > Float.MIN_VALUE) {
+        if (value < Float.MAX_VALUE) {
           float floatValue = (float) value;
           if (floatValue - value != 0) {
             dataType = DataType.DATA_DOUBLE;
@@ -97,7 +97,7 @@ public final class ValueCompressionUtil {
           } else {
             dataType = DataType.DATA_FLOAT;
           }
-        } else if (value < Double.MAX_VALUE && value > Double.MIN_VALUE) {
+        } else if (value < Double.MAX_VALUE) {
           dataType = DataType.DATA_DOUBLE;
         }
       }
