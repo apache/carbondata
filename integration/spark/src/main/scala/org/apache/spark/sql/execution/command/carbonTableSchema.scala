@@ -1103,7 +1103,8 @@ private[sql] case class LoadTable(
             "load DDL which you set can only be 'true' or 'false', please check your input DDL."
           throw new MalformedCarbonCommandException(errorMessage)
       }
-
+      val maxColumns = partionValues.getOrElse("maxcolumns", null)
+      carbonLoadModel.setMaxColumns(maxColumns)
       carbonLoadModel.setEscapeChar(escapeChar)
       carbonLoadModel.setSerializationNullFormat("serialization_null_format" + "," +
         serializationNullFormat)
