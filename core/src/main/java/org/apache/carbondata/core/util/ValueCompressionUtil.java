@@ -154,28 +154,31 @@ public final class ValueCompressionUtil {
       default:
         break;
     }
+    //Here we should use the Max abs as max to getDatatype, let's say -1 and -10000000, -1 is max,
+    //but we can't use -1 to getDatatype, we should use -10000000.
+    double absMaxValue = Math.max(Math.abs((double) maxValue), Math.abs((double) minValue));
     // None Decimal
     if (decimal == 0) {
-      if (getSize(getDataType((double) maxValue, decimal, dataTypeSelected)) > getSize(
+      if (getSize(getDataType(absMaxValue, decimal, dataTypeSelected)) > getSize(
           getDataType((double) maxValue - (double) minValue, decimal, dataTypeSelected))) {
         return new CompressionFinder(COMPRESSION_TYPE.MAX_MIN, DataType.DATA_DOUBLE,
             getDataType((double) maxValue - (double) minValue, decimal, dataTypeSelected));
-      } else if (getSize(getDataType((double) maxValue, decimal, dataTypeSelected)) < getSize(
+      } else if (getSize(getDataType(absMaxValue, decimal, dataTypeSelected)) < getSize(
               getDataType((double) maxValue - (double) minValue, decimal, dataTypeSelected))) {
         return new CompressionFinder(COMPRESSION_TYPE.NONE, DataType.DATA_DOUBLE,
                 getDataType((double) maxValue - (double) minValue, decimal, dataTypeSelected));
       } else {
         return new CompressionFinder(COMPRESSION_TYPE.NONE, DataType.DATA_DOUBLE,
-            getDataType((double) maxValue, decimal, dataTypeSelected));
+            getDataType(absMaxValue, decimal, dataTypeSelected));
       }
     }
     // decimal
     else {
-      DataType actualDataType = getDataType((double) maxValue, decimal, dataTypeSelected);
+      DataType actualDataType = getDataType(absMaxValue, decimal, dataTypeSelected);
       DataType diffDataType =
           getDataType((double) maxValue - (double) minValue, decimal, dataTypeSelected);
       DataType maxNonDecDataType =
-          getDataType(Math.pow(10, decimal) * (double) maxValue, 0, dataTypeSelected);
+          getDataType(Math.pow(10, decimal) * absMaxValue, 0, dataTypeSelected);
       DataType diffNonDecDataType =
           getDataType(Math.pow(10, decimal) * ((double) maxValue - (double) minValue), 0,
               dataTypeSelected);
