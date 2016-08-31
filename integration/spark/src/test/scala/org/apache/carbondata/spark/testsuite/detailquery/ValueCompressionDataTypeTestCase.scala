@@ -84,6 +84,8 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
   test("When the values of Double datatype are negative values") {
     val tempFilePath = "./src/test/resources/temp/doubleISnegtive.csv"
     try {
+      sql("drop table if exists doubleISnegtive")
+      sql("drop table if exists doubleISnegtive_hive")
       sql("CREATE TABLE doubleISnegtive (name String, value double) STORED BY 'org.apache.carbondata.format'")
       sql("CREATE TABLE doubleISnegtive_hive (name String, value double)row format delimited fields terminated by ','")
       val data ="a,-7489.7976000000\nb,-11234567489.797\nc,-11234567489.7\nd,-1.2\ne,-2\nf,-11234567489.7976000000\ng,-11234567489.7976000000"

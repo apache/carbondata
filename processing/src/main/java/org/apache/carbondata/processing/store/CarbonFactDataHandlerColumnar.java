@@ -882,7 +882,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @return it return no of value after decimal
    */
   private int getDecimalCount(double value) {
-    String strValue = BigDecimal.valueOf(Math.abs(value)).toPlainString();
+    String strValue = Double.toString(Math.abs(value));
     int integerPlaces = strValue.indexOf('.');
     int decimalPlaces = 0;
     if (-1 != integerPlaces) {
