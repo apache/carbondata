@@ -101,6 +101,8 @@ public class CsvInputMeta extends BaseStepMeta
 
   private String escapeCharacter;
 
+  private String maxColumns;
+
   public CsvInputMeta() {
     super(); // allocate BaseStepMeta
     allocate(0);
@@ -160,6 +162,7 @@ public class CsvInputMeta extends BaseStepMeta
       blocksID = XMLHandler.getTagValue(stepnode, "blocksID");
       partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
       escapeCharacter = XMLHandler.getTagValue(stepnode, "escapeCharacter");
+      maxColumns = XMLHandler.getTagValue(stepnode, "maxColumns");
       Node fields = XMLHandler.getSubNode(stepnode, getXmlCode("FIELDS"));
       int nrfields = XMLHandler.countNodes(fields, getXmlCode("FIELD"));
 
@@ -224,6 +227,7 @@ public class CsvInputMeta extends BaseStepMeta
     retval.append("    ").append(XMLHandler.addTagValue("blocksID", blocksID));
     retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
     retval.append("    ").append(XMLHandler.addTagValue("escapeCharacter", escapeCharacter));
+    retval.append("    ").append(XMLHandler.addTagValue("maxColumns", maxColumns));
     retval.append("    ").append(XMLHandler.openTag(getXmlCode("FIELDS"))).append(Const.CR);
     for (int i = 0; i < inputFields.length; i++) {
       TextFileInputField field = inputFields[i];
@@ -277,6 +281,7 @@ public class CsvInputMeta extends BaseStepMeta
       blocksID = rep.getStepAttributeString(idStep, getRepCode("blocksID"));
       partitionID = rep.getStepAttributeString(idStep, getRepCode("partitionID"));
       escapeCharacter = rep.getStepAttributeString(idStep, getRepCode("escapeCharacter"));
+      maxColumns = rep.getStepAttributeString(idStep, getRepCode("maxColumns"));
       int nrfields = rep.countNrStepAttributes(idStep, getRepCode("FIELD_NAME"));
 
       allocate(nrfields);
@@ -334,6 +339,8 @@ public class CsvInputMeta extends BaseStepMeta
       rep.saveStepAttribute(idTransformation, idStep, getRepCode("partitionID"), partitionID);
       rep.saveStepAttribute(idTransformation, idStep, getRepCode("escapeCharacter"),
           escapeCharacter);
+      rep.saveStepAttribute(idTransformation, idStep, getRepCode("maxColumns"),
+          maxColumns);
       for (int i = 0; i < inputFields.length; i++) {
         TextFileInputField field = inputFields[i];
 
@@ -933,5 +940,13 @@ public class CsvInputMeta extends BaseStepMeta
 
   public String getPartitionID() {
     return this.partitionID;
+  }
+
+  public String getMaxColumns() {
+    return maxColumns;
+  }
+
+  public void setMaxColumns(String maxColumns) {
+    this.maxColumns = maxColumns;
   }
 }

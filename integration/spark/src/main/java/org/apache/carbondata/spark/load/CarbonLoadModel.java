@@ -100,6 +100,10 @@ public class CarbonLoadModel implements Serializable {
    * defines the string that should be treated as null while loadind data
    */
   private String serializationNullFormat;
+  /**
+   * Max number of columns that needs to be parsed by univocity parser
+   */
+  private String maxColumns;
 
   /**
    * get escape char
@@ -318,6 +322,7 @@ public class CarbonLoadModel implements Serializable {
     copy.segmentId = segmentId;
     copy.serializationNullFormat = serializationNullFormat;
     copy.escapeChar = escapeChar;
+    copy.maxColumns = maxColumns;
     return copy;
   }
 
@@ -356,6 +361,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.segmentId = segmentId;
     copyObj.serializationNullFormat = serializationNullFormat;
     copyObj.escapeChar = escapeChar;
+    copyObj.maxColumns = maxColumns;
     return copyObj;
   }
 
@@ -523,5 +529,19 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setSerializationNullFormat(String serializationNullFormat) {
     this.serializationNullFormat = serializationNullFormat;
+  }
+
+  /**
+   * @return
+   */
+  public String getMaxColumns() {
+    return maxColumns;
+  }
+
+  /**
+   * @param maxColumns
+   */
+  public void setMaxColumns(String maxColumns) {
+    this.maxColumns = maxColumns;
   }
 }
