@@ -127,6 +127,8 @@ object Compactor {
           .error("Compaction request failed for table " + carbonLoadModel
             .getDatabaseName + "." + carbonLoadModel.getTableName
           )
+        throw new Exception("Compaction failed to update metadata for table " + carbonLoadModel
+            .getDatabaseName + "." + carbonLoadModel.getTableName)
       }
       else {
         logger
