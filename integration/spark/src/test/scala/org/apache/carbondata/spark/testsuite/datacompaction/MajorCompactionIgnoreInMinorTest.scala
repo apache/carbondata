@@ -20,12 +20,15 @@ package org.apache.carbondata.spark.testsuite.datacompaction
 
 import java.io.File
 
+import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.load.LoadMetadataDetails
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.lcm.status
 import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.scalatest.BeforeAndAfterAll
 
@@ -137,6 +140,65 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     assert(segments.contains("2.1"))
     assert(!segments.contains("2"))
     assert(!segments.contains("3"))
+
+  }
+
+  /**
+    * Delete should not work on compacted segment.
+    */
+  test("delete compacted segment and check status") {
+    try {
+      sql("delete segment 2 from table ignoremajor")
+      assert(false)
+    }
+    catch {
+      case _ => assert(true)
+    }
+    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
+        AbsoluteTableIdentifier(
+          CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
+          new CarbonTableIdentifier("default", "ignoremajor", "rrr")
+        )
+    )
+    val carbontablePath = CarbonStorePath
+      .getCarbonTablePath(CarbonProperties.getInstance
+        .getProperty(CarbonCommonConstants.STORE_LOCATION),
+        new CarbonTableIdentifier("default", "ignoremajor", "rrr")
+      )
+      .getMetadataDirectoryPath
+    var segs = segmentStatusManager.readLoadMetadata(carbontablePath)
+
+    // status should remain as compacted.
+    assert(segs(3).getLoadStatus.equalsIgnoreCase(CarbonCommonConstants.SEGMENT_COMPACTED))
+
+  }
+
+  /**
+    * Delete should not work on compacted segment.
+    */
+  test("delete compacted segment by date and check status") {
+    sql(
+      "DELETE SEGMENTS FROM TABLE ignoremajor where STARTTIME before" +
+        " '2222-01-01 19:35:01'"
+    )
+    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
+        AbsoluteTableIdentifier(
+          CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
+          new CarbonTableIdentifier("default", "ignoremajor", "rrr")
+        )
+    )
+    val carbontablePath = CarbonStorePath
+      .getCarbonTablePath(CarbonProperties.getInstance
+        .getProperty(CarbonCommonConstants.STORE_LOCATION),
+        new CarbonTableIdentifier("default", "ignoremajor", "rrr")
+      )
+      .getMetadataDirectoryPath
+    var segs = segmentStatusManager.readLoadMetadata(carbontablePath)
+
+    // status should remain as compacted for segment 2.
+    assert(segs(3).getLoadStatus.equalsIgnoreCase(CarbonCommonConstants.SEGMENT_COMPACTED))
+    // for segment 0.1 . should get deleted
+    assert(segs(2).getLoadStatus.equalsIgnoreCase(CarbonCommonConstants.MARKED_FOR_DELETE))
 
   }
 
