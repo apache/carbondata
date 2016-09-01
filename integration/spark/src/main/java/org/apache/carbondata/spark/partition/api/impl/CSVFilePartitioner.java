@@ -219,12 +219,13 @@ public class CSVFilePartitioner {
         .info("Processed Record count: " + recordCounter);
   }
 
-  private CSVParser getCustomParser(String delimiter, String quoteChar, String escapeChar) {
+  private CSVParser getCustomParser(String delimiter, String quoteChar,String escapeChar) {
     CSVParser customParser = null;
     boolean ignoreQuote = false;
     boolean ignoreEscape = false;
     char defaultQuoteChar = CSVParser.DEFAULT_QUOTE_CHARACTER;
     char defaultEscapeChar = CSVParser.DEFAULT_ESCAPE_CHARACTER;
+    char defaultCommentChar = CSVParser.DEFAULT_COMMENT_CHARACTER;
     if (quoteChar == null || quoteChar.isEmpty() || quoteChar.trim().isEmpty()) {
       ignoreQuote = true;
     } else {
@@ -238,9 +239,9 @@ public class CSVFilePartitioner {
       defaultEscapeChar = escapeChar.charAt(0);
     }
     delimiter = CarbonUtil.unescapeChar(delimiter);
-    customParser = new CSVParser(delimiter.charAt(0), defaultQuoteChar, defaultEscapeChar,
-        CSVParser.DEFAULT_STRICT_QUOTES, CSVParser.DEFAULT_IGNORE_LEADING_WHITESPACE, ignoreQuote,
-        ignoreEscape);
+    customParser = new CSVParser(delimiter.charAt(0), defaultQuoteChar, defaultCommentChar,
+      defaultEscapeChar, CSVParser.DEFAULT_STRICT_QUOTES,
+      CSVParser.DEFAULT_IGNORE_LEADING_WHITESPACE, ignoreQuote, ignoreEscape);
     return customParser;
   }
 

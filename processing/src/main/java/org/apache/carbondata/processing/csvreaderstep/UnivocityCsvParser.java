@@ -93,6 +93,7 @@ public class UnivocityCsvParser {
   public void initialize() throws IOException {
     CsvParserSettings parserSettings = new CsvParserSettings();
     parserSettings.getFormat().setDelimiter(csvParserVo.getDelimiter().charAt(0));
+    parserSettings.getFormat().setComment(csvParserVo.getCommentCharacter().charAt(0));
     parserSettings.setLineSeparatorDetectionEnabled(true);
     parserSettings.setMaxColumns(
         getMaxColumnsForParsing(csvParserVo.getNumberOfColumns(), csvParserVo.getMaxColumns()));
@@ -100,6 +101,8 @@ public class UnivocityCsvParser {
     parserSettings.setIgnoreLeadingWhitespaces(false);
     parserSettings.setIgnoreTrailingWhitespaces(false);
     parserSettings.setSkipEmptyLines(false);
+    parserSettings.getFormat().setQuote(null == csvParserVo.getQuoteCharacter() ?
+        '\"':csvParserVo.getQuoteCharacter().charAt(0));
     parserSettings.getFormat().setQuoteEscape(null == csvParserVo.getEscapeCharacter() ?
         '\\' :
         csvParserVo.getEscapeCharacter().charAt(0));

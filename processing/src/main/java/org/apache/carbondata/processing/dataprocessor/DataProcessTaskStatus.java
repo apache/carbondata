@@ -87,6 +87,10 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
 
   private String escapeCharacter;
 
+  private String commentCharacter;
+
+  private String quoteCharacter;
+
   public DataProcessTaskStatus(String databaseName, String tableName) {
     this.databaseName = databaseName;
     this.tableName = tableName;
@@ -283,4 +287,14 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
   public void setEscapeCharacter(String escapeCharacter) {
     this.escapeCharacter = escapeCharacter;
   }
+
+  public String getCommentCharacter() { return commentCharacter; }
+
+  public void setCommentCharacter(String commentCharacter) {
+    this.commentCharacter = commentCharacter;
+  }
+
+  public String getQuoteCharacter() { return quoteCharacter; }
+
+  public void setQuoteCharacter(String quoteCharacter) { this.quoteCharacter = quoteCharacter; }
 }

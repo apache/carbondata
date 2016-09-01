@@ -1091,6 +1091,7 @@ private[sql] case class LoadTable(
       val quoteChar = partionValues.getOrElse("quotechar", "\"")
       val fileHeader = partionValues.getOrElse("fileheader", "")
       val escapeChar = partionValues.getOrElse("escapechar", "\\")
+      val commentchar = partionValues.getOrElse("commentchar", "#")
       val columnDict = partionValues.getOrElse("columndict", null)
       val serializationNullFormat = partionValues.getOrElse("serialization_null_format", "\\N")
       val allDictionaryPath = partionValues.getOrElse("all_dictionary_path", "")
@@ -1107,6 +1108,8 @@ private[sql] case class LoadTable(
       val maxColumns = partionValues.getOrElse("maxcolumns", null)
       carbonLoadModel.setMaxColumns(maxColumns)
       carbonLoadModel.setEscapeChar(escapeChar)
+      carbonLoadModel.setCommentChar(commentchar)
+      carbonLoadModel.setQuoteChar(quoteChar)
       carbonLoadModel.setSerializationNullFormat("serialization_null_format" + "," +
         serializationNullFormat)
       if (delimiter.equalsIgnoreCase(complex_delimiter_level_1) ||

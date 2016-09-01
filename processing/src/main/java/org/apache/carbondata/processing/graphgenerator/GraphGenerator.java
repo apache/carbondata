@@ -185,6 +185,8 @@ public class GraphGenerator {
   private String factStoreLocation;
   private String blocksID;
   private String escapeCharacter;
+  private String commentCharacter;
+  private String quoteCharacter;
   /**
    * task id, each spark task has a unique id
    */
@@ -219,6 +221,8 @@ public class GraphGenerator {
     this.isColumnar = Boolean.parseBoolean(CarbonCommonConstants.IS_COLUMNAR_STORAGE_DEFAULTVALUE);
     this.blocksID = dataLoadModel.getBlocksID();
     this.taskNo = dataLoadModel.getTaskNo();
+    this.commentCharacter = dataLoadModel.getCommentCharacter();
+    this.quoteCharacter = dataLoadModel.getQuoteCharacter();
     this.factTimeStamp = dataLoadModel.getFactTimeStamp();
     this.segmentId = segmentId;
     this.escapeCharacter = dataLoadModel.getEscapeCharacter();
@@ -450,6 +454,8 @@ public class GraphGenerator {
     csvInputMeta.setBlocksID(this.blocksID);
     csvInputMeta.setPartitionID(this.partitionID);
     csvInputMeta.setEscapeCharacter(this.escapeCharacter);
+    csvInputMeta.setQuoteCharacter(this.quoteCharacter);
+    csvInputMeta.setCommentCharacter(this.commentCharacter);
     csvDataStep.setDraw(true);
     csvDataStep.setDescription("Read raw data from " + GraphGeneratorConstants.CSV_INPUT);
 

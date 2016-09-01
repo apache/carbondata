@@ -71,6 +71,16 @@ public class UnivocityCsvParserVo {
   private String escapeCharacter;
 
   /**
+   * quote character;
+   */
+  private String quoteCharacter;
+
+  /**
+   * comment character;
+   */
+  private String commentCharacter;
+
+  /**
    * max number of columns configured by user to be parsed in a row
    */
   private int maxColumns;
@@ -88,6 +98,8 @@ public class UnivocityCsvParserVo {
   public void setDelimiter(String delimiter) {
     this.delimiter = delimiter;
   }
+
+
 
   /**
    * @return the encoding
@@ -186,6 +198,17 @@ public class UnivocityCsvParserVo {
   public void setEscapeCharacter(String escapeCharacter) {
     this.escapeCharacter = escapeCharacter;
   }
+
+  public String getQuoteCharacter() { return quoteCharacter; }
+
+  public void setQuoteCharacter(String quoteCharacter) { this.quoteCharacter = quoteCharacter; }
+
+  public String getCommentCharacter() { return commentCharacter; }
+
+  public void setCommentCharacter(String commentCharacter) {
+    this.commentCharacter = commentCharacter;
+  }
+
 
   /**
    * @return

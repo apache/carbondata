@@ -365,6 +365,8 @@ object GlobalDictionaryUtil extends Logging {
       .option("ignoreLeadingWhiteSpace", "false")
       .option("ignoreTrailingWhiteSpace", "false")
       .option("codec", "gzip")
+      .option("comment", carbonLoadModel.getCommentChar)
+      .option("quote", carbonLoadModel.getQuoteChar)
       .load(carbonLoadModel.getFactFilePath)
     df
   }

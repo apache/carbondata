@@ -590,6 +590,23 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from carbontable1"), sql("select * from hivetable1"))
   }
 
+  test("test data loading with comment option") {
+    sql("drop table if exists comment_test")
+    sql(
+      "create table comment_test(imei string, age int, task bigint, num double, level decimal(10," +
+        "3), productdate timestamp, mark int, name string) STORED BY 'org.apache.carbondata.format'"
+    )
+    sql(
+      "LOAD DATA local inpath './src/test/resources/comment.csv' INTO TABLE comment_test " +
+        "options('DELIMITER' = ',', 'QUOTECHAR' = '.', 'COMMENTCHAR' = '?','FILEHEADER'='imei,age,task,num,level,productdate,mark,name')"
+    )
+    checkAnswer(sql("select imei from comment_test"),Seq(Row("\"huawei"),Row("#huawei"), Row(""),
+      Row("~huawei")))
+    sql("drop table if exists comment_test")
+
+  }
+
+
   override def afterAll {
     sql("drop table carbontable")
     sql("drop table hivetable")

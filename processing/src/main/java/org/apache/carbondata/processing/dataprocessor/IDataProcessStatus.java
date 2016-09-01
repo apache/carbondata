@@ -189,4 +189,8 @@ public interface IDataProcessStatus {
   String getBlocksID();
 
   String getEscapeCharacter();
+
+  String getCommentCharacter();
+
+  String getQuoteCharacter();
 }
