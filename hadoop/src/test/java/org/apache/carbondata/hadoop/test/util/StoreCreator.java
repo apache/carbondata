@@ -353,6 +353,8 @@ public class StoreCreator {
     GraphGenerator.blockInfo.put("qwqwq", new BlockDetails[] { blockDetails });
     schmaModel.setBlocksID("qwqwq");
     schmaModel.setEscapeCharacter("\\");
+    schmaModel.setQuoteCharacter("\"");
+    schmaModel.setCommentCharacter("#");
     info.setDatabaseName(databaseName);
     info.setTableName(tableName);
 
@@ -460,6 +462,8 @@ public class StoreCreator {
     model.setBlocksID(schmaModel.getBlocksID());
     model.setFactTimeStamp(readCurrentTime());
     model.setEscapeCharacter(schmaModel.getEscapeCharacter());
+    model.setQuoteCharacter(schmaModel.getQuoteCharacter());
+    model.setCommentCharacter(schmaModel.getCommentCharacter());
     if (null != loadMetadataDetails && !loadMetadataDetails.isEmpty()) {
       model.setLoadNames(
           CarbonDataProcessorUtil.getLoadNameFromLoadMetaDataDetails(loadMetadataDetails));
