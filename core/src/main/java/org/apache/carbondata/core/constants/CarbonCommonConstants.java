@@ -917,14 +917,14 @@ public final class CarbonCommonConstants {
   /**
    * Property for enabling system level compaction lock.1 compaction can run at once.
    */
-  public static String ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK =
-      "carbon.enable.systemlevel.compaction.lock";
+  public static String ENABLE_CONCURRENT_COMPACTION =
+      "carbon.concurrent.compaction";
 
   /**
    * Default value of Property for enabling system level compaction lock.1 compaction can run
    * at once.
    */
-  public static String DEFAULT_ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK = "true";
+  public static String DEFAULT_ENABLE_CONCURRENT_COMPACTION = "false";
 
   /**
    * Compaction system level lock folder.

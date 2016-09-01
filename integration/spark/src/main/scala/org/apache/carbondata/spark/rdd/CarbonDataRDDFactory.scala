@@ -276,16 +276,16 @@ object CarbonDataRDDFactory extends Logging {
       isCompactionTriggerByDDl
     )
 
-    val isSystemCompactionLockEnabled = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK,
-        CarbonCommonConstants.DEFAULT_ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK
+    val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
+        CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
       )
       .equalsIgnoreCase("true")
 
     // if system level compaction is enabled then only one compaction can run in the system
     // if any other request comes at this time then it will create a compaction request file.
     // so that this will be taken up by the compaction process which is executing.
-    if (isSystemCompactionLockEnabled) {
+    if (!isConcurrentCompactionAllowed) {
       logger
         .info("System level compaction lock is enabled."
         )
@@ -556,12 +556,12 @@ object CarbonDataRDDFactory extends Logging {
               executor, sqlContext, kettleHomePath, storeLocation
             )
             // check for all the tables.
-            val isSystemCompactionLockEnabled = CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK,
-                CarbonCommonConstants.DEFAULT_ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK
+            val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
+                CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
               ).equalsIgnoreCase("true")
 
-            if (isSystemCompactionLockEnabled) {
+            if (!isConcurrentCompactionAllowed) {
               logger.info("System level compaction lock is enabled.")
               var tableForCompaction = CarbonCompactionUtil
                 .getNextTableToCompact(CarbonEnv.getInstance(sqlContext).carbonCatalog.metadata
@@ -717,13 +717,13 @@ object CarbonDataRDDFactory extends Logging {
         }
         storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
-        val isSystemCompactionLockEnabled = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK,
-            CarbonCommonConstants.DEFAULT_ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK
+        val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
+            CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
           )
           .equalsIgnoreCase("true")
 
-        if (isSystemCompactionLockEnabled) {
+        if (!isConcurrentCompactionAllowed) {
 
           handleCompactionForSystemLocking(sqlContext,
             carbonLoadModel,
