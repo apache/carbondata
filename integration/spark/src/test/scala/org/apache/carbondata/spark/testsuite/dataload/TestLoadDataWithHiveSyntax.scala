@@ -385,7 +385,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql(
       """
        LOAD DATA LOCAL INPATH './src/test/resources/datawithescapecharacter.csv' into table t3
-          options ('DELIMITER'=',', 'QUOTECHAR'='\"','ESCAPECHAR'='\')
+          options ('DELIMITER'=',', 'QUOTECHAR'='"','ESCAPECHAR'='\')
       """
     )
     checkAnswer(sql("select count(*) from t3"), Seq(Row(21)))
@@ -406,7 +406,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql(
       """
        LOAD DATA LOCAL INPATH './src/test/resources/datawithescapecharacter.csv' into table t3
-          options ('DELIMITER'=',', 'QUOTECHAR'='\"','ESCAPECHAR'='@')
+          options ('DELIMITER'=',', 'QUOTECHAR'='"','ESCAPECHAR'='@')
       """
     )
     checkAnswer(sql("select count(*) from t3"), Seq(Row(21)))
@@ -590,6 +590,21 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from carbontable1"), sql("select * from hivetable1"))
   }
 
+  test("test data loading with comment option") {
+    sql("drop table if exists comment_test")
+    sql(
+      "create table comment_test(imei string, age int, task bigint, num double, level decimal(10," +
+        "3), productdate timestamp, mark int, name string) STORED BY 'org.apache.carbondata.format'"
+    )
+    sql(
+      "LOAD DATA local inpath './src/test/resources/comment.csv' INTO TABLE comment_test " +
+        "options('DELIMITER' = ',', 'QUOTECHAR' = '.', 'COMMENTCHAR' = '?','FILEHEADER'='imei,age,task,num,level,productdate,mark,name')"
+    )
+    checkAnswer(sql("select imei from comment_test"),Seq(Row("\".carbon"),Row("#?carbon"), Row(""),
+      Row("~carbon,")))
+  }
+
+
   override def afterAll {
     sql("drop table carbontable")
     sql("drop table hivetable")
@@ -597,5 +612,6 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists mixed_header_test")
     sql("drop table carbontable1")
     sql("drop table hivetable1")
+    sql("drop table if exists comment_test")
   }
 }

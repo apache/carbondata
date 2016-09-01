@@ -99,6 +99,10 @@ public class CsvInputMeta extends BaseStepMeta
 
   private String escapeCharacter;
 
+  private String quoteCharacter;
+
+  private String commentCharacter;
+
   private String maxColumns;
 
   public CsvInputMeta() {
@@ -121,6 +125,8 @@ public class CsvInputMeta extends BaseStepMeta
     blocksID = "";
     partitionID = "";
     escapeCharacter ="\\";
+    quoteCharacter = "\"";
+    commentCharacter = "#";
   }
 
   private void readData(Node stepnode) throws KettleXMLException {
@@ -157,6 +163,8 @@ public class CsvInputMeta extends BaseStepMeta
       blocksID = XMLHandler.getTagValue(stepnode, "blocksID");
       partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
       escapeCharacter = XMLHandler.getTagValue(stepnode, "escapeCharacter");
+      quoteCharacter = XMLHandler.getTagValue(stepnode, "quoteCharacter");
+      commentCharacter = XMLHandler.getTagValue(stepnode, "commentCharacter");
       maxColumns = XMLHandler.getTagValue(stepnode, "maxColumns");
       Node fields = XMLHandler.getSubNode(stepnode, getXmlCode("FIELDS"));
       int nrfields = XMLHandler.countNodes(fields, getXmlCode("FIELD"));
@@ -220,6 +228,8 @@ public class CsvInputMeta extends BaseStepMeta
     retval.append("    ").append(XMLHandler.addTagValue("blocksID", blocksID));
     retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
     retval.append("    ").append(XMLHandler.addTagValue("escapeCharacter", escapeCharacter));
+    retval.append("    ").append(XMLHandler.addTagValue("quoteCharacter", quoteCharacter));
+    retval.append("    ").append(XMLHandler.addTagValue("commentCharacter", commentCharacter));
     retval.append("    ").append(XMLHandler.addTagValue("maxColumns", maxColumns));
     retval.append("    ").append(XMLHandler.openTag(getXmlCode("FIELDS"))).append(Const.CR);
     for (int i = 0; i < inputFields.length; i++) {
@@ -273,6 +283,8 @@ public class CsvInputMeta extends BaseStepMeta
       blocksID = rep.getStepAttributeString(idStep, getRepCode("blocksID"));
       partitionID = rep.getStepAttributeString(idStep, getRepCode("partitionID"));
       escapeCharacter = rep.getStepAttributeString(idStep, getRepCode("escapeCharacter"));
+      quoteCharacter = rep.getStepAttributeString(idStep, getRepCode("quoteCharacter"));
+      commentCharacter = rep.getStepAttributeString(idStep, getRepCode("commentCharacter"));
       maxColumns = rep.getStepAttributeString(idStep, getRepCode("maxColumns"));
       int nrfields = rep.countNrStepAttributes(idStep, getRepCode("FIELD_NAME"));
 
@@ -329,6 +341,10 @@ public class CsvInputMeta extends BaseStepMeta
       rep.saveStepAttribute(idTransformation, idStep, getRepCode("partitionID"), partitionID);
       rep.saveStepAttribute(idTransformation, idStep, getRepCode("escapeCharacter"),
           escapeCharacter);
+      rep.saveStepAttribute(idTransformation, idStep, getRepCode("quoteCharacter"),
+          quoteCharacter);
+      rep.saveStepAttribute(idTransformation, idStep, getRepCode("commentCharacter"),
+          commentCharacter);
       rep.saveStepAttribute(idTransformation, idStep, getRepCode("maxColumns"),
           maxColumns);
       for (int i = 0; i < inputFields.length; i++) {
@@ -623,6 +639,16 @@ public class CsvInputMeta extends BaseStepMeta
     this.escapeCharacter = escapeCharacter;
   }
 
+  public String getQuoteCharacter() { return quoteCharacter; }
+
+  public void setQuoteCharacter(String quoteCharacter) { this.quoteCharacter = quoteCharacter; }
+
+  public String getCommentCharacter() { return commentCharacter; }
+
+  public void setCommentCharacter(String commentCharacter) {
+    this.commentCharacter = commentCharacter;
+  }
+
   public String getFileType() {
     return "CSV";
   }
@@ -828,6 +854,10 @@ public class CsvInputMeta extends BaseStepMeta
           partitionID = (String) entry.getValue();
         } else if ("escapeCharacter".equals(attributeKey)) {
           escapeCharacter = (String) entry.getValue();
+        } else if ("quoteCharacter".equals(attributeKey)) {
+          quoteCharacter = (String) entry.getValue();
+        } else if ("commentCharacter".equals(attributeKey)) {
+          commentCharacter = (String) entry.getValue();
         } else {
           throw new RuntimeException(
               "Unhandled metadata injection of attribute: " + attr.toString() + " - " + attr
