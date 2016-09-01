@@ -54,7 +54,7 @@ class SubqueryWithFilterAndSortTestCase extends QueryTest with BeforeAndAfterAll
 
   test("When the query has sub-query with sort and has 'like' filter") {
     try {
-      checkAnswer(sql("select name,id from (select * from subqueryfilterwithsort order by id)t where name like'name%' "),
+      checkAnswer(sql("select name,id from (select * from subqueryfilterwithsort order by id)t where name like 'name%' "),
         sql("select name,id from (select * from subqueryfilterwithsort_hive order by id)t where name like 'name%'"))
     } catch{
       case ex:Exception => ex.printStackTrace()
