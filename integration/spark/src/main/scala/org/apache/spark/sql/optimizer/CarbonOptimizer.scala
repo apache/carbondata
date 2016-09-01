@@ -218,7 +218,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
         case filter: Filter if !filter.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
           val attrsOnConds = new util.HashSet[AttributeReferenceWrapper]
           // In case the child is join then we cannot push down the filters so decode them earlier
-          if (filter.child.isInstanceOf[Join]) {
+          if (filter.child.isInstanceOf[Join] || filter.child.isInstanceOf[Sort]) {
             filter.condition.collect {
               case attr: AttributeReference =>
                 attrsOnConds.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))

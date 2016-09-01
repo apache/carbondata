@@ -115,16 +115,16 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
       val data ="a,-7489.7976000000\nb,11234567489.797\nc,-11234567489.7\nd,-1.2\ne,2\nf,-11234567489.7976000000\ng,11234567489.7976000000"
       writedata(tempFilePath, data)
       sql(s"LOAD data local inpath '${tempFilePath}' into table doublePAN options('fileheader'='name,value')")
-      sql(s"LOAD data local inpath '${tempFilePath}' into table doublePAN_hive")
+      sql(s"LOAD data local inpath '${tempFilePath}' into table double_hive")
 
-      checkAnswer(sql("select * from doublePAN"),
-        sql("select * from doublePAN_hive"))
+      checkAnswer(sql("select * from doubleISnegtive"),
+        sql("select * from doubleISnegtive_hive"))
     } catch{
       case ex:Exception => ex.printStackTrace()
         assert(false)
     } finally {
-      sql("drop table if exists doublePAN")
-      sql("drop table if exists doublePAN_hive")
+      sql("drop table if exists doubleISnegtive")
+      sql("drop table if exists doubleISnegtive_hive")
       deleteFile(tempFilePath)
     }
   }
