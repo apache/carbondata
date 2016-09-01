@@ -44,8 +44,8 @@ class SubqueryWithFilterAndSortTestCase extends QueryTest with BeforeAndAfterAll
 
   test("When the query has sub-query with sort and has '=' filter") {
     try {
-      checkAnswer(sql("select name,id from (select * from doubleISnegtive order by id)t where name='name_c' "),
-        sql("select name,id from (select * from doubleISnegtive order by id)t where name='name_c'"))
+      checkAnswer(sql("select name,id from (select * from subqueryfilterwithsort order by id)t where name='name_c' "),
+        sql("select name,id from (select * from subqueryfilterwithsort_hive order by id)t where name='name_c'"))
     } catch{
       case ex:Exception => ex.printStackTrace()
         assert(false)
@@ -54,8 +54,8 @@ class SubqueryWithFilterAndSortTestCase extends QueryTest with BeforeAndAfterAll
 
   test("When the query has sub-query with sort and has 'like' filter") {
     try {
-      checkAnswer(sql("select name,id from (select * from doubleISnegtive order by id)t where name like'name%' "),
-        sql("select name,id from (select * from doubleISnegtive order by id)t where name like 'name%'"))
+      checkAnswer(sql("select name,id from (select * from subqueryfilterwithsort order by id)t where name like'name%' "),
+        sql("select name,id from (select * from subqueryfilterwithsort_hive order by id)t where name like 'name%'"))
     } catch{
       case ex:Exception => ex.printStackTrace()
         assert(false)
