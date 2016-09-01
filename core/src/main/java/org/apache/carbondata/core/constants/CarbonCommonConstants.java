@@ -921,6 +921,12 @@ public final class CarbonCommonConstants {
       "carbon.enable.systemlevel.compaction.lock";
 
   /**
+   * Default value of Property for enabling system level compaction lock.1 compaction can run
+   * at once.
+   */
+  public static String DEFAULT_ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK = "true";
+
+  /**
    * Compaction system level lock folder.
    */
   public static String SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER = "SystemCompactionLock";

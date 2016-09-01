@@ -30,11 +30,14 @@ import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.TaskBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.CarbonUtilException;
+
+import org.apache.spark.sql.hive.TableMeta;
 
 /**
  * Utility Class for the Compaction Flow.
@@ -242,5 +245,21 @@ public class CarbonCompactionUtil {
       LOGGER.error("Exception in creating the compaction request file " + e.getMessage() );
     }
     return false;
+  }
+
+  /**
+   * This will check if any compaction request has been received for any table.
+   * @param tableMetas
+   * @return
+   */
+  public static TableMeta getNextTableToCompact(TableMeta[] tableMetas) {
+    for (TableMeta table : tableMetas) {
+      CarbonTable ctable = table.carbonTable();
+      String metadataPath = ctable.getMetaDataFilepath();
+      if (CarbonCompactionUtil.isCompactionRequiredForTable(metadataPath)) {
+        return table;
+      }
+    }
+    return null;
   }
 }

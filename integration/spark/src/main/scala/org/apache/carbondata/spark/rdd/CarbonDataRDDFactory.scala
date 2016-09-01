@@ -277,7 +277,9 @@ object CarbonDataRDDFactory extends Logging {
     )
 
     val isSystemCompactionLockEnabled = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK, "false")
+      .getProperty(CarbonCommonConstants.ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK,
+        CarbonCommonConstants.DEFAULT_ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK
+      )
       .equalsIgnoreCase("true")
 
     // if system level compaction is enabled then only one compaction can run in the system
@@ -552,64 +554,69 @@ object CarbonDataRDDFactory extends Logging {
             )
             // check for all the tables.
             val isSystemCompactionLockEnabled = CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK, "false")
-              .equalsIgnoreCase("true")
+              .getProperty(CarbonCommonConstants.ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK,
+                CarbonCommonConstants.DEFAULT_ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK
+              ).equalsIgnoreCase("true")
 
             if (isSystemCompactionLockEnabled) {
               logger.info("System level compaction lock is enabled.")
-              CarbonEnv.getInstance(sqlContext).carbonCatalog.metadata.tablesMeta.map { c =>
-                val table: CarbonTable = c.carbonTable
-                var metadataPath = table.getMetaDataFilepath
-                while (CarbonCompactionUtil.isCompactionRequiredForTable(metadataPath)) {
-                  logger
-                    .info("Compaction request has been identified for table " + table
-                      .getDatabaseName + "." + c.carbonTableIdentifier.getTableName
-                    )
-                  var compactionType = CarbonCompactionUtil.determineCompactionType(metadataPath)
-                  val newCarbonLoadModel = new CarbonLoadModel()
-                  newCarbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.toArray)
-                  newCarbonLoadModel.setTableName(table.getFactTableName)
-                  val dataLoadSchema = new CarbonDataLoadSchema(table)
-                  // Need to fill dimension relation
-                  newCarbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
-                  newCarbonLoadModel.setTableName(c.carbonTableIdentifier.getTableName)
-                  newCarbonLoadModel.setDatabaseName(c.carbonTableIdentifier.getDatabaseName)
-                  newCarbonLoadModel.setStorePath(c.storePath)
-                  readLoadMetadataDetails(newCarbonLoadModel, hdfsStoreLocation)
-                  val loadStartTime = CarbonLoaderUtil.readCurrentTime()
-                  newCarbonLoadModel.setFactTimeStamp(loadStartTime)
+              var tableForCompaction = CarbonCompactionUtil
+                .getNextTableToCompact(CarbonEnv.getInstance(sqlContext).carbonCatalog.metadata
+                  .tablesMeta.toArray
+                )
+              while(null != tableForCompaction) {
+                logger
+                  .info("Compaction request has been identified for table " + tableForCompaction
+                    .carbonTable.getDatabaseName + "." + tableForCompaction.carbonTableIdentifier
+                    .getTableName
+                  )
+                val table: CarbonTable = tableForCompaction.carbonTable
+                val metadataPath = table.getMetaDataFilepath
+                val compactionType = CarbonCompactionUtil.determineCompactionType(metadataPath)
 
-                  val tableCreationTime = CarbonEnv.getInstance(sqlContext).carbonCatalog
-                    .getTableCreationTime(newCarbonLoadModel.getDatabaseName,
-                      newCarbonLoadModel.getTableName
-                    )
-
-                  val compactionSize = CarbonDataMergerUtil
-                    .getCompactionSize(CompactionType.MAJOR_COMPACTION)
-
-                  val newcompactionModel = CompactionModel(compactionSize,
-                    compactionType,
-                    table,
-                    tableCreationTime,
-                    compactionModel.isDDLTrigger
+                val newCarbonLoadModel = new CarbonLoadModel()
+                prepareCarbonLoadModel(hdfsStoreLocation, table, newCarbonLoadModel)
+                val tableCreationTime = CarbonEnv.getInstance(sqlContext).carbonCatalog
+                  .getTableCreationTime(newCarbonLoadModel.getDatabaseName,
+                    newCarbonLoadModel.getTableName
                   )
 
-                  try {
-                    executeCompaction(newCarbonLoadModel,
-                      newCarbonLoadModel.getStorePath,
-                      newcompactionModel,
-                      partitioner,
-                      executor, sqlContext, kettleHomePath, storeLocation
-                    )
-                  }
-                  finally {
-                    // delete the compaction required file
-                    if (!CarbonCompactionUtil
-                      .deleteCompactionRequiredFile(metadataPath, compactionType)) {
-                      break
-                    }
+                val compactionSize = CarbonDataMergerUtil
+                  .getCompactionSize(CompactionType.MAJOR_COMPACTION)
+
+                val newcompactionModel = CompactionModel(compactionSize,
+                  compactionType,
+                  table,
+                  tableCreationTime,
+                  compactionModel.isDDLTrigger
+                )
+                // proceed for compaction
+                try {
+                  executeCompaction(newCarbonLoadModel,
+                    newCarbonLoadModel.getStorePath,
+                    newcompactionModel,
+                    partitioner,
+                    executor, sqlContext, kettleHomePath, storeLocation
+                  )
+                }
+                finally {
+                  // delete the compaction required file
+                  if (!CarbonCompactionUtil
+                    .deleteCompactionRequiredFile(metadataPath, compactionType)) {
+                    logger
+                      .error("Compaction request file can not be deleted for table " +
+                        tableForCompaction
+                        .carbonTable.getDatabaseName + "." + tableForCompaction
+                        .carbonTableIdentifier
+                        .getTableName
+                      )
                   }
                 }
+                // ********* check again for all the tables.
+                tableForCompaction = CarbonCompactionUtil
+                  .getNextTableToCompact(CarbonEnv.getInstance(sqlContext).carbonCatalog.metadata
+                    .tablesMeta.toArray
+                  )
               }
             }
           }
@@ -638,6 +645,22 @@ object CarbonDataRDDFactory extends Logging {
       compactionLock.unlock()
     }
 
+  }
+
+  def prepareCarbonLoadModel(hdfsStoreLocation: String,
+    table: CarbonTable,
+    newCarbonLoadModel: CarbonLoadModel): Unit = {
+    newCarbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.toArray)
+    newCarbonLoadModel.setTableName(table.getFactTableName)
+    val dataLoadSchema = new CarbonDataLoadSchema(table)
+    // Need to fill dimension relation
+    newCarbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
+    newCarbonLoadModel.setTableName(table.getCarbonTableIdentifier.getTableName)
+    newCarbonLoadModel.setDatabaseName(table.getCarbonTableIdentifier.getDatabaseName)
+    newCarbonLoadModel.setStorePath(table.getStorePath)
+    readLoadMetadataDetails(newCarbonLoadModel, hdfsStoreLocation)
+    val loadStartTime = CarbonLoaderUtil.readCurrentTime()
+    newCarbonLoadModel.setFactTimeStamp(loadStartTime)
   }
 
   def deletePartialLoadsInCompaction(carbonLoadModel: CarbonLoadModel): Unit = {
@@ -697,7 +720,9 @@ object CarbonDataRDDFactory extends Logging {
         storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
         val isSystemCompactionLockEnabled = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK, "false")
+          .getProperty(CarbonCommonConstants.ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK,
+            CarbonCommonConstants.DEFAULT_ENABLE_SYSTEM_LEVEL_COMPACTION_LOCK
+          )
           .equalsIgnoreCase("true")
 
         if (isSystemCompactionLockEnabled) {
