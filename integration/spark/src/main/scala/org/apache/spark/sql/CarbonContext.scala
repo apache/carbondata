@@ -20,6 +20,7 @@ package org.apache.spark.sql
 import java.io.File
 
 import scala.language.implicitConversions
+
 import org.apache.spark.{Logging, SparkContext}
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.catalyst.ParserDialect
@@ -31,6 +32,7 @@ import org.apache.spark.sql.execution.command.PartitionData
 import org.apache.spark.sql.execution.datasources.{PreInsertCastAndRename, PreWriteCheck}
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.optimizer.CarbonOptimizer
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
 import org.apache.carbondata.core.constants.CarbonCommonConstants

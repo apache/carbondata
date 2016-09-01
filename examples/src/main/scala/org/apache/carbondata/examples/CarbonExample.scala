@@ -50,6 +50,6 @@ object CarbonExample {
            GROUP BY country
            """).show()
 
-//    cc.sql("DROP TABLE IF EXISTS t3")
+    cc.sql("DROP TABLE IF EXISTS t3")
   }
 }

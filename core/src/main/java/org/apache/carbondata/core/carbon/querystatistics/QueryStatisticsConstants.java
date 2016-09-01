@@ -19,34 +19,34 @@
 
 package org.apache.carbondata.core.carbon.querystatistics;
 
-public final class QueryStatisticsConstants {
+public interface QueryStatisticsConstants {
 
   // driver side
-  public static final String SQL_PARSE = "Time taken to parse sql In Driver Side";
+  String SQL_PARSE = "Time taken to parse sql In Driver Side";
 
-  public static final String LOAD_META = "Time taken to load meta data In Driver Side";
+  String LOAD_META = "Time taken to load meta data In Driver Side";
 
-  public static final String LOAD_BLOCKS_DRIVER = "Time taken to load the Block(s) In Driver Side";
+  String LOAD_BLOCKS_DRIVER = "Time taken to load the Block(s) In Driver Side";
 
-  public static final String BLOCK_ALLOCATION = "Total Time taken in block(s) allocation";
+  String BLOCK_ALLOCATION = "Total Time taken in block(s) allocation";
 
-  public static final String BLOCK_IDENTIFICATION = "Time taken to identify Block(s) to scan";
+  String BLOCK_IDENTIFICATION = "Time taken to identify Block(s) to scan";
 
   // executor side
-  public static final String EXECUTOR_PART =
+  String EXECUTOR_PART =
       "Total Time taken to execute the query in executor Side";
 
-  public static final String LOAD_BLOCKS_EXECUTOR = "Time taken to load the Block(s) In Executor";
+  String LOAD_BLOCKS_EXECUTOR = "Time taken to load the Block(s) In Executor";
 
-  public static final String SCAN_BLOCKS_NUM = "The num of blocks scanned";
+  String SCAN_BLOCKS_NUM = "The num of blocks scanned";
 
-  public static final String SCAN_BLOCKS_TIME = "Time taken to scan blocks";
+  String SCAN_BLOCKS_TIME = "Time taken to scan blocks";
 
-  public static final String LOAD_DICTIONARY = "Time taken to load the Dictionary In Executor";
+  String LOAD_DICTIONARY = "Time taken to load the Dictionary In Executor";
 
-  public static final String PREPARE_RESULT = "Total Time taken to prepare query result";
+  String PREPARE_RESULT = "Total Time taken to prepare query result";
 
-  public static final String RESULT_SIZE = "The size of query result";
+  String RESULT_SIZE = "The size of query result";
 
 }
 

@@ -21,11 +21,13 @@ import java.util
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.hive.DistributionUtil
+
 import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.Dictionary
@@ -145,7 +147,7 @@ class CarbonScanRDD[V: ClassTag](
         statistic.addStatistics(QueryStatisticsConstants.BLOCK_IDENTIFICATION,
           System.currentTimeMillis)
         statisticRecorder.recordStatisticsForDriver(statistic, queryModel.getQueryId())
-        statisticRecorder.logStatisticsAsTable(true)
+        statisticRecorder.logStatisticsAsTableDriver()
         result.asScala.foreach { r =>
           val cp = r.asInstanceOf[CarbonSparkPartition]
           logInfo(s"Node : " + cp.locations.toSeq.mkString(",")
@@ -220,7 +222,7 @@ class CarbonScanRDD[V: ClassTag](
             queryStatistic.addCountStatistic(QueryStatisticsConstants.RESULT_SIZE, recordCount)
             queryModel.getStatisticsRecorder.recordStatistics(queryStatistic)
             // print executor query statistics for each task_id
-            queryModel.getStatisticsRecorder.logStatisticsAsTable(false)
+            queryModel.getStatisticsRecorder.logStatisticsAsTableExecutor()
           }
         }
         !finished
@@ -246,7 +248,7 @@ class CarbonScanRDD[V: ClassTag](
             queryStatistic.addCountStatistic(QueryStatisticsConstants.RESULT_SIZE, recordCount)
             queryModel.getStatisticsRecorder.recordStatistics(queryStatistic)
             // print executor query statistics for each task_id
-            queryModel.getStatisticsRecorder.logStatisticsAsTable(false)
+            queryModel.getStatisticsRecorder.logStatisticsAsTableExecutor()
           }
         }
         keyClass.getValue(rowIterator.next())

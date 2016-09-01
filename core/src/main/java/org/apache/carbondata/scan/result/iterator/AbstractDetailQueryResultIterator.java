@@ -26,6 +26,9 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.apache.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
@@ -67,6 +70,10 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
 
   protected boolean nextBatch = false;
 
+  protected long total = 0L;
+
+  protected QueryStatisticsRecorder recorder;
+
   public AbstractDetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel) {
     String batchSizeString =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE);
@@ -80,7 +87,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     } else {
       batchSize = CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT;
     }
-
+    this.recorder = queryModel.getStatisticsRecorder();
     this.blockExecutionInfos = infos;
     this.fileReader = FileFactory.getFileHolder(
         FileFactory.getFileType(queryModel.getAbsoluteTableIdentifier().getStorePath()));
@@ -111,8 +118,13 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
   @Override public boolean hasNext() {
     if ((dataBlockIterator != null && dataBlockIterator.hasNext()) || nextBatch) {
       return true;
+    } else if (blockExecutionInfos.size() > 0) {
+      return true;
     } else {
-      return blockExecutionInfos.size() > 0;
+      QueryStatistic statistic = new QueryStatistic();
+      statistic.addFixedTimeStatistic(QueryStatisticsConstants.SCAN_BLOCKS_TIME, total);
+      recorder.recordStatistics(statistic);
+      return false;
     }
   }
 

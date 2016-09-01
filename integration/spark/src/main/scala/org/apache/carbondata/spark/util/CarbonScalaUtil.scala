@@ -20,17 +20,18 @@ package org.apache.carbondata.spark.util
 import java.io.File
 
 import scala.collection.JavaConverters._
+
 import org.apache.spark.Logging
 import org.apache.spark.sql._
 import org.apache.spark.sql.hive.{CarbonMetaData, DictionaryMap}
 import org.apache.spark.sql.types._
+
 import org.apache.carbondata.core.carbon.metadata.datatype.{DataType => CarbonDataType}
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.commons.lang3.StringUtils
 
 object CarbonScalaUtil extends Logging {
   def convertSparkToCarbonDataType(
