@@ -18,39 +18,42 @@
  */
 package org.apache.carbondata.core.carbon.querystatistics;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 
+import static org.apache.carbondata.core.util.CarbonUtil.printLine;
+
 /**
  * Class will be used to record and log the query statistics
  */
-public class SingleQueryStatisticsRecorder implements Serializable {
+public class DriverQueryStatisticsRecorder {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(SingleQueryStatisticsRecorder.class.getName());
-  /**
-   * serialization version
-   */
-  private static final long serialVersionUID = -1L;
+      LogServiceFactory.getLogService(DriverQueryStatisticsRecorder.class.getName());
 
   /**
    * singleton QueryStatisticsRecorder for driver
    */
-  private HashMap<String, List<QueryStatistic>> queryStatisticsMap;
+  private Map<String, List<QueryStatistic>> queryStatisticsMap;
 
-  private SingleQueryStatisticsRecorder() {
+  /**
+   * lock for log statistics table
+   */
+  private static final Object lock = new Object();
+
+  private DriverQueryStatisticsRecorder() {
     queryStatisticsMap = new HashMap<String, List<QueryStatistic>>();
   }
 
-  private static SingleQueryStatisticsRecorder carbonLoadStatisticsImplInstance =
-      new SingleQueryStatisticsRecorder();
+  private static DriverQueryStatisticsRecorder carbonLoadStatisticsImplInstance =
+      new DriverQueryStatisticsRecorder();
 
-  public static SingleQueryStatisticsRecorder getInstance() {
+  public static DriverQueryStatisticsRecorder getInstance() {
     return carbonLoadStatisticsImplInstance;
   }
 
@@ -74,9 +77,11 @@ public class SingleQueryStatisticsRecorder implements Serializable {
    * Below method will be used to show statistic log as table
    */
   public void logStatisticsAsTableDriver() {
-    String tableInfo = collectDriverStatistics();
-    if (null != tableInfo) {
-      LOGGER.statistic(tableInfo);
+    synchronized (lock) {
+      String tableInfo = collectDriverStatistics();
+      if (null != tableInfo) {
+        LOGGER.statistic(tableInfo);
+      }
     }
   }
 
@@ -87,7 +92,7 @@ public class SingleQueryStatisticsRecorder implements Serializable {
     for (String key: queryStatisticsMap.keySet()) {
       try {
         // TODO: get the finished query, and print Statistics
-        if (queryStatisticsMap.get(key).size() > 2) {
+        if (queryStatisticsMap.get(key).size() > 3) {
           String sql_parse_time = "";
           String load_meta_time = "";
           String block_allocation_time = "";
@@ -174,20 +179,5 @@ public class SingleQueryStatisticsRecorder implements Serializable {
       }
     }
     return null;
-  }
-
-  /**
-   * Below method will create string like "***********"
-   *
-   * @param a
-   * @param num
-   */
-  public static String printLine(String a, int num)
-  {
-    StringBuilder builder = new StringBuilder();
-    for (int i = 0; i < num; i++) {
-      builder.append(a);
-    }
-    return builder.toString();
   }
 }

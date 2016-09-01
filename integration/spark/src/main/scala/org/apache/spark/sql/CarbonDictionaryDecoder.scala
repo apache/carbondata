@@ -174,19 +174,17 @@ case class CarbonDictionaryDecoder(
             var total = 0L
             override final def hasNext: Boolean = {
               flag = iter.hasNext
-              if (!flag && total > 0) {
+              if (false == flag && total > 0) {
                 val queryStatistic = new QueryStatistic()
                 queryStatistic
-                  .addFixedTimeStatistic(QueryStatisticsConstants.PREPARE_RESULT,
-                    total/1000000 + 1
-                  )
+                  .addFixedTimeStatistic(QueryStatisticsConstants.PREPARE_RESULT, total)
                 recorder.recordStatistics(queryStatistic)
                 recorder.logStatistics()
               }
               flag
             }
             override final def next(): InternalRow = {
-              val startTime = System.nanoTime()
+              val startTime = System.currentTimeMillis()
               val row: InternalRow = iter.next()
               val data = row.toSeq(dataTypes).toArray
               dictIndex.foreach { index =>
@@ -197,7 +195,7 @@ case class CarbonDictionaryDecoder(
                 }
               }
               val result = unsafeProjection(new GenericMutableRow(data))
-              total += System.nanoTime() - startTime
+              total += System.currentTimeMillis() - startTime
               result
             }
           }

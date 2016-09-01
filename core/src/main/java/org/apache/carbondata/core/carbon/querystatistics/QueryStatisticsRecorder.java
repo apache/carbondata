@@ -25,7 +25,7 @@ import java.util.List;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 
-import static org.apache.carbondata.core.carbon.querystatistics.SingleQueryStatisticsRecorder.printLine;
+import static org.apache.carbondata.core.util.CarbonUtil.printLine;
 
 /**
  * Class will be used to record and log the query statistics
@@ -34,6 +34,7 @@ public class QueryStatisticsRecorder implements Serializable {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(QueryStatisticsRecorder.class.getName());
+
   /**
    * serialization version
    */
@@ -50,6 +51,11 @@ public class QueryStatisticsRecorder implements Serializable {
    * query with taskd
    */
   private String queryIWthTask;
+
+  /**
+   * lock for log statistics table
+   */
+  private static final Object lock = new Object();
 
   public QueryStatisticsRecorder(String queryId) {
     queryStatistics = new ArrayList<QueryStatistic>();
@@ -78,9 +84,11 @@ public class QueryStatisticsRecorder implements Serializable {
    * Below method will be used to show statistic log as table
    */
   public void logStatisticsAsTableExecutor() {
-    String tableInfo = collectExecutorStatistics();
-    if (null != tableInfo) {
-      LOGGER.statistic(tableInfo);
+    synchronized (lock) {
+      String tableInfo = collectExecutorStatistics();
+      if (null != tableInfo) {
+        LOGGER.statistic(tableInfo);
+      }
     }
   }
 

@@ -64,7 +64,7 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
         execService.awaitTermination(1, TimeUnit.HOURS);
         fileReader.finish();
       }
-      total += System.currentTimeMillis() - startTime;
+      totalScanTime += System.currentTimeMillis() - startTime;
     } catch (Exception ex) {
       execService.shutdown();
       fileReader.finish();
