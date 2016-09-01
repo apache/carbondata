@@ -99,8 +99,6 @@ public class UnivocityCsvParserVo {
     this.delimiter = delimiter;
   }
 
-
-
   /**
    * @return the encoding
    */

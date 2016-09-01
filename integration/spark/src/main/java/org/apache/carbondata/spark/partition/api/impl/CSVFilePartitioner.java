@@ -219,7 +219,7 @@ public class CSVFilePartitioner {
         .info("Processed Record count: " + recordCounter);
   }
 
-  private CSVParser getCustomParser(String delimiter, String quoteChar,String escapeChar) {
+  private CSVParser getCustomParser(String delimiter, String quoteChar, String escapeChar) {
     CSVParser customParser = null;
     boolean ignoreQuote = false;
     boolean ignoreEscape = false;

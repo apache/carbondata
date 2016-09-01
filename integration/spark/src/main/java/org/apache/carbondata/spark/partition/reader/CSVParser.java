@@ -71,7 +71,7 @@ public class CSVParser {
    * The default escape character to use if none is supplied to the
    * constructor.
    */
-  public static final char DEFAULT_COMMENT_CHARACTER = '\\';
+  public static final char DEFAULT_COMMENT_CHARACTER = '#';
   /**
    * The default strict quote behavior to use if none is supplied to the
    * constructor.
