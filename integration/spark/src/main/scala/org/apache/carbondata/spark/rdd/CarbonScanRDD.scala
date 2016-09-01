@@ -212,11 +212,15 @@ class CarbonScanRDD[V: ClassTag](
         if (finished) {
           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
           if (null != queryModel.getStatisticsRecorder) {
-            val queryStatistic = new QueryStatistic
+            var queryStatistic = new QueryStatistic
             queryStatistic
               .addFixedTimeStatistic("Total Time taken to execute the query in executor Side",
                 System.currentTimeMillis - queryStartTime
               )
+            queryModel.getStatisticsRecorder.recordStatistics(queryStatistic);
+            // add the query result size statistics
+            queryStatistic = new QueryStatistic
+            queryStatistic.addCountStatistic("The record numbers of query result", recordCount)
             queryModel.getStatisticsRecorder.recordStatistics(queryStatistic);
             queryModel.getStatisticsRecorder.logStatistics();
           }
@@ -233,11 +237,15 @@ class CarbonScanRDD[V: ClassTag](
         if (queryModel.getLimit != -1 && recordCount >= queryModel.getLimit) {
           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
           if (null != queryModel.getStatisticsRecorder) {
-            val queryStatistic = new QueryStatistic
+            var queryStatistic = new QueryStatistic
             queryStatistic
               .addFixedTimeStatistic("Total Time taken to execute the query in executor Side",
                 System.currentTimeMillis - queryStartTime
               )
+            queryModel.getStatisticsRecorder.recordStatistics(queryStatistic);
+            // add the query result size statistics
+            queryStatistic = new QueryStatistic
+            queryStatistic.addCountStatistic("The record numbers of query result", recordCount)
             queryModel.getStatisticsRecorder.recordStatistics(queryStatistic);
             queryModel.getStatisticsRecorder.logStatistics();
           }
