@@ -191,7 +191,7 @@ case class CarbonCsvRelation protected[spark] (
         val escapeVal = if (escape == null) '\\' else escape.charValue()
         val commentChar: Char = if (comment == null) '\0' else comment
 
-        new BulkCsvReader(iter, split,
+        new CarbonBulkCsvReader(iter, split,
           headers = header, fieldSep = delimiter,
           quote = quote, escape = escapeVal, commentMarker = commentChar,
           ignoreLeadingSpace = ignoreLeadingWhiteSpace,
