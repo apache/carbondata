@@ -233,13 +233,18 @@ public class CarbonCompactionUtil {
       statusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
           + CarbonCommonConstants.minorCompactionRequiredFile;
     } else {
-
       statusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
           + CarbonCommonConstants.majorCompactionRequiredFile;
     }
     try {
       if (!FileFactory.isFileExist(statusFile, FileFactory.getFileType(statusFile))) {
-        return FileFactory.createNewFile(statusFile, FileFactory.getFileType(statusFile));
+        if (FileFactory.createNewFile(statusFile, FileFactory.getFileType(statusFile))) {
+          LOGGER.info("successfully created a compaction required file - " + statusFile);
+          return true;
+        } else {
+          LOGGER.error("Not able to create a compaction required file - " + statusFile);
+          return false;
+        }
       }
     } catch (IOException e) {
       LOGGER.error("Exception in creating the compaction request file " + e.getMessage() );

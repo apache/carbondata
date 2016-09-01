@@ -312,15 +312,22 @@ object CarbonDataRDDFactory extends Logging {
           .info("Acquired the compaction lock for table " + carbonLoadModel
             .getDatabaseName + "." + carbonLoadModel.getTableName
           )
-        startCompactionThreads(sqlContext,
-          carbonLoadModel,
-          partitioner,
-          hdfsStoreLocation,
-          kettleHomePath,
-          storeLocation,
-          compactionModel,
-          lock
-        )
+        try {
+          startCompactionThreads(sqlContext,
+            carbonLoadModel,
+            partitioner,
+            hdfsStoreLocation,
+            kettleHomePath,
+            storeLocation,
+            compactionModel,
+            lock
+          )
+        }
+        catch {
+          case e : Exception =>
+            logger.error("Exception in start compaction thread. " + e.getMessage)
+            lock.unlock()
+        }
       }
       else {
         logger
@@ -354,15 +361,22 @@ object CarbonDataRDDFactory extends Logging {
         .info("Acquired the compaction lock for table " + carbonLoadModel
           .getDatabaseName + "." + carbonLoadModel.getTableName
         )
-      startCompactionThreads(sqlContext,
-        carbonLoadModel,
-        partitioner,
-        hdfsStoreLocation,
-        kettleHomePath,
-        storeLocation,
-        compactionModel,
-        lock
-      )
+      try {
+        startCompactionThreads(sqlContext,
+          carbonLoadModel,
+          partitioner,
+          hdfsStoreLocation,
+          kettleHomePath,
+          storeLocation,
+          compactionModel,
+          lock
+        )
+      }
+      catch {
+        case e : Exception =>
+          logger.error("Exception in start compaction thread. " + e.getMessage)
+          lock.unlock()
+      }
     }
     else {
       logger
@@ -373,19 +387,19 @@ object CarbonDataRDDFactory extends Logging {
         .error("Not able to acquire the compaction lock for table " + carbonLoadModel
           .getDatabaseName + "." + carbonLoadModel.getTableName
         )
-      if (!CarbonCompactionUtil
-        .createCompactionRequiredFile(carbonTable.getMetaDataFilepath, compactionType)) {
-        logger.error("Not able to create a compaction required file for table " + carbonLoadModel
-          .getDatabaseName + "." + carbonLoadModel.getTableName
-        )
+      CarbonCompactionUtil
+        .createCompactionRequiredFile(carbonTable.getMetaDataFilepath, compactionType)
+      // do sys error only in case of DDL trigger.
+      if(compactionModel.isDDLTrigger) {
+        sys.error("Compaction is in progress, compaction request for table " + carbonLoadModel
+          .getDatabaseName + "." + carbonLoadModel.getTableName + " is in queue.")
       }
       else {
         logger
-          .info("successfully created a compaction required file for table " + carbonLoadModel
-            .getDatabaseName + "." + carbonLoadModel.getTableName
+          .error("Compaction is in progress, compaction request for table " + carbonLoadModel
+            .getDatabaseName + "." + carbonLoadModel.getTableName + " is in queue."
           )
       }
-      sys.error("System is already locked for compaction. Please try after some time.")
     }
   }
 
@@ -531,17 +545,6 @@ object CarbonDataRDDFactory extends Logging {
           )
     }
 
-    val loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
-      hdfsStoreLocation,
-      carbonLoadModel,
-      partitioner.partitionCount,
-      compactionModel.compactionSize,
-      segList,
-      compactionModel.compactionType
-    )
-
-    if (loadsToMerge.size() > 1) {
-
       val compactionThread = new Thread {
         override def run(): Unit = {
 
@@ -640,11 +643,6 @@ object CarbonDataRDDFactory extends Logging {
         // non blocking call in case of auto compaction.
         compactionThread.start()
       }
-    }
-    else {
-      compactionLock.unlock()
-    }
-
   }
 
   def prepareCarbonLoadModel(hdfsStoreLocation: String,
@@ -746,15 +744,22 @@ object CarbonDataRDDFactory extends Logging {
 
           if (lock.lockWithRetries()) {
             logger.info("Acquired the compaction lock.")
-            startCompactionThreads(sqlContext,
-              carbonLoadModel,
-              partitioner,
-              hdfsStoreLocation,
-              kettleHomePath,
-              storeLocation,
-              compactionModel,
-              lock
-            )
+            try {
+              startCompactionThreads(sqlContext,
+                carbonLoadModel,
+                partitioner,
+                hdfsStoreLocation,
+                kettleHomePath,
+                storeLocation,
+                compactionModel,
+                lock
+              )
+            }
+            catch {
+              case e : Exception =>
+                logger.error("Exception in start compaction thread. " + e.getMessage)
+                lock.unlock()
+            }
           }
           else {
             logger
