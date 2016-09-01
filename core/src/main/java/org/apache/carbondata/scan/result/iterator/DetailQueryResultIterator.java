@@ -49,6 +49,7 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
 
   @Override public BatchResult next() {
     BatchResult result;
+    long startTime = System.currentTimeMillis();
     try {
       if (future == null) {
         future = execute();
@@ -63,6 +64,7 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
         execService.awaitTermination(1, TimeUnit.HOURS);
         fileReader.finish();
       }
+      totalScanTime += System.currentTimeMillis() - startTime;
     } catch (Exception ex) {
       execService.shutdown();
       fileReader.finish();
