@@ -385,7 +385,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql(
       """
        LOAD DATA LOCAL INPATH './src/test/resources/datawithescapecharacter.csv' into table t3
-          options ('DELIMITER'=',', 'QUOTECHAR'='\"','ESCAPECHAR'='\')
+          options ('DELIMITER'=',', 'QUOTECHAR'='"','ESCAPECHAR'='\')
       """
     )
     checkAnswer(sql("select count(*) from t3"), Seq(Row(21)))
@@ -406,7 +406,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql(
       """
        LOAD DATA LOCAL INPATH './src/test/resources/datawithescapecharacter.csv' into table t3
-          options ('DELIMITER'=',', 'QUOTECHAR'='\"','ESCAPECHAR'='@')
+          options ('DELIMITER'=',', 'QUOTECHAR'='"','ESCAPECHAR'='@')
       """
     )
     checkAnswer(sql("select count(*) from t3"), Seq(Row(21)))
