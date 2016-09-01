@@ -26,8 +26,6 @@ import java.util.List;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 
-import org.apache.commons.lang3.StringUtils;
-
 /**
  * Class will be used to record and log the query statistics
  */
@@ -40,8 +38,47 @@ public class QueryStatisticsRecorder implements Serializable {
    */
   private static final long serialVersionUID = -5719752001674467864L;
 
-  private QueryStatisticsRecorder() {
+  /**
+   * list for statistics to record time taken
+   * by each phase of the query for example aggregation
+   * scanning,block loading time etc.
+   */
+  private List<QueryStatistic> queryStatistics;
+
+  /**
+   * query with taskd
+   */
+  private String queryIWthTask;
+
+  public QueryStatisticsRecorder(String queryId) {
     queryStatistics = new ArrayList<QueryStatistic>();
+    this.queryIWthTask = queryId;
+  }
+
+  /**
+   * Below method will be used to add the statistics
+   *
+   * @param statistic
+   */
+  public synchronized void recordStatistics(QueryStatistic statistic) {
+    queryStatistics.add(statistic);
+  }
+
+  /**
+   * Below method will be used to log the statistic
+   */
+  public void logStatistics() {
+    for (QueryStatistic statistic : queryStatistics) {
+      LOGGER.statistic(statistic.getStatistics(queryIWthTask));
+    }
+  }
+
+  /**
+   * singleton QueryStatisticsRecorder for driver
+   */
+  private HashMap<String, List<QueryStatistic>> queryStatisticsMap;
+
+  private QueryStatisticsRecorder() {
     queryStatisticsMap = new HashMap<String, List<QueryStatistic>>();
   }
 
@@ -51,51 +88,28 @@ public class QueryStatisticsRecorder implements Serializable {
   public static QueryStatisticsRecorder getInstance() {
     return carbonLoadStatisticsImplInstance;
   }
-  /**
-   * list for statistics to record time taken
-   * by each phase of the query for example aggregation
-   * scanning,block loading time etc.
-   */
-  private List<QueryStatistic> queryStatistics;
-
-  private HashMap<String, List<QueryStatistic>> queryStatisticsMap;
 
   /**
    * Below method will be used to add the statistics
    *
    * @param statistic
    */
-  public synchronized void recordStatistics(QueryStatistic statistic) {
-    queryStatistics.add(statistic);
+  public synchronized void recordStatisticsForDriver(QueryStatistic statistic, String queryId) {
     // refresh query Statistics Map
-    String key = statistic.getQueryId();
-    if (!StringUtils.isEmpty(key)) {
-      // 240954528274124_0 and 240954528274124 is the same query id
-      key = key.substring(0, 15);
-    }
-    if (queryStatisticsMap.get(key) != null) {
-      queryStatisticsMap.get(key).add(statistic);
+    if (queryStatisticsMap.get(queryId) != null) {
+      queryStatisticsMap.get(queryId).add(statistic);
     } else {
       List<QueryStatistic> newQueryStatistics = new ArrayList<QueryStatistic>();
       newQueryStatistics.add(statistic);
-      queryStatisticsMap.put(key, newQueryStatistics);
-    }
-  }
-
-  /**
-   * Below method will be used to log the statistic
-   */
-  public void logStatistics() {
-    for (QueryStatistic statistic : queryStatistics) {
-      LOGGER.statistic(statistic.getStatistics());
+      queryStatisticsMap.put(queryId, newQueryStatistics);
     }
   }
 
   /**
    * Below method will be used to show statistic log as table
    */
-  public void logStatisticsTable() {
-    String tableInfo = putStatisticsIntoTable();
+  public void logStatisticsAsTable(boolean isDriver) {
+    String tableInfo = isDriver? collectDriverStatistics(): collectExecutorStatistics();
     if (null != tableInfo) {
       LOGGER.statistic(tableInfo);
     }
@@ -104,228 +118,154 @@ public class QueryStatisticsRecorder implements Serializable {
   /**
    * Below method will parse queryStatisticsMap and put time into table
    */
-  public String putStatisticsIntoTable() {
+  public String collectExecutorStatistics() {
+    String load_blocks_time = "";
+    String scan_blocks_time = "";
+    String scan_blocks_num = "";
+    String load_dictionary_time = "";
+    String result_size = "";
+    String total_executor_time = "";
+    try {
+      for (QueryStatistic statistic : queryStatistics) {
+        switch (statistic.getMessage()) {
+          case QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR:
+            load_blocks_time += statistic.getTimeTaken();
+            break;
+          case QueryStatisticsConstants.SCAN_BLOCKS_TIME:
+            scan_blocks_time += statistic.getTimeTaken();
+            break;
+          case QueryStatisticsConstants.SCAN_BLOCKS_NUM:
+            scan_blocks_num += statistic.getCount();
+            break;
+          case QueryStatisticsConstants.LOAD_DICTIONARY:
+            load_dictionary_time += statistic.getTimeTaken();
+            break;
+          case QueryStatisticsConstants.RESULT_SIZE:
+            result_size += statistic.getCount();
+            break;
+          case QueryStatisticsConstants.EXECUTOR_PART:
+            total_executor_time += statistic.getTimeTaken();
+            break;
+          default:
+            break;
+        }
+      }
+      String headers = "task_id,load_blocks_time,load_dictionary_time,scan_blocks_time," +
+          "scan_blocks_num,result_size,total_executor_time";
+      List<String> values = new ArrayList<String>();
+      values.add(queryIWthTask);
+      values.add(load_blocks_time);
+      values.add(load_dictionary_time);
+      values.add(scan_blocks_time);
+      values.add(scan_blocks_num);
+      values.add(result_size);
+      values.add(total_executor_time);
+      StringBuilder tableInfo = new StringBuilder();
+      String[] columns = headers.split(",");
+      String line = "";
+      String hearLine = "";
+      String valueLine = "";
+      for (int i = 0; i < columns.length; i++) {
+        int len = Math.max(columns[i].length(), values.get(i).length());
+        line += "+" + printLine("-", len);
+        hearLine += "|" + printLine(" ", len - columns[i].length()) + columns[i];
+        valueLine += "|" + printLine(" ", len - values.get(i).length()) + values.get(i);
+      }
+      // struct table info
+      tableInfo.append(line + "+").append("\n");
+      tableInfo.append(hearLine + "|").append("\n");
+      tableInfo.append(line + "+").append("\n");
+      tableInfo.append(valueLine + "|").append("\n");
+      tableInfo.append(line + "+").append("\n");
+      return "Print query statistic for each task id:" + "\n" + tableInfo.toString();
+    } catch (Exception ex) {
+      return "Put statistics into table failed, catch exception: " + ex.getMessage();
+    }
+  }
+
+  /**
+   * Below method will parse queryStatisticsMap and put time into table
+   */
+  public String collectDriverStatistics() {
     for (String key: queryStatisticsMap.keySet()) {
       try {
         // TODO: get the finished query, and print Statistics
-        if (queryStatisticsMap.get(key).size() > 8) {
-          String jdbc_connection_time = "";
+        if (queryStatisticsMap.get(key).size() > 1) {
           String sql_parse_time = "";
           String load_meta_time = "";
+          String block_allocation_time = "";
           String block_identification_time = "";
-          String schedule_time = "";
           String driver_part_time = "";
-          String executor_part_time = "";
-          String load_index_time = "";
-          String scan_data_time = "";
-          String dictionary_load_time = "";
-          String prepare_result_time = "";
-          String print_result_time = "";
-          String total_query_time = "";
+          Double driver_part_time_tmp = 0.0;
           // get statistic time from the QueryStatistic
           for (QueryStatistic statistic : queryStatisticsMap.get(key)) {
             switch (statistic.getMessage()) {
-              case QueryStatisticsCommonConstants.JDBC_CONNECTION:
-                jdbc_connection_time += statistic.getTimeTaken();
-                break;
-              case QueryStatisticsCommonConstants.SQL_PARSE:
+              case QueryStatisticsConstants.SQL_PARSE:
                 sql_parse_time += statistic.getTimeTaken();
+                driver_part_time_tmp += statistic.getTimeTaken();
                 break;
-              case QueryStatisticsCommonConstants.LOAD_META:
+              case QueryStatisticsConstants.LOAD_META:
                 load_meta_time += statistic.getTimeTaken();
+                driver_part_time_tmp += statistic.getTimeTaken();
                 break;
-              case QueryStatisticsCommonConstants.BLOCK_IDENTIFICATION:
+              case QueryStatisticsConstants.BLOCK_ALLOCATION:
+                block_allocation_time += statistic.getTimeTaken();
+                driver_part_time_tmp += statistic.getTimeTaken();
+                break;
+              case QueryStatisticsConstants.BLOCK_IDENTIFICATION:
                 block_identification_time += statistic.getTimeTaken();
-                break;
-              case QueryStatisticsCommonConstants.SCHEDULE_TIME:
-                schedule_time += statistic.getTimeTaken();
-                break;
-              case QueryStatisticsCommonConstants.DRIVER_PART:
-                driver_part_time += statistic.getTimeTaken();
-                break;
-              case QueryStatisticsCommonConstants.EXECUTOR_PART:
-                executor_part_time += statistic.getTimeTaken();
-                break;
-              case QueryStatisticsCommonConstants.LOAD_INDEX:
-                load_index_time += statistic.getTimeTaken();
-                break;
-              case QueryStatisticsCommonConstants.SCAN_DATA:
-                scan_data_time += statistic.getTimeTaken();
-                break;
-              case QueryStatisticsCommonConstants.DICTIONARY_LOAD:
-                dictionary_load_time += statistic.getTimeTaken();
-                break;
-              case QueryStatisticsCommonConstants.PREPARE_RESULT:
-                prepare_result_time += statistic.getTimeTaken();
-                break;
-              case QueryStatisticsCommonConstants.PRINT_RESULT:
-                print_result_time += statistic.getTimeTaken();
-                break;
-              case QueryStatisticsCommonConstants.TOTAL_TIME:
-                total_query_time += statistic.getTimeTaken();
+                driver_part_time_tmp += statistic.getTimeTaken();
                 break;
               default:
                 break;
             }
           }
+          driver_part_time = driver_part_time_tmp + "";
           // structure the query statistics info table
+          StringBuilder tableInfo = new StringBuilder();
           int len1 = 8;
           int len2 = 20;
           int len3 = 21;
           int len4 = 22;
-          String col1 = QueryStatistic.sameCharBuilder("-", len1);
-          String col2 = QueryStatistic.sameCharBuilder("-", len2);
-          String col3 = QueryStatistic.sameCharBuilder("-", len3);
-          String col4 = QueryStatistic.sameCharBuilder("-", len4);
-
-          StringBuilder tableInfo = new StringBuilder();
+          String line = "+" + printLine("-", len1) + "+" + printLine("-", len2) + "+" +
+              printLine("-", len3) + "+" + printLine("-", len4) + "+";
+          String line2 = "|" + printLine(" ", len1) + "+" + printLine("-", len2) + "+" +
+              printLine(" ", len3) + "+" + printLine("-", len4) + "+";
           // table header
-          tableInfo.append("+" + col1 + "+" + col2 + "+" + col3 + "+" + col4 + "+" + "\n");
-          tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ", (len1 - "Module".length())) + "Module" + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len2 - "Operation Step".length())) +
-              "Operation Step" + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len3 + len4 + 1 - "Query Cost".length())) +
+          tableInfo.append(line).append("\n");
+          tableInfo.append("|" + printLine(" ", (len1 - "Module".length())) + "Module" + "|" +
+              printLine(" ", (len2 - "Operation Step".length())) + "Operation Step" + "|" +
+              printLine(" ", (len3 + len4 + 1 - "Query Cost".length())) +
               "Query Cost" + "|" + "\n");
-          // jdbc
-          tableInfo.append("+" + col1 + "+" + col2 + "+" + col3 + "+" + col4 + "+" + "\n");
-          tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ", (len1 + len2 + 1 - "JDBC connection".length())) +
-              "JDBC connection" + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len3 - jdbc_connection_time.length())) +
-              jdbc_connection_time + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len4 - jdbc_connection_time.length())) +
-              jdbc_connection_time + "|" + "\n");
           // driver part
-          tableInfo.append("+" + col1 + "+" + col2 + "+" + col3 + "+" + col4 + "+" + "\n");
-          tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ", len1) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len2 - "SQL parse".length())) + "SQL parse"
-              + "|" +
-              QueryStatistic.sameCharBuilder(" ", len3) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len4 - sql_parse_time.length())) +
-              sql_parse_time + "|" + "\n");
-          tableInfo.append("|" + QueryStatistic.sameCharBuilder(" ", len1) +
-              "+" + col2 + "+" + QueryStatistic.sameCharBuilder(" ", len3) +
-              "+" + col4 + "+" + "\n");
-          tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ", len1) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len2 - "Connect time to Hive".length())) +
-              "Connect time to Hive" + "|" +
-              QueryStatistic.sameCharBuilder(" ", len3) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len4 - load_meta_time.length())) +
+          tableInfo.append(line).append("\n");
+          tableInfo.append("|" + printLine(" ", len1) + "|" +
+              printLine(" ", (len2 - "SQL parse".length())) + "SQL parse" + "|" +
+              printLine(" ", len3) + "|" +
+              printLine(" ", (len4 - sql_parse_time.length())) + sql_parse_time + "|" + "\n");
+          tableInfo.append(line2).append("\n");
+          tableInfo.append("|" +printLine(" ", (len1 - "Driver".length())) + "Driver" + "|" +
+              printLine(" ", (len2 - "Load meta data".length())) + "Load meta data" + "|" +
+              printLine(" ", (len3 - driver_part_time.length())) + driver_part_time + "|" +
+              printLine(" ", (len4 - load_meta_time.length())) +
               load_meta_time + "|" + "\n");
+          tableInfo.append(line2).append("\n");
           tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ", (len1 - "Driver".length())) + "Driver" + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len2 - "metastore carbon".length())) +
-              "metastore carbon" + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len3 - driver_part_time.length())) +
-              driver_part_time + "|" +
-              QueryStatistic.sameCharBuilder(" ", len4) + "|" + "\n");
-          tableInfo.append("|" + QueryStatistic.sameCharBuilder(" ", len1) +
-              "+" + col2 + "+" + QueryStatistic.sameCharBuilder(" ", len3) +
-              "+" + col4 + "+" + "\n");
+              printLine(" ", (len1 - "Part".length())) + "Part" + "|" +
+              printLine(" ", (len2 - "Block allocation".length())) +
+              "Block allocation" + "|" +
+              printLine(" ", len3) + "|" +
+              printLine(" ", (len4 - block_allocation_time.length())) +
+              block_allocation_time + "|" + "\n");
+          tableInfo.append(line2).append("\n");
           tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ", (len1 - "Part".length())) + "Part" + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len2 - "Block identification".length())) +
+              printLine(" ", len1) + "|" +
+              printLine(" ", (len2 - "Block identification".length())) +
               "Block identification" + "|" +
-              QueryStatistic.sameCharBuilder(" ", len3) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len4 - block_identification_time.length())) +
+              printLine(" ", len3) + "|" +
+              printLine(" ", (len4 - block_identification_time.length())) +
               block_identification_time + "|" + "\n");
-          tableInfo.append("|" + QueryStatistic.sameCharBuilder(" ", len1) +
-              "+" + col2 + "+" + QueryStatistic.sameCharBuilder(" ", len3) +
-              "+" + col4 + "+" + "\n");
-          tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ", len1) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len2 - "Schedule task to".length())) +
-              "Schedule task to" + "|" +
-              QueryStatistic.sameCharBuilder(" ", len3) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len4 - schedule_time.length())) +
-              schedule_time + "|" + "\n");
-          tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ", len1) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len2 - "executor".length())) +
-              "executor" + "|" +
-              QueryStatistic.sameCharBuilder(" ", len3) + "|" +
-              QueryStatistic.sameCharBuilder(" ", len4) + "|" + "\n");
-          // executor part
-          tableInfo.append("+" + col1 + "+" + col2 + "+" + col3 + "+" + col4 + "+" + "\n");
-          tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ", len1) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len2 - "Load index".length())) +
-              "Load index" + "|" +
-              QueryStatistic.sameCharBuilder(" ", len3) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len4 - load_index_time.length())) +
-              load_index_time + "|" + "\n");
-          tableInfo.append("|" + QueryStatistic.sameCharBuilder(" ", len1) +
-              "+" + col2 + "+" + QueryStatistic.sameCharBuilder(" ", len3) +
-              "+" + col4 + "+" + "\n");
-          tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ", (len1 - "Executor".length())) +
-              "Executor" + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len2 - "Scan(include read".length())) +
-              "Scan(include read" + "|" +
-              QueryStatistic.sameCharBuilder(" ", len3) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len4 - scan_data_time.length())) +
-              scan_data_time + "|" + "\n");
-          tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ", (len1 - "Part".length())) + "Part" + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len2 - "data from file&".length())) +
-              "data from file&" + "|" +
-              QueryStatistic.sameCharBuilder(" ", len3) + "|" +
-              QueryStatistic.sameCharBuilder(" ", len4) + "|" + "\n");
-          tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ", len1) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len2 - "process".length())) + "process" + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len3 - executor_part_time.length())) +
-              executor_part_time + "|" +
-              QueryStatistic.sameCharBuilder(" ", len4) + "|" + "\n");
-          tableInfo.append("|" + QueryStatistic.sameCharBuilder(" ", len1) +
-              "+" + col2 + "+" + QueryStatistic.sameCharBuilder(" ", len3) +
-              "+" + col4 + "+" + "\n");
-          tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ", len1) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len2 - "Dictionary load".length())) +
-              "Dictionary load" + "|" +
-              QueryStatistic.sameCharBuilder(" ", len3) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len4 - dictionary_load_time.length())) +
-              dictionary_load_time + "|" + "\n");
-          tableInfo.append("|" + QueryStatistic.sameCharBuilder(" ", len1) +
-              "+" + col2 + "+" + QueryStatistic.sameCharBuilder(" ", len3) +
-              "" + "+" + col4 + "+" + "\n");
-          tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ", len1) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len2 - "Prepare query result".length())) +
-              "Prepare query result" + "|" +
-              QueryStatistic.sameCharBuilder(" ", len3) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len4 - prepare_result_time.length())) +
-              prepare_result_time + "|" + "\n");
-          tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ", len1) + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len2 - "and give to spark".length())) +
-              "and give to spark" + "|" +
-              QueryStatistic.sameCharBuilder(" ", len3) + "|" +
-              QueryStatistic.sameCharBuilder(" ", len4) + "|" + "\n");
-          // print
-          tableInfo.append("+" + col1 + "+" + col2 + "+" + col3 + "+" + col4 + "+" + "\n");
-          tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ",
-                  (len1 + len2 + 1 - "Print result at beeline".length())) +
-              "Print result at beeline" + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len3 - print_result_time.length())) +
-              print_result_time + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len4 - print_result_time.length())) +
-              print_result_time + "|" + "\n");
-          // total
-          tableInfo.append("+" + col1 + "+" + col2 + "+" + col3 + "+" + col4 + "+" + "\n");
-          tableInfo.append("|" +
-              QueryStatistic.sameCharBuilder(" ", (len1 + len2 + 1 - "Total".length())) +
-              "Total" + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len3 - total_query_time.length())) +
-              total_query_time + "|" +
-              QueryStatistic.sameCharBuilder(" ", (len4 - total_query_time.length())) +
-              total_query_time + "|" + "\n");
-          tableInfo.append("+" + col1 + "+" + col2 + "+" + col3 + "+" + col4 + "+" + "\n");
+          tableInfo.append(line).append("\n");
 
           // once the statistics be printed, remove it from the map
           queryStatisticsMap.remove(key);
@@ -337,5 +277,20 @@ public class QueryStatisticsRecorder implements Serializable {
       }
     }
     return null;
+  }
+
+  /**
+   * Below method will create string like "***********"
+   *
+   * @param a
+   * @param num
+   */
+  public static String printLine(String a, int num)
+  {
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < num; i++) {
+      builder.append(a);
+    }
+    return builder.toString();
   }
 }

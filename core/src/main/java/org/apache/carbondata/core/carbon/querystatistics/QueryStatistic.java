@@ -20,8 +20,6 @@ package org.apache.carbondata.core.carbon.querystatistics;
 
 import java.io.Serializable;
 
-import org.apache.commons.lang3.StringUtils;
-
 /**
  * Wrapper class to maintain the query statistics for each phase of the query
  */
@@ -52,11 +50,8 @@ public class QueryStatistic implements Serializable {
    */
   private long count;
 
-  private String queryIdWthTask;
-
-  public QueryStatistic(String queryId) {
+  public QueryStatistic() {
     this.startTime = System.currentTimeMillis();
-    this.queryIdWthTask = queryId;
   }
 
   /**
@@ -92,35 +87,23 @@ public class QueryStatistic implements Serializable {
    * Below method will be used to get the statistic message, which will
    * be used to log
    *
+   * @param queryWithTaskId query with task id to append in the message
    * @return statistic message
    */
-  public String getStatistics() {
-    if (StringUtils.isEmpty(queryIdWthTask)) {
-      return message + " Is: " + timeTaken + " ms";
-    } else if(timeTaken == -1) {
-      return message + " for the taskid : " + queryIdWthTask + " Is: " + count ;
-    }
-    return message + " for the taskid : " + queryIdWthTask + " Is: " + timeTaken + " ms";
-  }
-
-  public static String sameCharBuilder(String a, int num) {
-    StringBuilder builder = new StringBuilder();
-    for (int i = 0; i < num; i++){
-      builder.append(a);
-    }
-    return builder.toString();
-  }
-
-  public String getQueryId() {
-    return this.queryIdWthTask;
+  public String getStatistics(String queryWithTaskId) {
+    return message + " for the taskid : " + queryWithTaskId + " Is : " + timeTaken;
   }
 
   public String getMessage() {
     return this.message;
   }
 
-  public String getTimeTaken() {
-    return (double)this.timeTaken/1000 + " ";
+  public double getTimeTaken() {
+    return (double)this.timeTaken/1000;
+  }
+
+  public long getCount() {
+    return this.count;
   }
 
 }

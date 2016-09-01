@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql
 
+import io.netty.handler.codec.http.QueryStringDecoder
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.errors.attachTree
@@ -25,14 +26,13 @@ import org.apache.spark.sql.execution.{SparkPlan, UnaryNode}
 import org.apache.spark.sql.hive.{CarbonMetastoreCatalog, CarbonMetastoreTypes}
 import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
 import org.apache.spark.sql.types._
-
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
-import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsCommonConstants}
+import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
 import org.apache.carbondata.core.util.{CarbonTimeStatisticsFactory, DataTypeUtil}
 
 /**
@@ -158,7 +158,7 @@ case class CarbonDictionaryDecoder(
         val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
         (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
       }.toMap
-      val recorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance()
+      val recorder = new QueryStatisticsRecorder(queryId)
       if (isRequiredToDecode) {
         val dataTypes = child.output.map { attr => attr.dataType }
         child.execute().mapPartitions { iter =>
@@ -175,14 +175,13 @@ case class CarbonDictionaryDecoder(
             override final def hasNext: Boolean = {
               flag = iter.hasNext
               if (!flag && total > 0) {
-                val queryStatistic = new QueryStatistic(queryId)
+                val queryStatistic = new QueryStatistic()
                 queryStatistic
-                  .addFixedTimeStatistic(QueryStatisticsCommonConstants.PREPARE_RESULT,
+                  .addFixedTimeStatistic(QueryStatisticsConstants.PREPARE_RESULT,
                     total/1000000 + 1
                   )
                 recorder.recordStatistics(queryStatistic)
                 recorder.logStatistics()
-                recorder.logStatisticsTable()
               }
               flag
             }

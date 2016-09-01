@@ -20,7 +20,6 @@ package org.apache.spark.sql
 import java.io.File
 
 import scala.language.implicitConversions
-
 import org.apache.spark.{Logging, SparkContext}
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.catalyst.ParserDialect
@@ -32,9 +31,8 @@ import org.apache.spark.sql.execution.command.PartitionData
 import org.apache.spark.sql.execution.datasources.{PreInsertCastAndRename, PreWriteCheck}
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.optimizer.CarbonOptimizer
-
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsCommonConstants, QueryStatisticsRecorder}
+import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
 import org.apache.carbondata.spark.rdd.CarbonDataFrameRDD
@@ -131,10 +129,10 @@ class CarbonContext(
     val sqlString = sql.toUpperCase
     LOGGER.info(s"Query [$sqlString]")
     val recorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance()
-    val statistic = new QueryStatistic(queryId)
+    val statistic = new QueryStatistic()
     val logicPlan: LogicalPlan = parseSql(sql)
-    statistic.addStatistics(QueryStatisticsCommonConstants.SQL_PARSE, System.currentTimeMillis())
-    recorder.recordStatistics(statistic)
+    statistic.addStatistics(QueryStatisticsConstants.SQL_PARSE, System.currentTimeMillis())
+    recorder.recordStatisticsForDriver(statistic, queryId)
     val result = new CarbonDataFrameRDD(this, logicPlan)
 
     // We force query optimization to happen right away instead of letting it happen lazily like
@@ -226,6 +224,7 @@ object CarbonContext {
   /**
    *
    * Requesting the extra executors other than the existing ones.
+ *
    * @param sc
    * @param numExecutors
    * @return

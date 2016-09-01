@@ -40,7 +40,7 @@ import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
-import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsCommonConstants, QueryStatisticsRecorder}
+import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
@@ -153,7 +153,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
 
   def loadMetadata(metadataPath: String): MetaData = {
     val recorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance()
-    val statistic = new QueryStatistic(queryId)
+    val statistic = new QueryStatistic()
     // creating zookeeper instance once.
     // if zookeeper is configured as carbon lock type.
     val zookeeperUrl: String = hiveContext.getConf(CarbonCommonConstants.ZOOKEEPER_URL, null)
@@ -178,9 +178,9 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     val metaDataBuffer = new ArrayBuffer[TableMeta]
     fillMetaData(metadataPath, fileType, metaDataBuffer)
     updateSchemasUpdatedTime("", "")
-    statistic.addStatistics(QueryStatisticsCommonConstants.LOAD_META,
+    statistic.addStatistics(QueryStatisticsConstants.LOAD_META,
       System.currentTimeMillis())
-    recorder.recordStatistics(statistic)
+    recorder.recordStatisticsForDriver(statistic, queryId)
     MetaData(metaDataBuffer)
   }
 
