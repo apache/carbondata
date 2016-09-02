@@ -931,6 +931,16 @@ public final class CarbonCommonConstants {
    */
   public static String SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER = "SystemCompactionLock";
 
+  /**
+   * default broadcast record size
+   */
+  public static final String DEFAULT_BROADCAST_RECORD_SIZE="100";
+
+  /**
+   * key to get broadcast record size from properties
+   */
+  public static final String BROADCAST_RECORD_SIZE="broadcast.record.size";
+
   private CarbonCommonConstants() {
   }
 }
