@@ -42,7 +42,7 @@ import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.integration.spark.merger.{CarbonCompactionUtil, CompactionCallable, CompactionType}
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
@@ -102,11 +102,6 @@ object CarbonDataRDDFactory extends Logging {
     val table = CarbonMetadata.getInstance()
       .getCarbonTable(carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName)
     val metaDataPath: String = table.getMetaDataFilepath
-    var currentRestructNumber = CarbonUtil
-      .checkAndReturnCurrentRestructFolderNumber(metaDataPath, "RS_", false)
-    if (-1 == currentRestructNumber) {
-      currentRestructNumber = 0
-    }
   }
 
   def deleteLoadByDate(
@@ -124,12 +119,6 @@ object CarbonDataRDDFactory extends Logging {
     // Delete the records based on data
     val table = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(databaseName + "_" + tableName)
-
-    var currentRestructNumber = CarbonUtil
-      .checkAndReturnCurrentRestructFolderNumber(table.getMetaDataFilepath, "RS_", false)
-    if (-1 == currentRestructNumber) {
-      currentRestructNumber = 0
-    }
     val segmentStatusManager = new SegmentStatusManager(table.getAbsoluteTableIdentifier)
     val loadMetadataDetailsArray =
       segmentStatusManager.readLoadMetadata(table.getMetaDataFilepath()).toList
@@ -145,8 +134,7 @@ object CarbonDataRDDFactory extends Logging {
       table.getFactTableName,
       tableName,
       hdfsStoreLocation,
-      loadMetadataDetailsArray,
-      currentRestructNumber).collect.groupBy(_._1)
+      loadMetadataDetailsArray).collect.groupBy(_._1)
 
     var updatedLoadMetadataDetailsList = new ListBuffer[LoadMetadataDetails]()
     if (resultMap.nonEmpty) {
@@ -688,7 +676,6 @@ object CarbonDataRDDFactory extends Logging {
       isAgg: Boolean,
       partitionStatus: String = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS) {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    var currentRestructNumber = -1
 
     // for handling of the segment Merging.
     def handleSegmentMerging(tableCreationTime: Long): Unit = {
@@ -780,17 +767,9 @@ object CarbonDataRDDFactory extends Logging {
         .audit("Data load request has been received for table " + carbonLoadModel
           .getDatabaseName + "." + carbonLoadModel.getTableName
         )
-
-      currentRestructNumber = CarbonUtil
-        .checkAndReturnCurrentRestructFolderNumber(carbonTable.getMetaDataFilepath, "RS_", false)
-      if (-1 == currentRestructNumber) {
-        currentRestructNumber = 0
-      }
-
       // Check if any load need to be deleted before loading new data
       deleteLoadsAndUpdateMetadata(carbonLoadModel, carbonTable, partitioner, hdfsStoreLocation,
-        isForceDeletion = false,
-        currentRestructNumber)
+        isForceDeletion = false)
       if (null == carbonLoadModel.getLoadMetadataDetails) {
         readLoadMetadataDetails(carbonLoadModel, hdfsStoreLocation)
       }
@@ -988,7 +967,6 @@ object CarbonDataRDDFactory extends Logging {
               kettleHomePath,
               partitioner,
               columinar,
-              currentRestructNumber,
               currentLoadCount,
               tableCreationTime,
               schemaLastUpdatedTime,
@@ -1043,27 +1021,7 @@ object CarbonDataRDDFactory extends Logging {
 
       if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
         logInfo("********starting clean up**********")
-        if (isAgg) {
-          // TODO:need to clean aggTable
-          CarbonLoaderUtil.deleteTable(partitioner.partitionCount, carbonLoadModel.getDatabaseName,
-            carbonLoadModel.getTableName, carbonLoadModel.getAggTableName, hdfsStoreLocation,
-            currentRestructNumber
-          )
-          errorMessage = "Aggregate table creation failure"
-        } else {
-          CarbonLoaderUtil.deleteSegment(carbonLoadModel, currentLoadCount)
-          val aggTables = carbonTable.getAggregateTablesName
-          if (null != aggTables && !aggTables.isEmpty) {
-            // TODO:need to clean aggTable
-            val (result, _) = status(0)
-            val newSlice = CarbonCommonConstants.LOAD_FOLDER + result
-            aggTables.asScala.foreach { aggTableName =>
-              CarbonLoaderUtil
-                .deleteSlice(partitioner.partitionCount, carbonLoadModel.getDatabaseName,
-                  carbonLoadModel.getTableName, hdfsStoreLocation, currentRestructNumber, newSlice)
-            }
-          }
-        }
+        CarbonLoaderUtil.deleteSegment(carbonLoadModel, currentLoadCount)
         logInfo("********clean up done**********")
         logger.audit(s"Data load is failed for " +
           s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}")
@@ -1110,8 +1068,7 @@ object CarbonDataRDDFactory extends Logging {
     carbonLoadModel: CarbonLoadModel,
     table: CarbonTable, partitioner: Partitioner,
     hdfsStoreLocation: String,
-    isForceDeletion: Boolean,
-    currentRestructNumber: Integer) {
+    isForceDeletion: Boolean) {
     if (LoadMetadataUtil.isLoadDeletionRequired(carbonLoadModel)) {
       val loadMetadataFilePath = CarbonLoaderUtil
         .extractLoadMetadataFileLocation(carbonLoadModel)
@@ -1152,11 +1109,6 @@ object CarbonDataRDDFactory extends Logging {
     val table = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName)
     val metaDataPath: String = table.getMetaDataFilepath
-    var currentRestructNumber = CarbonUtil
-      .checkAndReturnCurrentRestructFolderNumber(metaDataPath, "RS_", false)
-    if (-1 == currentRestructNumber) {
-      currentRestructNumber = 0
-    }
     val carbonLock = CarbonLockFactory
       .getCarbonLockObj(table.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
         LockUsage.METADATA_LOCK
@@ -1167,8 +1119,7 @@ object CarbonDataRDDFactory extends Logging {
           table,
           partitioner,
           hdfsStoreLocation,
-          isForceDeletion = true,
-          currentRestructNumber)
+          isForceDeletion = true)
       }
     }
     finally {

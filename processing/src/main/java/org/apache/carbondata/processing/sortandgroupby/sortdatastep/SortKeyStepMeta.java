@@ -97,8 +97,6 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
    */
   private String updateMemberRequest;
 
-  private int currentRestructNumber;
-
   private String measureDataType;
 
   private String noDictionaryDims;
@@ -134,7 +132,6 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
     complexDimensionCount = "";
     measureCount = "";
     updateMemberRequest = "";
-    currentRestructNumber = -1;
     measureDataType = "";
     partitionID = "";
     segmentId = "";
@@ -163,8 +160,6 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
     retval.append("    ").append(XMLHandler.addTagValue("measureCount", this.measureCount));
     retval.append("    ")
         .append(XMLHandler.addTagValue("isUpdateMemberRequest", this.updateMemberRequest));
-    retval.append("    ")
-        .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
     retval.append("    ").append(XMLHandler.addTagValue("measureDataType", measureDataType));
     retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
     retval.append("    ").append(XMLHandler.addTagValue("segmentId", segmentId));
@@ -195,8 +190,6 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
       this.measureCount = XMLHandler.getTagValue(stepnode, "measureCount");
       this.updateMemberRequest = XMLHandler.getTagValue(stepnode, "isUpdateMemberRequest");
       this.measureDataType = XMLHandler.getTagValue(stepnode, "measureDataType");
-      currentRestructNumber =
-          Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
       this.partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
       this.segmentId = XMLHandler.getTagValue(stepnode, "segmentId");
       this.taskNo = XMLHandler.getTagValue(stepnode, "taskNo");
@@ -231,8 +224,6 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
       rep.saveStepAttribute(idTransformation, idStep, "measureCount", this.measureCount);
       rep.saveStepAttribute(idTransformation, idStep, "isUpdateMemberRequest",
           this.updateMemberRequest);
-      rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
-          currentRestructNumber);
       rep.saveStepAttribute(idTransformation, idStep, "measureDataType", measureDataType);
       rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
       rep.saveStepAttribute(idTransformation, idStep, "segmentId", segmentId);
@@ -267,8 +258,6 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
       this.measureCount = rep.getStepAttributeString(idStep, "measureCount");
       this.updateMemberRequest = rep.getStepAttributeString(idStep, "isUpdateMemberRequest");
       this.measureDataType = rep.getStepAttributeString(idStep, "measureDataType");
-      this.currentRestructNumber =
-          (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
       this.partitionID = rep.getStepAttributeString(idStep, "partitionID");
       this.segmentId = rep.getStepAttributeString(idStep, "segmentId");
       this.taskNo = rep.getStepAttributeString(idStep, "taskNo");
@@ -448,20 +437,6 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
    */
   public void setIsUpdateMemberRequest(String isUpdateMemberRequest) {
     this.updateMemberRequest = isUpdateMemberRequest;
-  }
-
-  /**
-   * @return the currentRestructNumber
-   */
-  public int getCurrentRestructNumber() {
-    return currentRestructNumber;
-  }
-
-  /**
-   * @param currentRestructNum the currentRestructNumber to set
-   */
-  public void setCurrentRestructNumber(int currentRestructNum) {
-    this.currentRestructNumber = currentRestructNum;
   }
 
   public String getMeasureDataType() {
