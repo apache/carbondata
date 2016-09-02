@@ -186,7 +186,6 @@ public class GraphConfigurationInfo {
    * type
    */
   private char[] type;
-  private int currentRestructNumber;
   private String levelAnddataType;
 
   private Boolean[] isNoDictionaryDimMapping;
@@ -948,17 +947,6 @@ public class GraphConfigurationInfo {
    */
   public void setType(char[] type) {
     this.type = type;
-  }
-
-  /**
-   * @return currentRestructNumber the current Restruct Number
-   */
-  public int getCurrentRestructNumber() {
-    return currentRestructNumber;
-  }
-
-  public void setCurrentRestructNumber(int currentRestructNum) {
-    this.currentRestructNumber = currentRestructNum;
   }
 
   public String getLevelAnddataType() {
