@@ -199,10 +199,6 @@ public final class CarbonCommonConstants {
    */
   public static final String MEMBER_DEFAULT_VAL = "@NU#LL$!";
   /**
-   * DEFAULT_COLUMN_NAME
-   */
-  public static final String DEFAULT_COLUMN_NAME = "@NU#LL$!COLUMN";
-  /**
    * FILE STATUS IN-PROGRESS
    */
   public static final String FILE_INPROGRESS_STATUS = ".inprogress";
