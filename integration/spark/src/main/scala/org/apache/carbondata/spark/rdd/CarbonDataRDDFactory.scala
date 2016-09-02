@@ -28,7 +28,7 @@ import scala.util.control.Breaks._
 
 import org.apache.hadoop.conf.{Configurable, Configuration}
 import org.apache.hadoop.mapreduce.Job
-import org.apache.hadoop.mapreduce.lib.input.FileSplit
+import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{util => _, _}
 import org.apache.spark.sql.{CarbonEnv, SQLContext}
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel, CompactionModel, Partitioner}
@@ -231,8 +231,7 @@ object CarbonDataRDDFactory extends Logging {
       if (newSplitSize < CarbonCommonConstants.CARBON_16MB) {
         newSplitSize = CarbonCommonConstants.CARBON_16MB
       }
-      hadoopConfiguration.set(
-        "mapreduce.input.fileinputformat.split.maxsize", newSplitSize.toString)
+      hadoopConfiguration.set(FileInputFormat.SPLIT_MAXSIZE, newSplitSize.toString)
       logInfo("totalInputSpaceConsumed : " + spaceConsumed +
         " , defaultParallelism : " + defaultParallelism)
       logInfo("mapreduce.input.fileinputformat.split.maxsize : " + newSplitSize.toString)
@@ -907,8 +906,8 @@ object CarbonDataRDDFactory extends Logging {
           val hadoopConfiguration = new Configuration(sqlContext.sparkContext.hadoopConfiguration)
           // FileUtils will skip file which is no csv, and return all file path which split by ','
           val filePaths = carbonLoadModel.getFactFilePath
-          hadoopConfiguration.set("mapreduce.input.fileinputformat.inputdir", filePaths)
-          hadoopConfiguration.set("mapreduce.input.fileinputformat.input.dir.recursive", "true")
+          hadoopConfiguration.set(FileInputFormat.INPUT_DIR, filePaths)
+          hadoopConfiguration.set(FileInputFormat.INPUT_DIR_RECURSIVE, "true")
 
           configSplitMaxSize(sqlContext.sparkContext, filePaths, hadoopConfiguration)
 
