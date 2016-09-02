@@ -45,7 +45,6 @@ import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.load.LoadMetadataDetails;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.spark.util.LoadMetadataUtil;
 
 public final class DeleteLoadFolders {
 
@@ -54,67 +53,6 @@ public final class DeleteLoadFolders {
 
   private DeleteLoadFolders() {
 
-  }
-
-  public static boolean deleteLoadFoldersFromFileSystem(CarbonLoadModel loadModel,
-      int partitionCount, String storeLocation, boolean isForceDelete, int currentRestructNumber,
-      LoadMetadataDetails[] details) {
-    String path = null;
-    List<LoadMetadataDetails> deletedLoads =
-        new ArrayList<LoadMetadataDetails>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
-    boolean isDeleted = false;
-
-    if (details != null && details.length != 0) {
-      for (LoadMetadataDetails oneLoad : details) {
-        if (checkIfLoadCanBeDeleted(oneLoad, isForceDelete)) {
-          boolean deletionStatus = false;
-
-          for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            // check load folder in each restructure folder
-            for (int restructureFolderNum = 0;
-                 restructureFolderNum <= currentRestructNumber; restructureFolderNum++) {
-              CarbonFile[] aggFiles = LoadMetadataUtil
-                  .getAggregateTableList(loadModel, storeLocation, partitionId,
-                      restructureFolderNum);
-              deleteAggLoadFolders(aggFiles,
-                  CarbonCommonConstants.LOAD_FOLDER + oneLoad.getLoadName());
-              path = LoadMetadataUtil.createLoadFolderPath(loadModel, storeLocation, partitionId,
-                  restructureFolderNum);
-              String loadFolderPath = "";
-              // deleting merged load folder
-              if (oneLoad.getMergedLoadName() != null) {
-                loadFolderPath =
-                    path + CarbonCommonConstants.FILE_SEPARATOR + CarbonCommonConstants.LOAD_FOLDER
-                        + oneLoad.getMergedLoadName();
-                deletionStatus = physicalFactAndMeasureMetadataDeletion(loadFolderPath);
-              } else {
-                loadFolderPath =
-                    path + CarbonCommonConstants.FILE_SEPARATOR + CarbonCommonConstants.LOAD_FOLDER
-                        + oneLoad.getLoadName();
-                deletionStatus = physicalFactAndMeasureMetadataDeletion(loadFolderPath);
-              }
-              if (deletionStatus) {
-                cleanDeletedFactFile(loadFolderPath);
-                factFileRenaming(loadFolderPath);
-                // if deletion status is True then there is no
-                // need to traverse all the RS folders.
-                break;
-              }
-            }
-
-          }
-          if (deletionStatus) {
-            isDeleted = true;
-            oneLoad.setVisibility("false");
-            deletedLoads.add(oneLoad);
-            LOGGER.info(" Deleted the load " + oneLoad.getLoadName());
-          }
-        }
-      }
-    }
-
-    return isDeleted;
   }
 
   /**
@@ -136,40 +74,6 @@ public final class DeleteLoadFolders {
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier())
         .getCarbonDataDirectoryPath("" + partitionId, segmentId);
     return path;
-  }
-
-  public static void deleteAggLoadFolders(CarbonFile[] aggFiles, String loadName) {
-    for (CarbonFile file : aggFiles) {
-      deleteLoadFolderFromEachAgg(file, loadName);
-    }
-
-  }
-
-  private static void deleteLoadFolderFromEachAgg(CarbonFile file, final String loadName) {
-    CarbonFile[] loadFolders = file.listFiles(new CarbonFileFilter() {
-
-      @Override public boolean accept(CarbonFile file) {
-        if (file.getName().equalsIgnoreCase(loadName)) {
-          return true;
-        }
-        return false;
-      }
-    });
-
-    for (CarbonFile loadFolder : loadFolders) {
-      CarbonFile[] files = loadFolder.listFiles();
-      // deleting individual files
-      if (files != null) {
-        for (CarbonFile eachFile : files) {
-          if (!eachFile.delete()) {
-            LOGGER.warn("Unable to delete the file as per delete command "
-                + loadFolder.getAbsolutePath());
-          }
-        }
-      }
-
-    }
-
   }
 
   private static boolean physicalFactAndMeasureMetadataDeletion(String path) {

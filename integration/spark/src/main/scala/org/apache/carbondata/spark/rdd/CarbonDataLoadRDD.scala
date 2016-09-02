@@ -83,7 +83,6 @@ class CarbonNodePartition(rddId: Int, val idx: Int, host: String,
  * @param kettleHomePath        The kettle home path
  * @param partitioner           Partitioner which specify how to partition
  * @param columinar             whether it is columinar
- * @param currentRestructNumber current restruct number
  * @param loadCount             Current load count
  * @param tableCreationTime      Time of creating table
  * @param schemaLastUpdatedTime Time of last schema update
@@ -101,7 +100,6 @@ class CarbonDataLoadRDD[K, V](
     kettleHomePath: String,
     partitioner: Partitioner,
     columinar: Boolean,
-    currentRestructNumber: Integer,
     loadCount: Integer,
     tableCreationTime: Long,
     schemaLastUpdatedTime: Long,
@@ -198,8 +196,7 @@ class CarbonDataLoadRDD[K, V](
         }
         else {
           try {
-            CarbonLoaderUtil.executeGraph(model, storeLocation, hdfsStoreLocation, kettleHomePath,
-              currentRestructNumber)
+            CarbonLoaderUtil.executeGraph(model, storeLocation, hdfsStoreLocation, kettleHomePath)
           } catch {
             case e: DataLoadingException => if (e.getErrorCode ==
                                                 DataProcessorConstants.BAD_REC_FOUND) {
@@ -324,13 +321,7 @@ class CarbonDataLoadRDD[K, V](
           val copyListOfLoadFolders = listOfLoadFolders.asScala.toList
           val copyListOfUpdatedLoadFolders = listOfUpdatedLoadFolders.asScala.toList
           loadTableSlices(listOfAllLoadFolders, details)
-          var loadFolders = Array[String]()
-          val loadFolder = CarbonLoaderUtil
-            .getAggLoadFolderLocation(newSlice, model.getDatabaseName, model.getTableName,
-              model.getTableName, hdfsStoreLocation, currentRestructNumber)
-          if (null != loadFolder) {
-            loadFolders :+= loadFolder
-          }
+          val loadFolders = Array[String]()
           dataloadStatus = iterateOverAggTables(aggTables, copyListOfLoadFolders.asJava,
             copyListOfUpdatedLoadFolders.asJava, loadFolders)
           if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(dataloadStatus)) {
@@ -358,14 +349,7 @@ class CarbonDataLoadRDD[K, V](
         val listOfLoadFolders = CarbonLoaderUtil.getListOfValidSlices(details)
         val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
         loadTableSlices(listOfAllLoadFolders, details)
-        var loadFolders = Array[String]()
-        var restructFolders = Array[String]()
-        for (number <- 0 to currentRestructNumber) {
-          restructFolders = CarbonLoaderUtil
-            .getStorelocs(model.getDatabaseName, model.getTableName, model.getTableName,
-              hdfsStoreLocation, number)
-          loadFolders = loadFolders ++ restructFolders
-        }
+        val loadFolders = Array[String]()
         val aggTable = model.getAggTableName
         dataloadStatus = loadAggregationTable(listOfLoadFolders, listOfUpdatedLoadFolders,
           loadFolders)
@@ -386,16 +370,7 @@ class CarbonDataLoadRDD[K, V](
           val listOfUpdatedLoadFolders = CarbonLoaderUtil.getListOfUpdatedSlices(details)
           val listOfAllLoadFolder = CarbonQueryUtil.getListOfSlices(details)
           loadTableSlices(listOfAllLoadFolder, details)
-          var loadFolders = Array[String]()
-          listOfUpdatedLoadFolders.asScala.foreach { sliceNum =>
-            val newSlice = CarbonCommonConstants.LOAD_FOLDER + sliceNum
-            val loadFolder = CarbonLoaderUtil
-              .getAggLoadFolderLocation(newSlice, model.getDatabaseName, model.getTableName,
-                model.getTableName, hdfsStoreLocation, currentRestructNumber)
-            if (null != loadFolder) {
-              loadFolders :+= loadFolder
-            }
-          }
+          val loadFolders = Array[String]()
           iterateOverAggTables(aggTables, listOfLoadFolders, listOfUpdatedLoadFolders, loadFolders)
         }
       }

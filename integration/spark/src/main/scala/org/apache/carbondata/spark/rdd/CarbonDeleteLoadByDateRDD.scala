@@ -41,8 +41,7 @@ class CarbonDeleteLoadByDateRDD[K, V](
     factTableName: String,
     dimTableName: String,
     hdfsStoreLocation: String,
-    loadMetadataDetails: List[LoadMetadataDetails],
-    currentRestructFolder: Integer)
+    loadMetadataDetails: List[LoadMetadataDetails])
   extends RDD[(K, V)](sc, Nil) with Logging {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")

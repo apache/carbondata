@@ -102,8 +102,6 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
    */
   private String factDimLensString;
 
-  private int currentRestructNumber = -1;
-
   private String levelAnddataTypeString;
   /**
    * partitionID
@@ -139,7 +137,6 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
     aggregatorClassString = "";
     aggregatorString = "";
     factDimLensString = "";
-    currentRestructNumber = -1;
     levelAnddataTypeString = "";
     partitionID = "";
     segmentId = "";
@@ -165,8 +162,6 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
         .append(XMLHandler.addTagValue("aggregatorClassString", aggregatorClassString));
     retval.append("    ").append(XMLHandler.addTagValue("aggregatorString", aggregatorString));
     retval.append("    ").append(XMLHandler.addTagValue("factDimLensString", factDimLensString));
-    retval.append("    ")
-        .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
     retval.append("    ")
         .append(XMLHandler.addTagValue("levelAnddataTypeString", levelAnddataTypeString));
     retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
@@ -197,8 +192,6 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
       aggregatorString = XMLHandler.getTagValue(stepnode, "aggregatorString");
       factDimLensString = XMLHandler.getTagValue(stepnode, "factDimLensString");
       levelAnddataTypeString = XMLHandler.getTagValue(stepnode, "levelAnddataTypeString");
-      currentRestructNumber =
-          Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
       partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
       segmentId = XMLHandler.getTagValue(stepnode, "segmentId");
       taskNo = XMLHandler.getTagValue(stepnode, "taskNo");
@@ -232,8 +225,6 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
       rep.saveStepAttribute(idTransformation, idStep, "factDimLensString", factDimLensString);
       rep.saveStepAttribute(idTransformation, idStep, "levelAnddataTypeString",
           levelAnddataTypeString);
-      rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
-          currentRestructNumber);
       rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
       rep.saveStepAttribute(idTransformation, idStep, "segmentId", segmentId);
       rep.saveStepAttribute(idTransformation, idStep, "taskNo", taskNo);
@@ -278,7 +269,6 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
       aggregatorString = rep.getStepAttributeString(idStep, "aggregatorString");
       factDimLensString = rep.getStepAttributeString(idStep, "factDimLensString");
       levelAnddataTypeString = rep.getStepAttributeString(idStep, "levelAnddataTypeString");
-      currentRestructNumber = (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
       partitionID = rep.getStepAttributeString(idStep, "partitionID");
       segmentId = rep.getStepAttributeString(idStep, "segmentId");
       taskNo = rep.getStepAttributeString(idStep, "taskNo");
@@ -516,20 +506,6 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
    */
   public void setFactDimLensString(String factDimLensString1) {
     this.factDimLensString = factDimLensString1;
-  }
-
-  /**
-   * @return the currentRestructNumber
-   */
-  public int getCurrentRestructNumber() {
-    return currentRestructNumber;
-  }
-
-  /**
-   * @param currentRestructNum the currentRestructNumber to set
-   */
-  public void setCurrentRestructNumber(int currentRestructNum) {
-    this.currentRestructNumber = currentRestructNum;
   }
 
   public String getLevelAnddataTypeString() {
