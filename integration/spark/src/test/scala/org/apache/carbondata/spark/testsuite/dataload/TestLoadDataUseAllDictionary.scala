@@ -35,7 +35,7 @@ class TestLoadDataUseAllDictionary extends QueryTest with BeforeAndAfterAll{
            """)
   }
 
-  test("test load data use all dictionary, and given wrong format dictionary files") {
+  test("test load data use all dictionary, and given wrong format dictionary values") {
     try {
       sql(s"""
            LOAD DATA LOCAL INPATH './src/test/resources/windows.csv' into table t3
@@ -45,8 +45,8 @@ class TestLoadDataUseAllDictionary extends QueryTest with BeforeAndAfterAll{
       assert(false)
     } catch {
       case e: DataLoadingException =>
-        assert(e.getMessage.equals("Data Loading failure, the dictionary file " +
-          "content is not in correct format!"))
+        assert(e.getMessage.equals("Data Loading failure, dictionary values are " +
+          "not in correct format!"))
     }
   }
 

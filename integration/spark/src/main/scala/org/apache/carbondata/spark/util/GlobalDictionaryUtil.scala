@@ -833,8 +833,8 @@ object GlobalDictionaryUtil extends Logging {
             checkStatus(carbonLoadModel, sqlContext, model, statusList)
             // if the dictionary contains wrong format record, throw ex
             if (accumulator.value > 0) {
-              throw new DataLoadingException("Data Loading failure, the dictionary file " +
-                "content is not in correct format!")
+              throw new DataLoadingException("Data Loading failure, dictionary values are " +
+                "not in correct format!")
             }
           } else {
             logInfo("have no column need to generate global dictionary")
