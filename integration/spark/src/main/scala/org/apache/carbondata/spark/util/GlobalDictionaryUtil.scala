@@ -27,7 +27,7 @@ import scala.language.implicitConversions
 import scala.util.control.Breaks.{break, breakable}
 
 import org.apache.commons.lang3.{ArrayUtils, StringUtils}
-import org.apache.spark.Logging
+import org.apache.spark.{Accumulator, Logging}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation, DataFrame, SQLContext}
 import org.apache.spark.sql.hive.CarbonMetastoreCatalog
@@ -588,30 +588,59 @@ object GlobalDictionaryUtil extends Logging {
                                      allDictionaryPath: String) = {
     var allDictionaryRdd: RDD[(String, Iterable[String])] = null
     try {
-      // read local dictionary file, and spilt (columnIndex, columnValue)
-      val basicRdd = sqlContext.sparkContext.textFile(allDictionaryPath)
-        .map(x => {
+      // parse record and validate record
+      def parseRecord(x: String, accum: Accumulator[Int]) : (String, String) = {
         val tokens = x.split("" + CSVWriter.DEFAULT_SEPARATOR)
-        if (tokens.size != 2) {
-          logError("Read a bad dictionary record: " + x)
-        }
-        var columnName: String = CarbonCommonConstants.DEFAULT_COLUMN_NAME
+        var columnName: String = ""
         var value: String = ""
-        try {
-          columnName = csvFileColumns(tokens(0).toInt)
-          value = tokens(1)
-        } catch {
-          case ex: Exception =>
-            logError("Reset bad dictionary record as default value")
+        // such as "," , "", throw ex
+        if (tokens.size == 0) {
+          logError("Read a bad dictionary record: " + x)
+          accum += 1
+        } else if (tokens.size == 1) {
+          // such as "1", "jone", throw ex
+          if (x.contains(",") == false) {
+            accum += 1
+          } else {
+            try {
+              columnName = csvFileColumns(tokens(0).toInt)
+            } catch {
+              case ex: Exception =>
+                logError("Read a bad dictionary record: " + x)
+                accum += 1
+            }
+          }
+        } else {
+          try {
+            columnName = csvFileColumns(tokens(0).toInt)
+            value = tokens(1)
+          } catch {
+            case ex: Exception =>
+              logError("Read a bad dictionary record: " + x)
+              accum += 1
+          }
         }
         (columnName, value)
-      })
+      }
 
+      val accumulator = sqlContext.sparkContext.accumulator(0)
+      // read local dictionary file, and spilt (columnIndex, columnValue)
+      val basicRdd = sqlContext.sparkContext.textFile(allDictionaryPath)
+        .map(x => parseRecord(x, accumulator)).persist()
+      // for accumulator updates performed inside actions only
+      basicRdd.count()
+      // if the dictionary contains wrong format record, throw ex
+      if (accumulator.value > 0) {
+        throw new DataLoadingException("Data Loading failure, the dictionary file " +
+          "content is not in correct format!")
+      }
       // group by column index, and filter required columns
       val requireColumnsList = requireColumns.toList
       allDictionaryRdd = basicRdd
         .groupByKey()
         .filter(x => requireColumnsList.contains(x._1))
+      // unpersist basicRdd
+      basicRdd.unpersist()
     } catch {
       case ex: Exception =>
         logError("Read dictionary files failed. Caused by: " + ex.getMessage)
