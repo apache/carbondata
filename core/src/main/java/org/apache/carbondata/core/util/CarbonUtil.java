@@ -64,7 +64,6 @@ import org.apache.carbondata.core.datastorage.store.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
@@ -145,67 +144,6 @@ public final class CarbonUtil {
       return -1;
     }
     return 1;
-  }
-
-  /**
-   * This method checks whether Restructure Folder exists or not
-   * and if not exist then return the number with which folder need to created.
-   *
-   * @param baseStorePath -
-   *                      baselocation where folder will be created.
-   * @return counter
-   * counter with which folder will be created.
-   */
-  public static int checkAndReturnCurrentRestructFolderNumber(String baseStorePath,
-      final String filterType, final boolean isDirectory) {
-    if (null == baseStorePath || 0 == baseStorePath.length()) {
-      return -1;
-    }
-    // change the slashes to /
-    baseStorePath = baseStorePath.replace("\\", "/");
-
-    // check if string wnds with / then remove that.
-    if (baseStorePath.charAt(baseStorePath.length() - 1) == '/') {
-      baseStorePath = baseStorePath.substring(0, baseStorePath.lastIndexOf("/"));
-    }
-    int retValue = createBaseStoreFolders(baseStorePath);
-    if (-1 == retValue) {
-      return retValue;
-    }
-
-    CarbonFile carbonFile =
-        FileFactory.getCarbonFile(baseStorePath, FileFactory.getFileType(baseStorePath));
-
-    // List of directories
-    CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile pathname) {
-        if (isDirectory && pathname.isDirectory()) {
-          if (pathname.getAbsolutePath().indexOf(filterType) > -1) {
-            return true;
-          }
-        } else {
-          if (pathname.getAbsolutePath().indexOf(filterType) > -1) {
-            return true;
-          }
-        }
-
-        return false;
-      }
-    });
-
-    int counter = -1;
-
-    // if no folder exists then return -1
-    if (listFiles.length == 0) {
-      return counter;
-    }
-
-    counter = findCounterValue(filterType, listFiles, counter);
-    return counter;
-  }
-
-  public static int checkAndReturnCurrentLoadFolderNumber(String baseStorePath) {
-    return checkAndReturnCurrentRestructFolderNumber(baseStorePath, "Load_", true);
   }
 
   /**
@@ -867,20 +805,6 @@ public final class CarbonUtil {
       }
     }
     return currentPath;
-  }
-
-  /**
-   * @param location
-   * @param factTableName
-   * @return
-   */
-  public static int getRestructureNumber(String location, String factTableName) {
-    String restructName =
-        location.substring(location.indexOf(CarbonCommonConstants.RESTRUCTRE_FOLDER));
-    int factTableIndex = restructName.indexOf(factTableName) - 1;
-    String restructNumber =
-        restructName.substring(CarbonCommonConstants.RESTRUCTRE_FOLDER.length(), factTableIndex);
-    return Integer.parseInt(restructNumber);
   }
 
   /**
