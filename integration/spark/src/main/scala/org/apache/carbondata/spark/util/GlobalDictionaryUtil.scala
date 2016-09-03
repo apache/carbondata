@@ -27,7 +27,7 @@ import scala.language.implicitConversions
 import scala.util.control.Breaks.{break, breakable}
 
 import org.apache.commons.lang3.{ArrayUtils, StringUtils}
-import org.apache.spark.Logging
+import org.apache.spark.{Accumulator, Logging}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation, DataFrame, SQLContext}
 import org.apache.spark.sql.hive.CarbonMetastoreCatalog
@@ -574,6 +574,48 @@ object GlobalDictionaryUtil extends Logging {
   }
 
   /**
+   * parse records in dictionary file and validate record
+   *
+   * @param x
+   * @param accum
+   * @param csvFileColumns
+   */
+  private def parseRecord(x: String, accum: Accumulator[Int],
+                  csvFileColumns: Array[String]) : (String, String) = {
+    val tokens = x.split("" + CSVWriter.DEFAULT_SEPARATOR)
+    var columnName: String = ""
+    var value: String = ""
+    // such as "," , "", throw ex
+    if (tokens.size == 0) {
+      logError("Read a bad dictionary record: " + x)
+      accum += 1
+    } else if (tokens.size == 1) {
+      // such as "1", "jone", throw ex
+      if (x.contains(",") == false) {
+        accum += 1
+      } else {
+        try {
+          columnName = csvFileColumns(tokens(0).toInt)
+        } catch {
+          case ex: Exception =>
+            logError("Read a bad dictionary record: " + x)
+            accum += 1
+        }
+      }
+    } else {
+      try {
+        columnName = csvFileColumns(tokens(0).toInt)
+        value = tokens(1)
+      } catch {
+        case ex: Exception =>
+          logError("Read a bad dictionary record: " + x)
+          accum += 1
+      }
+    }
+    (columnName, value)
+  }
+
+  /**
    * read local dictionary and prune column
    *
    * @param sqlContext
@@ -585,27 +627,13 @@ object GlobalDictionaryUtil extends Logging {
   private def readAllDictionaryFiles(sqlContext: SQLContext,
                                      csvFileColumns: Array[String],
                                      requireColumns: Array[String],
-                                     allDictionaryPath: String) = {
+                                     allDictionaryPath: String,
+                                     accumulator: Accumulator[Int]) = {
     var allDictionaryRdd: RDD[(String, Iterable[String])] = null
     try {
       // read local dictionary file, and spilt (columnIndex, columnValue)
       val basicRdd = sqlContext.sparkContext.textFile(allDictionaryPath)
-        .map(x => {
-        val tokens = x.split("" + CSVWriter.DEFAULT_SEPARATOR)
-        if (tokens.size != 2) {
-          logError("Read a bad dictionary record: " + x)
-        }
-        var columnName: String = CarbonCommonConstants.DEFAULT_COLUMN_NAME
-        var value: String = ""
-        try {
-          columnName = csvFileColumns(tokens(0).toInt)
-          value = tokens(1)
-        } catch {
-          case ex: Exception =>
-            logError("Reset bad dictionary record as default value")
-        }
-        (columnName, value)
-      })
+        .map(x => parseRecord(x, accumulator, csvFileColumns)).persist()
 
       // group by column index, and filter required columns
       val requireColumnsList = requireColumns.toList
@@ -791,9 +819,11 @@ object GlobalDictionaryUtil extends Logging {
           if (requireDimension.nonEmpty) {
             val model = createDictionaryLoadModel(carbonLoadModel, table, requireDimension,
               hdfsLocation, dictfolderPath, false)
+            // check if dictionary files contains bad record
+            val accumulator = sqlContext.sparkContext.accumulator(0)
             // read local dictionary file, and group by key
             val allDictionaryRdd = readAllDictionaryFiles(sqlContext, headers,
-              requireColumnNames, allDictionaryPath)
+              requireColumnNames, allDictionaryPath, accumulator)
             // read exist dictionary and combine
             val inputRDD = new CarbonAllDictionaryCombineRDD(allDictionaryRdd, model)
               .partitionBy(new ColumnPartitioner(model.primDimensions.length))
@@ -801,6 +831,11 @@ object GlobalDictionaryUtil extends Logging {
             val statusList = new CarbonGlobalDictionaryGenerateRDD(inputRDD, model).collect()
             // check result status
             checkStatus(carbonLoadModel, sqlContext, model, statusList)
+            // if the dictionary contains wrong format record, throw ex
+            if (accumulator.value > 0) {
+              throw new DataLoadingException("Data Loading failure, dictionary values are " +
+                "not in correct format!")
+            }
           } else {
             logInfo("have no column need to generate global dictionary")
           }
