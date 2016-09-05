@@ -59,6 +59,7 @@ class CarbonSqlParser()
   protected val BEFORE = carbonKeyWord("BEFORE")
   protected val BY = carbonKeyWord("BY")
   protected val CARDINALITY = carbonKeyWord("CARDINALITY")
+  protected val CASCADE = carbonKeyWord("CASCADE")
   protected val CLASS = carbonKeyWord("CLASS")
   protected val CLEAN = carbonKeyWord("CLEAN")
   protected val COLS = carbonKeyWord("COLS")
@@ -67,6 +68,7 @@ class CarbonSqlParser()
   protected val CUBE = carbonKeyWord("CUBE")
   protected val CUBES = carbonKeyWord("CUBES")
   protected val DATA = carbonKeyWord("DATA")
+  protected val DATABASE = carbonKeyWord("DATABASE")
   protected val DATABASES = carbonKeyWord("DATABASES")
   protected val DELETE = carbonKeyWord("DELETE")
   protected val DELIMITER = carbonKeyWord("DELIMITER")
@@ -109,6 +111,7 @@ class CarbonSqlParser()
   protected val PARTITIONER = carbonKeyWord("PARTITIONER")
   protected val QUOTECHAR = carbonKeyWord("QUOTECHAR")
   protected val RELATION = carbonKeyWord("RELATION")
+  protected val SCHEMA = carbonKeyWord("SCHEMA")
   protected val SCHEMAS = carbonKeyWord("SCHEMAS")
   protected val SHOW = carbonKeyWord("SHOW")
   protected val TABLES = carbonKeyWord("TABLES")
@@ -202,7 +205,7 @@ class CarbonSqlParser()
   override protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
 
   protected lazy val startCommand: Parser[LogicalPlan] =
-    loadManagement | describeTable | showLoads | alterTable | createTable
+    dropDatabaseCascade | loadManagement | describeTable | showLoads | alterTable | createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] = deleteLoadsByID | deleteLoadsByLoadDate |
     cleanFiles | loadDataNew
@@ -287,10 +290,11 @@ class CarbonSqlParser()
     ALTER ~> TABLE ~> restInput ^^ {
       case statement =>
         try {
+          val alterSql = "alter table " + statement
           // DDl will be parsed and we get the AST tree from the HiveQl
-          val node = HiveQlWrapper.getAst("alter table " + statement)
+          val node = HiveQlWrapper.getAst(alterSql)
           // processing the AST tree
-          nodeToPlanForAlterTable(node)
+          nodeToPlanForAlterTable(node, alterSql)
         } catch {
           // MalformedCarbonCommandException need to be throw directly, parser will catch it
           case ce: MalformedCarbonCommandException =>
@@ -465,7 +469,7 @@ class CarbonSqlParser()
    * @param node
    * @return LogicalPlan
    */
-  protected def nodeToPlanForAlterTable(node: Node): LogicalPlan = {
+  protected def nodeToPlanForAlterTable(node: Node, alterSql: String): LogicalPlan = {
     node match {
       // if create table taken is found then only we will handle.
       case Token("TOK_ALTERTABLE", children) =>
@@ -487,14 +491,8 @@ class CarbonSqlParser()
           case _ => // Unsupport features
         }
 
-        if (compactionType.equalsIgnoreCase("minor") || compactionType.equalsIgnoreCase("major")) {
-          val altertablemodel = AlterTableModel(dbName, tableName, compactionType)
-          AlterTableCompaction(altertablemodel)
-        }
-        else {
-          sys.error("Invalid compaction type, supported values are 'major' and 'minor'")
-        }
-
+        val altertablemodel = AlterTableModel(dbName, tableName, compactionType, alterSql)
+        AlterTableCompaction(altertablemodel)
     }
   }
 
@@ -999,7 +997,7 @@ class CarbonSqlParser()
     val supportedOptions = Seq("DELIMITER", "QUOTECHAR", "FILEHEADER", "ESCAPECHAR", "MULTILINE",
       "COMPLEX_DELIMITER_LEVEL_1", "COMPLEX_DELIMITER_LEVEL_2", "COLUMNDICT",
       "SERIALIZATION_NULL_FORMAT",
-      "ALL_DICTIONARY_PATH"
+      "ALL_DICTIONARY_PATH", "MAXCOLUMNS"
     )
     var isSupported = true
     val invalidOptions = StringBuilder.newBuilder
@@ -1022,6 +1020,17 @@ class CarbonSqlParser()
       val errorMessage = "Error: COLUMNDICT and ALL_DICTIONARY_PATH can not be used together" +
         " in options"
       throw new MalformedCarbonCommandException(errorMessage)
+    }
+
+    if (options.exists(_._1.equalsIgnoreCase("MAXCOLUMNS"))) {
+      val maxColumns: String = options.get("maxcolumns").get(0)._2
+      try {
+        maxColumns.toInt
+      } catch {
+        case ex: NumberFormatException =>
+          throw new MalformedCarbonCommandException(
+            "option MAXCOLUMNS can only contain integer values")
+      }
     }
 
     // check for duplicate options
@@ -1342,4 +1351,9 @@ class CarbonSqlParser()
       }
     }
 
+  protected lazy val dropDatabaseCascade: Parser[LogicalPlan] =
+    DROP ~> (DATABASE|SCHEMA) ~> opt(IF ~> EXISTS) ~> ident ~> CASCADE <~ opt(";") ^^ {
+      case cascade => throw new MalformedCarbonCommandException(
+          "Unsupported cascade operation in drop database/schema command")
+    }
 }

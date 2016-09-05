@@ -28,13 +28,8 @@
  */
 package org.apache.carbondata.spark.util;
 
-import java.io.File;
-
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.load.LoadMetadataDetails;
 import org.apache.carbondata.lcm.status.SegmentStatusManager;
 import org.apache.carbondata.spark.load.CarbonLoadModel;
@@ -64,50 +59,5 @@ public final class LoadMetadataUtil {
 
     return false;
 
-  }
-
-  public static String createLoadFolderPath(CarbonLoadModel model, String hdfsStoreLocation,
-      int partitionId, int currentRestructNumber) {
-    hdfsStoreLocation =
-        hdfsStoreLocation + File.separator + model.getDatabaseName() + '_' + partitionId
-            + File.separator + model.getTableName() + '_' + partitionId;
-    int rsCounter = currentRestructNumber;
-    if (rsCounter == -1) {
-      rsCounter = 0;
-    }
-    String hdfsLoadedTable =
-        hdfsStoreLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER + rsCounter
-            + File.separator + model.getTableName();
-    hdfsLoadedTable = hdfsLoadedTable.replace("\\", "/");
-    return hdfsLoadedTable;
-  }
-
-  public static CarbonFile[] getAggregateTableList(final CarbonLoadModel model,
-      String hdfsStoreLocation, int partitionId, int currentRestructNumber) {
-    hdfsStoreLocation =
-        hdfsStoreLocation + File.separator + model.getDatabaseName() + '_' + partitionId
-            + File.separator + model.getTableName() + '_' + partitionId;
-
-    int rsCounter = currentRestructNumber;
-    if (rsCounter == -1) {
-      rsCounter = 0;
-    }
-
-    String hdfsLoadedTable =
-        hdfsStoreLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER + rsCounter;
-
-    CarbonFile rsFile =
-        FileFactory.getCarbonFile(hdfsLoadedTable, FileFactory.getFileType(hdfsLoadedTable));
-
-    CarbonFile[] aggFiles = rsFile.listFiles(new CarbonFileFilter() {
-
-      @Override public boolean accept(CarbonFile file) {
-        return file.getName().startsWith(
-            CarbonCommonConstants.AGGREGATE_TABLE_START_TAG + CarbonCommonConstants.UNDERSCORE
-                + model.getTableName());
-      }
-    });
-
-    return aggFiles;
   }
 }

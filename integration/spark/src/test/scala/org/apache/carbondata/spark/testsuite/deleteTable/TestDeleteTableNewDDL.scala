@@ -18,6 +18,9 @@
  */
 package org.apache.carbondata.spark.testsuite.deleteTable
 
+import java.io.File
+
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -26,6 +29,10 @@ import org.scalatest.BeforeAndAfterAll
  * test class for testing the create cube DDL.
  */
 class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
+
+  val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
+    .getCanonicalPath
+  val resource = currentDirectory + "/src/test/resources/"
 
   override def beforeAll: Unit = {
 
@@ -44,6 +51,19 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
   test("drop table Test with new DDL") {
     sql("drop table table1")
 
+  }
+  
+  test("test drop database cascade command") {
+    sql("create database testdb")
+    try {
+      sql("drop database testdb cascade")
+      assert(false)
+    } catch {
+      case e : MalformedCarbonCommandException => {
+        assert(e.getMessage.equals("Unsupported cascade operation in drop database/schema command"))
+      }
+    }
+    sql("drop database testdb")
   }
 
   // deletion case with if exists
@@ -104,9 +124,124 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql("drop table default.table3")
   }
 
+
+  test("drop table and create table with different data type") {
+    sql(
+      "CREATE table dropTableTest1 (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format' "
+
+    )
+
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dropTableTest1 " +
+      "OPTIONS('DELIMITER' =  ',')")
+    sql("select * from dropTableTest1")
+    sql("drop table dropTableTest1")
+
+    sql(
+      "CREATE table dropTableTest1 (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary String) stored by 'org.apache.carbondata.format' "
+    )
+
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dropTableTest1 " +
+      "OPTIONS('DELIMITER' =  ',')")
+
+    sql("select * from dropTableTest1")
+
+  }
+
+
+  test("drop table and create table with dictionary exclude integer scenario") {
+    sql(
+      "CREATE table dropTableTest2 (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format' " +
+      "TBLPROPERTIES('DICTIONARY_EXCLUDE'='salary')"
+    )
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dropTableTest2 " +
+      "OPTIONS('DELIMITER' =  ',')")
+    sql("select * from dropTableTest2")
+    sql("drop table dropTableTest2")
+    sql(
+      "CREATE table dropTableTest2 (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary decimal) stored by 'org.apache.carbondata.format' " +
+      "TBLPROPERTIES('DICTIONARY_EXCLUDE'='date')"
+    )
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dropTableTest2 " +
+      "OPTIONS('DELIMITER' =  ',')")
+    sql("select * from dropTableTest2")
+
+  }
+
+  test("drop table and create table with dictionary exclude string scenario") {
+    sql("create database if not exists test")
+    sql(
+      "CREATE table test.dropTableTest3 (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format' " +
+      "TBLPROPERTIES('DICTIONARY_EXCLUDE'='salary')"
+    )
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE test.dropTableTest3 " +
+      "OPTIONS('DELIMITER' =  ',')")
+    sql("select * from test.dropTableTest3")
+    sql("drop table test.dropTableTest3")
+    sql(
+      "CREATE table test.dropTableTest3 (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary decimal) stored by 'org.apache.carbondata.format' " +
+      "TBLPROPERTIES('DICTIONARY_EXCLUDE'='date')"
+    )
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE test.dropTableTest3 " +
+      "OPTIONS('DELIMITER' =  ',')")
+    sql("select * from test.dropTableTest3")
+
+  }
+
+  test("drop table and create table with same name but different cols") {
+
+    sql(
+      "CREATE TABLE dropTableTest4 (imei string,age int,task bigint,name string,country string," +
+      "city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp," +
+      "enddate timestamp,PointId double,score decimal(10,3))STORED BY 'org.apache.carbondata" +
+      ".format'")
+    sql(
+      "LOAD DATA INPATH './src/test/resources/big_int_Decimal.csv'  INTO TABLE dropTableTest4 " +
+      "options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$'," +
+      "'COMPLEX_DELIMITER_LEVEL_2'=':', 'FILEHEADER'= '')")
+    sql("select * from dropTableTest4")
+    sql("drop table dropTableTest4")
+    sql(
+      "CREATE table dropTableTest4 (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary decimal) stored by 'org.apache.carbondata" +
+      ".format' " +
+      "TBLPROPERTIES('DICTIONARY_EXCLUDE'='date')"
+    )
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dropTableTest4 " +
+      "OPTIONS('DELIMITER' =  ',')")
+    sql("select * from dropTableTest4")
+
+
+  }
+
+
   override def afterAll: Unit = {
 
-    sql("drop table CaseSensitiveTable")
+    sql("drop table CaseInsensitiveTable")
+    sql("drop table dropTableTest1")
+    sql("drop table dropTableTest2")
+    sql("drop table test.dropTableTest3")
+    sql("drop database test")
+    sql("drop table dropTableTest4")
   }
 
 }

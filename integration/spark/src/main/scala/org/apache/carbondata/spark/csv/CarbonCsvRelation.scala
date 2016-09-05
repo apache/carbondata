@@ -25,6 +25,7 @@ import com.databricks.spark.csv.newapi.CarbonTextFile
 import com.databricks.spark.csv.util._
 import com.databricks.spark.sql.readers._
 import org.apache.commons.csv._
+import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.fs.Path
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
@@ -173,7 +174,7 @@ case class CarbonCsvRelation protected[spark] (
       csv.first()
     } else {
       csv.take(MAX_COMMENT_LINES_IN_HEADER)
-        .find(! _.startsWith(comment.toString))
+        .find(x => !StringUtils.isEmpty(x) && !x.startsWith(comment.toString))
         .getOrElse(sys.error(s"No uncommented header line in " +
           s"first $MAX_COMMENT_LINES_IN_HEADER lines"))
     }
@@ -190,7 +191,7 @@ case class CarbonCsvRelation protected[spark] (
         val escapeVal = if (escape == null) '\\' else escape.charValue()
         val commentChar: Char = if (comment == null) '\0' else comment
 
-        new BulkCsvReader(iter, split,
+        new CarbonBulkCsvReader(iter, split,
           headers = header, fieldSep = delimiter,
           quote = quote, escape = escapeVal, commentMarker = commentChar,
           ignoreLeadingSpace = ignoreLeadingWhiteSpace,

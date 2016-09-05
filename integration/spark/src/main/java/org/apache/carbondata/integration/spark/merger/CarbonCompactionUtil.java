@@ -18,24 +18,34 @@
  */
 package org.apache.carbondata.integration.spark.merger;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.TaskBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.CarbonUtilException;
+
+import org.apache.spark.sql.hive.TableMeta;
 
 /**
  * Utility Class for the Compaction Flow.
  */
 public class CarbonCompactionUtil {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CarbonCompactionExecutor.class.getName());
 
   /**
    * To create a mapping of Segment Id and TableBlockInfo.
@@ -129,4 +139,132 @@ public class CarbonCompactionUtil {
 
   }
 
+  /**
+   * Check whether the file to indicate the compaction is present or not.
+   * @param metaFolderPath
+   * @return
+   */
+  public static boolean isCompactionRequiredForTable(String metaFolderPath) {
+    String minorCompactionStatusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+        + CarbonCommonConstants.minorCompactionRequiredFile;
+
+    String majorCompactionStatusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+        + CarbonCommonConstants.majorCompactionRequiredFile;
+    try {
+      if (FileFactory.isFileExist(minorCompactionStatusFile,
+          FileFactory.getFileType(minorCompactionStatusFile)) || FileFactory
+          .isFileExist(majorCompactionStatusFile,
+              FileFactory.getFileType(majorCompactionStatusFile))) {
+        return true;
+      }
+    } catch (IOException e) {
+      LOGGER.error("Exception in isFileExist compaction request file " + e.getMessage() );
+    }
+    return false;
+  }
+
+  /**
+   * Determine the type of the compaction received.
+   * @param metaFolderPath
+   * @return
+   */
+  public static CompactionType determineCompactionType(String metaFolderPath) {
+    String minorCompactionStatusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+        + CarbonCommonConstants.minorCompactionRequiredFile;
+
+    String majorCompactionStatusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+        + CarbonCommonConstants.majorCompactionRequiredFile;
+    try {
+      if (FileFactory.isFileExist(minorCompactionStatusFile,
+          FileFactory.getFileType(minorCompactionStatusFile))) {
+        return CompactionType.MINOR_COMPACTION;
+      }
+      if (FileFactory.isFileExist(majorCompactionStatusFile,
+          FileFactory.getFileType(majorCompactionStatusFile))) {
+        return CompactionType.MAJOR_COMPACTION;
+      }
+
+    } catch (IOException e) {
+      LOGGER.error("Exception in determining the compaction request file " + e.getMessage() );
+    }
+    return CompactionType.MINOR_COMPACTION;
+  }
+
+  /**
+   * Delete the compation request file once the compaction is done.
+   * @param metaFolderPath
+   * @param compactionType
+   * @return
+   */
+  public static boolean deleteCompactionRequiredFile(String metaFolderPath,
+      CompactionType compactionType) {
+    String statusFile;
+    if (compactionType.equals(CompactionType.MINOR_COMPACTION)) {
+      statusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+          + CarbonCommonConstants.minorCompactionRequiredFile;
+    } else {
+      statusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+          + CarbonCommonConstants.majorCompactionRequiredFile;
+    }
+    try {
+      if (FileFactory.isFileExist(statusFile, FileFactory.getFileType(statusFile))) {
+        if (FileFactory.getCarbonFile(statusFile, FileFactory.getFileType(statusFile)).delete()) {
+          LOGGER.info("Deleted the compaction request file " + statusFile);
+        } else {
+          LOGGER.error("Unable to delete the compaction request file " + statusFile);
+        }
+      }
+    } catch (IOException e) {
+      LOGGER.error("Exception in deleting the compaction request file " + e.getMessage() );
+    }
+    return false;
+  }
+
+  /**
+   * Creation of the compaction request if someother compaction is in progress.
+   * @param metaFolderPath
+   * @param compactionType
+   * @return
+   */
+  public static boolean createCompactionRequiredFile(String metaFolderPath,
+      CompactionType compactionType) {
+    String statusFile;
+    if (compactionType.equals(CompactionType.MINOR_COMPACTION)) {
+      statusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+          + CarbonCommonConstants.minorCompactionRequiredFile;
+    } else {
+      statusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+          + CarbonCommonConstants.majorCompactionRequiredFile;
+    }
+    try {
+      if (!FileFactory.isFileExist(statusFile, FileFactory.getFileType(statusFile))) {
+        if (FileFactory.createNewFile(statusFile, FileFactory.getFileType(statusFile))) {
+          LOGGER.info("successfully created a compaction required file - " + statusFile);
+          return true;
+        } else {
+          LOGGER.error("Not able to create a compaction required file - " + statusFile);
+          return false;
+        }
+      }
+    } catch (IOException e) {
+      LOGGER.error("Exception in creating the compaction request file " + e.getMessage() );
+    }
+    return false;
+  }
+
+  /**
+   * This will check if any compaction request has been received for any table.
+   * @param tableMetas
+   * @return
+   */
+  public static TableMeta getNextTableToCompact(TableMeta[] tableMetas) {
+    for (TableMeta table : tableMetas) {
+      CarbonTable ctable = table.carbonTable();
+      String metadataPath = ctable.getMetaDataFilepath();
+      if (CarbonCompactionUtil.isCompactionRequiredForTable(metadataPath)) {
+        return table;
+      }
+    }
+    return null;
+  }
 }

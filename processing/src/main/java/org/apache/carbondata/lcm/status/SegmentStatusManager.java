@@ -410,18 +410,24 @@ public class SegmentStatusManager {
       for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
 
         if (loadId.equalsIgnoreCase(loadMetadata.getLoadName())) {
+          // if the segment is compacted then no need to delete that.
+          if (CarbonCommonConstants.SEGMENT_COMPACTED
+              .equalsIgnoreCase(loadMetadata.getLoadStatus())) {
+            LOG.error("Cannot delete the Segment which is compacted. Segment is " + loadId);
+            break;
+          }
           if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())) {
             loadFound = true;
             loadMetadata.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
             loadMetadata.setModificationOrdeletionTimesStamp(readCurrentTime());
-            LOG.info("LoadId " + loadId + " Marked for Delete");
+            LOG.info("Segment ID " + loadId + " Marked for Delete");
           }
           break;
         }
       }
 
       if (!loadFound) {
-        LOG.audit("Delete load by Id is failed. No matching load id found.");
+        LOG.audit("Delete segment by ID is failed. No matching segment id found.");
         invalidLoadIds.add(loadId);
         return invalidLoadIds;
       }
@@ -449,6 +455,12 @@ public class SegmentStatusManager {
     for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
       Integer result = compareDateValues(loadMetadata.getLoadStartTimeAsLong(), loadStartTime);
       if (result < 0) {
+        if (CarbonCommonConstants.SEGMENT_COMPACTED
+            .equalsIgnoreCase(loadMetadata.getLoadStatus())) {
+          LOG.info("Ignoring the segment : " + loadMetadata.getLoadName()
+              + "as the segment has been compacted.");
+          continue;
+        }
         if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())) {
           loadFound = true;
           loadMetadata.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);

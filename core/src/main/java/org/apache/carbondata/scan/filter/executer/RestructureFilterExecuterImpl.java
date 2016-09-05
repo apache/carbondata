@@ -20,21 +20,20 @@ package org.apache.carbondata.scan.filter.executer;
 
 import java.util.BitSet;
 
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.scan.filter.FilterUtil;
 import org.apache.carbondata.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
-
 
 public class RestructureFilterExecuterImpl implements FilterExecuter {
 
   DimColumnExecuterFilterInfo dimColumnExecuterInfo;
 
   public RestructureFilterExecuterImpl(DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo,
-      KeyGenerator blockKeyGenerator) {
+      SegmentProperties segmentProperties) {
     dimColumnExecuterInfo = new DimColumnExecuterFilterInfo();
     FilterUtil
-        .prepareKeysFromSurrogates(dimColumnResolvedFilterInfo.getFilterValues(), blockKeyGenerator,
+        .prepareKeysFromSurrogates(dimColumnResolvedFilterInfo.getFilterValues(), segmentProperties,
             dimColumnResolvedFilterInfo.getDimension(), dimColumnExecuterInfo);
   }
 

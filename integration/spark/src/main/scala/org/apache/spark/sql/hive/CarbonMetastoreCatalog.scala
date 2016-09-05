@@ -40,12 +40,13 @@ import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType
 import org.apache.carbondata.core.reader.ThriftReader
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
 import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.lcm.locks.ZookeeperInit
@@ -99,7 +100,7 @@ case class DictionaryMap(dictionaryMap: Map[String, Boolean]) {
 }
 
 class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
-    client: ClientInterface)
+    client: ClientInterface, queryId: String)
   extends HiveMetastoreCatalog(client, hiveContext)
     with spark.Logging {
 
@@ -151,7 +152,8 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
   }
 
   def loadMetadata(metadataPath: String): MetaData = {
-
+    val recorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance()
+    val statistic = new QueryStatistic()
     // creating zookeeper instance once.
     // if zookeeper is configured as carbon lock type.
     val zookeeperUrl: String = hiveContext.getConf(CarbonCommonConstants.ZOOKEEPER_URL, null)
@@ -176,8 +178,10 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     val metaDataBuffer = new ArrayBuffer[TableMeta]
     fillMetaData(metadataPath, fileType, metaDataBuffer)
     updateSchemasUpdatedTime("", "")
+    statistic.addStatistics(QueryStatisticsConstants.LOAD_META,
+      System.currentTimeMillis())
+    recorder.recordStatisticsForDriver(statistic, queryId)
     MetaData(metaDataBuffer)
-
   }
 
   private def fillMetaData(basePath: String, fileType: FileType,
@@ -443,8 +447,10 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
            c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))(0)
     org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .removeTable(dbName + "_" + tableName)
+    CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sqlContext)
 
-    sqlContext.asInstanceOf[HiveContext].runSqlHive(s"DROP TABLE IF EXISTS $dbName.$tableName")
+    // discard cached table info in cachedDataSourceTables
+    sqlContext.catalog.refreshTable(tableIdentifier)
   }
 
   private def getTimestampFileAndType(databaseName: String, tableName: String) = {

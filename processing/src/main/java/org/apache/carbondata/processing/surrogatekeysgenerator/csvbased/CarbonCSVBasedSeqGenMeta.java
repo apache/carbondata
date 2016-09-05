@@ -349,7 +349,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    * databaseName
    */
   private String databaseName;
-  private int currentRestructNumber;
   /**
    * partitionID
    */
@@ -646,7 +645,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     measureDataType = "";
     columnAndTableNameColumnMapForAggString = "";
     denormColumNames = "";
-    currentRestructNumber = -1;
     partitionID = "";
     segmentId = "";
     taskNo = "";
@@ -711,8 +709,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     retval.append("    ").append(XMLHandler.addTagValue("databaseName", databaseName));
     retval.append("    ").append(XMLHandler.addTagValue("tableName", tableName));
     retval.append("    ").append(XMLHandler.addTagValue("denormColumNames", denormColumNames));
-    retval.append("    ")
-        .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
     retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
     retval.append("    ").append(XMLHandler.addTagValue("segmentId", segmentId));
     retval.append("    ").append(XMLHandler.addTagValue("taskNo", taskNo));
@@ -763,8 +759,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       tableName = XMLHandler.getTagValue(stepnode, "tableName");
       databaseName = XMLHandler.getTagValue(stepnode, "databaseName");
       denormColumNames = XMLHandler.getTagValue(stepnode, "denormColumNames");
-      currentRestructNumber =
-          Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
       partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
       segmentId = XMLHandler.getTagValue(stepnode, "segmentId");
       taskNo = XMLHandler.getTagValue(stepnode, "taskNo");
@@ -1334,7 +1328,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
 
       tableName = rep.getStepAttributeString(idStep, "tableName");
       denormColumNames = rep.getStepAttributeString(idStep, "denormColumNames");
-      currentRestructNumber = (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
       partitionID = rep.getStepAttributeString(idStep, "partitionID");
       segmentId = rep.getStepAttributeString(idStep, "segmentId");
       taskNo = rep.getStepAttributeString(idStep, "taskNo");
@@ -1388,8 +1381,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       rep.saveStepAttribute(idTransformation, idStep, "databaseName", databaseName);
       rep.saveStepAttribute(idTransformation, idStep, "tableName", tableName);
       rep.saveStepAttribute(idTransformation, idStep, "denormColumNames", denormColumNames);
-      rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
-          currentRestructNumber);
       rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
       rep.saveStepAttribute(idTransformation, idStep, "segmentId", segmentId);
       rep.saveStepAttribute(idTransformation, idStep, "taskNo", taskNo);
@@ -1587,14 +1578,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
 
   public void setDenormColumNames(String denormColumNames) {
     this.denormColumNames = denormColumNames;
-  }
-
-  public int getCurrentRestructNumber() {
-    return currentRestructNumber;
-  }
-
-  public void setCurrentRestructNumber(int currentRestructNum) {
-    this.currentRestructNumber = currentRestructNum;
   }
 
   public String getNoDictionaryDims() {

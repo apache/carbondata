@@ -45,6 +45,10 @@ public class UnivocityCsvParser {
   private LogService LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
 
   /**
+   * Max number of columns that will be parsed for a row by univocity parsing
+   */
+  private static final int DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING = 2000;
+  /**
    * reader for csv
    */
   private Reader inputStreamReader;
@@ -90,7 +94,8 @@ public class UnivocityCsvParser {
     CsvParserSettings parserSettings = new CsvParserSettings();
     parserSettings.getFormat().setDelimiter(csvParserVo.getDelimiter().charAt(0));
     parserSettings.setLineSeparatorDetectionEnabled(true);
-    parserSettings.setMaxColumns(csvParserVo.getNumberOfColumns() + 10);
+    parserSettings.setMaxColumns(
+        getMaxColumnsForParsing(csvParserVo.getNumberOfColumns(), csvParserVo.getMaxColumns()));
     parserSettings.setNullValue("");
     parserSettings.setIgnoreLeadingWhitespaces(false);
     parserSettings.setIgnoreTrailingWhitespaces(false);
@@ -105,6 +110,26 @@ public class UnivocityCsvParser {
     }
     parser = new CsvParser(parserSettings);
     parser.beginParsing(inputStreamReader);
+  }
+
+  /**
+   * This method will decide the number of columns to be parsed for a row by univocity parser
+   *
+   * @param columnCountInSchema total number of columns in schema
+   * @return
+   */
+  private int getMaxColumnsForParsing(int columnCountInSchema, int maxColumns) {
+    int maxNumberOfColumnsForParsing = DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING;
+    if (maxColumns > 0) {
+      if (columnCountInSchema > maxColumns) {
+        maxNumberOfColumnsForParsing = columnCountInSchema + 10;
+      } else {
+        maxNumberOfColumnsForParsing = maxColumns;
+      }
+    } else if (columnCountInSchema > DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
+      maxNumberOfColumnsForParsing = columnCountInSchema + 10;
+    }
+    return maxNumberOfColumnsForParsing;
   }
 
   /**
