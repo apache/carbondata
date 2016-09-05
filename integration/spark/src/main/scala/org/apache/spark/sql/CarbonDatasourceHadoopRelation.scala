@@ -109,17 +109,6 @@ private[sql] case class CarbonDatasourceHadoopRelation(
     CarbonInputFormat.setColumnProjection(projection, conf)
     CarbonInputFormat.setCarbonReadSupport(classOf[SparkRowReadSupportImpl], conf)
 
-
-//    val builder = new CarbonScanRDDBuilder(
-//      sqlContext,
-//      this,
-//      requiredColumns,
-//      filters,
-//      true
-//    )
-//    builder.build
-
-
     new CarbonHadoopFSRDD[Row](sqlContext.sparkContext,
       new SerializableConfiguration(conf),
       identifier,
