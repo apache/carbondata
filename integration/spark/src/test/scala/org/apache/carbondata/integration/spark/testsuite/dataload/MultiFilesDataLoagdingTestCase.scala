@@ -49,7 +49,7 @@ class MultiFilesDataLoagdingTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table multifile")
     checkAnswer(
       sql("select count(empno) from multifile"),
-      Seq(Row(8))
+      Seq(Row(10))
     )
   }
 
