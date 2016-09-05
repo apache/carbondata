@@ -102,7 +102,6 @@ public class DriverQueryStatisticsRecorder {
               queryStatisticsMap.remove(queryId);
             }
           }
-          
           // clear the timeout query statistics
           long interval = System.nanoTime() - Long.parseLong(queryId);
           if (interval > QueryStatisticsConstants.CLEAR_STATISTICS_TIMEOUT) {
