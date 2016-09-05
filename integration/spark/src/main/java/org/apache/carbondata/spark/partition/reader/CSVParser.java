@@ -68,11 +68,6 @@ public class CSVParser {
    */
   public static final char DEFAULT_ESCAPE_CHARACTER = '\\';
   /**
-   * The default escape character to use if none is supplied to the
-   * constructor.
-   */
-  public static final char DEFAULT_COMMENT_CHARACTER = '#';
-  /**
    * The default strict quote behavior to use if none is supplied to the
    * constructor.
    */
@@ -103,10 +98,6 @@ public class CSVParser {
    */
   private final char escape;
   /**
-   * This is the character that the CSVParser will treat as the comment character.
-   */
-  private final char commentchar;
-  /**
    * Determines if the field is between quotes (true) or between separators (false).
    */
   private final boolean strictQuotes;
@@ -127,8 +118,7 @@ public class CSVParser {
    * Constructs CSVParser using a comma for the separator.
    */
   public CSVParser() {
-    this(DEFAULT_SEPARATOR, DEFAULT_QUOTE_CHARACTER, DEFAULT_COMMENT_CHARACTER,
-      DEFAULT_ESCAPE_CHARACTER);
+    this(DEFAULT_SEPARATOR, DEFAULT_QUOTE_CHARACTER, DEFAULT_ESCAPE_CHARACTER);
   }
 
   /**
@@ -137,11 +127,7 @@ public class CSVParser {
    * @param separator the delimiter to use for separating entries.
    */
   public CSVParser(char separator) {
-    this(separator, DEFAULT_QUOTE_CHARACTER, DEFAULT_COMMENT_CHARACTER, DEFAULT_ESCAPE_CHARACTER);
-  }
-
-  public CSVParser(char separator, char quotechar) {
-    this(separator, quotechar, DEFAULT_COMMENT_CHARACTER, DEFAULT_ESCAPE_CHARACTER);
+    this(separator, DEFAULT_QUOTE_CHARACTER, DEFAULT_ESCAPE_CHARACTER);
   }
 
   /**
@@ -150,8 +136,8 @@ public class CSVParser {
    * @param separator the delimiter to use for separating entries
    * @param quotechar the character to use for quoted elements
    */
-  public CSVParser(char separator, char quotechar, char commentchar) {
-    this(separator, quotechar, commentchar, DEFAULT_ESCAPE_CHARACTER);
+  public CSVParser(char separator, char quotechar) {
+    this(separator, quotechar, DEFAULT_ESCAPE_CHARACTER);
   }
 
   /**
@@ -161,8 +147,8 @@ public class CSVParser {
    * @param quotechar the character to use for quoted elements
    * @param escape    the character to use for escaping a separator or quote
    */
-  public CSVParser(char separator, char quotechar, char commentchar, char escape) {
-    this(separator, quotechar, commentchar, escape, DEFAULT_STRICT_QUOTES);
+  public CSVParser(char separator, char quotechar, char escape) {
+    this(separator, quotechar, escape, DEFAULT_STRICT_QUOTES);
   }
 
   /**
@@ -174,10 +160,8 @@ public class CSVParser {
    * @param escape       the character to use for escaping a separator or quote
    * @param strictQuotes if true, characters outside the quotes are ignored
    */
-  public CSVParser(char separator, char quotechar, char commentchar, char escape,
-                   boolean strictQuotes) {
-    this(separator, quotechar, commentchar, escape, strictQuotes,
-      DEFAULT_IGNORE_LEADING_WHITESPACE);
+  public CSVParser(char separator, char quotechar, char escape, boolean strictQuotes) {
+    this(separator, quotechar, escape, strictQuotes, DEFAULT_IGNORE_LEADING_WHITESPACE);
   }
 
   /**
@@ -190,9 +174,9 @@ public class CSVParser {
    * @param strictQuotes            if true, characters outside the quotes are ignored
    * @param ignoreLeadingWhiteSpace if true, white space in front of a quote in a field is ignored
    */
-  public CSVParser(char separator, char quotechar, char commentchar, char escape, boolean
-      strictQuotes, boolean ignoreLeadingWhiteSpace) {
-    this(separator, quotechar, commentchar, escape, strictQuotes, ignoreLeadingWhiteSpace,
+  public CSVParser(char separator, char quotechar, char escape, boolean strictQuotes,
+      boolean ignoreLeadingWhiteSpace) {
+    this(separator, quotechar, escape, strictQuotes, ignoreLeadingWhiteSpace,
         DEFAULT_IGNORE_QUOTATIONS);
   }
 
@@ -207,9 +191,9 @@ public class CSVParser {
    * @param ignoreLeadingWhiteSpace if true, white space in front of a quote in a field is ignored
    * @param ignoreQuotations        if true, treat quotations like any other character.
    */
-  public CSVParser(char separator, char quotechar, char commentchar, char escape, boolean
-      strictQuotes, boolean ignoreLeadingWhiteSpace, boolean ignoreQuotations) {
-    if (anyCharactersAreTheSame(separator, quotechar, commentchar, escape)) {
+  public CSVParser(char separator, char quotechar, char escape, boolean strictQuotes,
+      boolean ignoreLeadingWhiteSpace, boolean ignoreQuotations) {
+    if (anyCharactersAreTheSame(separator, quotechar, escape)) {
       throw new UnsupportedOperationException(
           "The separator, quote, and escape characters must be different!");
     }
@@ -219,7 +203,6 @@ public class CSVParser {
     this.separator = separator;
     this.quotechar = quotechar;
     this.escape = escape;
-    this.commentchar = commentchar;
     this.strictQuotes = strictQuotes;
     this.ignoreLeadingWhiteSpace = ignoreLeadingWhiteSpace;
     this.ignoreQuotations = ignoreQuotations;
@@ -236,11 +219,9 @@ public class CSVParser {
    * @param ignoreLeadingWhiteSpace if true, white space in front of a quote in a field is ignored
    * @param ignoreQuotations        if true, treat quotations like any other character.
    */
-  public CSVParser(char separator, char quotechar, char commentchar, char escape, boolean
-      strictQuotes, boolean ignoreLeadingWhiteSpace, boolean ignoreQuotations,
-                   boolean ignoreEscape) {
-    this(separator, quotechar, commentchar, escape, strictQuotes, ignoreLeadingWhiteSpace,
-      ignoreQuotations);
+  public CSVParser(char separator, char quotechar, char escape, boolean strictQuotes,
+      boolean ignoreLeadingWhiteSpace, boolean ignoreQuotations, boolean ignoreEscape) {
+    this(separator, quotechar, escape, strictQuotes, ignoreLeadingWhiteSpace, ignoreQuotations);
     this.ignoreEscapeChar = ignoreEscape;
   }
 
@@ -291,16 +272,13 @@ public class CSVParser {
    * the separator, quote, and escape characters must the different.
    *
    * @param separator the defined separator character
-   * @param quotechar the defined quotation character
-   * @param commentchar the defined comment character
+   * @param quotechar the defined quotation cahracter
    * @param escape    the defined escape character
    * @return true if any two of the three are the same.
    */
-  private boolean anyCharactersAreTheSame(char separator, char quotechar, char commentchar, char
-                                          escape) {
+  private boolean anyCharactersAreTheSame(char separator, char quotechar, char escape) {
     return isSameCharacter(separator, quotechar) || isSameCharacter(separator, escape)
-        || isSameCharacter(quotechar, escape) || isSameCharacter(separator, commentchar)
-        || isSameCharacter(quotechar, commentchar) || isSameCharacter(escape, commentchar);
+        || isSameCharacter(quotechar, escape);
   }
 
   /**

@@ -454,8 +454,8 @@ public class CsvInput extends BaseStep implements StepInterface {
     csvParserVo.setNumberOfColumns(meta.getInputFields().length);
     csvParserVo.setEscapeCharacter(meta.getEscapeCharacter());
     csvParserVo.setHeaderPresent(meta.isHeaderPresent());
-    csvParserVo.setCommentCharacter(meta.getCommentCharacter());
     csvParserVo.setQuoteCharacter(meta.getQuoteCharacter());
+    csvParserVo.setCommentCharacter(meta.getCommentCharacter());
     String maxColumns = meta.getMaxColumns();
     if(null != maxColumns) {
       csvParserVo.setMaxColumns(Integer.parseInt(maxColumns));
@@ -502,8 +502,6 @@ public class CsvInput extends BaseStep implements StepInterface {
             .getBytes(environmentSubstitute(meta.getDelimiter()), meta.getEncoding());
         data.escapeCharacter = data.encodingType
             .getBytes(environmentSubstitute(meta.getEscapeCharacter()), meta.getEncoding());
-        data.commentCharacter = data.encodingType
-            .getBytes(environmentSubstitute(meta.getCommentCharacter()), meta.getEncoding());
         if (Const.isEmpty(meta.getEnclosure())) {
           data.enclosure = null;
         } else {

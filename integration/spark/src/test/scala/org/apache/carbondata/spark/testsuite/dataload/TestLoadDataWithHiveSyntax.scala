@@ -600,10 +600,8 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
       "LOAD DATA local inpath './src/test/resources/comment.csv' INTO TABLE comment_test " +
         "options('DELIMITER' = ',', 'QUOTECHAR' = '.', 'COMMENTCHAR' = '?','FILEHEADER'='imei,age,task,num,level,productdate,mark,name')"
     )
-    checkAnswer(sql("select imei from comment_test"),Seq(Row("\"huawei"),Row("#huawei"), Row(""),
-      Row("~huawei")))
-    sql("drop table if exists comment_test")
-
+    checkAnswer(sql("select imei from comment_test"),Seq(Row("\".carbon"),Row("#?carbon"), Row(""),
+      Row("~carbon,")))
   }
 
 
@@ -614,5 +612,6 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists mixed_header_test")
     sql("drop table carbontable1")
     sql("drop table hivetable1")
+    sql("drop table if exists comment_test")
   }
 }

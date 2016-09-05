@@ -185,8 +185,8 @@ public class GraphGenerator {
   private String factStoreLocation;
   private String blocksID;
   private String escapeCharacter;
-  private String commentCharacter;
   private String quoteCharacter;
+  private String commentCharacter;
   /**
    * task id, each spark task has a unique id
    */
@@ -221,8 +221,8 @@ public class GraphGenerator {
     this.isColumnar = Boolean.parseBoolean(CarbonCommonConstants.IS_COLUMNAR_STORAGE_DEFAULTVALUE);
     this.blocksID = dataLoadModel.getBlocksID();
     this.taskNo = dataLoadModel.getTaskNo();
-    this.commentCharacter = dataLoadModel.getCommentCharacter();
     this.quoteCharacter = dataLoadModel.getQuoteCharacter();
+    this.commentCharacter = dataLoadModel.getCommentCharacter();
     this.factTimeStamp = dataLoadModel.getFactTimeStamp();
     this.segmentId = segmentId;
     this.escapeCharacter = dataLoadModel.getEscapeCharacter();

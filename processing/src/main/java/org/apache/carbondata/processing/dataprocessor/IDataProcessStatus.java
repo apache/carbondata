@@ -190,7 +190,7 @@ public interface IDataProcessStatus {
 
   String getEscapeCharacter();
 
-  String getCommentCharacter();
-
   String getQuoteCharacter();
+
+  String getCommentCharacter();
 }

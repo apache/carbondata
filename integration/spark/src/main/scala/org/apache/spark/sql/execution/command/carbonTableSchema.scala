@@ -1108,8 +1108,8 @@ private[sql] case class LoadTable(
       val maxColumns = partionValues.getOrElse("maxcolumns", null)
       carbonLoadModel.setMaxColumns(maxColumns)
       carbonLoadModel.setEscapeChar(escapeChar)
-      carbonLoadModel.setCommentChar(commentchar)
       carbonLoadModel.setQuoteChar(quoteChar)
+      carbonLoadModel.setCommentChar(commentchar)
       carbonLoadModel.setSerializationNullFormat("serialization_null_format" + "," +
         serializationNullFormat)
       if (delimiter.equalsIgnoreCase(complex_delimiter_level_1) ||

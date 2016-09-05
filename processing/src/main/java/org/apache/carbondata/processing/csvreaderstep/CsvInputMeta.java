@@ -228,8 +228,8 @@ public class CsvInputMeta extends BaseStepMeta
     retval.append("    ").append(XMLHandler.addTagValue("blocksID", blocksID));
     retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
     retval.append("    ").append(XMLHandler.addTagValue("escapeCharacter", escapeCharacter));
-    retval.append("    ").append(XMLHandler.addTagValue("commentCharacter", commentCharacter));
     retval.append("    ").append(XMLHandler.addTagValue("quoteCharacter", quoteCharacter));
+    retval.append("    ").append(XMLHandler.addTagValue("commentCharacter", commentCharacter));
     retval.append("    ").append(XMLHandler.addTagValue("maxColumns", maxColumns));
     retval.append("    ").append(XMLHandler.openTag(getXmlCode("FIELDS"))).append(Const.CR);
     for (int i = 0; i < inputFields.length; i++) {
@@ -283,8 +283,8 @@ public class CsvInputMeta extends BaseStepMeta
       blocksID = rep.getStepAttributeString(idStep, getRepCode("blocksID"));
       partitionID = rep.getStepAttributeString(idStep, getRepCode("partitionID"));
       escapeCharacter = rep.getStepAttributeString(idStep, getRepCode("escapeCharacter"));
-      commentCharacter = rep.getStepAttributeString(idStep, getRepCode("commentCharacter"));
       quoteCharacter = rep.getStepAttributeString(idStep, getRepCode("quoteCharacter"));
+      commentCharacter = rep.getStepAttributeString(idStep, getRepCode("commentCharacter"));
       maxColumns = rep.getStepAttributeString(idStep, getRepCode("maxColumns"));
       int nrfields = rep.countNrStepAttributes(idStep, getRepCode("FIELD_NAME"));
 
@@ -854,10 +854,10 @@ public class CsvInputMeta extends BaseStepMeta
           partitionID = (String) entry.getValue();
         } else if ("escapeCharacter".equals(attributeKey)) {
           escapeCharacter = (String) entry.getValue();
-        } else if ("commentCharacter".equals(attributeKey)) {
-          commentCharacter = (String) entry.getValue();
         } else if ("quoteCharacter".equals(attributeKey)) {
           quoteCharacter = (String) entry.getValue();
+        } else if ("commentCharacter".equals(attributeKey)) {
+          commentCharacter = (String) entry.getValue();
         } else {
           throw new RuntimeException(
               "Unhandled metadata injection of attribute: " + attr.toString() + " - " + attr

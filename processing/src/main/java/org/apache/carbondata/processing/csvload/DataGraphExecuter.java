@@ -288,8 +288,6 @@ public class DataGraphExecuter {
             ((CsvInputMeta) step.getStepMetaInterface()).setDelimiter(model.getCsvDelimiter());
             ((CsvInputMeta) step.getStepMetaInterface())
               .setEscapeCharacter(model.getEscapeCharacter());
-            ((CsvInputMeta) step.getStepMetaInterface())
-              .setCommentCharacter(model.getEscapeCharacter());
             ((CsvInputMeta) step.getStepMetaInterface()).setHeaderPresent(false);
 
           } else if (model.getFilesToProcess().size() > 0) {

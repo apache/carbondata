@@ -332,8 +332,8 @@ public class CarbonLoadModel implements Serializable {
     copy.segmentId = segmentId;
     copy.serializationNullFormat = serializationNullFormat;
     copy.escapeChar = escapeChar;
-    copy.commentChar = commentChar;
     copy.quoteChar = quoteChar;
+    copy.commentChar = commentChar;
     copy.maxColumns = maxColumns;
     return copy;
   }
@@ -373,8 +373,8 @@ public class CarbonLoadModel implements Serializable {
     copyObj.segmentId = segmentId;
     copyObj.serializationNullFormat = serializationNullFormat;
     copyObj.escapeChar = escapeChar;
-    copyObj.commentChar = commentChar;
     copyObj.quoteChar = quoteChar;
+    copyObj.commentChar = commentChar;
     copyObj.maxColumns = maxColumns;
     return copyObj;
   }
