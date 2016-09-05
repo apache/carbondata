@@ -39,29 +39,29 @@ import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.spark.{CarbonOption, _}
 
 /**
- * Carbon relation provider compliant to data source api.
- * Creates carbon relations
- */
+  * Carbon relation provider compliant to data source api.
+  * Creates carbon relations
+  */
 class CarbonSource
-  extends RelationProvider
-    with CreatableRelationProvider
-    with HadoopFsRelationProvider
-    with DataSourceRegister {
+    extends RelationProvider
+        with CreatableRelationProvider
+        with HadoopFsRelationProvider
+        with DataSourceRegister {
 
   override def shortName(): String = "carbondata"
 
   /**
-   * Returns a new base relation with the given parameters.
-   * Note: the parameters' keywords are case insensitive and this insensitivity is enforced
-   * by the Map that is passed to the function.
-   */
+    * Returns a new base relation with the given parameters.
+    * Note: the parameters' keywords are case insensitive and this insensitivity is enforced
+    * by the Map that is passed to the function.
+    */
   override def createRelation(
       sqlContext: SQLContext,
       parameters: Map[String, String]): BaseRelation = {
     // if path is provided we can directly create Hadoop relation. \
     // Otherwise create datasource relation
     parameters.get("path") match {
-      case Some(path) => CarbonDatasourceHadoopRelation(sqlContext, Array(path), parameters)
+      case Some(path) => CarbonDatasourceHadoopRelation(sqlContext, Array(path), parameters, None)
       case _ =>
         val options = new CarbonOption(parameters)
         val tableIdentifier = options.tableIdentifier.split("""\.""").toSeq
@@ -92,13 +92,13 @@ class CarbonSource
     val storePath = CarbonContext.getInstance(sqlContext.sparkContext).storePath
     val tablePath = new Path(storePath + "/" + options.dbName + "/" + options.tableName)
     val isExists = tablePath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)
-      .exists(tablePath)
+        .exists(tablePath)
     val (doSave, doAppend) = (mode, isExists) match {
       case (SaveMode.ErrorIfExists, true) =>
         sys.error(s"ErrorIfExists mode, path $storePath already exists.")
       case (SaveMode.Overwrite, true) =>
         val cc = CarbonContext.getInstance(sqlContext.sparkContext)
-        cc.sql(s"DROP CUBE IF EXISTS ${ options.dbName }.${ options.tableName }")
+        cc.sql(s"DROP TABLE IF EXISTS ${ options.dbName }.${ options.tableName }")
         (true, false)
       case (SaveMode.Overwrite, false) | (SaveMode.ErrorIfExists, false) =>
         (true, false)
@@ -123,24 +123,24 @@ class CarbonSource
       dataSchema: Option[StructType],
       partitionColumns: Option[StructType],
       parameters: Map[String, String]): HadoopFsRelation = {
-    CarbonDatasourceHadoopRelation(sqlContext, paths, parameters)
+    CarbonDatasourceHadoopRelation(sqlContext, paths, parameters, dataSchema)
   }
 }
 
 /**
- * Creates carbon relation compliant to data source api.
- * This relation is stored to hive metastore
- */
+  * Creates carbon relation compliant to data source api.
+  * This relation is stored to hive metastore
+  */
 private[sql] case class CarbonDatasourceRelation(
     tableIdentifier: TableIdentifier,
     alias: Option[String])
-  (@transient context: SQLContext)
-  extends BaseRelation with Serializable with Logging {
+    (@transient context: SQLContext)
+    extends BaseRelation with Serializable with Logging {
 
   def carbonRelation: CarbonRelation = {
     CarbonEnv.getInstance(context)
-      .carbonCatalog.lookupRelation1(tableIdentifier, None)(sqlContext)
-      .asInstanceOf[CarbonRelation]
+        .carbonCatalog.lookupRelation1(tableIdentifier, None)(sqlContext)
+        .asInstanceOf[CarbonRelation]
   }
 
   def schema: StructType = carbonRelation.schema
@@ -151,24 +151,24 @@ private[sql] case class CarbonDatasourceRelation(
 }
 
 /**
- * Represents logical plan for one carbon table
- */
+  * Represents logical plan for one carbon table
+  */
 case class CarbonRelation(
     databaseName: String,
     tableName: String,
     metaData: CarbonMetaData,
     tableMeta: TableMeta,
     alias: Option[String])(@transient sqlContext: SQLContext)
-  extends LeafNode with MultiInstanceRelation {
+    extends LeafNode with MultiInstanceRelation {
 
   def recursiveMethod(dimName: String, childDim: CarbonDimension): String = {
     childDim.getDataType.toString.toLowerCase match {
       case "array" => s"${
-          childDim.getColName.substring(dimName.length + 1)
-        }:array<${ getArrayChildren(childDim.getColName) }>"
+        childDim.getColName.substring(dimName.length + 1)
+      }:array<${ getArrayChildren(childDim.getColName) }>"
       case "struct" => s"${
-          childDim.getColName.substring(dimName.length + 1)
-        }:struct<${ getStructChildren(childDim.getColName) }>"
+        childDim.getColName.substring(dimName.length + 1)
+      }:struct<${ getStructChildren(childDim.getColName) }>"
       case dType => s"${ childDim.getColName.substring(dimName.length + 1) }:${ dType }"
     }
   }
@@ -195,29 +195,29 @@ case class CarbonRelation(
             .asScala.map(f => s"${ recursiveMethod(childDim.getColName, f) }").mkString(",")
         }>"
         case dType => s"${ childDim.getColName
-          .substring(dimName.length() + 1) }:${ addDecimalScaleAndPrecision(childDim, dType) }"
+            .substring(dimName.length() + 1) }:${ addDecimalScaleAndPrecision(childDim, dType) }"
       }
     }).mkString(",")
   }
 
   override def newInstance(): LogicalPlan = {
     CarbonRelation(databaseName, tableName, metaData, tableMeta, alias)(sqlContext)
-      .asInstanceOf[this.type]
+        .asInstanceOf[this.type]
   }
 
   val dimensionsAttr = {
     val sett = new LinkedHashSet(
       tableMeta.carbonTable.getDimensionByTableName(tableMeta.carbonTableIdentifier.getTableName)
-        .asScala.asJava)
+          .asScala.asJava)
     sett.asScala.toSeq.filter(!_.getColumnSchema.isInvisible).map(dim => {
       val dimval = metaData.carbonTable
-        .getDimensionByName(metaData.carbonTable.getFactTableName, dim.getColName)
+          .getDimensionByName(metaData.carbonTable.getFactTableName, dim.getColName)
       val output: DataType = dimval.getDataType
-        .toString.toLowerCase match {
+          .toString.toLowerCase match {
         case "array" => CarbonMetastoreTypes
-          .toDataType(s"array<${ getArrayChildren(dim.getColName) }>")
+            .toDataType(s"array<${ getArrayChildren(dim.getColName) }>")
         case "struct" => CarbonMetastoreTypes
-          .toDataType(s"struct<${ getStructChildren(dim.getColName) }>")
+            .toDataType(s"struct<${ getStructChildren(dim.getColName) }>")
         case dType =>
           var dataType = addDecimalScaleAndPrecision(dimval, dType)
           CarbonMetastoreTypes.toDataType(dataType)
@@ -234,17 +234,17 @@ case class CarbonRelation(
     val factTable = tableMeta.carbonTable.getFactTableName
     new LinkedHashSet(
       tableMeta.carbonTable.
-        getMeasureByTableName(tableMeta.carbonTable.getFactTableName).
-        asScala.asJava).asScala.toSeq.filter(!_.getColumnSchema.isInvisible)
+          getMeasureByTableName(tableMeta.carbonTable.getFactTableName).
+          asScala.asJava).asScala.toSeq.filter(!_.getColumnSchema.isInvisible)
         .map(x => AttributeReference(x.getColName, CarbonMetastoreTypes.toDataType(
-        metaData.carbonTable.getMeasureByName(factTable, x.getColName).getDataType.toString
-          .toLowerCase match {
-          case "int" => "long"
-          case "short" => "long"
-          case "decimal" => "decimal(" + x.getPrecision + "," + x.getScale + ")"
-          case others => others
-        }),
-      nullable = true)(qualifiers = tableName +: alias.toSeq))
+          metaData.carbonTable.getMeasureByName(factTable, x.getColName).getDataType.toString
+              .toLowerCase match {
+            case "int" => "long"
+            case "short" => "long"
+            case "decimal" => "decimal(" + x.getPrecision + "," + x.getScale + ")"
+            case others => others
+          }),
+          nullable = true)(qualifiers = tableName +: alias.toSeq))
   }
 
   override val output = dimensionsAttr ++ measureAttr
@@ -265,8 +265,8 @@ case class CarbonRelation(
     if (dimval.getDataType
         == org.apache.carbondata.core.carbon.metadata.datatype.DataType.DECIMAL) {
       dType +=
-        "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema
-          .getScale + ")"
+          "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema
+              .getScale + ")"
     }
     dType
   }
@@ -277,8 +277,8 @@ case class CarbonRelation(
 
   def sizeInBytes: Long = {
     val tableStatusNewLastUpdatedTime = new SegmentStatusManager(
-        tableMeta.carbonTable.getAbsoluteTableIdentifier)
-          .getTableStatusLastModifiedTime
+      tableMeta.carbonTable.getAbsoluteTableIdentifier)
+        .getTableStatusLastModifiedTime
     if (tableStatusLastUpdateTime != tableStatusNewLastUpdatedTime) {
       val tablePath = CarbonStorePath.getCarbonTablePath(
         tableMeta.storePath,
@@ -293,6 +293,4 @@ case class CarbonRelation(
   }
 
 }
-
-
 

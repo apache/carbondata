@@ -36,8 +36,8 @@ object InitForExamples {
 
   def createCarbonContext(appName: String): CarbonContext = {
     val sc = new SparkContext(new SparkConf()
-      .setAppName(appName)
-      .setMaster("local[2]"))
+          .setAppName(appName)
+          .setMaster("local[2]"))
     sc.setLogLevel("ERROR")
 
     println(s"Starting $appName using spark version ${sc.version}")
