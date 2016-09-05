@@ -19,6 +19,7 @@
 package org.apache.carbondata.core.carbon.querystatistics;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -82,22 +83,30 @@ public class DriverQueryStatisticsRecorder {
    */
   public void logStatisticsAsTableDriver() {
     synchronized (lock) {
-      for (String key: queryStatisticsMap.keySet()) {
-        // print sql_parse_t,load_meta_t,block_allocation_t,block_identification_t
-        // or just print block_allocation_t,block_identification_t
-        if (queryStatisticsMap.get(key).size() >= 2) {
-          String tableInfo = collectDriverStatistics(key);
-          if (null != tableInfo) {
-            LOGGER.statistic(tableInfo);
-          }
-        }
-        // clear timeout query statistics
-        if(StringUtils.isEmpty(key)) {
-          queryStatisticsMap.remove(key);
+      Iterator<Map.Entry<String, List<QueryStatistic>>> entries =
+              queryStatisticsMap.entrySet().iterator();
+      while (entries.hasNext()) {
+        Map.Entry<String, List<QueryStatistic>> entry = entries.next();
+        String queryId = entry.getKey();
+        // clear the unknown query statistics
+        if(StringUtils.isEmpty(queryId)) {
+          queryStatisticsMap.remove(queryId);
         } else {
-          long interval = System.nanoTime() - Long.parseLong(key);
+          // print sql_parse_t,load_meta_t,block_allocation_t,block_identification_t
+          // or just print block_allocation_t,block_identification_t
+          if (entry.getValue().size() >= 2) {
+            String tableInfo = collectDriverStatistics(entry.getValue(), queryId);
+            if (null != tableInfo) {
+              LOGGER.statistic(tableInfo);
+              // once the statistics be printed, remove it from the map
+              queryStatisticsMap.remove(queryId);
+            }
+          }
+          
+          // clear the timeout query statistics
+          long interval = System.nanoTime() - Long.parseLong(queryId);
           if (interval > QueryStatisticsConstants.CLEAR_STATISTICS_TIMEOUT) {
-            queryStatisticsMap.remove(key);
+            queryStatisticsMap.remove(queryId);
           }
         }
       }
@@ -107,7 +116,7 @@ public class DriverQueryStatisticsRecorder {
   /**
    * Below method will parse queryStatisticsMap and put time into table
    */
-  public String collectDriverStatistics(String key) {
+  public String collectDriverStatistics(List<QueryStatistic> statisticsList, String queryId) {
     String sql_parse_time = "";
     String load_meta_time = "";
     String block_allocation_time = "";
@@ -117,7 +126,7 @@ public class DriverQueryStatisticsRecorder {
     String splitChar = " ";
     try {
       // get statistic time from the QueryStatistic
-      for (QueryStatistic statistic : queryStatisticsMap.get(key)) {
+      for (QueryStatistic statistic : statisticsList) {
         switch (statistic.getMessage()) {
           case QueryStatisticsConstants.SQL_PARSE:
             sql_parse_time += statistic.getTimeTaken() + splitChar;
@@ -188,10 +197,9 @@ public class DriverQueryStatisticsRecorder {
             printLine(" ", (len4 - block_identification_time.length())) +
             block_identification_time + "|" + "\n");
         tableInfo.append(line).append("\n");
-        // once the statistics be printed, remove it from the map
-        queryStatisticsMap.remove(key);
+
         // show query statistic as "query id" + "table"
-        return "Print query statistic for query id: " + key + "\n" + tableInfo.toString();
+        return "Print query statistic for query id: " + queryId + "\n" + tableInfo.toString();
       } else if (!StringUtils.isEmpty(block_allocation_time) &&
           !StringUtils.isEmpty(block_identification_time)) {
         // when we can't get sql parse time, we only print the last two
@@ -210,11 +218,11 @@ public class DriverQueryStatisticsRecorder {
             printLine(" ", (len4 - block_identification_time.length())) +
             block_identification_time + "|" + "\n");
         tableInfo.append(line).append("\n");
-        // once the statistics be printed, remove it from the map
-        queryStatisticsMap.remove(key);
+
         // show query statistic as "query id" + "table"
-        return "Print query statistic for query id: " + key + "\n" + tableInfo.toString();
+        return "Print query statistic for query id: " + queryId + "\n" + tableInfo.toString();
       }
+
       return null;
     } catch (Exception ex) {
       return "Put statistics into table failed, catch exception: " + ex.getMessage();
