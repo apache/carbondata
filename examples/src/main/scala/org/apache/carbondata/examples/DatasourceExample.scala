@@ -17,11 +17,9 @@
 
 package org.apache.carbondata.examples
 
-import org.apache.carbondata.examples.util.InitForExamples
 import org.apache.spark.sql.{SaveMode, SQLContext}
-import org.apache.spark.{SparkConf, SparkContext}
 
-import org.apache.carbondata.spark._
+import org.apache.carbondata.examples.util.InitForExamples
 
 object DatasourceExample {
 

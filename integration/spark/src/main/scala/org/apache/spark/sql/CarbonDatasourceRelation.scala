@@ -39,22 +39,19 @@ import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.spark.{CarbonOption, _}
 
 /**
-  * Carbon relation provider compliant to data source api.
-  * Creates carbon relations
-  */
-class CarbonSource
-    extends RelationProvider
-        with CreatableRelationProvider
-        with HadoopFsRelationProvider
-        with DataSourceRegister {
+ * Carbon relation provider compliant to data source api.
+ * Creates carbon relations
+ */
+class CarbonSource extends RelationProvider
+    with CreatableRelationProvider with HadoopFsRelationProvider with DataSourceRegister {
 
   override def shortName(): String = "carbondata"
 
   /**
-    * Returns a new base relation with the given parameters.
-    * Note: the parameters' keywords are case insensitive and this insensitivity is enforced
-    * by the Map that is passed to the function.
-    */
+   * Returns a new base relation with the given parameters.
+   * Note: the parameters' keywords are case insensitive and this insensitivity is enforced
+   * by the Map that is passed to the function.
+   */
   override def createRelation(
       sqlContext: SQLContext,
       parameters: Map[String, String]): BaseRelation = {
@@ -110,7 +107,7 @@ class CarbonSource
 
     if (doSave) {
       // Only save data when the save mode is Overwrite.
-      data.saveAsCarbonFile(parameters)
+      data.saveAsCarbonData(parameters)
     } else if (doAppend) {
       data.appendToCarbonFile(parameters)
     }
@@ -128,9 +125,9 @@ class CarbonSource
 }
 
 /**
-  * Creates carbon relation compliant to data source api.
-  * This relation is stored to hive metastore
-  */
+ *  Creates carbon relation compliant to data source api.
+ * This relation is stored to hive metastore
+ */
 private[sql] case class CarbonDatasourceRelation(
     tableIdentifier: TableIdentifier,
     alias: Option[String])
@@ -151,8 +148,8 @@ private[sql] case class CarbonDatasourceRelation(
 }
 
 /**
-  * Represents logical plan for one carbon table
-  */
+ * Represents logical plan for one carbon table
+ */
 case class CarbonRelation(
     databaseName: String,
     tableName: String,
@@ -214,12 +211,12 @@ case class CarbonRelation(
           .getDimensionByName(metaData.carbonTable.getFactTableName, dim.getColName)
       val output: DataType = dimval.getDataType
           .toString.toLowerCase match {
-        case "array" => CarbonMetastoreTypes
-            .toDataType(s"array<${ getArrayChildren(dim.getColName) }>")
-        case "struct" => CarbonMetastoreTypes
-            .toDataType(s"struct<${ getStructChildren(dim.getColName) }>")
+        case "array" =>
+          CarbonMetastoreTypes.toDataType(s"array<${ getArrayChildren(dim.getColName) }>")
+        case "struct" =>
+          CarbonMetastoreTypes.toDataType(s"struct<${ getStructChildren(dim.getColName) }>")
         case dType =>
-          var dataType = addDecimalScaleAndPrecision(dimval, dType)
+          val dataType = addDecimalScaleAndPrecision(dimval, dType)
           CarbonMetastoreTypes.toDataType(dataType)
       }
 
@@ -265,8 +262,7 @@ case class CarbonRelation(
     if (dimval.getDataType
         == org.apache.carbondata.core.carbon.metadata.datatype.DataType.DECIMAL) {
       dType +=
-          "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema
-              .getScale + ")"
+          "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema.getScale + ")"
     }
     dType
   }

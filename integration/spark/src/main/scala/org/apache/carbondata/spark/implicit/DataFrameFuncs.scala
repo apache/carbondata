@@ -18,21 +18,21 @@
 package org.apache.carbondata.spark
 
 import org.apache.hadoop.fs.Path
+import org.apache.spark.sql.{CarbonContext, DataFrame, SaveMode}
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{SaveMode, CarbonContext, DataFrame}
 
 import org.apache.carbondata.core.carbon.metadata.datatype.{DataType => CarbonType}
 
 class DataFrameFuncs(dataFrame: DataFrame) {
 
   /**
-    * Saves DataFrame as CarbonData files.
-    */
-  def saveAsCarbonFile(parameters: Map[String, String] = Map()): Unit = {
-//    // To avoid derby problem, dataframe need to be writen and read using CarbonContext
-//    require(dataFrame.sqlContext.isInstanceOf[CarbonContext],
-//      "Error in saving dataframe to carbon file, must use CarbonContext to save dataframe"
-//    )
+   * Saves DataFrame as CarbonData files.
+   */
+  def saveAsCarbonData(parameters: Map[String, String] = Map()): Unit = {
+    // To avoid derby problem, dataframe need to be writen and read using CarbonContext
+    require(dataFrame.sqlContext.isInstanceOf[CarbonContext],
+      "Error in saving dataframe to carbon file, must use CarbonContext to save dataframe"
+    )
 
     val options = new CarbonOption(parameters)
     val tableName = options.tableName
@@ -45,7 +45,6 @@ class DataFrameFuncs(dataFrame: DataFrame) {
         .mode(SaveMode.Overwrite)
         .save(tempCSVFolder)
 
-    //val cc = CarbonContext.getInstance(dataFrame.sqlContext.sparkContext)
     val sqlContext = dataFrame.sqlContext
     val tempCSVPath = new Path(tempCSVFolder)
     val fs = tempCSVPath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)

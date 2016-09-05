@@ -17,17 +17,17 @@
 
 package org.apache.carbondata.spark.util
 
+import scala.reflect.ClassTag
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.JobContext
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
 import org.apache.carbondata.hadoop.CarbonInputFormat
 
-import scala.reflect.ClassTag
 
 /**
  * All the utility functions for carbon plan creation

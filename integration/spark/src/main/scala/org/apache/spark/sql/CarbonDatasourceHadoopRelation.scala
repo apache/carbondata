@@ -20,18 +20,13 @@ package org.apache.spark.sql
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import org.apache.carbondata.core.carbon.{CarbonTableIdentifier, AbsoluteTableIdentifier}
-import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
-import org.apache.carbondata.scan.expression.logical.AndExpression
-import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
-import org.apache.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
-import org.apache.carbondata.spark.util.QueryPlanUtil
-import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
+import scala.reflect.ClassTag
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.FileStatus
 import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.hadoop.mapreduce.{Job, JobID}
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark._
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.mapreduce.SparkHadoopMapReduceUtil
@@ -42,7 +37,14 @@ import org.apache.spark.sql.sources.{Filter, HadoopFsRelation, OutputWriterFacto
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
-import scala.reflect.ClassTag
+import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
+import org.apache.carbondata.scan.expression.logical.AndExpression
+import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
+import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
+import org.apache.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
+import org.apache.carbondata.spark.util.QueryPlanUtil
+
 
 private[sql] case class CarbonDatasourceHadoopRelation(
     sqlContext: SQLContext,
@@ -53,36 +55,36 @@ private[sql] case class CarbonDatasourceHadoopRelation(
 
   lazy val job = new Job(new JobConf())
   lazy val options = new CarbonOption(parameters)
-  lazy val table = new CarbonTableIdentifier(options.dbName, options.tableName, options.tableId)
-  lazy val identifier = new AbsoluteTableIdentifier(paths(0), table)
-  lazy val relationRaw: CarbonRelation = {
-    FileInputFormat.setInputPaths(job, paths.head)
-    CarbonInputFormat.setTableToAccess(job.getConfiguration, table)
-    val carbonTable = CarbonInputFormat.getCarbonTable(job.getConfiguration)
-    if (carbonTable == null) {
-      sys.error(s"Store path ${paths.head} is not valid or " +
-          s"table ${carbonTable.getTableUniqueName}  does not exist in path."
-      )
-    }
-    CarbonRelation(
-      carbonTable.getDatabaseName,
-      carbonTable.getFactTableName,
-      CarbonSparkUtil.createSparkMeta(carbonTable),
-      TableMeta(table,
-        paths.head,
-        carbonTable,
-        Partitioner(options.partitionClass,
-          Array(""),
-          options.partitionCount.toInt,
-          DistributionUtil.getNodeList(sqlContext.sparkContext)
-        )
-      ),
-      None
-    )(sqlContext)
-  }
+  lazy val identifier = new CarbonTableIdentifier(options.dbName, options.tableName,
+    options.tableId)
 
   override def dataSchema: StructType = {
     if (tableSchema.isEmpty) {
+      val relationRaw: CarbonRelation = {
+        FileInputFormat.setInputPaths(job, paths.head)
+        CarbonInputFormat.setTableToAccess(job.getConfiguration, identifier)
+        val carbonTable = CarbonInputFormat.getCarbonTable(job.getConfiguration)
+        if (carbonTable == null) {
+          sys.error(s"Store path ${paths.head} is not valid or " +
+              s"table ${carbonTable.getTableUniqueName}  does not exist in path."
+          )
+        }
+        CarbonRelation(
+          carbonTable.getDatabaseName,
+          carbonTable.getFactTableName,
+          CarbonSparkUtil.createSparkMeta(carbonTable),
+          TableMeta(identifier,
+            paths.head,
+            carbonTable,
+            Partitioner(options.partitionClass,
+              Array(""),
+              options.partitionCount.toInt,
+              DistributionUtil.getNodeList(sqlContext.sparkContext)
+            )
+          ),
+          None
+        )(sqlContext)
+      }
       relationRaw.schema
     } else {
       tableSchema.get
@@ -90,7 +92,7 @@ private[sql] case class CarbonDatasourceHadoopRelation(
   }
 
   override def prepareJobForWrite(job: Job): OutputWriterFactory = {
-
+    // TODO
     throw new UnsupportedOperationException
   }
 
@@ -111,7 +113,7 @@ private[sql] case class CarbonDatasourceHadoopRelation(
 
     new CarbonHadoopFSRDD[Row](sqlContext.sparkContext,
       new SerializableConfiguration(conf),
-      identifier,
+      new AbsoluteTableIdentifier(paths(0), identifier),
       classOf[CarbonInputFormat[Row]],
       classOf[Row]
     )
