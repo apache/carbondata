@@ -90,22 +90,23 @@ public class DriverQueryStatisticsRecorder {
         String queryId = entry.getKey();
         // clear the unknown query statistics
         if(StringUtils.isEmpty(queryId)) {
-          queryStatisticsMap.remove(queryId);
+          entries.remove();
         } else {
-          // print sql_parse_t,load_meta_t,block_allocation_t,block_identification_t
-          // or just print block_allocation_t,block_identification_t
-          if (entry.getValue().size() >= 2) {
-            String tableInfo = collectDriverStatistics(entry.getValue(), queryId);
-            if (null != tableInfo) {
-              LOGGER.statistic(tableInfo);
-              // once the statistics be printed, remove it from the map
-              queryStatisticsMap.remove(queryId);
-            }
-          }
           // clear the timeout query statistics
           long interval = System.nanoTime() - Long.parseLong(queryId);
           if (interval > QueryStatisticsConstants.CLEAR_STATISTICS_TIMEOUT) {
-            queryStatisticsMap.remove(queryId);
+            entries.remove();
+          } else {
+            // print sql_parse_t,load_meta_t,block_allocation_t,block_identification_t
+            // or just print block_allocation_t,block_identification_t
+            if (entry.getValue().size() >= 2) {
+              String tableInfo = collectDriverStatistics(entry.getValue(), queryId);
+              if (null != tableInfo) {
+                LOGGER.statistic(tableInfo);
+                // clear the statistics that has been printed
+                entries.remove();
+              }
+            }
           }
         }
       }
