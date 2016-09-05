@@ -63,7 +63,7 @@ class SparkDatasourceSuite extends QueryTest with BeforeAndAfterAll {
     import org.apache.carbondata.spark._
     df.saveAsCarbonFile(Map("tableName" -> "carbon2"))
 
-    sqlTest("SELECT count(*) FROM carbon2 WHERE c3 > 100", Seq(Row(900)))
+    checkAnswer(sql("SELECT count(*) FROM carbon2 WHERE c3 > 100"), Seq(Row(900)))
     sql("DROP TABLE IF EXISTS carbon2")
   }
 
@@ -71,7 +71,7 @@ class SparkDatasourceSuite extends QueryTest with BeforeAndAfterAll {
     import org.apache.carbondata.spark._
     df.saveAsCarbonFile(Map("tableName" -> "carbon2", "compress" -> "true"))
 
-    sqlTest("SELECT count(*) FROM carbon2 WHERE c3 > 100", Seq(Row(900)))
+    checkAnswer(sql("SELECT count(*) FROM carbon2 WHERE c3 > 100"), Seq(Row(900)))
     sql("DROP TABLE IF EXISTS carbon2")
   }
 
