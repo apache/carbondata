@@ -18,12 +18,13 @@
 package org.apache.carbondata
 
 import org.apache.hadoop.fs.Path
+import org.apache.spark.Logging
 import org.apache.spark.sql._
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.carbon.metadata.datatype.{DataType => CarbonType}
 
-package object spark {
+package object spark extends Logging {
 
   implicit class toCarbonDataFrame(dataFrame: DataFrame) {
 
@@ -43,38 +44,44 @@ package object spark {
 
       // temporary solution: write to csv file, then load the csv into carbon
       val tempCSVFolder = s"$storePath/$dbName/$tableName/tempCSV"
-      dataFrame.write
-        .format(csvPackage)
-        .option("header", "true")
-        .mode(SaveMode.Overwrite)
-        .save(tempCSVFolder)
+      var writer: DataFrameWriter =
+        dataFrame.write
+                 .format(csvPackage)
+                 .option("header", "false")
+                 .mode(SaveMode.Overwrite)
+
+      if (options.compress.equals("true")) {
+        writer = writer.option("codec", "gzip")
+      }
+
+      writer.save(tempCSVFolder)
 
       val cc = CarbonContext.getInstance(dataFrame.sqlContext.sparkContext)
       val tempCSVPath = new Path(tempCSVFolder)
       val fs = tempCSVPath.getFileSystem(dataFrame.sqlContext.sparkContext.hadoopConfiguration)
 
-      try {
-        cc.sql(makeCreateTableString(dataFrame.schema, options))
-
-        // add 'csv' as file extension to all generated part file
+      def countSize(): Double = {
+        var size: Double = 0
         val itor = fs.listFiles(tempCSVPath, true)
         while (itor.hasNext) {
           val f = itor.next()
           if (f.getPath.getName.startsWith("part-")) {
-            val newPath = s"${ f.getPath.getParent }/${ f.getPath.getName }.csv"
-            if (!fs.rename(f.getPath, new Path(newPath))) {
-              cc.sql(s"DROP TABLE ${ options.tableName }")
-              throw new RuntimeException("File system rename failed when loading data into carbon")
-            }
+            size += f.getLen
           }
         }
+        size
+      }
+
+      try {
+        cc.sql(makeCreateTableString(dataFrame.schema, options))
+        logInfo(s"temporary CSV file size: ${countSize() / 1024 / 1024} MB")
         cc.sql(makeLoadString(tableName, tempCSVFolder))
       } finally {
         fs.delete(tempCSVPath, true)
       }
     }
 
-    private def csvPackage: String = "com.databricks.spark.csv"
+    private def csvPackage: String = "com.databricks.spark.csv.newapi"
 
     private def convertToCarbonType(sparkType: DataType): String = {
       sparkType match {
@@ -107,6 +114,7 @@ package object spark {
       s"""
           LOAD DATA INPATH '$csvFolder'
           INTO TABLE $tableName
+          OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}')
       """
     }
 
