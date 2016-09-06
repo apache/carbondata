@@ -23,7 +23,7 @@ import java.util.Date
 import scala.reflect.ClassTag
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.fs.FileStatus
+import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.{Job, JobID}
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
@@ -37,14 +37,14 @@ import org.apache.spark.sql.sources.{Filter, HadoopFsRelation, OutputWriterFacto
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
-import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
+import org.apache.carbondata.core.carbon.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
 import org.apache.carbondata.scan.expression.logical.AndExpression
 import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 import org.apache.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
 import org.apache.carbondata.spark.util.QueryPlanUtil
-
 
 private[sql] case class CarbonDatasourceHadoopRelation(
     sqlContext: SQLContext,
@@ -53,10 +53,15 @@ private[sql] case class CarbonDatasourceHadoopRelation(
     tableSchema: Option[StructType])
     extends HadoopFsRelation {
 
+  lazy val schemaPath = new Path(CarbonTablePath.getSchemaFilePath(paths.head))
+  if (!schemaPath.getFileSystem(new Configuration).exists(schemaPath)) {
+    throw new IllegalArgumentException("invalid CarbonData file path: " + paths.head)
+  }
+
   lazy val job = new Job(new JobConf())
   lazy val options = new CarbonOption(parameters)
-  lazy val identifier = new CarbonTableIdentifier(options.dbName, options.tableName,
-    options.tableId)
+  lazy val absIdentifier = AbsoluteTableIdentifier.fromTablePath(paths.head)
+  lazy val identifier = absIdentifier.getCarbonTableIdentifier
 
   override def dataSchema: StructType = {
     if (tableSchema.isEmpty) {
@@ -113,7 +118,7 @@ private[sql] case class CarbonDatasourceHadoopRelation(
 
     new CarbonHadoopFSRDD[Row](sqlContext.sparkContext,
       new SerializableConfiguration(conf),
-      new AbsoluteTableIdentifier(paths(0), identifier),
+      absIdentifier,
       classOf[CarbonInputFormat[Row]],
       classOf[Row]
     )

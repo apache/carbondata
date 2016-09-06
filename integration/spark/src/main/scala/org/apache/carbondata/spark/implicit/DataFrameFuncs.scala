@@ -36,6 +36,7 @@ class DataFrameFuncs(dataFrame: DataFrame) {
 
     val options = new CarbonOption(parameters)
     val tableName = options.tableName
+    val dbName = options.dbName
 
     // temporary solution: write to csv file, then load the csv into carbon
     val tempCSVFolder = s"./tempCSV"
@@ -59,12 +60,12 @@ class DataFrameFuncs(dataFrame: DataFrame) {
         if (f.getPath.getName.startsWith("part-")) {
           val newPath = s"${ f.getPath.getParent }/${ f.getPath.getName }.csv"
           if (!fs.rename(f.getPath, new Path(newPath))) {
-            sqlContext.sql(s"DROP TABLE ${ options.tableName }")
+            sqlContext.sql(s"DROP TABLE IF EXISTS $dbName.$tableName")
             throw new RuntimeException("File system rename failed when loading data into carbon")
           }
         }
       }
-      sqlContext.sql(makeLoadString(tableName, tempCSVFolder))
+      sqlContext.sql(makeLoadString(tempCSVFolder, options))
     } finally {
       fs.delete(tempCSVPath, true)
     }
@@ -89,20 +90,23 @@ class DataFrameFuncs(dataFrame: DataFrame) {
 
   private def makeCreateTableString(schema: StructType, option: CarbonOption): String = {
     val tableName = option.tableName
+    val dbName = option.dbName
     val carbonSchema = schema.map { field =>
       s"${ field.name } ${ convertToCarbonType(field.dataType) }"
     }
     s"""
-          CREATE TABLE IF NOT EXISTS $tableName
+          CREATE TABLE IF NOT EXISTS $dbName.$tableName
           (${ carbonSchema.mkString(", ") })
           STORED BY '${ CarbonContext.datasourceName }'
       """
   }
 
-  private def makeLoadString(tableName: String, csvFolder: String): String = {
+  private def makeLoadString(csvFolder: String, option: CarbonOption): String = {
+    val tableName = option.tableName
+    val dbName = option.dbName
     s"""
           LOAD DATA INPATH '$csvFolder'
-          INTO TABLE $tableName
+          INTO TABLE $dbName.$tableName
       """
   }
 
