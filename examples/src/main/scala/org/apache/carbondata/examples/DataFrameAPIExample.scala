@@ -21,6 +21,7 @@ import org.apache.spark.sql.SaveMode
 
 import org.apache.carbondata.examples.util.InitForExamples
 
+// scalastyle:off println
 object DataFrameAPIExample {
 
   def main(args: Array[String]) {
@@ -28,7 +29,8 @@ object DataFrameAPIExample {
     val sc = cc.sc
 
     import cc.implicits._
-    // create a dataframe
+
+    // create a dataframe, it can be from parquet or hive table
     val df = sc.parallelize(1 to 1000)
       .map(x => ("a", "b", x))
       .toDF("c1", "c2", "c3")
@@ -47,10 +49,7 @@ object DataFrameAPIExample {
       .load()
 
     val count = in.where($"c3" > 500).select($"*").count()
-
-    // scalastyle:off println
     println(s"count using dataframe.read: $count")
-    // scalastyle:on println
 
     // use SQL to read
     cc.sql("SELECT count(*) FROM carbon1 WHERE c3 > 500").show
@@ -58,8 +57,10 @@ object DataFrameAPIExample {
 
     // also support a implicit function for easier access
     import org.apache.carbondata.spark._
-    df.saveAsCarbonFile(Map("tableName" -> "carbon2"))
+    df.saveAsCarbonFile(Map("tableName" -> "carbon2", "compress" -> "true"))
+
     cc.sql("SELECT count(*) FROM carbon2 WHERE c3 > 100").show
     cc.sql("DROP TABLE IF EXISTS carbon2")
   }
 }
+// scalastyle:on println

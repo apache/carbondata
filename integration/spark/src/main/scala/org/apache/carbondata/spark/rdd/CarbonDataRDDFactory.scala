@@ -887,6 +887,8 @@ object CarbonDataRDDFactory extends Logging {
           val filePaths = carbonLoadModel.getFactFilePath
           hadoopConfiguration.set(FileInputFormat.INPUT_DIR, filePaths)
           hadoopConfiguration.set(FileInputFormat.INPUT_DIR_RECURSIVE, "true")
+          hadoopConfiguration.set("io.compression.codecs",
+            "org.apache.hadoop.io.compress.GzipCodec")
 
           configSplitMaxSize(sqlContext.sparkContext, filePaths, hadoopConfiguration)
 

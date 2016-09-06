@@ -16,11 +16,11 @@
  */
 package com.databricks.spark.csv.newapi
 
-import com.databricks.spark.csv.CarbonCsvRelation
-import com.databricks.spark.csv.CsvSchemaRDD
-import com.databricks.spark.csv.util.{ ParserLibs, TextFile, TypeCast }
+import com.databricks.spark.csv.{CarbonCsvRelation, CsvSchemaRDD}
+import com.databricks.spark.csv.util.{ParserLibs, TextFile, TypeCast}
 import org.apache.hadoop.fs.Path
-import org.apache.spark.sql.{ DataFrame, SaveMode, SQLContext }
+import org.apache.hadoop.io.compress.{CompressionCodec, GzipCodec}
+import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.StructType
 
@@ -164,9 +164,16 @@ class DefaultSource
     } else {
       true
     }
+
+    val codec: Class[_ <: CompressionCodec] =
+      parameters.getOrElse("codec", "none") match {
+        case "gzip" => classOf[GzipCodec]
+        case _ => null
+      }
+
     if (doSave) {
       // Only save data when the save mode is not ignore.
-      data.saveAsCsvFile(path, parameters)
+      data.saveAsCsvFile(path, parameters, codec)
     }
 
     createRelation(sqlContext, parameters, data.schema)
