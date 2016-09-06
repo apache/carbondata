@@ -27,6 +27,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.zip.GZIPInputStream;
 
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
@@ -41,6 +43,7 @@ import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.compress.GzipCodec;
 
 public final class FileFactory {
   private static Configuration configuration = null;
@@ -117,36 +120,40 @@ public final class FileFactory {
 
   public static DataInputStream getDataInputStream(String path, FileType fileType)
       throws IOException {
-    path = path.replace("\\", "/");
-    switch (fileType) {
-      case LOCAL:
-        return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
-      case HDFS:
-      case VIEWFS:
-        Path pt = new Path(path);
-        FileSystem fs = FileSystem.get(configuration);
-        FSDataInputStream stream = fs.open(pt);
-        return new DataInputStream(new BufferedInputStream(stream));
-      default:
-        return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
-    }
+    return getDataInputStream(path, fileType, -1);
   }
 
   public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize)
       throws IOException {
     path = path.replace("\\", "/");
+    boolean gzip = path.endsWith(".gz");
+    InputStream stream;
     switch (fileType) {
       case LOCAL:
-        return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
+        if (gzip) {
+          stream = new GZIPInputStream(new FileInputStream(path));
+        } else {
+          stream = new FileInputStream(path);
+        }
+        break;
       case HDFS:
       case VIEWFS:
         Path pt = new Path(path);
         FileSystem fs = FileSystem.get(configuration);
-        FSDataInputStream stream = fs.open(pt, bufferSize);
-        return new DataInputStream(new BufferedInputStream(stream));
+        if (bufferSize == -1) {
+          stream = fs.open(pt);
+        } else {
+          stream = fs.open(pt, bufferSize);
+        }
+        if (gzip) {
+          GzipCodec codec = new GzipCodec();
+          stream = codec.createInputStream(stream);
+        }
+        break;
       default:
-        return new DataInputStream(new BufferedInputStream(new FileInputStream(path)));
+        throw new UnsupportedOperationException("unsupported file system");
     }
+    return new DataInputStream(new BufferedInputStream(stream));
   }
 
   /**

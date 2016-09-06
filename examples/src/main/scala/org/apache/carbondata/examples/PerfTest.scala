@@ -21,7 +21,6 @@ import java.io.File
 
 import scala.util.Random
 
-import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.{CarbonContext, DataFrame, Row, SaveMode, SQLContext}
 import org.apache.spark.sql.types.{DataTypes, StructType}
 

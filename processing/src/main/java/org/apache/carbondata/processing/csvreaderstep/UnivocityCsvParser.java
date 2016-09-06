@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType;
@@ -39,6 +41,8 @@ import org.apache.hadoop.util.LineReader;
  * Class which will be used to read the data from csv file and parse the record
  */
 public class UnivocityCsvParser {
+
+  private LogService LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
 
   /**
    * Max number of columns that will be parsed for a row by univocity parsing
@@ -137,25 +141,28 @@ public class UnivocityCsvParser {
     // if already one input stream is open first we need to close and then
     // open new stream
     close();
-    // get the block offset
-    long startOffset = this.csvParserVo.getBlockDetailsList().get(blockCounter).getBlockOffset();
-    FileType fileType = FileFactory
-        .getFileType(this.csvParserVo.getBlockDetailsList().get(blockCounter).getFilePath());
-    // calculate the end offset the block
-    long endOffset =
-        this.csvParserVo.getBlockDetailsList().get(blockCounter).getBlockLength() + startOffset;
 
-    // create a input stream for the block
-    DataInputStream dataInputStream = FileFactory
-        .getDataInputStream(this.csvParserVo.getBlockDetailsList().get(blockCounter).getFilePath(),
-            fileType, bufferSize, startOffset);
-    // if start offset is not 0 then reading then reading and ignoring the extra line
-    if (startOffset != 0) {
-      LineReader lineReader = new LineReader(dataInputStream, 1);
-      startOffset += lineReader.readLine(new Text(), 0);
+    String path = this.csvParserVo.getBlockDetailsList().get(blockCounter).getFilePath();
+    FileType fileType = FileFactory.getFileType(path);
+
+    if (path.endsWith(".gz")) {
+      DataInputStream dataInputStream = FileFactory.getDataInputStream(path, fileType, bufferSize);
+      inputStreamReader = new BufferedReader(new InputStreamReader(dataInputStream));
+    } else {
+      long startOffset = this.csvParserVo.getBlockDetailsList().get(blockCounter).getBlockOffset();
+      long blockLength = this.csvParserVo.getBlockDetailsList().get(blockCounter).getBlockLength();
+      long endOffset = blockLength + startOffset;
+
+      DataInputStream dataInputStream =
+          FileFactory.getDataInputStream(path, fileType, bufferSize, startOffset);
+      // if start offset is not 0 then reading then reading and ignoring the extra line
+      if (startOffset != 0) {
+        LineReader lineReader = new LineReader(dataInputStream, 1);
+        startOffset += lineReader.readLine(new Text(), 0);
+      }
+      inputStreamReader = new BufferedReader(new InputStreamReader(
+          new BoundedDataStream(dataInputStream, endOffset - startOffset)));
     }
-    inputStreamReader = new BufferedReader(new InputStreamReader(
-        new CustomDataStream(dataInputStream, endOffset - startOffset)));
   }
 
   /**

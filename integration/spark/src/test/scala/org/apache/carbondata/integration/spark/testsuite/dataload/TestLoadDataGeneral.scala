@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.spark.testsuite.dataload
+package org.apache.carbondata.integration.spark.testsuite.dataload
 
 import java.io.File
 
@@ -26,34 +26,41 @@ import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-/**
- * Test Class for data loading with hive syntax and old syntax
- *
- */
-class MultiFilesDataLoagdingTestCase extends QueryTest with BeforeAndAfterAll {
+class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
 
   var currentDirectory: String = _
 
   override def beforeAll {
-    sql("create table multifile(empno int, empname String, designation string, doj String," +
-      "workgroupcategory int, workgroupcategoryname String,deptno int, deptname String," +
-      "projectcode int, projectjoindate String,projectenddate String, attendance double," +
-      "utilization double,salary double) STORED BY 'org.apache.carbondata.format'")
-    
+    sql("DROP TABLE IF EXISTS loadtest")
+    sql(
+      """
+        | CREATE TABLE loadtest(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
     currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
-      .getCanonicalPath
+        .getCanonicalPath
   }
 
-  test("test data loading for multi files and nested folder") {
-    val testData = currentDirectory + "/src/test/resources/loadMultiFiles"
-    sql(s"LOAD DATA LOCAL INPATH '$testData' into table multifile")
+  test("test data loading CSV file") {
+    val testData = currentDirectory + "/src/test/resources/sample.csv"
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
     checkAnswer(
-      sql("select count(empno) from multifile"),
-      Seq(Row(10))
+      sql("SELECT COUNT(*) FROM loadtest"),
+      Seq(Row(4))
+    )
+  }
+
+  test("test data loading GZIP compressed CSV file") {
+    val testData = currentDirectory + "/src/test/resources/sample.csv.gz"
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
+    checkAnswer(
+      sql("SELECT COUNT(*) FROM loadtest"),
+      Seq(Row(8))
     )
   }
 
   override def afterAll {
-    sql("drop table multifile")
+    sql("DROP TABLE loadtest")
   }
 }

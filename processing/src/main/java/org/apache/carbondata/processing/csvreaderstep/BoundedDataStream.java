@@ -26,7 +26,7 @@ import java.io.InputStream;
  * Custom reader class to read the data from file it will take care of reading
  * till the limit assigned to this class
  */
-public class CustomDataStream extends InputStream {
+public class BoundedDataStream extends InputStream {
 
   /**
    * byte value of the new line character
@@ -49,7 +49,7 @@ public class CustomDataStream extends InputStream {
 
   private DataInputStream in;
 
-  public CustomDataStream(DataInputStream in, long limit) {
+  public BoundedDataStream(DataInputStream in, long limit) {
     this.in = in;
     this.remaining = limit;
   }
