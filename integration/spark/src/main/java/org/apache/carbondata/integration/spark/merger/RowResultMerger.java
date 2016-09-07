@@ -34,6 +34,7 @@ import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.carbon.path.CarbonStorePath;
@@ -250,6 +251,14 @@ public class RowResultMerger {
             loadModel.getPartitionId(), loadModel.getSegmentId());
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
 
+    List<CarbonDimension> dimensionByTableName =
+        loadModel.getCarbonDataLoadSchema().getCarbonTable().getDimensionByTableName(tableName);
+    boolean[] isUseInvertedIndexes = new boolean[dimensionByTableName.size()];
+    int index = 0;
+    for (CarbonDimension dimension : dimensionByTableName) {
+      isUseInvertedIndexes[index++] = dimension.isUseInvertedIndnex();
+    }
+    carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndexes);
     return carbonFactDataHandlerModel;
   }
 
