@@ -27,7 +27,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 
-import static org.apache.carbondata.core.util.CarbonUtil.add;
 import static org.apache.carbondata.core.util.CarbonUtil.printLine;
 
 import org.apache.commons.lang3.StringUtils;
@@ -121,8 +120,8 @@ public class DriverQueryStatisticsRecorder {
     String load_meta_time = "";
     String block_allocation_time = "";
     String block_identification_time = "";
-    Double driver_part_time_tmp = 0.0;
-    Double driver_part_time_tmp2 = 0.0;
+    long driver_part_time_tmp = 0L;
+    long driver_part_time_tmp2 = 0L;
     String splitChar = " ";
     try {
       // get statistic time from the QueryStatistic
@@ -130,21 +129,21 @@ public class DriverQueryStatisticsRecorder {
         switch (statistic.getMessage()) {
           case QueryStatisticsConstants.SQL_PARSE:
             sql_parse_time += statistic.getTimeTaken() + splitChar;
-            driver_part_time_tmp = add(driver_part_time_tmp, statistic.getTimeTaken());
+            driver_part_time_tmp += statistic.getTimeTaken();
             break;
           case QueryStatisticsConstants.LOAD_META:
             load_meta_time += statistic.getTimeTaken() + splitChar;
-            driver_part_time_tmp = add(driver_part_time_tmp, statistic.getTimeTaken());
+            driver_part_time_tmp += statistic.getTimeTaken();
             break;
           case QueryStatisticsConstants.BLOCK_ALLOCATION:
             block_allocation_time += statistic.getTimeTaken() + splitChar;
-            driver_part_time_tmp = add(driver_part_time_tmp, statistic.getTimeTaken());
-            driver_part_time_tmp2 = add(driver_part_time_tmp2, statistic.getTimeTaken());
+            driver_part_time_tmp += statistic.getTimeTaken();
+            driver_part_time_tmp2 += statistic.getTimeTaken();
             break;
           case QueryStatisticsConstants.BLOCK_IDENTIFICATION:
             block_identification_time += statistic.getTimeTaken() + splitChar;
-            driver_part_time_tmp = add(driver_part_time_tmp, statistic.getTimeTaken());
-            driver_part_time_tmp2 = add(driver_part_time_tmp2, statistic.getTimeTaken());
+            driver_part_time_tmp += statistic.getTimeTaken();
+            driver_part_time_tmp2 += statistic.getTimeTaken();
             break;
           default:
             break;
