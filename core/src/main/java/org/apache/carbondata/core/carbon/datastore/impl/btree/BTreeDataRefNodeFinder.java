@@ -240,9 +240,16 @@ public class BTreeDataRefNodeFinder implements DataRefNodeFinder {
               firstNoDictionaryKeyBuffer.getShort(nonDictionaryKeyOffset + SHORT_SIZE_IN_BYTES);
           secondNodeDictionaryLength =
               secondNoDictionaryKeyBuffer.getShort(nonDictionaryKeyOffset + SHORT_SIZE_IN_BYTES);
-          compareResult = ByteUtil.UnsafeComparer.INSTANCE
-              .compareTo(first.getNoDictionaryKeys(), actualOffset, firstNoDcitionaryLength,
-                  second.getNoDictionaryKeys(), actualOffset, secondNodeDictionaryLength);
+          int minLength = Math.min(firstNoDcitionaryLength, secondNodeDictionaryLength);
+          if (first.getNoDictionaryKeys().length < (minLength + actualOffset) ||
+                  second.getNoDictionaryKeys().length < (minLength + actualOffset)) {
+            compareResult = ByteUtil.UnsafeComparer.INSTANCE
+                    .compareTo(first.getNoDictionaryKeys(), second.getNoDictionaryKeys());
+          } else {
+            compareResult = ByteUtil.UnsafeComparer.INSTANCE
+                    .compareTo(first.getNoDictionaryKeys(), actualOffset, firstNoDcitionaryLength,
+                            second.getNoDictionaryKeys(), actualOffset, secondNodeDictionaryLength);
+          }
           nonDictionaryKeyOffset += SHORT_SIZE_IN_BYTES;
           processedNoDictionaryColumn--;
         } else {

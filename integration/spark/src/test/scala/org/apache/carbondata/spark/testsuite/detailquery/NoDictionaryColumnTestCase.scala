@@ -33,10 +33,17 @@ class NoDictionaryColumnTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("DROP TABLE IF EXISTS carbonTable")
     sql("DROP TABLE IF EXISTS hiveTable")
+    sql("DROP TABLE IF EXISTS carbonEmpty")
+    sql("DROP TABLE IF EXISTS hiveEmpty")
     sql("CREATE TABLE carbonTable (imei String, age Int, num BigInt) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='age,num')")
     sql("LOAD DATA LOCAL INPATH './src/test/resources/datawithNegtiveNumber.csv' INTO TABLE carbonTable")
     sql("CREATE TABLE hiveTable (imei String, age Int, num BigInt) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','")
     sql("LOAD DATA LOCAL INPATH './src/test/resources/datawithNegeativewithoutHeader.csv' INTO TABLE hiveTable")
+
+    sql("CREATE TABLE carbonEmpty (cust_id int, cust_name String, active_emui_version String, bob timestamp, bigint_column bigint) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='cust_name,active_emui_version')")
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/dataWithEmptyRows.csv' INTO TABLE carbonEmpty OPTIONS('FILEHEADER'='cust_id,cust_name,active_emui_version,bob,bigint_column')")
+    sql("CREATE TABLE hiveEmpty (cust_id int, cust_name String, active_emui_version String, bob timestamp, bigint_column bigint) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','")
+    sql("LOAD DATA LOCAL INPATH './src/test/resources/dataWithEmptyRows.csv' INTO TABLE hiveEmpty")
   }
 
   test("SELECT IntType FROM carbonTable") {
@@ -53,8 +60,17 @@ class NoDictionaryColumnTestCase extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("test load data with one row that all no dictionary column values are empty") {
+    checkAnswer(
+      sql("SELECT cust_name,active_emui_version FROM carbonEmpty"),
+      sql("SELECT cust_name,active_emui_version FROM hiveEmpty")
+    )
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS carbonTable")
     sql("DROP TABLE IF EXISTS hiveTable")
+    sql("DROP TABLE IF EXISTS carbonEmpty")
+    sql("DROP TABLE IF EXISTS hiveEmpty")
   }
 }
