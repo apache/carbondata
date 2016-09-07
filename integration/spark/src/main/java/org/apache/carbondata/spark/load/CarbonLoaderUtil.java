@@ -126,6 +126,8 @@ public final class CarbonLoaderUtil {
     }
     model.setBlocksID(schmaModel.getBlocksID());
     model.setEscapeCharacter(schmaModel.getEscapeCharacter());
+    model.setQuoteCharacter(schmaModel.getQuoteCharacter());
+    model.setCommentCharacter(schmaModel.getCommentCharacter());
     model.setTaskNo(loadModel.getTaskNo());
     model.setFactTimeStamp(loadModel.getFactTimeStamp());
     model.setMaxColumns(loadModel.getMaxColumns());
@@ -180,6 +182,8 @@ public final class CarbonLoaderUtil {
 
     schmaModel.setBlocksID(loadModel.getBlocksID());
     schmaModel.setEscapeCharacter(loadModel.getEscapeChar());
+    schmaModel.setQuoteCharacter(loadModel.getQuoteChar());
+    schmaModel.setCommentCharacter(loadModel.getCommentChar());
     SchemaInfo info = new SchemaInfo();
 
     info.setDatabaseName(databaseName);
