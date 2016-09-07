@@ -231,11 +231,11 @@ class CarbonAllDictionaryCombineRDD(
  * @param model a model package load info
  */
 class CarbonBlockDistinctValuesCombineRDD(
-    prev: RDD[Row],
+    prev: RDD[Array[String]],
     model: DictionaryLoadModel)
   extends RDD[(Int, ColumnDistinctValues)](prev) with Logging {
 
-  override def getPartitions: Array[Partition] = firstParent[Row].partitions
+  override def getPartitions: Array[Partition] = firstParent[Array[String]].partitions
 
   override def compute(split: Partition,
       context: TaskContext): Iterator[(Int, ColumnDistinctValues)] = {
@@ -247,15 +247,15 @@ class CarbonBlockDistinctValuesCombineRDD(
       val dimensionParsers =
         GlobalDictionaryUtil.createDimensionParsers(model, distinctValuesList)
       val dimNum = model.dimensions.length
-      var row: Row = null
-      val rddIter = firstParent[Row].iterator(split, context)
+      var row: Array[String] = null
+      val rddIter = firstParent[Array[String]].iterator(split, context)
       // generate block distinct value set
       while (rddIter.hasNext) {
         row = rddIter.next()
         if (row != null) {
           rowCount += 1
           for (i <- 0 until dimNum) {
-            dimensionParsers(i).parseString(row.getString(i))
+            dimensionParsers(i).parseString(row(i))
           }
         }
       }

@@ -448,18 +448,11 @@ public class CsvInput extends BaseStep implements StepInterface {
   }
 
   private UnivocityCsvParserVo getParserVo(List<BlockDetails> blocksListForProcess) {
-    UnivocityCsvParserVo csvParserVo = new UnivocityCsvParserVo();
+    UnivocityCsvParserVo csvParserVo = UnivocityCsvParserVo.newUnivocityCsvParserVo(meta
+            .getDelimiter(), meta.getInputFields().length, meta.getEscapeCharacter(),
+            meta.getQuoteCharacter(), meta.getCommentCharacter(), meta.isHeaderPresent(),
+            meta.getMaxColumns());
     csvParserVo.setBlockDetailsList(blocksListForProcess);
-    csvParserVo.setDelimiter(meta.getDelimiter());
-    csvParserVo.setNumberOfColumns(meta.getInputFields().length);
-    csvParserVo.setEscapeCharacter(meta.getEscapeCharacter());
-    csvParserVo.setHeaderPresent(meta.isHeaderPresent());
-    csvParserVo.setQuoteCharacter(meta.getQuoteCharacter());
-    csvParserVo.setCommentCharacter(meta.getCommentCharacter());
-    String maxColumns = meta.getMaxColumns();
-    if(null != maxColumns) {
-      csvParserVo.setMaxColumns(Integer.parseInt(maxColumns));
-    }
     return csvParserVo;
   }
 

@@ -19,6 +19,7 @@
 
 package org.apache.carbondata.processing.csvreaderstep;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.apache.carbondata.core.load.BlockDetails;
@@ -27,7 +28,7 @@ import org.apache.carbondata.core.load.BlockDetails;
  * Vo class which will holds all the properties required to read and parse the
  * csv file
  */
-public class UnivocityCsvParserVo {
+public class UnivocityCsvParserVo implements Serializable {
 
   /**
    * delimiter of the records
@@ -63,7 +64,7 @@ public class UnivocityCsvParserVo {
    * block details list, which will have
    * all the detail if the block
    */
-  private List<BlockDetails> blockDetailsList;
+  private transient List<BlockDetails> blockDetailsList;
 
   /**
    * escape character;
@@ -220,5 +221,25 @@ public class UnivocityCsvParserVo {
    */
   public void setMaxColumns(int maxColumns) {
     this.maxColumns = maxColumns;
+  }
+
+  public static UnivocityCsvParserVo newUnivocityCsvParserVo(String delimiter,
+                                                             int NumberOfColumns,
+                                                             String escapeCharacter,
+                                                             String quoteCharacter,
+                                                             String commentCharacter,
+                                                             boolean isHeaderPresent,
+                                                             String maxColumns) {
+    UnivocityCsvParserVo csvParserVo = new UnivocityCsvParserVo();
+    csvParserVo.setDelimiter(delimiter);
+    csvParserVo.setNumberOfColumns(NumberOfColumns);
+    csvParserVo.setEscapeCharacter(escapeCharacter);
+    csvParserVo.setQuoteCharacter(quoteCharacter);
+    csvParserVo.setCommentCharacter(commentCharacter);
+    csvParserVo.setHeaderPresent(isHeaderPresent);
+    if (null != maxColumns) {
+      csvParserVo.setMaxColumns(Integer.parseInt(maxColumns));
+    }
+    return csvParserVo;
   }
 }

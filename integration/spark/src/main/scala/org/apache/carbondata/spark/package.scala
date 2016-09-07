@@ -18,11 +18,13 @@
 package org.apache.carbondata
 
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.Logging
 import org.apache.spark.sql._
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.carbon.metadata.datatype.{DataType => CarbonType}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 package object spark extends Logging {
 
@@ -44,21 +46,44 @@ package object spark extends Logging {
 
       // temporary solution: write to csv file, then load the csv into carbon
       val tempCSVFolder = s"$storePath/$dbName/$tableName/tempCSV"
-      var writer: DataFrameWriter =
-        dataFrame.write
-                 .format(csvPackage)
-                 .option("header", "false")
-                 .mode(SaveMode.Overwrite)
-
-      if (options.compress.equals("true")) {
-        writer = writer.option("codec", "gzip")
-      }
-
-      writer.save(tempCSVFolder)
-
       val cc = CarbonContext.getInstance(dataFrame.sqlContext.sparkContext)
       val tempCSVPath = new Path(tempCSVFolder)
       val fs = tempCSVPath.getFileSystem(dataFrame.sqlContext.sparkContext.hadoopConfiguration)
+      if (fs.exists(tempCSVPath)) {
+        fs.delete(tempCSVPath, true)
+      }
+
+      val strRDD = dataFrame.rdd.mapPartitionsWithIndex { case (index, iter) =>
+        new Iterator[String] {
+          override def hasNext = iter.hasNext
+
+          def convertToCSVString(seq: Seq[Any]): String = {
+            val build = new java.lang.StringBuilder()
+            if (seq.head != null) {
+              build.append(seq.head.toString)
+            }
+            val itemIter = seq.tail.iterator
+            while (itemIter.hasNext) {
+              build.append(CarbonCommonConstants.COMMA)
+              val value = itemIter.next()
+              if (value != null) {
+                build.append(value.toString)
+              }
+            }
+            build.toString
+          }
+
+          override def next: String = {
+            convertToCSVString(iter.next.toSeq)
+          }
+        }
+      }
+
+      if (options.compress.equals("true")) {
+        strRDD.saveAsTextFile(tempCSVFolder, classOf[GzipCodec])
+      } else {
+        strRDD.saveAsTextFile(tempCSVFolder)
+      }
 
       def countSize(): Double = {
         var size: Double = 0
@@ -81,8 +106,6 @@ package object spark extends Logging {
       }
     }
 
-    private def csvPackage: String = "com.databricks.spark.csv.newapi"
-
     private def convertToCarbonType(sparkType: DataType): String = {
       sparkType match {
         case StringType => CarbonType.STRING.name
@@ -101,12 +124,12 @@ package object spark extends Logging {
     private def makeCreateTableString(schema: StructType, option: CarbonOption): String = {
       val tableName = option.tableName
       val carbonSchema = schema.map { field =>
-        s"${ field.name } ${ convertToCarbonType(field.dataType) }"
+        s"${field.name} ${convertToCarbonType(field.dataType)}"
       }
       s"""
           CREATE TABLE IF NOT EXISTS $tableName
-          (${ carbonSchema.mkString(", ") })
-          STORED BY '${ CarbonContext.datasourceName }'
+          (${carbonSchema.mkString(", ")})
+          STORED BY '${CarbonContext.datasourceName}'
       """
     }
 

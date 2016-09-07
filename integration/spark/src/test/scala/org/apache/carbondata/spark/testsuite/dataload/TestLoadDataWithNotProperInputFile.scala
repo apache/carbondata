@@ -39,7 +39,6 @@ class TestLoadDataWithNotProperInputFile extends QueryTest {
       val dataPath = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath + "/src/test/resources/nullSample.csv"
       carbonLoadModel.setFactFilePath(FileUtils.getPaths(dataPath))
-      GlobalDictionaryUtil.loadDataFrame(CarbonHiveContext, carbonLoadModel)
     } catch {
       case e: Throwable =>
         assert(e.getMessage.contains("Please check your input path and make sure " +
@@ -53,7 +52,6 @@ class TestLoadDataWithNotProperInputFile extends QueryTest {
       val dataPath = new File(this.getClass.getResource("/").getPath + "/../../")
         .getCanonicalPath + "/src/test/resources/noneCsvFormat.cs"
       carbonLoadModel.setFactFilePath(FileUtils.getPaths(dataPath))
-      GlobalDictionaryUtil.loadDataFrame(CarbonHiveContext, carbonLoadModel)
     } catch {
       case e: Throwable =>
         assert(e.getMessage.contains("Please check your input path and make sure " +
@@ -67,7 +65,6 @@ class TestLoadDataWithNotProperInputFile extends QueryTest {
       val dataPath = new File(this.getClass.getResource("/").getPath + "/../../")
         .getCanonicalPath + "/src/test/resources/input_file_does_not_exist.csv"
       carbonLoadModel.setFactFilePath(FileUtils.getPaths(dataPath))
-      GlobalDictionaryUtil.loadDataFrame(CarbonHiveContext, carbonLoadModel)
     } catch {
       case e: Throwable =>
         assert(e.getMessage.contains("The input file does not exist"))
