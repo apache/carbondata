@@ -223,6 +223,7 @@ public class BTreeDataRefNodeFinder implements DataRefNodeFinder {
     ByteBuffer firstNoDictionaryKeyBuffer = ByteBuffer.wrap(first.getNoDictionaryKeys());
     ByteBuffer secondNoDictionaryKeyBuffer = ByteBuffer.wrap(second.getNoDictionaryKeys());
     int actualOffset = 0;
+    int actualOffset1 = 0;
     int firstNoDcitionaryLength = 0;
     int secondNodeDictionaryLength = 0;
 
@@ -237,21 +238,25 @@ public class BTreeDataRefNodeFinder implements DataRefNodeFinder {
         if (processedNoDictionaryColumn > 1) {
           actualOffset = firstNoDictionaryKeyBuffer.getShort(nonDictionaryKeyOffset);
           firstNoDcitionaryLength =
-              firstNoDictionaryKeyBuffer.getShort(nonDictionaryKeyOffset + SHORT_SIZE_IN_BYTES);
+              firstNoDictionaryKeyBuffer.getShort(nonDictionaryKeyOffset + SHORT_SIZE_IN_BYTES)
+                      - actualOffset;
+          actualOffset1 = secondNoDictionaryKeyBuffer.getShort(nonDictionaryKeyOffset);
           secondNodeDictionaryLength =
-              secondNoDictionaryKeyBuffer.getShort(nonDictionaryKeyOffset + SHORT_SIZE_IN_BYTES);
+              secondNoDictionaryKeyBuffer.getShort(nonDictionaryKeyOffset + SHORT_SIZE_IN_BYTES)
+                      - actualOffset1;
           compareResult = ByteUtil.UnsafeComparer.INSTANCE
-              .compareTo(first.getNoDictionaryKeys(), actualOffset, firstNoDcitionaryLength,
-                  second.getNoDictionaryKeys(), actualOffset, secondNodeDictionaryLength);
+                  .compareTo(first.getNoDictionaryKeys(), actualOffset, firstNoDcitionaryLength,
+                          second.getNoDictionaryKeys(), actualOffset1, secondNodeDictionaryLength);
           nonDictionaryKeyOffset += SHORT_SIZE_IN_BYTES;
           processedNoDictionaryColumn--;
         } else {
           actualOffset = firstNoDictionaryKeyBuffer.getShort(nonDictionaryKeyOffset);
+          actualOffset1 = secondNoDictionaryKeyBuffer.getShort(nonDictionaryKeyOffset);
           firstNoDcitionaryLength = first.getNoDictionaryKeys().length - actualOffset;
-          secondNodeDictionaryLength = second.getNoDictionaryKeys().length - actualOffset;
+          secondNodeDictionaryLength = second.getNoDictionaryKeys().length - actualOffset1;
           compareResult = ByteUtil.UnsafeComparer.INSTANCE
               .compareTo(first.getNoDictionaryKeys(), actualOffset, firstNoDcitionaryLength,
-                  second.getNoDictionaryKeys(), actualOffset, secondNodeDictionaryLength);
+                  second.getNoDictionaryKeys(), actualOffset1, secondNodeDictionaryLength);
         }
       }
       if (compareResult != 0) {
