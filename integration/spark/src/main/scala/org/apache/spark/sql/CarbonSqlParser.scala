@@ -122,14 +122,6 @@ class CarbonSqlParser()
   protected val WHERE = carbonKeyWord("WHERE")
   protected val WITH = carbonKeyWord("WITH")
   protected val AGGREGATETABLE = carbonKeyWord("AGGREGATETABLE")
-  protected val SUM = Keyword("sum")
-  protected val COUNT = Keyword("count")
-  protected val AVG = Keyword("avg")
-  protected val MAX = Keyword("max")
-  protected val MIN = Keyword("min")
-  protected val DISTINCT = Keyword("distinct")
-  protected val DISTINCT_COUNT = Keyword("distinct-count")
-  protected val SUM_DISTINCT = Keyword("sum-distinct")
   protected val ABS = carbonKeyWord("abs")
 
   protected val FOR = carbonKeyWord("FOR")
@@ -209,67 +201,6 @@ class CarbonSqlParser()
 
   protected lazy val loadManagement: Parser[LogicalPlan] = deleteLoadsByID | deleteLoadsByLoadDate |
     cleanFiles | loadDataNew
-
-  protected lazy val aggregates: Parser[Seq[AggregateTableAttributes]] =
-    repsep((aggregateExpression | aggAttribute), ",")
-
-  protected lazy val aggAttribute: Parser[AggregateTableAttributes] =
-    (ident | stringLit) ^^ {
-      case e1 => AggregateTableAttributes(e1)
-    }
-
-  protected lazy val aggregateExpression: Parser[AggregateTableAttributes] =
-    (SUM ~> "(" ~> (ident | stringLit) <~ ")" ^^
-      { case e1 => AggregateTableAttributes(e1, SUM.str) } |
-      COUNT ~> "(" ~> (ident | stringLit) <~ ")" ^^
-        { case e1 => AggregateTableAttributes(e1, COUNT.str) } |
-      MAX ~> "(" ~> (ident | stringLit) <~ ")" ^^
-        { case e1 => AggregateTableAttributes(e1, MAX.str) } |
-      MIN ~> "(" ~> (ident | stringLit) <~ ")" ^^
-        { case e1 => AggregateTableAttributes(e1, MIN.str) } |
-      COUNT ~> "(" ~> DISTINCT ~> (ident | stringLit) <~ ")" ^^
-        { case e1 => AggregateTableAttributes(e1,
-          DISTINCT_COUNT.str)
-        } |
-      DISTINCT ~> COUNT ~> "(" ~> (ident | stringLit) <~ ")" ^^
-        { case e1 => AggregateTableAttributes(e1,
-          COUNT.str)
-        } |
-      SUM ~> "(" ~> DISTINCT ~> (ident | stringLit) <~ ")" ^^
-        { case e1 => AggregateTableAttributes(e1,
-          SUM_DISTINCT.str)
-        } |
-      AVG ~> "(" ~> (ident | stringLit) <~ ")" ^^
-        { case e1 => AggregateTableAttributes(e1, AVG.str) }
-      )
-
-  protected lazy val defaultExpr =
-    (ident | stringLit) ~ ("=" ~> (ident | stringLit | numericLit)) ^^ {
-      case e1 ~ e2 =>
-        Default(e1, e2.toString())
-    }
-
-  protected lazy val defaultVals =
-    rep1sep(defaultExpr, ",")
-
-  protected lazy val defaultDefn =
-    DEFAULTS ~> ("[" ~> defaultVals <~ "]")
-
-  protected lazy val defaultOptions =
-    ("(" ~> (noDictionaryDims).? ~ (aggregation).? ~ defaultDefn.? <~ ")")
-
-  protected lazy val dropDefinition =
-    DROP ~> "(" ~> rep1sep((stringLit | ident), ",") <~ ")"
-
-  protected lazy val aggOptionsForShowCreate =
-    (aggregation).? ~ (",".? ~> partitioner).?
-  protected lazy val aggOptions =
-    (noDictionaryDims).? ~ (",".? ~> aggregation).? ~ (",".? ~> partitioner).?
-  protected lazy val showcreateTableOptionDef =
-    ("(" ~> aggOptionsForShowCreate <~ ")")
-
-  protected lazy val createTableOptionDef =
-    ("(" ~> aggOptions <~ ")")
 
   protected val escapedIdentifier = "`([^`]+)`".r
 
@@ -355,6 +286,17 @@ class CarbonSqlParser()
 
           try {
 
+          // Checking whether create table request is carbon table
+          children.collect {
+            case Token("TOK_STORAGEHANDLER", child :: Nil) =>
+              storedBy = BaseSemanticAnalyzer.unescapeSQLString(child.getText).trim.toLowerCase
+            case _ =>
+          }
+          if (!(storedBy.equals(CarbonContext.datasourceName) ||
+              storedBy.equals(CarbonContext.datasourceShortName))) {
+            sys.error("Not a carbon format request")
+          }
+
           children.collect {
             // collecting all the field  list
             case list@Token("TOK_TABCOLLIST", _) =>
@@ -380,8 +322,8 @@ class CarbonSqlParser()
                   val f: Field = anyFieldDef(new lexical.Scanner(x))
                   match {
                     case Success(field, _) => field
-                    case failureOrError => new Field(columnName, dataType, name, None, null,
-                      Some("columnar"))
+                    case failureOrError => throw new MalformedCarbonCommandException(
+                        s"Unsupported data type : $col.getType")
                   }
                   // the data type of the decimal type will be like decimal(10,0)
                   // so checking the start of the string and taking the precision and scale.
@@ -424,17 +366,9 @@ class CarbonSqlParser()
             case Token("TOK_LIKETABLE", child :: Nil) =>
               likeTableName = child.getChild(0).getText()
 
-          case Token("TOK_STORAGEHANDLER", child :: Nil) =>
-            storedBy = BaseSemanticAnalyzer.unescapeSQLString(child.getText).trim.toLowerCase
-
             case _ => // Unsupport features
           }
 
-        if (!(storedBy.equals(CarbonContext.datasourceName) ||
-              storedBy.equals(CarbonContext.datasourceShortName))) {
-          // TODO: should execute by Hive instead of error
-          sys.error("Not a carbon format request")
-        }
 
           // validate tblProperties
           if (!CommonUtil.validateTblProperties(tableProperties, fields)) {
@@ -1058,11 +992,6 @@ class CarbonSqlParser()
         }
     }
 
-  protected lazy val tableFileMapping: Parser[DataLoadTableFileMapping] =
-    (ident <~ ":") ~ stringLit ^^ {
-      case tableName ~ dataPath => DataLoadTableFileMapping(tableName, dataPath)
-    }
-
   protected lazy val loadOptions: Parser[(String, String)] =
     (stringLit <~ "=") ~ stringLit ^^ {
       case opt ~ optvalue => (opt.trim.toLowerCase(), optvalue)
@@ -1120,71 +1049,6 @@ class CarbonSqlParser()
       BIGINT ^^^ "bigint" | DECIMAL ^^^ "decimal").? ~
       (AS ~> (ident | stringLit)).? ~ (IN ~> (ident | stringLit)).? ^^ {
       case e1 ~ e2 ~ e3 ~ e4 => Field(e1, e2, e3, Some(null))
-    }
-
-  protected lazy val dimCols: Parser[Seq[Field]] = rep1sep(dimCol, ",")
-
-  protected lazy val measureCols: Parser[Seq[Field]] = rep1sep(measureCol, ",")
-
-  protected lazy val expressions: Parser[Seq[FieldMapping]] = repsep(expsr, ",")
-
-  protected lazy val aggExpressions: Parser[Seq[Aggregation]] = repsep(aggExpsr, ",")
-
-  protected lazy val expsr: Parser[FieldMapping] =
-    ((ident | stringLit) ~ ("=" ~> (ident | stringLit))) ^^ {
-      case e1 ~ e2 => FieldMapping(e1, e2)
-    }
-
-  protected lazy val aggExpsr: Parser[Aggregation] =
-    ((ident | stringLit) ~ ("=" ~> (SUM | COUNT | AVG | MIN | MAX | ABS))) ^^ {
-      case e1 ~ e2 => Aggregation(e1, e2)
-      case _ => sys.error("Invalid Aggregator type")
-    }
-
-  protected lazy val cardinalityExprs: Parser[Seq[Cardinality]] = repsep(numericExprs, ",")
-
-  protected lazy val numericExprs: Parser[Cardinality] =
-    ((ident | stringLit) ~ ("=" ~> numericLit)) ^^ {
-      case e1 ~ e2 => Cardinality(e1, e2.toInt)
-    }
-
-  protected lazy val columns: Parser[Option[Seq[FieldMapping]]] =
-    opt("(" ~> expressions <~ ")")
-
-  protected lazy val cardinality: Parser[Option[Seq[Cardinality]]] =
-    opt(CARDINALITY ~> ("[" ~> cardinalityExprs <~ "]"))
-
-  protected lazy val aggregation: Parser[Seq[Aggregation]] =
-    AGGREGATION ~> ("[" ~> aggExpressions <~ "]")
-  protected lazy val noDictionaryDims: Parser[Option[Seq[String]]] =
-    HIGH_CARDINALITY_DIMS ~> ("(" ~> repsep((ident | stringLit), ",") <~ ")") ^^ {
-      case hc =>
-        Some(hc)
-      case _ => None
-
-    }
-
-  protected lazy val partitioner: Parser[Partitioner] =
-    PARTITIONER ~> "[" ~> opt(CLASS ~> "=" ~> stringLit) ~
-      opt(",".? ~> COLUMNS ~> "=" ~> "(" ~> rep1sep((ident | stringLit), ",") <~ ")") ~
-      (",".? ~> PARTITION_COUNT ~> "=" ~> numericLit) <~ "]" ^^ {
-      case partitionerClass ~ columns ~ count =>
-        Partitioner(partitionerClass.getOrElse(""),
-          columns.getOrElse(List("")).toArray, count.toInt, null)
-    }
-
-  protected lazy val hierarchies: Parser[Option[Seq[HierarchyMapping]]] =
-    opt(HIERARCHIES ~> ("[" ~> repsep(hierarchy, ",") <~ "]"))
-
-  protected lazy val hierarchy: Parser[HierarchyMapping] =
-    (ident ~ (TYPE ~> "=" ~> ident).?) ~
-      (LEVELS ~> "{" ~> repsep((ident | stringLit), ",") <~ "}") ^^ {
-      case hierName ~ hierType ~ levels =>
-        var dimType = "StandardDimension"
-        if (hierType.getOrElse(dimType).equalsIgnoreCase("time")) {
-          dimType = "TimeDimension"
-        }
-        HierarchyMapping(hierName, dimType, levels)
     }
 
   protected lazy val describeTable: Parser[LogicalPlan] =
