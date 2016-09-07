@@ -282,7 +282,7 @@ public class SegmentStatusManager {
           }
 
         } else {
-          LOG.audit("Delete load by Id is failed. No matching load id found.");
+          LOG.audit("Delete segment by Id is failed. No matching segment id found.");
           return loadIds;
         }
 
@@ -341,7 +341,7 @@ public class SegmentStatusManager {
           }
 
         } else {
-          LOG.audit("Delete load by date is failed. No matching load found.");
+          LOG.audit("Delete segment by date is failed. No matching segment found.");
           invalidLoadTimestamps.add(loadDate);
           return invalidLoadTimestamps;
         }
@@ -414,7 +414,8 @@ public class SegmentStatusManager {
           if (CarbonCommonConstants.SEGMENT_COMPACTED
               .equalsIgnoreCase(loadMetadata.getLoadStatus())) {
             LOG.error("Cannot delete the Segment which is compacted. Segment is " + loadId);
-            break;
+            invalidLoadIds.add(loadId);
+            return invalidLoadIds;
           }
           if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())) {
             loadFound = true;
@@ -427,7 +428,7 @@ public class SegmentStatusManager {
       }
 
       if (!loadFound) {
-        LOG.audit("Delete segment by ID is failed. No matching segment id found.");
+        LOG.audit("Delete segment by ID is failed. No matching segment id found :" + loadId);
         invalidLoadIds.add(loadId);
         return invalidLoadIds;
       }
@@ -475,7 +476,7 @@ public class SegmentStatusManager {
 
     if (!loadFound) {
       invalidLoadTimestamps.add(loadDate);
-      LOG.audit("Delete load by date is failed. No matching load found.");
+      LOG.audit("Delete segment by date is failed. No matching segment found.");
       return invalidLoadTimestamps;
     }
     return invalidLoadTimestamps;

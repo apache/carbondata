@@ -902,7 +902,7 @@ private[sql] case class DeleteLoadsById(
   def run(sqlContext: SQLContext): Seq[Row] = {
 
     val databaseName = getDB.getDatabaseName(databaseNameOp, sqlContext)
-    LOGGER.audit(s"Delete load by Id request has been received for $databaseName.$tableName")
+    LOGGER.audit(s"Delete segment by Id request has been received for $databaseName.$tableName")
 
     // validate load ids first
     validateLoadIds
@@ -912,7 +912,7 @@ private[sql] case class DeleteLoadsById(
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
       identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
-      LOGGER.audit(s"Delete load by Id is failed. Table $dbName.$tableName does not exist")
+      LOGGER.audit(s"Delete segment by Id is failed. Table $dbName.$tableName does not exist")
       sys.error(s"Table $dbName.$tableName does not exist")
     }
 
@@ -931,11 +931,11 @@ private[sql] case class DeleteLoadsById(
 
     if (invalidLoadIds.isEmpty) {
 
-      LOGGER.audit(s"Delete load by Id is successfull for $databaseName.$tableName.")
+      LOGGER.audit(s"Delete segment by Id is successfull for $databaseName.$tableName.")
     }
     else {
-      sys.error("Delete load by Id is failed. No matching load id found. SegmentSeqId(s) - "
-                + invalidLoadIds)
+      sys.error("Delete segment by Id is failed. Invalid ID is :"
+                + invalidLoadIds.mkString(",") + ". Please check the log.")
     }
 
     Seq.empty
@@ -945,7 +945,7 @@ private[sql] case class DeleteLoadsById(
   // validates load ids
   private def validateLoadIds: Unit = {
     if (loadids.isEmpty) {
-      val errorMessage = "Error: Load id(s) should not be empty."
+      val errorMessage = "Error: Segment id(s) should not be empty."
       throw new MalformedCarbonCommandException(errorMessage)
 
     }
@@ -962,14 +962,14 @@ private[sql] case class DeleteLoadsByLoadDate(
 
   def run(sqlContext: SQLContext): Seq[Row] = {
 
-    LOGGER.audit("The delete load by load date request has been received.")
+    LOGGER.audit("The delete segment by load date request has been received.")
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     val identifier = TableIdentifier(tableName, Option(dbName))
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
       .lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
       LOGGER
-        .audit(s"Delete load by load date is failed. Table $dbName.$tableName does not " +
+        .audit(s"Delete segment by load date is failed. Table $dbName.$tableName does not " +
          s"exist")
       sys.error(s"Table $dbName.$tableName does not exist")
     }
@@ -993,10 +993,10 @@ private[sql] case class DeleteLoadsByLoadDate(
     val invalidLoadTimestamps = segmentStatusManager
       .updateDeletionStatus(loadDate, path, timeObj.asInstanceOf[java.lang.Long]).asScala
     if(invalidLoadTimestamps.isEmpty) {
-      LOGGER.audit(s"Delete load by load date is successfull for $dbName.$tableName.")
+      LOGGER.audit(s"Delete segment by date is successfull for $dbName.$tableName.")
     }
     else {
-      sys.error("Delete load by load date is failed. No matching load found.")
+      sys.error("Delete segment by date is failed. No matching segment found.")
     }
     Seq.empty
 
