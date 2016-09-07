@@ -70,7 +70,6 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
 
   protected boolean nextBatch = false;
 
-  
   /**
    * total time scan the blocks
    */
@@ -82,7 +81,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
   protected boolean isStatisticsRecorded;
 
   /**
-   *  QueryStatisticsRecorder
+   * QueryStatisticsRecorder
    */
   protected QueryStatisticsRecorder recorder;
 
@@ -138,9 +137,9 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
         statistic.addFixedTimeStatistic(QueryStatisticsConstants.SCAN_BLOCKS_TIME, totalScanTime);
         recorder.recordStatistics(statistic);
         isStatisticsRecorded = true;
-    }
+      }
       return false;
-  }
+    }
   }
 
   protected void updateDataBlockIterator() {
