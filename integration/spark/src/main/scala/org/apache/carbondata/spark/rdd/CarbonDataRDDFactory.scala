@@ -402,7 +402,7 @@ object CarbonDataRDDFactory extends Logging {
       carbonLoadModel.getLoadMetadataDetails
     )
     CarbonDataMergerUtil.sortSegments(sortedSegments)
-    val lastSegment = sortedSegments.get(sortedSegments.size() - 1)
+
     var segList = carbonLoadModel.getLoadMetadataDetails
     var loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
       hdfsStoreLocation,
@@ -413,6 +413,7 @@ object CarbonDataRDDFactory extends Logging {
       compactionModel.compactionType
     )
     while (loadsToMerge.size() > 1) {
+      val lastSegment = sortedSegments.get(sortedSegments.size() - 1)
       deletePartialLoadsInCompaction(carbonLoadModel)
       val futureList: util.List[Future[Void]] = new util.ArrayList[Future[Void]](
         CarbonCommonConstants
