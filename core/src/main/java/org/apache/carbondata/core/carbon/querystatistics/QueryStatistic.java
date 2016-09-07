@@ -98,8 +98,8 @@ public class QueryStatistic implements Serializable {
     return this.message;
   }
 
-  public double getTimeTaken() {
-    return (double)this.timeTaken/1000;
+  public long getTimeTaken() {
+    return  this.timeTaken;
   }
 
   public long getCount() {
