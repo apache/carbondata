@@ -35,7 +35,7 @@ class NoDictionaryColumnTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS hiveTable")
     sql("DROP TABLE IF EXISTS carbonEmpty")
     sql("DROP TABLE IF EXISTS hiveEmpty")
-    sql("CREATE TABLE carbonTable (imei String, age Int, num BigInt) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='age,num')")
+    sql("CREATE TABLE carbonTable (imei String, age Int, num BigInt) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='age,num')")
     sql("LOAD DATA LOCAL INPATH './src/test/resources/datawithNegtiveNumber.csv' INTO TABLE carbonTable")
     sql("CREATE TABLE hiveTable (imei String, age Int, num BigInt) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','")
     sql("LOAD DATA LOCAL INPATH './src/test/resources/datawithNegeativewithoutHeader.csv' INTO TABLE hiveTable")
