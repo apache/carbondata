@@ -79,17 +79,17 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   test("test data loading and validate query output") {
     //Create test cube and hive table
     sql(
-      "CREATE table testtable (empno int, empname String, designation String, doj String, " +
-        "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
-        "projectcode int, projectjoindate String, projectenddate String,attendance double," +
+      "CREATE table testtable (empno string, empname String, designation String, doj String, " +
+        "workgroupcategory string, workgroupcategoryname String, deptno string, deptname String, " +
+        "projectcode string, projectjoindate String, projectenddate String,attendance double," +
         "utilization double,salary double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES" +
         "('DICTIONARY_EXCLUDE'='empno,empname,designation,doj,workgroupcategory," +
         "workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate')"
     )
     sql(
-      "create table testhivetable(empno int, empname String, designation string, doj String, " +
-        "workgroupcategory int, workgroupcategoryname String,deptno int, deptname String, " +
-        "projectcode int, projectjoindate String,projectenddate String, attendance double," +
+      "create table testhivetable(empno string, empname String, designation string, doj String, " +
+        "workgroupcategory string, workgroupcategoryname String,deptno string, deptname String, " +
+        "projectcode string, projectjoindate String,projectenddate String, attendance double," +
         "utilization double,salary double)row format delimited fields terminated by ','"
     )
     //load data into test cube and hive table and validate query result
@@ -120,17 +120,17 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   test("test data loading with different case file header and validate query output") {
     //Create test cube and hive table
     sql(
-      "CREATE table testtable1 (empno int, empname String, designation String, doj String, " +
-        "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
-        "projectcode int, projectjoindate String, projectenddate String,attendance double," +
+      "CREATE table testtable1 (empno string, empname String, designation String, doj String, " +
+        "workgroupcategory string, workgroupcategoryname String, deptno string, deptname String, " +
+        "projectcode string, projectjoindate String, projectenddate String,attendance double," +
         "utilization double,salary double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES" +
         "('DICTIONARY_EXCLUDE'='empno,empname,designation,doj,workgroupcategory," +
         "workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate')"
     )
     sql(
-      "create table testhivetable1(empno int, empname String, designation string, doj String, " +
-        "workgroupcategory int, workgroupcategoryname String,deptno int, deptname String, " +
-        "projectcode int, projectjoindate String,projectenddate String, attendance double," +
+      "create table testhivetable1(empno string, empname String, designation string, doj String, " +
+        "workgroupcategory string, workgroupcategoryname String,deptno string, deptname String, " +
+        "projectcode string, projectjoindate String,projectenddate String, attendance double," +
         "utilization double,salary double)row format delimited fields terminated by ','"
     )
     //load data into test cube and hive table and validate query result
@@ -592,17 +592,17 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
 
   test("test data loading when delimiter is '|' and data with header") {
     sql(
-      "CREATE table carbontable1 (empno int, empname String, designation String, doj String, " +
-        "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
-        "projectcode int, projectjoindate String, projectenddate String,attendance double," +
+      "CREATE table carbontable1 (empno string, empname String, designation String, doj String, " +
+        "workgroupcategory string, workgroupcategoryname String, deptno string, deptname String, " +
+        "projectcode string, projectjoindate String, projectenddate String,attendance double," +
         "utilization double,salary double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES" +
         "('DICTIONARY_EXCLUDE'='empno,empname,designation,doj,workgroupcategory," +
         "workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate')"
     )
     sql(
-      "create table hivetable1 (empno int, empname String, designation string, doj String, " +
-        "workgroupcategory int, workgroupcategoryname String,deptno int, deptname String, " +
-        "projectcode int, projectjoindate String,projectenddate String, attendance double," +
+      "create table hivetable1 (empno string, empname String, designation string, doj String, " +
+        "workgroupcategory string, workgroupcategoryname String,deptno string, deptname String, " +
+        "projectcode string, projectjoindate String,projectenddate String, attendance double," +
         "utilization double,salary double)row format delimited fields terminated by ','"
     )
 

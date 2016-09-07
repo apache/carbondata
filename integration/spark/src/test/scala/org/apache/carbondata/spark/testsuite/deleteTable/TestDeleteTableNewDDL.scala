@@ -159,7 +159,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
       "CREATE table dropTableTest2 (ID int, date String, country String, name " +
       "String," +
       "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format' " +
-      "TBLPROPERTIES('DICTIONARY_EXCLUDE'='salary')"
+      "TBLPROPERTIES('DICTIONARY_INCLUDE'='salary')"
     )
     sql(
       "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dropTableTest2 " +
@@ -170,7 +170,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
       "CREATE table dropTableTest2 (ID int, date String, country String, name " +
       "String," +
       "phonetype String, serialname String, salary decimal) stored by 'org.apache.carbondata.format' " +
-      "TBLPROPERTIES('DICTIONARY_EXCLUDE'='date')"
+      "TBLPROPERTIES('DICTIONARY_INCLUDE'='date')"
     )
     sql(
       "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dropTableTest2 " +
@@ -185,7 +185,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
       "CREATE table test.dropTableTest3 (ID int, date String, country String, name " +
       "String," +
       "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format' " +
-      "TBLPROPERTIES('DICTIONARY_EXCLUDE'='salary')"
+      "TBLPROPERTIES('DICTIONARY_INCLUDE'='salary')"
     )
     sql(
       "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE test.dropTableTest3 " +
