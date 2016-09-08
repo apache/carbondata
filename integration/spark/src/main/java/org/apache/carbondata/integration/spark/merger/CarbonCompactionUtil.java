@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -210,9 +211,13 @@ public class CarbonCompactionUtil {
       if (FileFactory.isFileExist(statusFile, FileFactory.getFileType(statusFile))) {
         if (FileFactory.getCarbonFile(statusFile, FileFactory.getFileType(statusFile)).delete()) {
           LOGGER.info("Deleted the compaction request file " + statusFile);
+          return true;
         } else {
           LOGGER.error("Unable to delete the compaction request file " + statusFile);
         }
+      }
+      else {
+        LOGGER.info("Compaction request file is not present. file is : " + statusFile);
       }
     } catch (IOException e) {
       LOGGER.error("Exception in deleting the compaction request file " + e.getMessage() );
@@ -245,6 +250,9 @@ public class CarbonCompactionUtil {
           LOGGER.error("Not able to create a compaction required file - " + statusFile);
           return false;
         }
+      }
+      else {
+        LOGGER.info("Compaction request file : " + statusFile + " already exist.");
       }
     } catch (IOException e) {
       LOGGER.error("Exception in creating the compaction request file " + e.getMessage() );
