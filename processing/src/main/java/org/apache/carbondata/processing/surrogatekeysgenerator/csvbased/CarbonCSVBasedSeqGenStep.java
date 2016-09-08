@@ -51,6 +51,7 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.core.keygenerator.factory.KeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -1933,7 +1934,10 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       dimListExcludingNoDictionaryColumn =
           new ArrayList<>(dimensionsList.size() - meta.noDictionaryCols.length);
       for (CarbonDimension dimension : dimensionsList) {
-        if (!dimension.getEncoder().isEmpty()) {
+        // Here if dimension.getEncoder() lnly contains Encoding.INVERTED_INDEX, it
+        // means that NoDicColumn using InvertedIndex, so not put it into dic dims list.
+        if (!dimension.getEncoder().isEmpty() && !((1 == dimension.getEncoder().size()) &&
+            dimension.getEncoder().contains(Encoding.INVERTED_INDEX))) {
           dimListExcludingNoDictionaryColumn.add(dimension);
         }
       }

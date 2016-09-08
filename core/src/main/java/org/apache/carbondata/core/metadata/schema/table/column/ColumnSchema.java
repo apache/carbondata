@@ -73,11 +73,6 @@ public class ColumnSchema implements Serializable {
   private boolean isDimensionColumn;
 
   /**
-   * Whether the column should use inverted index
-   */
-  private boolean useInvertedIndex = true;
-
-  /**
    * The group ID for column used for row format columns,
    * where in columns in each group are chunked together.
    */
@@ -174,14 +169,22 @@ public class ColumnSchema implements Serializable {
    * the isUseInvertedIndex
    */
   public boolean isUseInvertedIndex() {
-    return useInvertedIndex;
+    return this.hasEncoding(Encoding.INVERTED_INDEX);
   }
 
   /**
    * @param useInvertedIndex the useInvertedIndex to set
    */
   public void setUseInvertedIndex(boolean useInvertedIndex) {
-    this.useInvertedIndex = useInvertedIndex;
+    if (useInvertedIndex) {
+      if (!hasEncoding(Encoding.INVERTED_INDEX)) {
+        this.getEncodingList().add(Encoding.INVERTED_INDEX);
+      }
+    } else {
+      if (hasEncoding(Encoding.INVERTED_INDEX)) {
+        this.getEncodingList().remove(Encoding.INVERTED_INDEX);
+      }
+    }
   }
 
   /**
