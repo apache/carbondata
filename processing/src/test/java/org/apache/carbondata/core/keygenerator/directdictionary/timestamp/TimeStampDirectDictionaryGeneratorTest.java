@@ -31,7 +31,7 @@ import org.junit.Test;
 /**
  * Unit test case for the TimeStampDirectDictionaryGenerator
  */
-public class TimeStampDirectDictionaryGenerator_UT {
+public class TimeStampDirectDictionaryGeneratorTest {
   private String memberString = "2015-10-20 12:30:01";
   private int surrogateKey = -1;
 
@@ -48,9 +48,9 @@ public class TimeStampDirectDictionaryGenerator_UT {
   @Test public void generateDirectSurrogateKey() throws Exception {
     TimeStampDirectDictionaryGenerator generator = TimeStampDirectDictionaryGenerator.instance;
     // default timestamp format is "yyyy-MM-dd HH:mm:ss" and the data being passed
-    // in "dd/MM/yyyy" so the parsing should fail and method should return -1.
+    // in "dd/MM/yyyy" so the parsing should fail and method should return 1.
     int key = generator.generateDirectSurrogateKey("20/12/2014");
-    Assert.assertEquals(-1, key);
+    Assert.assertEquals(1, key);
     key = generator.generateDirectSurrogateKey("2015-10-20 12:30:01");
     Assert.assertEquals(surrogateKey, key);
 
@@ -71,5 +71,40 @@ public class TimeStampDirectDictionaryGenerator_UT {
     timeParser.setLenient(false);
     String actualValue = timeParser.format(date);
     Assert.assertEquals(memberString, actualValue);
+  }
+
+  /**
+   * The memberString should be retrieved from the actual surrogate key
+   *
+   * @throws Exception
+   */
+  @Test public void lowerBoundaryValueTest() throws Exception {
+    TimeStampDirectDictionaryGenerator generator = TimeStampDirectDictionaryGenerator.instance;
+    long valueFromSurrogate = (long) generator.getValueFromSurrogate(2);
+    Date date = new Date(valueFromSurrogate / 1000);
+    SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+    timeParser.setLenient(false);
+    String actualValue = timeParser.format(date);
+    Assert.assertEquals("1970-01-01 05:30:00", actualValue);
+  }
+
+  /**
+   * The memberString should be retrieved from the actual surrogate key
+   *
+   * @throws Exception
+   */
+  @Test public void upperBoundaryValueTest() throws Exception {
+    TimeStampDirectDictionaryGenerator generator = TimeStampDirectDictionaryGenerator.instance;
+    int surrogateKey = generator.generateDirectSurrogateKey("2038-01-01 05:30:00");
+    long valueFromSurrogate = (long) generator.getValueFromSurrogate(surrogateKey);
+    Date date = new Date(valueFromSurrogate / 1000);
+    SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+    timeParser.setLenient(false);
+    String actualValue = timeParser.format(date);
+    Assert.assertEquals("2038-01-01 05:30:00", actualValue);
   }
 }
