@@ -41,7 +41,7 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
   val absoluteTableIdentifier: AbsoluteTableIdentifier = new
       AbsoluteTableIdentifier(
         CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-        new CarbonTableIdentifier("default", "compactionLockTestTable", "1")
+        new CarbonTableIdentifier("default", "compactionlocktesttable", "1")
       )
   val carbonTablePath: CarbonTablePath = CarbonStorePath
     .getCarbonTablePath(absoluteTableIdentifier.getStorePath,
@@ -50,16 +50,18 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
   val dataPath: String = carbonTablePath.getMetadataDirectoryPath
 
   val carbonLock: ICarbonLock =
-    CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK)
+    CarbonLockFactory
+      .getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier, LockUsage.COMPACTION_LOCK)
 
 
   override def beforeAll {
-    CarbonProperties.getInstance().addProperty("carbon.enable.load.merge", "true")
-    sql("drop table if exists  compactionLockTestTable")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION, "true")
+    sql("drop table if exists  compactionlocktesttable")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
     sql(
-      "CREATE TABLE IF NOT EXISTS compactionLockTestTable (country String, ID Int, date " +
+      "CREATE TABLE IF NOT EXISTS compactionlocktesttable (country String, ID Int, date " +
         "Timestamp, name " +
         "String, " +
         "phonetype String, serialname String, salary Int) STORED BY 'org.apache.carbondata" +
@@ -73,15 +75,15 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
     var csvFilePath2 = currentDirectory + "/src/test/resources/compaction/compaction2.csv"
     var csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
 
-    sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE compactionLockTestTable " +
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE compactionlocktesttable " +
       "OPTIONS" +
       "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
-    sql("LOAD DATA LOCAL INPATH '" + csvFilePath2 + "' INTO TABLE compactionLockTestTable  " +
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath2 + "' INTO TABLE compactionlocktesttable  " +
       "OPTIONS" +
       "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
-    sql("LOAD DATA LOCAL INPATH '" + csvFilePath3 + "' INTO TABLE compactionLockTestTable  " +
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath3 + "' INTO TABLE compactionlocktesttable  " +
       "OPTIONS" +
       "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
@@ -89,17 +91,19 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
     carbonLock.lockWithRetries()
 
     // compaction should happen here.
-    sql("alter table compactionLockTestTable compact 'major'"
-    )
+    try{
+      sql("alter table compactionlocktesttable compact 'major'")
+    }
+    catch {
+      case e : Exception =>
+        assert(true)
+    }
   }
 
   /**
     * Compaction should fail as lock is being held purposefully
     */
   test("check if compaction is failed or not.") {
-    var status = true
-    var noOfRetries = 0
-    while (status && noOfRetries < 10) {
 
       val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
         absoluteTableIdentifier
@@ -107,20 +111,16 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
       val segments = segmentStatusManager.getValidSegments().listOfValidSegments.asScala.toList
 
       if (!segments.contains("0.1")) {
-        // wait for 2 seconds for compaction to complete.
-        Thread.sleep(2000)
-        noOfRetries += 1
+        assert(true)
       }
       else {
-        status = false
+        assert(false)
       }
-    }
-    assert(status)
   }
 
 
   override def afterAll {
-    /* sql("drop table compactionLockTestTable") */
+    /* sql("drop table compactionlocktesttable") */
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     carbonLock.unlock()
