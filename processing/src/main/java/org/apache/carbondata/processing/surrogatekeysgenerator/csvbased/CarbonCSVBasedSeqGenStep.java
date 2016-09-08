@@ -1934,6 +1934,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       dimListExcludingNoDictionaryColumn =
           new ArrayList<>(dimensionsList.size() - meta.noDictionaryCols.length);
       for (CarbonDimension dimension : dimensionsList) {
+        // Here if dimension.getEncoder() lnly contains Encoding.INVERTED_INDEX, it
+        // means that NoDicColumn using InvertedIndex, so not put it into dic dims list.
         if (!dimension.getEncoder().isEmpty() && !((1 == dimension.getEncoder().size()) &&
             dimension.getEncoder().contains(Encoding.INVERTED_INDEX))) {
           dimListExcludingNoDictionaryColumn.add(dimension);
