@@ -1,26 +1,45 @@
 package org.carbondata.processing.newflow;
 
-import org.carbondata.core.carbon.metadata.datatype.DataType;
+import java.io.Serializable;
 
-public class DataField {
+import org.apache.carbondata.core.carbon.metadata.blocklet.compressor.CompressionCodec;
+import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 
-  private String name;
+public class DataField implements Serializable {
 
-  private DataType dataType;
+  private CarbonColumn column;
 
-  public String getName() {
-    return name;
+  private int mdkOrder;
+
+  private CompressionCodec compressionCodec;
+
+  public boolean hasDictionaryEncoding() {
+    return column.hasEncoding(Encoding.DICTIONARY);
   }
 
-  public void setName(String name) {
-    this.name = name;
+  public CarbonColumn getColumn() {
+    return column;
   }
 
-  public DataType getDataType() {
-    return dataType;
+  public void setColumn(CarbonColumn column) {
+    this.column = column;
   }
 
-  public void setDataType(DataType dataType) {
-    this.dataType = dataType;
+  public CompressionCodec getCompressionCodec() {
+    return compressionCodec;
   }
+
+  public void setCompressionCodec(CompressionCodec compressionCodec) {
+    this.compressionCodec = compressionCodec;
+  }
+
+  public int getMdkOrder() {
+    return mdkOrder;
+  }
+
+  public void setMdkOrder(int mdkOrder) {
+    this.mdkOrder = mdkOrder;
+  }
+
 }
