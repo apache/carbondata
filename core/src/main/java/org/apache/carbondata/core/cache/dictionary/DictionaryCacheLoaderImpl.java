@@ -95,7 +95,7 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
     int dictionaryChunkSize = CarbonUtil.getDictionaryChunkSize();
     int sizeOfLastDictionaryChunk = dictionaryInfo.getSizeOfLastDictionaryChunk();
     int sizeOfOneDictionaryChunk = dictionaryChunkSize - sizeOfLastDictionaryChunk;
-    if (sizeOfOneDictionaryChunk == 0) {
+    if (sizeOfOneDictionaryChunk <= 0) {
       sizeOfOneDictionaryChunk = dictionaryChunkSize;
     }
     List<List<byte[]>> dictionaryChunks =
@@ -111,7 +111,9 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
       }
     }
     for (List<byte[]> dictionaryChunk : dictionaryChunks) {
-      dictionaryInfo.addDictionaryChunk(dictionaryChunk);
+      if (!dictionaryChunk.isEmpty()) {
+        dictionaryInfo.addDictionaryChunk(dictionaryChunk);
+      }
     }
   }
 
