@@ -48,6 +48,7 @@ import org.apache.carbondata.common.logging.impl.StandardLogService;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
@@ -1941,7 +1942,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       dimListExcludingNoDictionaryColumn =
           new ArrayList<>(dimensionsList.size() - meta.noDictionaryCols.length);
       for (CarbonDimension dimension : dimensionsList) {
-        if (!dimension.getEncoder().isEmpty()) {
+        if (!dimension.getEncoder().isEmpty() && !((1 == dimension.getEncoder().size()) &&
+            dimension.getEncoder().contains(Encoding.INVERTED_INDEX))) {
           dimListExcludingNoDictionaryColumn.add(dimension);
         }
       }
