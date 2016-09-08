@@ -39,6 +39,7 @@ object CarbonExample {
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname char(10), salary Int)
            STORED BY 'carbondata'
+           TBLPROPERTIES('NO_INVERTED_INDEX'='country,name,phonetype')
            """)
 
     // Currently there are two data loading flows in CarbonData, one uses Kettle as ETL tool
