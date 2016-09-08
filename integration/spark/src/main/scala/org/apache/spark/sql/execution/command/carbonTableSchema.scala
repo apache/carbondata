@@ -935,7 +935,7 @@ private[sql] case class DeleteLoadsById(
     }
     else {
       sys.error("Delete segment by Id is failed. Invalid ID is :"
-                + invalidLoadIds.mkString(",") + ". Please check the log.")
+                + invalidLoadIds.mkString(","))
     }
 
     Seq.empty
