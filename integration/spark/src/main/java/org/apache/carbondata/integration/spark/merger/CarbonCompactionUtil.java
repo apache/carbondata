@@ -198,24 +198,30 @@ public class CarbonCompactionUtil {
    */
   public static boolean deleteCompactionRequiredFile(String metaFolderPath,
       CompactionType compactionType) {
-    String statusFile;
+    String compactionRequiredFile;
     if (compactionType.equals(CompactionType.MINOR_COMPACTION)) {
-      statusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+      compactionRequiredFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
           + CarbonCommonConstants.minorCompactionRequiredFile;
     } else {
-      statusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+      compactionRequiredFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
           + CarbonCommonConstants.majorCompactionRequiredFile;
     }
     try {
-      if (FileFactory.isFileExist(statusFile, FileFactory.getFileType(statusFile))) {
-        if (FileFactory.getCarbonFile(statusFile, FileFactory.getFileType(statusFile)).delete()) {
-          LOGGER.info("Deleted the compaction request file " + statusFile);
+      if (FileFactory
+          .isFileExist(compactionRequiredFile, FileFactory.getFileType(compactionRequiredFile))) {
+        if (FileFactory
+            .getCarbonFile(compactionRequiredFile, FileFactory.getFileType(compactionRequiredFile))
+            .delete()) {
+          LOGGER.info("Deleted the compaction request file " + compactionRequiredFile);
+          return true;
         } else {
-          LOGGER.error("Unable to delete the compaction request file " + statusFile);
+          LOGGER.error("Unable to delete the compaction request file " + compactionRequiredFile);
         }
+      } else {
+        LOGGER.info("Compaction request file is not present. file is : " + compactionRequiredFile);
       }
     } catch (IOException e) {
-      LOGGER.error("Exception in deleting the compaction request file " + e.getMessage() );
+      LOGGER.error("Exception in deleting the compaction request file " + e.getMessage());
     }
     return false;
   }
@@ -245,6 +251,8 @@ public class CarbonCompactionUtil {
           LOGGER.error("Not able to create a compaction required file - " + statusFile);
           return false;
         }
+      } else {
+        LOGGER.info("Compaction request file : " + statusFile + " already exist.");
       }
     } catch (IOException e) {
       LOGGER.error("Exception in creating the compaction request file " + e.getMessage() );
