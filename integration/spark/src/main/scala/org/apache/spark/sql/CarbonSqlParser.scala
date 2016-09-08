@@ -723,9 +723,9 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
     var noInvertedIdxColsProps: Array[String] = Array[String]()
     var noInvertedIdxCols: Seq[String] = Seq[String]()
 
-    if (tableProperties.get("NO_INVERTED_INDEX").isDefined) {
+    if (tableProperties.get(CarbonCommonConstants.NO_INVERTED_INDEX).isDefined) {
       noInvertedIdxColsProps =
-        tableProperties.get("NO_INVERTED_INDEX").get.split(',').map(_.trim)
+        tableProperties.get(CarbonCommonConstants.NO_INVERTED_INDEX).get.split(',').map(_.trim)
       noInvertedIdxColsProps
         .map { noInvertedIdxColProp =>
           if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {

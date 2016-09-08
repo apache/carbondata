@@ -719,6 +719,7 @@ public final class CarbonCommonConstants {
   public static final String COLUMN_PROPERTIES = "columnproperties";
   // table block size in MB
   public static final String TABLE_BLOCKSIZE = "table_blocksize";
+  public static final String NO_INVERTED_INDEX = "no_inverted_index";
 
   /**
    * this variable is to enable/disable identify high cardinality during first data loading
