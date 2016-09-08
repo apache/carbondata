@@ -157,19 +157,18 @@ public final class GraphExecutionUtil {
   public static TextFileInputField[] getTextInputFiles(String header, StringBuilder builder,
       StringBuilder measuresInCSVFile, String delimiter) throws DataLoadingException {
 
-    String[] columnNames = header.split(delimiter);
+    String[] columnNames = CarbonUtil.splitHeader(header, delimiter);
     TextFileInputField[] textFileInputFields = new TextFileInputField[columnNames.length];
 
     int i = 0;
     String tmpCol;
     for (String columnName : columnNames) {
-      tmpCol = columnName.replaceAll("\"", "");
-      builder.append(tmpCol);
+      builder.append(columnName);
       builder.append(";");
       textFileInputFields[i] = new TextFileInputField();
-      textFileInputFields[i].setName(tmpCol.trim());
+      textFileInputFields[i].setName(columnName);
       textFileInputFields[i].setType(2);
-      measuresInCSVFile.append(tmpCol);
+      measuresInCSVFile.append(columnName);
       measuresInCSVFile.append(";");
       i++;
     }

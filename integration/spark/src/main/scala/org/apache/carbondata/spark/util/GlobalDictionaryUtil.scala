@@ -350,11 +350,12 @@ object GlobalDictionaryUtil extends Logging {
     val sc = sqlContext.sparkContext
 
     val csvParserVo = UnivocityCsvParserVo.newUnivocityCsvParserVo(
-      carbonLoadModel.getCsvDelimiter,
+      if (carbonLoadModel.getCsvDelimiter == null) CarbonCommonConstants.COMMA
+      else carbonLoadModel.getCsvDelimiter,
       numberOfColumns,
-      carbonLoadModel.getEscapeChar,
-      carbonLoadModel.getQuoteChar,
-      carbonLoadModel.getCommentChar,
+      if (carbonLoadModel.getEscapeChar == null) "\\" else carbonLoadModel.getEscapeChar,
+      if (carbonLoadModel.getQuoteChar == null) "\"" else carbonLoadModel.getQuoteChar,
+      if (carbonLoadModel.getCommentChar == null) "#" else carbonLoadModel.getCommentChar,
       isHeaderPresent,
       carbonLoadModel.getMaxColumns
     )
@@ -584,7 +585,7 @@ object GlobalDictionaryUtil extends Logging {
    */
   private def parseRecord(x: String, accum: Accumulator[Int],
                           csvFileColumns: Array[String]): (String, String) = {
-    val tokens = x.split("" + CSVWriter.DEFAULT_SEPARATOR)
+    val tokens = x.split(",")
     var columnName: String = ""
     var value: String = ""
     // such as "," , "", throw ex
@@ -712,14 +713,14 @@ object GlobalDictionaryUtil extends Logging {
       val factFile: String = carbonLoadModel.getFactFilePath.split(",")(0)
       val readLine = CarbonUtil.readHeader(factFile)
       if (null != readLine) {
-        headers = readLine.toLowerCase().split(getDelimiter(carbonLoadModel));
+        headers = CarbonUtil.splitHeader(readLine, getDelimiter(carbonLoadModel));
       } else {
         logError("Not found file header! Please set fileheader")
         throw new IOException("Failed to get file header")
       }
       (headers, true)
     } else {
-      (carbonLoadModel.getCsvHeader.toLowerCase.split("" + CSVWriter.DEFAULT_SEPARATOR), false)
+      (CarbonUtil.splitHeader(carbonLoadModel.getCsvHeader, ","), false)
     }
   }
 
