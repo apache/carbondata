@@ -37,7 +37,6 @@ object CarbonExample {
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            STORED BY 'carbondata'
-           TBLPROPERTIES('NO_INVERTED_INDEX'='country,name,phonetype')
            """)
 
     cc.sql(s"""
@@ -51,5 +50,6 @@ object CarbonExample {
            GROUP BY country
            """).show()
 
+    cc.sql("DROP TABLE IF EXISTS t3")
   }
 }
