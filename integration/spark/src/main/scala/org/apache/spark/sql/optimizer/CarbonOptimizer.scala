@@ -649,8 +649,15 @@ case class CarbonAliasDecoderRelation() {
     val value = attrMap.find(p =>
       p._1.name.equalsIgnoreCase(key.name) && p._1.exprId.equals(key.exprId))
     value match {
-      case Some((k, v)) => v
+      case Some((k, v)) =>
+        val attr = getOrElse(v, v)
+        if (attr .equals(v)) {
+          attr
+        } else {
+          getOrElse(attr, attr)
+        }
       case _ => default
     }
   }
 }
+
