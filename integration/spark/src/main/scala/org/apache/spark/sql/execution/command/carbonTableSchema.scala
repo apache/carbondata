@@ -1441,25 +1441,7 @@ private[sql] case class DescribeCommandFormatted(
     )
     results ++= Seq(("Table Name : ", relation.tableMeta.carbonTableIdentifier.getTableName, ""))
     results ++= Seq(("CARBON Store Path : ", relation.tableMeta.storePath, ""))
-    results ++= Seq(("", "", ""), ("#Aggregate Tables", "", ""))
     val carbonTable = relation.tableMeta.carbonTable
-    val aggTables = carbonTable.getAggregateTablesName
-    if (aggTables.size == 0) {
-      results ++= Seq(("NONE", "", ""))
-    } else {
-      aggTables.asScala.foreach(aggTable => {
-        results ++= Seq(("", "", ""),
-          ("Agg Table :" + aggTable, "#Columns", "#AggregateType")
-        )
-        carbonTable.getDimensionByTableName(aggTable).asScala.foreach(dim => {
-          results ++= Seq(("", dim.getColName, ""))
-        })
-        carbonTable.getMeasureByTableName(aggTable).asScala.foreach(measure => {
-          results ++= Seq(("", measure.getColName, measure.getAggregateFunction))
-        })
-      }
-      )
-    }
     results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))
     if (colPropStr.length() > 0) {
       results ++= Seq((colPropStr, "", ""))
