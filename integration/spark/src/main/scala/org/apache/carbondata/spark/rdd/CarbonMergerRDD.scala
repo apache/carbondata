@@ -55,7 +55,6 @@ class CarbonMergerRDD[K, V](
   confExecutorsTemp: String)
   extends RDD[(K, V)](sc, Nil) with Logging {
 
-  val defaultParallelism = sc.defaultParallelism
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
   sc.setLocalProperty("spark.job.interruptOnCancel", "true")
 
@@ -228,6 +227,7 @@ class CarbonMergerRDD[K, V](
     )
     val (carbonInputFormat: CarbonInputFormat[Array[Object]], job: Job) =
       QueryPlanUtil.createCarbonInputFormat(absoluteTableIdentifier)
+    var defaultParallelism = sparkContext.defaultParallelism
     val result = new util.ArrayList[Partition](defaultParallelism)
 
     // mapping of the node and block list.
@@ -299,7 +299,7 @@ class CarbonMergerRDD[K, V](
       maxTimes = maxTimes - 1
     }
     logInfo("Time taken to wait for executor allocation is =" + ((30 - maxTimes) * 500) + "millis")
-
+    defaultParallelism = sparkContext.defaultParallelism
     var i = 0
 
     val nodeTaskBlocksMap: util.Map[String, util.List[NodeInfo]] = new util.HashMap[String, util
