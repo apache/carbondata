@@ -73,9 +73,9 @@ class CarbonScanRDD[V: ClassTag](
     baseStoreLocation: String)
   extends RDD[V](sc, Nil) with Logging {
 
-  val defaultParallelism = sc.defaultParallelism
 
   override def getPartitions: Array[Partition] = {
+    var defaultParallelism = sparkContext.defaultParallelism
     val statisticRecorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance()
     val (carbonInputFormat: CarbonInputFormat[Array[Object]], job: Job) =
       QueryPlanUtil.createCarbonInputFormat(queryModel.getAbsoluteTableIdentifier)
@@ -110,13 +110,18 @@ class CarbonScanRDD[V: ClassTag](
           new BlockletInfos(inputSplit.getNumberOfBlocklets, 0, inputSplit.getNumberOfBlocklets)
         )
       )
+      var activeNodes = Array[String]()
+      if(blockListTemp.nonEmpty) {
+         activeNodes = DistributionUtil
+          .ensureExecutorsAndGetNodeList(blockListTemp.toArray, sparkContext)
+      }
+      defaultParallelism = sparkContext.defaultParallelism
       val blockList = CarbonLoaderUtil.
         distributeBlockLets(blockListTemp.asJava, defaultParallelism).asScala
+
       if (blockList.nonEmpty) {
         var statistic = new QueryStatistic()
         // group blocks to nodes, tasks
-        val activeNodes = DistributionUtil
-          .ensureExecutorsAndGetNodeList(blockList.toArray, sparkContext)
         val nodeBlockMapping =
           CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism,
             activeNodes.toList.asJava
