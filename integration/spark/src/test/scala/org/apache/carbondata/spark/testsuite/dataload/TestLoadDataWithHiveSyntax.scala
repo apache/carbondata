@@ -35,6 +35,23 @@ import org.scalatest.BeforeAndAfterAll
 class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    sql("drop table if exists carbontable")
+    sql("drop table if exists hivetable")
+    sql("drop table if exists testtable")
+    sql("drop table if exists testhivetable")
+    sql("drop table if exists testtable1")
+    sql("drop table if exists testhivetable1")
+    sql("drop table if exists complexcarbontable")
+    sql("drop table if exists header_test")
+    sql("drop table if exists duplicateColTest")
+    sql("drop table if exists mixed_header_test")
+    sql("drop table if exists primitivecarbontable")
+    sql("drop table if exists UPPERCASEcube")
+    sql("drop table if exists lowercaseCUBE")
+    sql("drop table if exists t3")
+    sql("drop table if exists carbontable1")
+    sql("drop table if exists hivetable1")
+    sql("drop table if exists comment_test")
     sql(
       "CREATE table carbontable (empno int, empname String, designation String, doj String, " +
         "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
@@ -48,8 +65,6 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
         "utilization String,salary String)row format delimited fields terminated by ','"
     )
 
-    sql("drop table if exists carbontable1")
-    sql("drop table if exists hivetable1")
   }
 
   test("test data loading and validate query output") {
@@ -85,8 +100,8 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     )
     checkAnswer(sql("select * from testtable"), sql("select * from testhivetable"))
     //drop test cube and table
-    sql("drop table testtable")
-    sql("drop table testhivetable")
+    sql("drop table if exists testtable")
+    sql("drop table if exists testhivetable")
   }
 
   /**
@@ -122,8 +137,8 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     )
     checkAnswer(sql("select * from testtable1"), sql("select * from testhivetable1"))
     //drop test cube and table
-    sql("drop table testtable1")
-    sql("drop table testhivetable1")
+    sql("drop table if exists testtable1")
+    sql("drop table if exists testhivetable1")
   }
 
   test("test hive table data loading") {
@@ -203,7 +218,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
         "'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')"
     )
     sql("select count(*) from complexcarbontable")
-    sql("drop table complexcarbontable")
+    sql("drop table if exists complexcarbontable")
   }
 
   test("test carbon table data loading with csv file Header in caps") {
@@ -328,7 +343,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
       "LOAD DATA local inpath './src/test/resources/data.csv' INTO table uppercasecube OPTIONS" +
         "('DELIMITER'=',', 'QUOTECHAR'='\"')"
     )
-    sql("drop table UpperCaseCube")
+    sql("drop table if exists UpperCaseCube")
   }
 
   test(
@@ -344,7 +359,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
       "LOAD DATA local inpath './src/test/resources/data.csv' INTO table LOWERCASECUBE OPTIONS" +
         "('DELIMITER'=',', 'QUOTECHAR'='\"')"
     )
-    sql("drop table LowErcasEcube")
+    sql("drop table if exists LowErcasEcube")
   }
 
   test("test carbon table data loading using escape char 1") {
@@ -484,6 +499,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
          LOAD DATA LOCAL INPATH './src/test/resources/lessthandatacolumndata.csv' into table t3
         """)
     checkAnswer(sql("select count(*) from t3"),Seq(Row(10)))
+    sql("DROP TABLE IF EXISTS t3")
   }
 
   test("test data which contain column with decimal data type in array."){
@@ -527,6 +543,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
          LOAD DATA LOCAL INPATH './src/test/resources/complexTypeDecimal.csv' into table t3
         """)
     checkAnswer(sql("select count(*) from t3"),Seq(Row(8)))
+    sql("DROP TABLE IF EXISTS t3")
   }
 
   test("test data which contain column with decimal data type in array of struct."){
@@ -606,12 +623,22 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
 
 
   override def afterAll {
-    sql("drop table carbontable")
-    sql("drop table hivetable")
+    sql("drop table if exists carbontable")
+    sql("drop table if exists hivetable")
+    sql("drop table if exists testtable")
+    sql("drop table if exists testhivetable")
+    sql("drop table if exists testtable1")
+    sql("drop table if exists testhivetable1")
+    sql("drop table if exists complexcarbontable")
     sql("drop table if exists header_test")
+    sql("drop table if exists duplicateColTest")
     sql("drop table if exists mixed_header_test")
-    sql("drop table carbontable1")
-    sql("drop table hivetable1")
+    sql("drop table if exists primitivecarbontable")
+    sql("drop table if exists UPPERCASEcube")
+    sql("drop table if exists lowercaseCUBE")
+    sql("drop table if exists t3")
+    sql("drop table if exists carbontable1")
+    sql("drop table if exists hivetable1")
     sql("drop table if exists comment_test")
   }
 }
