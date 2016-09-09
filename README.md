@@ -34,8 +34,10 @@ CarbonData file format is a columnar store in HDFS, it has many features that a 
 ### Documentation
 Please visit [CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA)
 
-### Building CarbonData and using Development tools
-Please refer [Building CarbonData and configuring IDE](https://cwiki.apache.org/confluence/display/CARBONDATA/Building+CarbonData+And+IDE+Configuration)
+### Building CarbonData,using development tools and cluster deployment guide
+Please refer [Building CarbonData and Configuring IDE](https://cwiki.apache.org/confluence/display/CARBONDATA/Building+CarbonData+And+IDE+Configuration)
+
+Please refer [Cluster Deployment Guide](https://cwiki.apache.org/confluence/display/CARBONDATA/Cluster+deployment+guide)
 
 ### Getting Started
 Read the [quick start](https://cwiki.apache.org/confluence/display/CARBONDATA/Quick+Start)
@@ -60,8 +62,8 @@ This guide document introduce [how to contribute to CarbonData](https://cwiki.ap
 ### Contact us
 To get involved in CarbonData:
 
-* First join by emailing [dev-subscribe@carbondata.incubator.apache.org](mailto:dev-subscribe@carbondata.incubator.apache.org),then discuss design and implementation issues on [dev@carbondata.incubator.apache.org](mailto:dev@carbondata.incubator.apache.org)
-* Report issues on [Jira](https://issues.apache.org/jira/browse/CARBONDATA).
+* First join by emailing to [dev-subscribe@carbondata.incubator.apache.org](mailto:dev-subscribe@carbondata.incubator.apache.org),then you can discuss issues by emailing to [dev@carbondata.incubator.apache.org](mailto:dev@carbondata.incubator.apache.org) or visit http://apache-carbondata-mailing-list-archive.1130556.n5.nabble.com
+* Report issues on [Apache Jira](https://issues.apache.org/jira/browse/CARBONDATA).
 
 ## About
 Apache CarbonData is an open source project of The Apache Software Foundation (ASF).
