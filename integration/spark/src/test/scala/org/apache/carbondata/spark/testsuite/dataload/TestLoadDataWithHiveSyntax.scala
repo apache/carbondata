@@ -35,6 +35,14 @@ import org.scalatest.BeforeAndAfterAll
 class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    sql("drop table if exists escapechar1")
+    sql("drop table if exists escapechar2")
+    sql("drop table if exists escapechar3")
+    sql("drop table if exists specialcharacter1")
+    sql("drop table if exists specialcharacter2")
+    sql("drop table if exists collessthanschema")
+    sql("drop table if exists decimalarray")
+    sql("drop table if exists decimalstruct")
     sql("drop table if exists carbontable")
     sql("drop table if exists hivetable")
     sql("drop table if exists testtable")
@@ -42,13 +50,14 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists testtable1")
     sql("drop table if exists testhivetable1")
     sql("drop table if exists complexcarbontable")
+    sql("drop table if exists complex_t3")
+    sql("drop table if exists complex_hive_t3")
     sql("drop table if exists header_test")
     sql("drop table if exists duplicateColTest")
     sql("drop table if exists mixed_header_test")
     sql("drop table if exists primitivecarbontable")
     sql("drop table if exists UPPERCASEcube")
     sql("drop table if exists lowercaseCUBE")
-    sql("drop table if exists t3")
     sql("drop table if exists carbontable1")
     sql("drop table if exists hivetable1")
     sql("drop table if exists comment_test")
@@ -363,11 +372,11 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test carbon table data loading using escape char 1") {
-    sql("DROP TABLE IF EXISTS t3")
+    sql("DROP TABLE IF EXISTS escapechar1")
 
     sql(
       """
-           CREATE TABLE IF NOT EXISTS t3
+           CREATE TABLE IF NOT EXISTS escapechar1
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            STORED BY 'org.apache.carbondata.format'
@@ -377,88 +386,88 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
     sql(
       s"""
-           LOAD DATA LOCAL INPATH './src/test/resources/datawithbackslash.csv' into table t3
+           LOAD DATA LOCAL INPATH './src/test/resources/datawithbackslash.csv' into table escapechar1
            OPTIONS('ESCAPECHAR'='@')
         """
     )
-    checkAnswer(sql("select count(*) from t3"), Seq(Row(10)))
+    checkAnswer(sql("select count(*) from escapechar1"), Seq(Row(10)))
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-    sql("DROP TABLE IF EXISTS t3")
+    sql("DROP TABLE IF EXISTS escapechar1")
   }
 
   test("test carbon table data loading using escape char 2") {
-    sql("DROP TABLE IF EXISTS t3")
+    sql("DROP TABLE IF EXISTS escapechar2")
 
     sql(
       """
-         CREATE TABLE t3(imei string,specialchar string)
+         CREATE TABLE escapechar2(imei string,specialchar string)
          STORED BY 'org.apache.carbondata.format'
       """
     )
 
     sql(
       """
-       LOAD DATA LOCAL INPATH './src/test/resources/datawithescapecharacter.csv' into table t3
+       LOAD DATA LOCAL INPATH './src/test/resources/datawithescapecharacter.csv' into table escapechar2
           options ('DELIMITER'=',', 'QUOTECHAR'='"','ESCAPECHAR'='\')
       """
     )
-    checkAnswer(sql("select count(*) from t3"), Seq(Row(21)))
-    checkAnswer(sql("select specialchar from t3 where imei = '1AA44'"), Seq(Row("escapeesc")))
-    sql("DROP TABLE IF EXISTS t3")
+    checkAnswer(sql("select count(*) from escapechar2"), Seq(Row(21)))
+    checkAnswer(sql("select specialchar from escapechar2 where imei = '1AA44'"), Seq(Row("escapeesc")))
+    sql("DROP TABLE IF EXISTS escapechar2")
   }
 
   test("test carbon table data loading using escape char 3") {
-    sql("DROP TABLE IF EXISTS t3")
+    sql("DROP TABLE IF EXISTS escapechar3")
 
     sql(
       """
-         CREATE TABLE t3(imei string,specialchar string)
+         CREATE TABLE escapechar3(imei string,specialchar string)
          STORED BY 'org.apache.carbondata.format'
       """
     )
 
     sql(
       """
-       LOAD DATA LOCAL INPATH './src/test/resources/datawithescapecharacter.csv' into table t3
+       LOAD DATA LOCAL INPATH './src/test/resources/datawithescapecharacter.csv' into table escapechar3
           options ('DELIMITER'=',', 'QUOTECHAR'='"','ESCAPECHAR'='@')
       """
     )
-    checkAnswer(sql("select count(*) from t3"), Seq(Row(21)))
-    checkAnswer(sql("select specialchar from t3 where imei in ('1232','12323')"), Seq(Row
+    checkAnswer(sql("select count(*) from escapechar3"), Seq(Row(21)))
+    checkAnswer(sql("select specialchar from escapechar3 where imei in ('1232','12323')"), Seq(Row
     ("ayush@b.com"), Row("ayushb.com")
     )
     )
-    sql("DROP TABLE IF EXISTS t3")
+    sql("DROP TABLE IF EXISTS escapechar3")
   }
 
   test("test carbon table data loading with special character 1") {
-    sql("DROP TABLE IF EXISTS t3")
+    sql("DROP TABLE IF EXISTS specialcharacter1")
 
     sql(
       """
-         CREATE TABLE t3(imei string,specialchar string)
+         CREATE TABLE specialcharacter1(imei string,specialchar string)
          STORED BY 'org.apache.carbondata.format'
       """
     )
 
     sql(
       """
-       LOAD DATA LOCAL INPATH './src/test/resources/datawithspecialcharacter.csv' into table t3
+       LOAD DATA LOCAL INPATH './src/test/resources/datawithspecialcharacter.csv' into table specialcharacter1
           options ('DELIMITER'=',', 'QUOTECHAR'='"')
       """
     )
-    checkAnswer(sql("select count(*) from t3"), Seq(Row(37)))
-    checkAnswer(sql("select specialchar from t3 where imei='1AA36'"), Seq(Row("\"i\"")))
-    sql("DROP TABLE IF EXISTS t3")
+    checkAnswer(sql("select count(*) from specialcharacter1"), Seq(Row(37)))
+    checkAnswer(sql("select specialchar from specialcharacter1 where imei='1AA36'"), Seq(Row("\"i\"")))
+    sql("DROP TABLE IF EXISTS specialcharacter1")
   }
 
   test("test carbon table data loading with special character 2") {
-    sql("DROP TABLE IF EXISTS t3")
+    sql("DROP TABLE IF EXISTS specialcharacter2")
 
     sql(
       """
-        CREATE table t3(customer_id int, 124_string_level_province String, date_level String,
+        CREATE table specialcharacter2(customer_id int, 124_string_level_province String, date_level String,
         Time_level String, lname String, fname String, mi String, address1 String, address2
         String, address3 String, address4 String, city String, country String, phone1 String,
         phone2 String, marital_status String, yearly_income String, gender String, education
@@ -472,22 +481,22 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql(
       """
        LOAD DATA LOCAL INPATH './src/test/resources/datawithcomplexspecialchar.csv' into
-       table t3 options ('DELIMITER'=',', 'QUOTECHAR'='"','ESCAPECHAR'='"')
+       table specialcharacter2 options ('DELIMITER'=',', 'QUOTECHAR'='"','ESCAPECHAR'='"')
       """
     )
-    checkAnswer(sql("select count(*) from t3"), Seq(Row(150)))
-    checkAnswer(sql("select 124_string_level_province from t3 where customer_id=103"),
+    checkAnswer(sql("select count(*) from specialcharacter2"), Seq(Row(150)))
+    checkAnswer(sql("select 124_string_level_province from specialcharacter2 where customer_id=103"),
       Seq(Row("\"state province # 124\""))
     )
-    sql("DROP TABLE IF EXISTS t3")
+    sql("DROP TABLE IF EXISTS specialcharacter2")
   }
 
   test("test data which contain column less than schema"){
-    sql("DROP TABLE IF EXISTS t3")
+    sql("DROP TABLE IF EXISTS collessthanschema")
 
     sql(
       """
-           CREATE TABLE IF NOT EXISTS t3
+           CREATE TABLE IF NOT EXISTS collessthanschema
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            STORED BY 'org.apache.carbondata.format'
@@ -496,18 +505,18 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(s"""
-         LOAD DATA LOCAL INPATH './src/test/resources/lessthandatacolumndata.csv' into table t3
+         LOAD DATA LOCAL INPATH './src/test/resources/lessthandatacolumndata.csv' into table collessthanschema
         """)
-    checkAnswer(sql("select count(*) from t3"),Seq(Row(10)))
-    sql("DROP TABLE IF EXISTS t3")
+    checkAnswer(sql("select count(*) from collessthanschema"),Seq(Row(10)))
+    sql("DROP TABLE IF EXISTS collessthanschema")
   }
 
   test("test data which contain column with decimal data type in array."){
-    sql("DROP TABLE IF EXISTS t3")
+    sql("DROP TABLE IF EXISTS decimalarray")
 
     sql(
       """
-           CREATE TABLE IF NOT EXISTS t3
+           CREATE TABLE IF NOT EXISTS decimalarray
            (ID decimal(5,5), date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int, complex
            array<decimal(4,2)>)
@@ -518,18 +527,18 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(s"""
-         LOAD DATA LOCAL INPATH './src/test/resources/complexTypeDecimal.csv' into table t3
+         LOAD DATA LOCAL INPATH './src/test/resources/complexTypeDecimal.csv' into table decimalarray
         """)
-    checkAnswer(sql("select count(*) from t3"),Seq(Row(8)))
-    sql("DROP TABLE IF EXISTS t3")
+    checkAnswer(sql("select count(*) from decimalarray"),Seq(Row(8)))
+    sql("DROP TABLE IF EXISTS decimalarray")
   }
 
   test("test data which contain column with decimal data type in struct."){
-    sql("DROP TABLE IF EXISTS t3")
+    sql("DROP TABLE IF EXISTS decimalstruct")
 
     sql(
       """
-           CREATE TABLE IF NOT EXISTS t3
+           CREATE TABLE IF NOT EXISTS decimalstruct
            (ID decimal(5,5), date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int, complex
            struct<a:decimal(4,2)>)
@@ -540,10 +549,10 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(s"""
-         LOAD DATA LOCAL INPATH './src/test/resources/complexTypeDecimal.csv' into table t3
+         LOAD DATA LOCAL INPATH './src/test/resources/complexTypeDecimal.csv' into table decimalstruct
         """)
-    checkAnswer(sql("select count(*) from t3"),Seq(Row(8)))
-    sql("DROP TABLE IF EXISTS t3")
+    checkAnswer(sql("select count(*) from decimalstruct"),Seq(Row(8)))
+    sql("DROP TABLE IF EXISTS decimalstruct")
   }
 
   test("test data which contain column with decimal data type in array of struct."){
@@ -623,6 +632,14 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
 
 
   override def afterAll {
+    sql("drop table if exists escapechar1")
+    sql("drop table if exists escapechar2")
+    sql("drop table if exists escapechar3")
+    sql("drop table if exists specialcharacter1")
+    sql("drop table if exists specialcharacter2")
+    sql("drop table if exists collessthanschema")
+    sql("drop table if exists decimalarray")
+    sql("drop table if exists decimalstruct")
     sql("drop table if exists carbontable")
     sql("drop table if exists hivetable")
     sql("drop table if exists testtable")
@@ -630,13 +647,14 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists testtable1")
     sql("drop table if exists testhivetable1")
     sql("drop table if exists complexcarbontable")
+    sql("drop table if exists complex_t3")
+    sql("drop table if exists complex_hive_t3")
     sql("drop table if exists header_test")
     sql("drop table if exists duplicateColTest")
     sql("drop table if exists mixed_header_test")
     sql("drop table if exists primitivecarbontable")
     sql("drop table if exists UPPERCASEcube")
     sql("drop table if exists lowercaseCUBE")
-    sql("drop table if exists t3")
     sql("drop table if exists carbontable1")
     sql("drop table if exists hivetable1")
     sql("drop table if exists comment_test")
