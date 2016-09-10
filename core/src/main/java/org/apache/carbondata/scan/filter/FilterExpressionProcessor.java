@@ -328,22 +328,20 @@ public class FilterExpressionProcessor implements FilterProcessor {
         }
         break;
       default:
-        condExpression = (ConditionalExpression) expression;
-        if (condExpression.isSingleDimension()
-            && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-            != DataType.ARRAY
-            && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-            != DataType.STRUCT) {
+        if(expression instanceof ConditionalExpression) {
           condExpression = (ConditionalExpression) expression;
-          if (condExpression.getColumnList().get(0).getCarbonColumn()
-              .hasEncoding(Encoding.DICTIONARY) && !condExpression.getColumnList().get(0)
-              .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-            return new ConditionalFilterResolverImpl(expression, true, true);
-          } else {
-            return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
+          if (condExpression.isSingleDimension()
+                  && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()
+                  != DataType.ARRAY
+                  && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()
+                  != DataType.STRUCT) {
+            condExpression = (ConditionalExpression) expression;
+            if (condExpression.getColumnList().get(0).getCarbonColumn()
+                    .hasEncoding(Encoding.DICTIONARY) && !condExpression.getColumnList().get(0)
+                    .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+              return new ConditionalFilterResolverImpl(expression, true, true);
+            }
           }
-        } else {
-          return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
         }
     }
     return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);

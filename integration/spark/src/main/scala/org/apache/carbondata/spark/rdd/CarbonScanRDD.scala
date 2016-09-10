@@ -32,7 +32,8 @@ import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.Dictionary
 import org.apache.carbondata.core.carbon.datastore.block.{BlockletInfos, TableBlockInfo}
-import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsRecorder}
+import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
+import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
 import org.apache.carbondata.scan.executor.QueryExecutorFactory
 import org.apache.carbondata.scan.expression.Expression
@@ -72,11 +73,10 @@ class CarbonScanRDD[V: ClassTag](
     baseStoreLocation: String)
   extends RDD[V](sc, Nil) with Logging {
 
-  val defaultParallelism = sc.defaultParallelism
 
   override def getPartitions: Array[Partition] = {
-    val statisticRecorder = new QueryStatisticsRecorder(queryModel.getQueryId)
-    val startTime = System.currentTimeMillis()
+    var defaultParallelism = sparkContext.defaultParallelism
+    val statisticRecorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance()
     val (carbonInputFormat: CarbonInputFormat[Array[Object]], job: Job) =
       QueryPlanUtil.createCarbonInputFormat(queryModel.getAbsoluteTableIdentifier)
 
@@ -110,22 +110,25 @@ class CarbonScanRDD[V: ClassTag](
           new BlockletInfos(inputSplit.getNumberOfBlocklets, 0, inputSplit.getNumberOfBlocklets)
         )
       )
+      var activeNodes = Array[String]()
+      if(blockListTemp.nonEmpty) {
+         activeNodes = DistributionUtil
+          .ensureExecutorsAndGetNodeList(blockListTemp.toArray, sparkContext)
+      }
+      defaultParallelism = sparkContext.defaultParallelism
       val blockList = CarbonLoaderUtil.
         distributeBlockLets(blockListTemp.asJava, defaultParallelism).asScala
+
       if (blockList.nonEmpty) {
+        var statistic = new QueryStatistic()
         // group blocks to nodes, tasks
-        val startTime = System.currentTimeMillis
-        var statistic = new QueryStatistic
-        val activeNodes = DistributionUtil
-          .ensureExecutorsAndGetNodeList(blockList.toArray, sparkContext)
         val nodeBlockMapping =
           CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism,
             activeNodes.toList.asJava
           )
-        val timeElapsed: Long = System.currentTimeMillis - startTime
-        statistic.addStatistics("Total Time taken in block(s) allocation", System.currentTimeMillis)
-        statisticRecorder.recordStatistics(statistic);
-        statistic = new QueryStatistic
+        statistic.addStatistics(QueryStatisticsConstants.BLOCK_ALLOCATION, System.currentTimeMillis)
+        statisticRecorder.recordStatisticsForDriver(statistic, queryModel.getQueryId())
+        statistic = new QueryStatistic()
         var i = 0
         // Create Spark Partition for each task and assign blocks
         nodeBlockMapping.asScala.foreach { entry =>
@@ -146,9 +149,10 @@ class CarbonScanRDD[V: ClassTag](
                 + s"parallelism: $defaultParallelism , " +
                 s"no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks"
         )
-        statistic.addStatistics("Time taken to identify Block(s) to scan", System.currentTimeMillis)
-        statisticRecorder.recordStatistics(statistic);
-        statisticRecorder.logStatistics
+        statistic.addStatistics(QueryStatisticsConstants.BLOCK_IDENTIFICATION,
+          System.currentTimeMillis)
+        statisticRecorder.recordStatisticsForDriver(statistic, queryModel.getQueryId())
+        statisticRecorder.logStatisticsAsTableDriver()
         result.asScala.foreach { r =>
           val cp = r.asInstanceOf[CarbonSparkPartition]
           logInfo(s"Node : " + cp.locations.toSeq.mkString(",")
@@ -157,14 +161,10 @@ class CarbonScanRDD[V: ClassTag](
         }
       } else {
         logInfo("No blocks identified to scan")
-        val nodesPerBlock = new util.ArrayList[TableBlockInfo]()
-        result.add(new CarbonSparkPartition(id, 0, Seq("").toArray, nodesPerBlock))
       }
     }
     else {
       logInfo("No valid segments found to scan")
-      val nodesPerBlock = new util.ArrayList[TableBlockInfo]()
-      result.add(new CarbonSparkPartition(id, 0, Seq("").toArray, nodesPerBlock))
     }
     result.toArray(new Array[Partition](result.size()))
   }
@@ -216,13 +216,18 @@ class CarbonScanRDD[V: ClassTag](
         if (finished) {
           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
           if (null != queryModel.getStatisticsRecorder) {
-            val queryStatistic = new QueryStatistic
+            var queryStatistic = new QueryStatistic()
             queryStatistic
-              .addFixedTimeStatistic("Total Time taken to execute the query in executor Side",
+              .addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
                 System.currentTimeMillis - queryStartTime
               )
-            queryModel.getStatisticsRecorder.recordStatistics(queryStatistic);
-            queryModel.getStatisticsRecorder.logStatistics();
+            queryModel.getStatisticsRecorder.recordStatistics(queryStatistic)
+            // result size
+            queryStatistic = new QueryStatistic()
+            queryStatistic.addCountStatistic(QueryStatisticsConstants.RESULT_SIZE, recordCount)
+            queryModel.getStatisticsRecorder.recordStatistics(queryStatistic)
+            // print executor query statistics for each task_id
+            queryModel.getStatisticsRecorder.logStatisticsAsTableExecutor()
           }
         }
         !finished
@@ -237,13 +242,18 @@ class CarbonScanRDD[V: ClassTag](
         if (queryModel.getLimit != -1 && recordCount >= queryModel.getLimit) {
           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
           if (null != queryModel.getStatisticsRecorder) {
-            val queryStatistic = new QueryStatistic
+            var queryStatistic = new QueryStatistic()
             queryStatistic
-              .addFixedTimeStatistic("Total Time taken to execute the query in executor Side",
+              .addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
                 System.currentTimeMillis - queryStartTime
               )
-            queryModel.getStatisticsRecorder.recordStatistics(queryStatistic);
-            queryModel.getStatisticsRecorder.logStatistics();
+            queryModel.getStatisticsRecorder.recordStatistics(queryStatistic)
+            // result size
+            queryStatistic = new QueryStatistic()
+            queryStatistic.addCountStatistic(QueryStatisticsConstants.RESULT_SIZE, recordCount)
+            queryModel.getStatisticsRecorder.recordStatistics(queryStatistic)
+            // print executor query statistics for each task_id
+            queryModel.getStatisticsRecorder.logStatisticsAsTableExecutor()
           }
         }
         keyClass.getValue(rowIterator.next())

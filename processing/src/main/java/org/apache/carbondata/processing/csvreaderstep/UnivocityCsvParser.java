@@ -24,6 +24,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType;
@@ -40,6 +42,12 @@ import org.apache.hadoop.util.LineReader;
  */
 public class UnivocityCsvParser {
 
+  private LogService LOGGER = LogServiceFactory.getLogService(this.getClass().getName());
+
+  /**
+   * Max number of columns that will be parsed for a row by univocity parsing
+   */
+  private static final int DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING = 2000;
   /**
    * reader for csv
    */
@@ -85,12 +93,16 @@ public class UnivocityCsvParser {
   public void initialize() throws IOException {
     CsvParserSettings parserSettings = new CsvParserSettings();
     parserSettings.getFormat().setDelimiter(csvParserVo.getDelimiter().charAt(0));
+    parserSettings.getFormat().setComment(csvParserVo.getCommentCharacter().charAt(0));
     parserSettings.setLineSeparatorDetectionEnabled(true);
-    parserSettings.setMaxColumns(csvParserVo.getNumberOfColumns() + 10);
+    parserSettings.setMaxColumns(
+        getMaxColumnsForParsing(csvParserVo.getNumberOfColumns(), csvParserVo.getMaxColumns()));
     parserSettings.setNullValue("");
     parserSettings.setIgnoreLeadingWhitespaces(false);
     parserSettings.setIgnoreTrailingWhitespaces(false);
     parserSettings.setSkipEmptyLines(false);
+    parserSettings.getFormat().setQuote(null == csvParserVo.getQuoteCharacter() ?
+        '\"':csvParserVo.getQuoteCharacter().charAt(0));
     parserSettings.getFormat().setQuoteEscape(null == csvParserVo.getEscapeCharacter() ?
         '\\' :
         csvParserVo.getEscapeCharacter().charAt(0));
@@ -104,6 +116,26 @@ public class UnivocityCsvParser {
   }
 
   /**
+   * This method will decide the number of columns to be parsed for a row by univocity parser
+   *
+   * @param columnCountInSchema total number of columns in schema
+   * @return
+   */
+  private int getMaxColumnsForParsing(int columnCountInSchema, int maxColumns) {
+    int maxNumberOfColumnsForParsing = DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING;
+    if (maxColumns > 0) {
+      if (columnCountInSchema > maxColumns) {
+        maxNumberOfColumnsForParsing = columnCountInSchema + 10;
+      } else {
+        maxNumberOfColumnsForParsing = maxColumns;
+      }
+    } else if (columnCountInSchema > DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
+      maxNumberOfColumnsForParsing = columnCountInSchema + 10;
+    }
+    return maxNumberOfColumnsForParsing;
+  }
+
+  /**
    * Below method will be used to initialize the reader
    *
    * @throws IOException
@@ -112,25 +144,28 @@ public class UnivocityCsvParser {
     // if already one input stream is open first we need to close and then
     // open new stream
     close();
-    // get the block offset
-    long startOffset = this.csvParserVo.getBlockDetailsList().get(blockCounter).getBlockOffset();
-    FileType fileType = FileFactory
-        .getFileType(this.csvParserVo.getBlockDetailsList().get(blockCounter).getFilePath());
-    // calculate the end offset the block
-    long endOffset =
-        this.csvParserVo.getBlockDetailsList().get(blockCounter).getBlockLength() + startOffset;
 
-    // create a input stream for the block
-    DataInputStream dataInputStream = FileFactory
-        .getDataInputStream(this.csvParserVo.getBlockDetailsList().get(blockCounter).getFilePath(),
-            fileType, bufferSize, startOffset);
-    // if start offset is not 0 then reading then reading and ignoring the extra line
-    if (startOffset != 0) {
-      LineReader lineReader = new LineReader(dataInputStream, 1);
-      startOffset += lineReader.readLine(new Text(), 0);
+    String path = this.csvParserVo.getBlockDetailsList().get(blockCounter).getFilePath();
+    FileType fileType = FileFactory.getFileType(path);
+
+    if (path.endsWith(".gz")) {
+      DataInputStream dataInputStream = FileFactory.getDataInputStream(path, fileType, bufferSize);
+      inputStreamReader = new BufferedReader(new InputStreamReader(dataInputStream));
+    } else {
+      long startOffset = this.csvParserVo.getBlockDetailsList().get(blockCounter).getBlockOffset();
+      long blockLength = this.csvParserVo.getBlockDetailsList().get(blockCounter).getBlockLength();
+      long endOffset = blockLength + startOffset;
+
+      DataInputStream dataInputStream =
+          FileFactory.getDataInputStream(path, fileType, bufferSize, startOffset);
+      // if start offset is not 0 then reading then reading and ignoring the extra line
+      if (startOffset != 0) {
+        LineReader lineReader = new LineReader(dataInputStream, 1);
+        startOffset += lineReader.readLine(new Text(), 0);
+      }
+      inputStreamReader = new BufferedReader(new InputStreamReader(
+          new BoundedDataStream(dataInputStream, endOffset - startOffset)));
     }
-    inputStreamReader = new BufferedReader(new InputStreamReader(
-        new CustomDataStream(dataInputStream, endOffset - startOffset)));
   }
 
   /**

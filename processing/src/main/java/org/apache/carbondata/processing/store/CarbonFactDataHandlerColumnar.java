@@ -878,6 +878,19 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   }
 
   /**
+   * @param double value
+   * @return it return no of value after decimal
+   */
+  private int getDecimalCount(double value) {
+    String strValue = BigDecimal.valueOf(Math.abs(value)).toPlainString();
+    int integerPlaces = strValue.indexOf('.');
+    int decimalPlaces = 0;
+    if (-1 != integerPlaces) {
+      decimalPlaces = strValue.length() - integerPlaces - 1;
+    }
+    return decimalPlaces;
+  }
+  /**
    * This method will be used to update the max value for each measure
    */
   private void calculateMaxMin(Object[] max, Object[] min, int[] decimal, int[] msrIndex,
@@ -892,7 +905,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           double minVal = (double) min[count];
           max[count] = (maxVal > value ? max[count] : value);
           min[count] = (minVal < value ? min[count] : value);
-          int num = (value % 1 == 0) ? 0 : CarbonCommonConstants.CARBON_DECIMAL_POINTERS_DEFAULT;
+          int num = getDecimalCount(value);
           decimal[count] = (decimal[count] > num ? decimal[count] : num);
         } else if (type[count] == CarbonCommonConstants.BIG_INT_MEASURE) {
           long value = (long) row[count];
@@ -900,7 +913,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           long minVal = (long) min[count];
           max[count] = (maxVal > value ? max[count] : value);
           min[count] = (minVal < value ? min[count] : value);
-          int num = (value % 1 == 0) ? 0 : CarbonCommonConstants.CARBON_DECIMAL_POINTERS_DEFAULT;
+          int num = getDecimalCount(value);
           decimal[count] = (decimal[count] > num ? decimal[count] : num);
         } else if (type[count] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
           byte[] buff = null;

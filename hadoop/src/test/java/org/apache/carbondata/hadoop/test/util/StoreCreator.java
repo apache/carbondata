@@ -18,21 +18,7 @@
  */
 package org.apache.carbondata.hadoop.test.util;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-
+import com.google.gson.Gson;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
@@ -83,7 +69,9 @@ import org.apache.carbondata.processing.graphgenerator.GraphGenerator;
 import org.apache.carbondata.processing.graphgenerator.GraphGeneratorException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
-import com.google.gson.Gson;
+import java.io.*;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 /**
  * This class will create store file based on provided schema
@@ -124,7 +112,6 @@ public class StoreCreator {
           absoluteTableIdentifier.getStorePath());
 
       String kettleHomePath = "../processing/carbonplugins";
-      int currentRestructureNumber = 0;
       CarbonTable table = createTable();
       writeDictionary(factFilePath, table);
       CarbonDataLoadSchema schema = new CarbonDataLoadSchema(table);
@@ -137,8 +124,7 @@ public class StoreCreator {
       loadModel.setFactFilePath(factFilePath);
       loadModel.setLoadMetadataDetails(new ArrayList<LoadMetadataDetails>());
 
-      executeGraph(loadModel, absoluteTableIdentifier.getStorePath(), kettleHomePath,
-          currentRestructureNumber);
+      executeGraph(loadModel, absoluteTableIdentifier.getStorePath(), kettleHomePath);
     } catch (Exception e) {
       e.printStackTrace();
     }
@@ -327,11 +313,10 @@ public class StoreCreator {
    * @param loadModel
    * @param storeLocation
    * @param kettleHomePath
-   * @param currentRestructNumber
    * @throws Exception
    */
-  public static void executeGraph(LoadModel loadModel, String storeLocation, String kettleHomePath,
-      int currentRestructNumber) throws Exception {
+  public static void executeGraph(LoadModel loadModel, String storeLocation, String kettleHomePath)
+      throws Exception {
     System.setProperty("KETTLE_HOME", kettleHomePath);
     new File(storeLocation).mkdirs();
     String outPutLoc = storeLocation + "/etl";
@@ -368,11 +353,13 @@ public class StoreCreator {
     GraphGenerator.blockInfo.put("qwqwq", new BlockDetails[] { blockDetails });
     schmaModel.setBlocksID("qwqwq");
     schmaModel.setEscapeCharacter("\\");
+    schmaModel.setQuoteCharacter("\"");
+    schmaModel.setCommentCharacter("#");
     info.setDatabaseName(databaseName);
     info.setTableName(tableName);
 
     generateGraph(schmaModel, info, loadModel.getTableName(), "0", loadModel.getSchema(), null,
-        currentRestructNumber, loadModel.getLoadMetadataDetails());
+        loadModel.getLoadMetadataDetails());
 
     DataGraphExecuter graphExecuter = new DataGraphExecuter(schmaModel);
     graphExecuter
@@ -460,13 +447,12 @@ public class StoreCreator {
    * @param partitionID
    * @param schema
    * @param factStoreLocation
-   * @param currentRestructNumber
    * @param loadMetadataDetails
    * @throws GraphGeneratorException
    */
   private static void generateGraph(IDataProcessStatus schmaModel, SchemaInfo info,
       String tableName, String partitionID, CarbonDataLoadSchema schema, String factStoreLocation,
-      int currentRestructNumber, List<LoadMetadataDetails> loadMetadataDetails)
+      List<LoadMetadataDetails> loadMetadataDetails)
       throws GraphGeneratorException {
     DataLoadModel model = new DataLoadModel();
     model.setCsvLoad(null != schmaModel.getCsvFilePath() || null != schmaModel.getFilesToProcess());
@@ -476,6 +462,8 @@ public class StoreCreator {
     model.setBlocksID(schmaModel.getBlocksID());
     model.setFactTimeStamp(readCurrentTime());
     model.setEscapeCharacter(schmaModel.getEscapeCharacter());
+    model.setQuoteCharacter(schmaModel.getQuoteCharacter());
+    model.setCommentCharacter(schmaModel.getCommentCharacter());
     if (null != loadMetadataDetails && !loadMetadataDetails.isEmpty()) {
       model.setLoadNames(
           CarbonDataProcessorUtil.getLoadNameFromLoadMetaDataDetails(loadMetadataDetails));
@@ -489,7 +477,7 @@ public class StoreCreator {
         .getProperty("store_output_location", "../carbon-store/system/carbon/etl");
     GraphGenerator generator =
         new GraphGenerator(model, hdfsReadMode, partitionID, factStoreLocation,
-            currentRestructNumber, allocate, schema, "0", outputLocation);
+            allocate, schema, "0", outputLocation);
     generator.generateGraph();
   }
 

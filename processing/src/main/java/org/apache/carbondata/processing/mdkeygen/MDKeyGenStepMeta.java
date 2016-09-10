@@ -97,8 +97,6 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
 
   private Map<String, GenericDataType> complexTypes;
 
-  private int currentRestructNumber;
-
   /**
    * It is column groups in below format
    * 0,1~2~3,4,5,6~7~8,9
@@ -155,7 +153,6 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     databaseName = "";
     columnGroupsString = "";
     noDictionaryDims = "";
-    currentRestructNumber = -1;
     measureDataType = "";
     taskNo = "";
     factTimeStamp = "";
@@ -178,8 +175,6 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     retval.append("    ").append(XMLHandler.addTagValue("dimensionCount", dimensionCount));
     retval.append("    ").append(XMLHandler.addTagValue("complexDimsCount", complexDimsCount));
     retval.append("    ").append(XMLHandler.addTagValue("complexTypeString", complexTypeString));
-    retval.append("    ")
-        .append(XMLHandler.addTagValue("currentRestructNumber", currentRestructNumber));
     retval.append("    ").append(XMLHandler.addTagValue("measureDataType", measureDataType));
     retval.append("    ").append(XMLHandler.addTagValue("taskNo", taskNo));
     retval.append("    ").append(XMLHandler.addTagValue("factTimeStamp", factTimeStamp));
@@ -207,8 +202,6 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       dimensionCount = XMLHandler.getTagValue(stepnode, "dimensionCount");
       complexDimsCount = XMLHandler.getTagValue(stepnode, "complexDimsCount");
       complexTypeString = XMLHandler.getTagValue(stepnode, "complexTypeString");
-      currentRestructNumber =
-          Integer.parseInt(XMLHandler.getTagValue(stepnode, "currentRestructNumber"));
       measureDataType = XMLHandler.getTagValue(stepnode, "measureDataType");
       taskNo = XMLHandler.getTagValue(stepnode, "taskNo");
       factTimeStamp = XMLHandler.getTagValue(stepnode, "factTimeStamp");
@@ -235,8 +228,6 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       rep.saveStepAttribute(idTransformation, idStep, "dimensionCount", dimensionCount);
       rep.saveStepAttribute(idTransformation, idStep, "complexDimsCount", complexDimsCount);
       rep.saveStepAttribute(idTransformation, idStep, "complexTypeString", complexTypeString);
-      rep.saveStepAttribute(idTransformation, idStep, "currentRestructNumber",
-          currentRestructNumber);
       rep.saveStepAttribute(idTransformation, idStep, "measureDataType", measureDataType);
       rep.saveStepAttribute(idTransformation, idStep, "taskNo", taskNo);
       rep.saveStepAttribute(idTransformation, idStep, "factTimeStamp", factTimeStamp);
@@ -267,7 +258,6 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       dimensionCount = rep.getStepAttributeString(idStep, "dimensionCount");
       complexDimsCount = rep.getStepAttributeString(idStep, "complexDimsCount");
       complexTypeString = rep.getStepAttributeString(idStep, "complexTypeString");
-      currentRestructNumber = (int) rep.getStepAttributeInteger(idStep, "currentRestructNumber");
       measureDataType = rep.getStepAttributeString(idStep, "measureDataType");
       taskNo = rep.getStepAttributeString(idStep, "taskNo");
       factTimeStamp = rep.getStepAttributeString(idStep, "factTimeStamp");
@@ -397,20 +387,6 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
    */
   public void setComplexTypeString(String complexTypeString) {
     this.complexTypeString = complexTypeString;
-  }
-
-  /**
-   * @return the currentRestructNumber
-   */
-  public int getCurrentRestructNumber() {
-    return currentRestructNumber;
-  }
-
-  /**
-   * @param currentRestructNum the currentRestructNumber to set
-   */
-  public void setCurrentRestructNumber(int currentRestructNum) {
-    this.currentRestructNumber = currentRestructNum;
   }
 
   /**

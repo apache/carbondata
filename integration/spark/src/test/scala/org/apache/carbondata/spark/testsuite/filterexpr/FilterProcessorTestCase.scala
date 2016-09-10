@@ -31,8 +31,6 @@ import org.scalatest.BeforeAndAfterAll
 /**
   * Test Class for filter expression query on String datatypes
   *
-  * @author N00902756
-  *
   */
 class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -85,14 +83,15 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
         s"OPTIONS('DELIMITER'= ',', " +
         s"'FILEHEADER'= '')"
     )
+    sql("DROP TABLE IF EXISTS filtertestTablesWithNull")
     sql(
       "CREATE TABLE filtertestTablesWithNull (ID int, date Timestamp, country " +
         "String, " +
         "name String, phonetype String, serialname String,salary int) " +
       "STORED BY 'org.apache.carbondata.format'"
     )
-    
-        sql(
+    sql("DROP TABLE IF EXISTS filtertestTablesWithNullJoin")
+    sql(
       "CREATE TABLE filtertestTablesWithNullJoin (ID int, date Timestamp, country " +
         "String, " +
         "name String, phonetype String, serialname String,salary int) " +
@@ -112,38 +111,25 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
         s"OPTIONS('DELIMITER'= ',', " +
         s"'FILEHEADER'= '')"
     )
+
+    sql("DROP TABLE IF EXISTS big_int_basicc")
+    sql("DROP TABLE IF EXISTS big_int_basicc_1")
+    sql("DROP TABLE IF EXISTS big_int_basicc_Hive")
+    sql("DROP TABLE IF EXISTS big_int_basicc_Hive_1")
+    sql("CREATE TABLE big_int_basicc (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp,enddate timestamp,PointId double,score decimal(10,3))STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE big_int_basicc_1 (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp,enddate timestamp,PointId double,score decimal(10,3))STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE big_int_basicc_Hive (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate date,enddate date,PointId double,score decimal(10,3))row format delimited fields terminated by ',' " +
+        "tblproperties(\"skip.header.line.count\"=\"1\") ")
+    sql("CREATE TABLE big_int_basicc_Hive_1 (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate date,enddate date,PointId double,score decimal(10,3))row format delimited fields terminated by ',' " +
+        "tblproperties(\"skip.header.line.count\"=\"1\") ")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
+    sql("LOAD DATA INPATH './src/test/resources/big_int_Decimal.csv'  INTO TABLE big_int_basicc options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$','COMPLEX_DELIMITER_LEVEL_2'=':', 'FILEHEADER'= '')")
+    sql("LOAD DATA INPATH './src/test/resources/big_int_Decimal.csv'  INTO TABLE big_int_basicc_1 options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$','COMPLEX_DELIMITER_LEVEL_2'=':', 'FILEHEADER'= '')")
+    sql("load data local inpath './src/test/resources/big_int_Decimal.csv' into table big_int_basicc_Hive")
+    sql("load data local inpath './src/test/resources/big_int_Decimal.csv' into table big_int_basicc_Hive_1")
   }
 
-         sql("CREATE TABLE big_int_basicc (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp,enddate timestamp,PointId double,score decimal(10,3))STORED BY 'org.apache.carbondata.format'")
-        sql("CREATE TABLE big_int_basicc_1 (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate timestamp,enddate timestamp,PointId double,score decimal(10,3))STORED BY 'org.apache.carbondata.format'")
-        
-        sql("CREATE TABLE big_int_basicc_Hive (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate date,enddate date,PointId double,score decimal(10,3))row format delimited fields terminated by ',' " +
-        "tblproperties(\"skip.header.line.count\"=\"1\") " +
-        ""
-    )
-        sql("CREATE TABLE big_int_basicc_Hive_1 (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate date,enddate date,PointId double,score decimal(10,3))row format delimited fields terminated by ',' " +
-        "tblproperties(\"skip.header.line.count\"=\"1\") " +
-        ""
-    )
-        CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
-  sql(
-        "LOAD DATA INPATH './src/test/resources/big_int_Decimal.csv'  INTO TABLE big_int_basicc options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$','COMPLEX_DELIMITER_LEVEL_2'=':', 'FILEHEADER'= '')"
-    );
-        
-    sql(
-        "LOAD DATA INPATH './src/test/resources/big_int_Decimal.csv'  INTO TABLE big_int_basicc_1 options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$','COMPLEX_DELIMITER_LEVEL_2'=':', 'FILEHEADER'= '')"
-    );
-    
-        sql(
-      "load data local inpath './src/test/resources/big_int_Decimal.csv' into table " +
-        "big_int_basicc_Hive"
-    );
-      sql(
-      "load data local inpath './src/test/resources/big_int_Decimal.csv' into table " +
-        "big_int_basicc_Hive_1"
-    );
-    
+
   test("Is not null filter") {
     checkAnswer(
       sql("select id from filtertestTablesWithNull " + "where id is not null"),
@@ -292,6 +278,12 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists filtertestTablesWithNull")
     sql("drop table if exists filterTimestampDataType")
     sql("drop table if exists noloadtable")
+    sql("DROP TABLE IF EXISTS big_int_basicc")
+    sql("DROP TABLE IF EXISTS big_int_basicc_1")
+    sql("DROP TABLE IF EXISTS big_int_basicc_Hive")
+    sql("DROP TABLE IF EXISTS big_int_basicc_Hive_1")
+    sql("DROP TABLE IF EXISTS filtertestTablesWithNull")
+    sql("DROP TABLE IF EXISTS filtertestTablesWithNullJoin")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }

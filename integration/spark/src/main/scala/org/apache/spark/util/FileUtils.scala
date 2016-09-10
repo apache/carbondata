@@ -43,10 +43,8 @@ object FileUtils extends Logging {
       } else if (fileName.startsWith(CarbonCommonConstants.UNDERSCORE) ||
           fileName.startsWith(CarbonCommonConstants.POINT)) {
         logWarning(s"skip invisible input file: $path")
-      } else if (fileName.toLowerCase().endsWith(".csv")) {
-        stringBuild.append(path.replace('\\', '/')).append(CarbonCommonConstants.COMMA)
       } else {
-        logWarning(s"skip input file: $path, because this path doesn't end with '.csv'")
+        stringBuild.append(path.replace('\\', '/')).append(CarbonCommonConstants.COMMA)
       }
     }
   }

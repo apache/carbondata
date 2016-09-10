@@ -32,6 +32,7 @@ import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, ColumnIdentif
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
 import org.apache.carbondata.core.util.DataTypeUtil
 
 /**
@@ -147,14 +148,17 @@ case class CarbonDictionaryDecoder(
 
   override def canProcessSafeRows: Boolean = true
 
+
+
   override def doExecute(): RDD[InternalRow] = {
     attachTree(this, "execute") {
       val storePath = sqlContext.catalog.asInstanceOf[CarbonMetastoreCatalog].storePath
+      val queryId = sqlContext.getConf("queryId", System.nanoTime() + "")
       val absoluteTableIdentifiers = relations.map { relation =>
         val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
         (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
       }.toMap
-
+      val recorder = new QueryStatisticsRecorder(queryId)
       if (isRequiredToDecode) {
         val dataTypes = child.output.map { attr => attr.dataType }
         child.execute().mapPartitions { iter =>
@@ -166,9 +170,21 @@ case class CarbonDictionaryDecoder(
           val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
           new Iterator[InternalRow] {
             val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)
-            override final def hasNext: Boolean = iter.hasNext
-
+            var flag = true
+            var total = 0L
+            override final def hasNext: Boolean = {
+              flag = iter.hasNext
+              if (false == flag && total > 0) {
+                val queryStatistic = new QueryStatistic()
+                queryStatistic
+                  .addFixedTimeStatistic(QueryStatisticsConstants.PREPARE_RESULT, total)
+                recorder.recordStatistics(queryStatistic)
+                recorder.logStatistics()
+              }
+              flag
+            }
             override final def next(): InternalRow = {
+              val startTime = System.currentTimeMillis()
               val row: InternalRow = iter.next()
               val data = row.toSeq(dataTypes).toArray
               dictIndex.foreach { index =>
@@ -178,7 +194,9 @@ case class CarbonDictionaryDecoder(
                       getDictionaryColumnIds(index)._3)
                 }
               }
-              unsafeProjection(new GenericMutableRow(data))
+              val result = unsafeProjection(new GenericMutableRow(data))
+              total += System.currentTimeMillis() - startTime
+              result
             }
           }
         }

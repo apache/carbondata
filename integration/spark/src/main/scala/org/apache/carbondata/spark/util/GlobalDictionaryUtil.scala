@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.spark.util
 
-import java.io.IOException
+import java.io.{FileNotFoundException, IOException}
 import java.nio.charset.Charset
 import java.util.regex.Pattern
 
@@ -27,7 +27,7 @@ import scala.language.implicitConversions
 import scala.util.control.Breaks.{break, breakable}
 
 import org.apache.commons.lang3.{ArrayUtils, StringUtils}
-import org.apache.spark.Logging
+import org.apache.spark.{Accumulator, Logging}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation, DataFrame, SQLContext}
 import org.apache.spark.sql.hive.CarbonMetastoreCatalog
@@ -43,7 +43,7 @@ import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.reader.CarbonDictionaryReader
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.spark.CarbonSparkFactory
@@ -364,6 +364,16 @@ object GlobalDictionaryUtil extends Logging {
       .option("escape", carbonLoadModel.getEscapeChar)
       .option("ignoreLeadingWhiteSpace", "false")
       .option("ignoreTrailingWhiteSpace", "false")
+      .option("codec", "gzip")
+      .option("quote", {
+        if (StringUtils.isEmpty(carbonLoadModel.getQuoteChar)) {
+          "" + CSVWriter. DEFAULT_QUOTE_CHARACTER
+        }
+        else {
+          carbonLoadModel.getQuoteChar
+        }
+      })
+      .option("comment", carbonLoadModel.getCommentChar)
       .load(carbonLoadModel.getFactFilePath)
     df
   }
@@ -489,9 +499,10 @@ object GlobalDictionaryUtil extends Logging {
     val preDictDimensionOption = dimensions.filter(
       _.getColName.equalsIgnoreCase(dimParent))
     if (preDictDimensionOption.length == 0) {
-      logError(s"No column $dimParent exists in ${table.getDatabaseName}.${table.getTableName}")
-      throw new DataLoadingException(s"No column $colName exists " +
-      s"in ${table.getDatabaseName}.${table.getTableName}")
+      logError(s"Column $dimParent is not a key column " +
+        s"in ${table.getDatabaseName}.${table.getTableName}")
+      throw new DataLoadingException(s"Column $dimParent is not a key column. " +
+        s"Only key column can be part of dictionary and used in COLUMNDICT option.")
     }
     val preDictDimension = preDictDimensionOption(0)
     if (preDictDimension.isComplex) {
@@ -573,6 +584,48 @@ object GlobalDictionaryUtil extends Logging {
   }
 
   /**
+   * parse records in dictionary file and validate record
+   *
+   * @param x
+   * @param accum
+   * @param csvFileColumns
+   */
+  private def parseRecord(x: String, accum: Accumulator[Int],
+                  csvFileColumns: Array[String]) : (String, String) = {
+    val tokens = x.split("" + CSVWriter.DEFAULT_SEPARATOR)
+    var columnName: String = ""
+    var value: String = ""
+    // such as "," , "", throw ex
+    if (tokens.size == 0) {
+      logError("Read a bad dictionary record: " + x)
+      accum += 1
+    } else if (tokens.size == 1) {
+      // such as "1", "jone", throw ex
+      if (x.contains(",") == false) {
+        accum += 1
+      } else {
+        try {
+          columnName = csvFileColumns(tokens(0).toInt)
+        } catch {
+          case ex: Exception =>
+            logError("Read a bad dictionary record: " + x)
+            accum += 1
+        }
+      }
+    } else {
+      try {
+        columnName = csvFileColumns(tokens(0).toInt)
+        value = tokens(1)
+      } catch {
+        case ex: Exception =>
+          logError("Read a bad dictionary record: " + x)
+          accum += 1
+      }
+    }
+    (columnName, value)
+  }
+
+  /**
    * read local dictionary and prune column
    *
    * @param sqlContext
@@ -582,38 +635,26 @@ object GlobalDictionaryUtil extends Logging {
    * @return allDictionaryRdd
    */
   private def readAllDictionaryFiles(sqlContext: SQLContext,
-                                       csvFileColumns: Array[String],
-                                       requireColumns: Array[String],
-                                     allDictionaryPath: String) = {
+                                     csvFileColumns: Array[String],
+                                     requireColumns: Array[String],
+                                     allDictionaryPath: String,
+                                     accumulator: Accumulator[Int]) = {
     var allDictionaryRdd: RDD[(String, Iterable[String])] = null
     try {
       // read local dictionary file, and spilt (columnIndex, columnValue)
       val basicRdd = sqlContext.sparkContext.textFile(allDictionaryPath)
-        .map(x => {
-        val tokens = x.split("" + CSVWriter.DEFAULT_SEPARATOR)
-        var index: Int = 0
-        var value: String = ""
-        try {
-          index = tokens(0).toInt
-          value = tokens(1)
-        } catch {
-          case ex: Exception =>
-            logError("read a bad dictionary record" + x)
-        }
-        (index, value)
-      })
+        .map(x => parseRecord(x, accumulator, csvFileColumns)).persist()
+
       // group by column index, and filter required columns
       val requireColumnsList = requireColumns.toList
       allDictionaryRdd = basicRdd
         .groupByKey()
-        .map(x => (csvFileColumns(x._1), x._2))
         .filter(x => requireColumnsList.contains(x._1))
     } catch {
       case ex: Exception =>
-        logError("read local dictionary files failed")
+        logError("Read dictionary files failed. Caused by: " + ex.getMessage)
         throw ex
     }
-
     allDictionaryRdd
   }
 
@@ -629,24 +670,59 @@ object GlobalDictionaryUtil extends Logging {
     // filepath regex, look like "/path/*.dictionary"
     if (filePath.getName.startsWith("*")) {
       val dictExt = filePath.getName.substring(1)
-      val listFiles = filePath.getParentFile.listFiles()
-      if (listFiles.exists(file =>
-        file.getName.endsWith(dictExt) && file.getSize > 0)) {
-        true
+      if (filePath.getParentFile.exists()) {
+        val listFiles = filePath.getParentFile.listFiles()
+        if (listFiles.exists(file =>
+          file.getName.endsWith(dictExt) && file.getSize > 0)) {
+          true
+        } else {
+          logWarning("No dictionary files found or empty dictionary files! " +
+            "Won't generate new dictionary.")
+          false
+        }
       } else {
-        logInfo("No dictionary files found or empty dictionary files! " +
-          "Won't generate new dictionary.")
-        false
+        throw new FileNotFoundException(
+          "The given dictionary file path is not found!")
       }
     } else {
-      if (filePath.exists() && filePath.getSize > 0) {
-        true
+      if (filePath.exists()) {
+        if (filePath.getSize > 0) {
+          true
+        } else {
+          logWarning("No dictionary files found or empty dictionary files! " +
+            "Won't generate new dictionary.")
+          false
+        }
       } else {
-        logInfo("No dictionary files found or empty dictionary files! " +
-          "Won't generate new dictionary.")
-        false
+        throw new FileNotFoundException(
+          "The given dictionary file path is not found!")
       }
     }
+  }
+
+  /**
+   * get file headers from fact file
+   *
+   * @param carbonLoadModel
+   * @return headers
+   */
+  private def getHeaderFormFactFile(carbonLoadModel: CarbonLoadModel): Array[String] = {
+    var headers: Array[String] = null
+    val factFile: String = carbonLoadModel.getFactFilePath.split(",")(0)
+    val readLine = CarbonUtil.readHeader(factFile)
+
+    if (null != readLine) {
+      val delimiter = if (StringUtils.isEmpty(carbonLoadModel.getCsvDelimiter)) {
+        "" + CSVWriter.DEFAULT_SEPARATOR
+      } else {
+        carbonLoadModel.getCsvDelimiter
+      }
+      headers = readLine.toLowerCase().split(delimiter);
+    } else {
+      logError("Not found file header! Please set fileheader")
+      throw new IOException("Failed to get file header")
+    }
+    headers
   }
 
   /**
@@ -689,6 +765,12 @@ object GlobalDictionaryUtil extends Logging {
           generatePredefinedColDictionary(colDictFilePath, table,
             dimensions, carbonLoadModel, sqlContext, hdfsLocation, dictfolderPath)
         }
+        if (headers.length > df.columns.length) {
+          val msg = "The number of columns in the file header do not match the number of " +
+            "columns in the data file; Either delimiter or fileheader provided is not correct"
+          logError(msg)
+          throw new DataLoadingException(msg)
+        }
         // use fact file to generate global dict
         val (requireDimension, requireColumnNames) = pruneDimensions(dimensions,
           headers, df.columns)
@@ -705,7 +787,7 @@ object GlobalDictionaryUtil extends Logging {
           // check result status
           checkStatus(carbonLoadModel, sqlContext, model, statusList)
         } else {
-          logInfo("have no column need to generate global dictionary in Fact file")
+          logInfo("No column found for generating global dictionary in source data files")
         }
         // generate global dict from dimension file
         if (carbonLoadModel.getDimFolderPath != null) {
@@ -732,31 +814,26 @@ object GlobalDictionaryUtil extends Logging {
           }
         }
       } else {
-        logInfo("Generate global dictionary from all dictionary files!")
+        logInfo("Generate global dictionary from dictionary files!")
         val isNonempty = validateAllDictionaryPath(allDictionaryPath)
         if(isNonempty) {
-          // fill the map[columnIndex -> columnName]
-          var fileHeaders : Array[String] = null
-          if(!StringUtils.isEmpty(carbonLoadModel.getCsvHeader)) {
-            val splitColumns = carbonLoadModel.getCsvHeader.split("" + CSVWriter.DEFAULT_SEPARATOR)
-            val fileHeadersArr = new ArrayBuffer[String]()
-            for(i <- 0 until splitColumns.length) {
-              fileHeadersArr += splitColumns(i).trim.toLowerCase()
-            }
-            fileHeaders = fileHeadersArr.toArray
+          var headers = if (StringUtils.isEmpty(carbonLoadModel.getCsvHeader)) {
+            getHeaderFormFactFile(carbonLoadModel)
           } else {
-            logError("Not found file header! Please set fileheader")
-            throw new IOException("Failed to get file header")
+            carbonLoadModel.getCsvHeader.toLowerCase.split("" + CSVWriter.DEFAULT_SEPARATOR)
           }
+          headers = headers.map(headerName => headerName.trim)
           // prune columns according to the CSV file header, dimension columns
           val (requireDimension, requireColumnNames) =
-            pruneDimensions(dimensions, fileHeaders, fileHeaders)
+            pruneDimensions(dimensions, headers, headers)
           if (requireDimension.nonEmpty) {
             val model = createDictionaryLoadModel(carbonLoadModel, table, requireDimension,
               hdfsLocation, dictfolderPath, false)
+            // check if dictionary files contains bad record
+            val accumulator = sqlContext.sparkContext.accumulator(0)
             // read local dictionary file, and group by key
-            val allDictionaryRdd = readAllDictionaryFiles(sqlContext, fileHeaders,
-              requireColumnNames, allDictionaryPath)
+            val allDictionaryRdd = readAllDictionaryFiles(sqlContext, headers,
+              requireColumnNames, allDictionaryPath, accumulator)
             // read exist dictionary and combine
             val inputRDD = new CarbonAllDictionaryCombineRDD(allDictionaryRdd, model)
               .partitionBy(new ColumnPartitioner(model.primDimensions.length))
@@ -764,6 +841,11 @@ object GlobalDictionaryUtil extends Logging {
             val statusList = new CarbonGlobalDictionaryGenerateRDD(inputRDD, model).collect()
             // check result status
             checkStatus(carbonLoadModel, sqlContext, model, statusList)
+            // if the dictionary contains wrong format record, throw ex
+            if (accumulator.value > 0) {
+              throw new DataLoadingException("Data Loading failure, dictionary values are " +
+                "not in correct format!")
+            }
           } else {
             logInfo("have no column need to generate global dictionary")
           }
@@ -771,7 +853,7 @@ object GlobalDictionaryUtil extends Logging {
       }
     } catch {
       case ex: Exception =>
-        logError("generate global dictionary failed")
+        logError("generate global dictionary failed", ex)
         throw ex
     }
   }

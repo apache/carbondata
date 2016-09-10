@@ -70,6 +70,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     carbonLoadModel.setComplexDelimiterLevel1("\\$")
     carbonLoadModel.setComplexDelimiterLevel2("\\:")
     carbonLoadModel.setStorePath(relation.tableMeta.storePath)
+    carbonLoadModel.setQuoteChar("\"")
     carbonLoadModel
   }
 

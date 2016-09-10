@@ -46,7 +46,6 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeas
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.load.BlockDetails;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.api.dataloader.DataLoadModel;
 import org.apache.carbondata.processing.api.dataloader.SchemaInfo;
 import org.apache.carbondata.processing.csvreaderstep.CsvInputMeta;
@@ -184,9 +183,10 @@ public class GraphGenerator {
   private boolean isColumnar;
   private String factTableName;
   private String factStoreLocation;
-  private int currentRestructNumber;
   private String blocksID;
   private String escapeCharacter;
+  private String quoteCharacter;
+  private String commentCharacter;
   /**
    * task id, each spark task has a unique id
    */
@@ -199,9 +199,13 @@ public class GraphGenerator {
    * new load start time
    */
   private String factTimeStamp;
+  /**
+   * max number of columns configured by user to be parsed in a row
+   */
+  private String maxColumns;
 
   public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
-      String factStoreLocation, int currentRestructNum, int allocate,
+      String factStoreLocation, int allocate,
       CarbonDataLoadSchema carbonDataLoadSchema, String segmentId) {
     CarbonMetadata.getInstance().addCarbonTable(carbonDataLoadSchema.getCarbonTable());
     this.schemaInfo = dataLoadModel.getSchemaInfo();
@@ -215,21 +219,23 @@ public class GraphGenerator {
     this.partitionID = partitionID;
     this.factStoreLocation = factStoreLocation;
     this.isColumnar = Boolean.parseBoolean(CarbonCommonConstants.IS_COLUMNAR_STORAGE_DEFAULTVALUE);
-    this.currentRestructNumber = currentRestructNum;
     this.blocksID = dataLoadModel.getBlocksID();
     this.taskNo = dataLoadModel.getTaskNo();
+    this.quoteCharacter = dataLoadModel.getQuoteCharacter();
+    this.commentCharacter = dataLoadModel.getCommentCharacter();
     this.factTimeStamp = dataLoadModel.getFactTimeStamp();
     this.segmentId = segmentId;
     this.escapeCharacter = dataLoadModel.getEscapeCharacter();
+    this.maxColumns = dataLoadModel.getMaxColumns();
     initialise();
     LOGGER.info("************* Is Columnar Storage" + isColumnar);
   }
 
   public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
-      String factStoreLocation, int currentRestructNum, int allocate,
-      CarbonDataLoadSchema carbonDataLoadSchema, String segmentId, String outputLocation) {
-    this(dataLoadModel, isHDFSReadMode, partitionID, factStoreLocation, currentRestructNum,
-        allocate, carbonDataLoadSchema, segmentId);
+      String factStoreLocation, int allocate, CarbonDataLoadSchema carbonDataLoadSchema,
+      String segmentId, String outputLocation) {
+    this(dataLoadModel, isHDFSReadMode, partitionID, factStoreLocation, allocate,
+        carbonDataLoadSchema, segmentId);
     this.outputLocation = outputLocation;
   }
 
@@ -436,7 +442,7 @@ public class GraphGenerator {
     csvInputMeta.setEncoding("UTF-8");
     csvInputMeta.setEnclosure("\"");
     csvInputMeta.setHeaderPresent(true);
-    csvInputMeta.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
+    csvInputMeta.setMaxColumns(maxColumns);
     StepMeta csvDataStep =
         new StepMeta(GraphGeneratorConstants.CSV_INPUT, (StepMetaInterface) csvInputMeta);
     csvDataStep.setLocation(100, 100);
@@ -448,6 +454,8 @@ public class GraphGenerator {
     csvInputMeta.setBlocksID(this.blocksID);
     csvInputMeta.setPartitionID(this.partitionID);
     csvInputMeta.setEscapeCharacter(this.escapeCharacter);
+    csvInputMeta.setQuoteCharacter(this.quoteCharacter);
+    csvInputMeta.setCommentCharacter(this.commentCharacter);
     csvDataStep.setDraw(true);
     csvDataStep.setDescription("Read raw data from " + GraphGeneratorConstants.CSV_INPUT);
 
@@ -467,12 +475,6 @@ public class GraphGenerator {
     sliceMerger.setTabelName(configurationInfo.getTableName());
     sliceMerger.setTableName(schemaInfo.getTableName());
     sliceMerger.setDatabaseName(schemaInfo.getDatabaseName());
-    if (null != this.factStoreLocation) {
-      sliceMerger.setCurrentRestructNumber(
-          CarbonUtil.getRestructureNumber(this.factStoreLocation, this.factTableName));
-    } else {
-      sliceMerger.setCurrentRestructNumber(configurationInfo.getCurrentRestructNumber());
-    }
     sliceMerger.setGroupByEnabled(isAutoAggRequest + "");
     if (isAutoAggRequest) {
       String[] aggType = configurationInfo.getAggType();
@@ -553,7 +555,6 @@ public class GraphGenerator {
     seqMeta.setDatabaseName(schemaInfo.getDatabaseName());
     seqMeta.setComplexDelimiterLevel1(schemaInfo.getComplexDelimiterLevel1());
     seqMeta.setComplexDelimiterLevel2(schemaInfo.getComplexDelimiterLevel2());
-    seqMeta.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
     seqMeta.setCarbonMetaHier(graphConfiguration.getMetaHeirString());
     seqMeta.setCarbonmsr(graphConfiguration.getMeasuresString());
     seqMeta.setCarbonProps(graphConfiguration.getPropertiesString());
@@ -614,7 +615,6 @@ public class GraphGenerator {
     carbonMdKey.setDatabaseName(schemaInfo.getDatabaseName());
     carbonMdKey.setTableName(schemaInfo.getTableName());
     carbonMdKey.setComplexTypeString(graphConfiguration.getComplexTypeString());
-    carbonMdKey.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
     carbonMdKey.setAggregateLevels(CarbonDataProcessorUtil
         .getLevelCardinalitiesString(graphConfiguration.getDimCardinalities(),
             graphConfiguration.getDimensions()));
@@ -759,7 +759,6 @@ public class GraphGenerator {
     sortRowsMeta.setTableName(schemaInfo.getTableName());
     sortRowsMeta.setDatabaseName(schemaInfo.getDatabaseName());
     sortRowsMeta.setOutputRowSize(actualMeasures.length + 1 + "");
-    sortRowsMeta.setCurrentRestructNumber(graphConfiguration.getCurrentRestructNumber());
     sortRowsMeta.setDimensionCount(graphConfiguration.getDimensions().length + "");
     sortRowsMeta.setComplexDimensionCount(graphConfiguration.getComplexTypeString().isEmpty() ?
         "0" :
@@ -791,7 +790,6 @@ public class GraphGenerator {
       CarbonDataLoadSchema carbonDataLoadSchema) throws GraphGeneratorException {
     //
     GraphConfigurationInfo graphConfiguration = new GraphConfigurationInfo();
-    graphConfiguration.setCurrentRestructNumber(currentRestructNumber);
     List<CarbonDimension> dimensions = carbonDataLoadSchema.getCarbonTable()
         .getDimensionByTableName(carbonDataLoadSchema.getCarbonTable().getFactTableName());
     prepareIsUseInvertedIndex(dimensions, graphConfiguration);

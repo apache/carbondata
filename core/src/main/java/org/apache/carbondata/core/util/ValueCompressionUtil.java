@@ -19,6 +19,7 @@
 
 package org.apache.carbondata.core.util;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -77,18 +78,18 @@ public final class ValueCompressionUtil {
   private static DataType getDataType(double value, int decimal, byte dataTypeSelected) {
     DataType dataType = DataType.DATA_DOUBLE;
     if (decimal == 0) {
-      if (value < Byte.MAX_VALUE) {
+      if (value <= Byte.MAX_VALUE && value >= Byte.MIN_VALUE) {
         dataType = DataType.DATA_BYTE;
-      } else if (value < Short.MAX_VALUE) {
+      } else if (value <= Short.MAX_VALUE && value >= Short.MIN_VALUE) {
         dataType = DataType.DATA_SHORT;
-      } else if (value < Integer.MAX_VALUE) {
+      } else if (value <= Integer.MAX_VALUE && value >= Integer.MIN_VALUE) {
         dataType = DataType.DATA_INT;
-      } else if (value < Long.MAX_VALUE) {
+      } else if (value <= Long.MAX_VALUE && value >= Long.MIN_VALUE) {
         dataType = DataType.DATA_LONG;
       }
     } else {
       if (dataTypeSelected == 1) {
-        if (value < Float.MAX_VALUE) {
+        if (value <= Float.MAX_VALUE && value >= Float.MIN_VALUE) {
           float floatValue = (float) value;
           if (floatValue - value != 0) {
             dataType = DataType.DATA_DOUBLE;
@@ -96,7 +97,7 @@ public final class ValueCompressionUtil {
           } else {
             dataType = DataType.DATA_FLOAT;
           }
-        } else if (value < Double.MAX_VALUE) {
+        } else if (value <= Double.MAX_VALUE && value >= Double.MIN_VALUE) {
           dataType = DataType.DATA_DOUBLE;
         }
       }
@@ -153,28 +154,32 @@ public final class ValueCompressionUtil {
       default:
         break;
     }
+    //Here we should use the Max abs as max to getDatatype, let's say -1 and -10000000, -1 is max,
+    //but we can't use -1 to getDatatype, we should use -10000000.
+    double absMaxValue = Math.abs((double) maxValue) >= Math.abs((double) minValue) ?
+        (double) maxValue:(double) minValue;
     // None Decimal
     if (decimal == 0) {
-      if (getSize(getDataType((double) maxValue, decimal, dataTypeSelected)) > getSize(
+      if (getSize(getDataType(absMaxValue, decimal, dataTypeSelected)) > getSize(
           getDataType((double) maxValue - (double) minValue, decimal, dataTypeSelected))) {
         return new CompressionFinder(COMPRESSION_TYPE.MAX_MIN, DataType.DATA_DOUBLE,
             getDataType((double) maxValue - (double) minValue, decimal, dataTypeSelected));
-      } else if (getSize(getDataType((double) maxValue, decimal, dataTypeSelected)) < getSize(
+      } else if (getSize(getDataType(absMaxValue, decimal, dataTypeSelected)) < getSize(
               getDataType((double) maxValue - (double) minValue, decimal, dataTypeSelected))) {
         return new CompressionFinder(COMPRESSION_TYPE.NONE, DataType.DATA_DOUBLE,
                 getDataType((double) maxValue - (double) minValue, decimal, dataTypeSelected));
       } else {
         return new CompressionFinder(COMPRESSION_TYPE.NONE, DataType.DATA_DOUBLE,
-            getDataType((double) maxValue, decimal, dataTypeSelected));
+            getDataType(absMaxValue, decimal, dataTypeSelected));
       }
     }
     // decimal
     else {
-      DataType actualDataType = getDataType((double) maxValue, decimal, dataTypeSelected);
+      DataType actualDataType = getDataType(absMaxValue, decimal, dataTypeSelected);
       DataType diffDataType =
           getDataType((double) maxValue - (double) minValue, decimal, dataTypeSelected);
       DataType maxNonDecDataType =
-          getDataType(Math.pow(10, decimal) * (double) maxValue, 0, dataTypeSelected);
+          getDataType(Math.pow(10, decimal) * absMaxValue, 0, dataTypeSelected);
       DataType diffNonDecDataType =
           getDataType(Math.pow(10, decimal) * ((double) maxValue - (double) minValue), 0,
               dataTypeSelected);
@@ -482,13 +487,16 @@ public final class ValueCompressionUtil {
   private static Object compressNonDecimalMaxMin(DataType changedDataType, double[] value,
       int decimal, double maxValue) {
     int i = 0;
+    BigDecimal max = BigDecimal.valueOf(maxValue);
     switch (changedDataType) {
       case DATA_BYTE:
 
         byte[] result = new byte[value.length];
 
         for (double a : value) {
-          result[i] = (byte) (Math.round((maxValue - a) * Math.pow(10, decimal)));
+          BigDecimal val = BigDecimal.valueOf(a);
+          double diff = max.subtract(val).doubleValue();
+          result[i] = (byte) (Math.round(diff * Math.pow(10, decimal)));
           i++;
         }
         return result;
@@ -498,7 +506,9 @@ public final class ValueCompressionUtil {
         short[] shortResult = new short[value.length];
 
         for (double a : value) {
-          shortResult[i] = (byte) (Math.round((maxValue - a) * Math.pow(10, decimal)));
+          BigDecimal val = BigDecimal.valueOf(a);
+          double diff = max.subtract(val).doubleValue();
+          shortResult[i] = (short) (Math.round(diff * Math.pow(10, decimal)));
           i++;
         }
         return shortResult;
@@ -508,7 +518,9 @@ public final class ValueCompressionUtil {
         int[] intResult = new int[value.length];
 
         for (double a : value) {
-          intResult[i] = (byte) (Math.round((maxValue - a) * Math.pow(10, decimal)));
+          BigDecimal val = BigDecimal.valueOf(a);
+          double diff = max.subtract(val).doubleValue();
+          intResult[i] = (int) (Math.round(diff * Math.pow(10, decimal)));
           i++;
         }
         return intResult;
@@ -518,7 +530,9 @@ public final class ValueCompressionUtil {
         long[] longResult = new long[value.length];
 
         for (double a : value) {
-          longResult[i] = (byte) (Math.round((maxValue - a) * Math.pow(10, decimal)));
+          BigDecimal val = BigDecimal.valueOf(a);
+          double diff = max.subtract(val).doubleValue();
+          longResult[i] = (long) (Math.round(diff * Math.pow(10, decimal)));
           i++;
         }
         return longResult;
@@ -528,7 +542,9 @@ public final class ValueCompressionUtil {
         float[] floatResult = new float[value.length];
 
         for (double a : value) {
-          floatResult[i] = (byte) (Math.round((maxValue - a) * Math.pow(10, decimal)));
+          BigDecimal val = BigDecimal.valueOf(a);
+          double diff = max.subtract(val).doubleValue();
+          floatResult[i] = (float) (Math.round(diff * Math.pow(10, decimal)));
           i++;
         }
         return floatResult;
@@ -538,7 +554,9 @@ public final class ValueCompressionUtil {
         double[] defaultResult = new double[value.length];
 
         for (double a : value) {
-          defaultResult[i] = (byte) (Math.round((maxValue - a) * Math.pow(10, decimal)));
+          BigDecimal val = BigDecimal.valueOf(a);
+          double diff = max.subtract(val).doubleValue();
+          defaultResult[i] =  (Math.round(diff * Math.pow(10, decimal)));
           i++;
         }
         return defaultResult;

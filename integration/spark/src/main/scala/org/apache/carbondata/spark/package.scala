@@ -17,7 +17,7 @@
 
 package org.apache.carbondata
 
-import org.apache.spark.sql._
+import org.apache.spark.sql.DataFrame
 
 package object spark {
 

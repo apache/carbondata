@@ -21,6 +21,7 @@ package org.apache.carbondata.spark.util
 import java.io.File
 
 import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.load.CarbonLoadModel
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
@@ -139,6 +140,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     carbonLoadModel.setComplexDelimiterLevel1("\\$")
     carbonLoadModel.setComplexDelimiterLevel2("\\:")
     carbonLoadModel.setColDictFilePath(extColFilePath)
+    carbonLoadModel.setQuoteChar("\"");
     carbonLoadModel
   }
 
@@ -216,6 +218,22 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       case ex: MalformedCarbonCommandException =>
         assertResult(ex.getMessage)("Error: COLUMNDICT and ALL_DICTIONARY_PATH can not be used together " +
           "in options")
+      case _ => assert(false)
+    }
+  }
+
+  test("Measure can not use COLUMNDICT") {
+    try {
+      sql(s"""
+      LOAD DATA LOCAL INPATH "$complexFilePath1" INTO TABLE loadSqlTest
+      OPTIONS('COLUMNDICT'='gamePointId:$filePath')
+      """)
+      assert(false)
+    } catch {
+      case ex: DataLoadingException =>
+        assertResult(ex.getMessage)("Column gamePointId is not a key column. Only key column can be part " +
+          "of dictionary and used in COLUMNDICT option.")
+      case _ => assert(false)
     }
   }
 

@@ -36,6 +36,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+    sql("DROP TABLE IF EXISTS alldatatypescubeAGG")
     sql(
       "CREATE TABLE alldatatypestableAGG (empno int, empname String, designation String, doj " +
       "Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname " +
@@ -44,7 +45,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
     sql(
       "LOAD DATA LOCAL INPATH './src/test/resources/data.csv' INTO TABLE alldatatypestableAGG " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
-      
+    sql("DROP TABLE IF EXISTS alldatatypescubeAGG_hive")
     sql(
       "CREATE TABLE alldatatypescubeAGG_hive (empno int, empname String, designation String, doj " +
       "Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname " +
@@ -106,6 +107,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop table alldatatypestableAGG")
+    sql("DROP TABLE IF EXISTS alldatatypescubeAGG")
+    sql("DROP TABLE IF EXISTS alldatatypescubeAGG_hive")
   }
 }

@@ -32,7 +32,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Cast, Literal}
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
-import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.sql.hive.{CarbonHiveMetadataUtil, HiveContext}
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
@@ -152,12 +152,14 @@ case class CarbonMergerMapping(storeLocation: String, hdfsStoreLocation: String,
 case class NodeInfo(TaskId: String, noOfBlocks: Int)
 
 
-case class AlterTableModel(dbName: Option[String], tableName: String, compactionType: String)
+case class AlterTableModel(dbName: Option[String], tableName: String,
+  compactionType: String, alterSql: String)
 
 case class CompactionModel(compactionSize: Long,
   compactionType: CompactionType,
   carbonTable: CarbonTable,
-  tableCreationTime: Long)
+  tableCreationTime: Long,
+  isDDLTrigger: Boolean)
 
 case class CompactionCallableModel(hdfsStoreLocation: String, carbonLoadModel: CarbonLoadModel,
   partitioner: Partitioner, storeLocation: String, carbonTable: CarbonTable, kettleHomePath: String,
@@ -900,7 +902,7 @@ private[sql] case class DeleteLoadsById(
   def run(sqlContext: SQLContext): Seq[Row] = {
 
     val databaseName = getDB.getDatabaseName(databaseNameOp, sqlContext)
-    LOGGER.audit(s"Delete load by Id request has been received for $databaseName.$tableName")
+    LOGGER.audit(s"Delete segment by Id request has been received for $databaseName.$tableName")
 
     // validate load ids first
     validateLoadIds
@@ -910,7 +912,7 @@ private[sql] case class DeleteLoadsById(
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
       identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
-      LOGGER.audit(s"Delete load by Id is failed. Table $dbName.$tableName does not exist")
+      LOGGER.audit(s"Delete segment by Id is failed. Table $dbName.$tableName does not exist")
       sys.error(s"Table $dbName.$tableName does not exist")
     }
 
@@ -929,11 +931,11 @@ private[sql] case class DeleteLoadsById(
 
     if (invalidLoadIds.isEmpty) {
 
-      LOGGER.audit(s"Delete load by Id is successfull for $databaseName.$tableName.")
+      LOGGER.audit(s"Delete segment by Id is successfull for $databaseName.$tableName.")
     }
     else {
-      sys.error("Delete load by Id is failed. No matching load id found. SegmentSeqId(s) - "
-                + invalidLoadIds)
+      sys.error("Delete segment by Id is failed. Invalid ID is :"
+                + invalidLoadIds.mkString(","))
     }
 
     Seq.empty
@@ -943,7 +945,7 @@ private[sql] case class DeleteLoadsById(
   // validates load ids
   private def validateLoadIds: Unit = {
     if (loadids.isEmpty) {
-      val errorMessage = "Error: Load id(s) should not be empty."
+      val errorMessage = "Error: Segment id(s) should not be empty."
       throw new MalformedCarbonCommandException(errorMessage)
 
     }
@@ -960,14 +962,14 @@ private[sql] case class DeleteLoadsByLoadDate(
 
   def run(sqlContext: SQLContext): Seq[Row] = {
 
-    LOGGER.audit("The delete load by load date request has been received.")
+    LOGGER.audit("The delete segment by load date request has been received.")
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     val identifier = TableIdentifier(tableName, Option(dbName))
     val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
       .lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
       LOGGER
-        .audit(s"Delete load by load date is failed. Table $dbName.$tableName does not " +
+        .audit(s"Delete segment by load date is failed. Table $dbName.$tableName does not " +
          s"exist")
       sys.error(s"Table $dbName.$tableName does not exist")
     }
@@ -991,10 +993,10 @@ private[sql] case class DeleteLoadsByLoadDate(
     val invalidLoadTimestamps = segmentStatusManager
       .updateDeletionStatus(loadDate, path, timeObj.asInstanceOf[java.lang.Long]).asScala
     if(invalidLoadTimestamps.isEmpty) {
-      LOGGER.audit(s"Delete load by load date is successfull for $dbName.$tableName.")
+      LOGGER.audit(s"Delete segment by date is successfull for $dbName.$tableName.")
     }
     else {
-      sys.error("Delete load by load date is failed. No matching load found.")
+      sys.error("Delete segment by date is failed. No matching segment found.")
     }
     Seq.empty
 
@@ -1089,6 +1091,7 @@ private[sql] case class LoadTable(
       val quoteChar = partionValues.getOrElse("quotechar", "\"")
       val fileHeader = partionValues.getOrElse("fileheader", "")
       val escapeChar = partionValues.getOrElse("escapechar", "\\")
+      val commentchar = partionValues.getOrElse("commentchar", "#")
       val columnDict = partionValues.getOrElse("columndict", null)
       val serializationNullFormat = partionValues.getOrElse("serialization_null_format", "\\N")
       val allDictionaryPath = partionValues.getOrElse("all_dictionary_path", "")
@@ -1102,8 +1105,11 @@ private[sql] case class LoadTable(
             "load DDL which you set can only be 'true' or 'false', please check your input DDL."
           throw new MalformedCarbonCommandException(errorMessage)
       }
-
+      val maxColumns = partionValues.getOrElse("maxcolumns", null)
+      carbonLoadModel.setMaxColumns(maxColumns)
       carbonLoadModel.setEscapeChar(escapeChar)
+      carbonLoadModel.setQuoteChar(quoteChar)
+      carbonLoadModel.setCommentChar(commentchar)
       carbonLoadModel.setSerializationNullFormat("serialization_null_format" + "," +
         serializationNullFormat)
       if (delimiter.equalsIgnoreCase(complex_delimiter_level_1) ||
@@ -1113,9 +1119,9 @@ private[sql] case class LoadTable(
       }
       else {
         carbonLoadModel.setComplexDelimiterLevel1(
-          CarbonUtil.escapeComplexDelimiterChar(complex_delimiter_level_1))
+          CarbonUtil.delimiterConverter(complex_delimiter_level_1))
         carbonLoadModel.setComplexDelimiterLevel2(
-          CarbonUtil.escapeComplexDelimiterChar(complex_delimiter_level_2))
+          CarbonUtil.delimiterConverter(complex_delimiter_level_2))
       }
       // set local dictionary path, and dictionary file extension
       carbonLoadModel.setAllDictPath(allDictionaryPath)
@@ -1254,15 +1260,7 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
       }
       if (sqlContext.tableNames(dbName).map(x => x.toLowerCase())
         .contains(tableName.toLowerCase())) {
-        try {
-          sqlContext.asInstanceOf[HiveContext].catalog.client.
-            runSqlHive(s"DROP TABLE IF EXISTS $dbName.$tableName")
-        } catch {
-          case e: RuntimeException =>
-            LOGGER.audit(
-              s"Error While deleting the table $dbName.$tableName during drop carbon table" +
-              e.getMessage)
-        }
+          CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sqlContext)
       } else if (!ifExistsSet) {
         sys.error(s"Carbon Table $dbName.$tableName does not exist")
       }
@@ -1341,6 +1339,13 @@ private[sql] case class ShowLoads(
   override def run(sqlContext: SQLContext): Seq[Row] = {
     val databaseName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     val tableUniqueName = databaseName + "_" + tableName
+    // Here using checkSchemasModifiedTimeAndReloadTables in tableExists to reload metadata if
+    // schema is changed by other process, so that tableInfoMap woulb be refilled.
+    val tableExists = CarbonEnv.getInstance(sqlContext).carbonCatalog
+      .tableExists(TableIdentifier(tableName, databaseNameOp))(sqlContext)
+    if (!tableExists) {
+      sys.error(s"$databaseName.$tableName is not found")
+    }
     val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
       .getCarbonTable(tableUniqueName)
     if (carbonTable == null) {
@@ -1436,25 +1441,7 @@ private[sql] case class DescribeCommandFormatted(
     )
     results ++= Seq(("Table Name : ", relation.tableMeta.carbonTableIdentifier.getTableName, ""))
     results ++= Seq(("CARBON Store Path : ", relation.tableMeta.storePath, ""))
-    results ++= Seq(("", "", ""), ("#Aggregate Tables", "", ""))
     val carbonTable = relation.tableMeta.carbonTable
-    val aggTables = carbonTable.getAggregateTablesName
-    if (aggTables.size == 0) {
-      results ++= Seq(("NONE", "", ""))
-    } else {
-      aggTables.asScala.foreach(aggTable => {
-        results ++= Seq(("", "", ""),
-          ("Agg Table :" + aggTable, "#Columns", "#AggregateType")
-        )
-        carbonTable.getDimensionByTableName(aggTable).asScala.foreach(dim => {
-          results ++= Seq(("", dim.getColName, ""))
-        })
-        carbonTable.getMeasureByTableName(aggTable).asScala.foreach(measure => {
-          results ++= Seq(("", measure.getColName, measure.getAggregateFunction))
-        })
-      }
-      )
-    }
     results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))
     if (colPropStr.length() > 0) {
       results ++= Seq((colPropStr, "", ""))

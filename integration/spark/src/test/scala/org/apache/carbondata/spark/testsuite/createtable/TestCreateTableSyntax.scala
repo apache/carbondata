@@ -44,6 +44,28 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbontable")
   }
   
+  test("Test table rename operation on carbon table and on hive table") {
+    sql("create table hivetable(test1 int, test2 array<String>,test3 array<bigint>,"+
+        "test4 array<int>,test5 array<decimal>,test6 array<timestamp>,test7 array<double>)"+
+        "row format delimited fields terminated by ',' collection items terminated by '$' map keys terminated by ':'")
+    sql("alter table hivetable rename To hiveRenamedTable")
+    sql("create table carbontable(test1 int, test2 array<String>,test3 array<bigint>,"+
+        "test4 array<int>,test5 array<decimal>,test6 array<timestamp>,test7 array<double>)"+
+        "STORED BY 'org.apache.carbondata.format'")
+    sql("alter table carbontable compact 'minor'")
+    try {
+      sql("alter table carbontable rename To carbonRenamedTable")
+      assert(false)
+    } catch {
+      case e : MalformedCarbonCommandException => {
+        assert(e.getMessage.equals("Unsupported alter operation on carbon table"))
+      }
+    }
+    sql("drop table if exists hiveRenamedTable")
+    sql("drop table if exists carbontable")
+  }
+
+  
   test("test carbon table create with complex datatype as dictionary exclude") {
     try {
       sql("create table carbontable(id int, name string, dept string, mobile array<string>, "+

@@ -142,6 +142,14 @@ public final class CarbonCommonConstants {
    */
   public static final String LOAD_FOLDER = "Segment_";
   /**
+   * HDFSURL_PREFIX
+   */
+  public static final String HDFSURL_PREFIX = "hdfs://";
+  /**
+   * FS_DEFAULT_FS
+   */
+  public static final String FS_DEFAULT_FS = "fs.defaultFS";
+  /**
    * RESTructure Folder
    */
   public static final String RESTRUCTRE_FOLDER = "RS_";
@@ -190,10 +198,6 @@ public final class CarbonCommonConstants {
    * MEMBER_DEFAULT_VAL
    */
   public static final String MEMBER_DEFAULT_VAL = "@NU#LL$!";
-  /**
-   * BLANK_LINE_FLAG
-   */
-  public static final String BLANK_LINE_FLAG = "@NU#LL$!BLANKLINE";
   /**
    * FILE STATUS IN-PROGRESS
    */
@@ -895,6 +899,33 @@ public final class CarbonCommonConstants {
    * default blocklet size eligible for blocklet distribution
    */
   public static final int DEFAULT_CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE = 2;
+
+  /**
+   * File created in case of minor compaction request
+   */
+  public static String minorCompactionRequiredFile = "compactionRequired_minor";
+
+  /**
+   * File created in case of major compaction request
+   */
+  public static String majorCompactionRequiredFile = "compactionRequired_major";
+
+  /**
+   * Property for enabling system level compaction lock.1 compaction can run at once.
+   */
+  public static String ENABLE_CONCURRENT_COMPACTION =
+      "carbon.concurrent.compaction";
+
+  /**
+   * Default value of Property for enabling system level compaction lock.1 compaction can run
+   * at once.
+   */
+  public static String DEFAULT_ENABLE_CONCURRENT_COMPACTION = "false";
+
+  /**
+   * Compaction system level lock folder.
+   */
+  public static String SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER = "SystemCompactionLock";
 
   private CarbonCommonConstants() {
   }

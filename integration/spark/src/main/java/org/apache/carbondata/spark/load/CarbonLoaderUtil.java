@@ -19,7 +19,6 @@
 package org.apache.carbondata.spark.load;
 
 import java.io.BufferedWriter;
-import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -55,8 +54,6 @@ import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -85,9 +82,6 @@ import org.apache.carbondata.spark.merger.NodeBlockRelation;
 import org.apache.carbondata.spark.merger.NodeMultiBlockRelation;
 
 import com.google.gson.Gson;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IOUtils;
 import org.apache.spark.SparkConf;
 import org.apache.spark.util.Utils;
 
@@ -112,19 +106,12 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  /**
-   * dfs.bytes-per-checksum
-   * HDFS checksum length, block size for a file should be exactly divisible
-   * by this value
-   */
-  private static final int HDFS_CHECKSUM_LENGTH = 512;
-
   private CarbonLoaderUtil() {
 
   }
 
   private static void generateGraph(IDataProcessStatus schmaModel, SchemaInfo info,
-      int currentRestructNumber, CarbonLoadModel loadModel, String outputLocation)
+      CarbonLoadModel loadModel, String outputLocation)
       throws GraphGeneratorException {
     DataLoadModel model = new DataLoadModel();
     model.setCsvLoad(null != schmaModel.getCsvFilePath() || null != schmaModel.getFilesToProcess());
@@ -139,19 +126,22 @@ public final class CarbonLoaderUtil {
     }
     model.setBlocksID(schmaModel.getBlocksID());
     model.setEscapeCharacter(schmaModel.getEscapeCharacter());
+    model.setQuoteCharacter(schmaModel.getQuoteCharacter());
+    model.setCommentCharacter(schmaModel.getCommentCharacter());
     model.setTaskNo(loadModel.getTaskNo());
     model.setFactTimeStamp(loadModel.getFactTimeStamp());
+    model.setMaxColumns(loadModel.getMaxColumns());
     boolean hdfsReadMode =
         schmaModel.getCsvFilePath() != null && schmaModel.getCsvFilePath().startsWith("hdfs:");
     int allocate = null != schmaModel.getCsvFilePath() ? 1 : schmaModel.getFilesToProcess().size();
     GraphGenerator generator = new GraphGenerator(model, hdfsReadMode, loadModel.getPartitionId(),
-        loadModel.getStorePath(), currentRestructNumber, allocate,
+        loadModel.getStorePath(), allocate,
         loadModel.getCarbonDataLoadSchema(), loadModel.getSegmentId(), outputLocation);
     generator.generateGraph();
   }
 
   public static void executeGraph(CarbonLoadModel loadModel, String storeLocation,
-      String hdfsStoreLocation, String kettleHomePath, int currentRestructNumber) throws Exception {
+      String hdfsStoreLocation, String kettleHomePath) throws Exception {
     System.setProperty("KETTLE_HOME", kettleHomePath);
     if (!new File(storeLocation).mkdirs()) {
       LOGGER.error("Error while creating the temp store path: " + storeLocation);
@@ -192,6 +182,8 @@ public final class CarbonLoaderUtil {
 
     schmaModel.setBlocksID(loadModel.getBlocksID());
     schmaModel.setEscapeCharacter(loadModel.getEscapeChar());
+    schmaModel.setQuoteCharacter(loadModel.getQuoteChar());
+    schmaModel.setCommentCharacter(loadModel.getCommentChar());
     SchemaInfo info = new SchemaInfo();
 
     info.setDatabaseName(databaseName);
@@ -201,7 +193,7 @@ public final class CarbonLoaderUtil {
     info.setComplexDelimiterLevel2(loadModel.getComplexDelimiterLevel2());
     info.setSerializationNullFormat(loadModel.getSerializationNullFormat());
 
-    generateGraph(schmaModel, info, currentRestructNumber, loadModel, outPutLoc);
+    generateGraph(schmaModel, info, loadModel, outPutLoc);
 
     DataGraphExecuter graphExecuter = new DataGraphExecuter(schmaModel);
     graphExecuter
@@ -209,87 +201,9 @@ public final class CarbonLoaderUtil {
             info, loadModel.getPartitionId(), loadModel.getCarbonDataLoadSchema());
   }
 
-  public static String[] getStorelocs(String databaseName, String tableName, String factTableName,
-      String hdfsStoreLocation, int currentRestructNumber) {
-    String[] loadFolders;
-
-    String baseStorelocation =
-        hdfsStoreLocation + File.separator + databaseName + File.separator + tableName;
-
-    String factStorepath =
-        baseStorelocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
-            + currentRestructNumber + File.separator + factTableName;
-
-    // Change to LOCAL for testing in local
-    CarbonFile file =
-        FileFactory.getCarbonFile(factStorepath, FileFactory.getFileType(factStorepath));
-
-    if (!file.exists()) {
-      return new String[0];
-    }
-    CarbonFile[] listFiles = file.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile path) {
-        return path.getName().startsWith(CarbonCommonConstants.LOAD_FOLDER) && !path.getName()
-            .endsWith(CarbonCommonConstants.FILE_INPROGRESS_STATUS);
-      }
-    });
-
-    loadFolders = new String[listFiles.length];
-    int count = 0;
-
-    for (CarbonFile loadFile : listFiles) {
-      loadFolders[count++] = loadFile.getAbsolutePath();
-    }
-
-    return loadFolders;
-  }
-
   public static List<String> addNewSliceNameToList(String newSlice, List<String> activeSlices) {
     activeSlices.add(newSlice);
     return activeSlices;
-  }
-
-  public static String getAggLoadFolderLocation(String loadFolderName, String databaseName,
-      String tableName, String aggTableName, String hdfsStoreLocation, int currentRestructNumber) {
-    for (int i = currentRestructNumber; i >= 0; i--) {
-      String aggTableLocation =
-          getTableLocation(databaseName, tableName, aggTableName, hdfsStoreLocation, i);
-      String aggStorepath = aggTableLocation + File.separator + loadFolderName;
-      try {
-        if (FileFactory.isFileExist(aggStorepath, FileFactory.getFileType(aggStorepath))) {
-          return aggStorepath;
-        }
-      } catch (IOException e) {
-        LOGGER.error("Problem checking file existence :: " + e.getMessage());
-      }
-    }
-    return null;
-  }
-
-  public static String getTableLocation(String databaseName, String tableName, String aggTableName,
-      String hdfsStoreLocation, int currentRestructNumber) {
-    String baseStorelocation =
-        hdfsStoreLocation + File.separator + databaseName + File.separator + tableName;
-    String aggTableLocation =
-        baseStorelocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
-            + currentRestructNumber + File.separator + aggTableName;
-    return aggTableLocation;
-  }
-
-  public static void deleteTable(int partitionCount, String databaseName, String tableName,
-      String aggTableName, String hdfsStoreLocation, int currentRestructNumber) {
-    String aggTableLoc = null;
-    String partitionDatabaseName = null;
-    String partitionTableName = null;
-    for (int i = 0; i < partitionCount; i++) {
-      partitionDatabaseName = databaseName + '_' + i;
-      partitionTableName = tableName + '_' + i;
-      for (int j = currentRestructNumber; j >= 0; j--) {
-        aggTableLoc = getTableLocation(partitionDatabaseName, partitionTableName, aggTableName,
-            hdfsStoreLocation, j);
-        deleteStorePath(aggTableLoc);
-      }
-    }
   }
 
   public static void deleteSegment(CarbonLoadModel loadModel, int currentLoad) {
@@ -300,22 +214,6 @@ public final class CarbonLoaderUtil {
     for (int i = 0; i < carbonTable.getPartitionCount(); i++) {
       String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(i + "", currentLoad + "");
       deleteStorePath(segmentPath);
-    }
-  }
-
-  public static void deleteSlice(int partitionCount, String databaseName, String tableName,
-      String hdfsStoreLocation, int currentRestructNumber, String loadFolder) {
-    String tableLoc = null;
-    String partitionDatabaseName = null;
-    String partitionTableName = null;
-    for (int i = 0; i < partitionCount; i++) {
-      partitionDatabaseName = databaseName + '_' + i;
-      partitionTableName = tableName + '_' + i;
-      tableLoc =
-          getTableLocation(partitionDatabaseName, partitionTableName, tableName, hdfsStoreLocation,
-              currentRestructNumber);
-      tableLoc = tableLoc + File.separator + loadFolder;
-      deleteStorePath(tableLoc);
     }
   }
 
@@ -382,24 +280,6 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  public static boolean isSliceValid(String loc, List<String> activeSlices,
-      List<String> updatedSlices, String factTableName) {
-    String loadFolderName = loc.substring(loc.indexOf(CarbonCommonConstants.LOAD_FOLDER));
-    String sliceNum = loadFolderName.substring(CarbonCommonConstants.LOAD_FOLDER.length());
-    if (activeSlices.contains(loadFolderName) || updatedSlices.contains(sliceNum)) {
-      String factFileLoc =
-          loc + File.separator + factTableName + "_0" + CarbonCommonConstants.FACT_FILE_EXT;
-      try {
-        if (FileFactory.isFileExist(factFileLoc, FileFactory.getFileType(factFileLoc))) {
-          return true;
-        }
-      } catch (IOException e) {
-        LOGGER.error("Problem checking file existence :: " + e.getMessage());
-      }
-    }
-    return false;
-  }
-
   public static List<String> getListOfValidSlices(LoadMetadataDetails[] details) {
     List<String> activeSlices =
         new ArrayList<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -438,24 +318,6 @@ public final class CarbonLoaderUtil {
     // TODO: Remove from memory
   }
 
-  public static void createEmptyLoadFolder(CarbonLoadModel model, String factLoadFolderLocation,
-      String hdfsStoreLocation, int currentRestructNumber) {
-    String loadFolderName = factLoadFolderLocation
-        .substring(factLoadFolderLocation.indexOf(CarbonCommonConstants.LOAD_FOLDER));
-    String aggLoadFolderLocation =
-        getTableLocation(model.getDatabaseName(), model.getTableName(), model.getAggTableName(),
-            hdfsStoreLocation, currentRestructNumber);
-    aggLoadFolderLocation = aggLoadFolderLocation + File.separator + loadFolderName;
-    FileType fileType = FileFactory.getFileType(hdfsStoreLocation);
-    try {
-      FileFactory.mkdirs(aggLoadFolderLocation, fileType);
-    } catch (IOException e) {
-      LOGGER
-          .error("Problem creating empty folder created for aggregation table: " + e.getMessage());
-    }
-    LOGGER.info("Empty folder created for aggregation table");
-  }
-
   /**
    * This method will delete the local data load folder location after data load is complete
    *
@@ -483,48 +345,6 @@ public final class CarbonLoaderUtil {
   }
 
   /**
-   * This method will copy the current segment load to cgiven carbon store path
-   *
-   * @param loadModel
-   * @param segmentName
-   * @param updatedSlices
-   * @throws IOException
-   * @throws CarbonUtilException
-   */
-  public static void copyCurrentLoadToHDFS(CarbonLoadModel loadModel, String segmentName,
-      List<String> updatedSlices) throws IOException, CarbonUtilException {
-    //Copy the current load folder to carbon store
-    boolean copyStore =
-        Boolean.valueOf(CarbonProperties.getInstance().getProperty("dataload.hdfs.copy", "true"));
-    String databaseName = loadModel.getDatabaseName();
-    String tableName = loadModel.getTableName();
-    String aggTableName = loadModel.getAggTableName();
-    if (copyStore) {
-      CarbonTableIdentifier carbonTableIdentifier =
-          loadModel.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier();
-      String segmentId = segmentName.substring(CarbonCommonConstants.LOAD_FOLDER.length());
-      // form carbon store location
-      String carbonStoreLocation = getStoreLocation(
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS),
-          carbonTableIdentifier, segmentId, loadModel.getPartitionId());
-      String tempLocationKey = databaseName + '_' + tableName;
-      // form local store location
-      String localStoreLocation = getStoreLocation(CarbonProperties.getInstance()
-              .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL),
-          carbonTableIdentifier, segmentId, loadModel.getPartitionId());
-      localStoreLocation = localStoreLocation + File.separator + loadModel.getTaskNo();
-      boolean isUpdate = false;
-      if (loadModel.isAggLoadRequest() && null != aggTableName) {
-        if (updatedSlices.contains(segmentId)) {
-          isUpdate = true;
-        }
-      }
-      copyToHDFS(carbonStoreLocation, localStoreLocation, isUpdate);
-      CarbonUtil.deleteFoldersAndFiles(new File[] { new File(localStoreLocation) });
-    }
-  }
-
-  /**
    * This method will get the store location for the given path, segemnt id and partition id
    *
    * @param storePath
@@ -539,205 +359,6 @@ public final class CarbonLoaderUtil {
         CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier);
     String carbonDataFilePath = carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
     return carbonDataFilePath;
-  }
-
-  /**
-   * This method will copy the carbon data files form local store segment folder
-   * to carbon store segment location
-   *
-   * @param carbonStoreLocation
-   * @param localStoreLocation
-   * @param isUpdate
-   * @throws IOException
-   */
-  private static void copyToHDFS(String carbonStoreLocation, String localStoreLocation,
-      boolean isUpdate) throws IOException {
-    //If the carbon store and the local store configured differently, then copy
-    if (carbonStoreLocation != null && !carbonStoreLocation.equals(localStoreLocation)) {
-      long copyStartTime = System.currentTimeMillis();
-      // isUpdate will be true only when the below 2 conditions are satisfied
-      // 1. slice is marked for update, 2. request is for aggregate table creation
-      if (isUpdate) {
-        renameFactFile(localStoreLocation);
-      }
-      LOGGER.info("Copying " + localStoreLocation + " --> " + carbonStoreLocation);
-      CarbonUtil.checkAndCreateFolder(carbonStoreLocation);
-      long blockSize = getBlockSize();
-      int bufferSize = CarbonCommonConstants.BYTEBUFFER_SIZE;
-      CarbonFile carbonFile = FileFactory
-          .getCarbonFile(localStoreLocation, FileFactory.getFileType(localStoreLocation));
-      CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
-        @Override public boolean accept(CarbonFile path) {
-          return path.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT) && !path.getName()
-              .endsWith(CarbonCommonConstants.FILE_INPROGRESS_STATUS);
-        }
-      });
-      for (int i = 0; i < listFiles.length; i++) {
-        String localFilePath = listFiles[i].getCanonicalPath();
-        CarbonFile localCarbonFile =
-            FileFactory.getCarbonFile(localFilePath, FileFactory.getFileType(localFilePath));
-        String carbonFilePath = carbonStoreLocation + localFilePath
-            .substring(localFilePath.lastIndexOf(File.separator));
-        copyLocalFileToHDFS(carbonFilePath, localFilePath, bufferSize,
-            getMaxOfBlockAndFileSize(blockSize, localCarbonFile.getSize()));
-      }
-      LOGGER.info("Total copy time (ms):  " + (System.currentTimeMillis() - copyStartTime));
-    } else {
-      LOGGER.info("Separate carbon.storelocation.hdfs is not configured for carbon store path");
-    }
-  }
-
-  /**
-   * This method will return max of block size and file size
-   *
-   * @param blockSize
-   * @param fileSize
-   * @return
-   */
-  private static long getMaxOfBlockAndFileSize(long blockSize, long fileSize) {
-    long maxSize = blockSize;
-    if (fileSize > blockSize) {
-      maxSize = fileSize;
-    }
-    // block size should be exactly divisible by 512 which is  maintained by HDFS as bytes
-    // per checksum, dfs.bytes-per-checksum=512 must divide block size
-    long remainder = maxSize % HDFS_CHECKSUM_LENGTH;
-    if (remainder > 0) {
-      maxSize = maxSize + HDFS_CHECKSUM_LENGTH - remainder;
-    }
-    return maxSize;
-  }
-
-  /**
-   * This method will return the block size for file to be copied in HDFS
-   *
-   * @return
-   */
-  private static long getBlockSize() {
-    CarbonProperties carbonProperties = CarbonProperties.getInstance();
-    long blockSizeInBytes = Long.parseLong(carbonProperties
-        .getProperty(CarbonCommonConstants.MAX_FILE_SIZE,
-            CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL))
-        * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
-        * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR * 1L;
-    return blockSizeInBytes;
-  }
-
-  /**
-   * This method will read the local carbon data file and write to carbon data file in HDFS
-   *
-   * @param carbonStoreFilePath
-   * @param localFilePath
-   * @param bufferSize
-   * @param blockSize
-   * @throws IOException
-   */
-  private static void copyLocalFileToHDFS(String carbonStoreFilePath, String localFilePath,
-      int bufferSize, long blockSize) throws IOException {
-    DataOutputStream dataOutputStream = null;
-    DataInputStream dataInputStream = null;
-    try {
-      LOGGER.debug(
-          "HDFS file block size for file: " + carbonStoreFilePath + " is " + blockSize + " (bytes");
-      dataOutputStream = FileFactory
-          .getDataOutputStream(carbonStoreFilePath, FileFactory.getFileType(carbonStoreFilePath),
-              bufferSize, blockSize);
-      dataInputStream = FileFactory
-          .getDataInputStream(localFilePath, FileFactory.getFileType(localFilePath), bufferSize);
-      IOUtils.copyBytes(dataInputStream, dataOutputStream, bufferSize);
-    } finally {
-      CarbonUtil.closeStreams(dataInputStream, dataOutputStream);
-    }
-  }
-
-  private static void renameFactFile(String localStoreLocation) {
-    FileType fileType = FileFactory.getFileType(localStoreLocation);
-    try {
-      if (FileFactory.isFileExist(localStoreLocation, fileType)) {
-        CarbonFile carbonFile = FileFactory.getCarbonFile(localStoreLocation, fileType);
-        CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
-          @Override public boolean accept(CarbonFile path) {
-            return path.getName().endsWith(CarbonCommonConstants.FACT_FILE_EXT) && !path.getName()
-                .endsWith(CarbonCommonConstants.FILE_INPROGRESS_STATUS);
-          }
-        });
-        for (int i = 0; i < listFiles.length; i++) {
-          carbonFile = listFiles[i];
-          String factFilePath = carbonFile.getCanonicalPath();
-          String changedFileName = factFilePath.replace(CarbonCommonConstants.FACT_FILE_EXT,
-              CarbonCommonConstants.FACT_UPDATE_EXTENSION);
-          carbonFile.renameTo(changedFileName);
-        }
-      }
-    } catch (IOException e) {
-      LOGGER.error("Inside renameFactFile. Problem checking file existence :: " + e.getMessage());
-    }
-  }
-
-  /**
-   * API will provide the load number inorder to record the same in metadata file.
-   */
-  public static int getLoadCount(CarbonLoadModel loadModel, int currentRestructNumber)
-      throws IOException {
-
-    String hdfsLoadedTable = getLoadFolderPath(loadModel, null, null, currentRestructNumber);
-    int loadCounter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(hdfsLoadedTable);
-
-    String hdfsStoreLoadFolder =
-        hdfsLoadedTable + File.separator + CarbonCommonConstants.LOAD_FOLDER + loadCounter;
-    hdfsStoreLoadFolder = hdfsStoreLoadFolder.replace("\\", "/");
-
-    String loadFolerCount = hdfsStoreLoadFolder
-        .substring(hdfsStoreLoadFolder.lastIndexOf('_') + 1, hdfsStoreLoadFolder.length());
-    return Integer.parseInt(loadFolerCount) + 1;
-  }
-
-  /**
-   * API will provide the load folder path for the store inorder to store the same
-   * in the metadata.
-   */
-  public static String getLoadFolderPath(CarbonLoadModel loadModel, String tableName,
-      String databaseName, int currentRestructNumber) {
-
-    //CHECKSTYLE:OFF    Approval No:Approval-V1R2C10_005
-
-    boolean copyStore =
-        Boolean.valueOf(CarbonProperties.getInstance().getProperty("dataload.hdfs.copy", "true"));
-
-    // CHECKSTYLE:ON
-    if (null == tableName && null == databaseName) {
-      databaseName = loadModel.getDatabaseName();
-      tableName = loadModel.getTableName();
-    }
-    String factTable = loadModel.getTableName();
-    String hdfsLoadedTable = null;
-    if (copyStore) {
-      String hdfsLocation =
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
-      String localStore = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.STORE_LOCATION,
-              CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-
-      if (!hdfsLocation.equals(localStore)) {
-        String hdfsStoreLocation = hdfsLocation;
-        hdfsStoreLocation =
-            hdfsStoreLocation + File.separator + databaseName + File.separator + tableName;
-
-        int rsCounter = currentRestructNumber;
-        if (rsCounter == -1) {
-          rsCounter = 0;
-        }
-
-        hdfsLoadedTable =
-            hdfsStoreLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER + rsCounter
-                + File.separator + factTable;
-
-        hdfsLoadedTable = hdfsLoadedTable.replace("\\", "/");
-      }
-
-    }
-    return hdfsLoadedTable;
-
   }
 
   /**
@@ -874,140 +495,6 @@ public final class CarbonLoaderUtil {
     return carbonTable.getMetaDataFilepath();
   }
 
-  /**
-   * This method will provide the dimension column list for a given aggregate
-   * table
-   */
-  public static Set<String> getColumnListFromAggTable(CarbonLoadModel model) {
-    Set<String> columnList = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    CarbonTable carbonTable =
-        org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-            .getCarbonTable(model.getDatabaseName() + '_' + model.getTableName());
-    List<CarbonDimension> dimensions = carbonTable.getDimensionByTableName(model.getAggTableName());
-    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(model.getAggTableName());
-    for (CarbonDimension carbonDimension : dimensions) {
-      columnList.add(carbonDimension.getColName());
-    }
-    for (CarbonMeasure carbonMeasure : measures) {
-      columnList.add(carbonMeasure.getColName());
-    }
-    return columnList;
-  }
-
-  public static void copyMergedLoadToHDFS(CarbonLoadModel loadModel, int currentRestructNumber,
-      String mergedLoadName) {
-    //Copy the current load folder to HDFS
-    boolean copyStore =
-        Boolean.valueOf(CarbonProperties.getInstance().getProperty("dataload.hdfs.copy", "true"));
-
-    String databaseName = loadModel.getDatabaseName();
-    String tableName = loadModel.getTableName();
-    String factTable = loadModel.getTableName();
-    String aggTableName = loadModel.getAggTableName();
-
-    if (copyStore) {
-      String hdfsLocation =
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
-
-      String localStore = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.STORE_LOCATION,
-              CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-      if (!loadModel.isAggLoadRequest()) {
-        copyMergeToHDFS(databaseName, tableName, factTable, hdfsLocation, localStore,
-            currentRestructNumber, mergedLoadName);
-      }
-      if (null != aggTableName) {
-        copyMergeToHDFS(databaseName, tableName, aggTableName, hdfsLocation, localStore,
-            currentRestructNumber, mergedLoadName);
-      }
-      try {
-        CarbonUtil.deleteFoldersAndFiles(new File[] {
-            new File(localStore + File.separator + databaseName + File.separator + tableName) });
-      } catch (CarbonUtilException e) {
-        LOGGER.error("Error while CarbonUtil.deleteFoldersAndFiles ");
-      }
-    }
-  }
-
-  public static void copyMergeToHDFS(String databaseName, String tableName, String factTable,
-      String hdfsLocation, String localStore, int currentRestructNumber, String mergedLoadName) {
-    try {
-      //If the hdfs store and the local store configured differently, then copy
-      if (hdfsLocation != null && !hdfsLocation.equals(localStore)) {
-        /**
-         * Identify the Load_X folder from the local store folder
-         */
-        String currentloadedStore = localStore;
-        currentloadedStore =
-            currentloadedStore + File.separator + databaseName + File.separator + tableName;
-
-        int rsCounter = currentRestructNumber;
-
-        if (rsCounter == -1) {
-          LOGGER.info("Unable to find the local store details (RS_-1) " + currentloadedStore);
-          return;
-        }
-        String localLoadedTable =
-            currentloadedStore + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER
-                + rsCounter + File.separator + factTable;
-
-        localLoadedTable = localLoadedTable.replace("\\", "/");
-
-        int loadCounter = CarbonUtil.checkAndReturnCurrentLoadFolderNumber(localLoadedTable);
-
-        if (loadCounter == -1) {
-          LOGGER.info("Unable to find the local store details (Load_-1) " + currentloadedStore);
-
-          return;
-        }
-
-        String localLoadName = CarbonCommonConstants.LOAD_FOLDER + mergedLoadName;
-        String localLoadFolder =
-            localLoadedTable + File.separator + CarbonCommonConstants.LOAD_FOLDER + mergedLoadName;
-
-        LOGGER.info("Local data loaded folder ... = " + localLoadFolder);
-
-        //Identify the Load_X folder in the HDFS store
-        String hdfsStoreLocation = hdfsLocation;
-        hdfsStoreLocation =
-            hdfsStoreLocation + File.separator + databaseName + File.separator + tableName;
-
-        rsCounter = currentRestructNumber;
-        if (rsCounter == -1) {
-          rsCounter = 0;
-        }
-
-        String hdfsLoadedTable =
-            hdfsStoreLocation + File.separator + CarbonCommonConstants.RESTRUCTRE_FOLDER + rsCounter
-                + File.separator + factTable;
-
-        hdfsLoadedTable = hdfsLoadedTable.replace("\\", "/");
-
-        String hdfsStoreLoadFolder = hdfsLoadedTable + File.separator + localLoadName;
-
-        LOGGER.info("HDFS data load folder ... = " + hdfsStoreLoadFolder);
-
-        // Copy the data created through latest ETL run, to the HDFS store
-        LOGGER.info("Copying " + localLoadFolder + " --> " + hdfsStoreLoadFolder);
-
-        hdfsStoreLoadFolder = hdfsStoreLoadFolder.replace("\\", "/");
-        Path path = new Path(hdfsStoreLocation);
-
-        FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
-        fs.copyFromLocalFile(true, true, new Path(localLoadFolder), new Path(hdfsStoreLoadFolder));
-
-        LOGGER.info("Copying sliceMetaData from " + localLoadedTable + " --> " + hdfsLoadedTable);
-
-      } else {
-        LOGGER.info("Separate carbon.storelocation.hdfs is not configured for hdfs store path");
-      }
-    } catch (RuntimeException e) {
-      LOGGER.info(e.getMessage());
-    } catch (Exception e) {
-      LOGGER.info(e.getMessage());
-    }
-  }
-
   public static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier,
       String carbonStorePath) throws CarbonUtilException {
     Cache dictCache =
@@ -1121,6 +608,7 @@ public final class CarbonLoaderUtil {
       noofNodes = activeNodes.size();
     }
     int blocksPerNode = blockInfos.size() / noofNodes;
+    blocksPerNode = blocksPerNode <=0 ? 1 : blocksPerNode;
 
     // sort the flattened data.
     Collections.sort(flattenedList);
@@ -1358,7 +846,7 @@ public final class CarbonLoaderUtil {
       }
     } else {
       try {
-        String hostAddress = InetAddress.getLocalHost().getHostAddress();
+        String hostAddress = InetAddress.getByName(nodeName).getHostAddress();
         isActiveNode = activeNode.contains(hostAddress);
         if(isActiveNode){
           return hostAddress;

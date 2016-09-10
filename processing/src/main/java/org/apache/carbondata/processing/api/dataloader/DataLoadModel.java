@@ -60,6 +60,12 @@ public class DataLoadModel {
   private String factTimeStamp;
 
   private String escapeCharacter;
+
+  private String quoteCharacter;
+
+  private String commentCharacter;
+
+  private String maxColumns;
   /**
    * @return Returns the schemaInfo.
    */
@@ -196,6 +202,29 @@ public class DataLoadModel {
 
   public void setEscapeCharacter(String escapeCharacter) {
     this.escapeCharacter = escapeCharacter;
+  }
+
+  public String getQuoteCharacter() { return quoteCharacter; }
+
+  public void setQuoteCharacter(String quoteCharacter) { this.quoteCharacter = quoteCharacter; }
+
+  public String getCommentCharacter() { return commentCharacter; }
+
+  public void setCommentCharacter(String commentCharacter) {
+    this.commentCharacter = commentCharacter;
+  }
+  /**
+   * @return
+   */
+  public String getMaxColumns() {
+    return maxColumns;
+  }
+
+  /**
+   * @param maxColumns
+   */
+  public void setMaxColumns(String maxColumns) {
+    this.maxColumns = maxColumns;
   }
 }
 

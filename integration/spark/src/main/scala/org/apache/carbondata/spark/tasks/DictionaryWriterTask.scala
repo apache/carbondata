@@ -63,15 +63,13 @@ class DictionaryWriterTask(valuesBuffer: mutable.HashSet[String],
       if (values.length >= 1) {
         if (model.dictFileExists(columnIndex)) {
           for (value <- values) {
-            if (dictionary.getSurrogateKey(value) ==
-                CarbonCommonConstants.INVALID_SURROGATE_KEY) {
-              val parsedValue = org.apache.carbondata.core.util.DataTypeUtil
-                .normalizeColumnValueForItsDataType(value,
-                  model.primDimensions(columnIndex))
-              if (null != parsedValue) {
-                writer.write(parsedValue)
-                distinctValues.add(parsedValue)
-              }
+            val parsedValue = org.apache.carbondata.core.util.DataTypeUtil
+              .normalizeColumnValueForItsDataType(value,
+                model.primDimensions(columnIndex))
+            if (null != parsedValue && dictionary.getSurrogateKey(parsedValue) ==
+              CarbonCommonConstants.INVALID_SURROGATE_KEY) {
+              writer.write(parsedValue)
+              distinctValues.add(parsedValue)
             }
           }
 
