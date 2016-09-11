@@ -300,6 +300,12 @@ public final class CarbonCommonConstants {
    * CSV_FILE_EXTENSION
    */
   public static final String CSV_FILE_EXTENSION = ".csv";
+
+  /**
+   * LOG_FILE_EXTENSION
+   */
+  public static final String LOG_FILE_EXTENSION = ".log";
+
   /**
    * COLON_SPC_CHARACTER
    */
