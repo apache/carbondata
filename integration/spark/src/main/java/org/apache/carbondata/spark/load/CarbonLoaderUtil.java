@@ -195,6 +195,8 @@ public final class CarbonLoaderUtil {
     info.setComplexDelimiterLevel1(loadModel.getComplexDelimiterLevel1());
     info.setComplexDelimiterLevel2(loadModel.getComplexDelimiterLevel2());
     info.setSerializationNullFormat(loadModel.getSerializationNullFormat());
+    info.setBadRecordsLoggerEnable(loadModel.getBadRecordsLoggerEnable());
+    info.setBadRecordsLoggerRedirect(loadModel.getBadRecordsLoggerRedirect());
 
     generateGraph(schmaModel, info, loadModel, outPutLoc);
 
