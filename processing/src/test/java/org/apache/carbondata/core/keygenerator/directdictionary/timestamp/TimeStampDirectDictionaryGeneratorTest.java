@@ -20,6 +20,7 @@ package org.apache.carbondata.core.keygenerator.directdictionary.timestamp;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -86,6 +87,7 @@ public class TimeStampDirectDictionaryGeneratorTest {
         .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
             CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
     timeParser.setLenient(false);
+    timeParser.setTimeZone(TimeZone.getTimeZone("IST"));
     String actualValue = timeParser.format(date);
     Assert.assertEquals("1970-01-01 05:30:00", actualValue);
   }
