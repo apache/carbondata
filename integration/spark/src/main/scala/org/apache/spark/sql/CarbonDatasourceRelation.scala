@@ -107,7 +107,7 @@ class CarbonSource extends RelationProvider
 
     if (doSave) {
       // Only save data when the save mode is Overwrite.
-      data.saveAsCarbonData(parameters)
+      data.saveAsCarbonFile(parameters)
     } else if (doAppend) {
       data.appendToCarbonFile(parameters)
     }

@@ -57,7 +57,7 @@ object DataFrameAPIExample {
 
     // also support a implicit function for easier access
     import org.apache.carbondata.spark._
-    df.saveAsCarbonData(Map("tableName" -> "carbon2", "compress" -> "true"))
+    df.saveAsCarbonFile(Map("tableName" -> "carbon2", "compress" -> "true"))
 
     cc.sql("SELECT count(*) FROM carbon2 WHERE c3 > 100").show
     cc.sql("DROP TABLE IF EXISTS carbon2")

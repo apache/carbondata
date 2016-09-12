@@ -28,7 +28,7 @@ class DataFrameFuncs(dataFrame: DataFrame) {
   /**
    * Saves DataFrame as CarbonData files.
    */
-  def saveAsCarbonData(parameters: Map[String, String] = Map()): Unit = {
+  def saveAsCarbonFile(parameters: Map[String, String] = Map()): Unit = {
     // To avoid derby problem, dataframe need to be writen and read using CarbonContext
     require(dataFrame.sqlContext.isInstanceOf[CarbonContext],
       "Error in saving dataframe to carbon file, must use CarbonContext to save dataframe"
