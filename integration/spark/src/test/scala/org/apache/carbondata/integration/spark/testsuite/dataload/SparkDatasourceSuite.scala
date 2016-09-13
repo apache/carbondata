@@ -58,18 +58,21 @@ class SparkDatasourceSuite extends QueryTest with BeforeAndAfterAll {
     assert(in.where("c3 > 500").count() == 500)
   }
 
+  test("read and write using CarbonContext with compression") {
+    val in = read
+        .format("carbondata")
+        .option("tableName", "carbon1")
+        .option("compress", "true")
+        .load()
+
+    assert(in.where("c3 > 500").count() == 500)
+  }
+
   test("saveAsCarbon API") {
     import org.apache.carbondata.spark._
     df.saveAsCarbonFile(Map("tableName" -> "carbon2"))
 
     checkAnswer(sql("SELECT count(*) FROM carbon2 WHERE c3 > 100"), Seq(Row(900)))
-  }
-
-  test("saveAsCarbon API using compression") {
-    import org.apache.carbondata.spark._
-    df.saveAsCarbonFile(Map("tableName" -> "carbon3", "compress" -> "true"))
-
-    checkAnswer(sql("SELECT count(*) FROM carbon3 WHERE c3 > 100"), Seq(Row(900)))
   }
 
   test("query using SQLContext") {
