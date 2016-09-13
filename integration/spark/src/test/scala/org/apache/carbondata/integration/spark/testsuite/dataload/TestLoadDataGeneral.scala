@@ -51,12 +51,30 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("test data loading CSV file without extension name") {
+    val testData = currentDirectory + "/src/test/resources/sample"
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
+    checkAnswer(
+      sql("SELECT COUNT(*) FROM loadtest"),
+      Seq(Row(8))
+    )
+  }
+
   test("test data loading GZIP compressed CSV file") {
     val testData = currentDirectory + "/src/test/resources/sample.csv.gz"
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
     checkAnswer(
       sql("SELECT COUNT(*) FROM loadtest"),
-      Seq(Row(8))
+      Seq(Row(12))
+    )
+  }
+
+  test("test data loading BZIP2 compressed CSV file") {
+    val testData = currentDirectory + "/src/test/resources/sample.csv.bz2"
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
+    checkAnswer(
+      sql("SELECT COUNT(*) FROM loadtest"),
+      Seq(Row(16))
     )
   }
 

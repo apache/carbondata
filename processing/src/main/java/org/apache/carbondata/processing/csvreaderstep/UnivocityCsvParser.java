@@ -148,7 +148,8 @@ public class UnivocityCsvParser {
     String path = this.csvParserVo.getBlockDetailsList().get(blockCounter).getFilePath();
     FileType fileType = FileFactory.getFileType(path);
 
-    if (path.endsWith(".gz")) {
+    if (path.endsWith(".gz") ||
+        path.endsWith(".bz2")) {
       DataInputStream dataInputStream = FileFactory.getDataInputStream(path, fileType, bufferSize);
       inputStreamReader = new BufferedReader(new InputStreamReader(dataInputStream));
     } else {
