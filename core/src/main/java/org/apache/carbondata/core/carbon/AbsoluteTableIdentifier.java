@@ -64,7 +64,7 @@ public class AbsoluteTableIdentifier implements Serializable {
   }
 
   public static AbsoluteTableIdentifier fromTablePath(String tablePath) {
-    String[] names = tablePath.split("/");
+    String[] names = tablePath.replace('\\', '/').split("/");
     if (names.length < 3) {
       throw new IllegalArgumentException("invalid table path: " + tablePath);
     }
