@@ -498,7 +498,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     complexTypes = new GenericDataType[meta.getComplexTypeColumns().length];
     for (int i = 0; i < meta.noDictionaryCols.length; i++) {
       for (int j = 0; j < metaColumnNames.length; j++) {
-        if (CarbonCommonConstants.DATATYPE_STRING
+        if (CarbonCommonConstants.STRING
             .equalsIgnoreCase(meta.dimColDataTypes.get(metaColumnNames[j]))) {
           isStringDataType[j] = true;
         }
