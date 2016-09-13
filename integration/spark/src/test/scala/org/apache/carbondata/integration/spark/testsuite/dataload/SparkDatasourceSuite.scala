@@ -21,7 +21,7 @@ package org.apache.carbondata.integration.spark.testsuite.dataload
 
 import java.io.File
 
-import org.apache.spark.sql.{Row, DataFrame, SaveMode}
+import org.apache.spark.sql.{SQLContext, Row, DataFrame, SaveMode}
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -40,23 +40,22 @@ class SparkDatasourceSuite extends QueryTest with BeforeAndAfterAll {
     df = sc.parallelize(1 to 1000)
         .map(x => ("a", "b", x))
         .toDF("c1", "c2", "c3")
-  }
 
-  test("read and write using CarbonContext") {
     // save dataframe to carbon file
     df.write
         .format("carbondata")
         .option("tableName", "carbon1")
         .mode(SaveMode.Overwrite)
         .save()
+  }
 
+  test("read and write using CarbonContext") {
     val in = read
         .format("carbondata")
         .option("tableName", "carbon1")
         .load()
 
     assert(in.where("c3 > 500").count() == 500)
-    sql("DROP TABLE IF EXISTS carbon1")
   }
 
   test("saveAsCarbon API") {
@@ -64,18 +63,37 @@ class SparkDatasourceSuite extends QueryTest with BeforeAndAfterAll {
     df.saveAsCarbonFile(Map("tableName" -> "carbon2"))
 
     checkAnswer(sql("SELECT count(*) FROM carbon2 WHERE c3 > 100"), Seq(Row(900)))
-    sql("DROP TABLE IF EXISTS carbon2")
   }
 
   test("saveAsCarbon API using compression") {
     import org.apache.carbondata.spark._
-    df.saveAsCarbonFile(Map("tableName" -> "carbon2", "compress" -> "true"))
+    df.saveAsCarbonFile(Map("tableName" -> "carbon3", "compress" -> "true"))
 
-    checkAnswer(sql("SELECT count(*) FROM carbon2 WHERE c3 > 100"), Seq(Row(900)))
-    sql("DROP TABLE IF EXISTS carbon2")
+    checkAnswer(sql("SELECT count(*) FROM carbon3 WHERE c3 > 100"), Seq(Row(900)))
+  }
+
+  test("query using SQLContext") {
+    val sqlContext = new SQLContext(sparkContext)
+    sqlContext.sql(
+      s"""
+         | CREATE TEMPORARY TABLE temp
+         | (c1 string, c2 string, c3 long)
+         | USING org.apache.spark.sql.CarbonSource
+         | OPTIONS (path '$storePath/default/carbon1')
+      """.stripMargin)
+    checkAnswer(sqlContext.sql(
+      """
+        | SELECT c1, c2, count(*)
+        | FROM temp
+        | WHERE c3 > 100
+        | GROUP BY c1, c2
+      """.stripMargin), Seq(Row("a", "b", 900)))
+    Seq(Row("a", "b", 900))
+    sqlContext.dropTempTable("temp")
   }
 
   override def afterAll {
-
+    sql("DROP TABLE IF EXISTS carbon1")
+    sql("DROP TABLE IF EXISTS carbon2")
   }
 }
