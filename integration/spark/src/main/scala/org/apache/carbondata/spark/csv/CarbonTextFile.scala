@@ -36,7 +36,10 @@ private[csv] object CarbonTextFile {
     val hadoopConfiguration = new Configuration(sc.hadoopConfiguration)
     hadoopConfiguration.setStrings(FileInputFormat.INPUT_DIR, location)
     hadoopConfiguration.setBoolean(FileInputFormat.INPUT_DIR_RECURSIVE, true)
-    hadoopConfiguration.set("io.compression.codecs", "org.apache.hadoop.io.compress.GzipCodec")
+    hadoopConfiguration.set("io.compression.codecs",
+      """org.apache.hadoop.io.compress.GzipCodec,
+         org.apache.hadoop.io.compress.DefaultCodec,
+         org.apache.hadoop.io.compress.BZip2Codec""".stripMargin)
 
     CarbonDataRDDFactory.configSplitMaxSize(sc, location, hadoopConfiguration)
     new NewHadoopRDD[LongWritable, Text](

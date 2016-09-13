@@ -37,12 +37,14 @@ import org.apache.carbondata.core.datastorage.store.filesystem.LocalCarbonFile;
 import org.apache.carbondata.core.datastorage.store.filesystem.ViewFSCarbonFile;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.compress.BZip2Codec;
 import org.apache.hadoop.io.compress.GzipCodec;
 
 public final class FileFactory {
@@ -127,11 +129,14 @@ public final class FileFactory {
       throws IOException {
     path = path.replace("\\", "/");
     boolean gzip = path.endsWith(".gz");
+    boolean bzip2 = path.endsWith(".bz2");
     InputStream stream;
     switch (fileType) {
       case LOCAL:
         if (gzip) {
           stream = new GZIPInputStream(new FileInputStream(path));
+        } else if (bzip2) {
+          stream = new BZip2CompressorInputStream(new FileInputStream(path));
         } else {
           stream = new FileInputStream(path);
         }
@@ -147,6 +152,9 @@ public final class FileFactory {
         }
         if (gzip) {
           GzipCodec codec = new GzipCodec();
+          stream = codec.createInputStream(stream);
+        } else if (bzip2) {
+          BZip2Codec codec = new BZip2Codec();
           stream = codec.createInputStream(stream);
         }
         break;
