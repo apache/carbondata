@@ -34,6 +34,7 @@ import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.api.dataloader.SchemaInfo;
 import org.apache.carbondata.processing.constants.DataProcessorConstants;
 import org.apache.carbondata.processing.csvreaderstep.CsvInputMeta;
@@ -420,12 +421,12 @@ public class DataGraphExecuter {
   private void validateHeader(SchemaInfo schemaInfo, String partitionId,
       CarbonDataLoadSchema schema) throws DataLoadingException {
     String[] columnNames = getColumnNames(schemaInfo, model.getTableName(), partitionId, schema);
-    String[] csvHeader = model.getCsvHeader().toLowerCase().split(",");
+    String[] csvHeader = CarbonUtil.splitHeader( model.getCsvHeader(), ",");
 
     List<String> csvColumnsList = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
     for (String column : csvHeader) {
-      csvColumnsList.add(column.replaceAll("\"", "").trim());
+      csvColumnsList.add(column);
     }
 
     int count = 0;

@@ -1389,6 +1389,18 @@ public final class CarbonUtil {
     return dictionaryOneChunkSize;
   }
 
+  public static String[] splitHeader(String header, String delimiter) {
+    if(header == null){
+      return new String[0];
+    }
+    String[] columns = header.toLowerCase().split(CarbonUtil.delimiterConverter(delimiter));
+    int length = columns.length;
+    for(int i =0; i< length; i++) {
+      columns[i] = columns[i].replace("\"", "").trim();
+    }
+    return columns;
+  }
+
   /**
    * @param csvFilePath
    * @return
