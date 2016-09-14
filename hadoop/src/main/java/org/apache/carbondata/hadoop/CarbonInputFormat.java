@@ -149,9 +149,12 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   public static CarbonTable getCarbonTable(Configuration configuration) throws IOException {
     String carbonTableStr = configuration.get(CARBON_TABLE);
     if (carbonTableStr == null) {
-      CarbonTable carbonTable = new SchemaReader()
-          .readCarbonTableFromStore(getTablePath(configuration), getTableToAccess(configuration),
-              getStorePathString(configuration));
+      // read it from schema file in the store
+      String storePath = configuration.get(INPUT_DIR, "");
+      AbsoluteTableIdentifier identifier = new AbsoluteTableIdentifier(
+          storePath, getTableToAccess(configuration));
+      CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(
+          getTablePath(configuration), identifier);
       setCarbonTable(configuration, carbonTable);
       return carbonTable;
     }

@@ -49,13 +49,13 @@ class HadoopFSRelationTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("hadoopfsrelation select all test") {
     val rdd = read.format("org.apache.spark.sql.CarbonSource")
-      .option("tableName", "hadoopfsrelation").load("./target/test")
+      .option("tableName", "hadoopfsrelation").load()
     assert(rdd.collect().length > 0)
   }
 
   test("hadoopfsrelation filters test") {
     val rdd: DataFrame = read.format("org.apache.spark.sql.CarbonSource")
-      .option("tableName", "hadoopfsrelation").load("./target/test")
+      .option("tableName", "hadoopfsrelation").load()
       .select("empno", "empname", "utilization").where("empname in ('arvind','ayushi')")
     checkAnswer(
       rdd,

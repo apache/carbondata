@@ -30,7 +30,6 @@ import static org.apache.carbondata.core.constants.CarbonCommonConstants.INVALID
 
 import org.apache.hadoop.fs.Path;
 
-
 /**
  * Helps to get Table content paths.
  */
@@ -182,6 +181,15 @@ public class CarbonTablePath extends Path {
    */
   public String getSchemaFilePath() {
     return getMetaDataDir() + File.separator + SCHEMA_FILE;
+  }
+
+  /**
+   * return the schema file path
+   * @param tablePath path to table files
+   * @return schema file path
+   */
+  public static String getSchemaFilePath(String tablePath) {
+    return tablePath + File.separator + METADATA_DIR + File.separator + SCHEMA_FILE;
   }
 
   /**
