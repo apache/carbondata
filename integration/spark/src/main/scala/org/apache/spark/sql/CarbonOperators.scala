@@ -148,9 +148,9 @@ case class CarbonScan(
     buildCarbonPlan.setQueryId(ocRaw.getConf("queryId", System.nanoTime() + ""))
 
     val tableCreationTime = carbonCatalog
-      .getTableCreationTime(relationRaw.databaseName, relationRaw.tableName)
+        .getTableCreationTime(relationRaw.databaseName, relationRaw.tableName)
     val schemaLastUpdatedTime = carbonCatalog
-      .getSchemaLastUpdatedTime(relationRaw.databaseName, relationRaw.tableName)
+        .getSchemaLastUpdatedTime(relationRaw.databaseName, relationRaw.tableName)
     val big = new CarbonScanRDD(
       ocRaw.sparkContext,
       model,
@@ -189,5 +189,3 @@ case class CarbonScan(
   }
 
 }
-
-

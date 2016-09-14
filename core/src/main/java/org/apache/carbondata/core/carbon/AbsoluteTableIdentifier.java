@@ -63,6 +63,21 @@ public class AbsoluteTableIdentifier implements Serializable {
     return carbonTableIdentifier;
   }
 
+  public static AbsoluteTableIdentifier fromTablePath(String tablePath) {
+    String[] names = tablePath.replace('\\', '/').split("/");
+    if (names.length < 3) {
+      throw new IllegalArgumentException("invalid table path: " + tablePath);
+    }
+
+    String tableName = names[names.length - 1];
+    String dbName = names[names.length - 2];
+    String storePath = tablePath.substring(0, tablePath.lastIndexOf(dbName));
+
+    CarbonTableIdentifier identifier =
+        new CarbonTableIdentifier(dbName, tableName, Long.toString(System.currentTimeMillis()));
+    return new AbsoluteTableIdentifier(storePath, identifier);
+  }
+
   /**
    * to get the hash code
    */

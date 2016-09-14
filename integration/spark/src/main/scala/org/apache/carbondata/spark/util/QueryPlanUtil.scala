@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark.util
 
+import scala.reflect.ClassTag
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapred.JobConf
@@ -25,6 +27,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
 import org.apache.carbondata.hadoop.CarbonInputFormat
+
 
 /**
  * All the utility functions for carbon plan creation
@@ -43,5 +46,14 @@ object QueryPlanUtil {
     CarbonInputFormat.setTableToAccess(job.getConfiguration,
       absoluteTableIdentifier.getCarbonTableIdentifier)
     (carbonInputFormat, job)
+  }
+
+  def createCarbonInputFormat[V: ClassTag](absoluteTableIdentifier: AbsoluteTableIdentifier,
+      conf: Configuration) : CarbonInputFormat[V] = {
+    val carbonInputFormat = new CarbonInputFormat[V]()
+    val job: Job = new Job(conf)
+    FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getStorePath))
+    CarbonInputFormat.setTableToAccess(conf, absoluteTableIdentifier.getCarbonTableIdentifier)
+    carbonInputFormat
   }
 }
