@@ -811,16 +811,26 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
         System.getProperty("java.io.tmpdir")
       )
     storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
-
-    CarbonDataRDDFactory
-      .alterTableForCompaction(sqlContext,
-        alterTableModel,
-        carbonLoadModel,
-        partitioner,
-        relation.tableMeta.storePath,
-        kettleHomePath,
-        storeLocation
-      )
+    try {
+      CarbonDataRDDFactory
+        .alterTableForCompaction(sqlContext,
+          alterTableModel,
+          carbonLoadModel,
+          partitioner,
+          relation.tableMeta.storePath,
+          kettleHomePath,
+          storeLocation
+        )
+    }
+    catch {
+      case e: Exception =>
+        if (null != e.getMessage) {
+          sys.error("Compaction failed." + e.getMessage)
+        }
+        else {
+          sys.error("Exception in compaction.")
+        }
+    }
 
     Seq.empty
   }
