@@ -81,6 +81,10 @@ public class NotInExpression extends BinaryConditionalExpression {
         setOfExprResult.add(val);
       }
     }
+    if(leftRsult.isNull()) {
+      leftRsult.set(DataType.NULL, null);
+      return leftRsult;
+    }
     leftRsult.set(DataType.BOOLEAN, !setOfExprResult.contains(leftRsult));
 
     return leftRsult;

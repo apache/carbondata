@@ -26,11 +26,13 @@ import org.apache.spark.sql.catalyst.{expressions, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions.{AttributeSet, _}
-import org.apache.spark.sql.catalyst.planning.{PhysicalOperation, QueryPlanner}
-import org.apache.spark.sql.catalyst.plans.logical.{Filter => LogicalFilter, LogicalPlan}
+import org.apache.spark.sql.catalyst.planning.{ExtractEquiJoinKeys, PhysicalOperation, QueryPlanner}
+import org.apache.spark.sql.catalyst.plans.Inner
+import org.apache.spark.sql.catalyst.plans.logical.{BroadcastHint, Filter => LogicalFilter, LogicalPlan}
 import org.apache.spark.sql.execution.{ExecutedCommand, Filter, Project, SparkPlan}
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.{DescribeCommand => LogicalDescribeCommand, LogicalRelation}
+import org.apache.spark.sql.execution.joins.{BroadCastFilterPushJoin, BuildLeft, BuildRight}
 import org.apache.spark.sql.hive.execution.{DropTable, HiveNativeCommand}
 import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
 import org.apache.spark.sql.types.IntegerType
@@ -65,6 +67,41 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           } else {
             carbonRawScan(projectList, predicates, l)(sqlContext) :: Nil
           }
+        case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition,
+        left, right)
+          if (isCarbonPlan(left) &&
+              canPushDownJoin(right, condition)) =>
+          LOGGER.info(s"pushing down for ExtractEquiJoinKeys:right")
+          val carbon = planLater(left)
+
+          val pushedDownJoin = BroadCastFilterPushJoin(
+            leftKeys: Seq[Expression],
+            rightKeys: Seq[Expression],
+            BuildRight,
+            carbon,
+            planLater(right),
+            condition)
+
+          condition.map(Filter(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
+
+        case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left,
+        right)
+          if (isCarbonPlan(left) &&
+              canPushDownJoin(left, condition)) =>
+          LOGGER.info(s"pushing down for ExtractEquiJoinKeys:left")
+          val carbon = planLater(right)
+
+          val pushedDownJoin = BroadCastFilterPushJoin(
+            leftKeys: Seq[Expression],
+            rightKeys: Seq[Expression],
+            BuildLeft,
+            planLater(left),
+            carbon,
+            condition)
+          condition.map(Filter(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
+        case CountStarPlan(isCountStar, colAttr, PhysicalOperation(projectList, predicates,
+               l: LogicalRelation)) if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
+             carbonCountStar(colAttr, l)(sqlContext)::Nil
         case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
           CarbonDictionaryDecoder(relations,
             profile,
@@ -75,6 +112,20 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       }
     }
 
+    def isCarbonPlan(plan: LogicalPlan): Boolean = {
+      plan match {
+        case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
+          return true
+        case others => false
+      }
+      false
+    }
+
+    protected def carbonCountStar(colAttr: Seq[Attribute], logicalRelation: LogicalRelation)
+      (sc: SQLContext): SparkPlan = {
+      val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceRelation]
+      CarbonCountStar(colAttr, relation.carbonRelation)(sqlContext)
+    }
     /**
      * Create carbon scan
      */
@@ -203,6 +254,25 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           attr.metadata)(attr.exprId, attr.qualifiers)
       } else {
         attr
+      }
+    }
+
+    private def canPushDownJoin(otherRDDPlan: LogicalPlan,
+        joinCondition: Option[Expression]): Boolean = {
+      val pushdowmJoinEnabled = sqlContext.sparkContext.conf
+        .getBoolean("spark.carbon.pushdown.join.as.filter", defaultValue = true)
+
+      if (!pushdowmJoinEnabled) {
+        return false
+      }
+
+      otherRDDPlan match {
+        case BroadcastHint(p) => true
+        case p if sqlContext.conf.autoBroadcastJoinThreshold > 0 &&
+                  p.statistics.sizeInBytes <= sqlContext.conf.autoBroadcastJoinThreshold =>
+          LOGGER.info("canPushDownJoin statistics:" + p.statistics.sizeInBytes)
+          true
+        case _ => false
       }
     }
 

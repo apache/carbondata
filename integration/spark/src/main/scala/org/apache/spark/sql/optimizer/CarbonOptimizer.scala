@@ -223,11 +223,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
               case attr: AttributeReference =>
                 attrsOnConds.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
             }
-          } else {
-            CarbonFilters
-              .selectFilters(splitConjunctivePredicates(filter.condition), attrsOnConds, aliasMap)
           }
-
           var child = filter.child
           if (attrsOnConds.size() > 0 && !child.isInstanceOf[Filter]) {
             child = CarbonDictionaryTempDecoder(attrsOnConds,
@@ -297,7 +293,6 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           } else {
             j
           }
-
         case p: Project
           if relations.nonEmpty && !p.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
           val attrsOnProjects = new util.HashSet[AttributeReferenceWrapper]
@@ -454,7 +449,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           case attr: AttributeReference =>
             updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
         }
-      case filter: Filter =>
+      case filter: Filter if filter.child.isInstanceOf[Join] =>
         val filterExps = filter.condition transform {
           case attr: AttributeReference =>
             updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
@@ -654,8 +649,15 @@ case class CarbonAliasDecoderRelation() {
     val value = attrMap.find(p =>
       p._1.name.equalsIgnoreCase(key.name) && p._1.exprId.equals(key.exprId))
     value match {
-      case Some((k, v)) => v
+      case Some((k, v)) =>
+        val attr = getOrElse(v, v)
+        if (attr .equals(v)) {
+          attr
+        } else {
+          getOrElse(attr, attr)
+        }
       case _ => default
     }
   }
 }
+
