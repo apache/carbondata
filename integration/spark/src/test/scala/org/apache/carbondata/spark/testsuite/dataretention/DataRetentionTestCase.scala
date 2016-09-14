@@ -28,11 +28,12 @@ import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.carbon.path.CarbonStorePath
+import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.LoadMetadataDetails
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.lcm.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
@@ -47,15 +48,28 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   val resource = currentDirectory + "/src/test/resources/"
 
   val storeLocation = new File(this.getClass.getResource("/").getPath + "/../test").getCanonicalPath
-  val carbonTableIdentifier: CarbonTableIdentifier =
-    new CarbonTableIdentifier("default", "DataRetentionTable".toLowerCase(), "1")
-  val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
-      AbsoluteTableIdentifier(storeLocation, carbonTableIdentifier))
-  val carbontablePath = CarbonStorePath.getCarbonTablePath(storeLocation, carbonTableIdentifier)
-    .getMetadataDirectoryPath
+  val absoluteTableIdentifierForLock: AbsoluteTableIdentifier = new
+      AbsoluteTableIdentifier(storeLocation,
+        new CarbonTableIdentifier("default", "retentionlock", "200"))
+  val absoluteTableIdentifierForRetention: AbsoluteTableIdentifier = new
+      AbsoluteTableIdentifier(storeLocation,
+        new CarbonTableIdentifier("default", "DataRetentionTable".toLowerCase(), "300"))
+  val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(absoluteTableIdentifierForRetention)
+  val carbonTablePath = CarbonStorePath
+    .getCarbonTablePath(absoluteTableIdentifierForRetention.getStorePath,
+      absoluteTableIdentifierForRetention.getCarbonTableIdentifier).getMetadataDirectoryPath
+
   var carbonDateFormat = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP)
   var defaultDateFormat = new SimpleDateFormat(CarbonCommonConstants
     .CARBON_TIMESTAMP_DEFAULT_FORMAT)
+  val carbonTableStatusLock: ICarbonLock = CarbonLockFactory
+    .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK)
+  val carbonDeleteSegmentLock: ICarbonLock = CarbonLockFactory
+    .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.DELETE_SEGMENT_LOCK)
+  val carbonCleanFilesLock: ICarbonLock = CarbonLockFactory
+    .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.CLEAN_FILES_LOCK)
+  val carbonMetadataLock: ICarbonLock = CarbonLockFactory
+    .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.METADATA_LOCK)
 
 
   override def beforeAll {
@@ -68,6 +82,16 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'"
 
     )
+    sql(
+      "CREATE table retentionlock (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'"
+
+    )
+
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE retentionlock " +
+      "OPTIONS('DELIMITER' =  ',')")
 
     sql(
       "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE DataRetentionTable " +
@@ -81,6 +105,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table DataRetentionTable")
     sql("drop table carbon_TABLE_1")
+    sql("drop table retentionlock")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
@@ -99,7 +124,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("RetentionTest_withoutDelete") {
     checkAnswer(
-      sql("SELECT country, count(salary) AS amount FROM dataretentionTable WHERE country" +
+      sql("SELECT country, count(salary) AS amount FROM DataRetentionTable WHERE country" +
           " IN ('china','ind','aus','eng') GROUP BY country"
       ),
       Seq(Row("aus", 9), Row("ind", 9))
@@ -108,7 +133,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("RetentionTest_DeleteSegmentsByLoadTime") {
     val segments: Array[LoadMetadataDetails] = segmentStatusManager
-      .readLoadMetadata(carbontablePath)
+      .readLoadMetadata(carbonTablePath)
     // check segment length, it should be 3 (loads)
     if (segments.length != 2) {
       assert(false)
@@ -117,7 +142,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     val actualValue: String = getSegmentStartTime(segments, 1)
     // delete segments (0,1) which contains ind, aus
     sql(
-      "DELETE SEGMENTS FROM TABLE dataretentionTable where STARTTIME before '" + actualValue + "'")
+      "DELETE SEGMENTS FROM TABLE DataRetentionTable where STARTTIME before '" + actualValue + "'")
 
     // load segment 2 which contains eng
     sql(
@@ -133,9 +158,9 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("RetentionTest3_DeleteByLoadId") {
     // delete segment 2 and load ind segment
-    sql("DELETE SEGMENT 2 FROM TABLE dataretentionTable")
+    sql("DELETE SEGMENT 2 FROM TABLE DataRetentionTable")
     sql(
-      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dataretentionTable " +
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE DataRetentionTable " +
       "OPTIONS('DELIMITER' = ',')")
     checkAnswer(
       sql("SELECT country, count(salary) AS amount FROM DataRetentionTable WHERE country" +
@@ -145,8 +170,8 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     )
 
     // these queries should execute without any error.
-    sql("show segments for table dataretentionTable")
-    sql("clean files for table dataretentionTable")
+    sql("show segments for table DataRetentionTable")
+    sql("clean files for table DataRetentionTable")
   }
 
   test("RetentionTest4_DeleteByInvalidLoadId") {
@@ -189,7 +214,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
     try {
       sql(
-        "DELETE SEGMENTS FROM TABLE dataretentionTable where STARTTIME before" +
+        "DELETE SEGMENTS FROM TABLE DataRetentionTable where STARTTIME before" +
         " 'abcd-01-01 00:00:00'")
       assert(false)
     } catch {
@@ -200,7 +225,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
     try {
       sql(
-        "DELETE SEGMENTS FROM TABLE dataretentionTable where STARTTIME before" +
+        "DELETE SEGMENTS FROM TABLE DataRetentionTable where STARTTIME before" +
         " '2099:01:01 00:00:00'")
       assert(false)
     } catch {
@@ -215,7 +240,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       ),
       Seq(Row("ind", 9))
     )
-    sql("DELETE SEGMENTS FROM TABLE dataretentionTable where STARTTIME before '2099-01-01'")
+    sql("DELETE SEGMENTS FROM TABLE DataRetentionTable where STARTTIME before '2099-01-01'")
     checkAnswer(
       sql("SELECT country, count(salary) AS amount FROM DataRetentionTable WHERE country" +
           " IN ('china','ind','aus','eng') GROUP BY country"), Seq())
@@ -227,7 +252,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
     // All these queries should fail.
     try {
-      sql("DELETE LOADS FROM TABLE dataretentionTable where STARTTIME before '2099-01-01'")
+      sql("DELETE LOADS FROM TABLE DataRetentionTable where STARTTIME before '2099-01-01'")
       throw new MalformedCarbonCommandException("Invalid query")
     } catch {
       case e: MalformedCarbonCommandException =>
@@ -236,7 +261,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     }
 
     try {
-      sql("DELETE LOAD 2 FROM TABLE dataretentionTable")
+      sql("DELETE LOAD 2 FROM TABLE DataRetentionTable")
       throw new MalformedCarbonCommandException("Invalid query")
     } catch {
       case e: MalformedCarbonCommandException =>
@@ -245,7 +270,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     }
 
     try {
-      sql("show loads for table dataretentionTable")
+      sql("show loads for table DataRetentionTable")
       throw new MalformedCarbonCommandException("Invalid query")
     } catch {
       case e: MalformedCarbonCommandException =>
@@ -253,5 +278,57 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       case _ => assert(true)
     }
 
+  }
+
+  test("RetentionTest_Locks") {
+
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE retentionlock " +
+      "OPTIONS('DELIMITER' = ',')")
+    carbonDeleteSegmentLock.lockWithRetries()
+    carbonTableStatusLock.lockWithRetries()
+    carbonCleanFilesLock.lockWithRetries()
+    // delete segment 0 it should fail
+    try {
+      sql("DELETE SEGMENT 0 FROM TABLE retentionlock")
+      throw new MalformedCarbonCommandException("Invalid")
+    } catch {
+      case me: MalformedCarbonCommandException =>
+        assert(false)
+      case ex: Exception =>
+        assert(true)
+    }
+
+    // it should fail
+    try {
+      sql("DELETE SEGMENTS FROM TABLE retentionlock where STARTTIME before " +
+          "'2099-01-01 00:00:00.0'")
+      throw new MalformedCarbonCommandException("Invalid")
+    } catch {
+      case me: MalformedCarbonCommandException =>
+        assert(false)
+      case ex: Exception =>
+        assert(true)
+    }
+
+    // it should fail
+    try {
+      sql("clean files for table retentionlock")
+      throw new MalformedCarbonCommandException("Invalid")
+    } catch {
+      case me: MalformedCarbonCommandException =>
+        assert(false)
+      case ex: Exception =>
+        assert(true)
+    }
+    carbonTableStatusLock.unlock()
+    carbonCleanFilesLock.unlock()
+    carbonDeleteSegmentLock.unlock()
+
+    sql("DELETE SEGMENT 0 FROM TABLE retentionlock")
+    //load and delete should execute parallely
+    carbonMetadataLock.lockWithRetries()
+    sql("DELETE SEGMENT 1 FROM TABLE retentionlock")
+    carbonMetadataLock.unlock()
   }
 }

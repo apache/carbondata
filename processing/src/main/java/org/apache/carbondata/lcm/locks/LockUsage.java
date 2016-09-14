@@ -23,10 +23,12 @@ package org.apache.carbondata.lcm.locks;
  * Each enum value is one specific lock case.
  */
 public class LockUsage {
-  public static String LOCK = ".lock";
-  public static String METADATA_LOCK = "meta.lock";
-  public static String COMPACTION_LOCK = "compaction.lock";
-  public static String SYSTEMLEVEL_COMPACTION_LOCK = "system_level_compaction.lock";
-  public static String TABLE_STATUS_LOCK = "tablestatus.lock";
+  public static final String LOCK = ".lock";
+  public static final String METADATA_LOCK = "meta.lock";
+  public static final String COMPACTION_LOCK = "compaction.lock";
+  public static final String SYSTEMLEVEL_COMPACTION_LOCK = "system_level_compaction.lock";
+  public static final String TABLE_STATUS_LOCK = "tablestatus.lock";
+  public static final String DELETE_SEGMENT_LOCK = "delete_segment.lock";
+  public static final String CLEAN_FILES_LOCK = "clean_files.lock";
 
 }
