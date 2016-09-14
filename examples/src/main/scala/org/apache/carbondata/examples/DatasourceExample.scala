@@ -45,10 +45,10 @@ object DatasourceExample {
     sqlContext.sql(
       """
         | CREATE TEMPORARY TABLE source
-        | (c1 string, c2 string, c3 long)
         | USING org.apache.spark.sql.CarbonSource
         | OPTIONS (path './examples/target/store/default/table1')
       """.stripMargin)
     sqlContext.sql("SELECT c1, c2, count(*) FROM source WHERE c3 > 100 GROUP BY c1, c2").show
+
   }
 }

@@ -94,6 +94,24 @@ class SparkDatasourceSuite extends QueryTest with BeforeAndAfterAll {
     sqlContext.dropTempTable("temp")
   }
 
+  test("query using SQLContext without providing schema") {
+    val sqlContext = new SQLContext(sparkContext)
+    sqlContext.sql(
+      s"""
+         | CREATE TEMPORARY TABLE temp
+         | USING org.apache.spark.sql.CarbonSource
+         | OPTIONS (path '$storePath/default/carbon1')
+      """.stripMargin)
+    checkAnswer(sqlContext.sql(
+      """
+        | SELECT c1, c2, count(*)
+        | FROM temp
+        | WHERE c3 > 100
+        | GROUP BY c1, c2
+      """.stripMargin), Seq(Row("a", "b", 900)))
+    sqlContext.dropTempTable("temp")
+  }
+
   test("query using SQLContext, multiple load") {
     sql("DROP TABLE IF EXISTS test")
     sql(

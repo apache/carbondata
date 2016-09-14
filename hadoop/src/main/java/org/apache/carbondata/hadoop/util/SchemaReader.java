@@ -20,6 +20,7 @@ package org.apache.carbondata.hadoop.util;
 
 import java.io.IOException;
 
+import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.converter.SchemaConverter;
@@ -33,17 +34,17 @@ import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.thrift.TBase;
 
 /**
- * TODO: It should be removed after store manager implemetation.
+ * TODO: It should be removed after store manager implementation.
  */
 public class SchemaReader {
 
-  public CarbonTable readCarbonTableFromStore(CarbonTablePath carbonTablePath,
-      CarbonTableIdentifier tableIdentifier, String storePath) throws IOException {
+  public static CarbonTable readCarbonTableFromStore(CarbonTablePath carbonTablePath,
+      AbsoluteTableIdentifier identifier) throws IOException {
     String schemaFilePath = carbonTablePath.getSchemaFilePath();
-    if (FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.HDFS) ||
-        FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.VIEWFS) ||
-        FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.LOCAL)) {
-      String tableName = tableIdentifier.getTableName();
+    if (FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.LOCAL) ||
+        FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.HDFS) ||
+        FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.VIEWFS)) {
+      String tableName = identifier.getCarbonTableIdentifier().getTableName();
 
       ThriftReader.TBaseCreator createTBase = new ThriftReader.TBaseCreator() {
         public TBase create() {
@@ -59,12 +60,15 @@ public class SchemaReader {
 
       SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
       TableInfo wrapperTableInfo = schemaConverter
-          .fromExternalToWrapperTableInfo(tableInfo, tableIdentifier.getDatabaseName(), tableName,
-              storePath);
+          .fromExternalToWrapperTableInfo(tableInfo,
+              identifier.getCarbonTableIdentifier().getDatabaseName(), tableName,
+              identifier.getStorePath());
       wrapperTableInfo.setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath));
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
-      return CarbonMetadata.getInstance().getCarbonTable(tableIdentifier.getTableUniqueName());
+      return CarbonMetadata.getInstance().getCarbonTable(
+          identifier.getCarbonTableIdentifier().getTableUniqueName());
+    } else {
+      return null;
     }
-    return null;
   }
 }

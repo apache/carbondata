@@ -20,13 +20,20 @@ package org.apache.spark.sql
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import scala.reflect.ClassTag
-
+import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
+import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.hadoop.util.SchemaReader
+import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
+import org.apache.carbondata.scan.expression.logical.AndExpression
+import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
+import org.apache.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
+import org.apache.carbondata.spark.util.QueryPlanUtil
+import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.{Job, JobID}
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
+import org.apache.hadoop.mapreduce.{Job, JobID}
 import org.apache.spark._
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.mapreduce.SparkHadoopMapReduceUtil
@@ -37,14 +44,7 @@ import org.apache.spark.sql.sources.{Filter, HadoopFsRelation, OutputWriterFacto
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
-import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
-import org.apache.carbondata.core.carbon.path.CarbonTablePath
-import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
-import org.apache.carbondata.scan.expression.logical.AndExpression
-import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
-import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
-import org.apache.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
-import org.apache.carbondata.spark.util.QueryPlanUtil
+import scala.reflect.ClassTag
 
 private[sql] case class CarbonDatasourceHadoopRelation(
     sqlContext: SQLContext,
@@ -63,9 +63,9 @@ private[sql] case class CarbonDatasourceHadoopRelation(
   lazy val absIdentifier = AbsoluteTableIdentifier.fromTablePath(paths.head)
   lazy val identifier = absIdentifier.getCarbonTableIdentifier
   lazy val relationRaw: CarbonRelation = {
-    FileInputFormat.setInputPaths(job, paths.head)
-    CarbonInputFormat.setTableToAccess(job.getConfiguration, identifier)
-    val carbonTable = CarbonInputFormat.getCarbonTable(job.getConfiguration)
+    val carbonTable = SchemaReader.readCarbonTableFromStore(
+      CarbonStorePath.getCarbonTablePath(absIdentifier.getStorePath, identifier),
+      absIdentifier)
     if (carbonTable == null) {
       sys.error(s"CarbonData file path ${paths.head} is not valid")
     }
