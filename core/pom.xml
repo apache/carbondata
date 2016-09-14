@@ -97,11 +97,6 @@
       <artifactId>spark-sql_${scala.binary.version}</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-format</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
       <version>3.4.7</version>
