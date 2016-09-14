@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.TaskBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
@@ -262,14 +263,19 @@ public class CarbonCompactionUtil {
 
   /**
    * This will check if any compaction request has been received for any table.
+   *
    * @param tableMetas
    * @return
    */
-  public static TableMeta getNextTableToCompact(TableMeta[] tableMetas) {
+  public static TableMeta getNextTableToCompact(TableMeta[] tableMetas,
+      List<CarbonTableIdentifier> skipList) {
     for (TableMeta table : tableMetas) {
       CarbonTable ctable = table.carbonTable();
       String metadataPath = ctable.getMetaDataFilepath();
-      if (CarbonCompactionUtil.isCompactionRequiredForTable(metadataPath)) {
+      // check for the compaction required file and at the same time exclude the tables which are
+      // present in the skip list.
+      if (CarbonCompactionUtil.isCompactionRequiredForTable(metadataPath) && !skipList
+          .contains(table.carbonTableIdentifier())) {
         return table;
       }
     }

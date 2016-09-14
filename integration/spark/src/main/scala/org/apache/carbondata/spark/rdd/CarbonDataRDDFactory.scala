@@ -32,11 +32,11 @@ import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{util => _, _}
 import org.apache.spark.sql.{CarbonEnv, SQLContext}
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel, CompactionModel, Partitioner}
-import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.sql.hive.{DistributionUtil, TableMeta}
 import org.apache.spark.util.{FileUtils, SplitUtils}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier}
 import org.apache.carbondata.core.carbon.datastore.block.{Distributable, TableBlockInfo}
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
@@ -363,6 +363,10 @@ object CarbonDataRDDFactory extends Logging {
         case e : Exception =>
           logger.error("Exception in start compaction thread. " + e.getMessage)
           lock.unlock()
+          // if the compaction is a blocking call then only need to throw the exception.
+          if (compactionModel.isDDLTrigger) {
+            throw e
+          }
       }
     }
     else {
@@ -537,13 +541,24 @@ object CarbonDataRDDFactory extends Logging {
         override def run(): Unit = {
 
           try {
-            executeCompaction(carbonLoadModel: CarbonLoadModel,
-              hdfsStoreLocation: String,
-              compactionModel: CompactionModel,
-              partitioner: Partitioner,
-              executor, sqlContext, kettleHomePath, storeLocation
-            )
-            // check for all the tables.
+            // compaction status of the table which is triggered by the user.
+            var triggeredCompactionStatus = false
+            var exception : Exception = null
+            try {
+              executeCompaction(carbonLoadModel: CarbonLoadModel,
+                hdfsStoreLocation: String,
+                compactionModel: CompactionModel,
+                partitioner: Partitioner,
+                executor, sqlContext, kettleHomePath, storeLocation
+              )
+              triggeredCompactionStatus = true
+            }
+            catch {
+              case e: Exception =>
+                logger.error("Exception in compaction thread " + e.getMessage)
+                exception = e
+            }
+            // continue in case of exception also, check for all the tables.
             val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
                 CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
@@ -551,15 +566,16 @@ object CarbonDataRDDFactory extends Logging {
 
             if (!isConcurrentCompactionAllowed) {
               logger.info("System level compaction lock is enabled.")
+              val skipCompactionTables = ListBuffer[CarbonTableIdentifier]()
               var tableForCompaction = CarbonCompactionUtil
                 .getNextTableToCompact(CarbonEnv.getInstance(sqlContext).carbonCatalog.metadata
-                  .tablesMeta.toArray
+                  .tablesMeta.toArray, skipCompactionTables.toList.asJava
                 )
-              while(null != tableForCompaction) {
+              while (null != tableForCompaction) {
                 logger
                   .info("Compaction request has been identified for table " + tableForCompaction
                     .carbonTable.getDatabaseName + "." + tableForCompaction.carbonTableIdentifier
-                    .getTableName
+                          .getTableName
                   )
                 val table: CarbonTable = tableForCompaction.carbonTable
                 val metadataPath = table.getMetaDataFilepath
@@ -590,31 +606,44 @@ object CarbonDataRDDFactory extends Logging {
                     executor, sqlContext, kettleHomePath, storeLocation
                   )
                 }
+                catch {
+                  case e: Exception =>
+                    logger.error("Exception in compaction thread for table " + tableForCompaction
+                      .carbonTable.getDatabaseName + "." +
+                                 tableForCompaction.carbonTableIdentifier
+                                   .getTableName)
+                  // not handling the exception. only logging as this is not the table triggered
+                  // by user.
+                }
                 finally {
-                  // delete the compaction required file
+                  // delete the compaction required file in case of failure or success also.
                   if (!CarbonCompactionUtil
                     .deleteCompactionRequiredFile(metadataPath, compactionType)) {
+                    // if the compaction request file is not been able to delete then
+                    // add those tables details to the skip list so that it wont be considered next.
+                    skipCompactionTables.+=:(tableForCompaction.carbonTableIdentifier)
                     logger
                       .error("Compaction request file can not be deleted for table " +
-                        tableForCompaction
-                        .carbonTable.getDatabaseName + "." + tableForCompaction
-                        .carbonTableIdentifier
-                        .getTableName
+                             tableForCompaction
+                               .carbonTable.getDatabaseName + "." + tableForCompaction
+                               .carbonTableIdentifier
+                               .getTableName
                       )
+
                   }
                 }
                 // ********* check again for all the tables.
                 tableForCompaction = CarbonCompactionUtil
                   .getNextTableToCompact(CarbonEnv.getInstance(sqlContext).carbonCatalog.metadata
-                    .tablesMeta.toArray
+                    .tablesMeta.toArray, skipCompactionTables.asJava
                   )
               }
+              // giving the user his error for telling in the beeline if his triggered table
+              // compaction is failed.
+              if (!triggeredCompactionStatus) {
+                throw new Exception("Exception in compaction " + exception.getMessage)
+              }
             }
-          }
-          catch {
-            case e: Exception =>
-              logger.error("Exception in compaction thread " + e.getMessage)
-              throw e
           }
           finally {
             executor.shutdownNow()
