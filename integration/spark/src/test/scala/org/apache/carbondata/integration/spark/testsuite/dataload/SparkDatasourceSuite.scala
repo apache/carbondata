@@ -21,9 +21,9 @@ package org.apache.carbondata.integration.spark.testsuite.dataload
 
 import java.io.File
 
-import org.apache.spark.sql.{SQLContext, Row, DataFrame, SaveMode}
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.{DataFrame, Row, SQLContext, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
 class SparkDatasourceSuite extends QueryTest with BeforeAndAfterAll {
@@ -91,8 +91,35 @@ class SparkDatasourceSuite extends QueryTest with BeforeAndAfterAll {
         | WHERE c3 > 100
         | GROUP BY c1, c2
       """.stripMargin), Seq(Row("a", "b", 900)))
-    Seq(Row("a", "b", 900))
     sqlContext.dropTempTable("temp")
+  }
+
+  test("query using SQLContext, multiple load") {
+    sql("DROP TABLE IF EXISTS test")
+    sql(
+      """
+        | CREATE TABLE test(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    val testData = currentDirectory + "/src/test/resources/sample.csv"
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table test")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table test")
+
+    val sqlContext = new SQLContext(sparkContext)
+    sqlContext.sql(
+      s"""
+         | CREATE TEMPORARY TABLE temp
+         | (id long, name string, city string, age long)
+         | USING org.apache.spark.sql.CarbonSource
+         | OPTIONS (path '$storePath/default/test')
+      """.stripMargin)
+    checkAnswer(sqlContext.sql(
+      """
+        | SELECT count(id)
+        | FROM temp
+      """.stripMargin), Seq(Row(8)))
+    sqlContext.dropTempTable("temp")
+    sql("DROP TABLE test")
   }
 
   override def afterAll {
