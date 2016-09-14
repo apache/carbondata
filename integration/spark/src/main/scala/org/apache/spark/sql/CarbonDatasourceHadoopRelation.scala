@@ -67,9 +67,7 @@ private[sql] case class CarbonDatasourceHadoopRelation(
     CarbonInputFormat.setTableToAccess(job.getConfiguration, identifier)
     val carbonTable = CarbonInputFormat.getCarbonTable(job.getConfiguration)
     if (carbonTable == null) {
-      sys.error(s"Store path ${paths.head} is not valid or " +
-          s"table ${carbonTable.getTableUniqueName}  does not exist in path."
-      )
+      sys.error(s"CarbonData file path ${paths.head} is not valid")
     }
     CarbonRelation(
       carbonTable.getDatabaseName,
