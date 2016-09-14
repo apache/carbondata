@@ -109,6 +109,5 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("DROP TABLE IF EXISTS alldatatypescubeAGG")
     sql("DROP TABLE IF EXISTS alldatatypescubeAGG_hive")
-    sql("DROP TABLE IF EXSITS alldatatypestableagg")
   }
 }
