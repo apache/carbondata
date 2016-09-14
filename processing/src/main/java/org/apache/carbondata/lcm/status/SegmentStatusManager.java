@@ -246,15 +246,22 @@ public class SegmentStatusManager {
    *
    * @param loadIds
    * @param tableFolderPath
+   * @param dbName
+   * @param tableName
    * @return
    */
-  public List<String> updateDeletionStatus(List<String> loadIds, String tableFolderPath) {
-    ICarbonLock carbonLock = CarbonLockFactory
+  public List<String> updateDeletionStatus(List<String> loadIds, String tableFolderPath,
+      String dbName, String tableName) throws Exception {
+    ICarbonLock carbonMetadataLock = CarbonLockFactory
         .getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier(),
             LockUsage.METADATA_LOCK);
+    ICarbonLock carbonTableStatusLock = CarbonLockFactory
+        .getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier(),
+            LockUsage.TABLE_STATUS_LOCK);
+    String tableDetails = dbName + "." + tableName;
     List<String> invalidLoadIds = new ArrayList<String>(0);
     try {
-      if (carbonLock.lockWithRetries()) {
+      if (carbonMetadataLock.lockWithRetries()) {
         LOG.info("Metadata lock has been successfully acquired");
 
         CarbonTablePath carbonTablePath = CarbonStorePath
@@ -272,8 +279,19 @@ public class SegmentStatusManager {
         if (listOfLoadFolderDetailsArray != null && listOfLoadFolderDetailsArray.length != 0) {
           updateDeletionStatus(loadIds, listOfLoadFolderDetailsArray, invalidLoadIds);
           if (invalidLoadIds.isEmpty()) {
-            // All or None , if anything fails then dont write
-            writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
+            if(carbonTableStatusLock.lockWithRetries()) {
+              LOG.info("Table status lock has been successfully acquired");
+              // All or None , if anything fails then dont write
+              writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
+            }
+            else {
+              String errorMsg = "Delete segment by id is failed for " + tableDetails
+                  + ". Not able to acquire the table status lock.";
+              LOG.audit(errorMsg);
+              LOG.error(errorMsg);
+              throw new Exception(errorMsg);
+            }
+
           } else {
             return invalidLoadIds;
           }
@@ -284,12 +302,17 @@ public class SegmentStatusManager {
         }
 
       } else {
-        LOG.error("Unable to acquire the metadata lock");
+        String errorMsg = "Delete segment by id is failed for " + tableDetails
+            + ". Not able to acquire the metadata lock.";
+        LOG.audit(errorMsg);
+        LOG.error(errorMsg);
+        throw new Exception(errorMsg);
       }
     } catch (IOException e) {
       LOG.error("IOException" + e.getMessage());
     } finally {
-      fileUnlock(carbonLock);
+      fileUnlock(carbonTableStatusLock);
+      fileUnlock(carbonMetadataLock);
     }
 
     return invalidLoadIds;
