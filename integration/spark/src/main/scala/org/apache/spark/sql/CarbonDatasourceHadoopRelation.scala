@@ -20,20 +20,13 @@ package org.apache.spark.sql
 import java.text.SimpleDateFormat
 import java.util.Date
 
-import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
-import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
-import org.apache.carbondata.hadoop.util.SchemaReader
-import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
-import org.apache.carbondata.scan.expression.logical.AndExpression
-import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
-import org.apache.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
-import org.apache.carbondata.spark.util.QueryPlanUtil
-import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
+import scala.reflect.ClassTag
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.mapred.JobConf
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.hadoop.mapreduce.{Job, JobID}
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark._
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.mapreduce.SparkHadoopMapReduceUtil
@@ -44,14 +37,23 @@ import org.apache.spark.sql.sources.{Filter, HadoopFsRelation, OutputWriterFacto
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
 
-import scala.reflect.ClassTag
+import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
+import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
+import org.apache.carbondata.hadoop.util.SchemaReader
+import org.apache.carbondata.scan.expression.logical.AndExpression
+import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
+import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
+import org.apache.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
+import org.apache.carbondata.spark.util.QueryPlanUtil
+
 
 private[sql] case class CarbonDatasourceHadoopRelation(
-    sqlContext: SQLContext,
-    paths: Array[String],
-    parameters: Map[String, String],
-    tableSchema: Option[StructType])
-    extends HadoopFsRelation {
+  sqlContext: SQLContext,
+  paths: Array[String],
+  parameters: Map[String, String],
+  tableSchema: Option[StructType])
+  extends HadoopFsRelation {
 
   lazy val schemaPath = new Path(CarbonTablePath.getSchemaFilePath(paths.head))
   if (!schemaPath.getFileSystem(new Configuration).exists(schemaPath)) {
@@ -65,7 +67,8 @@ private[sql] case class CarbonDatasourceHadoopRelation(
   lazy val relationRaw: CarbonRelation = {
     val carbonTable = SchemaReader.readCarbonTableFromStore(
       CarbonStorePath.getCarbonTablePath(absIdentifier.getStorePath, identifier),
-      absIdentifier)
+      absIdentifier
+    )
     if (carbonTable == null) {
       sys.error(s"CarbonData file path ${paths.head} is not valid")
     }
@@ -94,14 +97,14 @@ private[sql] case class CarbonDatasourceHadoopRelation(
   }
 
   override def buildScan(
-      requiredColumns: Array[String],
-      filters: Array[Filter],
-      inputFiles: Array[FileStatus]): RDD[Row] = {
+    requiredColumns: Array[String],
+    filters: Array[Filter],
+    inputFiles: Array[FileStatus]): RDD[Row] = {
     val conf = new Configuration(job.getConfiguration)
     filters.flatMap { filter =>
-        CarbonFilters.createCarbonFilter(dataSchema, filter)
-      }.reduceOption(new AndExpression(_, _))
-        .foreach(CarbonInputFormat.setFilterPredicates(conf, _))
+      CarbonFilters.createCarbonFilter(dataSchema, filter)
+    }.reduceOption(new AndExpression(_, _))
+      .foreach(CarbonInputFormat.setFilterPredicates(conf, _))
 
     val projection = new CarbonProjection
     requiredColumns.foreach(projection.addColumn)
@@ -119,8 +122,8 @@ private[sql] case class CarbonDatasourceHadoopRelation(
 }
 
 class CarbonHadoopFSPartition(rddId: Int, val idx: Int,
-    val carbonSplit: SerializableWritable[CarbonInputSplit])
-    extends Partition {
+  val carbonSplit: SerializableWritable[CarbonInputSplit])
+  extends Partition {
 
   override val index: Int = idx
 
@@ -128,14 +131,14 @@ class CarbonHadoopFSPartition(rddId: Int, val idx: Int,
 }
 
 class CarbonHadoopFSRDD[V: ClassTag](
-    @transient sc: SparkContext,
-    conf: SerializableConfiguration,
-    identifier: AbsoluteTableIdentifier,
-    inputFormatClass: Class[_ <: CarbonInputFormat[V]],
-    valueClass: Class[V])
-    extends RDD[V](sc, Nil)
-        with SparkHadoopMapReduceUtil
-        with Logging {
+  @transient sc: SparkContext,
+  conf: SerializableConfiguration,
+  identifier: AbsoluteTableIdentifier,
+  inputFormatClass: Class[_ <: CarbonInputFormat[V]],
+  valueClass: Class[V])
+  extends RDD[V](sc, Nil)
+    with SparkHadoopMapReduceUtil
+    with Logging {
 
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
@@ -145,17 +148,20 @@ class CarbonHadoopFSRDD[V: ClassTag](
 
   @DeveloperApi
   override def compute(split: Partition,
-      context: TaskContext): Iterator[V] = {
+    context: TaskContext): Iterator[V] = {
     val attemptId = newTaskAttemptID(jobTrackerId, id, isMap = true, split.index, 0)
     val hadoopAttemptContext = newTaskAttemptContext(conf.value, attemptId)
     val inputFormat = QueryPlanUtil.createCarbonInputFormat(identifier,
-      hadoopAttemptContext.getConfiguration)
+      hadoopAttemptContext.getConfiguration
+    )
     hadoopAttemptContext.getConfiguration.set(FileInputFormat.INPUT_DIR, identifier.getStorePath)
     val reader =
       inputFormat.createRecordReader(split.asInstanceOf[CarbonHadoopFSPartition].carbonSplit.value,
-        hadoopAttemptContext)
+        hadoopAttemptContext
+      )
     reader.initialize(split.asInstanceOf[CarbonHadoopFSPartition].carbonSplit.value,
-      hadoopAttemptContext)
+      hadoopAttemptContext
+    )
     new Iterator[V] {
       private[this] var havePair = false
       private[this] var finished = false
@@ -187,11 +193,12 @@ class CarbonHadoopFSRDD[V: ClassTag](
   override protected def getPartitions: Array[Partition] = {
     val jobContext = newJobContext(conf.value, jobId)
     val carbonInputFormat = QueryPlanUtil.createCarbonInputFormat(identifier,
-      jobContext.getConfiguration)
+      jobContext.getConfiguration
+    )
     jobContext.getConfiguration.set(FileInputFormat.INPUT_DIR, identifier.getStorePath)
     val splits = carbonInputFormat.getSplits(jobContext).toArray
     val carbonInputSplits = splits
-        .map(f => new SerializableWritable(f.asInstanceOf[CarbonInputSplit]))
+      .map(f => new SerializableWritable(f.asInstanceOf[CarbonInputSplit]))
     carbonInputSplits.zipWithIndex.map(f => new CarbonHadoopFSPartition(id, f._2, f._1))
   }
 }

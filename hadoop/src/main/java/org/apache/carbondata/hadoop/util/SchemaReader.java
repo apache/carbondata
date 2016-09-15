@@ -21,7 +21,6 @@ package org.apache.carbondata.hadoop.util;
 import java.io.IOException;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl;
