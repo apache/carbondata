@@ -245,7 +245,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
       case NOT_IN:
         return getFilterResolverBasedOnExpressionType(ExpressionType.NOT_EQUALS, false,
             expressionTree, tableIdentifier, expressionTree);
-
+      case FALSE:
+        return getFilterResolverBasedOnExpressionType(ExpressionType.FALSE, false,
+            expressionTree, tableIdentifier, expressionTree);
       default:
         return getFilterResolverBasedOnExpressionType(ExpressionType.UNKNOWN, false, expressionTree,
             tableIdentifier, expressionTree);
@@ -262,6 +264,8 @@ public class FilterExpressionProcessor implements FilterProcessor {
     BinaryConditionalExpression currentCondExpression = null;
     ConditionalExpression condExpression = null;
     switch (filterExpressionType) {
+      case FALSE:
+        return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
       case EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
         if (currentCondExpression.isSingleDimension()

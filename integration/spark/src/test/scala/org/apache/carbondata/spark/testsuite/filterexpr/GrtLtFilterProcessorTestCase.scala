@@ -136,6 +136,12 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
       Seq(Row(0))
     )
   }
+      test("In condition With improper format query regarding Null filter") {
+    checkAnswer(
+      sql("select empid from a12_allnull " + "where empid not in ('china',NULL)"),
+      Seq()
+    )
+      }
 
   //no null test cases
 
