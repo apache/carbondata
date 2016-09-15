@@ -20,6 +20,7 @@ package org.apache.carbondata.core.carbon.datastore;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -62,6 +63,12 @@ public class BlockIndexStore {
   private Map<AbsoluteTableIdentifier, Map<TableBlockInfo, AbstractIndex>> tableBlocksMap;
 
   /**
+   * map to maintain segment id to block info map, this map will be used to
+   * while removing the block from memory when segment is compacted or deleted
+   */
+  private Map<AbsoluteTableIdentifier, Map<String, List<TableBlockInfo>>> segmentIdToBlockListMap;
+
+  /**
    * map of block info to lock object map, while loading the btree this will be filled
    * and removed after loading the tree for that particular block info, this will be useful
    * while loading the tree concurrently so only block level lock will be applied another
@@ -83,6 +90,7 @@ public class BlockIndexStore {
     tableLockMap = new ConcurrentHashMap<AbsoluteTableIdentifier, Object>(
         CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     blockInfoLock = new ConcurrentHashMap<TableBlockInfo, Object>();
+    segmentIdToBlockListMap = new ConcurrentHashMap<>();
   }
 
   /**
@@ -129,6 +137,7 @@ public class BlockIndexStore {
         tableBlockMapTemp = new ConcurrentHashMap<TableBlockInfo, AbstractIndex>();
         tableBlocksMap.put(absoluteTableIdentifier, tableBlockMapTemp);
       }
+      fillSegmentIdToTableInfoMap(tableBlocksInfos, absoluteTableIdentifier);
     }
     AbstractIndex tableBlock = null;
     List<Future<AbstractIndex>> blocksList = new ArrayList<Future<AbstractIndex>>();
@@ -189,6 +198,32 @@ public class BlockIndexStore {
   }
 
   /**
+   * Below method will be used to fill segment id to its block mapping map.
+   * it will group all the table block info based on segment id and it will fill
+   *
+   * @param tableBlockInfos         table block infos
+   * @param absoluteTableIdentifier absolute table identifier
+   */
+  private void fillSegmentIdToTableInfoMap(List<TableBlockInfo> tableBlockInfos,
+      AbsoluteTableIdentifier absoluteTableIdentifier) {
+    Map<String, List<TableBlockInfo>> map = segmentIdToBlockListMap.get(absoluteTableIdentifier);
+    if (null == map) {
+      map = new ConcurrentHashMap<String, List<TableBlockInfo>>();
+      segmentIdToBlockListMap.put(absoluteTableIdentifier, map);
+    }
+    for (TableBlockInfo info : tableBlockInfos) {
+      List<TableBlockInfo> tempTableBlockInfos = map.get(info.getSegmentId());
+      if (null == tempTableBlockInfos) {
+        tempTableBlockInfos = new ArrayList<>();
+        map.put(info.getSegmentId(), tempTableBlockInfos);
+      }
+      if (!tempTableBlockInfos.contains(info)) {
+        tempTableBlockInfos.add(info);
+      }
+    }
+  }
+
+  /**
    * Below method will be used to fill the loaded blocks to the array
    * which will be used for query execution
    *
@@ -246,10 +281,10 @@ public class BlockIndexStore {
    * deletion of some of the blocks in case of retention or may be some other
    * scenario
    *
-   * @param removeTableBlocksInfos  blocks to be removed
+   * @param segmentsToBeRemoved     list of segments to be removed
    * @param absoluteTableIdentifier absolute table identifier
    */
-  public void removeTableBlocks(List<TableBlockInfo> removeTableBlocksInfos,
+  public void removeTableBlocks(List<String> segmentsToBeRemoved,
       AbsoluteTableIdentifier absoluteTableIdentifier) {
     // get the lock object if lock object is not present then it is not
     // loaded at all
@@ -260,11 +295,26 @@ public class BlockIndexStore {
     }
     Map<TableBlockInfo, AbstractIndex> map = tableBlocksMap.get(absoluteTableIdentifier);
     // if there is no loaded blocks then return
-    if (null == map) {
+    if (null == map || map.isEmpty()) {
       return;
     }
-    for (TableBlockInfo blockInfos : removeTableBlocksInfos) {
-      map.remove(blockInfos);
+    Map<String, List<TableBlockInfo>> segmentIdToBlockInfoMap =
+        segmentIdToBlockListMap.get(absoluteTableIdentifier);
+    if (null == segmentIdToBlockInfoMap || segmentIdToBlockInfoMap.isEmpty()) {
+      return;
+    }
+    synchronized (lockObject) {
+      for (String segmentId : segmentsToBeRemoved) {
+        List<TableBlockInfo> tableBlockInfoList = segmentIdToBlockInfoMap.remove(segmentId);
+        if (null == tableBlockInfoList) {
+          continue;
+        }
+        Iterator<TableBlockInfo> tableBlockInfoIterator = tableBlockInfoList.iterator();
+        while (tableBlockInfoIterator.hasNext()) {
+          TableBlockInfo info = tableBlockInfoIterator.next();
+          map.remove(info);
+        }
+      }
     }
   }
 

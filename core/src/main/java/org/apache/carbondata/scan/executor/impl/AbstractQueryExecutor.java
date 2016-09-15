@@ -18,12 +18,7 @@
  */
 package org.apache.carbondata.scan.executor.impl;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -101,8 +96,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // query execution
     Collections.sort(queryModel.getTableBlockInfos());
     // get the table blocks
+    BlockIndexStore blockLoaderInstance = BlockIndexStore.getInstance();
+    // remove the invalid table blocks, block which is deleted or compacted
+    blockLoaderInstance.removeTableBlocks(queryModel.getInvalidSegmentIds(),
+        queryModel.getAbsoluteTableIdentifier());
     try {
-      queryProperties.dataBlocks = BlockIndexStore.getInstance()
+      queryProperties.dataBlocks = blockLoaderInstance
           .loadAndGetBlocks(queryModel.getTableBlockInfos(),
               queryModel.getAbsoluteTableIdentifier());
     } catch (IndexBuilderException e) {

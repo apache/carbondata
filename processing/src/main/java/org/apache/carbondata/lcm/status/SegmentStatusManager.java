@@ -49,7 +49,6 @@ import org.apache.carbondata.lcm.locks.ICarbonLock;
 import org.apache.carbondata.lcm.locks.LockUsage;
 
 import com.google.gson.Gson;
-
 /**
  * Manages Load/Segment status
  */
@@ -62,17 +61,6 @@ public class SegmentStatusManager {
 
   public SegmentStatusManager(AbsoluteTableIdentifier absoluteTableIdentifier) {
     this.absoluteTableIdentifier = absoluteTableIdentifier;
-  }
-
-  public static class ValidSegmentsInfo {
-    public final List<String> listOfValidSegments;
-    public final List<String> listOfValidUpdatedSegments;
-
-    public ValidSegmentsInfo(List<String> listOfValidSegments,
-        List<String> listOfValidUpdatedSegments) {
-      this.listOfValidSegments = listOfValidSegments;
-      this.listOfValidUpdatedSegments = listOfValidUpdatedSegments;
-    }
   }
 
   /**
@@ -89,9 +77,9 @@ public class SegmentStatusManager {
    * This method will return last modified time of tablestatus file
    */
   public long getTableStatusLastModifiedTime() throws IOException {
-    String tableStatusPath = CarbonStorePath.getCarbonTablePath(
-        absoluteTableIdentifier.getStorePath(), absoluteTableIdentifier.getCarbonTableIdentifier())
-          .getTableStatusFilePath();
+    String tableStatusPath = CarbonStorePath
+        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+            absoluteTableIdentifier.getCarbonTableIdentifier()).getTableStatusFilePath();
     if (!FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
       return 0L;
     } else {
@@ -102,14 +90,16 @@ public class SegmentStatusManager {
 
   /**
    * get valid segment for given table
+   *
    * @return
    * @throws IOException
    */
-  public ValidSegmentsInfo getValidSegments() throws IOException {
+  public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments() throws IOException {
 
     // @TODO: move reading LoadStatus file to separate class
     List<String> listOfValidSegments = new ArrayList<String>(10);
     List<String> listOfValidUpdatedSegments = new ArrayList<String>(10);
+    List<String> listOfInvalidSegments = new ArrayList<String>(10);
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
@@ -157,8 +147,15 @@ public class SegmentStatusManager {
               listOfValidUpdatedSegments.add(loadMetadataDetails.getLoadName());
             }
             listOfValidSegments.add(loadMetadataDetails.getLoadName());
-
+          } else if ((CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
+              .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
+              || CarbonCommonConstants.SEGMENT_COMPACTED
+              .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
+              || CarbonCommonConstants.MARKED_FOR_DELETE
+              .equalsIgnoreCase(loadMetadataDetails.getLoadStatus()))) {
+            listOfInvalidSegments.add(loadMetadataDetails.getLoadName());
           }
+
         }
       }
     } catch (IOException e) {
@@ -176,7 +173,8 @@ public class SegmentStatusManager {
       }
 
     }
-    return new ValidSegmentsInfo(listOfValidSegments, listOfValidUpdatedSegments);
+    return new ValidAndInvalidSegmentsInfo(listOfValidSegments, listOfValidUpdatedSegments,
+        listOfInvalidSegments);
   }
 
   /**
@@ -218,6 +216,7 @@ public class SegmentStatusManager {
 
   /**
    * returns current time
+   *
    * @return
    */
   private String readCurrentTime() {
@@ -244,6 +243,7 @@ public class SegmentStatusManager {
 
   /**
    * updates deletion status
+   *
    * @param loadIds
    * @param tableFolderPath
    * @return
@@ -271,13 +271,10 @@ public class SegmentStatusManager {
         listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath);
         if (listOfLoadFolderDetailsArray != null && listOfLoadFolderDetailsArray.length != 0) {
           updateDeletionStatus(loadIds, listOfLoadFolderDetailsArray, invalidLoadIds);
-          if(invalidLoadIds.isEmpty())
-          {
+          if (invalidLoadIds.isEmpty()) {
             // All or None , if anything fails then dont write
             writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
-          }
-          else
-          {
+          } else {
             return invalidLoadIds;
           }
 
@@ -330,13 +327,11 @@ public class SegmentStatusManager {
         // read existing metadata details in load metadata.
         listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath);
         if (listOfLoadFolderDetailsArray != null && listOfLoadFolderDetailsArray.length != 0) {
-          updateDeletionStatus(loadDate, listOfLoadFolderDetailsArray,
-              invalidLoadTimestamps, loadStartTime);
-          if(invalidLoadTimestamps.isEmpty()) {
+          updateDeletionStatus(loadDate, listOfLoadFolderDetailsArray, invalidLoadTimestamps,
+              loadStartTime);
+          if (invalidLoadTimestamps.isEmpty()) {
             writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
-          }
-          else
-          {
+          } else {
             return invalidLoadTimestamps;
           }
 
@@ -395,6 +390,7 @@ public class SegmentStatusManager {
 
   /**
    * updates deletion status details for each load and returns invalidLoadIds
+   *
    * @param loadIds
    * @param listOfLoadFolderDetailsArray
    * @param invalidLoadIds
@@ -503,17 +499,39 @@ public class SegmentStatusManager {
 
   /**
    * unlocks given file
+   *
    * @param carbonLock
    */
   private void fileUnlock(ICarbonLock carbonLock) {
     if (carbonLock.unlock()) {
       LOG.info("Metadata lock has been successfully released");
     } else {
-      LOG
-          .error("Not able to release the metadata lock");
+      LOG.error("Not able to release the metadata lock");
     }
   }
 
+  public static class ValidAndInvalidSegmentsInfo {
+    private final List<String> listOfValidSegments;
+    private final List<String> listOfValidUpdatedSegments;
+    private final List<String> listOfInvalidSegments;
 
+    private ValidAndInvalidSegmentsInfo(List<String> listOfValidSegments,
+        List<String> listOfValidUpdatedSegments, List<String> listOfInvalidUpdatedSegments) {
+      this.listOfValidSegments = listOfValidSegments;
+      this.listOfValidUpdatedSegments = listOfValidUpdatedSegments;
+      this.listOfInvalidSegments = listOfInvalidUpdatedSegments;
+    }
 
+    public List<String> getInvalidSegments() {
+      return listOfInvalidSegments;
+    }
+
+    public List<String> getValidSegments() {
+      return listOfValidSegments;
+    }
+
+    public List<String> getUpadtedSegments() {
+      return listOfValidUpdatedSegments;
+    }
+  }
 }

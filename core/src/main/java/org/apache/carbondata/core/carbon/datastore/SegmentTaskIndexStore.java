@@ -141,8 +141,8 @@ public class SegmentTaskIndexStore {
           synchronized (segmentLoderLockObject) {
             taskIdToSegmentIndexMap = tableSegmentMapTemp.get(segmentId);
             if (null == taskIdToSegmentIndexMap) {
-              // creating a map of take if to table segment
-              taskIdToSegmentIndexMap = new HashMap<String, AbstractIndex>();
+              // creating a map of task id to table segment
+              taskIdToSegmentIndexMap = new ConcurrentHashMap<String, AbstractIndex>();
               Iterator<Entry<String, List<TableBlockInfo>>> iterator =
                   taskIdToTableBlockInfoMap.entrySet().iterator();
               while (iterator.hasNext()) {
@@ -256,7 +256,7 @@ public class SegmentTaskIndexStore {
   private Map<String, List<TableBlockInfo>> mappedAndGetTaskIdToTableBlockInfo(
       Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos) {
     Map<String, List<TableBlockInfo>> taskIdToTableBlockInfoMap =
-        new HashMap<String, List<TableBlockInfo>>();
+        new ConcurrentHashMap<String, List<TableBlockInfo>>();
     Iterator<Entry<String, List<TableBlockInfo>>> iterator =
         segmentToTableBlocksInfos.entrySet().iterator();
     while (iterator.hasNext()) {
