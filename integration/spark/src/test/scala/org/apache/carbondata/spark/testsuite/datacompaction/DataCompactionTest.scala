@@ -90,7 +90,7 @@ class DataCompactionTest extends QueryTest with BeforeAndAfterAll {
             new CarbonTableIdentifier("default", "normalcompaction", "1")
           )
       )
-      val segments = segmentStatusManager.getValidSegments().listOfValidSegments.asScala.toList
+      val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
 
       if (!segments.contains("0.1")) {
         // wait for 2 seconds for compaction to complete.
@@ -138,7 +138,7 @@ class DataCompactionTest extends QueryTest with BeforeAndAfterAll {
         )
     )
     // merged segment should not be there
-    val segments   = segmentStatusManager.getValidSegments.listOfValidSegments.asScala.toList
+    val segments   = segmentStatusManager.getValidAndInvalidSegments().getValidSegments.asScala.toList
     assert(!segments.contains("0"))
     assert(!segments.contains("1"))
     assert(!segments.contains("2"))

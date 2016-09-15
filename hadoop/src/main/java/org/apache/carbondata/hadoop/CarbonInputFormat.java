@@ -54,6 +54,7 @@ import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodedReadSupportImpl;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
@@ -91,6 +92,9 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.security.TokenCache;
 import org.apache.hadoop.mapreduce.task.JobContextImpl;
 import org.apache.hadoop.util.StringUtils;
+
+
+
 
 
 /**
@@ -239,20 +243,28 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * Set List of segments to access
    */
-  private void setSegmentsToAccess(Configuration configuration, List<String> segmentNosList) {
-
-    //serialize to comma separated string
-    StringBuilder stringSegmentsBuilder = new StringBuilder();
-    for (int i = 0; i < segmentNosList.size(); i++) {
-      String segmentNo = segmentNosList.get(i);
-      stringSegmentsBuilder.append(segmentNo);
-      if (i < segmentNosList.size() - 1) {
-        stringSegmentsBuilder.append(",");
-      }
-    }
-    configuration.set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, stringSegmentsBuilder.toString());
+  public static void setSegmentsToAccess(Configuration configuration, List<String> validSegments) {
+    configuration
+        .set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, CarbonUtil.getSegmentString(validSegments));
   }
 
+  /**
+   * Below method will be used to set the segments details if
+   * segments are not added in the configuration
+   *
+   * @param job
+   * @param absoluteTableIdentifier
+   * @throws IOException
+   */
+  private void addSegmentsIfEmpty(JobContext job, AbsoluteTableIdentifier absoluteTableIdentifier)
+      throws IOException {
+    if (getSegmentsFromConfiguration(job).length == 0) {
+      // Get the valid segments from the carbon store.
+      SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegments =
+          new SegmentStatusManager(absoluteTableIdentifier).getValidAndInvalidSegments();
+      setSegmentsToAccess(job.getConfiguration(), validAndInvalidSegments.getValidSegments());
+    }
+  }
   /**
    * {@inheritDoc}
    * Configurations FileInputFormat.INPUT_DIR
@@ -266,25 +278,17 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     try {
       CarbonTable carbonTable = getCarbonTable(job.getConfiguration());
       Object filterPredicates = getFilterPredicates(job.getConfiguration());
-      if (getValidSegments(job).length == 0) {
-        // Get the valid segments from the carbon store.
-        SegmentStatusManager.ValidSegmentsInfo validSegments =
-            new SegmentStatusManager(getAbsoluteTableIdentifier(job.getConfiguration()))
-                .getValidSegments();
-        if (validSegments.listOfValidSegments.isEmpty()) {
-          return new ArrayList<InputSplit>();
-        }
-        setSegmentsToAccess(job.getConfiguration(), validSegments.listOfValidSegments);
-      }
-
+      AbsoluteTableIdentifier absoluteTableIdentifier =
+          getAbsoluteTableIdentifier(job.getConfiguration());
+      addSegmentsIfEmpty(job, absoluteTableIdentifier);
       if (filterPredicates == null) {
         return getSplitsNonFilter(job);
       } else {
         if (filterPredicates instanceof Expression) {
           //process and resolve the expression.
           CarbonInputFormatUtil.processFilterExpression((Expression) filterPredicates, carbonTable);
-          return getSplits(job, CarbonInputFormatUtil.resolveFilter((Expression) filterPredicates,
-              getAbsoluteTableIdentifier(job.getConfiguration())));
+          return getSplits(job, CarbonInputFormatUtil
+              .resolveFilter((Expression) filterPredicates, absoluteTableIdentifier));
         } else {
           //It means user sets already resolved expression.
           return getSplits(job, (FilterResolverIntf) filterPredicates);
@@ -342,7 +346,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         getAbsoluteTableIdentifier(job.getConfiguration());
 
     //for each segment fetch blocks matching filter in Driver BTree
-    for (String segmentNo : getValidSegments(job)) {
+    for (String segmentNo : getSegmentsFromConfiguration(job)) {
       List<DataRefNode> dataRefNodes =
           getDataBlocksOfSegment(job, filterExpressionProcessor, absoluteTableIdentifier,
               filterResolver, segmentNo);
@@ -368,11 +372,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     long rowCount = 0;
     AbsoluteTableIdentifier absoluteTableIdentifier =
         getAbsoluteTableIdentifier(job.getConfiguration());
-    SegmentStatusManager.ValidSegmentsInfo validSegments =
-        new SegmentStatusManager(getAbsoluteTableIdentifier(job.getConfiguration()))
-            .getValidSegments();
-    setSegmentsToAccess(job.getConfiguration(), validSegments.listOfValidSegments);
     // no of core to load the blocks in driver
+    addSegmentsIfEmpty(job, absoluteTableIdentifier);
     int numberOfCores = CarbonCommonConstants.NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT_DEFAULT_VALUE;
     try {
       numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
@@ -385,7 +386,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     List<Future<Map<String, AbstractIndex>>> loadedBlocks =
         new ArrayList<Future<Map<String, AbstractIndex>>>();
     //for each segment fetch blocks matching filter in Driver BTree
-    for (String segmentNo : getValidSegments(job)) {
+    for (String segmentNo : getSegmentsFromConfiguration(job)) {
       // submitting the task
       loadedBlocks
           .add(threadPool.submit(new BlocksLoaderThread(job, absoluteTableIdentifier, segmentNo)));
@@ -494,6 +495,39 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return resultFilterredBlocks;
   }
 
+  /**
+   * Below method will be used to get the table block info
+   *
+   * @param job                     job context
+   * @param absoluteTableIdentifier absolute table identifier
+   * @param segmentId               number of segment id
+   * @return list of table block
+   * @throws IOException
+   */
+  private List<TableBlockInfo> getTableBlockInfo(JobContext job,
+      AbsoluteTableIdentifier absoluteTableIdentifier, String segmentId) throws IOException {
+    // List<FileStatus> fileStatusList = new LinkedList<FileStatus>();
+    List<TableBlockInfo> tableBlockInfoList = new ArrayList<TableBlockInfo>();
+    // getFileStatusOfSegments(job, new int[]{ segmentId }, fileStatusList);
+
+    // get file location of all files of given segment
+    JobContext newJob =
+        new JobContextImpl(new Configuration(job.getConfiguration()), job.getJobID());
+    newJob.getConfiguration().set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, segmentId + "");
+
+    // identify table blocks
+    for (InputSplit inputSplit : getSplitsInternal(newJob)) {
+      CarbonInputSplit carbonInputSplit = (CarbonInputSplit) inputSplit;
+      BlockletInfos blockletInfos = new BlockletInfos(carbonInputSplit.getNumberOfBlocklets(), 0,
+          carbonInputSplit.getNumberOfBlocklets());
+      tableBlockInfoList.add(
+          new TableBlockInfo(carbonInputSplit.getPath().toString(), carbonInputSplit.getStart(),
+              segmentId, carbonInputSplit.getLocations(), carbonInputSplit.getLength(),
+              blockletInfos));
+    }
+    return tableBlockInfoList;
+  }
+
   private Map<String, AbstractIndex> getSegmentAbstractIndexs(JobContext job,
       AbsoluteTableIdentifier absoluteTableIdentifier, String segmentId)
       throws IOException, IndexBuilderException {
@@ -503,24 +537,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     // if segment tree is not loaded, load the segment tree
     if (segmentIndexMap == null) {
       // List<FileStatus> fileStatusList = new LinkedList<FileStatus>();
-      List<TableBlockInfo> tableBlockInfoList = new LinkedList<TableBlockInfo>();
+      List<TableBlockInfo> tableBlockInfoList =
+          getTableBlockInfo(job, absoluteTableIdentifier, segmentId);
       // getFileStatusOfSegments(job, new int[]{ segmentId }, fileStatusList);
-
-      // get file location of all files of given segment
-      JobContext newJob =
-          new JobContextImpl(new Configuration(job.getConfiguration()), job.getJobID());
-      newJob.getConfiguration().set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, segmentId + "");
-
-      // identify table blocks
-      for (InputSplit inputSplit : getSplitsInternal(newJob)) {
-        CarbonInputSplit carbonInputSplit = (CarbonInputSplit) inputSplit;
-        BlockletInfos blockletInfos = new BlockletInfos(carbonInputSplit.getNumberOfBlocklets(), 0,
-            carbonInputSplit.getNumberOfBlocklets());
-        tableBlockInfoList.add(
-            new TableBlockInfo(carbonInputSplit.getPath().toString(), carbonInputSplit.getStart(),
-                segmentId, carbonInputSplit.getLocations(), carbonInputSplit.getLength(),
-                blockletInfos));
-      }
 
       Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos = new HashMap<>();
       segmentToTableBlocksInfos.put(segmentId, tableBlockInfoList);
@@ -624,7 +643,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
   @Override protected List<FileStatus> listStatus(JobContext job) throws IOException {
     List<FileStatus> result = new ArrayList<FileStatus>();
-    String[] segmentsToConsider = getValidSegments(job);
+    String[] segmentsToConsider = getSegmentsFromConfiguration(job);
     if (segmentsToConsider.length == 0) {
       throw new IOException("No segments found");
     }
@@ -706,7 +725,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * @return updateExtension
    */
-  private String[] getValidSegments(JobContext job) throws IOException {
+  private String[] getSegmentsFromConfiguration(JobContext job)
+      throws IOException {
     String segmentString = job.getConfiguration().get(INPUT_SEGMENT_NUMBERS, "");
     // if no segments
     if (segmentString.trim().isEmpty()) {

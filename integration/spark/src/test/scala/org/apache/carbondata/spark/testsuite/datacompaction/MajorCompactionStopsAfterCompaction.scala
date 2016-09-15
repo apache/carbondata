@@ -93,7 +93,7 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
             new CarbonTableIdentifier("default", "stopmajor", noOfRetries + "")
           )
       )
-      val segments = segmentStatusManager.getValidSegments().listOfValidSegments.asScala.toList
+      val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
       segments.foreach(seg =>
         System.out.println( "valid segment is =" + seg)
       )
@@ -125,7 +125,7 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
         )
     )
     // merged segment should not be there
-    val segments = segmentStatusManager.getValidSegments.listOfValidSegments.asScala.toList
+    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
     assert(segments.contains("0.1"))
     assert(!segments.contains("0.2"))
     assert(!segments.contains("0"))
