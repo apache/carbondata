@@ -1119,6 +1119,7 @@ object CarbonDataRDDFactory extends Logging {
         try {
         // Update load metadate file after cleaning deleted nodes
         if (carbonTableStatusLock.lockWithRetries()) {
+          logger.info("Table status lock has been successfully acquired.")
           CarbonLoaderUtil.writeLoadMetadata(
             carbonLoadModel.getCarbonDataLoadSchema,
             carbonLoadModel.getDatabaseName,
@@ -1165,6 +1166,7 @@ object CarbonDataRDDFactory extends Logging {
       )
     try {
       if (carbonMetadataLock.lockWithRetries()) {
+        logger.info("Metadata lock has been successfully acquired.")
         deleteLoadsAndUpdateMetadata(carbonLoadModel,
           table,
           partitioner,
