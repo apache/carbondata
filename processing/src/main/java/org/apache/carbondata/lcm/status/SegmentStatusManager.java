@@ -362,6 +362,7 @@ public class SegmentStatusManager {
               invalidLoadTimestamps, loadStartTime);
           if(invalidLoadTimestamps.isEmpty()) {
             if(carbonTableStatusLock.lockWithRetries()) {
+              LOG.info("Table status lock has been successfully acquired.");
               writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
             }
             else {

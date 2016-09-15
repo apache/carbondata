@@ -1570,7 +1570,7 @@ private[sql] case class CleanFiles(
       LOGGER.audit(s"Clean files request is successfull for $dbName.$tableName.")
     } catch {
       case ex : Exception =>
-        LOGGER.audit(ex.getMessage)
+        sys.error(ex.getMessage)
     }
     Seq.empty
   }
