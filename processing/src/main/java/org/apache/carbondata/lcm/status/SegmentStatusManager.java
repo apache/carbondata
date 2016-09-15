@@ -45,6 +45,7 @@ import org.apache.carbondata.lcm.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.lcm.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.lcm.fileoperations.FileWriteOperation;
 import org.apache.carbondata.lcm.locks.CarbonLockFactory;
+import org.apache.carbondata.lcm.locks.CarbonLockUtil;
 import org.apache.carbondata.lcm.locks.ICarbonLock;
 import org.apache.carbondata.lcm.locks.LockUsage;
 
@@ -289,7 +290,7 @@ public class SegmentStatusManager {
                   + ". Not able to acquire the table status lock.";
               LOG.audit(errorMsg);
               LOG.error(errorMsg);
-              throw new Exception(errorMsg);
+              throw new Exception(errorMsg + " Please try after some time.");
             }
 
           } else {
@@ -306,13 +307,13 @@ public class SegmentStatusManager {
             + ". Not able to acquire the metadata lock.";
         LOG.audit(errorMsg);
         LOG.error(errorMsg);
-        throw new Exception(errorMsg);
+        throw new Exception(errorMsg + " Please try after some time.");
       }
     } catch (IOException e) {
       LOG.error("IOException" + e.getMessage());
     } finally {
-      fileUnlock(carbonTableStatusLock);
-      fileUnlock(carbonMetadataLock);
+      CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
+      CarbonLockUtil.fileUnlock(carbonMetadataLock, LockUsage.METADATA_LOCK);
     }
 
     return invalidLoadIds;
@@ -326,13 +327,17 @@ public class SegmentStatusManager {
    * @return
    */
   public List<String> updateDeletionStatus(String loadDate, String tableFolderPath,
-      Long loadStartTime) {
-    ICarbonLock carbonLock = CarbonLockFactory
+      Long loadStartTime, String dbName, String tableName) throws Exception {
+    ICarbonLock carbonMetadataLock = CarbonLockFactory
         .getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier(),
             LockUsage.METADATA_LOCK);
+    ICarbonLock carbonTableStatusLock = CarbonLockFactory
+        .getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier(),
+            LockUsage.TABLE_STATUS_LOCK);
+    String tableDetails = dbName + "." + tableName;
     List<String> invalidLoadTimestamps = new ArrayList<String>(0);
     try {
-      if (carbonLock.lockWithRetries()) {
+      if (carbonMetadataLock.lockWithRetries()) {
         LOG.info("Metadata lock has been successfully acquired");
 
         CarbonTablePath carbonTablePath = CarbonStorePath
@@ -353,7 +358,18 @@ public class SegmentStatusManager {
           updateDeletionStatus(loadDate, listOfLoadFolderDetailsArray, invalidLoadTimestamps,
               loadStartTime);
           if (invalidLoadTimestamps.isEmpty()) {
-            writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
+            if(carbonTableStatusLock.lockWithRetries()) {
+              writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
+            }
+            else {
+
+              String errorMsg = "Delete segment by date is failed for " + tableDetails
+                  + ". Not able to acquire the table status lock.";
+              LOG.audit(errorMsg);
+              LOG.error(errorMsg);
+              throw new Exception(errorMsg + " Please try after some time.");
+
+            }
           } else {
             return invalidLoadTimestamps;
           }
@@ -365,12 +381,17 @@ public class SegmentStatusManager {
         }
 
       } else {
-        LOG.error("Error message: " + "Unable to acquire the metadata lock");
+        String errorMsg = "Delete segment by date is failed for " + tableDetails
+            + ". Not able to acquire the metadata lock.";
+        LOG.audit(errorMsg);
+        LOG.error(errorMsg);
+        throw new Exception(errorMsg + " Please try after some time.");
       }
     } catch (IOException e) {
       LOG.error("Error message: " + "IOException" + e.getMessage());
     } finally {
-      fileUnlock(carbonLock);
+      CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
+      CarbonLockUtil.fileUnlock(carbonMetadataLock, LockUsage.METADATA_LOCK);
     }
 
     return invalidLoadTimestamps;
@@ -406,9 +427,9 @@ public class SegmentStatusManager {
         brWriter.flush();
       }
       CarbonUtil.closeStreams(brWriter);
+      fileWrite.close();
     }
 
-    fileWrite.close();
   }
 
   /**
@@ -518,19 +539,6 @@ public class SegmentStatusManager {
           }
         }
       }
-    }
-  }
-
-  /**
-   * unlocks given file
-   *
-   * @param carbonLock
-   */
-  private void fileUnlock(ICarbonLock carbonLock) {
-    if (carbonLock.unlock()) {
-      LOG.info("Metadata lock has been successfully released");
-    } else {
-      LOG.error("Not able to release the metadata lock");
     }
   }
 
