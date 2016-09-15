@@ -29,7 +29,7 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
 import org.apache.carbondata.scan.expression.conditional._
-import org.apache.carbondata.scan.expression.logical.{AndExpression, OrExpression}
+import org.apache.carbondata.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
@@ -258,16 +258,30 @@ object CarbonFilters {
         case Not(EqualTo(l@Literal(v, t), Cast(a: Attribute, _))) => new
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
 
-        case Not(In(a: Attribute, list)) if !list.exists(!_.isInstanceOf[Literal]) =>
+        case Not(In(a: Attribute, list))
+         if !list.exists(!_.isInstanceOf[Literal]) =>
+         if (list.exists(x => (isNullLiteral(x.asInstanceOf[Literal])))) {
+          Some(new FalseExpression(transformExpression(a).get))
+         }
+        else {
           Some(new NotInExpression(transformExpression(a).get,
-            new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
+              new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
+            }
         case In(a: Attribute, list) if !list.exists(!_.isInstanceOf[Literal]) =>
           Some(new InExpression(transformExpression(a).get,
             new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
         case Not(In(Cast(a: Attribute, _), list))
           if !list.exists(!_.isInstanceOf[Literal]) =>
-          Some(new NotInExpression(transformExpression(a).get,
-            new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
+        /* if any illogical expression comes in NOT IN Filter like
+         NOT IN('scala',NULL) this will be treated as false expression and will
+         always return no result. */
+          if (list.exists(x => (isNullLiteral(x.asInstanceOf[Literal])))) {
+          Some(new FalseExpression(transformExpression(a).get))
+         }
+        else {
+          Some(new NotInExpression(transformExpression(a).get, new ListExpression(
+              convertToJavaList(list.map(transformExpression(_).get)))))
+              }
         case In(Cast(a: Attribute, _), list) if !list.exists(!_.isInstanceOf[Literal]) =>
           Some(new InExpression(transformExpression(a).get,
             new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
@@ -335,7 +349,16 @@ object CarbonFilters {
     }
     exprs.flatMap(transformExpression(_, false)).reduceOption(new AndExpression(_, _))
   }
-
+  private def isNullLiteral(exp: Expression): Boolean = {
+    if (null != exp
+        &&  exp.isInstanceOf[Literal]
+        && (exp.asInstanceOf[Literal].dataType == org.apache.spark.sql.types.DataTypes.NullType)
+        || (exp.asInstanceOf[Literal].value == null)) {
+      true
+    } else {
+      false
+    }
+  }
   private def getActualCarbonDataType(column: String, carbonTable: CarbonTable) = {
     var carbonColumn: CarbonColumn =
       carbonTable.getDimensionByName(carbonTable.getFactTableName, column)
