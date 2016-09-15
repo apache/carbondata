@@ -214,8 +214,7 @@ public class CarbonCompactionUtil {
         } else {
           LOGGER.error("Unable to delete the compaction request file " + statusFile);
         }
-      }
-      else {
+      } else {
         LOGGER.info("Compaction request file is not present. file is : " + statusFile);
       }
     } catch (IOException e) {
@@ -249,8 +248,7 @@ public class CarbonCompactionUtil {
           LOGGER.error("Not able to create a compaction required file - " + statusFile);
           return false;
         }
-      }
-      else {
+      } else {
         LOGGER.info("Compaction request file : " + statusFile + " already exist.");
       }
     } catch (IOException e) {
