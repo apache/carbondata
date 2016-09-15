@@ -102,7 +102,7 @@ class CarbonScanRDD[V: ClassTag](
     val splits = carbonInputFormat.getSplits(job)
     if (!splits.isEmpty) {
       val carbonInputSplits = splits.asScala.map(_.asInstanceOf[CarbonInputSplit])
-
+      queryModel.setInvalidTableBlocks(carbonInputFormat.getInvalidSplits(job))
       val blockListTemp = carbonInputSplits.map(inputSplit =>
         new TableBlockInfo(inputSplit.getPath.toString,
           inputSplit.getStart, inputSplit.getSegmentId,

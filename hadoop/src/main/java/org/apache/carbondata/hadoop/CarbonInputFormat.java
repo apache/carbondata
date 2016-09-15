@@ -93,6 +93,7 @@ import org.apache.hadoop.mapreduce.task.JobContextImpl;
 import org.apache.hadoop.util.StringUtils;
 
 
+
 /**
  * Carbon Input format class representing one carbon table
  */
@@ -266,6 +267,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     try {
       CarbonTable carbonTable = getCarbonTable(job.getConfiguration());
       Object filterPredicates = getFilterPredicates(job.getConfiguration());
+      // removing in valid blocks from memory
+      removeInvalidSegments(job);
       if (getValidSegments(job).length == 0) {
         // Get the valid segments from the carbon store.
         SegmentStatusManager.ValidSegmentsInfo validSegments =
@@ -372,6 +375,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         new SegmentStatusManager(getAbsoluteTableIdentifier(job.getConfiguration()))
             .getValidSegments();
     setSegmentsToAccess(job.getConfiguration(), validSegments.listOfValidSegments);
+    // removing invalid blocks in case of count star query
+    removeInvalidSegments(job);
     // no of core to load the blocks in driver
     int numberOfCores = CarbonCommonConstants.NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT_DEFAULT_VALUE;
     try {
@@ -408,6 +413,42 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       throw new IndexBuilderException(e);
     }
     return rowCount;
+  }
+
+  /**
+   * Below method will be used to remove the invalid segments from memory blocks
+   * Invalid segments can be segment which is marked for delete
+   * or already compacted.
+   *
+   * @param job job context
+   * @throws IOException throws IOException
+   */
+  private void removeInvalidSegments(JobContext job) throws IOException {
+    AbsoluteTableIdentifier absoluteTableIdentifier =
+        getAbsoluteTableIdentifier(job.getConfiguration());
+    List<String> invalidSegments =
+        new SegmentStatusManager(absoluteTableIdentifier).getInvalidSegments().getInvalidSegment();
+    SegmentTaskIndexStore.getInstance().removeTableBlocks(invalidSegments, absoluteTableIdentifier);
+  }
+
+  /**
+   * Below method will be used to get the invalid splits.
+   * Invalid splits can be blocks which got deleted or compacted
+   *
+   * @param job
+   * @return list of invalid splits
+   * @throws IOException
+   */
+  public List<TableBlockInfo> getInvalidSplits(JobContext job) throws IOException {
+    AbsoluteTableIdentifier absoluteTableIdentifier =
+        getAbsoluteTableIdentifier(job.getConfiguration());
+    List<String> invalidSegmentId =
+        new SegmentStatusManager(absoluteTableIdentifier).getInvalidSegments().getInvalidSegment();
+    List<TableBlockInfo> invalidBlocks = new ArrayList<>();
+    for (String segmentId : invalidSegmentId) {
+      invalidBlocks.addAll(getTableBlockInfo(job, absoluteTableIdentifier, segmentId));
+    }
+    return invalidBlocks;
   }
 
   /**
@@ -494,6 +535,39 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return resultFilterredBlocks;
   }
 
+  /**
+   * Below method will be used to get the table block info
+   *
+   * @param job                     job context
+   * @param absoluteTableIdentifier absolute table identifier
+   * @param segmentId               number of segment id
+   * @return list of table block
+   * @throws IOException
+   */
+  private List<TableBlockInfo> getTableBlockInfo(JobContext job,
+      AbsoluteTableIdentifier absoluteTableIdentifier, String segmentId) throws IOException {
+    // List<FileStatus> fileStatusList = new LinkedList<FileStatus>();
+    List<TableBlockInfo> tableBlockInfoList = new ArrayList<TableBlockInfo>();
+    // getFileStatusOfSegments(job, new int[]{ segmentId }, fileStatusList);
+
+    // get file location of all files of given segment
+    JobContext newJob =
+        new JobContextImpl(new Configuration(job.getConfiguration()), job.getJobID());
+    newJob.getConfiguration().set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, segmentId + "");
+
+    // identify table blocks
+    for (InputSplit inputSplit : getSplitsInternal(newJob)) {
+      CarbonInputSplit carbonInputSplit = (CarbonInputSplit) inputSplit;
+      BlockletInfos blockletInfos = new BlockletInfos(carbonInputSplit.getNumberOfBlocklets(), 0,
+          carbonInputSplit.getNumberOfBlocklets());
+      tableBlockInfoList.add(
+          new TableBlockInfo(carbonInputSplit.getPath().toString(), carbonInputSplit.getStart(),
+              segmentId, carbonInputSplit.getLocations(), carbonInputSplit.getLength(),
+              blockletInfos));
+    }
+    return tableBlockInfoList;
+  }
+
   private Map<String, AbstractIndex> getSegmentAbstractIndexs(JobContext job,
       AbsoluteTableIdentifier absoluteTableIdentifier, String segmentId)
       throws IOException, IndexBuilderException {
@@ -503,24 +577,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     // if segment tree is not loaded, load the segment tree
     if (segmentIndexMap == null) {
       // List<FileStatus> fileStatusList = new LinkedList<FileStatus>();
-      List<TableBlockInfo> tableBlockInfoList = new LinkedList<TableBlockInfo>();
+      List<TableBlockInfo> tableBlockInfoList =
+          getTableBlockInfo(job, absoluteTableIdentifier, segmentId);
       // getFileStatusOfSegments(job, new int[]{ segmentId }, fileStatusList);
-
-      // get file location of all files of given segment
-      JobContext newJob =
-          new JobContextImpl(new Configuration(job.getConfiguration()), job.getJobID());
-      newJob.getConfiguration().set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, segmentId + "");
-
-      // identify table blocks
-      for (InputSplit inputSplit : getSplitsInternal(newJob)) {
-        CarbonInputSplit carbonInputSplit = (CarbonInputSplit) inputSplit;
-        BlockletInfos blockletInfos = new BlockletInfos(carbonInputSplit.getNumberOfBlocklets(), 0,
-            carbonInputSplit.getNumberOfBlocklets());
-        tableBlockInfoList.add(
-            new TableBlockInfo(carbonInputSplit.getPath().toString(), carbonInputSplit.getStart(),
-                segmentId, carbonInputSplit.getLocations(), carbonInputSplit.getLength(),
-                blockletInfos));
-      }
 
       Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos = new HashMap<>();
       segmentToTableBlocksInfos.put(segmentId, tableBlockInfoList);
