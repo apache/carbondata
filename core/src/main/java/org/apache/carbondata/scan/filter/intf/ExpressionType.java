@@ -39,6 +39,7 @@ public enum ExpressionType {
   NOT_IN,
   UNKNOWN,
   LITERAL,
-  RANGE
+  RANGE,
+  FALSE
 
 }
