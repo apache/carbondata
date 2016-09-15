@@ -49,6 +49,7 @@ import org.apache.carbondata.lcm.locks.ICarbonLock;
 import org.apache.carbondata.lcm.locks.LockUsage;
 
 import com.google.gson.Gson;
+
 /**
  * Manages Load/Segment status
  */
@@ -120,14 +121,14 @@ public class SegmentStatusManager {
         List<LoadMetadataDetails> loadFolderDetails = Arrays.asList(loadFolderDetailsArray);
 
         for (LoadMetadataDetails loadMetadataDetails : loadFolderDetails) {
-          if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
+          if ((CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
               .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
               || CarbonCommonConstants.SEGMENT_COMPACTED
               .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
               || CarbonCommonConstants.MARKED_FOR_DELETE
-              .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) {
+              .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) && "true"
+              .equalsIgnoreCase(loadMetadataDetails.getVisibility())) {
             listOfInvalidSegments.add(loadMetadataDetails.getLoadName());
-
           }
         }
       }
