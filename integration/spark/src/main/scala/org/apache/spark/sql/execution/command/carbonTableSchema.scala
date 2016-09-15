@@ -996,7 +996,7 @@ private[sql] case class DeleteLoadsByLoadDate(
     val path = carbonTable.getMetaDataFilepath()
 
     val invalidLoadTimestamps = segmentStatusManager
-      .updateDeletionStatus(loadDate, path, timeObj.asInstanceOf[java.lang.Long]).asScala
+      .updateDeletionStatus(loadDate, path, timeObj.asInstanceOf[java.lang.Long], dbName, tableName).asScala
     if(invalidLoadTimestamps.isEmpty) {
       LOGGER.audit(s"Delete segment by date is successfull for $dbName.$tableName.")
     }
@@ -1561,12 +1561,17 @@ private[sql] case class CleanFiles(
     carbonLoadModel.setStorePath(relation.tableMeta.storePath)
     val dataLoadSchema = new CarbonDataLoadSchema(table)
     carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
-    CarbonDataRDDFactory.cleanFiles(
-      sqlContext.sparkContext,
-      carbonLoadModel,
-      relation.tableMeta.storePath,
-      relation.tableMeta.partitioner)
-    LOGGER.audit("Clean files request is successfull.")
+    try {
+      CarbonDataRDDFactory.cleanFiles(
+        sqlContext.sparkContext,
+        carbonLoadModel,
+        relation.tableMeta.storePath,
+        relation.tableMeta.partitioner)
+      LOGGER.audit(s"Clean files request is successfull for $dbName.$tableName.")
+    } catch {
+      case ex : Exception =>
+        LOGGER.audit(ex.getMessage)
+    }
     Seq.empty
   }
 }

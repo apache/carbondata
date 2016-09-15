@@ -473,9 +473,8 @@ public final class CarbonLoaderUtil {
 
       }
       CarbonUtil.closeStreams(brWriter);
-
+      writeOperation.close();
     }
-    writeOperation.close();
 
   }
 
