@@ -825,10 +825,10 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
     catch {
       case e: Exception =>
         if (null != e.getMessage) {
-          sys.error("Compaction failed." + e.getMessage)
+          sys.error("Compaction failed. Please check logs for more info." + e.getMessage)
         }
         else {
-          sys.error("Exception in compaction.")
+          sys.error("Exception in compaction. Please check logs for more info.")
         }
     }
 
