@@ -254,16 +254,16 @@ public class SegmentStatusManager {
       throws Exception {
     CarbonTableIdentifier carbonTableIdentifier =
         absoluteTableIdentifier.getCarbonTableIdentifier();
-    ICarbonLock carbonMetadataLock =
-        CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.METADATA_LOCK);
+    ICarbonLock carbonDeleteSegmentLock =
+        CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.DELETE_SEGMENT_LOCK);
     ICarbonLock carbonTableStatusLock =
         CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK);
     String tableDetails =
         carbonTableIdentifier.getDatabaseName() + "." + carbonTableIdentifier.getTableName();
     List<String> invalidLoadIds = new ArrayList<String>(0);
     try {
-      if (carbonMetadataLock.lockWithRetries()) {
-        LOG.info("Metadata lock has been successfully acquired");
+      if (carbonDeleteSegmentLock.lockWithRetries()) {
+        LOG.info("Delete segment lock has been successfully acquired");
 
         CarbonTablePath carbonTablePath = CarbonStorePath
             .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
@@ -288,7 +288,8 @@ public class SegmentStatusManager {
             }
             else {
               String errorMsg = "Delete segment by id is failed for " + tableDetails
-                  + ". Not able to acquire the table status lock.";
+                  + ". Not able to acquire the table status lock due to other operation running "
+                  + "in the background.";
               LOG.audit(errorMsg);
               LOG.error(errorMsg);
               throw new Exception(errorMsg + " Please try after some time.");
@@ -307,7 +308,8 @@ public class SegmentStatusManager {
 
       } else {
         String errorMsg = "Delete segment by id is failed for " + tableDetails
-            + ". Not able to acquire the metadata lock.";
+            + ". Not able to acquire the metadata lock due to other operation running "
+            + "in the background.";
         LOG.audit(errorMsg);
         LOG.error(errorMsg);
         throw new Exception(errorMsg + " Please try after some time.");
@@ -316,7 +318,7 @@ public class SegmentStatusManager {
       LOG.error("IOException" + e.getMessage());
     } finally {
       CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
-      CarbonLockUtil.fileUnlock(carbonMetadataLock, LockUsage.METADATA_LOCK);
+      CarbonLockUtil.fileUnlock(carbonDeleteSegmentLock, LockUsage.DELETE_SEGMENT_LOCK);
     }
 
     return invalidLoadIds;
@@ -333,16 +335,16 @@ public class SegmentStatusManager {
       Long loadStartTime) throws Exception {
     CarbonTableIdentifier carbonTableIdentifier =
         absoluteTableIdentifier.getCarbonTableIdentifier();
-    ICarbonLock carbonMetadataLock =
-        CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.METADATA_LOCK);
+    ICarbonLock carbonDeleteSegmentLock =
+        CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.DELETE_SEGMENT_LOCK);
     ICarbonLock carbonTableStatusLock =
         CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK);
     String tableDetails =
         carbonTableIdentifier.getDatabaseName() + "." + carbonTableIdentifier.getTableName();
     List<String> invalidLoadTimestamps = new ArrayList<String>(0);
     try {
-      if (carbonMetadataLock.lockWithRetries()) {
-        LOG.info("Metadata lock has been successfully acquired");
+      if (carbonDeleteSegmentLock.lockWithRetries()) {
+        LOG.info("Delete segment lock has been successfully acquired");
 
         CarbonTablePath carbonTablePath = CarbonStorePath
             .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
@@ -369,7 +371,8 @@ public class SegmentStatusManager {
             else {
 
               String errorMsg = "Delete segment by date is failed for " + tableDetails
-                  + ". Not able to acquire the table status lock.";
+                  + ". Not able to acquire the table status lock due to other operation running "
+                  + "in the background.";
               LOG.audit(errorMsg);
               LOG.error(errorMsg);
               throw new Exception(errorMsg + " Please try after some time.");
@@ -389,7 +392,8 @@ public class SegmentStatusManager {
 
       } else {
         String errorMsg = "Delete segment by date is failed for " + tableDetails
-            + ". Not able to acquire the metadata lock.";
+            + ". Not able to acquire the metadata lock due to other operation running "
+            + "in the background.";
         LOG.audit(errorMsg);
         LOG.error(errorMsg);
         throw new Exception(errorMsg + " Please try after some time.");
@@ -398,7 +402,7 @@ public class SegmentStatusManager {
       LOG.error("Error message: " + "IOException" + e.getMessage());
     } finally {
       CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
-      CarbonLockUtil.fileUnlock(carbonMetadataLock, LockUsage.METADATA_LOCK);
+      CarbonLockUtil.fileUnlock(carbonDeleteSegmentLock, LockUsage.DELETE_SEGMENT_LOCK);
     }
 
     return invalidLoadTimestamps;
