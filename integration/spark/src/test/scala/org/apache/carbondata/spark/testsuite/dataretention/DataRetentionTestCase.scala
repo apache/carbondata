@@ -320,6 +320,6 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     }
     carbonTableStatusLock.unlock()
     //it should pass
-    sql("DELETE SEGMENT 4 FROM TABLE retentionlock")
+    sql("DELETE SEGMENT 0 FROM TABLE retentionlock")
   }
 }

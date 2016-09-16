@@ -35,6 +35,7 @@ import java.util.List;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -247,19 +248,18 @@ public class SegmentStatusManager {
    * updates deletion status
    * @param loadIds
    * @param tableFolderPath
-   * @param dbName
-   * @param tableName
    * @return
    */
-  public List<String> updateDeletionStatus(List<String> loadIds, String tableFolderPath,
-      String dbName, String tableName) throws Exception {
-    ICarbonLock carbonMetadataLock = CarbonLockFactory
-        .getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier(),
-            LockUsage.METADATA_LOCK);
-    ICarbonLock carbonTableStatusLock = CarbonLockFactory
-        .getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier(),
-            LockUsage.TABLE_STATUS_LOCK);
-    String tableDetails = dbName + "." + tableName;
+  public List<String> updateDeletionStatus(List<String> loadIds, String tableFolderPath)
+      throws Exception {
+    CarbonTableIdentifier carbonTableIdentifier =
+        absoluteTableIdentifier.getCarbonTableIdentifier();
+    ICarbonLock carbonMetadataLock =
+        CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.METADATA_LOCK);
+    ICarbonLock carbonTableStatusLock =
+        CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK);
+    String tableDetails =
+        carbonTableIdentifier.getDatabaseName() + "." + carbonTableIdentifier.getTableName();
     List<String> invalidLoadIds = new ArrayList<String>(0);
     try {
       if (carbonMetadataLock.lockWithRetries()) {
@@ -330,14 +330,15 @@ public class SegmentStatusManager {
    * @return
    */
   public List<String> updateDeletionStatus(String loadDate, String tableFolderPath,
-      Long loadStartTime, String dbName, String tableName) throws Exception {
-    ICarbonLock carbonMetadataLock = CarbonLockFactory
-        .getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier(),
-            LockUsage.METADATA_LOCK);
-    ICarbonLock carbonTableStatusLock = CarbonLockFactory
-        .getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier(),
-            LockUsage.TABLE_STATUS_LOCK);
-    String tableDetails = dbName + "." + tableName;
+      Long loadStartTime) throws Exception {
+    CarbonTableIdentifier carbonTableIdentifier =
+        absoluteTableIdentifier.getCarbonTableIdentifier();
+    ICarbonLock carbonMetadataLock =
+        CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.METADATA_LOCK);
+    ICarbonLock carbonTableStatusLock =
+        CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK);
+    String tableDetails =
+        carbonTableIdentifier.getDatabaseName() + "." + carbonTableIdentifier.getTableName();
     List<String> invalidLoadTimestamps = new ArrayList<String>(0);
     try {
       if (carbonMetadataLock.lockWithRetries()) {
