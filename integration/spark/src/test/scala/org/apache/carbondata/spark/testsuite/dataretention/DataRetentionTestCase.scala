@@ -50,6 +50,8 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   val storeLocation = new File(this.getClass.getResource("/").getPath + "/../test").getCanonicalPath
   val carbonTableIdentifier: CarbonTableIdentifier =
     new CarbonTableIdentifier("default", "DataRetentionTable".toLowerCase(), "1")
+  val carbonTableIdentifierLock: CarbonTableIdentifier =
+    new CarbonTableIdentifier("default", "retentionlock".toLowerCase(), "100")
   val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
       AbsoluteTableIdentifier(storeLocation, carbonTableIdentifier))
   val carbontablePath = CarbonStorePath.getCarbonTablePath(storeLocation, carbonTableIdentifier)
@@ -58,9 +60,9 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   var defaultDateFormat = new SimpleDateFormat(CarbonCommonConstants
     .CARBON_TIMESTAMP_DEFAULT_FORMAT)
   val carbonTableStatusLock: ICarbonLock = CarbonLockFactory
-    .getCarbonLockObj(carbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK)
+    .getCarbonLockObj(carbonTableIdentifierLock, LockUsage.TABLE_STATUS_LOCK)
   val carbonMetadataLock: ICarbonLock = CarbonLockFactory
-    .getCarbonLockObj(carbonTableIdentifier, LockUsage.METADATA_LOCK)
+    .getCarbonLockObj(carbonTableIdentifierLock, LockUsage.METADATA_LOCK)
 
 
   override def beforeAll {
@@ -73,6 +75,16 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'"
 
     )
+    sql(
+      "CREATE table retentionlock (ID int, date String, country String, name " +
+      "String," +
+      "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'"
+
+    )
+
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE retentionlock " +
+      "OPTIONS('DELIMITER' =  ',')")
 
     sql(
       "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE DataRetentionTable " +
@@ -86,6 +98,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table DataRetentionTable")
     sql("drop table carbon_TABLE_1")
+    sql("drop table retentionlock")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
@@ -263,13 +276,13 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   test("RetentionTest_Locks") {
 
     sql(
-      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dataretentionTable " +
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE retentionlock " +
       "OPTIONS('DELIMITER' = ',')")
     carbonTableStatusLock.lockWithRetries()
 
     // delete segment 4 it should fail
     try {
-      sql("DELETE SEGMENT 4 FROM TABLE dataretentionTable")
+      sql("DELETE SEGMENT 0 FROM TABLE retentionlock")
       assert(false)
     } catch {
       case ex : Exception =>
@@ -278,7 +291,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
     // it should fail
     try {
-      sql("DELETE SEGMENTS FROM TABLE dataretentionTable where STARTTIME before " +
+      sql("DELETE SEGMENTS FROM TABLE retentionlock where STARTTIME before " +
           "'2099-01-01 00:00:00.0'")
       assert(false)
     } catch {
@@ -288,7 +301,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
     // it should fail
     try {
-      sql("clean files for table dataretentionTable")
+      sql("clean files for table retentionlock")
       assert(false)
     } catch {
       case ex : Exception =>
@@ -298,7 +311,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     // it should fail
     try {
       sql(
-        "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dataretentionTable" +
+        "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE retentionlock" +
         " OPTIONS('DELIMITER' = ',')")
       assert(false)
     } catch {
@@ -307,6 +320,6 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     }
     carbonTableStatusLock.unlock()
     //it should pass
-    sql("DELETE SEGMENT 4 FROM TABLE dataretentionTable")
+    sql("DELETE SEGMENT 4 FROM TABLE retentionlock")
   }
 }
