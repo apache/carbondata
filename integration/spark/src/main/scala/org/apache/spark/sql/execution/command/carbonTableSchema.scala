@@ -144,10 +144,19 @@ case class Default(key: String, value: String)
 
 case class DataLoadTableFileMapping(table: String, loadPath: String)
 
-case class CarbonMergerMapping(storeLocation: String, hdfsStoreLocation: String,
-  partitioner: Partitioner, metadataFilePath: String, mergedLoadName: String,
-  kettleHomePath: String, tableCreationTime: Long, databaseName: String,
-  factTableName: String, validSegments: Array[String], tableId: String)
+case class CarbonMergerMapping(storeLocation: String,
+    hdfsStoreLocation: String,
+    partitioner: Partitioner,
+    metadataFilePath: String,
+    mergedLoadName: String,
+    kettleHomePath: String,
+    tableCreationTime: Long,
+    databaseName: String,
+    factTableName: String,
+    validSegments: Array[String],
+    tableId: String,
+    var colCardinality: Array[Int],
+    var columnSchemaList: List[ColumnSchema])
 
 case class NodeInfo(TaskId: String, noOfBlocks: Int)
 
