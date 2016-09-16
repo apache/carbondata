@@ -39,13 +39,25 @@ public class CarbonLockUtil {
       if (locktype.equals(LockUsage.METADATA_LOCK)) {
         LOGGER.info("Metadata lock has been successfully released");
       } else if (locktype.equals(LockUsage.TABLE_STATUS_LOCK)) {
-        LOGGER.info("Table Status lock has been successfully released");
+        LOGGER.info("Table status lock has been successfully released");
+      }
+      else if (locktype.equals(LockUsage.CLEAN_FILES_LOCK)) {
+        LOGGER.info("Clean files lock has been successfully released");
+      }
+      else if (locktype.equals(LockUsage.DELETE_SEGMENT_LOCK)) {
+        LOGGER.info("Delete segments lock has been successfully released");
       }
     } else {
       if (locktype.equals(LockUsage.METADATA_LOCK)) {
         LOGGER.error("Not able to release the metadata lock");
       } else if (locktype.equals(LockUsage.TABLE_STATUS_LOCK)) {
-        LOGGER.error("Not able to release the Table Status lock");
+        LOGGER.error("Not able to release the table status lock");
+      }
+      else if (locktype.equals(LockUsage.CLEAN_FILES_LOCK)) {
+        LOGGER.info("Not able to release the clean files lock");
+      }
+      else if (locktype.equals(LockUsage.DELETE_SEGMENT_LOCK)) {
+        LOGGER.info("Not able to release the delete segments lock");
       }
     }
   }

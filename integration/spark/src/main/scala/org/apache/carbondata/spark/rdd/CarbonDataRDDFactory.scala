@@ -1129,7 +1129,8 @@ object CarbonDataRDDFactory extends Logging {
         else {
           val errorMsg = "Clean files request is failed for " + carbonLoadModel.getDatabaseName +
                          "." + carbonLoadModel.getTableName +
-                         ". Not able to acquire the table status lock."
+                         ". Not able to acquire the table status lock due to other operation " +
+                         "running in the background."
           logger.audit(errorMsg)
           logger.error(errorMsg)
           throw new Exception(errorMsg + " Please try after some time.")
@@ -1159,13 +1160,13 @@ object CarbonDataRDDFactory extends Logging {
     val table = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName)
     val metaDataPath: String = table.getMetaDataFilepath
-    val carbonMetadataLock = CarbonLockFactory
+    val carbonCleanFilesLock = CarbonLockFactory
       .getCarbonLockObj(table.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
-        LockUsage.METADATA_LOCK
+        LockUsage.CLEAN_FILES_LOCK
       )
     try {
-      if (carbonMetadataLock.lockWithRetries()) {
-        logger.info("Metadata lock has been successfully acquired.")
+      if (carbonCleanFilesLock.lockWithRetries()) {
+        logger.info("Clean files lock has been successfully acquired.")
         deleteLoadsAndUpdateMetadata(carbonLoadModel,
           table,
           partitioner,
@@ -1175,7 +1176,8 @@ object CarbonDataRDDFactory extends Logging {
       else {
         val errorMsg = "Clean files request is failed for " + carbonLoadModel.getDatabaseName +
                        "." + carbonLoadModel.getTableName +
-                       ". Not able to acquire the metadata lock."
+                       ". Not able to acquire the metadata lock due to other operation running " +
+                       "in the background."
         logger.audit(errorMsg)
         logger.error(errorMsg)
         throw new Exception(errorMsg + " Please try after some time.")
@@ -1183,7 +1185,7 @@ object CarbonDataRDDFactory extends Logging {
       }
     }
     finally {
-      CarbonLockUtil.fileUnlock(carbonMetadataLock, LockUsage.METADATA_LOCK)
+      CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
     }
   }
 

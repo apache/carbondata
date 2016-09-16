@@ -64,6 +64,10 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     .CARBON_TIMESTAMP_DEFAULT_FORMAT)
   val carbonTableStatusLock: ICarbonLock = CarbonLockFactory
     .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK)
+  val carbonDeleteSegmentLock: ICarbonLock = CarbonLockFactory
+    .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.DELETE_SEGMENT_LOCK)
+  val carbonCleanFilesLock: ICarbonLock = CarbonLockFactory
+    .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.CLEAN_FILES_LOCK)
   val carbonMetadataLock: ICarbonLock = CarbonLockFactory
     .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.METADATA_LOCK)
 
@@ -281,18 +285,17 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     sql(
       "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE retentionlock " +
       "OPTIONS('DELIMITER' = ',')")
-    sql("show segments for table retentionlock").show()
-    carbonMetadataLock.lockWithRetries()
+    carbonDeleteSegmentLock.lockWithRetries()
     carbonTableStatusLock.lockWithRetries()
-
-    // delete segment 4 it should fail
+    carbonCleanFilesLock.lockWithRetries()
+    // delete segment 0 it should fail
     try {
       sql("DELETE SEGMENT 0 FROM TABLE retentionlock")
       throw new MalformedCarbonCommandException("Invalid")
     } catch {
-      case me : MalformedCarbonCommandException =>
+      case me: MalformedCarbonCommandException =>
         assert(false)
-      case ex : Exception =>
+      case ex: Exception =>
         assert(true)
     }
 
@@ -302,15 +305,30 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
           "'2099-01-01 00:00:00.0'")
       throw new MalformedCarbonCommandException("Invalid")
     } catch {
-      case me : MalformedCarbonCommandException =>
+      case me: MalformedCarbonCommandException =>
         assert(false)
-      case ex : Exception =>
+      case ex: Exception =>
+        assert(true)
+    }
+
+    // it should fail
+    try {
+      sql("clean files for table retentionlock")
+      throw new MalformedCarbonCommandException("Invalid")
+    } catch {
+      case me: MalformedCarbonCommandException =>
+        assert(false)
+      case ex: Exception =>
         assert(true)
     }
     carbonTableStatusLock.unlock()
-    carbonMetadataLock.unlock()
-    sql("show segments for table retentionlock").show()
-    //it should pass
+    carbonCleanFilesLock.unlock()
+    carbonDeleteSegmentLock.unlock()
+
     sql("DELETE SEGMENT 0 FROM TABLE retentionlock")
+    //load and delete should execute parallely
+    carbonMetadataLock.lockWithRetries()
+    sql("DELETE SEGMENT 1 FROM TABLE retentionlock")
+    carbonMetadataLock.unlock()
   }
 }
