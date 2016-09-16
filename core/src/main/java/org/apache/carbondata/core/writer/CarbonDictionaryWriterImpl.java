@@ -199,7 +199,10 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    */
   @Override public void close() throws IOException {
     if (null != dictionaryThriftWriter) {
-      writeDictionaryFile();
+      // if stream is open then only need to write dictionary file.
+      if(dictionaryThriftWriter.isOpen()){
+        writeDictionaryFile();
+      }
       // close the thrift writer for dictionary file
       closeThriftWriter();
     }
@@ -404,7 +407,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   }
 
   @Override public void commit() throws IOException {
-    if (null != dictionaryThriftWriter) {
+    if (null != dictionaryThriftWriter && dictionaryThriftWriter.isOpen()) {
       this.chunk_end_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
       writeDictionaryMetadataFile();
     }
