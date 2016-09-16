@@ -33,6 +33,7 @@ import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableId
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.LoadMetadataDetails
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.lcm.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
@@ -56,6 +57,10 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   var carbonDateFormat = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP)
   var defaultDateFormat = new SimpleDateFormat(CarbonCommonConstants
     .CARBON_TIMESTAMP_DEFAULT_FORMAT)
+  val carbonTableStatusLock: ICarbonLock = CarbonLockFactory
+    .getCarbonLockObj(carbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK)
+  val carbonMetadataLock: ICarbonLock = CarbonLockFactory
+    .getCarbonLockObj(carbonTableIdentifier, LockUsage.METADATA_LOCK)
 
 
   override def beforeAll {
@@ -253,5 +258,55 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       case _ => assert(true)
     }
 
+  }
+
+  test("RetentionTest_Locks") {
+
+    sql(
+      "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dataretentionTable " +
+      "OPTIONS('DELIMITER' = ',')")
+    carbonTableStatusLock.lockWithRetries()
+
+    // delete segment 4 it should fail
+    try {
+      sql("DELETE SEGMENT 4 FROM TABLE dataretentionTable")
+      assert(false)
+    } catch {
+      case ex : Exception =>
+        assert(true)
+    }
+
+    // it should fail
+    try {
+      sql("DELETE SEGMENTS FROM TABLE dataretentionTable where STARTTIME before " +
+          "'2099-01-01 00:00:00.0'")
+      assert(false)
+    } catch {
+      case ex : Exception =>
+        assert(true)
+    }
+
+    // it should fail
+    try {
+      sql("clean files for table dataretentionTable")
+      assert(false)
+    } catch {
+      case ex : Exception =>
+        assert(true)
+    }
+
+    // it should fail
+    try {
+      sql(
+        "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE dataretentionTable" +
+        " OPTIONS('DELIMITER' = ',')")
+      assert(false)
+    } catch {
+      case ex : Exception =>
+        assert(true)
+    }
+    carbonTableStatusLock.unlock()
+    //it should pass
+    sql("DELETE SEGMENT 4 FROM TABLE dataretentionTable")
   }
 }

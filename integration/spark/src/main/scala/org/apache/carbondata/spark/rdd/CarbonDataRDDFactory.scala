@@ -1098,10 +1098,9 @@ object CarbonDataRDDFactory extends Logging {
           )
         }
         else {
-          val errorMsg: String = "Clean files request is failed for " +
-                                 carbonLoadModel.getDatabaseName + "." +
-                                 carbonLoadModel.getTableName
-          ". Not able to acquire the table status lock."
+          val errorMsg = "Clean files request is failed for " + carbonLoadModel.getDatabaseName +
+                         "." + carbonLoadModel.getTableName +
+                         ". Not able to acquire the table status lock."
           logger.audit(errorMsg)
           logger.error(errorMsg)
           throw new Exception(errorMsg + " Please try after some time.")
@@ -1145,10 +1144,9 @@ object CarbonDataRDDFactory extends Logging {
           isForceDeletion = true)
       }
       else {
-        val errorMsg: String = "Clean Files request is failed for " +
-                               carbonLoadModel.getDatabaseName + "." +
-                               carbonLoadModel.getTableName +
-                               ". Not able to acquire the metadata lock."
+        val errorMsg = "Clean Files request is failed for " + carbonLoadModel.getDatabaseName +
+                       "." + carbonLoadModel.getTableName +
+                       ". Not able to acquire the metadata lock."
         logger.audit(errorMsg)
         logger.error(errorMsg)
         throw new Exception(errorMsg + " Please try after some time.")
