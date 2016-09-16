@@ -80,6 +80,17 @@ public class ThriftWriter {
   }
 
   /**
+   * This will check whether stream and binary out is open or not.
+   * @return
+   */
+  public boolean isOpen() {
+    if (null != binaryOut && null != dataOutputStream) {
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Write the object to disk.
    */
   public void write(TBase t) throws IOException {
