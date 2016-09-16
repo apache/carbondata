@@ -920,8 +920,7 @@ private[sql] case class DeleteLoadsById(
     val segmentStatusManager =
       new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
     try {
-      val invalidLoadIds = segmentStatusManager
-        .updateDeletionStatus(loadids.asJava, path, dbName, tableName).asScala
+      val invalidLoadIds = segmentStatusManager.updateDeletionStatus(loadids.asJava, path).asScala
 
       if (invalidLoadIds.isEmpty) {
 
@@ -989,8 +988,7 @@ private[sql] case class DeleteLoadsByLoadDate(
     val path = carbonTable.getMetaDataFilepath()
 
     val invalidLoadTimestamps = segmentStatusManager
-      .updateDeletionStatus(loadDate, path, timeObj.asInstanceOf[java.lang.Long], dbName, tableName)
-      .asScala
+      .updateDeletionStatus(loadDate, path, timeObj.asInstanceOf[java.lang.Long]).asScala
     if(invalidLoadTimestamps.isEmpty) {
       LOGGER.audit(s"Delete segment by date is successfull for $dbName.$tableName.")
     }
