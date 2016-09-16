@@ -49,7 +49,6 @@ import org.apache.carbondata.lcm.locks.ICarbonLock;
 import org.apache.carbondata.lcm.locks.LockUsage;
 
 import com.google.gson.Gson;
-
 /**
  * Manages Load/Segment status
  */
@@ -95,64 +94,12 @@ public class SegmentStatusManager {
    * @return
    * @throws IOException
    */
-  public InvalidSegmentsInfo getInvalidSegments() throws IOException {
-
-    // @TODO: move reading LoadStatus file to separate class
-    List<String> listOfInvalidSegments = new ArrayList<String>(10);
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
-    String dataPath = carbonTablePath.getTableStatusFilePath();
-    DataInputStream dataInputStream = null;
-    Gson gsonObjectToRead = new Gson();
-    AtomicFileOperations fileOperation =
-        new AtomicFileOperationsImpl(dataPath, FileFactory.getFileType(dataPath));
-    LoadMetadataDetails[] loadFolderDetailsArray;
-    try {
-      if (FileFactory.isFileExist(dataPath, FileFactory.getFileType(dataPath))) {
-
-        dataInputStream = fileOperation.openForRead();
-
-        BufferedReader buffReader =
-            new BufferedReader(new InputStreamReader(dataInputStream, "UTF-8"));
-
-        loadFolderDetailsArray = gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
-        //just directly iterate Array
-        List<LoadMetadataDetails> loadFolderDetails = Arrays.asList(loadFolderDetailsArray);
-
-        for (LoadMetadataDetails loadMetadataDetails : loadFolderDetails) {
-          if ((CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-              .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
-              || CarbonCommonConstants.SEGMENT_COMPACTED
-              .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
-              || CarbonCommonConstants.MARKED_FOR_DELETE
-              .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) && "true"
-              .equalsIgnoreCase(loadMetadataDetails.getVisibility())) {
-            listOfInvalidSegments.add(loadMetadataDetails.getLoadName());
-          }
-        }
-      }
-    } catch (IOException e) {
-      LOG.error(e);
-      throw e;
-    } finally {
-      CarbonUtil.closeStreams(dataInputStream);
-
-    }
-    return new InvalidSegmentsInfo(listOfInvalidSegments);
-  }
-
-  /**
-   * get valid segment for given table
-   *
-   * @return
-   * @throws IOException
-   */
-  public ValidSegmentsInfo getValidSegments() throws IOException {
+  public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments() throws IOException {
 
     // @TODO: move reading LoadStatus file to separate class
     List<String> listOfValidSegments = new ArrayList<String>(10);
     List<String> listOfValidUpdatedSegments = new ArrayList<String>(10);
+    List<String> listOfInvalidSegments = new ArrayList<String>(10);
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
@@ -200,8 +147,16 @@ public class SegmentStatusManager {
               listOfValidUpdatedSegments.add(loadMetadataDetails.getLoadName());
             }
             listOfValidSegments.add(loadMetadataDetails.getLoadName());
-
+          } else if ((CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
+              .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
+              || CarbonCommonConstants.SEGMENT_COMPACTED
+              .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
+              || CarbonCommonConstants.MARKED_FOR_DELETE
+              .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) && "true"
+              .equalsIgnoreCase(loadMetadataDetails.getVisibility())) {
+            listOfInvalidSegments.add(loadMetadataDetails.getLoadName());
           }
+
         }
       }
     } catch (IOException e) {
@@ -219,7 +174,8 @@ public class SegmentStatusManager {
       }
 
     }
-    return new ValidSegmentsInfo(listOfValidSegments, listOfValidUpdatedSegments);
+    return new ValidAndInvalidSegmentsInfo(listOfValidSegments, listOfValidUpdatedSegments,
+        listOfInvalidSegments);
   }
 
   /**
@@ -556,31 +512,28 @@ public class SegmentStatusManager {
     }
   }
 
-  public static class ValidSegmentsInfo {
-    public final List<String> listOfValidSegments;
-    public final List<String> listOfValidUpdatedSegments;
-
-    private ValidSegmentsInfo(List<String> listOfValidSegments,
-        List<String> listOfValidUpdatedSegments) {
-      this.listOfValidSegments = listOfValidSegments;
-      this.listOfValidUpdatedSegments = listOfValidUpdatedSegments;
-    }
-  }
-
-  /**
-   * Class to hold invalid segments details
-   *
-   */
-  public static class InvalidSegmentsInfo {
+  public static class ValidAndInvalidSegmentsInfo {
+    private final List<String> listOfValidSegments;
+    private final List<String> listOfValidUpdatedSegments;
     private final List<String> listOfInvalidSegments;
 
-    private InvalidSegmentsInfo(List<String> listOfInvalidSegments) {
-      this.listOfInvalidSegments = listOfInvalidSegments;
+    private ValidAndInvalidSegmentsInfo(List<String> listOfValidSegments,
+        List<String> listOfValidUpdatedSegments, List<String> listOfInvalidUpdatedSegments) {
+      this.listOfValidSegments = listOfValidSegments;
+      this.listOfValidUpdatedSegments = listOfValidUpdatedSegments;
+      this.listOfInvalidSegments = listOfInvalidUpdatedSegments;
     }
 
-    public List<String> getInvalidSegment() {
+    public List<String> getInvalidSegments() {
       return listOfInvalidSegments;
     }
-  }
 
+    public List<String> getValidSegments() {
+      return listOfValidSegments;
+    }
+
+    public List<String> getUpadtedSegments() {
+      return listOfValidUpdatedSegments;
+    }
+  }
 }

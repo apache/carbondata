@@ -32,9 +32,10 @@ import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.Dictionary
 import org.apache.carbondata.core.carbon.datastore.block.{BlockletInfos, TableBlockInfo}
-import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
+import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants}
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
+import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.scan.executor.QueryExecutorFactory
 import org.apache.carbondata.scan.expression.Expression
 import org.apache.carbondata.scan.model.QueryModel
@@ -43,6 +44,7 @@ import org.apache.carbondata.scan.result.iterator.ChunkRowIterator
 import org.apache.carbondata.spark.RawValue
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.util.QueryPlanUtil
+
 
 class CarbonSparkPartition(rddId: Int, val idx: Int,
     val locations: Array[String],
@@ -85,6 +87,13 @@ class CarbonScanRDD[V: ClassTag](
     // set filter resolver tree
     try {
       // before applying filter check whether segments are available in the table.
+      val validAndInvalidSegments = new SegmentStatusManager(queryModel.getAbsoluteTableIdentifier)
+        .getValidAndInvalidSegments;
+      CarbonInputFormat
+        .setSegmentsToAccess(job.getConfiguration,
+          validAndInvalidSegments.getValidSegments,
+          validAndInvalidSegments.getInvalidSegments
+        )
       val splits = carbonInputFormat.getSplits(job)
       if (!splits.isEmpty) {
         val filterResolver = carbonInputFormat

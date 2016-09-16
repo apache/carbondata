@@ -44,7 +44,7 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
           new CarbonTableIdentifier(databaseName, tableName.toLowerCase , tableId)
         )
     )
-    val segments = segmentStatusManager.getValidSegments().listOfValidSegments.asScala.toList
+    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
     segments
   }
 
