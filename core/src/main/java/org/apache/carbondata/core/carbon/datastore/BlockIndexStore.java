@@ -31,11 +31,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.carbon.datastore.block.BlockIndex;
+import org.apache.carbondata.core.carbon.datastore.block.BlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
@@ -50,8 +49,6 @@ import org.apache.carbondata.core.util.CarbonUtilException;
  */
 public class BlockIndexStore {
 
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(BlockIndexStore.class.getName());
   /**
    * singleton instance
    */
@@ -60,13 +57,13 @@ public class BlockIndexStore {
   /**
    * map to hold the table and its list of blocks
    */
-  private Map<AbsoluteTableIdentifier, Map<TableBlockInfo, AbstractIndex>> tableBlocksMap;
+  private Map<AbsoluteTableIdentifier, Map<BlockInfo, AbstractIndex>> tableBlocksMap;
 
   /**
    * map to maintain segment id to block info map, this map will be used to
    * while removing the block from memory when segment is compacted or deleted
    */
-  private Map<AbsoluteTableIdentifier, Map<String, List<TableBlockInfo>>> segmentIdToBlockListMap;
+  private Map<AbsoluteTableIdentifier, Map<String, List<BlockInfo>>> segmentIdToBlockListMap;
 
   /**
    * map of block info to lock object map, while loading the btree this will be filled
@@ -74,7 +71,7 @@ public class BlockIndexStore {
    * while loading the tree concurrently so only block level lock will be applied another
    * block can be loaded concurrently
    */
-  private Map<TableBlockInfo, Object> blockInfoLock;
+  private Map<BlockInfo, Object> blockInfoLock;
 
   /**
    * table and its lock object to this will be useful in case of concurrent
@@ -84,12 +81,11 @@ public class BlockIndexStore {
   private Map<AbsoluteTableIdentifier, Object> tableLockMap;
 
   private BlockIndexStore() {
-    tableBlocksMap =
-        new ConcurrentHashMap<AbsoluteTableIdentifier, Map<TableBlockInfo, AbstractIndex>>(
-            CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    tableBlocksMap = new ConcurrentHashMap<AbsoluteTableIdentifier, Map<BlockInfo, AbstractIndex>>(
+        CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     tableLockMap = new ConcurrentHashMap<AbsoluteTableIdentifier, Object>(
         CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    blockInfoLock = new ConcurrentHashMap<TableBlockInfo, Object>();
+    blockInfoLock = new ConcurrentHashMap<BlockInfo, Object>();
     segmentIdToBlockListMap = new ConcurrentHashMap<>();
   }
 
@@ -118,7 +114,7 @@ public class BlockIndexStore {
 
     // get the instance
     Object lockObject = tableLockMap.get(absoluteTableIdentifier);
-    Map<TableBlockInfo, AbstractIndex> tableBlockMapTemp = null;
+    Map<BlockInfo, AbstractIndex> tableBlockMapTemp = null;
     int numberOfCores = 1;
     try {
       numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
@@ -130,19 +126,20 @@ public class BlockIndexStore {
     ExecutorService executor = Executors.newFixedThreadPool(numberOfCores);
     // Acquire the lock to ensure only one query is loading the table blocks
     // if same block is assigned to both the queries
+    List<BlockInfo> blockInfosNeedToLoad = null;
     synchronized (lockObject) {
       tableBlockMapTemp = tableBlocksMap.get(absoluteTableIdentifier);
       // if it is loading for first time
       if (null == tableBlockMapTemp) {
-        tableBlockMapTemp = new ConcurrentHashMap<TableBlockInfo, AbstractIndex>();
+        tableBlockMapTemp = new ConcurrentHashMap<BlockInfo, AbstractIndex>();
         tableBlocksMap.put(absoluteTableIdentifier, tableBlockMapTemp);
       }
-      fillSegmentIdToTableInfoMap(tableBlocksInfos, absoluteTableIdentifier);
+      blockInfosNeedToLoad = fillSegmentIdToTableInfoMap(tableBlocksInfos, absoluteTableIdentifier);
     }
     AbstractIndex tableBlock = null;
     List<Future<AbstractIndex>> blocksList = new ArrayList<Future<AbstractIndex>>();
     int counter = -1;
-    for (TableBlockInfo blockInfo : tableBlocksInfos) {
+    for (BlockInfo blockInfo : blockInfosNeedToLoad) {
       counter++;
       // if table block is already loaded then do not load
       // that block
@@ -204,23 +201,29 @@ public class BlockIndexStore {
    * @param tableBlockInfos         table block infos
    * @param absoluteTableIdentifier absolute table identifier
    */
-  private void fillSegmentIdToTableInfoMap(List<TableBlockInfo> tableBlockInfos,
+  private List<BlockInfo> fillSegmentIdToTableInfoMap(List<TableBlockInfo> tableBlockInfos,
       AbsoluteTableIdentifier absoluteTableIdentifier) {
-    Map<String, List<TableBlockInfo>> map = segmentIdToBlockListMap.get(absoluteTableIdentifier);
+    Map<String, List<BlockInfo>> map = segmentIdToBlockListMap.get(absoluteTableIdentifier);
     if (null == map) {
-      map = new ConcurrentHashMap<String, List<TableBlockInfo>>();
+      map = new ConcurrentHashMap<String, List<BlockInfo>>();
       segmentIdToBlockListMap.put(absoluteTableIdentifier, map);
     }
+    BlockInfo temp = null;
+    List<BlockInfo> blockInfosNeedToLoad = new ArrayList<>();
+
     for (TableBlockInfo info : tableBlockInfos) {
-      List<TableBlockInfo> tempTableBlockInfos = map.get(info.getSegmentId());
+      List<BlockInfo> tempTableBlockInfos = map.get(info.getSegmentId());
       if (null == tempTableBlockInfos) {
         tempTableBlockInfos = new ArrayList<>();
         map.put(info.getSegmentId(), tempTableBlockInfos);
       }
-      if (!tempTableBlockInfos.contains(info)) {
-        tempTableBlockInfos.add(info);
+      temp = new BlockInfo(info);
+      if (!tempTableBlockInfos.contains(temp)) {
+        tempTableBlockInfos.add(temp);
       }
+      blockInfosNeedToLoad.add(temp);
     }
+    return blockInfosNeedToLoad;
   }
 
   /**
@@ -246,15 +249,16 @@ public class BlockIndexStore {
     }
   }
 
-  private AbstractIndex loadBlock(Map<TableBlockInfo, AbstractIndex> tableBlockMapTemp,
-      TableBlockInfo blockInfo) throws CarbonUtilException {
+  private AbstractIndex loadBlock(Map<BlockInfo, AbstractIndex> tableBlockMapTemp,
+      BlockInfo blockInfo) throws CarbonUtilException {
     AbstractIndex tableBlock;
     DataFileFooter footer;
     // getting the data file meta data of the block
-    footer = CarbonUtil.readMetadatFile(blockInfo.getFilePath(), blockInfo.getBlockOffset(),
-        blockInfo.getBlockLength());
+    footer = CarbonUtil.readMetadatFile(blockInfo.getTableBlockInfo().getFilePath(),
+        blockInfo.getTableBlockInfo().getBlockOffset(),
+        blockInfo.getTableBlockInfo().getBlockLength());
     tableBlock = new BlockIndex();
-    footer.setTableBlockInfo(blockInfo);
+    footer.setBlockInfo(blockInfo);
     // building the block
     tableBlock.buildIndex(Arrays.asList(footer));
     tableBlockMapTemp.put(blockInfo, tableBlock);
@@ -293,25 +297,25 @@ public class BlockIndexStore {
     if (null == lockObject) {
       return;
     }
-    Map<TableBlockInfo, AbstractIndex> map = tableBlocksMap.get(absoluteTableIdentifier);
+    Map<BlockInfo, AbstractIndex> map = tableBlocksMap.get(absoluteTableIdentifier);
     // if there is no loaded blocks then return
     if (null == map || map.isEmpty()) {
       return;
     }
-    Map<String, List<TableBlockInfo>> segmentIdToBlockInfoMap =
+    Map<String, List<BlockInfo>> segmentIdToBlockInfoMap =
         segmentIdToBlockListMap.get(absoluteTableIdentifier);
     if (null == segmentIdToBlockInfoMap || segmentIdToBlockInfoMap.isEmpty()) {
       return;
     }
     synchronized (lockObject) {
       for (String segmentId : segmentsToBeRemoved) {
-        List<TableBlockInfo> tableBlockInfoList = segmentIdToBlockInfoMap.remove(segmentId);
+        List<BlockInfo> tableBlockInfoList = segmentIdToBlockInfoMap.remove(segmentId);
         if (null == tableBlockInfoList) {
           continue;
         }
-        Iterator<TableBlockInfo> tableBlockInfoIterator = tableBlockInfoList.iterator();
+        Iterator<BlockInfo> tableBlockInfoIterator = tableBlockInfoList.iterator();
         while (tableBlockInfoIterator.hasNext()) {
-          TableBlockInfo info = tableBlockInfoIterator.next();
+          BlockInfo info = tableBlockInfoIterator.next();
           map.remove(info);
         }
       }
@@ -336,13 +340,12 @@ public class BlockIndexStore {
     /**
      * table block info to block index map
      */
-    private Map<TableBlockInfo, AbstractIndex> tableBlockMap;
+    private Map<BlockInfo, AbstractIndex> tableBlockMap;
 
     // block info
-    private TableBlockInfo blockInfo;
+    private BlockInfo blockInfo;
 
-    private BlockLoaderThread(TableBlockInfo blockInfo,
-        Map<TableBlockInfo, AbstractIndex> tableBlockMap) {
+    private BlockLoaderThread(BlockInfo blockInfo, Map<BlockInfo, AbstractIndex> tableBlockMap) {
       this.tableBlockMap = tableBlockMap;
       this.blockInfo = blockInfo;
     }
