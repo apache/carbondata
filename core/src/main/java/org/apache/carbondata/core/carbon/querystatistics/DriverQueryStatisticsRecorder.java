@@ -155,7 +155,7 @@ public class DriverQueryStatisticsRecorder {
       int len1 = 8;
       int len2 = 20;
       int len3 = 21;
-      int len4 = 22;
+      int len4 = 24;
       String line = "+" + printLine("-", len1) + "+" + printLine("-", len2) + "+" +
           printLine("-", len3) + "+" + printLine("-", len4) + "+";
       String line2 = "|" + printLine(" ", len1) + "+" + printLine("-", len2) + "+" +
@@ -164,7 +164,8 @@ public class DriverQueryStatisticsRecorder {
       tableInfo.append(line).append("\n");
       tableInfo.append("|" + printLine(" ", (len1 - "Module".length())) + "Module" + "|" +
           printLine(" ", (len2 - "Operation Step".length())) + "Operation Step" + "|" +
-          printLine(" ", (len3 + len4 + 1 - "Query Cost".length())) + "Query Cost" + "|" + "\n");
+          printLine(" ", (len3 - "Total Query Cost".length())) + "Total Query Cost" + "|" +
+          printLine(" ", (len4 - "Query Cost".length())) + "Query Cost" + "|" + "\n");
       tableInfo.append(line).append("\n");
       // print sql_parse_t,load_meta_t,block_allocation_t,block_identification_t
       if (!StringUtils.isEmpty(sql_parse_time) &&
