@@ -59,8 +59,7 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.partition.api.impl.QueryPartitionHelper
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
-
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil, GlobalDictionaryUtil}
 
 case class tableModel(
     ifNotExistsSet: Boolean,
@@ -183,7 +182,8 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
         val encoders = new java.util.ArrayList[Encoding]()
         encoders.add(Encoding.DICTIONARY)
         val columnSchema: ColumnSchema = getColumnSchema(
-          normalizeType(field.dataType.getOrElse("")), field.name.getOrElse(field.column), index,
+          DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
+          field.name.getOrElse(field.column), index,
           isCol = true, encoders, isDimensionCol = true, rowGroup, field.precision, field.scale)
         allColumns ++= Seq(columnSchema)
         index = index + 1
@@ -240,7 +240,8 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     cm.dimCols.foreach(field => {
       val encoders = new java.util.ArrayList[Encoding]()
       encoders.add(Encoding.DICTIONARY)
-      val columnSchema: ColumnSchema = getColumnSchema(normalizeType(field.dataType.getOrElse("")),
+      val columnSchema: ColumnSchema = getColumnSchema(
+        DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
         field.name.getOrElse(field.column),
         index,
         isCol = true,
@@ -259,7 +260,8 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
 
     cm.msrCols.foreach(field => {
       val encoders = new java.util.ArrayList[Encoding]()
-      val coloumnSchema: ColumnSchema = getColumnSchema(normalizeType(field.dataType.getOrElse("")),
+      val coloumnSchema: ColumnSchema = getColumnSchema(
+        DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
         field.name.getOrElse(field.column),
         index,
         isCol = true,
@@ -415,25 +417,6 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     tableInfo.setFactTable(tableSchema)
     tableInfo.setAggregateTableList(new util.ArrayList[TableSchema]())
     tableInfo
-  }
-
-  private def normalizeType(dataType: String): DataType = {
-    dataType match {
-      case "String" => DataType.STRING
-      case "int" => DataType.INT
-      case "Integer" => DataType.INT
-      case "tinyint" => DataType.SHORT
-      case "short" => DataType.SHORT
-      case "Long" => DataType.LONG
-      case "BigInt" => DataType.LONG
-      case "Numeric" => DataType.DOUBLE
-      case "Double" => DataType.DOUBLE
-      case "Decimal" => DataType.DECIMAL
-      case "Timestamp" => DataType.TIMESTAMP
-      case "Array" => DataType.ARRAY
-      case "Struct" => DataType.STRUCT
-      case _ => sys.error("Unsupported data type : " + dataType)
-    }
   }
 
   //  For checking if the specified col group columns are specified in fields list.
