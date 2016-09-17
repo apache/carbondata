@@ -83,7 +83,7 @@ public class EqualToExpression extends BinaryConditionalExpression {
       case TIMESTAMP:
         result = val1.getTime().equals(val2.getTime());
         break;
-      case LONG:
+      case BIGINT:
         result = val1.getLong().equals(val2.getLong());
         break;
       case DECIMAL:

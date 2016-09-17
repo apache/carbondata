@@ -1246,7 +1246,7 @@ public final class CarbonUtil {
         return org.apache.carbondata.format.DataType.STRING;
       case INT:
         return org.apache.carbondata.format.DataType.INT;
-      case LONG:
+      case BIGINT:
         return org.apache.carbondata.format.DataType.LONG;
       case DOUBLE:
         return org.apache.carbondata.format.DataType.DOUBLE;
@@ -1280,7 +1280,7 @@ public final class CarbonUtil {
       case INT:
         return DataType.INT;
       case LONG:
-        return DataType.LONG;
+        return DataType.BIGINT;
       case DOUBLE:
         return DataType.DOUBLE;
       case DECIMAL:

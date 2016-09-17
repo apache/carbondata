@@ -28,5 +28,7 @@ public class LockUsage {
   public static String COMPACTION_LOCK = "compaction.lock";
   public static String SYSTEMLEVEL_COMPACTION_LOCK = "system_level_compaction.lock";
   public static String TABLE_STATUS_LOCK = "tablestatus.lock";
+  public static String DELETE_SEGMENT_LOCK = "delete_segment.lock";
+  public static String CLEAN_FILES_LOCK = "clean_files.lock";
 
 }

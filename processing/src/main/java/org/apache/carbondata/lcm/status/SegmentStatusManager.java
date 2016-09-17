@@ -35,6 +35,7 @@ import java.util.List;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -45,6 +46,7 @@ import org.apache.carbondata.lcm.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.lcm.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.lcm.fileoperations.FileWriteOperation;
 import org.apache.carbondata.lcm.locks.CarbonLockFactory;
+import org.apache.carbondata.lcm.locks.CarbonLockUtil;
 import org.apache.carbondata.lcm.locks.ICarbonLock;
 import org.apache.carbondata.lcm.locks.LockUsage;
 
@@ -248,14 +250,20 @@ public class SegmentStatusManager {
    * @param tableFolderPath
    * @return
    */
-  public List<String> updateDeletionStatus(List<String> loadIds, String tableFolderPath) {
-    ICarbonLock carbonLock = CarbonLockFactory
-        .getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier(),
-            LockUsage.METADATA_LOCK);
+  public List<String> updateDeletionStatus(List<String> loadIds, String tableFolderPath)
+      throws Exception {
+    CarbonTableIdentifier carbonTableIdentifier =
+        absoluteTableIdentifier.getCarbonTableIdentifier();
+    ICarbonLock carbonDeleteSegmentLock =
+        CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.DELETE_SEGMENT_LOCK);
+    ICarbonLock carbonTableStatusLock =
+        CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK);
+    String tableDetails =
+        carbonTableIdentifier.getDatabaseName() + "." + carbonTableIdentifier.getTableName();
     List<String> invalidLoadIds = new ArrayList<String>(0);
     try {
-      if (carbonLock.lockWithRetries()) {
-        LOG.info("Metadata lock has been successfully acquired");
+      if (carbonDeleteSegmentLock.lockWithRetries()) {
+        LOG.info("Delete segment lock has been successfully acquired");
 
         CarbonTablePath carbonTablePath = CarbonStorePath
             .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
@@ -273,8 +281,20 @@ public class SegmentStatusManager {
           updateDeletionStatus(loadIds, listOfLoadFolderDetailsArray, invalidLoadIds);
           if(invalidLoadIds.isEmpty())
           {
-            // All or None , if anything fails then dont write
-            writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
+            if(carbonTableStatusLock.lockWithRetries()) {
+              LOG.info("Table status lock has been successfully acquired");
+              // All or None , if anything fails then dont write
+              writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
+            }
+            else {
+              String errorMsg = "Delete segment by id is failed for " + tableDetails
+                  + ". Not able to acquire the table status lock due to other operation running "
+                  + "in the background.";
+              LOG.audit(errorMsg);
+              LOG.error(errorMsg);
+              throw new Exception(errorMsg + " Please try after some time.");
+            }
+
           }
           else
           {
@@ -287,12 +307,18 @@ public class SegmentStatusManager {
         }
 
       } else {
-        LOG.error("Unable to acquire the metadata lock");
+        String errorMsg = "Delete segment by id is failed for " + tableDetails
+            + ". Not able to acquire the metadata lock due to other operation running "
+            + "in the background.";
+        LOG.audit(errorMsg);
+        LOG.error(errorMsg);
+        throw new Exception(errorMsg + " Please try after some time.");
       }
     } catch (IOException e) {
       LOG.error("IOException" + e.getMessage());
     } finally {
-      fileUnlock(carbonLock);
+      CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
+      CarbonLockUtil.fileUnlock(carbonDeleteSegmentLock, LockUsage.DELETE_SEGMENT_LOCK);
     }
 
     return invalidLoadIds;
@@ -306,14 +332,19 @@ public class SegmentStatusManager {
    * @return
    */
   public List<String> updateDeletionStatus(String loadDate, String tableFolderPath,
-      Long loadStartTime) {
-    ICarbonLock carbonLock = CarbonLockFactory
-        .getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier(),
-            LockUsage.METADATA_LOCK);
+      Long loadStartTime) throws Exception {
+    CarbonTableIdentifier carbonTableIdentifier =
+        absoluteTableIdentifier.getCarbonTableIdentifier();
+    ICarbonLock carbonDeleteSegmentLock =
+        CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.DELETE_SEGMENT_LOCK);
+    ICarbonLock carbonTableStatusLock =
+        CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK);
+    String tableDetails =
+        carbonTableIdentifier.getDatabaseName() + "." + carbonTableIdentifier.getTableName();
     List<String> invalidLoadTimestamps = new ArrayList<String>(0);
     try {
-      if (carbonLock.lockWithRetries()) {
-        LOG.info("Metadata lock has been successfully acquired");
+      if (carbonDeleteSegmentLock.lockWithRetries()) {
+        LOG.info("Delete segment lock has been successfully acquired");
 
         CarbonTablePath carbonTablePath = CarbonStorePath
             .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
@@ -333,7 +364,20 @@ public class SegmentStatusManager {
           updateDeletionStatus(loadDate, listOfLoadFolderDetailsArray,
               invalidLoadTimestamps, loadStartTime);
           if(invalidLoadTimestamps.isEmpty()) {
-            writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
+            if(carbonTableStatusLock.lockWithRetries()) {
+              LOG.info("Table status lock has been successfully acquired.");
+              writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
+            }
+            else {
+
+              String errorMsg = "Delete segment by date is failed for " + tableDetails
+                  + ". Not able to acquire the table status lock due to other operation running "
+                  + "in the background.";
+              LOG.audit(errorMsg);
+              LOG.error(errorMsg);
+              throw new Exception(errorMsg + " Please try after some time.");
+
+            }
           }
           else
           {
@@ -347,12 +391,18 @@ public class SegmentStatusManager {
         }
 
       } else {
-        LOG.error("Error message: " + "Unable to acquire the metadata lock");
+        String errorMsg = "Delete segment by date is failed for " + tableDetails
+            + ". Not able to acquire the metadata lock due to other operation running "
+            + "in the background.";
+        LOG.audit(errorMsg);
+        LOG.error(errorMsg);
+        throw new Exception(errorMsg + " Please try after some time.");
       }
     } catch (IOException e) {
       LOG.error("Error message: " + "IOException" + e.getMessage());
     } finally {
-      fileUnlock(carbonLock);
+      CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK);
+      CarbonLockUtil.fileUnlock(carbonDeleteSegmentLock, LockUsage.DELETE_SEGMENT_LOCK);
     }
 
     return invalidLoadTimestamps;
@@ -388,9 +438,9 @@ public class SegmentStatusManager {
         brWriter.flush();
       }
       CarbonUtil.closeStreams(brWriter);
+      fileWrite.close();
     }
 
-    fileWrite.close();
   }
 
   /**
@@ -501,20 +551,4 @@ public class SegmentStatusManager {
       }
     }
   }
-
-  /**
-   * unlocks given file
-   * @param carbonLock
-   */
-  private void fileUnlock(ICarbonLock carbonLock) {
-    if (carbonLock.unlock()) {
-      LOG.info("Metadata lock has been successfully released");
-    } else {
-      LOG
-          .error("Not able to release the metadata lock");
-    }
-  }
-
-
-
 }

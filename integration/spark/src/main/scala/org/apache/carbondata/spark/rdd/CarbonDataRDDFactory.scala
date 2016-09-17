@@ -44,7 +44,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.integration.spark.merger.{CarbonCompactionUtil, CompactionCallable, CompactionType}
-import org.apache.carbondata.lcm.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
+import org.apache.carbondata.lcm.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
@@ -52,7 +52,7 @@ import org.apache.carbondata.spark._
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.merger.CarbonDataMergerUtil
 import org.apache.carbondata.spark.splits.TableSplit
-import org.apache.carbondata.spark.util.{CarbonQueryUtil, LoadMetadataUtil}
+import org.apache.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil, LoadMetadataUtil}
 
 /**
  * This is the factory class which can create different RDD depends on user needs.
@@ -1077,6 +1077,9 @@ object CarbonDataRDDFactory extends Logging {
       val segmentStatusManager = new SegmentStatusManager(table.getAbsoluteTableIdentifier)
       val details = segmentStatusManager
         .readLoadMetadata(loadMetadataFilePath)
+      val carbonTableStatusLock = CarbonLockFactory
+        .getCarbonLockObj(table.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+          LockUsage.TABLE_STATUS_LOCK)
 
       // Delete marked loads
       val isUpdationRequired = DeleteLoadFolders
@@ -1084,12 +1087,29 @@ object CarbonDataRDDFactory extends Logging {
           partitioner.partitionCount, isForceDeletion, details)
 
       if (isUpdationRequired) {
+        try {
         // Update load metadate file after cleaning deleted nodes
-        CarbonLoaderUtil.writeLoadMetadata(
-          carbonLoadModel.getCarbonDataLoadSchema,
-          carbonLoadModel.getDatabaseName,
-          carbonLoadModel.getTableName, details.toList.asJava
-        )
+        if (carbonTableStatusLock.lockWithRetries()) {
+          logger.info("Table status lock has been successfully acquired.")
+          CarbonLoaderUtil.writeLoadMetadata(
+            carbonLoadModel.getCarbonDataLoadSchema,
+            carbonLoadModel.getDatabaseName,
+            carbonLoadModel.getTableName, details.toList.asJava
+          )
+        }
+        else {
+          val errorMsg = "Clean files request is failed for " + carbonLoadModel.getDatabaseName +
+                         "." + carbonLoadModel.getTableName +
+                         ". Not able to acquire the table status lock due to other operation " +
+                         "running in the background."
+          logger.audit(errorMsg)
+          logger.error(errorMsg)
+          throw new Exception(errorMsg + " Please try after some time.")
+
+        }
+      } finally {
+          CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK)
+        }
       }
     }
   }
@@ -1111,25 +1131,32 @@ object CarbonDataRDDFactory extends Logging {
     val table = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName)
     val metaDataPath: String = table.getMetaDataFilepath
-    val carbonLock = CarbonLockFactory
+    val carbonCleanFilesLock = CarbonLockFactory
       .getCarbonLockObj(table.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
-        LockUsage.METADATA_LOCK
+        LockUsage.CLEAN_FILES_LOCK
       )
     try {
-      if (carbonLock.lockWithRetries()) {
+      if (carbonCleanFilesLock.lockWithRetries()) {
+        logger.info("Clean files lock has been successfully acquired.")
         deleteLoadsAndUpdateMetadata(carbonLoadModel,
           table,
           partitioner,
           hdfsStoreLocation,
           isForceDeletion = true)
       }
+      else {
+        val errorMsg = "Clean files request is failed for " + carbonLoadModel.getDatabaseName +
+                       "." + carbonLoadModel.getTableName +
+                       ". Not able to acquire the metadata lock due to other operation running " +
+                       "in the background."
+        logger.audit(errorMsg)
+        logger.error(errorMsg)
+        throw new Exception(errorMsg + " Please try after some time.")
+
+      }
     }
     finally {
-      if (carbonLock.unlock()) {
-        logInfo("unlock the table metadata file successfully")
-      } else {
-        logError("Unable to unlock the metadata lock")
-      }
+      CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
     }
   }
 

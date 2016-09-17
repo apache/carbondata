@@ -28,7 +28,7 @@ public enum DataType {
   SHORT(2),
   INT(3),
   FLOAT(4),
-  LONG(5),
+  BIGINT(5),
   DOUBLE(6),
   NULL(7),
   DECIMAL(8),

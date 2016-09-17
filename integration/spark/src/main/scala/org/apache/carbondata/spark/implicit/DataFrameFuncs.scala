@@ -79,7 +79,7 @@ class DataFrameFuncs(dataFrame: DataFrame) {
       case IntegerType => CarbonType.INT.name
       case ByteType => CarbonType.INT.name
       case ShortType => CarbonType.SHORT.name
-      case LongType => CarbonType.LONG.name
+      case LongType => CarbonType.BIGINT.name
       case FloatType => CarbonType.DOUBLE.name
       case DoubleType => CarbonType.DOUBLE.name
       case BooleanType => CarbonType.DOUBLE.name

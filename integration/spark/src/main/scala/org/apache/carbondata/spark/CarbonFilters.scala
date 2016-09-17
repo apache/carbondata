@@ -367,8 +367,8 @@ object CarbonFilters {
     } else {
       carbonColumn = carbonTable.getMeasureByName(carbonTable.getFactTableName, column)
       carbonColumn.getDataType match {
-        case DataType.INT => DataType.LONG
-        case DataType.LONG => DataType.LONG
+        case DataType.INT => DataType.BIGINT
+        case DataType.BIGINT => DataType.BIGINT
         case DataType.DECIMAL => DataType.DECIMAL
         case _ => DataType.DOUBLE
       }
