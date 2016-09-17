@@ -49,6 +49,10 @@ public class UnivocityCsvParser {
    */
   private static final int DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING = 2000;
   /**
+   * Maximum allowed value for number of columns to be parsed in each row
+   */
+  private static final int THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING = 20000;
+  /**
    * reader for csv
    */
   private Reader inputStreamReader;
@@ -125,12 +129,17 @@ public class UnivocityCsvParser {
     int maxNumberOfColumnsForParsing = DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING;
     if (maxColumns > 0) {
       if (columnCountInSchema > maxColumns) {
-        maxNumberOfColumnsForParsing = columnCountInSchema + 10;
+        maxNumberOfColumnsForParsing = columnCountInSchema;
+      } else if (maxColumns > THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
+        maxNumberOfColumnsForParsing = THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING;
+        LOGGER.info("MAXCOLUMNS option value configured is more than system allowed limit. "
+            + "Therefore threshold value for max column parsing will be considered: "
+            + THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING);
       } else {
         maxNumberOfColumnsForParsing = maxColumns;
       }
     } else if (columnCountInSchema > DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
-      maxNumberOfColumnsForParsing = columnCountInSchema + 10;
+      maxNumberOfColumnsForParsing = columnCountInSchema;
     }
     return maxNumberOfColumnsForParsing;
   }
