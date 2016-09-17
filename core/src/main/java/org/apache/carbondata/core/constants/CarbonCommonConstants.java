@@ -911,6 +911,7 @@ public final class CarbonCommonConstants {
   public static String majorCompactionRequiredFile = "compactionRequired_major";
 
   /**
+   * @Deprecated : This property has been deprecated.
    * Property for enabling system level compaction lock.1 compaction can run at once.
    */
   public static String ENABLE_CONCURRENT_COMPACTION =
@@ -920,7 +921,7 @@ public final class CarbonCommonConstants {
    * Default value of Property for enabling system level compaction lock.1 compaction can run
    * at once.
    */
-  public static String DEFAULT_ENABLE_CONCURRENT_COMPACTION = "false";
+  public static String DEFAULT_ENABLE_CONCURRENT_COMPACTION = "true";
 
   /**
    * Compaction system level lock folder.
