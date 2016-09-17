@@ -66,7 +66,7 @@ public class GreaterThanEqualToExpression extends BinaryConditionalExpression {
       case TIMESTAMP:
         result = elRes.getTime() >= (erRes.getTime());
         break;
-      case LONG:
+      case BIGINT:
         result = elRes.getLong() >= (erRes.getLong());
         break;
       case DECIMAL:

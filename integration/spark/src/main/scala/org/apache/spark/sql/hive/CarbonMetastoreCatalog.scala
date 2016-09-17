@@ -586,7 +586,7 @@ object CarbonMetastoreTypes extends RegexParsers {
       "tinyint" ^^^ ShortType |
       "short" ^^^ ShortType |
       "double" ^^^ DoubleType |
-      "long" ^^^ LongType |
+      "bigint" ^^^ LongType |
       "binary" ^^^ BinaryType |
       "boolean" ^^^ BooleanType |
       fixedDecimalType |

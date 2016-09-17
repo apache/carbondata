@@ -40,7 +40,7 @@ object CarbonScalaUtil extends Logging {
       case StringType => CarbonDataType.STRING
       case ShortType => CarbonDataType.SHORT
       case IntegerType => CarbonDataType.INT
-      case LongType => CarbonDataType.LONG
+      case LongType => CarbonDataType.BIGINT
       case DoubleType => CarbonDataType.DOUBLE
       case FloatType => CarbonDataType.FLOAT
       case DateType => CarbonDataType.DATE
@@ -75,7 +75,7 @@ object CarbonScalaUtil extends Logging {
       case CarbonDataType.STRING => StringType
       case CarbonDataType.SHORT => ShortType
       case CarbonDataType.INT => IntegerType
-      case CarbonDataType.LONG => LongType
+      case CarbonDataType.BIGINT => LongType
       case CarbonDataType.DOUBLE => DoubleType
       case CarbonDataType.BOOLEAN => BooleanType
       case CarbonDataType.DECIMAL => DecimalType.SYSTEM_DEFAULT

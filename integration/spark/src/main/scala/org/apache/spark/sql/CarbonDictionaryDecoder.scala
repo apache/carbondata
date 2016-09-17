@@ -96,7 +96,7 @@ case class CarbonDictionaryDecoder(
       case DataType.STRING => StringType
       case DataType.SHORT => ShortType
       case DataType.INT => IntegerType
-      case DataType.LONG => LongType
+      case DataType.BIGINT => LongType
       case DataType.DOUBLE => DoubleType
       case DataType.BOOLEAN => BooleanType
       case DataType.DECIMAL =>

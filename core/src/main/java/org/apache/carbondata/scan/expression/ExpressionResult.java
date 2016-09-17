@@ -181,7 +181,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           return ((Short) value).doubleValue();
         case INT:
           return ((Integer) value).doubleValue();
-        case LONG:
+        case BIGINT:
           return ((Long) value).doubleValue();
         case DOUBLE:
           return (Double) value;
@@ -218,7 +218,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           return ((Short) value).longValue();
         case INT:
           return (Long) value;
-        case LONG:
+        case BIGINT:
           return (Long) value;
         case DOUBLE:
           return (Long) value;
@@ -256,7 +256,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           return new BigDecimal((short) value);
         case INT:
           return new BigDecimal((int) value);
-        case LONG:
+        case BIGINT:
           return new BigDecimal((long) value);
         case DOUBLE:
           return new BigDecimal(value.toString());
@@ -303,7 +303,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         case SHORT:
           return ((Short) value).longValue();
         case INT:
-        case LONG:
+        case BIGINT:
           return (Long) value;
         case DOUBLE:
           return (Long) value;
@@ -413,7 +413,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         case INT:
           result = this.getInt().equals(objToCompare.getInt());
           break;
-        case LONG:
+        case BIGINT:
         case TIMESTAMP:
           result = this.getLong().equals(objToCompare.getLong());
           break;
@@ -442,7 +442,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
       switch (o.dataType) {
         case SHORT:
         case INT:
-        case LONG:
+        case BIGINT:
         case DOUBLE:
           Double d1 = this.getDouble();
           Double d2 = o.getDouble();

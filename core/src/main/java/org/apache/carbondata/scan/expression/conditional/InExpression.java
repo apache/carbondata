@@ -67,7 +67,7 @@ public class InExpression extends BinaryConditionalExpression {
           case DOUBLE:
             val = new ExpressionResult(val.getDataType(), expressionResVal.getDouble());
             break;
-          case LONG:
+          case BIGINT:
             val = new ExpressionResult(val.getDataType(), expressionResVal.getLong());
             break;
           case TIMESTAMP:

@@ -386,7 +386,7 @@ public class DataFileFooterConverter {
       case INT:
         return DataType.INT;
       case LONG:
-        return DataType.LONG;
+        return DataType.BIGINT;
       case DOUBLE:
         return DataType.DOUBLE;
       case DECIMAL:

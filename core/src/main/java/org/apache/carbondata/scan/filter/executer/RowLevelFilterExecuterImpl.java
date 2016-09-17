@@ -234,8 +234,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     for (MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo : msrColEvalutorInfoList) {
       switch (msrColumnEvalutorInfo.getType()) {
         case INT:
-        case LONG:
-          msrType = DataType.LONG;
+        case BIGINT:
+          msrType = DataType.BIGINT;
           break;
         case DECIMAL:
           msrType = DataType.DECIMAL;
@@ -250,7 +250,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         Object msrValue;
         switch (msrType) {
           case INT:
-          case LONG:
+          case BIGINT:
             msrValue =
                 blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
                     .getMeasureDataHolder().getReadableLongValueByIndex(index);
