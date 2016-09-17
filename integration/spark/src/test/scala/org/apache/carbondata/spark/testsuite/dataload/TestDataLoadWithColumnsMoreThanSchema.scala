@@ -87,6 +87,18 @@ class TestDataLoadWithColumnsMoreThanSchema extends QueryTest with BeforeAndAfte
     }
   }
 
+  test("test for maxcolumns option value greater than threshold value for maxcolumns") {
+    sql("DROP TABLE IF EXISTS valid_max_columns_test")
+    sql("CREATE TABLE valid_max_columns_test (imei string,age int,task bigint,num double,level decimal(10,3),productdate timestamp,mark int,name string)STORED BY 'org.apache.carbondata.format'")
+    try {
+      sql("LOAD DATA LOCAL INPATH './src/test/resources/character_carbon.csv' into table valid_max_columns_test options('MAXCOLUMNS'='22000')")
+      checkAnswer(sql("select count(*) from valid_max_columns_test"),
+        sql("select count(*) from hive_char_test"))
+    } catch {
+      case _ => assert(false)
+    }
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS char_test")
     sql("DROP TABLE IF EXISTS hive_char_test")
