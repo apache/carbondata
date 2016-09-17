@@ -390,6 +390,7 @@ public class CsvInput extends BaseStep implements StepInterface {
           LOGGER.info("*****************Completed csv reading by thread***********");
         } catch (Throwable e) {
           LOGGER.error(e, "Thread is terminated due to error");
+          throw new RuntimeException("Thread is terminated due to error : " + e.getMessage());
         }
         return null;
       }
