@@ -22,7 +22,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 
 /**
- * This is a singleton class for initialization of zookeeper client.
+ * This class contains all carbon lock utilities
  */
 public class CarbonLockUtil {
 

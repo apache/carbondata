@@ -305,8 +305,8 @@ public class SegmentStatusManager {
 
       } else {
         String errorMsg = "Delete segment by id is failed for " + tableDetails
-            + ". Not able to acquire the delete segment lock due to other operation running "
-            + "in the background.";
+            + ". Not able to acquire the delete segment lock due to another delete "
+            + "operation is running in the background.";
         LOG.audit(errorMsg);
         LOG.error(errorMsg);
         throw new Exception(errorMsg + " Please try after some time.");
@@ -387,8 +387,8 @@ public class SegmentStatusManager {
 
       } else {
         String errorMsg = "Delete segment by date is failed for " + tableDetails
-            + ". Not able to acquire the delete segment lock due to other operation running "
-            + "in the background.";
+            + ". Not able to acquire the delete segment lock due to another delete "
+            + "operation is running in the background.";
         LOG.audit(errorMsg);
         LOG.error(errorMsg);
         throw new Exception(errorMsg + " Please try after some time.");
