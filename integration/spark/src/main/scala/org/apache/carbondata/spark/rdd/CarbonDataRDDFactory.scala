@@ -623,6 +623,8 @@ object CarbonDataRDDFactory extends Logging {
           }
         }
       }
+    // calling the run method of a thread to make the call as blocking call.
+    // in the future we may make this as concurrent.
     compactionThread.run()
   }
 
@@ -1049,7 +1051,8 @@ object CarbonDataRDDFactory extends Logging {
         }
         catch {
           case e: Exception =>
-            throw new Exception("Dataload is success. Compaction is failed. Please check logs.")
+            throw new Exception(
+              "Dataload is success. Auto-Compaction has failed. Please check logs.")
         }
       }
     }
