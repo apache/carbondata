@@ -118,7 +118,7 @@ class CompactionSystemLockFeatureTest extends QueryTest with BeforeAndAfterAll {
         )
     )
     // merged segment should not be there
-    val segments = segmentStatusManager.getValidSegments.listOfValidSegments.asScala.toList
+    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
     assert(segments.contains("0.1"))
     assert(!segments.contains("0"))
     assert(!segments.contains("1"))
@@ -130,7 +130,7 @@ class CompactionSystemLockFeatureTest extends QueryTest with BeforeAndAfterAll {
         )
     )
     // merged segment should not be there
-    val segments2 = segmentStatusManager2.getValidSegments.listOfValidSegments.asScala.toList
+    val segments2 = segmentStatusManager2.getValidAndInvalidSegments.getValidSegments.asScala.toList
     assert(segments2.contains("0.1"))
     assert(!segments2.contains("0"))
     assert(!segments2.contains("1"))

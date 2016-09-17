@@ -108,7 +108,7 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
       val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
         absoluteTableIdentifier
       )
-      val segments = segmentStatusManager.getValidSegments().listOfValidSegments.asScala.toList
+      val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
 
       if (!segments.contains("0.1")) {
         assert(true)

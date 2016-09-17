@@ -132,6 +132,13 @@ public class QueryModel implements Serializable {
 
   private QueryStatisticsRecorder statisticsRecorder;
 
+  /**
+   * Invalid table blocks, which need to be removed from
+   * memory, invalid blocks can be segment which are deleted
+   * or compacted
+   */
+  private List<String> invalidSegmentIds;
+
   public QueryModel() {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
     queryDimension = new ArrayList<QueryDimension>();
@@ -139,6 +146,7 @@ public class QueryModel implements Serializable {
     sortDimension = new ArrayList<QueryDimension>();
     sortOrder = new byte[0];
     paritionColumns = new ArrayList<String>();
+    invalidSegmentIds = new ArrayList<>();
   }
 
   public static QueryModel createModel(AbsoluteTableIdentifier absoluteTableIdentifier,
@@ -503,5 +511,13 @@ public class QueryModel implements Serializable {
 
   public void setStatisticsRecorder(QueryStatisticsRecorder statisticsRecorder) {
     this.statisticsRecorder = statisticsRecorder;
+  }
+
+  public List<String> getInvalidSegmentIds() {
+    return invalidSegmentIds;
+  }
+
+  public void setInvalidSegmentIds(List<String> invalidSegmentIds) {
+    this.invalidSegmentIds = invalidSegmentIds;
   }
 }
