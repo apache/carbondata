@@ -104,8 +104,9 @@ class CarbonMergerRDD[K, V](
 
         // get destination segment properties as sent from driver which is of last segment.
 
-        val segmentProperties = new SegmentProperties(carbonMergerMapping.columnSchemaList.asJava,
-          carbonMergerMapping.colCardinality)
+        val segmentProperties = new SegmentProperties(carbonMergerMapping.maxSegmentColumnSchemaList
+          .asJava,
+          carbonMergerMapping.maxSegmentColCardinality)
 
         // sorting the table block info List.
         var tableBlockInfoList = carbonSparkPartition.tableBlockInfos
@@ -162,7 +163,7 @@ class CarbonMergerRDD[K, V](
             segmentProperties,
             tempStoreLoc,
             carbonLoadModel,
-            carbonMergerMapping.colCardinality
+            carbonMergerMapping.maxSegmentColCardinality
           )
         mergeStatus = merger.mergerSlice()
 
@@ -254,7 +255,9 @@ class CarbonMergerRDD[K, V](
       )
 
       // keep on assigning till last one is reached.
-      blocksOfLastSegment = blocksOfOneSegment.asJava
+      if (null != blocksOfOneSegment && blocksOfOneSegment.size > 0) {
+        blocksOfLastSegment = blocksOfOneSegment.asJava
+      }
 
       // populate the task and its block mapping.
       blocksOfOneSegment.foreach(tableBlockInfo => {
@@ -279,23 +282,26 @@ class CarbonMergerRDD[K, V](
     }
 
     // prepare the details required to extract the segment properties using last segment.
+    if (null != blocksOfLastSegment && blocksOfLastSegment.size > 0)
+    {
+      val lastBlockInfo = blocksOfLastSegment.get(blocksOfLastSegment.size - 1)
 
-    val lastBlockInfo = blocksOfLastSegment.get(blocksOfLastSegment.size - 1)
+      var dataFileFooter: DataFileFooter = null
 
-    var dataFileFooter: DataFileFooter = null
+      try {
+        dataFileFooter = CarbonUtil.readMetadatFile(lastBlockInfo.getFilePath,
+          lastBlockInfo.getBlockOffset, lastBlockInfo.getBlockLength)
+      } catch {
+        case e: CarbonUtilException =>
+          logError("Exception in preparing the data file footer for compaction " + e.getMessage)
+          throw e
+      }
 
-    try {
-      dataFileFooter = CarbonUtil.readMetadatFile(lastBlockInfo.getFilePath,
-        lastBlockInfo.getBlockOffset, lastBlockInfo.getBlockLength)
-    } catch {
-      case e: CarbonUtilException =>
-        logError("Exception in preparing the data file footer for compaction " + e.getMessage)
-        throw e
+      carbonMergerMapping.maxSegmentColCardinality = dataFileFooter.getSegmentInfo
+        .getColumnCardinality
+      carbonMergerMapping.maxSegmentColumnSchemaList = dataFileFooter.getColumnInTable.asScala
+        .toList
     }
-
-    carbonMergerMapping.colCardinality = dataFileFooter.getSegmentInfo.getColumnCardinality
-    carbonMergerMapping.columnSchemaList = dataFileFooter.getColumnInTable.asScala.toList
-
     // send complete list of blocks to the mapping util.
     nodeMapping = CarbonLoaderUtil.nodeBlockMapping(taskInfoList, -1)
 

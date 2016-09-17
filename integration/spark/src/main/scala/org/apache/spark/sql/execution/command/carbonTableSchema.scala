@@ -155,8 +155,10 @@ case class CarbonMergerMapping(storeLocation: String,
     factTableName: String,
     validSegments: Array[String],
     tableId: String,
-    var colCardinality: Array[Int],
-    var columnSchemaList: List[ColumnSchema])
+    // maxSegmentColCardinality is Cardinality of last segment of compaction
+    var maxSegmentColCardinality: Array[Int],
+    // maxSegmentColumnSchemaList is list of column schema of last segment of compaction
+    var maxSegmentColumnSchemaList: List[ColumnSchema])
 
 case class NodeInfo(TaskId: String, noOfBlocks: Int)
 
