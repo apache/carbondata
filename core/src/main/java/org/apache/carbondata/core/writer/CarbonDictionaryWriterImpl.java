@@ -200,7 +200,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   @Override public void close() throws IOException {
     if (null != dictionaryThriftWriter && dictionaryThriftWriter.isOpen()) {
       // if stream is open then only need to write dictionary file.
-        writeDictionaryFile();
+      writeDictionaryFile();
       // close the thrift writer for dictionary file
       closeThriftWriter();
     }
