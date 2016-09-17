@@ -106,6 +106,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
   }
 
   private void intialiseInfos() {
+    totalScanTime=System.currentTimeMillis();
     for (BlockExecutionInfo blockInfo : blockExecutionInfos) {
       DataRefNodeFinder finder = new BTreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
       DataRefNode startDataBlock = finder
@@ -134,7 +135,8 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     } else {
       if (!isStatisticsRecorded) {
         QueryStatistic statistic = new QueryStatistic();
-        statistic.addFixedTimeStatistic(QueryStatisticsConstants.SCAN_BLOCKS_TIME, totalScanTime);
+        statistic.addFixedTimeStatistic(QueryStatisticsConstants.SCAN_BLOCKS_TIME,
+            System.currentTimeMillis() - totalScanTime);
         recorder.recordStatistics(statistic);
         isStatisticsRecorded = true;
       }
