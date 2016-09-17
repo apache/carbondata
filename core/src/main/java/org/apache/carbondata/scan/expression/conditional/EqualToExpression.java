@@ -24,6 +24,7 @@ import org.apache.carbondata.scan.expression.Expression;
 import org.apache.carbondata.scan.expression.ExpressionResult;
 import org.apache.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
+import org.apache.carbondata.scan.filter.FilterUtil;
 import org.apache.carbondata.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.scan.filter.intf.RowIntf;
 
@@ -78,7 +79,7 @@ public class EqualToExpression extends BinaryConditionalExpression {
         result = val1.getInt().equals(val2.getInt());
         break;
       case DOUBLE:
-        result = val1.getDouble().equals(val2.getDouble());
+        result = FilterUtil.nanSafeEqualsDoubles(val1.getDouble(), val2.getDouble());
         break;
       case TIMESTAMP:
         result = val1.getTime().equals(val2.getTime());
