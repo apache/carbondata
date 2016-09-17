@@ -63,8 +63,8 @@ public class SubstractExpression extends BinaryArithmeticExpression {
       case INT:
         subtractExprRightRes.set(DataType.INT, val1.getInt() - val2.getInt());
         break;
-      case LONG:
-        subtractExprRightRes.set(DataType.LONG, val1.getLong() - val2.getLong());
+      case BIGINT:
+        subtractExprRightRes.set(DataType.BIGINT, val1.getLong() - val2.getLong());
         break;
       case DECIMAL:
         subtractExprRightRes

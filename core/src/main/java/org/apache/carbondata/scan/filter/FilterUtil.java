@@ -1114,7 +1114,7 @@ public final class FilterUtil {
         case DOUBLE:
           return Double
               .compare((Double.parseDouble(dictionaryVal)), (Double.parseDouble(memberVal)));
-        case LONG:
+        case BIGINT:
           return Long.compare((Long.parseLong(dictionaryVal)), (Long.parseLong(memberVal)));
         case BOOLEAN:
           return Boolean
@@ -1227,7 +1227,7 @@ public final class FilterUtil {
       switch (dataType) {
         case SHORT:
         case INT:
-        case LONG:
+        case BIGINT:
         case DOUBLE:
 
           if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {

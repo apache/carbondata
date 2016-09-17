@@ -133,7 +133,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
         return IntegerType$.MODULE$;
       case DOUBLE:
         return DoubleType$.MODULE$;
-      case LONG:
+      case BIGINT:
         return LongType$.MODULE$;
       case BOOLEAN:
         return BooleanType$.MODULE$;

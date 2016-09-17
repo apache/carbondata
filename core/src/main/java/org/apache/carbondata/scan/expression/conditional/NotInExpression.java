@@ -68,7 +68,7 @@ public class NotInExpression extends BinaryConditionalExpression {
           case TIMESTAMP:
             val = new ExpressionResult(val.getDataType(), exprResVal.getTime());
             break;
-          case LONG:
+          case BIGINT:
             val = new ExpressionResult(val.getDataType(), exprResVal.getLong());
             break;
           case DECIMAL:

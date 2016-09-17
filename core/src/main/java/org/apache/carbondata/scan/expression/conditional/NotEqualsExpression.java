@@ -80,7 +80,7 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
       case TIMESTAMP:
         result = val1.getTime().longValue() != val2.getTime().longValue();
         break;
-      case LONG:
+      case BIGINT:
         result = elRes.getLong().longValue() != (erRes.getLong()).longValue();
         break;
       case DECIMAL:

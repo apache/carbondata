@@ -66,7 +66,7 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
     switch (dataType) {
       case SHORT:
       case INT:
-      case LONG:
+      case BIGINT:
       case DOUBLE:
 
         Double d1 = null;
