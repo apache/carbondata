@@ -1176,7 +1176,7 @@ object CarbonDataRDDFactory extends Logging {
       else {
         val errorMsg = "Clean files request is failed for " + carbonLoadModel.getDatabaseName +
                        "." + carbonLoadModel.getTableName +
-                       ". Not able to acquire the metadata lock due to other operation running " +
+                       ". Not able to acquire the clean files lock due to other operation running " +
                        "in the background."
         logger.audit(errorMsg)
         logger.error(errorMsg)

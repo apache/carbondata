@@ -305,7 +305,7 @@ public class SegmentStatusManager {
 
       } else {
         String errorMsg = "Delete segment by id is failed for " + tableDetails
-            + ". Not able to acquire the metadata lock due to other operation running "
+            + ". Not able to acquire the delete segment lock due to other operation running "
             + "in the background.";
         LOG.audit(errorMsg);
         LOG.error(errorMsg);
@@ -387,7 +387,7 @@ public class SegmentStatusManager {
 
       } else {
         String errorMsg = "Delete segment by date is failed for " + tableDetails
-            + ". Not able to acquire the metadata lock due to other operation running "
+            + ". Not able to acquire the delete segment lock due to other operation running "
             + "in the background.";
         LOG.audit(errorMsg);
         LOG.error(errorMsg);
