@@ -38,6 +38,7 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists a12")
     sql("drop table if exists a12_allnull")
     sql("drop table if exists a12_no_null")
+     sql("drop table if exists Test_Boundary1")
 
     sql(
       "create table a12(empid String,ename String,sal double,deptno int,mgr string,gender string," +
@@ -53,6 +54,7 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
         " string," +
         "dob timestamp,comm decimal(4,2),desc string) stored by 'org.apache.carbondata.format'"
     )
+    sql("create table Test_Boundary1 (c1_int int,c2_Bigint Bigint,c3_Decimal Decimal(38,38),c4_double double,c5_string string,c6_Timestamp Timestamp,c7_Datatype_Desc string) STORED BY 'org.apache.carbondata.format'")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
     val basePath = new File(this.getClass.getResource("/").getPath + "/../../")
@@ -77,6 +79,9 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
          'QUOTECHAR'='"')"""
         .stripMargin
     )
+    
+    sql(
+      s"LOAD DATA INPATH './src/test/resources/Test_Data1_Logrithmic.csv' INTO table Test_Boundary1 OPTIONS('DELIMITER'=',','QUOTECHAR'='','FILEHEADER'='')")
   }
   //mixed value test
   test("Less Than Filter") {
@@ -97,6 +102,12 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select count (empid) from a12 where dob > '2014-07-01 12:07:28'"),
       Seq(Row(3))
+    )
+  }
+  test("0.0 and -0.0 equality check for double data type applying log function") {
+    checkAnswer(
+      sql("select log(c4_double,1) from Test_Boundary1 where log(c4_double,1)= -0.0"),
+      Seq(Row(0.0),Row(0.0))
     )
   }
 

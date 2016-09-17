@@ -1390,6 +1390,26 @@ public final class FilterUtil {
   }
 
   /**
+   * This method will compare double values for its equality and also it will preserve
+   * the -0.0 and 0.0 equality as per == ,also preserve NaN equality check as per
+   * java.lang.Double.equals()
+   *
+   * @param d1 double value for equality check
+   * @param d2 double value for equality check
+   * @return boolean after comparing two double values.
+   */
+  public static boolean nanSafeEqualsDoubles(Double d1, Double d2) {
+    Boolean xIsNan = Double.isNaN(d1);
+    Boolean yIsNan = Double.isNaN(d2);
+    if ((xIsNan && yIsNan) || (d1.doubleValue() == d2.doubleValue())) {
+
+      return true;
+    }
+    return false;
+
+  }
+
+  /**
    * This method will prepare the list with all unknown expressions
    *
    * @param expression
@@ -1406,5 +1426,4 @@ public final class FilterUtil {
       getUnknownExpressionsList(child, lst);
     }
   }
-
 }
