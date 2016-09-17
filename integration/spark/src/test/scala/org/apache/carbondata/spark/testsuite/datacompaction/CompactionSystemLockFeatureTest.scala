@@ -43,6 +43,8 @@ class CompactionSystemLockFeatureTest extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists  table2")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION, "false")
     sql(
       "CREATE TABLE IF NOT EXISTS table1 (country String, ID Int, date Timestamp, name " +
         "String, " +
