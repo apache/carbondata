@@ -19,7 +19,6 @@
 package org.apache.carbondata.core.carbon.datastore.block;
 
 import java.io.Serializable;
-import java.util.Arrays;
 
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath.DataFileUtil;
@@ -74,6 +73,7 @@ public class TableBlockInfo extends Distributable
 
   /**
    * constructor to initialize the TbaleBlockInfo with BlockletInfos
+   *
    * @param filePath
    * @param blockOffset
    * @param segmentId
@@ -104,7 +104,6 @@ public class TableBlockInfo extends Distributable
   public long getBlockOffset() {
     return blockOffset;
   }
-
 
   /**
    * @return the segmentId
@@ -145,12 +144,14 @@ public class TableBlockInfo extends Distributable
     if (blockLength != other.blockLength) {
       return false;
     }
-
-    if (filePath == null) {
-      if (other.filePath != null) {
-        return false;
-      }
+    if (filePath == null && other.filePath != null) {
+      return false;
+    } else if (filePath != null && other.filePath == null) {
+      return false;
     } else if (!filePath.equals(other.filePath)) {
+      return false;
+    }
+    if (blockletInfos.getStartBlockletNumber() != other.blockletInfos.getStartBlockletNumber()) {
       return false;
     }
     return true;
@@ -225,7 +226,6 @@ public class TableBlockInfo extends Distributable
     result = 31 * result + (int) (blockOffset ^ (blockOffset >>> 32));
     result = 31 * result + (int) (blockLength ^ (blockLength >>> 32));
     result = 31 * result + segmentId.hashCode();
-    result = 31 * result + Arrays.hashCode(locations);
     result = 31 * result + blockletInfos.getStartBlockletNumber();
     return result;
   }
@@ -236,6 +236,7 @@ public class TableBlockInfo extends Distributable
 
   /**
    * returns BlockletInfos
+   *
    * @return
    */
   public BlockletInfos getBlockletInfos() {
@@ -244,6 +245,7 @@ public class TableBlockInfo extends Distributable
 
   /**
    * set the blocklestinfos
+   *
    * @param blockletInfos
    */
   public void setBlockletInfos(BlockletInfos blockletInfos) {

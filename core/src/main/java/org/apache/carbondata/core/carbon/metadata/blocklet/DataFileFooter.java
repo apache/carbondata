@@ -21,7 +21,7 @@ package org.apache.carbondata.core.carbon.metadata.blocklet;
 import java.io.Serializable;
 import java.util.List;
 
-import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.carbon.datastore.block.BlockInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 
@@ -68,7 +68,7 @@ public class DataFileFooter implements Serializable {
   /**
    * to store the block info detail like file name block index and locations
    */
-  private TableBlockInfo tableBlockInfo;
+  private BlockInfo blockInfo;
 
   /**
    * @return the versionId
@@ -157,14 +157,14 @@ public class DataFileFooter implements Serializable {
   /**
    * @return the tableBlockInfo
    */
-  public TableBlockInfo getTableBlockInfo() {
-    return tableBlockInfo;
+  public BlockInfo getBlockInfo() {
+    return blockInfo;
   }
 
   /**
    * @param tableBlockInfo the tableBlockInfo to set
    */
-  public void setTableBlockInfo(TableBlockInfo tableBlockInfo) {
-    this.tableBlockInfo = tableBlockInfo;
+  public void setBlockInfo(BlockInfo tableBlockInfo) {
+    this.blockInfo = tableBlockInfo;
   }
 }
