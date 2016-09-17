@@ -19,6 +19,7 @@
 package org.apache.carbondata.core.carbon.datastore.impl.btree;
 
 import org.apache.carbondata.core.carbon.datastore.BTreeBuilderInfo;
+import org.apache.carbondata.core.carbon.datastore.block.BlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletMinMaxIndex;
@@ -30,7 +31,7 @@ import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletMinMaxI
  */
 public class BlockBTreeLeafNode extends AbstractBTreeLeafNode {
 
-  private TableBlockInfo blockInfo;
+  private BlockInfo blockInfo;
 
   /**
    * Create a leaf node
@@ -47,7 +48,7 @@ public class BlockBTreeLeafNode extends AbstractBTreeLeafNode {
     minKeyOfColumns = minMaxIndex.getMinValues();
     numberOfKeys = 1;
     this.nodeNumber = nodeNumber;
-    this.blockInfo = footer.getTableBlockInfo();
+    this.blockInfo = footer.getBlockInfo();
   }
 
   /**
@@ -58,7 +59,7 @@ public class BlockBTreeLeafNode extends AbstractBTreeLeafNode {
    * @return TableBlockInfo
    */
   public TableBlockInfo getTableBlockInfo() {
-    return blockInfo;
+    return blockInfo.getTableBlockInfo();
   }
 
 }
