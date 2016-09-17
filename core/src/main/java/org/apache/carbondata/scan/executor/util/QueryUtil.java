@@ -155,7 +155,7 @@ public class QueryUtil {
   /**
    * To get the max key based on dimensions. i.e. all other dimensions will be
    * set to 0 bits and the required query dimension will be masked with all
-   * LONG.MAX so that we can mask key and then compare while aggregating This
+   * BIGINT.MAX so that we can mask key and then compare while aggregating This
    * can be useful during filter query when only few dimensions were selected
    * out of row group
    *

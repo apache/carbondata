@@ -63,8 +63,8 @@ public class AddExpression extends BinaryArithmeticExpression {
       case INT:
         addExprRightRes.set(DataType.INT, val1.getInt() + val2.getInt());
         break;
-      case LONG:
-        addExprRightRes.set(DataType.LONG, val1.getLong() + val2.getLong());
+      case BIGINT:
+        addExprRightRes.set(DataType.BIGINT, val1.getLong() + val2.getLong());
         break;
       case DECIMAL:
         addExprRightRes.set(DataType.DECIMAL, val1.getDecimal().add(val2.getDecimal()));

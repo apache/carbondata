@@ -61,7 +61,7 @@ public final class DataTypeUtil {
         return normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
       case INT:
         return Double.valueOf(msrValue).longValue();
-      case LONG:
+      case BIGINT:
         return Long.valueOf(msrValue);
       default:
         return Double.valueOf(msrValue);
@@ -93,7 +93,7 @@ public final class DataTypeUtil {
       case DECIMAL:
         return CarbonCommonConstants.BIG_DECIMAL_MEASURE;
       case INT:
-      case LONG:
+      case BIGINT:
         return CarbonCommonConstants.BIG_INT_MEASURE;
       default:
         return CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE;
@@ -152,8 +152,8 @@ public final class DataTypeUtil {
       case "SHORT":
         dataType = DataType.SHORT;
         break;
-      case "LONG":
-        dataType = DataType.LONG;
+      case "BIGINT":
+        dataType = DataType.BIGINT;
         break;
       case "DOUBLE":
         dataType = DataType.DOUBLE;
@@ -186,7 +186,7 @@ public final class DataTypeUtil {
       switch (actualDataType) {
         case SHORT:
         case INT:
-        case LONG:
+        case BIGINT:
         case DOUBLE:
         case DECIMAL:
           return NumberUtils.isNumber(data);
@@ -241,7 +241,7 @@ public final class DataTypeUtil {
             return null;
           }
           return Double.parseDouble(data);
-        case LONG:
+        case BIGINT:
           if (data.isEmpty()) {
             return null;
           }
@@ -289,7 +289,7 @@ public final class DataTypeUtil {
       switch (dataType) {
         case DOUBLE:
           return data;
-        case LONG:
+        case BIGINT:
           return data;
         case DECIMAL:
           java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data.toString());
@@ -326,7 +326,7 @@ public final class DataTypeUtil {
         case INT:
           parsedValue = Integer.parseInt(data);
           break;
-        case LONG:
+        case BIGINT:
           parsedValue = Long.parseLong(data);
           break;
         default:
@@ -358,7 +358,7 @@ public final class DataTypeUtil {
         case DECIMAL:
           return parseStringToBigDecimal(value, dimension);
         case INT:
-        case LONG:
+        case BIGINT:
           parsedValue = normalizeIntAndLongValues(value, dimension.getDataType());
           break;
         case DOUBLE:

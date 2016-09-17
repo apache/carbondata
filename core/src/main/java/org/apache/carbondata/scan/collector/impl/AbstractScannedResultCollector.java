@@ -103,7 +103,7 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
       Object msrVal;
       switch (dataType) {
         case INT:
-        case LONG:
+        case BIGINT:
           msrVal = dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
           break;
         case DECIMAL:

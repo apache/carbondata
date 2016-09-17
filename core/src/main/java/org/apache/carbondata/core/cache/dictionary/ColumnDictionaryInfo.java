@@ -279,7 +279,7 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
         case DOUBLE:
           return Double
               .compare((Double.parseDouble(dictionaryVal)), (Double.parseDouble(memberVal)));
-        case LONG:
+        case BIGINT:
           return Long.compare((Long.parseLong(dictionaryVal)), (Long.parseLong(memberVal)));
         case BOOLEAN:
           return Boolean

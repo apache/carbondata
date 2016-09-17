@@ -63,8 +63,8 @@ public class MultiplyExpression extends BinaryArithmeticExpression {
       case INT:
         multiplyExprRightRes.set(DataType.INT, val1.getInt() * val2.getInt());
         break;
-      case LONG:
-        multiplyExprRightRes.set(DataType.LONG, val1.getLong() * val2.getLong());
+      case BIGINT:
+        multiplyExprRightRes.set(DataType.BIGINT, val1.getLong() * val2.getLong());
         break;
       case DECIMAL:
         multiplyExprRightRes.set(DataType.DECIMAL, val1.getDecimal().multiply(val2.getDecimal()));

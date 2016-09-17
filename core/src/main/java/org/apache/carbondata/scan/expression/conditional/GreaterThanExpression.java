@@ -68,7 +68,7 @@ public class GreaterThanExpression extends BinaryConditionalExpression {
       case TIMESTAMP:
         result = exprLeftRes.getTime() > (exprRightRes.getTime());
         break;
-      case LONG:
+      case BIGINT:
         result = exprLeftRes.getLong() > (exprRightRes.getLong());
         break;
       case DECIMAL:

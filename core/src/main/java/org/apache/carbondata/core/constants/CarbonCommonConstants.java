@@ -33,7 +33,7 @@ public final class CarbonCommonConstants {
    */
   public static final int DOUBLE_SIZE_IN_BYTE = 8;
   /**
-   * LONG size in bytes
+   * BIGINT size in bytes
    */
   public static final int LONG_SIZE_IN_BYTE = 8;
   /**
