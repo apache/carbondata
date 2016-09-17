@@ -623,14 +623,7 @@ object CarbonDataRDDFactory extends Logging {
           }
         }
       }
-      if(compactionModel.isDDLTrigger) {
-        // making this an blocking call for DDL
-        compactionThread.run()
-      }
-      else {
-        // non blocking call in case of auto compaction.
-        compactionThread.start()
-      }
+    compactionThread.run()
   }
 
   def prepareCarbonLoadModel(hdfsStoreLocation: String,
@@ -746,6 +739,7 @@ object CarbonDataRDDFactory extends Logging {
               case e : Exception =>
                 logger.error("Exception in start compaction thread. " + e.getMessage)
                 lock.unlock()
+                throw e
             }
           }
           else {
@@ -816,9 +810,6 @@ object CarbonDataRDDFactory extends Logging {
         .getTableCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
       val schemaLastUpdatedTime = CarbonEnv.getInstance(sqlContext).carbonCatalog
         .getSchemaLastUpdatedTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
-
-      // compaction handling
-      handleSegmentMerging(tableCreationTime)
 
       // get partition way from configuration
       // val isTableSplitPartition = CarbonProperties.getInstance().getProperty(
@@ -1030,28 +1021,36 @@ object CarbonDataRDDFactory extends Logging {
         logWarning("Cannot write load metadata file as data load failed")
         throw new Exception(errorMessage)
       } else {
-        val metadataDetails = status(0)._2
-        if (!isAgg) {
-          val status = CarbonLoaderUtil
-            .recordLoadMetadata(currentLoadCount,
-              metadataDetails,
-              carbonLoadModel,
-              loadStatus,
-              loadStartTime
-            )
-          if (!status) {
-            val errorMessage = "Dataload failed due to failure in table status updation."
-            logger.audit("Data load is failed for " +
-              s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}")
-            logger.error("Dataload failed due to failure in table status updation.")
-            throw new Exception(errorMessage)
+          val metadataDetails = status(0)._2
+          if (!isAgg) {
+            val status = CarbonLoaderUtil
+              .recordLoadMetadata(currentLoadCount,
+                metadataDetails,
+                carbonLoadModel,
+                loadStatus,
+                loadStartTime
+              )
+            if (!status) {
+              val errorMessage = "Dataload failed due to failure in table status updation."
+              logger.audit("Data load is failed for " +
+                           s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}")
+              logger.error("Dataload failed due to failure in table status updation.")
+              throw new Exception(errorMessage)
+            }
+          } else if (!carbonLoadModel.isRetentionRequest) {
+            // TODO : Handle it
+            logInfo("********Database updated**********")
           }
-        } else if (!carbonLoadModel.isRetentionRequest) {
-          // TODO : Handle it
-          logInfo("********Database updated**********")
+          logger.audit("Data load is successful for " +
+                       s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}")
+        try {
+          // compaction handling
+          handleSegmentMerging(tableCreationTime)
         }
-        logger.audit("Data load is successful for " +
-          s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}")
+        catch {
+          case e: Exception =>
+            throw new Exception("Dataload is success. Compaction is failed. Please check logs.")
+        }
       }
     }
 
