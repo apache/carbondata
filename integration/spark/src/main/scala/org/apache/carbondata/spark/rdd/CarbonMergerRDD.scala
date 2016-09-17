@@ -36,7 +36,7 @@ import org.apache.carbondata.core.carbon.datastore.block.{Distributable, Segment
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.carbon.path.CarbonTablePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, CarbonUtilException}
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
 import org.apache.carbondata.integration.spark.merger.{CarbonCompactionExecutor, CarbonCompactionUtil, RowResultMerger}
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
@@ -102,6 +102,12 @@ class CarbonMergerRDD[K, V](
         var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
         val carbonSparkPartition = theSplit.asInstanceOf[CarbonSparkPartition]
 
+        // get destination segment properties as sent from driver which is of last segment.
+
+        val segmentProperties = new SegmentProperties(carbonMergerMapping.maxSegmentColumnSchemaList
+          .asJava,
+          carbonMergerMapping.maxSegmentColCardinality)
+
         // sorting the table block info List.
         var tableBlockInfoList = carbonSparkPartition.tableBlockInfos
 
@@ -114,19 +120,6 @@ class CarbonMergerRDD[K, V](
           CarbonCompactionUtil.createDataFileFooterMappingForSegments(tableBlockInfoList)
 
         carbonLoadModel.setStorePath(hdfsStoreLocation)
-
-        // taking the last table block info for getting the segment properties.
-        val listMetadata = dataFileMetadataSegMapping.get(tableBlockInfoList.get
-        (tableBlockInfoList.size() - 1).getSegmentId()
-        )
-
-        val colCardinality: Array[Int] = listMetadata.get(listMetadata.size() - 1).getSegmentInfo
-          .getColumnCardinality
-
-        val segmentProperties = new SegmentProperties(
-          listMetadata.get(listMetadata.size() - 1).getColumnInTable,
-          colCardinality
-        )
 
         val exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties, databaseName,
           factTableName, hdfsStoreLocation, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
@@ -170,7 +163,7 @@ class CarbonMergerRDD[K, V](
             segmentProperties,
             tempStoreLoc,
             carbonLoadModel,
-            colCardinality
+            carbonMergerMapping.maxSegmentColCardinality
           )
         mergeStatus = merger.mergerSlice()
 
@@ -238,6 +231,8 @@ class CarbonMergerRDD[K, V](
 
     val taskInfoList = new util.ArrayList[Distributable]
 
+    var blocksOfLastSegment: List[TableBlockInfo] = null
+
     // for each valid segment.
     for (eachSeg <- carbonMergerMapping.validSegments) {
 
@@ -259,6 +254,11 @@ class CarbonMergerRDD[K, V](
         )
       )
 
+      // keep on assigning till last one is reached.
+      if (null != blocksOfOneSegment && blocksOfOneSegment.size > 0) {
+        blocksOfLastSegment = blocksOfOneSegment.asJava
+      }
+
       // populate the task and its block mapping.
       blocksOfOneSegment.foreach(tableBlockInfo => {
         val taskNo = CarbonTablePath.DataFileUtil.getTaskNo(tableBlockInfo.getFilePath)
@@ -279,6 +279,28 @@ class CarbonMergerRDD[K, V](
         entry =>
           taskInfoList.add(new TableTaskInfo(entry._1, entry._2).asInstanceOf[Distributable])
       )
+    }
+
+    // prepare the details required to extract the segment properties using last segment.
+    if (null != blocksOfLastSegment && blocksOfLastSegment.size > 0)
+    {
+      val lastBlockInfo = blocksOfLastSegment.get(blocksOfLastSegment.size - 1)
+
+      var dataFileFooter: DataFileFooter = null
+
+      try {
+        dataFileFooter = CarbonUtil.readMetadatFile(lastBlockInfo.getFilePath,
+          lastBlockInfo.getBlockOffset, lastBlockInfo.getBlockLength)
+      } catch {
+        case e: CarbonUtilException =>
+          logError("Exception in preparing the data file footer for compaction " + e.getMessage)
+          throw e
+      }
+
+      carbonMergerMapping.maxSegmentColCardinality = dataFileFooter.getSegmentInfo
+        .getColumnCardinality
+      carbonMergerMapping.maxSegmentColumnSchemaList = dataFileFooter.getColumnInTable.asScala
+        .toList
     }
     // send complete list of blocks to the mapping util.
     nodeMapping = CarbonLoaderUtil.nodeBlockMapping(taskInfoList, -1)

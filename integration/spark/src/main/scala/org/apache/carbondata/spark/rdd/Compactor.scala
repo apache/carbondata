@@ -69,7 +69,9 @@ object Compactor {
       schemaName,
       factTableName,
       validSegments,
-      carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId
+      carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
+      maxSegmentColCardinality = null,
+      maxSegmentColumnSchemaList = null
     )
     carbonLoadModel.setStorePath(carbonMergerMapping.hdfsStoreLocation)
     val segmentStatusManager = new SegmentStatusManager(new AbsoluteTableIdentifier
