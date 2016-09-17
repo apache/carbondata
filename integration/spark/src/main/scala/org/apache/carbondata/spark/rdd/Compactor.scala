@@ -70,7 +70,7 @@ object Compactor {
       factTableName,
       validSegments,
       carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
-      colCardinality = Array[Int](0),
+      colCardinality = null,
       columnSchemaList = null
     )
     carbonLoadModel.setStorePath(carbonMergerMapping.hdfsStoreLocation)
