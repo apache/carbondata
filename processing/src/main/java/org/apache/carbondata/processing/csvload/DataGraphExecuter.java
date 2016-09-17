@@ -209,7 +209,7 @@ public class DataGraphExecuter {
 
     if (trans.getErrors() > 0) {
       LOGGER.error("Graph Execution had errors");
-      throw new DataLoadingException("Internal Errors");
+      throw new DataLoadingException("Due to internal errors, please check logs for more details.");
     } else if (null != BadRecordslogger.hasBadRecord(key)) {
       LOGGER.error("Graph Execution is partcially success");
       throw new DataLoadingException(DataProcessorConstants.BAD_REC_FOUND,

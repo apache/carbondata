@@ -25,6 +25,8 @@ import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+
 /**
  * This class will test data load in which number of columns in data are more than
  * the number of columns in schema
@@ -68,8 +70,26 @@ class TestDataLoadWithColumnsMoreThanSchema extends QueryTest with BeforeAndAfte
     }
   }
 
+  test("test with invalid maxColumns value") {
+    sql(
+      "CREATE TABLE max_columns_value_test (imei string,age int,task bigint,num double,level " +
+      "decimal(10,3),productdate timestamp,mark int,name string) STORED BY 'org.apache.carbondata" +
+      ".format'")
+    try {
+      sql(
+        "LOAD DATA LOCAL INPATH './src/test/resources/character_carbon.csv' into table " +
+        "max_columns_value_test options('FILEHEADER='imei,age','MAXCOLUMNS'='2')")
+      throw new MalformedCarbonCommandException("Invalid")
+    } catch {
+      case me: MalformedCarbonCommandException =>
+        assert(false)
+      case _ => assert(true)
+    }
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS char_test")
     sql("DROP TABLE IF EXISTS hive_char_test")
+    sql("DROP TABLE IF EXISTS max_columns_value_test")
   }
 }
