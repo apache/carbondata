@@ -152,8 +152,7 @@ public class SegmentStatusManager {
               || CarbonCommonConstants.SEGMENT_COMPACTED
               .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
               || CarbonCommonConstants.MARKED_FOR_DELETE
-              .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) && "true"
-              .equalsIgnoreCase(loadMetadataDetails.getVisibility())) {
+              .equalsIgnoreCase(loadMetadataDetails.getLoadStatus()))) {
             listOfInvalidSegments.add(loadMetadataDetails.getLoadName());
           }
 

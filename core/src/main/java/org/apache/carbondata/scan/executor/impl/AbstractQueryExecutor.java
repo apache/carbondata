@@ -98,7 +98,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // get the table blocks
     BlockIndexStore blockLoaderInstance = BlockIndexStore.getInstance();
     // remove the invalid table blocks, block which is deleted or compacted
-    blockLoaderInstance.removeTableBlocks(queryModel.getInvalidTableBlocks(),
+    blockLoaderInstance.removeTableBlocks(queryModel.getInvalidSegmentIds(),
         queryModel.getAbsoluteTableIdentifier());
     try {
       queryProperties.dataBlocks = blockLoaderInstance

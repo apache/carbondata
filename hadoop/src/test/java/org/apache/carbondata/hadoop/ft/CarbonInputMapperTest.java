@@ -25,18 +25,18 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import junit.framework.TestCase;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.CarbonInputFormat;
 import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.test.util.StoreCreator;
-import org.apache.carbondata.lcm.status.SegmentStatusManager;
 import org.apache.carbondata.scan.expression.ColumnExpression;
 import org.apache.carbondata.scan.expression.Expression;
 import org.apache.carbondata.scan.expression.LiteralExpression;
 import org.apache.carbondata.scan.expression.conditional.EqualToExpression;
+
+import junit.framework.TestCase;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
@@ -47,6 +47,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 public class CarbonInputMapperTest extends TestCase {
@@ -54,10 +55,6 @@ public class CarbonInputMapperTest extends TestCase {
   // changed setUp to static init block to avoid un wanted multiple time store creation
   static {
     StoreCreator.createCarbonStore();
-  }
-
-  public static void main(String[] args) throws Exception {
-    new CarbonInputMapperTest().runJob("target/output", null, null);
   }
 
   @Test public void testInputFormatMapperReadAllRowsAndColumns() throws Exception {
@@ -132,38 +129,6 @@ public class CarbonInputMapperTest extends TestCase {
     return 0;
   }
 
-  private void runJob(String outPath, CarbonProjection projection, Expression filter)
-      throws Exception {
-
-    Job job = Job.getInstance(new Configuration());
-    job.setJarByClass(CarbonInputMapperTest.class);
-    job.setOutputKeyClass(Text.class);
-    job.setOutputValueClass(IntWritable.class);
-    job.setMapperClass(Map.class);
-    //    job.setReducerClass(WordCountReducer.class);
-    job.setInputFormatClass(CarbonInputFormat.class);
-    job.setOutputFormatClass(TextOutputFormat.class);
-    AbsoluteTableIdentifier abs = StoreCreator.getAbsoluteTableIdentifier();
-    CarbonInputFormat.setTableToAccess(job.getConfiguration(), abs.getCarbonTableIdentifier());
-    if (projection != null) {
-      CarbonInputFormat.setColumnProjection(projection, job.getConfiguration());
-    }
-    if (filter != null) {
-      CarbonInputFormat.setFilterPredicates(job.getConfiguration(), filter);
-    }
-    FileInputFormat.addInputPath(job, new Path(abs.getStorePath()));
-    CarbonUtil.deleteFoldersAndFiles(new File(outPath + "1"));
-    FileOutputFormat.setOutputPath(job, new Path(outPath + "1"));
-    SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegments =
-        new SegmentStatusManager(abs).getValidAndInvalidSegments();
-    CarbonInputFormat
-        .setSegmentsToAccess(job.getConfiguration(), validAndInvalidSegments.getValidSegments(),
-            validAndInvalidSegments.getInvalidSegments());
-    job.getConfiguration().set("outpath", outPath);
-
-    boolean status = job.waitForCompletion(true);
-  }
-
   public static class Map extends Mapper<Void, Object[], Void, Text> {
 
     private BufferedWriter fileWriter;
@@ -191,5 +156,35 @@ public class CarbonInputMapperTest extends TestCase {
       super.cleanup(context);
       fileWriter.close();
     }
+  }
+
+  private void runJob(String outPath, CarbonProjection projection, Expression filter)
+      throws Exception {
+
+    Job job = Job.getInstance(new Configuration());
+    job.setJarByClass(CarbonInputMapperTest.class);
+    job.setOutputKeyClass(Text.class);
+    job.setOutputValueClass(IntWritable.class);
+    job.setMapperClass(Map.class);
+    //    job.setReducerClass(WordCountReducer.class);
+    job.setInputFormatClass(CarbonInputFormat.class);
+    job.setOutputFormatClass(TextOutputFormat.class);
+    AbsoluteTableIdentifier abs = StoreCreator.getAbsoluteTableIdentifier();
+    CarbonInputFormat.setTableToAccess(job.getConfiguration(), abs.getCarbonTableIdentifier());
+    if (projection != null) {
+      CarbonInputFormat.setColumnProjection(projection, job.getConfiguration());
+    }
+    if (filter != null) {
+      CarbonInputFormat.setFilterPredicates(job.getConfiguration(), filter);
+    }
+    FileInputFormat.addInputPath(job, new Path(abs.getStorePath()));
+    CarbonUtil.deleteFoldersAndFiles(new File(outPath + "1"));
+    FileOutputFormat.setOutputPath(job, new Path(outPath + "1"));
+    job.getConfiguration().set("outpath", outPath);
+    boolean status = job.waitForCompletion(true);
+  }
+
+  public static void main(String[] args) throws Exception {
+    new CarbonInputMapperTest().runJob("target/output", null, null);
   }
 }
