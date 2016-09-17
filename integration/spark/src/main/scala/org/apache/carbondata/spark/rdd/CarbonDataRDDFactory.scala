@@ -32,11 +32,11 @@ import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{util => _, _}
 import org.apache.spark.sql.{CarbonEnv, SQLContext}
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel, CompactionModel, Partitioner}
-import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.sql.hive.{DistributionUtil, TableMeta}
 import org.apache.spark.util.{FileUtils, SplitUtils}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier}
 import org.apache.carbondata.core.carbon.datastore.block.{Distributable, TableBlockInfo}
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
@@ -566,9 +566,10 @@ object CarbonDataRDDFactory extends Logging {
 
             if (!isConcurrentCompactionAllowed) {
               logger.info("System level compaction lock is enabled.")
+              val skipCompactionTables = ListBuffer[CarbonTableIdentifier]()
               var tableForCompaction = CarbonCompactionUtil
                 .getNextTableToCompact(CarbonEnv.getInstance(sqlContext).carbonCatalog.metadata
-                  .tablesMeta.toArray
+                  .tablesMeta.toArray, skipCompactionTables.toList.asJava
                 )
               while (null != tableForCompaction) {
                 logger
@@ -618,6 +619,9 @@ object CarbonDataRDDFactory extends Logging {
                   // delete the compaction required file in case of failure or success also.
                   if (!CarbonCompactionUtil
                     .deleteCompactionRequiredFile(metadataPath, compactionType)) {
+                    // if the compaction request file is not been able to delete then
+                    // add those tables details to the skip list so that it wont be considered next.
+                    skipCompactionTables.+=:(tableForCompaction.carbonTableIdentifier)
                     logger
                       .error("Compaction request file can not be deleted for table " +
                              tableForCompaction
@@ -625,12 +629,13 @@ object CarbonDataRDDFactory extends Logging {
                                .carbonTableIdentifier
                                .getTableName
                       )
+
                   }
                 }
                 // ********* check again for all the tables.
                 tableForCompaction = CarbonCompactionUtil
                   .getNextTableToCompact(CarbonEnv.getInstance(sqlContext).carbonCatalog.metadata
-                    .tablesMeta.toArray
+                    .tablesMeta.toArray, skipCompactionTables.asJava
                   )
               }
               // giving the user his error for telling in the beeline if his triggered table
