@@ -596,7 +596,7 @@ object GlobalDictionaryUtil extends Logging {
     var columnName: String = ""
     var value: String = ""
     // such as "," , "", throw ex
-    if (tokens.size == 0) {
+    if (tokens.isEmpty) {
       logError("Read a bad dictionary record: " + x)
       accum += 1
     } else if (tokens.size == 1) {
