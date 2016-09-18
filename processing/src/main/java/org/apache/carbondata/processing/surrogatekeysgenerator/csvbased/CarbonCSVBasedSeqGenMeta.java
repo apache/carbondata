@@ -20,15 +20,7 @@
 package org.apache.carbondata.processing.surrogatekeysgenerator.csvbased;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -928,9 +920,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     if (null != normHier && normHier.length() != 0) {
       String[] split = normHier.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
 
-      for (int i = 0; i < split.length; i++) {
-        hierList.add(split[i]);
-      }
+      Collections.addAll(hierList, split);
     }
     return hierList;
   }
@@ -982,9 +972,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       if (null != actualHier) {
         if (actualHier.contains(CarbonCommonConstants.COMA_SPC_CHARACTER)) {
           String[] splitHier = actualHier.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
-          for (String hier : splitHier) {
-            actualHierList.add(hier);
-          }
+          Collections.addAll(actualHierList, splitHier);
         } else {
           actualHierList.add(actualHier);
         }
