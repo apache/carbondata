@@ -150,7 +150,7 @@ public class CarbonSliceMergerStepMeta extends BaseStepMeta
    * @throws KettleException in case there is a conversion or XML encoding error
    */
   public String getXML() {
-    StringBuffer retval = new StringBuffer(150);
+    StringBuilder retval = new StringBuilder(150);
     retval.append("    ").append(XMLHandler.addTagValue("TableName", tabelName));
     retval.append("    ").append(XMLHandler.addTagValue("MDKeySize", mdkeySize));
     retval.append("    ").append(XMLHandler.addTagValue("Measurecount", measureCount));

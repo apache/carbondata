@@ -162,7 +162,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
   }
 
   public String getXML() {
-    StringBuffer retval = new StringBuffer(150);
+    StringBuilder retval = new StringBuilder(150);
 
     retval.append("    ").append(XMLHandler.addTagValue("TableName", tableName));
     retval.append("    ").append(XMLHandler.addTagValue("AggregateLevels", aggregateLevels));

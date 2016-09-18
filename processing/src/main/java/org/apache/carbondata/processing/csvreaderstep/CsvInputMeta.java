@@ -202,7 +202,7 @@ public class CsvInputMeta extends BaseStepMeta
   }
 
   public String getXML() {
-    StringBuffer retval = new StringBuffer(500);
+    StringBuilder retval = new StringBuilder(500);
 
     retval.append("    ").append(XMLHandler.addTagValue(getXmlCode("FILENAME"), filename));
     retval.append("    ")

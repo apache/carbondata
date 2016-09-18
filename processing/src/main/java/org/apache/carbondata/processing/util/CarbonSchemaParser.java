@@ -578,7 +578,7 @@ public final class CarbonSchemaParser {
    * @return
    */
   public static String getColumnGroups(List<CarbonDimension> dimensions) {
-    StringBuffer columnGroups = new StringBuffer();
+    StringBuilder columnGroups = new StringBuilder();
     for (int i = 0; i < dimensions.size(); i++) {
       CarbonDimension dimension = dimensions.get(i);
       //assuming complex dimensions will always be atlast
@@ -648,7 +648,7 @@ public final class CarbonSchemaParser {
 
   public static String getTableNameString(String factTableName, List<CarbonDimension> dimensions,
       CarbonDataLoadSchema carbonDataLoadSchema) {
-    StringBuffer stringBuffer = new StringBuffer();
+    StringBuilder stringBuffer = new StringBuilder();
 
     for (CarbonDimension cDimension : dimensions) {
       String tableName = extractDimensionTableName(cDimension.getColName(), carbonDataLoadSchema);
@@ -674,7 +674,7 @@ public final class CarbonSchemaParser {
    * @return
    */
   public static String getColumnIdString(List<CarbonDimension> dimensions) {
-    StringBuffer stringBuffer = new StringBuffer();
+    StringBuilder stringBuffer = new StringBuilder();
     for (CarbonDimension cDimension : dimensions) {
       if (!cDimension.hasEncoding(Encoding.DICTIONARY)) {
         continue;
@@ -741,7 +741,7 @@ public final class CarbonSchemaParser {
    */
   public static String getHeirAndKeySizeMapForFact(List<CarbonDimension> dimensions,
       CarbonDataLoadSchema carbonDataLoadSchema) {
-    StringBuffer stringBuffer = new StringBuffer();
+    StringBuilder stringBuffer = new StringBuilder();
     String heirName = null;
     int[] dims = null;
     int keySizeInBytes = 0;
@@ -895,7 +895,7 @@ public final class CarbonSchemaParser {
    */
   public static String getPrimaryKeyString(List<CarbonDimension> dimensions,
       CarbonDataLoadSchema carbonDataLoadSchema) {
-    StringBuffer primaryKeyStringbuffer = new StringBuffer();
+    StringBuilder primaryKeyStringbuffer = new StringBuilder();
     for (CarbonDimension cDimension : dimensions) {
       String dimTableName =
           extractDimensionTableName(cDimension.getColName(), carbonDataLoadSchema);

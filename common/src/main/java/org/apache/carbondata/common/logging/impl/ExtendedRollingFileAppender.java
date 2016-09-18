@@ -145,7 +145,7 @@ public class ExtendedRollingFileAppender extends RollingFileAppender {
     if (maxBackupIndex > 0) {
       DateFormat dateFormat = new SimpleDateFormat(DATE_FORMAT_FOR_TRANSFER);
 
-      StringBuffer buffer = new StringBuffer();
+      StringBuilder buffer = new StringBuilder();
       String extension = "";
       if (fileName.contains(".")) {
         extension = fileName.substring(fileName.lastIndexOf("."));
