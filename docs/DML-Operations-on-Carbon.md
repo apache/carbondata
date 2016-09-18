@@ -18,7 +18,7 @@
 -->
 
 * [LOAD DATA](#LOAD DATA)
-* [SHOW LOADS](#SHOW SEGMENTS)
+* [SHOW SEGMENTS](#SHOW SEGMENTS)
 * [DELETE SEGMENT BY ID](#DELETE SEGMENT BY ID)
 * [DELETE SEGMENT BY DATE](#DELETE SEGMENT BY DATE)
 
@@ -86,15 +86,10 @@ Following are the options that can be used in load data:
     ```ruby
     OPTIONS('COMPLEX_DELIMITER_LEVEL_2'=':') 
     ```
-- **LOCAL_DICTIONARY_PATH:** Local dictionary files path.
+- **ALL_DICTIONARY_PATH:** All dictionary files path.
 
     ```ruby
-    OPTIONS('LOCAL_DICTIONARY_PATH'='/opt/localdictionary/') 
-    ```
-- **DICTIONARY_FILE_EXTENSION:** local Dictionary file extension.
-
-    ```ruby
-    OPTIONS('DICTIONARY_FILE_EXTENSION'='.dictionary') 
+    OPTIONS('ALL_DICTIONARY_PATH'='/opt/alldictionary/data.dictionary')
     ```
 
 **Example:**
@@ -109,8 +104,8 @@ Following are the options that can be used in load data:
                                  'MULTILINE'='true', 'ESCAPECHAR'='\', 
                                  'COMPLEX_DELIMITER_LEVEL_1'='$', 
                                  'COMPLEX_DELIMITER_LEVEL_2'=':',
-                                 'LOCAL_DICTIONARY_PATH'='/opt/localdictionary/',
-                                 'DICTIONARY_FILE_EXTENSION'='.dictionary') 
+                                 'ALL_DICTIONARY_PATH'='/opt/alldictionary/data.dictionary'
+                                 )
   ```
 
 ***
