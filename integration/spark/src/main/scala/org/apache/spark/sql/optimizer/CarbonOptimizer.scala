@@ -23,8 +23,8 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
@@ -73,8 +73,8 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
     transformCarbonPlan(plan, relations)
   }
 
-  private def hasRelation(currentPlan: LogicalPlan,
-      pf: PartialFunction[LogicalPlan, LogicalRelation]): Boolean = {
+  def hasRelation(currentPlan: LogicalPlan,
+      pf: PartialFunction[LogicalPlan, MultiInstanceRelation]): Boolean = {
     currentPlan collectFirst pf match {
       case Some(_) => true
       case None => false
@@ -99,10 +99,14 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
     // collect alias information before hand.
     collectInformationOnAttributes(plan, aliasMap)
 
-    val hasNonCarbonRelation = hasRelation(plan, {case l: LogicalRelation
-      if !l.relation.isInstanceOf[CarbonDatasourceRelation] => l})
+    val hasNonCarbonRelation = hasRelation(plan, { case r: MultiInstanceRelation =>
+      r match {
+        case lr: LogicalRelation if !lr.relation.isInstanceOf[CarbonDatasourceRelation] => lr
+        case other => other
+      }
+    })
 
-    def checkRelation(currentPlan: LogicalPlan): Boolean = {
+    def hasCarbonRelation(currentPlan: LogicalPlan): Boolean = {
       if (hasNonCarbonRelation) {
         hasRelation(currentPlan, {case l: LogicalRelation
           if l.relation.isInstanceOf[CarbonDatasourceRelation] => l})
@@ -117,7 +121,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           decoder = true
           cd
         case currentPlan =>
-           checkRelation(currentPlan) match {
+          hasCarbonRelation(currentPlan) match {
             case true =>
               currentPlan match {
                 case sort: Sort if !sort.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
@@ -155,13 +159,13 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
                     rightCondAttrs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr))))
                   var leftPlan = union.left
                   var rightPlan = union.right
-                  if (leftCondAttrs.size() > 0 &&
+                  if (hasCarbonRelation(leftPlan) && leftCondAttrs.size() > 0 &&
                       !leftPlan.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
                     leftPlan = CarbonDictionaryTempDecoder(leftCondAttrs,
                       new util.HashSet[AttributeReferenceWrapper](),
                       union.left)
                   }
-                  if (rightCondAttrs.size() > 0 &&
+                  if (hasCarbonRelation(rightPlan) && rightCondAttrs.size() > 0 &&
                       !rightPlan.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
                     rightPlan = CarbonDictionaryTempDecoder(rightCondAttrs,
                       new util.HashSet[AttributeReferenceWrapper](),
