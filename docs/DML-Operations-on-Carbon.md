@@ -18,7 +18,7 @@
 -->
 
 * [LOAD DATA](#LOAD DATA)
-* [SHOW LOADS](#SHOW LOADS)
+* [SHOW LOADS](#SHOW SEGMENTS)
 * [DELETE SEGMENT BY ID](#DELETE SEGMENT BY ID)
 * [DELETE SEGMENT BY DATE](#DELETE SEGMENT BY DATE)
 
@@ -157,8 +157,8 @@ This command is to delete segment by using the segment ID.
 **Example:**
 
   ```ruby
-  DELETE LOAD 0 FROM TABLE CarbonDatabase.CarbonTable;
-  DELETE LOAD 0.1,5,8 FROM TABLE CarbonDatabase.CarbonTable;
+  DELETE SEGMENT 0 FROM TABLE CarbonDatabase.CarbonTable;
+  DELETE SEGMENT 0.1,5,8 FROM TABLE CarbonDatabase.CarbonTable;
   Note: Here 0.1 is compacted segment sequence id.  
   ```
 
