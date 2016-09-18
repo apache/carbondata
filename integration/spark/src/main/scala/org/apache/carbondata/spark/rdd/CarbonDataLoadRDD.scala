@@ -175,7 +175,7 @@ class CarbonDataLoadRDD[K, V](
 
         if(carbonUseLocalDir.equalsIgnoreCase("true")) {
           val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
-          if (null != storeLocations && storeLocations.length > 0) {
+          if (null != storeLocations && storeLocations.nonEmpty) {
             storeLocation = storeLocations(Random.nextInt(storeLocations.length))
           }
           if (storeLocation == null) {

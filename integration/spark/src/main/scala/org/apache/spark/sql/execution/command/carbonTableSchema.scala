@@ -211,7 +211,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
     val colPropMap = new java.util.HashMap[String, String]()
-    if (None != cm.colProps && null != cm.colProps.get.get(colName)) {
+    if (cm.colProps.isDefined && null != cm.colProps.get.get(colName)) {
       val colProps = cm.colProps.get.get(colName)
       colProps.asScala.foreach { x => colPropMap.put(x.key, x.value) }
     }
@@ -1071,7 +1071,7 @@ private[sql] case class LoadTable(
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
       var storeLocation = ""
       val configuredStore = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
-      if (null != configuredStore && configuredStore.length > 0) {
+      if (null != configuredStore && configuredStore.nonEmpty) {
         storeLocation = configuredStore(Random.nextInt(configuredStore.length))
       }
       if (storeLocation == null) {

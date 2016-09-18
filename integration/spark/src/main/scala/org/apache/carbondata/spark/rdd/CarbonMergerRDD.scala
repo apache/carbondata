@@ -319,9 +319,9 @@ class CarbonMergerRDD[K, V](
           .add(new NodeInfo(blocksPerNode.getTaskId, blocksPerNode.getTableBlockInfoList.size))
        })
       if (list.size() != 0) {
-           result.add(new CarbonSparkPartition(id, i, Seq(entry._1).toArray, list))
-           i += 1
-         }
+        result.add(new CarbonSparkPartition(id, i, Seq(entry._1).toArray, list))
+        i += 1
+      }
     }
 
     // print the node info along with task and number of blocks for the task.

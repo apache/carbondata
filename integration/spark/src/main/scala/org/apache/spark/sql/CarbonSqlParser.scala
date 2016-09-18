@@ -363,7 +363,7 @@ class CarbonSqlParser()
                 val dupColsGrp = cols.asScala.groupBy(x => x.getName) filter {
                   case (_, colList) => colList.size > 1
                 }
-                if (dupColsGrp.size > 0) {
+                if (dupColsGrp.nonEmpty) {
                   var columnName: String = ""
                   dupColsGrp.toSeq.foreach(columnName += _._1 + ", ")
                   columnName = columnName.substring(0, columnName.lastIndexOf(", "))
@@ -454,7 +454,7 @@ class CarbonSqlParser()
         catch {
           case ce: MalformedCarbonCommandException =>
             val message = if (tableName.isEmpty) "Create table command failed. "
-            else if (!dbName.isDefined) s"Create table command failed for $tableName. "
+            else if (dbName.isEmpty) s"Create table command failed for $tableName. "
             else s"Create table command failed for ${dbName.get}.$tableName. "
             LOGGER.audit(message + ce.getMessage)
             throw ce
@@ -515,7 +515,7 @@ class CarbonSqlParser()
 
     val (dims: Seq[Field], noDictionaryDims: Seq[String]) = extractDimColsAndNoDictionaryFields(
       fields, tableProperties)
-    if (dims.length == 0) {
+    if (dims.isEmpty) {
       throw new MalformedCarbonCommandException(s"Table ${dbName.getOrElse(
         CarbonCommonConstants.DATABASE_DEFAULT_NAME)}.$tableName"
         + " can not be created without key columns. Please use DICTIONARY_INCLUDE or " +
@@ -554,7 +554,7 @@ class CarbonSqlParser()
       noDictionaryDims: Seq[String],
       msrs: Seq[Field],
       dims: Seq[Field]): Seq[String] = {
-    if (None != tableProperties.get(CarbonCommonConstants.COLUMN_GROUPS)) {
+    if (tableProperties.get(CarbonCommonConstants.COLUMN_GROUPS).isDefined) {
 
       var splittedColGrps: Seq[String] = Seq[String]()
       val nonSplitCols: String = tableProperties.get(CarbonCommonConstants.COLUMN_GROUPS).get
@@ -603,7 +603,7 @@ class CarbonSqlParser()
       true
     }
     val colGrpNames: StringBuilder = StringBuilder.newBuilder
-    for (i <- 0 until colGrpFieldIndx.length) {
+    for (i <- colGrpFieldIndx.indices) {
       colGrpNames.append(dims(colGrpFieldIndx(i)).column)
       if (i < (colGrpFieldIndx.length - 1)) {
         colGrpNames.append(",")
@@ -629,11 +629,11 @@ class CarbonSqlParser()
     var partitionClass: String = ""
     var partitionCount: Int = 1
     var partitionColNames: Array[String] = Array[String]()
-    if (None != tableProperties.get(CarbonCommonConstants.PARTITIONCLASS)) {
+    if (tableProperties.get(CarbonCommonConstants.PARTITIONCLASS).isDefined) {
       partitionClass = tableProperties.get(CarbonCommonConstants.PARTITIONCLASS).get
     }
 
-    if (None != tableProperties.get(CarbonCommonConstants.PARTITIONCOUNT)) {
+    if (tableProperties.get(CarbonCommonConstants.PARTITIONCOUNT).isDefined) {
       try {
         partitionCount = tableProperties.get(CarbonCommonConstants.PARTITIONCOUNT).get.toInt
       } catch {
@@ -684,14 +684,14 @@ class CarbonSqlParser()
     colPropMap: java.util.HashMap[String, java.util.List[ColumnProperty]]) {
     val (tblPropKey, colProKey) = getKey(parentColumnName, columnName)
     val colProps = CommonUtil.getColumnProperties(tblPropKey, tableProperties)
-    if (None != colProps) {
+    if (colProps.isDefined) {
       colPropMap.put(colProKey, colProps.get)
     }
   }
 
   def getKey(parentColumnName: Option[String],
     columnName: String): (String, String) = {
-    if (None != parentColumnName) {
+    if (parentColumnName.isDefined) {
       if (columnName == "val") {
         (parentColumnName.get, parentColumnName.get + "." + columnName)
       } else {
@@ -881,13 +881,13 @@ class CarbonSqlParser()
     var dictExcludedCols: Array[String] = Array[String]()
 
     // get all included cols
-    if (None != tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE)) {
+    if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
       dictIncludedCols =
         tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).get.split(',').map(_.trim)
     }
 
     // get all excluded cols
-    if (None != tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE)) {
+    if (tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).isDefined) {
       dictExcludedCols =
         tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).get.split(',').map(_.trim)
     }
@@ -1038,7 +1038,7 @@ class CarbonSqlParser()
       case (_, optionlist) => optionlist.size > 1
     }
     val duplicates = StringBuilder.newBuilder
-    if (duplicateOptions.size > 0) {
+    if (duplicateOptions.nonEmpty) {
       duplicateOptions.foreach(x => {
         duplicates.append(x._1)
       }

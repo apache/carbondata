@@ -34,7 +34,7 @@ object CommonUtil {
       if (noDictionaryDims.contains(x)) {
         throw new MalformedCarbonCommandException(
           "Column group is not supported for no dictionary columns:" + x)
-      } else if (msrs.filter { msr => msr.column.equals(x) }.size > 0) {
+      } else if (msrs.filter { msr => msr.column.equals(x) }.nonEmpty) {
         // if column is measure
         throw new MalformedCarbonCommandException("Column group is not supported for measures:" + x)
       } else if (foundIndExistingColGrp(x)) {
@@ -47,7 +47,7 @@ object CommonUtil {
           "Column group doesn't support Timestamp datatype:" + x)
       }
       // if invalid column is present
-      else if (dims.filter { dim => dim.column.equalsIgnoreCase(x) }.size == 0) {
+      else if (dims.filter { dim => dim.column.equalsIgnoreCase(x) }.isEmpty) {
         throw new MalformedCarbonCommandException(
           "column in column group is not a valid column :" + x
         )
@@ -69,7 +69,7 @@ object CommonUtil {
   def isTimeStampColumn(colName: String, dims: Seq[Field]): Boolean = {
     dims.foreach { dim =>
       if (dim.column.equalsIgnoreCase(colName)) {
-        if (None != dim.dataType && null != dim.dataType.get &&
+        if (dim.dataType.isDefined && null != dim.dataType.get &&
             "timestamp".equalsIgnoreCase(dim.dataType.get)) {
           return true
         }
@@ -80,7 +80,7 @@ object CommonUtil {
 
   def isComplex(colName: String, dims: Seq[Field]): Boolean = {
     dims.foreach { x =>
-      if (None != x.children && null != x.children.get && x.children.get.size > 0) {
+      if (x.children.isDefined && null != x.children.get && x.children.get.nonEmpty) {
         val children = x.children.get
         if (x.column.equals(colName)) {
           return true
