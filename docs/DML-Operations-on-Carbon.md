@@ -18,7 +18,7 @@
 -->
 
 * [LOAD DATA](#LOAD DATA)
-* [SHOW LOADS](#SHOW LOADS)
+* [SHOW SEGMENTS](#SHOW SEGMENTS)
 * [DELETE SEGMENT BY ID](#DELETE SEGMENT BY ID)
 * [DELETE SEGMENT BY DATE](#DELETE SEGMENT BY DATE)
 
@@ -86,15 +86,10 @@ Following are the options that can be used in load data:
     ```ruby
     OPTIONS('COMPLEX_DELIMITER_LEVEL_2'=':') 
     ```
-- **LOCAL_DICTIONARY_PATH:** Local dictionary files path.
+- **ALL_DICTIONARY_PATH:** All dictionary files path.
 
     ```ruby
-    OPTIONS('LOCAL_DICTIONARY_PATH'='/opt/localdictionary/') 
-    ```
-- **DICTIONARY_FILE_EXTENSION:** local Dictionary file extension.
-
-    ```ruby
-    OPTIONS('DICTIONARY_FILE_EXTENSION'='.dictionary') 
+    OPTIONS('ALL_DICTIONARY_PATH'='/opt/alldictionary/data.dictionary')
     ```
 
 **Example:**
@@ -109,8 +104,8 @@ Following are the options that can be used in load data:
                                  'MULTILINE'='true', 'ESCAPECHAR'='\', 
                                  'COMPLEX_DELIMITER_LEVEL_1'='$', 
                                  'COMPLEX_DELIMITER_LEVEL_2'=':',
-                                 'LOCAL_DICTIONARY_PATH'='/opt/localdictionary/',
-                                 'DICTIONARY_FILE_EXTENSION'='.dictionary') 
+                                 'ALL_DICTIONARY_PATH'='/opt/alldictionary/data.dictionary'
+                                 )
   ```
 
 ***
@@ -128,7 +123,7 @@ This command is to show the segments of carbon table to the user.
 | ------------- | -----| --------- |
 | db_name | Database name, if it is not specified then it uses current database. | YES |
 | table_name | The name of the table in provided database.| NO |
-| number_of_loads | limit the output to this number. | YES |
+| number_of_segments | limit the output to this number. | YES |
 
 **Example:**
 
@@ -157,8 +152,8 @@ This command is to delete segment by using the segment ID.
 **Example:**
 
   ```ruby
-  DELETE LOAD 0 FROM TABLE CarbonDatabase.CarbonTable;
-  DELETE LOAD 0.1,5,8 FROM TABLE CarbonDatabase.CarbonTable;
+  DELETE SEGMENT 0 FROM TABLE CarbonDatabase.CarbonTable;
+  DELETE SEGMENT 0.1,5,8 FROM TABLE CarbonDatabase.CarbonTable;
   Note: Here 0.1 is compacted segment sequence id.  
   ```
 
