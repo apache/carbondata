@@ -20,11 +20,7 @@
 package org.apache.carbondata.spark.util;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -163,9 +159,7 @@ public final class CarbonQueryUtil {
       String separator) {
     if (StringUtils.isNotEmpty(sourcePath)) {
       String[] files = sourcePath.split(separator);
-      for (String file : files) {
-        partitionsFiles.add(file);
-      }
+      Collections.addAll(partitionsFiles, files);
     }
   }
 

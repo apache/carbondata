@@ -41,9 +41,7 @@ public class UnCompressDefaultLong extends UnCompressNoneLong {
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
     CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
     long[] vals = new long[value.length];
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i];
-    }
+    System.arraycopy(value, 0, vals, 0, vals.length);
     dataHolder.setReadableLongValues(vals);
     return dataHolder;
   }

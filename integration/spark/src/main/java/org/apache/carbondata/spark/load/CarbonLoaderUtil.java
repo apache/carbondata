@@ -413,9 +413,7 @@ public final class CarbonLoaderUtil {
             new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         if (null != listOfLoadFolderDetailsArray) {
-          for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
-            listOfLoadFolderDetails.add(loadMetadata);
-          }
+          Collections.addAll(listOfLoadFolderDetails, listOfLoadFolderDetailsArray);
         }
         listOfLoadFolderDetails.add(loadMetadataDetails);
 

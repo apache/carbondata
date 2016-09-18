@@ -48,11 +48,11 @@ import org.apache.carbondata.spark.util.QueryPlanUtil
 
 
 class CarbonMergerRDD[K, V](
-                             sc: SparkContext,
-                             result: MergeResult[K, V],
-                             carbonLoadModel: CarbonLoadModel,
-                             carbonMergerMapping : CarbonMergerMapping,
-                             confExecutorsTemp: String)
+  sc: SparkContext,
+  result: MergeResult[K, V],
+  carbonLoadModel: CarbonLoadModel,
+  carbonMergerMapping : CarbonMergerMapping,
+  confExecutorsTemp: String)
   extends RDD[(K, V)](sc, Nil) with Logging {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
@@ -335,11 +335,11 @@ class CarbonMergerRDD[K, V](
 
       val list = new util.ArrayList[TableBlockInfo]
       entry._2.asScala.foreach(taskInfo => {
-        val blocksPerNode = taskInfo.asInstanceOf[TableTaskInfo]
-        list.addAll(blocksPerNode.getTableBlockInfoList)
+         val blocksPerNode = taskInfo.asInstanceOf[TableTaskInfo]
+         list.addAll(blocksPerNode.getTableBlockInfoList)
         taskBlockList
           .add(new NodeInfo(blocksPerNode.getTaskId, blocksPerNode.getTableBlockInfoList.size))
-      })
+       })
       if (list.size() != 0) {
         result.add(new CarbonSparkPartition(id, i, Seq(entry._1).toArray, list))
         i += 1
@@ -358,15 +358,15 @@ class CarbonMergerRDD[K, V](
     val noOfNodes = nodes.length
     val noOfTasks = result.size
     logInfo(s"Identified  no.of.Blocks: $noOfBlocks,"
-      + s"parallelism: $defaultParallelism , no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks"
+            + s"parallelism: $defaultParallelism , no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks"
     )
     logInfo("Time taken to identify Blocks to scan : " + (System
-      .currentTimeMillis() - startTime)
+                                                            .currentTimeMillis() - startTime)
     )
     for (j <- 0 until result.size ) {
       val cp = result.get(j).asInstanceOf[CarbonSparkPartition]
       logInfo(s"Node : " + cp.locations.toSeq.mkString(",")
-        + ", No.Of Blocks : " + cp.tableBlockInfos.size
+              + ", No.Of Blocks : " + cp.tableBlockInfos.size
       )
     }
     result.toArray(new Array[Partition](result.size))
