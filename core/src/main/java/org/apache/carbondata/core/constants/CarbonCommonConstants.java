@@ -435,10 +435,6 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_METADATA_EXTENSION = ".metadata";
   /**
-   * LOAD_STATUS
-   */
-  public static final String CARBON_DEFAULT_STREAM_ENCODEFORMAT = "UTF-8";
-  /**
    * COMMA
    */
   public static final String COMMA = ",";
@@ -742,11 +738,6 @@ public final class CarbonCommonConstants {
    * 256 mb size
    */
   public static final long CARBON_256MB = 256*1024*1024;
-
-  /**
-   * Data type String.
-   */
-  public static final String DATATYPE_STRING = "STRING";
 
   /**
    * SEGMENT_COMPACTED is property to indicate whether seg is compacted or not.

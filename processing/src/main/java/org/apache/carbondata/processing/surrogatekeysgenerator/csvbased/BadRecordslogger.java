@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -141,7 +142,7 @@ public class BadRecordslogger {
         outStream = FileFactory.getDataOutputStream(filePath, fileType);
 
         bufferedWriter = new BufferedWriter(new OutputStreamWriter(outStream,
-            CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT));
+                Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
 
       }
       bufferedWriter.write(logStrings.toString());
