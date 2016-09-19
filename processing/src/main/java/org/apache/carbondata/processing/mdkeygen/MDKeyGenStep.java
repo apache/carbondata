@@ -302,9 +302,7 @@ public class MDKeyGenStep extends BaseStep {
 
     int simpleDimsCount = this.dimensionCount - meta.getComplexDimsCount();
     int[] simpleDimsLen = new int[simpleDimsCount];
-    for (int i = 0; i < simpleDimsCount; i++) {
-      simpleDimsLen[i] = dimLens[i];
-    }
+    System.arraycopy(dimLens, 0, simpleDimsLen, 0, simpleDimsCount);
 
     CarbonTable carbonTable = CarbonMetadata.getInstance()
         .getCarbonTable(meta.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + tableName);
@@ -352,9 +350,7 @@ public class MDKeyGenStep extends BaseStep {
   private void initDataHandler() {
     int simpleDimsCount = this.dimensionCount - meta.getComplexDimsCount();
     int[] simpleDimsLen = new int[simpleDimsCount];
-    for (int i = 0; i < simpleDimsCount; i++) {
-      simpleDimsLen[i] = dimLens[i];
-    }
+    System.arraycopy(dimLens, 0, simpleDimsLen, 0, simpleDimsCount);
     CarbonDataFileAttributes carbonDataFileAttributes =
         new CarbonDataFileAttributes(meta.getTaskNo(), meta.getFactTimeStamp());
     initAggType();

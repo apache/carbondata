@@ -231,8 +231,7 @@ public final class CarbonDataProcessorUtil {
           .append(CarbonCommonConstants.HASH_SPC_CHARACTER);
     }
     String loadNames =
-        builder.substring(0, builder.lastIndexOf(CarbonCommonConstants.HASH_SPC_CHARACTER))
-            .toString();
+        builder.substring(0, builder.lastIndexOf(CarbonCommonConstants.HASH_SPC_CHARACTER));
     return loadNames;
   }
 
@@ -247,7 +246,7 @@ public final class CarbonDataProcessorUtil {
           .append(CarbonCommonConstants.HASH_SPC_CHARACTER);
     }
     String modOrDelTimesStamp =
-        builder.substring(0, builder.indexOf(CarbonCommonConstants.HASH_SPC_CHARACTER)).toString();
+        builder.substring(0, builder.indexOf(CarbonCommonConstants.HASH_SPC_CHARACTER));
     return modOrDelTimesStamp;
   }
 
