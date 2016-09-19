@@ -17,47 +17,63 @@
 
 package org.apache.carbondata.core.util;
 
-import org.apache.carbondata.core.carbon.querystatistics.DriverQueryStatisticsRecorder;
+import org.apache.carbondata.core.carbon.querystatistics.*;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 public class CarbonTimeStatisticsFactory {
-  private static String LoadStatisticsInstanceType;
-  private static LoadStatistics LoadStatisticsInstance;
-  private static DriverQueryStatisticsRecorder QueryStatisticsRecorderInstance;
+  private static String loadStatisticsInstanceType;
+  private static LoadStatistics loadStatisticsInstance;
+  private static String driverRecorderType;
+  private static QueryStatisticsRecorder driverRecorder;
 
   static {
     CarbonTimeStatisticsFactory.updateTimeStatisticsUtilStatus();
-    LoadStatisticsInstance = genLoadStatisticsInstance();
-    QueryStatisticsRecorderInstance = genQueryStatisticsRecorderInstance();
+    loadStatisticsInstance = genLoadStatisticsInstance();
+    driverRecorder = genDriverRecorder();
   }
 
   private static void updateTimeStatisticsUtilStatus() {
-    LoadStatisticsInstanceType = CarbonProperties.getInstance()
+    loadStatisticsInstanceType = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS,
             CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS_DEFAULT);
+    driverRecorderType = CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+                    CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
   }
 
   private static LoadStatistics genLoadStatisticsInstance() {
-    switch (LoadStatisticsInstanceType.toLowerCase()) {
-      case "false":
-        return CarbonLoadStatisticsDummy.getInstance();
-      case "true":
-        return CarbonLoadStatisticsImpl.getInstance();
-      default:
-        return CarbonLoadStatisticsDummy.getInstance();
+    if (loadStatisticsInstanceType.equalsIgnoreCase("true")) {
+      return CarbonLoadStatisticsImpl.getInstance();
+    } else {
+      return CarbonLoadStatisticsDummy.getInstance();
     }
   }
 
   public static LoadStatistics getLoadStatisticsInstance() {
-    return LoadStatisticsInstance;
+    return loadStatisticsInstance;
   }
 
-  private static DriverQueryStatisticsRecorder genQueryStatisticsRecorderInstance() {
-    return DriverQueryStatisticsRecorder.getInstance();
+  private static QueryStatisticsRecorder genDriverRecorder() {
+    if (driverRecorderType.equalsIgnoreCase("true")) {
+      return DriverQueryStatisticsRecorderImpl.getInstance();
+    } else {
+      return DriverQueryStatisticsRecorderDummy.getInstance();
+    }
   }
 
-  public static DriverQueryStatisticsRecorder getQueryStatisticsRecorderInstance() {
-    return QueryStatisticsRecorderInstance;
+  public static QueryStatisticsRecorder createDriverRecorder() {
+    return driverRecorder;
+  }
+
+  public static QueryStatisticsRecorder createExecutorRecorder(String queryId) {
+    String queryStatisticsRecorderType = CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+                    CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
+    if (queryStatisticsRecorderType.equalsIgnoreCase("true")) {
+      return new QueryStatisticsRecorderImpl(queryId);
+    } else {
+      return new QueryStatisticsRecorderDummy(queryId);
+    }
   }
 
 }

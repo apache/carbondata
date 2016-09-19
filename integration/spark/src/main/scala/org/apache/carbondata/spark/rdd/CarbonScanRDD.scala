@@ -82,9 +82,12 @@ class CarbonScanRDD[V: ClassTag](
 
   override def getPartitions: Array[Partition] = {
     var defaultParallelism = sparkContext.defaultParallelism
-    val statisticRecorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance()
+    val statisticRecorder = CarbonTimeStatisticsFactory.createDriverRecorder()
     val (carbonInputFormat: CarbonInputFormat[Array[Object]], job: Job) =
       QueryPlanUtil.createCarbonInputFormat(queryModel.getAbsoluteTableIdentifier)
+
+    // initialise query_id for job
+    job.getConfiguration.set("query.id", queryModel.getQueryId)
 
     val result = new util.ArrayList[Partition](defaultParallelism)
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)

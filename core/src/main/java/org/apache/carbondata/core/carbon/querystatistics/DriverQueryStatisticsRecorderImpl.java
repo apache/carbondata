@@ -34,10 +34,10 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Class will be used to record and log the query statistics
  */
-public class DriverQueryStatisticsRecorder {
+public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorder{
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DriverQueryStatisticsRecorder.class.getName());
+      LogServiceFactory.getLogService(DriverQueryStatisticsRecorderImpl.class.getName());
 
   /**
    * singleton QueryStatisticsRecorder for driver
@@ -49,16 +49,28 @@ public class DriverQueryStatisticsRecorder {
    */
   private static final Object lock = new Object();
 
-  private DriverQueryStatisticsRecorder() {
+  private DriverQueryStatisticsRecorderImpl() {
     // use ConcurrentHashMap, it is thread-safe
     queryStatisticsMap = new ConcurrentHashMap<String, List<QueryStatistic>>();
   }
 
-  private static DriverQueryStatisticsRecorder carbonLoadStatisticsImplInstance =
-      new DriverQueryStatisticsRecorder();
+  private static DriverQueryStatisticsRecorderImpl carbonLoadStatisticsImplInstance =
+      new DriverQueryStatisticsRecorderImpl();
 
-  public static DriverQueryStatisticsRecorder getInstance() {
+  public static DriverQueryStatisticsRecorderImpl getInstance() {
     return carbonLoadStatisticsImplInstance;
+  }
+
+  public void recordStatistics(QueryStatistic statistic) {
+
+  }
+
+  public void logStatistics() {
+
+  }
+
+  public void logStatisticsAsTableExecutor() {
+
   }
 
   /**
@@ -118,10 +130,12 @@ public class DriverQueryStatisticsRecorder {
   public String collectDriverStatistics(List<QueryStatistic> statisticsList, String queryId) {
     String sql_parse_time = "";
     String load_meta_time = "";
+    String load_blocks_time = "";
     String block_allocation_time = "";
     String block_identification_time = "";
     long driver_part_time_tmp = 0L;
     long driver_part_time_tmp2 = 0L;
+    long load_blocks_time_tmp = 0L;
     String splitChar = " ";
     try {
       // get statistic time from the QueryStatistic
@@ -134,6 +148,12 @@ public class DriverQueryStatisticsRecorder {
           case QueryStatisticsConstants.LOAD_META:
             load_meta_time += statistic.getTimeTaken() + splitChar;
             driver_part_time_tmp += statistic.getTimeTaken();
+            break;
+          case QueryStatisticsConstants.LOAD_BLOCKS_DRIVER:
+            // multi segments will generate multi load_blocks_time
+            load_blocks_time_tmp += statistic.getTimeTaken();
+            driver_part_time_tmp += statistic.getTimeTaken();
+            driver_part_time_tmp2 += statistic.getTimeTaken();
             break;
           case QueryStatisticsConstants.BLOCK_ALLOCATION:
             block_allocation_time += statistic.getTimeTaken() + splitChar;
@@ -149,6 +169,7 @@ public class DriverQueryStatisticsRecorder {
             break;
         }
       }
+      load_blocks_time = load_blocks_time_tmp + splitChar;
       String driver_part_time = driver_part_time_tmp + splitChar;
       // structure the query statistics info table
       StringBuilder tableInfo = new StringBuilder();
@@ -184,6 +205,13 @@ public class DriverQueryStatisticsRecorder {
             load_meta_time + "|" + "\n");
         tableInfo.append(line2).append("\n");
         tableInfo.append("|" + printLine(" ", (len1 - "Part".length())) + "Part" + "|" +
+                printLine(" ", (len2 - "Load blocks driver".length())) +
+                "Load blocks driver" + "|" +
+                printLine(" ", len3) + "|" +
+                printLine(" ", (len4 - load_blocks_time.length())) +
+                load_blocks_time + "|" + "\n");
+        tableInfo.append(line2).append("\n");
+        tableInfo.append("|" + printLine(" ", len1 ) + "|" +
             printLine(" ", (len2 - "Block allocation".length())) + "Block allocation" + "|" +
             printLine(" ", len3) + "|" +
             printLine(" ", (len4 - block_allocation_time.length())) +
@@ -205,13 +233,20 @@ public class DriverQueryStatisticsRecorder {
         // when we can't get sql parse time, we only print the last two
         driver_part_time = driver_part_time_tmp2 + splitChar;
         tableInfo.append("|" + printLine(" ", (len1 - "Driver".length())) + "Driver" + "|" +
+                printLine(" ", (len2 - "Load blocks driver".length())) +
+                "Load blocks driver" + "|" +
+                printLine(" ", len3) + "|" +
+                printLine(" ", (len4 - load_blocks_time.length())) +
+                load_blocks_time + "|" + "\n");
+        tableInfo.append(line2).append("\n");
+        tableInfo.append("|" + printLine(" ", (len1 - "Part".length())) + "Part" + "|" +
             printLine(" ", (len2 - "Block allocation".length())) + "Block allocation" + "|" +
             printLine(" ", (len3 - driver_part_time.length())) + driver_part_time + "|" +
             printLine(" ", (len4 - block_allocation_time.length())) +
             block_allocation_time + "|" + "\n");
         tableInfo.append(line2).append("\n");
         tableInfo.append("|" +
-            printLine(" ", (len1 - "Part".length())) + "Part" + "|" +
+            printLine(" ", len1) + "|" +
             printLine(" ", (len2 - "Block identification".length())) +
             "Block identification" + "|" +
             printLine(" ", len3) + "|" +
