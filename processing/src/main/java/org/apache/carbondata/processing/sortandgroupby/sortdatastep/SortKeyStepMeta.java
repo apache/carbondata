@@ -145,7 +145,7 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
    * @throws KettleException in case there is a conversion or XML encoding error
    */
   public String getXML() {
-    StringBuffer retval = new StringBuffer(150);
+    StringBuilder retval = new StringBuilder(150);
     retval.append("    ").append(XMLHandler.addTagValue("TableName", this.tabelName));
     retval.append("    ").append(XMLHandler.addTagValue("factDimLensString", factDimLensString));
     retval.append("    ").append(XMLHandler.addTagValue("outputRowSize", this.outputRowSize));

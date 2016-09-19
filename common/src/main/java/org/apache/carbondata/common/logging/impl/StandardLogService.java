@@ -130,7 +130,7 @@ public final class StandardLogService implements LogService {
   }
 
   public static void setThreadName(String partitionID, String queryID) {
-    StringBuffer b = new StringBuffer(PARTITION_ID);
+    StringBuilder b = new StringBuilder(PARTITION_ID);
     b.append(partitionID);
     if (null != queryID) {
       b.append(";queryID:");
@@ -190,7 +190,7 @@ public final class StandardLogService implements LogService {
     if (StandardLogService.doLog) {
       try {
         //Append the partition id and query id if exist
-        StringBuffer buff = new StringBuffer(Thread.currentThread().getName());
+        StringBuilder buff = new StringBuilder(Thread.currentThread().getName());
         buff.append(" ");
         buff.append(message);
         message = buff.toString();

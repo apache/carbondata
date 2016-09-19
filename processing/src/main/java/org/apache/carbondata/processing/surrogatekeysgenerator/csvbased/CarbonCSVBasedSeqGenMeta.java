@@ -659,7 +659,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
   }
 
   public String getXML() throws KettleValueException {
-    StringBuffer retval = new StringBuffer(150);
+    StringBuilder retval = new StringBuilder(150);
     retval.append("    ").append(XMLHandler.addTagValue("carbonProps", carbonProps));
     retval.append("    ").append(XMLHandler.addTagValue("dim", carbondim));
     retval.append("    ").append(XMLHandler.addTagValue("msr", carbonmsr));
