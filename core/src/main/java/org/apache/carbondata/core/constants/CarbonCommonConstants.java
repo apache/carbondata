@@ -395,6 +395,14 @@ public final class CarbonCommonConstants {
    */
   public static final String AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE = "true";
   /**
+   * ENABLE_QUERY_STATISTICS
+   */
+  public static final String ENABLE_QUERY_STATISTICS = "enable.query.statistics";
+  /**
+   * ENABLE_QUERY_STATISTICS_DEFAULT
+   */
+  public static final String ENABLE_QUERY_STATISTICS_DEFAULT = "false";
+  /**
    * TIME_STAT_UTIL_TYPE
    */
   public static final String ENABLE_DATA_LOADING_STATISTICS = "enable.data.loading.statistics";

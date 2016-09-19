@@ -17,13 +17,16 @@
 
 package org.apache.carbondata.core.util;
 
-import org.apache.carbondata.core.carbon.querystatistics.DriverQueryStatisticsRecorder;
+import org.apache.carbondata.core.carbon.querystatistics.DriverQueryStatisticsRecorderDummy;
+import org.apache.carbondata.core.carbon.querystatistics.DriverQueryStatisticsRecorderImpl;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 public class CarbonTimeStatisticsFactory {
   private static String LoadStatisticsInstanceType;
   private static LoadStatistics LoadStatisticsInstance;
-  private static DriverQueryStatisticsRecorder QueryStatisticsRecorderInstance;
+  private static String queryStatisticsRecorderInstanceType;
+  private static QueryStatisticsRecorder QueryStatisticsRecorderInstance;
 
   static {
     CarbonTimeStatisticsFactory.updateTimeStatisticsUtilStatus();
@@ -35,6 +38,9 @@ public class CarbonTimeStatisticsFactory {
     LoadStatisticsInstanceType = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS,
             CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS_DEFAULT);
+    queryStatisticsRecorderInstanceType = CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+                    CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
   }
 
   private static LoadStatistics genLoadStatisticsInstance() {
@@ -52,11 +58,18 @@ public class CarbonTimeStatisticsFactory {
     return LoadStatisticsInstance;
   }
 
-  private static DriverQueryStatisticsRecorder genQueryStatisticsRecorderInstance() {
-    return DriverQueryStatisticsRecorder.getInstance();
+  private static QueryStatisticsRecorder genQueryStatisticsRecorderInstance() {
+    switch (queryStatisticsRecorderInstanceType.toLowerCase()) {
+      case "false":
+        return DriverQueryStatisticsRecorderDummy.getInstance();
+      case "true":
+        return DriverQueryStatisticsRecorderImpl.getInstance();
+      default:
+        return DriverQueryStatisticsRecorderDummy.getInstance();
+    }
   }
 
-  public static DriverQueryStatisticsRecorder getQueryStatisticsRecorderInstance() {
+  public static QueryStatisticsRecorder getQueryStatisticsRecorderInstance() {
     return QueryStatisticsRecorderInstance;
   }
 

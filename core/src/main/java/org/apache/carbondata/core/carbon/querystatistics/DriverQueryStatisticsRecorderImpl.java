@@ -34,10 +34,10 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * Class will be used to record and log the query statistics
  */
-public class DriverQueryStatisticsRecorder {
+public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorder{
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DriverQueryStatisticsRecorder.class.getName());
+      LogServiceFactory.getLogService(DriverQueryStatisticsRecorderImpl.class.getName());
 
   /**
    * singleton QueryStatisticsRecorder for driver
@@ -49,16 +49,28 @@ public class DriverQueryStatisticsRecorder {
    */
   private static final Object lock = new Object();
 
-  private DriverQueryStatisticsRecorder() {
+  private DriverQueryStatisticsRecorderImpl() {
     // use ConcurrentHashMap, it is thread-safe
     queryStatisticsMap = new ConcurrentHashMap<String, List<QueryStatistic>>();
   }
 
-  private static DriverQueryStatisticsRecorder carbonLoadStatisticsImplInstance =
-      new DriverQueryStatisticsRecorder();
+  private static DriverQueryStatisticsRecorderImpl carbonLoadStatisticsImplInstance =
+      new DriverQueryStatisticsRecorderImpl();
 
-  public static DriverQueryStatisticsRecorder getInstance() {
+  public static DriverQueryStatisticsRecorderImpl getInstance() {
     return carbonLoadStatisticsImplInstance;
+  }
+
+  public void recordStatistics(QueryStatistic statistic) {
+
+  }
+
+  public void logStatistics() {
+
+  }
+
+  public void logStatisticsAsTableExecutor() {
+
   }
 
   /**
