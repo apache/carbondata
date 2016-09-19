@@ -159,7 +159,9 @@ public final class CarbonQueryUtil {
       String separator) {
     if (StringUtils.isNotEmpty(sourcePath)) {
       String[] files = sourcePath.split(separator);
-      Collections.addAll(partitionsFiles, files);
+      for (String file : files) {
+        partitionsFiles.add(file);
+      }
     }
   }
 

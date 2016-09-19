@@ -920,7 +920,9 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     if (null != normHier && normHier.length() != 0) {
       String[] split = normHier.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
 
-      Collections.addAll(hierList, split);
+      for (int i = 0; i < split.length; i++) {
+        hierList.add(split[i]);
+      }
     }
     return hierList;
   }
@@ -972,7 +974,9 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       if (null != actualHier) {
         if (actualHier.contains(CarbonCommonConstants.COMA_SPC_CHARACTER)) {
           String[] splitHier = actualHier.split(CarbonCommonConstants.COMA_SPC_CHARACTER);
-          Collections.addAll(actualHierList, splitHier);
+          for (String hier : splitHier) {
+            actualHierList.add(hier);
+          }
         } else {
           actualHierList.add(actualHier);
         }
