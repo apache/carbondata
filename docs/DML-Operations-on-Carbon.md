@@ -46,15 +46,20 @@
 
 ### Usage Guideline
 Following are the options that can be used in load data:
-- **DELIMITER:** Delimiters and Quote Characters can be provided in the load command.
+- **DELIMITER:** Delimiters can be provided in the load command.
     
     ``` ruby
-    OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"') 
+    OPTIONS('DELIMITER'=',')
     ```
-- **QUOTECHAR:** Delimiters and Quote Characters can be provided in the load command.
+- **QUOTECHAR:** Quote Characters can be provided in the load command.
 
     ```ruby
-    OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"') 
+    OPTIONS('QUOTECHAR'='"')
+    ```
+- **COMMENTCHAR:** Comment Characters can be provided in the load command if user want to comment lines.
+
+    ```ruby
+    OPTIONS('COMMENTCHAR'='#')
     ```
 - **FILEHEADER:** Headers can be provided in the LOAD DATA command if headers are missing in the source files.
 
@@ -96,7 +101,7 @@ Following are the options that can be used in load data:
 
   ```ruby
   LOAD DATA local inpath '/opt/rawdata/data.csv' INTO table carbontable
-                         options('DELIMITER'=',', 'QUOTECHAR'='"',
+                         options('DELIMITER'=',', 'QUOTECHAR'='"', 'COMMENTCHAR'='#',
                                  'FILEHEADER'='empno,empname,
                                   designation,doj,workgroupcategory,
                                   workgroupcategoryname,deptno,deptname,projectcode,
