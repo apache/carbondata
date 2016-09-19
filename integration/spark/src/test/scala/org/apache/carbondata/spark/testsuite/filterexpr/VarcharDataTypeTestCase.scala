@@ -31,13 +31,14 @@ import org.scalatest.BeforeAndAfterAll
 class VarcharDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    sql("drop table if exists varchar_test")
     sql("""
         CREATE TABLE varchar_test (empno int, designation varchar(10), deptno int, projectcode int,attendance int)
         STORED BY 'org.apache.carbondata.format'
       """)
     sql("""
         LOAD DATA local inpath './src/test/resources/data.csv' INTO TABLE
-        varchar_test OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')
+        varchar_test
       """)
     sql("desc varchar_test").show
   }
@@ -51,6 +52,6 @@ class VarcharDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("drop table varchar_test")
+    sql("drop table if exists varchar_test")
   }
 }
