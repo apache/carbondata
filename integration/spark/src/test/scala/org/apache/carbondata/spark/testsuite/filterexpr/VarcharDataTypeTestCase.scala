@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.carbondata.spark.testsuite.filterexpr
+package org.apache.carbondata.spark.testsuite.filterexpr
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
@@ -39,6 +39,7 @@ class VarcharDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
         LOAD DATA local inpath './src/test/resources/data.csv' INTO TABLE
         varchar_test OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')
       """)
+    sql("desc varchar_test").show
   }
 
   test("select designation from varchar_test") {
