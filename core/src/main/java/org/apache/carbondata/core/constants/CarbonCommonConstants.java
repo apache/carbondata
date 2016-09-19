@@ -134,10 +134,6 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_DDL_BASE_HDFS_URL = "carbon.ddl.base.hdfs.url";
   /**
-   * Slice Meta data file.
-   */
-  public static final String SLICE_METADATA_FILENAME = "sliceMetaData";
-  /**
    * Load Folder Name
    */
   public static final String LOAD_FOLDER = "Segment_";
@@ -149,10 +145,6 @@ public final class CarbonCommonConstants {
    * FS_DEFAULT_FS
    */
   public static final String FS_DEFAULT_FS = "fs.defaultFS";
-  /**
-   * RESTructure Folder
-   */
-  public static final String RESTRUCTRE_FOLDER = "RS_";
   /**
    * BYTEBUFFER_SIZE
    */
@@ -166,26 +158,6 @@ public final class CarbonCommonConstants {
    * Count constant
    */
   public static final String COUNT = "count";
-  /**
-   * Count constant
-   */
-  public static final String COUNT_STAR = "countstar";
-  /**
-   * Max constant
-   */
-  public static final String MAX = "max";
-  /**
-   * Min constant
-   */
-  public static final String MIN = "min";
-  /**
-   * distinct count
-   */
-  public static final String DISTINCT_COUNT = "distinct-count";
-  /**
-   * CUSTOM
-   */
-  public static final String CUSTOM = "custom";
   /**
    * SUM
    */
@@ -353,10 +325,6 @@ public final class CarbonCommonConstants {
    */
   public static final String HYPHEN_SPC_CHARACTER = "-#!:HYPHEN:!#-";
   /**
-   * CARBON_DECIMAL_POINTERS_DEFAULT
-   */
-  public static final byte CARBON_DECIMAL_POINTERS_DEFAULT = 5;
-  /**
    * SORT_TEMP_FILE_EXT
    */
   public static final String SORT_TEMP_FILE_EXT = ".sorttemp";
@@ -450,8 +418,6 @@ public final class CarbonCommonConstants {
    * LEVEL_METADATA_FILE
    */
   public static final String LEVEL_METADATA_FILE = "levelmetadata_";
-  public static final String ENABLE_BASE64_ENCODING = "enable.base64.encoding";
-  public static final String ENABLE_BASE64_ENCODING_DEFAULT = "false";
   /**
    * LOAD_STATUS SUCCESS
    */
@@ -468,14 +434,6 @@ public final class CarbonCommonConstants {
    * LOAD_STATUS
    */
   public static final String CARBON_METADATA_EXTENSION = ".metadata";
-  /**
-   * LOAD_STATUS
-   */
-  public static final String CARBON_DEFAULT_STREAM_ENCODEFORMAT = "UTF-8";
-  /**
-   * AGGREGATE_TABLE_START_TAG
-   */
-  public static final String AGGREGATE_TABLE_START_TAG = "agg";
   /**
    * COMMA
    */
@@ -500,10 +458,6 @@ public final class CarbonCommonConstants {
    * CARBON_TIMESTAMP
    */
   public static final String CARBON_TIMESTAMP = "dd-MM-yyyy HH:mm:ss";
-  /**
-   * METADATA_LOCK
-   */
-  public static final String METADATA_LOCK = "meta.lock";
   /**
    * NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK
    */
@@ -537,7 +491,6 @@ public final class CarbonCommonConstants {
   public static final String TIMESTAMP_TYPE = "TimestampType";
   public static final String BYTE_TYPE = "ByteType";
   public static final String SHORT_TYPE = "ShortType";
-  public static final String BINARY_TYPE = "BinaryType";
   public static final String DECIMAL_TYPE = "DecimalType";
   public static final String STRING = "String";
   public static final String COLUMNAR = "columnar";
@@ -554,7 +507,6 @@ public final class CarbonCommonConstants {
   /**
    * FACT_UPDATE_EXTENSION.
    */
-  public static final String FACT_UPDATE_EXTENSION = ".carbondata_update";
   public static final String FACT_DELETE_EXTENSION = "_delete";
   /**
    * MARKED_FOR_UPDATION
@@ -568,13 +520,6 @@ public final class CarbonCommonConstants {
    * LOADMETADATA_FILENAME
    */
   public static final String LOADMETADATA_FILENAME = "tablestatus";
-  public static final String SUM_DISTINCT = "sum-distinct";
-  /**
-   * INMEMORY_REOCRD_SIZE
-   */
-  public static final String INMEMORY_REOCRD_SIZE = "carbon.inmemory.record.size";
-  public static final int INMEMORY_REOCRD_SIZE_DEFAULT = 240000;
-
   /**
    * INMEMORY_REOCRD_SIZE
    */
@@ -795,11 +740,6 @@ public final class CarbonCommonConstants {
   public static final long CARBON_256MB = 256*1024*1024;
 
   /**
-   * Data type String.
-   */
-  public static final String DATATYPE_STRING = "STRING";
-
-  /**
    * SEGMENT_COMPACTED is property to indicate whether seg is compacted or not.
    */
   public static final String SEGMENT_COMPACTED = "Compacted";
@@ -831,11 +771,6 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_LOCK_TYPE_HDFS =
       "HDFSLOCK";
-
-  /**
-   * Lock file in zoo keeper will be of this name.
-   */
-  public static final String ZOOKEEPER_LOCK = "zookeeperLock";
 
   /**
    * Invalid filter member log string
