@@ -18,7 +18,7 @@
  */
 package org.apache.carbondata.scan.result.iterator;
 
-import java.util.List;
+import java.util.Queue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -43,7 +43,7 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
 
   private final Object lock = new Object();
 
-  public DetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel) {
+  public DetailQueryResultIterator(Queue<BlockExecutionInfo> infos, QueryModel queryModel) {
     super(infos, queryModel);
   }
 
