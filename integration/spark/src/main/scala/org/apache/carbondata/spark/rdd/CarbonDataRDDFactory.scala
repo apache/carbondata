@@ -1122,10 +1122,20 @@ object CarbonDataRDDFactory extends Logging {
         // Update load metadate file after cleaning deleted nodes
         if (carbonTableStatusLock.lockWithRetries()) {
           logger.info("Table status lock has been successfully acquired.")
+
+          // read latest table status again.
+          val latestMetadata = segmentStatusManager
+            .readLoadMetadata(loadMetadataFilePath)
+
+          // update the metadata details from old to new status.
+
+          val latestStatus = CarbonLoaderUtil
+            .updateLoadMetadataFromOldToNew(details, latestMetadata)
+
           CarbonLoaderUtil.writeLoadMetadata(
             carbonLoadModel.getCarbonDataLoadSchema,
             carbonLoadModel.getDatabaseName,
-            carbonLoadModel.getTableName, details.toList.asJava
+            carbonLoadModel.getTableName, latestStatus
           )
         }
         else {
