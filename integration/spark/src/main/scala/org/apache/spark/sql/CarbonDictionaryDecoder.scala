@@ -33,8 +33,7 @@ import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.carbon.querystatistics._
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil}
+import org.apache.carbondata.core.util.{CarbonTimeStatisticsFactory, DataTypeUtil}
 
 /**
  * It decodes the data.
@@ -159,16 +158,8 @@ case class CarbonDictionaryDecoder(
         val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
         (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
       }.toMap
-      val queryStatisticsRecorderInstanceType = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-          CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT)
-      var recorder: QueryStatisticsRecorder = null
-      if (queryStatisticsRecorderInstanceType.equalsIgnoreCase("true")) {
-        recorder = new QueryStatisticsRecorderImpl(queryId)
-      } else {
-        recorder = new QueryStatisticsRecorderDummy(queryId)
-      }
 
+      val recorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorder(queryId);
       if (isRequiredToDecode) {
         val dataTypes = child.output.map { attr => attr.dataType }
         child.execute().mapPartitions { iter =>

@@ -52,6 +52,7 @@ import org.apache.carbondata.core.carbon.querystatistics.*;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodedReadSupportImpl;
@@ -459,15 +460,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       FilterExpressionProcessor filterExpressionProcessor,
       AbsoluteTableIdentifier absoluteTableIdentifier, FilterResolverIntf resolver,
       String segmentId) throws IndexBuilderException, IOException {
-    String queryStatisticsRecorderInstanceType = CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-                    CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
-    QueryStatisticsRecorder recorder = null;
-    if (queryStatisticsRecorderInstanceType.equalsIgnoreCase("true")) {
-      recorder = new QueryStatisticsRecorderImpl("");
-    } else {
-      recorder = new QueryStatisticsRecorderDummy("");
-    }
+    QueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorder("");
     QueryStatistic statistic = new QueryStatistic();
     Map<String, AbstractIndex> segmentIndexMap =
         getSegmentAbstractIndexs(job, absoluteTableIdentifier, segmentId);

@@ -17,9 +17,7 @@
 
 package org.apache.carbondata.core.util;
 
-import org.apache.carbondata.core.carbon.querystatistics.DriverQueryStatisticsRecorderDummy;
-import org.apache.carbondata.core.carbon.querystatistics.DriverQueryStatisticsRecorderImpl;
-import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
+import org.apache.carbondata.core.carbon.querystatistics.*;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 public class CarbonTimeStatisticsFactory {
@@ -59,18 +57,26 @@ public class CarbonTimeStatisticsFactory {
   }
 
   private static QueryStatisticsRecorder genQueryStatisticsRecorderInstance() {
-    switch (queryStatisticsRecorderInstanceType.toLowerCase()) {
-      case "false":
-        return DriverQueryStatisticsRecorderDummy.getInstance();
-      case "true":
-        return DriverQueryStatisticsRecorderImpl.getInstance();
-      default:
-        return DriverQueryStatisticsRecorderDummy.getInstance();
+    if (queryStatisticsRecorderInstanceType.equalsIgnoreCase("true")) {
+      return DriverQueryStatisticsRecorderImpl.getInstance();
+    } else {
+      return DriverQueryStatisticsRecorderDummy.getInstance();
     }
   }
 
   public static QueryStatisticsRecorder getQueryStatisticsRecorderInstance() {
     return QueryStatisticsRecorderInstance;
+  }
+
+  public static QueryStatisticsRecorder getQueryStatisticsRecorder(String queryId) {
+    String queryStatisticsRecorderType = CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
+                    CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
+    if (queryStatisticsRecorderType.equalsIgnoreCase("true")) {
+      return new QueryStatisticsRecorderImpl(queryId);
+    } else {
+      return new QueryStatisticsRecorderDummy(queryId);
+    }
   }
 
 }
