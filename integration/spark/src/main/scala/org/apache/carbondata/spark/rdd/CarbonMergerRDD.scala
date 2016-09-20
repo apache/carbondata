@@ -98,6 +98,7 @@ class CarbonMergerRDD[K, V](
       LOGGER.info("Temp storeLocation taken is " + storeLocation)
       var mergeStatus = false
       var mergeNumber = ""
+      var exec: CarbonCompactionExecutor = null
       try {
         var dataloadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
         val carbonSparkPartition = theSplit.asInstanceOf[CarbonSparkPartition]
@@ -121,7 +122,7 @@ class CarbonMergerRDD[K, V](
 
         carbonLoadModel.setStorePath(hdfsStoreLocation)
 
-        val exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties, databaseName,
+          exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties, databaseName,
           factTableName, hdfsStoreLocation, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
           dataFileMetadataSegMapping
         )
@@ -132,7 +133,9 @@ class CarbonMergerRDD[K, V](
           result2 = exec.processTableBlocks()
         } catch {
           case e: Throwable =>
-            exec.clearDictionaryFromQueryModel
+            if (null != exec) {
+              exec.finish
+            }
             LOGGER.error(e)
             if (null != e.getMessage) {
               sys.error("Exception occurred in query execution :: " + e.getMessage)
@@ -140,7 +143,6 @@ class CarbonMergerRDD[K, V](
               sys.error("Exception occurred in query execution.Please check logs.")
             }
         }
-
         mergeNumber = mergedLoadName
           .substring(mergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER) +
             CarbonCommonConstants.LOAD_FOLDER.length(), mergedLoadName.length()
@@ -184,6 +186,9 @@ class CarbonMergerRDD[K, V](
           case e: Exception =>
             LOGGER.error(e)
         }
+       if (null != exec) {
+         exec.finish
+       }
       }
 
       var finished = false
