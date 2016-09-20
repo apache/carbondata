@@ -99,6 +99,38 @@ class TestDataLoadWithColumnsMoreThanSchema extends QueryTest with BeforeAndAfte
     }
   }
 
+  test("test for boundary value for maxcolumns") {
+    sql("DROP TABLE IF EXISTS boundary_max_columns_test")
+    sql("CREATE TABLE boundary_max_columns_test (empno string, empname String, designation String, doj String, " +
+        "workgroupcategory string, workgroupcategoryname String, deptno string, deptname String, " +
+        "projectcode string, projectjoindate String, projectenddate String,attendance double," +
+        "utilization double,salary double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES" +
+        "('DICTIONARY_EXCLUDE'='empno,empname,designation,doj,workgroupcategory," +
+        "workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate')")
+    try {
+      sql("LOAD DATA LOCAL INPATH './src/test/resources/data.csv' into table boundary_max_columns_test options('MAXCOLUMNS'='14')")
+      assert(true)
+    } catch {
+      case _ => assert(false)
+    }
+  }
+
+  test("test for maxcolumns value less than columns in 1st line of csv file") {
+    sql("DROP TABLE IF EXISTS boundary_max_columns_test")
+    sql("CREATE TABLE boundary_max_columns_test (empno string, empname String, designation String, doj String, " +
+        "workgroupcategory string, workgroupcategoryname String, deptno string, deptname String, " +
+        "projectcode string, projectjoindate String, projectenddate String,attendance double," +
+        "utilization double,salary double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES" +
+        "('DICTIONARY_EXCLUDE'='empno,empname,designation,doj,workgroupcategory," +
+        "workgroupcategoryname,deptno,deptname,projectcode,projectjoindate,projectenddate')")
+    try {
+      sql("LOAD DATA LOCAL INPATH './src/test/resources/data.csv' into table boundary_max_columns_test options('MAXCOLUMNS'='13')")
+      assert(true)
+    } catch {
+      case _ => assert(false)
+    }
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS char_test")
     sql("DROP TABLE IF EXISTS hive_char_test")

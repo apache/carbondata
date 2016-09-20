@@ -128,8 +128,10 @@ public class UnivocityCsvParser {
   private int getMaxColumnsForParsing(int columnCountInSchema, int maxColumns) {
     int maxNumberOfColumnsForParsing = DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING;
     if (maxColumns > 0) {
-      if (columnCountInSchema > maxColumns) {
-        maxNumberOfColumnsForParsing = columnCountInSchema;
+      if (columnCountInSchema >= maxColumns) {
+        // univocity parser needs one extra count from the number of columns
+        // specified during processing. eg. columnCount=12, then array size should be 13
+        maxNumberOfColumnsForParsing = columnCountInSchema + 1;
       } else if (maxColumns > THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
         maxNumberOfColumnsForParsing = THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING;
         LOGGER.info("MAXCOLUMNS option value configured is more than system allowed limit. "
@@ -138,8 +140,10 @@ public class UnivocityCsvParser {
       } else {
         maxNumberOfColumnsForParsing = maxColumns;
       }
-    } else if (columnCountInSchema > DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
-      maxNumberOfColumnsForParsing = columnCountInSchema;
+    } else if (columnCountInSchema >= DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
+      // univocity parser needs one extra count from the number of columns
+      // specified during processing. eg. columnCount=2200, then array size should be 2201
+      maxNumberOfColumnsForParsing = columnCountInSchema + 1;
     }
     return maxNumberOfColumnsForParsing;
   }
