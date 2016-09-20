@@ -187,6 +187,10 @@ class CarbonScanRDD[V: ClassTag](
       var rowIterator: CarbonIterator[Array[Any]] = _
       var queryStartTime: Long = 0
       try {
+        context.addTaskCompletionListener(context => {
+          clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
+          logStatistics()
+        })
         val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
         if(!carbonSparkPartition.tableBlockInfos.isEmpty) {
           queryModel.setQueryId(queryModel.getQueryId + "_" + carbonSparkPartition.idx)
@@ -225,23 +229,6 @@ class CarbonScanRDD[V: ClassTag](
           finished = (null == rowIterator) || (!rowIterator.hasNext)
           havePair = !finished
         }
-        if (finished) {
-          clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
-          if (null != queryModel.getStatisticsRecorder) {
-            var queryStatistic = new QueryStatistic()
-            queryStatistic
-              .addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
-                System.currentTimeMillis - queryStartTime
-              )
-            queryModel.getStatisticsRecorder.recordStatistics(queryStatistic)
-            // result size
-            queryStatistic = new QueryStatistic()
-            queryStatistic.addCountStatistic(QueryStatisticsConstants.RESULT_SIZE, recordCount)
-            queryModel.getStatisticsRecorder.recordStatistics(queryStatistic)
-            // print executor query statistics for each task_id
-            queryModel.getStatisticsRecorder.logStatisticsAsTableExecutor()
-          }
-        }
         !finished
       }
 
@@ -251,8 +238,17 @@ class CarbonScanRDD[V: ClassTag](
         }
         havePair = false
         recordCount += 1
-        if (queryModel.getLimit != -1 && recordCount >= queryModel.getLimit) {
-          clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
+        keyClass.getValue(rowIterator.next())
+      }
+
+      def clearDictionaryCache(columnToDictionaryMap: java.util.Map[String, Dictionary]) = {
+        if (null != columnToDictionaryMap) {
+          org.apache.carbondata.spark.util.CarbonQueryUtil
+            .clearColumnDictionaryCache(columnToDictionaryMap)
+        }
+      }
+
+      def logStatistics(): Unit = {
           if (null != queryModel.getStatisticsRecorder) {
             var queryStatistic = new QueryStatistic()
             queryStatistic
@@ -268,15 +264,8 @@ class CarbonScanRDD[V: ClassTag](
             queryModel.getStatisticsRecorder.logStatisticsAsTableExecutor()
           }
         }
-        keyClass.getValue(rowIterator.next())
       }
-      def clearDictionaryCache(columnToDictionaryMap: java.util.Map[String, Dictionary]) = {
-        if (null != columnToDictionaryMap) {
-          org.apache.carbondata.spark.util.CarbonQueryUtil
-            .clearColumnDictionaryCache(columnToDictionaryMap)
-        }
-      }
-    }
+
     iter
   }
 
