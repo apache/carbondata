@@ -38,6 +38,7 @@ import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryS
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
+import org.apache.carbondata.scan.executor.QueryExecutor
 import org.apache.carbondata.scan.executor.QueryExecutorFactory
 import org.apache.carbondata.scan.expression.Expression
 import org.apache.carbondata.scan.model.QueryModel
@@ -46,6 +47,8 @@ import org.apache.carbondata.scan.result.iterator.ChunkRowIterator
 import org.apache.carbondata.spark.RawValue
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.util.QueryPlanUtil
+
+
 
 class CarbonSparkPartition(rddId: Int, val idx: Int,
     val locations: Array[String],
@@ -186,10 +189,12 @@ class CarbonScanRDD[V: ClassTag](
     val iter = new Iterator[V] {
       var rowIterator: CarbonIterator[Array[Any]] = _
       var queryStartTime: Long = 0
+      val queryExecutor = QueryExecutorFactory.getQueryExecutor()
       try {
         context.addTaskCompletionListener(context => {
           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
           logStatistics()
+          queryExecutor.finish
         })
         val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
         if(!carbonSparkPartition.tableBlockInfos.isEmpty) {
@@ -197,7 +202,6 @@ class CarbonScanRDD[V: ClassTag](
           // fill table block info
           queryModel.setTableBlockInfos(carbonSparkPartition.tableBlockInfos)
           queryStartTime = System.currentTimeMillis
-
           val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
           logInfo("*************************" + carbonPropertiesFilePath)
           if (null == carbonPropertiesFilePath) {
@@ -206,7 +210,7 @@ class CarbonScanRDD[V: ClassTag](
           }
           // execute query
           rowIterator = new ChunkRowIterator(
-            QueryExecutorFactory.getQueryExecutor(queryModel).execute(queryModel).
+            queryExecutor.execute(queryModel).
               asInstanceOf[CarbonIterator[BatchResult]]).asInstanceOf[CarbonIterator[Array[Any]]]
 
         }

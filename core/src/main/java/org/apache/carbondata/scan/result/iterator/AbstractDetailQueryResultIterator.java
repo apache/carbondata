@@ -19,6 +19,7 @@
 package org.apache.carbondata.scan.result.iterator;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
@@ -51,41 +52,36 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(AbstractDetailQueryResultIterator.class.getName());
 
+  protected ExecutorService execService;
   /**
    * execution info of the block
    */
   protected List<BlockExecutionInfo> blockExecutionInfos;
-
+  /**
+   * file reader which will be used to execute the query
+   */
+  protected FileHolder fileReader;
+  protected AbstractDataBlockIterator dataBlockIterator;
+  protected boolean nextBatch = false;
+  /**
+   * total time scan the blocks
+   */
+  protected long totalScanTime;
+  /**
+   * is the statistic recorded
+   */
+  protected boolean isStatisticsRecorded;
+  /**
+   * QueryStatisticsRecorder
+   */
+  protected QueryStatisticsRecorder recorder;
   /**
    * number of cores which can be used
    */
   private int batchSize;
 
-  /**
-   * file reader which will be used to execute the query
-   */
-  protected FileHolder fileReader;
-
-  protected AbstractDataBlockIterator dataBlockIterator;
-
-  protected boolean nextBatch = false;
-
-  /**
-   * total time scan the blocks
-   */
-  protected long totalScanTime;
-
-  /**
-   * is the statistic recorded
-   */
-  protected boolean isStatisticsRecorded;
-
-  /**
-   *  QueryStatisticsRecorder
-   */
-  protected QueryStatisticsRecorder recorder;
-
-  public AbstractDetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel) {
+  public AbstractDetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
+      ExecutorService execService) {
     String batchSizeString =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE);
     if (null != batchSizeString) {
@@ -102,16 +98,17 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     this.blockExecutionInfos = infos;
     this.fileReader = FileFactory.getFileHolder(
         FileFactory.getFileType(queryModel.getAbsoluteTableIdentifier().getStorePath()));
+    this.execService = execService;
     intialiseInfos();
   }
 
   private void intialiseInfos() {
-    totalScanTime=System.currentTimeMillis();
+    totalScanTime = System.currentTimeMillis();
     for (BlockExecutionInfo blockInfo : blockExecutionInfos) {
       DataRefNodeFinder finder = new BTreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
       DataRefNode startDataBlock = finder
           .findFirstDataBlock(blockInfo.getDataBlock().getDataRefNode(), blockInfo.getStartKey());
-      while(startDataBlock.nodeNumber()!= blockInfo.getStartBlockletIndex()) {
+      while (startDataBlock.nodeNumber() != blockInfo.getStartBlockletIndex()) {
         startDataBlock = startDataBlock.getNextDataRefNode();
       }
 
@@ -154,13 +151,12 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
   }
 
   private DataBlockIteratorImpl getDataBlockIterator() {
-    if(blockExecutionInfos.size() > 0) {
+    if (blockExecutionInfos.size() > 0) {
       BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
       blockExecutionInfos.remove(executionInfo);
       return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize);
     }
     return null;
   }
-
 
 }

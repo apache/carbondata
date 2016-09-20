@@ -19,6 +19,7 @@
 package org.apache.carbondata.scan.executor.impl;
 
 import java.util.*;
+import java.util.concurrent.Executors;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -85,6 +86,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         queryModel.getQueryId());
     LOGGER.info("Query will be executed on table: " + queryModel.getAbsoluteTableIdentifier()
         .getCarbonTableIdentifier().getTableName());
+    // add executor service for query execution
+    queryProperties.executorService = Executors.newFixedThreadPool(1);
     // Initializing statistics list to record the query statistics
     // creating copy on write to handle concurrent scenario
     queryProperties.queryStatisticsRecorder = new QueryStatisticsRecorder(queryModel.getQueryId());
@@ -424,6 +427,17 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     }
     return ArrayUtils
         .toPrimitive(parentBlockIndexList.toArray(new Integer[parentBlockIndexList.size()]));
+  }
+
+  /**
+   * Below method will be used to finish the execution
+   *
+   * @throws QueryExecutionException
+   */
+  @Override public void finish() throws QueryExecutionException {
+    if (null != queryProperties.executorService) {
+      queryProperties.executorService.shutdownNow();
+    }
   }
 
 }

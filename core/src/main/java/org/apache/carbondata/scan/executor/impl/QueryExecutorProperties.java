@@ -21,6 +21,7 @@ package org.apache.carbondata.scan.executor.impl;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
@@ -82,6 +83,10 @@ public class QueryExecutorProperties {
    * to record the query execution details phase wise
    */
   public QueryStatisticsRecorder queryStatisticsRecorder;
+  /**
+   * executor service to execute the query
+   */
+  public ExecutorService executorService;
   /**
    * list of blocks in which query will be executed
    */

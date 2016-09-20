@@ -29,6 +29,7 @@ import org.apache.carbondata.core.carbon.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
+import org.apache.carbondata.scan.executor.QueryExecutor;
 import org.apache.carbondata.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.model.QueryModel;
@@ -50,9 +51,12 @@ public class CarbonRecordReader<T> extends RecordReader<Void, T> {
 
   private CarbonIterator<Object[]> carbonIterator;
 
+  private QueryExecutor queryExecutor;
+
   public CarbonRecordReader(QueryModel queryModel, CarbonReadSupport<T> readSupport) {
     this.queryModel = queryModel;
     this.readSupport = readSupport;
+    this.queryExecutor = QueryExecutorFactory.getQueryExecutor();
   }
 
   @Override public void initialize(InputSplit split, TaskAttemptContext context)
@@ -69,9 +73,8 @@ public class CarbonRecordReader<T> extends RecordReader<Void, T> {
     readSupport
         .intialize(queryModel.getProjectionColumns(), queryModel.getAbsoluteTableIdentifier());
     try {
-      carbonIterator = new ChunkRowIterator(
-          (CarbonIterator<BatchResult>) QueryExecutorFactory.getQueryExecutor(queryModel)
-              .execute(queryModel));
+      carbonIterator =
+          new ChunkRowIterator((CarbonIterator<BatchResult>) queryExecutor.execute(queryModel));
     } catch (QueryExecutionException e) {
       throw new InterruptedException(e.getMessage());
     }
@@ -105,5 +108,10 @@ public class CarbonRecordReader<T> extends RecordReader<Void, T> {
     }
     // close read support
     readSupport.close();
+    try {
+      queryExecutor.finish();
+    } catch (QueryExecutionException e) {
+      throw new IOException(e);
+    }
   }
 }
