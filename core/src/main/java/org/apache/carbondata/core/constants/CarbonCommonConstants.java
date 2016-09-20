@@ -863,6 +863,16 @@ public final class CarbonCommonConstants {
    */
   public static String SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER = "SystemCompactionLock";
 
+  /**
+   * to enable blocklet distribution
+   */
+  public static String ENABLE_BLOCKLET_DISTRIBUTION = "enable.blocklet.distribution";
+
+  /**
+   * to enable blocklet distribution default value
+   */
+  public static String ENABLE_BLOCKLET_DISTRIBUTION_DEFAULTVALUE = "true";
+
   private CarbonCommonConstants() {
   }
 }
