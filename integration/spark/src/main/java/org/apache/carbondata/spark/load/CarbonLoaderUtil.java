@@ -1007,7 +1007,7 @@ public final class CarbonLoaderUtil {
     List<LoadMetadataDetails> newListMetadata =
         new ArrayList<LoadMetadataDetails>(Arrays.asList(newList));
     for (LoadMetadataDetails oldSegment : oldList) {
-      if (oldSegment.getVisibility().equalsIgnoreCase("false")) {
+      if ("false".equalsIgnoreCase(oldSegment.getVisibility())) {
         newListMetadata.get(newListMetadata.indexOf(oldSegment)).setVisibility("false");
       }
     }
