@@ -86,6 +86,7 @@ import com.google.gson.Gson;
 import org.apache.spark.SparkConf;
 import org.apache.spark.util.Utils;
 
+
 public final class CarbonLoaderUtil {
 
   private static final LogService LOGGER =
@@ -646,7 +647,8 @@ public final class CarbonLoaderUtil {
     for (Map.Entry<String, List<Distributable>> eachNode : nodeBlocksMap.entrySet()) {
 
       List<Distributable> blockOfEachNode = eachNode.getValue();
-
+      //sorting the block so same block will be give to same executor
+      Collections.sort(blockOfEachNode);
       // create the task list for each node.
       createTaskListForNode(outputMap, noOfTasksPerNode, eachNode.getKey());
 
@@ -946,9 +948,13 @@ public final class CarbonLoaderUtil {
      */
   public static List<Distributable> distributeBlockLets(List<TableBlockInfo> blockInfoList,
       int defaultParallelism) {
+    String blockletDistributionString = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.ENABLE_BLOCKLET_DISTRIBUTION,
+            CarbonCommonConstants.ENABLE_BLOCKLET_DISTRIBUTION_DEFAULTVALUE);
+    boolean isBlockletDistributionEnabled = Boolean.parseBoolean(blockletDistributionString);
     LOGGER.info("No.Of Blocks before Blocklet distribution: " + blockInfoList.size());
     List<Distributable> tableBlockInfos = new ArrayList<Distributable>();
-    if (blockInfoList.size() < defaultParallelism) {
+    if (blockInfoList.size() < defaultParallelism && isBlockletDistributionEnabled) {
       for (TableBlockInfo tableBlockInfo : blockInfoList) {
         int noOfBlockLets = tableBlockInfo.getBlockletInfos().getNoOfBlockLets();
         LOGGER.info(
