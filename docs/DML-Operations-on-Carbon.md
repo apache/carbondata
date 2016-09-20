@@ -123,7 +123,7 @@ This command is to show the segments of carbon table to the user.
 | ------------- | -----| --------- |
 | db_name | Database name, if it is not specified then it uses current database. | YES |
 | table_name | The name of the table in provided database.| NO |
-| number_of_loads | limit the output to this number. | YES |
+| number_of_segments | limit the output to this number. | YES |
 
 **Example:**
 
