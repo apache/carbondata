@@ -283,7 +283,6 @@ object CarbonDataRDDFactory extends Logging {
           case e : Exception =>
             logger.error("Exception in start compaction thread. " + e.getMessage)
             lock.unlock()
-            throw e;
         }
       }
       else {

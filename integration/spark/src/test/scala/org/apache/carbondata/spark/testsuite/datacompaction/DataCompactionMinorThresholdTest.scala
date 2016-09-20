@@ -96,7 +96,7 @@ class DataCompactionMinorThresholdTest extends QueryTest with BeforeAndAfterAll 
 
     sql("clean files for table minorthreshold")
 
-    val segments = segmentStatusManager.getValidSegments().listOfValidSegments.asScala.toList
+    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
 
     assert(segments.contains("0.2"))
     assert(!segments.contains("0.1"))
