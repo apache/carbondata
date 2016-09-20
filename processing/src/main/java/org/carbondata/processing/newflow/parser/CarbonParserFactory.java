@@ -11,11 +11,11 @@ import org.carbondata.processing.newflow.parser.impl.StructParserImpl;
 
 public class CarbonParserFactory {
 
-  public static GenericParser createParser(CarbonColumn carbonColumn, char[] complexDelimiters) {
+  public static GenericParser createParser(CarbonColumn carbonColumn, String[] complexDelimiters) {
     return createParser(carbonColumn, complexDelimiters, 0);
   }
 
-  private static GenericParser createParser(CarbonColumn carbonColumn, char[] complexDelimiters,
+  private static GenericParser createParser(CarbonColumn carbonColumn, String[] complexDelimiters,
       int counter) {
     switch (carbonColumn.getDataType()) {
       case ARRAY:

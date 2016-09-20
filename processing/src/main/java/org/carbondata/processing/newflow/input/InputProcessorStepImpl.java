@@ -18,7 +18,6 @@ import org.carbondata.processing.newflow.parser.GenericParser;
  */
 public class InputProcessorStepImpl implements DataLoadProcessorStep {
 
-
   private RecordReader<Void, CarbonArrayWritable> recordReader;
 
   private CarbonDataLoadConfiguration configuration;
@@ -48,10 +47,11 @@ public class InputProcessorStepImpl implements DataLoadProcessorStep {
     DataField[] output = getOutput();
     genericParsers = new GenericParser[output.length];
     for (int i = 0; i < genericParsers.length; i++) {
-      genericParsers[i] = CarbonParserFactory.createParser(output[i].getColumn(), configuration.getComplexDelimiters());
+      genericParsers[i] = CarbonParserFactory
+          .createParser(output[i].getColumn(), configuration.getComplexDelimiters());
     }
 
-    if(child != null) {
+    if (child != null) {
       child.intialize(configuration, child);
     }
   }
@@ -60,6 +60,7 @@ public class InputProcessorStepImpl implements DataLoadProcessorStep {
 
     return new CarbonIterator<Object[]>() {
       CarbonArrayWritable data = new CarbonArrayWritable();
+
       @Override public boolean hasNext() {
         try {
           return recordReader.next(null, data);
@@ -71,7 +72,11 @@ public class InputProcessorStepImpl implements DataLoadProcessorStep {
 
       @Override public Object[] next() {
 
-        return data.get();
+        Object[] row = data.get();
+        for (int i = 0; i < row.length; i++) {
+          row[i] = genericParsers[i].parse(row[i].toString());
+        }
+        return row;
       }
     };
   }

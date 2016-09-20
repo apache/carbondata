@@ -1,4 +1,4 @@
-package org.carbondata.processing.newflow.dictionaryencode;
+package org.carbondata.processing.newflow.encodestep;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -18,9 +18,9 @@ import org.carbondata.processing.newflow.encoding.FieldEncoder;
 import org.carbondata.processing.newflow.encoding.impl.DictionaryFieldEncoderImpl;
 
 /**
- * Encode data with dictionary values.
+ * Encode data with dictionary values and composed with bit/byte packed key.
  */
-public class DictionaryEncoderProcessorStepImpl implements DataLoadProcessorStep {
+public class EncoderProcessorStepImpl implements DataLoadProcessorStep {
 
   private CarbonDataLoadConfiguration configuration;
 
@@ -38,7 +38,7 @@ public class DictionaryEncoderProcessorStepImpl implements DataLoadProcessorStep
     this.child = child;
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, configuration.getStoreLocation());
+        cacheProvider.createCache(CacheType.REVERSE_DICTIONARY, configuration.getStoreLocation());
     List<FieldEncoder> fieldEncoders = new ArrayList<>();
     DataField[] output = child.getOutput();
     for (int i = 0; i < output.length; i++) {

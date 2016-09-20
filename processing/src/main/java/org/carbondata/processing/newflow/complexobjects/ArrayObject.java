@@ -4,6 +4,10 @@ public class ArrayObject {
 
   private Object[] data;
 
+  public ArrayObject(Object[] data) {
+    this.data = data;
+  }
+
   public Object[] getData() {
     return data;
   }

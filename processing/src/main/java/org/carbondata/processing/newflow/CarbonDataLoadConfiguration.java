@@ -26,7 +26,7 @@ public class CarbonDataLoadConfiguration {
 
   private RecordReader<Void, CarbonArrayWritable> recordReader;
 
-  private char[] complexDelimiters;
+  private String[] complexDelimiters;
 
   public DataField[] getDataFields() {
     return dataFields;
@@ -108,11 +108,11 @@ public class CarbonDataLoadConfiguration {
     this.tableIdentifier = tableIdentifier;
   }
 
-  public char[] getComplexDelimiters() {
+  public String[] getComplexDelimiters() {
     return complexDelimiters;
   }
 
-  public void setComplexDelimiters(char[] complexDelimiters) {
+  public void setComplexDelimiters(String[] complexDelimiters) {
     this.complexDelimiters = complexDelimiters;
   }
 }
