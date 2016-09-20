@@ -21,9 +21,7 @@ package org.apache.carbondata.scan.result.iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
@@ -37,14 +35,12 @@ import org.apache.carbondata.scan.result.BatchResult;
  */
 public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator {
 
-  private ExecutorService execService = Executors.newFixedThreadPool(1);
-
+  private final Object lock = new Object();
   private Future<BatchResult> future;
 
-  private final Object lock = new Object();
-
-  public DetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel) {
-    super(infos, queryModel);
+  public DetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
+      ExecutorService execService) {
+    super(infos, queryModel, execService);
   }
 
   @Override public BatchResult next() {
@@ -60,13 +56,10 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
         nextBatch = true;
         future = execute();
       } else {
-        execService.shutdown();
-        execService.awaitTermination(1, TimeUnit.HOURS);
         fileReader.finish();
       }
       totalScanTime += System.currentTimeMillis() - startTime;
     } catch (Exception ex) {
-      execService.shutdown();
       fileReader.finish();
       throw new RuntimeException(ex);
     }

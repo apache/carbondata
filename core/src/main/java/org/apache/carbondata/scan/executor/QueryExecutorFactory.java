@@ -19,7 +19,6 @@
 package org.apache.carbondata.scan.executor;
 
 import org.apache.carbondata.scan.executor.impl.DetailQueryExecutor;
-import org.apache.carbondata.scan.model.QueryModel;
 
 /**
  * Factory class to get the query executor from RDD
@@ -27,7 +26,7 @@ import org.apache.carbondata.scan.model.QueryModel;
  */
 public class QueryExecutorFactory {
 
-  public static QueryExecutor getQueryExecutor(QueryModel queryModel) {
+  public static QueryExecutor getQueryExecutor() {
     return new DetailQueryExecutor();
   }
 }

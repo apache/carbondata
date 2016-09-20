@@ -52,22 +52,21 @@ import org.apache.carbondata.scan.result.iterator.RawResultIterator;
  */
 public class CarbonCompactionExecutor {
 
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CarbonCompactionExecutor.class.getName());
   private final Map<String, List<DataFileFooter>> dataFileMetadataSegMapping;
-  private QueryExecutor queryExecutor;
   private final SegmentProperties destinationSegProperties;
   private final String databaseName;
   private final String factTableName;
   private final Map<String, TaskBlockInfo> segmentMapping;
   private final String storePath;
+  private QueryExecutor queryExecutor;
   private CarbonTable carbonTable;
-
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(CarbonCompactionExecutor.class.getName());
-
   private QueryModel queryModel;
 
   /**
    * Constructor
+   *
    * @param segmentMapping
    * @param segmentProperties
    * @param databaseName
@@ -97,6 +96,7 @@ public class CarbonCompactionExecutor {
 
   /**
    * For processing of the table blocks.
+   *
    * @return List of Carbon iterators
    */
   public List<RawResultIterator> processTableBlocks() throws QueryExecutionException {
@@ -113,10 +113,8 @@ public class CarbonCompactionExecutor {
 
       int[] colCardinality = listMetadata.get(0).getSegmentInfo().getColumnCardinality();
 
-      SegmentProperties sourceSegProperties = new SegmentProperties(
-          listMetadata.get(0).getColumnInTable(),
-          colCardinality
-      );
+      SegmentProperties sourceSegProperties =
+          new SegmentProperties(listMetadata.get(0).getColumnInTable(), colCardinality);
 
       // for each segment get taskblock info
       TaskBlockInfo taskBlockInfo = taskMap.getValue();
@@ -128,7 +126,7 @@ public class CarbonCompactionExecutor {
         Collections.sort(list);
         LOGGER.info("for task -" + task + "-block size is -" + list.size());
         queryModel.setTableBlockInfos(list);
-        resultList.add(new RawResultIterator( executeBlockList(list),sourceSegProperties,
+        resultList.add(new RawResultIterator(executeBlockList(list), sourceSegProperties,
             destinationSegProperties));
 
       }
@@ -147,7 +145,7 @@ public class CarbonCompactionExecutor {
       throws QueryExecutionException {
 
     queryModel.setTableBlockInfos(blockList);
-    this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
+    this.queryExecutor = QueryExecutorFactory.getQueryExecutor();
     CarbonIterator<BatchResult> iter = null;
     try {
       iter = queryExecutor.execute(queryModel);
@@ -160,10 +158,23 @@ public class CarbonCompactionExecutor {
   }
 
   /**
+   * Below method will be used
+   * for cleanup
+   */
+  public void finish() {
+    try {
+      queryExecutor.finish();
+    } catch (QueryExecutionException e) {
+      LOGGER.error(e, "Problem while finish: ");
+    }
+    clearDictionaryFromQueryModel();
+  }
+
+  /**
    * This method will clear the dictionary access count after its usage is complete so
    * that column can be deleted form LRU cache whenever memory reaches threshold
    */
-  public void clearDictionaryFromQueryModel() {
+  private void clearDictionaryFromQueryModel() {
     if (null != queryModel) {
       Map<String, Dictionary> columnToDictionaryMapping = queryModel.getColumnToDictionaryMapping();
       if (null != columnToDictionaryMapping) {
@@ -176,6 +187,7 @@ public class CarbonCompactionExecutor {
 
   /**
    * Preparing of the query model.
+   *
    * @param blockList
    * @return
    */

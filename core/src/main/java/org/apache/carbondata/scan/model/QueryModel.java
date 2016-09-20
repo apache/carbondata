@@ -199,8 +199,8 @@ public class QueryModel implements Serializable {
 
   }
 
-  public static void processFilterExpression(
-      Expression filterExpression, List<CarbonDimension> dimensions, List<CarbonMeasure> measures) {
+  public static void processFilterExpression(Expression filterExpression,
+      List<CarbonDimension> dimensions, List<CarbonMeasure> measures) {
     if (null != filterExpression) {
       if (null != filterExpression.getChildren() && filterExpression.getChildren().size() == 0) {
         if (filterExpression instanceof ConditionalExpression) {

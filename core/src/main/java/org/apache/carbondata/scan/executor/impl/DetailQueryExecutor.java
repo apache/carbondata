@@ -36,7 +36,8 @@ public class DetailQueryExecutor extends AbstractQueryExecutor {
   @Override public CarbonIterator<Object[]> execute(QueryModel queryModel)
       throws QueryExecutionException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
-    return new DetailQueryResultIterator(blockExecutionInfoList, queryModel);
+    return new DetailQueryResultIterator(blockExecutionInfoList, queryModel,
+        queryProperties.executorService);
   }
 
 }

@@ -37,4 +37,11 @@ public interface QueryExecutor<E> {
    * @throws QueryExecutionException if any failure while executing the query
    */
   CarbonIterator<E> execute(QueryModel queryModel) throws QueryExecutionException;
+
+  /**
+   * Below method will be used for cleanup
+   *
+   * @throws QueryExecutionException
+   */
+  void finish() throws QueryExecutionException;
 }
