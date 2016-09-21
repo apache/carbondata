@@ -39,9 +39,13 @@ class TestDeleteAllCarbonTablesInDB extends QueryTest with BeforeAndAfterAll {
 
   test("Drop all carbon tables in one database") {
     sql("DROP ALL CARBON TABLES IN testDB_deleteall")
-    checkAnswer(
-      sql("show tables in testDB_deleteall"), Seq(Row("hivetb", false))
+    val allTables = sql("show tables in testDB_deleteall").collectAsList()
+    assert(
+      allTables.contains(Row("hivetb", false)) &&
+      !allTables.contains(Row("carbonTB1", false)) &&
+      !allTables.contains(Row("carbonTB1", false))
     )
+
   }
 
   override def afterAll {
