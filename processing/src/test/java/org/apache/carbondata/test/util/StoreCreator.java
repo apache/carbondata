@@ -89,7 +89,6 @@ import com.google.gson.Gson;
 /**
  * This class will create store file based on provided schema
  *
- * @author Administrator
  */
 public class StoreCreator {
 
