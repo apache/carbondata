@@ -68,7 +68,7 @@ public class CarbonTimeStatisticsFactory {
     return QueryStatisticsRecorderInstance;
   }
 
-  public static QueryStatisticsRecorder getQueryStatisticsRecorder(String queryId) {
+  public static QueryStatisticsRecorder createRecorder(String queryId) {
     String queryStatisticsRecorderType = CarbonProperties.getInstance()
             .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
                     CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);

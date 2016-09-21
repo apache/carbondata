@@ -90,7 +90,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // Initializing statistics list to record the query statistics
     // creating copy on write to handle concurrent scenario
     queryProperties.queryStatisticsRecorder =
-            CarbonTimeStatisticsFactory.getQueryStatisticsRecorder(queryModel.getQueryId());
+            CarbonTimeStatisticsFactory.createRecorder(queryModel.getQueryId());
     queryModel.setStatisticsRecorder(queryProperties.queryStatisticsRecorder);
     QueryUtil.resolveQueryModel(queryModel);
     QueryStatistic queryStatistic = new QueryStatistic();

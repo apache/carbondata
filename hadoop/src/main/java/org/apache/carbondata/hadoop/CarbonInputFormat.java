@@ -460,7 +460,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       FilterExpressionProcessor filterExpressionProcessor,
       AbsoluteTableIdentifier absoluteTableIdentifier, FilterResolverIntf resolver,
       String segmentId) throws IndexBuilderException, IOException {
-    QueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorder("");
+    QueryStatisticsRecorder recorder =
+            CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance();
     QueryStatistic statistic = new QueryStatistic();
     Map<String, AbstractIndex> segmentIndexMap =
         getSegmentAbstractIndexs(job, absoluteTableIdentifier, segmentId);
@@ -488,8 +489,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     }
     statistic.addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_DRIVER,
         System.currentTimeMillis());
-    recorder.recordStatistics(statistic);
-    recorder.logStatistics();
+    recorder.recordStatisticsForDriver(statistic, job.getConfiguration().get("query.id"));
     return resultFilterredBlocks;
   }
 

@@ -86,6 +86,9 @@ class CarbonScanRDD[V: ClassTag](
     val (carbonInputFormat: CarbonInputFormat[Array[Object]], job: Job) =
       QueryPlanUtil.createCarbonInputFormat(queryModel.getAbsoluteTableIdentifier)
 
+    // initialise query_id for job
+    job.getConfiguration.set("query.id", queryModel.getQueryId)
+
     val result = new util.ArrayList[Partition](defaultParallelism)
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val validAndInvalidSegments = new SegmentStatusManager(queryModel.getAbsoluteTableIdentifier)

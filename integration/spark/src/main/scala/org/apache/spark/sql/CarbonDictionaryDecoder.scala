@@ -159,7 +159,7 @@ case class CarbonDictionaryDecoder(
         (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
       }.toMap
 
-      val recorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorder(queryId);
+      val recorder = CarbonTimeStatisticsFactory.createRecorder(queryId);
       if (isRequiredToDecode) {
         val dataTypes = child.output.map { attr => attr.dataType }
         child.execute().mapPartitions { iter =>
