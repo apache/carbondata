@@ -25,6 +25,7 @@ import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet}
 import scala.util.control.Breaks.{break, breakable}
 
+import au.com.bytecode.opencsv.CSVReader
 import org.apache.commons.lang3.{ArrayUtils, StringUtils}
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
@@ -38,9 +39,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
-import org.apache.carbondata.spark.load.CarbonLoaderUtil
-import org.apache.carbondata.spark.load.CarbonLoadModel
-import org.apache.carbondata.spark.partition.reader.{CSVParser, CSVReader}
+import org.apache.carbondata.spark.load.{CarbonLoaderUtil, CarbonLoadModel}
 import org.apache.carbondata.spark.tasks.{DictionaryWriterTask, SortIndexWriterTask}
 import org.apache.carbondata.spark.util.GlobalDictionaryUtil
 import org.apache.carbondata.spark.util.GlobalDictionaryUtil._
@@ -500,7 +499,7 @@ class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
       inputStream = FileFactory.getDataInputStream(preDefDictFilePath,
         FileFactory.getFileType(preDefDictFilePath))
       csvReader = new CSVReader(new InputStreamReader(inputStream, Charset.defaultCharset),
-        CSVReader.DEFAULT_SKIP_LINES, new CSVParser(carbonLoadModel.getCsvDelimiter.charAt(0)))
+        carbonLoadModel.getCsvDelimiter.charAt(0))
       // read the column data to list iterator
       colDictData = csvReader.readAll.iterator
     } catch {
