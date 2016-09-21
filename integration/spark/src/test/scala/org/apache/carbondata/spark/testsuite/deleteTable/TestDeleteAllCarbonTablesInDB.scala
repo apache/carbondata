@@ -43,7 +43,7 @@ class TestDeleteAllCarbonTablesInDB extends QueryTest with BeforeAndAfterAll {
     assert(
       allTables.contains(Row("hivetb", false)) &&
       !allTables.contains(Row("carbonTB1", false)) &&
-      !allTables.contains(Row("carbonTB1", false))
+      !allTables.contains(Row("carbonTB2", false))
     )
 
   }
