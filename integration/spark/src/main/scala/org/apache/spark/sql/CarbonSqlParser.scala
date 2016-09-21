@@ -195,10 +195,11 @@ class CarbonSqlParser()
   private def carbonKeyWord(keys: String) =
     ("(?i)" + keys).r
 
-  override protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand | dropAllCarbonTables
+  override protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
 
   protected lazy val startCommand: Parser[LogicalPlan] =
-    dropDatabaseCascade | loadManagement | describeTable | showLoads | alterTable | createTable
+    dropAllCarbonTables | dropDatabaseCascade | loadManagement | describeTable | showLoads |
+      alterTable | createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] = deleteLoadsByID | deleteLoadsByLoadDate |
     cleanFiles | loadDataNew
