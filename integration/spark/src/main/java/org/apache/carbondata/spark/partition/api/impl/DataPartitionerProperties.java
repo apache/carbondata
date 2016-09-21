@@ -17,9 +17,6 @@
  * under the License.
  */
 
-/**
- *
- */
 package org.apache.carbondata.spark.partition.api.impl;
 
 import java.io.File;

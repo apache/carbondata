@@ -28,13 +28,12 @@ import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog}
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.ExtractPythonUDFs
-import org.apache.spark.sql.execution.command.PartitionData
 import org.apache.spark.sql.execution.datasources.{PreInsertCastAndRename, PreWriteCheck}
 import org.apache.spark.sql.hive._
 import org.apache.spark.sql.optimizer.CarbonOptimizer
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
+import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
 import org.apache.carbondata.spark.rdd.CarbonDataFrameRDD
@@ -153,45 +152,6 @@ object CarbonContext {
 
   @transient
   val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)
-  /**
-   * @param databaseName - Database Name
-   * @param tableName   - Table Name
-   * @param factPath   - Raw CSV data path
-   * @param targetPath - Target path where the file will be split as per partition
-   * @param delimiter  - default file delimiter is comma(,)
-   * @param quoteChar  - default quote character used in Raw CSV file, Default quote
-   *                   character is double quote(")
-   * @param fileHeader - Header should be passed if not available in Raw CSV File, else pass null,
-   *                   Header will be read from CSV
-   * @param escapeChar - This parameter by default will be null, there wont be any validation if
-   *                   default escape character(\) is found on the RawCSV file
-   * @param multiLine  - This parameter will be check for end of quote character if escape character
-   *                   & quote character is set.
-   *                   if set as false, it will check for end of quote character within the line
-   *                   and skips only 1 line if end of quote not found
-   *                   if set as true, By default it will check for 10000 characters in multiple
-   *                   lines for end of quote & skip all lines if end of quote not found.
-   */
-  final def partitionData(
-      databaseName: String = null,
-      tableName: String,
-      factPath: String,
-      targetPath: String,
-      delimiter: String = ",",
-      quoteChar: String = "\"",
-      fileHeader: String = null,
-      escapeChar: String = null,
-      multiLine: Boolean = false)(hiveContext: HiveContext): String = {
-    updateCarbonPorpertiesPath(hiveContext)
-    var databaseNameLocal = databaseName
-    if (databaseNameLocal == null) {
-      databaseNameLocal = "default"
-    }
-    val partitionDataClass = PartitionData(databaseName, tableName, factPath, targetPath, delimiter,
-      quoteChar, fileHeader, escapeChar, multiLine)
-    partitionDataClass.run(hiveContext)
-    partitionDataClass.partitionStatus
-  }
 
   final def updateCarbonPorpertiesPath(hiveContext: HiveContext) {
     val carbonPropertiesFilePath = hiveContext.getConf("carbon.properties.filepath", null)
