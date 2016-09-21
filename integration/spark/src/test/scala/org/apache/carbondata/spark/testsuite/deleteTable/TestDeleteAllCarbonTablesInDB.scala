@@ -27,8 +27,8 @@ import org.scalatest.BeforeAndAfterAll
 class TestDeleteAllCarbonTablesInDB extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("create database if not exists testDB")
-    sql("use testDB")
+    sql("create database if not exists testDB_deleteall")
+    sql("use testDB_deleteall")
     sql("drop table if exists carbonTB1")
     sql("drop table if exists carbonTB2")
     sql("drop table if exists hiveTB")
@@ -38,9 +38,9 @@ class TestDeleteAllCarbonTablesInDB extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Drop all carbon tables in one database") {
-    sql("DROP ALL CARBON TABLES IN testDB")
+    sql("DROP ALL CARBON TABLES IN testDB_deleteall")
     checkAnswer(
-      sql("show tables in testDB"), Seq(Row("hivetb", false))
+      sql("show tables in testDB_deleteall"), Seq(Row("hivetb", false))
     )
   }
 
@@ -48,7 +48,7 @@ class TestDeleteAllCarbonTablesInDB extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonTB1")
     sql("drop table if exists carbonTB2")
     sql("drop table if exists hiveTB")
-    sql("drop database testDB")
+    sql("drop database testDB_deleteall")
     sql("use default")
   }
 }
