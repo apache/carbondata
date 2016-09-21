@@ -435,6 +435,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @throws QueryExecutionException
    */
   @Override public void finish() throws QueryExecutionException {
+    QueryStatistic statistic = new QueryStatistic();
+    statistic.addFixedTimeStatistic(QueryStatisticsConstants.SCAN_BLOCKS_TIME,
+        System.currentTimeMillis() - queryProperties.scanStartTime);
+    queryProperties.queryStatisticsRecorder.recordStatistics(statistic);
     if (null != queryProperties.executorService) {
       queryProperties.executorService.shutdownNow();
     }

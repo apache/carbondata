@@ -18,9 +18,7 @@
  */
 package org.apache.carbondata.scan.executor.impl;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
@@ -91,5 +89,10 @@ public class QueryExecutorProperties {
    * list of blocks in which query will be executed
    */
   protected List<AbstractIndex> dataBlocks;
+  /**
+   * start time scanning
+   *
+   * */
+  public long scanStartTime;
 
 }

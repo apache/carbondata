@@ -27,9 +27,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.apache.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
-import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
-import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
-import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
@@ -63,18 +60,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
   protected FileHolder fileReader;
   protected AbstractDataBlockIterator dataBlockIterator;
   protected boolean nextBatch = false;
-  /**
-   * total time scan the blocks
-   */
-  protected long totalScanTime;
-  /**
-   * is the statistic recorded
-   */
-  protected boolean isStatisticsRecorded;
-  /**
-   * QueryStatisticsRecorder
-   */
-  protected QueryStatisticsRecorder recorder;
+
   /**
    * number of cores which can be used
    */
@@ -94,7 +80,6 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     } else {
       batchSize = CarbonCommonConstants.DETAIL_QUERY_BATCH_SIZE_DEFAULT;
     }
-    this.recorder = queryModel.getStatisticsRecorder();
     this.blockExecutionInfos = infos;
     this.fileReader = FileFactory.getFileHolder(
         FileFactory.getFileType(queryModel.getAbsoluteTableIdentifier().getStorePath()));
@@ -103,7 +88,6 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
   }
 
   private void intialiseInfos() {
-    totalScanTime = System.currentTimeMillis();
     for (BlockExecutionInfo blockInfo : blockExecutionInfos) {
       DataRefNodeFinder finder = new BTreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
       DataRefNode startDataBlock = finder
@@ -130,13 +114,6 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     } else if (blockExecutionInfos.size() > 0) {
       return true;
     } else {
-      if (!isStatisticsRecorded) {
-        QueryStatistic statistic = new QueryStatistic();
-        statistic.addFixedTimeStatistic(QueryStatisticsConstants.SCAN_BLOCKS_TIME,
-            System.currentTimeMillis() - totalScanTime);
-        recorder.recordStatistics(statistic);
-        isStatisticsRecorded = true;
-      }
       return false;
     }
   }
