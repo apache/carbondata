@@ -1139,28 +1139,6 @@ private[sql] case class LoadTable(
           carbonLoadModel.setColDictFilePath(columnDict)
           carbonLoadModel.setDirectLoad(true)
         }
-        else {
-          val fileType = FileFactory.getFileType(partitionLocation)
-          if (FileFactory.isFileExist(partitionLocation, fileType)) {
-            val file = FileFactory.getCarbonFile(partitionLocation, fileType)
-            CarbonUtil.deleteFoldersAndFiles(file)
-          }
-          partitionLocation += System.currentTimeMillis()
-          FileFactory.mkdirs(partitionLocation, fileType)
-          LOGGER.info("Initiating Data Partitioning for the Table : (" +
-                      dbName + "." + tableName + ")")
-          partitionStatus = CarbonContext.partitionData(
-            dbName,
-            tableName,
-            factPath,
-            partitionLocation,
-            delimiter,
-            quoteChar,
-            fileHeader,
-            escapeChar, multiLine)(sqlContext.asInstanceOf[HiveContext])
-          carbonLoadModel.setFactFilePath(FileUtils.getPaths(partitionLocation))
-          carbonLoadModel.setColDictFilePath(columnDict)
-        }
         GlobalDictionaryUtil
           .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.tableMeta.storePath)
         CarbonDataRDDFactory
@@ -1211,34 +1189,6 @@ private[sql] case class LoadTable(
     Seq.empty
   }
 
-}
-
-private[sql] case class PartitionData(databaseName: String, tableName: String, factPath: String,
-    targetPath: String, delimiter: String, quoteChar: String,
-    fileHeader: String, escapeChar: String, multiLine: Boolean)
-  extends RunnableCommand {
-
-  var partitionStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
-
-  def run(sqlContext: SQLContext): Seq[Row] = {
-    val identifier = TableIdentifier(tableName, Option(databaseName))
-    val relation = CarbonEnv.getInstance(sqlContext)
-      .carbonCatalog.lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
-    val dimNames = relation.tableMeta.carbonTable
-      .getDimensionByTableName(tableName).asScala.map(_.getColName)
-    val msrNames = relation.tableMeta.carbonTable
-      .getDimensionByTableName(tableName).asScala.map(_.getColName)
-    val targetFolder = targetPath
-    partitionStatus = CarbonDataRDDFactory.partitionCarbonData(
-      sqlContext.sparkContext, databaseName,
-      tableName, factPath, targetFolder, (dimNames ++ msrNames).toArray
-      , fileHeader, delimiter,
-      quoteChar, escapeChar, multiLine, relation.tableMeta.partitioner)
-    if (partitionStatus == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS) {
-      logInfo("Bad Record Found while partitioning data")
-    }
-    Seq.empty
-  }
 }
 
 private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: Option[String],

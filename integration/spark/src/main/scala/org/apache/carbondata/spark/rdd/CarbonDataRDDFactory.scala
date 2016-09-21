@@ -62,37 +62,6 @@ object CarbonDataRDDFactory extends Logging {
 
   val logger = LogServiceFactory.getLogService(CarbonDataRDDFactory.getClass.getName)
 
-  // scalastyle:off
-  def partitionCarbonData(sc: SparkContext,
-      databaseName: String,
-      tableName: String,
-      sourcePath: String,
-      targetFolder: String,
-      requiredColumns: Array[String],
-      headers: String,
-      delimiter: String,
-      quoteChar: String,
-      escapeChar: String,
-      multiLine: Boolean,
-      partitioner: Partitioner): String = {
-    // scalastyle:on
-    val status = new
-        CarbonDataPartitionRDD(sc, new PartitionResultImpl(), databaseName, tableName, sourcePath,
-          targetFolder, requiredColumns, headers, delimiter, quoteChar, escapeChar, multiLine,
-          partitioner
-        ).collect
-    CarbonDataProcessorUtil
-      .renameBadRecordsFromInProgressToNormal("partition/" + databaseName + '/' + tableName)
-    var loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
-    status.foreach {
-      case (key, value) =>
-        if (value) {
-          loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
-        }
-    }
-    loadStatus
-  }
-
   def mergeCarbonData(
       sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,

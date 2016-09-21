@@ -49,13 +49,22 @@ import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.spark.CarbonSparkFactory
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.load.CarbonLoadModel
-import org.apache.carbondata.spark.partition.reader.CSVWriter
 import org.apache.carbondata.spark.rdd._
 
 /**
  * A object which provide a method to generate global dictionary from CSV files.
  */
 object GlobalDictionaryUtil extends Logging {
+
+  /**
+   * The default separator to use if none is supplied to the constructor.
+   */
+  val DEFAULT_SEPARATOR: Char = ','
+  /**
+   * The default quote character to use if none is supplied to the
+   * constructor.
+   */
+  val DEFAULT_QUOTE_CHARACTER: Char = '"'
 
   /**
    * find columns which need to generate global dictionary.
@@ -354,7 +363,7 @@ object GlobalDictionaryUtil extends Logging {
       })
       .option("delimiter", {
         if (StringUtils.isEmpty(carbonLoadModel.getCsvDelimiter)) {
-          "" + CSVWriter.DEFAULT_SEPARATOR
+          "" + DEFAULT_SEPARATOR
         }
         else {
           carbonLoadModel.getCsvDelimiter
@@ -367,7 +376,7 @@ object GlobalDictionaryUtil extends Logging {
       .option("codec", "gzip")
       .option("quote", {
         if (StringUtils.isEmpty(carbonLoadModel.getQuoteChar)) {
-          "" + CSVWriter. DEFAULT_QUOTE_CHARACTER
+          "" + DEFAULT_QUOTE_CHARACTER
         }
         else {
           carbonLoadModel.getQuoteChar
@@ -592,7 +601,7 @@ object GlobalDictionaryUtil extends Logging {
    */
   private def parseRecord(x: String, accum: Accumulator[Int],
                   csvFileColumns: Array[String]) : (String, String) = {
-    val tokens = x.split("" + CSVWriter.DEFAULT_SEPARATOR)
+    val tokens = x.split("" + DEFAULT_SEPARATOR)
     var columnName: String = ""
     var value: String = ""
     // such as "," , "", throw ex
@@ -713,7 +722,7 @@ object GlobalDictionaryUtil extends Logging {
 
     if (null != readLine) {
       val delimiter = if (StringUtils.isEmpty(carbonLoadModel.getCsvDelimiter)) {
-        "" + CSVWriter.DEFAULT_SEPARATOR
+        "" + DEFAULT_SEPARATOR
       } else {
         carbonLoadModel.getCsvDelimiter
       }
@@ -756,7 +765,7 @@ object GlobalDictionaryUtil extends Logging {
           df.columns
         }
         else {
-          carbonLoadModel.getCsvHeader.split("" + CSVWriter.DEFAULT_SEPARATOR)
+          carbonLoadModel.getCsvHeader.split("" + DEFAULT_SEPARATOR)
         }
         headers = headers.map(headerName => headerName.trim)
         val colDictFilePath = carbonLoadModel.getColDictFilePath
@@ -820,7 +829,7 @@ object GlobalDictionaryUtil extends Logging {
           var headers = if (StringUtils.isEmpty(carbonLoadModel.getCsvHeader)) {
             getHeaderFormFactFile(carbonLoadModel)
           } else {
-            carbonLoadModel.getCsvHeader.toLowerCase.split("" + CSVWriter.DEFAULT_SEPARATOR)
+            carbonLoadModel.getCsvHeader.toLowerCase.split("" + DEFAULT_SEPARATOR)
           }
           headers = headers.map(headerName => headerName.trim)
           // prune columns according to the CSV file header, dimension columns
