@@ -66,6 +66,7 @@ case class tableModel(
     var databaseName: String,
     databaseNameOp: Option[String],
     tableName: String,
+    tableBlockSize: Option[Integer],
     dimCols: Seq[Field],
     msrCols: Seq[Field],
     fromKeyword: String,
@@ -419,6 +420,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     schemaEvol
       .setSchemaEvolutionEntryList(new util.ArrayList[SchemaEvolutionEntry]())
     tableSchema.setTableId(UUID.randomUUID().toString)
+    tableSchema.setBlockszie(Integer.parseInt(cm.tableBlockSize.getOrElse(0).toString))
     tableSchema.setTableName(cm.tableName)
     tableSchema.setListOfColumns(allColumns.asJava)
     tableSchema.setSchemaEvalution(schemaEvol)

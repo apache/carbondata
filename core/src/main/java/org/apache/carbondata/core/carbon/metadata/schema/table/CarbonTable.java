@@ -77,6 +77,11 @@ public class CarbonTable implements Serializable {
    */
   private long tableLastUpdatedTime;
 
+  /**
+   * table block size
+   */
+  private int blocksize;
+
   public CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableMeasuresMap = new HashMap<String, List<CarbonMeasure>>();
@@ -87,6 +92,7 @@ public class CarbonTable implements Serializable {
    * @param tableInfo
    */
   public void loadCarbonTable(TableInfo tableInfo) {
+    this.blocksize = tableInfo.getFactTable().getBlockszie();
     this.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
     this.tableUniqueName = tableInfo.getTableUniqueName();
     this.metaDataFilepath = tableInfo.getMetaDataFilepath();
@@ -390,4 +396,13 @@ public class CarbonTable implements Serializable {
   public int getPartitionCount() {
     return 1;
   }
+
+  public int getBlocksize() {
+    return blocksize;
+  }
+
+  public void setBlocksize(int blocksize) {
+    this.blocksize = blocksize;
+  }
+
 }
