@@ -1200,27 +1200,6 @@ class CarbonSqlParser()
         }
     }
 
-  protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
-    DELETE ~> SEGMENT ~> repsep(segmentId, ",") ~ (FROM ~> TABLE ~>
-      (ident <~ ".").? ~ ident) <~
-      opt(";") ^^ {
-      case loadids ~ table => table match {
-        case databaseName ~ tableName =>
-          DeleteLoadsById(loadids, databaseName, tableName.toLowerCase())
-      }
-    }
-
-  protected lazy val deleteLoadsByLoadDate: Parser[LogicalPlan] =
-    DELETE ~> SEGMENTS ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
-      (WHERE ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
-      opt(";") ^^ {
-      case schema ~ table ~ condition =>
-        condition match {
-          case dateField ~ dateValue =>
-            DeleteLoadsByLoadDate(schema, table.toLowerCase(), dateField, dateValue)
-        }
-    }
-
   protected lazy val cleanFiles: Parser[LogicalPlan] =
     CLEAN ~> FILES ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
       case databaseName ~ tableName => CleanFiles(databaseName, tableName.toLowerCase())
