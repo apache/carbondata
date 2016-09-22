@@ -25,12 +25,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 /**
  * Mapping class for Carbon actual table
@@ -41,6 +44,12 @@ public class CarbonTable implements Serializable {
    * serialization id
    */
   private static final long serialVersionUID = 8696507171227156445L;
+
+  /**
+   * Attribute for Carbon table LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CarbonTable.class.getName());
 
   /**
    * Absolute table identifier
@@ -77,6 +86,11 @@ public class CarbonTable implements Serializable {
    */
   private long tableLastUpdatedTime;
 
+  /**
+   * table block size
+   */
+  private int blocksize;
+
   public CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableMeasuresMap = new HashMap<String, List<CarbonMeasure>>();
@@ -87,6 +101,7 @@ public class CarbonTable implements Serializable {
    * @param tableInfo
    */
   public void loadCarbonTable(TableInfo tableInfo) {
+    this.blocksize = getTableBlockSize(tableInfo);
     this.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
     this.tableUniqueName = tableInfo.getTableUniqueName();
     this.metaDataFilepath = tableInfo.getMetaDataFilepath();
@@ -103,6 +118,30 @@ public class CarbonTable implements Serializable {
       this.aggregateTablesName.add(aggTable.getTableName());
       fillDimensionsAndMeasuresForTables(aggTable);
     }
+  }
+
+  /**
+   * This method will return the table size. Default table block size will be considered
+   * in case not specified by the user
+   *
+   * @param tableInfo
+   * @return
+   */
+  private int getTableBlockSize(TableInfo tableInfo) {
+    String tableBlockSize = null;
+    // In case of old store there will not be any map for table properties so table properties
+    // will be null
+    Map<String, String> tableProperties = tableInfo.getFactTable().getTableProperties();
+    if (null != tableProperties) {
+      tableBlockSize = tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE);
+    }
+    if (null == tableBlockSize) {
+      tableBlockSize = CarbonCommonConstants.BLOCK_SIZE_DEFAULT_VAL;
+      LOGGER.info("Table block size not specified for " + tableInfo.getTableUniqueName()
+          + ". Therefore considering the default value "
+          + CarbonCommonConstants.BLOCK_SIZE_DEFAULT_VAL + " MB");
+    }
+    return Integer.parseInt(tableBlockSize);
   }
 
   /**
@@ -390,4 +429,13 @@ public class CarbonTable implements Serializable {
   public int getPartitionCount() {
     return 1;
   }
+
+  public int getBlocksize() {
+    return blocksize;
+  }
+
+  public void setBlocksize(int blocksize) {
+    this.blocksize = blocksize;
+  }
+
 }

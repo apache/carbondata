@@ -179,7 +179,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   public AbstractFactDataWriter(String storeLocation, int measureCount, int mdKeyLength,
       String databaseName, String tableName, IFileManagerComposite fileManager, int[] keyBlockSize,
       CarbonDataFileAttributes carbonDataFileAttributes, List<ColumnSchema> columnSchema,
-      String carbonDataDirectoryPath, int[] colCardinality, SegmentProperties segmentProperties) {
+      String carbonDataDirectoryPath, int[] colCardinality, SegmentProperties segmentProperties,
+      int blocksize) {
 
     // measure count
     this.measureCount = measureCount;
@@ -196,10 +197,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     blockIndexInfoList = new ArrayList<>();
     // get max file size;
     CarbonProperties propInstance = CarbonProperties.getInstance();
-    this.fileSizeInBytes = Long.parseLong(propInstance
-        .getProperty(CarbonCommonConstants.MAX_FILE_SIZE,
-            CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL))
-        * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
+    this.fileSizeInBytes = blocksize * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
         * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR * 1L;
     this.spaceReservedForBlockMetaSize = Integer.parseInt(propInstance
         .getProperty(CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE,
