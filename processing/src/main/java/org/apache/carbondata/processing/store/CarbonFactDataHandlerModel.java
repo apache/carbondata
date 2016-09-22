@@ -39,6 +39,19 @@ public class CarbonFactDataHandlerModel {
    * table name
    */
   private String tableName;
+
+  public int getBlocksize() {
+    return blocksize;
+  }
+
+  public void setBlocksize(int blocksize) {
+    this.blocksize = blocksize;
+  }
+
+  /**
+   * table blocksize
+   */
+  private int blocksize;
   /**
    * flag to check whether to group the similar data
    */

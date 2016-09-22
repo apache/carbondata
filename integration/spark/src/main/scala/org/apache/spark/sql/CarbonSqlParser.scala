@@ -40,7 +40,7 @@ import org.apache.spark.sql.hive.HiveQlWrapper
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -468,9 +468,11 @@ class CarbonSqlParser()
     val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
 
     val partitioner: Option[Partitioner] = getPartitionerObject(partitionCols, tableProperties)
+    // get the tableBlockSize from table properties
+    val tableBlockSize: Integer = getTableBlockSize(tableProperties)
 
     tableModel(ifNotExistPresent,
-      dbName.getOrElse("default"), dbName, tableName,
+      dbName.getOrElse("default"), dbName, tableName, Option(tableBlockSize),
       reorderDimensions(dims.map(f => normalizeType(f)).map(f => addParent(f))),
       msrs.map(f => normalizeType(f)), "", null, "",
       None, Seq(), null, Option(noDictionaryDims), Option(noInvertedIdxCols), null, partitioner,
@@ -546,6 +548,18 @@ class CarbonSqlParser()
     colGrpNames.toString()
   }
 
+  protected def getTableBlockSize(tableProperties: Map[String, String]): Integer = {
+    var tableBlockSize: Integer = 0
+    if (tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).isDefined) {
+      val blockSizeStr: String = tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).get
+      try {
+        tableBlockSize = Integer.parseInt(blockSizeStr)
+      } catch {
+        case e: NumberFormatException => tableBlockSize = 0
+      }
+    }
+    tableBlockSize
+  }
 
   /**
    * For getting the partitioner Object
