@@ -39,6 +39,7 @@ object DataFrameAPIExample {
     df.write
       .format("carbondata")
       .option("tableName", "carbon1")
+      .option("compress", "true")
       .mode(SaveMode.Overwrite)
       .save()
 
