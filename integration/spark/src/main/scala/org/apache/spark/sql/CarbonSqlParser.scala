@@ -548,12 +548,6 @@ class CarbonSqlParser()
     colGrpNames.toString()
   }
 
-  /**
-    * For getting the partitioner Object
-    *
-    * @param tableProperties
-    * @return
-    */
   protected def getTableBlockSize(tableProperties: Map[String, String]): Integer = {
     var tableBlockSize: Integer = 0
     if (tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).isDefined) {
