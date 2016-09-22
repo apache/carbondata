@@ -58,6 +58,7 @@ class CarbonSqlParser()
   protected val HIGH_CARDINALITY_DIMS = carbonKeyWord("NO_DICTIONARY")
   protected val BEFORE = carbonKeyWord("BEFORE")
   protected val BY = carbonKeyWord("BY")
+  protected val EQUAL = carbonKeyWord("EQUAL")
   protected val CARDINALITY = carbonKeyWord("CARDINALITY")
   protected val CASCADE = carbonKeyWord("CASCADE")
   protected val CLASS = carbonKeyWord("CLASS")
@@ -1179,6 +1180,25 @@ class CarbonSqlParser()
       elem("decimal", p => {
         p.getClass.getSimpleName.equals("FloatLit") ||
         p.getClass.getSimpleName.equals("DecimalLit") } ) ^^ (_.chars)
+
+  protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
+    DELETE ~> FROM ~ TABLE ~> (ident <~ ".").? ~ ident ~
+      (WHERE ~> SEGMENT ~> EQUAL ~> repsep(segmentId, ",")) <~
+      opt(";") ^^ {
+      case dbName ~ tableName ~ loadids =>
+        DeleteLoadsById(loadids, dbName, tableName.toLowerCase())
+    }
+
+  protected lazy val deleteLoadsByLoadDate: Parser[LogicalPlan] =
+    DELETE ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
+      (WHERE ~> SEGMENTS ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
+      opt(";") ^^ {
+      case database ~ table ~ condition =>
+        condition match {
+          case dateField ~ dateValue =>
+            DeleteLoadsByLoadDate(database, table.toLowerCase(), dateField, dateValue)
+        }
+    }
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
     DELETE ~> SEGMENT ~> repsep(segmentId, ",") ~ (FROM ~> TABLE ~>
