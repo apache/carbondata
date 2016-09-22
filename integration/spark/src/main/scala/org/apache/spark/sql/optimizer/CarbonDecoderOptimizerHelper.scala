@@ -22,7 +22,7 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
-import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.expressions.{Attribute, ExprId}
 import org.apache.spark.sql.catalyst.plans.logical._
 
 abstract class AbstractNode
@@ -110,31 +110,28 @@ case class AttributeReferenceWrapper(attr: Attribute) {
       attr.name.equalsIgnoreCase(ar.attr.name) && attr.exprId == ar.attr.exprId
     case _ => false
   }
-  override def hashCode: Int = {
-    var h = 17
-    h = h * 37 + attr.exprId.hashCode()
-    h
-  }
 
-
+  // constant hash value
+  lazy val hash = (attr.name.toLowerCase + "." + attr.exprId.id).hashCode
+  override def hashCode: Int = hash
 }
 
-case class Marker(set: util.Set[Attribute], binary: Boolean = false)
+case class Marker(set: util.Set[AttributeReferenceWrapper], binary: Boolean = false)
 
 class CarbonPlanMarker {
   val markerStack = new util.Stack[Marker]
   var joinCount = 0
 
-  def pushMarker(attrs: util.Set[Attribute]): Unit = {
+  def pushMarker(attrs: util.Set[AttributeReferenceWrapper]): Unit = {
     markerStack.push(Marker(attrs))
   }
 
-  def pushBinaryMarker(attrs: util.Set[Attribute]): Unit = {
+  def pushBinaryMarker(attrs: util.Set[AttributeReferenceWrapper]): Unit = {
     markerStack.push(Marker(attrs, binary = true))
     joinCount = joinCount + 1
   }
 
-  def revokeJoin(): util.Set[Attribute] = {
+  def revokeJoin(): util.Set[AttributeReferenceWrapper] = {
     if (joinCount > 0) {
       while (!markerStack.empty()) {
         val marker = markerStack.pop()
