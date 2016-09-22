@@ -179,7 +179,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   public AbstractFactDataWriter(String storeLocation, int measureCount, int mdKeyLength,
       String databaseName, String tableName, IFileManagerComposite fileManager, int[] keyBlockSize,
       CarbonDataFileAttributes carbonDataFileAttributes, List<ColumnSchema> columnSchema,
-      String carbonDataDirectoryPath, int[] colCardinality, SegmentProperties segmentProperties) {
+      String carbonDataDirectoryPath, int[] colCardinality, SegmentProperties segmentProperties,
+      int blocksize) {
 
     // measure count
     this.measureCount = measureCount;
@@ -196,11 +197,22 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     blockIndexInfoList = new ArrayList<>();
     // get max file size;
     CarbonProperties propInstance = CarbonProperties.getInstance();
-    this.fileSizeInBytes = Long.parseLong(propInstance
-        .getProperty(CarbonCommonConstants.MAX_FILE_SIZE,
-            CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL))
-        * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
-        * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR * 1L;
+    // If blocksize is defined by create table ddl, then use this value otherwise
+    // use system level property
+    if (blocksize >= CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL_MIN_VAL &&
+        blocksize <= CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL_MAX_VAL) {
+      LOGGER.audit("The max file size is set in table level. ");
+      this.fileSizeInBytes = blocksize * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
+          * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR * 1L;
+    } else {
+      LOGGER.audit("The max file size in create table ddl is not set or is invalid, " +
+          "so here use " + CarbonCommonConstants.MAX_FILE_SIZE + "to set. ");
+      this.fileSizeInBytes = Long.parseLong(propInstance
+          .getProperty(CarbonCommonConstants.MAX_FILE_SIZE,
+              CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL))
+          * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
+          * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR * 1L;
+    }
     this.spaceReservedForBlockMetaSize = Integer.parseInt(propInstance
         .getProperty(CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE,
             CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT));

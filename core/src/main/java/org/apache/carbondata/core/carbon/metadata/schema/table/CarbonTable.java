@@ -80,7 +80,7 @@ public class CarbonTable implements Serializable {
   /**
    * table block size
    */
-  private long blocksize;
+  private int blocksize;
 
   public CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
@@ -397,11 +397,11 @@ public class CarbonTable implements Serializable {
     return 1;
   }
 
-  public long getBlocksize() {
+  public int getBlocksize() {
     return blocksize;
   }
 
-  public void setBlocksize(long blocksize) {
+  public void setBlocksize(int blocksize) {
     this.blocksize = blocksize;
   }
 

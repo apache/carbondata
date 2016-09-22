@@ -23,7 +23,6 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.LinkedHashSet
 import scala.language.implicitConversions
 import scala.util.matching.Regex
-
 import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
 import org.apache.spark.Logging
@@ -36,11 +35,10 @@ import org.apache.spark.sql.execution.ExplainCommand
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -60,7 +58,6 @@ class CarbonSqlParser()
   protected val BY = carbonKeyWord("BY")
   protected val CARDINALITY = carbonKeyWord("CARDINALITY")
   protected val CASCADE = carbonKeyWord("CASCADE")
-  protected val CARBON = carbonKeyWord("CARBON")
   protected val CLASS = carbonKeyWord("CLASS")
   protected val CLEAN = carbonKeyWord("CLEAN")
   protected val COLS = carbonKeyWord("COLS")
@@ -198,7 +195,7 @@ class CarbonSqlParser()
   override protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
 
   protected lazy val startCommand: Parser[LogicalPlan] =
-    dropAllCarbonTables | dropDatabaseCascade | loadManagement | describeTable | showLoads |
+    dropDatabaseCascade | loadManagement | describeTable | showLoads |
       alterTable | createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] = deleteLoadsByID | deleteLoadsByLoadDate |
@@ -470,9 +467,11 @@ class CarbonSqlParser()
     val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
 
     val partitioner: Option[Partitioner] = getPartitionerObject(partitionCols, tableProperties)
+    // get the tableBlockSize from table properties
+    val tableBlockSize: Integer = getTableBlockSize(tableProperties)
 
     tableModel(ifNotExistPresent,
-      dbName.getOrElse("default"), dbName, tableName,
+      dbName.getOrElse("default"), dbName, tableName, Option(tableBlockSize),
       reorderDimensions(dims.map(f => normalizeType(f)).map(f => addParent(f))),
       msrs.map(f => normalizeType(f)), "", null, "",
       None, Seq(), null, Option(noDictionaryDims), Option(noInvertedIdxCols), null, partitioner,
@@ -548,6 +547,27 @@ class CarbonSqlParser()
     colGrpNames.toString()
   }
 
+  /**
+    * For getting the TableBlockSize
+    *
+    * @param tableProperties
+    * @return
+    */
+  protected def getTableBlockSize(tableProperties: Map[String, String]) :Integer = {
+    var tableBlockSize :Integer = 0
+    if (tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).isDefined) {
+      val blockSizeStr :String = tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).get
+      try {
+        tableBlockSize = Integer.parseInt(blockSizeStr)
+      }
+      catch {
+        case e: NumberFormatException => {
+          tableBlockSize = 0
+        }
+      }
+    }
+    tableBlockSize
+  }
 
   /**
    * For getting the partitioner Object
@@ -1174,11 +1194,6 @@ class CarbonSqlParser()
       opt(";") ^^ {
       case databaseName ~ tableName ~ limit =>
         ShowLoadsCommand(databaseName, tableName.toLowerCase(), limit)
-    }
-
-  protected lazy val dropAllCarbonTables: Parser[LogicalPlan] =
-    DROP ~> ALL ~> CARBON ~> TABLES ~> IN ~> ident <~ opt(";") ^^ {
-      case dbName => DropAllCarbonTables(dbName)
     }
 
   protected lazy val segmentId: Parser[String] =

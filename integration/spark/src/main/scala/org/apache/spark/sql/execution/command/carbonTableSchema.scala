@@ -66,6 +66,7 @@ case class tableModel(
     var databaseName: String,
     databaseNameOp: Option[String],
     tableName: String,
+    tableBlockSize: Option[Integer],
     dimCols: Seq[Field],
     msrCols: Seq[Field],
     fromKeyword: String,
@@ -419,6 +420,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     schemaEvol
       .setSchemaEvolutionEntryList(new util.ArrayList[SchemaEvolutionEntry]())
     tableSchema.setTableId(UUID.randomUUID().toString)
+    tableSchema.setBlockszie(Integer.parseInt(cm.tableBlockSize.getOrElse(0).toString))
     tableSchema.setTableName(cm.tableName)
     tableSchema.setListOfColumns(allColumns.asJava)
     tableSchema.setSchemaEvalution(schemaEvol)
@@ -1532,23 +1534,4 @@ private[sql] case class CleanFiles(
     }
     Seq.empty
   }
-}
-
-private[sql] case class DropAllCarbonTables(dbName: String) extends RunnableCommand {
-
-  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
-  def run(sqlContext: SQLContext): Seq[Row] = {
-    LOGGER.audit(s"Drop all carbon tables request has been received for $dbName")
-    val carbonTablesInDB = CarbonEnv.getInstance(sqlContext).carbonCatalog
-      .getTables(Some(dbName))(sqlContext).map(x => x._1)
-    carbonTablesInDB.foreach{carbonTableName =>
-      sqlContext.sql(
-        s"""DROP TABLE IF EXISTS $carbonTableName""")
-        .collect
-    }
-    LOGGER.audit(s"Carbon tables under database $dbName had been dropped.")
-    Seq.empty
-  }
-
 }
