@@ -549,22 +549,19 @@ class CarbonSqlParser()
   }
 
   /**
-    * For getting the TableBlockSize
+    * For getting the partitioner Object
     *
     * @param tableProperties
     * @return
     */
-  protected def getTableBlockSize(tableProperties: Map[String, String]) :Integer = {
-    var tableBlockSize :Integer = 0
+  protected def getTableBlockSize(tableProperties: Map[String, String]): Integer = {
+    var tableBlockSize: Integer = 0
     if (tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).isDefined) {
-      val blockSizeStr :String = tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).get
+      val blockSizeStr: String = tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).get
       try {
         tableBlockSize = Integer.parseInt(blockSizeStr)
-      }
-      catch {
-        case e: NumberFormatException => {
-          tableBlockSize = 0
-        }
+      } catch {
+        case e: NumberFormatException => tableBlockSize = 0
       }
     }
     tableBlockSize
