@@ -148,7 +148,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     */
   test("delete compacted segment and check status") {
     try {
-      sql("delete segment 2 from table ignoremajor")
+      sql("delete from table ignoremajor where segments equal 2")
       assert(false)
     }
     catch {
@@ -178,7 +178,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     */
   test("delete compacted segment by date and check status") {
     sql(
-      "DELETE SEGMENTS FROM TABLE ignoremajor where STARTTIME before" +
+      "DELETE FROM TABLE ignoremajor where SEGMENTS STARTTIME before" +
         " '2222-01-01 19:35:01'"
     )
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new

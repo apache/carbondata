@@ -162,7 +162,7 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE nodictionaryCompaction " +
         "OPTIONS('DELIMITER' = ',')"
     )
-    sql("DELETE segment 0.1,3 FROM TABLE nodictionaryCompaction")
+    sql("DELETE FROM TABLE nodictionaryCompaction WHERE SEGMENTS EQUAL 0.1,3 ")
     checkAnswer(
       sql("select country from nodictionaryCompaction"),
       Seq()
