@@ -36,19 +36,33 @@ import org.apache.thrift.TBase;
 public class TableSchemaUpdater {
   public static void updateTableSchemaBlockSize(String storePath,
       CarbonTableIdentifier tableIdentifier, int blocksize) throws IOException {
-    //Read TableInfo from store
-    String tableName = tableIdentifier.getTableName();
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(storePath, tableIdentifier);
     String schemaFilePath = carbonTablePath.getSchemaFilePath();
+    String schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath);
+    //Read TableInfo from store
+    TableInfo newTableInfo = readTableInfo(storePath, schemaFilePath, tableIdentifier);
+    // Update the new TableInfo
+    newTableInfo.setLastUpdatedTime(System.currentTimeMillis());
+    // Update the blocksize for one table
+    newTableInfo.getFactTable().setBlockszie(blocksize);
 
+    writeTableInfo(newTableInfo, schemaMetadataPath, schemaFilePath);
+    // TODO make sure where the blocksize would be used and RE-loadTableMetadata to set this value.
+    CarbonMetadata.getInstance().loadTableMetadata(newTableInfo);
+
+  }
+
+  private static TableInfo readTableInfo(String storePath, String schemaFilePath,
+                                         CarbonTableIdentifier tableIdentifier) throws IOException{
+    String tableName = tableIdentifier.getTableName();
     ThriftReader.TBaseCreator createTBase = new ThriftReader.TBaseCreator() {
       public TBase create() {
         return new org.apache.carbondata.format.TableInfo();
       }
     };
     ThriftReader thriftReader =
-        new ThriftReader(carbonTablePath.getSchemaFilePath(), createTBase);
+        new ThriftReader(schemaFilePath, createTBase);
     thriftReader.open();
     org.apache.carbondata.format.TableInfo tableInfo =
         (org.apache.carbondata.format.TableInfo) thriftReader.read();
@@ -59,15 +73,12 @@ public class TableSchemaUpdater {
         .fromExternalToWrapperTableInfo(tableInfo,
             tableIdentifier.getDatabaseName(), tableName,
             storePath);
-    // Update the new TableInfo
-    newTableInfo.setLastUpdatedTime(System.currentTimeMillis());
-    // Update the blocksize for one table
-    newTableInfo.getFactTable().setBlockszie(blocksize);
+    return newTableInfo;
+  }
 
-    String schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath);
-    // TODO make sure where the blocksize would be used and RE-loadTableMetadata to set this value.
-    CarbonMetadata.getInstance().loadTableMetadata(newTableInfo);
-
+  private static void writeTableInfo(TableInfo newTableInfo, String schemaMetadataPath,
+                                     String schemaFilePath) throws IOException{
+    SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
     org.apache.carbondata.format.TableInfo thriftTableInfo = schemaConverter
         .fromWrapperToExternalTableInfo(newTableInfo, newTableInfo.getDatabaseName(),
             newTableInfo.getFactTable().getTableName());
@@ -83,7 +94,6 @@ public class TableSchemaUpdater {
       thriftWriter.write(thriftTableInfo);
       thriftWriter.close();
     }
-
   }
 
 }
