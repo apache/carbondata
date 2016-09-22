@@ -124,6 +124,7 @@ struct TableSchema{
 	1: required string table_id;  // ID used to
 	2: required list<ColumnSchema> table_columns; // Columns in the table
 	3: required SchemaEvolution schema_evolution; // History of schema evolution of this table
+	4: optional i32 block_size
 }
 
 struct TableInfo{

@@ -56,6 +56,11 @@ public class TableSchema implements Serializable {
    */
   private SchemaEvolution schemaEvalution;
 
+  /**
+   * Used to record the block size of this table.
+   */
+  private int blockszie;
+
   public TableSchema() {
     this.listOfColumns = new ArrayList<ColumnSchema>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   }
@@ -100,6 +105,14 @@ public class TableSchema implements Serializable {
    */
   public void setSchemaEvalution(SchemaEvolution schemaEvalution) {
     this.schemaEvalution = schemaEvalution;
+  }
+
+  public int getBlockszie() {
+    return blockszie;
+  }
+
+  public void setBlockszie(int blockszie) {
+    this.blockszie = blockszie;
   }
 
   /**
@@ -177,6 +190,7 @@ public class TableSchema implements Serializable {
         return false;
       }
     } else if (!tableName.equals(other.tableName)) {
+
       return false;
     }
     return true;

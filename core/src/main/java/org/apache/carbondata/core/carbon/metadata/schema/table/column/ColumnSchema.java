@@ -100,6 +100,7 @@ public class ColumnSchema implements Serializable {
    */
   private int numberOfChild;
 
+
   /**
    * Used when this column is part of an aggregate function.
    */
