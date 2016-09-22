@@ -28,10 +28,12 @@ import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.apache.spark.sql.execution.RunnableCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{IntegerType, StringType}
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.spark.CarbonFilters
 
 /**
@@ -68,9 +70,48 @@ object CarbonOptimizer {
  */
 class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
   extends Rule[LogicalPlan] with PredicateHelper {
-
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
   def apply(plan: LogicalPlan): LogicalPlan = {
-    transformCarbonPlan(plan, relations)
+    if (relations.nonEmpty && !isOptimized(plan)) {
+      LOGGER.info("Starting to optimize plan")
+      val startTime = System.currentTimeMillis
+      val result = transformCarbonPlan(plan, relations)
+      LOGGER.info("Time taken to optimize plan: " + ( System.currentTimeMillis - startTime))
+      result
+    } else {
+      LOGGER.info("Skip CarbonOptimizer")
+      plan
+    }
+  }
+
+  def isOptimized(plan: LogicalPlan): Boolean = {
+    plan find {
+      case cd: CarbonDictionaryCatalystDecoder => true
+      case other => false
+    } isDefined
+  }
+
+  case class ExtraNodeInfo(var hasCarbonRelation: Boolean)
+
+  def fillNodeInfo(
+       plan: LogicalPlan,
+       extraNodeInfos: java.util.HashMap[LogicalPlan, ExtraNodeInfo]): ExtraNodeInfo = {
+    plan match {
+      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
+        val extraNodeInfo = ExtraNodeInfo(true)
+        extraNodeInfos.put(plan, extraNodeInfo)
+        extraNodeInfo
+      case others =>
+        val extraNodeInfo = ExtraNodeInfo(false)
+        others.children.foreach { childPlan =>
+          val childExtraNodeInfo = fillNodeInfo(childPlan, extraNodeInfos)
+          if (childExtraNodeInfo.hasCarbonRelation) {
+            extraNodeInfo.hasCarbonRelation = true
+          }
+        }
+        extraNodeInfos.put(plan, extraNodeInfo)
+        extraNodeInfo
+    }
   }
 
   /**
@@ -87,20 +128,27 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
       return plan
     }
     var decoder = false
+    val mapOfNodes = new java.util.HashMap[LogicalPlan, ExtraNodeInfo]
+    fillNodeInfo(plan, mapOfNodes)
     val aliasMap = CarbonAliasDecoderRelation()
     // collect alias information before hand.
     collectInformationOnAttributes(plan, aliasMap)
-    val transFormedPlan =
-      plan transformDown {
-        case cd: CarbonDictionaryTempDecoder if cd.isOuter =>
-          decoder = true
-          cd
+
+    def hasCarbonRelation(currentPlan: LogicalPlan): Boolean = {
+      mapOfNodes.containsKey(currentPlan)
+    }
+
+    val attrMap = new util.HashMap[AttributeReferenceWrapper, CarbonDecoderRelation]()
+    relations.foreach(_.fillAttributeMap(attrMap))
+
+    def addTempDecoder(currentPlan: LogicalPlan): LogicalPlan = {
+      currentPlan match {
         case sort: Sort if !sort.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
           val attrsOnSort = new util.HashSet[AttributeReferenceWrapper]()
           sort.order.map { s =>
             s.collect {
               case attr: AttributeReference
-                if isDictionaryEncoded(attr, relations, aliasMap) =>
+                if isDictionaryEncoded(attr, attrMap, aliasMap) =>
                 attrsOnSort.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
             }
           }
@@ -130,13 +178,13 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
             rightCondAttrs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr))))
           var leftPlan = union.left
           var rightPlan = union.right
-          if (leftCondAttrs.size() > 0 &&
+          if (hasCarbonRelation(leftPlan) && leftCondAttrs.size() > 0 &&
               !leftPlan.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
             leftPlan = CarbonDictionaryTempDecoder(leftCondAttrs,
               new util.HashSet[AttributeReferenceWrapper](),
               union.left)
           }
-          if (rightCondAttrs.size() > 0 &&
+          if (hasCarbonRelation(rightPlan) && rightCondAttrs.size() > 0 &&
               !rightPlan.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
             rightPlan = CarbonDictionaryTempDecoder(rightCondAttrs,
               new util.HashSet[AttributeReferenceWrapper](),
@@ -160,13 +208,13 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
             case aggExp: AggregateExpression =>
               aggExp.transform {
                 case aggExp: AggregateExpression =>
-                  collectDimensionAggregates(aggExp, attrsOndimAggs, aliasMap)
+                  collectDimensionAggregates(aggExp, attrsOndimAggs, aliasMap, attrMap)
                   aggExp
               }
             case others =>
               others.collect {
                 case attr: AttributeReference
-                  if isDictionaryEncoded(attr, relations, aliasMap) =>
+                  if isDictionaryEncoded(attr, attrMap, aliasMap) =>
                   attrsOndimAggs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
               }
           }
@@ -195,7 +243,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
               case others =>
                 others.collect {
                   case attr: AttributeReference
-                    if isDictionaryEncoded(attr, relations, aliasMap) =>
+                    if isDictionaryEncoded(attr, attrMap, aliasMap) =>
                     attrsOnExpand.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
                 }
             }
@@ -253,7 +301,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
             case Some(expression) =>
               expression.collect {
                 case attr: AttributeReference
-                  if isDictionaryEncoded(attr, relations, aliasMap) =>
+                  if isDictionaryEncoded(attr, attrMap, aliasMap) =>
                   attrsOnJoin.add(aliasMap.getOrElse(attr, attr))
               }
             case _ =>
@@ -307,7 +355,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
             case others =>
               others.collect {
                 case attr: AttributeReference
-                  if isDictionaryEncoded(attr, relations, aliasMap) =>
+                  if isDictionaryEncoded(attr, attrMap, aliasMap) =>
                   attrsOnProjects.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
               }
           }
@@ -334,7 +382,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
             case others =>
               others.collect {
                 case attr: AttributeReference
-                  if isDictionaryEncoded(attr, relations, aliasMap) =>
+                  if isDictionaryEncoded(attr, attrMap, aliasMap) =>
                   attrsOnProjects.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
               }
           }
@@ -342,7 +390,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
             case others =>
               others.collect {
                 case attr: AttributeReference
-                  if isDictionaryEncoded(attr, relations, aliasMap) =>
+                  if isDictionaryEncoded(attr, attrMap, aliasMap) =>
                   attrsOnProjects.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
               }
           }
@@ -351,21 +399,21 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
             case others =>
               others.collect {
                 case attr: AttributeReference
-                  if isDictionaryEncoded(attr, relations, aliasMap) =>
+                  if isDictionaryEncoded(attr, attrMap, aliasMap) =>
                   attrsOnProjects.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
               }
           }
           wd.orderSpec.map { s =>
             s.collect {
               case attr: AttributeReference
-                if isDictionaryEncoded(attr, relations, aliasMap) =>
+                if isDictionaryEncoded(attr, attrMap, aliasMap) =>
                 attrsOnProjects.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
             }
           }
           wd.partitionSpec.map { s =>
             s.collect {
               case attr: AttributeReference
-                if isDictionaryEncoded(attr, relations, aliasMap) =>
+                if isDictionaryEncoded(attr, attrMap, aliasMap) =>
                 attrsOnProjects.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
             }
           }
@@ -397,20 +445,38 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
         case others => others
       }
 
+    }
+
+    val tStartTime = System.currentTimeMillis
+    val transFormedPlan =
+      plan transformDown {
+        case cd: CarbonDictionaryTempDecoder if cd.isOuter =>
+          decoder = true
+          cd
+        case currentPlan =>
+          hasCarbonRelation(currentPlan) match {
+            case true => addTempDecoder(currentPlan)
+            case false => currentPlan
+          }
+      }
+
     val processor = new CarbonDecoderProcessor
     processor.updateDecoders(processor.getDecoderList(transFormedPlan))
-    updateProjection(updateTempDecoder(transFormedPlan, aliasMap))
+    updateProjection(updateTempDecoder(transFormedPlan, aliasMap, attrMap))
   }
 
   private def updateTempDecoder(plan: LogicalPlan,
-      aliasMap: CarbonAliasDecoderRelation): LogicalPlan = {
-    var allAttrsNotDecode: util.Set[Attribute] = new util.HashSet[Attribute]()
+      aliasMap: CarbonAliasDecoderRelation,
+      attrMap: java.util.HashMap[AttributeReferenceWrapper, CarbonDecoderRelation]):
+  LogicalPlan = {
+    var allAttrsNotDecode: util.Set[AttributeReferenceWrapper] =
+      new util.HashSet[AttributeReferenceWrapper]()
     val marker = new CarbonPlanMarker
     plan transformDown {
       case cd: CarbonDictionaryTempDecoder if !cd.processed =>
         cd.processed = true
-        allAttrsNotDecode = cd.getAttrsNotDecode
-        marker.pushMarker(cd.getAttrsNotDecode)
+        allAttrsNotDecode = cd.attrsNotDecode
+        marker.pushMarker(allAttrsNotDecode)
         if (cd.isOuter) {
           CarbonDictionaryCatalystDecoder(relations,
             ExcludeProfile(cd.getAttrsNotDecode.asScala.toSeq),
@@ -430,7 +496,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
         val sortExprs = sort.order.map { s =>
           s.transform {
             case attr: AttributeReference =>
-              updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
+              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
           }.asInstanceOf[SortOrder]
         }
         Sort(sortExprs, sort.global, sort.child)
@@ -438,26 +504,26 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
         val aggExps = agg.aggregateExpressions.map { aggExp =>
           aggExp.transform {
             case attr: AttributeReference =>
-              updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
+              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
           }
         }.asInstanceOf[Seq[NamedExpression]]
 
         val grpExps = agg.groupingExpressions.map { gexp =>
           gexp.transform {
             case attr: AttributeReference =>
-              updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
+              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
           }
         }
         Aggregate(grpExps, aggExps, agg.child)
       case expand: Expand =>
         expand.transformExpressions {
           case attr: AttributeReference =>
-            updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
+            updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
         }
       case filter: Filter =>
         val filterExps = filter.condition transform {
           case attr: AttributeReference =>
-            updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
+            updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
         }
         Filter(filterExps, filter.child)
       case j: Join =>
@@ -470,7 +536,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
         val prExps = p.projectList.map { prExp =>
           prExp.transform {
             case attr: AttributeReference =>
-              updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
+              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
           }
         }.asInstanceOf[Seq[NamedExpression]]
         Project(prExps, p.child)
@@ -478,25 +544,25 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
         val prExps = wd.projectList.map { prExp =>
           prExp.transform {
             case attr: AttributeReference =>
-              updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
+              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
           }
         }.asInstanceOf[Seq[Attribute]]
         val wdExps = wd.windowExpressions.map { gexp =>
           gexp.transform {
             case attr: AttributeReference =>
-              updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
+              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
           }
         }.asInstanceOf[Seq[NamedExpression]]
         val partitionSpec = wd.partitionSpec.map{ exp =>
           exp.transform {
             case attr: AttributeReference =>
-              updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
+              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
           }
         }
         val orderSpec = wd.orderSpec.map { exp =>
           exp.transform {
             case attr: AttributeReference =>
-              updateDataType(attr, relations, allAttrsNotDecode, aliasMap)
+              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
           }
         }.asInstanceOf[Seq[SortOrder]]
         Window(prExps, wdExps, partitionSpec, orderSpec, wd.child)
@@ -562,9 +628,10 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
   // Collect aggregates on dimensions so that we can add decoder to it.
   private def collectDimensionAggregates(aggExp: AggregateExpression,
       attrsOndimAggs: util.HashSet[AttributeReferenceWrapper],
-      aliasMap: CarbonAliasDecoderRelation) {
+      aliasMap: CarbonAliasDecoderRelation,
+      attrMap: java.util.HashMap[AttributeReferenceWrapper, CarbonDecoderRelation]) {
     aggExp collect {
-      case attr: AttributeReference if isDictionaryEncoded(attr, relations, aliasMap) =>
+      case attr: AttributeReference if isDictionaryEncoded(attr, attrMap, aliasMap) =>
         attrsOndimAggs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr)))
     }
   }
@@ -575,21 +642,19 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
    *
    */
   private def updateDataType(attr: Attribute,
-      relations: Seq[CarbonDecoderRelation],
-      allAttrsNotDecode: util.Set[Attribute],
+      attrMap: java.util.HashMap[AttributeReferenceWrapper, CarbonDecoderRelation],
+      allAttrsNotDecode: java.util.Set[AttributeReferenceWrapper],
       aliasMap: CarbonAliasDecoderRelation): Attribute = {
     val uAttr = aliasMap.getOrElse(attr, attr)
-    val relation = relations.find(p => p.contains(uAttr))
+    val relation = Option(attrMap.get(AttributeReferenceWrapper(uAttr)))
     if (relation.isDefined) {
-      relation.get.carbonRelation.carbonRelation.metaData.dictionaryMap.get(uAttr.name) match {
+      relation.get.dictionaryMap.get(uAttr.name) match {
         case Some(true)
-          if !allAttrsNotDecode.asScala
-            .exists(p => p.name.equalsIgnoreCase(uAttr.name) && p.exprId.equals(uAttr.exprId)) =>
+          if !allAttrsNotDecode.contains(AttributeReferenceWrapper(uAttr)) =>
           val newAttr = AttributeReference(attr.name,
             IntegerType,
             attr.nullable,
             attr.metadata)(attr.exprId, attr.qualifiers)
-          relation.get.addAttribute(newAttr)
           newAttr
         case _ => attr
       }
@@ -599,12 +664,12 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
   }
 
   private def isDictionaryEncoded(attr: Attribute,
-      relations: Seq[CarbonDecoderRelation],
+      attrMap: java.util.HashMap[AttributeReferenceWrapper, CarbonDecoderRelation],
       aliasMap: CarbonAliasDecoderRelation): Boolean = {
     val uAttr = aliasMap.getOrElse(attr, attr)
-    val relation = relations.find(p => p.contains(uAttr))
+    val relation = Option(attrMap.get(AttributeReferenceWrapper(uAttr)))
     if (relation.isDefined) {
-      relation.get.carbonRelation.carbonRelation.metaData.dictionaryMap.get(uAttr.name) match {
+      relation.get.dictionaryMap.get(uAttr.name) match {
         case Some(true) => true
         case _ => false
       }
@@ -626,6 +691,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
 case class CarbonDecoderRelation(
     attributeMap: AttributeMap[AttributeReference],
     carbonRelation: CarbonDatasourceRelation) {
+
   val extraAttrs = new ArrayBuffer[Attribute]()
 
   def addAttribute(attr: Attribute): Unit = {
@@ -640,22 +706,35 @@ case class CarbonDecoderRelation(
                                  entry.exprId.equals(attr.exprId))
     exists
   }
+
+  def fillAttributeMap(attrMap: java.util.HashMap[AttributeReferenceWrapper,
+    CarbonDecoderRelation]): Unit = {
+    attributeMap.foreach { attr =>
+      attrMap.put(AttributeReferenceWrapper(attr._1), this)
+    }
+  }
+
+  lazy val dictionaryMap = carbonRelation.carbonRelation.metaData.dictionaryMap
 }
 
 case class CarbonAliasDecoderRelation() {
 
-  val attrMap = new ArrayBuffer[(Attribute, Attribute)]()
+  val attrMap = new java.util.HashMap[AttributeReferenceWrapper, Attribute]
 
   def put(key: Attribute, value: Attribute): Unit = {
-    attrMap += ((key, value))
+    attrMap.put(AttributeReferenceWrapper(key), value)
   }
 
   def getOrElse(key: Attribute, default: Attribute): Attribute = {
-    val value = attrMap.find(p =>
-      p._1.name.equalsIgnoreCase(key.name) && p._1.exprId.equals(key.exprId))
-    value match {
-      case Some((k, v)) => v
-      case _ => default
+    val value = attrMap.get(AttributeReferenceWrapper(key))
+    if (value == null) {
+      default
+    } else {
+      if (value.equals(key)) {
+        value
+      } else {
+        getOrElse(value, value)
+      }
     }
   }
 }
