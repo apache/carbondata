@@ -1403,10 +1403,7 @@ public final class FilterUtil {
    * @return boolean after comparing two double values.
    */
   public static boolean nanSafeEqualsDoubles(Double d1, Double d2) {
-    Boolean xIsNan = Double.isNaN(d1);
-    Boolean yIsNan = Double.isNaN(d2);
-    if ((xIsNan && yIsNan) || (d1.doubleValue() == d2.doubleValue())) {
-
+    if ((d1.doubleValue() == d2.doubleValue()) || (Double.isNaN(d1) && Double.isNaN(d2))) {
       return true;
     }
     return false;
