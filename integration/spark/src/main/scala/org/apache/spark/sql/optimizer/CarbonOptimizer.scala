@@ -76,7 +76,8 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
       LOGGER.info("Starting to optimize plan")
       val startTime = System.currentTimeMillis
       val result = transformCarbonPlan(plan, relations)
-      LOGGER.info("Time taken to optimize plan: " + ( System.currentTimeMillis - startTime))
+      LOGGER.statistic("Time taken for Carbon Optimizer to optimize: " +
+        ( System.currentTimeMillis - startTime))
       result
     } else {
       LOGGER.info("Skip CarbonOptimizer")
@@ -130,14 +131,14 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
       return plan
     }
     var decoder = false
-    val mapOfNodes = new java.util.HashMap[LogicalPlan, ExtraNodeInfo]
-    fillNodeInfo(plan, mapOfNodes)
+    val mapOfNonCarbonPlanNodes = new java.util.HashMap[LogicalPlan, ExtraNodeInfo]
+    fillNodeInfo(plan, mapOfNonCarbonPlanNodes)
     val aliasMap = CarbonAliasDecoderRelation()
     // collect alias information before hand.
     collectInformationOnAttributes(plan, aliasMap)
 
     def hasCarbonRelation(currentPlan: LogicalPlan): Boolean = {
-      val extraNodeInfo = mapOfNodes.get(currentPlan)
+      val extraNodeInfo = mapOfNonCarbonPlanNodes.get(currentPlan)
       if (extraNodeInfo == null) {
         true
       } else {
@@ -454,7 +455,6 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
 
     }
 
-    val tStartTime = System.currentTimeMillis
     val transFormedPlan =
       plan transformDown {
         case cd: CarbonDictionaryTempDecoder if cd.isOuter =>
