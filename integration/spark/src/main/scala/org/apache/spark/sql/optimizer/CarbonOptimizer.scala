@@ -99,7 +99,6 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
     plan match {
       case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
         val extraNodeInfo = ExtraNodeInfo(true)
-        extraNodeInfos.put(plan, extraNodeInfo)
         extraNodeInfo
       case others =>
         val extraNodeInfo = ExtraNodeInfo(false)
@@ -109,7 +108,10 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
             extraNodeInfo.hasCarbonRelation = true
           }
         }
-        extraNodeInfos.put(plan, extraNodeInfo)
+        // only put no carbon realtion plan
+        if (!extraNodeInfo.hasCarbonRelation) {
+          extraNodeInfos.put(plan, extraNodeInfo)
+        }
         extraNodeInfo
     }
   }
@@ -135,7 +137,12 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
     collectInformationOnAttributes(plan, aliasMap)
 
     def hasCarbonRelation(currentPlan: LogicalPlan): Boolean = {
-      mapOfNodes.containsKey(currentPlan)
+      val extraNodeInfo = mapOfNodes.get(currentPlan)
+      if (extraNodeInfo == null) {
+        true
+      } else {
+        extraNodeInfo.hasCarbonRelation
+      }
     }
 
     val attrMap = new util.HashMap[AttributeReferenceWrapper, CarbonDecoderRelation]()
