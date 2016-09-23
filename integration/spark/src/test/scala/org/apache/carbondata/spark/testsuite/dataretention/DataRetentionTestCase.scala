@@ -142,7 +142,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     val actualValue: String = getSegmentStartTime(segments, 1)
     // delete segments (0,1) which contains ind, aus
     sql(
-      "DELETE SEGMENTS FROM TABLE DataRetentionTable where STARTTIME before '" + actualValue + "'")
+      "DELETE FROM TABLE DataRetentionTable where SEGMENTS STARTTIME before '" + actualValue + "'")
 
     // load segment 2 which contains eng
     sql(
@@ -158,7 +158,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("RetentionTest3_DeleteByLoadId") {
     // delete segment 2 and load ind segment
-    sql("DELETE SEGMENT 2 FROM TABLE DataRetentionTable")
+    sql("DELETE FROM TABLE DataRetentionTable WHERE SEGMENTS EQUAL 2 ")
     sql(
       "LOAD DATA LOCAL INPATH '" + resource + "dataretention1.csv' INTO TABLE DataRetentionTable " +
       "OPTIONS('DELIMITER' = ',')")
@@ -177,7 +177,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   test("RetentionTest4_DeleteByInvalidLoadId") {
     try {
       // delete segment with no id
-      sql("DELETE SEGMENT FROM TABLE DataRetentionTable")
+      sql("DELETE FROM TABLE DataRetentionTable WHERE SEGMENTS EQUAL")
       assert(false)
     } catch {
       case e: MalformedCarbonCommandException =>
@@ -203,8 +203,8 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select count(*) from cArbon_TaBlE_1"), Seq(Row(20)))
 
-    sql("delete segments from table carbon_TABLE_1 " +
-      "where starttime before '2099-07-28 11:00:00'")
+    sql("delete from table carbon_TABLE_1 " +
+      "where segments starttime before '2099-07-28 11:00:00'")
 
     checkAnswer(
       sql("select count(*) from caRbon_TabLe_1"), Seq(Row(0)))
@@ -214,7 +214,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
     try {
       sql(
-        "DELETE SEGMENTS FROM TABLE DataRetentionTable where STARTTIME before" +
+        "DELETE FROM TABLE DataRetentionTable where SEGMENTS STARTTIME before" +
         " 'abcd-01-01 00:00:00'")
       assert(false)
     } catch {
@@ -225,7 +225,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
     try {
       sql(
-        "DELETE SEGMENTS FROM TABLE DataRetentionTable where STARTTIME before" +
+        "DELETE FROM TABLE DataRetentionTable where SEGMENTS STARTTIME before" +
         " '2099:01:01 00:00:00'")
       assert(false)
     } catch {
@@ -240,7 +240,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       ),
       Seq(Row("ind", 9))
     )
-    sql("DELETE SEGMENTS FROM TABLE DataRetentionTable where STARTTIME before '2099-01-01'")
+    sql("DELETE FROM TABLE DataRetentionTable where SEGMENTS STARTTIME before '2099-01-01'")
     checkAnswer(
       sql("SELECT country, count(salary) AS amount FROM DataRetentionTable WHERE country" +
           " IN ('china','ind','aus','eng') GROUP BY country"), Seq())
@@ -290,7 +290,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     carbonCleanFilesLock.lockWithRetries()
     // delete segment 0 it should fail
     try {
-      sql("DELETE SEGMENT 0 FROM TABLE retentionlock")
+      sql("DELETE FROM TABLE retentionlock WHERE SEGMENTS EQUAL 0 ")
       throw new MalformedCarbonCommandException("Invalid")
     } catch {
       case me: MalformedCarbonCommandException =>
@@ -301,7 +301,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
     // it should fail
     try {
-      sql("DELETE SEGMENTS FROM TABLE retentionlock where STARTTIME before " +
+      sql("DELETE FROM TABLE retentionlock where SEGMENTS STARTTIME before " +
           "'2099-01-01 00:00:00.0'")
       throw new MalformedCarbonCommandException("Invalid")
     } catch {
@@ -325,10 +325,10 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     carbonCleanFilesLock.unlock()
     carbonDeleteSegmentLock.unlock()
 
-    sql("DELETE SEGMENT 0 FROM TABLE retentionlock")
+    sql("DELETE FROM TABLE retentionlock WHERE SEGMENTS EQUAL 0 ")
     //load and delete should execute parallely
     carbonMetadataLock.lockWithRetries()
-    sql("DELETE SEGMENT 1 FROM TABLE retentionlock")
+    sql("DELETE FROM TABLE retentionlock WHERE SEGMENTS EQUAL 1 ")
     carbonMetadataLock.unlock()
   }
 }

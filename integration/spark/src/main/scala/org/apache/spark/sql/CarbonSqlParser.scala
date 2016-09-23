@@ -57,6 +57,7 @@ class CarbonSqlParser()
   protected val ALL = carbonKeyWord("ALL")
   protected val HIGH_CARDINALITY_DIMS = carbonKeyWord("NO_DICTIONARY")
   protected val BEFORE = carbonKeyWord("BEFORE")
+  protected val EQUAL = carbonKeyWord("EQUAL")
   protected val BY = carbonKeyWord("BY")
   protected val CARDINALITY = carbonKeyWord("CARDINALITY")
   protected val CASCADE = carbonKeyWord("CASCADE")
@@ -138,7 +139,6 @@ class CarbonSqlParser()
   protected val DIMENSION = carbonKeyWord("DIMENSION")
   protected val STARTTIME = carbonKeyWord("STARTTIME")
   protected val SEGMENTS = carbonKeyWord("SEGMENTS")
-  protected val SEGMENT = carbonKeyWord("SEGMENT")
 
   protected val STRING = carbonKeyWord("STRING")
   protected val INTEGER = carbonKeyWord("INTEGER")
@@ -1181,23 +1181,21 @@ class CarbonSqlParser()
         p.getClass.getSimpleName.equals("DecimalLit") } ) ^^ (_.chars)
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
-    DELETE ~> SEGMENT ~> repsep(segmentId, ",") ~ (FROM ~> TABLE ~>
-      (ident <~ ".").? ~ ident) <~
+    DELETE ~> FROM ~ TABLE ~> (ident <~ ".").? ~ ident ~
+      (WHERE ~> SEGMENTS ~> EQUAL ~> repsep(segmentId, ",")) <~
       opt(";") ^^ {
-      case loadids ~ table => table match {
-        case databaseName ~ tableName =>
-          DeleteLoadsById(loadids, databaseName, tableName.toLowerCase())
-      }
+      case dbName ~ tableName ~ loadids =>
+        DeleteLoadsById(loadids, dbName, tableName.toLowerCase())
     }
 
   protected lazy val deleteLoadsByLoadDate: Parser[LogicalPlan] =
-    DELETE ~> SEGMENTS ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
-      (WHERE ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
+    DELETE ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
+      (WHERE ~> SEGMENTS ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
       opt(";") ^^ {
-      case schema ~ table ~ condition =>
+      case database ~ table ~ condition =>
         condition match {
           case dateField ~ dateValue =>
-            DeleteLoadsByLoadDate(schema, table.toLowerCase(), dateField, dateValue)
+            DeleteLoadsByLoadDate(database, table.toLowerCase(), dateField, dateValue)
         }
     }
 
