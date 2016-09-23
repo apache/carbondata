@@ -134,7 +134,7 @@ private[sql] case class CarbonDatasourceRelation(
     (@transient context: SQLContext)
     extends BaseRelation with Serializable with Logging {
 
-  def carbonRelation: CarbonRelation = {
+  lazy val carbonRelation: CarbonRelation = {
     CarbonEnv.getInstance(context)
         .carbonCatalog.lookupRelation1(tableIdentifier, None)(sqlContext)
         .asInstanceOf[CarbonRelation]
