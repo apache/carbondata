@@ -1019,7 +1019,11 @@ public final class FilterUtil {
     long[] dictionarySurrogateKey =
         new long[segmentProperties.getDimensions().size() - segmentProperties
             .getNumberOfNoDictionaryDimension()];
-    Arrays.fill(dictionarySurrogateKey, Long.MAX_VALUE);
+    int index = 0;
+    int[] dimColumnsCardinality = segmentProperties.getDimColumnsCardinality();
+    for (int i = 0; i < dimColumnsCardinality.length; i++) {
+      dictionarySurrogateKey[index++] = dimColumnsCardinality[i];
+    }
     IndexKey endIndexKey;
     byte[] dictionaryendMdkey =
         segmentProperties.getDimensionKeyGenerator().generateKey(dictionarySurrogateKey);
