@@ -27,8 +27,8 @@ import org.apache.carbondata.core.carbon.metadata.datatype.{DataType => CarbonTy
 class DataFrameFuncs(dataFrame: DataFrame) extends Logging {
 
   /**
-    * Saves DataFrame as CarbonData files.
-    */
+   * Saves DataFrame as CarbonData files.
+   */
   def saveAsCarbonFile(parameters: Map[String, String] = Map()): Unit = {
     // To avoid derby problem, dataframe need to be writen and read using CarbonContext
     require(dataFrame.sqlContext.isInstanceOf[CarbonContext],
