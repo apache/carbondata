@@ -36,7 +36,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-    sql("DROP TABLE IF EXISTS alldatatypescubeAGG")
+    sql("DROP TABLE IF EXISTS alldatatypestableAGG")
     sql(
       "CREATE TABLE alldatatypestableAGG (empno int, empname String, designation String, doj " +
       "Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname " +
