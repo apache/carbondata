@@ -708,6 +708,7 @@ public final class CarbonCommonConstants {
   public static final String PARTITIONCLASS = "partitionclass";
   public static final String PARTITIONCOUNT = "partitioncount";
   public static final String COLUMN_PROPERTIES = "columnproperties";
+  public static final String NO_INVERTED_INDEX = "no_inverted_index";
 
   /**
    * this variable is to enable/disable identify high cardinality during first data loading
