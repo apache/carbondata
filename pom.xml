@@ -36,7 +36,7 @@
   <inceptionYear>2016</inceptionYear>
   <packaging>pom</packaging>
 
-  <version>0.1.2-incubating-SNAPSHOT</version>
+  <version>0.1.1-incubating-SNAPSHOT</version>
 
   <licenses>
     <license>
