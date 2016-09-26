@@ -135,6 +135,7 @@ public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorde
     String block_identification_time = "";
     long driver_part_time_tmp = 0L;
     long driver_part_time_tmp2 = 0L;
+    long load_blocks_time_tmp = 0L;
     String splitChar = " ";
     try {
       // get statistic time from the QueryStatistic
@@ -149,7 +150,8 @@ public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorde
             driver_part_time_tmp += statistic.getTimeTaken();
             break;
           case QueryStatisticsConstants.LOAD_BLOCKS_DRIVER:
-            load_blocks_time += statistic.getTimeTaken() + splitChar;
+            // multi segments will generate multi load_blocks_time
+            load_blocks_time_tmp += statistic.getTimeTaken();
             driver_part_time_tmp += statistic.getTimeTaken();
             driver_part_time_tmp2 += statistic.getTimeTaken();
             break;
@@ -167,6 +169,7 @@ public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorde
             break;
         }
       }
+      load_blocks_time = load_blocks_time_tmp + splitChar;
       String driver_part_time = driver_part_time_tmp + splitChar;
       // structure the query statistics info table
       StringBuilder tableInfo = new StringBuilder();
