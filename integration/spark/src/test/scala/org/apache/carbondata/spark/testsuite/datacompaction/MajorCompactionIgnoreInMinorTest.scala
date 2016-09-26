@@ -100,7 +100,8 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
           AbsoluteTableIdentifier(
             CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-            new CarbonTableIdentifier("default", "ignoremajor", noOfRetries + "")
+            new CarbonTableIdentifier(
+              CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", noOfRetries + "")
           )
       )
       val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
@@ -131,7 +132,8 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
         AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-          new CarbonTableIdentifier("default", "ignoremajor", "rrr")
+          new CarbonTableIdentifier(
+            CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", "rrr")
         )
     )
     // merged segment should not be there
@@ -157,13 +159,15 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
         AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-          new CarbonTableIdentifier("default", "ignoremajor", "rrr")
+          new CarbonTableIdentifier(
+            CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", "rrr")
         )
     )
     val carbontablePath = CarbonStorePath
       .getCarbonTablePath(CarbonProperties.getInstance
         .getProperty(CarbonCommonConstants.STORE_LOCATION),
-        new CarbonTableIdentifier("default", "ignoremajor", "rrr")
+        new CarbonTableIdentifier(
+          CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", "rrr")
       )
       .getMetadataDirectoryPath
     var segs = segmentStatusManager.readLoadMetadata(carbontablePath)
@@ -184,13 +188,15 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
         AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-          new CarbonTableIdentifier("default", "ignoremajor", "rrr")
+          new CarbonTableIdentifier(
+            CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", "rrr")
         )
     )
     val carbontablePath = CarbonStorePath
       .getCarbonTablePath(CarbonProperties.getInstance
         .getProperty(CarbonCommonConstants.STORE_LOCATION),
-        new CarbonTableIdentifier("default", "ignoremajor", "rrr")
+        new CarbonTableIdentifier(
+          CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", "rrr")
       )
       .getMetadataDirectoryPath
     var segs = segmentStatusManager.readLoadMetadata(carbontablePath)

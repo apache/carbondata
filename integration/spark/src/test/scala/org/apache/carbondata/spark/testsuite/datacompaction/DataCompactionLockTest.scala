@@ -41,7 +41,8 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
   val absoluteTableIdentifier: AbsoluteTableIdentifier = new
       AbsoluteTableIdentifier(
         CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-        new CarbonTableIdentifier("default", "compactionlocktesttable", "1")
+        new CarbonTableIdentifier(
+          CarbonCommonConstants.DATABASE_DEFAULT_NAME, "compactionlocktesttable", "1")
       )
   val carbonTablePath: CarbonTablePath = CarbonStorePath
     .getCarbonTablePath(absoluteTableIdentifier.getStorePath,

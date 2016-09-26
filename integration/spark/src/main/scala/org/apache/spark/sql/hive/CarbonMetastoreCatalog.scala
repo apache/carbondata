@@ -108,7 +108,8 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     .getLogService("org.apache.spark.sql.CarbonMetastoreCatalog")
 
   val tableModifiedTimeStore = new java.util.HashMap[String, Long]()
-  tableModifiedTimeStore.put("default", System.currentTimeMillis())
+  tableModifiedTimeStore
+    .put(CarbonCommonConstants.DATABASE_DEFAULT_NAME, System.currentTimeMillis())
 
   val metadata = loadMetadata(storePath)
 
@@ -471,7 +472,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
 
     touchSchemasTimestampFile(databaseName, tableName)
 
-    tableModifiedTimeStore.put("default",
+    tableModifiedTimeStore.put(CarbonCommonConstants.DATABASE_DEFAULT_NAME,
       FileFactory.getCarbonFile(timestampFile, timestampFileType).getLastModifiedTime)
 
   }
@@ -486,7 +487,8 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     val (timestampFile, timestampFileType) = getTimestampFileAndType("", "")
     if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
       if (!(FileFactory.getCarbonFile(timestampFile, timestampFileType).
-        getLastModifiedTime == tableModifiedTimeStore.get("default"))) {
+        getLastModifiedTime ==
+        tableModifiedTimeStore.get(CarbonCommonConstants.DATABASE_DEFAULT_NAME))) {
         refreshCache()
       }
     }

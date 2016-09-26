@@ -23,6 +23,7 @@ import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentif
 import org.apache.carbondata.core.carbon.{CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.carbon.path.CarbonStorePath
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.examples.util.ExampleUtils
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 
@@ -37,7 +38,7 @@ object GenerateDictionaryExample {
     val cc = ExampleUtils.createCarbonContext("GenerateDictionaryExample")
     val factFilePath = ExampleUtils.currentPath + "/src/main/resources/factSample.csv"
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(ExampleUtils.storeLocation,
-      new CarbonTableIdentifier("default", "dictSample", "1"))
+      new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "dictSample", "1"))
     val dictFolderPath = carbonTablePath.getMetadataDirectoryPath
 
     // execute sql statement
@@ -53,7 +54,8 @@ object GenerateDictionaryExample {
            """)
 
     // check generated dictionary
-    val tableIdentifier = new CarbonTableIdentifier("default", "dictSample", "1")
+    val tableIdentifier =
+      new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "dictSample", "1")
     printDictionary(cc, tableIdentifier, dictFolderPath)
   }
 
