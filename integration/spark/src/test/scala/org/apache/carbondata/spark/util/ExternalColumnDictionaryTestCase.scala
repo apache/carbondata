@@ -21,6 +21,7 @@ package org.apache.carbondata.spark.util
 import java.io.File
 
 import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.load.CarbonLoadModel
@@ -28,7 +29,6 @@ import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.apache.spark.sql.common.util.CarbonHiveContext
 import org.apache.spark.sql.common.util.CarbonHiveContext.sql
 import org.apache.spark.sql.common.util.QueryTest
-
 import org.scalatest.BeforeAndAfterAll
 
   /**
@@ -113,11 +113,14 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
 
   def buildRelation() = {
     val catalog = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
-    extComplexRelation = catalog.lookupRelation1(Option("default"), "extComplextypes")(CarbonHiveContext)
+    extComplexRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      "extComplextypes")(CarbonHiveContext)
       .asInstanceOf[CarbonRelation]
-    verticalDelimiteRelation = catalog.lookupRelation1(Option("default"), "verticalDelimitedTable")(CarbonHiveContext)
+    verticalDelimiteRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      "verticalDelimitedTable")(CarbonHiveContext)
       .asInstanceOf[CarbonRelation]
-    loadSqlRelation = catalog.lookupRelation1(Option("default"), "loadSqlTest")(CarbonHiveContext)
+    loadSqlRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      "loadSqlTest")(CarbonHiveContext)
       .asInstanceOf[CarbonRelation]
   }
 

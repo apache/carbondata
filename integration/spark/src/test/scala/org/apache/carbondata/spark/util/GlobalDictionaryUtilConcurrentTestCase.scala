@@ -95,7 +95,8 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
 
   def buildRelation() = {
     val catalog = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
-    sampleRelation = catalog.lookupRelation1(Option("default"), "employee")(CarbonHiveContext)
+    sampleRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      "employee")(CarbonHiveContext)
       .asInstanceOf[CarbonRelation]
   }
   def writedummydata(filePath: String, recCount: Int) = {

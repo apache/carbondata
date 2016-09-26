@@ -89,7 +89,7 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
       val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
           AbsoluteTableIdentifier(
             CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-            new CarbonTableIdentifier("default", "cardinalityTest", "1")
+            new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "cardinalityTest", "1")
           )
       )
       val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList

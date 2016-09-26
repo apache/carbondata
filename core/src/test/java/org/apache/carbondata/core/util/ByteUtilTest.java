@@ -19,6 +19,7 @@
 package org.apache.carbondata.core.util;
 
 import junit.framework.TestCase;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
 import org.junit.Before;
 import org.junit.Test;
@@ -139,7 +140,7 @@ public class ByteUtilTest extends TestCase {
     private void prepareBuffers() {
         ByteBuffer[] out1 = new ByteBuffer[1];
         ByteBuffer buffer = ByteBuffer.allocate(dimensionValue1.length());
-        buffer.put(dimensionValue1.getBytes(Charset.forName("UTF-8")));
+        buffer.put(dimensionValue1.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
         buffer.rewind();
         out1[0] = buffer;
 
@@ -147,7 +148,7 @@ public class ByteUtilTest extends TestCase {
         ByteBuffer[] out2 = new ByteBuffer[1];
 
         ByteBuffer buffer2 = ByteBuffer.allocate(dimensionValue2.length());
-        buffer2.put(dimensionValue2.getBytes(Charset.forName("UTF-8")));
+        buffer2.put(dimensionValue2.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
         buffer2.rewind();
         out2[0] = buffer2;
 

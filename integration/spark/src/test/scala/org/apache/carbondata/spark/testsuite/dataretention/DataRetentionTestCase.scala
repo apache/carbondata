@@ -50,10 +50,11 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   val storeLocation = new File(this.getClass.getResource("/").getPath + "/../test").getCanonicalPath
   val absoluteTableIdentifierForLock: AbsoluteTableIdentifier = new
       AbsoluteTableIdentifier(storeLocation,
-        new CarbonTableIdentifier("default", "retentionlock", "200"))
+        new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "retentionlock", "200"))
   val absoluteTableIdentifierForRetention: AbsoluteTableIdentifier = new
       AbsoluteTableIdentifier(storeLocation,
-        new CarbonTableIdentifier("default", "DataRetentionTable".toLowerCase(), "300"))
+        new CarbonTableIdentifier(
+          CarbonCommonConstants.DATABASE_DEFAULT_NAME, "DataRetentionTable".toLowerCase(), "300"))
   val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(absoluteTableIdentifierForRetention)
   val carbonTablePath = CarbonStorePath
     .getCarbonTablePath(absoluteTableIdentifierForRetention.getStorePath,

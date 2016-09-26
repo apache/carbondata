@@ -92,7 +92,8 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
     var noOfRetries = 0
     while (status && noOfRetries < 10) {
 
-      val segments: List[String] = getSegments("default", "nodictionaryCompaction", "uni21")
+      val segments: List[String] = getSegments(
+        CarbonCommonConstants.DATABASE_DEFAULT_NAME, "nodictionaryCompaction", "uni21")
 
       if (!segments.contains("0.1")) {
         // wait for 2 seconds for compaction to complete.
@@ -133,7 +134,8 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
    sql("clean files for table nodictionaryCompaction")
 
     // merged segment should not be there
-    val segments = getSegments("default", "nodictionaryCompaction", "uni21")
+    val segments =
+      getSegments(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "nodictionaryCompaction", "uni21")
     assert(!segments.contains("0"))
     assert(!segments.contains("1"))
     assert(!segments.contains("2"))

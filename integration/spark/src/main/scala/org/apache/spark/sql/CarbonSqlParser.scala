@@ -474,7 +474,8 @@ class CarbonSqlParser()
     CommonUtil.validateTableBlockSize(tableProperties)
 
     tableModel(ifNotExistPresent,
-      dbName.getOrElse("default"), dbName, tableName, tableProperties,
+      dbName.getOrElse(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      dbName, tableName, tableProperties,
       reorderDimensions(dims.map(f => normalizeType(f)).map(f => addParent(f))),
       msrs.map(f => normalizeType(f)), "", null, "",
       None, Seq(), null, Option(noDictionaryDims), Option(noInvertedIdxCols), null, partitioner,

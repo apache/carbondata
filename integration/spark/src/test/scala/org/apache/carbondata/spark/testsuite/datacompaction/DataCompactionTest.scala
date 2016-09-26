@@ -87,7 +87,7 @@ class DataCompactionTest extends QueryTest with BeforeAndAfterAll {
       val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
           AbsoluteTableIdentifier(
             CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-            new CarbonTableIdentifier("default", "normalcompaction", "1")
+            new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "normalcompaction", "1")
           )
       )
       val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
@@ -134,7 +134,8 @@ class DataCompactionTest extends QueryTest with BeforeAndAfterAll {
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
         AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-          new CarbonTableIdentifier("default", "normalcompaction", "uniqueid")
+          new CarbonTableIdentifier(
+            CarbonCommonConstants.DATABASE_DEFAULT_NAME, "normalcompaction", "uniqueid")
         )
     )
     // merged segment should not be there

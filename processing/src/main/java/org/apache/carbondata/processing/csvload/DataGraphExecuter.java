@@ -250,7 +250,7 @@ public class DataGraphExecuter {
           stepMetaInterface.setFilenameField("filename");
           stepMetaInterface.setFileName(new String[] { "${csvInputFilePath}" });
           stepMetaInterface.setDefault();
-          stepMetaInterface.setEncoding("UTF-8");
+          stepMetaInterface.setEncoding(CarbonCommonConstants.DEFAULT_CHARSET);
           stepMetaInterface.setEnclosure("\"");
           stepMetaInterface.setHeader(true);
           stepMetaInterface.setSeparator(",");
@@ -272,7 +272,7 @@ public class DataGraphExecuter {
           stepMetaInterface.setFileName(files);
           stepMetaInterface.setFilenameField("filename");
           stepMetaInterface.setDefault();
-          stepMetaInterface.setEncoding("UTF-8");
+          stepMetaInterface.setEncoding(CarbonCommonConstants.DEFAULT_CHARSET);
           stepMetaInterface.setEnclosure("\"");
           stepMetaInterface.setHeader(true);
           stepMetaInterface.setSeparator(",");

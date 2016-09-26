@@ -253,7 +253,7 @@ public class GraphGenerator {
     try {
       String xml = transMeta.getXML();
       dos = new DataOutputStream(new FileOutputStream(new File(graphFile)));
-      dos.write(xml.getBytes("UTF-8"));
+      dos.write(xml.getBytes(CarbonCommonConstants.DEFAULT_CHARSET));
     } catch (KettleException kettelException) {
       throw new GraphGeneratorException("Error while getting the graph XML", kettelException);
     }
@@ -413,7 +413,7 @@ public class GraphGenerator {
     fileInputMeta.setFilenameField("filename");
     fileInputMeta.setFileName(new String[] { "${csvInputFilePath}" });
     fileInputMeta.setDefault();
-    fileInputMeta.setEncoding("UTF-8");
+    fileInputMeta.setEncoding(CarbonCommonConstants.DEFAULT_CHARSET);
     fileInputMeta.setEnclosure("\"");
     fileInputMeta.setHeader(true);
     fileInputMeta.setSeparator(",");
@@ -439,7 +439,7 @@ public class GraphGenerator {
     // Init the Filename...
     csvInputMeta.setFilename("${csvInputFilePath}");
     csvInputMeta.setDefault();
-    csvInputMeta.setEncoding("UTF-8");
+    csvInputMeta.setEncoding(CarbonCommonConstants.DEFAULT_CHARSET);
     csvInputMeta.setEnclosure("\"");
     csvInputMeta.setHeaderPresent(true);
     csvInputMeta.setMaxColumns(maxColumns);

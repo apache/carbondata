@@ -34,6 +34,7 @@ import org.apache.carbondata.core.carbon.datastore.BlockIndexStore;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.test.util.StoreCreator;
 
 import junit.framework.TestCase;
@@ -56,7 +57,8 @@ public class BlockIndexStoreTest extends TestCase {
     TableBlockInfo info =
         new TableBlockInfo(file.getAbsolutePath(), 0, "0", new String[] { "loclhost" },
             file.length());
-    CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("default", "t3", "1");
+    CarbonTableIdentifier carbonTableIdentifier =
+            new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "t3", "1");
     AbsoluteTableIdentifier absoluteTableIdentifier =
         new AbsoluteTableIdentifier("/src/test/resources", carbonTableIdentifier);
     try {
@@ -91,7 +93,8 @@ public class BlockIndexStoreTest extends TestCase {
         new TableBlockInfo(file.getAbsolutePath(), 0, "1", new String[] { "loclhost" },
             file.length());
 
-    CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("default", "t3", "1");
+    CarbonTableIdentifier carbonTableIdentifier =
+            new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "t3", "1");
     AbsoluteTableIdentifier absoluteTableIdentifier =
         new AbsoluteTableIdentifier("/src/test/resources", carbonTableIdentifier);
     ExecutorService executor = Executors.newFixedThreadPool(3);
@@ -156,7 +159,8 @@ public class BlockIndexStoreTest extends TestCase {
         new TableBlockInfo(file.getAbsolutePath(), 0, "3", new String[] { "loclhost" },
             file.length());
 
-    CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("default", "t3", "1");
+    CarbonTableIdentifier carbonTableIdentifier =
+            new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "t3", "1");
     AbsoluteTableIdentifier absoluteTableIdentifier =
         new AbsoluteTableIdentifier("/src/test/resources", carbonTableIdentifier);
     ExecutorService executor = Executors.newFixedThreadPool(3);
