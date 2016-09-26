@@ -152,7 +152,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
   }
 
   def loadMetadata(metadataPath: String): MetaData = {
-    val recorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance()
+    val recorder = CarbonTimeStatisticsFactory.createDriverRecorder()
     val statistic = new QueryStatistic()
     // creating zookeeper instance once.
     // if zookeeper is configured as carbon lock type.

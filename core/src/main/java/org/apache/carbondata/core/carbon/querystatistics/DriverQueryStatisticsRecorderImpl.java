@@ -202,7 +202,8 @@ public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorde
             load_meta_time + "|" + "\n");
         tableInfo.append(line2).append("\n");
         tableInfo.append("|" + printLine(" ", (len1 - "Part".length())) + "Part" + "|" +
-                printLine(" ", (len2 - "Load blocks driver".length())) + "Load blocks driver" + "|" +
+                printLine(" ", (len2 - "Load blocks driver".length())) +
+                "Load blocks driver" + "|" +
                 printLine(" ", len3) + "|" +
                 printLine(" ", (len4 - load_blocks_time.length())) +
                 load_blocks_time + "|" + "\n");
@@ -229,7 +230,8 @@ public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorde
         // when we can't get sql parse time, we only print the last two
         driver_part_time = driver_part_time_tmp2 + splitChar;
         tableInfo.append("|" + printLine(" ", (len1 - "Driver".length())) + "Driver" + "|" +
-                printLine(" ", (len2 - "Load blocks driver".length())) + "Load blocks driver" + "|" +
+                printLine(" ", (len2 - "Load blocks driver".length())) +
+                "Load blocks driver" + "|" +
                 printLine(" ", len3) + "|" +
                 printLine(" ", (len4 - load_blocks_time.length())) +
                 load_blocks_time + "|" + "\n");

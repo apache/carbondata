@@ -42,13 +42,10 @@ public class CarbonTimeStatisticsFactory {
   }
 
   private static LoadStatistics genLoadStatisticsInstance() {
-    switch (LoadStatisticsInstanceType.toLowerCase()) {
-      case "false":
-        return CarbonLoadStatisticsDummy.getInstance();
-      case "true":
-        return CarbonLoadStatisticsImpl.getInstance();
-      default:
-        return CarbonLoadStatisticsDummy.getInstance();
+    if (LoadStatisticsInstanceType.equalsIgnoreCase("true")) {
+      return CarbonLoadStatisticsImpl.getInstance();
+    } else {
+      return CarbonLoadStatisticsDummy.getInstance();
     }
   }
 
@@ -64,7 +61,7 @@ public class CarbonTimeStatisticsFactory {
     }
   }
 
-  public static QueryStatisticsRecorder getQueryStatisticsRecorderInstance() {
+  public static QueryStatisticsRecorder createDriverRecorder() {
     return QueryStatisticsRecorderInstance;
   }
 

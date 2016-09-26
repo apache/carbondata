@@ -52,11 +52,6 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder,Seri
    */
   private String queryIWthTask;
 
-  /**
-   * lock for log statistics table
-   */
-  private static final Object lock = new Object();
-
   public QueryStatisticsRecorderImpl(String queryId) {
     queryStatistics = new ArrayList<QueryStatistic>();
     this.queryIWthTask = queryId;
@@ -84,11 +79,9 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder,Seri
    * Below method will be used to show statistic log as table
    */
   public void logStatisticsAsTableExecutor() {
-    synchronized (lock) {
-      String tableInfo = collectExecutorStatistics();
-      if (null != tableInfo) {
-        LOGGER.statistic(tableInfo);
-      }
+    String tableInfo = collectExecutorStatistics();
+    if (null != tableInfo) {
+      LOGGER.statistic(tableInfo);
     }
   }
 

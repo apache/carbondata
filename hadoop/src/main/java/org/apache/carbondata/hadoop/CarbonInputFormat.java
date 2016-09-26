@@ -461,7 +461,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       AbsoluteTableIdentifier absoluteTableIdentifier, FilterResolverIntf resolver,
       String segmentId) throws IndexBuilderException, IOException {
     QueryStatisticsRecorder recorder =
-            CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance();
+            CarbonTimeStatisticsFactory.createDriverRecorder();
     QueryStatistic statistic = new QueryStatistic();
     Map<String, AbstractIndex> segmentIndexMap =
         getSegmentAbstractIndexs(job, absoluteTableIdentifier, segmentId);
