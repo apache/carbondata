@@ -132,7 +132,8 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
       metadata.setColumnExpression(columnList.get(0));
       metadata.setExpression(exp);
       metadata.setIncludeFilter(isIncludeFilter);
-      if (!columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)) {
+      if (!columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY)
+              || columnList.get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         dimColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
             FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnList.get(0)), metadata);
 
