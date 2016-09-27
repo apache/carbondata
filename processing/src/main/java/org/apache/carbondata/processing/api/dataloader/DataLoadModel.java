@@ -65,6 +65,8 @@ public class DataLoadModel {
 
   private String commentCharacter;
 
+  private String rddIteratorKey;
+
   private String maxColumns;
   /**
    * @return Returns the schemaInfo.
@@ -225,6 +227,14 @@ public class DataLoadModel {
    */
   public void setMaxColumns(String maxColumns) {
     this.maxColumns = maxColumns;
+  }
+
+  public String getRddIteratorKey() {
+    return rddIteratorKey;
+  }
+
+  public void setRddIteratorKey(String rddIteratorKey) {
+    this.rddIteratorKey = rddIteratorKey;
   }
 }
 

@@ -837,7 +837,7 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
   }
 }
 
-private[sql] case class CreateTable(cm: tableModel) extends RunnableCommand {
+case class CreateTable(cm: tableModel) extends RunnableCommand {
 
   def run(sqlContext: SQLContext): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -1024,14 +1024,15 @@ private[sql] case class DeleteLoadsByLoadDate(
 
 }
 
-private[sql] case class LoadTable(
+case class LoadTable(
     databaseNameOp: Option[String],
     tableName: String,
     factPathFromUser: String,
     dimFilesPath: Seq[DataLoadTableFileMapping],
     partionValues: Map[String, String],
     isOverwriteExist: Boolean = false,
-    var inputSqlString: String = null) extends RunnableCommand {
+    var inputSqlString: String = null,
+    dataFrame: Option[DataFrame] = None) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -1070,7 +1071,8 @@ private[sql] case class LoadTable(
         sys.error("Table is locked for updation. Please try after some time")
       }
 
-      val factPath = FileUtils.getPaths(CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser))
+      val factPath = if (dataFrame.isDefined) "" else FileUtils.getPaths(
+        CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser))
       val carbonLoadModel = new CarbonLoadModel()
       carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
       carbonLoadModel.setDatabaseName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
@@ -1167,11 +1169,12 @@ private[sql] case class LoadTable(
           carbonLoadModel.setDirectLoad(true)
         }
         GlobalDictionaryUtil
-          .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.tableMeta.storePath)
+          .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.tableMeta.storePath,
+            dataFrame)
         CarbonDataRDDFactory
           .loadCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.tableMeta.storePath,
             kettleHomePath,
-            relation.tableMeta.partitioner, columinar, isAgg = false, partitionStatus)
+            relation.tableMeta.partitioner, columinar, isAgg = false, partitionStatus, dataFrame)
       }
       catch {
         case ex: Exception =>

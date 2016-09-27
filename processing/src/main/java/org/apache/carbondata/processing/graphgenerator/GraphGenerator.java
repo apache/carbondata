@@ -204,6 +204,8 @@ public class GraphGenerator {
    */
   private String maxColumns;
 
+  private String rddIteratorKey;
+
   public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
       String factStoreLocation, int allocate,
       CarbonDataLoadSchema carbonDataLoadSchema, String segmentId) {
@@ -237,6 +239,7 @@ public class GraphGenerator {
     this(dataLoadModel, isHDFSReadMode, partitionID, factStoreLocation, allocate,
         carbonDataLoadSchema, segmentId);
     this.outputLocation = outputLocation;
+    this.rddIteratorKey = dataLoadModel.getRddIteratorKey();
   }
 
   /**
@@ -456,6 +459,7 @@ public class GraphGenerator {
     csvInputMeta.setEscapeCharacter(this.escapeCharacter);
     csvInputMeta.setQuoteCharacter(this.quoteCharacter);
     csvInputMeta.setCommentCharacter(this.commentCharacter);
+    csvInputMeta.setRddIteratorKey(this.rddIteratorKey == null ? "" : this.rddIteratorKey);
     csvDataStep.setDraw(true);
     csvDataStep.setDescription("Read raw data from " + GraphGeneratorConstants.CSV_INPUT);
 

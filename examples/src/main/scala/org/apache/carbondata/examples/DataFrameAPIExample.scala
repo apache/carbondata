@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.examples
 
-import org.apache.spark.sql.SaveMode
-
 import org.apache.carbondata.examples.util.ExampleUtils
 
 // scalastyle:off println
