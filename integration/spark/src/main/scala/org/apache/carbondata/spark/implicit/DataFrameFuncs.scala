@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.spark
 
-import org.apache.hadoop.fs.Path
 import org.apache.spark.Logging
-import org.apache.spark.sql.{CarbonContext, DataFrame, DataFrameWriter, SaveMode}
+import org.apache.spark.sql.{CarbonContext, DataFrame}
+import org.apache.spark.sql.execution.command.LoadTable
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.carbon.metadata.datatype.{DataType => CarbonType}
@@ -35,49 +35,20 @@ class DataFrameFuncs(dataFrame: DataFrame) extends Logging {
       "Error in saving dataframe to carbon file, must use CarbonContext to save dataframe"
     )
 
-    val options = new CarbonOption(parameters)
-    val tableName = options.tableName
-
-    // temporary solution: write to csv file, then load the csv into carbon
-    val tempCSVFolder = s"./tempCSV"
-    var writer: DataFrameWriter =
-      dataFrame.write
-          .format(csvPackage)
-          .option("header", "false")
-          .mode(SaveMode.Overwrite)
-
-    if (options.compress.equals("true")) {
-      writer = writer.option("codec", "gzip")
-    }
-
-    writer.save(tempCSVFolder)
-
     val cc = CarbonContext.getInstance(dataFrame.sqlContext.sparkContext)
-    val tempCSVPath = new Path(tempCSVFolder)
-    val fs = tempCSVPath.getFileSystem(dataFrame.sqlContext.sparkContext.hadoopConfiguration)
-
-    def countSize(): Double = {
-      var size: Double = 0
-      val itor = fs.listFiles(tempCSVPath, true)
-      while (itor.hasNext) {
-        val f = itor.next()
-        if (f.getPath.getName.startsWith("part-")) {
-          size += f.getLen
-        }
-      }
-      size
-    }
-
-    try {
-      cc.sql(makeCreateTableString(dataFrame.schema, options))
-      logInfo(s"temporary CSV file size: ${countSize() / 1024 / 1024} MB")
-      cc.sql(makeLoadString(tableName, tempCSVFolder))
-    } finally {
-      fs.delete(tempCSVPath, true)
-    }
+    val options = new CarbonOption(parameters, cc)
+    cc.sql(makeCreateTableString(dataFrame.schema, options))
+    val header = dataFrame.columns.mkString(",")
+    LoadTable(
+      Some(options.dbName),
+      options.tableName,
+      null,
+      Seq(),
+      Map(("fileheader" -> header)),
+      false,
+      null,
+      Some(dataFrame)).run(cc)
   }
-
-  private def csvPackage: String = "com.databricks.spark.csv.newapi"
 
   private def convertToCarbonType(sparkType: DataType): String = {
     sparkType match {
@@ -107,13 +78,6 @@ class DataFrameFuncs(dataFrame: DataFrame) extends Logging {
       """
   }
 
-  private def makeLoadString(tableName: String, csvFolder: String): String = {
-    s"""
-          LOAD DATA INPATH '$csvFolder'
-          INTO TABLE $tableName
-          OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}')
-      """
-  }
 
   def appendToCarbonFile(parameters: Map[String, String] = Map()): Unit = {
     // find out table

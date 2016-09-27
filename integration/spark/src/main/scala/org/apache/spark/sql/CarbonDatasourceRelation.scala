@@ -60,7 +60,7 @@ class CarbonSource extends RelationProvider
     parameters.get("path") match {
       case Some(path) => CarbonDatasourceHadoopRelation(sqlContext, Array(path), parameters, None)
       case _ =>
-        val options = new CarbonOption(parameters)
+        val options = new CarbonOption(parameters, sqlContext)
         val tableIdentifier = options.tableIdentifier.split("""\.""").toSeq
         val identifier = tableIdentifier match {
           case Seq(name) => TableIdentifier(name, None)
@@ -85,7 +85,7 @@ class CarbonSource extends RelationProvider
     require(!parameters.contains("path"), "'path' should not be specified, " +
         "the path to store carbon file is the 'storePath' specified when creating CarbonContext")
 
-    val options = new CarbonOption(parameters)
+    val options = new CarbonOption(parameters, sqlContext)
     val storePath = CarbonContext.getInstance(sqlContext.sparkContext).storePath
     val tablePath = new Path(storePath + "/" + options.dbName + "/" + options.tableName)
     val isExists = tablePath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)

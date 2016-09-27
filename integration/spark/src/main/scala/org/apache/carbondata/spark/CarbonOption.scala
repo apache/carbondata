@@ -17,13 +17,15 @@
 
 package org.apache.carbondata.spark
 
+import org.apache.spark.sql.{getDB, SQLContext}
+
 /**
  * Contains all options for Spark data source
  */
-class CarbonOption(options: Map[String, String]) {
+class CarbonOption(options: Map[String, String], cc: SQLContext) {
   def tableIdentifier: String = options.getOrElse("tableName", s"$dbName.$tableName")
 
-  def dbName: String = options.getOrElse("dbName", "default")
+  def dbName: String = getDB.getDatabaseName(options.get("dbName"), cc)
 
   def tableName: String = options.getOrElse("tableName", "default_table")
 

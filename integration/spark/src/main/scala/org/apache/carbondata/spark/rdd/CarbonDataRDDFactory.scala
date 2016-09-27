@@ -30,9 +30,9 @@ import org.apache.hadoop.conf.{Configurable, Configuration}
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{util => _, _}
-import org.apache.spark.sql.{CarbonEnv, SQLContext}
+import org.apache.spark.sql.{CarbonEnv, DataFrame, SQLContext}
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel, CompactionModel, Partitioner}
-import org.apache.spark.sql.hive.{DistributionUtil, TableMeta}
+import org.apache.spark.sql.hive.{DistributionUtil}
 import org.apache.spark.util.{FileUtils, SplitUtils}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -47,12 +47,11 @@ import org.apache.carbondata.integration.spark.merger.{CarbonCompactionUtil, Com
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.etl.DataLoadingException
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark._
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.merger.CarbonDataMergerUtil
 import org.apache.carbondata.spark.splits.TableSplit
-import org.apache.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil, LoadMetadataUtil}
+import org.apache.carbondata.spark.util.{CarbonQueryUtil, LoadMetadataUtil}
 
 /**
  * This is the factory class which can create different RDD depends on user needs.
@@ -667,7 +666,8 @@ object CarbonDataRDDFactory extends Logging {
       partitioner: Partitioner,
       columinar: Boolean,
       isAgg: Boolean,
-      partitionStatus: String = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS) {
+      partitionStatus: String = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS,
+      dataFrame: Option[DataFrame] = None) {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
 
     // for handling of the segment Merging.
@@ -817,7 +817,9 @@ object CarbonDataRDDFactory extends Logging {
       // CarbonCommonConstants.TABLE_SPLIT_PARTITION_DEFAULT_VALUE).toBoolean
       val isTableSplitPartition = false
       var blocksGroupBy: Array[(String, Array[BlockDetails])] = null
-      isTableSplitPartition match {
+      var status: Array[(String, LoadMetadataDetails)] = null
+
+      def loadDataFile(): Unit = { isTableSplitPartition match {
         case true =>
           /*
            * when data handle by table split partition
@@ -856,7 +858,7 @@ object CarbonDataRDDFactory extends Logging {
                 val pathBuilder = new StringBuilder()
                 pathBuilder.append(carbonLoadModel.getFactFilePath)
                 if (!carbonLoadModel.getFactFilePath.endsWith("/")
-                    && !carbonLoadModel.getFactFilePath.endsWith("\\")) {
+                  && !carbonLoadModel.getFactFilePath.endsWith("\\")) {
                   pathBuilder.append("/")
                 }
                 pathBuilder.append(split.getPartition.getUniqueID).append("/")
@@ -941,16 +943,8 @@ object CarbonDataRDDFactory extends Logging {
             (entry._1, blockDetailsList)
           }
           ).toArray
-      }
+        }
 
-      CarbonLoaderUtil.checkAndCreateCarbonDataLocation(hdfsStoreLocation,
-        carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName,
-        partitioner.partitionCount, currentLoadCount.toString)
-      var loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
-      var status: Array[(String, LoadMetadataDetails)] = null
-      var errorMessage: String = "DataLoad failure"
-      var executorMessage: String = ""
-      try {
         status = new
             CarbonDataLoadRDD(sqlContext.sparkContext,
               new DataLoadResultImpl(),
@@ -966,6 +960,39 @@ object CarbonDataRDDFactory extends Logging {
               blocksGroupBy,
               isTableSplitPartition
             ).collect()
+      }
+
+      def loadDataFrame(): Unit = {
+        var rdd = dataFrame.get.rdd
+        var numPartitions = DistributionUtil.getNodeList(sqlContext.sparkContext).length
+        numPartitions = Math.max(1, Math.min(numPartitions, rdd.partitions.length))
+        rdd = rdd.coalesce(numPartitions, false)
+
+        status = new CarbonRDDDataLoadRDD(sqlContext.sparkContext,
+          new DataLoadResultImpl(),
+          carbonLoadModel,
+          storeLocation,
+          hdfsStoreLocation,
+          kettleHomePath,
+          columinar,
+          currentLoadCount,
+          tableCreationTime,
+          schemaLastUpdatedTime,
+          rdd).collect()
+      }
+
+      CarbonLoaderUtil.checkAndCreateCarbonDataLocation(hdfsStoreLocation,
+        carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName,
+        partitioner.partitionCount, currentLoadCount.toString)
+      var loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
+      var errorMessage: String = "DataLoad failure"
+      var executorMessage: String = ""
+      try {
+        if (dataFrame.isDefined) {
+          loadDataFrame()
+        } else {
+          loadDataFile()
+        }
         val newStatusMap = scala.collection.mutable.Map.empty[String, String]
         status.foreach { eachLoadStatus =>
           val state = newStatusMap.get(eachLoadStatus._1)
