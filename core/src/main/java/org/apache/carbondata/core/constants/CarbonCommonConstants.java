@@ -517,9 +517,21 @@ public final class CarbonCommonConstants {
    */
   public static final int DEFAULT_MAX_QUERY_EXECUTION_TIME = 60;
   /**
-   * LOADMETADATA_FILENAME
+   * Carbon table path
    */
-  public static final String LOADMETADATA_FILENAME = "tablestatus";
+  public static final String METADATA_DIR = "Metadata";
+  public static final String DICTIONARY_EXT = ".dict";
+  public static final String DICTIONARY_META_EXT = ".dictmeta";
+  public static final String SORT_INDEX_EXT = ".sortindex";
+  public static final String SCHEMA_FILE = "schema";
+  public static final String TABLE_STATUS_FILE = "tablestatus";
+  public static final String FACT_DIR = "Fact";
+  public static final String AGGREGATE_TABLE_PREFIX = "Agg";
+  public static final String SEGMENT_PREFIX = "Segment_";
+  public static final String PARTITION_PREFIX = "Part";
+  public static final String CARBON_DATA_EXT = ".carbondata";
+  public static final String DATA_PART_PREFIX = "part";
+  public static final String INDEX_FILE_EXT = ".carbonindex";
   /**
    * INMEMORY_REOCRD_SIZE
    */

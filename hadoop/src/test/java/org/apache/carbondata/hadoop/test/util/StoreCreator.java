@@ -406,7 +406,7 @@ public class StoreCreator {
     listOfLoadFolderDetails.add(loadMetadataDetails);
 
     String dataLoadLocation = schema.getCarbonTable().getMetaDataFilepath() + File.separator
-        + CarbonCommonConstants.LOADMETADATA_FILENAME;
+        + CarbonCommonConstants.TABLE_STATUS_FILE;
 
     DataOutputStream dataOutputStream;
     Gson gsonObjectToWrite = new Gson();
