@@ -365,9 +365,8 @@ class CarbonSqlParser()
               }
             case Token("TOK_TABLEPROPERTIES", list :: Nil) =>
               val propertySeq: Seq[(String, String)] = getProperties(list)
-              val repeatedProperties = propertySeq.groupBy(x => x._1)
-                .filter(y => y._2.size > 1).keySet
-              if (repeatedProperties.size > 0) {
+              val repeatedProperties = propertySeq.groupBy(_._1).filter(_._2.nonEmpty).keySet
+              if (repeatedProperties.nonEmpty) {
                 val repeatedPropStr: String = repeatedProperties.mkString(",")
                 throw new MalformedCarbonCommandException("Table properties is repeated: " +
                   repeatedPropStr)
