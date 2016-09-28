@@ -162,6 +162,26 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
       }
     }
   }
+
+  test("create carbon table with repeated table properties") {
+    try {
+      sql(
+        """
+          CREATE TABLE IF NOT EXISTS carbontable
+          (ID Int, date Timestamp, country String,
+          name String, phonetype String, serialname String, salary Int)
+          STORED BY 'carbondata'
+          TBLPROPERTIES('DICTIONARY_EXCLUDE'='country','DICTIONARY_INCLUDE'='ID',
+          'DICTIONARY_EXCLUDE'='phonetype', 'DICTIONARY_INCLUDE'='salary')
+        """)
+      assert(false)
+    } catch {
+      case e : MalformedCarbonCommandException => {
+        assert(e.getMessage.equals("Table properties is repeated: dictionary_include,dictionary_exclude"))
+      }
+    }
+  }
+
   override def afterAll {
     sql("drop table if exists carbontable")
   }
