@@ -364,7 +364,15 @@ class CarbonSqlParser()
                 }
               }
             case Token("TOK_TABLEPROPERTIES", list :: Nil) =>
-              tableProperties ++= getProperties(list)
+              val propertySeq: Seq[(String, String)] = getProperties(list)
+              val repeatedProperties = propertySeq.groupBy(x => x._1)
+                .filter(y => y._2.size > 1).keySet
+              if (repeatedProperties.size > 0) {
+                val repeatedPropStr: String = repeatedProperties.mkString(",")
+                throw new MalformedCarbonCommandException("Table properties is repeated: " +
+                  repeatedPropStr)
+              }
+              tableProperties ++= propertySeq
 
             case Token("TOK_LIKETABLE", child :: Nil) =>
               likeTableName = child.getChild(0).getText()
