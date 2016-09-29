@@ -111,7 +111,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
   /**
    * timeFormat
    */
-  protected SimpleDateFormat timeFormat;
+  protected String timeFormat;
   /**
    * timeDimeIndex
    */
@@ -605,6 +605,10 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     this.generateDimFiles = generateDimFiles;
   }
 
+  public String getTimeFormat() { return timeFormat; }
+
+  public void setTimeFormat(String timeFormat) { this.timeFormat = timeFormat; }
+
   /**
    * set sensible defaults for a new step
    *
@@ -651,6 +655,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     columnSchemaDetails = "";
     columnsDataTypeString="";
     tableOption = "";
+    timeFormat = CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT;
   }
 
   // helper method to allocate the arrays
@@ -684,6 +689,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
         .append(XMLHandler.addTagValue("complexDelimiterLevel1", complexDelimiterLevel1));
     retval.append("    ")
         .append(XMLHandler.addTagValue("complexDelimiterLevel2", complexDelimiterLevel2));
+    retval.append("    ").append(XMLHandler.addTagValue("timeFormat", timeFormat));
     retval.append("    ").append(XMLHandler.addTagValue("primaryKeysString", primaryKeysString));
     retval.append("    ").append(XMLHandler.addTagValue("carbonMeasureNames", carbonMeasureNames));
     retval.append("    ").append(XMLHandler.addTagValue("actualDimNames", actualDimNames));
@@ -740,6 +746,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       columnPropertiesString = XMLHandler.getTagValue(stepnode, "columnPropertiesString");
       complexDelimiterLevel1 = XMLHandler.getTagValue(stepnode, "complexDelimiterLevel1");
       complexDelimiterLevel2 = XMLHandler.getTagValue(stepnode, "complexDelimiterLevel2");
+      timeFormat = XMLHandler.getTagValue(stepnode, "timeFormat");
       primaryKeysString = XMLHandler.getTagValue(stepnode, "primaryKeysString");
       carbonMeasureNames = XMLHandler.getTagValue(stepnode, "carbonMeasureNames");
       actualDimNames = XMLHandler.getTagValue(stepnode, "actualDimNames");

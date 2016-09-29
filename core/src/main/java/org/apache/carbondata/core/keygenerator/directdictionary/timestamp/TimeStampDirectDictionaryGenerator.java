@@ -117,15 +117,23 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
    * @return dictionary value
    */
   @Override public int generateDirectSurrogateKey(String memberStr) {
-    SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+    String timeString;
+    String formatString;
+    if (memberStr.contains(CarbonCommonConstants.COLON_SPC_CHARACTER)){
+      timeString = memberStr.split(CarbonCommonConstants.COLON_SPC_CHARACTER)[0];
+      formatString = memberStr.split(CarbonCommonConstants.COLON_SPC_CHARACTER)[1];
+    } else {
+      timeString = memberStr;
+      formatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+    }
+    SimpleDateFormat timeParser = new SimpleDateFormat(formatString);
     timeParser.setLenient(false);
-    if (null == memberStr || memberStr.trim().isEmpty() || memberStr
+    if (null == timeString || timeString.trim().isEmpty() || timeString
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
       return 1;
     }
-    return getDirectSurrogateForMember(memberStr, timeParser);
+    return getDirectSurrogateForMember(timeString, timeParser);
   }
 
   /**

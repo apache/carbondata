@@ -1179,6 +1179,13 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
               DirectDictionaryGenerator directDictionaryGenerator1 =
                   DirectDictionaryKeyGeneratorFactory
                       .getDirectDictionaryGenerator(details.getColumnType());
+              String[] timeformats = meta.timeFormat.split(",");
+              for(String timeformat:timeformats){
+                if(timeformat.startsWith(details.getColumnName())){
+                  timeformat = timeformat.replaceFirst(":", CarbonCommonConstants.COLON_SPC_CHARACTER);
+                  tuple = timeformat.replace(details.getColumnName(), tuple);
+                }
+              }
               surrogateKeyForHrrchy[0] =
                   directDictionaryGenerator1.generateDirectSurrogateKey(tuple);
               if (!isSerialized && surrogateKeyForHrrchy[0] == 1) {

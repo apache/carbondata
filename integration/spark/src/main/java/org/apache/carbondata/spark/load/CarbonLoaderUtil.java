@@ -188,7 +188,6 @@ public final class CarbonLoaderUtil {
       dataProcessTaskStatus.setCsvDelimiter(loadModel.getCsvDelimiter());
       dataProcessTaskStatus.setCsvHeader(loadModel.getCsvHeader());
     }
-
     dataProcessTaskStatus.setBlocksID(loadModel.getBlocksID());
     dataProcessTaskStatus.setEscapeCharacter(loadModel.getEscapeChar());
     dataProcessTaskStatus.setQuoteCharacter(loadModel.getQuoteChar());

@@ -1130,7 +1130,6 @@ case class LoadTableUsingKettle(
 
       val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
       val kettleHomePath = CarbonScalaUtil.getKettleHome(sqlContext)
-
       val delimiter = options.getOrElse("delimiter", ",")
       val quoteChar = options.getOrElse("quotechar", "\"")
       val fileHeader = options.getOrElse("fileheader", "")
@@ -1143,6 +1142,7 @@ case class LoadTableUsingKettle(
       val allDictionaryPath = options.getOrElse("all_dictionary_path", "")
       val complex_delimiter_level_1 = options.getOrElse("complex_delimiter_level_1", "\\$")
       val complex_delimiter_level_2 = options.getOrElse("complex_delimiter_level_2", "\\:")
+      val timeFormat = options.getOrElse("timeformat", null)
       val multiLine = options.getOrElse("multiline", "false").trim.toLowerCase match {
         case "true" => true
         case "false" => false
@@ -1156,6 +1156,9 @@ case class LoadTableUsingKettle(
       carbonLoadModel.setEscapeChar(escapeChar)
       carbonLoadModel.setQuoteChar(quoteChar)
       carbonLoadModel.setCommentChar(commentchar)
+      carbonLoadModel.setTimeFormat(timeFormat)
+      carbonLoadModel.setSerializationNullFormat("serialization_null_format" + "," +
+        serializationNullFormat)
       carbonLoadModel
         .setSerializationNullFormat(
           TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + "," + serializationNullFormat)

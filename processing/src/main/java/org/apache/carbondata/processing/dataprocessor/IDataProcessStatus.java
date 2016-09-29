@@ -195,4 +195,6 @@ public interface IDataProcessStatus {
   String getCommentCharacter();
 
   String getRddIteratorKey();
+
+  String getTimeFormat();
 }

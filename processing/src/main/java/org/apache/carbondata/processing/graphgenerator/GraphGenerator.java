@@ -187,6 +187,7 @@ public class GraphGenerator {
   private String escapeCharacter;
   private String quoteCharacter;
   private String commentCharacter;
+  private String timeFormat;
   /**
    * task id, each spark task has a unique id
    */
@@ -225,9 +226,11 @@ public class GraphGenerator {
     this.taskNo = dataLoadModel.getTaskNo();
     this.quoteCharacter = dataLoadModel.getQuoteCharacter();
     this.commentCharacter = dataLoadModel.getCommentCharacter();
+    this.timeFormat = dataLoadModel.getTimeFormat();
     this.factTimeStamp = dataLoadModel.getFactTimeStamp();
     this.segmentId = segmentId;
     this.escapeCharacter = dataLoadModel.getEscapeCharacter();
+
     this.maxColumns = dataLoadModel.getMaxColumns();
     initialise();
     LOGGER.info("************* Is Columnar Storage" + isColumnar);
@@ -570,6 +573,7 @@ public class GraphGenerator {
         graphConfiguration.getColumnAndTableNameColumnMapForAgg());
     seqMeta.setForgienKeyPrimayKeyString(graphConfiguration.getForgienKeyAndPrimaryKeyMapString());
     seqMeta.setTableName(graphConfiguration.getTableName());
+    seqMeta.setTimeFormat(timeFormat);
     seqMeta.setModifiedDimension(modifiedDimension);
     seqMeta.setForeignKeyHierarchyString(graphConfiguration.getForeignKeyHierarchyString());
     seqMeta.setPrimaryKeysString(graphConfiguration.getPrimaryKeyString());
