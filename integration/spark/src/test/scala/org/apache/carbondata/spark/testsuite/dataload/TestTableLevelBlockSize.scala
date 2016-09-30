@@ -63,7 +63,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
     } catch {
       case e : MalformedCarbonCommandException => {
         assert(e.getMessage.equals("Invalid table_blocksize value found: 4096, " +
-          "only int value from 1 to 2048 is supported."))
+          "only int value from 256 to 2048 is supported."))
       }
     }
   }
@@ -82,7 +82,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
     } catch {
       case e : MalformedCarbonCommandException => {
         assert(e.getMessage.equals("Invalid table_blocksize value found: 10y4, " +
-          "only int value from 1 to 2048 is supported."))
+          "only int value from 256 to 2048 is supported."))
       }
     }
   }
