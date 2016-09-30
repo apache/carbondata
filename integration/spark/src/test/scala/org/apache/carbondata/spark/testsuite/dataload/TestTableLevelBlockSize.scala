@@ -30,7 +30,7 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.scalatest.BeforeAndAfterAll
 
 /**
-  * Test Class for no inverted index load and query
+  * Test Class for table block size
   *
   */
 
