@@ -33,11 +33,10 @@ object CarbonExample {
     cc.sql("DROP TABLE IF EXISTS t3")
 
     cc.sql("""
-             CREATE TABLE IF NOT EXISTS table_blocksize3
-             (ID Int, date Timestamp, country String,
-              name String, phonetype String, serialname String, salary Int)
-             STORED BY 'org.apache.carbondata.format'
-             TBLPROPERTIES('table_blocksize'='10Y4')
+           CREATE TABLE IF NOT EXISTS t3
+           (ID Int, date Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int)
+           STORED BY 'carbondata'
            """)
 
     cc.sql(s"""
