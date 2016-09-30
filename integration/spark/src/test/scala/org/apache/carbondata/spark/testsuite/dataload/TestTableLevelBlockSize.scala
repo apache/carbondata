@@ -53,7 +53,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
     try {
       sql(
         """
-          CREATE TABLE IF NOT EXISTS table_blocksize3
+          CREATE TABLE IF NOT EXISTS table_blocksize1
           (ID Int, date Timestamp, country String,
           name String, phonetype String, serialname String, salary Int)
           STORED BY 'org.apache.carbondata.format'
@@ -72,7 +72,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
     try {
       sql(
         """
-          CREATE TABLE IF NOT EXISTS table_blocksize3
+          CREATE TABLE IF NOT EXISTS table_blocksize2
           (ID Int, date Timestamp, country String,
           name String, phonetype String, serialname String, salary Int)
           STORED BY 'org.apache.carbondata.format'

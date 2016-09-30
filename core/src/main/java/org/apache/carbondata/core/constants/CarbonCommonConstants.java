@@ -57,10 +57,6 @@ public final class CarbonCommonConstants {
    */
   public static final String BLOCKLET_SIZE = "carbon.blocklet.size";
   /**
-   * TODO: max number of blocklets written in a single file?
-   */
-  public static final String MAX_FILE_SIZE = "carbon.max.file.size";
-  /**
    * Number of cores to be used
    */
   public static final String NUM_CORES = "carbon.number.of.cores";

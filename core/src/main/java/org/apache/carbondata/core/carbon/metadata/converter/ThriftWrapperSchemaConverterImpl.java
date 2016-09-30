@@ -186,10 +186,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     org.apache.carbondata.format.TableSchema externalTableSchema =
         new org.apache.carbondata.format.TableSchema(
             wrapperTableSchema.getTableId(), thriftColumnSchema, schemaEvolution);
-    // When blocksize is defined by create table ddl
-    if (0 != wrapperTableSchema.getBlocksize()) {
-      externalTableSchema.setBlock_size(wrapperTableSchema.getBlocksize());
-    }
+    externalTableSchema.setBlock_size(wrapperTableSchema.getBlocksize());
     return externalTableSchema;
   }
 
