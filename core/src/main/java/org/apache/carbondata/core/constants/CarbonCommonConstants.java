@@ -91,7 +91,7 @@ public final class CarbonCommonConstants {
 
   public static final String BLOCK_SIZE_DEFAULT_VAL = "1024";
 
-  public static final int BLOCK_SIZE_MIN_VAL = 256;
+  public static final int BLOCK_SIZE_MIN_VAL = 1;
 
   public static final int BLOCK_SIZE_MAX_VAL = 2048;
   /**
