@@ -420,7 +420,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     schemaEvol
       .setSchemaEvolutionEntryList(new util.ArrayList[SchemaEvolutionEntry]())
     tableSchema.setTableId(UUID.randomUUID().toString)
-    tableSchema.setBlockszie(Integer.parseInt(cm.tableBlockSize.getOrElse(0).toString))
+    tableSchema.setBlocksize(Integer.parseInt(cm.tableBlockSize.getOrElse(0).toString))
     tableSchema.setTableName(cm.tableName)
     tableSchema.setListOfColumns(allColumns.asJava)
     tableSchema.setSchemaEvalution(schemaEvol)

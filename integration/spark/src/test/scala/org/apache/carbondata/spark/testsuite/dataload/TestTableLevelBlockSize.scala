@@ -26,6 +26,7 @@ import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.Row
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.scalatest.BeforeAndAfterAll
 
 /**
@@ -45,32 +46,52 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
   override def beforeAll {
     sql("DROP TABLE IF EXISTS table_blocksize1")
     sql("DROP TABLE IF EXISTS table_blocksize2")
+    sql("DROP TABLE IF EXISTS table_blocksize3")
   }
 
-  test("Set table level blocksize load and point query") {
-
-    sql("""
-           CREATE TABLE IF NOT EXISTS table_blocksize1
-           (id Int, name String, city String)
-           STORED BY 'org.apache.carbondata.format'
-           TBLPROPERTIES('table_blocksize'='128')
+  test("Value test: set table level blocksize value beyong [1,2048]") {
+    try {
+      sql(
+        """
+          CREATE TABLE IF NOT EXISTS table_blocksize3
+          (ID Int, date Timestamp, country String,
+          name String, phonetype String, serialname String, salary Int)
+          STORED BY 'org.apache.carbondata.format'
+          TBLPROPERTIES('table_blocksize'='4096')
         """)
-    sql(s"""
-           LOAD DATA LOCAL INPATH '$testData1' into table table_blocksize1
-           """)
-    checkAnswer(
-      sql("""
-           SELECT * FROM table_blocksize1 WHERE city = "Bangalore"
-          """),
-      Seq(Row("Emily", "Bangalore", 19.0)))
-
+      assert(false)
+    } catch {
+      case e : MalformedCarbonCommandException => {
+        assert(e.getMessage.equals("Invalid table_blocksize value found: 4096, " +
+          "only int value from 1 to 2048 is supported."))
+      }
+    }
   }
 
-  test("Set table level blocksize load and agg query") {
+  test("Value test: set table level blocksize in not int value") {
+    try {
+      sql(
+        """
+          CREATE TABLE IF NOT EXISTS table_blocksize3
+          (ID Int, date Timestamp, country String,
+          name String, phonetype String, serialname String, salary Int)
+          STORED BY 'org.apache.carbondata.format'
+          TBLPROPERTIES('table_blocksize'='10Y4')
+        """)
+      assert(false)
+    } catch {
+      case e : MalformedCarbonCommandException => {
+        assert(e.getMessage.equals("Invalid table_blocksize value found: 10y4, " +
+          "only int value from 1 to 2048 is supported."))
+      }
+    }
+  }
+
+  test("Function test: set table level blocksize load and agg query") {
 
     sql(
       """
-        CREATE TABLE IF NOT EXISTS table_blocksize2
+        CREATE TABLE IF NOT EXISTS table_blocksize3
         (ID Int, date Timestamp, country String,
         name String, phonetype String, serialname String, salary Int)
         STORED BY 'org.apache.carbondata.format'
@@ -81,13 +102,13 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
     sql(s"""
-           LOAD DATA LOCAL INPATH '$testData2' into table table_blocksize2
+           LOAD DATA LOCAL INPATH '$testData2' into table table_blocksize3
            """)
 
     checkAnswer(
       sql("""
            SELECT country, count(salary) AS amount
-           FROM table_blocksize2
+           FROM table_blocksize3
            WHERE country IN ('china','france')
            GROUP BY country
           """),
@@ -99,6 +120,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
   override def afterAll {
     sql("DROP TABLE IF EXISTS table_blocksize1")
     sql("DROP TABLE IF EXISTS table_blocksize2")
+    sql("DROP TABLE IF EXISTS table_blocksize3")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }

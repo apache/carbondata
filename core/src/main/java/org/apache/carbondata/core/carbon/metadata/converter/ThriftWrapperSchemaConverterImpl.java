@@ -187,8 +187,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         new org.apache.carbondata.format.TableSchema(
             wrapperTableSchema.getTableId(), thriftColumnSchema, schemaEvolution);
     // When blocksize is defined by create table ddl
-    if (0 != wrapperTableSchema.getBlockszie()) {
-      externalTableSchema.setBlock_size(wrapperTableSchema.getBlockszie());
+    if (0 != wrapperTableSchema.getBlocksize()) {
+      externalTableSchema.setBlock_size(wrapperTableSchema.getBlocksize());
     }
     return externalTableSchema;
   }
@@ -353,7 +353,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     TableSchema wrapperTableSchema = new TableSchema();
     wrapperTableSchema.setTableId(externalTableSchema.getTable_id());
     wrapperTableSchema.setTableName(tableName);
-    wrapperTableSchema.setBlockszie(externalTableSchema.getBlock_size());
+    wrapperTableSchema.setBlocksize(externalTableSchema.getBlock_size());
     List<ColumnSchema> listOfColumns = new ArrayList<ColumnSchema>();
     for (org.apache.carbondata.format.ColumnSchema externalColumnSchema : externalTableSchema
         .getTable_columns()) {

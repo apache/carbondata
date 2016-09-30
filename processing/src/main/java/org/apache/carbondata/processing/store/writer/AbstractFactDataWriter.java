@@ -197,19 +197,13 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     blockIndexInfoList = new ArrayList<>();
     // get max file size;
     CarbonProperties propInstance = CarbonProperties.getInstance();
-    // If blocksize is defined by create table ddl, then use this value otherwise
-    // use system level property
-    if (blocksize >= CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL_MIN_VAL &&
-        blocksize <= CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL_MAX_VAL) {
-      LOGGER.audit("The max file size is set in table level. ");
+    // For consistence with older tables, if blocksize = 0 it means the table is
+    // created before this property added, and this property get from schema is 0.
+    if (blocksize > 0) {
       this.fileSizeInBytes = blocksize * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
           * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR * 1L;
     } else {
-      LOGGER.audit("The max file size in create table ddl is not set or is invalid, " +
-          "so here use " + CarbonCommonConstants.MAX_FILE_SIZE + "to set. ");
-      this.fileSizeInBytes = Long.parseLong(propInstance
-          .getProperty(CarbonCommonConstants.MAX_FILE_SIZE,
-              CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL))
+      this.fileSizeInBytes = Long.parseLong(CarbonCommonConstants.BLOCK_SIZE_DEFAULT_VAL)
           * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
           * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR * 1L;
     }

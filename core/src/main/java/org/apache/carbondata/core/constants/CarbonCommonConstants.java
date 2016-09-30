@@ -95,16 +95,16 @@ public final class CarbonCommonConstants {
   /**
    * TODO: default value of max number of blocklet written in a single file?
    */
-  public static final String MAX_FILE_SIZE_DEFAULT_VAL = "1024";
+  public static final String BLOCK_SIZE_DEFAULT_VAL = "1024";
   /**
    * TODO: min value of max number of blocklets written in a single file?
    */
-  public static final int MAX_FILE_SIZE_DEFAULT_VAL_MIN_VAL = 1;
+  public static final int BLOCK_SIZE_MIN_VAL = 1;
   /**
    * max allowed block size for a file. If block size is greater than this value
    * then the value is reset to default block size for a file
    */
-  public static final int MAX_FILE_SIZE_DEFAULT_VAL_MAX_VAL = 2048;
+  public static final int BLOCK_SIZE_MAX_VAL = 2048;
   /**
    * default value of number of cores to be used
    */

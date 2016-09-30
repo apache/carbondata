@@ -76,7 +76,6 @@ public final class CarbonProperties {
     }
 
     validateBlockletSize();
-    validateMaxFileSize();
     validateNumCores();
     validateNumCoresBlockSort();
     validateSortSize();
@@ -118,33 +117,6 @@ public final class CarbonProperties {
               + CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
       carbonProperties.setProperty(CarbonCommonConstants.BLOCKLET_SIZE,
           CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
-    }
-  }
-
-  /**
-   * TODO: This method validates the maximum number of blocklets per file ?
-   */
-  private void validateMaxFileSize() {
-    String maxFileSizeStr = carbonProperties.getProperty(CarbonCommonConstants.MAX_FILE_SIZE,
-        CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL);
-    try {
-      int maxFileSize = Integer.parseInt(maxFileSizeStr);
-
-      if (maxFileSize < CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL_MIN_VAL
-          || maxFileSize > CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL_MAX_VAL) {
-        LOGGER.info("The max file size value \"" + maxFileSizeStr
-                + "\" is invalid. Using the default value \""
-                + CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL);
-        carbonProperties.setProperty(CarbonCommonConstants.MAX_FILE_SIZE,
-            CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.info("The max file size value \"" + maxFileSizeStr
-              + "\" is invalid. Using the default value \""
-              + CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL);
-
-      carbonProperties.setProperty(CarbonCommonConstants.MAX_FILE_SIZE,
-          CarbonCommonConstants.MAX_FILE_SIZE_DEFAULT_VAL);
     }
   }
 

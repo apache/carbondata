@@ -555,8 +555,20 @@ class CarbonSqlParser()
       try {
         tableBlockSize = Integer.parseInt(blockSizeStr)
       } catch {
-        case e: NumberFormatException => tableBlockSize = 0
+        case e: NumberFormatException =>
+          throw new MalformedCarbonCommandException("Invalid table_blocksize value found: " +
+            s"$blockSizeStr, only int value from 1 to 2048 is supported.")
       }
+      if (tableBlockSize < CarbonCommonConstants.BLOCK_SIZE_MIN_VAL ||
+        tableBlockSize > CarbonCommonConstants.BLOCK_SIZE_MAX_VAL) {
+        throw new MalformedCarbonCommandException("Invalid table_blocksize value found: " +
+          s"$blockSizeStr, only int value from 1 to 2048 is supported.")
+      }
+    } else {
+      // Here it means table_blocksize is not set in ddl, we use the default value and log it.
+      tableBlockSize = Integer.parseInt(CarbonCommonConstants.BLOCK_SIZE_DEFAULT_VAL)
+      LOGGER.audit(s"Table block size is not set in create table ddl," +
+        s" using the default value: ${CarbonCommonConstants.BLOCK_SIZE_DEFAULT_VAL}.")
     }
     tableBlockSize
   }

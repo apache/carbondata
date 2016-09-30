@@ -92,7 +92,7 @@ public class CarbonTable implements Serializable {
    * @param tableInfo
    */
   public void loadCarbonTable(TableInfo tableInfo) {
-    this.blocksize = tableInfo.getFactTable().getBlockszie();
+    this.blocksize = tableInfo.getFactTable().getBlocksize();
     this.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
     this.tableUniqueName = tableInfo.getTableUniqueName();
     this.metaDataFilepath = tableInfo.getMetaDataFilepath();

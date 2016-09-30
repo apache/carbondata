@@ -59,7 +59,7 @@ public class TableSchema implements Serializable {
   /**
    * Used to record the block size of this table.
    */
-  private int blockszie;
+  private int blocksize;
 
   public TableSchema() {
     this.listOfColumns = new ArrayList<ColumnSchema>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -107,12 +107,12 @@ public class TableSchema implements Serializable {
     this.schemaEvalution = schemaEvalution;
   }
 
-  public int getBlockszie() {
-    return blockszie;
+  public int getBlocksize() {
+    return blocksize;
   }
 
-  public void setBlockszie(int blockszie) {
-    this.blockszie = blockszie;
+  public void setBlocksize(int blocksize) {
+    this.blocksize = blocksize;
   }
 
   /**
