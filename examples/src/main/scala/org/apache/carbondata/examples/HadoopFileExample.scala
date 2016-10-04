@@ -17,25 +17,24 @@
 
 package org.apache.carbondata.examples
 
-import org.apache.spark.sql.{SaveMode, SQLContext}
-
 import org.apache.carbondata.examples.util.ExampleUitls
+import org.apache.carbondata.hadoop.CarbonInputFormat
 
-object DatasourceExample {
+// scalastyle:off println
+object HadoopFileExample {
 
-  def main(args: Array[String]) {
-    // use CarbonContext to write CarbonData files
-    val cc = ExampleUitls.createCarbonContext("DatasourceExample")
-    ExampleUitls.writeSampleCarbonFile(cc, "table1")
+  def main(args: Array[String]): Unit = {
+    val cc = ExampleUitls.createCarbonContext("DataFrameAPIExample")
+    ExampleUitls.writeSampleCarbonFile(cc, "carbon1")
 
-    // Use SQLContext to read CarbonData files
-    val sqlContext = new SQLContext(cc.sparkContext)
-    sqlContext.sql(
-      s"""
-        | CREATE TEMPORARY TABLE source
-        | USING org.apache.spark.sql.CarbonSource
-        | OPTIONS (path '${cc.storePath}/default/table1')
-      """.stripMargin)
-    sqlContext.sql("SELECT c1, c2, count(*) FROM source WHERE c3 > 100 GROUP BY c1, c2").show
+    val sc = cc.sparkContext
+    val input = sc.newAPIHadoopFile(s"${cc.storePath}/default/carbon1",
+      classOf[CarbonInputFormat[Array[Object]]],
+      classOf[Void],
+      classOf[Array[Object]])
+    val result = input.map(x => x._2.toList).collect
+    result.foreach(x => println(x.mkString(", ")))
   }
 }
+// scalastyle:on println
+

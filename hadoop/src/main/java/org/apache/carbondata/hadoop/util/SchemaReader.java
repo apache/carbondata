@@ -26,6 +26,7 @@ import org.apache.carbondata.core.carbon.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.carbon.metadata.schema.table.TableInfo;
+import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.reader.ThriftReader;
@@ -37,8 +38,9 @@ import org.apache.thrift.TBase;
  */
 public class SchemaReader {
 
-  public static CarbonTable readCarbonTableFromStore(CarbonTablePath carbonTablePath,
-      AbsoluteTableIdentifier identifier) throws IOException {
+  public static CarbonTable readCarbonTableFromStore(AbsoluteTableIdentifier identifier)
+      throws IOException {
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(identifier);
     String schemaFilePath = carbonTablePath.getSchemaFilePath();
     if (FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.LOCAL) ||
         FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.HDFS) ||

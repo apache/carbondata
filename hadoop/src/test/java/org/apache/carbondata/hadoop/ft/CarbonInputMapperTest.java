@@ -170,14 +170,13 @@ public class CarbonInputMapperTest extends TestCase {
     job.setInputFormatClass(CarbonInputFormat.class);
     job.setOutputFormatClass(TextOutputFormat.class);
     AbsoluteTableIdentifier abs = StoreCreator.getAbsoluteTableIdentifier();
-    CarbonInputFormat.setTableToAccess(job.getConfiguration(), abs.getCarbonTableIdentifier());
     if (projection != null) {
       CarbonInputFormat.setColumnProjection(projection, job.getConfiguration());
     }
     if (filter != null) {
       CarbonInputFormat.setFilterPredicates(job.getConfiguration(), filter);
     }
-    FileInputFormat.addInputPath(job, new Path(abs.getStorePath()));
+    FileInputFormat.addInputPath(job, new Path(abs.getTablePath()));
     CarbonUtil.deleteFoldersAndFiles(new File(outPath + "1"));
     FileOutputFormat.setOutputPath(job, new Path(outPath + "1"));
     job.getConfiguration().set("outpath", outPath);

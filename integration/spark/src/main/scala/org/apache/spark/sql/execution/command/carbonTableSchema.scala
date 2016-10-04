@@ -1212,8 +1212,7 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     val identifier = TableIdentifier(tableName, Option(dbName))
-    val tmpTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
-      .getCarbonTable(dbName + "_" + tableName)
+    val tmpTable = CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)
     if (null == tmpTable) {
       if (!ifExistsSet) {
         LOGGER

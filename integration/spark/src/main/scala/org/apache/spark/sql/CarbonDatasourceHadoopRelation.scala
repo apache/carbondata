@@ -63,12 +63,8 @@ private[sql] case class CarbonDatasourceHadoopRelation(
   lazy val job = new Job(new JobConf())
   lazy val options = new CarbonOption(parameters)
   lazy val absIdentifier = AbsoluteTableIdentifier.fromTablePath(paths.head)
-  lazy val identifier = absIdentifier.getCarbonTableIdentifier
   lazy val relationRaw: CarbonRelation = {
-    val carbonTable = SchemaReader.readCarbonTableFromStore(
-      CarbonStorePath.getCarbonTablePath(absIdentifier.getStorePath, identifier),
-      absIdentifier
-    )
+    val carbonTable = SchemaReader.readCarbonTableFromStore(absIdentifier)
     if (carbonTable == null) {
       sys.error(s"CarbonData file path ${paths.head} is not valid")
     }
@@ -76,7 +72,7 @@ private[sql] case class CarbonDatasourceHadoopRelation(
       carbonTable.getDatabaseName,
       carbonTable.getFactTableName,
       CarbonSparkUtil.createSparkMeta(carbonTable),
-      TableMeta(identifier,
+      TableMeta(absIdentifier.getCarbonTableIdentifier,
         paths.head,
         carbonTable,
         Partitioner(options.partitionClass,
@@ -154,7 +150,7 @@ class CarbonHadoopFSRDD[V: ClassTag](
     val inputFormat = QueryPlanUtil.createCarbonInputFormat(identifier,
       hadoopAttemptContext.getConfiguration
     )
-    hadoopAttemptContext.getConfiguration.set(FileInputFormat.INPUT_DIR, identifier.getStorePath)
+    hadoopAttemptContext.getConfiguration.set(FileInputFormat.INPUT_DIR, identifier.getTablePath)
     val reader =
       inputFormat.createRecordReader(split.asInstanceOf[CarbonHadoopFSPartition].carbonSplit.value,
         hadoopAttemptContext
@@ -195,7 +191,7 @@ class CarbonHadoopFSRDD[V: ClassTag](
     val carbonInputFormat = QueryPlanUtil.createCarbonInputFormat(identifier,
       jobContext.getConfiguration
     )
-    jobContext.getConfiguration.set(FileInputFormat.INPUT_DIR, identifier.getStorePath)
+    jobContext.getConfiguration.set(FileInputFormat.INPUT_DIR, identifier.getTablePath)
     val splits = carbonInputFormat.getSplits(jobContext).toArray
     val carbonInputSplits = splits
       .map(f => new SerializableWritable(f.asInstanceOf[CarbonInputSplit]))
