@@ -21,6 +21,7 @@ package org.apache.carbondata.core.carbon.metadata.schema.table;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.carbon.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
@@ -57,9 +58,9 @@ public class TableSchema implements Serializable {
   private SchemaEvolution schemaEvalution;
 
   /**
-   * Used to record the block size of this table.
+   * contains all key value pairs for table properties set by user in craete DDL
    */
-  private int blocksize;
+  private Map<String, String> tableProperties;
 
   public TableSchema() {
     this.listOfColumns = new ArrayList<ColumnSchema>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -105,14 +106,6 @@ public class TableSchema implements Serializable {
    */
   public void setSchemaEvalution(SchemaEvolution schemaEvalution) {
     this.schemaEvalution = schemaEvalution;
-  }
-
-  public int getBlocksize() {
-    return blocksize;
-  }
-
-  public void setBlocksize(int blocksize) {
-    this.blocksize = blocksize;
   }
 
   /**
@@ -196,4 +189,17 @@ public class TableSchema implements Serializable {
     return true;
   }
 
+  /**
+   * @return
+   */
+  public Map<String, String> getTableProperties() {
+    return tableProperties;
+  }
+
+  /**
+   * @param tableProperties
+   */
+  public void setTableProperties(Map<String, String> tableProperties) {
+    this.tableProperties = tableProperties;
+  }
 }

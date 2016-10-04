@@ -468,11 +468,11 @@ class CarbonSqlParser()
     val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
 
     val partitioner: Option[Partitioner] = getPartitionerObject(partitionCols, tableProperties)
-    // get the tableBlockSize from table properties
-    val tableBlockSize: Integer = getTableBlockSize(tableProperties)
+    // validate the tableBlockSize from table properties
+    CommonUtil.validateTableBlockSize(tableProperties)
 
     tableModel(ifNotExistPresent,
-      dbName.getOrElse("default"), dbName, tableName, Option(tableBlockSize),
+      dbName.getOrElse("default"), dbName, tableName, tableProperties,
       reorderDimensions(dims.map(f => normalizeType(f)).map(f => addParent(f))),
       msrs.map(f => normalizeType(f)), "", null, "",
       None, Seq(), null, Option(noDictionaryDims), Option(noInvertedIdxCols), null, partitioner,
@@ -546,31 +546,6 @@ class CarbonSqlParser()
       }
     }
     colGrpNames.toString()
-  }
-
-  protected def getTableBlockSize(tableProperties: Map[String, String]): Integer = {
-    var tableBlockSize: Integer = 0
-    if (tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).isDefined) {
-      val blockSizeStr: String = tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).get
-      try {
-        tableBlockSize = Integer.parseInt(blockSizeStr)
-      } catch {
-        case e: NumberFormatException =>
-          throw new MalformedCarbonCommandException("Invalid table_blocksize value found: " +
-            s"$blockSizeStr, only int value from 1 to 2048 is supported.")
-      }
-      if (tableBlockSize < CarbonCommonConstants.BLOCK_SIZE_MIN_VAL ||
-        tableBlockSize > CarbonCommonConstants.BLOCK_SIZE_MAX_VAL) {
-        throw new MalformedCarbonCommandException("Invalid table_blocksize value found: " +
-          s"$blockSizeStr, only int value from 1 to 2048 is supported.")
-      }
-    } else {
-      // Here it means table_blocksize is not set in ddl, we use the default value and log it.
-      tableBlockSize = Integer.parseInt(CarbonCommonConstants.BLOCK_SIZE_DEFAULT_VAL)
-      LOGGER.audit(s"Table block size is not set in create table ddl," +
-        s" using the default value: ${CarbonCommonConstants.BLOCK_SIZE_DEFAULT_VAL}.")
-    }
-    tableBlockSize
   }
 
   /**

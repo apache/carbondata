@@ -197,16 +197,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     blockIndexInfoList = new ArrayList<>();
     // get max file size;
     CarbonProperties propInstance = CarbonProperties.getInstance();
-    // For consistence with older tables, if blocksize = 0 it means the table is
-    // created before this property added, and this property get from schema is 0.
-    if (blocksize > 0) {
-      this.fileSizeInBytes = blocksize * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
-          * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR * 1L;
-    } else {
-      this.fileSizeInBytes = Long.parseLong(CarbonCommonConstants.BLOCK_SIZE_DEFAULT_VAL)
-          * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
-          * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR * 1L;
-    }
+    this.fileSizeInBytes = blocksize * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
+        * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR * 1L;
     this.spaceReservedForBlockMetaSize = Integer.parseInt(propInstance
         .getProperty(CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE,
             CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT));
