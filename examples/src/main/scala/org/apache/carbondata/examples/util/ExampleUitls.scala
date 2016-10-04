@@ -20,13 +20,13 @@ package org.apache.carbondata.examples.util
 import java.io.File
 
 import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.CarbonContext
+import org.apache.spark.sql.{CarbonContext, SaveMode}
 
 import org.apache.carbondata.core.util.CarbonProperties
 
 // scalastyle:off println
 
-object InitForExamples {
+object ExampleUitls {
 
   def currentPath: String = new File(this.getClass.getResource("/").getPath + "/../../")
     .getCanonicalPath
@@ -49,6 +49,30 @@ object InitForExamples {
     // false -> use node split partition, support data load by host partition
     CarbonProperties.getInstance().addProperty("carbon.table.split.partition.enable", "false")
     cc
+  }
+
+  /**
+    * This func will write a sample CarbonData file containing following schema:
+    * c1: String, c2: String, c3: Double
+    */
+  def writeSampleCarbonFile(cc: CarbonContext, tableName: String): Unit = {
+    // use CarbonContext to write CarbonData files
+    import cc.implicits._
+    val sc = cc.sparkContext
+    // create a dataframe, it can be from parquet or hive table
+    val df = sc.parallelize(1 to 1000, 2)
+        .map(x => ("a", "b", x))
+        .toDF("c1", "c2", "c3")
+
+    cc.sql(s"DROP TABLE IF EXISTS $tableName")
+
+    // save dataframe to carbon file
+    df.write
+      .format("carbondata")
+      .option("tableName", tableName)
+      .option("compress", "true")
+      .mode(SaveMode.Overwrite)
+      .save()
   }
 }
 // scalastyle:on println

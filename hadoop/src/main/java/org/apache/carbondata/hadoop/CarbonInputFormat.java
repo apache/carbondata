@@ -33,7 +33,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.apache.carbondata.core.carbon.datastore.IndexKey;
@@ -70,8 +69,6 @@ import org.apache.carbondata.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.scan.model.QueryModel;
 
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.INVALID_SEGMENT_ID;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -93,10 +90,6 @@ import org.apache.hadoop.mapreduce.security.TokenCache;
 import org.apache.hadoop.mapreduce.task.JobContextImpl;
 import org.apache.hadoop.util.StringUtils;
 
-
-
-
-
 /**
  * Carbon Input format class representing one carbon table
  */
@@ -106,35 +99,11 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   public static final String INPUT_SEGMENT_NUMBERS =
       "mapreduce.input.carboninputformat.segmentnumbers";
   private static final Log LOG = LogFactory.getLog(CarbonInputFormat.class);
-  private static final String DATABASE_NAME = "mapreduce.input.carboninputformat.databasename";
-  private static final String TABLE_NAME = "mapreduce.input.carboninputformat.tablename";
   private static final String FILTER_PREDICATE =
       "mapreduce.input.carboninputformat.filter.predicate";
   private static final String COLUMN_PROJECTION = "mapreduce.input.carboninputformat.projection";
   private static final String CARBON_TABLE = "mapreduce.input.carboninputformat.table";
   private static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
-  private static final String TABLE_ID = "mapreduce.input.carboninputformat.tableId";
-
-  public static void setTableToAccess(Configuration configuration,
-      CarbonTableIdentifier tableIdentifier) {
-    configuration.set(CarbonInputFormat.DATABASE_NAME, tableIdentifier.getDatabaseName());
-    configuration.set(CarbonInputFormat.TABLE_NAME, tableIdentifier.getTableName());
-    configuration.set(CarbonInputFormat.TABLE_ID, tableIdentifier.getTableId());
-  }
-
-  /**
-   * Get CarbonTableIdentifier from job configuration
-   */
-  public static CarbonTableIdentifier getTableToAccess(Configuration configuration) {
-    String databaseName = configuration.get(CarbonInputFormat.DATABASE_NAME);
-    String tableName = configuration.get(CarbonInputFormat.TABLE_NAME);
-    String tableId = configuration.get(CarbonInputFormat.TABLE_ID);
-    if (databaseName != null && tableName != null) {
-      return new CarbonTableIdentifier(databaseName, tableName, tableId);
-    }
-    //TODO: better raise exception
-    return null;
-  }
 
   /**
    * It is optional, if user does not set then it reads from store
@@ -154,11 +123,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     String carbonTableStr = configuration.get(CARBON_TABLE);
     if (carbonTableStr == null) {
       // read it from schema file in the store
-      String storePath = configuration.get(INPUT_DIR, "");
-      AbsoluteTableIdentifier identifier = new AbsoluteTableIdentifier(
-          storePath, getTableToAccess(configuration));
-      CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(
-          getTablePath(configuration), identifier);
+      AbsoluteTableIdentifier absIdentifier = getAbsoluteTableIdentifier(configuration);
+      CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(absIdentifier);
       setCarbonTable(configuration, carbonTable);
       return carbonTable;
     }
@@ -221,23 +187,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   public static CarbonTablePath getTablePath(Configuration configuration) throws IOException {
-
-    String storePathString = getStorePathString(configuration);
-    CarbonTableIdentifier tableIdentifier = CarbonInputFormat.getTableToAccess(configuration);
-    if (tableIdentifier == null) {
-      throw new IOException("Could not find " + DATABASE_NAME + "," + TABLE_NAME);
-    }
-    return CarbonStorePath.getCarbonTablePath(storePathString, tableIdentifier);
-  }
-
-  private static String getStorePathString(Configuration configuration) throws IOException {
-
-    String dirs = configuration.get(INPUT_DIR, "");
-    String[] inputPaths = StringUtils.split(dirs);
-    if (inputPaths.length == 0) {
-      throw new IOException("No input paths specified in job");
-    }
-    return CarbonInputFormatUtil.processPath(inputPaths[0]);
+    AbsoluteTableIdentifier absIdentifier = getAbsoluteTableIdentifier(configuration);
+    return CarbonStorePath.getCarbonTablePath(absIdentifier);
   }
 
   /**
@@ -319,7 +270,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     for (InputSplit inputSplit : splits) {
       FileSplit fileSplit = (FileSplit) inputSplit;
       String segmentId = CarbonTablePath.DataPathUtil.getSegmentId(fileSplit.getPath().toString());
-      if (INVALID_SEGMENT_ID == segmentId) {
+      if (segmentId.equals(CarbonCommonConstants.INVALID_SEGMENT_ID)) {
         continue;
       }
       carbonSplits.add(CarbonInputSplit.from(segmentId, fileSplit));
@@ -435,10 +386,14 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     }
   }
 
-  private AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
+  private static AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
       throws IOException {
-    return new AbsoluteTableIdentifier(getStorePathString(configuration),
-        getTableToAccess(configuration));
+    String dirs = configuration.get(INPUT_DIR, "");
+    String[] inputPaths = StringUtils.split(dirs);
+    if (inputPaths.length == 0) {
+      throw new IOException("No input paths specified in job");
+    }
+    return AbsoluteTableIdentifier.fromTablePath(inputPaths[0]);
   }
 
   private Object getFilterPredicates(Configuration configuration) {

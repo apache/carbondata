@@ -25,7 +25,7 @@ import org.apache.spark.sql.{CarbonContext, DataFrame, Row, SaveMode, SQLContext
 import org.apache.spark.sql.types.{DataTypes, StructType}
 
 import org.apache.carbondata.examples.PerfTest._
-import org.apache.carbondata.examples.util.InitForExamples
+import org.apache.carbondata.examples.util.ExampleUitls
 
 // scalastyle:off println
 
@@ -268,7 +268,7 @@ object PerfTest {
   )
 
   def main(args: Array[String]) {
-    val cc = InitForExamples.createCarbonContext("PerfTest")
+    val cc = ExampleUitls.createCarbonContext("PerfTest")
 
     // prepare performance queries
     var workload = Seq[Query]()
@@ -318,7 +318,7 @@ object PerfTest {
   }
 
   def savePath(datasource: String): String =
-      s"${InitForExamples.currentPath}/target/perftest/${datasource}"
+      s"${ExampleUitls.currentPath}/target/perftest/${datasource}"
 
   def withTime(body: => Unit): Long = {
     val start = System.nanoTime()

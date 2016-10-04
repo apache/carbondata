@@ -42,9 +42,7 @@ object QueryPlanUtil {
     val carbonInputFormat = new CarbonInputFormat[Array[Object]]()
     val jobConf: JobConf = new JobConf(new Configuration)
     val job: Job = new Job(jobConf)
-    FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getStorePath))
-    CarbonInputFormat.setTableToAccess(job.getConfiguration,
-      absoluteTableIdentifier.getCarbonTableIdentifier)
+    FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getTablePath))
     (carbonInputFormat, job)
   }
 
@@ -52,8 +50,7 @@ object QueryPlanUtil {
       conf: Configuration) : CarbonInputFormat[V] = {
     val carbonInputFormat = new CarbonInputFormat[V]()
     val job: Job = new Job(conf)
-    FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getStorePath))
-    CarbonInputFormat.setTableToAccess(conf, absoluteTableIdentifier.getCarbonTableIdentifier)
+    FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getTablePath))
     carbonInputFormat
   }
 }
