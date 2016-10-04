@@ -155,6 +155,19 @@ This command can be used to delete the existing table.
 | db_name | Database name, if it is not specified then it uses current database. | YES |
 | table_name | The name of the table in provided database.| NO |
  
+### Usage Guideline
+Minor Compaction:
+  In Minor compaction, you can specify number of loads to be merged (compacted). 
+  Minor compaction triggers for every data load if the parameter carbon.enable.auto.load.merge is set. 
+  If any segments are available to be merged, then compaction will run parallel with data load. 
+  There are 2 levels in minor compaction.
+   - Level 1: Merging of the segments which are not yet compacted.
+   - Level 2: Merging of the compacted segments again to form a bigger segment.
+
+Major Compaction:
+ In Major compaction, many segments can be merged into one big segment. 
+ You can specify the compaction size until which the segments will be merged. 
+ Major compaction is usually done during the off-peak time.
 
 **Example:**
 
