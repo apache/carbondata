@@ -163,6 +163,7 @@ Minor Compaction:
   There are 2 levels in minor compaction.
    - Level 1: Merging of the segments which are not yet compacted.
    - Level 2: Merging of the compacted segments again to form a bigger segment.
+
 Major Compaction:
  In Major compaction, many segments can be merged into one big segment. 
  You can specify the compaction size until which the segments will be merged. 
