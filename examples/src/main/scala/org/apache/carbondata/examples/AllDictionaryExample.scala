@@ -18,15 +18,15 @@ package org.apache.carbondata.examples
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.examples.util.{AllDictionaryUtil, ExampleUitls}
+import org.apache.carbondata.examples.util.{AllDictionaryUtil, ExampleUtils}
 
 object AllDictionaryExample {
   def main(args: Array[String]) {
-    val cc = ExampleUitls.createCarbonContext("CarbonExample")
-    val testData = ExampleUitls.currentPath + "/src/main/resources/data.csv"
+    val cc = ExampleUtils.createCarbonContext("CarbonExample")
+    val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
     val csvHeader = "ID,date,country,name,phonetype,serialname,salary"
     val dictCol = "|date|country|name|phonetype|serialname|"
-    val allDictFile = ExampleUitls.currentPath + "/src/main/resources/data.dictionary"
+    val allDictFile = ExampleUtils.currentPath + "/src/main/resources/data.dictionary"
     // extract all dictionary files from source data
     AllDictionaryUtil.extractDictionary(cc.sparkContext,
       testData, allDictFile, csvHeader, dictCol)

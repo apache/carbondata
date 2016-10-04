@@ -19,14 +19,14 @@ package org.apache.carbondata.examples
 
 import org.apache.spark.sql.{SaveMode, SQLContext}
 
-import org.apache.carbondata.examples.util.ExampleUitls
+import org.apache.carbondata.examples.util.ExampleUtils
 
 object DatasourceExample {
 
   def main(args: Array[String]) {
     // use CarbonContext to write CarbonData files
-    val cc = ExampleUitls.createCarbonContext("DatasourceExample")
-    ExampleUitls.writeSampleCarbonFile(cc, "table1")
+    val cc = ExampleUtils.createCarbonContext("DatasourceExample")
+    ExampleUtils.writeSampleCarbonFile(cc, "table1")
 
     // Use SQLContext to read CarbonData files
     val sqlContext = new SQLContext(cc.sparkContext)
