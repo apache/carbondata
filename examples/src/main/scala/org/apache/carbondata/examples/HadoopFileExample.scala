@@ -17,15 +17,15 @@
 
 package org.apache.carbondata.examples
 
-import org.apache.carbondata.examples.util.ExampleUitls
+import org.apache.carbondata.examples.util.ExampleUtils
 import org.apache.carbondata.hadoop.CarbonInputFormat
 
 // scalastyle:off println
 object HadoopFileExample {
 
   def main(args: Array[String]): Unit = {
-    val cc = ExampleUitls.createCarbonContext("DataFrameAPIExample")
-    ExampleUitls.writeSampleCarbonFile(cc, "carbon1")
+    val cc = ExampleUtils.createCarbonContext("DataFrameAPIExample")
+    ExampleUtils.writeSampleCarbonFile(cc, "carbon1")
 
     val sc = cc.sparkContext
     val input = sc.newAPIHadoopFile(s"${cc.storePath}/default/carbon1",

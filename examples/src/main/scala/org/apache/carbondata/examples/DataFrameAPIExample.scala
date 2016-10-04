@@ -19,14 +19,14 @@ package org.apache.carbondata.examples
 
 import org.apache.spark.sql.SaveMode
 
-import org.apache.carbondata.examples.util.ExampleUitls
+import org.apache.carbondata.examples.util.ExampleUtils
 
 // scalastyle:off println
 object DataFrameAPIExample {
 
   def main(args: Array[String]) {
-    val cc = ExampleUitls.createCarbonContext("DataFrameAPIExample")
-    ExampleUitls.writeSampleCarbonFile(cc, "carbon1")
+    val cc = ExampleUtils.createCarbonContext("DataFrameAPIExample")
+    ExampleUtils.writeSampleCarbonFile(cc, "carbon1")
 
     // use datasource api to read
     val in = cc.read

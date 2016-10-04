@@ -26,7 +26,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 // scalastyle:off println
 
-object ExampleUitls {
+object ExampleUtils {
 
   def currentPath: String = new File(this.getClass.getResource("/").getPath + "/../../")
     .getCanonicalPath
@@ -52,9 +52,9 @@ object ExampleUitls {
   }
 
   /**
-    * This func will write a sample CarbonData file containing following schema:
-    * c1: String, c2: String, c3: Double
-    */
+   * This func will write a sample CarbonData file containing following schema:
+   * c1: String, c2: String, c3: Double
+   */
   def writeSampleCarbonFile(cc: CarbonContext, tableName: String): Unit = {
     // use CarbonContext to write CarbonData files
     import cc.implicits._

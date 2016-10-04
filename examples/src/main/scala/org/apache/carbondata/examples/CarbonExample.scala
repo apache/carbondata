@@ -19,12 +19,12 @@ package org.apache.carbondata.examples
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.examples.util.ExampleUitls
+import org.apache.carbondata.examples.util.ExampleUtils
 
 object CarbonExample {
   def main(args: Array[String]) {
-    val cc = ExampleUitls.createCarbonContext("CarbonExample")
-    val testData = ExampleUitls.currentPath + "/src/main/resources/data.csv"
+    val cc = ExampleUtils.createCarbonContext("CarbonExample")
+    val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
 
     // Specify timestamp format based on raw data
     CarbonProperties.getInstance()
