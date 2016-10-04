@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.examples
 
-import org.apache.carbondata.examples.util.ExampleUitls
+import org.apache.carbondata.examples.util.ExampleUtils
 
 /**
  * Carbon supports the complex types ARRAY and STRUCT.
@@ -26,8 +26,8 @@ import org.apache.carbondata.examples.util.ExampleUitls
 object ComplexTypeExample {
 
   def main(args: Array[String]) {
-    val cc = ExampleUitls.createCarbonContext("ComplexTypeExample")
-    val dataPath = ExampleUitls.currentPath + "/src/main/resources/complexdata.csv"
+    val cc = ExampleUtils.createCarbonContext("ComplexTypeExample")
+    val dataPath = ExampleUtils.currentPath + "/src/main/resources/complexdata.csv"
     val tableName = "complexTypeTable"
 
     cc.sql(s"DROP TABLE IF EXISTS $tableName")

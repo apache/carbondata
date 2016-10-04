@@ -26,7 +26,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 // scalastyle:off println
 
-object ExampleUitls {
+object ExampleUtils {
 
   def currentPath: String = new File(this.getClass.getResource("/").getPath + "/../../")
     .getCanonicalPath
