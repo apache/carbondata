@@ -428,4 +428,17 @@ public class CarbonTablePath extends Path {
     });
     return files;
   }
+
+  /**
+   * returns the carbondata file name
+   *
+   * @param carbonDataFilePath carbondata file path
+   * @return
+   */
+  public static String getCarbonDataFileName(String carbonDataFilePath) {
+    String carbonDataFileName = carbonDataFilePath
+        .substring(carbonDataFilePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR) + 1,
+            carbonDataFilePath.indexOf(CARBON_DATA_EXT));
+    return carbonDataFileName;
+  }
 }
