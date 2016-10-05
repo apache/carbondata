@@ -33,13 +33,12 @@ import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
-import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
-import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
+import org.apache.carbondata.core.carbon.querystatistics.*;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.scan.executor.QueryExecutor;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
@@ -90,7 +89,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     queryProperties.executorService = Executors.newFixedThreadPool(1);
     // Initializing statistics list to record the query statistics
     // creating copy on write to handle concurrent scenario
-    queryProperties.queryStatisticsRecorder = new QueryStatisticsRecorder(queryModel.getQueryId());
+    queryProperties.queryStatisticsRecorder =
+            CarbonTimeStatisticsFactory.createExecutorRecorder(queryModel.getQueryId());
     queryModel.setStatisticsRecorder(queryProperties.queryStatisticsRecorder);
     QueryUtil.resolveQueryModel(queryModel);
     QueryStatistic queryStatistic = new QueryStatistic();

@@ -129,7 +129,7 @@ class CarbonContext(
     CarbonContext.updateCarbonPorpertiesPath(this)
     val sqlString = sql.toUpperCase
     LOGGER.info(s"Query [$sqlString]")
-    val recorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance()
+    val recorder = CarbonTimeStatisticsFactory.createDriverRecorder()
     val statistic = new QueryStatistic()
     val logicPlan: LogicalPlan = parseSql(sql)
     statistic.addStatistics(QueryStatisticsConstants.SQL_PARSE, System.currentTimeMillis())
