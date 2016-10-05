@@ -16,32 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.carbondata.core.carbon.datastore.block;
 
-import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.core.cache.Cacheable;
-import org.apache.carbondata.core.carbon.datastore.DataRefNode;
-import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.carbon.datastore.SegmentTaskIndexStore;
 
-public abstract class AbstractIndex implements Cacheable {
-
-  /**
-   * vo class which will hold the RS information of the block
-   */
-  protected SegmentProperties segmentProperties;
+/**
+ * SegmentTaskIndexWrapper class holds the  taskIdToTableSegmentMap
+ */
+public class SegmentTaskIndexWrapper implements Cacheable {
 
   /**
-   * data block
+   * task_id to table segment index map
    */
-  protected DataRefNode dataRefNode;
-
-  /**
-   * total number of row present in the block
-   */
-  protected long totalNumberOfRows;
-
+  private Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> taskIdToTableSegmentMap;
   /**
    * atomic integer to maintain the access count for a column access
    */
@@ -52,40 +44,40 @@ public abstract class AbstractIndex implements Cacheable {
    */
   protected long memorySize;
 
-  /**
-   * @return the totalNumberOfRows
-   */
-  public long getTotalNumberOfRows() {
-    return totalNumberOfRows;
+  public SegmentTaskIndexWrapper(
+      Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> taskIdToTableSegmentMap) {
+    this.taskIdToTableSegmentMap = taskIdToTableSegmentMap;
+  }
+
+  public Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> getTaskIdToTableSegmentMap() {
+    return taskIdToTableSegmentMap;
+  }
+
+  public void setTaskIdToTableSegmentMap(
+      Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> taskIdToTableSegmentMap) {
+    this.taskIdToTableSegmentMap = taskIdToTableSegmentMap;
   }
 
   /**
-   * @return the segmentProperties
+   * return segment size
+   *
+   * @param memorySize
    */
-  public SegmentProperties getSegmentProperties() {
-    return segmentProperties;
+  public void setMemorySize(long memorySize) {
+    this.memorySize = memorySize;
   }
 
   /**
-   * @return the dataBlock
+   * returns the timestamp
+   *
+   * @return
    */
-  public DataRefNode getDataRefNode() {
-    return dataRefNode;
-  }
-
   @Override public long getFileTimeStamp() {
     return 0;
   }
 
   /**
-   * Below method will be used to load the data block
-   *
-   * @param footerList footer list
-   */
-  public abstract void buildIndex(List<DataFileFooter> footerList);
-
-  /**
-   * the method returns the access count
+   * returns the access count
    *
    * @return
    */
@@ -94,12 +86,12 @@ public abstract class AbstractIndex implements Cacheable {
   }
 
   /**
-   * The method returns table block size
+   * returns the memory size
    *
    * @return
    */
   @Override public long getMemorySize() {
-    return this.memorySize;
+    return memorySize;
   }
 
   /**
@@ -126,11 +118,4 @@ public abstract class AbstractIndex implements Cacheable {
     }
   }
 
-  /**
-   * the method is used to set the memory size of the b-tree
-   * @param memorySize
-   */
-  public void setMemorySize(long memorySize) {
-    this.memorySize = memorySize;
-  }
 }
