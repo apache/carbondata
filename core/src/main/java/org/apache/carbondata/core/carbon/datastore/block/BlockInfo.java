@@ -18,6 +18,9 @@
  */
 package org.apache.carbondata.core.carbon.datastore.block;
 
+import org.apache.carbondata.core.carbon.path.CarbonTablePath;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+
 /**
  * Below class will be used to store table block info
  * As in blocklet distribution we are dividing the same block
@@ -32,6 +35,10 @@ public class BlockInfo {
    * about the block
    */
   private TableBlockInfo info;
+  /**
+   * unique blockName
+   */
+  private String blockUniqueName;
 
   /**
    * Constructor
@@ -40,6 +47,18 @@ public class BlockInfo {
    */
   public BlockInfo(TableBlockInfo info) {
     this.info = info;
+    init();
+  }
+
+  /**
+   * init the block unique name
+   */
+  private void init() {
+    StringBuilder stringBuilder = new StringBuilder();
+    stringBuilder.append(this.info.getSegmentId());
+    stringBuilder.append(CarbonCommonConstants.FILE_SEPARATOR);
+    stringBuilder.append(CarbonTablePath.getCarbonDataFileName(this.info.getFilePath()));
+    this.blockUniqueName = stringBuilder.toString();
   }
 
   /**
@@ -103,5 +122,13 @@ public class BlockInfo {
       return false;
     }
     return true;
+  }
+
+  /**
+   * returns unique blockname
+   * @return
+   */
+  public String getBlockUniqueName() {
+    return blockUniqueName;
   }
 }

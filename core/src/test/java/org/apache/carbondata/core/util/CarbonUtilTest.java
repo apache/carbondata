@@ -210,7 +210,7 @@ public class CarbonUtilTest {
       }
     };
     String badLogStoreLocation = CarbonUtil.getBadLogPath("badLogPath");
-    assertEquals(badLogStoreLocation, "../unibi-solutions/system/carbon/badRecords/badLogPath");
+    assertEquals(badLogStoreLocation.replace("\\", "/"), "../unibi-solutions/system/carbon/badRecords/badLogPath");
   }
 
   @Test public void testToDeleteFoldersAndFilesForCarbonFileSilently()

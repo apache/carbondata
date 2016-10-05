@@ -59,6 +59,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
    * execution info of the block
    */
   protected List<BlockExecutionInfo> blockExecutionInfos;
+
   /**
    * file reader which will be used to execute the query
    */

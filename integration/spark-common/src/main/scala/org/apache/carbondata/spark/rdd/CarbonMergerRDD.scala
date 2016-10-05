@@ -134,9 +134,6 @@ class CarbonMergerRDD[K, V](
           result2 = exec.processTableBlocks()
         } catch {
           case e: Throwable =>
-            if (null != exec) {
-              exec.finish()
-            }
             LOGGER.error(e)
             if (null != e.getMessage) {
               sys.error(s"Exception occurred in query execution :: ${ e.getMessage }")
