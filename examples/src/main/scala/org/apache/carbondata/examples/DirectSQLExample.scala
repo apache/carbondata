@@ -17,36 +17,26 @@
 
 package org.apache.carbondata.examples
 
-import org.apache.spark.sql.{SaveMode, SQLContext}
+import org.apache.spark.sql.SQLContext
 
-import org.apache.carbondata.examples.util.InitForExamples
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.examples.util.ExampleUtils
 
+/**
+ * This example needs Spark 1.6 or later version to run
+ */
 object DirectSQLExample {
 
   def main(args: Array[String]) {
-    // use CarbonContext to write CarbonData files
-    val cc = InitForExamples.createCarbonContext("DatasourceExample")
-    import cc.implicits._
-    val sc = cc.sparkContext
-    // create a dataframe, it can be from parquet or hive table
-    val df = sc.parallelize(1 to 1000)
-        .map(x => ("a", "b", x))
-        .toDF("c1", "c2", "c3")
-
-    // save dataframe to CarbonData files
-    df.write
-        .format("carbondata")
-        .option("tableName", "table1")
-        .mode(SaveMode.Overwrite)
-        .save()
+    val cc = ExampleUtils.createCarbonContext("DatasourceExample")
+    ExampleUtils.writeSampleCarbonFile(cc, "table1")
 
     // Use SQLContext to read CarbonData files without creating table
-    // This requires Spark 1.6 or later version to run
-    val sqlContext = new SQLContext(sc)
+    val sqlContext = new SQLContext(cc.sparkContext)
     sqlContext.sql(
-      """
+      s"""
         | SELECT c1, c2, count(*)
-        | FROM carbondata.`./examples/target/store/default/table1`
+        | FROM carbondata.`${cc.storePath}/${CarbonCommonConstants.DATABASE_DEFAULT_NAME}/table1`
         | WHERE c3 > 100
         | GROUP BY c1, c2
       """.stripMargin).show
