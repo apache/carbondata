@@ -87,7 +87,7 @@ struct ColumnSchema{
 
 	12: optional binary default_value;
 	
-	13: optional map<string,string> columnProperties
+	13: optional map<string,string> columnProperties;
 	
     /**
 	* To specify the visibily of the column by default its false
@@ -124,6 +124,7 @@ struct TableSchema{
 	1: required string table_id;  // ID used to
 	2: required list<ColumnSchema> table_columns; // Columns in the table
 	3: required SchemaEvolution schema_evolution; // History of schema evolution of this table
+  4: optional map<string,string> tableProperties; // table properties configured bu the user
 }
 
 struct TableInfo{

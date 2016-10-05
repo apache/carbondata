@@ -66,6 +66,7 @@ case class tableModel(
     var databaseName: String,
     databaseNameOp: Option[String],
     tableName: String,
+    tableProperties: Map[String, String],
     dimCols: Seq[Field],
     msrCols: Seq[Field],
     fromKeyword: String,
@@ -419,6 +420,12 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     schemaEvol
       .setSchemaEvolutionEntryList(new util.ArrayList[SchemaEvolutionEntry]())
     tableSchema.setTableId(UUID.randomUUID().toString)
+    // populate table properties map
+    val tablePropertiesMap = new java.util.HashMap[String, String]()
+    cm.tableProperties.foreach {
+      x => tablePropertiesMap.put(x._1, x._2)
+    }
+    tableSchema.setTableProperties(tablePropertiesMap)
     tableSchema.setTableName(cm.tableName)
     tableSchema.setListOfColumns(allColumns.asJava)
     tableSchema.setSchemaEvalution(schemaEvol)

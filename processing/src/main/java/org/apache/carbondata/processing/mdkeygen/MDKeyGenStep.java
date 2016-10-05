@@ -90,6 +90,11 @@ public class MDKeyGenStep extends BaseStep {
   private String tableName;
 
   /**
+   * table blocksize
+   */
+  private int blocksize;
+
+  /**
    * File manager
    */
   private IFileManagerComposite fileManager;
@@ -309,6 +314,7 @@ public class MDKeyGenStep extends BaseStep {
     wrapperColumnSchema = CarbonUtil
         .getColumnSchemaList(carbonTable.getDimensionByTableName(tableName),
             carbonTable.getMeasureByTableName(tableName));
+    blocksize = carbonTable.getBlocksize();
     colCardinality =
         CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchema);
     segmentProperties = new SegmentProperties(wrapperColumnSchema, colCardinality);
@@ -393,6 +399,7 @@ public class MDKeyGenStep extends BaseStep {
     carbonFactDataHandlerModel.setAggType(aggType);
     carbonFactDataHandlerModel.setFactDimLens(dimLens);
     carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
+    carbonFactDataHandlerModel.setBlocksize(blocksize);
     return carbonFactDataHandlerModel;
   }
 

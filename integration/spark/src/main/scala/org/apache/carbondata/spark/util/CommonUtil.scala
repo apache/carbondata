@@ -199,4 +199,30 @@ object CommonUtil {
     }
     index
   }
+
+  /**
+   * This method will validate the table block size specified by the user
+   *
+   * @param tableProperties
+   */
+  def validateTableBlockSize(tableProperties: Map[String, String]): Unit = {
+    var tableBlockSize: Integer = 0
+    if (tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).isDefined) {
+      val blockSizeStr: String = tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).get
+      try {
+        tableBlockSize = Integer.parseInt(blockSizeStr)
+      } catch {
+        case e: NumberFormatException =>
+          throw new MalformedCarbonCommandException("Invalid table_blocksize value found: " +
+                                                    s"$blockSizeStr, only int value from 1 to " +
+                                                    s"2048 is supported.")
+      }
+      if (tableBlockSize < CarbonCommonConstants.BLOCK_SIZE_MIN_VAL ||
+          tableBlockSize > CarbonCommonConstants.BLOCK_SIZE_MAX_VAL) {
+        throw new MalformedCarbonCommandException("Invalid table_blocksize value found: " +
+                                                  s"$blockSizeStr, only int value from 1 to 2048 " +
+                                                  s"is supported.")
+      }
+    }
+  }
 }

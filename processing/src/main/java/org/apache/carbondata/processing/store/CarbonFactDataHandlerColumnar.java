@@ -134,6 +134,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private String tableName;
   /**
+   * table block size
+   */
+  private int tableBlockSize;
+  /**
    * otherMeasureIndex
    */
   private int[] otherMeasureIndex;
@@ -339,6 +343,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   private void initParameters(CarbonFactDataHandlerModel carbonFactDataHandlerModel) {
     this.databaseName = carbonFactDataHandlerModel.getDatabaseName();
+    this.tableBlockSize = carbonFactDataHandlerModel.getBlocksize();
     this.tableName = carbonFactDataHandlerModel.getTableName();
     this.type = carbonFactDataHandlerModel.getAggType();
     this.segmentProperties = carbonFactDataHandlerModel.getSegmentProperties();
@@ -1107,7 +1112,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         mdKeyLength, tableName, fileManager, keyBlockSize, aggKeyBlock, isComplexTypes(),
         noDictionaryCount, carbonDataFileAttributes, databaseName, wrapperColumnSchemaList,
         noDictionaryCount, dimensionType, carbonDataDirectoryPath, colCardinality,
-        segmentProperties);
+        segmentProperties, tableBlockSize);
   }
 
   private boolean[] isComplexTypes() {
