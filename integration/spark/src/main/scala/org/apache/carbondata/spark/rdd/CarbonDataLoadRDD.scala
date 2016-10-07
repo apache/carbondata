@@ -76,9 +76,16 @@ class CarbonNodePartition(rddId: Int, val idx: Int, host: String,
   override def hashCode(): Int = 41 * (41 + rddId) + idx
 }
 
-object CarbonDataLoadRDDFuncs extends Logging{
-  def initialize(model: CarbonLoadModel,
-                 splitIndex: Int): String = {
+class SparkPartitionLoader(model: CarbonLoadModel,
+                           splitIndex: Int,
+                           hdfsStoreLocation: String,
+                           kettleHomePath: String,
+                           loadCount: Int,
+                           loadMetadataDetails: LoadMetadataDetails) extends Logging{
+
+  var storeLocation: String = ""
+
+  def initialize(): Unit = {
     val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
     if (null == carbonPropertiesFilePath) {
       System.setProperty("carbon.properties.filepath",
@@ -98,7 +105,6 @@ object CarbonDataLoadRDDFuncs extends Logging{
     // container temp dir or is yarn application directory.
     val carbonUseLocalDir = CarbonProperties.getInstance()
       .getProperty("carbon.use.local.dir", "false")
-    var storeLocation = ""
     if(carbonUseLocalDir.equalsIgnoreCase("true")) {
       val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
       if (null != storeLocations && storeLocations.nonEmpty) {
@@ -112,15 +118,9 @@ object CarbonDataLoadRDDFuncs extends Logging{
       storeLocation = System.getProperty("java.io.tmpdir")
     }
     storeLocation = storeLocation + '/' + System.nanoTime() + '/' + splitIndex
-    storeLocation
   }
 
-  def run(model: CarbonLoadModel,
-          storeLocation: String,
-          hdfsStoreLocation: String,
-          kettleHomePath: String,
-          loadCount: Int,
-          loadMetadataDetails: LoadMetadataDetails): Unit = {
+  def run(): Unit = {
     try {
       CarbonLoaderUtil.executeGraph(model, storeLocation, hdfsStoreLocation,
         kettleHomePath)
@@ -178,7 +178,7 @@ object CarbonDataLoadRDDFuncs extends Logging{
  * @tparam K Class of the key associated with the Result.
  * @tparam V Class of the value associated with the Result.
  */
-class CarbonDataLoadRDD[K, V](
+class DataFileLoaderRDD[K, V](
     sc: SparkContext,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
@@ -191,9 +191,7 @@ class CarbonDataLoadRDD[K, V](
     tableCreationTime: Long,
     schemaLastUpdatedTime: Long,
     blocksGroupBy: Array[(String, Array[BlockDetails])],
-    isTableSplitPartition: Boolean)
-  extends RDD[(K, V)](sc, Nil)
-    with Logging {
+    isTableSplitPartition: Boolean) extends RDD[(K, V)](sc, Nil) with Logging {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
@@ -243,7 +241,9 @@ class CarbonDataLoadRDD[K, V](
 
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         setModelAndBlocksInfo()
-        storeLocation = CarbonDataLoadRDDFuncs.initialize(model, theSplit.index)
+        val loader = new SparkPartitionLoader(model, theSplit.index, hdfsStoreLocation,
+          kettleHomePath, loadCount, loadMetadataDetails)
+        loader.initialize
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
         if (model.isRetentionRequest) {
           recreateAggregationTableForRetention
@@ -252,8 +252,7 @@ class CarbonDataLoadRDD[K, V](
           loadMetadataDetails.setLoadStatus(createManualAggregateTable)
         }
         else {
-          CarbonDataLoadRDDFuncs.run(model, storeLocation, hdfsStoreLocation, kettleHomePath,
-            loadCount, loadMetadataDetails)
+          loader.run
         }
       } catch {
         case e: Exception =>
@@ -494,20 +493,18 @@ class CarbonDataLoadRDD[K, V](
  * @tparam K
  * @tparam V
  */
-class CarbonRDDDataLoadRDD[K, V](
-                               sc: SparkContext,
-                               result: DataLoadResult[K, V],
-                               carbonLoadModel: CarbonLoadModel,
-                               var storeLocation: String,
-                               hdfsStoreLocation: String,
-                               kettleHomePath: String,
-                               columinar: Boolean,
-                               loadCount: Integer,
-                               tableCreationTime: Long,
-                               schemaLastUpdatedTime: Long,
-                               prev: RDD[Row])
-  extends RDD[(K, V)](prev)
-    with Logging {
+class DataFrameLoaderRDD[K, V](
+    sc: SparkContext,
+    result: DataLoadResult[K, V],
+    carbonLoadModel: CarbonLoadModel,
+    var storeLocation: String,
+    hdfsStoreLocation: String,
+    kettleHomePath: String,
+    columinar: Boolean,
+    loadCount: Integer,
+    tableCreationTime: Long,
+    schemaLastUpdatedTime: Long,
+    prev: RDD[Row]) extends RDD[(K, V)](prev) with Logging {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
@@ -525,16 +522,16 @@ class CarbonRDDDataLoadRDD[K, V](
         carbonLoadModel.setPartitionId(partitionID)
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
-
-        storeLocation = CarbonDataLoadRDDFuncs.initialize(carbonLoadModel, theSplit.index)
+        val loader = new SparkPartitionLoader(carbonLoadModel, theSplit.index, hdfsStoreLocation,
+          kettleHomePath, loadCount, loadMetadataDetails)
+        loader.initialize
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
         val rddIteratorKey = UUID.randomUUID().toString
         try{
           RddInputUtils.put(rddIteratorKey,
             new RddIterator(firstParent[Row].iterator(theSplit, context), carbonLoadModel))
           carbonLoadModel.setRddIteratorKey(rddIteratorKey)
-          CarbonDataLoadRDDFuncs.run(carbonLoadModel, storeLocation, hdfsStoreLocation,
-            kettleHomePath, loadCount, loadMetadataDetails)
+          loader.run
         } finally {
           RddInputUtils.remove(rddIteratorKey)
         }

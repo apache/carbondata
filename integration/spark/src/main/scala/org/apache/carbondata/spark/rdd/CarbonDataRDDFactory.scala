@@ -945,8 +945,7 @@ object CarbonDataRDDFactory extends Logging {
           ).toArray
         }
 
-        status = new
-            CarbonDataLoadRDD(sqlContext.sparkContext,
+        status = new DataFileLoaderRDD(sqlContext.sparkContext,
               new DataLoadResultImpl(),
               carbonLoadModel,
               storeLocation,
@@ -968,7 +967,7 @@ object CarbonDataRDDFactory extends Logging {
         numPartitions = Math.max(1, Math.min(numPartitions, rdd.partitions.length))
         rdd = rdd.coalesce(numPartitions, false)
 
-        status = new CarbonRDDDataLoadRDD(sqlContext.sparkContext,
+        status = new DataFrameLoaderRDD(sqlContext.sparkContext,
           new DataLoadResultImpl(),
           carbonLoadModel,
           storeLocation,

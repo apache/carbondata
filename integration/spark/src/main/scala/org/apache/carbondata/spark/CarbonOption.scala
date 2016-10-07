@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.spark
 
-import org.apache.spark.sql.{getDB, SQLContext}
-
 /**
  * Contains all options for Spark data source
  */
@@ -38,7 +36,7 @@ class CarbonOption(options: Map[String, String]) {
       "org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl")
   }
 
-  def tempCSV: String = options.getOrElse("tempCSV", "false")
+  def tempCSV: String = options.getOrElse("tempCSV", "true")
 
   def compress: String = options.getOrElse("compress", "false")
 
