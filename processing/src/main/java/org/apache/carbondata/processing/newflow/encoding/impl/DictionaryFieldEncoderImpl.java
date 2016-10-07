@@ -7,10 +7,12 @@ import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonUtilException;
 
 import org.apache.carbondata.processing.newflow.DataField;
+import org.apache.carbondata.processing.newflow.dictionarygenerator.ColumnDictionaryGenerator;
+import org.apache.carbondata.processing.newflow.dictionarygenerator.impl.PreGeneratedColumnDictionaryGeneratorImpl;
 
 public class DictionaryFieldEncoderImpl extends AbstractDictionaryFieldEncoderImpl {
 
-  private Dictionary dictionary;
+  private ColumnDictionaryGenerator dictionaryGenerator;
 
   private int index;
 
@@ -24,15 +26,16 @@ public class DictionaryFieldEncoderImpl extends AbstractDictionaryFieldEncoderIm
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
             dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType());
     try {
-      this.dictionary = cache.get(identifier);
-      cardinality = this.dictionary.getDictionaryChunks().getSize();
+      Dictionary dictionary = cache.get(identifier);
+      dictionaryGenerator = new PreGeneratedColumnDictionaryGeneratorImpl(dictionary);
+      cardinality = dictionary.getDictionaryChunks().getSize();
     } catch (CarbonUtilException e) {
       e.printStackTrace();
     }
   }
 
   @Override public Integer encode(Object[] data) {
-    return this.dictionary.getSurrogateKey(data[index].toString());
+    return this.dictionaryGenerator.generateDictionaryValue(data[index]);
   }
 
   @Override public int getColumnCardinality() {

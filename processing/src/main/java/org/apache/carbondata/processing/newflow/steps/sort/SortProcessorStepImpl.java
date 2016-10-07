@@ -1,8 +1,6 @@
 package org.apache.carbondata.processing.newflow.steps.sort;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
@@ -10,15 +8,13 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
-import org.apache.carbondata.processing.schema.metadata.SortObserver;
-import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
-import org.apache.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
-
-import org.apache.commons.lang3.ArrayUtils;
-
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.DataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
+import org.apache.carbondata.processing.schema.metadata.SortObserver;
+import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
+import org.apache.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class SortProcessorStepImpl implements DataLoadProcessorStep {
 
@@ -36,20 +32,22 @@ public class SortProcessorStepImpl implements DataLoadProcessorStep {
   }
 
   @Override
-  public void intialize(CarbonDataLoadConfiguration configuration, DataLoadProcessorStep child) throws CarbonDataLoadingException {
-   this.child = child;
+  public void intialize(CarbonDataLoadConfiguration configuration, DataLoadProcessorStep child)
+      throws CarbonDataLoadingException {
+    this.child = child;
     this.configuration = configuration;
     CarbonTableIdentifier tableIdentifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
-    this.sortDataRows = new SortDataRows(
-        tableIdentifier.getTableName(),
+    this.sortDataRows = new SortDataRows(tableIdentifier.getTableName(),
         configuration.getDimensionCount() - configuration.getComplexDimensionCount(),
-        configuration.getComplexDimensionCount(), configuration.getMeasureCount(), new SortObserver(),
-        configuration.getNoDictionaryCount(), configuration.getPartitionId(), configuration.getSegmentId() + "",
-        configuration.getTaskNo(), getNoDictionaryMapping(configuration.getDataFields()));
+        configuration.getComplexDimensionCount(), configuration.getMeasureCount(),
+        new SortObserver(), configuration.getNoDictionaryCount(), configuration.getPartitionId(),
+        configuration.getSegmentId() + "", configuration.getTaskNo(),
+        CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields()));
     try {
       // initialize sort
-      this.sortDataRows.initialize(tableIdentifier.getDatabaseName(), tableIdentifier.getTableName());
+      this.sortDataRows
+          .initialize(tableIdentifier.getDatabaseName(), tableIdentifier.getTableName());
     } catch (CarbonSortKeyAndGroupByException e) {
       throw new CarbonDataLoadingException(e);
     }
@@ -61,6 +59,7 @@ public class SortProcessorStepImpl implements DataLoadProcessorStep {
       while (iterator.hasNext()) {
         sortDataRows.addRow(iterator.next());
       }
+      child.finish();
       processRowToNextStep();
     } catch (CarbonSortKeyAndGroupByException e) {
       LOGGER.error(e);
@@ -80,7 +79,6 @@ public class SortProcessorStepImpl implements DataLoadProcessorStep {
 
   /**
    * Below method will be used to process data to next step
-   *
    */
   private boolean processRowToNextStep() throws CarbonDataLoadingException {
     CarbonTableIdentifier tableIdentifier =
@@ -99,10 +97,11 @@ public class SortProcessorStepImpl implements DataLoadProcessorStep {
 
       // check any more rows are present
       LOGGER.info("Record Processed For table: " + tableIdentifier.getTableName());
-      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordSortRowsStepTotalTime(
-          configuration.getPartitionId(), System.currentTimeMillis());
-      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordDictionaryValuesTotalTime(
-          configuration.getPartitionId(), System.currentTimeMillis());
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
+          .recordSortRowsStepTotalTime(configuration.getPartitionId(), System.currentTimeMillis());
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
+          .recordDictionaryValuesTotalTime(configuration.getPartitionId(),
+              System.currentTimeMillis());
       return false;
     } catch (CarbonSortKeyAndGroupByException e) {
       throw new CarbonDataLoadingException(e);
@@ -110,29 +109,9 @@ public class SortProcessorStepImpl implements DataLoadProcessorStep {
 
   }
 
-  @Override public void close() {
+  @Override public void finish() {
 
   }
 
-  /**
-   * Preparing the boolean [] to map whether the dimension is no Dictionary or not.
-   *
-   */
-  private boolean[] getNoDictionaryMapping(DataField[] fields) {
-    // boolean[] NoDictionaryMapping = new boolean[dims.size()];
-    List<Boolean> noDictionaryMapping = new ArrayList<Boolean>();
-    for (DataField field : fields) {
-      // for  complex type need to break the loop
-      if (field.getColumn().isComplex()) {
-        break;
-      }
 
-      if (!field.hasDictionaryEncoding() && field.getColumn().isDimesion()) {
-        noDictionaryMapping.add(true);
-      } else if (field.getColumn().isDimesion()){
-        noDictionaryMapping.add(false);
-      }
-    }
-    return ArrayUtils.toPrimitive(noDictionaryMapping.toArray(new Boolean[noDictionaryMapping.size()]));
-  }
 }

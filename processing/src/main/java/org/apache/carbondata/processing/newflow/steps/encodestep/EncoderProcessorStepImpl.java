@@ -1,21 +1,14 @@
 package org.apache.carbondata.processing.newflow.steps.encodestep;
 
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.core.cache.Cache;
-import org.apache.carbondata.core.cache.CacheProvider;
-import org.apache.carbondata.core.cache.CacheType;
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
-
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.DataLoadProcessorStep;
-import org.apache.carbondata.processing.newflow.encoding.FieldEncoder;
-import org.apache.carbondata.processing.newflow.encoding.impl.FieldEncoderFactory;
+import org.apache.carbondata.processing.newflow.encoding.RowEncoder;
+import org.apache.carbondata.processing.newflow.encoding.impl.RowEncoderImpl;
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 
 /**
  * Encode data with dictionary values and composed with bit/byte packed key.
@@ -27,32 +20,22 @@ public class EncoderProcessorStepImpl implements DataLoadProcessorStep {
 
   private DataLoadProcessorStep child;
 
-  private FieldEncoder[] encoders;
+  private RowEncoder encoder;
 
   @Override public DataField[] getOutput() {
     return child.getOutput();
   }
 
   @Override
-  public void intialize(CarbonDataLoadConfiguration configuration, DataLoadProcessorStep child) {
+  public void intialize(CarbonDataLoadConfiguration configuration, DataLoadProcessorStep child)
+      throws CarbonDataLoadingException {
     this.configuration = configuration;
     this.child = child;
-    CacheProvider cacheProvider = CacheProvider.getInstance();
-    Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache =
-        cacheProvider.createCache(CacheType.REVERSE_DICTIONARY, configuration.getTableIdentifier().getStorePath());
-    List<FieldEncoder> fieldEncoders = new ArrayList<>();
-    DataField[] output = child.getOutput();
-    for (int i = 0; i < output.length; i++) {
-      FieldEncoder fieldEncoder = FieldEncoderFactory.getInstance()
-          .createFieldEncoder(output[i], cache,
-              configuration.getTableIdentifier().getCarbonTableIdentifier(), i);
-      fieldEncoders.add(fieldEncoder);
-    }
-    encoders = fieldEncoders.toArray(new FieldEncoder[fieldEncoders.size()]);
+    encoder = new RowEncoderImpl(child.getOutput(), configuration);
     child.intialize(configuration, child);
   }
 
-  @Override public Iterator<Object[]> execute() {
+  @Override public Iterator<Object[]> execute() throws CarbonDataLoadingException {
     final Iterator<Object[]> iterator = child.execute();
     return new CarbonIterator<Object[]>() {
       @Override public boolean hasNext() {
@@ -61,15 +44,12 @@ public class EncoderProcessorStepImpl implements DataLoadProcessorStep {
 
       @Override public Object[] next() {
         Object[] next = iterator.next();
-        for (int i = 0; i < encoders.length; i++) {
-          encoders[i].encode(next);
-        }
-        return next;
+        return encoder.encode(next);
       }
     };
   }
 
-  @Override public void close() {
-
+  @Override public void finish() {
+    encoder.finish();
   }
 }

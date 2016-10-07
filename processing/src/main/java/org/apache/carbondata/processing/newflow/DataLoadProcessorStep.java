@@ -13,6 +13,6 @@ public interface DataLoadProcessorStep {
 
   Iterator<Object[]> execute() throws CarbonDataLoadingException;
 
-  void close();
+  void finish();
 
 }

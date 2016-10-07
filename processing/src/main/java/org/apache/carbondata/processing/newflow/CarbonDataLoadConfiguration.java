@@ -1,6 +1,7 @@
 package org.apache.carbondata.processing.newflow;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 
 import org.apache.hadoop.mapred.RecordReader;
 
@@ -29,6 +30,10 @@ public class CarbonDataLoadConfiguration {
   private String segmentId;
 
   private String taskNo;
+
+  private String factTimeStamp;
+
+  private RunTimeDataLoadConfiguration runTimeDataLoadConfiguration = new RunTimeDataLoadConfiguration();
 
   public int getDimensionCount() {
     int dimCount = 0;
@@ -164,5 +169,17 @@ public class CarbonDataLoadConfiguration {
 
   public void setTaskNo(String taskNo) {
     this.taskNo = taskNo;
+  }
+
+  public RunTimeDataLoadConfiguration getRunTimeDataLoadConfiguration() {
+    return runTimeDataLoadConfiguration;
+  }
+
+  public String getFactTimeStamp() {
+    return factTimeStamp;
+  }
+
+  public void setFactTimeStamp(String factTimeStamp) {
+    this.factTimeStamp = factTimeStamp;
   }
 }

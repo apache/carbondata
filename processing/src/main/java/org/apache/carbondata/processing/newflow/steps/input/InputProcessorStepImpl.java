@@ -82,7 +82,7 @@ public class InputProcessorStepImpl implements DataLoadProcessorStep {
     };
   }
 
-  @Override public void close() {
+  @Override public void finish() {
     try {
       this.recordReader.close();
     } catch (IOException e) {

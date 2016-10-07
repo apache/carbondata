@@ -4,4 +4,5 @@ public interface RowEncoder {
 
   Object[] encode(Object[] row);
 
+  void finish();
 }

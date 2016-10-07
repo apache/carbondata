@@ -14,17 +14,20 @@ import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.IgnoreDictionary;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
+import org.apache.carbondata.processing.newflow.DataField;
+import org.apache.carbondata.processing.newflow.encoding.FieldEncoder;
 import org.apache.carbondata.processing.newflow.encoding.RowEncoder;
 import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
 
-import org.apache.carbondata.processing.newflow.DataField;
-import org.apache.carbondata.processing.newflow.encoding.FieldEncoder;
-
+/**
+ *
+ */
 public class RowEncoderImpl implements RowEncoder {
+
+  private CarbonDataLoadConfiguration configuration;
 
   private AbstractDictionaryFieldEncoderImpl[] dictionaryFieldEncoders;
 
@@ -32,9 +35,8 @@ public class RowEncoderImpl implements RowEncoder {
 
   private MeasureFieldEncoderImpl[] measureFieldEncoders;
 
-  private KeyGenerator keyGenerator;
-
   public RowEncoderImpl(DataField[] fields, CarbonDataLoadConfiguration configuration) {
+    this.configuration = configuration;
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache = cacheProvider
         .createCache(CacheType.REVERSE_DICTIONARY,
@@ -66,22 +68,6 @@ public class RowEncoderImpl implements RowEncoder {
     measureFieldEncoders = measureFieldEncoderList
         .toArray(new MeasureFieldEncoderImpl[measureFieldEncoderList.size()]);
 
-    int[] dimCardinality = new int[dictionaryFieldEncoders.length];
-    for (int i = 0; i < dimCardinality.length; i++) {
-      dimCardinality[i] = dictionaryFieldEncoders[i].getColumnCardinality();
-    }
-
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        configuration.getTableIdentifier().getCarbonTableIdentifier().getTableUniqueName());
-    String tableName = configuration.getTableIdentifier().getCarbonTableIdentifier().getTableName();
-    List<ColumnSchema> columnSchemaList = CarbonUtil
-        .getColumnSchemaList(carbonTable.getDimensionByTableName(tableName),
-            carbonTable.getMeasureByTableName(tableName));
-    int[] formattedCardinality =
-        CarbonUtil.getFormattedCardinality(dimCardinality, columnSchemaList);
-    SegmentProperties segmentProperties =
-        new SegmentProperties(columnSchemaList, formattedCardinality);
-    keyGenerator = segmentProperties.getDimensionKeyGenerator();
   }
 
   @Override public Object[] encode(Object[] row) {
@@ -90,7 +76,6 @@ public class RowEncoderImpl implements RowEncoder {
     for (int i = 0; i < dictArray.length; i++) {
       dictArray[i] = dictionaryFieldEncoders[i].encode(row);
     }
-    byte[] generateKey = keyGenerator.generateKey(dictArray);
 
     ByteBuffer[] byteBuffers = new ByteBuffer[nonDictionaryFieldEncoders.length];
     for (int i = 0; i < byteBuffers.length; i++) {
@@ -106,12 +91,20 @@ public class RowEncoderImpl implements RowEncoder {
     }
 
     Object[] newOutArr = new Object[3];
-    newOutArr[IgnoreDictionary.DIMENSION_INDEX_IN_ROW.getIndex()] = generateKey;
+    newOutArr[IgnoreDictionary.DIMENSION_INDEX_IN_ROW.getIndex()] = dictArray;
     newOutArr[IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex()] = nonDictionaryCols;
     newOutArr[IgnoreDictionary.MEASURES_INDEX_IN_ROW.getIndex()] = measureArray;
 
-
     return newOutArr;
+  }
+
+  @Override public void finish() {
+    int[] dimCardinality = new int[dictionaryFieldEncoders.length];
+    for (int i = 0; i < dimCardinality.length; i++) {
+      dimCardinality[i] = dictionaryFieldEncoders[i].getColumnCardinality();
+    }
+
+    configuration.getRunTimeDataLoadConfiguration().setDimLenghts(dimCardinality);
   }
 
 }
