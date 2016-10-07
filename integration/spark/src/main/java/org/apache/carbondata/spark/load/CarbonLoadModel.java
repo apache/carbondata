@@ -110,6 +110,17 @@ public class CarbonLoadModel implements Serializable {
    * defines the string that should be treated as null while loadind data
    */
   private String serializationNullFormat;
+
+  /**
+   * defines the string to specify whether the bad record logger should be enabled or not
+   */
+  private String badRecordsLoggerEnable;
+
+  /**
+   * defines the option to specify the bad record log redirect to raw csv
+   */
+  private String badRecordsLoggerRedirect;
+
   /**
    * Max number of columns that needs to be parsed by univocity parser
    */
@@ -331,6 +342,8 @@ public class CarbonLoadModel implements Serializable {
     copy.factTimeStamp = factTimeStamp;
     copy.segmentId = segmentId;
     copy.serializationNullFormat = serializationNullFormat;
+    copy.badRecordsLoggerEnable = badRecordsLoggerEnable;
+    copy.badRecordsLoggerRedirect =badRecordsLoggerRedirect;
     copy.escapeChar = escapeChar;
     copy.quoteChar = quoteChar;
     copy.commentChar = commentChar;
@@ -372,6 +385,8 @@ public class CarbonLoadModel implements Serializable {
     copyObj.factTimeStamp = factTimeStamp;
     copyObj.segmentId = segmentId;
     copyObj.serializationNullFormat = serializationNullFormat;
+    copyObj.badRecordsLoggerEnable = badRecordsLoggerEnable;
+    copyObj.badRecordsLoggerRedirect =badRecordsLoggerRedirect;
     copyObj.escapeChar = escapeChar;
     copyObj.quoteChar = quoteChar;
     copyObj.commentChar = commentChar;
@@ -545,6 +560,22 @@ public class CarbonLoadModel implements Serializable {
     this.serializationNullFormat = serializationNullFormat;
   }
 
+  /**
+   * returns the string to enable bad record logger
+   * @return
+   */
+  public String getBadRecordsLoggerEnable() {
+    return badRecordsLoggerEnable;
+  }
+
+  /**
+   * method sets the string to specify whether to enable or dissable the badrecord logger.
+   * @param badRecordsLoggerEnable
+   */
+  public void setBadRecordsLoggerEnable(String badRecordsLoggerEnable) {
+    this.badRecordsLoggerEnable = badRecordsLoggerEnable;
+  }
+
   public String getQuoteChar() {
     return quoteChar;
   }
@@ -573,5 +604,21 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setMaxColumns(String maxColumns) {
     this.maxColumns = maxColumns;
+  }
+
+  /**
+   *  returns option to specify the bad record log redirect to raw csv
+   * @return
+   */
+  public String getBadRecordsLoggerRedirect() {
+    return badRecordsLoggerRedirect;
+  }
+
+  /**
+   * set option to specify the bad record log redirect to raw csv
+   * @param badRecordsLoggerRedirect
+   */
+  public void setBadRecordsLoggerRedirect(String badRecordsLoggerRedirect) {
+    this.badRecordsLoggerRedirect = badRecordsLoggerRedirect;
   }
 }

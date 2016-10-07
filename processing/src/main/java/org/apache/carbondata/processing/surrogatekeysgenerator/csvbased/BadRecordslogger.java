@@ -64,9 +64,15 @@ public class BadRecordslogger {
   private BufferedWriter bufferedWriter;
   private DataOutputStream outStream;
   /**
+   * csv file writer
+   */
+  private BufferedWriter bufferedCSVWriter;
+  private DataOutputStream outCSVStream;
+  /**
    *
    */
   private CarbonFile logFile;
+
   /**
    * task key which is DatabaseName/TableName/tablename
    */
@@ -89,42 +95,61 @@ public class BadRecordslogger {
     return badRecordEntry.remove(key);
   }
 
-  public void addBadRecordsToBilder(Object[] row, int size, String reason, String valueComparer) {
-    StringBuilder logStrings = new StringBuilder();
-    int count = size;
-    for (int i = 0; i < size; i++) {
-      if (null == row[i]) {
-        logStrings.append(row[i]);
-      } else if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(row[i].toString())) {
-        logStrings.append(valueComparer);
-      } else {
-        logStrings.append(row[i]);
+  public void addBadRecordsToBuilder(Object[] row, String reason, String valueComparer,
+      boolean badRecordsLogRedirect, boolean badRecordLoggerEnable) {
+    if (badRecordsLogRedirect || badRecordLoggerEnable) {
+      StringBuilder logStrings = new StringBuilder();
+      int size = row.length;
+      int count = size;
+      for (int i = 0; i < size; i++) {
+        if (null == row[i]) {
+          char ch =
+              logStrings.length() > 0 ? logStrings.charAt(logStrings.length() - 1) : (char) -1;
+          if (ch == ',') {
+            logStrings = logStrings.deleteCharAt(logStrings.lastIndexOf(","));
+          }
+          break;
+        } else if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(row[i].toString())) {
+          logStrings.append(valueComparer);
+        } else {
+          logStrings.append(row[i]);
+        }
+        if (count > 1) {
+          logStrings.append(',');
+        }
+        count--;
       }
-      if (count > 1) {
-        logStrings.append(" , ");
+      if (badRecordsLogRedirect) {
+        writeBadRecordsToCSVFile(logStrings);
       }
-      count--;
+      if (badRecordLoggerEnable) {
+        logStrings.append("----->");
+        if (null != reason) {
+          if (reason.indexOf(CarbonCommonConstants.MEMBER_DEFAULT_VAL) > -1) {
+            logStrings
+                .append(reason.replace(CarbonCommonConstants.MEMBER_DEFAULT_VAL, valueComparer));
+          } else {
+            logStrings.append(reason);
+          }
+        }
+        writeBadRecordsToFile(logStrings);
+      }
+    } else {
+      // setting partial success entry since even if bad records are there then load
+      // status should be partial success regardless of bad record logged
+      badRecordEntry.put(taskKey, "Partially");
     }
-
-    logStrings.append("----->");
-    if (null != reason) {
-      if (reason.indexOf(CarbonCommonConstants.MEMBER_DEFAULT_VAL) > -1) {
-        logStrings.append(reason.replace(CarbonCommonConstants.MEMBER_DEFAULT_VAL, valueComparer));
-      } else {
-        logStrings.append(reason);
-      }
-    }
-
-    writeBadRecordsToFile(logStrings);
   }
 
   /**
    *
    */
   private synchronized void writeBadRecordsToFile(StringBuilder logStrings) {
-    String filePath = this.storePath + File.separator + this.fileName
-        + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
+
     if (null == logFile) {
+      String filePath =
+          this.storePath + File.separator + this.fileName + CarbonCommonConstants.LOG_FILE_EXTENSION
+              + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
       logFile = FileFactory.getCarbonFile(filePath, FileFactory.getFileType(filePath));
     }
 
@@ -136,10 +161,10 @@ public class BadRecordslogger {
           FileFactory.mkdirs(this.storePath, fileType);
 
           // create the files
-          FileFactory.createNewFile(filePath, fileType);
+          FileFactory.createNewFile(logFile.getPath(), fileType);
         }
 
-        outStream = FileFactory.getDataOutputStream(filePath, fileType);
+        outStream = FileFactory.getDataOutputStream(logFile.getPath(), fileType);
 
         bufferedWriter = new BufferedWriter(new OutputStreamWriter(outStream,
                 Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
@@ -160,10 +185,46 @@ public class BadRecordslogger {
   }
 
   /**
+   *
+   */
+  private synchronized void writeBadRecordsToCSVFile(StringBuilder logStrings) {
+    String filePath =
+        this.storePath + File.separator + this.fileName + CarbonCommonConstants.CSV_FILE_EXTENSION
+            + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
+    try {
+      if (null == bufferedCSVWriter) {
+        FileType fileType = FileFactory.getFileType(storePath);
+        if (!FileFactory.isFileExist(this.storePath, fileType)) {
+          // create the folders if not exist
+          FileFactory.mkdirs(this.storePath, fileType);
+
+          // create the files
+          FileFactory.createNewFile(filePath, fileType);
+        }
+
+        outCSVStream = FileFactory.getDataOutputStream(filePath, fileType);
+
+        bufferedCSVWriter = new BufferedWriter(new OutputStreamWriter(outCSVStream,
+            Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
+
+      }
+      bufferedCSVWriter.write(logStrings.toString());
+      bufferedCSVWriter.newLine();
+    } catch (FileNotFoundException e) {
+      LOGGER.error("Bad Log Files not found");
+    } catch (IOException e) {
+      LOGGER.error("Error While writing bad log File");
+    }
+    finally {
+      badRecordEntry.put(taskKey, "Partially");
+    }
+  }
+
+  /**
    * closeStreams void
    */
   public synchronized void closeStreams() {
-    CarbonUtil.closeStreams(bufferedWriter, outStream);
+    CarbonUtil.closeStreams(bufferedWriter, outStream, bufferedCSVWriter, outCSVStream);
   }
 
 }

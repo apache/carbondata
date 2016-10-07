@@ -64,6 +64,16 @@ public class SchemaInfo {
    */
   private String serializationNullFormat;
 
+  /**
+   * defines the string to specify whether the bad record logger should be enabled or not
+   */
+  private String badRecordsLoggerEnable;
+  /**
+   * defines the option to specify whether to redirect the bad record logger to raw csv or not
+   */
+  private String badRecordsLoggerRedirect;
+
+
   public String getComplexDelimiterLevel1() {
     return complexDelimiterLevel1;
   }
@@ -188,4 +198,35 @@ public class SchemaInfo {
     this.serializationNullFormat = serializationNullFormat;
   }
 
+  /**
+   * returns the string to enable bad record logger
+   * @return
+   */
+  public String getBadRecordsLoggerEnable() {
+    return badRecordsLoggerEnable;
+  }
+
+  /**
+   * method sets the string to specify whether to enable or dissable the badrecord logger.
+   * @param badRecordsLoggerEnable
+   */
+  public void setBadRecordsLoggerEnable(String badRecordsLoggerEnable) {
+    this.badRecordsLoggerEnable = badRecordsLoggerEnable;
+  }
+
+  /**
+   * returns the option to set to redirect the badrecord logger to raw csv
+   * @return
+   */
+  public String getBadRecordsLoggerRedirect() {
+    return badRecordsLoggerRedirect;
+  }
+
+  /**
+   * set the option to set to redirect the badrecord logger to raw csv
+   * @param badRecordsLoggerRedirect
+   */
+  public void setBadRecordsLoggerRedirect(String badRecordsLoggerRedirect) {
+    this.badRecordsLoggerRedirect = badRecordsLoggerRedirect;
+  }
 }
