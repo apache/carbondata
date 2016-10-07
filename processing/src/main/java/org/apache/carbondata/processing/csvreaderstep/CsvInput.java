@@ -87,6 +87,9 @@ public class CsvInput extends BaseStep implements StepInterface {
 
   private ExecutorService exec;
 
+  /**
+   * If rddIteratorKey is not null, read data from RDD
+   */
   private String rddIteratorKey = null;
 
   public CsvInput(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
@@ -349,7 +352,7 @@ public class CsvInput extends BaseStep implements StepInterface {
     } catch (NumberFormatException exc) {
       numberOfNodes = NUM_CORES_DEFAULT_VAL;
     }
-    if ( rddIteratorKey == null ) {
+    if (rddIteratorKey == null) {
       BlockDetails[] blocksInfo = GraphGenerator.blockInfo.get(meta.getBlocksID());
       if (blocksInfo.length == 0) {
         //if isDirectLoad = true, and partition number > file num

@@ -22,10 +22,10 @@ import org.apache.spark.sql.{getDB, SQLContext}
 /**
  * Contains all options for Spark data source
  */
-class CarbonOption(options: Map[String, String], cc: SQLContext) {
+class CarbonOption(options: Map[String, String]) {
   def tableIdentifier: String = options.getOrElse("tableName", s"$dbName.$tableName")
 
-  def dbName: String = getDB.getDatabaseName(options.get("dbName"), cc)
+  def dbName: String = options.getOrElse("dbName", "default")
 
   def tableName: String = options.getOrElse("tableName", "default_table")
 
@@ -37,6 +37,8 @@ class CarbonOption(options: Map[String, String], cc: SQLContext) {
     options.getOrElse("partitionClass",
       "org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl")
   }
+
+  def tempCSV: String = options.getOrElse("tempCSV", "false")
 
   def compress: String = options.getOrElse("compress", "false")
 

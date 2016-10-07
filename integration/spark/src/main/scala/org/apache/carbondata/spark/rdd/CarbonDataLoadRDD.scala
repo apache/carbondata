@@ -76,7 +76,7 @@ class CarbonNodePartition(rddId: Int, val idx: Int, host: String,
   override def hashCode(): Int = 41 * (41 + rddId) + idx
 }
 
-object CarbonDataLoadRDD extends Logging{
+object CarbonDataLoadRDDFuncs extends Logging{
   def initialize(model: CarbonLoadModel,
                  splitIndex: Int): String = {
     val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
@@ -160,7 +160,7 @@ object CarbonDataLoadRDD extends Logging{
   }
 }
 /**
- * Use this RDD class to load data
+ * Use this RDD class to load csv data file
  *
  * @param sc                    The SparkContext to associate the RDD with.
  * @param result                Output result
@@ -243,7 +243,7 @@ class CarbonDataLoadRDD[K, V](
 
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         setModelAndBlocksInfo()
-        storeLocation = CarbonDataLoadRDD.initialize(model, theSplit.index)
+        storeLocation = CarbonDataLoadRDDFuncs.initialize(model, theSplit.index)
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
         if (model.isRetentionRequest) {
           recreateAggregationTableForRetention
@@ -252,7 +252,7 @@ class CarbonDataLoadRDD[K, V](
           loadMetadataDetails.setLoadStatus(createManualAggregateTable)
         }
         else {
-          CarbonDataLoadRDD.run(model, storeLocation, hdfsStoreLocation, kettleHomePath,
+          CarbonDataLoadRDDFuncs.run(model, storeLocation, hdfsStoreLocation, kettleHomePath,
             loadCount, loadMetadataDetails)
         }
       } catch {
@@ -478,6 +478,22 @@ class CarbonDataLoadRDD[K, V](
   }
 }
 
+/**
+ * Use this RDD class to load RDD
+ * @param sc
+ * @param result
+ * @param carbonLoadModel
+ * @param storeLocation
+ * @param hdfsStoreLocation
+ * @param kettleHomePath
+ * @param columinar
+ * @param loadCount
+ * @param tableCreationTime
+ * @param schemaLastUpdatedTime
+ * @param prev
+ * @tparam K
+ * @tparam V
+ */
 class CarbonRDDDataLoadRDD[K, V](
                                sc: SparkContext,
                                result: DataLoadResult[K, V],
@@ -510,15 +526,15 @@ class CarbonRDDDataLoadRDD[K, V](
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
 
-        storeLocation = CarbonDataLoadRDD.initialize(carbonLoadModel, theSplit.index)
+        storeLocation = CarbonDataLoadRDDFuncs.initialize(carbonLoadModel, theSplit.index)
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
         val rddIteratorKey = UUID.randomUUID().toString
         try{
           RddInputUtils.put(rddIteratorKey,
             new RddIterator(firstParent[Row].iterator(theSplit, context), carbonLoadModel))
           carbonLoadModel.setRddIteratorKey(rddIteratorKey)
-          CarbonDataLoadRDD.run(carbonLoadModel, storeLocation, hdfsStoreLocation, kettleHomePath,
-            loadCount, loadMetadataDetails)
+          CarbonDataLoadRDDFuncs.run(carbonLoadModel, storeLocation, hdfsStoreLocation,
+            kettleHomePath, loadCount, loadMetadataDetails)
         } finally {
           RddInputUtils.remove(rddIteratorKey)
         }
@@ -543,6 +559,12 @@ class CarbonRDDDataLoadRDD[K, V](
   override protected def getPartitions: Array[Partition] = firstParent[Row].partitions
 }
 
+/**
+ * This class wrap Scala's Iterator to Java's Iterator.
+ * It also convert all columns to string data to use csv data loading flow.
+ * @param rddIter
+ * @param carbonLoadModel
+ */
 class RddIterator(rddIter: Iterator[Row],
                   carbonLoadModel: CarbonLoadModel) extends java.util.Iterator[Array[String]] {
   val formatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants

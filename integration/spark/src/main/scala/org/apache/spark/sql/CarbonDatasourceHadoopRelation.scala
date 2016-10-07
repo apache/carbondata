@@ -61,7 +61,7 @@ private[sql] case class CarbonDatasourceHadoopRelation(
   }
 
   lazy val job = new Job(new JobConf())
-  lazy val options = new CarbonOption(parameters, sqlContext)
+  lazy val options = new CarbonOption(parameters)
   lazy val absIdentifier = AbsoluteTableIdentifier.fromTablePath(paths.head)
   lazy val relationRaw: CarbonRelation = {
     val carbonTable = SchemaReader.readCarbonTableFromStore(absIdentifier)
