@@ -16,6 +16,10 @@ import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAn
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+/**
+ * It sorts the data and write them to intermediate temp files. These files will be further read
+ * by next step for writing to carbondata files.
+ */
 public class SortProcessorStepImpl implements DataLoadProcessorStep {
 
   private static final LogService LOGGER =

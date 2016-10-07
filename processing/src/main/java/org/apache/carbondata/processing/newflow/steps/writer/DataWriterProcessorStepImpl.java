@@ -17,8 +17,10 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSche
 import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
@@ -31,8 +33,14 @@ import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.SingleThreadFinalSortFilesMerger;
+import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
 
+/**
+ * It reads data from sorted files which are generated in previous sort step.
+ * And it writes data to carbondata file. It also generates mdk key while writing to carbondata file
+ */
 public class DataWriterProcessorStepImpl implements DataLoadProcessorStep {
 
   private static final LogService LOGGER =
@@ -66,6 +74,16 @@ public class DataWriterProcessorStepImpl implements DataLoadProcessorStep {
 
   private Map<Integer, GenericDataType> complexIndexMap;
 
+  private int noDictionaryCount;
+
+  private int complexDimensionCount;
+
+  private int measureCount;
+
+  private long readCounter;
+
+  private long writeCounter;
+
   @Override public DataField[] getOutput() {
     return new DataField[0];
   }
@@ -87,6 +105,7 @@ public class DataWriterProcessorStepImpl implements DataLoadProcessorStep {
   private boolean setStepConfiguration() {
     CarbonTableIdentifier tableIdentifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
+
     storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
             tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()),
@@ -110,8 +129,11 @@ public class DataWriterProcessorStepImpl implements DataLoadProcessorStep {
     }
 
     this.dimensionCount = configuration.getDimensionCount();
+    this.noDictionaryCount = configuration.getNoDictionaryCount();
+    this.complexDimensionCount = configuration.getComplexDimensionCount();
+    this.measureCount = configuration.getMeasureCount();
 
-    int simpleDimsCount = this.dimensionCount - configuration.getComplexDimensionCount();
+    int simpleDimsCount = this.dimensionCount - complexDimensionCount;
     int[] simpleDimsLen = new int[simpleDimsCount];
     for (int i = 0; i < simpleDimsCount; i++) {
       simpleDimsLen[i] = dimLens[i];
@@ -134,8 +156,7 @@ public class DataWriterProcessorStepImpl implements DataLoadProcessorStep {
     Iterator<Map.Entry<String, GenericDataType>> complexMap =
         CarbonDataProcessorUtil.getComplexTypesMap(configuration.getDataFields()).entrySet()
             .iterator();
-    complexIndexMap =
-        new HashMap<Integer, GenericDataType>(configuration.getComplexDimensionCount());
+    complexIndexMap = new HashMap<Integer, GenericDataType>(complexDimensionCount);
     while (complexMap.hasNext()) {
       Map.Entry<String, GenericDataType> complexDataType = complexMap.next();
       complexDataType.getValue().setOutputArrayIndex(0);
@@ -155,8 +176,7 @@ public class DataWriterProcessorStepImpl implements DataLoadProcessorStep {
   }
 
   private void initDataHandler() {
-    int simpleDimsCount =
-        configuration.getDimensionCount() - configuration.getComplexDimensionCount();
+    int simpleDimsCount = dimensionCount - complexDimensionCount;
     int[] simpleDimsLen = new int[simpleDimsCount];
     for (int i = 0; i < simpleDimsCount; i++) {
       simpleDimsLen[i] = dimLens[i];
@@ -167,19 +187,18 @@ public class DataWriterProcessorStepImpl implements DataLoadProcessorStep {
     String carbonDataDirectoryPath = getCarbonDataFolderLocation();
     finalMerger = new SingleThreadFinalSortFilesMerger(dataFolderLocation,
         configuration.getTableIdentifier().getCarbonTableIdentifier().getTableName(),
-        dimensionCount - configuration.getComplexDimensionCount(),
-        configuration.getComplexDimensionCount(), configuration.getMeasureCount(),
-        configuration.getNoDictionaryCount(), null,
+        dimensionCount - complexDimensionCount, complexDimensionCount, measureCount,
+        noDictionaryCount, null,
         CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields()));
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = getCarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setPrimitiveDimLens(simpleDimsLen);
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndex);
-    if (configuration.getNoDictionaryCount() > 0 || configuration.getComplexDimensionCount() > 0) {
-      carbonFactDataHandlerModel.setMdKeyIndex(configuration.getMeasureCount() + 1);
+    if (noDictionaryCount > 0 || complexDimensionCount > 0) {
+      carbonFactDataHandlerModel.setMdKeyIndex(measureCount + 1);
     } else {
-      carbonFactDataHandlerModel.setMdKeyIndex(configuration.getMeasureCount());
+      carbonFactDataHandlerModel.setMdKeyIndex(measureCount);
     }
     dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
   }
@@ -195,11 +214,11 @@ public class DataWriterProcessorStepImpl implements DataLoadProcessorStep {
         configuration.getTableIdentifier().getCarbonTableIdentifier().getDatabaseName());
     carbonFactDataHandlerModel
         .setTableName(configuration.getTableIdentifier().getCarbonTableIdentifier().getTableName());
-    carbonFactDataHandlerModel.setMeasureCount(configuration.getMeasureCount());
+    carbonFactDataHandlerModel.setMeasureCount(measureCount);
     carbonFactDataHandlerModel.setMdKeyLength(keyGenerator.getKeySizeInBytes());
     carbonFactDataHandlerModel.setStoreLocation(configuration.getTableIdentifier().getStorePath());
     carbonFactDataHandlerModel.setDimLens(dimLens);
-    carbonFactDataHandlerModel.setNoDictionaryCount(configuration.getNoDictionaryCount());
+    carbonFactDataHandlerModel.setNoDictionaryCount(noDictionaryCount);
     carbonFactDataHandlerModel.setDimensionCount(configuration.getDimensionCount());
     carbonFactDataHandlerModel.setComplexIndexMap(complexIndexMap);
     carbonFactDataHandlerModel.setSegmentProperties(segmentProperties);
@@ -233,7 +252,95 @@ public class DataWriterProcessorStepImpl implements DataLoadProcessorStep {
   }
 
   @Override public Iterator<Object[]> execute() throws CarbonDataLoadingException {
+    child.execute();
+    String tableName = configuration.getTableIdentifier().getCarbonTableIdentifier().getTableName();
+    try {
+      initDataHandler();
+      dataHandler.initialise();
+      finalMerger.startFinalMerge();
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
+          .recordDictionaryValue2MdkAdd2FileTime(configuration.getPartitionId(),
+              System.currentTimeMillis());
+      while (finalMerger.hasNext()) {
+        Object[] r = finalMerger.next();
+        readCounter++;
+        Object[] outputRow = process(r);
+        dataHandler.addDataToStore(outputRow);
+        writeCounter++;
+      }
+    } catch (CarbonDataWriterException e) {
+      LOGGER.error(e, "Failed for table: " + tableName + " in MDKeyGenStep");
+      throw new CarbonDataLoadingException(
+          "Error while initializing data handler : " + e.getMessage());
+    } catch (Exception e) {
+      LOGGER.error(e, "Failed for table: " + tableName + " in MDKeyGenStep");
+      throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage());
+    } finally {
+      try {
+        dataHandler.finish();
+      } catch (CarbonDataWriterException e) {
+        LOGGER.error(e, "Failed for table: " + tableName + " in  finishing data handler");
+      } catch (Exception e) {
+        LOGGER.error(e, "Failed for table: " + tableName + " in  finishing data handler");
+      }
+    }
+    LOGGER.info("Record Procerssed For table: " + tableName);
+    String logMessage =
+        "Finished Carbon Mdkey Generation Step: Read: " + readCounter + ": Write: " + writeCounter;
+    LOGGER.info(logMessage);
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordTotalRecords(writeCounter);
+    processingComplete();
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
+        .recordDictionaryValue2MdkAdd2FileTime(configuration.getPartitionId(),
+            System.currentTimeMillis());
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
+        .recordMdkGenerateTotalTime(configuration.getPartitionId(), System.currentTimeMillis());
+
     return null;
+  }
+
+  private void processingComplete() throws CarbonDataLoadingException {
+    if (null != dataHandler) {
+      try {
+        dataHandler.closeHandler();
+      } catch (CarbonDataWriterException e) {
+        LOGGER.error(e, e.getMessage());
+        throw new CarbonDataLoadingException(e.getMessage());
+      } catch (Exception e) {
+        LOGGER.error(e, e.getMessage());
+        throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage());
+      }
+    }
+  }
+
+  private Object[] process(Object[] row) throws CarbonDataLoadingException {
+    Object[] outputRow = null;
+    // adding one for the high cardinality dims byte array.
+    if (noDictionaryCount > 0 || complexDimensionCount > 0) {
+      outputRow = new Object[measureCount + 1 + 1];
+    } else {
+      outputRow = new Object[measureCount + 1];
+    }
+
+    int l = 0;
+    int index = 0;
+    for (int i = 0; i < measureCount; i++) {
+      outputRow[l++] = RemoveDictionaryUtil.getMeasure(index++, row);
+    }
+    outputRow[l] = RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row);
+
+    int[] highCardExcludedRows = new int[segmentProperties.getDimColumnsCardinality().length];
+    for (int i = 0; i < highCardExcludedRows.length; i++) {
+      Object key = RemoveDictionaryUtil.getDimension(i, row);
+      highCardExcludedRows[i] = (Integer) key;
+    }
+    try {
+      outputRow[outputRow.length - 1] = keyGenerator.generateKey(highCardExcludedRows);
+    } catch (KeyGenException e) {
+      throw new CarbonDataLoadingException("unable to generate the mdkey", e);
+    }
+
+    return outputRow;
   }
 
   @Override public void finish() {

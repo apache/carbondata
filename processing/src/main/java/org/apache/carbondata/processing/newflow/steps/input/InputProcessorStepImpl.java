@@ -4,20 +4,25 @@ import java.io.IOException;
 import java.util.Iterator;
 
 import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.processing.newflow.CarbonArrayWritable;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
-
-import org.apache.hadoop.mapred.RecordReader;
-
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.DataLoadProcessorStep;
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.parser.CarbonParserFactory;
 import org.apache.carbondata.processing.newflow.parser.GenericParser;
 
+import org.apache.hadoop.mapred.RecordReader;
+
 /**
- * It is wrapper class around input format
+ * It reads data from record reader and sends data to next step.
  */
 public class InputProcessorStepImpl implements DataLoadProcessorStep {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(InputProcessorStepImpl.class.getName());
 
   private RecordReader<Void, CarbonArrayWritable> recordReader;
 
@@ -42,7 +47,8 @@ public class InputProcessorStepImpl implements DataLoadProcessorStep {
   }
 
   @Override
-  public void intialize(CarbonDataLoadConfiguration configuration, DataLoadProcessorStep child) {
+  public void intialize(CarbonDataLoadConfiguration configuration, DataLoadProcessorStep child)
+      throws CarbonDataLoadingException {
     this.recordReader = configuration.getRecordReader();
     this.configuration = configuration;
     DataField[] output = getOutput();
@@ -66,7 +72,7 @@ public class InputProcessorStepImpl implements DataLoadProcessorStep {
         try {
           return recordReader.next(null, data);
         } catch (IOException e) {
-          e.printStackTrace();
+          LOGGER.error(e);
         }
         return false;
       }
@@ -86,7 +92,7 @@ public class InputProcessorStepImpl implements DataLoadProcessorStep {
     try {
       this.recordReader.close();
     } catch (IOException e) {
-      e.printStackTrace();
+      LOGGER.error(e);
     }
   }
 }
