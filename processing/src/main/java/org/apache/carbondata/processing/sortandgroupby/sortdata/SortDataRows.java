@@ -39,6 +39,8 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.carbon.path.CarbonStorePath;
+import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -46,6 +48,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.schema.metadata.SortObserver;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+import org.apache.carbondata.processing.util.LocalDirectoryChooser;
 import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
 
 public class SortDataRows {
@@ -107,6 +110,10 @@ public class SortDataRows {
    */
   private List<File> procFiles;
   /**
+   * final files
+   */
+  private List<String> finalFilePathList;
+  /**
    * observer
    */
   private SortObserver observer;
@@ -165,6 +172,8 @@ public class SortDataRows {
    */
   private Semaphore semaphore;
 
+  private CarbonTable carbonTable;
+
   public SortDataRows(String tableName, int dimColCount, int complexDimColCount,
       int measureColCount, SortObserver observer, int noDictionaryCount, String partitionID,
       String segmentId, String taskNo, boolean[] noDictionaryColMaping) {
@@ -185,6 +194,9 @@ public class SortDataRows {
     // processed file list
     this.procFiles = new ArrayList<File>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
+    // final files list
+    this.finalFilePathList = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+
     // observer for main sorting
     this.observer = observer;
 
@@ -200,6 +212,8 @@ public class SortDataRows {
       throws CarbonSortKeyAndGroupByException {
     this.databaseName = databaseName;
     this.tableName = tableName;
+    this.carbonTable = CarbonMetadata.getInstance()
+            .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
 
     CarbonProperties carbonProperties = CarbonProperties.getInstance();
     setSortConfiguration(carbonProperties);
@@ -271,8 +285,6 @@ public class SortDataRows {
 
   private void initAggType() {
     Arrays.fill(aggType, 'n');
-    CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
     for (int i = 0; i < measureColCount; i++) {
       aggType[i] = DataTypeUtil.getAggType(measures.get(i).getDataType());
@@ -343,14 +355,18 @@ public class SortDataRows {
       recordHolderList = toSort;
 
       // create new file
-      File file =
-          new File(this.tempFileLocation + File.separator + this.tableName + System.nanoTime() +
-              CarbonCommonConstants.SORT_TEMP_FILE_EXT);
+      String filePath = getLocalDirectory() + File.separator + this.tableName + System.nanoTime() +
+              CarbonCommonConstants.SORT_TEMP_FILE_EXT;
+      File file = new File(filePath);
+      this.finalFilePathList.add(filePath);
       writeDataTofile(recordHolderList, this.entryCount, file);
 
     }
 
     startFileBasedMerge();
+    for(File file : procFiles) {
+      this.finalFilePathList.add(file.getPath());
+    }
     procFiles = null;
     this.recordHolderList = null;
   }
@@ -465,8 +481,10 @@ public class SortDataRows {
    * @param intermediateFiles
    */
   private void startIntermediateMerging(File[] intermediateFiles) {
-    File file = new File(this.tempFileLocation + File.separator + this.tableName + System.nanoTime()
-        + CarbonCommonConstants.MERGERD_EXTENSION);
+    String filePath = getLocalDirectory() + File.separator + this.tableName + System.nanoTime()
+            + CarbonCommonConstants.MERGERD_EXTENSION;
+    File file = new File(filePath);
+    this.finalFilePathList.add(filePath);
 
     FileMergerParameters parameters = new FileMergerParameters();
     parameters.setIsNoDictionaryDimensionColumn(noDictionaryDimnesionColumn);
@@ -552,6 +570,25 @@ public class SortDataRows {
     }
   }
 
+  public String[] getFinalFilePathList() {
+    String[] list = new String[finalFilePathList.size()];
+    return finalFilePathList.toArray(list);
+  }
+
+  private String getLocalDirectory() {
+    String baseStoreLocation = LocalDirectoryChooser.getInstance().nextLocalDir();
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(baseStoreLocation, this
+            .carbonTable.getCarbonTableIdentifier());
+    String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(this.partitionID,
+            this.segmentId);
+    String localDirectory = carbonDataDirectoryPath + File.separator + this.taskNo +
+            File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
+    if (!new File(localDirectory).mkdir()) {
+      LOGGER.info("Sort Temp Location Already Exists");
+    }
+    return localDirectory;
+  }
+
   /**
    * Observer class for thread execution
    * In case of any failure we need stop all the running thread
@@ -594,7 +631,7 @@ public class SortDataRows {
         }
         // create a new file every time
         File sortTempFile = new File(
-            tempFileLocation + File.separator + tableName + System.nanoTime()
+                getLocalDirectory() + File.separator + tableName + System.nanoTime()
                 + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
         writeDataTofile(recordHolderArray, recordHolderArray.length, sortTempFile);
         // add sort temp filename to and arrayList. When the list size reaches 20 then

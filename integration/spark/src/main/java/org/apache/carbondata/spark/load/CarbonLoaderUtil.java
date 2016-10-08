@@ -18,26 +18,12 @@
  */
 package org.apache.carbondata.spark.load;
 
-import java.io.BufferedWriter;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -80,13 +66,14 @@ import org.apache.carbondata.processing.dataprocessor.IDataProcessStatus;
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator;
 import org.apache.carbondata.processing.graphgenerator.GraphGeneratorException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+import org.apache.carbondata.processing.util.LocalDirectoryChooser;
 import org.apache.carbondata.spark.merger.NodeBlockRelation;
 import org.apache.carbondata.spark.merger.NodeMultiBlockRelation;
 
 import com.google.gson.Gson;
 import org.apache.spark.SparkConf;
+import org.apache.spark.SparkEnv;
 import org.apache.spark.util.Utils;
-
 
 public final class CarbonLoaderUtil {
 
@@ -944,6 +931,32 @@ public final class CarbonLoaderUtil {
   public static String[] getConfiguredLocalDirs(SparkConf conf) {
     return Utils.getConfiguredLocalDirs(conf);
   }
+
+  /**
+   *
+   * @return
+   */
+  public static synchronized LocalDirectoryChooser getLocalDirectoryChooser() {
+    LocalDirectoryChooser localDirChooser = LocalDirectoryChooser.getInstance();
+    if (localDirChooser == null) {
+      String carbonUseLocalDir = CarbonProperties.getInstance()
+              .getProperty("carbon.use.local.dir", "false");
+      String[] localDirs;
+      if (carbonUseLocalDir.equalsIgnoreCase("true")) {
+        localDirs = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get().conf());
+        if (null == localDirs || localDirs.length == 0) {
+          localDirs = new String[1];
+          localDirs[0] = System.getProperty("java.io.tmpdir");
+        }
+      } else {
+        localDirs = new String[1];
+        localDirs[0] = System.getProperty("java.io.tmpdir");
+      }
+      localDirChooser = LocalDirectoryChooser.newInstance(localDirs);
+    }
+    return localDirChooser;
+  }
+
 
   /**
    * method to distribute the blocklets of a block in multiple blocks

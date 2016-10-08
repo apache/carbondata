@@ -234,7 +234,7 @@ public class SortKeyStep extends BaseStep {
       String logMessage =
           "Summary: Carbon Sort Key Step: Read: " + readCounter + ": Write: " + writeCounter;
       LOGGER.info(logMessage);
-      putRow(data.getOutputRowMeta(), new Object[0]);
+      putRow(data.getOutputRowMeta(), this.sortDataRows.getFinalFilePathList());
       setOutputDone();
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordSortRowsStepTotalTime(
           meta.getPartitionID(), System.currentTimeMillis());

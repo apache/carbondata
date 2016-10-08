@@ -24,7 +24,6 @@ import java.util
 import java.util.UUID
 
 import scala.collection.JavaConverters._
-import scala.util.Random
 
 import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, SparkEnv, TaskContext}
 import org.apache.spark.annotation.DeveloperApi
@@ -117,6 +116,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
     else {
       storeLocation = System.getProperty("java.io.tmpdir")
     }
+    storeLocation = CarbonLoaderUtil.getLocalDirectoryChooser.nextLocalDir
     storeLocation = storeLocation + '/' + System.nanoTime() + '/' + splitIndex
   }
 

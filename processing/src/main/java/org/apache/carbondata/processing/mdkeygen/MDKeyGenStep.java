@@ -146,6 +146,8 @@ public class MDKeyGenStep extends BaseStep {
    */
   private boolean[] isUseInvertedIndex;
 
+  private String[] tempFileList = new String[0];
+
   /**
    * CarbonMDKeyGenStep
    *
@@ -194,6 +196,9 @@ public class MDKeyGenStep extends BaseStep {
     }
 
     if (null != row) {
+      if (row instanceof String[]) {
+        tempFileList = (String[])row;
+      }
       putRow(data.outputRowMeta, new Object[measureCount + 1]);
       return true;
     }
@@ -363,7 +368,7 @@ public class MDKeyGenStep extends BaseStep {
     String carbonDataDirectoryPath = getCarbonDataFolderLocation();
     finalMerger = new SingleThreadFinalSortFilesMerger(dataFolderLocation, tableName,
         dimensionCount - meta.getComplexDimsCount(), meta.getComplexDimsCount(), measureCount,
-        meta.getNoDictionaryCount(), aggType, isNoDictionaryDimension);
+        meta.getNoDictionaryCount(), aggType, isNoDictionaryDimension, this.tempFileList);
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = getCarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setPrimitiveDimLens(simpleDimsLen);
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
