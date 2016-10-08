@@ -75,6 +75,10 @@ import org.apache.carbondata.processing.schema.metadata.HierarchiesInfo;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
 
+import static org.apache.carbondata.processing.constants.TableOptionConstant.BAD_RECORDS_ACTION;
+import static org.apache.carbondata.processing.constants.TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE;
+import static org.apache.carbondata.processing.constants.TableOptionConstant.SERIALIZATION_NULL_FORMAT;
+
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.core.row.ValueMeta;
@@ -439,12 +443,12 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           data.getSurrogateKeyGen()
               .setDimensionOrdinalToDimensionMapping(populateNameToCarbonDimensionMap());
         }
-        serializationNullFormat = meta.getTableOptionWrapper().get("serialization_null_format");
-        badRecordsLoggerEnable =
-            Boolean.parseBoolean(meta.getTableOptionWrapper().get("bad_records_logger_enable"));
-        badRecordConvertNullDisable = true;
+        serializationNullFormat =
+            meta.getTableOptionWrapper().get(SERIALIZATION_NULL_FORMAT.getName());
+        badRecordsLoggerEnable = Boolean
+            .parseBoolean(meta.getTableOptionWrapper().get(BAD_RECORDS_LOGGER_ENABLE.getName()));
         String bad_records_action =
-            meta.getTableOptionWrapper().get("bad_records_action");
+            meta.getTableOptionWrapper().get(BAD_RECORDS_ACTION.getName());
         if(null != bad_records_action) {
           LoggerAction loggerAction = null;
           try {
@@ -458,9 +462,11 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
               break;
             case REDIRECT:
               badRecordsLogRedirect = true;
+              badRecordConvertNullDisable = true;
               break;
             case IGNORE:
               badRecordsLogRedirect = false;
+              badRecordConvertNullDisable = true;
               break;
           }
         }

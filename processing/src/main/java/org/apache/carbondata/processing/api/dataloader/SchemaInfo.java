@@ -69,9 +69,9 @@ public class SchemaInfo {
    */
   private String badRecordsLoggerEnable;
   /**
-   * defines the option to specify whether to redirect the bad record logger to raw csv or not
+   * defines the option to specify whether to bad record logger action
    */
-  private String badRecordsLoggerRedirect;
+  private String badRecordsLoggerAction;
 
 
   public String getComplexDelimiterLevel1() {
@@ -215,18 +215,18 @@ public class SchemaInfo {
   }
 
   /**
-   * returns the option to set to redirect the badrecord logger to raw csv
+   * returns the option to set bad record logger action
    * @return
    */
-  public String getBadRecordsLoggerRedirect() {
-    return badRecordsLoggerRedirect;
+  public String getBadRecordsLoggerAction() {
+    return badRecordsLoggerAction;
   }
 
   /**
-   * set the option to set to redirect the badrecord logger to raw csv
-   * @param badRecordsLoggerRedirect
+   * set the option to set set bad record logger action
+   * @param badRecordsLoggerAction
    */
-  public void setBadRecordsLoggerRedirect(String badRecordsLoggerRedirect) {
-    this.badRecordsLoggerRedirect = badRecordsLoggerRedirect;
+  public void setBadRecordsLoggerAction(String badRecordsLoggerAction) {
+    this.badRecordsLoggerAction = badRecordsLoggerAction;
   }
 }

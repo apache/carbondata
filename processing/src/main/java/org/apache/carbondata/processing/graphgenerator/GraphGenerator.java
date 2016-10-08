@@ -921,7 +921,7 @@ public class GraphGenerator {
     TableOptionWrapper tableOptionWrapper = TableOptionWrapper.getTableOptionWrapperInstance();
     tableOptionWrapper.setTableOption(schemaInfo.getSerializationNullFormat());
     tableOptionWrapper.setTableOption(schemaInfo.getBadRecordsLoggerEnable());
-    tableOptionWrapper.setTableOption(schemaInfo.getBadRecordsLoggerRedirect());
+    tableOptionWrapper.setTableOption(schemaInfo.getBadRecordsLoggerAction());
     return tableOptionWrapper;
   }
 
