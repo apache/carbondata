@@ -138,7 +138,7 @@ public class DataGraphExecuter {
       String partitionId, CarbonDataLoadSchema schema) throws DataLoadingException {
 
     //This Method will validate the both fact and dimension csv files.
-    if (!schemaInfo.isAutoAggregateRequest()) {
+    if (!schemaInfo.isAutoAggregateRequest() && model.getRddIteratorKey() == null ) {
       validateCSVFiles(schemaInfo, partitionId, schema);
     }
     execute(graphFilePath, measureColumns, schemaInfo);
@@ -367,7 +367,7 @@ public class DataGraphExecuter {
       StringBuilder builder, StringBuilder measuresInCSVFile) throws DataLoadingException {
     for (StepMeta step : stepsMeta) {
       if (step.getStepMetaInterface() instanceof CsvInputMeta) {
-        if (null != model.getCsvFilePath()) {
+        if (null != model.getCsvFilePath() && model.getRddIteratorKey() == null) {
           CarbonFile csvFileToRead = GraphExecutionUtil.getCsvFileToRead(model.getCsvFilePath());
           TextFileInputField[] inputFields = GraphExecutionUtil
               .getTextInputFiles(csvFileToRead, measureColumns, builder, measuresInCSVFile, ",");

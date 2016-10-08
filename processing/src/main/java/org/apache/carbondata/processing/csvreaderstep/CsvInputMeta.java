@@ -103,6 +103,8 @@ public class CsvInputMeta extends BaseStepMeta
 
   private String commentCharacter;
 
+  private String rddIteratorKey;
+
   private String maxColumns;
 
   public CsvInputMeta() {
@@ -127,6 +129,7 @@ public class CsvInputMeta extends BaseStepMeta
     escapeCharacter ="\\";
     quoteCharacter = "\"";
     commentCharacter = "#";
+    rddIteratorKey = "";
   }
 
   private void readData(Node stepnode) throws KettleXMLException {
@@ -165,6 +168,7 @@ public class CsvInputMeta extends BaseStepMeta
       escapeCharacter = XMLHandler.getTagValue(stepnode, "escapeCharacter");
       quoteCharacter = XMLHandler.getTagValue(stepnode, "quoteCharacter");
       commentCharacter = XMLHandler.getTagValue(stepnode, "commentCharacter");
+      rddIteratorKey = XMLHandler.getTagValue(stepnode, "rddIteratorKey");
       maxColumns = XMLHandler.getTagValue(stepnode, "maxColumns");
       Node fields = XMLHandler.getSubNode(stepnode, getXmlCode("FIELDS"));
       int nrfields = XMLHandler.countNodes(fields, getXmlCode("FIELD"));
@@ -230,6 +234,7 @@ public class CsvInputMeta extends BaseStepMeta
     retval.append("    ").append(XMLHandler.addTagValue("escapeCharacter", escapeCharacter));
     retval.append("    ").append(XMLHandler.addTagValue("quoteCharacter", quoteCharacter));
     retval.append("    ").append(XMLHandler.addTagValue("commentCharacter", commentCharacter));
+    retval.append("    ").append(XMLHandler.addTagValue("rddIteratorKey", rddIteratorKey));
     retval.append("    ").append(XMLHandler.addTagValue("maxColumns", maxColumns));
     retval.append("    ").append(XMLHandler.openTag(getXmlCode("FIELDS"))).append(Const.CR);
     for (int i = 0; i < inputFields.length; i++) {
@@ -285,6 +290,7 @@ public class CsvInputMeta extends BaseStepMeta
       escapeCharacter = rep.getStepAttributeString(idStep, getRepCode("escapeCharacter"));
       quoteCharacter = rep.getStepAttributeString(idStep, getRepCode("quoteCharacter"));
       commentCharacter = rep.getStepAttributeString(idStep, getRepCode("commentCharacter"));
+      rddIteratorKey = rep.getStepAttributeString(idStep, getRepCode("rddIteratorKey"));
       maxColumns = rep.getStepAttributeString(idStep, getRepCode("maxColumns"));
       int nrfields = rep.countNrStepAttributes(idStep, getRepCode("FIELD_NAME"));
 
@@ -345,6 +351,8 @@ public class CsvInputMeta extends BaseStepMeta
           quoteCharacter);
       rep.saveStepAttribute(idTransformation, idStep, getRepCode("commentCharacter"),
           commentCharacter);
+      rep.saveStepAttribute(idTransformation, idStep, getRepCode("rddIteratorKey"),
+              rddIteratorKey);
       rep.saveStepAttribute(idTransformation, idStep, getRepCode("maxColumns"),
           maxColumns);
       for (int i = 0; i < inputFields.length; i++) {
@@ -858,6 +866,8 @@ public class CsvInputMeta extends BaseStepMeta
           quoteCharacter = (String) entry.getValue();
         } else if ("commentCharacter".equals(attributeKey)) {
           commentCharacter = (String) entry.getValue();
+        } else if ("rddIteratorKey".equals(attributeKey)) {
+          rddIteratorKey = (String) entry.getValue();
         } else {
           throw new RuntimeException(
               "Unhandled metadata injection of attribute: " + attr.toString() + " - " + attr
@@ -952,5 +962,12 @@ public class CsvInputMeta extends BaseStepMeta
 
   public void setMaxColumns(String maxColumns) {
     this.maxColumns = maxColumns;
+  }
+
+  public String getRddIteratorKey() {
+    return this.rddIteratorKey;
+  }
+  public void setRddIteratorKey(String rddIteratorKey) {
+    this.rddIteratorKey = rddIteratorKey;
   }
 }

@@ -29,7 +29,7 @@ import scala.util.control.Breaks.{break, breakable}
 import org.apache.commons.lang3.{ArrayUtils, StringUtils}
 import org.apache.spark.{Accumulator, Logging}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{CarbonEnv, CarbonRelation, DataFrame, SQLContext}
+import org.apache.spark.sql._
 import org.apache.spark.sql.hive.CarbonMetastoreCatalog
 import org.apache.spark.util.FileUtils
 
@@ -742,7 +742,8 @@ object GlobalDictionaryUtil extends Logging {
    */
   def generateGlobalDictionary(sqlContext: SQLContext,
                                carbonLoadModel: CarbonLoadModel,
-                               hdfsLocation: String): Unit = {
+                               hdfsLocation: String,
+                               dataFrame: Option[DataFrame] = None): Unit = {
     try {
       val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getAbsoluteTableIdentifier
         .getCarbonTableIdentifier
@@ -760,7 +761,11 @@ object GlobalDictionaryUtil extends Logging {
       if(StringUtils.isEmpty(allDictionaryPath)) {
         logInfo("Generate global dictionary from source data files!")
         // load data by using dataSource com.databricks.spark.csv
-        var df = loadDataFrame(sqlContext, carbonLoadModel)
+        var df = if (dataFrame.isDefined) {
+          dataFrame.get
+        } else {
+          loadDataFrame(sqlContext, carbonLoadModel)
+        }
         var headers = if (StringUtils.isEmpty(carbonLoadModel.getCsvHeader)) {
           df.columns
         }

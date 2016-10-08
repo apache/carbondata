@@ -19,7 +19,8 @@ package org.apache.carbondata.spark
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark.Logging
-import org.apache.spark.sql.{CarbonContext, DataFrame, DataFrameWriter, SaveMode}
+import org.apache.spark.sql._
+import org.apache.spark.sql.execution.command.LoadTable
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.carbon.metadata.datatype.{DataType => CarbonType}
@@ -35,16 +36,31 @@ class DataFrameFuncs(dataFrame: DataFrame) extends Logging {
       "Error in saving dataframe to carbon file, must use CarbonContext to save dataframe"
     )
 
+    val cc = CarbonContext.getInstance(dataFrame.sqlContext.sparkContext)
     val options = new CarbonOption(parameters)
-    val tableName = options.tableName
+    cc.sql(makeCreateTableString(dataFrame.schema, options))
 
+    if (options.tempCSV.equals("true")) {
+      loadTempCSV(options, cc)
+    } else {
+      loadDataFrame(options, cc)
+    }
+  }
+
+  /**
+   * Firstly, saving DataFrame to CSV files
+   * Secondly, load CSV files
+   * @param options
+   * @param cc
+   */
+  private def loadTempCSV(options: CarbonOption, cc: CarbonContext): Unit = {
     // temporary solution: write to csv file, then load the csv into carbon
     val tempCSVFolder = s"./tempCSV"
     var writer: DataFrameWriter =
       dataFrame.write
-          .format(csvPackage)
-          .option("header", "false")
-          .mode(SaveMode.Overwrite)
+        .format(csvPackage)
+        .option("header", "false")
+        .mode(SaveMode.Overwrite)
 
     if (options.compress.equals("true")) {
       writer = writer.option("codec", "gzip")
@@ -52,7 +68,6 @@ class DataFrameFuncs(dataFrame: DataFrame) extends Logging {
 
     writer.save(tempCSVFolder)
 
-    val cc = CarbonContext.getInstance(dataFrame.sqlContext.sparkContext)
     val tempCSVPath = new Path(tempCSVFolder)
     val fs = tempCSVPath.getFileSystem(dataFrame.sqlContext.sparkContext.hadoopConfiguration)
 
@@ -69,12 +84,29 @@ class DataFrameFuncs(dataFrame: DataFrame) extends Logging {
     }
 
     try {
-      cc.sql(makeCreateTableString(dataFrame.schema, options))
       logInfo(s"temporary CSV file size: ${countSize() / 1024 / 1024} MB")
-      cc.sql(makeLoadString(tableName, tempCSVFolder))
+      cc.sql(makeLoadString(options.tableName, tempCSVFolder))
     } finally {
       fs.delete(tempCSVPath, true)
     }
+  }
+
+  /**
+   * Loading DataFrame directly without saving DataFrame to CSV files.
+   * @param options
+   * @param cc
+   */
+  private def loadDataFrame(options: CarbonOption, cc: CarbonContext): Unit = {
+    val header = dataFrame.columns.mkString(",")
+    LoadTable(
+      Some(options.dbName),
+      options.tableName,
+      null,
+      Seq(),
+      Map(("fileheader" -> header)),
+      false,
+      null,
+      Some(dataFrame)).run(cc)
   }
 
   private def csvPackage: String = "com.databricks.spark.csv.newapi"

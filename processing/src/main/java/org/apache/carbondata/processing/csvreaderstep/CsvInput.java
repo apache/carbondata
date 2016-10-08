@@ -22,6 +22,7 @@ package org.apache.carbondata.processing.csvreaderstep;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -38,6 +39,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator;
 
+import org.apache.commons.lang3.StringUtils;
 import org.pentaho.di.core.Const;
 import org.pentaho.di.core.exception.KettleException;
 import org.pentaho.di.core.logging.LogChannelInterface;
@@ -84,6 +86,11 @@ public class CsvInput extends BaseStep implements StepInterface {
   private List<List<BlockDetails>> threadBlockList = new ArrayList<>();
 
   private ExecutorService exec;
+
+  /**
+   * If rddIteratorKey is not null, read data from RDD
+   */
+  private String rddIteratorKey = null;
 
   public CsvInput(StepMeta stepMeta, StepDataInterface stepDataInterface, int copyNr,
       TransMeta transMeta, Trans trans) {
@@ -332,6 +339,8 @@ public class CsvInput extends BaseStep implements StepInterface {
           data.rownumFieldIndex++;
         }
       }
+      rddIteratorKey = StringUtils.isEmpty(meta.getRddIteratorKey()) ? null : meta
+              .getRddIteratorKey();
     }
 
     // start multi-thread to process
@@ -343,39 +352,55 @@ public class CsvInput extends BaseStep implements StepInterface {
     } catch (NumberFormatException exc) {
       numberOfNodes = NUM_CORES_DEFAULT_VAL;
     }
+    if (rddIteratorKey == null) {
+      BlockDetails[] blocksInfo = GraphGenerator.blockInfo.get(meta.getBlocksID());
+      if (blocksInfo.length == 0) {
+        //if isDirectLoad = true, and partition number > file num
+        //then blocksInfo will get empty in some partition processing, so just return
+        setOutputDone();
+        return false;
+      }
 
-    BlockDetails[] blocksInfo = GraphGenerator.blockInfo.get(meta.getBlocksID());
-    if (blocksInfo.length == 0) {
-      //if isDirectLoad = true, and partition number > file num
-      //then blocksInfo will get empty in some partition processing, so just return
-      setOutputDone();
-      return false;
-    }
+      if (numberOfNodes > blocksInfo.length) {
+        numberOfNodes = blocksInfo.length;
+      }
 
-    if (numberOfNodes > blocksInfo.length) {
-      numberOfNodes = blocksInfo.length;
-    }
+      //new the empty lists
+      for (int pos = 0; pos < numberOfNodes; pos++) {
+        threadBlockList.add(new ArrayList<BlockDetails>());
+      }
 
-    //new the empty lists
-    for (int pos = 0; pos < numberOfNodes; pos++) {
-      threadBlockList.add(new ArrayList<BlockDetails>());
-    }
-
-    //block balance to every thread
-    for (int pos = 0; pos < blocksInfo.length; ) {
-      for (int threadNum = 0; threadNum < numberOfNodes; threadNum++) {
-        if (pos < blocksInfo.length) {
-          threadBlockList.get(threadNum).add(blocksInfo[pos++]);
+      //block balance to every thread
+      for (int pos = 0; pos < blocksInfo.length; ) {
+        for (int threadNum = 0; threadNum < numberOfNodes; threadNum++) {
+          if (pos < blocksInfo.length) {
+            threadBlockList.get(threadNum).add(blocksInfo[pos++]);
+          }
         }
       }
+      LOGGER.info("*****************Started all csv reading***********");
+      startProcess(numberOfNodes);
+      LOGGER.info("*****************Completed all csv reading***********");
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordCsvInputStepTime(
+              meta.getPartitionID(), System.currentTimeMillis());
+    } else {
+      scanRddIterator();
     }
-    LOGGER.info("*****************Started all csv reading***********");
-    startProcess(numberOfNodes);
-    LOGGER.info("*****************Completed all csv reading***********");
-    CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordCsvInputStepTime(
-        meta.getPartitionID(), System.currentTimeMillis());
     setOutputDone();
     return false;
+  }
+
+  private void scanRddIterator() throws RuntimeException {
+    Iterator<String[]> iterator = RddInputUtils.getAndRemove(rddIteratorKey);
+    if (iterator != null) {
+      try{
+        while(iterator.hasNext()){
+          putRow(data.outputRowMeta, iterator.next());
+        }
+      } catch (KettleException e) {
+        throw new RuntimeException(e);
+      }
+    }
   }
 
   private void startProcess(final int numberOfNodes) throws RuntimeException {
@@ -488,7 +513,7 @@ public class CsvInput extends BaseStep implements StepInterface {
       if (getTransMeta().findNrPrevSteps(getStepMeta()) == 0) {
         String filename = environmentSubstitute(meta.getFilename());
 
-        if (Const.isEmpty(filename)) {
+        if (Const.isEmpty(filename) && Const.isEmpty(meta.getRddIteratorKey())) {
           logError(BaseMessages.getString(PKG, "CsvInput.MissingFilename.Message")); //$NON-NLS-1$
           return false;
         }

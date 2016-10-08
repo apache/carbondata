@@ -127,6 +127,11 @@ public class CarbonLoadModel implements Serializable {
   private String maxColumns;
 
   /**
+   * the key of RDD Iterator in RDD iterator Map
+   */
+  private String rddIteratorKey;
+
+  /**
    * get escape char
    * @return
    */
@@ -620,5 +625,14 @@ public class CarbonLoadModel implements Serializable {
    */
   public void setBadRecordsLoggerRedirect(String badRecordsLoggerRedirect) {
     this.badRecordsLoggerRedirect = badRecordsLoggerRedirect;
+  }
+
+  public String getRddIteratorKey() {
+    return rddIteratorKey;
+  }
+
+  public void setRddIteratorKey(String rddIteratorKey) {
+    this.rddIteratorKey = rddIteratorKey;
+
   }
 }

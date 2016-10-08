@@ -131,6 +131,7 @@ public final class CarbonLoaderUtil {
     model.setEscapeCharacter(schmaModel.getEscapeCharacter());
     model.setQuoteCharacter(schmaModel.getQuoteCharacter());
     model.setCommentCharacter(schmaModel.getCommentCharacter());
+    model.setRddIteratorKey(schmaModel.getRddIteratorKey());
     model.setTaskNo(loadModel.getTaskNo());
     model.setFactTimeStamp(loadModel.getFactTimeStamp());
     model.setMaxColumns(loadModel.getMaxColumns());
@@ -187,6 +188,7 @@ public final class CarbonLoaderUtil {
     schmaModel.setEscapeCharacter(loadModel.getEscapeChar());
     schmaModel.setQuoteCharacter(loadModel.getQuoteChar());
     schmaModel.setCommentCharacter(loadModel.getCommentChar());
+    schmaModel.setRddIteratorKey(loadModel.getRddIteratorKey());
     SchemaInfo info = new SchemaInfo();
 
     info.setDatabaseName(databaseName);

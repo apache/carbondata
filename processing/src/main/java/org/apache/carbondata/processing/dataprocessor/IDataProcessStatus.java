@@ -193,4 +193,6 @@ public interface IDataProcessStatus {
   String getQuoteCharacter();
 
   String getCommentCharacter();
+
+  String getRddIteratorKey();
 }
