@@ -118,7 +118,8 @@ public class SegmentStatusManager {
         dataInputStream = fileOperation.openForRead();
 
         BufferedReader buffReader =
-            new BufferedReader(new InputStreamReader(dataInputStream, "UTF-8"));
+            new BufferedReader(
+                    new InputStreamReader(dataInputStream, CarbonCommonConstants.DEFAULT_CHARSET));
 
         loadFolderDetailsArray = gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
         //just directly iterate Array

@@ -26,6 +26,8 @@ import java.io.ObjectOutputStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -70,7 +72,8 @@ public class ObjectSerializationUtil {
       }
     }
 
-    return new String(Base64.encodeBase64(baos.toByteArray()), "UTF-8");
+    return new String(Base64.encodeBase64(baos.toByteArray()),
+            CarbonCommonConstants.DEFAULT_CHARSET);
   }
 
   /**
@@ -85,7 +88,8 @@ public class ObjectSerializationUtil {
       return null;
     }
 
-    byte[] bytes = Base64.decodeBase64(objectString.getBytes("UTF-8"));
+    byte[] bytes =
+            Base64.decodeBase64(objectString.getBytes(CarbonCommonConstants.DEFAULT_CHARSET));
 
     ByteArrayInputStream bais = null;
     GZIPInputStream gis = null;

@@ -90,7 +90,8 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
       val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
           AbsoluteTableIdentifier(
             CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-            new CarbonTableIdentifier("default", "stopmajor", noOfRetries + "")
+            new CarbonTableIdentifier(
+              CarbonCommonConstants.DATABASE_DEFAULT_NAME, "stopmajor", noOfRetries + "")
           )
       )
       val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
@@ -121,7 +122,7 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
         AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-          new CarbonTableIdentifier("default", "stopmajor", "rrr")
+          new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "stopmajor", "rrr")
         )
     )
     // merged segment should not be there

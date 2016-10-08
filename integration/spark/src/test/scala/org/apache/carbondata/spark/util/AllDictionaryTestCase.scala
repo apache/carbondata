@@ -24,6 +24,7 @@ import org.apache.spark.sql.common.util.CarbonHiveContext.sql
 import org.apache.spark.sql.common.util.{CarbonHiveContext, QueryTest}
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.load.CarbonLoadModel
 import org.scalatest.BeforeAndAfterAll
 
@@ -105,8 +106,10 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
 
   def buildRelation() = {
     val catalog = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
-    sampleRelation = catalog.lookupRelation1(Option("default"), "sample")(CarbonHiveContext).asInstanceOf[CarbonRelation]
-    complexRelation = catalog.lookupRelation1(Option("default"), "complextypes")(CarbonHiveContext).asInstanceOf[CarbonRelation]
+    sampleRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      "sample")(CarbonHiveContext).asInstanceOf[CarbonRelation]
+    complexRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
+      "complextypes")(CarbonHiveContext).asInstanceOf[CarbonRelation]
   }
 
   test("Support generate global dictionary from all dictionary files") {

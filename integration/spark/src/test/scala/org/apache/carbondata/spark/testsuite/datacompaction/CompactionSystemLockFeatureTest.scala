@@ -86,7 +86,7 @@ class CompactionSystemLockFeatureTest extends QueryTest with BeforeAndAfterAll {
     val absoluteTableIdentifier = new
         AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-          new CarbonTableIdentifier("default", "table2", "rrr")
+          new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "table2", "rrr")
         )
     val carbonTablePath: CarbonTablePath = CarbonStorePath
       .getCarbonTablePath(absoluteTableIdentifier.getStorePath,
@@ -116,7 +116,7 @@ class CompactionSystemLockFeatureTest extends QueryTest with BeforeAndAfterAll {
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
         AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-          new CarbonTableIdentifier("default", "table1", "rrr")
+          new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "table1", "rrr")
         )
     )
     // merged segment should not be there
@@ -128,7 +128,7 @@ class CompactionSystemLockFeatureTest extends QueryTest with BeforeAndAfterAll {
     val segmentStatusManager2: SegmentStatusManager = new SegmentStatusManager(new
         AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-          new CarbonTableIdentifier("default", "table2", "rrr1")
+          new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "table2", "rrr1")
         )
     )
     // merged segment should not be there
