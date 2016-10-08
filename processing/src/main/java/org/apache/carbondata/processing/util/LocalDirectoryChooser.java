@@ -57,4 +57,8 @@ public class LocalDirectoryChooser {
     return localDirs[nextIndex()];
   }
 
+  public String[] getLocalDirs() {
+    return this.localDirs;
+  }
+
 }

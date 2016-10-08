@@ -126,6 +126,7 @@ public class CarbonLoadModel implements Serializable {
    */
   private String maxColumns;
 
+  private String tempFolder;
   /**
    * the key of RDD Iterator in RDD iterator Map
    */
@@ -633,6 +634,13 @@ public class CarbonLoadModel implements Serializable {
 
   public void setRddIteratorKey(String rddIteratorKey) {
     this.rddIteratorKey = rddIteratorKey;
+  }
 
+  public String getTempFolder() {
+    return tempFolder;
+  }
+
+  public void setTempFolder(String tempFolder) {
+    this.tempFolder = tempFolder;
   }
 }

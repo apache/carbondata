@@ -68,6 +68,8 @@ public class DataLoadModel {
   private String rddIteratorKey;
 
   private String maxColumns;
+
+  private String tempFolder;
   /**
    * @return Returns the schemaInfo.
    */
@@ -235,6 +237,14 @@ public class DataLoadModel {
 
   public void setRddIteratorKey(String rddIteratorKey) {
     this.rddIteratorKey = rddIteratorKey;
+  }
+
+  public void setTempFolder(String tempFolder) {
+    this.tempFolder = tempFolder;
+  }
+
+  public String getTempFolder() {
+    return this.tempFolder;
   }
 }
 

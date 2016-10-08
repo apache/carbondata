@@ -102,22 +102,9 @@ class SparkPartitionLoader(model: CarbonLoadModel,
 
     // this property is used to determine whether temp location for carbon is inside
     // container temp dir or is yarn application directory.
-    val carbonUseLocalDir = CarbonProperties.getInstance()
-      .getProperty("carbon.use.local.dir", "false")
-    if(carbonUseLocalDir.equalsIgnoreCase("true")) {
-      val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
-      if (null != storeLocations && storeLocations.nonEmpty) {
-        storeLocation = storeLocations(Random.nextInt(storeLocations.length))
-      }
-      if (storeLocation == null) {
-        storeLocation = System.getProperty("java.io.tmpdir")
-      }
-    }
-    else {
-      storeLocation = System.getProperty("java.io.tmpdir")
-    }
     storeLocation = CarbonLoaderUtil.getLocalDirectoryChooser.nextLocalDir
-    storeLocation = storeLocation + '/' + System.nanoTime() + '/' + splitIndex
+    model.setTempFolder(System.nanoTime() + "")
+    storeLocation = storeLocation + '/' + model.getTempFolder + '/' + splitIndex
   }
 
   def run(): Unit = {

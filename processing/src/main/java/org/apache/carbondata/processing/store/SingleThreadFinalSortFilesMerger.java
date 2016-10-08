@@ -122,7 +122,7 @@ public class SingleThreadFinalSortFilesMerger {
    * @throws CarbonSortKeyAndGroupByException
    */
   public void startFinalMerge() throws CarbonDataWriterException {
-    if (null == this.tempFiles || this.tempFiles.length < 0) {
+    if (null == this.tempFiles || this.tempFiles.length < 1) {
       return;
     }
     // get all the merged files

@@ -174,9 +174,11 @@ public class SortDataRows {
 
   private CarbonTable carbonTable;
 
+  private String tempFolder;
+
   public SortDataRows(String tableName, int dimColCount, int complexDimColCount,
       int measureColCount, SortObserver observer, int noDictionaryCount, String partitionID,
-      String segmentId, String taskNo, boolean[] noDictionaryColMaping) {
+      String segmentId, String taskNo, boolean[] noDictionaryColMaping, String tempFolder) {
     // set table name
     this.tableName = tableName;
     this.partitionID = partitionID;
@@ -203,6 +205,8 @@ public class SortDataRows {
     // observer of writing file in thread
     this.threadStatusObserver = new ThreadStatusObserver();
     this.aggType = new char[measureColCount];
+
+    this.tempFolder = tempFolder;
   }
 
   /**
@@ -577,13 +581,15 @@ public class SortDataRows {
 
   private String getLocalDirectory() {
     String baseStoreLocation = LocalDirectoryChooser.getInstance().nextLocalDir();
+    baseStoreLocation = baseStoreLocation + File.separator + this.tempFolder +  File.separator +
+            this.taskNo;
     CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(baseStoreLocation, this
             .carbonTable.getCarbonTableIdentifier());
     String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(this.partitionID,
             this.segmentId);
     String localDirectory = carbonDataDirectoryPath + File.separator + this.taskNo +
             File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
-    if (!new File(localDirectory).mkdir()) {
+    if (!new File(localDirectory).mkdirs()) {
       LOGGER.info("Sort Temp Location Already Exists");
     }
     return localDirectory;

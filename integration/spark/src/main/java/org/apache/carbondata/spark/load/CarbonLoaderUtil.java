@@ -122,6 +122,7 @@ public final class CarbonLoaderUtil {
     model.setTaskNo(loadModel.getTaskNo());
     model.setFactTimeStamp(loadModel.getFactTimeStamp());
     model.setMaxColumns(loadModel.getMaxColumns());
+    model.setTempFolder(loadModel.getTempFolder());
     boolean hdfsReadMode =
         schmaModel.getCsvFilePath() != null && schmaModel.getCsvFilePath().startsWith("hdfs:");
     int allocate = null != schmaModel.getCsvFilePath() ? 1 : schmaModel.getFilesToProcess().size();
@@ -330,7 +331,18 @@ public final class CarbonLoaderUtil {
     String localStoreLocation = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
     try {
-      CarbonUtil.deleteFoldersAndFiles(new File[] { new File(localStoreLocation).getParentFile() });
+      LocalDirectoryChooser chooser = LocalDirectoryChooser.getInstance();
+      if (chooser != null) {
+        String[] tempFolders = chooser.getLocalDirs();
+        File[] tempFiles = new File[tempFolders.length];
+        for(int i=0; i < tempFolders.length; i++) {
+          tempFiles[i] = new File(tempFolders[i] + File.separator + loadModel.getTempFolder() );
+        }
+        CarbonUtil.deleteFoldersAndFiles(tempFiles);
+      } else {
+        CarbonUtil.deleteFoldersAndFiles(new File[] {
+            new File(localStoreLocation).getParentFile() });
+      }
       LOGGER.info("Deleted the local store location" + localStoreLocation);
     } catch (CarbonUtilException e) {
       LOGGER.error(e, "Failed to delete local data load folder location");
