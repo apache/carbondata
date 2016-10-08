@@ -19,6 +19,8 @@ package org.apache.carbondata.spark.util
 import java.util
 import java.util.UUID
 
+import scala.collection.mutable.Map
+
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field}
 
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
@@ -208,21 +210,42 @@ object CommonUtil {
   def validateTableBlockSize(tableProperties: Map[String, String]): Unit = {
     var tableBlockSize: Integer = 0
     if (tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).isDefined) {
-      val blockSizeStr: String = tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).get
+      val blockSizeStr: String =
+        parsePropertyValueStringInMB(tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).get)
       try {
         tableBlockSize = Integer.parseInt(blockSizeStr)
       } catch {
         case e: NumberFormatException =>
           throw new MalformedCarbonCommandException("Invalid table_blocksize value found: " +
-                                                    s"$blockSizeStr, only int value from 1 to " +
-                                                    s"2048 is supported.")
+                                                    s"$blockSizeStr, only int value from 1 MB to " +
+                                                    s"2048 MB is supported.")
       }
       if (tableBlockSize < CarbonCommonConstants.BLOCK_SIZE_MIN_VAL ||
           tableBlockSize > CarbonCommonConstants.BLOCK_SIZE_MAX_VAL) {
         throw new MalformedCarbonCommandException("Invalid table_blocksize value found: " +
-                                                  s"$blockSizeStr, only int value from 1 to 2048 " +
-                                                  s"is supported.")
+                                                  s"$blockSizeStr, only int value from 1 MB to " +
+                                                  s"2048 MB is supported.")
       }
+      tableProperties.put(CarbonCommonConstants.TABLE_BLOCKSIZE, blockSizeStr)
     }
   }
+
+  /**
+   * This method will parse the configure string from 'XX MB/M' to 'XX'
+   *
+   * @param propertyValueString
+   */
+  def parsePropertyValueStringInMB(propertyValueString: String): String = {
+    var parsedPropertyValueString: String = propertyValueString
+    if (propertyValueString.trim.toLowerCase.endsWith("mb")) {
+      parsedPropertyValueString = propertyValueString.trim.toLowerCase
+        .substring(0, propertyValueString.trim.toLowerCase.lastIndexOf("mb")).trim
+    }
+    if (propertyValueString.trim.toLowerCase.endsWith("m")) {
+      parsedPropertyValueString = propertyValueString.trim.toLowerCase
+        .substring(0, propertyValueString.trim.toLowerCase.lastIndexOf("m")).trim
+    }
+    parsedPropertyValueString
+  }
+
 }
