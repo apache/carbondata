@@ -62,6 +62,7 @@ import org.apache.carbondata.lcm.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.lcm.fileoperations.FileWriteOperation;
 import org.apache.carbondata.processing.api.dataloader.DataLoadModel;
 import org.apache.carbondata.processing.api.dataloader.SchemaInfo;
+import org.apache.carbondata.processing.constants.TableOptionConstant;
 import org.apache.carbondata.processing.csvload.DataGraphExecuter;
 import org.apache.carbondata.processing.dataprocessor.DataProcessTaskStatus;
 import org.apache.carbondata.processing.dataprocessor.IDataProcessStatus;
@@ -358,9 +359,12 @@ public class StoreCreator {
     schmaModel.setCommentCharacter("#");
     info.setDatabaseName(databaseName);
     info.setTableName(tableName);
-    info.setSerializationNullFormat("serialization_null_format" + "," + "\\N");
-    info.setBadRecordsLoggerEnable("bad_records_logger_enable"+","+"false");
-    info.setBadRecordsLoggerEnable("bad_records_action"+","+"force");
+    info.setSerializationNullFormat(
+        TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName() + "," + "\\N");
+    info.setBadRecordsLoggerEnable(
+        TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName() + "," + "false");
+    info.setBadRecordsLoggerAction(
+        TableOptionConstant.BAD_RECORDS_ACTION.getName() + "," + "force");
 
     generateGraph(schmaModel, info, loadModel.getTableName(), "0", loadModel.getSchema(), null,
         loadModel.getLoadMetadataDetails());

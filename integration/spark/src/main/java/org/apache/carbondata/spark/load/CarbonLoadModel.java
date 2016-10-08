@@ -117,9 +117,9 @@ public class CarbonLoadModel implements Serializable {
   private String badRecordsLoggerEnable;
 
   /**
-   * defines the option to specify the bad record log redirect to raw csv
+   * defines the option to specify the bad record logger action
    */
-  private String badRecordsLoggerRedirect;
+  private String badRecordsAction;
 
   /**
    * Max number of columns that needs to be parsed by univocity parser
@@ -348,7 +348,7 @@ public class CarbonLoadModel implements Serializable {
     copy.segmentId = segmentId;
     copy.serializationNullFormat = serializationNullFormat;
     copy.badRecordsLoggerEnable = badRecordsLoggerEnable;
-    copy.badRecordsLoggerRedirect =badRecordsLoggerRedirect;
+    copy.badRecordsAction = badRecordsAction;
     copy.escapeChar = escapeChar;
     copy.quoteChar = quoteChar;
     copy.commentChar = commentChar;
@@ -391,7 +391,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.segmentId = segmentId;
     copyObj.serializationNullFormat = serializationNullFormat;
     copyObj.badRecordsLoggerEnable = badRecordsLoggerEnable;
-    copyObj.badRecordsLoggerRedirect =badRecordsLoggerRedirect;
+    copyObj.badRecordsAction = badRecordsAction;
     copyObj.escapeChar = escapeChar;
     copyObj.quoteChar = quoteChar;
     copyObj.commentChar = commentChar;
@@ -612,19 +612,19 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   *  returns option to specify the bad record log redirect to raw csv
+   *  returns option to specify the bad record logger action
    * @return
    */
-  public String getBadRecordsLoggerRedirect() {
-    return badRecordsLoggerRedirect;
+  public String getBadRecordsAction() {
+    return badRecordsAction;
   }
 
   /**
-   * set option to specify the bad record log redirect to raw csv
-   * @param badRecordsLoggerRedirect
+   * set option to specify the bad record logger action
+   * @param badRecordsAction
    */
-  public void setBadRecordsLoggerRedirect(String badRecordsLoggerRedirect) {
-    this.badRecordsLoggerRedirect = badRecordsLoggerRedirect;
+  public void setBadRecordsAction(String badRecordsAction) {
+    this.badRecordsAction = badRecordsAction;
   }
 
   public String getRddIteratorKey() {

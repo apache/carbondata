@@ -20,21 +20,24 @@
 package org.apache.carbondata.processing.constants;
 
 /**
- * enum to hold the bad record logger action
+ * enum holds the value related to the ddl option
  */
-public enum LoggerAction {
-
-  FORCE("FORCE"), // data will be converted to null
-  REDIRECT("REDIRECT"), // no null conversion moved to bad record and written to raw csv
-  IGNORE("IGNORE"); // no null conversion moved to bad record and not written to raw csv
+public enum TableOptionConstant {
+  SERIALIZATION_NULL_FORMAT("serialization_null_format"),
+  BAD_RECORDS_LOGGER_ENABLE("bad_records_logger_enable"),
+  BAD_RECORDS_ACTION("bad_records_action");
 
   private String name;
 
-  LoggerAction(String name) {
+  /**
+   * constructor to initialize the enum value
+   * @param name
+   */
+  TableOptionConstant(String name) {
     this.name = name;
   }
 
-  @Override public String toString() {
-    return this.name;
+  public String getName() {
+    return name;
   }
 }
