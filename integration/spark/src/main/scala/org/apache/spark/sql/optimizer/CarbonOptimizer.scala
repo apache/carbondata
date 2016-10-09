@@ -24,16 +24,16 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
-import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.catalyst.trees.TreeNode
 import org.apache.spark.sql.execution.RunnableCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types.{IntegerType, StringType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic
+import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.apache.carbondata.spark.CarbonFilters
 
 /**
@@ -74,10 +74,13 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
   def apply(plan: LogicalPlan): LogicalPlan = {
     if (relations.nonEmpty && !isOptimized(plan)) {
       LOGGER.info("Starting to optimize plan")
-      val startTime = System.currentTimeMillis
+      val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("");
+      val queryStatistic = new QueryStatistic()
       val result = transformCarbonPlan(plan, relations)
-      LOGGER.statistic("Time taken for Carbon Optimizer to optimize: " +
-        ( System.currentTimeMillis - startTime))
+      queryStatistic.addStatistics("Time taken for Carbon Optimizer to optimize: ",
+        System.currentTimeMillis)
+      recorder.recordStatistics(queryStatistic)
+      recorder.logStatistics()
       result
     } else {
       LOGGER.info("Skip CarbonOptimizer")

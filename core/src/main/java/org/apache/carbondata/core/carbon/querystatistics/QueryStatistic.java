@@ -20,6 +20,8 @@ package org.apache.carbondata.core.carbon.querystatistics;
 
 import java.io.Serializable;
 
+import org.apache.commons.lang3.StringUtils;
+
 /**
  * Wrapper class to maintain the query statistics for each phase of the query
  */
@@ -91,6 +93,9 @@ public class QueryStatistic implements Serializable {
    * @return statistic message
    */
   public String getStatistics(String queryWithTaskId) {
+    if (StringUtils.isEmpty(queryWithTaskId)) {
+      return message + timeTaken;
+    }
     return message + " for the taskid : " + queryWithTaskId + " Is : " + timeTaken;
   }
 
