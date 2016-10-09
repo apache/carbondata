@@ -231,10 +231,10 @@ object CommonUtil {
   }
 
   /**
-    * This method will parse the configure string from 'XX MB/M' to 'XX'
-    *
-    * @param propertyValueString
-    */
+   * This method will parse the configure string from 'XX MB/M' to 'XX'
+   *
+   * @param propertyValueString
+   */
   def parsePropertyValueStringInMB(propertyValueString: String): String = {
     var parsedPropertyValueString: String = propertyValueString
     if (propertyValueString.trim.toLowerCase.endsWith("mb")) {
