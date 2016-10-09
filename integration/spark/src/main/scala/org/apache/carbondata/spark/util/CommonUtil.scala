@@ -226,7 +226,7 @@ object CommonUtil {
                                                   s"$blockSizeStr, only int value from 1 MB to " +
                                                   s"2048 MB is supported.")
       }
-      tableProperties += (CarbonCommonConstants.TABLE_BLOCKSIZE -> blockSizeStr)
+      tableProperties.put(CarbonCommonConstants.TABLE_BLOCKSIZE, blockSizeStr)
     }
   }
 
@@ -245,7 +245,7 @@ object CommonUtil {
       parsedPropertyValueString = propertyValueString.trim.toLowerCase
         .substring(0, propertyValueString.trim.toLowerCase.lastIndexOf("m")).trim
     }
-    return parsedPropertyValueString
+    parsedPropertyValueString
   }
 
 }
