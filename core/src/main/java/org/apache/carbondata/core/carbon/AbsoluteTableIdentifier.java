@@ -21,6 +21,7 @@ package org.apache.carbondata.core.carbon;
 import java.io.File;
 import java.io.Serializable;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 
 /**
@@ -72,7 +73,8 @@ public class AbsoluteTableIdentifier implements Serializable {
 
     String tableName = names[names.length - 1];
     String dbName = names[names.length - 2];
-    String storePath = tablePath.substring(0, tablePath.lastIndexOf(dbName));
+    String storePath = tablePath.substring(0, tablePath.lastIndexOf(dbName +
+            CarbonCommonConstants.FILE_SEPARATOR + tableName));
 
     CarbonTableIdentifier identifier =
         new CarbonTableIdentifier(dbName, tableName, Long.toString(System.currentTimeMillis()));
