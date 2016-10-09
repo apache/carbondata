@@ -57,13 +57,13 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
           (ID Int, date Timestamp, country String,
           name String, phonetype String, serialname String, salary Int)
           STORED BY 'org.apache.carbondata.format'
-          TBLPROPERTIES('table_blocksize'='4096')
+          TBLPROPERTIES('table_blocksize'='4096 MB')
         """)
       assert(false)
     } catch {
       case e : MalformedCarbonCommandException => {
         assert(e.getMessage.equals("Invalid table_blocksize value found: 4096, " +
-          "only int value from 1 to 2048 is supported."))
+          "only int value from 1 MB to 2048 MB is supported."))
       }
     }
   }
@@ -76,13 +76,13 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
           (ID Int, date Timestamp, country String,
           name String, phonetype String, serialname String, salary Int)
           STORED BY 'org.apache.carbondata.format'
-          TBLPROPERTIES('table_blocksize'='10Y4')
+          TBLPROPERTIES('table_blocksize'='10Y4 MB')
         """)
       assert(false)
     } catch {
       case e : MalformedCarbonCommandException => {
         assert(e.getMessage.equals("Invalid table_blocksize value found: 10y4, " +
-          "only int value from 1 to 2048 is supported."))
+          "only int value from 1 MB to 2048 MB is supported."))
       }
     }
   }
@@ -95,7 +95,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
         (ID Int, date Timestamp, country String,
         name String, phonetype String, serialname String, salary Int)
         STORED BY 'org.apache.carbondata.format'
-        TBLPROPERTIES('table_blocksize'='512')
+        TBLPROPERTIES('table_blocksize'='512 MB')
       """)
 
     CarbonProperties.getInstance()

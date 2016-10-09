@@ -24,6 +24,7 @@ import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.Map
 import scala.language.implicitConversions
 import scala.util.Random
 
@@ -1029,7 +1030,7 @@ private[sql] case class LoadTable(
     tableName: String,
     factPathFromUser: String,
     dimFilesPath: Seq[DataLoadTableFileMapping],
-    partionValues: Map[String, String],
+    partionValues: scala.collection.immutable.Map[String, String],
     isOverwriteExist: Boolean = false,
     var inputSqlString: String = null) extends RunnableCommand {
 

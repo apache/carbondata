@@ -21,6 +21,7 @@ import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.LinkedHashSet
+import scala.collection.mutable.Map
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 
