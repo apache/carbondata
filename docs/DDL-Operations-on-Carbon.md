@@ -67,6 +67,14 @@ Here, DICTIONARY_EXCLUDE will exclude dictionary creation. This is applicable fo
   ```ruby
   TBLPROPERTIES ("COLUMN_GROUPS"="(column1,column3),(Column4,Column5,Column6)") 
   ```
+ - **Table Block Size Configuration**
+
+   The block size of one table's files on hdfs can be defined using an int value whose size is in MB, the range is form 1MB to 2048MB and the default value is 1024MB, if user didn't define this values in ddl, it would use default value to set.
+
+  ```ruby
+  TBLPROPERTIES ("TABLE_BLOCKSIZE"="512 MB")
+  ```
+Here 512 MB means the block size of this table is 512 MB, user also can set it as 512M or 512.
  - **Inverted Index Configuration**
 
    Inverted index is very useful to improve compression ratio and query speed, especially for those low-cardinality columns who are in reward position.
