@@ -21,25 +21,36 @@ package org.apache.carbondata.processing.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
+import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastorage.store.filesystem.*;
+import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.apache.carbondata.core.load.LoadMetadataDetails;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.CarbonUtilException;
+import org.apache.carbondata.processing.datatypes.ArrayDataType;
+import org.apache.carbondata.processing.datatypes.GenericDataType;
+import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
+import org.apache.carbondata.processing.datatypes.StructDataType;
+import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Const;
@@ -279,5 +290,114 @@ public final class CarbonDataProcessorUtil {
         carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId + "");
     String localDataLoadFolderLocation = carbonDataDirectoryPath + File.separator + taskId;
     return localDataLoadFolderLocation;
+  }
+
+  /**
+   * Preparing the boolean [] to map whether the dimension is no Dictionary or not.
+   */
+  public static boolean[] getNoDictionaryMapping(DataField[] fields) {
+    List<Boolean> noDictionaryMapping = new ArrayList<Boolean>();
+    for (DataField field : fields) {
+      // for  complex type need to break the loop
+      if (field.getColumn().isComplex()) {
+        break;
+      }
+
+      if (!field.hasDictionaryEncoding() && field.getColumn().isDimesion()) {
+        noDictionaryMapping.add(true);
+      } else if (field.getColumn().isDimesion()) {
+        noDictionaryMapping.add(false);
+      }
+    }
+    return ArrayUtils
+        .toPrimitive(noDictionaryMapping.toArray(new Boolean[noDictionaryMapping.size()]));
+  }
+
+  /**
+   * Preparing the boolean [] to map whether the dimension use inverted index or not.
+   */
+  public static boolean[] getIsUseInvertedIndex(DataField[] fields) {
+    List<Boolean> isUseInvertedIndexList = new ArrayList<Boolean>();
+    for (DataField field : fields) {
+      if (field.getColumn().isUseInvertedIndnex() && field.getColumn().isDimesion()) {
+        isUseInvertedIndexList.add(true);
+      } else if(field.getColumn().isDimesion()){
+        isUseInvertedIndexList.add(false);
+      }
+    }
+    return ArrayUtils
+        .toPrimitive(isUseInvertedIndexList.toArray(new Boolean[isUseInvertedIndexList.size()]));
+  }
+
+  private static String getComplexTypeString(DataField[] dataFields) {
+    StringBuilder dimString = new StringBuilder();
+    for (int i = 0; i < dataFields.length; i++) {
+      DataField dataField = dataFields[i];
+      if (dataField.getColumn().getDataType().equals(DataType.ARRAY) || dataField.getColumn()
+          .getDataType().equals(DataType.STRUCT)) {
+        addAllComplexTypeChildren((CarbonDimension) dataField.getColumn(), dimString, "");
+        dimString.append(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
+      }
+    }
+    return dimString.toString();
+  }
+
+  /**
+   * This method will return all the child dimensions under complex dimension
+   *
+   */
+  private static void addAllComplexTypeChildren(CarbonDimension dimension, StringBuilder dimString,
+      String parent) {
+    dimString.append(
+        dimension.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER + dimension.getDataType()
+            + CarbonCommonConstants.COLON_SPC_CHARACTER + parent
+            + CarbonCommonConstants.COLON_SPC_CHARACTER + dimension.getColumnId()
+            + CarbonCommonConstants.HASH_SPC_CHARACTER);
+    for (int i = 0; i < dimension.getNumberOfChild(); i++) {
+      CarbonDimension childDim = dimension.getListOfChildDimensions().get(i);
+      if (childDim.getNumberOfChild() > 0) {
+        addAllComplexTypeChildren(childDim, dimString, dimension.getColName());
+      } else {
+        dimString.append(
+            childDim.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER + childDim
+                .getDataType() + CarbonCommonConstants.COLON_SPC_CHARACTER + dimension.getColName()
+                + CarbonCommonConstants.COLON_SPC_CHARACTER + childDim.getColumnId()
+                + CarbonCommonConstants.COLON_SPC_CHARACTER + childDim.getOrdinal()
+                + CarbonCommonConstants.HASH_SPC_CHARACTER);
+      }
+    }
+  }
+
+  // TODO: need to simplify it. Not required create string first.
+  public static Map<String, GenericDataType> getComplexTypesMap(DataField[] dataFields) {
+    String complexTypeString = getComplexTypeString(dataFields);
+    if (null == complexTypeString) {
+      return new LinkedHashMap<>();
+    }
+    Map<String, GenericDataType> complexTypesMap = new LinkedHashMap<String, GenericDataType>();
+    String[] hierarchies = complexTypeString.split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
+    for (int i = 0; i < hierarchies.length; i++) {
+      String[] levels = hierarchies[i].split(CarbonCommonConstants.HASH_SPC_CHARACTER);
+      String[] levelInfo = levels[0].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
+      GenericDataType g = levelInfo[1].equals(CarbonCommonConstants.ARRAY) ?
+          new ArrayDataType(levelInfo[0], "", levelInfo[3]) :
+          new StructDataType(levelInfo[0], "", levelInfo[3]);
+      complexTypesMap.put(levelInfo[0], g);
+      for (int j = 1; j < levels.length; j++) {
+        levelInfo = levels[j].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
+        switch (levelInfo[1]) {
+          case CarbonCommonConstants.ARRAY:
+            g.addChildren(new ArrayDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
+            break;
+          case CarbonCommonConstants.STRUCT:
+            g.addChildren(new StructDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
+            break;
+          default:
+            g.addChildren(new PrimitiveDataType(levelInfo[0], levelInfo[2], levelInfo[3],
+                Integer.parseInt(levelInfo[4])));
+        }
+      }
+    }
+    return complexTypesMap;
   }
 }

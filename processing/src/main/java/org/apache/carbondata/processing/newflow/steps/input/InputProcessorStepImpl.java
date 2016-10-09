@@ -1,0 +1,98 @@
+package org.apache.carbondata.processing.newflow.steps.input;
+
+import java.io.IOException;
+import java.util.Iterator;
+
+import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.processing.newflow.CarbonArrayWritable;
+import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
+import org.apache.carbondata.processing.newflow.DataField;
+import org.apache.carbondata.processing.newflow.DataLoadProcessorStep;
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
+import org.apache.carbondata.processing.newflow.parser.CarbonParserFactory;
+import org.apache.carbondata.processing.newflow.parser.GenericParser;
+
+import org.apache.hadoop.mapred.RecordReader;
+
+/**
+ * It reads data from record reader and sends data to next step.
+ */
+public class InputProcessorStepImpl implements DataLoadProcessorStep {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(InputProcessorStepImpl.class.getName());
+
+  private RecordReader<Void, CarbonArrayWritable> recordReader;
+
+  private CarbonDataLoadConfiguration configuration;
+
+  private GenericParser[] genericParsers;
+
+  @Override public DataField[] getOutput() {
+    DataField[] fields = configuration.getDataFields();
+    String[] header = configuration.getHeader();
+    DataField[] output = new DataField[fields.length];
+    int k = 0;
+    for (int i = 0; i < header.length; i++) {
+      for (int j = 0; j < fields.length; j++) {
+        if (header[j].equalsIgnoreCase(fields[j].getColumn().getColName())) {
+          output[k++] = fields[j];
+          break;
+        }
+      }
+    }
+    return output;
+  }
+
+  @Override
+  public void intialize(CarbonDataLoadConfiguration configuration, DataLoadProcessorStep child)
+      throws CarbonDataLoadingException {
+    this.recordReader = configuration.getRecordReader();
+    this.configuration = configuration;
+    DataField[] output = getOutput();
+    genericParsers = new GenericParser[output.length];
+    for (int i = 0; i < genericParsers.length; i++) {
+      genericParsers[i] = CarbonParserFactory
+          .createParser(output[i].getColumn(), configuration.getComplexDelimiters());
+    }
+
+    if (child != null) {
+      child.intialize(configuration, child);
+    }
+  }
+
+  @Override public Iterator<Object[]> execute() {
+
+    return new CarbonIterator<Object[]>() {
+      CarbonArrayWritable data = new CarbonArrayWritable();
+
+      @Override public boolean hasNext() {
+        try {
+          return recordReader.next(null, data);
+        } catch (IOException e) {
+          LOGGER.error(e);
+        }
+        return false;
+      }
+
+      @Override public Object[] next() {
+
+        Object[] row = data.get();
+        for (int i = 0; i < row.length; i++) {
+          row[i] = genericParsers[i].parse(row[i].toString());
+        }
+        return row;
+      }
+    };
+  }
+
+  @Override public void finish() {
+    try {
+      this.recordReader.close();
+    } catch (IOException e) {
+      LOGGER.error(e);
+    }
+  }
+}
