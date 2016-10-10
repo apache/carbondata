@@ -81,11 +81,12 @@ public class FilterScanner extends AbstractBlockletScanner {
    * @throws QueryExecutionException
    * @throws FilterUnsupportedException
    */
-  @Override public AbstractScannedResult scanBlocklet(
-      BlocksChunkHolder blocksChunkHolder, QueryStatisticsRecorder recoder)
+  @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder,
+                                                      QueryStatisticsRecorder recoder,
+                                                      QueryStatistic queryStatistic)
       throws QueryExecutionException {
     try {
-      fillScannedResult(blocksChunkHolder, recoder);
+      fillScannedResult(blocksChunkHolder, recoder, queryStatistic);
     } catch (FilterUnsupportedException e) {
       throw new QueryExecutionException(e.getMessage());
     }
@@ -108,8 +109,9 @@ public class FilterScanner extends AbstractBlockletScanner {
    * @param blocksChunkHolder
    * @throws FilterUnsupportedException
    */
-  private void fillScannedResult(
-      BlocksChunkHolder blocksChunkHolder, QueryStatisticsRecorder recoder)
+  private void fillScannedResult(BlocksChunkHolder blocksChunkHolder,
+                                 QueryStatisticsRecorder recoder,
+                                 QueryStatistic queryStatistic)
       throws FilterUnsupportedException {
 
     scannedResult.reset();
@@ -128,7 +130,6 @@ public class FilterScanner extends AbstractBlockletScanner {
     BitSet bitSet = this.filterExecuter.applyFilter(blocksChunkHolder);
     //scanned blocklet
     noOfScannedBlocklet++;
-    QueryStatistic queryStatistic = new QueryStatistic();
     queryStatistic.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKLET_NUM,
         noOfScannedBlocklet);
     recoder.recordStatistics(queryStatistic);

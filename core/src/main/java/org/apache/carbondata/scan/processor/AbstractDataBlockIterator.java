@@ -24,6 +24,7 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.scan.collector.ScannedResultCollector;
@@ -109,17 +110,17 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     }
   }
 
-  protected boolean updateScanner(QueryStatisticsRecorder recorder) {
+  protected boolean updateScanner(QueryStatisticsRecorder recorder, QueryStatistic queryStatistic) {
     try {
       if (scannedResult != null && scannedResult.hasNext()) {
         return true;
       } else {
-        scannedResult = getNextScannedResult(recorder);
+        scannedResult = getNextScannedResult(recorder, queryStatistic);
         while (scannedResult != null) {
           if (scannedResult.hasNext()) {
             return true;
           }
-          scannedResult = getNextScannedResult(recorder);
+          scannedResult = getNextScannedResult(recorder, queryStatistic);
         }
         return false;
       }
@@ -128,12 +129,13 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     }
   }
 
-  private AbstractScannedResult getNextScannedResult(QueryStatisticsRecorder recorder)
+  private AbstractScannedResult getNextScannedResult(QueryStatisticsRecorder recorder,
+                                                     QueryStatistic queryStatistic)
       throws QueryExecutionException {
     if (dataBlockIterator.hasNext()) {
       blocksChunkHolder.setDataBlock(dataBlockIterator.next());
       blocksChunkHolder.reset();
-      return blockletScanner.scanBlocklet(blocksChunkHolder, recorder);
+      return blockletScanner.scanBlocklet(blocksChunkHolder, recorder, queryStatistic);
     }
     return null;
   }
