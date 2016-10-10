@@ -49,7 +49,6 @@ public class FilterScanner extends AbstractBlockletScanner {
    */
   private FilterExecuter filterExecuter;
   private int noOfScannedBlocklet;
-  private int noOfNoneEmptyScannedBlocklet;
   /**
    * this will be used to apply min max
    * this will be useful for dimension column which is on the right side
@@ -139,6 +138,7 @@ public class FilterScanner extends AbstractBlockletScanner {
       scannedResult.setIndexes(new int[0]);
       return;
     }
+    // get the row indexes from bot set
     int[] indexes = new int[bitSet.cardinality()];
     int index = 0;
     for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
