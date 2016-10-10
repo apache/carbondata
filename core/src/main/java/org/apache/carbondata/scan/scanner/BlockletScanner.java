@@ -40,6 +40,7 @@ public interface BlockletScanner {
    */
   AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder,
                                      QueryStatisticsRecorder recorder,
-                                     QueryStatistic queryStatistic)
+                                     QueryStatistic queryStatisticBlocklet,
+                                     QueryStatistic queryStatisticValidBlocklet)
       throws QueryExecutionException;
 }

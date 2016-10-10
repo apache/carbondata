@@ -32,7 +32,8 @@ import org.apache.carbondata.scan.processor.AbstractDataBlockIterator;
  */
 public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
   private QueryStatisticsRecorder recorder;
-  private QueryStatistic queryStatistic;
+  private QueryStatistic queryStatisticBlocklet;
+  private QueryStatistic queryStatisticValidBlocklet;
   /**
    * DataBlockIteratorImpl Constructor
    *
@@ -42,7 +43,8 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
       int batchSize, QueryStatisticsRecorder recorder) {
     super(blockExecutionInfo, fileReader, batchSize);
     this.recorder = recorder;
-    this.queryStatistic = new QueryStatistic();
+    this.queryStatisticBlocklet = new QueryStatistic();
+    this.queryStatisticValidBlocklet = new QueryStatistic();
   }
 
   /**
@@ -52,9 +54,10 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
    */
   public List<Object[]> next() {
     List<Object[]> collectedResult = null;
-    if (updateScanner(recorder, queryStatistic)) {
+    if (updateScanner(recorder, queryStatisticBlocklet, queryStatisticValidBlocklet)) {
       collectedResult = this.scannerResultAggregator.collectData(scannedResult, batchSize);
-      while (collectedResult.size() < batchSize && updateScanner(recorder, queryStatistic)) {
+      while (collectedResult.size() < batchSize &&
+          updateScanner(recorder, queryStatisticBlocklet, queryStatisticValidBlocklet)) {
         List<Object[]> data = this.scannerResultAggregator
             .collectData(scannedResult, batchSize - collectedResult.size());
         collectedResult.addAll(data);

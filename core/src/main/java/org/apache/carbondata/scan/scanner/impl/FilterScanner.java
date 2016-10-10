@@ -49,6 +49,7 @@ public class FilterScanner extends AbstractBlockletScanner {
    */
   private FilterExecuter filterExecuter;
   private int noOfScannedBlocklet;
+  private int noOfValidScannedBlocklet;
   /**
    * this will be used to apply min max
    * this will be useful for dimension column which is on the right side
@@ -83,10 +84,12 @@ public class FilterScanner extends AbstractBlockletScanner {
    */
   @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder,
                                                       QueryStatisticsRecorder recoder,
-                                                      QueryStatistic queryStatistic)
+                                                      QueryStatistic queryStatisticBlocklet,
+                                                      QueryStatistic queryStatisticValidBlocklet)
       throws QueryExecutionException {
     try {
-      fillScannedResult(blocksChunkHolder, recoder, queryStatistic);
+      fillScannedResult(blocksChunkHolder, recoder, queryStatisticBlocklet,
+          queryStatisticValidBlocklet);
     } catch (FilterUnsupportedException e) {
       throw new QueryExecutionException(e.getMessage());
     }
@@ -111,7 +114,8 @@ public class FilterScanner extends AbstractBlockletScanner {
    */
   private void fillScannedResult(BlocksChunkHolder blocksChunkHolder,
                                  QueryStatisticsRecorder recoder,
-                                 QueryStatistic queryStatistic)
+                                 QueryStatistic queryStatisticBlocklet,
+                                 QueryStatistic queryStatisticValidBlocklet)
       throws FilterUnsupportedException {
 
     scannedResult.reset();
@@ -130,15 +134,19 @@ public class FilterScanner extends AbstractBlockletScanner {
     BitSet bitSet = this.filterExecuter.applyFilter(blocksChunkHolder);
     //scanned blocklet
     noOfScannedBlocklet++;
-    queryStatistic.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKLET_NUM,
+    queryStatisticBlocklet.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKLET_NUM,
         noOfScannedBlocklet);
-    recoder.recordStatistics(queryStatistic);
+    recoder.recordStatistics(queryStatisticBlocklet);
     // if indexes is empty then return with empty result
     if (bitSet.isEmpty()) {
       scannedResult.setNumberOfRows(0);
       scannedResult.setIndexes(new int[0]);
       return;
     }
+    noOfValidScannedBlocklet++;
+    queryStatisticValidBlocklet.addCountStatistic(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM,
+        noOfValidScannedBlocklet);
+    recoder.recordStatistics(queryStatisticValidBlocklet);
     // get the row indexes from bot set
     int[] indexes = new int[bitSet.cardinality()];
     int index = 0;

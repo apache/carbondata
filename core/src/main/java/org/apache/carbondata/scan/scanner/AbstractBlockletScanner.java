@@ -46,7 +46,8 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
 
   @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder,
                                                       QueryStatisticsRecorder recorder,
-                                                      QueryStatistic queryStatistic)
+                                                      QueryStatistic queryStatisticBlocklet,
+                                                      QueryStatistic queryStatisticValidBlocklet)
       throws QueryExecutionException {
     fillKeyValue(blocksChunkHolder);
     return scannedResult;

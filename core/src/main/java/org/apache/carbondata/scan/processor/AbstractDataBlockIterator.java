@@ -110,17 +110,21 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     }
   }
 
-  protected boolean updateScanner(QueryStatisticsRecorder recorder, QueryStatistic queryStatistic) {
+  protected boolean updateScanner(QueryStatisticsRecorder recorder,
+                                  QueryStatistic queryStatisticBlocklet,
+                                  QueryStatistic queryStatisticValidBlocklet) {
     try {
       if (scannedResult != null && scannedResult.hasNext()) {
         return true;
       } else {
-        scannedResult = getNextScannedResult(recorder, queryStatistic);
+        scannedResult =
+            getNextScannedResult(recorder, queryStatisticBlocklet, queryStatisticValidBlocklet);
         while (scannedResult != null) {
           if (scannedResult.hasNext()) {
             return true;
           }
-          scannedResult = getNextScannedResult(recorder, queryStatistic);
+          scannedResult =
+              getNextScannedResult(recorder, queryStatisticBlocklet, queryStatisticValidBlocklet);
         }
         return false;
       }
@@ -130,12 +134,14 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
   }
 
   private AbstractScannedResult getNextScannedResult(QueryStatisticsRecorder recorder,
-                                                     QueryStatistic queryStatistic)
+                                                     QueryStatistic queryStatisticBlocklet,
+                                                     QueryStatistic queryStatisticValidBlocklet)
       throws QueryExecutionException {
     if (dataBlockIterator.hasNext()) {
       blocksChunkHolder.setDataBlock(dataBlockIterator.next());
       blocksChunkHolder.reset();
-      return blockletScanner.scanBlocklet(blocksChunkHolder, recorder, queryStatistic);
+      return blockletScanner.scanBlocklet(blocksChunkHolder, recorder,
+          queryStatisticBlocklet, queryStatisticValidBlocklet);
     }
     return null;
   }
