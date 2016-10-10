@@ -35,7 +35,7 @@ class NullMeasureValueTestCaseAggregate extends QueryTest with BeforeAndAfterAll
         "phonetype String, serialname String, salary Int) STORED BY 'org.apache.carbondata.format'"
     )
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql("LOAD DATA LOCAL INPATH './src/test/resources/nullmeasurevalue.csv' into table t3");
   }
 

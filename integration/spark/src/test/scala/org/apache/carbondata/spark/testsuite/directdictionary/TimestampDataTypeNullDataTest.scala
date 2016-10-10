@@ -56,7 +56,7 @@ class TimestampDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
       )
 
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
       val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
         .getCanonicalPath
       val csvFilePath = currentDirectory + "/src/test/resources/datasamplenull.csv"
@@ -71,7 +71,7 @@ class TimestampDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
   test("SELECT max(date) FROM timestampTyeNullData where date is not null") {
     checkAnswer(
       sql("SELECT max(date) FROM timestampTyeNullData where date is not null"),
-      Seq(Row(Timestamp.valueOf("2015-01-23 00:07:00.0"))
+      Seq(Row(Timestamp.valueOf("2015-07-23 00:00:00.0"))
       )
     )
   }

@@ -383,7 +383,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
       """
     )
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(
       s"""
            LOAD DATA LOCAL INPATH './src/test/resources/datawithbackslash.csv' into table escapechar1

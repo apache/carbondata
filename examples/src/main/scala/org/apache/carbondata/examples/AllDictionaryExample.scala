@@ -32,7 +32,7 @@ object AllDictionaryExample {
       testData, allDictFile, csvHeader, dictCol)
     // Specify timestamp format based on raw data
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
     cc.sql("DROP TABLE IF EXISTS t3")
 
