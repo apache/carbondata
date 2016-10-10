@@ -21,6 +21,7 @@ package org.apache.carbondata.scan.processor.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.processor.AbstractDataBlockIterator;
@@ -29,15 +30,14 @@ import org.apache.carbondata.scan.processor.AbstractDataBlockIterator;
  * Below class will be used to process the block for detail query
  */
 public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
-
   /**
    * DataBlockIteratorImpl Constructor
    *
    * @param blockExecutionInfo execution information
    */
   public DataBlockIteratorImpl(BlockExecutionInfo blockExecutionInfo, FileHolder fileReader,
-      int batchSize) {
-    super(blockExecutionInfo, fileReader, batchSize);
+      int batchSize, QueryStatisticsModel queryStatisticsModel) {
+    super(blockExecutionInfo, fileReader, batchSize, queryStatisticsModel);
   }
 
   /**
