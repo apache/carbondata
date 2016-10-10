@@ -45,7 +45,7 @@ class TestEmptyRows extends QueryTest with BeforeAndAfterAll {
         "terminated by ','"
     )
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
     val csvFilePath = currentDirectory + "/src/test/resources/emptyrow/emptyRows.csv"

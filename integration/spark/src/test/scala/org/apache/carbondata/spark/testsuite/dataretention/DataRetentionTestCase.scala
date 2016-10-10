@@ -76,7 +76,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     CarbonProperties.getInstance.addProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME, "1")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     sql(
       "CREATE table DataRetentionTable (ID int, date String, country String, name " +
       "String," +

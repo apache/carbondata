@@ -60,7 +60,7 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
             .getCanonicalPath)
 
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
       val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
         .getCanonicalPath
       var csvFilePath = currentDirectory + "/src/test/resources/badrecords/datasample.csv"
