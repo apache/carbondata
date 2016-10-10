@@ -21,6 +21,7 @@ package org.apache.carbondata.scan.processor.impl;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.processor.AbstractDataBlockIterator;
@@ -29,15 +30,16 @@ import org.apache.carbondata.scan.processor.AbstractDataBlockIterator;
  * Below class will be used to process the block for detail query
  */
 public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
-
+  private QueryStatisticsRecorder recorder;
   /**
    * DataBlockIteratorImpl Constructor
    *
    * @param blockExecutionInfo execution information
    */
   public DataBlockIteratorImpl(BlockExecutionInfo blockExecutionInfo, FileHolder fileReader,
-      int batchSize) {
+      int batchSize, QueryStatisticsRecorder recorder) {
     super(blockExecutionInfo, fileReader, batchSize);
+    this.recorder = recorder;
   }
 
   /**
@@ -47,9 +49,9 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
    */
   public List<Object[]> next() {
     List<Object[]> collectedResult = null;
-    if (updateScanner()) {
+    if (updateScanner(recorder)) {
       collectedResult = this.scannerResultAggregator.collectData(scannedResult, batchSize);
-      while (collectedResult.size() < batchSize && updateScanner()) {
+      while (collectedResult.size() < batchSize && updateScanner(recorder)) {
         List<Object[]> data = this.scannerResultAggregator
             .collectData(scannedResult, batchSize - collectedResult.size());
         collectedResult.addAll(data);

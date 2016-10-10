@@ -154,7 +154,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     if (blockExecutionInfos.size() > 0) {
       BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
       blockExecutionInfos.remove(executionInfo);
-      return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize);
+      return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize, recorder);
     }
     return null;
   }

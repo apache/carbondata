@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.scan.scanner;
 
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
@@ -42,7 +43,8 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     this.blockExecutionInfo = tableBlockExecutionInfos;
   }
 
-  @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
+  @Override public AbstractScannedResult scanBlocklet(
+      BlocksChunkHolder blocksChunkHolder, QueryStatisticsRecorder recorder)
       throws QueryExecutionException {
     fillKeyValue(blocksChunkHolder);
     return scannedResult;

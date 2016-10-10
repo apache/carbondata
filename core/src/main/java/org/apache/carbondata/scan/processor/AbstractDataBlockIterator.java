@@ -24,6 +24,7 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.scan.collector.ScannedResultCollector;
 import org.apache.carbondata.scan.collector.impl.DictionaryBasedResultCollector;
@@ -108,17 +109,17 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     }
   }
 
-  protected boolean updateScanner() {
+  protected boolean updateScanner(QueryStatisticsRecorder recorder) {
     try {
       if (scannedResult != null && scannedResult.hasNext()) {
         return true;
       } else {
-        scannedResult = getNextScannedResult();
+        scannedResult = getNextScannedResult(recorder);
         while (scannedResult != null) {
           if (scannedResult.hasNext()) {
             return true;
           }
-          scannedResult = getNextScannedResult();
+          scannedResult = getNextScannedResult(recorder);
         }
         return false;
       }
@@ -127,11 +128,12 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     }
   }
 
-  private AbstractScannedResult getNextScannedResult() throws QueryExecutionException {
+  private AbstractScannedResult getNextScannedResult(QueryStatisticsRecorder recorder)
+      throws QueryExecutionException {
     if (dataBlockIterator.hasNext()) {
       blocksChunkHolder.setDataBlock(dataBlockIterator.next());
       blocksChunkHolder.reset();
-      return blockletScanner.scanBlocklet(blocksChunkHolder);
+      return blockletScanner.scanBlocklet(blocksChunkHolder, recorder);
     }
     return null;
   }

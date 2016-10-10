@@ -48,6 +48,8 @@ public interface QueryStatisticsConstants {
 
   String RESULT_SIZE = "The size of query result";
 
+  String SCAN_BLOCKLET_NUM = "The size of scanned blocklet";
+
   // clear no-use statistics timeout
   long CLEAR_STATISTICS_TIMEOUT = 60 * 1000 * 1000000L;
 

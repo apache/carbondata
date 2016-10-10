@@ -22,6 +22,9 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -45,7 +48,8 @@ public class FilterScanner extends AbstractBlockletScanner {
    * filter tree
    */
   private FilterExecuter filterExecuter;
-
+  private int noOfScannedBlocklet;
+  private int noOfNoneEmptyScannedBlocklet;
   /**
    * this will be used to apply min max
    * this will be useful for dimension column which is on the right side
@@ -78,10 +82,11 @@ public class FilterScanner extends AbstractBlockletScanner {
    * @throws QueryExecutionException
    * @throws FilterUnsupportedException
    */
-  @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
+  @Override public AbstractScannedResult scanBlocklet(
+      BlocksChunkHolder blocksChunkHolder, QueryStatisticsRecorder recoder)
       throws QueryExecutionException {
     try {
-      fillScannedResult(blocksChunkHolder);
+      fillScannedResult(blocksChunkHolder, recoder);
     } catch (FilterUnsupportedException e) {
       throw new QueryExecutionException(e.getMessage());
     }
@@ -104,7 +109,8 @@ public class FilterScanner extends AbstractBlockletScanner {
    * @param blocksChunkHolder
    * @throws FilterUnsupportedException
    */
-  private void fillScannedResult(BlocksChunkHolder blocksChunkHolder)
+  private void fillScannedResult(
+      BlocksChunkHolder blocksChunkHolder, QueryStatisticsRecorder recoder)
       throws FilterUnsupportedException {
 
     scannedResult.reset();
@@ -121,13 +127,18 @@ public class FilterScanner extends AbstractBlockletScanner {
     }
     // apply filter on actual data
     BitSet bitSet = this.filterExecuter.applyFilter(blocksChunkHolder);
+    //scanned blocklet
+    noOfScannedBlocklet++;
+    QueryStatistic queryStatistic = new QueryStatistic();
+    queryStatistic.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKLET_NUM,
+        noOfScannedBlocklet);
+    recoder.recordStatistics(queryStatistic);
     // if indexes is empty then return with empty result
     if (bitSet.isEmpty()) {
       scannedResult.setNumberOfRows(0);
       scannedResult.setIndexes(new int[0]);
       return;
     }
-    // get the row indexes from bot set
     int[] indexes = new int[bitSet.cardinality()];
     int index = 0;
     for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
