@@ -130,17 +130,17 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder,Seri
         }
       }
       String headers = "task_id,load_blocks_time,load_dictionary_time,scan_blocks_time," +
-          "scan_blocks_num,result_size,total_executor_time,scan_blocklet_num,valid_scan_blocklet";
+          "total_executor_time,scan_blocks_num,scan_blocklet_num,valid_scan_blocklet,result_size";
       List<String> values = new ArrayList<String>();
       values.add(queryIWthTask);
       values.add(load_blocks_time);
       values.add(load_dictionary_time);
       values.add(scan_blocks_time);
-      values.add(scan_blocks_num);
-      values.add(result_size);
       values.add(total_executor_time);
+      values.add(scan_blocks_num);
       values.add(scan_blocklet);
       values.add(valid_scan_blocklet);
+      values.add(result_size);
       StringBuilder tableInfo = new StringBuilder();
       String[] columns = headers.split(",");
       String line = "";
