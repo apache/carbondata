@@ -67,7 +67,7 @@ public class DataLoadModel {
 
   private String rddIteratorKey;
 
-  private String timeFormat;
+  private String dateFormat;
 
   private String maxColumns;
   /**
@@ -218,9 +218,9 @@ public class DataLoadModel {
     this.commentCharacter = commentCharacter;
   }
 
-  public String getTimeFormat() { return timeFormat; }
+  public String getDateFormat() { return dateFormat; }
 
-  public void setTimeFormat(String timeFormat) { this.timeFormat = timeFormat; }
+  public void setDateFormat(String dateFormat) { this.dateFormat = dateFormat; }
   /**
    * @return
    */

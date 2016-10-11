@@ -196,5 +196,5 @@ public interface IDataProcessStatus {
 
   String getRddIteratorKey();
 
-  String getTimeFormat();
+  String getDateFormat();
 }

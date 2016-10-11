@@ -19,7 +19,6 @@
 
 package org.apache.carbondata.processing.surrogatekeysgenerator.csvbased;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -109,9 +108,9 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    */
   protected Map<String, String[]> hierColumnMap;
   /**
-   * timeFormat
+   * dateFormat
    */
-  protected String timeFormat;
+  protected String dateFormat;
   /**
    * timeDimeIndex
    */
@@ -605,9 +604,9 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     this.generateDimFiles = generateDimFiles;
   }
 
-  public String getTimeFormat() { return timeFormat; }
+  public String getDateFormat() { return dateFormat; }
 
-  public void setTimeFormat(String timeFormat) { this.timeFormat = timeFormat; }
+  public void setDateFormat(String dateFormat) { this.dateFormat = dateFormat; }
 
   /**
    * set sensible defaults for a new step
@@ -655,7 +654,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     columnSchemaDetails = "";
     columnsDataTypeString="";
     tableOption = "";
-    timeFormat = CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT;
+    dateFormat = "";
   }
 
   // helper method to allocate the arrays
@@ -689,7 +688,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
         .append(XMLHandler.addTagValue("complexDelimiterLevel1", complexDelimiterLevel1));
     retval.append("    ")
         .append(XMLHandler.addTagValue("complexDelimiterLevel2", complexDelimiterLevel2));
-    retval.append("    ").append(XMLHandler.addTagValue("timeFormat", timeFormat));
+    retval.append("    ").append(XMLHandler.addTagValue("dateFormat", dateFormat));
     retval.append("    ").append(XMLHandler.addTagValue("primaryKeysString", primaryKeysString));
     retval.append("    ").append(XMLHandler.addTagValue("carbonMeasureNames", carbonMeasureNames));
     retval.append("    ").append(XMLHandler.addTagValue("actualDimNames", actualDimNames));
@@ -746,7 +745,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       columnPropertiesString = XMLHandler.getTagValue(stepnode, "columnPropertiesString");
       complexDelimiterLevel1 = XMLHandler.getTagValue(stepnode, "complexDelimiterLevel1");
       complexDelimiterLevel2 = XMLHandler.getTagValue(stepnode, "complexDelimiterLevel2");
-      timeFormat = XMLHandler.getTagValue(stepnode, "timeFormat");
+      dateFormat = XMLHandler.getTagValue(stepnode, "dateFormat");
       primaryKeysString = XMLHandler.getTagValue(stepnode, "primaryKeysString");
       carbonMeasureNames = XMLHandler.getTagValue(stepnode, "carbonMeasureNames");
       actualDimNames = XMLHandler.getTagValue(stepnode, "actualDimNames");
@@ -1340,6 +1339,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       taskNo = rep.getStepAttributeString(idStep, "taskNo");
       columnSchemaDetails = rep.getStepAttributeString(idStep, "columnSchemaDetails");
       tableOption = rep.getStepAttributeString(idStep, "tableOption");
+      dateFormat = rep.getStepAttributeString(idStep, "dateFormat");
       int nrKeys = rep.countNrStepAttributes(idStep, "lookup_keyfield");
       allocate(nrKeys);
     } catch (Exception e) {
@@ -1393,6 +1393,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       rep.saveStepAttribute(idTransformation, idStep, "taskNo", taskNo);
       rep.saveStepAttribute(idTransformation, idStep, "columnSchemaDetails", columnSchemaDetails);
       rep.saveStepAttribute(idTransformation, idStep, "tableOption", tableOption);
+      rep.saveStepAttribute(idTransformation, idStep, "dateFormat", dateFormat);
     } catch (Exception e) {
       throw new KettleException(
           BaseMessages.getString(pkg, "CarbonStep.Exception.UnableToSaveStepInfoToRepository")

@@ -136,6 +136,7 @@ public final class CarbonLoaderUtil {
     model.setTaskNo(loadModel.getTaskNo());
     model.setFactTimeStamp(loadModel.getFactTimeStamp());
     model.setMaxColumns(loadModel.getMaxColumns());
+    model.setDateFormat(loadModel.getDateFormat());
     boolean hdfsReadMode =
         dataProcessTaskStatus.getCsvFilePath() != null
                 && dataProcessTaskStatus.getCsvFilePath().startsWith("hdfs:");
@@ -188,11 +189,13 @@ public final class CarbonLoaderUtil {
       dataProcessTaskStatus.setCsvDelimiter(loadModel.getCsvDelimiter());
       dataProcessTaskStatus.setCsvHeader(loadModel.getCsvHeader());
     }
+
     dataProcessTaskStatus.setBlocksID(loadModel.getBlocksID());
     dataProcessTaskStatus.setEscapeCharacter(loadModel.getEscapeChar());
     dataProcessTaskStatus.setQuoteCharacter(loadModel.getQuoteChar());
     dataProcessTaskStatus.setCommentCharacter(loadModel.getCommentChar());
     dataProcessTaskStatus.setRddIteratorKey(loadModel.getRddIteratorKey());
+    dataProcessTaskStatus.setDateFormat(loadModel.getDateFormat());
     SchemaInfo info = new SchemaInfo();
 
     info.setDatabaseName(databaseName);

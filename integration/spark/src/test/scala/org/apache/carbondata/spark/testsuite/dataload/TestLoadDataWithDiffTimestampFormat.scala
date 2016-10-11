@@ -26,6 +26,7 @@ import java.sql.Timestamp
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.Row
 
 class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterAll {
@@ -40,18 +41,19 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
   }
-git
+
   test("test load data with different timestamp format") {
       sql(s"""
            LOAD DATA LOCAL INPATH './src/test/resources/timeStampFormatData1.csv' into table t3
-           OPTIONS('timeformat' = 'starttime:yyyy-MM-dd HH:mm:ss')
+           OPTIONS('dateformat' = 'starttime:yyyy-MM-dd HH:mm:ss')
            """)
       sql(s"""
            LOAD DATA LOCAL INPATH './src/test/resources/timeStampFormatData2.csv' into table t3
-           OPTIONS('timeformat' = 'date:yyyy-MM-dd,starttime:yyyy/MM/dd HH:mm:ss')
+           OPTIONS('dateformat' = ' date : yyyy-MM-dd , StartTime : yyyy/MM/dd HH:mm:ss')
            """)
       checkAnswer(
-        sql("SELECT date FROM t3 WHERE ID = 1"), Seq(Row(Timestamp.valueOf("2015-07-23 00:00:00.0")))
+        sql("SELECT date FROM t3 WHERE ID = 1"),
+        Seq(Row(Timestamp.valueOf("2015-07-23 00:00:00.0")))
       )
       checkAnswer(
         sql("SELECT starttime FROM t3 WHERE ID = 1"),
@@ -65,6 +67,69 @@ git
         sql("SELECT starttime FROM t3 WHERE ID = 18"),
         Seq(Row(Timestamp.valueOf("2016-07-25 02:32:02.0")))
       )
+  }
+
+  test("test load data with different timestamp format with wrong setting") {
+    try {
+      sql(s"""
+           LOAD DATA LOCAL INPATH './src/test/resources/timeStampFormatData1.csv' into table t3
+           OPTIONS('dateformat' = '')
+           """)
+      assert(false)
+    } catch {
+      case ex: MalformedCarbonCommandException =>
+        assertResult(ex.getMessage)("Option DateFormat is set an empty string.")
+      case _ => assert(false)
+    }
+
+    try {
+      sql(s"""
+           LOAD DATA LOCAL INPATH './src/test/resources/timeStampFormatData1.csv' into table t3
+           OPTIONS('dateformat' = 'fasfdas:yyyy/MM/dd')
+           """)
+      assert(false)
+    } catch {
+      case ex: MalformedCarbonCommandException =>
+        assertResult(ex.getMessage)("Wrong Column Name fasfdas is provided in Option DateFormat.")
+      case _ => assert(false)
+    }
+
+    try {
+      sql(s"""
+           LOAD DATA LOCAL INPATH './src/test/resources/timeStampFormatData1.csv' into table t3
+           OPTIONS('dateformat' = 'date:  ')
+           """)
+      assert(false)
+    } catch {
+      case ex: MalformedCarbonCommandException =>
+        assertResult(ex.getMessage)("Option DateFormat is not provided for Column date.")
+      case _ => assert(false)
+    }
+
+    try {
+      sql(s"""
+           LOAD DATA LOCAL INPATH './src/test/resources/timeStampFormatData1.csv' into table t3
+           OPTIONS('dateformat' = 'date  ')
+           """)
+      assert(false)
+    } catch {
+      case ex: MalformedCarbonCommandException =>
+        assertResult(ex.getMessage)("Option DateFormat is not provided for Column date  .")
+      case _ => assert(false)
+    }
+
+    try {
+      sql(s"""
+           LOAD DATA LOCAL INPATH './src/test/resources/timeStampFormatData1.csv' into table t3
+           OPTIONS('dateformat' = ':yyyy/MM/dd  ')
+           """)
+      assert(false)
+    } catch {
+      case ex: MalformedCarbonCommandException =>
+        assertResult(ex.getMessage)("Wrong Column Name  is provided in Option DateFormat.")
+      case _ => assert(false)
+    }
+
   }
 
   override def afterAll {

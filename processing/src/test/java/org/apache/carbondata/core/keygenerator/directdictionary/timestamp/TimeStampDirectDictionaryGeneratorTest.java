@@ -37,7 +37,7 @@ public class TimeStampDirectDictionaryGeneratorTest {
   private int surrogateKey = -1;
 
   @Before public void setUp() throws Exception {
-    TimeStampDirectDictionaryGenerator generator = TimeStampDirectDictionaryGenerator.instance;
+    TimeStampDirectDictionaryGenerator generator = new TimeStampDirectDictionaryGenerator( );
     surrogateKey = generator.generateDirectSurrogateKey("2015-10-20 12:30:01");
   }
 
@@ -47,7 +47,7 @@ public class TimeStampDirectDictionaryGeneratorTest {
    * @throws Exception
    */
   @Test public void generateDirectSurrogateKey() throws Exception {
-    TimeStampDirectDictionaryGenerator generator = TimeStampDirectDictionaryGenerator.instance;
+    TimeStampDirectDictionaryGenerator generator = new TimeStampDirectDictionaryGenerator( );
     // default timestamp format is "yyyy-MM-dd HH:mm:ss" and the data being passed
     // in "dd/MM/yyyy" so the parsing should fail and method should return 1.
     int key = generator.generateDirectSurrogateKey("20/12/2014");
@@ -63,7 +63,7 @@ public class TimeStampDirectDictionaryGeneratorTest {
    * @throws Exception
    */
   @Test public void getValueFromSurrogate() throws Exception {
-    TimeStampDirectDictionaryGenerator generator = TimeStampDirectDictionaryGenerator.instance;
+    TimeStampDirectDictionaryGenerator generator = new TimeStampDirectDictionaryGenerator( );
     long valueFromSurrogate = (long) generator.getValueFromSurrogate(surrogateKey);
     Date date = new Date(valueFromSurrogate / 1000);
     SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
@@ -80,7 +80,7 @@ public class TimeStampDirectDictionaryGeneratorTest {
    * @throws Exception
    */
   @Test public void lowerBoundaryValueTest() throws Exception {
-    TimeStampDirectDictionaryGenerator generator = TimeStampDirectDictionaryGenerator.instance;
+    TimeStampDirectDictionaryGenerator generator = new TimeStampDirectDictionaryGenerator( );
     long valueFromSurrogate = (long) generator.getValueFromSurrogate(2);
     Date date = new Date(valueFromSurrogate / 1000);
     SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
@@ -98,7 +98,7 @@ public class TimeStampDirectDictionaryGeneratorTest {
    * @throws Exception
    */
   @Test public void upperBoundaryValueTest() throws Exception {
-    TimeStampDirectDictionaryGenerator generator = TimeStampDirectDictionaryGenerator.instance;
+    TimeStampDirectDictionaryGenerator generator = new TimeStampDirectDictionaryGenerator( );
     int surrogateKey = generator.generateDirectSurrogateKey("2038-01-01 05:30:00");
     long valueFromSurrogate = (long) generator.getValueFromSurrogate(surrogateKey);
     Date date = new Date(valueFromSurrogate / 1000);

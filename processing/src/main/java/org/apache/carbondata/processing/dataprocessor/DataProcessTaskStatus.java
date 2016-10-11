@@ -91,10 +91,9 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
 
   private String commentCharacter;
 
-
   private String rddIteratorKey;
 
-  private String timeFormat;
+  private String dateFormat;
 
   public DataProcessTaskStatus(String databaseName, String tableName) {
     this.databaseName = databaseName;
@@ -311,7 +310,7 @@ public class DataProcessTaskStatus implements IDataProcessStatus, Serializable {
     this.rddIteratorKey = rddIteratorKey;
   }
 
-  public String getTimeFormat() { return timeFormat; }
+  public String getDateFormat() { return dateFormat; }
 
-  public void setTimeFormat(String timeFormat) { this.timeFormat = timeFormat; }
+  public void setDateFormat(String dateFormat) { this.dateFormat = dateFormat; }
 }

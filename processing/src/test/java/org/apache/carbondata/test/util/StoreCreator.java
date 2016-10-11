@@ -367,6 +367,7 @@ public class StoreCreator {
     dataProcessTaskStatus.setEscapeCharacter("\\");
     dataProcessTaskStatus.setQuoteCharacter("\"");
     dataProcessTaskStatus.setCommentCharacter("#");
+    dataProcessTaskStatus.setDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
     info.setDatabaseName(databaseName);
     info.setTableName(tableName);
 
@@ -476,6 +477,7 @@ public class StoreCreator {
     model.setEscapeCharacter(dataProcessTaskStatus.getEscapeCharacter());
     model.setQuoteCharacter(dataProcessTaskStatus.getQuoteCharacter());
     model.setCommentCharacter(dataProcessTaskStatus.getCommentCharacter());
+    model.setDateFormat(dataProcessTaskStatus.getDateFormat());
     if (null != loadMetadataDetails && !loadMetadataDetails.isEmpty()) {
       model.setLoadNames(
           CarbonDataProcessorUtil.getLoadNameFromLoadMetaDataDetails(loadMetadataDetails));
