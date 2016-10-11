@@ -197,8 +197,9 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     blockIndexInfoList = new ArrayList<>();
     // get max file size;
     CarbonProperties propInstance = CarbonProperties.getInstance();
-    this.fileSizeInBytes = blocksize * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
-        * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR * 1L;
+    // if blocksize=2048, then 2048*1024*1024 will beyond the range of Int
+    this.fileSizeInBytes = 1L * blocksize * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
+        * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR;
     this.spaceReservedForBlockMetaSize = Integer.parseInt(propInstance
         .getProperty(CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE,
             CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT));
