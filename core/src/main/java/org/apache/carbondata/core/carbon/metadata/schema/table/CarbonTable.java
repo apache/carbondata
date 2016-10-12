@@ -87,9 +87,9 @@ public class CarbonTable implements Serializable {
   private long tableLastUpdatedTime;
 
   /**
-   * table block size
+   * table block size in MB
    */
-  private int blocksize;
+  private int blockSize;
 
   public CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
@@ -101,7 +101,7 @@ public class CarbonTable implements Serializable {
    * @param tableInfo
    */
   public void loadCarbonTable(TableInfo tableInfo) {
-    this.blocksize = getTableBlockSize(tableInfo);
+    this.blockSize = getTableBlockSizeInMB(tableInfo);
     this.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
     this.tableUniqueName = tableInfo.getTableUniqueName();
     this.metaDataFilepath = tableInfo.getMetaDataFilepath();
@@ -127,7 +127,7 @@ public class CarbonTable implements Serializable {
    * @param tableInfo
    * @return
    */
-  private int getTableBlockSize(TableInfo tableInfo) {
+  private int getTableBlockSizeInMB(TableInfo tableInfo) {
     String tableBlockSize = null;
     // In case of old store there will not be any map for table properties so table properties
     // will be null
@@ -430,12 +430,12 @@ public class CarbonTable implements Serializable {
     return 1;
   }
 
-  public int getBlocksize() {
-    return blocksize;
+  public int getBlockSizeInMB() {
+    return blockSize;
   }
 
-  public void setBlocksize(int blocksize) {
-    this.blocksize = blocksize;
+  public void setBlockSizeInMB(int blockSize) {
+    this.blockSize = blockSize;
   }
 
 }

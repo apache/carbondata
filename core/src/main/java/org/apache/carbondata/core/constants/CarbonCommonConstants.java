@@ -88,11 +88,17 @@ public final class CarbonCommonConstants {
    * max blocklet size
    */
   public static final int BLOCKLET_SIZE_MAX_VAL = 12000000;
-
+  /**
+   * default block size in MB
+   */
   public static final String BLOCK_SIZE_DEFAULT_VAL = "1024";
-
+  /**
+   * min block size in MB
+   */
   public static final int BLOCK_SIZE_MIN_VAL = 1;
-
+  /**
+   * max block size in MB
+   */
   public static final int BLOCK_SIZE_MAX_VAL = 2048;
   /**
    * default value of number of cores to be used
@@ -711,6 +717,7 @@ public final class CarbonCommonConstants {
   public static final String PARTITIONCLASS = "partitionclass";
   public static final String PARTITIONCOUNT = "partitioncount";
   public static final String COLUMN_PROPERTIES = "columnproperties";
+  // table block size in MB
   public static final String TABLE_BLOCKSIZE = "table_blocksize";
 
   /**
