@@ -166,7 +166,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     return null;
   }
 
-  protected void initQueryStatiticsModel () {
+  protected void initQueryStatiticsModel() {
     this.queryStatisticsModel = new QueryStatisticsModel();
     QueryStatistic queryStatisticTotalBlocklet = new QueryStatistic();
     queryStatisticsModel.getStatisticsTypeAndObjMap()
