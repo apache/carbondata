@@ -19,11 +19,13 @@
 
 package org.apache.carbondata.core.carbon.querystatistics;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class QueryStatisticsModel {
   private QueryStatisticsRecorder recorder;
-  private Map<String, QueryStatistic> statisticsTypeAndObjMap;
+  private Map<String, QueryStatistic> statisticsTypeAndObjMap =
+      new HashMap<String, QueryStatistic>();
 
   public QueryStatisticsRecorder getRecorder() {
     return recorder;
