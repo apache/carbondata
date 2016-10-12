@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
@@ -31,20 +33,22 @@ import org.apache.carbondata.scan.processor.AbstractDataBlockIterator;
  * Below class will be used to process the block for detail query
  */
 public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
-  private QueryStatisticsRecorder recorder;
-  private QueryStatistic queryStatisticBlocklet;
-  private QueryStatistic queryStatisticValidBlocklet;
+  QueryStatisticsModel queryStatisticsModel;
   /**
    * DataBlockIteratorImpl Constructor
    *
    * @param blockExecutionInfo execution information
    */
   public DataBlockIteratorImpl(BlockExecutionInfo blockExecutionInfo, FileHolder fileReader,
-      int batchSize, QueryStatisticsRecorder recorder) {
+      int batchSize, QueryStatisticsModel queryStatisticsModel) {
     super(blockExecutionInfo, fileReader, batchSize);
-    this.recorder = recorder;
-    this.queryStatisticBlocklet = new QueryStatistic();
-    this.queryStatisticValidBlocklet = new QueryStatistic();
+    this.queryStatisticsModel = queryStatisticsModel;
+    QueryStatistic queryStatisticBlocklet = new QueryStatistic();
+    this.queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.SCAN_BLOCKLET_NUM, queryStatisticBlocklet);
+    QueryStatistic queryStatisticValidBlocklet = new QueryStatistic();
+    this.queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM, queryStatisticValidBlocklet);
   }
 
   /**
@@ -54,10 +58,10 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
    */
   public List<Object[]> next() {
     List<Object[]> collectedResult = null;
-    if (updateScanner(recorder, queryStatisticBlocklet, queryStatisticValidBlocklet)) {
+    if (updateScanner(this.queryStatisticsModel)) {
       collectedResult = this.scannerResultAggregator.collectData(scannedResult, batchSize);
       while (collectedResult.size() < batchSize &&
-          updateScanner(recorder, queryStatisticBlocklet, queryStatisticValidBlocklet)) {
+          updateScanner(this.queryStatisticsModel)) {
         List<Object[]> data = this.scannerResultAggregator
             .collectData(scannedResult, batchSize - collectedResult.size());
         collectedResult.addAll(data);

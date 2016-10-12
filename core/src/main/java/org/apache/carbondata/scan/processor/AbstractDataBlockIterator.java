@@ -25,6 +25,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.scan.collector.ScannedResultCollector;
@@ -110,21 +111,19 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     }
   }
 
-  protected boolean updateScanner(QueryStatisticsRecorder recorder,
-                                  QueryStatistic queryStatisticBlocklet,
-                                  QueryStatistic queryStatisticValidBlocklet) {
+  protected boolean updateScanner(QueryStatisticsModel queryStatisticsModel) {
     try {
       if (scannedResult != null && scannedResult.hasNext()) {
         return true;
       } else {
         scannedResult =
-            getNextScannedResult(recorder, queryStatisticBlocklet, queryStatisticValidBlocklet);
+            getNextScannedResult(queryStatisticsModel);
         while (scannedResult != null) {
           if (scannedResult.hasNext()) {
             return true;
           }
           scannedResult =
-              getNextScannedResult(recorder, queryStatisticBlocklet, queryStatisticValidBlocklet);
+              getNextScannedResult(queryStatisticsModel);
         }
         return false;
       }
@@ -133,15 +132,12 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     }
   }
 
-  private AbstractScannedResult getNextScannedResult(QueryStatisticsRecorder recorder,
-                                                     QueryStatistic queryStatisticBlocklet,
-                                                     QueryStatistic queryStatisticValidBlocklet)
+  private AbstractScannedResult getNextScannedResult(QueryStatisticsModel queryStatisticsModel)
       throws QueryExecutionException {
     if (dataBlockIterator.hasNext()) {
       blocksChunkHolder.setDataBlock(dataBlockIterator.next());
       blocksChunkHolder.reset();
-      return blockletScanner.scanBlocklet(blocksChunkHolder, recorder,
-          queryStatisticBlocklet, queryStatisticValidBlocklet);
+      return blockletScanner.scanBlocklet(blocksChunkHolder, queryStatisticsModel);
     }
     return null;
   }

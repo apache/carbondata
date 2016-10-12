@@ -29,6 +29,7 @@ import org.apache.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.apache.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
@@ -154,7 +155,9 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     if (blockExecutionInfos.size() > 0) {
       BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
       blockExecutionInfos.remove(executionInfo);
-      return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize, recorder);
+      QueryStatisticsModel queryStatisticsModel = new QueryStatisticsModel();
+      queryStatisticsModel.setRecorder(recorder);
+      return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize, queryStatisticsModel);
     }
     return null;
   }

@@ -24,6 +24,7 @@ import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChun
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
@@ -83,13 +84,10 @@ public class FilterScanner extends AbstractBlockletScanner {
    * @throws FilterUnsupportedException
    */
   @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder,
-                                                      QueryStatisticsRecorder recoder,
-                                                      QueryStatistic queryStatisticBlocklet,
-                                                      QueryStatistic queryStatisticValidBlocklet)
+                                                      QueryStatisticsModel queryStatisticsModel)
       throws QueryExecutionException {
     try {
-      fillScannedResult(blocksChunkHolder, recoder, queryStatisticBlocklet,
-          queryStatisticValidBlocklet);
+      fillScannedResult(blocksChunkHolder, queryStatisticsModel);
     } catch (FilterUnsupportedException e) {
       throw new QueryExecutionException(e.getMessage());
     }
@@ -113,9 +111,7 @@ public class FilterScanner extends AbstractBlockletScanner {
    * @throws FilterUnsupportedException
    */
   private void fillScannedResult(BlocksChunkHolder blocksChunkHolder,
-                                 QueryStatisticsRecorder recoder,
-                                 QueryStatistic queryStatisticBlocklet,
-                                 QueryStatistic queryStatisticValidBlocklet)
+                                 QueryStatisticsModel queryStatisticsModel)
       throws FilterUnsupportedException {
 
     scannedResult.reset();
@@ -132,21 +128,28 @@ public class FilterScanner extends AbstractBlockletScanner {
     }
     // apply filter on actual data
     BitSet bitSet = this.filterExecuter.applyFilter(blocksChunkHolder);
-    //scanned blocklet
+    // scanned blocklet
     noOfScannedBlocklet++;
-    queryStatisticBlocklet.addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKLET_NUM,
-        noOfScannedBlocklet);
-    recoder.recordStatistics(queryStatisticBlocklet);
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.SCAN_BLOCKLET_NUM)
+        .addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKLET_NUM, noOfScannedBlocklet);
+    queryStatisticsModel.getRecorder()
+        .recordStatistics(queryStatisticsModel.getStatisticsTypeAndObjMap()
+            .get(QueryStatisticsConstants.SCAN_BLOCKLET_NUM));
     // if indexes is empty then return with empty result
     if (bitSet.isEmpty()) {
       scannedResult.setNumberOfRows(0);
       scannedResult.setIndexes(new int[0]);
       return;
     }
+    // valid scanned blocklet
     noOfValidScannedBlocklet++;
-    queryStatisticValidBlocklet.addCountStatistic(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM,
-        noOfValidScannedBlocklet);
-    recoder.recordStatistics(queryStatisticValidBlocklet);
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM)
+        .addCountStatistic(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM, noOfValidScannedBlocklet);
+    queryStatisticsModel.getRecorder()
+        .recordStatistics(queryStatisticsModel.getStatisticsTypeAndObjMap()
+            .get(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM));
     // get the row indexes from bot set
     int[] indexes = new int[bitSet.cardinality()];
     int index = 0;
