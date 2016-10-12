@@ -71,7 +71,7 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
       @Override public BatchResult call() throws QueryExecutionException {
         BatchResult batchResult = new BatchResult();
         synchronized (lock) {
-          updateDataBlockIterator(queryStatisticsModel);
+          updateDataBlockIterator();
           if (dataBlockIterator != null) {
             batchResult.setRows(dataBlockIterator.next());
           }

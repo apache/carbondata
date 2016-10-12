@@ -59,7 +59,10 @@ public class FilterScanner extends AbstractBlockletScanner {
    */
   private boolean isMinMaxEnabled;
 
-  public FilterScanner(BlockExecutionInfo blockExecutionInfo) {
+  private QueryStatisticsModel queryStatisticsModel;
+
+  public FilterScanner(BlockExecutionInfo blockExecutionInfo,
+                       QueryStatisticsModel queryStatisticsModel) {
     super(blockExecutionInfo);
     scannedResult = new FilterQueryScannedResult(blockExecutionInfo);
     // to check whether min max is enabled or not
@@ -71,6 +74,7 @@ public class FilterScanner extends AbstractBlockletScanner {
     }
     // get the filter tree
     this.filterExecuter = blockExecutionInfo.getFilterExecuterTree();
+    this.queryStatisticsModel = queryStatisticsModel;
   }
 
   /**
@@ -80,11 +84,10 @@ public class FilterScanner extends AbstractBlockletScanner {
    * @throws QueryExecutionException
    * @throws FilterUnsupportedException
    */
-  @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder,
-                                                      QueryStatisticsModel queryStatisticsModel)
+  @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
       throws QueryExecutionException {
     try {
-      fillScannedResult(blocksChunkHolder, queryStatisticsModel);
+      fillScannedResult(blocksChunkHolder);
     } catch (FilterUnsupportedException e) {
       throw new QueryExecutionException(e.getMessage());
     }
@@ -107,8 +110,7 @@ public class FilterScanner extends AbstractBlockletScanner {
    * @param blocksChunkHolder
    * @throws FilterUnsupportedException
    */
-  private void fillScannedResult(BlocksChunkHolder blocksChunkHolder,
-                                 QueryStatisticsModel queryStatisticsModel)
+  private void fillScannedResult(BlocksChunkHolder blocksChunkHolder)
       throws FilterUnsupportedException {
 
     scannedResult.reset();

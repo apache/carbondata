@@ -43,8 +43,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     this.blockExecutionInfo = tableBlockExecutionInfos;
   }
 
-  @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder,
-                                                      QueryStatisticsModel queryStatisticsModel)
+  @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
       throws QueryExecutionException {
     fillKeyValue(blocksChunkHolder);
     return scannedResult;

@@ -77,8 +77,10 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
 
   protected AbstractScannedResult scannedResult;
 
+  QueryStatisticsModel queryStatisticsModel;
+
   public AbstractDataBlockIterator(BlockExecutionInfo blockExecutionInfo,
-      FileHolder fileReader, int batchSize) {
+      FileHolder fileReader, int batchSize, QueryStatisticsModel queryStatisticsModel) {
     this.blockExecutionInfo = blockExecutionInfo;
     dataBlockIterator = new BlockletIterator(blockExecutionInfo.getFirstDataBlock(),
         blockExecutionInfo.getNumberOfBlockToScan());
@@ -87,7 +89,7 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     blocksChunkHolder.setFileReader(fileReader);
 
     if (blockExecutionInfo.getFilterExecuterTree() != null) {
-      blockletScanner = new FilterScanner(blockExecutionInfo);
+      blockletScanner = new FilterScanner(blockExecutionInfo, queryStatisticsModel);
     } else {
       blockletScanner = new NonFilterScanner(blockExecutionInfo);
     }
@@ -99,6 +101,7 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
           new DictionaryBasedResultCollector(blockExecutionInfo);
     }
     this.batchSize = batchSize;
+    this.queryStatisticsModel = queryStatisticsModel;
   }
 
   public boolean hasNext() {
@@ -109,17 +112,17 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     }
   }
 
-  protected boolean updateScanner(QueryStatisticsModel queryStatisticsModel) {
+  protected boolean updateScanner() {
     try {
       if (scannedResult != null && scannedResult.hasNext()) {
         return true;
       } else {
-        scannedResult = getNextScannedResult(queryStatisticsModel);
+        scannedResult = getNextScannedResult();
         while (scannedResult != null) {
           if (scannedResult.hasNext()) {
             return true;
           }
-          scannedResult = getNextScannedResult(queryStatisticsModel);
+          scannedResult = getNextScannedResult();
         }
         return false;
       }
@@ -128,12 +131,11 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     }
   }
 
-  private AbstractScannedResult getNextScannedResult(QueryStatisticsModel queryStatisticsModel)
-      throws QueryExecutionException {
+  private AbstractScannedResult getNextScannedResult() throws QueryExecutionException {
     if (dataBlockIterator.hasNext()) {
       blocksChunkHolder.setDataBlock(dataBlockIterator.next());
       blocksChunkHolder.reset();
-      return blockletScanner.scanBlocklet(blocksChunkHolder, queryStatisticsModel);
+      return blockletScanner.scanBlocklet(blocksChunkHolder);
     }
     return null;
   }

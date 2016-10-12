@@ -37,7 +37,6 @@ public interface BlockletScanner {
    * result after processing
    * @throws QueryExecutionException
    */
-  AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder,
-                                     QueryStatisticsModel queryStatisticsModel)
+  AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
       throws QueryExecutionException;
 }

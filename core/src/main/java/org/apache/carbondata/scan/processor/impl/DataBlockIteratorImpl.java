@@ -30,7 +30,6 @@ import org.apache.carbondata.scan.processor.AbstractDataBlockIterator;
  * Below class will be used to process the block for detail query
  */
 public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
-  QueryStatisticsModel queryStatisticsModel;
   /**
    * DataBlockIteratorImpl Constructor
    *
@@ -38,8 +37,7 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
    */
   public DataBlockIteratorImpl(BlockExecutionInfo blockExecutionInfo, FileHolder fileReader,
       int batchSize, QueryStatisticsModel queryStatisticsModel) {
-    super(blockExecutionInfo, fileReader, batchSize);
-    this.queryStatisticsModel = queryStatisticsModel;
+    super(blockExecutionInfo, fileReader, batchSize, queryStatisticsModel);
   }
 
   /**
@@ -49,9 +47,9 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
    */
   public List<Object[]> next() {
     List<Object[]> collectedResult = null;
-    if (updateScanner(this.queryStatisticsModel)) {
+    if (updateScanner()) {
       collectedResult = this.scannerResultAggregator.collectData(scannedResult, batchSize);
-      while (collectedResult.size() < batchSize && updateScanner(this.queryStatisticsModel)) {
+      while (collectedResult.size() < batchSize && updateScanner()) {
         List<Object[]> data = this.scannerResultAggregator
             .collectData(scannedResult, batchSize - collectedResult.size());
         collectedResult.addAll(data);

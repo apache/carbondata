@@ -147,16 +147,16 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     }
   }
 
-  protected void updateDataBlockIterator(QueryStatisticsModel queryStatisticsModel) {
+  protected void updateDataBlockIterator() {
     if (dataBlockIterator == null || !dataBlockIterator.hasNext()) {
-      dataBlockIterator = getDataBlockIterator(queryStatisticsModel);
+      dataBlockIterator = getDataBlockIterator();
       while (dataBlockIterator != null && !dataBlockIterator.hasNext()) {
-        dataBlockIterator = getDataBlockIterator(queryStatisticsModel);
+        dataBlockIterator = getDataBlockIterator();
       }
     }
   }
 
-  private DataBlockIteratorImpl getDataBlockIterator(QueryStatisticsModel queryStatisticsModel) {
+  private DataBlockIteratorImpl getDataBlockIterator() {
     if (blockExecutionInfos.size() > 0) {
       BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
       blockExecutionInfos.remove(executionInfo);
