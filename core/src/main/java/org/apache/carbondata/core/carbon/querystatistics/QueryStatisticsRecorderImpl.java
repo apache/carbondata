@@ -96,6 +96,7 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder,Seri
     String result_size = "";
     String total_executor_time = "";
     String splitChar = " ";
+    String total_blocklet = "";
     String scan_blocklet = "";
     String valid_scan_blocklet = "";
     try {
@@ -119,6 +120,9 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder,Seri
           case QueryStatisticsConstants.EXECUTOR_PART:
             total_executor_time += statistic.getTimeTaken() + splitChar;
             break;
+          case QueryStatisticsConstants.TOTAL_BLOCKLET_NUM:
+            total_blocklet = statistic.getCount() + splitChar;
+            break;
           case QueryStatisticsConstants.SCAN_BLOCKLET_NUM:
             scan_blocklet = statistic.getCount() + splitChar;
             break;
@@ -130,7 +134,8 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder,Seri
         }
       }
       String headers = "task_id,load_blocks_time,load_dictionary_time,scan_blocks_time," +
-          "total_executor_time,scan_blocks_num,scan_blocklet_num,valid_scan_blocklet,result_size";
+          "total_executor_time,scan_blocks_num,total_blocklet,scan_blocklet_num," +
+          "valid_scan_blocklet,result_size";
       List<String> values = new ArrayList<String>();
       values.add(queryIWthTask);
       values.add(load_blocks_time);
@@ -138,6 +143,7 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder,Seri
       values.add(scan_blocks_time);
       values.add(total_executor_time);
       values.add(scan_blocks_num);
+      values.add(total_blocklet);
       values.add(scan_blocklet);
       values.add(valid_scan_blocklet);
       values.add(result_size);

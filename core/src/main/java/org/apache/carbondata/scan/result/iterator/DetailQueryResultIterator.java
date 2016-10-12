@@ -23,6 +23,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.model.QueryModel;
@@ -71,7 +74,7 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
       @Override public BatchResult call() throws QueryExecutionException {
         BatchResult batchResult = new BatchResult();
         synchronized (lock) {
-          updateDataBlockIterator();
+          updateDataBlockIterator(queryStatisticsModel);
           if (dataBlockIterator != null) {
             batchResult.setRows(dataBlockIterator.next());
           }

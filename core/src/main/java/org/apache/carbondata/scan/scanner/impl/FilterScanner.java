@@ -25,7 +25,6 @@ import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
-import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -49,8 +48,6 @@ public class FilterScanner extends AbstractBlockletScanner {
    * filter tree
    */
   private FilterExecuter filterExecuter;
-  private int noOfScannedBlocklet;
-  private int noOfValidScannedBlocklet;
   /**
    * this will be used to apply min max
    * this will be useful for dimension column which is on the right side
@@ -115,6 +112,11 @@ public class FilterScanner extends AbstractBlockletScanner {
       throws FilterUnsupportedException {
 
     scannedResult.reset();
+    QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM);
+    totalBlockletStatistic.addCountStatistic(
+        QueryStatisticsConstants.TOTAL_BLOCKLET_NUM, totalBlockletStatistic.getCount() + 1);
+    queryStatisticsModel.getRecorder().recordStatistics(totalBlockletStatistic);
     // apply min max
     if (isMinMaxEnabled) {
       BitSet bitSet = this.filterExecuter
@@ -129,13 +131,11 @@ public class FilterScanner extends AbstractBlockletScanner {
     // apply filter on actual data
     BitSet bitSet = this.filterExecuter.applyFilter(blocksChunkHolder);
     // scanned blocklet
-    noOfScannedBlocklet++;
-    queryStatisticsModel.getStatisticsTypeAndObjMap()
-        .get(QueryStatisticsConstants.SCAN_BLOCKLET_NUM)
-        .addCountStatistic(QueryStatisticsConstants.SCAN_BLOCKLET_NUM, noOfScannedBlocklet);
-    queryStatisticsModel.getRecorder()
-        .recordStatistics(queryStatisticsModel.getStatisticsTypeAndObjMap()
-            .get(QueryStatisticsConstants.SCAN_BLOCKLET_NUM));
+    QueryStatistic scannedBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.SCAN_BLOCKLET_NUM);
+    scannedBlockletStatistic.addCountStatistic(
+        QueryStatisticsConstants.SCAN_BLOCKLET_NUM, scannedBlockletStatistic.getCount() + 1);
+    queryStatisticsModel.getRecorder().recordStatistics(scannedBlockletStatistic);
     // if indexes is empty then return with empty result
     if (bitSet.isEmpty()) {
       scannedResult.setNumberOfRows(0);
@@ -143,13 +143,11 @@ public class FilterScanner extends AbstractBlockletScanner {
       return;
     }
     // valid scanned blocklet
-    noOfValidScannedBlocklet++;
-    queryStatisticsModel.getStatisticsTypeAndObjMap()
-        .get(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM)
-        .addCountStatistic(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM, noOfValidScannedBlocklet);
-    queryStatisticsModel.getRecorder()
-        .recordStatistics(queryStatisticsModel.getStatisticsTypeAndObjMap()
-            .get(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM));
+    QueryStatistic validScannedBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM);
+    validScannedBlockletStatistic.addCountStatistic(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM,
+        validScannedBlockletStatistic.getCount() + 1);
+    queryStatisticsModel.getRecorder().recordStatistics(validScannedBlockletStatistic);
     // get the row indexes from bot set
     int[] indexes = new int[bitSet.cardinality()];
     int index = 0;

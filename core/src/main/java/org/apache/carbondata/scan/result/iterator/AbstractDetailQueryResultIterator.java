@@ -80,6 +80,10 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
    * number of cores which can be used
    */
   private int batchSize;
+  /**
+   * queryStatisticsModel to store query statistics object
+   */
+  QueryStatisticsModel queryStatisticsModel;
 
   public AbstractDetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
       ExecutorService execService) {
@@ -101,6 +105,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
         FileFactory.getFileType(queryModel.getAbsoluteTableIdentifier().getStorePath()));
     this.execService = execService;
     intialiseInfos();
+    initQueryStatiticsModel();
   }
 
   private void intialiseInfos() {
@@ -142,24 +147,36 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     }
   }
 
-  protected void updateDataBlockIterator() {
+  protected void updateDataBlockIterator(QueryStatisticsModel queryStatisticsModel) {
     if (dataBlockIterator == null || !dataBlockIterator.hasNext()) {
-      dataBlockIterator = getDataBlockIterator();
+      dataBlockIterator = getDataBlockIterator(queryStatisticsModel);
       while (dataBlockIterator != null && !dataBlockIterator.hasNext()) {
-        dataBlockIterator = getDataBlockIterator();
+        dataBlockIterator = getDataBlockIterator(queryStatisticsModel);
       }
     }
   }
 
-  private DataBlockIteratorImpl getDataBlockIterator() {
+  private DataBlockIteratorImpl getDataBlockIterator(QueryStatisticsModel queryStatisticsModel) {
     if (blockExecutionInfos.size() > 0) {
       BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
       blockExecutionInfos.remove(executionInfo);
-      QueryStatisticsModel queryStatisticsModel = new QueryStatisticsModel();
       queryStatisticsModel.setRecorder(recorder);
       return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize, queryStatisticsModel);
     }
     return null;
+  }
+
+  protected void initQueryStatiticsModel () {
+    this.queryStatisticsModel = new QueryStatisticsModel();
+    QueryStatistic queryStatisticTotalBlocklet = new QueryStatistic();
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM, queryStatisticTotalBlocklet);
+    QueryStatistic queryStatisticScanBlocklet = new QueryStatistic();
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.SCAN_BLOCKLET_NUM, queryStatisticScanBlocklet);
+    QueryStatistic queryStatisticValidScanBlocklet = new QueryStatistic();
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM, queryStatisticValidScanBlocklet);
   }
 
 }
