@@ -17,26 +17,22 @@
 
 package org.apache.carbondata.examples
 
-import java.io.{DataOutputStream, File}
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.util.ExampleUtils
 
 object CarbonExample {
   def main(args: Array[String]) {
     val cc = ExampleUtils.createCarbonContext("CarbonExample")
+    val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
 
-    def currentPath: String = new File(this.getClass.getResource("/").getPath + "/../../")
-      .getCanonicalPath
-    val outputPath = currentPath + "/block_prune_test.csv"
     // Specify timestamp format based on raw data
     CarbonProperties.getInstance()
 <<<<<<< 978e08e9cdd2f8d828a45c1cccad5c610dadfead
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 =======
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
+<<<<<<< ba48bd5be23af7a7e27021f381beaabec909f96a
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
     val testData: Array[String]= new Array[String](3);
@@ -64,23 +60,29 @@ object CarbonExample {
       }
     }
 >>>>>>> Fix
+=======
+>>>>>>> Fix
 
-    cc.sql("DROP TABLE IF EXISTS blockprune")
+    cc.sql("DROP TABLE IF EXISTS t3")
 
+    cc.sql("""
+           CREATE TABLE IF NOT EXISTS t3
+           (ID Int, date Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int)
+           STORED BY 'carbondata'
+           """)
 
+    cc.sql(s"""
+           LOAD DATA LOCAL INPATH '$testData' into table t3
+           """)
 
-    cc.sql(
-      """
-        CREATE TABLE IF NOT EXISTS blockprune (name string, id int)
-        STORED BY 'org.apache.carbondata.format'
-      """)
-    cc.sql(
-      s"LOAD DATA LOCAL INPATH '$outputPath' INTO table blockprune options('FILEHEADER'='name,id')"
-    )
-    // data is in all 7 blocks
-    cc.sql(
-      s"select count(*) from blockprune where name = 'a'"
-    ).show()
+    cc.sql("""
+           SELECT country, count(salary) AS amount
+           FROM t3
+           WHERE country IN ('china','france')
+           GROUP BY country
+           """).show()
 
+    cc.sql("DROP TABLE IF EXISTS t3")
   }
 }
