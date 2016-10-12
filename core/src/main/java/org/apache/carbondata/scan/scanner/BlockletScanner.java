@@ -18,7 +18,6 @@
  */
 package org.apache.carbondata.scan.scanner;
 
-import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.scan.result.AbstractScannedResult;
