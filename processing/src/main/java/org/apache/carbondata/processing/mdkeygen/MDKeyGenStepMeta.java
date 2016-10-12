@@ -117,6 +117,8 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
    * task id, each spark task has a unique id
    */
   private String taskNo;
+
+  private String tempFolder;
   /**
    * new load start time
    */
@@ -155,6 +157,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     noDictionaryDims = "";
     measureDataType = "";
     taskNo = "";
+    tempFolder = "";
     factTimeStamp = "";
     partitionID = "";
     segmentId = "";
@@ -177,6 +180,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
     retval.append("    ").append(XMLHandler.addTagValue("complexTypeString", complexTypeString));
     retval.append("    ").append(XMLHandler.addTagValue("measureDataType", measureDataType));
     retval.append("    ").append(XMLHandler.addTagValue("taskNo", taskNo));
+    retval.append("    ").append(XMLHandler.addTagValue("tempFolder", tempFolder));
     retval.append("    ").append(XMLHandler.addTagValue("factTimeStamp", factTimeStamp));
     retval.append("    ").append(XMLHandler.addTagValue("factTimeStamp", factTimeStamp));
     retval.append("    ").append(XMLHandler.addTagValue("partitionID", partitionID));
@@ -204,6 +208,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       complexTypeString = XMLHandler.getTagValue(stepnode, "complexTypeString");
       measureDataType = XMLHandler.getTagValue(stepnode, "measureDataType");
       taskNo = XMLHandler.getTagValue(stepnode, "taskNo");
+      tempFolder = XMLHandler.getTagValue(stepnode, "tempFolder");
       factTimeStamp = XMLHandler.getTagValue(stepnode, "factTimeStamp");
       partitionID = XMLHandler.getTagValue(stepnode, "partitionID");
       isUseInvertedIndex = XMLHandler.getTagValue(stepnode, "isUseInvertedIndex");
@@ -230,6 +235,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       rep.saveStepAttribute(idTransformation, idStep, "complexTypeString", complexTypeString);
       rep.saveStepAttribute(idTransformation, idStep, "measureDataType", measureDataType);
       rep.saveStepAttribute(idTransformation, idStep, "taskNo", taskNo);
+      rep.saveStepAttribute(idTransformation, idStep, "tempFolder", tempFolder);
       rep.saveStepAttribute(idTransformation, idStep, "factTimeStamp", factTimeStamp);
       rep.saveStepAttribute(idTransformation, idStep, "partitionID", partitionID);
       rep.saveStepAttribute(idTransformation, idStep, "isUseInvertedIndex", isUseInvertedIndex);
@@ -260,6 +266,7 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
       complexTypeString = rep.getStepAttributeString(idStep, "complexTypeString");
       measureDataType = rep.getStepAttributeString(idStep, "measureDataType");
       taskNo = rep.getStepAttributeString(idStep, "taskNo");
+      tempFolder = rep.getStepAttributeString(idStep, "tempFolder");
       factTimeStamp = rep.getStepAttributeString(idStep, "factTimeStamp");
       partitionID = rep.getStepAttributeString(idStep, "partitionID");
       isUseInvertedIndex = rep.getStepAttributeString(idStep, "isUseInvertedIndex");
@@ -481,6 +488,14 @@ public class MDKeyGenStepMeta extends BaseStepMeta implements StepMetaInterface 
    */
   public void setTaskNo(String taskNo) {
     this.taskNo = taskNo;
+  }
+
+  public String getTempFolder() {
+    return tempFolder;
+  }
+
+  public void setTempFolder(String tempFolder) {
+    this.tempFolder = tempFolder;
   }
 
   /**

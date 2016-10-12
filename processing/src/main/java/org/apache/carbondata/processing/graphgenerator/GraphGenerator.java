@@ -636,6 +636,7 @@ public class GraphGenerator {
             .split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER).length + "");
     carbonMdKey.setMeasureDataType(graphConfiguration.getMeasureDataTypeInfo());
     carbonMdKey.setTaskNo(taskNo);
+    carbonMdKey.setTempFolder(tempFolder);
     carbonMdKey.setFactTimeStamp(factTimeStamp);
     StepMeta mdkeyStepMeta =
         new StepMeta(GraphGeneratorConstants.MDKEY_GENERATOR + graphConfiguration.getTableName(),

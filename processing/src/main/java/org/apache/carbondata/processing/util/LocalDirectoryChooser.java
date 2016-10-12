@@ -19,7 +19,19 @@
 
 package org.apache.carbondata.processing.util;
 
+import java.io.File;
+
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.carbon.path.CarbonStorePath;
+import org.apache.carbondata.core.carbon.path.CarbonTablePath;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+
+
 public class LocalDirectoryChooser {
+  private static final LogService LOGGER =
+            LogServiceFactory.getLogService(LocalDirectoryChooser.class.getName());
   private String[] localDirs = null;
   private int length = 0;
   private int index = 0;
@@ -59,6 +71,23 @@ public class LocalDirectoryChooser {
 
   public String[] getLocalDirs() {
     return this.localDirs;
+  }
+
+  public static String getLocalDirectory(CarbonTable carbonTable, String tempFolder, String
+          taskNo, String partitionID, String segmentId) {
+    String baseStoreLocation = LocalDirectoryChooser.getInstance().nextLocalDir();
+    baseStoreLocation = baseStoreLocation + File.separator + tempFolder +  File.separator +
+        taskNo;
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(baseStoreLocation,
+        carbonTable.getCarbonTableIdentifier());
+    String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(partitionID,
+        segmentId);
+    String localDirectory = carbonDataDirectoryPath + File.separator + taskNo +
+        File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
+    if (!new File(localDirectory).mkdirs()) {
+      LOGGER.info("Sort Temp Location Already Exists");
+    }
+    return localDirectory;
   }
 
 }
