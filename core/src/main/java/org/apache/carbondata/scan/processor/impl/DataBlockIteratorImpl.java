@@ -21,8 +21,6 @@ package org.apache.carbondata.scan.processor.impl;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
-import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
@@ -53,8 +51,7 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
     List<Object[]> collectedResult = null;
     if (updateScanner(this.queryStatisticsModel)) {
       collectedResult = this.scannerResultAggregator.collectData(scannedResult, batchSize);
-      while (collectedResult.size() < batchSize &&
-          updateScanner(this.queryStatisticsModel)) {
+      while (collectedResult.size() < batchSize && updateScanner(this.queryStatisticsModel)) {
         List<Object[]> data = this.scannerResultAggregator
             .collectData(scannedResult, batchSize - collectedResult.size());
         collectedResult.addAll(data);

@@ -145,8 +145,9 @@ public class FilterScanner extends AbstractBlockletScanner {
     // valid scanned blocklet
     QueryStatistic validScannedBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM);
-    validScannedBlockletStatistic.addCountStatistic(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM,
-        validScannedBlockletStatistic.getCount() + 1);
+    validScannedBlockletStatistic.
+        addCountStatistic(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM,
+            validScannedBlockletStatistic.getCount() + 1);
     queryStatisticsModel.getRecorder().recordStatistics(validScannedBlockletStatistic);
     // get the row indexes from bot set
     int[] indexes = new int[bitSet.cardinality()];

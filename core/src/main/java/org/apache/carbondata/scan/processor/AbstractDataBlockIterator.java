@@ -114,14 +114,12 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
       if (scannedResult != null && scannedResult.hasNext()) {
         return true;
       } else {
-        scannedResult =
-            getNextScannedResult(queryStatisticsModel);
+        scannedResult = getNextScannedResult(queryStatisticsModel);
         while (scannedResult != null) {
           if (scannedResult.hasNext()) {
             return true;
           }
-          scannedResult =
-              getNextScannedResult(queryStatisticsModel);
+          scannedResult = getNextScannedResult(queryStatisticsModel);
         }
         return false;
       }
