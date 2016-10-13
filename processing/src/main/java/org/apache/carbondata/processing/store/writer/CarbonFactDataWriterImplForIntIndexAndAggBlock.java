@@ -24,6 +24,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -45,6 +47,8 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
   private boolean[] isComplexType;
   private int numberOfNoDictionaryColumn;
   private boolean[] isDictionaryColumn;
+  private static final LogService LOGGER = LogServiceFactory.getLogService(
+      CarbonFactDataWriterImplForIntIndexAndAggBlock.class.getName());
 
   public CarbonFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
       int mdKeyLength, String tableName, IFileManagerComposite fileManager, int[] keyBlockSize,
@@ -250,6 +254,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     }
     long blockletDataSize =
         holder.getKeyArray().length + holder.getDataArray().length + indexBlockSize;
+    LOGGER.info("A new blocklet is added, its data size is: " + blockletDataSize + " Byte");
     updateBlockletFileChannel(blockletDataSize);
     writeDataToFile(holder);
   }
