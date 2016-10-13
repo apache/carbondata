@@ -994,29 +994,31 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           }
         } else {
           try {
-            out[memberMapping[dimLen + index] - meta.complexTypes.size()] =
-                (isNull || msr == null || msr.length() == 0) ?
-                    null :
-                    DataTypeUtil
-                        .getMeasureValueBasedOnDataType(msr, msrDataType[meta.msrMapping[msrCount]],
-                            meta.carbonMeasures[meta.msrMapping[msrCount]]);
-          } catch (NumberFormatException e) {
-            try {
-              msr = msr.replaceAll(",", "");
-              out[memberMapping[dimLen + index] - meta.complexTypes.size()] = DataTypeUtil
+            if (!isNull && null != msr && msr.length() > 0) {
+              Object measureValueBasedOnDataType = DataTypeUtil
                   .getMeasureValueBasedOnDataType(msr, msrDataType[meta.msrMapping[msrCount]],
                       meta.carbonMeasures[meta.msrMapping[msrCount]]);
-            } catch (NumberFormatException ex) {
-              addEntryToBadRecords(r, j, columnName, msrDataType[meta.msrMapping[msrCount]].name());
-              if (badRecordConvertNullDisable) {
-                return null;
+              if (null == measureValueBasedOnDataType) {
+                addEntryToBadRecords(r, j, columnName,
+                    msrDataType[meta.msrMapping[msrCount]].name());
+                if (badRecordConvertNullDisable) {
+                  return null;
+                }
+                LOGGER.warn("Cannot convert : " + msr
+                    + " to Numeric type value. Value considered as null.");
               }
-              LOGGER.warn("Cant not convert : " + msr
-                  + " to Numeric type value. Value considered as null.");
-              out[memberMapping[dimLen + index] - meta.complexTypes.size()] = null;
+              out[memberMapping[dimLen + index] - meta.complexTypes.size()] =
+                  measureValueBasedOnDataType;
             }
+          } catch (NumberFormatException e) {
+            addEntryToBadRecords(r, j, columnName, msrDataType[meta.msrMapping[msrCount]].name());
+            if (badRecordConvertNullDisable) {
+              return null;
+            }
+            LOGGER.warn(
+                "Cannot convert : " + msr + " to Numeric type value. Value considered as null.");
+            out[memberMapping[dimLen + index] - meta.complexTypes.size()] = null;
           }
-
         }
 
         index++;
