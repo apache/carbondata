@@ -360,7 +360,7 @@ public class StoreCreator {
     info.setTableName(tableName);
     info.setSerializationNullFormat("serialization_null_format" + "," + "\\N");
     info.setBadRecordsLoggerEnable("bad_records_logger_enable"+","+"false");
-    info.setBadRecordsLoggerEnable("bad_records_logger_action"+","+"force");
+    info.setBadRecordsLoggerEnable("bad_records_action"+","+"force");
 
     generateGraph(schmaModel, info, loadModel.getTableName(), "0", loadModel.getSchema(), null,
         loadModel.getLoadMetadataDetails());

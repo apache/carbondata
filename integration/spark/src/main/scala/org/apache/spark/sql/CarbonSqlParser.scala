@@ -88,7 +88,7 @@ class CarbonSqlParser()
   protected val FILEHEADER = carbonKeyWord("FILEHEADER")
   protected val SERIALIZATION_NULL_FORMAT = carbonKeyWord("SERIALIZATION_NULL_FORMAT")
   protected val BAD_RECORDS_LOGGER_ENABLE = carbonKeyWord("BAD_RECORDS_LOGGER_ENABLE")
-  protected val BAD_RECORDS_LOGGER_ACTION = carbonKeyWord("BAD_RECORDS_LOGGER_ACTION")
+  protected val BAD_RECORDS_ACTION = carbonKeyWord("BAD_RECORDS_ACTION")
   protected val FILES = carbonKeyWord("FILES")
   protected val FROM = carbonKeyWord("FROM")
   protected val HIERARCHIES = carbonKeyWord("HIERARCHIES")
@@ -934,7 +934,7 @@ class CarbonSqlParser()
     val options = partionDataOptions.get.groupBy(x => x._1)
     val supportedOptions = Seq("DELIMITER", "QUOTECHAR", "FILEHEADER", "ESCAPECHAR", "MULTILINE",
       "COMPLEX_DELIMITER_LEVEL_1", "COMPLEX_DELIMITER_LEVEL_2", "COLUMNDICT",
-      "SERIALIZATION_NULL_FORMAT", "BAD_RECORDS_LOGGER_ENABLE", "BAD_RECORDS_LOGGER_ACTION",
+      "SERIALIZATION_NULL_FORMAT", "BAD_RECORDS_LOGGER_ENABLE", "BAD_RECORDS_ACTION",
       "ALL_DICTIONARY_PATH", "MAXCOLUMNS", "COMMENTCHAR"
     )
     var isSupported = true

@@ -443,12 +443,12 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         badRecordsLoggerEnable =
             Boolean.parseBoolean(meta.getTableOptionWrapper().get("bad_records_logger_enable"));
         badRecordConvertNullDisable = true;
-        String bad_records_logger_action =
-            meta.getTableOptionWrapper().get("bad_records_logger_action");
-        if(null != bad_records_logger_action) {
+        String bad_records_action =
+            meta.getTableOptionWrapper().get("bad_records_action");
+        if(null != bad_records_action) {
           LoggerAction loggerAction = null;
           try {
-            loggerAction = LoggerAction.valueOf(bad_records_logger_action.toUpperCase());
+            loggerAction = LoggerAction.valueOf(bad_records_action.toUpperCase());
           } catch (IllegalArgumentException e) {
             loggerAction = LoggerAction.FORCE;
           }
