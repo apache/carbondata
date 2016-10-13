@@ -1,6 +1,25 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+
 package org.apache.carbondata.processing.newflow;
 
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 
@@ -8,21 +27,11 @@ public class CarbonDataLoadConfiguration {
 
   private DataField[] dataFields;
 
-  private String tempStoreLocation;
-
-  private String blockletSize;
-
-  private String batchSize;
-
-  private String sortSize;
+  private AbsoluteTableIdentifier tableIdentifier;
 
   private String[] header;
 
-  private AbsoluteTableIdentifier tableIdentifier;
-
   private Iterator<Object[]> inputIterator;
-
-  private String[] complexDelimiters;
 
   private String partitionId;
 
@@ -30,10 +39,7 @@ public class CarbonDataLoadConfiguration {
 
   private String taskNo;
 
-  private String factTimeStamp;
-
-  private RunTimeDataLoadConfiguration runTimeDataLoadConfiguration =
-      new RunTimeDataLoadConfiguration();
+  private Map<String, Object> dataLoadProperties = new HashMap<>();
 
   public int getDimensionCount() {
     int dimCount = 0;
@@ -83,38 +89,6 @@ public class CarbonDataLoadConfiguration {
     this.dataFields = dataFields;
   }
 
-  public String getTempStoreLocation() {
-    return tempStoreLocation;
-  }
-
-  public void setTempStoreLocation(String tempStoreLocation) {
-    this.tempStoreLocation = tempStoreLocation;
-  }
-
-  public String getBlockletSize() {
-    return blockletSize;
-  }
-
-  public void setBlockletSize(String blockletSize) {
-    this.blockletSize = blockletSize;
-  }
-
-  public String getBatchSize() {
-    return batchSize;
-  }
-
-  public void setBatchSize(String batchSize) {
-    this.batchSize = batchSize;
-  }
-
-  public String getSortSize() {
-    return sortSize;
-  }
-
-  public void setSortSize(String sortSize) {
-    this.sortSize = sortSize;
-  }
-
   public Iterator<Object[]> getInputIterator() {
     return inputIterator;
   }
@@ -137,14 +111,6 @@ public class CarbonDataLoadConfiguration {
 
   public void setTableIdentifier(AbsoluteTableIdentifier tableIdentifier) {
     this.tableIdentifier = tableIdentifier;
-  }
-
-  public String[] getComplexDelimiters() {
-    return complexDelimiters;
-  }
-
-  public void setComplexDelimiters(String[] complexDelimiters) {
-    this.complexDelimiters = complexDelimiters;
   }
 
   public String getPartitionId() {
@@ -171,15 +137,19 @@ public class CarbonDataLoadConfiguration {
     this.taskNo = taskNo;
   }
 
-  public RunTimeDataLoadConfiguration getRunTimeDataLoadConfiguration() {
-    return runTimeDataLoadConfiguration;
+  public void setDataLoadProperty(String key, Object value) {
+    dataLoadProperties.put(key, value);
   }
 
-  public String getFactTimeStamp() {
-    return factTimeStamp;
+  public Object getDataLoadProperty(String key, Object defaultValue) {
+    Object value = dataLoadProperties.get(key);
+    if (value == null) {
+      value = defaultValue;
+    }
+    return value;
   }
 
-  public void setFactTimeStamp(String factTimeStamp) {
-    this.factTimeStamp = factTimeStamp;
+  public Object getDataLoadProperty(String key) {
+    return dataLoadProperties.get(key);
   }
 }
