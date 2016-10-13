@@ -1118,7 +1118,7 @@ case class LoadTable(
       val columnDict = partionValues.getOrElse("columndict", null)
       val serializationNullFormat = partionValues.getOrElse("serialization_null_format", "\\N")
       val badRecordsLoggerEnable = partionValues.getOrElse("bad_records_logger_enable", "false")
-      val badRecordsLoggerRedirect = partionValues.getOrElse("bad_records_logger_action", "force")
+      val badRecordsLoggerRedirect = partionValues.getOrElse("bad_records_action", "force")
       val allDictionaryPath = partionValues.getOrElse("all_dictionary_path", "")
       val complex_delimiter_level_1 = partionValues.getOrElse("complex_delimiter_level_1", "\\$")
       val complex_delimiter_level_2 = partionValues.getOrElse("complex_delimiter_level_2", "\\:")
@@ -1140,7 +1140,7 @@ case class LoadTable(
       carbonLoadModel
         .setBadRecordsLoggerEnable("bad_records_logger_enable" + "," + badRecordsLoggerEnable)
       carbonLoadModel
-        .setBadRecordsLoggerRedirect("bad_records_logger_action" + "," + badRecordsLoggerRedirect)
+        .setBadRecordsLoggerRedirect("bad_records_action" + "," + badRecordsLoggerRedirect)
 
       if (delimiter.equalsIgnoreCase(complex_delimiter_level_1) ||
           complex_delimiter_level_1.equalsIgnoreCase(complex_delimiter_level_2) ||
