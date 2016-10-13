@@ -97,7 +97,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
       "CREATE table CaseInsensitiveTable (ID int, date String, country String, name " +
       "String," +
       "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'" +
-      "TBLPROPERTIES('DICTIONARY_INCLUDE'='ID,salary')"
+      "TBLPROPERTIES('DICTIONARY_INCLUDE'='ID, salary')"
     )
     // table should drop wihout any error
     sql("drop table caseInsensitiveTable")
@@ -107,7 +107,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
       "CREATE table CaseInsensitiveTable (ID int, date String, country String, name " +
       "String," +
       "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'" +
-      "TBLPROPERTIES('DICTIONARY_INCLUDE'='ID,salary')"
+      "TBLPROPERTIES('DICTIONARY_INCLUDE'='ID, salary')"
     )
 
   }
@@ -118,7 +118,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
       "CREATE table default.table3 (ID int, date String, country String, name " +
       "String," +
       "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'" +
-      "TBLPROPERTIES('DICTIONARY_INCLUDE'='ID,salary')"
+      "TBLPROPERTIES('DICTIONARY_INCLUDE'='ID, salary')"
     )
     // table should drop without any error
     sql("drop table default.table3")
