@@ -23,14 +23,14 @@
     <groupId>org.apache.carbondata</groupId>
     <artifactId>carbondata-parent</artifactId>
     <version>0.2.0-incubating-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
+    <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>carbondata-format</artifactId>
-  <name>Apache CarbonData :: Format</name>
+  <artifactId>carbondata-format-java</artifactId>
+  <name>Apache CarbonData :: Format Java</name>
 
   <properties>
-    <dev.path>${basedir}/../dev</dev.path>
+    <dev.path>${basedir}/../../dev</dev.path>
   </properties>
 
   <dependencies>
@@ -42,29 +42,22 @@
   </dependencies>
 
   <build>
+    <sourceDirectory>src/main/java</sourceDirectory>
     <plugins>
       <plugin>
-        <groupId>org.apache.thrift.tools</groupId>
-        <artifactId>maven-thrift-plugin</artifactId>
-        <version>0.1.11</version>
+        <artifactId>maven-compiler-plugin</artifactId>
         <configuration>
-          <thriftExecutable>thrift</thriftExecutable>
-          <thriftSourceRoot>src/main/thrift</thriftSourceRoot>
+          <source>1.7</source>
+          <target>1.7</target>
         </configuration>
-        <executions>
-          <execution>
-            <id>generate-thrift-java</id>
-            <phase>generate-sources</phase>
-            <configuration>
-              <generator>java</generator>
-              <outputDirectory>target/gen-java</outputDirectory>
-              <compileOutput>true</compileOutput>
-            </configuration>
-            <goals>
-              <goal>compile</goal>
-            </goals>
-          </execution>
-        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>2.17</version>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
       </plugin>
     </plugins>
   </build>

@@ -43,7 +43,7 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-format</artifactId>
+      <artifactId>carbondata-format-java</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
