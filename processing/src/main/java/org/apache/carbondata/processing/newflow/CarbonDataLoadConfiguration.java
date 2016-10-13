@@ -18,7 +18,6 @@
 package org.apache.carbondata.processing.newflow;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
@@ -30,8 +29,6 @@ public class CarbonDataLoadConfiguration {
   private AbsoluteTableIdentifier tableIdentifier;
 
   private String[] header;
-
-  private Iterator<Object[]> inputIterator;
 
   private String partitionId;
 
@@ -87,14 +84,6 @@ public class CarbonDataLoadConfiguration {
 
   public void setDataFields(DataField[] dataFields) {
     this.dataFields = dataFields;
-  }
-
-  public Iterator<Object[]> getInputIterator() {
-    return inputIterator;
-  }
-
-  public void setInputIterator(Iterator<Object[]> inputIterator) {
-    this.inputIterator = inputIterator;
   }
 
   public String[] getHeader() {

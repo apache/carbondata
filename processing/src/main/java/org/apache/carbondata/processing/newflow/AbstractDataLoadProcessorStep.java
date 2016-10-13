@@ -25,7 +25,8 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 
 /**
- * This base interface for data loading. It can do transformation jobs as per the implementation.
+ * This base abstract class for data loading.
+ * It can do transformation jobs as per the implementation.
  */
 public abstract class AbstractDataLoadProcessorStep {
 
@@ -56,11 +57,25 @@ public abstract class AbstractDataLoadProcessorStep {
   /**
    * Tranform the data as per the implemetation.
    *
-   * @return Iterator of data
+   * @return Array of Iterator with data. It can be processed parallel if implementation class wants
    * @throws CarbonDataLoadingException
    */
-  public Iterator<Object[]> execute() throws CarbonDataLoadingException {
-    final Iterator<Object[]> childIter = child.execute();
+  public Iterator<Object[]>[] execute() throws CarbonDataLoadingException {
+    Iterator<Object[]>[] childIters = child.execute();
+    Iterator<Object[]>[] iterators = new Iterator[childIters.length];
+    for (int i = 0; i < childIters.length; i++) {
+      iterators[i] = getIterator(childIters[i]);
+    }
+    return iterators;
+  }
+
+  /**
+   * Create the iterator using child iterator.
+   *
+   * @param childIter
+   * @return
+   */
+  protected Iterator<Object[]> getIterator(final Iterator<Object[]> childIter) {
     return new CarbonIterator<Object[]>() {
       @Override public boolean hasNext() {
         return childIter.hasNext();
