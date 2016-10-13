@@ -33,6 +33,8 @@ import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan
 import org.apache.spark.sql.types._
 import org.slf4j.LoggerFactory
 
+import org.apache.carbondata.processing.etl.DataLoadingException
+
 case class CarbonCsvRelation protected[spark] (
     location: String,
     useHeader: Boolean,
@@ -147,6 +149,9 @@ case class CarbonCsvRelation protected[spark] (
           .withEscape(escape)
           .withSkipHeaderRecord(false)
         CSVParser.parse(firstLine, csvFormat).getRecords.get(0).asScala.toArray
+      }
+      if(null == firstRow) {
+        throw new DataLoadingException("First line of the csv is not valid.")
       }
       val header = if (useHeader) {
         firstRow
