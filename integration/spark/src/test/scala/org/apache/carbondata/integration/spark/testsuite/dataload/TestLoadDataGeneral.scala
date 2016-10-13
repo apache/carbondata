@@ -20,6 +20,7 @@
 package org.apache.carbondata.integration.spark.testsuite.dataload
 
 import java.io.File
+import java.math.BigDecimal
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
@@ -57,6 +58,17 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("SELECT COUNT(*) FROM loadtest"),
       Seq(Row(8))
+    )
+  }
+
+  test("test data loading with invalid values for mesasures") {
+    val testData = currentDirectory + "/src/test/resources/invalidMeasures.csv"
+    sql("drop table if exists invalidMeasures")
+    sql("CREATE TABLE invalidMeasures (country String, salary double, age decimal(10,2)) STORED BY 'carbondata'")
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table invalidMeasures options('Fileheader'='country,salary,age')")
+    checkAnswer(
+      sql("SELECT * FROM invalidMeasures"),
+      Seq(Row("India",null,new BigDecimal("22.44")), Row("Russia",null,null), Row("USA",234.43,null))
     )
   }
 

@@ -64,7 +64,11 @@ public final class DataTypeUtil {
       case LONG:
         return Long.valueOf(msrValue);
       default:
-        return Double.valueOf(msrValue);
+        Double parsedValue = Double.valueOf(msrValue);
+        if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
+          return null;
+        }
+        return parsedValue;
     }
   }
 
