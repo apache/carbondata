@@ -23,6 +23,8 @@ import java.util.Iterator;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
+import org.apache.carbondata.processing.newflow.row.CarbonRow;
+import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 
 /**
  * This base abstract class for data loading.
@@ -59,9 +61,9 @@ public abstract class AbstractDataLoadProcessorStep {
    * @return Array of Iterator with data. It can be processed parallel if implementation class wants
    * @throws CarbonDataLoadingException
    */
-  public Iterator<CarbonRow>[] execute() throws CarbonDataLoadingException {
-    Iterator<CarbonRow>[] childIters = child.execute();
-    Iterator<CarbonRow>[] iterators = new Iterator[childIters.length];
+  public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
+    Iterator<CarbonRowBatch>[] childIters = child.execute();
+    Iterator<CarbonRowBatch>[] iterators = new Iterator[childIters.length];
     for (int i = 0; i < childIters.length; i++) {
       iterators[i] = getIterator(childIters[i]);
     }
@@ -74,16 +76,31 @@ public abstract class AbstractDataLoadProcessorStep {
    * @param childIter
    * @return new iterator with step specific processing.
    */
-  protected Iterator<CarbonRow> getIterator(final Iterator<CarbonRow> childIter) {
-    return new CarbonIterator<CarbonRow>() {
+  protected Iterator<CarbonRowBatch> getIterator(final Iterator<CarbonRowBatch> childIter) {
+    return new CarbonIterator<CarbonRowBatch>() {
       @Override public boolean hasNext() {
         return childIter.hasNext();
       }
 
-      @Override public CarbonRow next() {
-        return processRow(childIter.next());
+      @Override public CarbonRowBatch next() {
+        return processRowBatch(childIter.next());
       }
     };
+  }
+
+  /**
+   * Process the batch of rows as per the step logic.
+   *
+   * @param rowBatch
+   * @return processed row.
+   */
+  protected CarbonRowBatch processRowBatch(CarbonRowBatch rowBatch) {
+    CarbonRowBatch newBatch = new CarbonRowBatch();
+    Iterator<CarbonRow> batchIterator = rowBatch.getBatchIterator();
+    while (batchIterator.hasNext()) {
+      newBatch.addRow(processRow(batchIterator.next()));
+    }
+    return newBatch;
   }
 
   /**

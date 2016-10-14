@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.processing.newflow;
+package org.apache.carbondata.processing.newflow.row;
 
 import java.math.BigDecimal;
 
