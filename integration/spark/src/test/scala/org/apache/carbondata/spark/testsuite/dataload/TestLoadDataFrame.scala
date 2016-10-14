@@ -19,6 +19,7 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.spark.sql.{DataFrame, Row, SaveMode}
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
@@ -51,11 +52,10 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     // save dataframe to carbon file
     df.write
       .format("carbondata")
-      .option("tableName", "carbon1")
       .option("tempCSV", "true")
       .option("compress", "true")
       .mode(SaveMode.Overwrite)
-      .save()
+      .save(s"$storePath/${CarbonCommonConstants.DATABASE_DEFAULT_NAME}/carbon1")
     checkAnswer(
       sql("select count(*) from carbon1 where c3 > 500"), Row(500)
     )
@@ -65,11 +65,10 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     // save dataframe to carbon file
     df.write
       .format("carbondata")
-      .option("tableName", "carbon2")
       .option("tempCSV", "true")
       .option("compress", "false")
       .mode(SaveMode.Overwrite)
-      .save()
+      .save(s"$storePath/${CarbonCommonConstants.DATABASE_DEFAULT_NAME}/carbon2")
     checkAnswer(
       sql("select count(*) from carbon2 where c3 > 500"), Row(500)
     )
@@ -79,10 +78,9 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     // save dataframe to carbon file
     df.write
       .format("carbondata")
-      .option("tableName", "carbon3")
       .option("tempCSV", "false")
       .mode(SaveMode.Overwrite)
-      .save()
+      .save(s"$storePath/${CarbonCommonConstants.DATABASE_DEFAULT_NAME}/carbon3")
     checkAnswer(
       sql("select count(*) from carbon3 where c3 > 500"), Row(500)
     )
