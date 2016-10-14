@@ -38,8 +38,8 @@ class CarbonOption(options: Map[String, String]) {
       "org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl")
   }
 
-  def tempCSV: String = options.getOrElse("tempCSV", "true")
+  def tempCSV: Boolean = options.getOrElse("tempCSV", "true").toBoolean
 
-  def compress: String = options.getOrElse("compress", "false")
+  def compress: Boolean = options.getOrElse("compress", "false").toBoolean
 
 }

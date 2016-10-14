@@ -68,13 +68,46 @@ class SparkDatasourceSuite extends QueryTest with BeforeAndAfterAll {
     assert(in.where("c3 > 500").count() == 500)
   }
 
-  test("saveAsCarbon API") {
-    import org.apache.carbondata.spark._
-    df.saveAsCarbonFile(Map("tableName" -> "carbon2"))
-
-    checkAnswer(sql("SELECT count(*) FROM carbon2 WHERE c3 > 100"), Seq(Row(900)))
+  test("test overwrite") {
+    sql("DROP TABLE IF EXISTS carbon4")
+    df.write
+        .format("carbondata")
+        .option("tableName", "carbon4")
+        .mode(SaveMode.Overwrite)
+        .save()
+    df.write
+        .format("carbondata")
+        .option("tableName", "carbon4")
+        .mode(SaveMode.Overwrite)
+        .save()
+    val in = read
+        .format("carbondata")
+        .option("tableName", "carbon4")
+        .load()
+    assert(in.where("c3 > 500").count() == 500)
+    sql("DROP TABLE IF EXISTS carbon4")
   }
 
+  test("read and write using CarbonContext, multiple load") {
+    sql("DROP TABLE IF EXISTS carbon4")
+    df.write
+        .format("carbondata")
+        .option("tableName", "carbon4")
+        .mode(SaveMode.Overwrite)
+        .save()
+    df.write
+        .format("carbondata")
+        .option("tableName", "carbon4")
+        .mode(SaveMode.Append)
+        .save()
+    val in = read
+        .format("carbondata")
+        .option("tableName", "carbon4")
+        .load()
+    assert(in.where("c3 > 500").count() == 1000)
+    sql("DROP TABLE IF EXISTS carbon4")
+  }
+  
   test("query using SQLContext") {
     val sqlContext = new SQLContext(sparkContext)
     sqlContext.sql(
