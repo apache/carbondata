@@ -114,11 +114,15 @@ public abstract class AbstractDataLoadProcessorStep {
   /**
    * It is called when task is called successfully.
    */
-  public abstract void finish();
+  public void finish() {
+    // implementation classes can override to update the status.
+  }
 
   /**
    * Closing of resources after step execution can be done here.
    */
-  public abstract void close();
+  public void close() {
+    // implementation classes can override to close the resources if any available.
+  }
 
 }

@@ -33,4 +33,8 @@ public final class DataLoadProcessorConstants {
   public static final String COMPLEX_DELIMITERS = "COMPLEX_DELIMITERS";
 
   public static final String DIMENSION_LENGTHS = "DIMENSION_LENGTHS";
+
+  public static final String DATA_LOAD_BATCH_SIZE = "DATA_LOAD_BATCH_SIZE";
+
+  public static final String DATA_LOAD_BATCH_SIZE_DEFAULT = "1000";
 }
