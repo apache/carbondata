@@ -43,7 +43,6 @@ public abstract class AbstractDataLoadProcessorStep {
   /**
    * The output meta for this step. The data returns from this step is as per this meta.
    *
-   * @return
    */
   public abstract DataField[] getOutput();
 
@@ -55,14 +54,14 @@ public abstract class AbstractDataLoadProcessorStep {
   public abstract void intialize() throws CarbonDataLoadingException;
 
   /**
-   * Tranform the data as per the implemetation.
+   * Tranform the data as per the implementation.
    *
    * @return Array of Iterator with data. It can be processed parallel if implementation class wants
    * @throws CarbonDataLoadingException
    */
-  public Iterator<Object[]>[] execute() throws CarbonDataLoadingException {
-    Iterator<Object[]>[] childIters = child.execute();
-    Iterator<Object[]>[] iterators = new Iterator[childIters.length];
+  public Iterator<CarbonRow>[] execute() throws CarbonDataLoadingException {
+    Iterator<CarbonRow>[] childIters = child.execute();
+    Iterator<CarbonRow>[] iterators = new Iterator[childIters.length];
     for (int i = 0; i < childIters.length; i++) {
       iterators[i] = getIterator(childIters[i]);
     }
@@ -73,15 +72,15 @@ public abstract class AbstractDataLoadProcessorStep {
    * Create the iterator using child iterator.
    *
    * @param childIter
-   * @return
+   * @return new iterator with step specific processing.
    */
-  protected Iterator<Object[]> getIterator(final Iterator<Object[]> childIter) {
-    return new CarbonIterator<Object[]>() {
+  protected Iterator<CarbonRow> getIterator(final Iterator<CarbonRow> childIter) {
+    return new CarbonIterator<CarbonRow>() {
       @Override public boolean hasNext() {
         return childIter.hasNext();
       }
 
-      @Override public Object[] next() {
+      @Override public CarbonRow next() {
         return processRow(childIter.next());
       }
     };
@@ -93,7 +92,7 @@ public abstract class AbstractDataLoadProcessorStep {
    * @param row
    * @return processed row.
    */
-  protected abstract Object[] processRow(Object[] row);
+  protected abstract CarbonRow processRow(CarbonRow row);
 
   /**
    * It is called when task is called successfully.
