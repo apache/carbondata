@@ -877,6 +877,16 @@ public final class CarbonCommonConstants {
    */
   public static String ENABLE_BLOCKLET_DISTRIBUTION_DEFAULTVALUE = "true";
 
+  /**
+   * This batch size is used to send rows from load step to another step in batches.
+   */
+  public static final String DATA_LOAD_BATCH_SIZE = "DATA_LOAD_BATCH_SIZE";
+
+  /**
+   * Default size of data load batch size.
+   */
+  public static final String DATA_LOAD_BATCH_SIZE_DEFAULT = "1000";
+
   private CarbonCommonConstants() {
   }
 }
