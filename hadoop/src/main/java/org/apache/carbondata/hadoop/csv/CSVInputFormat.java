@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.hadoop.mapreduce;
+package org.apache.carbondata.hadoop.csv;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,9 +25,9 @@ import java.io.Reader;
 
 import org.apache.carbondata.hadoop.io.BoundedInputStream;
 import org.apache.carbondata.hadoop.io.StringArrayWritable;
-import org.apache.carbondata.hadoop.util.CSVInputFormatUtil;
 
 import com.univocity.parsers.csv.CsvParser;
+import com.univocity.parsers.csv.CsvParserSettings;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -43,6 +43,7 @@ import org.apache.hadoop.io.compress.Decompressor;
 import org.apache.hadoop.io.compress.SplitCompressionInputStream;
 import org.apache.hadoop.io.compress.SplittableCompressionCodec;
 import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -55,16 +56,37 @@ import org.apache.hadoop.util.LineReader;
  */
 public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWritable> {
 
+  public static final String DELIMITER = "carbon.csvinputformat.delimiter";
+  public static final String DELIMITER_DEFAULT = ",";
+  public static final String COMMENT = "carbon.csvinputformat.comment";
+  public static final String COMMENT_DEFAULT = "#";
+  public static final String QUOTE = "carbon.csvinputformat.quote";
+  public static final String QUOTE_DEFAULT = "\"";
+  public static final String ESCAPE = "carbon.csvinputformat.escape";
+  public static final String ESCAPE_DEFAULT = "\\";
+  public static final String HEADER_PRESENT = "caron.csvinputformat.header.present";
+  public static final boolean HEADER_PRESENT_DEFAULT = false;
+
   @Override
   public RecordReader<NullWritable, StringArrayWritable> createRecordReader(InputSplit inputSplit,
       TaskAttemptContext context) throws IOException, InterruptedException {
-    return new NewCSVRecordReader();
+    return new CSVRecordReader();
+  }
+
+  @Override
+  protected boolean isSplitable(JobContext context, Path file) {
+    final CompressionCodec codec = new CompressionCodecFactory(context.getConfiguration())
+        .getCodec(file);
+    if (null == codec) {
+      return true;
+    }
+    return codec instanceof SplittableCompressionCodec;
   }
 
   /**
    * Treats value as line in file. Key is null.
    */
-  public static class NewCSVRecordReader extends RecordReader<NullWritable, StringArrayWritable> {
+  public static class CSVRecordReader extends RecordReader<NullWritable, StringArrayWritable> {
 
     private long start;
     private long end;
@@ -81,8 +103,8 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     public void initialize(InputSplit inputSplit, TaskAttemptContext context)
         throws IOException, InterruptedException {
       FileSplit split = (FileSplit) inputSplit;
-      this.start = split.getStart();
-      this.end = this.start + split.getLength();
+      start = split.getStart();
+      end = start + split.getLength();
       Path file = split.getPath();
       Configuration job = context.getConfiguration();
       CompressionCodec codec = (new CompressionCodecFactory(job)).getCodec(file);
@@ -90,51 +112,69 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
       FSDataInputStream fileIn = fs.open(file);
       InputStream inputStream = null;
       if (codec != null) {
-        this.isCompressedInput = true;
-        this.decompressor = CodecPool.getDecompressor(codec);
+        isCompressedInput = true;
+        decompressor = CodecPool.getDecompressor(codec);
         if (codec instanceof SplittableCompressionCodec) {
           SplitCompressionInputStream scIn = ((SplittableCompressionCodec) codec)
-              .createInputStream(fileIn, this.decompressor, this.start, this.end,
-                  SplittableCompressionCodec.READ_MODE.BYBLOCK);
-          this.start = scIn.getAdjustedStart();
-          this.end = scIn.getAdjustedEnd();
-          if (this.start != 0) {
+              .createInputStream(fileIn, decompressor, start, end, SplittableCompressionCodec
+                  .READ_MODE.BYBLOCK);
+          start = scIn.getAdjustedStart();
+          end = scIn.getAdjustedEnd();
+          if (start != 0) {
             LineReader lineReader = new LineReader(scIn, 1);
-            this.start += lineReader.readLine(new Text(), 0);
+            start += lineReader.readLine(new Text(), 0);
           }
-          this.filePosition = scIn;
+          filePosition = scIn;
           inputStream = scIn;
         } else {
           CompressionInputStream cIn = codec.createInputStream(fileIn, decompressor);
-          this.filePosition = cIn;
+          filePosition = cIn;
           inputStream = cIn;
         }
       } else {
-        fileIn.seek(this.start);
-        if (this.start != 0) {
+        fileIn.seek(start);
+        if (start != 0) {
           LineReader lineReader = new LineReader(fileIn, 1);
-          this.start += lineReader.readLine(new Text(), 0);
+          start += lineReader.readLine(new Text(), 0);
         }
-        boundedInputStream = new BoundedInputStream(fileIn, this.end - this.start);
-        this.filePosition = fileIn;
+        boundedInputStream = new BoundedInputStream(fileIn, end - start);
+        filePosition = fileIn;
         inputStream = boundedInputStream;
       }
       reader = new InputStreamReader(inputStream);
-      csvParser = new CsvParser(CSVInputFormatUtil.extractCsvParserSettings(job, this.start));
+      csvParser = new CsvParser(extractCsvParserSettings(job));
       csvParser.beginParsing(reader);
+    }
+
+    private CsvParserSettings extractCsvParserSettings(Configuration job) {
+      CsvParserSettings parserSettings = new CsvParserSettings();
+      parserSettings.getFormat().setDelimiter(job.get(DELIMITER, DELIMITER_DEFAULT).charAt(0));
+      parserSettings.getFormat().setComment(job.get(COMMENT, COMMENT_DEFAULT).charAt(0));
+      parserSettings.setLineSeparatorDetectionEnabled(true);
+      parserSettings.setNullValue("");
+      parserSettings.setIgnoreLeadingWhitespaces(false);
+      parserSettings.setIgnoreTrailingWhitespaces(false);
+      parserSettings.setSkipEmptyLines(false);
+      parserSettings.getFormat().setQuote(job.get(QUOTE, QUOTE_DEFAULT).charAt(0));
+      parserSettings.getFormat().setQuoteEscape(job.get(ESCAPE, ESCAPE_DEFAULT).charAt(0));
+      if (start == 0) {
+        parserSettings.setHeaderExtractionEnabled(job.getBoolean(HEADER_PRESENT,
+            HEADER_PRESENT_DEFAULT));
+      }
+      return parserSettings;
     }
 
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
-      this.columns = csvParser.parseNext();
-      if (this.columns == null) {
-        this.value = null;
+      columns = csvParser.parseNext();
+      if (columns == null) {
+        value = null;
         return false;
       }
-      if (this.value == null) {
-        this.value = new StringArrayWritable();
+      if (value == null) {
+        value = new StringArrayWritable();
       }
-      this.value.set(this.columns);
+      value.set(columns);
       return true;
     }
 
@@ -145,34 +185,34 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
 
     @Override
     public StringArrayWritable getCurrentValue() throws IOException, InterruptedException {
-      return this.value;
+      return value;
     }
 
     private long getPos() throws IOException {
-      long retVal = this.start;
-      if (null != this.boundedInputStream) {
-        retVal = this.end - this.boundedInputStream.getRemaining();
-      } else if (this.isCompressedInput && null != this.filePosition) {
-        retVal = this.filePosition.getPos();
+      long retVal = start;
+      if (null != boundedInputStream) {
+        retVal = end - boundedInputStream.getRemaining();
+      } else if (isCompressedInput && null != filePosition) {
+        retVal = filePosition.getPos();
       }
       return retVal;
     }
 
     @Override
     public float getProgress() throws IOException, InterruptedException {
-      return this.start == this.end?0.0F:Math.min(1.0F, (float)(this.getPos() -
-          this.start) / (float)(this.end - this.start));
+      return start == end ? 0.0F : Math.min(1.0F, (float) (getPos() -
+          start) / (float) (end - start));
     }
 
     @Override
     public void close() throws IOException {
       try {
-        if(this.reader != null) {
-          this.reader.close();
+        if (reader != null) {
+          reader.close();
         }
       } finally {
-        if(this.decompressor != null) {
-          CodecPool.returnDecompressor(this.decompressor);
+        if (decompressor != null) {
+          CodecPool.returnDecompressor(decompressor);
         }
       }
     }

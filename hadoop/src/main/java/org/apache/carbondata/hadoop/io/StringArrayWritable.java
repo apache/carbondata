@@ -44,7 +44,8 @@ public class StringArrayWritable implements Writable {
     return values;
   }
 
-  @Override public void readFields(DataInput in) throws IOException {
+  @Override
+  public void readFields(DataInput in) throws IOException {
     int length = in.readInt();
     values = new String[length];
     for (int i = 0; i < length; i++) {
@@ -54,7 +55,8 @@ public class StringArrayWritable implements Writable {
     }
   }
 
-  @Override public void write(DataOutput out) throws IOException {
+  @Override
+  public void write(DataOutput out) throws IOException {
     out.writeInt(values.length);                 // write values
     for (int i = 0; i < values.length; i++) {
       byte[] b = values[i].getBytes(Charset.defaultCharset());
@@ -63,7 +65,8 @@ public class StringArrayWritable implements Writable {
     }
   }
 
-  @Override public String toString() {
+  @Override
+  public String toString() {
     return Arrays.toString(values);
   }
 }
