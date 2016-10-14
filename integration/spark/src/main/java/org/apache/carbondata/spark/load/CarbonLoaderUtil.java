@@ -113,13 +113,14 @@ public final class CarbonLoaderUtil {
 
   }
 
-  private static void generateGraph(IDataProcessStatus schmaModel, SchemaInfo info,
+  private static void generateGraph(IDataProcessStatus dataProcessTaskStatus, SchemaInfo info,
       CarbonLoadModel loadModel, String outputLocation)
       throws GraphGeneratorException {
     DataLoadModel model = new DataLoadModel();
-    model.setCsvLoad(null != schmaModel.getCsvFilePath() || null != schmaModel.getFilesToProcess());
+    model.setCsvLoad(null != dataProcessTaskStatus.getCsvFilePath()
+            || null != dataProcessTaskStatus.getFilesToProcess());
     model.setSchemaInfo(info);
-    model.setTableName(schmaModel.getTableName());
+    model.setTableName(dataProcessTaskStatus.getTableName());
     List<LoadMetadataDetails> loadMetadataDetails = loadModel.getLoadMetadataDetails();
     if (null != loadMetadataDetails && !loadMetadataDetails.isEmpty()) {
       model.setLoadNames(
@@ -127,17 +128,20 @@ public final class CarbonLoaderUtil {
       model.setModificationOrDeletionTime(CarbonDataProcessorUtil
           .getModificationOrDeletionTimesFromLoadMetadataDetails(loadMetadataDetails));
     }
-    model.setBlocksID(schmaModel.getBlocksID());
-    model.setEscapeCharacter(schmaModel.getEscapeCharacter());
-    model.setQuoteCharacter(schmaModel.getQuoteCharacter());
-    model.setCommentCharacter(schmaModel.getCommentCharacter());
-    model.setRddIteratorKey(schmaModel.getRddIteratorKey());
+    model.setBlocksID(dataProcessTaskStatus.getBlocksID());
+    model.setEscapeCharacter(dataProcessTaskStatus.getEscapeCharacter());
+    model.setQuoteCharacter(dataProcessTaskStatus.getQuoteCharacter());
+    model.setCommentCharacter(dataProcessTaskStatus.getCommentCharacter());
+    model.setRddIteratorKey(dataProcessTaskStatus.getRddIteratorKey());
     model.setTaskNo(loadModel.getTaskNo());
     model.setFactTimeStamp(loadModel.getFactTimeStamp());
     model.setMaxColumns(loadModel.getMaxColumns());
     boolean hdfsReadMode =
-        schmaModel.getCsvFilePath() != null && schmaModel.getCsvFilePath().startsWith("hdfs:");
-    int allocate = null != schmaModel.getCsvFilePath() ? 1 : schmaModel.getFilesToProcess().size();
+        dataProcessTaskStatus.getCsvFilePath() != null
+                && dataProcessTaskStatus.getCsvFilePath().startsWith("hdfs:");
+    int allocate =
+            null != dataProcessTaskStatus.getCsvFilePath()
+                    ? 1 : dataProcessTaskStatus.getFilesToProcess().size();
     GraphGenerator generator = new GraphGenerator(model, hdfsReadMode, loadModel.getPartitionId(),
         loadModel.getStorePath(), allocate,
         loadModel.getCarbonDataLoadSchema(), loadModel.getSegmentId(), outputLocation);
@@ -174,21 +178,22 @@ public final class CarbonLoaderUtil {
       path.delete();
     }
 
-    DataProcessTaskStatus schmaModel = new DataProcessTaskStatus(databaseName, tableName);
-    schmaModel.setCsvFilePath(loadModel.getFactFilePath());
-    schmaModel.setDimCSVDirLoc(loadModel.getDimFolderPath());
+    DataProcessTaskStatus dataProcessTaskStatus
+            = new DataProcessTaskStatus(databaseName, tableName);
+    dataProcessTaskStatus.setCsvFilePath(loadModel.getFactFilePath());
+    dataProcessTaskStatus.setDimCSVDirLoc(loadModel.getDimFolderPath());
     if (loadModel.isDirectLoad()) {
-      schmaModel.setFilesToProcess(loadModel.getFactFilesToProcess());
-      schmaModel.setDirectLoad(true);
-      schmaModel.setCsvDelimiter(loadModel.getCsvDelimiter());
-      schmaModel.setCsvHeader(loadModel.getCsvHeader());
+      dataProcessTaskStatus.setFilesToProcess(loadModel.getFactFilesToProcess());
+      dataProcessTaskStatus.setDirectLoad(true);
+      dataProcessTaskStatus.setCsvDelimiter(loadModel.getCsvDelimiter());
+      dataProcessTaskStatus.setCsvHeader(loadModel.getCsvHeader());
     }
 
-    schmaModel.setBlocksID(loadModel.getBlocksID());
-    schmaModel.setEscapeCharacter(loadModel.getEscapeChar());
-    schmaModel.setQuoteCharacter(loadModel.getQuoteChar());
-    schmaModel.setCommentCharacter(loadModel.getCommentChar());
-    schmaModel.setRddIteratorKey(loadModel.getRddIteratorKey());
+    dataProcessTaskStatus.setBlocksID(loadModel.getBlocksID());
+    dataProcessTaskStatus.setEscapeCharacter(loadModel.getEscapeChar());
+    dataProcessTaskStatus.setQuoteCharacter(loadModel.getQuoteChar());
+    dataProcessTaskStatus.setCommentCharacter(loadModel.getCommentChar());
+    dataProcessTaskStatus.setRddIteratorKey(loadModel.getRddIteratorKey());
     SchemaInfo info = new SchemaInfo();
 
     info.setDatabaseName(databaseName);
@@ -200,9 +205,9 @@ public final class CarbonLoaderUtil {
     info.setBadRecordsLoggerEnable(loadModel.getBadRecordsLoggerEnable());
     info.setBadRecordsLoggerRedirect(loadModel.getBadRecordsLoggerRedirect());
 
-    generateGraph(schmaModel, info, loadModel, outPutLoc);
+    generateGraph(dataProcessTaskStatus, info, loadModel, outPutLoc);
 
-    DataGraphExecuter graphExecuter = new DataGraphExecuter(schmaModel);
+    DataGraphExecuter graphExecuter = new DataGraphExecuter(dataProcessTaskStatus);
     graphExecuter
         .executeGraph(graphPath, new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN),
             info, loadModel.getPartitionId(), loadModel.getCarbonDataLoadSchema());
