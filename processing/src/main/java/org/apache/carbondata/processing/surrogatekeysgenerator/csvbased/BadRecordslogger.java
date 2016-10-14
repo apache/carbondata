@@ -32,7 +32,6 @@ import java.util.Map;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -69,9 +68,13 @@ public class BadRecordslogger {
   private BufferedWriter bufferedCSVWriter;
   private DataOutputStream outCSVStream;
   /**
-   *
+   * bad record log file path
    */
-  private CarbonFile logFile;
+  private String logFilePath;
+  /**
+   * csv file path
+   */
+  private String csvFilePath;
 
   /**
    * task key which is DatabaseName/TableName/tablename
@@ -145,14 +148,11 @@ public class BadRecordslogger {
    *
    */
   private synchronized void writeBadRecordsToFile(StringBuilder logStrings) {
-
-    if (null == logFile) {
-      String filePath =
+    if (null == logFilePath) {
+      logFilePath =
           this.storePath + File.separator + this.fileName + CarbonCommonConstants.LOG_FILE_EXTENSION
               + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-      logFile = FileFactory.getCarbonFile(filePath, FileFactory.getFileType(filePath));
     }
-
     try {
       if (null == bufferedWriter) {
         FileType fileType = FileFactory.getFileType(storePath);
@@ -161,13 +161,13 @@ public class BadRecordslogger {
           FileFactory.mkdirs(this.storePath, fileType);
 
           // create the files
-          FileFactory.createNewFile(logFile.getPath(), fileType);
+          FileFactory.createNewFile(logFilePath, fileType);
         }
 
-        outStream = FileFactory.getDataOutputStream(logFile.getPath(), fileType);
+        outStream = FileFactory.getDataOutputStream(logFilePath, fileType);
 
         bufferedWriter = new BufferedWriter(new OutputStreamWriter(outStream,
-                Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
+            Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
 
       }
       bufferedWriter.write(logStrings.toString());
@@ -185,12 +185,16 @@ public class BadRecordslogger {
   }
 
   /**
+   * method will write the row having bad record in the csv file.
    *
+   * @param logStrings
    */
   private synchronized void writeBadRecordsToCSVFile(StringBuilder logStrings) {
-    String filePath =
-        this.storePath + File.separator + this.fileName + CarbonCommonConstants.CSV_FILE_EXTENSION
-            + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
+    if (null == csvFilePath) {
+      csvFilePath =
+          this.storePath + File.separator + this.fileName + CarbonCommonConstants.CSV_FILE_EXTENSION
+              + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
+    }
     try {
       if (null == bufferedCSVWriter) {
         FileType fileType = FileFactory.getFileType(storePath);
@@ -199,10 +203,10 @@ public class BadRecordslogger {
           FileFactory.mkdirs(this.storePath, fileType);
 
           // create the files
-          FileFactory.createNewFile(filePath, fileType);
+          FileFactory.createNewFile(csvFilePath, fileType);
         }
 
-        outCSVStream = FileFactory.getDataOutputStream(filePath, fileType);
+        outCSVStream = FileFactory.getDataOutputStream(csvFilePath, fileType);
 
         bufferedCSVWriter = new BufferedWriter(new OutputStreamWriter(outCSVStream,
             Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
@@ -211,9 +215,9 @@ public class BadRecordslogger {
       bufferedCSVWriter.write(logStrings.toString());
       bufferedCSVWriter.newLine();
     } catch (FileNotFoundException e) {
-      LOGGER.error("Bad Log Files not found");
+      LOGGER.error("Bad record csv Files not found");
     } catch (IOException e) {
-      LOGGER.error("Error While writing bad log File");
+      LOGGER.error("Error While writing bad record csv File");
     }
     finally {
       badRecordEntry.put(taskKey, "Partially");

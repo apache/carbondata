@@ -54,6 +54,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.integration.spark.merger.CompactionType
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
+import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.spark.CarbonSparkFactory
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -1135,12 +1136,15 @@ case class LoadTable(
       carbonLoadModel.setEscapeChar(escapeChar)
       carbonLoadModel.setQuoteChar(quoteChar)
       carbonLoadModel.setCommentChar(commentchar)
-      carbonLoadModel.setSerializationNullFormat("serialization_null_format" + "," +
-        serializationNullFormat)
       carbonLoadModel
-        .setBadRecordsLoggerEnable("bad_records_logger_enable" + "," + badRecordsLoggerEnable)
+        .setSerializationNullFormat(
+          TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + "," + serializationNullFormat)
       carbonLoadModel
-        .setBadRecordsLoggerRedirect("bad_records_action" + "," + badRecordsLoggerRedirect)
+        .setBadRecordsLoggerEnable(
+          TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName + "," + badRecordsLoggerEnable)
+      carbonLoadModel
+        .setBadRecordsAction(
+          TableOptionConstant.BAD_RECORDS_ACTION.getName + "," + badRecordsLoggerRedirect)
 
       if (delimiter.equalsIgnoreCase(complex_delimiter_level_1) ||
           complex_delimiter_level_1.equalsIgnoreCase(complex_delimiter_level_2) ||
