@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.examples
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.examples.util.ExampleUtils
 import org.apache.carbondata.hadoop.CarbonInputFormat
 
@@ -28,7 +29,8 @@ object HadoopFileExample {
     ExampleUtils.writeSampleCarbonFile(cc, "carbon1")
 
     val sc = cc.sparkContext
-    val input = sc.newAPIHadoopFile(s"${cc.storePath}/default/carbon1",
+    val input = sc.newAPIHadoopFile(
+      s"${cc.storePath}/${CarbonCommonConstants.DATABASE_DEFAULT_NAME}/carbon1",
       classOf[CarbonInputFormat[Array[Object]]],
       classOf[Void],
       classOf[Array[Object]])

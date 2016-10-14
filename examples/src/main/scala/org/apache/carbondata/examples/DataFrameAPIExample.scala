@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.examples
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.examples.util.ExampleUtils
 
 // scalastyle:off println
@@ -29,8 +30,7 @@ object DataFrameAPIExample {
     // use datasource api to read
     val in = cc.read
       .format("carbondata")
-      .option("tableName", "carbon1")
-      .load()
+      .load(s"${cc.storePath}/${CarbonCommonConstants.DATABASE_DEFAULT_NAME}/carbon1")
 
     import cc.implicits._
     val count = in.where($"c3" > 500).select($"*").count()

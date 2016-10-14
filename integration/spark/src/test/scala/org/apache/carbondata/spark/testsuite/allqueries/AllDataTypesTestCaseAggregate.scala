@@ -1091,10 +1091,11 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   test("CARBONDATA-60-union-defect")({
     sql("drop table if exists carbonunion")
     import implicits._
-    val df=sc.parallelize(1 to 1000).map(x => (x+"", (x+100)+"")).toDF("c1", "c2")
+    val df = sc.parallelize(1 to 1000).map(x => (x+"", (x+100)+"")).toDF("c1", "c2")
     df.registerTempTable("sparkunion")
     import org.apache.carbondata.spark._
-    df.saveAsCarbonFile(Map("tableName" -> "carbonunion"))
+    df.saveAsCarbonFile(
+      Map("path" -> s"$storePath/${CarbonCommonConstants.DATABASE_DEFAULT_NAME}/carbonunion"))
 
     checkAnswer(
       sql("select c1,count(c1) from (select c1 as c1,c2 as c2 from carbonunion union all select c2 as c1,c1 as c2 from carbonunion)t where c1='200' group by c1"),

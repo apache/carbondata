@@ -38,7 +38,8 @@ class DataFrameFuncs(dataFrame: DataFrame) extends Logging {
 
     val cc = CarbonContext.getInstance(dataFrame.sqlContext.sparkContext)
     val options = new CarbonOption(parameters)
-    cc.sql(makeCreateTableString(dataFrame.schema, options))
+    val (dbName, tableName) = options.dbNameAndTableName
+    cc.sql(makeCreateTableString(dataFrame.schema, dbName, tableName))
 
     if (options.tempCSV.equals("true")) {
       loadTempCSV(options, cc)
@@ -85,7 +86,8 @@ class DataFrameFuncs(dataFrame: DataFrame) extends Logging {
 
     try {
       logInfo(s"temporary CSV file size: ${countSize() / 1024 / 1024} MB")
-      cc.sql(makeLoadString(options.tableName, tempCSVFolder))
+      val (dbName, tableName) = options.dbNameAndTableName
+      cc.sql(makeLoadString(dbName, tableName, tempCSVFolder))
     } finally {
       fs.delete(tempCSVPath, true)
     }
@@ -98,9 +100,10 @@ class DataFrameFuncs(dataFrame: DataFrame) extends Logging {
    */
   private def loadDataFrame(options: CarbonOption, cc: CarbonContext): Unit = {
     val header = dataFrame.columns.mkString(",")
+    val (dbName, tablName) = options.dbNameAndTableName
     LoadTable(
-      Some(options.dbName),
-      options.tableName,
+      Some(dbName),
+      tablName,
       null,
       Seq(),
       Map(("fileheader" -> header)),
@@ -126,9 +129,8 @@ class DataFrameFuncs(dataFrame: DataFrame) extends Logging {
     }
   }
 
-  private def makeCreateTableString(schema: StructType, option: CarbonOption): String = {
-    val tableName = option.tableName
-    val dbName = option.dbName
+  private def makeCreateTableString(schema: StructType,
+      dbName: String, tableName: String): String = {
     val carbonSchema = schema.map { field =>
       s"${ field.name } ${ convertToCarbonType(field.dataType) }"
     }
@@ -139,10 +141,10 @@ class DataFrameFuncs(dataFrame: DataFrame) extends Logging {
       """
   }
 
-  private def makeLoadString(tableName: String, csvFolder: String): String = {
+  private def makeLoadString(dbName: String, tableName: String, csvFolder: String): String = {
     s"""
           LOAD DATA INPATH '$csvFolder'
-          INTO TABLE $tableName
+          INTO TABLE $dbName.$tableName
           OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}')
       """
   }

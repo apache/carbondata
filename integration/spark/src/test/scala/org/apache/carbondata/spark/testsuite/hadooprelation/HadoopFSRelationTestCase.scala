@@ -19,6 +19,7 @@
 
 package org.apache.carbondata.spark.testsuite.hadooprelation
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.spark.sql.{DataFrame, Row}
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
@@ -48,17 +49,20 @@ class HadoopFSRelationTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("hadoopfsrelation select all test") {
-    val rdd = read.format("org.apache.spark.sql.CarbonSource")
-      .option("tableName", "hadoopfsrelation").load()
-    assert(rdd.collect().length > 0)
+    val df =
+      read.format("org.apache.spark.sql.CarbonSource")
+          .load(s"$storePath/${CarbonCommonConstants.DATABASE_DEFAULT_NAME}/hadoopfsrelation")
+    assert(df.collect().length > 0)
   }
 
   test("hadoopfsrelation filters test") {
-    val rdd: DataFrame = read.format("org.apache.spark.sql.CarbonSource")
-      .option("tableName", "hadoopfsrelation").load()
-      .select("empno", "empname", "utilization").where("empname in ('arvind','ayushi')")
+    val df: DataFrame =
+      read.format("org.apache.spark.sql.CarbonSource")
+          .load(s"$storePath/${CarbonCommonConstants.DATABASE_DEFAULT_NAME}/hadoopfsrelation")
+          .select("empno", "empname", "utilization")
+          .where("empname in ('arvind','ayushi')")
     checkAnswer(
-      rdd,
+      df,
       sql("select empno,empname,utilization from hadoopfsrelation_hive where empname in ('arvind','ayushi')"))
   }
 

@@ -42,7 +42,7 @@ import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
 import org.apache.carbondata.hadoop.util.SchemaReader
 import org.apache.carbondata.scan.expression.logical.AndExpression
-import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
+import org.apache.carbondata.spark.CarbonFilters
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 import org.apache.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
 import org.apache.carbondata.spark.util.QueryPlanUtil

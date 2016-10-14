@@ -15,7 +15,9 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark
+package org.apache.spark.sql
+
+import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
@@ -23,13 +25,21 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
  * Contains all options for Spark data source
  */
 class CarbonOption(options: Map[String, String]) {
-  def tableIdentifier: String = options.getOrElse("tableName", s"$dbName.$tableName")
 
-  def dbName: String = options.getOrElse("dbName", CarbonCommonConstants.DATABASE_DEFAULT_NAME)
+  def tableIdentifier: TableIdentifier = {
+    val (dbName, tableName) = dbNameAndTableName
+    TableIdentifier(tableName, Some(dbName))
+  }
 
-  def tableName: String = options.getOrElse("tableName", "default_table")
+  def path: String = options.getOrElse("path",
+    throw new IllegalArgumentException("path must present"))
 
-  def tableId: String = options.getOrElse("tableId", "default_table_id")
+  def dbNameAndTableName: (String, String) = {
+    val tablePath = path.replace("\\", "/")
+    val pathSplits = tablePath.split('/')
+    assert(pathSplits.length > 2)
+    (pathSplits(pathSplits.length - 2), pathSplits.last)
+  }
 
   def partitionCount: String = options.getOrElse("partitionCount", "1")
 

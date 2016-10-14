@@ -17,8 +17,9 @@
 
 package org.apache.carbondata.examples
 
-import org.apache.spark.sql.{SaveMode, SQLContext}
+import org.apache.spark.sql.SQLContext
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.examples.util.ExampleUtils
 
 object DatasourceExample {
@@ -34,7 +35,7 @@ object DatasourceExample {
       s"""
         | CREATE TEMPORARY TABLE source
         | USING org.apache.spark.sql.CarbonSource
-        | OPTIONS (path '${cc.storePath}/default/table1')
+        | OPTIONS (path '${cc.storePath}/${CarbonCommonConstants.DATABASE_DEFAULT_NAME}/table1')
       """.stripMargin)
     sqlContext.sql("SELECT c1, c2, count(*) FROM source WHERE c3 > 100 GROUP BY c1, c2").show
   }
