@@ -22,6 +22,7 @@ import java.io.File
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.{CarbonContext, SaveMode}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 // scalastyle:off println
@@ -69,10 +70,9 @@ object ExampleUtils {
     // save dataframe to carbon file
     df.write
       .format("carbondata")
-      .option("tableName", tableName)
       .option("compress", "true")
       .mode(SaveMode.Overwrite)
-      .save()
+      .save(s"${cc.storePath}/${CarbonCommonConstants.DATABASE_DEFAULT_NAME}/$tableName")
   }
 }
 // scalastyle:on println

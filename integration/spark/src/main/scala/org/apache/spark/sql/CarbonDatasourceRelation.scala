@@ -36,7 +36,7 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDime
 import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.lcm.status.SegmentStatusManager
-import org.apache.carbondata.spark.{CarbonOption, _}
+import org.apache.carbondata.spark._
 
 /**
  * Carbon relation provider compliant to data source api.
@@ -55,18 +55,11 @@ class CarbonSource extends RelationProvider
   override def createRelation(
       sqlContext: SQLContext,
       parameters: Map[String, String]): BaseRelation = {
-    // if path is provided we can directly create Hadoop relation. \
-    // Otherwise create datasource relation
-    parameters.get("path") match {
-      case Some(path) => CarbonDatasourceHadoopRelation(sqlContext, Array(path), parameters, None)
-      case _ =>
-        val options = new CarbonOption(parameters)
-        val tableIdentifier = options.tableIdentifier.split("""\.""").toSeq
-        val identifier = tableIdentifier match {
-          case Seq(name) => TableIdentifier(name, None)
-          case Seq(db, name) => TableIdentifier(name, Some(db))
-        }
-        CarbonDatasourceRelation(identifier, None)(sqlContext)
+    val options = new CarbonOption(parameters)
+    if (sqlContext.isInstanceOf[CarbonContext]) {
+      CarbonDatasourceRelation(options.tableIdentifier, None)(sqlContext)
+    } else {
+      CarbonDatasourceHadoopRelation(sqlContext, Array(options.path), parameters, None)
     }
   }
 
@@ -80,22 +73,17 @@ class CarbonSource extends RelationProvider
     require(sqlContext.isInstanceOf[CarbonContext], "Error in saving dataframe to carbon file, " +
         "must use CarbonContext to save dataframe")
 
-    // User should not specify path since only one store is supported in carbon currently,
-    // after we support multi-store, we can remove this limitation
-    require(!parameters.contains("path"), "'path' should not be specified, " +
-        "the path to store carbon file is the 'storePath' specified when creating CarbonContext")
-
     val options = new CarbonOption(parameters)
-    val storePath = CarbonContext.getInstance(sqlContext.sparkContext).storePath
-    val tablePath = new Path(storePath + "/" + options.dbName + "/" + options.tableName)
-    val isExists = tablePath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration)
-        .exists(tablePath)
+    val tablePath = new Path(options.path)
+    val (dbName, tableName) = options.dbNameAndTableName
+    val isExists =
+      tablePath.getFileSystem(sqlContext.sparkContext.hadoopConfiguration).exists(tablePath)
     val (doSave, doAppend) = (mode, isExists) match {
       case (SaveMode.ErrorIfExists, true) =>
-        sys.error(s"ErrorIfExists mode, path $storePath already exists.")
+        sys.error(s"ErrorIfExists mode, path $tablePath already exists.")
       case (SaveMode.Overwrite, true) =>
         val cc = CarbonContext.getInstance(sqlContext.sparkContext)
-        cc.sql(s"DROP TABLE IF EXISTS ${ options.dbName }.${ options.tableName }")
+        cc.sql(s"DROP TABLE IF EXISTS $dbName.$tableName")
         (true, false)
       case (SaveMode.Overwrite, false) | (SaveMode.ErrorIfExists, false) =>
         (true, false)

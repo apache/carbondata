@@ -869,9 +869,11 @@ case class CreateTable(cm: tableModel) extends RunnableCommand {
       val tablePath = catalog.createTableFromThrift(tableInfo, dbName, tbName, null)(sqlContext)
       try {
         sqlContext.sql(
-          s"""CREATE TABLE $dbName.$tbName USING carbondata""" +
-          s""" OPTIONS (tableName "$dbName.$tbName", tablePath "$tablePath") """)
-              .collect
+          s"""
+             | CREATE TABLE $dbName.$tbName
+             | USING carbondata
+             | OPTIONS (path "$tablePath")
+           """.stripMargin).collect
       } catch {
         case e: Exception =>
 

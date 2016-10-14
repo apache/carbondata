@@ -21,6 +21,7 @@ package org.apache.carbondata.integration.spark.testsuite.dataload
 
 import java.io.File
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.{DataFrame, Row, SQLContext, SaveMode}
@@ -33,6 +34,8 @@ class SparkDatasourceSuite extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("DROP TABLE IF EXISTS carbon1")
+    sql("DROP TABLE IF EXISTS carbon2")
+    sql("DROP TABLE IF EXISTS carbon3")
 
     currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
         .getCanonicalPath
@@ -44,35 +47,37 @@ class SparkDatasourceSuite extends QueryTest with BeforeAndAfterAll {
     // save dataframe to carbon file
     df.write
         .format("carbondata")
-        .option("tableName", "carbon1")
         .mode(SaveMode.Overwrite)
-        .save()
+        .save(s"$storePath/${CarbonCommonConstants.DATABASE_DEFAULT_NAME}/carbon1")
   }
 
   test("read and write using CarbonContext") {
     val in = read
         .format("carbondata")
-        .option("tableName", "carbon1")
-        .load()
+        .load(s"$storePath/${CarbonCommonConstants.DATABASE_DEFAULT_NAME}/carbon1")
 
     assert(in.where("c3 > 500").count() == 500)
   }
 
   test("read and write using CarbonContext with compression") {
+    df.write
+        .format("carbondata")
+        .option("compress", "true")
+        .mode(SaveMode.Overwrite)
+        .save(s"$storePath/${CarbonCommonConstants.DATABASE_DEFAULT_NAME}/carbon2")
+
     val in = read
         .format("carbondata")
-        .option("tableName", "carbon1")
-        .option("compress", "true")
-        .load()
+        .load(s"$storePath/${CarbonCommonConstants.DATABASE_DEFAULT_NAME}/carbon2")
 
     assert(in.where("c3 > 500").count() == 500)
   }
 
   test("saveAsCarbon API") {
     import org.apache.carbondata.spark._
-    df.saveAsCarbonFile(Map("tableName" -> "carbon2"))
+    df.saveAsCarbonFile(Map("path" -> s"$storePath/${CarbonCommonConstants.DATABASE_DEFAULT_NAME}/carbon3"))
 
-    checkAnswer(sql("SELECT count(*) FROM carbon2 WHERE c3 > 100"), Seq(Row(900)))
+    checkAnswer(sql("SELECT count(*) FROM carbon3 WHERE c3 > 100"), Seq(Row(900)))
   }
 
   test("query using SQLContext") {
@@ -143,5 +148,6 @@ class SparkDatasourceSuite extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("DROP TABLE IF EXISTS carbon1")
     sql("DROP TABLE IF EXISTS carbon2")
+    sql("DROP TABLE IF EXISTS carbon3")
   }
 }
