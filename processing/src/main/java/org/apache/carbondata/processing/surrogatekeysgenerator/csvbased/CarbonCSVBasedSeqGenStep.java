@@ -1237,6 +1237,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
   private void addEntryToBadRecords(Object[] r, int j, String columnName,
       String dataType) {
+    dataType= DataTypeUtil.getColumnDataTypeDisplayName(dataType);
     badRecordslogger.addBadRecordsToBuilder(r,
         "The value " + " \"" + r[j] + "\"" + " with column name " + columnName
             + " and column data type " + dataType + " is not a valid " + dataType + " type.",
