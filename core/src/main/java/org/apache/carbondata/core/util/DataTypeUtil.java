@@ -25,6 +25,8 @@ import java.math.RoundingMode;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -43,6 +45,23 @@ public final class DataTypeUtil {
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataTypeUtil.class.getName());
+  private static final Map<String, String> dataTypeDisplayNames;
+
+  static {
+    dataTypeDisplayNames = new HashMap<String, String>(16);
+    dataTypeDisplayNames.put(DataType.DATE.toString(), DataType.DATE.getName());
+    dataTypeDisplayNames.put(DataType.LONG.toString(), DataType.LONG.getName());
+    dataTypeDisplayNames.put(DataType.INT.toString(), DataType.INT.getName());
+    dataTypeDisplayNames.put(DataType.FLOAT.toString(), DataType.FLOAT.getName());
+    dataTypeDisplayNames.put(DataType.BOOLEAN.toString(), DataType.BOOLEAN.getName());
+    dataTypeDisplayNames.put(DataType.NULL.toString(), DataType.NULL.getName());
+    dataTypeDisplayNames.put(DataType.DECIMAL.toString(), DataType.DECIMAL.getName());
+    dataTypeDisplayNames.put(DataType.ARRAY.toString(), DataType.ARRAY.getName());
+    dataTypeDisplayNames.put(DataType.STRUCT.toString(), DataType.STRUCT.getName());
+    dataTypeDisplayNames.put(DataType.TIMESTAMP.toString(), DataType.TIMESTAMP.getName());
+    dataTypeDisplayNames.put(DataType.SHORT.toString(), DataType.SHORT.getName());
+    dataTypeDisplayNames.put(DataType.STRING.toString(), DataType.STRING.getName());
+  }
 
   /**
    * This method will convert a given value to its specific type
@@ -70,6 +89,14 @@ public final class DataTypeUtil {
         }
         return parsedValue;
     }
+  }
+
+  /**
+   * @param dataType
+   * @return
+   */
+  public static String getColumnDataTypeDisplayName(String dataType) {
+    return dataTypeDisplayNames.get(dataType);
   }
 
   /**
