@@ -25,22 +25,27 @@ import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.carbon.metadata.datatype.{DataType => CarbonType}
 
-class DataFrameFuncs(dataFrame: DataFrame) extends Logging {
+class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
 
-  /**
-   * Saves DataFrame as CarbonData files.
-   */
   def saveAsCarbonFile(parameters: Map[String, String] = Map()): Unit = {
-    // To avoid derby problem, dataframe need to be writen and read using CarbonContext
-    require(dataFrame.sqlContext.isInstanceOf[CarbonContext],
-      "Error in saving dataframe to carbon file, must use CarbonContext to save dataframe"
-    )
-
+    checkContext()
     val cc = CarbonContext.getInstance(dataFrame.sqlContext.sparkContext)
-    val options = new CarbonOption(parameters)
-    cc.sql(makeCreateTableString(dataFrame.schema, options))
 
-    if (options.tempCSV.equals("true")) {
+    // create a new table using dataframe's schema and write its content into the table
+    cc.sql(makeCreateTableString(dataFrame.schema, new CarbonOption(parameters)))
+    writeToCarbonFile(parameters)
+  }
+
+  def appendToCarbonFile(parameters: Map[String, String] = Map()): Unit = {
+    // append the data as a new load
+    checkContext()
+    writeToCarbonFile(parameters)
+  }
+
+  private def writeToCarbonFile(parameters: Map[String, String] = Map()): Unit = {
+    val options = new CarbonOption(parameters)
+    val cc = CarbonContext.getInstance(dataFrame.sqlContext.sparkContext)
+    if (options.tempCSV) {
       loadTempCSV(options, cc)
     } else {
       loadDataFrame(options, cc)
@@ -55,18 +60,8 @@ class DataFrameFuncs(dataFrame: DataFrame) extends Logging {
    */
   private def loadTempCSV(options: CarbonOption, cc: CarbonContext): Unit = {
     // temporary solution: write to csv file, then load the csv into carbon
-    val tempCSVFolder = s"./tempCSV"
-    var writer: DataFrameWriter =
-      dataFrame.write
-        .format(csvPackage)
-        .option("header", "false")
-        .mode(SaveMode.Overwrite)
-
-    if (options.compress.equals("true")) {
-      writer = writer.option("codec", "gzip")
-    }
-
-    writer.save(tempCSVFolder)
+    val tempCSVFolder = "./tempCSV"
+    writeToTempCSVFile(tempCSVFolder, options)
 
     val tempCSVPath = new Path(tempCSVFolder)
     val fs = tempCSVPath.getFileSystem(dataFrame.sqlContext.sparkContext.hadoopConfiguration)
@@ -83,12 +78,34 @@ class DataFrameFuncs(dataFrame: DataFrame) extends Logging {
       size
     }
 
+    logInfo(s"temporary CSV file size: ${countSize / 1024 / 1024} MB")
+
     try {
-      logInfo(s"temporary CSV file size: ${countSize() / 1024 / 1024} MB")
-      cc.sql(makeLoadString(options.tableName, tempCSVFolder))
+      cc.sql(makeLoadString(tempCSVFolder, options))
     } finally {
       fs.delete(tempCSVPath, true)
     }
+  }
+
+  private def checkContext(): Unit = {
+    // To avoid derby problem, dataframe need to be writen and read using CarbonContext
+    require(dataFrame.sqlContext.isInstanceOf[CarbonContext],
+      "Error in saving dataframe to carbon file, must use CarbonContext to save dataframe"
+    )
+  }
+
+  private def writeToTempCSVFile(tempCSVFolder: String, options: CarbonOption): Unit = {
+    var writer: DataFrameWriter =
+      dataFrame.write
+        .format(csvPackage)
+        .option("header", "false")
+        .mode(SaveMode.Overwrite)
+
+    if (options.compress) {
+      writer = writer.option("codec", "gzip")
+    }
+
+    writer.save(tempCSVFolder)
   }
 
   /**
@@ -126,34 +143,23 @@ class DataFrameFuncs(dataFrame: DataFrame) extends Logging {
     }
   }
 
-  private def makeCreateTableString(schema: StructType, option: CarbonOption): String = {
-    val tableName = option.tableName
-    val dbName = option.dbName
+  private def makeCreateTableString(schema: StructType, options: CarbonOption): String = {
     val carbonSchema = schema.map { field =>
       s"${ field.name } ${ convertToCarbonType(field.dataType) }"
     }
     s"""
-          CREATE TABLE IF NOT EXISTS $dbName.$tableName
+          CREATE TABLE IF NOT EXISTS ${options.dbName}.${options.tableName}
           (${ carbonSchema.mkString(", ") })
           STORED BY '${ CarbonContext.datasourceName }'
       """
   }
 
-  private def makeLoadString(tableName: String, csvFolder: String): String = {
+  private def makeLoadString(csvFolder: String, options: CarbonOption): String = {
     s"""
           LOAD DATA INPATH '$csvFolder'
-          INTO TABLE $tableName
+          INTO TABLE ${options.dbName}.${options.tableName}
           OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}')
       """
-  }
-
-  def appendToCarbonFile(parameters: Map[String, String] = Map()): Unit = {
-    // find out table
-    // find out streaming segment
-    // for each rdd partition, find out the appendable carbon file
-    // check whether it is full
-    // if full, create new file
-    // append to it: create blocklet header and data, call thrift to convert, write hdfs
   }
 
 }

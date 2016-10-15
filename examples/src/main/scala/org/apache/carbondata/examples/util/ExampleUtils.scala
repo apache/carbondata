@@ -55,24 +55,37 @@ object ExampleUtils {
    * This func will write a sample CarbonData file containing following schema:
    * c1: String, c2: String, c3: Double
    */
-  def writeSampleCarbonFile(cc: CarbonContext, tableName: String): Unit = {
+  def writeSampleCarbonFile(cc: CarbonContext, tableName: String, numRows: Int = 1000): Unit = {
+    cc.sql(s"DROP TABLE IF EXISTS $tableName")
+    writeDataframe(cc, tableName, numRows, SaveMode.Overwrite)
+  }
+
+  /**
+   * This func will append data to the CarbonData file
+   */
+  def appendSampleCarbonFile(cc: CarbonContext, tableName: String, numRows: Int = 1000): Unit = {
+    writeDataframe(cc, tableName, numRows, SaveMode.Append)
+  }
+
+  /**
+   * create a new dataframe and write to CarbonData file, based on save mode
+   */
+  private def writeDataframe(
+      cc: CarbonContext, tableName: String, numRows: Int, mode: SaveMode): Unit = {
     // use CarbonContext to write CarbonData files
     import cc.implicits._
     val sc = cc.sparkContext
-    // create a dataframe, it can be from parquet or hive table
-    val df = sc.parallelize(1 to 1000, 2)
+    val df = sc.parallelize(1 to numRows, 2)
         .map(x => ("a", "b", x))
         .toDF("c1", "c2", "c3")
 
-    cc.sql(s"DROP TABLE IF EXISTS $tableName")
-
     // save dataframe to carbon file
     df.write
-      .format("carbondata")
-      .option("tableName", tableName)
-      .option("compress", "true")
-      .mode(SaveMode.Overwrite)
-      .save()
+        .format("carbondata")
+        .option("tableName", tableName)
+        .option("compress", "true")
+        .mode(mode)
+        .save()
   }
 }
 // scalastyle:on println

@@ -33,8 +33,13 @@ object DataFrameAPIExample {
       .load()
 
     import cc.implicits._
-    val count = in.where($"c3" > 500).select($"*").count()
-    println(s"count using dataframe: $count")
+    var count = in.where($"c3" > 500).select($"*").count()
+    println(s"count after 1 load: $count")
+
+    // append new data, query answer should be 1000
+    ExampleUtils.appendSampleCarbonFile(cc, "carbon1")
+    count = in.where($"c3" > 500).select($"*").count()
+    println(s"count after 2 load: $count")
 
     // use SQL to read
     cc.sql("SELECT count(*) FROM carbon1 WHERE c3 > 500").show
