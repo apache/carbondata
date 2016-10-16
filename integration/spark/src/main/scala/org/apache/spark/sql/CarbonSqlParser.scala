@@ -922,7 +922,7 @@ class CarbonSqlParser()
   }
 
   protected lazy val loadDataNew: Parser[LogicalPlan] =
-    LOAD ~> DATA ~> opt(LOCAL) ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
+    LOAD ~> DATA ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
       (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
       (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
         case filePath ~ isOverwrite ~ table ~ partionDataOptions =>
