@@ -91,6 +91,12 @@ Following are the options that can be used in load data:
     ```ruby
     OPTIONS('ALL_DICTIONARY_PATH'='/opt/alldictionary/data.dictionary')
     ```
+- **COLUMNDICT:** dictionary file path for single column.
+
+    ```ruby
+    OPTIONS('COLUMNDICT'='column1:dictionaryFilePath1, column2:dictionaryFilePath2')
+    ```
+    Note: ALL_DICTIONARY_PATH and COLUMNDICT can't be used together.
 
 **Example:**
 
@@ -154,8 +160,8 @@ This command is to delete segment by using the segment ID.
   ```ruby
   DELETE SEGMENT 0 FROM TABLE CarbonDatabase.CarbonTable;
   DELETE SEGMENT 0.1,5,8 FROM TABLE CarbonDatabase.CarbonTable;
-  Note: Here 0.1 is compacted segment sequence id.  
   ```
+  Note: Here 0.1 is compacted segment sequence id.  
 
 ***
 
