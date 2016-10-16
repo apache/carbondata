@@ -42,9 +42,11 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.util.*;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
+import org.apache.carbondata.processing.iterator.CarbonIterator;
 import org.apache.carbondata.processing.mdkeygen.file.FileData;
 import org.apache.carbondata.processing.mdkeygen.file.FileManager;
 import org.apache.carbondata.processing.mdkeygen.file.IFileManagerComposite;
+import org.apache.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
 import org.apache.carbondata.processing.store.CarbonDataFileAttributes;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
@@ -146,6 +148,10 @@ public class MDKeyGenStep extends BaseStep {
    */
   private boolean[] isUseInvertedIndex;
 
+  private boolean mergeSort = true;
+
+  private SortDataRows sortDataRows;
+
   /**
    * CarbonMDKeyGenStep
    *
@@ -194,49 +200,73 @@ public class MDKeyGenStep extends BaseStep {
     }
 
     if (null != row) {
+      if (row instanceof SortDataRows[]) {
+        mergeSort = false;
+        sortDataRows = ((SortDataRows[])row)[0];
+      }
+
       putRow(data.outputRowMeta, new Object[measureCount + 1]);
       return true;
     }
 
+    if (mergeSort) {
+      addAllRowsToStore(getMergeSortIterator());
+    } else {
+      addAllRowsToStore(sortDataRows.getIterator());
+    }
+    return false;
+  }
+
+  /**
+   * Add all rows into the store. Rows are iterated by an Iterator based merge sort or not
+   * @param mergeSort whether need merge sort
+   * @param row input object
+   * @throws KettleException
+   */
+  private void addAllRowsToStore(CarbonIterator<Object[]> sortedRows)
+      throws KettleException {
+    initDataHandler();
+    dataHandler.initialise();
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordDictionaryValue2MdkAdd2FileTime(
+        meta.getPartitionID(), System.currentTimeMillis());
+
     try {
-      initDataHandler();
-      dataHandler.initialise();
-      finalMerger.startFinalMerge();
-      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordDictionaryValue2MdkAdd2FileTime(
-              meta.getPartitionID(), System.currentTimeMillis());
-      while (finalMerger.hasNext()) {
-        Object[] r = finalMerger.next();
+      while (sortedRows.hasNext()) {
+        Object[] r = sortedRows.next();
         readCounter++;
         Object[] outputRow = process(r);
         dataHandler.addDataToStore(outputRow);
         writeCounter++;
       }
-    } catch (CarbonDataWriterException e) {
+    } catch (KettleException e) {
       LOGGER.error(e, "Failed for table: " + this.tableName + " in MDKeyGenStep");
-      throw new KettleException("Error while initializing data handler : " + e.getMessage());
-    } catch (Exception e) {
-      LOGGER.error(e, "Failed for table: " + this.tableName + " in MDKeyGenStep");
-      throw new KettleException("There is an unexpected error: " + e.getMessage());
+      throw e;
     } finally {
       try {
         dataHandler.finish();
-      } catch (CarbonDataWriterException e) {
-        LOGGER.error(e, "Failed for table: " + this.tableName + " in  finishing data handler");
       } catch (Exception e) {
-        LOGGER.error(e, "Failed for table: " + this.tableName + " in  finishing data handler");
+        LOGGER.error(e, "Failed for table: " + this.tableName + " in finishing data handler");
       }
     }
-    LOGGER.info("Record Procerssed For table: " + this.tableName);
-    String logMessage =
-        "Finished Carbon Mdkey Generation Step: Read: " + readCounter + ": Write: " + writeCounter;
-    LOGGER.info(logMessage);
+    logStepSummary();
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordTotalRecords(writeCounter);
     processingComplete();
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordDictionaryValue2MdkAdd2FileTime(
         meta.getPartitionID(), System.currentTimeMillis());
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordMdkGenerateTotalTime(
         meta.getPartitionID(), System.currentTimeMillis());
-    return false;
+  }
+
+  private void logStepSummary() {
+    LOGGER.info("Record processed for table: " + this.tableName);
+    String logMessage =
+        "Finished Carbon Mdkey Generation Step: Read: " + readCounter + ": Write: " + writeCounter;
+    LOGGER.info(logMessage);
+  }
+
+  private CarbonIterator<Object[]> getMergeSortIterator() {
+    finalMerger.startFinalMerge();
+    return finalMerger;
   }
 
   private void processingComplete() throws KettleException {

@@ -1241,6 +1241,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       } catch (Throwable throwable) {
         consumerExecutorService.shutdownNow();
         resetBlockletProcessingCount();
+        throwable.printStackTrace();
         throw new CarbonDataWriterException(throwable.getMessage());
       }
     }

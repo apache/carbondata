@@ -60,9 +60,8 @@ public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter {
       blockDataArray = new ByteArrayOutputStream(totalSize);
       dataOutputStream = new DataOutputStream(blockDataArray);
 
-      UnCompressedTempSortFileWriter
-          .writeDataOutputStream(records, dataOutputStream, measureCount, dimensionCount,
-              noDictionaryCount, complexDimensionCount);
+      UnCompressedTempSortFileWriter.writeDataOutputStream(records, dataOutputStream,
+          measureCount, dimensionCount, noDictionaryCount, complexDimensionCount);
 
       stream.writeInt(records.length);
       byte[] byteArray = SnappyByteCompression.INSTANCE.compress(blockDataArray.toByteArray());
