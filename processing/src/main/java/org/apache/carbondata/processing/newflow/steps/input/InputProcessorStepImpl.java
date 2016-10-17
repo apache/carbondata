@@ -53,7 +53,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return output;
   }
 
-  @Override public void intialize() throws CarbonDataLoadingException {
+  @Override public void initialize() throws CarbonDataLoadingException {
     DataField[] output = getOutput();
     genericParsers = new GenericParser[output.length];
     for (int i = 0; i < genericParsers.length; i++) {

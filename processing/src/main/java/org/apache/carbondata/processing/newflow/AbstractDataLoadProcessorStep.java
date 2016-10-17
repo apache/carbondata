@@ -49,11 +49,11 @@ public abstract class AbstractDataLoadProcessorStep {
   public abstract DataField[] getOutput();
 
   /**
-   * Intialization process for this step.
+   * Initialization process for this step.
    *
    * @throws CarbonDataLoadingException
    */
-  public abstract void intialize() throws CarbonDataLoadingException;
+  public abstract void initialize() throws CarbonDataLoadingException;
 
   /**
    * Tranform the data as per the implementation.
