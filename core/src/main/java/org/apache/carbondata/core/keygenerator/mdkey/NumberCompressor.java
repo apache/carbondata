@@ -42,6 +42,11 @@ public class NumberCompressor {
 
   public NumberCompressor(int cardinaity) {
     bitsLength = (byte) Long.toBinaryString(cardinaity).length();
+    int div = bitsLength / 8;
+    int mod = bitsLength % 8;
+    if (mod > 0) {
+      bitsLength = (byte)(8 * (div + 1));
+    }
   }
 
   public byte[] compress(int[] keys) {
