@@ -16,35 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.carbondata.processing.newflow.encoding.impl;
 
-package org.apache.carbondata.core.devapi;
+import org.apache.carbondata.processing.newflow.DataField;
+import org.apache.carbondata.processing.newflow.encoding.FieldEncoder;
+import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
-public abstract class GeneratingBiDictionary<K, V> implements BiDictionary<K, V> {
+public class MeasureFieldEncoderImpl implements FieldEncoder<Object> {
 
-  private DictionaryGenerator<K, V> generator;
+  private int index;
 
-  public GeneratingBiDictionary(DictionaryGenerator<K, V> generator) {
-    this.generator = generator;
+  public MeasureFieldEncoderImpl(DataField dataField, int index) {
+    this.index = index;
   }
 
-  @Override
-  public K getOrGenerateKey(V value) throws DictionaryGenerationException {
-    K key = getKey(value);
-    if (key != null) {
-      return key;
-    } else {
-      K newKey = generator.generateKey(value);
-      assert(newKey != null);
-      put(newKey, value);
-      return newKey;
-    }
+  @Override public Object encode(CarbonRow row) {
+    return row.getObject(index);
   }
-
-  /**
-   * put the input key value pair into the dictionary
-   * @param key dictionary key
-   * @param value dictionary value
-   */
-  protected abstract void put(K key, V value);
-
 }

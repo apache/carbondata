@@ -68,6 +68,10 @@ public class CarbonRow {
     return (byte[]) data[ordinal];
   }
 
+  public Object getObject(int ordinal) {
+    return data[ordinal];
+  }
+
   public void update(Object value, int ordinal) {
     data[ordinal] = value;
   }

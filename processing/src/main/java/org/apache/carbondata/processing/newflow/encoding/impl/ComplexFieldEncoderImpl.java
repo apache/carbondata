@@ -17,34 +17,16 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.devapi;
+package org.apache.carbondata.processing.newflow.encoding.impl;
 
-public abstract class GeneratingBiDictionary<K, V> implements BiDictionary<K, V> {
+import java.nio.ByteBuffer;
 
-  private DictionaryGenerator<K, V> generator;
+import org.apache.carbondata.processing.newflow.encoding.FieldEncoder;
+import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
-  public GeneratingBiDictionary(DictionaryGenerator<K, V> generator) {
-    this.generator = generator;
+public class ComplexFieldEncoderImpl implements FieldEncoder<ByteBuffer> {
+
+  @Override public ByteBuffer encode(CarbonRow data) {
+    return null;
   }
-
-  @Override
-  public K getOrGenerateKey(V value) throws DictionaryGenerationException {
-    K key = getKey(value);
-    if (key != null) {
-      return key;
-    } else {
-      K newKey = generator.generateKey(value);
-      assert(newKey != null);
-      put(newKey, value);
-      return newKey;
-    }
-  }
-
-  /**
-   * put the input key value pair into the dictionary
-   * @param key dictionary key
-   * @param value dictionary value
-   */
-  protected abstract void put(K key, V value);
-
 }
