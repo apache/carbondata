@@ -27,5 +27,5 @@ public interface DictionaryGenerator<K, V> {
    * @return dictionary key
    * @throws Exception any exception
    */
-  K generateKey(V value) throws Exception;
+  K generateKey(V value) throws DictionaryGenerationException;
 }

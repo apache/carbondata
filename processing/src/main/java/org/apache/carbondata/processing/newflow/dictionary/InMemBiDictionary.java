@@ -21,6 +21,7 @@ package org.apache.carbondata.processing.newflow.dictionary;
 
 import java.util.Map;
 
+import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.devapi.DictionaryGenerator;
 import org.apache.carbondata.core.devapi.GeneratingBiDictionary;
 
@@ -47,9 +48,10 @@ public class InMemBiDictionary<K, V> extends GeneratingBiDictionary<K, V> {
   public InMemBiDictionary(Map<K, V> preCreatedDictionary) {
     super(new DictionaryGenerator<K, V>() {
       @Override
-      public K generateKey(V value) throws Exception {
+      public K generateKey(V value) throws DictionaryGenerationException {
         // Since dictionary is provided by preCreated, normally it should not come here
-        throw new Exception("encounter new dictionary value in pre-created dictionary:" + value);
+        throw new DictionaryGenerationException(
+            "encounter new dictionary value in pre-created dictionary:" + value);
       }
     });
     biMap = HashBiMap.create(preCreatedDictionary);
