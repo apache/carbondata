@@ -40,13 +40,14 @@ import org.codehaus.jackson.map.ObjectMapper
 
 import org.apache.carbondata.common.factory.CarbonCommonFactory
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier}
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
 import org.apache.carbondata.core.carbon.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
 import org.apache.carbondata.core.carbon.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
+import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.load.LoadMetadataDetails
@@ -59,7 +60,6 @@ import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.spark.CarbonSparkFactory
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.load._
-import org.apache.carbondata.spark.partition.api.impl.QueryPartitionHelper
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil, GlobalDictionaryUtil}
 
@@ -875,18 +875,11 @@ case class CreateTable(cm: tableModel) extends RunnableCommand {
               .collect
       } catch {
         case e: Exception =>
-
           val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
-          val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
-            .lookupRelation1(identifier)(sqlContext).asInstanceOf[CarbonRelation]
-          if (relation != null) {
-            LOGGER.audit(s"Deleting Table [$tbName] under Database [$dbName]" +
-                         "as create TABLE failed")
-            CarbonEnv.getInstance(sqlContext).carbonCatalog
-              .dropTable(relation.tableMeta.partitioner.partitionCount,
-                relation.tableMeta.storePath,
-                identifier)(sqlContext)
-          }
+          // call the drop table to delete the created table.
+
+          CarbonEnv.getInstance(sqlContext).carbonCatalog
+            .dropTable(catalog.storePath, identifier)(sqlContext)
 
           LOGGER.audit(s"Table creation with Database name [$dbName] " +
             s"and Table name [$tbName] failed")
@@ -1234,81 +1227,46 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     val identifier = TableIdentifier(tableName, Option(dbName))
-    val tmpTable = CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)
-    if (null == tmpTable) {
-      if (!ifExistsSet) {
-        LOGGER
-          .audit(s"Dropping carbon table with Database name [$dbName] and Table name" +
-                 "[$tableName] failed")
-        LOGGER.error(s"Carbon Table $dbName.$tableName metadata does not exist")
+    val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "")
+    val carbonLock = CarbonLockFactory
+      .getCarbonLockObj(carbonTableIdentifier, LockUsage.DROP_TABLE_LOCK)
+    val storePath = CarbonEnv.getInstance(sqlContext).carbonCatalog.storePath
+    try {
+      if (carbonLock.lockWithRetries()) {
+        logInfo("Successfully able to get the lock for drop.")
       }
-      if (sqlContext.tableNames(dbName).map(x => x.toLowerCase())
-        .contains(tableName.toLowerCase())) {
-          CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sqlContext)
-      } else if (!ifExistsSet) {
-        sys.error(s"Carbon Table $dbName.$tableName does not exist")
+      else {
+        LOGGER.audit(s"Dropping table $dbName.$tableName failed as the Table is locked")
+        sys.error("Table is locked for deletion. Please try after some time")
       }
-    } else {
-      CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
-      val carbonLock = CarbonLockFactory
-        .getCarbonLockObj(tmpTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
-          LockUsage.METADATA_LOCK
-        )
-      try {
-        if (carbonLock.lockWithRetries()) {
-          logInfo("Successfully able to get the table metadata file lock")
-        } else {
-          LOGGER.audit(s"Dropping table $dbName.$tableName failed as the Table is locked")
-          sys.error("Table is locked for updation. Please try after some time")
-        }
-
-        val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
-          .lookupRelation1(identifier)(sqlContext).asInstanceOf[CarbonRelation]
-
-        if (relation == null) {
-          if (!ifExistsSet) {
-            sys.error(s"Table $dbName.$tableName does not exist")
+      LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
+      CarbonEnv.getInstance(sqlContext).carbonCatalog.dropTable(storePath, identifier)(sqlContext)
+      LOGGER.audit(s"Deleted table [$tableName] under database [$dbName]")
+    }
+    finally {
+      if (carbonLock != null) {
+        if (carbonLock.unlock()) {
+          logInfo("Table MetaData Unlocked Successfully after dropping the table")
+          // deleting any remaining files.
+          val metadataFilePath = CarbonStorePath
+            .getCarbonTablePath(storePath, carbonTableIdentifier).getMetadataDirectoryPath
+          val fileType = FileFactory.getFileType(metadataFilePath)
+          if (FileFactory.isFileExist(metadataFilePath, fileType)) {
+            val file = FileFactory.getCarbonFile(metadataFilePath, fileType)
+            CarbonUtil.deleteFoldersAndFiles(file.getParentFile)
+          }
+          // delete bad record log after drop table
+          val badLogPath = CarbonUtil.getBadLogPath(dbName +  File.separator + tableName)
+          val badLogFileType = FileFactory.getFileType(badLogPath)
+          if (FileFactory.isFileExist(badLogPath, badLogFileType)) {
+            val file = FileFactory.getCarbonFile(badLogPath, badLogFileType)
+            CarbonUtil.deleteFoldersAndFiles(file)
           }
         } else {
-          LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
-
-          CarbonEnv.getInstance(sqlContext).carbonCatalog
-            .dropTable(relation.tableMeta.partitioner.partitionCount,
-              relation.tableMeta.storePath,
-              TableIdentifier(relation.tableMeta.carbonTableIdentifier.getTableName,
-                Some(relation.tableMeta.carbonTableIdentifier.getDatabaseName))
-              )(sqlContext)
-          CarbonDataRDDFactory
-            .dropTable(sqlContext.sparkContext, dbName, tableName,
-              relation.tableMeta.partitioner)
-          QueryPartitionHelper.getInstance().removePartition(dbName, tableName)
-
-          LOGGER.audit(s"Deleted table [$tableName] under database [$dbName]")
-        }
-      }
-      finally {
-        if (carbonLock != null) {
-          if (carbonLock.unlock()) {
-            logInfo("Table MetaData Unlocked Successfully after dropping the table")
-            val fileType = FileFactory.getFileType(tmpTable .getMetaDataFilepath)
-            if (FileFactory.isFileExist(tmpTable .getMetaDataFilepath, fileType)) {
-              val file = FileFactory.getCarbonFile(tmpTable .getMetaDataFilepath, fileType)
-              CarbonUtil.deleteFoldersAndFiles(file.getParentFile)
-            }
-            // delete bad record log after drop table
-            val badLogPath = CarbonUtil.getBadLogPath(dbName +  File.separator + tableName)
-            val badLogFileType = FileFactory.getFileType(badLogPath)
-            if (FileFactory.isFileExist(badLogPath, badLogFileType)) {
-              val file = FileFactory.getCarbonFile(badLogPath, badLogFileType)
-              CarbonUtil.deleteFoldersAndFiles(file)
-            }
-          } else {
-            logError("Unable to unlock Table MetaData")
-          }
+          logError("Unable to unlock Table MetaData")
         }
       }
     }
-
     Seq.empty
   }
 }

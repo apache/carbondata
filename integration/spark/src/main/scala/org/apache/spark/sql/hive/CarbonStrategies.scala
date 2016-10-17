@@ -220,8 +220,8 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
   object DDLStrategies extends Strategy {
     def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
       case DropTable(tableName, ifNotExists)
-        if CarbonEnv.getInstance(sqlContext).carbonCatalog
-            .tableExists(toTableIdentifier(tableName.toLowerCase))(sqlContext) =>
+        if (CarbonEnv.getInstance(sqlContext).carbonCatalog
+            .isTablePathExists(toTableIdentifier(tableName.toLowerCase))(sqlContext)) =>
         val identifier = toTableIdentifier(tableName.toLowerCase)
         ExecutedCommand(DropTableCommand(ifNotExists, identifier.database, identifier.table)) :: Nil
       case ShowLoadsCommand(databaseName, table, limit) =>

@@ -412,46 +412,44 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     }
   }
 
-  def dropTable(partitionCount: Int, tableStorePath: String, tableIdentifier: TableIdentifier)
+  def isTablePathExists(tableIdentifier: TableIdentifier)(sqlContext: SQLContext): Boolean = {
+    val dbName = tableIdentifier.database.getOrElse(getDB.getDatabaseName(None, sqlContext))
+    val tableName = tableIdentifier.table
+
+    val tablePath = CarbonStorePath.getCarbonTablePath(this.storePath,
+      new CarbonTableIdentifier(dbName, tableName, "")).getPath
+
+    val fileType = FileFactory.getFileType(tablePath)
+    FileFactory.isFileExist(tablePath, fileType)
+  }
+
+  def dropTable(tableStorePath: String, tableIdentifier: TableIdentifier)
     (sqlContext: SQLContext) {
     val dbName = tableIdentifier.database.get
     val tableName = tableIdentifier.table
-    if (!tableExists(tableIdentifier)(sqlContext)) {
-      LOGGER.audit(s"Drop Table failed. Table with $dbName.$tableName does not exist")
-      sys.error(s"Table with $dbName.$tableName does not exist")
+
+    val metadataFilePath = CarbonStorePath.getCarbonTablePath(tableStorePath,
+      new CarbonTableIdentifier(dbName, tableName, "")).getMetadataDirectoryPath
+
+    val fileType = FileFactory.getFileType(metadataFilePath)
+
+    if (FileFactory.isFileExist(metadataFilePath, fileType)) {
+
+      val file = FileFactory.getCarbonFile(metadataFilePath, fileType)
+      CarbonUtil.deleteFoldersAndFilesSilent(file.getParentFile)
+
+      metadata.tablesMeta -= metadata.tablesMeta.filter(
+        c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(dbName) &&
+             c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))(0)
+      org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
+        .removeTable(dbName + "_" + tableName)
+
+      CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sqlContext)
+      updateSchemasUpdatedTime(dbName, tableName)
+
+      // discard cached table info in cachedDataSourceTables
+      sqlContext.catalog.refreshTable(tableIdentifier)
     }
-
-    val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
-      .getCarbonTable(dbName + "_" + tableName)
-
-    if (null != carbonTable) {
-      val metadatFilePath = carbonTable.getMetaDataFilepath
-      val fileType = FileFactory.getFileType(metadatFilePath)
-
-      if (FileFactory.isFileExist(metadatFilePath, fileType)) {
-        val file = FileFactory.getCarbonFile(metadatFilePath, fileType)
-        CarbonUtil.renameTableForDeletion(partitionCount, tableStorePath, dbName, tableName)
-        CarbonUtil.deleteFoldersAndFilesSilent(file.getParentFile)
-      }
-
-      val partitionLocation = tableStorePath + File.separator + "partition" + File.separator +
-                              dbName + File.separator + tableName
-      val partitionFileType = FileFactory.getFileType(partitionLocation)
-      if (FileFactory.isFileExist(partitionLocation, partitionFileType)) {
-        CarbonUtil
-          .deleteFoldersAndFiles(FileFactory.getCarbonFile(partitionLocation, partitionFileType))
-      }
-    }
-
-    metadata.tablesMeta -= metadata.tablesMeta.filter(
-      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(dbName) &&
-           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))(0)
-    org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
-      .removeTable(dbName + "_" + tableName)
-    CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sqlContext)
-
-    // discard cached table info in cachedDataSourceTables
-    sqlContext.catalog.refreshTable(tableIdentifier)
   }
 
   private def getTimestampFileAndType(databaseName: String, tableName: String) = {
