@@ -1232,7 +1232,7 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
       .getCarbonLockObj(carbonTableIdentifier, LockUsage.DROP_TABLE_LOCK)
     val storePath = CarbonEnv.getInstance(sqlContext).carbonCatalog.storePath
     try {
-      if(carbonLock.lockWithRetries()) {
+      if (carbonLock.lockWithRetries()) {
         logInfo("Successfully able to get the lock for drop.")
       }
       else {
@@ -1240,7 +1240,7 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
         sys.error("Table is locked for deletion. Please try after some time")
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
-      CarbonEnv.getInstance(sqlContext).carbonCatalog.dropTable(storePath,identifier)(sqlContext)
+      CarbonEnv.getInstance(sqlContext).carbonCatalog.dropTable(storePath, identifier)(sqlContext)
       LOGGER.audit(s"Deleted table [$tableName] under database [$dbName]")
     }
     finally {
