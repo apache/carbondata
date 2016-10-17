@@ -50,8 +50,6 @@ public interface QueryStatisticsConstants {
 
   String TOTAL_BLOCKLET_NUM = "The num of total blocklet";
 
-  String SCAN_BLOCKLET_NUM = "The num of scanned blocklet";
-
   String VALID_SCAN_BLOCKLET_NUM = "The num of valid scanned blocklet";
 
   // clear no-use statistics timeout

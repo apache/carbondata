@@ -132,12 +132,6 @@ public class FilterScanner extends AbstractBlockletScanner {
     }
     // apply filter on actual data
     BitSet bitSet = this.filterExecuter.applyFilter(blocksChunkHolder);
-    // scanned blocklet
-    QueryStatistic scannedBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
-        .get(QueryStatisticsConstants.SCAN_BLOCKLET_NUM);
-    scannedBlockletStatistic.addCountStatistic(
-        QueryStatisticsConstants.SCAN_BLOCKLET_NUM, scannedBlockletStatistic.getCount() + 1);
-    queryStatisticsModel.getRecorder().recordStatistics(scannedBlockletStatistic);
     // if indexes is empty then return with empty result
     if (bitSet.isEmpty()) {
       scannedResult.setNumberOfRows(0);

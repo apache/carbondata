@@ -172,8 +172,6 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     queryStatisticsModel.getStatisticsTypeAndObjMap()
         .put(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM, queryStatisticTotalBlocklet);
     QueryStatistic queryStatisticScanBlocklet = new QueryStatistic();
-    queryStatisticsModel.getStatisticsTypeAndObjMap()
-        .put(QueryStatisticsConstants.SCAN_BLOCKLET_NUM, queryStatisticScanBlocklet);
     QueryStatistic queryStatisticValidScanBlocklet = new QueryStatistic();
     queryStatisticsModel.getStatisticsTypeAndObjMap()
         .put(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM, queryStatisticValidScanBlocklet);
