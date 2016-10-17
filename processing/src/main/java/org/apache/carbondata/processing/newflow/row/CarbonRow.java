@@ -60,6 +60,10 @@ public class CarbonRow {
     return (String) data[ordinal];
   }
 
+  public Object getObject(int ordinal) {
+    return data[ordinal];
+  }
+
   public byte[] getBinary(int ordinal) {
     return (byte[]) data[ordinal];
   }

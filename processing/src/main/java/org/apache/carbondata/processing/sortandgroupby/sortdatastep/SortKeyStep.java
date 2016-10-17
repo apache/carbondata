@@ -28,6 +28,8 @@ import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.schema.metadata.SortObserver;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
+import org.apache.carbondata.processing.sortandgroupby.sortdata.SortIntermediateFileMerger;
+import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 import org.apache.carbondata.processing.sortdatastep.SortKeyStepData;
 import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
 
@@ -62,6 +64,11 @@ public class SortKeyStep extends BaseStep {
    * carbonSortKeys
    */
   private SortDataRows sortDataRows;
+
+  /**
+   * intermediateFileMerger
+   */
+  private SortIntermediateFileMerger intermediateFileMerger;
 
   /**
    * rowCounter
@@ -171,15 +178,16 @@ public class SortKeyStep extends BaseStep {
 
       this.noDictionaryColMaping =
           RemoveDictionaryUtil.convertStringToBooleanArr(meta.getNoDictionaryDimsMapping());
-
-      this.sortDataRows = new SortDataRows(meta.getTabelName(),
-          meta.getDimensionCount() - meta.getComplexDimensionCount(),
-          meta.getComplexDimensionCount(), meta.getMeasureCount(), this.observer,
-          meta.getNoDictionaryCount(), meta.getPartitionID(), meta.getSegmentId() + "",
-          meta.getTaskNo(), this.noDictionaryColMaping);
+      SortParameters parameters =
+          SortParameters.createSortParameters(meta.getDatabaseName(), meta.getTabelName(),
+              meta.getDimensionCount(), meta.getComplexDimensionCount(), meta.getMeasureCount(),
+              this.observer, meta.getNoDictionaryCount(), meta.getPartitionID(),
+              meta.getSegmentId() + "", meta.getTaskNo(), this.noDictionaryColMaping);
+      intermediateFileMerger = new SortIntermediateFileMerger(parameters);
+      this.sortDataRows = new SortDataRows(parameters, intermediateFileMerger);
       try {
         // initialize sort
-        this.sortDataRows.initialize(meta.getDatabaseName(), meta.getTableName());
+        this.sortDataRows.initialize();
       } catch (CarbonSortKeyAndGroupByException e) {
         throw new KettleException(e);
       }
@@ -228,6 +236,7 @@ public class SortKeyStep extends BaseStep {
     try {
       // start sorting
       this.sortDataRows.startSorting();
+      this.intermediateFileMerger.finish();
 
       // check any more rows are present
       LOGGER.info("Record Processed For table: " + meta.getTabelName());

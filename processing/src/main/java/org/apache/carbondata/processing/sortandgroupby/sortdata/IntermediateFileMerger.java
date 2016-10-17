@@ -84,14 +84,21 @@ public class IntermediateFileMerger implements Callable<Void> {
    */
   private int totalSize;
 
-  private FileMergerParameters mergerParameters;
+  private SortParameters mergerParameters;
+
+  private File[] intermediateFiles;
+
+  private File outPutFile;
 
   /**
    * IntermediateFileMerger Constructor
    */
-  public IntermediateFileMerger(FileMergerParameters mergerParameters) {
+  public IntermediateFileMerger(SortParameters mergerParameters, File[] intermediateFiles,
+      File outPutFile) {
     this.mergerParameters = mergerParameters;
-    this.fileCounter = mergerParameters.getIntermediateFiles().length;
+    this.fileCounter = intermediateFiles.length;
+    this.intermediateFiles = intermediateFiles;
+    this.outPutFile = outPutFile;
   }
 
   @Override public Void call() throws Exception {
@@ -105,7 +112,7 @@ public class IntermediateFileMerger implements Callable<Void> {
       while (hasNext()) {
         writeDataTofile(next());
       }
-      if (mergerParameters.isCompressionEnabled() || mergerParameters.isPrefetch()) {
+      if (mergerParameters.isSortFileCompressionEnabled() || mergerParameters.isPrefetch()) {
         if (entryCount > 0) {
           if (entryCount < totalSize) {
             Object[][] temp = new Object[entryCount][];
@@ -137,7 +144,7 @@ public class IntermediateFileMerger implements Callable<Void> {
           LOGGER.error(e, "Problem while deleting the merge file");
         }
       } else {
-        if (mergerParameters.getOutFile().delete()) {
+        if (outPutFile.delete()) {
           LOGGER.error("Problem while deleting the merge file");
         }
       }
@@ -152,10 +159,10 @@ public class IntermediateFileMerger implements Callable<Void> {
    * @throws CarbonSortKeyAndGroupByException
    */
   private void initialize() throws CarbonSortKeyAndGroupByException {
-    if (!mergerParameters.isCompressionEnabled() && !mergerParameters.isPrefetch()) {
+    if (!mergerParameters.isSortFileCompressionEnabled() && !mergerParameters.isPrefetch()) {
       try {
         this.stream = new DataOutputStream(
-            new BufferedOutputStream(new FileOutputStream(mergerParameters.getOutFile()),
+            new BufferedOutputStream(new FileOutputStream(outPutFile),
                 mergerParameters.getFileWriteBufferSize()));
         this.stream.writeInt(this.totalNumberOfRecords);
       } catch (FileNotFoundException e) {
@@ -165,16 +172,16 @@ public class IntermediateFileMerger implements Callable<Void> {
       }
     } else {
       writer = TempSortFileWriterFactory.getInstance()
-          .getTempSortFileWriter(mergerParameters.isCompressionEnabled(),
+          .getTempSortFileWriter(mergerParameters.isSortFileCompressionEnabled(),
               mergerParameters.getDimColCount(), mergerParameters.getComplexDimColCount(),
               mergerParameters.getMeasureColCount(), mergerParameters.getNoDictionaryCount(),
               mergerParameters.getFileWriteBufferSize());
-      writer.initiaize(mergerParameters.getOutFile(), totalNumberOfRecords);
+      writer.initiaize(outPutFile, totalNumberOfRecords);
 
       if (mergerParameters.isPrefetch()) {
-        totalSize = mergerParameters.getPrefetchBufferSize();
+        totalSize = mergerParameters.getBufferSize();
       } else {
-        totalSize = mergerParameters.getNoOfRecordsInCompression();
+        totalSize = mergerParameters.getSortTempFileNoOFRecordsInCompression();
       }
     }
   }
@@ -232,20 +239,20 @@ public class IntermediateFileMerger implements Callable<Void> {
     LOGGER.info("Number of temp file: " + this.fileCounter);
 
     // create record holder heap
-    createRecordHolderQueue(mergerParameters.getIntermediateFiles());
+    createRecordHolderQueue(intermediateFiles);
 
     // iterate over file list and create chunk holder and add to heap
     LOGGER.info("Started adding first record from each file");
 
     SortTempFileChunkHolder sortTempFileChunkHolder = null;
 
-    for (File tempFile : mergerParameters.getIntermediateFiles()) {
+    for (File tempFile : intermediateFiles) {
       // create chunk holder
       sortTempFileChunkHolder =
           new SortTempFileChunkHolder(tempFile, mergerParameters.getDimColCount(),
               mergerParameters.getComplexDimColCount(), mergerParameters.getMeasureColCount(),
-              mergerParameters.getFileReadBufferSize(), mergerParameters.getNoDictionaryCount(),
-              mergerParameters.getAggType(), mergerParameters.getIsNoDictionaryDimensionColumn());
+              mergerParameters.getFileBufferSize(), mergerParameters.getNoDictionaryCount(),
+              mergerParameters.getAggType(), mergerParameters.getNoDictionaryDimnesionColumn());
 
       // initialize
       sortTempFileChunkHolder.initialize();
@@ -296,7 +303,7 @@ public class IntermediateFileMerger implements Callable<Void> {
    * @throws CarbonSortKeyAndGroupByException problem while writing
    */
   private void writeDataTofile(Object[] row) throws CarbonSortKeyAndGroupByException {
-    if (mergerParameters.isCompressionEnabled() || mergerParameters.isPrefetch()) {
+    if (mergerParameters.isSortFileCompressionEnabled() || mergerParameters.isPrefetch()) {
       if (entryCount == 0) {
         records = new Object[totalSize][];
         records[entryCount++] = row;
@@ -363,7 +370,7 @@ public class IntermediateFileMerger implements Callable<Void> {
       }
     }
     try {
-      CarbonUtil.deleteFiles(mergerParameters.getIntermediateFiles());
+      CarbonUtil.deleteFiles(intermediateFiles);
     } catch (CarbonUtilException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while deleting the intermediate files");
     }
