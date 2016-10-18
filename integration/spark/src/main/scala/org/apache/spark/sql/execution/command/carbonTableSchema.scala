@@ -1512,3 +1512,22 @@ private[sql] case class CleanFiles(
     Seq.empty
   }
 }
+
+private[sql] case class DropAllCarbonTables(dbName: String) extends RunnableCommand {
+
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
+  def run(sqlContext: SQLContext): Seq[Row] = {
+    LOGGER.audit(s"Drop all carbon tables request has been received for $dbName")
+    val carbonTablesInDB = CarbonEnv.getInstance(sqlContext).carbonCatalog
+      .getTables(Some(dbName))(sqlContext).map(x => x._1)
+    carbonTablesInDB.foreach{carbonTableName =>
+      sqlContext.sql(
+        s"""DROP TABLE IF EXISTS $carbonTableName""")
+        .collect
+    }
+    LOGGER.audit(s"Carbon tables under database $dbName had been dropped.")
+    Seq.empty
+  }
+
+}

@@ -61,6 +61,7 @@ class CarbonSqlParser()
   protected val BY = carbonKeyWord("BY")
   protected val CARDINALITY = carbonKeyWord("CARDINALITY")
   protected val CASCADE = carbonKeyWord("CASCADE")
+  protected val CARBON = carbonKeyWord("CARBON")
   protected val CLASS = carbonKeyWord("CLASS")
   protected val CLEAN = carbonKeyWord("CLEAN")
   protected val COLS = carbonKeyWord("COLS")
@@ -200,7 +201,8 @@ class CarbonSqlParser()
   override protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
 
   protected lazy val startCommand: Parser[LogicalPlan] =
-    dropDatabaseCascade | loadManagement | describeTable | showLoads | alterTable | createTable
+    dropAllCarbonTables | dropDatabaseCascade | loadManagement | describeTable | showLoads |
+      alterTable | createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] = deleteLoadsByID | deleteLoadsByLoadDate |
     cleanFiles | loadDataNew
@@ -1184,6 +1186,11 @@ class CarbonSqlParser()
       opt(";") ^^ {
       case databaseName ~ tableName ~ limit =>
         ShowLoadsCommand(databaseName, tableName.toLowerCase(), limit)
+    }
+
+  protected lazy val dropAllCarbonTables: Parser[LogicalPlan] =
+    DROP ~> ALL ~> CARBON ~> TABLES ~> IN ~> ident <~ opt(";") ^^ {
+      case dbName => DropAllCarbonTables(dbName)
     }
 
   protected lazy val segmentId: Parser[String] =
