@@ -193,7 +193,7 @@ public class SegmentStatusManager {
     BufferedReader buffReader = null;
     InputStreamReader inStream = null;
     String metadataFileName = tableFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-        + CarbonCommonConstants.LOADMETADATA_FILENAME;
+        + CarbonCommonConstants.TABLE_STATUS_FILE;
     LoadMetadataDetails[] listOfLoadFolderDetailsArray;
 
     AtomicFileOperations fileOperation =

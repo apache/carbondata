@@ -35,20 +35,6 @@ import org.apache.hadoop.fs.Path;
  */
 public class CarbonTablePath extends Path {
 
-  protected static final String METADATA_DIR = "Metadata";
-  protected static final String DICTIONARY_EXT = ".dict";
-  protected static final String DICTIONARY_META_EXT = ".dictmeta";
-  protected static final String SORT_INDEX_EXT = ".sortindex";
-  protected static final String SCHEMA_FILE = "schema";
-  protected static final String TABLE_STATUS_FILE = "tablestatus";
-  protected static final String FACT_DIR = "Fact";
-  protected static final String AGGREGATE_TABLE_PREFIX = "Agg";
-  protected static final String SEGMENT_PREFIX = "Segment_";
-  protected static final String PARTITION_PREFIX = "Part";
-  protected static final String CARBON_DATA_EXT = ".carbondata";
-  protected static final String DATA_PART_PREFIX = "part";
-  protected static final String INDEX_FILE_EXT = ".carbonindex";
-
   protected String tablePath;
   protected CarbonTableIdentifier carbonTableIdentifier;
 
@@ -77,7 +63,7 @@ public class CarbonTablePath extends Path {
    * @return name of dictionary file
    */
   public static String getDictionaryFileName(String columnId) {
-    return columnId + DICTIONARY_EXT;
+    return columnId + CarbonCommonConstants.DICTIONARY_EXT;
   }
 
   /**
@@ -87,7 +73,8 @@ public class CarbonTablePath extends Path {
    * @return
    */
   public static Boolean isDictionaryFile(CarbonFile carbonFile) {
-    return (!carbonFile.isDirectory()) && (carbonFile.getName().endsWith(DICTIONARY_EXT));
+    return (!carbonFile.isDirectory()) &&
+        (carbonFile.getName().endsWith(CarbonCommonConstants.DICTIONARY_EXT));
   }
 
   /**
@@ -99,7 +86,7 @@ public class CarbonTablePath extends Path {
   public static boolean isCarbonDataFile(String fileNameWithPath) {
     int pos = fileNameWithPath.lastIndexOf('.');
     if (pos != -1) {
-      return fileNameWithPath.substring(pos).startsWith(CARBON_DATA_EXT);
+      return fileNameWithPath.substring(pos).startsWith(CarbonCommonConstants.CARBON_DATA_EXT);
     }
     return false;
   }
@@ -113,7 +100,7 @@ public class CarbonTablePath extends Path {
   public static boolean isCarbonIndexFile(String fileNameWithPath) {
     int pos = fileNameWithPath.lastIndexOf('.');
     if (pos != -1) {
-      return fileNameWithPath.substring(pos).startsWith(INDEX_FILE_EXT);
+      return fileNameWithPath.substring(pos).startsWith(CarbonCommonConstants.INDEX_FILE_EXT);
     }
     return false;
   }
@@ -155,7 +142,7 @@ public class CarbonTablePath extends Path {
    * @return absolute path of dictionary meta file
    */
   public String getDictionaryMetaFilePath(String columnId) {
-    return getMetaDataDir() + File.separator + columnId + DICTIONARY_META_EXT;
+    return getMetaDataDir() + File.separator + columnId + CarbonCommonConstants.DICTIONARY_META_EXT;
   }
 
   /**
@@ -163,7 +150,7 @@ public class CarbonTablePath extends Path {
    * @return absolute path of sort index file
    */
   public String getSortIndexFilePath(String columnId) {
-    return getMetaDataDir() + File.separator + columnId + SORT_INDEX_EXT;
+    return getMetaDataDir() + File.separator + columnId + CarbonCommonConstants.SORT_INDEX_EXT;
   }
 
   /**
@@ -173,14 +160,15 @@ public class CarbonTablePath extends Path {
    * @return absolute path of sortindex with appeneded dictionary offset
    */
   public String getSortIndexFilePath(String columnId, long dictOffset) {
-    return getMetaDataDir() + File.separator + columnId + "_" + dictOffset + SORT_INDEX_EXT;
+    return getMetaDataDir() + File.separator + columnId + "_" + dictOffset +
+        CarbonCommonConstants.SORT_INDEX_EXT;
   }
 
   /**
    * @return absolute path of schema file
    */
   public String getSchemaFilePath() {
-    return getMetaDataDir() + File.separator + SCHEMA_FILE;
+    return getMetaDataDir() + File.separator + CarbonCommonConstants.SCHEMA_FILE;
   }
 
   /**
@@ -189,14 +177,15 @@ public class CarbonTablePath extends Path {
    * @return schema file path
    */
   public static String getSchemaFilePath(String tablePath) {
-    return tablePath + File.separator + METADATA_DIR + File.separator + SCHEMA_FILE;
+    return tablePath + File.separator + CarbonCommonConstants.METADATA_DIR +
+        File.separator + CarbonCommonConstants.SCHEMA_FILE;
   }
 
   /**
    * @return absolute path of table status file
    */
   public String getTableStatusFilePath() {
-    return getMetaDataDir() + File.separator + TABLE_STATUS_FILE;
+    return getMetaDataDir() + File.separator + CarbonCommonConstants.TABLE_STATUS_FILE;
   }
 
   /**
@@ -231,7 +220,8 @@ public class CarbonTablePath extends Path {
 
     CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
-        return file.getName().startsWith(taskId) && file.getName().endsWith(INDEX_FILE_EXT);
+        return file.getName().startsWith(taskId) &&
+            file.getName().endsWith(CarbonCommonConstants.INDEX_FILE_EXT);
       }
     });
     return files[0].getAbsolutePath();
@@ -274,8 +264,8 @@ public class CarbonTablePath extends Path {
    */
   public String getCarbonDataFileName(Integer filePartNo, Integer taskNo,
       String factUpdateTimeStamp) {
-    return DATA_PART_PREFIX + "-" + filePartNo + "-" + taskNo + "-" + factUpdateTimeStamp
-        + CARBON_DATA_EXT;
+    return CarbonCommonConstants.DATA_PART_PREFIX + "-" + filePartNo + "-" + taskNo + "-" +
+        factUpdateTimeStamp + CarbonCommonConstants.CARBON_DATA_EXT;
   }
 
   /**
@@ -286,36 +276,38 @@ public class CarbonTablePath extends Path {
    * @return filename
    */
   public String getCarbonIndexFileName(int taskNo, String factUpdatedTimeStamp) {
-    return taskNo + "-" + factUpdatedTimeStamp + INDEX_FILE_EXT;
+    return taskNo + "-" + factUpdatedTimeStamp + CarbonCommonConstants.INDEX_FILE_EXT;
   }
 
   private String getSegmentDir(String partitionId, String segmentId) {
-    return getPartitionDir(partitionId) + File.separator + SEGMENT_PREFIX + segmentId;
+    return getPartitionDir(partitionId) + File.separator +
+        CarbonCommonConstants.SEGMENT_PREFIX + segmentId;
   }
 
   public String getPartitionDir(String partitionId) {
-    return getFactDir() + File.separator + PARTITION_PREFIX + partitionId;
+    return getFactDir() + File.separator + CarbonCommonConstants.PARTITION_PREFIX + partitionId;
   }
 
   private String getAggSegmentDir(String aggTableID, String partitionId, String segmentId) {
-    return getAggPartitionDir(aggTableID, partitionId) + File.separator + SEGMENT_PREFIX
-        + segmentId;
+    return getAggPartitionDir(aggTableID, partitionId) + File.separator +
+        CarbonCommonConstants.SEGMENT_PREFIX + segmentId;
   }
 
   private String getAggPartitionDir(String aggTableID, String partitionId) {
-    return getAggregateTableDir(aggTableID) + File.separator + PARTITION_PREFIX + partitionId;
+    return getAggregateTableDir(aggTableID) + File.separator +
+        CarbonCommonConstants.PARTITION_PREFIX + partitionId;
   }
 
   private String getMetaDataDir() {
-    return tablePath + File.separator + METADATA_DIR;
+    return tablePath + File.separator + CarbonCommonConstants.METADATA_DIR;
   }
 
   public String getFactDir() {
-    return tablePath + File.separator + FACT_DIR;
+    return tablePath + File.separator + CarbonCommonConstants.FACT_DIR;
   }
 
   private String getAggregateTableDir(String aggTableId) {
-    return tablePath + File.separator + AGGREGATE_TABLE_PREFIX + aggTableId;
+    return tablePath + File.separator + CarbonCommonConstants.AGGREGATE_TABLE_PREFIX + aggTableId;
   }
 
   @Override public boolean equals(Object o) {
@@ -425,7 +417,8 @@ public class CarbonTablePath extends Path {
   public CarbonFile[] getSortIndexFiles(CarbonFile sortIndexDir, final String columnUniqueId) {
     CarbonFile[] files = sortIndexDir.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
-        return file.getName().startsWith(columnUniqueId) && file.getName().endsWith(SORT_INDEX_EXT);
+        return file.getName().startsWith(columnUniqueId) &&
+            file.getName().endsWith(CarbonCommonConstants.SORT_INDEX_EXT);
       }
     });
     return files;

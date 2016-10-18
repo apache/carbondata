@@ -209,17 +209,8 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
                 if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
                   val tableName = tableFolder.getName
                   val tableUniqueName = databaseFolder.getName + "_" + tableFolder.getName
-
-
-                  val createTBase = new ThriftReader.TBaseCreator() {
-                    override def create(): org.apache.thrift.TBase[TableInfo, TableInfo._Fields] = {
-                      new TableInfo()
-                    }
-                  }
-                  val thriftReader = new ThriftReader(tableMetadataFile, createTBase)
-                  thriftReader.open()
-                  val tableInfo: TableInfo = thriftReader.read().asInstanceOf[TableInfo]
-                  thriftReader.close()
+                  val tableInfo: TableInfo = CarbonMetastoreCatalog
+                    .readSchemaFileToThriftTable(tableMetadataFile)
 
                   val schemaConverter = new ThriftWrapperSchemaConverterImpl
                   val wrapperTableInfo = schemaConverter
@@ -305,11 +296,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
       FileFactory.mkdirs(schemaMetadataPath, fileType)
     }
-
-    val thriftWriter = new ThriftWriter(schemaFilePath, false)
-    thriftWriter.open()
-    thriftWriter.write(thriftTableInfo)
-    thriftWriter.close()
+    CarbonMetastoreCatalog.writeThriftTableToSchemaFile(schemaFilePath, thriftTableInfo)
 
     metadata.tablesMeta += tableMeta
     logInfo(s"Table $tableName for Database $dbName created successfully.")
