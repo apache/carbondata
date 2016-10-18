@@ -882,7 +882,9 @@ object CarbonDataRDDFactory extends Logging {
           hadoopConfiguration.set(FileInputFormat.INPUT_DIR, filePaths)
           hadoopConfiguration.set(FileInputFormat.INPUT_DIR_RECURSIVE, "true")
           hadoopConfiguration.set("io.compression.codecs",
-            "org.apache.hadoop.io.compress.GzipCodec")
+            """org.apache.hadoop.io.compress.GzipCodec,
+               org.apache.hadoop.io.compress.DefaultCodec,
+               org.apache.hadoop.io.compress.BZip2Codec""".stripMargin)
 
           configSplitMaxSize(sqlContext.sparkContext, filePaths, hadoopConfiguration)
 
