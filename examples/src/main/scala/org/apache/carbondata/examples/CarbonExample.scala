@@ -28,40 +28,7 @@ object CarbonExample {
 
     // Specify timestamp format based on raw data
     CarbonProperties.getInstance()
-<<<<<<< 978e08e9cdd2f8d828a45c1cccad5c610dadfead
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-=======
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
-<<<<<<< ba48bd5be23af7a7e27021f381beaabec909f96a
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true")
-    val testData: Array[String]= new Array[String](3);
-    testData(0) = "a"
-    testData(1) = "b"
-    testData(2) = "c"
-    var writer: DataOutputStream = null
-    try {
-      val fileType = FileFactory.getFileType(outputPath)
-      val file = FileFactory.getCarbonFile(outputPath, fileType)
-      if (!file.exists()) {
-        file.createNewFile()
-      }
-      writer = FileFactory.getDataOutputStream(outputPath, fileType)
-      for (i <- 0 to 2) {
-        for (j <- 0 to 240000) {
-          writer.writeBytes(testData(i) + "," + j + "\n")
-        }
-      }
-    }  finally {
-      if (writer != null) {
-        try {
-          writer.close()
-        }
-      }
-    }
->>>>>>> Fix
-=======
->>>>>>> Fix
 
     cc.sql("DROP TABLE IF EXISTS t3")
 
