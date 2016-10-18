@@ -254,9 +254,9 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     }
     long blockletDataSize =
         holder.getKeyArray().length + holder.getDataArray().length + indexBlockSize;
-    LOGGER.info("A new blocklet is added, its data size is: " + blockletDataSize + " Byte");
     updateBlockletFileChannel(blockletDataSize);
     writeDataToFile(holder);
+    LOGGER.info("A new blocklet is added, its data size is: " + blockletDataSize + " Byte");
   }
 
   /**
