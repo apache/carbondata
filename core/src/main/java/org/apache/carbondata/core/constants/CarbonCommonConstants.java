@@ -488,7 +488,7 @@ public final class CarbonCommonConstants {
   /**
    * default compressor is snappy
    */
-  public static final String DEFAULT_COMPRESSOR = "snappy";
+  public static final String DEFAULT_COMPRESSOR = "dummy";
 
   /**
    * MARKED_FOR_DELETION

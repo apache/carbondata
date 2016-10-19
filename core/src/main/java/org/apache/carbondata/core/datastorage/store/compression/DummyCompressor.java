@@ -19,100 +19,107 @@
 
 package org.apache.carbondata.core.datastorage.store.compression;
 
-import java.io.IOException;
-
+import org.apache.carbondata.common.Bytes;
 
 public class DummyCompressor implements Compressor {
   @Override
   public byte[] compressByte(byte[] unCompInput) {
-    return new byte[0];
+    return unCompInput;
   }
 
   @Override
   public byte[] unCompressByte(byte[] compInput) {
-    return new byte[0];
+    return compInput;
   }
 
   @Override
   public byte[] compressShort(short[] unCompInput) {
-    return new byte[0];
+    byte[] output = new byte[unCompInput.length * Bytes.SIZEOF_SHORT];
+    for (int i = 0; i < unCompInput.length; i++) {
+      Bytes.toBytes(unCompInput[i], output, i * Bytes.SIZEOF_SHORT);
+    }
+    return output;
   }
 
   @Override
   public short[] unCompressShort(byte[] compInput) {
-    return new short[0];
+    short[] output = new short[compInput.length / Bytes.SIZEOF_SHORT];
+    for (int i = 0; i < output.length; i++) {
+      output[i] = Bytes.toShort(compInput, i * Bytes.SIZEOF_SHORT);
+    }
+    return output;
   }
 
   @Override
   public byte[] compressInt(int[] unCompInput) {
-    return new byte[0];
+    byte[] output = new byte[unCompInput.length * Bytes.SIZEOF_INT];
+    for (int i = 0; i < unCompInput.length; i++) {
+      Bytes.toBytes(unCompInput[i], output, i * Bytes.SIZEOF_INT);
+    }
+    return output;
   }
 
   @Override
   public int[] unCompressInt(byte[] compInput) {
-    return new int[0];
+    int[] output = new int[compInput.length / Bytes.SIZEOF_INT];
+    for (int i = 0; i < output.length; i++) {
+      output[i] = Bytes.toInt(compInput, i * Bytes.SIZEOF_INT);
+    }
+    return output;
   }
 
   @Override
   public byte[] compressLong(long[] unCompInput) {
-    return new byte[0];
+    byte[] output = new byte[unCompInput.length * Bytes.SIZEOF_LONG];
+    for (int i = 0; i < unCompInput.length; i++) {
+      Bytes.toBytes(unCompInput[i], output, i * Bytes.SIZEOF_LONG);
+    }
+    return output;
   }
 
   @Override
   public long[] unCompressLong(byte[] compInput) {
-    return new long[0];
+    long[] output = new long[compInput.length / Bytes.SIZEOF_LONG];
+    for (int i = 0; i < output.length; i++) {
+      output[i] = Bytes.toLong(compInput, i * Bytes.SIZEOF_LONG);
+    }
+    return output;
   }
 
   @Override
   public byte[] compressFloat(float[] unCompInput) {
-    return new byte[0];
+    byte[] output = new byte[unCompInput.length * Bytes.SIZEOF_FLOAT];
+    for (int i = 0; i < unCompInput.length; i++) {
+      Bytes.toBytes(unCompInput[i], output, i * Bytes.SIZEOF_FLOAT);
+    }
+    return output;
   }
 
   @Override
   public float[] unCompressFloat(byte[] compInput) {
-    return new float[0];
+    float[] output = new float[compInput.length / Bytes.SIZEOF_FLOAT];
+    for (int i = 0; i < output.length; i++) {
+      output[i] = Bytes.toFloat(compInput, i * Bytes.SIZEOF_FLOAT);
+    }
+    return output;
   }
 
   @Override
   public byte[] compressDouble(double[] unCompInput) {
-    byte[] output = new byte[unCompInput.length * 8];
+    byte[] output = new byte[unCompInput.length * Bytes.SIZEOF_DOUBLE];
     for (int i = 0; i < unCompInput.length; i++) {
-      doubleToByteArray(unCompInput[i], output, i * 8);
+      Bytes.toBytes(unCompInput[i], output, i * Bytes.SIZEOF_DOUBLE);
     }
     return output;
   }
 
   @Override
   public double[] unCompressDouble(byte[] compInput) {
-    double[] output = new double[compInput.length / 8];
+    double[] output = new double[compInput.length / Bytes.SIZEOF_DOUBLE];
     for (int i = 0; i < output.length; i++) {
-      output[i] = byteArrayToDouble(compInput, i * 8);
+      output[i] = Bytes.toDouble(compInput, i * Bytes.SIZEOF_DOUBLE);
     }
     return output;
-  }
-
-  private static void doubleToByteArray(double input, byte[] output, int start) {
-    long l = Double.doubleToLongBits(input);
-    output[start] = (byte)((l >> 56) & 0xff);
-    output[start + 1] = (byte)((l >> 48) & 0xff);
-    output[start + 2] = (byte)((l >> 40) & 0xff);
-    output[start + 3] = (byte)((l >> 32) & 0xff);
-    output[start + 4] = (byte)((l >> 24) & 0xff);
-    output[start + 5] = (byte)((l >> 16) & 0xff);
-    output[start + 6] = (byte)((l >> 8) & 0xff);
-    output[start + 7] = (byte)((l >> 0) & 0xff);
-  }
-
-  private static double byteArrayToDouble(byte[] bytes, int start) {
-    long l = ((long)bytes[start] << 56) +
-        ((long)bytes[start + 1] << 48) +
-        ((long)bytes[start + 2] << 40) +
-        ((long)bytes[start + 3] << 32) +
-        ((long)bytes[start + 4] << 24) +
-        ((long)bytes[start + 5] << 16) +
-        ((long)bytes[start + 6] << 8) +
-        ((long)bytes[start + 7]);
-    return Double.longBitsToDouble(l);
   }
 
 }
