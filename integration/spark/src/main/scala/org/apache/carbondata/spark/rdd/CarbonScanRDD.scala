@@ -49,7 +49,6 @@ import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.util.QueryPlanUtil
 
 
-
 class CarbonSparkPartition(rddId: Int, val idx: Int,
     val locations: Array[String],
     val tableBlockInfos: util.List[TableBlockInfo])
@@ -92,7 +91,7 @@ class CarbonScanRDD[V: ClassTag](
     val result = new util.ArrayList[Partition](defaultParallelism)
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val validAndInvalidSegments = new SegmentStatusManager(queryModel.getAbsoluteTableIdentifier)
-        .getValidAndInvalidSegments
+      .getValidAndInvalidSegments
     // set filter resolver tree
     try {
       // before applying filter check whether segments are available in the table.
@@ -110,11 +109,10 @@ class CarbonScanRDD[V: ClassTag](
             queryModel.getAbsoluteTableIdentifier
           )
       }
-    }
-    catch {
+    } catch {
       case e: Exception =>
         LOGGER.error(e)
-        sys.error("Exception occurred in query execution :: " + e.getMessage)
+        sys.error(s"Exception occurred in query execution :: ${ e.getMessage }")
     }
     // get splits
     val splits = carbonInputFormat.getSplits(job)
@@ -129,8 +127,8 @@ class CarbonScanRDD[V: ClassTag](
         )
       )
       var activeNodes = Array[String]()
-      if(blockListTemp.nonEmpty) {
-         activeNodes = DistributionUtil
+      if (blockListTemp.nonEmpty) {
+        activeNodes = DistributionUtil
           .ensureExecutorsAndGetNodeList(blockListTemp.toArray, sparkContext)
       }
       defaultParallelism = sparkContext.defaultParallelism
@@ -141,9 +139,9 @@ class CarbonScanRDD[V: ClassTag](
         var statistic = new QueryStatistic()
         // group blocks to nodes, tasks
         val nodeBlockMapping =
-          CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism,
-            activeNodes.toList.asJava
-          )
+        CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism,
+          activeNodes.toList.asJava
+        )
         statistic.addStatistics(QueryStatisticsConstants.BLOCK_ALLOCATION, System.currentTimeMillis)
         statisticRecorder.recordStatisticsForDriver(statistic, queryModel.getQueryId())
         statistic = new QueryStatistic()
@@ -173,15 +171,14 @@ class CarbonScanRDD[V: ClassTag](
         statisticRecorder.logStatisticsAsTableDriver()
         result.asScala.foreach { r =>
           val cp = r.asInstanceOf[CarbonSparkPartition]
-          logInfo(s"Node : " + cp.locations.toSeq.mkString(",")
-                  + ", No.Of Blocks : " + cp.tableBlockInfos.size()
+          logInfo(s"Node: ${ cp.locations.toSeq.mkString(",") }" +
+                  s", No.Of Blocks:  ${ cp.tableBlockInfos.size() }"
           )
         }
       } else {
         logInfo("No blocks identified to scan")
       }
-    }
-    else {
+    } else {
       logInfo("No valid segments found to scan")
     }
     result.toArray(new Array[Partition](result.size()))
@@ -200,7 +197,7 @@ class CarbonScanRDD[V: ClassTag](
           queryExecutor.finish
         })
         val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
-        if(!carbonSparkPartition.tableBlockInfos.isEmpty) {
+        if (!carbonSparkPartition.tableBlockInfos.isEmpty) {
           queryModel.setQueryId(queryModel.getQueryId + "_" + carbonSparkPartition.idx)
           // fill table block info
           queryModel.setTableBlockInfos(carbonSparkPartition.tableBlockInfos)
@@ -221,7 +218,7 @@ class CarbonScanRDD[V: ClassTag](
         case e: Exception =>
           LOGGER.error(e)
           if (null != e.getMessage) {
-            sys.error("Exception occurred in query execution :: " + e.getMessage)
+            sys.error(s"Exception occurred in query execution :: ${ e.getMessage }")
           } else {
             sys.error("Exception occurred in query execution.Please check logs.")
           }
@@ -256,22 +253,22 @@ class CarbonScanRDD[V: ClassTag](
       }
 
       def logStatistics(): Unit = {
-          if (null != queryModel.getStatisticsRecorder) {
-            var queryStatistic = new QueryStatistic()
-            queryStatistic
-              .addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
-                System.currentTimeMillis - queryStartTime
-              )
-            queryModel.getStatisticsRecorder.recordStatistics(queryStatistic)
-            // result size
-            queryStatistic = new QueryStatistic()
-            queryStatistic.addCountStatistic(QueryStatisticsConstants.RESULT_SIZE, recordCount)
-            queryModel.getStatisticsRecorder.recordStatistics(queryStatistic)
-            // print executor query statistics for each task_id
-            queryModel.getStatisticsRecorder.logStatisticsAsTableExecutor()
-          }
+        if (null != queryModel.getStatisticsRecorder) {
+          var queryStatistic = new QueryStatistic()
+          queryStatistic
+            .addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
+              System.currentTimeMillis - queryStartTime
+            )
+          queryModel.getStatisticsRecorder.recordStatistics(queryStatistic)
+          // result size
+          queryStatistic = new QueryStatistic()
+          queryStatistic.addCountStatistic(QueryStatisticsConstants.RESULT_SIZE, recordCount)
+          queryModel.getStatisticsRecorder.recordStatistics(queryStatistic)
+          // print executor query statistics for each task_id
+          queryModel.getStatisticsRecorder.logStatisticsAsTableExecutor()
         }
       }
+    }
 
     iter
   }

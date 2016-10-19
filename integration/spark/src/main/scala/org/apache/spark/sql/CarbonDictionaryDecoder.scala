@@ -111,10 +111,10 @@ case class CarbonDictionaryDecoder(
       case DataType.TIMESTAMP => TimestampType
       case DataType.STRUCT =>
         CarbonMetastoreTypes
-        .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
+          .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
       case DataType.ARRAY =>
         CarbonMetastoreTypes
-        .toDataType(s"array<${ relation.getArrayChildren(carbonDimension.getColName) }>")
+          .toDataType(s"array<${ relation.getArrayChildren(carbonDimension.getColName) }>")
     }
   }
 
@@ -131,7 +131,7 @@ case class CarbonDictionaryDecoder(
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
             !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           (carbonTable.getFactTableName, carbonDimension.getColumnIdentifier,
-              carbonDimension.getDataType)
+            carbonDimension.getDataType)
         } else {
           (null, null, null)
         }
@@ -160,7 +160,7 @@ case class CarbonDictionaryDecoder(
         (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
       }.toMap
 
-      val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder(queryId);
+      val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder(queryId)
       if (isRequiredToDecode) {
         val dataTypes = child.output.map { attr => attr.dataType }
         child.execute().mapPartitions { iter =>
@@ -186,7 +186,7 @@ case class CarbonDictionaryDecoder(
             var total = 0L
             override final def hasNext: Boolean = {
               flag = iter.hasNext
-              if (false == flag && total > 0) {
+              if (!flag && total > 0) {
                 val queryStatistic = new QueryStatistic()
                 queryStatistic
                   .addFixedTimeStatistic(QueryStatisticsConstants.PREPARE_RESULT, total)
@@ -202,8 +202,8 @@ case class CarbonDictionaryDecoder(
               dictIndex.foreach { index =>
                 if (data(index) != null) {
                   data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
-                      .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
-                      getDictionaryColumnIds(index)._3)
+                    .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
+                    getDictionaryColumnIds(index)._3)
                 }
               }
               val result = unsafeProjection(new GenericMutableRow(data))
@@ -231,7 +231,7 @@ case class CarbonDictionaryDecoder(
       if (f._2 != null) {
         try {
           cache.get(new DictionaryColumnUniqueIdentifier(
-            atiMap.get(f._1).get.getCarbonTableIdentifier,
+            atiMap(f._1).getCarbonTableIdentifier,
             f._2, f._3))
         } catch {
           case _: Throwable => null
@@ -242,4 +242,5 @@ case class CarbonDictionaryDecoder(
     }
     dicts
   }
+
 }

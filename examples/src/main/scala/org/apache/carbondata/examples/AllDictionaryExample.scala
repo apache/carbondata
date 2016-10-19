@@ -21,6 +21,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.util.{AllDictionaryUtil, ExampleUtils}
 
 object AllDictionaryExample {
+
   def main(args: Array[String]) {
     val cc = ExampleUtils.createCarbonContext("CarbonExample")
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
@@ -57,4 +58,5 @@ object AllDictionaryExample {
     // clean local dictionary files
     AllDictionaryUtil.cleanDictionary(allDictFile)
   }
+
 }
