@@ -47,7 +47,7 @@ public class CSVInputFormatTest extends TestCase {
    * generate compressed files, no need to call this method.
    * @throws Exception
    */
-  public void testGenerateCompressFiles() throws Exception {
+  public void generateCompressFiles() throws Exception {
     String pwd = new File("src/test/resources").getCanonicalPath();
     String inputFile = pwd + "/data.csv";
     FileInputStream input = new FileInputStream(inputFile);
@@ -142,10 +142,10 @@ public class CSVInputFormatTest extends TestCase {
     FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "data.csv"));
     FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "data.csv.bz2"));
     FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "data.csv.gz"));
-    FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "data.csv.lz4"));
-    FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "data.csv.snappy"));
+    // FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "data.csv.lz4"));
+    // FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "data.csv.snappy"));
 
-    File output = new File("target/output");
+    File output = new File("target/output_CSVInputFormatTest");
     deleteOutput(output);
     FileOutputFormat.setOutputPath(job, new Path(output.getCanonicalPath()));
 
