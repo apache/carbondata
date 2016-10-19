@@ -31,6 +31,7 @@
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
+    <thrift.source>${basedir}/../format/src/main/thrift</thrift.source>
   </properties>
 
   <dependencies>
@@ -40,6 +41,39 @@
       <version>0.9.3</version>
     </dependency>
   </dependencies>
+
+  <profiles>
+    <profile>
+      <id>format</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.thrift.tools</groupId>
+            <artifactId>maven-thrift-plugin</artifactId>
+            <version>0.1.11</version>
+            <configuration>
+              <thriftExecutable>thrift</thriftExecutable>
+              <thriftSourceRoot>${thrift.source}</thriftSourceRoot>
+            </configuration>
+            <executions>
+              <execution>
+                <id>generate-thrift-java</id>
+                <phase>generate-sources</phase>
+                <configuration>
+                  <generator>java</generator>
+                  <outputDirectory>src/main/java</outputDirectory>
+                  <compileOutput>false</compileOutput>
+                </configuration>
+                <goals>
+                  <goal>compile</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 
   <build>
     <sourceDirectory>src/main/java</sourceDirectory>
