@@ -167,16 +167,16 @@ case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends S
  * @param model a model package load info
  */
 class CarbonAllDictionaryCombineRDD(
-                                       prev: RDD[(String, Iterable[String])],
-                                       model: DictionaryLoadModel)
+    prev: RDD[(String, Iterable[String])],
+    model: DictionaryLoadModel)
   extends RDD[(Int, ColumnDistinctValues)](prev) with Logging {
 
   override def getPartitions: Array[Partition] =
     firstParent[(String, Iterable[String])].partitions
 
   override def compute(split: Partition, context: TaskContext
-                      ): Iterator[(Int, ColumnDistinctValues)] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass().getName())
+  ): Iterator[(Int, ColumnDistinctValues)] = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
     val distinctValuesList = new ArrayBuffer[(Int, HashSet[String])]
     /*
@@ -239,7 +239,7 @@ class CarbonBlockDistinctValuesCombineRDD(
   override def compute(split: Partition,
       context: TaskContext): Iterator[(Int, ColumnDistinctValues)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordLoadCsvfilesToDfTime()
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordLoadCsvfilesToDfTime()
     val distinctValuesList = new ArrayBuffer[(Int, HashSet[String])]
     var rowCount = 0L
     try {
@@ -258,7 +258,7 @@ class CarbonBlockDistinctValuesCombineRDD(
           }
         }
       }
-      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordLoadCsvfilesToDfTime()
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordLoadCsvfilesToDfTime()
     } catch {
       case ex: Exception =>
         LOGGER.error(ex)
@@ -287,7 +287,7 @@ class CarbonGlobalDictionaryGenerateRDD(
   override def getPartitions: Array[Partition] = firstParent[(Int, ColumnDistinctValues)].partitions
 
   override def compute(split: Partition, context: TaskContext): Iterator[(Int, String, Boolean)] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass().getName)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     var status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
     var isHighCardinalityColumn = false
     val iter = new Iterator[(Int, String, Boolean)] {
@@ -297,17 +297,17 @@ class CarbonGlobalDictionaryGenerateRDD(
       var dictionaryForDistinctValueLookUpCleared: Boolean = false
       val pathService = CarbonCommonFactory.getPathService
       val carbonTablePath = pathService.getCarbonTablePath(model.columnIdentifier(split.index),
-          model.hdfsLocation, model.table)
+        model.hdfsLocation, model.table)
       if (StringUtils.isNotBlank(model.hdfsTempLocation )) {
-         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
-           model.hdfsTempLocation)
+        CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
+          model.hdfsTempLocation)
       }
       if (StringUtils.isNotBlank(model.lockType)) {
-         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.LOCK_TYPE,
-           model.lockType)
+        CarbonProperties.getInstance.addProperty(CarbonCommonConstants.LOCK_TYPE,
+          model.lockType)
       }
       if (StringUtils.isNotBlank(model.zooKeeperUrl)) {
-         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.ZOOKEEPER_URL,
+        CarbonProperties.getInstance.addProperty(CarbonCommonConstants.ZOOKEEPER_URL,
           model.zooKeeperUrl)
       }
       val dictLock = CarbonLockFactory
@@ -320,7 +320,7 @@ class CarbonGlobalDictionaryGenerateRDD(
         val valuesBuffer = new mutable.HashSet[String]
         val rddIter = firstParent[(Int, ColumnDistinctValues)].iterator(split, context)
         var rowCount = 0L
-        CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordDicShuffleAndWriteTime()
+        CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordDicShuffleAndWriteTime()
         breakable {
           while (rddIter.hasNext) {
             val distinctValueList = rddIter.next()._2
@@ -329,7 +329,7 @@ class CarbonGlobalDictionaryGenerateRDD(
             // check high cardinality
             if (model.isFirstLoad && model.highCardIdentifyEnable
                 && !model.isComplexes(split.index)
-                && model.dimensions(split.index).isColumnar()) {
+                && model.dimensions(split.index).isColumnar) {
               isHighCardinalityColumn = GlobalDictionaryUtil.isHighCardinalityColumn(
                 valuesBuffer.size, rowCount, model)
               if (isHighCardinalityColumn) {
@@ -338,7 +338,7 @@ class CarbonGlobalDictionaryGenerateRDD(
             }
           }
         }
-        val combineListTime = (System.currentTimeMillis() - t1)
+        val combineListTime = System.currentTimeMillis() - t1
         if (isHighCardinalityColumn) {
           LOGGER.info("column " + model.table.getTableUniqueName + "." +
                       model.primDimensions(split.index).getColName + " is high cardinality column")
@@ -367,7 +367,7 @@ class CarbonGlobalDictionaryGenerateRDD(
           } else {
             null
           }
-          val dictCacheTime = (System.currentTimeMillis - t2)
+          val dictCacheTime = System.currentTimeMillis - t2
           val t3 = System.currentTimeMillis()
           val dictWriteTask = new DictionaryWriterTask(valuesBuffer,
             dictionaryForDistinctValueLookUp,
@@ -375,7 +375,7 @@ class CarbonGlobalDictionaryGenerateRDD(
             split.index)
           // execute dictionary writer task to get distinct values
           val distinctValues = dictWriteTask.execute()
-          val dictWriteTime = (System.currentTimeMillis() - t3)
+          val dictWriteTime = System.currentTimeMillis() - t3
           val t4 = System.currentTimeMillis()
           // if new data came than rewrite sort index file
           if (distinctValues.size() > 0) {
@@ -385,22 +385,22 @@ class CarbonGlobalDictionaryGenerateRDD(
               distinctValues)
             sortIndexWriteTask.execute()
           }
-          val sortIndexWriteTime = (System.currentTimeMillis() - t4)
-          CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordDicShuffleAndWriteTime()
+          val sortIndexWriteTime = System.currentTimeMillis() - t4
+          CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordDicShuffleAndWriteTime()
           // After sortIndex writing, update dictionaryMeta
           dictWriteTask.updateMetaData()
           // clear the value buffer after writing dictionary data
           valuesBuffer.clear
           org.apache.carbondata.core.util.CarbonUtil
-            .clearDictionaryCache(dictionaryForDistinctValueLookUp);
+            .clearDictionaryCache(dictionaryForDistinctValueLookUp)
           dictionaryForDistinctValueLookUpCleared = true
           LOGGER.info("\n columnName:" + model.primDimensions(split.index).getColName +
-              "\n columnId:" + model.primDimensions(split.index).getColumnId +
-              "\n new distinct values count:" + distinctValues.size() +
-              "\n combine lists:" + combineListTime +
-              "\n create dictionary cache:" + dictCacheTime +
-              "\n sort list, distinct and write:" + dictWriteTime +
-              "\n write sort info:" + sortIndexWriteTime)
+                      "\n columnId:" + model.primDimensions(split.index).getColumnId +
+                      "\n new distinct values count:" + distinctValues.size() +
+                      "\n combine lists:" + combineListTime +
+                      "\n create dictionary cache:" + dictCacheTime +
+                      "\n sort list, distinct and write:" + dictWriteTime +
+                      "\n write sort info:" + sortIndexWriteTime)
         }
       } catch {
         case ex: Exception =>
@@ -409,10 +409,10 @@ class CarbonGlobalDictionaryGenerateRDD(
       } finally {
         if (!dictionaryForDistinctValueLookUpCleared) {
           org.apache.carbondata.core.util.CarbonUtil
-            .clearDictionaryCache(dictionaryForDistinctValueLookUp);
+            .clearDictionaryCache(dictionaryForDistinctValueLookUp)
         }
         org.apache.carbondata.core.util.CarbonUtil
-          .clearDictionaryCache(dictionaryForSortIndexWriting);
+          .clearDictionaryCache(dictionaryForSortIndexWriting)
         if (dictLock != null && isDictionaryLocked) {
           if (dictLock.unlock()) {
             logInfo(s"Dictionary ${
@@ -466,7 +466,7 @@ class CarbonColumnDictPatition(id: Int, dimension: CarbonDimension)
  * @param dimensions  carbon dimenisons having predefined dict
  * @param hdfsLocation  carbon base store path
  * @param dictFolderPath  path of dictionary folder
-*/
+ */
 class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
     dictionaryLoadModel: DictionaryLoadModel,
     sparkContext: SparkContext,
@@ -505,25 +505,25 @@ class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
     } catch {
       case ex: Exception =>
         logError(s"Error in reading pre-defined " +
-          s"dictionary file:${ex.getMessage}")
+                 s"dictionary file:${ex.getMessage}")
         throw ex
     } finally {
       if (csvReader != null) {
         try {
-          csvReader.close
+          csvReader.close()
         } catch {
           case ex: Exception =>
             logError(s"Error in closing csvReader of " +
-              s"pre-defined dictionary file:${ex.getMessage}")
+                     s"pre-defined dictionary file:${ex.getMessage}")
         }
       }
       if (inputStream != null) {
         try {
-          inputStream.close
+          inputStream.close()
         } catch {
           case ex: Exception =>
             logError(s"Error in closing inputStream of " +
-              s"pre-defined dictionary file:${ex.getMessage}")
+                     s"pre-defined dictionary file:${ex.getMessage}")
         }
       }
     }

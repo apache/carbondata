@@ -50,7 +50,7 @@ object Compactor {
     val carbonLoadModel = compactionCallableModel.carbonLoadModel
     val compactionType = compactionCallableModel.compactionType
 
-    val startTime = System.nanoTime();
+    val startTime = System.nanoTime()
     val mergedLoadName = CarbonDataMergerUtil.getMergedLoadName(loadsToMerge)
     var finalMergeStatus = false
     val schemaName: String = carbonLoadModel.getDatabaseName
@@ -58,11 +58,11 @@ object Compactor {
     val storePath = hdfsStoreLocation
     val validSegments: Array[String] = CarbonDataMergerUtil
       .getValidSegments(loadsToMerge).split(',')
-    val mergeLoadStartTime = CarbonLoaderUtil.readCurrentTime();
+    val mergeLoadStartTime = CarbonLoaderUtil.readCurrentTime()
     val carbonMergerMapping = CarbonMergerMapping(storeLocation,
       hdfsStoreLocation,
       partitioner,
-      carbonTable.getMetaDataFilepath(),
+      carbonTable.getMetaDataFilepath,
       mergedLoadName,
       kettleHomePath,
       cubeCreationTime,
@@ -83,7 +83,7 @@ object Compactor {
     )
     )
     carbonLoadModel.setLoadMetadataDetails(segmentStatusManager
-      .readLoadMetadata(carbonTable.getMetaDataFilepath()).toList.asJava
+      .readLoadMetadata(carbonTable.getMetaDataFilepath).toList.asJava
     )
     var execInstance = "1"
     // in case of non dynamic executor allocation, number of executors are fixed.
@@ -115,10 +115,10 @@ object Compactor {
     }
 
     if (finalMergeStatus) {
-      val endTime = System.nanoTime();
+      val endTime = System.nanoTime()
       logger.info("time taken to merge " + mergedLoadName + " is " + (endTime - startTime))
       if (!CarbonDataMergerUtil
-        .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath(),
+        .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath,
           mergedLoadName, carbonLoadModel, mergeLoadStartTime, compactionType
         )) {
         logger
@@ -130,7 +130,7 @@ object Compactor {
             .getDatabaseName + "." + carbonLoadModel.getTableName
           )
         throw new Exception("Compaction failed to update metadata for table " + carbonLoadModel
-            .getDatabaseName + "." + carbonLoadModel.getTableName)
+          .getDatabaseName + "." + carbonLoadModel.getTableName)
       }
       else {
         logger

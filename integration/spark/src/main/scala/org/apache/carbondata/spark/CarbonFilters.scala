@@ -121,8 +121,8 @@ object CarbonFilters {
       expr match {
         case or@ Or(left, right) =>
 
-          val leftFilter = translate(left, true)
-          val rightFilter = translate(right, true)
+          val leftFilter = translate(left, or = true)
+          val rightFilter = translate(right, or = true)
           if (leftFilter.isDefined && rightFilter.isDefined) {
             Some( sources.Or(leftFilter.get, rightFilter.get))
           } else {
@@ -265,29 +265,29 @@ object CarbonFilters {
             Some(new EqualToExpression(transformExpression(child).get,
              transformExpression(Literal(null)).get, true))
         case Not(In(a: Attribute, list))
-         if !list.exists(!_.isInstanceOf[Literal]) =>
-         if (list.exists(x => (isNullLiteral(x.asInstanceOf[Literal])))) {
-          Some(new FalseExpression(transformExpression(a).get))
-         }
-        else {
-          Some(new NotInExpression(transformExpression(a).get,
+          if !list.exists(!_.isInstanceOf[Literal]) =>
+          if (list.exists(x => isNullLiteral(x.asInstanceOf[Literal]))) {
+            Some(new FalseExpression(transformExpression(a).get))
+          }
+          else {
+            Some(new NotInExpression(transformExpression(a).get,
               new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
-            }
+          }
         case In(a: Attribute, list) if !list.exists(!_.isInstanceOf[Literal]) =>
           Some(new InExpression(transformExpression(a).get,
             new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
         case Not(In(Cast(a: Attribute, _), list))
           if !list.exists(!_.isInstanceOf[Literal]) =>
-        /* if any illogical expression comes in NOT IN Filter like
-         NOT IN('scala',NULL) this will be treated as false expression and will
-         always return no result. */
-          if (list.exists(x => (isNullLiteral(x.asInstanceOf[Literal])))) {
-          Some(new FalseExpression(transformExpression(a).get))
-         }
-        else {
-          Some(new NotInExpression(transformExpression(a).get, new ListExpression(
+          /* if any illogical expression comes in NOT IN Filter like
+           NOT IN('scala',NULL) this will be treated as false expression and will
+           always return no result. */
+          if (list.exists(x => isNullLiteral(x.asInstanceOf[Literal]))) {
+            Some(new FalseExpression(transformExpression(a).get))
+          }
+          else {
+            Some(new NotInExpression(transformExpression(a).get, new ListExpression(
               convertToJavaList(list.map(transformExpression(_).get)))))
-              }
+          }
         case In(Cast(a: Attribute, _), list) if !list.exists(!_.isInstanceOf[Literal]) =>
           Some(new InExpression(transformExpression(a).get,
             new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))

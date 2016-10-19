@@ -99,8 +99,8 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
   case class ExtraNodeInfo(var hasCarbonRelation: Boolean)
 
   def fillNodeInfo(
-       plan: LogicalPlan,
-       extraNodeInfos: java.util.HashMap[LogicalPlan, ExtraNodeInfo]): ExtraNodeInfo = {
+      plan: LogicalPlan,
+      extraNodeInfos: java.util.HashMap[LogicalPlan, ExtraNodeInfo]): ExtraNodeInfo = {
     plan match {
       case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
         val extraNodeInfo = ExtraNodeInfo(true)
@@ -465,9 +465,10 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           decoder = true
           cd
         case currentPlan =>
-          hasCarbonRelation(currentPlan) match {
-            case true => addTempDecoder(currentPlan)
-            case false => currentPlan
+          if (hasCarbonRelation(currentPlan)) {
+            addTempDecoder(currentPlan)
+          } else {
+            currentPlan
           }
       }
 

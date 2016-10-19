@@ -36,7 +36,7 @@ object CommonUtil {
       if (noDictionaryDims.contains(x)) {
         throw new MalformedCarbonCommandException(
           "Column group is not supported for no dictionary columns:" + x)
-      } else if (msrs.filter { msr => msr.column.equals(x) }.nonEmpty) {
+      } else if (msrs.exists { msr => msr.column.equals(x) }) {
         // if column is measure
         throw new MalformedCarbonCommandException("Column group is not supported for measures:" + x)
       } else if (foundIndExistingColGrp(x)) {
@@ -49,7 +49,7 @@ object CommonUtil {
           "Column group doesn't support Timestamp datatype:" + x)
       }
       // if invalid column is present
-      else if (dims.filter { dim => dim.column.equalsIgnoreCase(x) }.isEmpty) {
+      else if (!dims.exists { dim => dim.column.equalsIgnoreCase(x) }) {
         throw new MalformedCarbonCommandException(
           "column in column group is not a valid column :" + x
         )
@@ -110,7 +110,7 @@ object CommonUtil {
             key.length()), value))
         }
     }
-    if (fieldProps.isEmpty()) {
+    if (fieldProps.isEmpty) {
       None
     } else {
       Some(fieldProps)
@@ -211,7 +211,7 @@ object CommonUtil {
     var tableBlockSize: Integer = 0
     if (tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).isDefined) {
       val blockSizeStr: String =
-        parsePropertyValueStringInMB(tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE).get)
+        parsePropertyValueStringInMB(tableProperties(CarbonCommonConstants.TABLE_BLOCKSIZE))
       try {
         tableBlockSize = Integer.parseInt(blockSizeStr)
       } catch {

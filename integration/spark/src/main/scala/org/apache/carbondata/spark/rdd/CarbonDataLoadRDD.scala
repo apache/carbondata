@@ -196,30 +196,29 @@ class DataFileLoaderRDD[K, V](
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
   override def getPartitions: Array[Partition] = {
-    isTableSplitPartition match {
-      case true =>
-        // for table split partition
-        var splits = Array[TableSplit]()
-        if (carbonLoadModel.isDirectLoad) {
-          splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath,
-            partitioner.nodeList, partitioner.partitionCount)
-        }
-        else {
-          splits = CarbonQueryUtil.getTableSplits(carbonLoadModel.getDatabaseName,
-            carbonLoadModel.getTableName, null, partitioner)
-        }
+    if (isTableSplitPartition) {
+      // for table split partition
+      var splits = Array[TableSplit]()
+      if (carbonLoadModel.isDirectLoad) {
+        splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath,
+          partitioner.nodeList, partitioner.partitionCount)
+      }
+      else {
+        splits = CarbonQueryUtil.getTableSplits(carbonLoadModel.getDatabaseName,
+          carbonLoadModel.getTableName, null, partitioner)
+      }
 
-        splits.zipWithIndex.map {s =>
-          // filter the same partition unique id, because only one will match, so get 0 element
-          val blocksDetails: Array[BlockDetails] = blocksGroupBy.filter(p =>
-            p._1 == s._1.getPartition.getUniqueID)(0)._2
-          new CarbonTableSplitPartition(id, s._2, s._1, blocksDetails)
-        }
-      case false =>
-        // for node partition
-        blocksGroupBy.zipWithIndex.map{b =>
-          new CarbonNodePartition(id, b._2, b._1._1, b._1._2)
-        }
+      splits.zipWithIndex.map { s =>
+        // filter the same partition unique id, because only one will match, so get 0 element
+        val blocksDetails: Array[BlockDetails] = blocksGroupBy.filter(p =>
+          p._1 == s._1.getPartition.getUniqueID)(0)._2
+        new CarbonTableSplitPartition(id, s._2, s._1, blocksDetails)
+      }
+    } else {
+      // for node partition
+      blocksGroupBy.zipWithIndex.map { b =>
+        new CarbonNodePartition(id, b._2, b._1._1, b._1._2)
+      }
     }
   }
 
@@ -262,52 +261,51 @@ class DataFileLoaderRDD[K, V](
       }
 
       def setModelAndBlocksInfo(): Unit = {
-        isTableSplitPartition match {
-          case true =>
-            // for table split partition
-            val split = theSplit.asInstanceOf[CarbonTableSplitPartition]
-            logInfo("Input split: " + split.serializableHadoopSplit.value)
-            val blocksID = gernerateBlocksID
-            carbonLoadModel.setBlocksID(blocksID)
-            carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
-            if (carbonLoadModel.isDirectLoad) {
-              model = carbonLoadModel.getCopyWithPartition(
-                split.serializableHadoopSplit.value.getPartition.getUniqueID,
-                split.serializableHadoopSplit.value.getPartition.getFilesPath,
-                carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
-            } else {
-              model = carbonLoadModel.getCopyWithPartition(
-                split.serializableHadoopSplit.value.getPartition.getUniqueID)
-            }
-            partitionID = split.serializableHadoopSplit.value.getPartition.getUniqueID
-            // get this partition data blocks and put it to global static map
-            GraphGenerator.blockInfo.put(blocksID, split.partitionBlocksDetail)
-            StandardLogService.setThreadName(partitionID, null)
-            CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordPartitionBlockMap(
-              partitionID, split.partitionBlocksDetail.length)
-          case false =>
-            // for node partition
-            val split = theSplit.asInstanceOf[CarbonNodePartition]
-            logInfo("Input split: " + split.serializableHadoopSplit)
-            logInfo("The Block Count in this node :" + split.nodeBlocksDetail.length)
-            CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordHostBlockMap(
-              split.serializableHadoopSplit, split.nodeBlocksDetail.length)
-            val blocksID = gernerateBlocksID
-            carbonLoadModel.setBlocksID(blocksID)
-            carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
-            // set this node blocks info to global static map
-            GraphGenerator.blockInfo.put(blocksID, split.nodeBlocksDetail)
-            if (carbonLoadModel.isDirectLoad) {
-              val filelist: java.util.List[String] = new java.util.ArrayList[String](
-                CarbonCommonConstants.CONSTANT_SIZE_TEN)
-              CarbonQueryUtil.splitFilePath(carbonLoadModel.getFactFilePath, filelist, ",")
-              model = carbonLoadModel.getCopyWithPartition(partitionID, filelist,
-                carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
-            }
-            else {
-              model = carbonLoadModel.getCopyWithPartition(partitionID)
-            }
-            StandardLogService.setThreadName(blocksID, null)
+        if (isTableSplitPartition) {
+          // for table split partition
+          val split = theSplit.asInstanceOf[CarbonTableSplitPartition]
+          logInfo("Input split: " + split.serializableHadoopSplit.value)
+          val blocksID = gernerateBlocksID
+          carbonLoadModel.setBlocksID(blocksID)
+          carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
+          if (carbonLoadModel.isDirectLoad) {
+            model = carbonLoadModel.getCopyWithPartition(
+              split.serializableHadoopSplit.value.getPartition.getUniqueID,
+              split.serializableHadoopSplit.value.getPartition.getFilesPath,
+              carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
+          } else {
+            model = carbonLoadModel.getCopyWithPartition(
+              split.serializableHadoopSplit.value.getPartition.getUniqueID)
+          }
+          partitionID = split.serializableHadoopSplit.value.getPartition.getUniqueID
+          // get this partition data blocks and put it to global static map
+          GraphGenerator.blockInfo.put(blocksID, split.partitionBlocksDetail)
+          StandardLogService.setThreadName(partitionID, null)
+          CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordPartitionBlockMap(
+            partitionID, split.partitionBlocksDetail.length)
+        } else {
+          // for node partition
+          val split = theSplit.asInstanceOf[CarbonNodePartition]
+          logInfo("Input split: " + split.serializableHadoopSplit)
+          logInfo("The Block Count in this node :" + split.nodeBlocksDetail.length)
+          CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordHostBlockMap(
+            split.serializableHadoopSplit, split.nodeBlocksDetail.length)
+          val blocksID = gernerateBlocksID
+          carbonLoadModel.setBlocksID(blocksID)
+          carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
+          // set this node blocks info to global static map
+          GraphGenerator.blockInfo.put(blocksID, split.nodeBlocksDetail)
+          if (carbonLoadModel.isDirectLoad) {
+            val filelist: java.util.List[String] = new java.util.ArrayList[String](
+              CarbonCommonConstants.CONSTANT_SIZE_TEN)
+            CarbonQueryUtil.splitFilePath(carbonLoadModel.getFactFilePath, filelist, ",")
+            model = carbonLoadModel.getCopyWithPartition(partitionID, filelist,
+              carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
+          }
+          else {
+            model = carbonLoadModel.getCopyWithPartition(partitionID)
+          }
+          StandardLogService.setThreadName(blocksID, null)
         }
       }
 
@@ -317,14 +315,13 @@ class DataFileLoaderRDD[K, V](
        * @return
        */
       def gernerateBlocksID: String = {
-        isTableSplitPartition match {
-          case true =>
-            carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" +
-            theSplit.asInstanceOf[CarbonTableSplitPartition].serializableHadoopSplit.value
-              .getPartition.getUniqueID + "_" + UUID.randomUUID()
-          case false =>
-            carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" +
-            UUID.randomUUID()
+        if (isTableSplitPartition) {
+          carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" +
+          theSplit.asInstanceOf[CarbonTableSplitPartition].serializableHadoopSplit.value
+            .getPartition.getUniqueID + "_" + UUID.randomUUID()
+        } else {
+          carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" +
+          UUID.randomUUID()
         }
       }
 
@@ -439,42 +436,42 @@ class DataFileLoaderRDD[K, V](
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
-    isTableSplitPartition match {
-      case true =>
-        // for table split partition
-        val theSplit = split.asInstanceOf[CarbonTableSplitPartition]
-        val location = theSplit.serializableHadoopSplit.value.getLocations.asScala
-        location
-      case false =>
-        // for node partition
-        val theSplit = split.asInstanceOf[CarbonNodePartition]
-        val firstOptionLocation: Seq[String] = List(theSplit.serializableHadoopSplit)
-        logInfo("Preferred Location for split : " + firstOptionLocation(0))
-        val blockMap = new util.LinkedHashMap[String, Integer]()
-        val tableBlocks = theSplit.blocksDetails
-        tableBlocks.foreach(tableBlock => tableBlock.getLocations.foreach(
-          location => {
-            if (!firstOptionLocation.exists(location.equalsIgnoreCase(_))) {
-              val currentCount = blockMap.get(location)
-              if (currentCount == null) {
-                blockMap.put(location, 1)
-              } else {
-                blockMap.put(location, currentCount + 1)
-              }
+    if (isTableSplitPartition) {
+      // for table split partition
+      val theSplit = split.asInstanceOf[CarbonTableSplitPartition]
+      val location = theSplit.serializableHadoopSplit.value.getLocations.asScala
+      location
+    } else {
+      // for node partition
+      val theSplit = split.asInstanceOf[CarbonNodePartition]
+      val firstOptionLocation: Seq[String] = List(theSplit.serializableHadoopSplit)
+      logInfo("Preferred Location for split : " + firstOptionLocation.head)
+      val blockMap = new util.LinkedHashMap[String, Integer]()
+      val tableBlocks = theSplit.blocksDetails
+      tableBlocks.foreach(tableBlock => tableBlock.getLocations.foreach(
+        location => {
+          if (!firstOptionLocation.exists(location.equalsIgnoreCase)) {
+            val currentCount = blockMap.get(location)
+            if (currentCount == null) {
+              blockMap.put(location, 1)
+            } else {
+              blockMap.put(location, currentCount + 1)
             }
           }
-        )
-        )
-
-        val sortedList = blockMap.entrySet().asScala.toSeq.sortWith((nodeCount1, nodeCount2) => {
-          nodeCount1.getValue > nodeCount2.getValue
         }
-        )
+      )
+      )
 
-        val sortedNodesList = sortedList.map(nodeCount => nodeCount.getKey).take(2)
-        firstOptionLocation ++ sortedNodesList
+      val sortedList = blockMap.entrySet().asScala.toSeq.sortWith((nodeCount1, nodeCount2) => {
+        nodeCount1.getValue > nodeCount2.getValue
+      }
+      )
+
+      val sortedNodesList = sortedList.map(nodeCount => nodeCount.getKey).take(2)
+      firstOptionLocation ++ sortedNodesList
     }
   }
+
 }
 
 /**
@@ -573,9 +570,10 @@ class RddIterator(rddIter: Iterator[Row],
   def hasNext: Boolean = rddIter.hasNext
 
   private def getString(value: Any, level: Int = 1): String = {
-    value == null match {
-      case true => ""
-      case false => value match {
+    if (value == null) {
+      ""
+    } else {
+      value match {
         case s: String => s
         case i: java.lang.Integer => i.toString
         case d: java.lang.Double => d.toString
@@ -626,4 +624,5 @@ class RddIterator(rddIter: Iterator[Row],
 
   def remove(): Unit = {
   }
+
 }
