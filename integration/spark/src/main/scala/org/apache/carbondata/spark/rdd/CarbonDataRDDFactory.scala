@@ -544,13 +544,9 @@ object CarbonDataRDDFactory extends Logging {
                 .tablesMeta.toArray, skipCompactionTables.toList.asJava
               )
             while (null != tableForCompaction) {
-              logger
-                .info("Compaction request has been identified for table " +
-                      s"${ tableForCompaction.carbonTable.getDatabaseName }.${
-                        tableForCompaction
-                          .carbonTableIdentifier.getTableName
-                      }"
-                )
+              logger.info("Compaction request has been identified for table " +
+                          s"${ tableForCompaction.carbonTable.getDatabaseName }." +
+                          s"${ tableForCompaction.carbonTableIdentifier.getTableName }")
               val table: CarbonTable = tableForCompaction.carbonTable
               val metadataPath = table.getMetaDataFilepath
               val compactionType = CarbonCompactionUtil.determineCompactionType(metadataPath)
@@ -1129,10 +1125,8 @@ object CarbonDataRDDFactory extends Logging {
           }
           else {
             val errorMsg = "Clean files request is failed for " +
-                           s"${ carbonLoadModel.getDatabaseName }.${
-                             carbonLoadModel
-                               .getTableName
-                           }" +
+                           s"${ carbonLoadModel.getDatabaseName }." +
+                           s"${ carbonLoadModel.getTableName }" +
                            ". Not able to acquire the table status lock due to other operation " +
                            "running in the background."
             logger.audit(errorMsg)

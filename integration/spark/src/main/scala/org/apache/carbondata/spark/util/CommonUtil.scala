@@ -36,7 +36,7 @@ object CommonUtil {
       if (noDictionaryDims.contains(x)) {
         throw new MalformedCarbonCommandException(
           "Column group is not supported for no dictionary columns:" + x)
-      } else if (msrs.exists(msr => msr.column.equals(x))) {
+      } else if (msrs.exists { msr => msr.column.equals(x) }) {
         // if column is measure
         throw new MalformedCarbonCommandException("Column group is not supported for measures:" + x)
       } else if (foundIndExistingColGrp(x)) {
@@ -47,9 +47,9 @@ object CommonUtil {
       } else if (isTimeStampColumn(x, dims)) {
         throw new MalformedCarbonCommandException(
           "Column group doesn't support Timestamp datatype:" + x)
-      }// if invalid column is
-      else if (!dims.exists(dim => dim.column.equalsIgnoreCase(x))) {
-        // present
+      }
+      // if invalid column is present
+      else if (!dims.exists { dim => dim.column.equalsIgnoreCase(x) }) {
         throw new MalformedCarbonCommandException(
           "column in column group is not a valid column :" + x
         )
