@@ -55,9 +55,9 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
 case class MetaData(var tablesMeta: ArrayBuffer[TableMeta])
 
 case class CarbonMetaData(dims: Seq[String],
-  msrs: Seq[String],
-  carbonTable: CarbonTable,
-  dictionaryMap: DictionaryMap)
+    msrs: Seq[String],
+    carbonTable: CarbonTable,
+    dictionaryMap: DictionaryMap)
 
 case class TableMeta(carbonTableIdentifier: CarbonTableIdentifier, storePath: String,
     var carbonTable: CarbonTable, partitioner: Partitioner)
@@ -176,12 +176,12 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
       ZookeeperInit.getInstance(zookeeperUrl)
       LOGGER.info("Zookeeper url is configured. Taking the zookeeper as lock type.")
       var configuredLockType = CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.LOCK_TYPE)
+        .getProperty(CarbonCommonConstants.LOCK_TYPE)
       if (null == configuredLockType) {
         configuredLockType = CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER
         CarbonProperties.getInstance
-            .addProperty(CarbonCommonConstants.LOCK_TYPE,
-                configuredLockType)
+          .addProperty(CarbonCommonConstants.LOCK_TYPE,
+            configuredLockType)
       }
     }
 
@@ -214,7 +214,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
             tableFolders.foreach(tableFolder => {
               if (tableFolder.isDirectory) {
                 val carbonTableIdentifier = new CarbonTableIdentifier(databaseFolder.getName,
-                    tableFolder.getName, UUID.randomUUID().toString)
+                  tableFolder.getName, UUID.randomUUID().toString)
                 val carbonTablePath = CarbonStorePath.getCarbonTablePath(basePath,
                   carbonTableIdentifier)
                 val tableMetadataFile = carbonTablePath.getSchemaFilePath
@@ -260,21 +260,16 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
             })
           }
         })
-      }
-      else {
+      } else {
         // Create folders and files.
         FileFactory.mkdirs(databasePath, fileType)
-
       }
-    }
-    catch {
+    } catch {
       case s: java.io.FileNotFoundException =>
         // Create folders and files.
         FileFactory.mkdirs(databasePath, fileType)
-
     }
   }
-
 
   /**
    *
@@ -286,11 +281,9 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
       tableInfo: org.apache.carbondata.core.carbon.metadata.schema.table.TableInfo,
       dbName: String, tableName: String, partitioner: Partitioner)
     (sqlContext: SQLContext): String = {
-
     if (tableExists(TableIdentifier(tableName, Some(dbName)))(sqlContext)) {
       sys.error(s"Table [$tableName] already exists under Database [$dbName]")
     }
-
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     val thriftTableInfo = schemaConverter
       .fromWrapperToExternalTableInfo(tableInfo, dbName, tableName)
@@ -299,14 +292,13 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
       .add(schemaEvolutionEntry)
 
     val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName,
-        tableInfo.getFactTable.getTableId)
+      tableInfo.getFactTable.getTableId)
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier)
     val schemaFilePath = carbonTablePath.getSchemaFilePath
     val schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath)
     tableInfo.setMetaDataFilepath(schemaMetadataPath)
     tableInfo.setStorePath(storePath)
     CarbonMetadata.getInstance().loadTableMetadata(tableInfo)
-
     val tableMeta = TableMeta(
       carbonTableIdentifier,
       storePath,
@@ -318,15 +310,13 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
       FileFactory.mkdirs(schemaMetadataPath, fileType)
     }
-
     val thriftWriter = new ThriftWriter(schemaFilePath, false)
     thriftWriter.open()
     thriftWriter.write(thriftTableInfo)
     thriftWriter.close()
-
     metadata.tablesMeta += tableMeta
     logInfo(s"Table $tableName for Database $dbName created successfully.")
-    LOGGER.info("Table " + tableName + " for Database " + dbName + " created successfully.")
+    LOGGER.info(s"Table $tableName for Database $dbName created successfully.")
     updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
     carbonTablePath.getPath
   }
@@ -392,8 +382,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
           if (c.carbonTableIdentifier.getDatabaseName.contains(name)) {
             c.carbonTableIdentifier
               .getDatabaseName
-          }
-          else {
+          } else {
             null
           }
         case _ => c.carbonTableIdentifier.getDatabaseName
@@ -420,8 +409,8 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
   def getAllTables()(sqlContext: SQLContext): Seq[TableIdentifier] = {
     checkSchemasModifiedTimeAndReloadTables()
     metadata.tablesMeta.map { c =>
-        TableIdentifier(c.carbonTableIdentifier.getTableName,
-          Some(c.carbonTableIdentifier.getDatabaseName))
+      TableIdentifier(c.carbonTableIdentifier.getTableName,
+        Some(c.carbonTableIdentifier.getDatabaseName))
     }
   }
 
@@ -526,7 +515,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
       if (!(FileFactory.getCarbonFile(timestampFile, timestampFileType).
         getLastModifiedTime ==
-        tableModifiedTimeStore.get(CarbonCommonConstants.DATABASE_DEFAULT_NAME))) {
+            tableModifiedTimeStore.get(CarbonCommonConstants.DATABASE_DEFAULT_NAME))) {
         refreshCache()
       }
     }
@@ -636,18 +625,18 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
 object CarbonMetastoreTypes extends RegexParsers {
   protected lazy val primitiveType: Parser[DataType] =
     "string" ^^^ StringType |
-      "float" ^^^ FloatType |
-      "int" ^^^ IntegerType |
-      "tinyint" ^^^ ShortType |
-      "short" ^^^ ShortType |
-      "double" ^^^ DoubleType |
-      "long" ^^^ LongType |
-      "binary" ^^^ BinaryType |
-      "boolean" ^^^ BooleanType |
-      fixedDecimalType |
-      "decimal" ^^^ "decimal" ^^^ DecimalType(18, 2) |
-      "varchar\\((\\d+)\\)".r ^^^ StringType |
-      "timestamp" ^^^ TimestampType
+    "float" ^^^ FloatType |
+    "int" ^^^ IntegerType |
+    "tinyint" ^^^ ShortType |
+    "short" ^^^ ShortType |
+    "double" ^^^ DoubleType |
+    "long" ^^^ LongType |
+    "binary" ^^^ BinaryType |
+    "boolean" ^^^ BooleanType |
+    fixedDecimalType |
+    "decimal" ^^^ "decimal" ^^^ DecimalType(18, 2) |
+    "varchar\\((\\d+)\\)".r ^^^ StringType |
+    "timestamp" ^^^ TimestampType
 
   protected lazy val fixedDecimalType: Parser[DataType] =
     "decimal" ~> "(" ~> "^[1-9]\\d*".r ~ ("," ~> "^[0-9]\\d*".r <~ ")") ^^ {
