@@ -223,7 +223,7 @@ case class CarbonDictionaryDecoder(
             atiMap.get(f._1).get.getCarbonTableIdentifier,
             f._2, f._3))
         } catch {
-          case _ => null
+          case _: Throwable => null
         }
       } else {
         null

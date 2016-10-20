@@ -183,7 +183,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     } catch {
       case e: MalformedCarbonCommandException =>
         assert(e.getMessage.contains("should not be empty"))
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 
@@ -221,7 +221,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     } catch {
       case e: MalformedCarbonCommandException =>
         assert(e.getMessage.contains("Invalid load start time format"))
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
 
     try {
@@ -232,7 +232,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     } catch {
       case e: MalformedCarbonCommandException =>
         assert(e.getMessage.contains("Invalid load start time format"))
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
 
     checkAnswer(
@@ -258,7 +258,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     } catch {
       case e: MalformedCarbonCommandException =>
         assert(!e.getMessage.equalsIgnoreCase("Invalid query"))
-      case _ => assert(true)
+      case _: Throwable => assert(true)
     }
 
     try {
@@ -267,7 +267,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     } catch {
       case e: MalformedCarbonCommandException =>
         assert(!e.getMessage.equalsIgnoreCase("Invalid query"))
-      case _ => assert(true)
+      case _: Throwable => assert(true)
     }
 
     try {
@@ -276,7 +276,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     } catch {
       case e: MalformedCarbonCommandException =>
         assert(!e.getMessage.equalsIgnoreCase("Invalid query"))
-      case _ => assert(true)
+      case _: Throwable => assert(true)
     }
 
   }

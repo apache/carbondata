@@ -221,7 +221,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       case ex: MalformedCarbonCommandException =>
         assertResult(ex.getMessage)("Error: COLUMNDICT and ALL_DICTIONARY_PATH can not be used together " +
           "in options")
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 
@@ -236,7 +236,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       case ex: DataLoadingException =>
         assertResult(ex.getMessage)("Column gamePointId is not a key column. Only key column can be part " +
           "of dictionary and used in COLUMNDICT option.")
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 

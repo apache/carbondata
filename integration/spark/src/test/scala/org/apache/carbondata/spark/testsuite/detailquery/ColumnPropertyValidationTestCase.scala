@@ -30,7 +30,7 @@ class ColumnPropertyValidationTestCase extends QueryTest with BeforeAndAfterAll 
        assert(true)
        sql("drop table employee")
      } catch {
-       case e =>assert(false)
+       case e: Throwable =>assert(false)
      }
   }
   test("Validate Dictionary include _ invalid key") {
@@ -39,7 +39,7 @@ class ColumnPropertyValidationTestCase extends QueryTest with BeforeAndAfterAll 
        assert(false)
        sql("drop table employee")
      } catch {
-       case e =>assert(true)
+       case e: Throwable =>assert(true)
      }
   }
   
