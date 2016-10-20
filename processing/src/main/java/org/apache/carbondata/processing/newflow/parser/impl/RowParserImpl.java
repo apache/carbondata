@@ -29,7 +29,8 @@ public class RowParserImpl implements RowParser {
     this.genericParsers = genericParsers;
   }
 
-  @Override public Object[] parseRow(Object[] row) {
+  @Override
+  public Object[] parseRow(Object[] row) {
     for (int i = 0; i < row.length; i++) {
       row[i] = genericParsers[i].parse(row[i].toString());
     }

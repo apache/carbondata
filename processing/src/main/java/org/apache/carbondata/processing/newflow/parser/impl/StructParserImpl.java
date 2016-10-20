@@ -45,7 +45,8 @@ public class StructParserImpl implements ComplexParser<StructObject> {
     pattern = Pattern.compile(CarbonUtil.delimiterConverter(delimiter));
   }
 
-  @Override public StructObject parse(String data) {
+  @Override
+  public StructObject parse(String data) {
     if (StringUtils.isNotEmpty(data)) {
       String[] split = pattern.split(data, -1);
       if (ArrayUtils.isNotEmpty(split)) {
@@ -59,7 +60,8 @@ public class StructParserImpl implements ComplexParser<StructObject> {
     return null;
   }
 
-  @Override public void addChildren(GenericParser parser) {
+  @Override
+  public void addChildren(GenericParser parser) {
     children.add(parser);
   }
 }

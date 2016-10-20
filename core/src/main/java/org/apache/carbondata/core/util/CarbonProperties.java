@@ -448,6 +448,40 @@ public final class CarbonProperties {
   }
 
   /**
+   * Number of cores should be used while loading data.
+   *
+   * @return
+   */
+  public int getNumberOfCores() {
+    int numberOfCores;
+    try {
+      numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
+              CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
+    } catch (NumberFormatException exc) {
+      numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+    }
+    return numberOfCores;
+  }
+
+  /**
+   * Batch size of rows while sending data from one step to another in data loading.
+   *
+   * @return
+   */
+  public int getBatchSize() {
+    int batchSize;
+    try {
+      batchSize = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.DATA_LOAD_BATCH_SIZE,
+              CarbonCommonConstants.DATA_LOAD_BATCH_SIZE_DEFAULT));
+    } catch (NumberFormatException exc) {
+      batchSize = Integer.parseInt(CarbonCommonConstants.DATA_LOAD_BATCH_SIZE_DEFAULT);
+    }
+    return batchSize;
+  }
+
+  /**
    * Validate the restrictions
    *
    * @param actual

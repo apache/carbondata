@@ -38,7 +38,8 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     this.inputIterators = inputIterators;
   }
 
-  @Override public DataField[] getOutput() {
+  @Override
+  public DataField[] getOutput() {
     DataField[] fields = configuration.getDataFields();
     String[] header = configuration.getHeader();
     DataField[] output = new DataField[fields.length];
@@ -54,7 +55,8 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return output;
   }
 
-  @Override public void initialize() throws CarbonDataLoadingException {
+  @Override
+  public void initialize() throws CarbonDataLoadingException {
     DataField[] output = getOutput();
     genericParsers = new GenericParser[output.length];
     for (int i = 0; i < genericParsers.length; i++) {
@@ -66,7 +68,8 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
 
 
-  @Override public Iterator<CarbonRowBatch>[] execute() {
+  @Override
+  public Iterator<CarbonRowBatch>[] execute() {
     int batchSize = CarbonProperties.getInstance().getBatchSize();
     List<Iterator<Object[]>>[] readerIterators = partitionInputReaderIterators();
     Iterator<CarbonRowBatch>[] outIterators = new Iterator[readerIterators.length];
@@ -98,7 +101,8 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return iterators;
   }
 
-  @Override protected CarbonRow processRow(CarbonRow row) {
+  @Override
+  protected CarbonRow processRow(CarbonRow row) {
     return null;
   }
 
@@ -128,7 +132,8 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
       currentIterator = inputIterators.get(counter++);
     }
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
       return internalHasNext();
     }
 
@@ -146,7 +151,8 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
       return hasNext;
     }
 
-    @Override public CarbonRowBatch next() {
+    @Override
+    public CarbonRowBatch next() {
       // Create batch and fill it.
       CarbonRowBatch carbonRowBatch = new CarbonRowBatch();
       int count = 0;

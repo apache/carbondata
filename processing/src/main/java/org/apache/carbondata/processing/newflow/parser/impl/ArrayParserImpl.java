@@ -45,7 +45,8 @@ public class ArrayParserImpl implements ComplexParser<ArrayObject> {
     pattern = Pattern.compile(CarbonUtil.delimiterConverter(delimiter));
   }
 
-  @Override public ArrayObject parse(String data) {
+  @Override
+  public ArrayObject parse(String data) {
     if (StringUtils.isNotEmpty(data)) {
       String[] split = pattern.split(data, -1);
       if (ArrayUtils.isNotEmpty(split)) {
@@ -59,7 +60,8 @@ public class ArrayParserImpl implements ComplexParser<ArrayObject> {
     return null;
   }
 
-  @Override public void addChildren(GenericParser parser) {
+  @Override
+  public void addChildren(GenericParser parser) {
     children.add(parser);
   }
 }

@@ -22,7 +22,8 @@ import org.apache.carbondata.processing.newflow.parser.GenericParser;
 
 public class PrimitiveParserImpl implements GenericParser<Object> {
 
-  @Override public Object parse(String data) {
+  @Override
+  public Object parse(String data) {
     return data;
   }
 
