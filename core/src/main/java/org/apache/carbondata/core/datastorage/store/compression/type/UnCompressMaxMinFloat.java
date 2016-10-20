@@ -23,7 +23,6 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
@@ -37,10 +36,7 @@ public class UnCompressMaxMinFloat implements UnCompressValue<float[]> {
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(UnCompressMaxMinFloat.class.getName());
-  /**
-   * floatCompressor
-   */
-  private static Compressor compressor = CompressorFactory.getInstance();
+
   /**
    * value.
    */
@@ -63,7 +59,7 @@ public class UnCompressMaxMinFloat implements UnCompressValue<float[]> {
   @Override public UnCompressValue compress() {
 
     UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte();
-    byte1.setValue(compressor.compressFloat(value));
+    byte1.setValue(CompressorFactory.getInstance().compressFloat(value));
     return byte1;
   }
 
@@ -80,9 +76,6 @@ public class UnCompressMaxMinFloat implements UnCompressValue<float[]> {
     this.value = ValueCompressionUtil.convertToFloatArray(buffer, value.length);
   }
 
-  /**
-   * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
-   */
   @Override public UnCompressValue getCompressorObject() {
     return new UnCompressMaxMinByte();
   }

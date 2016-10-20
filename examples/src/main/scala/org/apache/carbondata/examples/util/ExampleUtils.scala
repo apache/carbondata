@@ -19,9 +19,10 @@ package org.apache.carbondata.examples.util
 
 import java.io.File
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.{CarbonContext, SaveMode}
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 // scalastyle:off println

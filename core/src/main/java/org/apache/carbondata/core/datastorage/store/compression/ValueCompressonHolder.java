@@ -27,13 +27,12 @@ import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
  */
 public final class ValueCompressonHolder {
 
-  /**
-   * byteCompressor.
-   */
-  private static Compressor compressor = CompressorFactory.getInstance();
-
   private ValueCompressonHolder() {
 
+  }
+
+  private static Compressor compressor() {
+    return CompressorFactory.getInstance();
   }
 
   /**
@@ -45,32 +44,32 @@ public final class ValueCompressonHolder {
     switch (dataType) {
       case DATA_BYTE:
 
-        value.setValue(compressor.unCompressByte(data));
+        value.setValue(compressor().unCompressByte(data));
         break;
 
       case DATA_SHORT:
 
-        value.setValue(compressor.unCompressShort(data));
+        value.setValue(compressor().unCompressShort(data));
         break;
 
       case DATA_INT:
 
-        value.setValue(compressor.unCompressInt(data));
+        value.setValue(compressor().unCompressInt(data));
         break;
 
       case DATA_LONG:
       case DATA_BIGINT:
 
-        value.setValue(compressor.unCompressLong(data));
+        value.setValue(compressor().unCompressLong(data));
         break;
 
       case DATA_FLOAT:
 
-        value.setValue(compressor.unCompressFloat(data));
+        value.setValue(compressor().unCompressFloat(data));
         break;
       default:
 
-        value.setValue(compressor.unCompressDouble(data));
+        value.setValue(compressor().unCompressDouble(data));
         break;
 
     }

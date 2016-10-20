@@ -23,7 +23,6 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
@@ -36,10 +35,7 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(UnCompressNoneInt.class.getName());
-  /**
-   * intCompressor.
-   */
-  private static Compressor compressor = CompressorFactory.getInstance();
+
   /**
    * value.
    */
@@ -65,7 +61,7 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
 
   @Override public ValueCompressonHolder.UnCompressValue compress() {
     UnCompressNoneByte byte1 = new UnCompressNoneByte();
-    byte1.setValue(compressor.compressInt(value));
+    byte1.setValue(CompressorFactory.getInstance().compressInt(value));
 
     return byte1;
   }

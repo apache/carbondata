@@ -23,7 +23,6 @@ import java.math.BigDecimal;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
@@ -37,10 +36,7 @@ public class UnCompressNonDecimalMaxMinByte
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(UnCompressNonDecimalMaxMinByte.class.getName());
-  /**
-   * compressor.
-   */
-  private static Compressor compressor = CompressorFactory.getInstance();
+
   /**
    * value.
    */
@@ -58,7 +54,7 @@ public class UnCompressNonDecimalMaxMinByte
 
   @Override public ValueCompressonHolder.UnCompressValue compress() {
     UnCompressNonDecimalMaxMinByte byte1 = new UnCompressNonDecimalMaxMinByte();
-    byte1.setValue(compressor.compressByte(value));
+    byte1.setValue(CompressorFactory.getInstance().compressByte(value));
     return byte1;
   }
 

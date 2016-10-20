@@ -37,11 +37,6 @@ import org.apache.carbondata.core.util.CarbonProperties;
 public abstract class AbstractChunkReader implements DimensionColumnChunkReader {
 
   /**
-   * compressor will be used to uncompress the data
-   */
-  protected static final Compressor compressor = CompressorFactory.getInstance();
-
-  /**
    * data chunk list which holds the information
    * about the data block metadata
    */
@@ -138,5 +133,9 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
       dataChunk.add(data);
     }
     return dataChunk;
+  }
+
+  protected Compressor compressor() {
+    return CompressorFactory.getInstance();
   }
 }
