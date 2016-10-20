@@ -7,7 +7,6 @@ import java.util.List;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
@@ -16,6 +15,8 @@ import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConst
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.parser.CarbonParserFactory;
 import org.apache.carbondata.processing.newflow.parser.GenericParser;
+import org.apache.carbondata.processing.newflow.parser.RowParser;
+import org.apache.carbondata.processing.newflow.parser.impl.RowParserImpl;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 
@@ -63,32 +64,10 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     }
   }
 
-  private int getNumberOfCores() {
-    int numberOfCores;
-    try {
-      numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
-              CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
-    } catch (NumberFormatException exc) {
-      numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-    }
-    return numberOfCores;
-  }
 
-  private int getBatchSize() {
-    int batchSize;
-    try {
-      batchSize = Integer.parseInt(configuration
-          .getDataLoadProperty(DataLoadProcessorConstants.DATA_LOAD_BATCH_SIZE,
-              DataLoadProcessorConstants.DATA_LOAD_BATCH_SIZE_DEFAULT).toString());
-    } catch (NumberFormatException exc) {
-      batchSize = Integer.parseInt(DataLoadProcessorConstants.DATA_LOAD_BATCH_SIZE_DEFAULT);
-    }
-    return batchSize;
-  }
 
   @Override public Iterator<CarbonRowBatch>[] execute() {
-    int batchSize = getBatchSize();
+    int batchSize = CarbonProperties.getInstance().getBatchSize();
     List<Iterator<Object[]>>[] readerIterators = partitionInputReaderIterators();
     Iterator<CarbonRowBatch>[] outIterators = new Iterator[readerIterators.length];
     for (int i = 0; i < outIterators.length; i++) {
@@ -97,19 +76,24 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return outIterators;
   }
 
+  /**
+   * Partition input iterators equally as per the number of threads.
+   * @return
+   */
   private List<Iterator<Object[]>>[] partitionInputReaderIterators() {
-    int numberOfCores = getNumberOfCores();
-    if (inputIterators.size() < numberOfCores) {
-      numberOfCores = inputIterators.size();
-    }
-    List<Iterator<Object[]>>[] iterators = new List[numberOfCores];
-    for (int i = 0; i < numberOfCores; i++) {
+    // Get the number of cores configured in property.
+    int numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
+    // Get the minimum of number of cores and iterators size to get the number of parallel threads
+    // to be launched.
+    int parallelThreadNumber = Math.min(inputIterators.size(), numberOfCores);
+
+    List<Iterator<Object[]>>[] iterators = new List[parallelThreadNumber];
+    for (int i = 0; i < parallelThreadNumber; i++) {
       iterators[i] = new ArrayList<>();
     }
-
+    // Equally partition the iterators as per number of threads
     for (int i = 0; i < inputIterators.size(); i++) {
-      iterators[i % numberOfCores].add(inputIterators.get(i));
-
+      iterators[i % parallelThreadNumber].add(inputIterators.get(i));
     }
     return iterators;
   }
@@ -118,11 +102,13 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return null;
   }
 
+  /**
+   * This iterator wraps the list of iterators and it starts iterating the each
+   * iterator of the list one by one. It also parse the data while iterating it.
+   */
   private static class InputProcessorIterator extends CarbonIterator<CarbonRowBatch> {
 
     private List<Iterator<Object[]>> inputIterators;
-
-    private GenericParser[] genericParsers;
 
     private Iterator<Object[]> currentIterator;
 
@@ -130,11 +116,15 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
     private int batchSize;
 
+    private RowParser rowParser;
+
     public InputProcessorIterator(List<Iterator<Object[]>> inputIterators,
         GenericParser[] genericParsers, int batchSize) {
       this.inputIterators = inputIterators;
-      this.genericParsers = genericParsers;
       this.batchSize = batchSize;
+      this.rowParser = new RowParserImpl(genericParsers);
+      this.counter = 0;
+      // Get the first iterator from the list.
       currentIterator = inputIterators.get(counter++);
     }
 
@@ -144,8 +134,11 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
     private boolean internalHasNext() {
       boolean hasNext = currentIterator.hasNext();
+      // If iterator is finished then check for next iterator.
       if (!hasNext) {
+        // Check next iterator is available in the list.
         if (counter < inputIterators.size()) {
+          // Get the next iterator from the list.
           currentIterator = inputIterators.get(counter++);
         }
         hasNext = internalHasNext();
@@ -154,14 +147,11 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     }
 
     @Override public CarbonRowBatch next() {
+      // Create batch and fill it.
       CarbonRowBatch carbonRowBatch = new CarbonRowBatch();
       int count = 0;
       while (internalHasNext() && count < batchSize) {
-        Object[] row = currentIterator.next();
-        for (int i = 0; i < row.length; i++) {
-          row[i] = genericParsers[i].parse(row[i].toString());
-        }
-        carbonRowBatch.addRow(new CarbonRow(row));
+        carbonRowBatch.addRow(new CarbonRow(rowParser.parseRow(currentIterator.next())));
         count++;
       }
       return carbonRowBatch;

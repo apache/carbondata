@@ -29,6 +29,11 @@ import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 /**
  * This base abstract class for data loading.
  * It can do transformation jobs as per the implementation.
+ *
+ * Life cycle of this class is
+ * First initialize() is called to initialize the step
+ * then execute() is called to process the step logic and
+ * then close() is called to close any resources if any opened in the step.
  */
 public abstract class AbstractDataLoadProcessorStep {
 
@@ -111,18 +116,15 @@ public abstract class AbstractDataLoadProcessorStep {
    */
   protected abstract CarbonRow processRow(CarbonRow row);
 
-  /**
-   * It is called when task is called successfully.
-   */
-  public void finish() {
-    // implementation classes can override to update the status.
-  }
 
   /**
-   * Closing of resources after step execution can be done here.
+   * Close all resources.This method is called after execute() is finished.
+   * It will be called in both success and failure cases.
    */
   public void close() {
-    // implementation classes can override to close the resources if any available.
+    if (child != null) {
+      child.close();
+    }
   }
 
 }
