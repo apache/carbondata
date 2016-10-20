@@ -196,8 +196,8 @@ class CarbonScanRDD[V: ClassTag](
       try {
         context.addTaskCompletionListener(context => {
           clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
-          logStatistics()
           queryExecutor.finish
+          logStatistics()
         })
         val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
         if(!carbonSparkPartition.tableBlockInfos.isEmpty) {

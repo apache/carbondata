@@ -58,7 +58,6 @@ public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator
       } else {
         fileReader.finish();
       }
-      totalScanTime += System.currentTimeMillis() - startTime;
     } catch (Exception ex) {
       fileReader.finish();
       throw new RuntimeException(ex);
