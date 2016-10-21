@@ -110,17 +110,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return child.getOutput();
   }
 
-  @Override public void intialize() throws CarbonDataLoadingException {
-    setStepConfiguration();
-  }
-
-  /**
-   * This method will be used to get and update the step properties which will
-   * required to run this step
-   *
-   * @throws CarbonUtilException
-   */
-  private void setStepConfiguration() {
+  @Override public void initialize() throws CarbonDataLoadingException {
     CarbonTableIdentifier tableIdentifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
 
@@ -365,10 +355,6 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   @Override protected CarbonRow processRow(CarbonRow row) {
     return null;
-  }
-
-  @Override public void finish() {
-
   }
 
 }
