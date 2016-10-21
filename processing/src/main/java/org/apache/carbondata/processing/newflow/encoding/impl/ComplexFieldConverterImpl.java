@@ -17,12 +17,16 @@
  * under the License.
  */
 
-package org.apache.carbondata.processing.newflow.encoding;
+package org.apache.carbondata.processing.newflow.encoding.impl;
 
-import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
+import java.nio.ByteBuffer;
+
+import org.apache.carbondata.processing.newflow.encoding.FieldConverter;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
-public interface FieldEncoder<E> {
+public class ComplexFieldConverterImpl implements FieldConverter {
 
-  E encode(CarbonRow data) throws CarbonDataLoadingException;
+  @Override
+  public void convert(CarbonRow row) {
+  }
 }

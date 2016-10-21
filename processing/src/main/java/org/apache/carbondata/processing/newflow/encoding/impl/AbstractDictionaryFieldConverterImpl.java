@@ -16,17 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.processing.newflow.encoding;
+package org.apache.carbondata.processing.newflow.encoding.impl;
 
-import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
+import org.apache.carbondata.processing.newflow.encoding.FieldConverter;
 
-/**
- * Encodes the row
- */
-public interface RowEncoder {
+public abstract class AbstractDictionaryFieldConverterImpl implements FieldConverter {
 
-  CarbonRow encode(CarbonRow row) throws CarbonDataLoadingException;
+  public abstract int getColumnCardinality();
 
-  void finish();
 }

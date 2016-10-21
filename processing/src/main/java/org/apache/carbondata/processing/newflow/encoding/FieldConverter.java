@@ -16,21 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.processing.newflow.encoding.impl;
 
-import org.apache.carbondata.processing.newflow.DataField;
-import org.apache.carbondata.processing.newflow.encoding.FieldEncoder;
+package org.apache.carbondata.processing.newflow.encoding;
+
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
-public class MeasureFieldEncoderImpl implements FieldEncoder<Object> {
+/**
+ * This interface converts/transforms the column field.
+ */
+public interface FieldConverter {
 
-  private int index;
-
-  public MeasureFieldEncoderImpl(DataField dataField, int index) {
-    this.index = index;
-  }
-
-  @Override public Object encode(CarbonRow row) {
-    return row.getObject(index);
-  }
+  /**
+   * It converts the column field and updates the data in same location/index in row.
+   * @param row
+   * @throws CarbonDataLoadingException
+   */
+  void convert(CarbonRow row) throws CarbonDataLoadingException;
 }

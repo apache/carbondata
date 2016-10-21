@@ -24,13 +24,13 @@ import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionary
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
-public class DirectDictionaryFieldEncoderImpl extends AbstractDictionaryFieldEncoderImpl {
+public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldConverterImpl {
 
   private DirectDictionaryGenerator directDictionaryGenerator;
 
   private int index;
 
-  public DirectDictionaryFieldEncoderImpl(DataField dataField, int index) {
+  public DirectDictionaryFieldConverterImpl(DataField dataField, int index) {
     DirectDictionaryGenerator directDictionaryGenerator =
         DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(dataField.getColumn().getDataType());
@@ -38,11 +38,13 @@ public class DirectDictionaryFieldEncoderImpl extends AbstractDictionaryFieldEnc
     this.index = index;
   }
 
-  @Override public Integer encode(CarbonRow row) {
-    return directDictionaryGenerator.generateDirectSurrogateKey(row.getString(index));
+  @Override
+  public void convert(CarbonRow row) {
+    row.update(directDictionaryGenerator.generateDirectSurrogateKey(row.getString(index)), index);
   }
 
-  @Override public int getColumnCardinality() {
+  @Override
+  public int getColumnCardinality() {
     return Integer.MAX_VALUE;
   }
 }

@@ -33,16 +33,16 @@ import org.apache.carbondata.processing.newflow.dictionary.PreCreatedDictionary;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
-public class DictionaryFieldEncoderImpl extends AbstractDictionaryFieldEncoderImpl {
+public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConverterImpl {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DictionaryFieldEncoderImpl.class.getName());
+      LogServiceFactory.getLogService(DictionaryFieldConverterImpl.class.getName());
 
   private BiDictionary<Integer, String> dictionaryGenerator;
 
   private int index;
 
-  public DictionaryFieldEncoderImpl(DataField dataField,
+  public DictionaryFieldConverterImpl(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       CarbonTableIdentifier carbonTableIdentifier, int index) {
     this.index = index;
@@ -58,15 +58,17 @@ public class DictionaryFieldEncoderImpl extends AbstractDictionaryFieldEncoderIm
     }
   }
 
-  @Override public Integer encode(CarbonRow row) throws CarbonDataLoadingException {
+  @Override
+  public void convert(CarbonRow row) throws CarbonDataLoadingException {
     try {
-      return dictionaryGenerator.getOrGenerateKey(row.getString(index));
+      row.update(dictionaryGenerator.getOrGenerateKey(row.getString(index)), index);
     } catch (DictionaryGenerationException e) {
       throw new CarbonDataLoadingException(e);
     }
   }
 
-  @Override public int getColumnCardinality() {
+  @Override
+  public int getColumnCardinality() {
     return dictionaryGenerator.size();
   }
 }

@@ -24,7 +24,7 @@ import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentif
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.processing.newflow.DataField;
-import org.apache.carbondata.processing.newflow.encoding.FieldEncoder;
+import org.apache.carbondata.processing.newflow.encoding.FieldConverter;
 
 public class FieldEncoderFactory {
 
@@ -41,21 +41,19 @@ public class FieldEncoderFactory {
     return instance;
   }
 
-  public FieldEncoder createFieldEncoder(DataField dataField,
+  public FieldConverter createFieldEncoder(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       CarbonTableIdentifier carbonTableIdentifier, int index) {
     if (dataField.hasDictionaryEncoding()) {
-      return new DictionaryFieldEncoderImpl(dataField, cache, carbonTableIdentifier, index);
+      return new DictionaryFieldConverterImpl(dataField, cache, carbonTableIdentifier, index);
     } else if (dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-      return new DirectDictionaryFieldEncoderImpl(dataField, index);
+      return new DirectDictionaryFieldConverterImpl(dataField, index);
     } else if (dataField.getColumn().isComplex()) {
-      return new ComplexFieldEncoderImpl();
+      return new ComplexFieldConverterImpl();
     } else if ((dataField.getColumn().hasEncoding(Encoding.DICTIONARY) || dataField.getColumn()
         .hasEncoding(Encoding.DIRECT_DICTIONARY))) {
-      return new NonDictionaryFieldEncoderImpl(dataField, index);
-    } else if (!dataField.getColumn().isDimesion()) {
-      return new MeasureFieldEncoderImpl(dataField, index);
+      return new NonDictionaryFieldConverterImpl(dataField, index);
     }
-    return new NonDictionaryFieldEncoderImpl(dataField, index);
+    return null;
   }
 }

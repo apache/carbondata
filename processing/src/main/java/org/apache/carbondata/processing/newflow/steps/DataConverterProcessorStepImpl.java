@@ -17,25 +17,25 @@
  * under the License.
  */
 
-package org.apache.carbondata.processing.newflow.steps.encodestep;
+package org.apache.carbondata.processing.newflow.steps;
 
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
-import org.apache.carbondata.processing.newflow.encoding.RowEncoder;
-import org.apache.carbondata.processing.newflow.encoding.impl.RowEncoderImpl;
+import org.apache.carbondata.processing.newflow.encoding.RowConverter;
+import org.apache.carbondata.processing.newflow.encoding.impl.RowConverterImpl;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
 /**
- * Encode data with dictionary values and composed with bit/byte packed key.
- * nondictionary values are packed as bytes, and complex types are also packed as bytes.
+ * Replace row data fields with dictionary values if column is configured dictionary encoded.
+ * And nondictionary columns as well as complex columns will be converted to byte[].
  */
-public class EncoderProcessorStepImpl extends AbstractDataLoadProcessorStep {
+public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
-  private RowEncoder encoder;
+  private RowConverter encoder;
 
-  public EncoderProcessorStepImpl(CarbonDataLoadConfiguration configuration,
+  public DataConverterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
     super(configuration, child);
   }
@@ -45,19 +45,17 @@ public class EncoderProcessorStepImpl extends AbstractDataLoadProcessorStep {
   }
 
   @Override public void intialize() throws CarbonDataLoadingException {
-    encoder = new RowEncoderImpl(child.getOutput(), configuration);
+    encoder = new RowConverterImpl(child.getOutput(), configuration);
     child.intialize();
   }
 
   @Override protected CarbonRow processRow(CarbonRow row) {
-    return encoder.encode(row);
-  }
-
-  @Override public void finish() {
-    encoder.finish();
+    return encoder.convert(row);
   }
 
   @Override public void close() {
-
+    if (encoder != null) {
+      encoder.finish();
+    }
   }
 }
