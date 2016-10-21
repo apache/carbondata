@@ -459,6 +459,7 @@ class DataFileLoaderRDD[K, V](
         nodeCount1.getValue > nodeCount2.getValue
       }
       )
+
       val sortedNodesList = sortedList.map(nodeCount => nodeCount.getKey).take(2)
       firstOptionLocation ++ sortedNodesList
     }
