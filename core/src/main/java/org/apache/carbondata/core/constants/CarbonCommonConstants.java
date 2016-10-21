@@ -19,866 +19,859 @@
 
 package org.apache.carbondata.core.constants;
 
-public final class CarbonCommonConstants {
+public interface CarbonCommonConstants {
   /**
    * integer size in bytes
    */
-  public static final int INT_SIZE_IN_BYTE = 4;
+  int INT_SIZE_IN_BYTE = 4;
   /**
    * short size in bytes
    */
-  public static final int SHORT_SIZE_IN_BYTE = 2;
+  int SHORT_SIZE_IN_BYTE = 2;
   /**
    * DOUBLE size in bytes
    */
-  public static final int DOUBLE_SIZE_IN_BYTE = 8;
+  int DOUBLE_SIZE_IN_BYTE = 8;
   /**
    * LONG size in bytes
    */
-  public static final int LONG_SIZE_IN_BYTE = 8;
+  int LONG_SIZE_IN_BYTE = 8;
   /**
    * byte to KB conversion factor
    */
-  public static final int BYTE_TO_KB_CONVERSION_FACTOR = 1024;
+  int BYTE_TO_KB_CONVERSION_FACTOR = 1024;
   /**
    * BYTE_ENCODING
    */
-  public static final String BYTE_ENCODING = "ISO-8859-1";
+  String BYTE_ENCODING = "ISO-8859-1";
   /**
    * measure meta data file name
    */
-  public static final String MEASURE_METADATA_FILE_NAME = "/msrMetaData_";
+  String MEASURE_METADATA_FILE_NAME = "/msrMetaData_";
   /**
    * location of the carbon member, hierarchy and fact files
    */
-  public static final String STORE_LOCATION = "carbon.storelocation";
+  String STORE_LOCATION = "carbon.storelocation";
   /**
    * blocklet size in carbon file
    */
-  public static final String BLOCKLET_SIZE = "carbon.blocklet.size";
+  String BLOCKLET_SIZE = "carbon.blocklet.size";
   /**
    * Number of cores to be used
    */
-  public static final String NUM_CORES = "carbon.number.of.cores";
+  String NUM_CORES = "carbon.number.of.cores";
   /**
    * carbon sort size
    */
-  public static final String SORT_SIZE = "carbon.sort.size";
+  String SORT_SIZE = "carbon.sort.size";
   /**
    * default location of the carbon member, hierarchy and fact files
    */
-  public static final String STORE_LOCATION_DEFAULT_VAL = "../carbon.store";
+  String STORE_LOCATION_DEFAULT_VAL = "../carbon.store";
   /**
    * the folder name of kettle home path
    */
-  public static final String KETTLE_HOME_NAME = "carbonplugins";
+  String KETTLE_HOME_NAME = "carbonplugins";
   /**
    * CARDINALITY_INCREMENT_DEFAULT_VALUE
    */
-  public static final int CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL = 10;
+  int CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL = 10;
   /**
    * default blocklet size
    */
-  public static final String BLOCKLET_SIZE_DEFAULT_VAL = "120000";
+  String BLOCKLET_SIZE_DEFAULT_VAL = "120000";
   /**
    * min blocklet size
    */
-  public static final int BLOCKLET_SIZE_MIN_VAL = 50;
+  int BLOCKLET_SIZE_MIN_VAL = 50;
   /**
    * max blocklet size
    */
-  public static final int BLOCKLET_SIZE_MAX_VAL = 12000000;
+  int BLOCKLET_SIZE_MAX_VAL = 12000000;
 
-  public static final String BLOCK_SIZE_DEFAULT_VAL = "1024";
+  String BLOCK_SIZE_DEFAULT_VAL = "1024";
 
-  public static final int BLOCK_SIZE_MIN_VAL = 1;
+  int BLOCK_SIZE_MIN_VAL = 1;
 
-  public static final int BLOCK_SIZE_MAX_VAL = 2048;
+  int BLOCK_SIZE_MAX_VAL = 2048;
   /**
    * default value of number of cores to be used
    */
-  public static final String NUM_CORES_DEFAULT_VAL = "2";
+  String NUM_CORES_DEFAULT_VAL = "2";
   /**
    * min value of number of cores to be used
    */
-  public static final int NUM_CORES_MIN_VAL = 1;
+  int NUM_CORES_MIN_VAL = 1;
   /**
    * max value of number of cores to be used
    */
-  public static final int NUM_CORES_MAX_VAL = 32;
+  int NUM_CORES_MAX_VAL = 32;
   /**
    * default carbon sort size
    */
-  public static final String SORT_SIZE_DEFAULT_VAL = "100000";
+  String SORT_SIZE_DEFAULT_VAL = "100000";
   /**
    * min carbon sort size
    */
-  public static final int SORT_SIZE_MIN_VAL = 1000;
+  int SORT_SIZE_MIN_VAL = 1000;
   /**
    * carbon properties file path
    */
-  public static final String CARBON_PROPERTIES_FILE_PATH = "../../../conf/carbon.properties";
+  String CARBON_PROPERTIES_FILE_PATH = "../../../conf/carbon.properties";
   /**
    * CARBON_DDL_BASE_HDFS_URL
    */
-  public static final String CARBON_DDL_BASE_HDFS_URL = "carbon.ddl.base.hdfs.url";
+  String CARBON_DDL_BASE_HDFS_URL = "carbon.ddl.base.hdfs.url";
   /**
    * Load Folder Name
    */
-  public static final String LOAD_FOLDER = "Segment_";
+  String LOAD_FOLDER = "Segment_";
   /**
    * HDFSURL_PREFIX
    */
-  public static final String HDFSURL_PREFIX = "hdfs://";
+  String HDFSURL_PREFIX = "hdfs://";
   /**
    * FS_DEFAULT_FS
    */
-  public static final String FS_DEFAULT_FS = "fs.defaultFS";
+  String FS_DEFAULT_FS = "fs.defaultFS";
   /**
    * BYTEBUFFER_SIZE
    */
 
-  public static final int BYTEBUFFER_SIZE = 24 * 1024;
+  int BYTEBUFFER_SIZE = 24 * 1024;
   /**
    * Average constant
    */
-  public static final String AVERAGE = "avg";
+  String AVERAGE = "avg";
   /**
    * Count constant
    */
-  public static final String COUNT = "count";
+  String COUNT = "count";
   /**
    * SUM
    */
-  public static final String SUM = "sum";
+  String SUM = "sum";
   /**
    * DUMMY aggregation function
    */
-  public static final String DUMMY = "dummy";
+  String DUMMY = "dummy";
   /**
    * MEMBER_DEFAULT_VAL
    */
-  public static final String MEMBER_DEFAULT_VAL = "@NU#LL$!";
+  String MEMBER_DEFAULT_VAL = "@NU#LL$!";
   /**
    * FILE STATUS IN-PROGRESS
    */
-  public static final String FILE_INPROGRESS_STATUS = ".inprogress";
+  String FILE_INPROGRESS_STATUS = ".inprogress";
   /**
    * CARBON_BADRECORDS_LOCATION
    */
-  public static final String CARBON_BADRECORDS_LOC = "carbon.badRecords.location";
+  String CARBON_BADRECORDS_LOC = "carbon.badRecords.location";
   /**
    * CARBON_BADRECORDS_LOCATION_DEFAULT
    */
-  public static final String CARBON_BADRECORDS_LOC_DEFAULT_VAL =
-      "../unibi-solutions/system/carbon/badRecords";
+  String CARBON_BADRECORDS_LOC_DEFAULT_VAL =
+          "../unibi-solutions/system/carbon/badRecords";
   /**
    * HIERARCHY_FILE_EXTENSION
    */
-  public static final String HIERARCHY_FILE_EXTENSION = ".hierarchy";
+  String HIERARCHY_FILE_EXTENSION = ".hierarchy";
   /**
    * SORT_TEMP_FILE_LOCATION
    */
-  public static final String SORT_TEMP_FILE_LOCATION = "sortrowtmp";
+  String SORT_TEMP_FILE_LOCATION = "sortrowtmp";
   /**
    * CARBON_RESULT_SIZE_DEFAULT
    */
-  public static final String LEVEL_FILE_EXTENSION = ".level";
+  String LEVEL_FILE_EXTENSION = ".level";
   /**
    * FACT_FILE_EXT
    */
-  public static final String FACT_FILE_EXT = ".carbondata";
+  String FACT_FILE_EXT = ".carbondata";
   /**
    * MEASUREMETADATA_FILE_EXT
    */
-  public static final String MEASUREMETADATA_FILE_EXT = ".msrmetadata";
+  String MEASUREMETADATA_FILE_EXT = ".msrmetadata";
   /**
    * GRAPH_ROWSET_SIZE
    */
-  public static final String GRAPH_ROWSET_SIZE = "carbon.graph.rowset.size";
+  String GRAPH_ROWSET_SIZE = "carbon.graph.rowset.size";
   /**
    * GRAPH_ROWSET_SIZE_DEFAULT
    */
-  public static final String GRAPH_ROWSET_SIZE_DEFAULT = "500";
+  String GRAPH_ROWSET_SIZE_DEFAULT = "500";
   /**
    * Comment for <code>TYPE_MYSQL</code>
    */
-  public static final String TYPE_MYSQL = "MYSQL";
+  String TYPE_MYSQL = "MYSQL";
   /**
    * Comment for <code>TYPE_MSSQL</code>
    */
-  public static final String TYPE_MSSQL = "MSSQL";
+  String TYPE_MSSQL = "MSSQL";
   /**
    * Comment for <code>TYPE_ORACLE</code>
    */
-  public static final String TYPE_ORACLE = "ORACLE";
+  String TYPE_ORACLE = "ORACLE";
   /**
    * Comment for <code>TYPE_SYBASE</code>
    */
-  public static final String TYPE_SYBASE = "SYBASE";
+  String TYPE_SYBASE = "SYBASE";
   /**
    * SORT_INTERMEDIATE_FILES_LIMIT
    */
-  public static final String SORT_INTERMEDIATE_FILES_LIMIT = "carbon.sort.intermediate.files.limit";
+  String SORT_INTERMEDIATE_FILES_LIMIT = "carbon.sort.intermediate.files.limit";
   /**
    * SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE
    */
-  public static final String SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE = "20";
+  String SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE = "20";
   /**
    * MERGERD_EXTENSION
    */
-  public static final String MERGERD_EXTENSION = ".merge";
+  String MERGERD_EXTENSION = ".merge";
   /**
    * SORT_FILE_BUFFER_SIZE
    */
-  public static final String SORT_FILE_BUFFER_SIZE = "carbon.sort.file.buffer.size";
+  String SORT_FILE_BUFFER_SIZE = "carbon.sort.file.buffer.size";
   /**
    * no.of records after which counter to be printed
    */
-  public static final String DATA_LOAD_LOG_COUNTER = "carbon.load.log.counter";
+  String DATA_LOAD_LOG_COUNTER = "carbon.load.log.counter";
   /**
    * DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER
    */
-  public static final String DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER = "500000";
+  String DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER = "500000";
   /**
    * SORT_FILE_WRITE_BUFFER_SIZE
    */
-  public static final String CARBON_SORT_FILE_WRITE_BUFFER_SIZE =
-      "carbon.sort.file.write.buffer.size";
+  String CARBON_SORT_FILE_WRITE_BUFFER_SIZE =
+          "carbon.sort.file.write.buffer.size";
   /**
    * SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE
    */
-  public static final String CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE = "50000";
+  String CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE = "50000";
   /**
    * Number of cores to be used while loading
    */
-  public static final String NUM_CORES_LOADING = "carbon.number.of.cores.while.loading";
+  String NUM_CORES_LOADING = "carbon.number.of.cores.while.loading";
   /**
    * Number of cores to be used while compacting
    */
-  public static final String NUM_CORES_COMPACTING = "carbon.number.of.cores.while.compacting";
+  String NUM_CORES_COMPACTING = "carbon.number.of.cores.while.compacting";
   /**
    * Number of cores to be used for block sort
    */
-  public static final String NUM_CORES_BLOCK_SORT = "carbon.number.of.cores.block.sort";
+  String NUM_CORES_BLOCK_SORT = "carbon.number.of.cores.block.sort";
   /**
    * Default value of number of cores to be used for block sort
    */
-  public static final String NUM_CORES_BLOCK_SORT_DEFAULT_VAL = "7";
+  String NUM_CORES_BLOCK_SORT_DEFAULT_VAL = "7";
   /**
    * Max value of number of cores to be used for block sort
    */
-  public static final int NUM_CORES_BLOCK_SORT_MAX_VAL = 12;
+  int NUM_CORES_BLOCK_SORT_MAX_VAL = 12;
   /**
    * Min value of number of cores to be used for block sort
    */
-  public static final int NUM_CORES_BLOCK_SORT_MIN_VAL = 1;
+  int NUM_CORES_BLOCK_SORT_MIN_VAL = 1;
   /**
    * CSV_READ_BUFFER_SIZE
    */
-  public static final String CSV_READ_BUFFER_SIZE = "carbon.csv.read.buffersize.byte";
+  String CSV_READ_BUFFER_SIZE = "carbon.csv.read.buffersize.byte";
   /**
    * CSV_READ_BUFFER_SIZE
    */
-  public static final String CSV_READ_BUFFER_SIZE_DEFAULT = "50000";
+  String CSV_READ_BUFFER_SIZE_DEFAULT = "50000";
   /**
    * CSV_READ_COPIES
    */
-  public static final String DEFAULT_NUMBER_CORES = "2";
+  String DEFAULT_NUMBER_CORES = "2";
   /**
    * CSV_FILE_EXTENSION
    */
-  public static final String CSV_FILE_EXTENSION = ".csv";
+  String CSV_FILE_EXTENSION = ".csv";
 
   /**
    * LOG_FILE_EXTENSION
    */
-  public static final String LOG_FILE_EXTENSION = ".log";
+  String LOG_FILE_EXTENSION = ".log";
 
   /**
    * COLON_SPC_CHARACTER
    */
-  public static final String COLON_SPC_CHARACTER = ":!@#COLON#@!:";
+  String COLON_SPC_CHARACTER = ":!@#COLON#@!:";
   /**
    * HASH_SPC_CHARATER
    */
-  public static final String HASH_SPC_CHARACTER = "#!@:HASH:@!#";
+  String HASH_SPC_CHARACTER = "#!@:HASH:@!#";
   /**
    * SEMICOLON_SPC_CHARATER
    */
-  public static final String SEMICOLON_SPC_CHARACTER = ";#!@:SEMIC:@!#;";
+  String SEMICOLON_SPC_CHARACTER = ";#!@:SEMIC:@!#;";
   /**
    * AMPERSAND_SPC_CHARATER
    */
-  public static final String AMPERSAND_SPC_CHARACTER = "&#!@:AMPER:@!#&";
+  String AMPERSAND_SPC_CHARACTER = "&#!@:AMPER:@!#&";
   /**
    * ATTHERATE_SPC_CHARATER
    */
-  public static final String COMA_SPC_CHARACTER = ",#!:COMA:!#,";
+  String COMA_SPC_CHARACTER = ",#!:COMA:!#,";
   /**
    * HYPHEN_SPC_CHARACTER
    */
-  public static final String HYPHEN_SPC_CHARACTER = "-#!:HYPHEN:!#-";
+  String HYPHEN_SPC_CHARACTER = "-#!:HYPHEN:!#-";
   /**
    * SORT_TEMP_FILE_EXT
    */
-  public static final String SORT_TEMP_FILE_EXT = ".sorttemp";
+  String SORT_TEMP_FILE_EXT = ".sorttemp";
   /**
    * CARBON_MERGE_SORT_READER_THREAD
    */
-  public static final String CARBON_MERGE_SORT_READER_THREAD = "carbon.merge.sort.reader.thread";
+  String CARBON_MERGE_SORT_READER_THREAD = "carbon.merge.sort.reader.thread";
   /**
    * CARBON_MERGE_SORT_READER_THREAD_DEFAULTVALUE
    */
-  public static final String CARBON_MERGE_SORT_READER_THREAD_DEFAULTVALUE = "3";
+  String CARBON_MERGE_SORT_READER_THREAD_DEFAULTVALUE = "3";
   /**
    * IS_SORT_TEMP_FILE_COMPRESSION_ENABLED
    */
-  public static final String IS_SORT_TEMP_FILE_COMPRESSION_ENABLED =
-      "carbon.is.sort.temp.file.compression.enabled";
+  String IS_SORT_TEMP_FILE_COMPRESSION_ENABLED =
+          "carbon.is.sort.temp.file.compression.enabled";
   /**
    * IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE
    */
-  public static final String IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE = "false";
+  String IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE = "false";
   /**
    * SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
    */
-  public static final String SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION =
-      "carbon.sort.temp.file.no.of.records.for.compression";
+  String SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION =
+          "carbon.sort.temp.file.no.of.records.for.compression";
   /**
    * SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE
    */
-  public static final String SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE = "50";
+  String SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE = "50";
   /**
    * DEFAULT_COLLECTION_SIZE
    */
-  public static final int DEFAULT_COLLECTION_SIZE = 16;
+  int DEFAULT_COLLECTION_SIZE = 16;
   /**
    * CARBON_TIMESTAMP_DEFAULT_FORMAT
    */
-  public static final String CARBON_TIMESTAMP_DEFAULT_FORMAT = "yyyy-MM-dd HH:mm:ss";
+  String CARBON_TIMESTAMP_DEFAULT_FORMAT = "yyyy-MM-dd HH:mm:ss";
   /**
    * CARBON_TIMESTAMP_DEFAULT_FORMAT
    */
-  public static final String CARBON_TIMESTAMP_FORMAT = "carbon.timestamp.format";
+  String CARBON_TIMESTAMP_FORMAT = "carbon.timestamp.format";
   /**
    * STORE_LOCATION_HDFS
    */
-  public static final String STORE_LOCATION_HDFS = "carbon.storelocation.hdfs";
+  String STORE_LOCATION_HDFS = "carbon.storelocation.hdfs";
   /**
    * STORE_LOCATION_TEMP_PATH
    */
-  public static final String STORE_LOCATION_TEMP_PATH = "carbon.tempstore.location";
+  String STORE_LOCATION_TEMP_PATH = "carbon.tempstore.location";
   /**
    * IS_COLUMNAR_STORAGE_DEFAULTVALUE
    */
-  public static final String IS_COLUMNAR_STORAGE_DEFAULTVALUE = "true";
+  String IS_COLUMNAR_STORAGE_DEFAULTVALUE = "true";
   /**
    * DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE
    */
-  public static final String DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE = "1";
+  String DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE = "1";
   /**
    * IS_FULLY_FILLED_BITS_DEFAULT_VALUE
    */
-  public static final String IS_FULLY_FILLED_BITS_DEFAULT_VALUE = "true";
+  String IS_FULLY_FILLED_BITS_DEFAULT_VALUE = "true";
   /**
    * IS_INT_BASED_INDEXER
    */
-  public static final String AGGREAGATE_COLUMNAR_KEY_BLOCK = "aggregate.columnar.keyblock";
+  String AGGREAGATE_COLUMNAR_KEY_BLOCK = "aggregate.columnar.keyblock";
   /**
    * IS_INT_BASED_INDEXER_DEFAULTVALUE
    */
-  public static final String AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE = "true";
+  String AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE = "true";
   /**
    * ENABLE_QUERY_STATISTICS
    */
-  public static final String ENABLE_QUERY_STATISTICS = "enable.query.statistics";
+  String ENABLE_QUERY_STATISTICS = "enable.query.statistics";
   /**
    * ENABLE_QUERY_STATISTICS_DEFAULT
    */
-  public static final String ENABLE_QUERY_STATISTICS_DEFAULT = "false";
+  String ENABLE_QUERY_STATISTICS_DEFAULT = "false";
   /**
    * TIME_STAT_UTIL_TYPE
    */
-  public static final String ENABLE_DATA_LOADING_STATISTICS = "enable.data.loading.statistics";
+  String ENABLE_DATA_LOADING_STATISTICS = "enable.data.loading.statistics";
   /**
    * TIME_STAT_UTIL_TYPE_DEFAULT
    */
-  public static final String ENABLE_DATA_LOADING_STATISTICS_DEFAULT = "false";
+  String ENABLE_DATA_LOADING_STATISTICS_DEFAULT = "false";
   /**
    * IS_INT_BASED_INDEXER
    */
-  public static final String HIGH_CARDINALITY_VALUE = "high.cardinality.value";
+  String HIGH_CARDINALITY_VALUE = "high.cardinality.value";
   /**
    * IS_INT_BASED_INDEXER_DEFAULTVALUE
    */
-  public static final String HIGH_CARDINALITY_VALUE_DEFAULTVALUE = "100000";
+  String HIGH_CARDINALITY_VALUE_DEFAULTVALUE = "100000";
   /**
    * CONSTANT_SIZE_TEN
    */
-  public static final int CONSTANT_SIZE_TEN = 10;
+  int CONSTANT_SIZE_TEN = 10;
   /**
    * LEVEL_METADATA_FILE
    */
-  public static final String LEVEL_METADATA_FILE = "levelmetadata_";
+  String LEVEL_METADATA_FILE = "levelmetadata_";
   /**
    * LOAD_STATUS SUCCESS
    */
-  public static final String STORE_LOADSTATUS_SUCCESS = "Success";
+  String STORE_LOADSTATUS_SUCCESS = "Success";
   /**
    * LOAD_STATUS FAILURE
    */
-  public static final String STORE_LOADSTATUS_FAILURE = "Failure";
+  String STORE_LOADSTATUS_FAILURE = "Failure";
   /**
    * LOAD_STATUS PARTIAL_SUCCESS
    */
-  public static final String STORE_LOADSTATUS_PARTIAL_SUCCESS = "Partial Success";
+  String STORE_LOADSTATUS_PARTIAL_SUCCESS = "Partial Success";
   /**
    * LOAD_STATUS
    */
-  public static final String CARBON_METADATA_EXTENSION = ".metadata";
+  String CARBON_METADATA_EXTENSION = ".metadata";
   /**
    * COMMA
    */
-  public static final String COMMA = ",";
+  String COMMA = ",";
   /**
    * UNDERSCORE
    */
-  public static final String UNDERSCORE = "_";
+  String UNDERSCORE = "_";
   /**
    * POINT
    */
-  public static final String POINT = ".";
+  String POINT = ".";
   /**
    * File separator
    */
-  public static final String FILE_SEPARATOR = "/";
+  String FILE_SEPARATOR = "/";
   /**
    * MAX_QUERY_EXECUTION_TIME
    */
-  public static final String MAX_QUERY_EXECUTION_TIME = "max.query.execution.time";
+  String MAX_QUERY_EXECUTION_TIME = "max.query.execution.time";
   /**
    * CARBON_TIMESTAMP
    */
-  public static final String CARBON_TIMESTAMP = "dd-MM-yyyy HH:mm:ss";
+  String CARBON_TIMESTAMP = "dd-MM-yyyy HH:mm:ss";
   /**
    * NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK
    */
-  public static final int NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK_DEFAULT = 3;
+  int NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK_DEFAULT = 3;
   /**
    * MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK
    */
-  public static final int MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK_DEFAULT = 5;
+  int MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK_DEFAULT = 5;
   /**
    * NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK
    */
-  public static final String NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK =
-      "carbon.load.metadata.lock.retries";
+  String NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK =
+          "carbon.load.metadata.lock.retries";
   /**
    * MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK
    */
-  public static final String MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK =
-      "carbon.load.metadata.lock.retry.timeout.sec";
+  String MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK =
+          "carbon.load.metadata.lock.retry.timeout.sec";
   /**
    * MARKED_FOR_DELETION
    */
-  public static final String MARKED_FOR_DELETE = "Marked for Delete";
-  public static final String MARKED_FOR_UPDATE = "Marked for Update";
-  public static final String STRING_TYPE = "StringType";
-  public static final String INTEGER_TYPE = "IntegerType";
-  public static final String LONG_TYPE = "LongType";
-  public static final String DOUBLE_TYPE = "DoubleType";
-  public static final String FLOAT_TYPE = "FloatType";
-  public static final String DATE_TYPE = "DateType";
-  public static final String BOOLEAN_TYPE = "BooleanType";
-  public static final String TIMESTAMP_TYPE = "TimestampType";
-  public static final String BYTE_TYPE = "ByteType";
-  public static final String SHORT_TYPE = "ShortType";
-  public static final String DECIMAL_TYPE = "DecimalType";
-  public static final String STRING = "String";
-  public static final String COLUMNAR = "columnar";
+  String MARKED_FOR_DELETE = "Marked for Delete";
+  String MARKED_FOR_UPDATE = "Marked for Update";
+  String STRING_TYPE = "StringType";
+  String INTEGER_TYPE = "IntegerType";
+  String LONG_TYPE = "LongType";
+  String DOUBLE_TYPE = "DoubleType";
+  String FLOAT_TYPE = "FloatType";
+  String DATE_TYPE = "DateType";
+  String BOOLEAN_TYPE = "BooleanType";
+  String TIMESTAMP_TYPE = "TimestampType";
+  String BYTE_TYPE = "ByteType";
+  String SHORT_TYPE = "ShortType";
+  String DECIMAL_TYPE = "DecimalType";
+  String STRING = "String";
+  String COLUMNAR = "columnar";
 
-  public static final String INTEGER = "Integer";
-  public static final String SHORT = "Short";
-  public static final String NUMERIC = "Numeric";
-  public static final String TIMESTAMP = "Timestamp";
-  public static final String ARRAY = "ARRAY";
-  public static final String STRUCT = "STRUCT";
-  public static final String INCLUDE = "include";
-  public static final String FROM = "from";
-  public static final String WITH = "with";
+  String INTEGER = "Integer";
+  String SHORT = "Short";
+  String NUMERIC = "Numeric";
+  String TIMESTAMP = "Timestamp";
+  String ARRAY = "ARRAY";
+  String STRUCT = "STRUCT";
+  String INCLUDE = "include";
+  String FROM = "from";
+  String WITH = "with";
   /**
    * FACT_UPDATE_EXTENSION.
    */
-  public static final String FACT_DELETE_EXTENSION = "_delete";
+  String FACT_DELETE_EXTENSION = "_delete";
   /**
    * MARKED_FOR_UPDATION
    */
-  public static final String FACT_FILE_UPDATED = "update";
+  String FACT_FILE_UPDATED = "update";
   /**
    * MAX_QUERY_EXECUTION_TIME
    */
-  public static final int DEFAULT_MAX_QUERY_EXECUTION_TIME = 60;
+  int DEFAULT_MAX_QUERY_EXECUTION_TIME = 60;
   /**
    * LOADMETADATA_FILENAME
    */
-  public static final String LOADMETADATA_FILENAME = "tablestatus";
+  String LOADMETADATA_FILENAME = "tablestatus";
   /**
    * INMEMORY_REOCRD_SIZE
    */
-  public static final String DETAIL_QUERY_BATCH_SIZE = "carbon.detail.batch.size";
-  public static final int DETAIL_QUERY_BATCH_SIZE_DEFAULT = 10000;
+  String DETAIL_QUERY_BATCH_SIZE = "carbon.detail.batch.size";
+  int DETAIL_QUERY_BATCH_SIZE_DEFAULT = 10000;
   /**
    * SPILL_OVER_DISK_PATH
    */
-  public static final String SCHEMAS_MODIFIED_TIME_FILE = "modifiedTime.mdt";
-  public static final String DEFAULT_INVISIBLE_DUMMY_MEASURE = "default_dummy_measure";
+  String SCHEMAS_MODIFIED_TIME_FILE = "modifiedTime.mdt";
+  String DEFAULT_INVISIBLE_DUMMY_MEASURE = "default_dummy_measure";
   /**
    * max level cache size upto which level cache will be loaded in memory
    */
-  public static final String CARBON_MAX_LEVEL_CACHE_SIZE = "carbon.max.level.cache.size";
+  String CARBON_MAX_LEVEL_CACHE_SIZE = "carbon.max.level.cache.size";
   /**
    * max level cache size default value in GB
    */
-  public static final String CARBON_MAX_LEVEL_CACHE_SIZE_DEFAULT = "-1";
+  String CARBON_MAX_LEVEL_CACHE_SIZE_DEFAULT = "-1";
   /**
    * DOUBLE_VALUE_MEASURE
    */
-  public static final char SUM_COUNT_VALUE_MEASURE = 'n';
+  char SUM_COUNT_VALUE_MEASURE = 'n';
   /**
    * BYTE_VALUE_MEASURE
    */
-  public static final char BYTE_VALUE_MEASURE = 'c';
+  char BYTE_VALUE_MEASURE = 'c';
   /**
    * BIG_DECIMAL_MEASURE
    */
-  public static final char BIG_DECIMAL_MEASURE = 'b';
+  char BIG_DECIMAL_MEASURE = 'b';
 
   /**
    * BIG_INT_MEASURE
    */
-  public static final char BIG_INT_MEASURE = 'l';
+  char BIG_INT_MEASURE = 'l';
 
   /**
    * This determines the size of array to be processed in data load steps. one
    * for dimensions , one of ignore dictionary dimensions , one for measures.
    */
-  public static final int ARRAYSIZE = 3;
+  int ARRAYSIZE = 3;
   /**
    * CARBON_PREFETCH_BUFFERSIZE
    */
-  public static final int CARBON_PREFETCH_BUFFERSIZE = 20000;
+  int CARBON_PREFETCH_BUFFERSIZE = 20000;
   /**
    * CARBON_PREFETCH_IN_MERGE
    */
-  public static final boolean CARBON_PREFETCH_IN_MERGE_VALUE = false;
+  boolean CARBON_PREFETCH_IN_MERGE_VALUE = false;
   /**
    * TEMPWRITEFILEEXTENSION
    */
-  public static final String TEMPWRITEFILEEXTENSION = ".write";
+  String TEMPWRITEFILEEXTENSION = ".write";
   /**
    * ENABLE_AUTO_LOAD_MERGE
    */
-  public static final String ENABLE_AUTO_LOAD_MERGE = "carbon.enable.auto.load.merge";
+  String ENABLE_AUTO_LOAD_MERGE = "carbon.enable.auto.load.merge";
   /**
    * DEFAULT_ENABLE_AUTO_LOAD_MERGE
    */
-  public static final String DEFAULT_ENABLE_AUTO_LOAD_MERGE = "false";
+  String DEFAULT_ENABLE_AUTO_LOAD_MERGE = "false";
 
   /**
    * ZOOKEEPER_ENABLE_LOCK if this is set to true then zookeeper will be used to handle locking
    * mechanism of carbon
    */
-  public static final String LOCK_TYPE = "carbon.lock.type";
+  String LOCK_TYPE = "carbon.lock.type";
 
   /**
    * ZOOKEEPER_ENABLE_DEFAULT the default value for zookeeper will be true for carbon
    */
-  public static final String LOCK_TYPE_DEFAULT = "LOCALLOCK";
+  String LOCK_TYPE_DEFAULT = "LOCALLOCK";
 
   /**
    * ZOOKEEPER_LOCATION this is the location in zookeeper file system where locks are created.
    * mechanism of carbon
    */
-  public static final String ZOOKEEPER_LOCATION = "/CarbonLocks";
+  String ZOOKEEPER_LOCATION = "/CarbonLocks";
 
   /**
    * maximum dictionary chunk size that can be kept in memory while writing dictionary file
    */
-  public static final String DICTIONARY_ONE_CHUNK_SIZE = "carbon.dictionary.chunk.size";
+  String DICTIONARY_ONE_CHUNK_SIZE = "carbon.dictionary.chunk.size";
 
   /**
    * dictionary chunk default size
    */
-  public static final String DICTIONARY_ONE_CHUNK_SIZE_DEFAULT = "10000";
+  String DICTIONARY_ONE_CHUNK_SIZE_DEFAULT = "10000";
 
   /**
    * xxhash algorithm property for hashmap
    */
-  public static final String ENABLE_XXHASH = "carbon.enableXXHash";
+  String ENABLE_XXHASH = "carbon.enableXXHash";
 
   /**
    * xxhash algorithm property for hashmap. Default value false
    */
-  public static final String ENABLE_XXHASH_DEFAULT = "true";
+  String ENABLE_XXHASH_DEFAULT = "true";
 
   /**
    * default charset to be used for reading and writing
    */
-  public static final String DEFAULT_CHARSET = "UTF-8";
+  String DEFAULT_CHARSET = "UTF-8";
 
   /**
    * surrogate key that will be sent whenever in the dictionary chunks
    * a valid surrogate key is not found for a given dictionary value
    */
-  public static final int INVALID_SURROGATE_KEY = -1;
+  int INVALID_SURROGATE_KEY = -1;
 
   /**
    * surrogate key for MEMBER_DEFAULT_VAL
    */
-  public static final int MEMBER_DEFAULT_VAL_SURROGATE_KEY = 1;
+  int MEMBER_DEFAULT_VAL_SURROGATE_KEY = 1;
 
-  public static final String INVALID_SEGMENT_ID = "-1";
+  String INVALID_SEGMENT_ID = "-1";
 
   /**
    * Size of Major Compaction in MBs
    */
-  public static final String MAJOR_COMPACTION_SIZE = "carbon.major.compaction.size";
+  String MAJOR_COMPACTION_SIZE = "carbon.major.compaction.size";
 
   /**
    * By default size of major compaction in MBs.
    */
-  public static final String DEFAULT_MAJOR_COMPACTION_SIZE = "1024";
+  String DEFAULT_MAJOR_COMPACTION_SIZE = "1024";
 
   /**
    * This property is used to tell how many segments to be preserved from merging.
    */
-  public static final java.lang.String PRESERVE_LATEST_SEGMENTS_NUMBER =
-      "carbon.numberof.preserve.segments";
+  java.lang.String PRESERVE_LATEST_SEGMENTS_NUMBER = "carbon.numberof.preserve.segments";
 
   /**
    * If preserve property is enabled then 2 segments will be preserved.
    */
-  public static final String DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER = "0";
+  String DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER = "0";
 
   /**
    * This property will determine the loads of how many days can be compacted.
    */
-  public static final java.lang.String DAYS_ALLOWED_TO_COMPACT = "carbon.allowed.compaction.days";
+  java.lang.String DAYS_ALLOWED_TO_COMPACT = "carbon.allowed.compaction.days";
 
   /**
    * Default value of 1 day loads can be compacted
    */
-  public static final String DEFAULT_DAYS_ALLOWED_TO_COMPACT = "0";
+  String DEFAULT_DAYS_ALLOWED_TO_COMPACT = "0";
 
   /**
    * space reserved for writing block meta data in carbon data file
    */
-  public static final String CARBON_BLOCK_META_RESERVED_SPACE =
-      "carbon.block.meta.size.reserved.percentage";
+  String CARBON_BLOCK_META_RESERVED_SPACE = "carbon.block.meta.size.reserved.percentage";
 
   /**
    * default value for space reserved for writing block meta data in carbon data file
    */
-  public static final String CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT = "10";
+  String CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT = "10";
 
   /**
    * property to enable min max during filter query
    */
-  public static final String CARBON_QUERY_MIN_MAX_ENABLED = "carbon.enableMinMax";
+  String CARBON_QUERY_MIN_MAX_ENABLED = "carbon.enableMinMax";
 
   /**
    * default value to enable min or max during filter query execution
    */
-  public static final String MIN_MAX_DEFAULT_VALUE = "true";
+  String MIN_MAX_DEFAULT_VALUE = "true";
 
   /**
    * this variable is to enable/disable prefetch of data during merge sort while
    * reading data from sort temp files
    */
-  public static final String CARBON_MERGE_SORT_PREFETCH = "carbon.merge.sort.prefetch";
-  public static final String CARBON_MERGE_SORT_PREFETCH_DEFAULT = "true";
+  String CARBON_MERGE_SORT_PREFETCH = "carbon.merge.sort.prefetch";
+  String CARBON_MERGE_SORT_PREFETCH_DEFAULT = "true";
 
   /**
    *  default name of data base
    */
-  public static final String DATABASE_DEFAULT_NAME = "default";
+  String DATABASE_DEFAULT_NAME = "default";
 
   // tblproperties
-  public static final String COLUMN_GROUPS = "column_groups";
-  public static final String DICTIONARY_EXCLUDE = "dictionary_exclude";
-  public static final String DICTIONARY_INCLUDE = "dictionary_include";
-  public static final String PARTITIONCLASS = "partitionclass";
-  public static final String PARTITIONCOUNT = "partitioncount";
-  public static final String COLUMN_PROPERTIES = "columnproperties";
-  public static final String TABLE_BLOCKSIZE = "table_blocksize";
+  String COLUMN_GROUPS = "column_groups";
+  String DICTIONARY_EXCLUDE = "dictionary_exclude";
+  String DICTIONARY_INCLUDE = "dictionary_include";
+  String PARTITIONCLASS = "partitionclass";
+  String PARTITIONCOUNT = "partitioncount";
+  String COLUMN_PROPERTIES = "columnproperties";
+  String TABLE_BLOCKSIZE = "table_blocksize";
 
   /**
    * this variable is to enable/disable identify high cardinality during first data loading
    */
-  public static final String HIGH_CARDINALITY_IDENTIFY_ENABLE =
-      "high.cardinality.identify.enable";
-  public static final String HIGH_CARDINALITY_IDENTIFY_ENABLE_DEFAULT = "true";
+  String HIGH_CARDINALITY_IDENTIFY_ENABLE =
+          "high.cardinality.identify.enable";
+  String HIGH_CARDINALITY_IDENTIFY_ENABLE_DEFAULT = "true";
 
   /**
    * threshold of high cardinality
    */
-  public static final String HIGH_CARDINALITY_THRESHOLD = "high.cardinality.threshold";
-  public static final String HIGH_CARDINALITY_THRESHOLD_DEFAULT = "1000000";
-  public static final int HIGH_CARDINALITY_THRESHOLD_MIN = 10000;
+  String HIGH_CARDINALITY_THRESHOLD = "high.cardinality.threshold";
+  String HIGH_CARDINALITY_THRESHOLD_DEFAULT = "1000000";
+  int HIGH_CARDINALITY_THRESHOLD_MIN = 10000;
 
   /**
    * percentage of cardinality in row count
    */
-  public static final String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE =
-      "high.cardinality.row.count.percentage";
-  public static final String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT = "80";
+  String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE =
+          "high.cardinality.row.count.percentage";
+  String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT = "80";
 
   /**
    * 16 mb size
    */
-  public static final long CARBON_16MB = 16*1024*1024;
+  long CARBON_16MB = 16*1024*1024;
   /**
    * 256 mb size
    */
-  public static final long CARBON_256MB = 256*1024*1024;
+  long CARBON_256MB = 256*1024*1024;
 
   /**
    * SEGMENT_COMPACTED is property to indicate whether seg is compacted or not.
    */
-  public static final String SEGMENT_COMPACTED = "Compacted";
+  String SEGMENT_COMPACTED = "Compacted";
 
   /**
    * property for number of core to load the blocks in driver
    */
-  public static final String NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT =
-      "no.of.cores.to.load.blocks.in.driver";
+  String NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT =
+          "no.of.cores.to.load.blocks.in.driver";
   /**
    * default number of cores
    */
-  public static final int NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT_DEFAULT_VALUE = 10;
+  int NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT_DEFAULT_VALUE = 10;
 
   /**
    * ZOOKEEPERLOCK TYPE
    */
-  public static final String CARBON_LOCK_TYPE_ZOOKEEPER =
-      "ZOOKEEPERLOCK";
+  String CARBON_LOCK_TYPE_ZOOKEEPER = "ZOOKEEPERLOCK";
 
   /**
    * LOCALLOCK TYPE
    */
-  public static final String CARBON_LOCK_TYPE_LOCAL =
-      "LOCALLOCK";
+  String CARBON_LOCK_TYPE_LOCAL = "LOCALLOCK";
 
   /**
    * HDFSLOCK TYPE
    */
-  public static final String CARBON_LOCK_TYPE_HDFS =
-      "HDFSLOCK";
+  String CARBON_LOCK_TYPE_HDFS =
+          "HDFSLOCK";
 
   /**
    * Invalid filter member log string
    */
-  public static final String FILTER_INVALID_MEMBER = " Invalid Record(s) are present "
-                                                     + "while filter evaluation. ";
+  String FILTER_INVALID_MEMBER = " Invalid Record(s) are present "
+          + "while filter evaluation. ";
 
   /**
    * Number of unmerged segments to be merged.
    */
-  public static final String COMPACTION_SEGMENT_LEVEL_THRESHOLD =
-      "carbon.compaction.level.threshold";
+  String COMPACTION_SEGMENT_LEVEL_THRESHOLD =
+          "carbon.compaction.level.threshold";
 
   /**
    * Default count for Number of segments to be merged in levels is 4,3
    */
-  public static final String DEFAULT_SEGMENT_LEVEL_THRESHOLD = "4,3";
+  String DEFAULT_SEGMENT_LEVEL_THRESHOLD = "4,3";
 
   /**
    * default location of the carbon metastore db
    */
-  public static final String METASTORE_LOCATION_DEFAULT_VAL = "../carbon.metastore";
+  String METASTORE_LOCATION_DEFAULT_VAL = "../carbon.metastore";
 
   /**
    * hive connection url
    */
-  public static final String HIVE_CONNECTION_URL = "javax.jdo.option.ConnectionURL";
+  String HIVE_CONNECTION_URL = "javax.jdo.option.ConnectionURL";
 
   /**
    * Rocord size in case of compaction.
    */
-  public static final int COMPACTION_INMEMORY_RECORD_SIZE = 120000;
+  int COMPACTION_INMEMORY_RECORD_SIZE = 120000;
 
   /**
    * If the level 2 compaction is done in minor then new compacted segment will end with .2
    */
-  public static String LEVEL2_COMPACTION_INDEX = ".2";
+  String LEVEL2_COMPACTION_INDEX = ".2";
 
   /**
    * Indicates compaction
    */
-  public static String COMPACTION_KEY_WORD = "COMPACTION";
+  String COMPACTION_KEY_WORD = "COMPACTION";
 
   /**
    * hdfs temporary directory key
    */
-  public static final String HDFS_TEMP_LOCATION = "hadoop.tmp.dir";
+  String HDFS_TEMP_LOCATION = "hadoop.tmp.dir";
 
   /**
    * zookeeper url key
    */
-  public static final String ZOOKEEPER_URL = "spark.deploy.zookeeper.url";
+  String ZOOKEEPER_URL = "spark.deploy.zookeeper.url";
 
   /**
    * configure the minimum blocklet size eligible for blocklet distribution
    */
-  public static final String CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE =
-      "carbon.blockletdistribution.min.blocklet.size";
+  String CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE =
+          "carbon.blockletdistribution.min.blocklet.size";
 
   /**
    * default blocklet size eligible for blocklet distribution
    */
-  public static final int DEFAULT_CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE = 2;
+  int DEFAULT_CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE = 2;
 
   /**
    * File created in case of minor compaction request
    */
-  public static String minorCompactionRequiredFile = "compactionRequired_minor";
+  String minorCompactionRequiredFile = "compactionRequired_minor";
 
   /**
    * File created in case of major compaction request
    */
-  public static String majorCompactionRequiredFile = "compactionRequired_major";
+  String majorCompactionRequiredFile = "compactionRequired_major";
 
   /**
    * @Deprecated : This property has been deprecated.
    * Property for enabling system level compaction lock.1 compaction can run at once.
    */
-  public static String ENABLE_CONCURRENT_COMPACTION =
-      "carbon.concurrent.compaction";
+  String ENABLE_CONCURRENT_COMPACTION = "carbon.concurrent.compaction";
 
   /**
    * Default value of Property for enabling system level compaction lock.1 compaction can run
    * at once.
    */
-  public static String DEFAULT_ENABLE_CONCURRENT_COMPACTION = "true";
+  String DEFAULT_ENABLE_CONCURRENT_COMPACTION = "true";
 
   /**
    * Compaction system level lock folder.
    */
-  public static String SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER = "SystemCompactionLock";
+  String SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER = "SystemCompactionLock";
 
   /**
    * to enable blocklet distribution
    */
-  public static String ENABLE_BLOCKLET_DISTRIBUTION = "enable.blocklet.distribution";
+  String ENABLE_BLOCKLET_DISTRIBUTION = "enable.blocklet.distribution";
 
   /**
    * to enable blocklet distribution default value
    */
-  public static String ENABLE_BLOCKLET_DISTRIBUTION_DEFAULTVALUE = "true";
+  String ENABLE_BLOCKLET_DISTRIBUTION_DEFAULTVALUE = "true";
 
-  private CarbonCommonConstants() {
-  }
 }
 
 
