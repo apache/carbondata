@@ -110,8 +110,7 @@ class CarbonScanRDD[V: ClassTag](
             queryModel.getAbsoluteTableIdentifier
           )
       }
-    }
-    catch {
+    } catch {
       case e: Exception =>
         LOGGER.error(e)
         sys.error("Exception occurred in query execution :: " + e.getMessage)
@@ -180,8 +179,7 @@ class CarbonScanRDD[V: ClassTag](
       } else {
         logInfo("No blocks identified to scan")
       }
-    }
-    else {
+    } else {
       logInfo("No valid segments found to scan")
     }
     result.toArray(new Array[Partition](result.size()))

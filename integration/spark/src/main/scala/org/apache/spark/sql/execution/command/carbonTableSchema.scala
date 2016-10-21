@@ -313,14 +313,11 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     for (column <- allColumns) {
       if (highCardinalityDims.contains(column.getColumnName)) {
         newOrderedDims += column
-      }
-      else if (column.isComplex) {
+      } else if (column.isComplex) {
         complexDims += column
-      }
-      else if (column.isDimensionColumn) {
+      } else if (column.isDimensionColumn) {
         newOrderedDims += column
-      }
-      else {
+      } else {
         measures += column
       }
 
@@ -377,16 +374,14 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
             Partitioner(
               "org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
               Array(""), part.partitionCount, null)
-          }
-          else {
+          } else {
             // case where partition cols are set and partition class is not set.
             // so setting the default value.
             Partitioner(
               "org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
               part.partitionColumn, part.partitionCount, null)
           }
-        }
-        else if (definedpartCols.nonEmpty) {
+        } else if (definedpartCols.nonEmpty) {
           val msg = definedpartCols.mkString(", ")
           LOGGER.error(s"partition columns specified are not part of Dimension columns : $msg")
           LOGGER.audit(
@@ -394,8 +389,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
               s"${cm.databaseName}.${cm.tableName} " +
             s"partition columns specified are not part of Dimension columns : $msg")
           sys.error(s"partition columns specified are not part of Dimension columns : $msg")
-        }
-        else {
+        } else {
 
           try {
             Class.forName(part.partitionClass).newInstance()
@@ -676,8 +670,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
           val matchedMapping = aggs.filter(agg => f.name.equals(agg.msrName))
           if (matchedMapping.isEmpty) {
             f
-          }
-          else {
+          } else {
             Measure(f.name, f.column, f.dataType, matchedMapping.head.aggType)
           }
         }
@@ -707,17 +700,14 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
           Partitioner(
             "org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
             Array(""), part.partitionCount, null)
-        }
-        else if (definedpartCols.nonEmpty) {
+        } else if (definedpartCols.nonEmpty) {
           val msg = definedpartCols.mkString(", ")
           LOGGER.error(s"partition columns specified are not part of Dimension columns : $msg")
           LOGGER.audit(
             s"Validation failed for Create/Alter Table Operation - " +
             s"partition columns specified are not part of Dimension columns : $msg")
           sys.error(s"partition columns specified are not part of Dimension columns : $msg")
-        }
-        else {
-
+        } else {
           try {
             Class.forName(part.partitionClass).newInstance()
           } catch {
@@ -823,17 +813,14 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
           kettleHomePath,
           storeLocation
         )
-    }
-    catch {
+    } catch {
       case e: Exception =>
         if (null != e.getMessage) {
           sys.error("Compaction failed. Please check logs for more info." + e.getMessage)
-        }
-        else {
+        } else {
           sys.error("Exception in compaction. Please check logs for more info.")
         }
     }
-
     Seq.empty
   }
 }
@@ -860,9 +847,7 @@ case class CreateTable(cm: tableModel) extends RunnableCommand {
           s"Table [$tbName] already exists under database [$dbName]")
         sys.error(s"Table [$tbName] already exists under database [$dbName]")
       }
-    }
-    else {
-
+    } else {
       // Add Database to catalog and persist
       val catalog = CarbonEnv.getInstance(sqlContext).carbonCatalog
       // Need to fill partitioner class when we support partition
@@ -871,7 +856,7 @@ case class CreateTable(cm: tableModel) extends RunnableCommand {
         sqlContext.sql(
           s"""CREATE TABLE $dbName.$tbName USING carbondata""" +
           s""" OPTIONS (tableName "$dbName.$tbName", tablePath "$tablePath") """)
-              .collect
+          .collect
       } catch {
         case e: Exception =>
           val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
@@ -881,7 +866,7 @@ case class CreateTable(cm: tableModel) extends RunnableCommand {
             .dropTable(catalog.storePath, identifier)(sqlContext)
 
           LOGGER.audit(s"Table creation with Database name [$dbName] " +
-            s"and Table name [$tbName] failed")
+                       s"and Table name [$tbName] failed")
           throw e
       }
 
@@ -1202,14 +1187,12 @@ case class LoadTableUsingKettle(
           .loadCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.tableMeta.storePath,
             kettleHomePath,
             relation.tableMeta.partitioner, columinar, isAgg = false, partitionStatus, dataFrame)
-      }
-      catch {
+      } catch {
         case ex: Exception =>
           LOGGER.error(ex)
           LOGGER.audit(s"Dataload failure for $dbName.$tableName. Please check the logs")
           throw ex
-      }
-      finally {
+      } finally {
         // Once the data load is successful delete the unwanted partition files
         try {
           val fileType = FileFactory.getFileType(partitionLocation)
@@ -1294,8 +1277,7 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
       CarbonEnv.getInstance(sqlContext).carbonCatalog.dropTable(storePath, identifier)(sqlContext)
       LOGGER.audit(s"Deleted table [$tableName] under database [$dbName]")
-    }
-    finally {
+    } finally {
       if (carbonLock != null) {
         if (carbonLock.unlock()) {
           logInfo("Table MetaData Unlocked Successfully after dropping the table")
@@ -1368,8 +1350,7 @@ private[sql] case class ShowLoads(
         try {
           val lim = Integer.parseInt(limitLoads)
           loadMetadataDetailsSortedArray = loadMetadataDetailsSortedArray.slice(0, lim)
-        }
-        catch {
+        } catch {
           case ex: NumberFormatException => sys.error(s" Entered limit is not a valid Number")
         }
 
@@ -1479,7 +1460,6 @@ private[sql] case class DeleteLoadByDate(
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def run(sqlContext: SQLContext): Seq[Row] = {
-
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     LOGGER.audit(s"The delete load by date request has been received for $dbName.$tableName")
     val identifier = TableIdentifier(tableName, Option(dbName))
@@ -1492,21 +1472,17 @@ private[sql] case class DeleteLoadByDate(
       LOGGER.audit(s"The delete load by date is failed. Table $dbName.$tableName does not exist")
       sys.error(s"Table $dbName.$tableName does not exist")
     }
-
     val matches: Seq[AttributeReference] = relation.dimensionsAttr.filter(
       filter => filter.name.equalsIgnoreCase(dateField) &&
                 filter.dataType.isInstanceOf[TimestampType]).toList
-
     if (matches.isEmpty) {
       LOGGER.audit(
         "The delete load by date is failed. " +
         "Table $dbName.$tableName does not contain date field :" + dateField)
       sys.error(s"Table $dbName.$tableName does not contain date field " + dateField)
-    }
-    else {
+    } else {
       level = matches.asJava.get(0).name
     }
-
     val actualColName = relation.metaData.carbonTable.getDimensionByName(tableName, level)
       .getColName
     CarbonDataRDDFactory.deleteLoadByDate(
@@ -1522,6 +1498,7 @@ private[sql] case class DeleteLoadByDate(
     LOGGER.audit(s"The delete load by date $dateValue is successful for $dbName.$tableName.")
     Seq.empty
   }
+
 }
 
 private[sql] case class CleanFiles(
@@ -1559,7 +1536,7 @@ private[sql] case class CleanFiles(
         relation.tableMeta.partitioner)
       LOGGER.audit(s"Clean files request is successfull for $dbName.$tableName.")
     } catch {
-      case ex : Exception =>
+      case ex: Exception =>
         sys.error(ex.getMessage)
     }
     Seq.empty

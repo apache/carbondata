@@ -60,8 +60,7 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
       new ExpressionResult(CarbonScalaUtil.convertSparkToCarbonDataType(sparkExp.dataType),
         sparkRes
       )
-    }
-    catch {
+    } catch {
       case e: Exception => throw new FilterUnsupportedException(e.getMessage)
     }
   }
@@ -102,8 +101,7 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
     getAllColumnListFromExpressionTree(sparkExp, lst)
     if (lst.size == 1 && lst.get(0).isDimension) {
       true
-    }
-    else {
+    } else {
       false
     }
   }
@@ -139,8 +137,7 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
     getAllColumnListFromExpressionTree(sparkExp, lst)
     if (lst.get(0).getCarbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
       true
-    }
-    else {
+    } else {
       false
     }
   }

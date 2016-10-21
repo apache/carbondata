@@ -194,9 +194,9 @@ object CarbonDataRDDFactory extends Logging {
         newSplitSize = CarbonCommonConstants.CARBON_16MB
       }
       hadoopConfiguration.set(FileInputFormat.SPLIT_MAXSIZE, newSplitSize.toString)
-      logInfo("totalInputSpaceConsumed : " + spaceConsumed +
-              " , defaultParallelism : " + defaultParallelism)
-      logInfo("mapreduce.input.fileinputformat.split.maxsize : " + newSplitSize.toString)
+      logInfo(s"totalInputSpaceConsumed : $spaceConsumed ," +
+              s" defaultParallelism : $defaultParallelism")
+      logInfo(s"mapreduce.input.fileinputformat.split.maxsize : ${newSplitSize.toString}")
     }
   }
 
@@ -283,8 +283,7 @@ object CarbonDataRDDFactory extends Logging {
             compactionModel,
             lock
           )
-        }
-        catch {
+        } catch {
           case e: Exception =>
             logger.error("Exception in start compaction thread. " + e.getMessage)
             lock.unlock()
@@ -332,8 +331,7 @@ object CarbonDataRDDFactory extends Logging {
           compactionModel,
           lock
         )
-      }
-      catch {
+      } catch {
         case e: Exception =>
           logger.error("Exception in start compaction thread. " + e.getMessage)
           lock.unlock()
@@ -416,8 +414,7 @@ object CarbonDataRDDFactory extends Logging {
           future.get
         }
         )
-      }
-      catch {
+      } catch {
         case e: Exception =>
           logger.error("Exception in compaction thread " + e.getMessage)
           throw e
@@ -503,8 +500,7 @@ object CarbonDataRDDFactory extends Logging {
     // clean up of the stale segments.
     try {
       CarbonLoaderUtil.deletePartialLoadDataIfExist(carbonLoadModel, true)
-    }
-    catch {
+    } catch {
       case e: Exception =>
         logger
           .error("Exception in compaction thread while clean up of stale segments " + e
@@ -514,7 +510,6 @@ object CarbonDataRDDFactory extends Logging {
 
     val compactionThread = new Thread {
       override def run(): Unit = {
-
         try {
           // compaction status of the table which is triggered by the user.
           var triggeredCompactionStatus = false
@@ -527,8 +522,7 @@ object CarbonDataRDDFactory extends Logging {
               executor, sqlContext, kettleHomePath, storeLocation
             )
             triggeredCompactionStatus = true
-          }
-          catch {
+          } catch {
             case e: Exception =>
               logger.error("Exception in compaction thread " + e.getMessage)
               exception = e
@@ -580,8 +574,7 @@ object CarbonDataRDDFactory extends Logging {
                   partitioner,
                   executor, sqlContext, kettleHomePath, storeLocation
                 )
-              }
-              catch {
+              } catch {
                 case e: Exception =>
                   logger.error("Exception in compaction thread for table " + tableForCompaction
                     .carbonTable.getDatabaseName + "." +
@@ -589,8 +582,7 @@ object CarbonDataRDDFactory extends Logging {
                                  .getTableName)
                 // not handling the exception. only logging as this is not the table triggered
                 // by user.
-              }
-              finally {
+              } finally {
                 // delete the compaction required file in case of failure or success also.
                 if (!CarbonCompactionUtil
                   .deleteCompactionRequiredFile(metadataPath, compactionType)) {
@@ -619,8 +611,7 @@ object CarbonDataRDDFactory extends Logging {
               throw new Exception("Exception in compaction " + exception.getMessage)
             }
           }
-        }
-        finally {
+        } finally {
           executor.shutdownNow()
           deletePartialLoadsInCompaction(carbonLoadModel)
           compactionLock.unlock()
@@ -655,8 +646,7 @@ object CarbonDataRDDFactory extends Logging {
     // so deleting those folders.
     try {
       CarbonLoaderUtil.deletePartialLoadDataIfExist(carbonLoadModel, true)
-    }
-    catch {
+    } catch {
       case e: Exception =>
         logger
           .error("Exception in compaction thread while clean up of stale segments " + e
@@ -741,8 +731,7 @@ object CarbonDataRDDFactory extends Logging {
                 compactionModel,
                 lock
               )
-            }
-            catch {
+            } catch {
               case e: Exception =>
                 logger.error("Exception in start compaction thread. " + e.getMessage)
                 lock.unlock()
@@ -801,8 +790,7 @@ object CarbonDataRDDFactory extends Logging {
       // so deleting those folders.
       try {
         CarbonLoaderUtil.deletePartialLoadDataIfExist(carbonLoadModel, false)
-      }
-      catch {
+      } catch {
         case e: Exception =>
           logger
             .error("Exception in data load while clean up of stale segments " + e
@@ -1058,13 +1046,8 @@ object CarbonDataRDDFactory extends Logging {
       } else {
         val metadataDetails = status(0)._2
         if (!isAgg) {
-          val status = CarbonLoaderUtil
-            .recordLoadMetadata(currentLoadCount,
-              metadataDetails,
-              carbonLoadModel,
-              loadStatus,
-              loadStartTime
-            )
+          val status = CarbonLoaderUtil.recordLoadMetadata(currentLoadCount, metadataDetails,
+            carbonLoadModel, loadStatus, loadStartTime)
           if (!status) {
             val errorMessage = "Dataload failed due to failure in table status updation."
             logger.audit("Data load is failed for " +
@@ -1081,8 +1064,7 @@ object CarbonDataRDDFactory extends Logging {
         try {
           // compaction handling
           handleSegmentMerging(tableCreationTime)
-        }
-        catch {
+        } catch {
           case e: Exception =>
             throw new Exception(
               "Dataload is success. Auto-Compaction has failed. Please check logs.")
@@ -1128,11 +1110,9 @@ object CarbonDataRDDFactory extends Logging {
             logger.info("Table status lock has been successfully acquired.")
 
             // read latest table status again.
-            val latestMetadata = segmentStatusManager
-              .readLoadMetadata(loadMetadataFilePath)
+            val latestMetadata = segmentStatusManager.readLoadMetadata(loadMetadataFilePath)
 
             // update the metadata details from old to new status.
-
             val latestStatus = CarbonLoaderUtil
               .updateLoadMetadataFromOldToNew(details, latestMetadata)
 
@@ -1199,8 +1179,7 @@ object CarbonDataRDDFactory extends Logging {
         throw new Exception(errorMsg + " Please try after some time.")
 
       }
-    }
-    finally {
+    } finally {
       CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
     }
   }

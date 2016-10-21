@@ -268,8 +268,7 @@ object CarbonFilters {
           if !list.exists(!_.isInstanceOf[Literal]) =>
           if (list.exists(x => isNullLiteral(x.asInstanceOf[Literal]))) {
             Some(new FalseExpression(transformExpression(a).get))
-          }
-          else {
+          } else {
             Some(new NotInExpression(transformExpression(a).get,
               new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
           }
@@ -283,8 +282,7 @@ object CarbonFilters {
            always return no result. */
           if (list.exists(x => isNullLiteral(x.asInstanceOf[Literal]))) {
             Some(new FalseExpression(transformExpression(a).get))
-          }
-          else {
+          } else {
             Some(new NotInExpression(transformExpression(a).get, new ListExpression(
               convertToJavaList(list.map(transformExpression(_).get)))))
           }

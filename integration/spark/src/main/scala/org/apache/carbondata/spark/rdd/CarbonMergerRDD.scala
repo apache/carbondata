@@ -89,8 +89,7 @@ class CarbonMergerRDD[K, V](
         if (storeLocation == null) {
           storeLocation = System.getProperty("java.io.tmpdir")
         }
-      }
-      else {
+      } else {
         storeLocation = System.getProperty("java.io.tmpdir")
       }
       storeLocation = storeLocation + '/' + System.nanoTime() + '/' + theSplit.index
@@ -169,13 +168,11 @@ class CarbonMergerRDD[K, V](
           )
         mergeStatus = merger.mergerSlice()
 
-      }
-      catch {
+      } catch {
         case e: Exception =>
           LOGGER.error(e)
           throw e
-      }
-      finally {
+      } finally {
         // delete temp location data
         val newSlice = CarbonCommonConstants.LOAD_FOLDER + mergeNumber
         try {
@@ -197,8 +194,7 @@ class CarbonMergerRDD[K, V](
         if (!finished) {
           finished = true
           finished
-        }
-        else {
+        } else {
           !finished
         }
       }
@@ -272,8 +268,7 @@ class CarbonMergerRDD[K, V](
           val blockListTemp = new util.ArrayList[TableBlockInfo]()
           blockListTemp.add(tableBlockInfo)
           taskIdMapping.put(taskNo, blockListTemp)
-        }
-        else {
+        } else {
           blockList.add(tableBlockInfo)
         }
       }

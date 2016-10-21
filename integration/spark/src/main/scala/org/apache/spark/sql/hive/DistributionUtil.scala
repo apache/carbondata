@@ -62,13 +62,11 @@ object DistributionUtil {
           addr.getHostName
         }
         nodeNames.toArray
-      }
-      else {
+      } else {
         // For Standalone cluster, node IPs will be returned.
         nodelist.toArray
       }
-    }
-    else {
+    } else {
       Seq(InetAddress.getLocalHost.getHostName).toArray
     }
   }

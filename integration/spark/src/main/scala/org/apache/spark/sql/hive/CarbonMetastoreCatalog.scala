@@ -247,21 +247,16 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
             })
           }
         })
-      }
-      else {
+      } else {
         // Create folders and files.
         FileFactory.mkdirs(databasePath, fileType)
-
       }
-    }
-    catch {
+    } catch {
       case s: java.io.FileNotFoundException =>
         // Create folders and files.
         FileFactory.mkdirs(databasePath, fileType)
-
     }
   }
-
 
   /**
    *
@@ -273,11 +268,9 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
       tableInfo: org.apache.carbondata.core.carbon.metadata.schema.table.TableInfo,
       dbName: String, tableName: String, partitioner: Partitioner)
     (sqlContext: SQLContext): String = {
-
     if (tableExists(TableIdentifier(tableName, Some(dbName)))(sqlContext)) {
       sys.error(s"Table [$tableName] already exists under Database [$dbName]")
     }
-
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     val thriftTableInfo = schemaConverter
       .fromWrapperToExternalTableInfo(tableInfo, dbName, tableName)
@@ -293,7 +286,6 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     tableInfo.setMetaDataFilepath(schemaMetadataPath)
     tableInfo.setStorePath(storePath)
     CarbonMetadata.getInstance().loadTableMetadata(tableInfo)
-
     val tableMeta = TableMeta(
       carbonTableIdentifier,
       storePath,
@@ -305,12 +297,10 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
       FileFactory.mkdirs(schemaMetadataPath, fileType)
     }
-
     val thriftWriter = new ThriftWriter(schemaFilePath, false)
     thriftWriter.open()
     thriftWriter.write(thriftTableInfo)
     thriftWriter.close()
-
     metadata.tablesMeta += tableMeta
     logInfo(s"Table $tableName for Database $dbName created successfully.")
     LOGGER.info("Table " + tableName + " for Database " + dbName + " created successfully.")
@@ -379,8 +369,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
           if (c.carbonTableIdentifier.getDatabaseName.contains(name)) {
             c.carbonTableIdentifier
               .getDatabaseName
-          }
-          else {
+          } else {
             null
           }
         case _ => c.carbonTableIdentifier.getDatabaseName

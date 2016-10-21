@@ -394,8 +394,7 @@ class CarbonSqlParser()
 
           // get logical plan.
           CreateTable(tableModel)
-        }
-        catch {
+        } catch {
           case ce: MalformedCarbonCommandException =>
             val message = if (tableName.isEmpty) "Create table command failed. "
             else if (dbName.isEmpty) s"Create table command failed for $tableName. "
@@ -518,8 +517,7 @@ class CarbonSqlParser()
       }
       // This will  be furthur handled.
       CommonUtil.arrangeColGrpsInSchemaOrder(splittedColGrps, dims)
-    }
-    else {
+    } else {
       null
     }
   }
@@ -758,11 +756,9 @@ class CarbonSqlParser()
           noDictionaryDims :+= field.column
         }
         dimFields += field
-      }
-      else if (dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
+      } else if (dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
         dimFields += (field)
-      }
-      else if (isDetectAsDimentionDatatype(field.dataType.get)) {
+      } else if (isDetectAsDimentionDatatype(field.dataType.get)) {
         dimFields += (field)
       }
     }
@@ -1077,8 +1073,7 @@ class CarbonSqlParser()
         if (ef.isDefined && "FORMATTED".equalsIgnoreCase(ef.get)) {
           new DescribeFormattedCommand("describe formatted " + tblIdentifier,
             tblIdentifier)
-        }
-        else {
+        } else {
           new DescribeCommand(UnresolvedRelation(tblIdentifier, None), ef.isDefined)
         }
     }

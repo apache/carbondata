@@ -113,8 +113,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
       if (storeLocation == null) {
         storeLocation = System.getProperty("java.io.tmpdir")
       }
-    }
-    else {
+    } else {
       storeLocation = System.getProperty("java.io.tmpdir")
     }
     storeLocation = storeLocation + '/' + System.nanoTime() + '/' + splitIndex
@@ -202,8 +201,7 @@ class DataFileLoaderRDD[K, V](
       if (carbonLoadModel.isDirectLoad) {
         splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath,
           partitioner.nodeList, partitioner.partitionCount)
-      }
-      else {
+      } else {
         splits = CarbonQueryUtil.getTableSplits(carbonLoadModel.getDatabaseName,
           carbonLoadModel.getTableName, null, partitioner)
       }
@@ -246,11 +244,9 @@ class DataFileLoaderRDD[K, V](
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
         if (model.isRetentionRequest) {
           recreateAggregationTableForRetention
-        }
-        else if (model.isAggLoadRequest) {
+        } else if (model.isAggLoadRequest) {
           loadMetadataDetails.setLoadStatus(createManualAggregateTable)
-        }
-        else {
+        } else {
           loader.run
         }
       } catch {
@@ -301,8 +297,7 @@ class DataFileLoaderRDD[K, V](
             CarbonQueryUtil.splitFilePath(carbonLoadModel.getFactFilePath, filelist, ",")
             model = carbonLoadModel.getCopyWithPartition(partitionID, filelist,
               carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
-          }
-          else {
+          } else {
             model = carbonLoadModel.getCopyWithPartition(partitionID)
           }
           StandardLogService.setThreadName(blocksID, null)
@@ -349,8 +344,7 @@ class DataFileLoaderRDD[K, V](
             CarbonLoaderUtil
               .removeSliceFromMemory(model.getDatabaseName, model.getTableName, newSlice)
             logInfo(s"Aggregate table creation failed")
-          }
-          else {
+          } else {
             logInfo("Aggregate tables creation successfull")
           }
         }
@@ -448,8 +442,8 @@ class DataFileLoaderRDD[K, V](
       logInfo("Preferred Location for split : " + firstOptionLocation.head)
       val blockMap = new util.LinkedHashMap[String, Integer]()
       val tableBlocks = theSplit.blocksDetails
-      tableBlocks.foreach(tableBlock => tableBlock.getLocations.foreach(
-        location => {
+      tableBlocks.foreach { tableBlock =>
+        tableBlock.getLocations.foreach { location =>
           if (!firstOptionLocation.exists(location.equalsIgnoreCase)) {
             val currentCount = blockMap.get(location)
             if (currentCount == null) {
@@ -459,8 +453,7 @@ class DataFileLoaderRDD[K, V](
             }
           }
         }
-      )
-      )
+      }
 
       val sortedList = blockMap.entrySet().asScala.toSeq.sortWith((nodeCount1, nodeCount2) => {
         nodeCount1.getValue > nodeCount2.getValue

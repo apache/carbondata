@@ -109,8 +109,7 @@ object Compactor {
 
     if(mergeStatus.length == 0) {
       finalMergeStatus = false
-    }
-    else {
+    } else {
       finalMergeStatus = mergeStatus.forall(_._2)
     }
 
@@ -131,8 +130,7 @@ object Compactor {
           )
         throw new Exception("Compaction failed to update metadata for table " + carbonLoadModel
           .getDatabaseName + "." + carbonLoadModel.getTableName)
-      }
-      else {
+      } else {
         logger
           .audit("Compaction request completed for table " + carbonLoadModel
             .getDatabaseName + "." + carbonLoadModel.getTableName
@@ -142,8 +140,7 @@ object Compactor {
             .getDatabaseName + "." + carbonLoadModel.getTableName
           )
       }
-    }
-    else {
+    } else {
       logger
         .audit("Compaction request failed for table " + carbonLoadModel
           .getDatabaseName + "." + carbonLoadModel.getTableName

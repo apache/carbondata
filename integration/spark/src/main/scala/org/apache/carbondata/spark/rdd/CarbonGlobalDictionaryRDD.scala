@@ -37,7 +37,7 @@ import org.apache.carbondata.core.carbon.{CarbonTableIdentifier, ColumnIdentifie
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.spark.load.{CarbonLoaderUtil, CarbonLoadModel}
 import org.apache.carbondata.spark.tasks.{DictionaryWriterTask, SortIndexWriterTask}
@@ -391,8 +391,7 @@ class CarbonGlobalDictionaryGenerateRDD(
           dictWriteTask.updateMetaData()
           // clear the value buffer after writing dictionary data
           valuesBuffer.clear
-          org.apache.carbondata.core.util.CarbonUtil
-            .clearDictionaryCache(dictionaryForDistinctValueLookUp)
+          CarbonUtil.clearDictionaryCache(dictionaryForDistinctValueLookUp)
           dictionaryForDistinctValueLookUpCleared = true
           LOGGER.info("\n columnName:" + model.primDimensions(split.index).getColName +
                       "\n columnId:" + model.primDimensions(split.index).getColumnId +
@@ -408,11 +407,9 @@ class CarbonGlobalDictionaryGenerateRDD(
           throw ex
       } finally {
         if (!dictionaryForDistinctValueLookUpCleared) {
-          org.apache.carbondata.core.util.CarbonUtil
-            .clearDictionaryCache(dictionaryForDistinctValueLookUp)
+          CarbonUtil.clearDictionaryCache(dictionaryForDistinctValueLookUp)
         }
-        org.apache.carbondata.core.util.CarbonUtil
-          .clearDictionaryCache(dictionaryForSortIndexWriting)
+        CarbonUtil.clearDictionaryCache(dictionaryForSortIndexWriting)
         if (dictLock != null && isDictionaryLocked) {
           if (dictLock.unlock()) {
             logInfo(s"Dictionary ${

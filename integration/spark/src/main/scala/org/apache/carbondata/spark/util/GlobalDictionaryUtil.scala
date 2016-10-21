@@ -269,7 +269,8 @@ object GlobalDictionaryUtil extends Logging {
   def isHighCardinalityColumn(columnCardinality: Int,
       rowCount: Long,
       model: DictionaryLoadModel): Boolean = {
-    (columnCardinality > model.highCardThreshold) && (rowCount > 0) &&
+    (columnCardinality > model.highCardThreshold) &&
+    (rowCount > 0) &&
     (columnCardinality.toDouble / rowCount * 100 > model.rowCountPercentage)
   }
 
@@ -356,16 +357,14 @@ object GlobalDictionaryUtil extends Logging {
       .option("header", {
         if (StringUtils.isEmpty(carbonLoadModel.getCsvHeader)) {
           "true"
-        }
-        else {
+        } else {
           "false"
         }
       })
       .option("delimiter", {
         if (StringUtils.isEmpty(carbonLoadModel.getCsvDelimiter)) {
           "" + DEFAULT_SEPARATOR
-        }
-        else {
+        } else {
           carbonLoadModel.getCsvDelimiter
         }
       })
@@ -377,8 +376,7 @@ object GlobalDictionaryUtil extends Logging {
       .option("quote", {
         if (StringUtils.isEmpty(carbonLoadModel.getQuoteChar)) {
           "" + DEFAULT_QUOTE_CHARACTER
-        }
-        else {
+        } else {
           carbonLoadModel.getQuoteChar
         }
       })
@@ -417,8 +415,7 @@ object GlobalDictionaryUtil extends Logging {
 
     // update CarbonDataLoadSchema
     val carbonTable = catalog.lookupRelation1(Option(model.table.getDatabaseName),
-      model.table.getTableName)(sqlContext)
-      .asInstanceOf[CarbonRelation].tableMeta.carbonTable
+      model.table.getTableName)(sqlContext).asInstanceOf[CarbonRelation].tableMeta.carbonTable
     carbonLoadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(carbonTable))
 
   }
@@ -502,12 +499,7 @@ object GlobalDictionaryUtil extends Logging {
       colName match {
         case "" => colName
         case _ =>
-          if (parentDimName.isEmpty) {
-            middleDimName
-          }
-          else {
-            "." + middleDimName
-          }
+          if (parentDimName.isEmpty) middleDimName else "." + middleDimName
       }
     }
     // judge whether the column is exists
@@ -528,10 +520,8 @@ object GlobalDictionaryUtil extends Logging {
         preDictDimension.getDataType match {
           case DataType.ARRAY =>
             if (children(0).isComplex) {
-              "val." +
-              colName.substring(middleDimName.length + 1)
-            }
-            else {
+              "val." + colName.substring(middleDimName.length + 1)
+            } else {
               "val"
             }
           case _ => colName.substring(middleDimName.length + 1)
@@ -778,8 +768,7 @@ object GlobalDictionaryUtil extends Logging {
         }
         var headers = if (StringUtils.isEmpty(carbonLoadModel.getCsvHeader)) {
           df.columns
-        }
-        else {
+        } else {
           carbonLoadModel.getCsvHeader.split("" + DEFAULT_SEPARATOR)
         }
         headers = headers.map(headerName => headerName.trim)
@@ -849,8 +838,7 @@ object GlobalDictionaryUtil extends Logging {
           }
           headers = headers.map(headerName => headerName.trim)
           // prune columns according to the CSV file header, dimension columns
-          val (requireDimension, requireColumnNames) =
-          pruneDimensions(dimensions, headers, headers)
+          val (requireDimension, requireColumnNames) = pruneDimensions(dimensions, headers, headers)
           if (requireDimension.nonEmpty) {
             val model = createDictionaryLoadModel(carbonLoadModel, carbonTableIdentifier,
               requireDimension, storePath, dictfolderPath, false)
