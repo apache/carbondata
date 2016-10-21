@@ -72,7 +72,6 @@ public class RowConverterImpl implements RowConverter {
 
   @Override
   public CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException {
-
     for (int i = 0; i < fieldConverters.length; i++) {
       fieldConverters[i].convert(row);
     }

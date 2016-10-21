@@ -54,7 +54,7 @@ public class FieldEncoderFactory {
       CarbonTableIdentifier carbonTableIdentifier, int index) {
     // Converters are only needed for dimensions and measures it return null.
     if (dataField.getColumn().isDimesion()) {
-      if (dataField.hasDictionaryEncoding()) {
+      if (dataField.getColumn().hasEncoding(Encoding.DICTIONARY)) {
         return new DictionaryFieldConverterImpl(dataField, cache, carbonTableIdentifier, index);
       } else if (dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         return new DirectDictionaryFieldConverterImpl(dataField, index);
