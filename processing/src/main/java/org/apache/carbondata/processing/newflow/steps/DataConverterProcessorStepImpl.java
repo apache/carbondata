@@ -46,9 +46,9 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
   }
 
   @Override
-  public void intialize() throws CarbonDataLoadingException {
+  public void initialize() throws CarbonDataLoadingException {
     encoder = new RowConverterImpl(child.getOutput(), configuration);
-    child.intialize();
+    child.initialize();
   }
 
   @Override
@@ -58,6 +58,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
 
   @Override
   public void close() {
+    super.close();
     if (encoder != null) {
       encoder.finish();
     }

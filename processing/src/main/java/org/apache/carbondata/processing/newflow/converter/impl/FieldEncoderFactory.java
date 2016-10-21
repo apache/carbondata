@@ -41,18 +41,28 @@ public class FieldEncoderFactory {
     return instance;
   }
 
+  /**
+   * Creates the FieldConverter for all dimensions, for measures return null.
+   * @param dataField column schema
+   * @param cache dicionary cache.
+   * @param carbonTableIdentifier table identifier
+   * @param index index of column in the row.
+   * @return
+   */
   public FieldConverter createFieldEncoder(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       CarbonTableIdentifier carbonTableIdentifier, int index) {
-    if (dataField.hasDictionaryEncoding()) {
-      return new DictionaryFieldConverterImpl(dataField, cache, carbonTableIdentifier, index);
-    } else if (dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-      return new DirectDictionaryFieldConverterImpl(dataField, index);
-    } else if (dataField.getColumn().isComplex()) {
-      return new ComplexFieldConverterImpl();
-    } else if ((dataField.getColumn().hasEncoding(Encoding.DICTIONARY) ||
-        dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY))) {
-      return new NonDictionaryFieldConverterImpl(dataField, index);
+    // Converters are only needed for dimensions and measures it return null.
+    if (dataField.getColumn().isDimesion()) {
+      if (dataField.hasDictionaryEncoding()) {
+        return new DictionaryFieldConverterImpl(dataField, cache, carbonTableIdentifier, index);
+      } else if (dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        return new DirectDictionaryFieldConverterImpl(dataField, index);
+      } else if (dataField.getColumn().isComplex()) {
+        return new ComplexFieldConverterImpl();
+      } else {
+        return new NonDictionaryFieldConverterImpl(dataField, index);
+      }
     }
     return null;
   }
