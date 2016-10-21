@@ -253,6 +253,13 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     if (remainder > 0) {
       maxSize = maxSize + HDFS_CHECKSUM_LENGTH - remainder;
     }
+    // convert to make block size more readable.
+    String readableBlockSize = ByteUtil.convertByteToReadable(blockSize);
+    String readableFileSize = ByteUtil.convertByteToReadable(fileSize);
+    String readableMaxSize = ByteUtil.convertByteToReadable(maxSize);
+    LOGGER.info("The configured block size is " + readableBlockSize +
+            ", the actual carbon file size is " + readableFileSize +
+            ", choose the max value " + readableMaxSize + " as the block size on HDFS");
     return maxSize;
   }
 

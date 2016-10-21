@@ -20,6 +20,8 @@ package org.apache.carbondata.spark.testsuite.describeTable
 
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.Row
+
 import org.scalatest.BeforeAndAfterAll
 
 /**
@@ -39,6 +41,11 @@ class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
 
   test("test describe table") {
     checkAnswer(sql("DESC Desc1"), sql("DESC Desc2"))
+  }
+
+  test("test describe formatted table") {
+    checkExistence(sql("DESC FORMATTED Desc1"), true,
+      "Table Block Size :                   1024 MB")
   }
 
   override def afterAll: Unit = {

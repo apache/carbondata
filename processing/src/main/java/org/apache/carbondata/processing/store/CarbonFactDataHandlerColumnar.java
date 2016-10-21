@@ -134,7 +134,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private String tableName;
   /**
-   * table block size
+   * table block size in MB
    */
   private int tableBlockSize;
   /**
@@ -343,7 +343,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   private void initParameters(CarbonFactDataHandlerModel carbonFactDataHandlerModel) {
     this.databaseName = carbonFactDataHandlerModel.getDatabaseName();
-    this.tableBlockSize = carbonFactDataHandlerModel.getBlocksize();
+    this.tableBlockSize = carbonFactDataHandlerModel.getBlockSizeInMB();
     this.tableName = carbonFactDataHandlerModel.getTableName();
     this.type = carbonFactDataHandlerModel.getAggType();
     this.segmentProperties = carbonFactDataHandlerModel.getSegmentProperties();
