@@ -16,21 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.carbondata.processing.newflow.converter.impl;
 
-package org.apache.carbondata.processing.newflow.encoding;
+import org.apache.carbondata.processing.newflow.converter.FieldConverter;
 
-import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
-import org.apache.carbondata.processing.newflow.row.CarbonRow;
+public abstract class AbstractDictionaryFieldConverterImpl implements FieldConverter {
 
-/**
- * This interface converts/transforms the column field.
- */
-public interface FieldConverter {
+  public abstract int getColumnCardinality();
 
-  /**
-   * It converts the column field and updates the data in same location/index in row.
-   * @param row
-   * @throws CarbonDataLoadingException
-   */
-  void convert(CarbonRow row) throws CarbonDataLoadingException;
 }

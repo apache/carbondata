@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.processing.newflow.encoding.impl;
+package org.apache.carbondata.processing.newflow.converter.impl;
 
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
@@ -24,7 +24,7 @@ import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentif
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.processing.newflow.DataField;
-import org.apache.carbondata.processing.newflow.encoding.FieldConverter;
+import org.apache.carbondata.processing.newflow.converter.FieldConverter;
 
 public class FieldEncoderFactory {
 
@@ -50,8 +50,8 @@ public class FieldEncoderFactory {
       return new DirectDictionaryFieldConverterImpl(dataField, index);
     } else if (dataField.getColumn().isComplex()) {
       return new ComplexFieldConverterImpl();
-    } else if ((dataField.getColumn().hasEncoding(Encoding.DICTIONARY) || dataField.getColumn()
-        .hasEncoding(Encoding.DIRECT_DICTIONARY))) {
+    } else if ((dataField.getColumn().hasEncoding(Encoding.DICTIONARY) ||
+        dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY))) {
       return new NonDictionaryFieldConverterImpl(dataField, index);
     }
     return null;

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.processing.newflow.encoding.impl;
+package org.apache.carbondata.processing.newflow.converter.impl;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,15 +30,16 @@ import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
-import org.apache.carbondata.processing.newflow.encoding.FieldConverter;
-import org.apache.carbondata.processing.newflow.encoding.RowConverter;
+import org.apache.carbondata.processing.newflow.converter.FieldConverter;
+import org.apache.carbondata.processing.newflow.converter.RowConverter;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
 import org.apache.commons.lang3.ArrayUtils;
 
 /**
- *
+ * It converts the complete row if necessary, dictionary columns are encoded with dictionary values
+ * and nondictionary values are converted to binary.
  */
 public class RowConverterImpl implements RowConverter {
 
@@ -82,11 +83,15 @@ public class RowConverterImpl implements RowConverter {
   public void finish() {
     List<Integer> dimCardinality = new ArrayList<>();
     for (int i = 0; i < fieldConverters.length; i++) {
-      if (fieldConverters[i] instanceof AbstractDictionaryFieldConverterImpl) dimCardinality
-          .add(((AbstractDictionaryFieldConverterImpl) fieldConverters[i]).getColumnCardinality());
+      if (fieldConverters[i] instanceof AbstractDictionaryFieldConverterImpl) {
+        dimCardinality.add(
+            ((AbstractDictionaryFieldConverterImpl) fieldConverters[i]).getColumnCardinality());
+      }
     }
-    int[] cardinality =
-        ArrayUtils.toPrimitive(dimCardinality.toArray(new Integer[dimCardinality.size()]));
+    int[] cardinality = new int[dimCardinality.size()];
+    for (int i = 0; i < dimCardinality.size(); i++) {
+      cardinality[i] = dimCardinality.get(i);
+    }
     // Set the cardinality to configuration, it will be used by further step for mdk key.
     configuration.setDataLoadProperty(DataLoadProcessorConstants.DIMENSION_LENGTHS, cardinality);
   }

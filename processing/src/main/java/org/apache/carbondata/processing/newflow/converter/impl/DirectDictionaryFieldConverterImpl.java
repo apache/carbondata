@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.processing.newflow.encoding.impl;
+package org.apache.carbondata.processing.newflow.converter.impl;
 
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;

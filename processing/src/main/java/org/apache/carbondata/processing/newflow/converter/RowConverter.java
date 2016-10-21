@@ -16,17 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.carbondata.processing.newflow.converter;
 
-package org.apache.carbondata.processing.newflow.encoding.impl;
-
-import java.nio.ByteBuffer;
-
-import org.apache.carbondata.processing.newflow.encoding.FieldConverter;
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
-public class ComplexFieldConverterImpl implements FieldConverter {
+/**
+ * convert the row
+ */
+public interface RowConverter {
 
-  @Override
-  public void convert(CarbonRow row) {
-  }
+  CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException;
+
+  void finish();
 }

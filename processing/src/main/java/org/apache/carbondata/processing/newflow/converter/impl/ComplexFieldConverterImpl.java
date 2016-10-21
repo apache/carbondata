@@ -16,12 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.processing.newflow.encoding.impl;
 
-import org.apache.carbondata.processing.newflow.encoding.FieldConverter;
+package org.apache.carbondata.processing.newflow.converter.impl;
 
-public abstract class AbstractDictionaryFieldConverterImpl implements FieldConverter {
+import org.apache.carbondata.processing.newflow.converter.FieldConverter;
+import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
-  public abstract int getColumnCardinality();
+public class ComplexFieldConverterImpl implements FieldConverter {
 
+  @Override
+  public void convert(CarbonRow row) {
+  }
 }

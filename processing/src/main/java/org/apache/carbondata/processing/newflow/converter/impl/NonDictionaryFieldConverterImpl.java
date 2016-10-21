@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.processing.newflow.encoding.impl;
+package org.apache.carbondata.processing.newflow.converter.impl;
 
 import java.nio.charset.Charset;
 
@@ -24,7 +24,7 @@ import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.DataField;
-import org.apache.carbondata.processing.newflow.encoding.FieldConverter;
+import org.apache.carbondata.processing.newflow.converter.FieldConverter;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
 public class NonDictionaryFieldConverterImpl implements FieldConverter {

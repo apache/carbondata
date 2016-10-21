@@ -22,8 +22,8 @@ package org.apache.carbondata.processing.newflow.steps;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
-import org.apache.carbondata.processing.newflow.encoding.RowConverter;
-import org.apache.carbondata.processing.newflow.encoding.impl.RowConverterImpl;
+import org.apache.carbondata.processing.newflow.converter.RowConverter;
+import org.apache.carbondata.processing.newflow.converter.impl.RowConverterImpl;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
@@ -40,20 +40,24 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     super(configuration, child);
   }
 
-  @Override public DataField[] getOutput() {
+  @Override
+  public DataField[] getOutput() {
     return child.getOutput();
   }
 
-  @Override public void intialize() throws CarbonDataLoadingException {
+  @Override
+  public void intialize() throws CarbonDataLoadingException {
     encoder = new RowConverterImpl(child.getOutput(), configuration);
     child.intialize();
   }
 
-  @Override protected CarbonRow processRow(CarbonRow row) {
+  @Override
+  protected CarbonRow processRow(CarbonRow row) {
     return encoder.convert(row);
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
     if (encoder != null) {
       encoder.finish();
     }

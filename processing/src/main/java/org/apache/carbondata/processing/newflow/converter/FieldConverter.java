@@ -16,17 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.processing.newflow.encoding;
+
+package org.apache.carbondata.processing.newflow.converter;
 
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
 /**
- * convert the row
+ * This interface converts/transforms the column field.
  */
-public interface RowConverter {
+public interface FieldConverter {
 
-  CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException;
-
-  void finish();
+  /**
+   * It converts the column field and updates the data in same location/index in row.
+   * @param row
+   * @throws CarbonDataLoadingException
+   */
+  void convert(CarbonRow row) throws CarbonDataLoadingException;
 }
