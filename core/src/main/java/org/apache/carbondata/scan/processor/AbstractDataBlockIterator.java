@@ -24,6 +24,7 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.scan.collector.ScannedResultCollector;
 import org.apache.carbondata.scan.collector.impl.DictionaryBasedResultCollector;
@@ -76,8 +77,10 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
 
   protected AbstractScannedResult scannedResult;
 
+  QueryStatisticsModel queryStatisticsModel;
+
   public AbstractDataBlockIterator(BlockExecutionInfo blockExecutionInfo,
-      FileHolder fileReader, int batchSize) {
+      FileHolder fileReader, int batchSize, QueryStatisticsModel queryStatisticsModel) {
     this.blockExecutionInfo = blockExecutionInfo;
     dataBlockIterator = new BlockletIterator(blockExecutionInfo.getFirstDataBlock(),
         blockExecutionInfo.getNumberOfBlockToScan());
@@ -86,7 +89,7 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     blocksChunkHolder.setFileReader(fileReader);
 
     if (blockExecutionInfo.getFilterExecuterTree() != null) {
-      blockletScanner = new FilterScanner(blockExecutionInfo);
+      blockletScanner = new FilterScanner(blockExecutionInfo, queryStatisticsModel);
     } else {
       blockletScanner = new NonFilterScanner(blockExecutionInfo);
     }
@@ -98,6 +101,7 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
           new DictionaryBasedResultCollector(blockExecutionInfo);
     }
     this.batchSize = batchSize;
+    this.queryStatisticsModel = queryStatisticsModel;
   }
 
   public boolean hasNext() {

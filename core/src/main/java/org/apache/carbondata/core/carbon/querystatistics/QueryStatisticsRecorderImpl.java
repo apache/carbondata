@@ -96,6 +96,8 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder,Seri
     String result_size = "";
     String total_executor_time = "";
     String splitChar = " ";
+    String total_blocklet = "";
+    String valid_scan_blocklet = "";
     try {
       for (QueryStatistic statistic : queryStatistics) {
         switch (statistic.getMessage()) {
@@ -112,25 +114,34 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder,Seri
             load_dictionary_time += statistic.getTimeTaken() + splitChar;
             break;
           case QueryStatisticsConstants.RESULT_SIZE:
-            result_size += statistic.getCount() + " ";
+            result_size += statistic.getCount() + splitChar;
             break;
           case QueryStatisticsConstants.EXECUTOR_PART:
             total_executor_time += statistic.getTimeTaken() + splitChar;
+            break;
+          case QueryStatisticsConstants.TOTAL_BLOCKLET_NUM:
+            total_blocklet = statistic.getCount() + splitChar;
+            break;
+          case QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM:
+            valid_scan_blocklet = statistic.getCount() + splitChar;
             break;
           default:
             break;
         }
       }
       String headers = "task_id,load_blocks_time,load_dictionary_time,scan_blocks_time," +
-          "scan_blocks_num,result_size,total_executor_time";
+          "total_executor_time,scan_blocks_num,total_blocklet" +
+          "valid_scan_blocklet,result_size";
       List<String> values = new ArrayList<String>();
       values.add(queryIWthTask);
       values.add(load_blocks_time);
       values.add(load_dictionary_time);
       values.add(scan_blocks_time);
-      values.add(scan_blocks_num);
-      values.add(result_size);
       values.add(total_executor_time);
+      values.add(scan_blocks_num);
+      values.add(total_blocklet);
+      values.add(valid_scan_blocklet);
+      values.add(result_size);
       StringBuilder tableInfo = new StringBuilder();
       String[] columns = headers.split(",");
       String line = "";
