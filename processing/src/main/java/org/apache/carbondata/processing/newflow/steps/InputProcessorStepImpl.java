@@ -1,4 +1,4 @@
-package org.apache.carbondata.processing.newflow.steps.input;
+package org.apache.carbondata.processing.newflow.steps;
 
 import java.util.ArrayList;
 import java.util.Iterator;

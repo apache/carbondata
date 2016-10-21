@@ -124,7 +124,8 @@ public class RemoveDictionaryUtil {
 
   /**
    * This method will form one single byte [] for all the high card dims.
-   *
+   * For example if you need to pack 2 columns c1 and c2 , it stores in following way
+   *  <total_len(short)><offsetLen(short)><offsetLen+c1_len(short)><c1(byte[])><c2(byte[])>
    * @param byteBufferArr
    * @return
    */

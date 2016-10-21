@@ -178,8 +178,8 @@ public class SortKeyStep extends BaseStep {
 
       this.noDictionaryColMaping =
           RemoveDictionaryUtil.convertStringToBooleanArr(meta.getNoDictionaryDimsMapping());
-      SortParameters parameters = SortParameters
-          .createSortParameters(meta.getDatabaseName(), meta.getTabelName(),
+      SortParameters parameters =
+          SortParameters.createSortParameters(meta.getDatabaseName(), meta.getTabelName(),
               meta.getDimensionCount(), meta.getComplexDimensionCount(), meta.getMeasureCount(),
               this.observer, meta.getNoDictionaryCount(), meta.getPartitionID(),
               meta.getSegmentId() + "", meta.getTaskNo(), this.noDictionaryColMaping);

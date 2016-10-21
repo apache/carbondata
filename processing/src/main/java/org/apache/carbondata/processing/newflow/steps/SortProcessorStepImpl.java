@@ -20,16 +20,14 @@ package org.apache.carbondata.processing.newflow.steps;
 
 import java.util.Iterator;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
-import org.apache.carbondata.processing.newflow.sort.CarbonSorter;
-import org.apache.carbondata.processing.newflow.sort.impl.CarbonParallelReadMergeSorterImpl;
+import org.apache.carbondata.processing.newflow.sort.Sorter;
+import org.apache.carbondata.processing.newflow.sort.impl.ParallelReadMergeSorterImpl;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 
 /**
@@ -38,42 +36,41 @@ import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
  */
 public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(SortProcessorStepImpl.class.getName());
-
-  private CarbonSorter carbonSorter;
+  private Sorter sorter;
 
   public SortProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
     super(configuration, child);
   }
 
-  @Override public DataField[] getOutput() {
+  @Override
+  public DataField[] getOutput() {
     return child.getOutput();
   }
 
-  @Override public void intialize() throws CarbonDataLoadingException {
+  @Override
+  public void initialize() throws CarbonDataLoadingException {
     SortParameters sortParameters = SortParameters.createSortParameters(configuration);
-    carbonSorter = new CarbonParallelReadMergeSorterImpl(child.getOutput());
-    carbonSorter.initialize(sortParameters);
+    sorter = new ParallelReadMergeSorterImpl(child.getOutput());
+    sorter.initialize(sortParameters);
   }
 
-  @Override public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
+  @Override
+  public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
     final Iterator<CarbonRowBatch>[] iterators = child.execute();
-    Iterator<CarbonRowBatch>[] sortedIterators = carbonSorter.sort(iterators);
-    child.finish();
+    Iterator<CarbonRowBatch>[] sortedIterators = sorter.sort(iterators);
+    child.close();
     return sortedIterators;
   }
 
-  @Override protected CarbonRow processRow(CarbonRow row) {
+  @Override
+  protected CarbonRow processRow(CarbonRow row) {
     return null;
   }
 
-  @Override public void close() {
-    carbonSorter.close();
+  @Override
+  public void close() {
+    sorter.close();
   }
 
-  @Override public void finish() {
-
-  }
 }

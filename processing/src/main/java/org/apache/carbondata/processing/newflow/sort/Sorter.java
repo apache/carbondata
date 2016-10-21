@@ -28,7 +28,7 @@ import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
  * This interface sorts all the data of iterators.
  * The life cycle of this interface is initialize -> sort -> close
  */
-public interface CarbonSorter {
+public interface Sorter {
 
   /**
    * Initialize sorter with sort parameters.

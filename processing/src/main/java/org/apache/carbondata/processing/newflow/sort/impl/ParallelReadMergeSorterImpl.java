@@ -34,7 +34,7 @@ import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
-import org.apache.carbondata.processing.newflow.sort.CarbonSorter;
+import org.apache.carbondata.processing.newflow.sort.Sorter;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortIntermediateFileMerger;
@@ -48,10 +48,10 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
  * First it sorts the data and write to temp files. These temp files will be merge sorted to get
  * final merge sort result.
  */
-public class CarbonParallelReadMergeSorterImpl implements CarbonSorter {
+public class ParallelReadMergeSorterImpl implements Sorter {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(CarbonParallelReadMergeSorterImpl.class.getName());
+      LogServiceFactory.getLogService(ParallelReadMergeSorterImpl.class.getName());
 
   private SortParameters sortParameters;
 
@@ -63,7 +63,7 @@ public class CarbonParallelReadMergeSorterImpl implements CarbonSorter {
 
   private DataField[] inputDataFields;
 
-  public CarbonParallelReadMergeSorterImpl(DataField[] inputDataFields) {
+  public ParallelReadMergeSorterImpl(DataField[] inputDataFields) {
     this.inputDataFields = inputDataFields;
   }
 
@@ -71,8 +71,9 @@ public class CarbonParallelReadMergeSorterImpl implements CarbonSorter {
   public void initialize(SortParameters sortParameters) {
     this.sortParameters = sortParameters;
     intermediateFileMerger = new SortIntermediateFileMerger(sortParameters);
-    String storeLocation = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(sortParameters.getDatabaseName(), sortParameters.getTableName(),
+    String storeLocation =
+        CarbonDataProcessorUtil.getLocalDataFolderLocation(
+            sortParameters.getDatabaseName(), sortParameters.getTableName(),
             String.valueOf(sortParameters.getTaskNo()), sortParameters.getPartitionID(),
             sortParameters.getSegmentId() + "", false);
     // Set the data file location
@@ -133,11 +134,13 @@ public class CarbonParallelReadMergeSorterImpl implements CarbonSorter {
     // Creates the iterator to read from merge sorter.
     Iterator<CarbonRowBatch> batchIterator = new CarbonIterator<CarbonRowBatch>() {
 
-      @Override public boolean hasNext() {
+      @Override
+      public boolean hasNext() {
         return finalMerger.hasNext();
       }
 
-      @Override public CarbonRowBatch next() {
+      @Override
+      public CarbonRowBatch next() {
         int counter = 0;
         CarbonRowBatch rowBatch = new CarbonRowBatch();
         while (finalMerger.hasNext() && counter < batchSize) {
@@ -172,7 +175,8 @@ public class CarbonParallelReadMergeSorterImpl implements CarbonSorter {
       this.parameters = parameters;
     }
 
-    @Override public Void call() throws CarbonDataLoadingException {
+    @Override
+    public Void call() throws CarbonDataLoadingException {
       try {
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();

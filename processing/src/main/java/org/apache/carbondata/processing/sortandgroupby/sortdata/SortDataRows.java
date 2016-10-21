@@ -155,15 +155,14 @@ public class SortDataRows {
         Arrays.sort(toSort, new RowComparator(parameters.getNoDictionaryDimnesionColumn(),
             parameters.getNoDictionaryCount()));
       } else {
-
         Arrays.sort(toSort, new RowComparatorForNormalDims(parameters.getDimColCount()));
       }
       recordHolderList = toSort;
 
       // create new file
       File file = new File(
-          parameters.getTempFileLocation() + File.separator + parameters.getTableName() + System
-              .nanoTime() + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
+          parameters.getTempFileLocation() + File.separator + parameters.getTableName() +
+              System.nanoTime() + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
       writeDataTofile(recordHolderList, this.entryCount, file);
 
     }
