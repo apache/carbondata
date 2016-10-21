@@ -123,6 +123,60 @@ public class RemoveDictionaryUtil {
   }
 
   /**
+   * This method will form one single byte [] for all the high card dims.
+   *
+   * @param byteBufferArr
+   * @return
+   */
+  public static byte[] packByteBufferIntoSingleByteArray(byte[][] byteBufferArr) {
+    // for empty array means there is no data to remove dictionary.
+    if (null == byteBufferArr || byteBufferArr.length == 0) {
+      return null;
+    }
+    int noOfCol = byteBufferArr.length;
+    short toDetermineLengthOfByteArr = 2;
+    short offsetLen = (short) (noOfCol * 2 + toDetermineLengthOfByteArr);
+    int totalBytes = calculateTotalBytes(byteBufferArr) + offsetLen;
+
+    ByteBuffer buffer = ByteBuffer.allocate(totalBytes);
+
+    // write the length of the byte [] as first short
+    buffer.putShort((short) (totalBytes - toDetermineLengthOfByteArr));
+    // writing the offset of the first element.
+    buffer.putShort(offsetLen);
+
+    // prepare index for byte []
+    for (int index = 0; index < byteBufferArr.length - 1; index++) {
+      int noOfBytes = byteBufferArr[index].length;
+
+      buffer.putShort((short) (offsetLen + noOfBytes));
+      offsetLen += noOfBytes;
+    }
+
+    // put actual data.
+    for (int index = 0; index < byteBufferArr.length; index++) {
+      buffer.put(byteBufferArr[index]);
+    }
+    buffer.rewind();
+    return buffer.array();
+
+  }
+
+  /**
+   * To calculate the total bytes in byte Buffer[].
+   *
+   * @param byteBufferArr
+   * @return
+   */
+  private static int calculateTotalBytes(byte[][] byteBufferArr) {
+    int total = 0;
+    for (int index = 0; index < byteBufferArr.length; index++) {
+      total += byteBufferArr[index].length;
+    }
+    return total;
+  }
+
+  /**
    * Method to check whether entire row is empty or not.
    *
    * @param row

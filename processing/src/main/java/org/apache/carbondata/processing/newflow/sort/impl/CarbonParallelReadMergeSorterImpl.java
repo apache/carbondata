@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.processing.newflow.steps.sort;
+package org.apache.carbondata.processing.newflow.sort.impl;
 
 import java.io.File;
 import java.util.Iterator;
@@ -30,13 +30,11 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
-import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
-import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
-import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
+import org.apache.carbondata.processing.newflow.sort.CarbonSorter;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortIntermediateFileMerger;
@@ -46,13 +44,14 @@ import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterE
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
- * It sorts the data and write them to intermediate temp files. These files will be further read
- * by next step for writing to carbondata files.
+ * It parallely reads data from array of iterates and do merge sort.
+ * First it sorts the data and write to temp files. These temp files will be merge sorted to get
+ * final merge sort result.
  */
-public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
+public class CarbonParallelReadMergeSorterImpl implements CarbonSorter {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(SortProcessorStepImpl.class.getName());
+      LogServiceFactory.getLogService(CarbonParallelReadMergeSorterImpl.class.getName());
 
   private SortParameters sortParameters;
 
@@ -62,17 +61,15 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   private SingleThreadFinalSortFilesMerger finalMerger;
 
-  public SortProcessorStepImpl(CarbonDataLoadConfiguration configuration,
-      AbstractDataLoadProcessorStep child) {
-    super(configuration, child);
+  private DataField[] inputDataFields;
+
+  public CarbonParallelReadMergeSorterImpl(DataField[] inputDataFields) {
+    this.inputDataFields = inputDataFields;
   }
 
-  @Override public DataField[] getOutput() {
-    return child.getOutput();
-  }
-
-  @Override public void intialize() throws CarbonDataLoadingException {
-    sortParameters = SortParameters.createSortParameters(configuration);
+  @Override
+  public void initialize(SortParameters sortParameters) {
+    this.sortParameters = sortParameters;
     intermediateFileMerger = new SortIntermediateFileMerger(sortParameters);
     String storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(sortParameters.getDatabaseName(), sortParameters.getTableName(),
@@ -89,8 +86,9 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
             sortParameters.getNoDictionaryDimnesionColumn());
   }
 
-  @Override public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
-    final Iterator<CarbonRowBatch>[] iterators = child.execute();
+  @Override
+  public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
+      throws CarbonDataLoadingException {
     SortDataRows[] sortDataRows = new SortDataRows[iterators.length];
     try {
       for (int i = 0; i < iterators.length; i++) {
@@ -103,8 +101,15 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
     }
     this.executorService = Executors.newFixedThreadPool(iterators.length);
 
+    // First prepare the data for sort.
+    Iterator<CarbonRowBatch>[] sortPrepIterators = new Iterator[iterators.length];
+    for (int i = 0; i < sortPrepIterators.length; i++) {
+      sortPrepIterators[i] = new SortPreparatorIterator(iterators[i], inputDataFields);
+    }
+
     for (int i = 0; i < sortDataRows.length; i++) {
-      executorService.submit(new SortIteratorThread(iterators[i], sortDataRows[i], sortParameters));
+      executorService
+          .submit(new SortIteratorThread(sortPrepIterators[i], sortDataRows[i], sortParameters));
     }
 
     try {
@@ -113,8 +118,6 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
     } catch (InterruptedException e) {
       throw new CarbonDataLoadingException("Problem while shutdown the server ", e);
     }
-    child.finish();
-
     try {
       intermediateFileMerger.finish();
       finalMerger.startFinalMerge();
@@ -124,8 +127,10 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
       throw new CarbonDataLoadingException(e);
     }
 
-    final int batchSize = getBatchSize();
+    //TODO get the batch size from CarbonProperties
+    final int batchSize = 1000;
 
+    // Creates the iterator to read from merge sorter.
     Iterator<CarbonRowBatch> batchIterator = new CarbonIterator<CarbonRowBatch>() {
 
       @Override public boolean hasNext() {
@@ -145,26 +150,13 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return new Iterator[] { batchIterator };
   }
 
-  private int getBatchSize() {
-    int batchSize;
-    try {
-      batchSize = Integer.parseInt(configuration
-          .getDataLoadProperty(DataLoadProcessorConstants.DATA_LOAD_BATCH_SIZE,
-              DataLoadProcessorConstants.DATA_LOAD_BATCH_SIZE_DEFAULT).toString());
-    } catch (NumberFormatException exc) {
-      batchSize = Integer.parseInt(DataLoadProcessorConstants.DATA_LOAD_BATCH_SIZE_DEFAULT);
-    }
-    return batchSize;
-  }
-
-  @Override protected CarbonRow processRow(CarbonRow row) {
-    return null;
-  }
-
   @Override public void close() {
     intermediateFileMerger.close();
   }
 
+  /**
+   * This thread iterates the iterator and adds the rows to @{@link SortDataRows}
+   */
   private static class SortIteratorThread implements Callable<Void> {
 
     private Iterator<CarbonRowBatch> iterator;
@@ -226,12 +218,6 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
       } catch (CarbonSortKeyAndGroupByException e) {
         throw new CarbonDataLoadingException(e);
       }
-
     }
   }
-
-  @Override public void finish() {
-
-  }
-
 }
