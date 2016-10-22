@@ -926,14 +926,14 @@ class CarbonSqlParser()
       (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
       (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
         case filePath ~ isOverwrite ~ table ~ partionDataOptions =>
-          val (schema, tablename) = table match {
+          val (databaseNameOp, tableName) = table match {
             case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
           }
           if(partionDataOptions.isDefined) {
             validateOptions(partionDataOptions)
           }
           val patitionOptionsMap = partionDataOptions.getOrElse(List.empty[(String, String)]).toMap
-          LoadTable(schema, tablename, filePath, Seq(), patitionOptionsMap, isOverwrite.isDefined)
+          LoadTable(databaseNameOp, tableName, filePath, Seq(), patitionOptionsMap, isOverwrite.isDefined)
       }
 
   private def validateOptions(partionDataOptions: Option[List[(String, String)]]): Unit = {
