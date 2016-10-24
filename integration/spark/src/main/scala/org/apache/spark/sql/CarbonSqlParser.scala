@@ -933,7 +933,8 @@ class CarbonSqlParser()
             validateOptions(partionDataOptions)
           }
           val patitionOptionsMap = partionDataOptions.getOrElse(List.empty[(String, String)]).toMap
-          LoadTable(databaseNameOp, tableName, filePath, Seq(), patitionOptionsMap, isOverwrite.isDefined)
+          LoadTable(databaseNameOp, tableName, filePath, Seq(), patitionOptionsMap,
+            isOverwrite.isDefined)
       }
 
   private def validateOptions(partionDataOptions: Option[List[(String, String)]]): Unit = {
