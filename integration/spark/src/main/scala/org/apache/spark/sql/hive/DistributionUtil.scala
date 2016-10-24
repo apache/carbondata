@@ -103,8 +103,13 @@ object DistributionUtil {
    * @return
    */
   def ensureExecutorsAndGetNodeList(blockList: Seq[Distributable],
-    sparkContext: SparkContext): Seq[String] = {
-    val nodeMapping = CarbonLoaderUtil.getRequiredExecutors(blockList.asJava)
+      sparkContext: SparkContext): Seq[String] = {
+    val nodeMapping = CarbonLoaderUtil.getRequiredExecutors(blockList.toSeq.asJava)
+    ensureExecutorsByNumberAndGetNodeList(nodeMapping.size(), sparkContext)
+  }
+
+  def ensureExecutorsByNumberAndGetNodeList(nodesOfData: Int,
+      sparkContext: SparkContext): Seq[String] = {
     var confExecutorsTemp: String = null
     if (sparkContext.getConf.contains("spark.executor.instances")) {
       confExecutorsTemp = sparkContext.getConf.get("spark.executor.instances")
@@ -116,15 +121,11 @@ object DistributionUtil {
       }
     }
 
-    val confExecutors = if (null != confExecutorsTemp) {
-      confExecutorsTemp.toInt
-    } else {
-      1
-    }
-    val requiredExecutors = if (nodeMapping.size > confExecutors) {
+    val confExecutors = if (null != confExecutorsTemp) confExecutorsTemp.toInt else 1
+    val requiredExecutors = if (nodesOfData < 1 || nodesOfData > confExecutors) {
       confExecutors
     } else {
-      nodeMapping.size()
+      nodesOfData
     }
 
     val startTime = System.currentTimeMillis()

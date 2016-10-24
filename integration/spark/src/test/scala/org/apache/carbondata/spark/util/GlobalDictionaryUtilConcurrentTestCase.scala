@@ -20,28 +20,23 @@ package org.apache.carbondata.spark.util
 
 import java.io.File
 
+import java.util.concurrent.Executors
+import java.util.concurrent.Callable
+
+import scala.collection.mutable.ListBuffer
+
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.apache.spark.sql.common.util.CarbonHiveContext
 import org.apache.spark.sql.common.util.CarbonHiveContext.sql
 import org.apache.spark.sql.common.util.QueryTest
-
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory
-import scala.collection.mutable.ListBuffer
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
-import java.util.concurrent.FutureTask
-import java.util.concurrent.Callable
-import java.util.concurrent.TimeUnit
-
 import org.apache.carbondata.common.ext.PathFactory
-import org.apache.carbondata.core.carbon.path.CarbonTablePath
-import org.apache.carbondata.core.carbon.ColumnIdentifier
+import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.model.CarbonLoadModel
 
 class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAfterAll {
@@ -70,6 +65,8 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     carbonLoadModel.setComplexDelimiterLevel2("\\:")
     carbonLoadModel.setStorePath(relation.tableMeta.storePath)
     carbonLoadModel.setQuoteChar("\"")
+    carbonLoadModel.setSerializationNullFormat(
+      TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + ",\\N")
     carbonLoadModel
   }
 
