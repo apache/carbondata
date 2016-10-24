@@ -93,7 +93,6 @@
 
   <modules>
     <module>common</module>
-    <module>format</module>
     <module>core</module>
     <module>processing</module>
     <module>hadoop</module>
@@ -264,6 +263,12 @@
   </build>
 
   <profiles>
+    <profile>
+      <id>build-with-format</id>
+      <modules>
+        <module>format</module>
+      </modules>
+    </profile>
     <profile>
       <id>hadoop-2.2.0</id>
       <!-- default -->
