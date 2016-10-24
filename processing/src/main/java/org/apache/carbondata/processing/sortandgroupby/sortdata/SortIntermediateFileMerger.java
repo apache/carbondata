@@ -30,6 +30,9 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 
+/**
+ * It does mergesort intermediate files to big file.
+ */
 public class SortIntermediateFileMerger {
 
   private static final LogService LOGGER =
@@ -90,17 +93,17 @@ public class SortIntermediateFileMerger {
 
   public void finish() throws CarbonSortKeyAndGroupByException {
     try {
-    executorService.shutdown();
-    executorService.awaitTermination(2, TimeUnit.DAYS);
-  } catch (InterruptedException e) {
-    throw new CarbonSortKeyAndGroupByException("Problem while shutdown the server ", e);
-  }
+      executorService.shutdown();
+      executorService.awaitTermination(2, TimeUnit.DAYS);
+    } catch (InterruptedException e) {
+      throw new CarbonSortKeyAndGroupByException("Problem while shutdown the server ", e);
+    }
     procFiles.clear();
     procFiles = null;
   }
 
   public void close() {
-    if(executorService.isShutdown()) {
+    if (executorService.isShutdown()) {
       executorService.shutdownNow();
     }
   }
