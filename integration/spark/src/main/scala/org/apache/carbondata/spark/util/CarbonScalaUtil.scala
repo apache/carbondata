@@ -18,6 +18,7 @@
 package org.apache.carbondata.spark.util
 
 import java.io.File
+import java.text.SimpleDateFormat
 
 import scala.collection.JavaConverters._
 
@@ -165,4 +166,53 @@ object CarbonScalaUtil {
     kettleHomePath
   }
 
+  def getString(value: Any,
+      serializationNullFormat: String,
+      delimiterLevel1: String,
+      delimiterLevel2: String,
+      format: SimpleDateFormat,
+      level: Int = 1): String = {
+    value == null match {
+      case true => serializationNullFormat
+      case false => value match {
+        case s: String => s
+        case d: java.math.BigDecimal => d.toPlainString
+        case i: java.lang.Integer => i.toString
+        case d: java.lang.Double => d.toString
+        case t: java.sql.Timestamp => format format t
+        case d: java.sql.Date => format format d
+        case b: java.lang.Boolean => b.toString
+        case s: java.lang.Short => s.toString
+        case f: java.lang.Float => f.toString
+        case bs: Array[Byte] => new String(bs)
+        case s: scala.collection.Seq[Any] =>
+          val delimiter = if (level == 1) {
+            delimiterLevel1
+          } else {
+            delimiterLevel2
+          }
+          val builder = new StringBuilder()
+          s.foreach { x =>
+            builder.append(getString(x, serializationNullFormat, delimiterLevel1,
+                delimiterLevel2, format, level + 1)).append(delimiter)
+          }
+          builder.substring(0, builder.length - 1)
+        case m: scala.collection.Map[Any, Any] =>
+          throw new Exception("Unsupported data type: Map")
+        case r: org.apache.spark.sql.Row =>
+          val delimiter = if (level == 1) {
+            delimiterLevel1
+          } else {
+            delimiterLevel2
+          }
+          val builder = new StringBuilder()
+          for (i <- 0 until r.length) {
+            builder.append(getString(r(i), serializationNullFormat, delimiterLevel1,
+                delimiterLevel2, format, level + 1)).append(delimiter)
+          }
+          builder.substring(0, builder.length - 1)
+        case other => other.toString
+      }
+    }
+  }
 }

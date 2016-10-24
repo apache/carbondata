@@ -19,6 +19,7 @@ package org.apache.carbondata.spark.rdd
 
 import java.io.{DataInputStream, InputStreamReader}
 import java.nio.charset.Charset
+import java.text.SimpleDateFormat
 import java.util.regex.Pattern
 
 import scala.collection.mutable
@@ -42,6 +43,7 @@ import org.apache.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.tasks.{DictionaryWriterTask, SortIndexWriterTask}
+import org.apache.carbondata.spark.util.CarbonScalaUtil
 import org.apache.carbondata.spark.util.GlobalDictionaryUtil
 import org.apache.carbondata.spark.util.GlobalDictionaryUtil._
 
@@ -157,7 +159,8 @@ case class DictionaryLoadModel(table: CarbonTableIdentifier,
     isFirstLoad: Boolean,
     hdfsTempLocation: String,
     lockType: String,
-    zooKeeperUrl: String) extends Serializable
+    zooKeeperUrl: String,
+    serializationNullFormat: String) extends Serializable
 
 case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends Serializable
 
@@ -251,13 +254,17 @@ class CarbonBlockDistinctValuesCombineRDD(
       val dimNum = model.dimensions.length
       var row: Row = null
       val rddIter = firstParent[Row].iterator(split, context)
+      val formatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+          .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      val format = new SimpleDateFormat(formatString)
       // generate block distinct value set
       while (rddIter.hasNext) {
         row = rddIter.next()
         if (row != null) {
           rowCount += 1
           for (i <- 0 until dimNum) {
-            dimensionParsers(i).parseString(row.getString(i))
+            dimensionParsers(i).parseString(CarbonScalaUtil.getString(row.get(i),
+                model.serializationNullFormat,model.delimiters(0), model.delimiters(1), format))
           }
         }
       }

@@ -16,27 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.carbondata.processing.csvreaderstep;
+/**
+ * JavaRddIterator wrap spark rdd iterator.
+ * It can avoid this module dependency spark module.
+ * @param <E>
+ */
+public interface JavaRddIterator<E> {
 
-import java.util.HashMap;
-import java.util.Map;
+  boolean hasNext();
 
-public class RddInputUtils {
-  private static Map<String, JavaRddIterator<JavaRddIterator<String[]>>> iteratorMap = new
-      HashMap<String, JavaRddIterator<JavaRddIterator<String[]>>>();
+  E next();
 
-  public static void put(String key, JavaRddIterator<JavaRddIterator<String[]>> value) {
-    iteratorMap.put(key, value);
-  }
-
-  public static JavaRddIterator<JavaRddIterator<String[]>> getAndRemove(String key) {
-    JavaRddIterator<JavaRddIterator<String[]>> iter = iteratorMap.get(key);
-    remove(key);
-    return iter;
-  }
-
-  public static void remove(String key) {
-    iteratorMap.remove(key);
-  }
+  void initialize();
 }
