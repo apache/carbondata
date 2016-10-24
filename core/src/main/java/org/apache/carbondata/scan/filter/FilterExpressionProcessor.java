@@ -232,7 +232,8 @@ public class FilterExpressionProcessor implements FilterProcessor {
                 currentExpression), currentExpression);
       case EQUALS:
       case IN:
-        return getFilterResolverBasedOnExpressionType(ExpressionType.EQUALS, false, expressionTree,
+        return getFilterResolverBasedOnExpressionType(ExpressionType.EQUALS,
+            ((BinaryConditionalExpression) expressionTree).isNull, expressionTree,
             tableIdentifier, expressionTree);
       case GREATERTHAN:
       case GREATERTHAN_EQUALTO:

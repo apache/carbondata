@@ -31,7 +31,6 @@ import org.apache.carbondata.scan.filter.intf.RowIntf;
 public class EqualToExpression extends BinaryConditionalExpression {
 
   private static final long serialVersionUID = 1L;
-  private boolean isNull;
 
   public EqualToExpression(Expression left, Expression right) {
     super(left, right);
