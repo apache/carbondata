@@ -75,7 +75,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
   def apply(plan: LogicalPlan): LogicalPlan = {
     if (relations.nonEmpty && !isOptimized(plan)) {
       LOGGER.info("Starting to optimize plan")
-      val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("");
+      val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("")
       val queryStatistic = new QueryStatistic()
       val result = transformCarbonPlan(plan, relations)
       queryStatistic.addStatistics("Time taken for Carbon Optimizer to optimize: ",

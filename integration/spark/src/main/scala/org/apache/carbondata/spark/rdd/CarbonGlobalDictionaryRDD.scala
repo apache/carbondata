@@ -66,6 +66,7 @@ trait GenericParser {
 
 case class DictionaryStats(distinctValues: java.util.List[String],
     dictWriteTime: Long, sortIndexWriteTime: Long)
+
 case class PrimitiveParser(dimension: CarbonDimension,
     setOpt: Option[HashSet[String]]) extends GenericParser {
   val (hasDictEncoding, set: HashSet[String]) = setOpt match {
@@ -163,7 +164,7 @@ case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends S
  * A RDD to combine all dictionary distinct values.
  *
  * @constructor create a RDD with RDD[(String, Iterable[String])]
- * @param prev the input RDD[(String, Iterable[String])]
+ * @param prev  the input RDD[(String, Iterable[String])]
  * @param model a model package load info
  */
 class CarbonAllDictionaryCombineRDD(
@@ -171,8 +172,9 @@ class CarbonAllDictionaryCombineRDD(
     model: DictionaryLoadModel)
   extends RDD[(Int, ColumnDistinctValues)](prev) with Logging {
 
-  override def getPartitions: Array[Partition] =
+  override def getPartitions: Array[Partition] = {
     firstParent[(String, Iterable[String])].partitions
+  }
 
   override def compute(split: Partition, context: TaskContext
   ): Iterator[(Int, ColumnDistinctValues)] = {
@@ -298,7 +300,7 @@ class CarbonGlobalDictionaryGenerateRDD(
       val pathService = CarbonCommonFactory.getPathService
       val carbonTablePath = pathService.getCarbonTablePath(model.columnIdentifier(split.index),
         model.hdfsLocation, model.table)
-      if (StringUtils.isNotBlank(model.hdfsTempLocation )) {
+      if (StringUtils.isNotBlank(model.hdfsTempLocation)) {
         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
           model.hdfsTempLocation)
       }
@@ -340,8 +342,11 @@ class CarbonGlobalDictionaryGenerateRDD(
         }
         val combineListTime = System.currentTimeMillis() - t1
         if (isHighCardinalityColumn) {
-          LOGGER.info("column " + model.table.getTableUniqueName + "." +
-                      model.primDimensions(split.index).getColName + " is high cardinality column")
+          LOGGER.info(s"column ${ model.table.getTableUniqueName }." +
+                      s"${
+                        model.primDimensions(split.index)
+                          .getColName
+                      } is high cardinality column")
         } else {
           isDictionaryLocked = dictLock.lockWithRetries()
           if (isDictionaryLocked) {
@@ -393,13 +398,13 @@ class CarbonGlobalDictionaryGenerateRDD(
           valuesBuffer.clear
           CarbonUtil.clearDictionaryCache(dictionaryForDistinctValueLookUp)
           dictionaryForDistinctValueLookUpCleared = true
-          LOGGER.info("\n columnName:" + model.primDimensions(split.index).getColName +
-                      "\n columnId:" + model.primDimensions(split.index).getColumnId +
-                      "\n new distinct values count:" + distinctValues.size() +
-                      "\n combine lists:" + combineListTime +
-                      "\n create dictionary cache:" + dictCacheTime +
-                      "\n sort list, distinct and write:" + dictWriteTime +
-                      "\n write sort info:" + sortIndexWriteTime)
+          LOGGER.info(s"\n columnName: ${ model.primDimensions(split.index).getColName }" +
+                      s"\n columnId: ${ model.primDimensions(split.index).getColumnId }" +
+                      s"\n new distinct values count: ${ distinctValues.size() }" +
+                      s"\n combine lists: $combineListTime" +
+                      s"\n create dictionary cache: $dictCacheTime" +
+                      s"\n sort list, distinct and write: $dictWriteTime" +
+                      s"\n write sort info: $sortIndexWriteTime")
         }
       } catch {
         case ex: Exception =>
@@ -438,14 +443,17 @@ class CarbonGlobalDictionaryGenerateRDD(
         (split.index, status, isHighCardinalityColumn)
       }
     }
+
     iter
   }
+
 }
+
 /**
  * Set column dictionry patition format
  *
- * @param id  partition id
- * @param dimension  current carbon dimension
+ * @param id        partition id
+ * @param dimension current carbon dimension
  */
 class CarbonColumnDictPatition(id: Int, dimension: CarbonDimension)
   extends Partition {
@@ -457,11 +465,11 @@ class CarbonColumnDictPatition(id: Int, dimension: CarbonDimension)
 /**
  * Use external column dict to generate global dictionary
  *
- * @param carbonLoadModel  carbon load model
- * @param sparkContext  spark context
- * @param table  carbon table identifier
- * @param dimensions  carbon dimenisons having predefined dict
- * @param hdfsLocation  carbon base store path
+ * @param carbonLoadModel carbon load model
+ * @param sparkContext    spark context
+ * @param table           carbon table identifier
+ * @param dimensions      carbon dimenisons having predefined dict
+ * @param hdfsLocation    carbon base store path
  * @param dictFolderPath  path of dictionary folder
  */
 class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
@@ -502,7 +510,7 @@ class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
     } catch {
       case ex: Exception =>
         logError(s"Error in reading pre-defined " +
-                 s"dictionary file:${ex.getMessage}")
+                 s"dictionary file:${ ex.getMessage }")
         throw ex
     } finally {
       if (csvReader != null) {
@@ -511,7 +519,7 @@ class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
         } catch {
           case ex: Exception =>
             logError(s"Error in closing csvReader of " +
-                     s"pre-defined dictionary file:${ex.getMessage}")
+                     s"pre-defined dictionary file:${ ex.getMessage }")
         }
       }
       if (inputStream != null) {
@@ -520,7 +528,7 @@ class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
         } catch {
           case ex: Exception =>
             logError(s"Error in closing inputStream of " +
-                     s"pre-defined dictionary file:${ex.getMessage}")
+                     s"pre-defined dictionary file:${ ex.getMessage }")
         }
       }
     }

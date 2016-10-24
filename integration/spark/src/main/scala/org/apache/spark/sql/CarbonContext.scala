@@ -44,14 +44,14 @@ class CarbonContext(
     metaStorePath: String) extends HiveContext(sc) with Logging {
   self =>
 
-  def this (sc: SparkContext) = {
-    this (sc,
+  def this(sc: SparkContext) = {
+    this(sc,
       new File(CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL).getCanonicalPath,
       new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
   }
 
-  def this (sc: SparkContext, storePath: String) = {
-    this (sc,
+  def this(sc: SparkContext, storePath: String) = {
+    this(sc,
       storePath,
       new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
   }
@@ -109,7 +109,7 @@ class CarbonContext(
       val hiveMetaStoreDB = metaStorePathAbsolute + "/metastore_db"
       logDebug(s"metastore db is going to be created in location : $hiveMetaStoreDB")
       super.configure() ++ Map((CarbonCommonConstants.HIVE_CONNECTION_URL,
-              s"jdbc:derby:;databaseName=$hiveMetaStoreDB;create=true"),
+        s"jdbc:derby:;databaseName=$hiveMetaStoreDB;create=true"),
         ("hive.metastore.warehouse.dir", metaStorePathAbsolute + "/hivemetadata"))
     } else {
       super.configure()
@@ -186,7 +186,7 @@ object CarbonContext {
   /**
    *
    * Requesting the extra executors other than the existing ones.
- *
+   *
    * @param sc
    * @param numExecutors
    * @return
@@ -194,12 +194,12 @@ object CarbonContext {
   final def ensureExecutors(sc: SparkContext, numExecutors: Int): Boolean = {
     sc.schedulerBackend match {
       case b: CoarseGrainedSchedulerBackend =>
-        val requiredExecutors = numExecutors -  b.numExistingExecutors
+        val requiredExecutors = numExecutors - b.numExistingExecutors
         LOGGER
-          .info("number of executors is =" + numExecutors + " existing executors are =" + b
-            .numExistingExecutors
+          .info(s"number of executors is =$numExecutors existing executors are =" +
+                s"${ b.numExistingExecutors }"
           )
-        if(requiredExecutors > 0) {
+        if (requiredExecutors > 0) {
           b.requestExecutors(requiredExecutors)
         }
         true

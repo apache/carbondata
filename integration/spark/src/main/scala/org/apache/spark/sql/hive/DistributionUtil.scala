@@ -34,6 +34,7 @@ import org.apache.carbondata.spark.load.CarbonLoaderUtil
 object DistributionUtil {
   @transient
   val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)
+
   /*
    * This method will return the list of executers in the cluster.
    * For this we take the  memory status of all node with getExecutorMemoryStatus
@@ -109,37 +110,41 @@ object DistributionUtil {
    * @return
    */
   def ensureExecutorsAndGetNodeList(blockList: Array[Distributable],
-    sparkContext: SparkContext):
+      sparkContext: SparkContext):
   Array[String] = {
     val nodeMapping = CarbonLoaderUtil.getRequiredExecutors(blockList.toSeq.asJava)
     var confExecutorsTemp: String = null
     if (sparkContext.getConf.contains("spark.executor.instances")) {
       confExecutorsTemp = sparkContext.getConf.get("spark.executor.instances")
     } else if (sparkContext.getConf.contains("spark.dynamicAllocation.enabled")
-      && sparkContext.getConf.get("spark.dynamicAllocation.enabled").trim
-      .equalsIgnoreCase("true")) {
+               && sparkContext.getConf.get("spark.dynamicAllocation.enabled").trim
+                 .equalsIgnoreCase("true")) {
       if (sparkContext.getConf.contains("spark.dynamicAllocation.maxExecutors")) {
         confExecutorsTemp = sparkContext.getConf.get("spark.dynamicAllocation.maxExecutors")
       }
     }
 
-    val confExecutors = if (null != confExecutorsTemp) confExecutorsTemp.toInt else 1
+    val confExecutors = if (null != confExecutorsTemp) {
+      confExecutorsTemp.toInt
+    } else {
+      1
+    }
     val requiredExecutors = if (nodeMapping.size > confExecutors) {
       confExecutors
-    } else {nodeMapping.size()}
+    } else { nodeMapping.size() }
 
-    val startTime = System.currentTimeMillis();
+    val startTime = System.currentTimeMillis()
     CarbonContext.ensureExecutors(sparkContext, requiredExecutors)
     var nodes = DistributionUtil.getNodeList(sparkContext)
-    var maxTimes = 30;
+    var maxTimes = 30
     while (nodes.length < requiredExecutors && maxTimes > 0) {
-      Thread.sleep(500);
+      Thread.sleep(500)
       nodes = DistributionUtil.getNodeList(sparkContext)
-      maxTimes = maxTimes - 1;
+      maxTimes = maxTimes - 1
     }
-    val timDiff = System.currentTimeMillis() - startTime;
-    LOGGER.info("Total Time taken to ensure the required executors : " + timDiff)
-    LOGGER.info("Time elapsed to allocate the required executors : " + (30 - maxTimes) * 500)
+    val timDiff = System.currentTimeMillis() - startTime
+    LOGGER.info(s"Total Time taken to ensure the required executors : $timDiff")
+    LOGGER.info(s"Time elapsed to allocate the required executors : ${ (30 - maxTimes) * 500 }")
     nodes.distinct
   }
 }
