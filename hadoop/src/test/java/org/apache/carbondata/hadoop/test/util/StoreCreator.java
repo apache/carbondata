@@ -347,16 +347,16 @@ public class StoreCreator {
       path.delete();
     }
 
-    DataProcessTaskStatus schmaModel = new DataProcessTaskStatus(databaseName, tableName);
-    schmaModel.setCsvFilePath(loadModel.getFactFilePath());
+    DataProcessTaskStatus dataProcessTaskStatus = new DataProcessTaskStatus(databaseName, tableName);
+    dataProcessTaskStatus.setCsvFilePath(loadModel.getFactFilePath());
     SchemaInfo info = new SchemaInfo();
     BlockDetails blockDetails = new BlockDetails(loadModel.getFactFilePath(),
         0, new File(loadModel.getFactFilePath()).length(), new String[] {"localhost"});
     GraphGenerator.blockInfo.put("qwqwq", new BlockDetails[] { blockDetails });
-    schmaModel.setBlocksID("qwqwq");
-    schmaModel.setEscapeCharacter("\\");
-    schmaModel.setQuoteCharacter("\"");
-    schmaModel.setCommentCharacter("#");
+    dataProcessTaskStatus.setBlocksID("qwqwq");
+    dataProcessTaskStatus.setEscapeCharacter("\\");
+    dataProcessTaskStatus.setQuoteCharacter("\"");
+    dataProcessTaskStatus.setCommentCharacter("#");
     info.setDatabaseName(databaseName);
     info.setTableName(tableName);
     info.setSerializationNullFormat(
@@ -366,10 +366,10 @@ public class StoreCreator {
     info.setBadRecordsLoggerAction(
         TableOptionConstant.BAD_RECORDS_ACTION.getName() + "," + "force");
 
-    generateGraph(schmaModel, info, loadModel.getTableName(), "0", loadModel.getSchema(), null,
+    generateGraph(dataProcessTaskStatus, info, loadModel.getTableName(), "0", loadModel.getSchema(), null,
         loadModel.getLoadMetadataDetails());
 
-    DataGraphExecuter graphExecuter = new DataGraphExecuter(schmaModel);
+    DataGraphExecuter graphExecuter = new DataGraphExecuter(dataProcessTaskStatus);
     graphExecuter
         .executeGraph(graphPath, new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN),
             info, "0", loadModel.getSchema());
@@ -449,7 +449,7 @@ public class StoreCreator {
   /**
    * generate graph
    *
-   * @param schmaModel
+   * @param dataProcessTaskStatus
    * @param info
    * @param tableName
    * @param partitionID
@@ -458,20 +458,20 @@ public class StoreCreator {
    * @param loadMetadataDetails
    * @throws GraphGeneratorException
    */
-  private static void generateGraph(IDataProcessStatus schmaModel, SchemaInfo info,
+  private static void generateGraph(IDataProcessStatus dataProcessTaskStatus, SchemaInfo info,
       String tableName, String partitionID, CarbonDataLoadSchema schema, String factStoreLocation,
       List<LoadMetadataDetails> loadMetadataDetails)
       throws GraphGeneratorException {
     DataLoadModel model = new DataLoadModel();
-    model.setCsvLoad(null != schmaModel.getCsvFilePath() || null != schmaModel.getFilesToProcess());
+    model.setCsvLoad(null != dataProcessTaskStatus.getCsvFilePath() || null != dataProcessTaskStatus.getFilesToProcess());
     model.setSchemaInfo(info);
-    model.setTableName(schmaModel.getTableName());
+    model.setTableName(dataProcessTaskStatus.getTableName());
     model.setTaskNo("1");
-    model.setBlocksID(schmaModel.getBlocksID());
+    model.setBlocksID(dataProcessTaskStatus.getBlocksID());
     model.setFactTimeStamp(readCurrentTime());
-    model.setEscapeCharacter(schmaModel.getEscapeCharacter());
-    model.setQuoteCharacter(schmaModel.getQuoteCharacter());
-    model.setCommentCharacter(schmaModel.getCommentCharacter());
+    model.setEscapeCharacter(dataProcessTaskStatus.getEscapeCharacter());
+    model.setQuoteCharacter(dataProcessTaskStatus.getQuoteCharacter());
+    model.setCommentCharacter(dataProcessTaskStatus.getCommentCharacter());
     if (null != loadMetadataDetails && !loadMetadataDetails.isEmpty()) {
       model.setLoadNames(
           CarbonDataProcessorUtil.getLoadNameFromLoadMetaDataDetails(loadMetadataDetails));
@@ -479,8 +479,8 @@ public class StoreCreator {
           .getModificationOrDeletionTimesFromLoadMetadataDetails(loadMetadataDetails));
     }
     boolean hdfsReadMode =
-        schmaModel.getCsvFilePath() != null && schmaModel.getCsvFilePath().startsWith("hdfs:");
-    int allocate = null != schmaModel.getCsvFilePath() ? 1 : schmaModel.getFilesToProcess().size();
+        dataProcessTaskStatus.getCsvFilePath() != null && dataProcessTaskStatus.getCsvFilePath().startsWith("hdfs:");
+    int allocate = null != dataProcessTaskStatus.getCsvFilePath() ? 1 : dataProcessTaskStatus.getFilesToProcess().size();
     String outputLocation = CarbonProperties.getInstance()
         .getProperty("store_output_location", "../carbon-store/system/carbon/etl");
     GraphGenerator generator =
