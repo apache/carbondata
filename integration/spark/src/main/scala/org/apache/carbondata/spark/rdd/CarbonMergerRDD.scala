@@ -53,7 +53,7 @@ class CarbonMergerRDD[K, V](
     sc: SparkContext,
     result: MergeResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    carbonMergerMapping : CarbonMergerMapping,
+    carbonMergerMapping: CarbonMergerMapping,
     confExecutorsTemp: String)
   extends RDD[(K, V)](sc, Nil) with Logging {
 
