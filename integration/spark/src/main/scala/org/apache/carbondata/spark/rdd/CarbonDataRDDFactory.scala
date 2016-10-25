@@ -667,7 +667,7 @@ object CarbonDataRDDFactory extends Logging {
       columinar: Boolean,
       isAgg: Boolean,
       partitionStatus: String = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS,
-      dataFrame: Option[DataFrame] = None) {
+      dataFrame: Option[DataFrame] = None): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
 
     // for handling of the segment Merging.

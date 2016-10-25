@@ -1024,7 +1024,34 @@ case class LoadTable(
     tableName: String,
     factPathFromUser: String,
     dimFilesPath: Seq[DataLoadTableFileMapping],
-    partionValues: scala.collection.immutable.Map[String, String],
+    options: scala.collection.immutable.Map[String, String],
+    isOverwriteExist: Boolean = false,
+    var inputSqlString: String = null,
+    dataFrame: Option[DataFrame] = None,
+    useKettle: Boolean = true) extends RunnableCommand {
+
+  def run(sqlContext: SQLContext): Seq[Row] = {
+    if (useKettle) {
+      LoadTableUsingKettle(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
+        options, isOverwriteExist, inputSqlString, dataFrame).run(sqlContext)
+    } else {
+      LoadTableUsingProcessorStep().run(sqlContext)
+    }
+  }
+}
+
+case class LoadTableUsingProcessorStep() extends RunnableCommand {
+  def run(sqlContext: SQLContext): Seq[Row] = {
+    throw new UnsupportedOperationException("work in progress")
+  }
+}
+
+case class LoadTableUsingKettle(
+    databaseNameOp: Option[String],
+    tableName: String,
+    factPathFromUser: String,
+    dimFilesPath: Seq[DataLoadTableFileMapping],
+    options: scala.collection.immutable.Map[String, String],
     isOverwriteExist: Boolean = false,
     var inputSqlString: String = null,
     dataFrame: Option[DataFrame] = None) extends RunnableCommand {
@@ -1104,19 +1131,19 @@ case class LoadTable(
       val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
       val kettleHomePath = CarbonScalaUtil.getKettleHome(sqlContext)
 
-      val delimiter = partionValues.getOrElse("delimiter", ",")
-      val quoteChar = partionValues.getOrElse("quotechar", "\"")
-      val fileHeader = partionValues.getOrElse("fileheader", "")
-      val escapeChar = partionValues.getOrElse("escapechar", "\\")
-      val commentchar = partionValues.getOrElse("commentchar", "#")
-      val columnDict = partionValues.getOrElse("columndict", null)
-      val serializationNullFormat = partionValues.getOrElse("serialization_null_format", "\\N")
-      val badRecordsLoggerEnable = partionValues.getOrElse("bad_records_logger_enable", "false")
-      val badRecordsLoggerRedirect = partionValues.getOrElse("bad_records_action", "force")
-      val allDictionaryPath = partionValues.getOrElse("all_dictionary_path", "")
-      val complex_delimiter_level_1 = partionValues.getOrElse("complex_delimiter_level_1", "\\$")
-      val complex_delimiter_level_2 = partionValues.getOrElse("complex_delimiter_level_2", "\\:")
-      val multiLine = partionValues.getOrElse("multiline", "false").trim.toLowerCase match {
+      val delimiter = options.getOrElse("delimiter", ",")
+      val quoteChar = options.getOrElse("quotechar", "\"")
+      val fileHeader = options.getOrElse("fileheader", "")
+      val escapeChar = options.getOrElse("escapechar", "\\")
+      val commentchar = options.getOrElse("commentchar", "#")
+      val columnDict = options.getOrElse("columndict", null)
+      val serializationNullFormat = options.getOrElse("serialization_null_format", "\\N")
+      val badRecordsLoggerEnable = options.getOrElse("bad_records_logger_enable", "false")
+      val badRecordsLoggerRedirect = options.getOrElse("bad_records_action", "force")
+      val allDictionaryPath = options.getOrElse("all_dictionary_path", "")
+      val complex_delimiter_level_1 = options.getOrElse("complex_delimiter_level_1", "\\$")
+      val complex_delimiter_level_2 = options.getOrElse("complex_delimiter_level_2", "\\:")
+      val multiLine = options.getOrElse("multiline", "false").trim.toLowerCase match {
         case "true" => true
         case "false" => false
         case illegal =>
@@ -1124,7 +1151,7 @@ case class LoadTable(
             "load DDL which you set can only be 'true' or 'false', please check your input DDL."
           throw new MalformedCarbonCommandException(errorMessage)
       }
-      val maxColumns = partionValues.getOrElse("maxcolumns", null)
+      val maxColumns = options.getOrElse("maxcolumns", null)
       carbonLoadModel.setMaxColumns(maxColumns)
       carbonLoadModel.setEscapeChar(escapeChar)
       carbonLoadModel.setQuoteChar(quoteChar)
