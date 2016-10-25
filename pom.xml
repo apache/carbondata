@@ -93,7 +93,7 @@
 
   <modules>
     <module>common</module>
-    <module>format</module>
+    <module>format/format-java</module>
     <module>core</module>
     <module>processing</module>
     <module>hadoop</module>

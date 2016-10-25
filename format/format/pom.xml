@@ -23,14 +23,16 @@
     <groupId>org.apache.carbondata</groupId>
     <artifactId>carbondata-parent</artifactId>
     <version>0.2.0-incubating-SNAPSHOT</version>
-    <relativePath>../pom.xml</relativePath>
+    <relativePath>../../pom.xml</relativePath>
   </parent>
 
   <artifactId>carbondata-format</artifactId>
   <name>Apache CarbonData :: Format</name>
+  <packaging>pom</packaging>
 
   <properties>
-    <dev.path>${basedir}/../dev</dev.path>
+    <dev.path>${basedir}/../../dev</dev.path>
+    <thrift.output>${basedir}/../format-java/src/main/java</thrift.output>
   </properties>
 
   <dependencies>
@@ -57,8 +59,8 @@
             <phase>generate-sources</phase>
             <configuration>
               <generator>java</generator>
-              <outputDirectory>target/gen-java</outputDirectory>
-              <compileOutput>true</compileOutput>
+              <outputDirectory>${thrift.output}</outputDirectory>
+              <compileOutput>false</compileOutput>
             </configuration>
             <goals>
               <goal>compile</goal>
