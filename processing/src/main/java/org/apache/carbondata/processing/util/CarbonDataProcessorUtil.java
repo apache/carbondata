@@ -21,6 +21,7 @@ package org.apache.carbondata.processing.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -38,8 +39,10 @@ import org.apache.carbondata.core.load.LoadMetadataDetails;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.CarbonUtilException;
+import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 
+import org.apache.commons.lang3.ArrayUtils;
 import org.pentaho.di.core.CheckResult;
 import org.pentaho.di.core.CheckResultInterface;
 import org.pentaho.di.core.Const;
@@ -279,5 +282,26 @@ public final class CarbonDataProcessorUtil {
         carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId + "");
     String localDataLoadFolderLocation = carbonDataDirectoryPath + File.separator + taskId;
     return localDataLoadFolderLocation;
+  }
+
+  /**
+   * Preparing the boolean [] to map whether the dimension is no Dictionary or not.
+   */
+  public static boolean[] getNoDictionaryMapping(DataField[] fields) {
+    List<Boolean> noDictionaryMapping = new ArrayList<Boolean>();
+    for (DataField field : fields) {
+      // for  complex type need to break the loop
+      if (field.getColumn().isComplex()) {
+        break;
+      }
+
+      if (!field.hasDictionaryEncoding() && field.getColumn().isDimesion()) {
+        noDictionaryMapping.add(true);
+      } else if (field.getColumn().isDimesion()) {
+        noDictionaryMapping.add(false);
+      }
+    }
+    return ArrayUtils
+        .toPrimitive(noDictionaryMapping.toArray(new Boolean[noDictionaryMapping.size()]));
   }
 }

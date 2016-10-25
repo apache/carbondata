@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -37,7 +38,7 @@ import org.apache.carbondata.processing.sortandgroupby.sortdata.SortTempFileChun
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
-public class SingleThreadFinalSortFilesMerger {
+public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   /**
    * LOGGER
    */
@@ -221,7 +222,7 @@ public class SingleThreadFinalSortFilesMerger {
    * @return sorted row
    * @throws CarbonSortKeyAndGroupByException
    */
-  public Object[] next() throws CarbonDataWriterException {
+  public Object[] next() {
     return getSortedRecordFromFile();
   }
 
