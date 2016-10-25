@@ -35,8 +35,6 @@ import org.apache.carbondata.processing.newflow.converter.RowConverter;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
-import org.apache.commons.lang3.ArrayUtils;
-
 /**
  * It converts the complete row if necessary, dictionary columns are encoded with dictionary values
  * and nondictionary values are converted to binary.
