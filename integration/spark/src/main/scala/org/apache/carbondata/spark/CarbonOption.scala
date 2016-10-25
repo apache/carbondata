@@ -42,4 +42,5 @@ class CarbonOption(options: Map[String, String]) {
 
   def compress: Boolean = options.getOrElse("compress", "false").toBoolean
 
+  def useKettle: Boolean = options.getOrElse("useKettle", "true").toBoolean
 }
