@@ -82,7 +82,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
      TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
       """)
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex:Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
 
     try {
@@ -92,7 +92,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
      TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
       """)
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex:Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
 
     try {
@@ -107,7 +107,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
      TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
       """)
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex:Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
   }
 
@@ -221,7 +221,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       case ex: MalformedCarbonCommandException =>
         assertResult(ex.getMessage)("Error: COLUMNDICT and ALL_DICTIONARY_PATH can not be used together " +
           "in options")
-      case _ : Throwable => assert(false)
+      case _ :Throwable => assert(false)
     }
   }
 
@@ -236,7 +236,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       case ex: DataLoadingException =>
         assertResult(ex.getMessage)("Column gamePointId is not a key column. Only key column can be part " +
           "of dictionary and used in COLUMNDICT option.")
-      case _ : Throwable => assert(false)
+      case _ :Throwable => assert(false)
     }
   }
 

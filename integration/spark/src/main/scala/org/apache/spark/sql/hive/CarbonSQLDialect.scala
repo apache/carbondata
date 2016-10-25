@@ -37,7 +37,7 @@ private[spark] class CarbonSQLDialect(hiveContext: HiveContext) extends ParserDi
       // because hive can no parse carbon command
       case ce: MalformedCarbonCommandException =>
         throw ce
-      case _ : Throwable =>
+      case _: Throwable =>
         HiveQl.parseSql(sqlText)
     }
   }

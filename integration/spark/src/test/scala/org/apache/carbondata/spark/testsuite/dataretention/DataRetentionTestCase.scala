@@ -258,7 +258,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     } catch {
       case e: MalformedCarbonCommandException =>
         assert(!e.getMessage.equalsIgnoreCase("Invalid query"))
-      case _ : Throwable => assert(true)
+      case _ :Throwable => assert(true)
     }
 
     try {
@@ -267,7 +267,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     } catch {
       case e: MalformedCarbonCommandException =>
         assert(!e.getMessage.equalsIgnoreCase("Invalid query"))
-      case _ : Throwable => assert(true)
+      case _ :Throwable => assert(true)
     }
 
     try {

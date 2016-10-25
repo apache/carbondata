@@ -52,7 +52,6 @@ public class CarbonInputFormat_FT extends TestCase {
     CarbonInputFormat carbonInputFormat = new CarbonInputFormat();
     JobConf jobConf = new JobConf(new Configuration());
     Job job = Job.getInstance(jobConf);
-    //Job job = new Job(jobConf);
     FileInputFormat.addInputPath(job, new Path("/opt/carbonstore/db/table1"));
     job.getConfiguration().set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, "1,2");
     List splits = carbonInputFormat.getSplits(job);
