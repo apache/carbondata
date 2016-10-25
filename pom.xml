@@ -264,16 +264,9 @@
 
   <profiles>
     <profile>
-      <id>build-all</id>
+      <id>build-with-format</id>
       <modules>
         <module>format</module>
-        <module>common</module>
-        <module>core</module>
-        <module>processing</module>
-        <module>hadoop</module>
-        <module>integration/spark</module>
-        <module>assembly</module>
-        <module>examples</module>
       </modules>
     </profile>
     <profile>
