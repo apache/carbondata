@@ -16,35 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.carbondata.processing.newflow.converter.impl;
 
-package org.apache.carbondata.core.devapi;
+import org.apache.carbondata.processing.newflow.converter.FieldConverter;
 
-public abstract class GeneratingBiDictionary<K, V> implements BiDictionary<K, V> {
+public abstract class AbstractDictionaryFieldConverterImpl implements FieldConverter {
 
-  private DictionaryGenerator<K, V> generator;
-
-  public GeneratingBiDictionary(DictionaryGenerator<K, V> generator) {
-    this.generator = generator;
-  }
-
-  @Override
-  public K getOrGenerateKey(V value) throws DictionaryGenerationException {
-    K key = getKey(value);
-    if (key != null) {
-      return key;
-    } else {
-      K newKey = generator.generateKey(value);
-      assert(newKey != null);
-      put(newKey, value);
-      return newKey;
-    }
-  }
-
-  /**
-   * put the input key value pair into the dictionary
-   * @param key dictionary key
-   * @param value dictionary value
-   */
-  protected abstract void put(K key, V value);
+  public abstract int getColumnCardinality();
 
 }

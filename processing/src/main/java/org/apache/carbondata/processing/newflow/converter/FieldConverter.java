@@ -17,34 +17,20 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.devapi;
+package org.apache.carbondata.processing.newflow.converter;
 
-public abstract class GeneratingBiDictionary<K, V> implements BiDictionary<K, V> {
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
+import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
-  private DictionaryGenerator<K, V> generator;
-
-  public GeneratingBiDictionary(DictionaryGenerator<K, V> generator) {
-    this.generator = generator;
-  }
-
-  @Override
-  public K getOrGenerateKey(V value) throws DictionaryGenerationException {
-    K key = getKey(value);
-    if (key != null) {
-      return key;
-    } else {
-      K newKey = generator.generateKey(value);
-      assert(newKey != null);
-      put(newKey, value);
-      return newKey;
-    }
-  }
+/**
+ * This interface converts/transforms the column field.
+ */
+public interface FieldConverter {
 
   /**
-   * put the input key value pair into the dictionary
-   * @param key dictionary key
-   * @param value dictionary value
+   * It converts the column field and updates the data in same location/index in row.
+   * @param row
+   * @throws CarbonDataLoadingException
    */
-  protected abstract void put(K key, V value);
-
+  void convert(CarbonRow row) throws CarbonDataLoadingException;
 }

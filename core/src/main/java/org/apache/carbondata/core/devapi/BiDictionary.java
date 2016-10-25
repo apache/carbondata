@@ -27,7 +27,7 @@ public interface BiDictionary<K, V> {
    * @param value dictionary value
    * @return dictionary key
    */
-  K getOrGenerateKey(V value) throws Exception;
+  K getOrGenerateKey(V value) throws DictionaryGenerationException;
 
   /**
    * Get the dictionary key corresponding to the input value, return null if value is not exist in

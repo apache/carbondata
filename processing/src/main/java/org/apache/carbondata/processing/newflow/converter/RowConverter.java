@@ -16,35 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.carbondata.processing.newflow.converter;
 
-package org.apache.carbondata.core.devapi;
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
+import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
-public abstract class GeneratingBiDictionary<K, V> implements BiDictionary<K, V> {
+/**
+ * convert the row
+ */
+public interface RowConverter {
 
-  private DictionaryGenerator<K, V> generator;
+  CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException;
 
-  public GeneratingBiDictionary(DictionaryGenerator<K, V> generator) {
-    this.generator = generator;
-  }
-
-  @Override
-  public K getOrGenerateKey(V value) throws DictionaryGenerationException {
-    K key = getKey(value);
-    if (key != null) {
-      return key;
-    } else {
-      K newKey = generator.generateKey(value);
-      assert(newKey != null);
-      put(newKey, value);
-      return newKey;
-    }
-  }
-
-  /**
-   * put the input key value pair into the dictionary
-   * @param key dictionary key
-   * @param value dictionary value
-   */
-  protected abstract void put(K key, V value);
-
+  void finish();
 }
