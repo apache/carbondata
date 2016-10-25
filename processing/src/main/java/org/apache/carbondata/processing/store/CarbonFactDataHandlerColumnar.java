@@ -42,7 +42,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -271,6 +270,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private boolean compactionFlow;
 
+  private CarbonTable carbonTable;
+  private String tempFolder;
+  private String taskNo;
+  private String partitionId;
+  private String segmentId;
+
   /**
    * CarbonFactDataHandler constructor
    */
@@ -359,8 +364,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.dimLens = this.segmentProperties.getDimColumnsCardinality();
     this.carbonDataFileAttributes = carbonFactDataHandlerModel.getCarbonDataFileAttributes();
     //TODO need to pass carbon table identifier to metadata
-    CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
+    this.carbonTable = carbonFactDataHandlerModel.getCarbonTable();
+    this.tempFolder = carbonFactDataHandlerModel.getTempFolder();
+    this.taskNo = carbonFactDataHandlerModel.getTaskNo();
+    this.partitionId = carbonFactDataHandlerModel.getPartitionId();
+    this.segmentId = carbonFactDataHandlerModel.getSegmentId();
     dimensionType =
         CarbonUtil.identifyDimensionType(carbonTable.getDimensionByTableName(tableName));
 
@@ -1112,7 +1120,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         mdKeyLength, tableName, fileManager, keyBlockSize, aggKeyBlock, isComplexTypes(),
         noDictionaryCount, carbonDataFileAttributes, databaseName, wrapperColumnSchemaList,
         noDictionaryCount, dimensionType, carbonDataDirectoryPath, colCardinality,
-        segmentProperties, tableBlockSize);
+        segmentProperties, tableBlockSize, carbonTable, tempFolder, taskNo, partitionId, segmentId);
   }
 
   private boolean[] isComplexTypes() {

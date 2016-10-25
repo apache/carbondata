@@ -40,7 +40,6 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletBTreeIndex;
 import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletMinMaxIndex;
@@ -69,6 +68,7 @@ import org.apache.carbondata.processing.mdkeygen.file.FileData;
 import org.apache.carbondata.processing.mdkeygen.file.IFileManagerComposite;
 import org.apache.carbondata.processing.store.CarbonDataFileAttributes;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
+import org.apache.carbondata.processing.util.LocalDirectoryChooser;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.hadoop.io.IOUtils;
@@ -176,11 +176,18 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
 
   private List<BlockIndexInfo> blockIndexInfoList;
 
+  private CarbonTable carbonTable;
+  private String tempFolder;
+  private String taskNo;
+  private String partitionId;
+  private String segmentId;
+
   public AbstractFactDataWriter(String storeLocation, int measureCount, int mdKeyLength,
       String databaseName, String tableName, IFileManagerComposite fileManager, int[] keyBlockSize,
       CarbonDataFileAttributes carbonDataFileAttributes, List<ColumnSchema> columnSchema,
       String carbonDataDirectoryPath, int[] colCardinality, SegmentProperties segmentProperties,
-      int blocksize) {
+      int blocksize, CarbonTable carbonTable, String tempFolder, String taskNo, String partitionId,
+      String segmentId) {
 
     // measure count
     this.measureCount = measureCount;
@@ -191,6 +198,11 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     this.databaseName = databaseName;
 
     this.storeLocation = storeLocation;
+    this.carbonTable = carbonTable;
+    this.tempFolder = tempFolder;
+    this.taskNo = taskNo;
+    this.partitionId = partitionId;
+    this.segmentId = segmentId;
     this.segmentProperties = segmentProperties;
     this.blockletInfoList =
         new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
@@ -214,8 +226,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     // in case of compaction we will pass the cardinality.
     this.localCardinality = colCardinality;
     this.carbonDataFileAttributes = carbonDataFileAttributes;
-    CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     carbonTablePath =
         CarbonStorePath.getCarbonTablePath(storeLocation, carbonTable.getCarbonTableIdentifier());
     //TODO: We should delete the levelmetadata file after reading here.
@@ -302,6 +312,10 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     currentFileSize += blockletDataSize;
   }
 
+  private String getLocalDirectory() {
+    return LocalDirectoryChooser.getLocalDirectory(carbonTable, tempFolder, taskNo, partitionId,
+        segmentId);
+  }
   /**
    * This method will be used to initialize the channel
    *
@@ -317,7 +331,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     String actualFileNameVal = carbonDataFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     FileData fileData = new FileData(actualFileNameVal, this.storeLocation);
     fileManager.add(fileData);
-    this.fileName = storeLocation + File.separator + carbonDataFileName
+    this.fileName = getLocalDirectory() + File.separator + carbonDataFileName
         + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     this.fileCount++;
     try {

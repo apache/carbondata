@@ -176,7 +176,7 @@ public class SortKeyStep extends BaseStep {
           meta.getDimensionCount() - meta.getComplexDimensionCount(),
           meta.getComplexDimensionCount(), meta.getMeasureCount(), this.observer,
           meta.getNoDictionaryCount(), meta.getPartitionID(), meta.getSegmentId() + "",
-          meta.getTaskNo(), this.noDictionaryColMaping);
+          meta.getTaskNo(), this.noDictionaryColMaping, meta.getTempFolder());
       try {
         // initialize sort
         this.sortDataRows.initialize(meta.getDatabaseName(), meta.getTableName());
@@ -234,7 +234,7 @@ public class SortKeyStep extends BaseStep {
       String logMessage =
           "Summary: Carbon Sort Key Step: Read: " + readCounter + ": Write: " + writeCounter;
       LOGGER.info(logMessage);
-      putRow(data.getOutputRowMeta(), new Object[0]);
+      putRow(data.getOutputRowMeta(), this.sortDataRows.getFinalFilePathList());
       setOutputDone();
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordSortRowsStepTotalTime(
           meta.getPartitionID(), System.currentTimeMillis());

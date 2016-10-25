@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 
@@ -165,6 +166,12 @@ public class CarbonFactDataHandlerModel {
    * or not.
    */
   private boolean isCompactionFlow;
+
+  private CarbonTable carbonTable;
+  private String tempFolder;
+  private String taskNo;
+  private String partitionId;
+  private String segmentId;
 
   public int[] getColCardinality() {
     return colCardinality;
@@ -402,5 +409,44 @@ public class CarbonFactDataHandlerModel {
     this.wrapperColumnSchema = wrapperColumnSchema;
   }
 
+  public String getPartitionId() {
+    return partitionId;
+  }
+
+  public void setPartitionId(String partitionId) {
+    this.partitionId = partitionId;
+  }
+
+  public String getSegmentId() {
+    return segmentId;
+  }
+
+  public void setSegmentId(String segmentId) {
+    this.segmentId = segmentId;
+  }
+
+  public String getTaskNo() {
+    return taskNo;
+  }
+
+  public void setTaskNo(String taskNo) {
+    this.taskNo = taskNo;
+  }
+
+  public String getTempFolder() {
+    return tempFolder;
+  }
+
+  public void setTempFolder(String tempFolder) {
+    this.tempFolder = tempFolder;
+  }
+
+  public CarbonTable getCarbonTable() {
+    return carbonTable;
+  }
+
+  public void setCarbonTable(CarbonTable carbonTable) {
+    this.carbonTable = carbonTable;
+  }
 }
 

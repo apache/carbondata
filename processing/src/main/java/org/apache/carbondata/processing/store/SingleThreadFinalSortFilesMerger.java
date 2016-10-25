@@ -20,7 +20,6 @@
 package org.apache.carbondata.processing.store;
 
 import java.io.File;
-import java.io.FileFilter;
 import java.util.AbstractQueue;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
@@ -96,6 +95,7 @@ public class SingleThreadFinalSortFilesMerger {
 
   private char[] aggType;
 
+  private String[] tempFiles;
   /**
    * below code is to check whether dimension
    * is of no dictionary type or not
@@ -104,7 +104,7 @@ public class SingleThreadFinalSortFilesMerger {
 
   public SingleThreadFinalSortFilesMerger(String tempFileLocation, String tableName,
       int dimensionCount, int complexDimensionCount, int measureCount, int noDictionaryCount,
-      char[] aggType, boolean[] isNoDictionaryColumn) {
+      char[] aggType, boolean[] isNoDictionaryColumn, String[] tempFiles) {
     this.tempFileLocation = tempFileLocation;
     this.tableName = tableName;
     this.dimensionCount = dimensionCount;
@@ -113,6 +113,7 @@ public class SingleThreadFinalSortFilesMerger {
     this.aggType = aggType;
     this.noDictionaryCount = noDictionaryCount;
     this.isNoDictionaryColumn = isNoDictionaryColumn;
+    this.tempFiles = tempFiles;
   }
 
   /**
@@ -121,17 +122,13 @@ public class SingleThreadFinalSortFilesMerger {
    * @throws CarbonSortKeyAndGroupByException
    */
   public void startFinalMerge() throws CarbonDataWriterException {
-    // get all the merged files
-    File file = new File(tempFileLocation);
-
-    File[] fileList = file.listFiles(new FileFilter() {
-      public boolean accept(File pathname) {
-        return pathname.getName().startsWith(tableName);
-      }
-    });
-
-    if (null == fileList || fileList.length < 0) {
+    if (null == this.tempFiles || this.tempFiles.length < 1) {
       return;
+    }
+    // get all the merged files
+    File[] fileList = new File[this.tempFiles.length];
+    for(int i = 0; i < this.tempFiles.length; i++) {
+      fileList[i] = new File(this.tempFiles[i]);
     }
     startSorting(fileList);
   }

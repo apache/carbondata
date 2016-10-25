@@ -206,6 +206,8 @@ public class GraphGenerator {
 
   private String rddIteratorKey;
 
+  private final String tempFolder;
+
   public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
       String factStoreLocation, int allocate,
       CarbonDataLoadSchema carbonDataLoadSchema, String segmentId) {
@@ -229,6 +231,7 @@ public class GraphGenerator {
     this.segmentId = segmentId;
     this.escapeCharacter = dataLoadModel.getEscapeCharacter();
     this.maxColumns = dataLoadModel.getMaxColumns();
+    this.tempFolder = dataLoadModel.getTempFolder();
     initialise();
     LOGGER.info("************* Is Columnar Storage" + isColumnar);
   }
@@ -633,6 +636,7 @@ public class GraphGenerator {
             .split(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER).length + "");
     carbonMdKey.setMeasureDataType(graphConfiguration.getMeasureDataTypeInfo());
     carbonMdKey.setTaskNo(taskNo);
+    carbonMdKey.setTempFolder(tempFolder);
     carbonMdKey.setFactTimeStamp(factTimeStamp);
     StepMeta mdkeyStepMeta =
         new StepMeta(GraphGeneratorConstants.MDKEY_GENERATOR + graphConfiguration.getTableName(),
@@ -774,6 +778,7 @@ public class GraphGenerator {
     sortRowsMeta.setMeasureDataType(graphConfiguration.getMeasureDataTypeInfo());
     sortRowsMeta.setNoDictionaryDimsMapping(RemoveDictionaryUtil
         .convertBooleanArrToString(graphConfiguration.getIsNoDictionaryDimMapping()));
+    sortRowsMeta.setTempFolder(tempFolder);
 
     StepMeta sortRowsStep = new StepMeta(
         GraphGeneratorConstants.SORT_KEY_AND_GROUPBY + graphConfiguration.getTableName(),
