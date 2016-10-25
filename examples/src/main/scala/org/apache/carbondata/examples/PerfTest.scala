@@ -126,9 +126,6 @@ class QueryRunner(sqlContext: SQLContext, dataFrame: DataFrame, datasources: Seq
             dataFrame.sqlContext.sparkContext.hadoopConfiguration.set("orc.compress", "SNAPPY")
             loadToNative(datasource)
           case "carbon" =>
-            sqlContext.sql(s"DROP TABLE IF EXISTS ${PerfTest.makeTableName(datasource)}")
-            println(s"loading data into $datasource, path: " +
-                s"${dataFrame.sqlContext.asInstanceOf[CarbonContext].storePath}")
             dataFrame.write
                 .format("org.apache.spark.sql.CarbonSource")
                 .option("tableName", PerfTest.makeTableName(datasource))
@@ -145,15 +142,13 @@ class QueryRunner(sqlContext: SQLContext, dataFrame: DataFrame, datasources: Seq
 
   def shutDown(): Unit = {
     // drop all tables and temp files
-    datasources.foreach { datasource =>
-      datasource match {
-        case "parquet" | "orc" =>
-          val f = new File(PerfTest.savePath(datasource))
-          if (f.exists()) f.delete()
-        case "carbon" =>
-          sqlContext.sql(s"DROP TABLE IF EXISTS ${PerfTest.makeTableName("carbon")}")
-        case _ => sys.error("unsupported data source")
-      }
+    datasources.foreach {
+      case datasource@("parquet" | "orc") =>
+        val f = new File(PerfTest.savePath(datasource))
+        if (f.exists()) f.delete()
+      case "carbon" =>
+        sqlContext.sql(s"DROP TABLE IF EXISTS ${PerfTest.makeTableName("carbon")}")
+      case _ => sys.error("unsupported data source")
     }
   }
 }

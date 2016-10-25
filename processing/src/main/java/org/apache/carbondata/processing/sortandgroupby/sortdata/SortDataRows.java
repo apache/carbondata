@@ -43,6 +43,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.processing.iterator.CarbonIterator;
 import org.apache.carbondata.processing.schema.metadata.SortObserver;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
@@ -164,6 +165,15 @@ public class SortDataRows {
    * semaphore which will used for managing sorted data object arrays
    */
   private Semaphore semaphore;
+
+  /**
+   * Indicating whether has spilled data into sort temp file, it is used for deciding doing
+   * merge sort or not.
+   * If it is false after all rows are added, then SortKeyStep will send this object in the putRow,
+   * and MDKeyGenStep will use this object as input to write carbon files. Otherwise do merge sort
+   * in MDKeyGenStep.
+   */
+  private boolean spilled = false;
 
   public SortDataRows(String tableName, int dimColCount, int complexDimColCount,
       int measureColCount, SortObserver observer, int noDictionaryCount, String partitionID,
@@ -291,32 +301,46 @@ public class SortDataRows {
     int currentSize = entryCount;
 
     if (sortBufferSize == currentSize) {
-      LOGGER.debug("************ Writing to temp file ********** ");
-
-      File[] fileList;
-      if (procFiles.size() >= numberOfIntermediateFileToBeMerged) {
-        synchronized (lockObject) {
-          fileList = procFiles.toArray(new File[procFiles.size()]);
-          this.procFiles = new ArrayList<File>(1);
-        }
-
-        LOGGER.debug("Sumitting request for intermediate merging no of files: " + fileList.length);
-        startIntermediateMerging(fileList);
-      }
-      Object[][] recordHolderListLocal = recordHolderList;
-      try {
-        semaphore.acquire();
-        dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(recordHolderListLocal));
-      } catch (InterruptedException e) {
-        LOGGER.error(
-            "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
-        throw new CarbonSortKeyAndGroupByException(e.getMessage());
-      }
-      // create the new holder Array
-      this.recordHolderList = new Object[this.sortBufferSize][];
-      this.entryCount = 0;
+      // buffer is full, write to temp file and do merge sort later
+      spillAsync();
+      spilled = true;
     }
     recordHolderList[entryCount++] = row;
+  }
+
+  private void spillAsync() throws CarbonSortKeyAndGroupByException {
+    LOGGER.debug("************ Writing to temp file ********** ");
+
+    File[] fileList;
+    if (procFiles.size() >= numberOfIntermediateFileToBeMerged) {
+      synchronized (lockObject) {
+        fileList = procFiles.toArray(new File[procFiles.size()]);
+        this.procFiles = new ArrayList<File>(1);
+      }
+
+      LOGGER.debug("Sumitting request for intermediate merging no of files: " + fileList.length);
+      startIntermediateMerging(fileList);
+    }
+    Object[][] recordHolderListLocal = recordHolderList;
+    try {
+      semaphore.acquire();
+      dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(recordHolderListLocal));
+    } catch (InterruptedException e) {
+      LOGGER.error(
+          "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
+      throw new CarbonSortKeyAndGroupByException(e.getMessage());
+    }
+    // create the new holder Array
+    this.recordHolderList = new Object[this.sortBufferSize][];
+    this.entryCount = 0;
+  }
+
+  /**
+   * Need to do merge sort if spilled to temp file, otherwise does not need merge sort
+   * @return whether spilled
+   */
+  public boolean needMergeSort() {
+    return spilled;
   }
 
   /**
@@ -327,26 +351,16 @@ public class SortDataRows {
    *
    * @throws CarbonSortKeyAndGroupByException
    */
-  public void startSorting() throws CarbonSortKeyAndGroupByException {
+  public void doFinalSpill() throws CarbonSortKeyAndGroupByException {
     LOGGER.info("File based sorting will be used");
     if (this.entryCount > 0) {
-      Object[][] toSort;
-      toSort = new Object[entryCount][];
-      System.arraycopy(recordHolderList, 0, toSort, 0, entryCount);
-
-      if (noDictionaryCount > 0) {
-        Arrays.sort(toSort, new RowComparator(noDictionaryDimnesionColumn, noDictionaryCount));
-      } else {
-
-        Arrays.sort(toSort, new RowComparatorForNormalDims(this.dimColCount));
-      }
-      recordHolderList = toSort;
+      sortByDimension(recordHolderList, 0, entryCount);
 
       // create new file
       File file =
           new File(this.tempFileLocation + File.separator + this.tableName + System.nanoTime() +
               CarbonCommonConstants.SORT_TEMP_FILE_EXT);
-      writeDataTofile(recordHolderList, this.entryCount, file);
+      writeDataToFile(recordHolderList, this.entryCount, file);
 
     }
 
@@ -356,11 +370,46 @@ public class SortDataRows {
   }
 
   /**
+   * sort the input array based on dimension key
+   * @param input input array to be sorted
+   * @param fromIndex the index of the first element (inclusive) to be sorted
+   * @param toIndex the index of the end element (exclusive) to be sorted
+   */
+  private void sortByDimension(Object[][] input, int fromIndex, int toIndex) {
+    if (noDictionaryCount > 0) {
+      Arrays.sort(input, fromIndex, toIndex,
+          new RowComparator(noDictionaryDimnesionColumn, noDictionaryCount));
+    } else {
+      Arrays.sort(input, fromIndex, toIndex, new RowComparatorForNormalDims(this.dimColCount));
+    }
+  }
+
+  /**
+   * return an iterator on sorted rows
+   * @return
+   */
+  public CarbonIterator<Object[]> getIterator() {
+    sortByDimension(recordHolderList, 0, entryCount);
+    return new CarbonIterator<Object[]>() {
+      private int index = 0;
+      @Override
+      public boolean hasNext() {
+        return index < entryCount;
+      }
+
+      @Override
+      public Object[] next() {
+        return recordHolderList[index++];
+      }
+    };
+  }
+
+  /**
    * Below method will be used to write data to file
    *
    * @throws CarbonSortKeyAndGroupByException problem while writing
    */
-  private void writeDataTofile(Object[][] recordHolderList, int entryCountLocal, File file)
+  private void writeDataToFile(Object[][] recordHolderList, int entryCountLocal, File file)
       throws CarbonSortKeyAndGroupByException {
     // stream
     if (isSortFileCompressionEnabled || prefetch) {
@@ -586,17 +635,12 @@ public class SortDataRows {
     @Override public Void call() throws Exception {
       try {
         long startTime = System.currentTimeMillis();
-        if (noDictionaryCount > 0) {
-          Arrays.sort(recordHolderArray,
-              new RowComparator(noDictionaryDimnesionColumn, noDictionaryCount));
-        } else {
-          Arrays.sort(recordHolderArray, new RowComparatorForNormalDims(dimColCount));
-        }
+        sortByDimension(recordHolderArray, 0, recordHolderArray.length);
         // create a new file every time
         File sortTempFile = new File(
             tempFileLocation + File.separator + tableName + System.nanoTime()
                 + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
-        writeDataTofile(recordHolderArray, recordHolderArray.length, sortTempFile);
+        writeDataToFile(recordHolderArray, recordHolderArray.length, sortTempFile);
         // add sort temp filename to and arrayList. When the list size reaches 20 then
         // intermediate merging of sort temp files will be triggered
         synchronized (lockObject) {

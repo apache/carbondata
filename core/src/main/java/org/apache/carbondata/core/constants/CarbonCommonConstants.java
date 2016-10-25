@@ -61,7 +61,8 @@ public final class CarbonCommonConstants {
    */
   public static final String NUM_CORES = "carbon.number.of.cores";
   /**
-   * carbon sort size
+   * Number of rows to keep in memory when loading data, if number of input row exceeds this value,
+   * carbon will use merge sort instead of in memory sort
    */
   public static final String SORT_SIZE = "carbon.sort.size";
   /**

@@ -32,6 +32,7 @@ import org.apache.carbondata.processing.sortdatastep.SortKeyStepData;
 import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
 
 import org.pentaho.di.core.exception.KettleException;
+import org.pentaho.di.core.exception.KettleStepException;
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.Trans;
 import org.pentaho.di.trans.TransMeta;
@@ -215,36 +216,51 @@ public class SortKeyStep extends BaseStep {
    * @throws KettleException
    */
   private boolean processRowToNextStep() throws KettleException {
-    if (null == this.sortDataRows) {
-      LOGGER.info("Record Processed For table: " + meta.getTabelName());
-      LOGGER.info("Number of Records was Zero");
-      String logMessage = "Summary: Carbon Sort Key Step: Read: " + 0 + ": Write: " + 0;
-      LOGGER.info(logMessage);
-      putRow(data.getOutputRowMeta(), new Object[0]);
-      setOutputDone();
+    if (null == sortDataRows) {
+      // if comes here, means no row is added, so does not need merge sort
+      startNextStep(true);
       return false;
     }
 
-    try {
-      // start sorting
-      this.sortDataRows.startSorting();
-
-      // check any more rows are present
-      LOGGER.info("Record Processed For table: " + meta.getTabelName());
-      String logMessage =
-          "Summary: Carbon Sort Key Step: Read: " + readCounter + ": Write: " + writeCounter;
-      LOGGER.info(logMessage);
-      putRow(data.getOutputRowMeta(), new Object[0]);
-      setOutputDone();
-      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordSortRowsStepTotalTime(
-          meta.getPartitionID(), System.currentTimeMillis());
-      CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordDictionaryValuesTotalTime(
-          meta.getPartitionID(), System.currentTimeMillis());
-      return false;
-    } catch (CarbonSortKeyAndGroupByException e) {
-      throw new KettleException(e);
+    if (sortDataRows.needMergeSort()) {
+      try {
+        sortDataRows.doFinalSpill();
+      } catch (CarbonSortKeyAndGroupByException e) {
+        throw new KettleException(e);
+      }
+      startNextStep(true);
+    } else {
+      startNextStep(false);
     }
+    return false;
+  }
 
+  /**
+   * Send signal to next step to start
+   * @param mergeSort whether merge sort is needed
+   * @throws KettleStepException
+   */
+  private void startNextStep(boolean mergeSort) throws KettleStepException {
+    // if merge sort is needed, send an empty row to next step, otherwise send the sortDataRows
+    // object to next step as input
+    if (mergeSort) {
+      putRow(data.getOutputRowMeta(), new Object[0]);
+    } else {
+      putRow(data.getOutputRowMeta(), new SortDataRows[]{sortDataRows});
+    }
+    logStepSummary();
+    setOutputDone();
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
+        .recordSortRowsStepTotalTime(meta.getPartitionID(), System.currentTimeMillis());
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
+        .recordDictionaryValuesTotalTime(meta.getPartitionID(), System.currentTimeMillis());
+  }
+
+  private void logStepSummary() {
+    LOGGER.info("Record Processed For table: " + meta.getTabelName());
+    String logMessage = "Summary: Carbon Sort Key Step: Read: " + readCounter +
+        ": Write: " + writeCounter;
+    LOGGER.info(logMessage);
   }
 
   /**

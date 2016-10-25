@@ -51,12 +51,13 @@ class TestEmptyRows extends QueryTest with BeforeAndAfterAll {
     val csvFilePath = currentDirectory + "/src/test/resources/emptyrow/emptyRows.csv"
 
     sql(
-      s"""LOAD DATA INPATH '$csvFilePath' INTO table emptyRowCarbonTable OPTIONS('DELIMITER'=',','QUOTECHAR'='"','FILEHEADER'='eid,ename,sal,presal,comm,deptno,Desc')""")
+      s"""LOAD DATA INPATH '$csvFilePath' INTO table emptyRowCarbonTable OPTIONS('DELIMITER'=',','QUOTECHAR'='"','FILEHEADER'='eid,ename,sal,presal,comm,deptno,Desc')"""
+    )
 
     sql(
       "LOAD DATA LOCAL INPATH '" + csvFilePath + "' into table " +
         "emptyRowHiveTable"
-    );
+    )
   }
 
   test("select eid from table") {

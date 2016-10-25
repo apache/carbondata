@@ -19,9 +19,9 @@ package org.apache.carbondata.examples.util
 
 import java.io.File
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.{CarbonContext, SaveMode}
-
 import org.apache.carbondata.core.util.CarbonProperties
 
 // scalastyle:off println
@@ -47,7 +47,12 @@ object ExampleUtils {
     // whether use table split partition
     // true -> use table split partition, support multiple partition loading
     // false -> use node split partition, support data load by host partition
-    CarbonProperties.getInstance().addProperty("carbon.table.split.partition.enable", "false")
+    val properties = CarbonProperties.getInstance()
+    properties.addProperty("carbon.table.split.partition.enable", "false")
+
+    // set sort buffer to 3M rows, avoiding merge sort while loading
+    properties.addProperty(CarbonCommonConstants.SORT_SIZE, "3000010")
+    properties.addProperty(CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS, "true")
     cc
   }
 
