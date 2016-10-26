@@ -53,7 +53,7 @@ public final class FileFactory {
   private static FileType storeDefaultFileType = FileType.LOCAL;
 
   static {
-    String property = CarbonUtil.getCarbonStorePath(null, null);
+    String property = CarbonUtil.getCarbonStorePath();
     if (property != null) {
       if (property.startsWith(CarbonUtil.HDFS_PREFIX)) {
         storeDefaultFileType = FileType.HDFS;
@@ -87,7 +87,7 @@ public final class FileFactory {
   }
 
   public static FileType getFileType() {
-    String property = CarbonUtil.getCarbonStorePath(null, null);
+    String property = CarbonUtil.getCarbonStorePath();
     if (property != null) {
       if (property.startsWith(CarbonUtil.HDFS_PREFIX)) {
         storeDefaultFileType = FileType.HDFS;
