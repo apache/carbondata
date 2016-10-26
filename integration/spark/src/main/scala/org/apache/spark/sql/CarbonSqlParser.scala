@@ -477,6 +477,9 @@ class CarbonSqlParser()
     // get no inverted index columns from table properties.
     val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
 
+    // get trim columns from table properties.
+    val TrimCols = extractTrimColumns(fields, tableProperties)
+
     val partitioner: Option[Partitioner] = getPartitionerObject(partitionCols, tableProperties)
     // validate the tableBlockSize from table properties
     CommonUtil.validateTableBlockSize(tableProperties)
@@ -486,8 +489,8 @@ class CarbonSqlParser()
       dbName, tableName, tableProperties,
       reorderDimensions(dims.map(f => normalizeType(f)).map(f => addParent(f))),
       msrs.map(f => normalizeType(f)), "", null, "",
-      None, Seq(), null, Option(noDictionaryDims), Option(noInvertedIdxCols), null, partitioner,
-      groupCols, Some(colProps))
+      None, Seq(), null, Option(noDictionaryDims), Option(noInvertedIdxCols),
+      Option(TrimCols), null, partitioner, groupCols, Some(colProps))
   }
 
   /**
@@ -684,6 +687,45 @@ class CarbonSqlParser()
     }
     )
     noInvertedIdxCols
+  }
+
+  /**
+   * This will extract the trim columns fields.
+   * By default all dimensions are no trim.
+   *
+   * @param fields
+   * @param tableProperties
+   * @return
+   */
+  protected def extractTrimColumns(fields: Seq[Field],
+                                        tableProperties: Map[String, String]):
+  Seq[String] = {
+    // check whether the column name is in fields
+    var trimColsProps: Array[String] = Array[String]()
+    var trimCols: Seq[String] = Seq[String]()
+
+    if (tableProperties.get("trim").isDefined) {
+      trimColsProps =
+        tableProperties.get("trim").get.split(',').map(_.trim)
+      trimColsProps
+        .map { trimColsProp =>
+          if (!fields.exists(x => x.column.equalsIgnoreCase(trimColsProp))) {
+            val errormsg = "TRIM column: " + trimColsProp +
+              " does not exist in table. Please check create table statement."
+            throw new MalformedCarbonCommandException(errormsg)
+          }
+        }
+    }
+    // check duplicate columns and only 1 col left
+    val distinctCols = trimColsProps.toSet
+    // extract the trim columns
+    fields.foreach( field => {
+      if (distinctCols.exists(x => x.equalsIgnoreCase(field.column))) {
+        trimCols :+= field.column
+      }
+    }
+    )
+    trimCols
   }
 
   /**
