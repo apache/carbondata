@@ -925,26 +925,27 @@ class CarbonSqlParser()
     LOAD ~> DATA ~> opt(LOCAL) ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
       (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
       (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
-        case filePath ~ isOverwrite ~ table ~ partionDataOptions =>
+        case filePath ~ isOverwrite ~ table ~ optionsList =>
           val (databaseNameOp, tableName) = table match {
             case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
           }
-          if(partionDataOptions.isDefined) {
-            validateOptions(partionDataOptions)
+          if(optionsList.isDefined) {
+            validateOptions(optionsList)
           }
-          val patitionOptionsMap = partionDataOptions.getOrElse(List.empty[(String, String)]).toMap
-          LoadTable(databaseNameOp, tableName, filePath, Seq(), patitionOptionsMap,
-            isOverwrite.isDefined)
+          val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
+          val useKettle = optionsMap.getOrElse("USE_KETTLE", "true").toBoolean
+          LoadTable(databaseNameOp, tableName, filePath, Seq(), optionsMap,
+            isOverwrite.isDefined, useKettle = useKettle)
       }
 
-  private def validateOptions(partionDataOptions: Option[List[(String, String)]]): Unit = {
+  private def validateOptions(optionList: Option[List[(String, String)]]): Unit = {
 
     // validate with all supported options
-    val options = partionDataOptions.get.groupBy(x => x._1)
+    val options = optionList.get.groupBy(x => x._1)
     val supportedOptions = Seq("DELIMITER", "QUOTECHAR", "FILEHEADER", "ESCAPECHAR", "MULTILINE",
       "COMPLEX_DELIMITER_LEVEL_1", "COMPLEX_DELIMITER_LEVEL_2", "COLUMNDICT",
       "SERIALIZATION_NULL_FORMAT", "BAD_RECORDS_LOGGER_ENABLE", "BAD_RECORDS_ACTION",
-      "ALL_DICTIONARY_PATH", "MAXCOLUMNS", "COMMENTCHAR"
+      "ALL_DICTIONARY_PATH", "MAXCOLUMNS", "COMMENTCHAR", "USE_KETTLE"
     )
     var isSupported = true
     val invalidOptions = StringBuilder.newBuilder
