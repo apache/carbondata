@@ -823,7 +823,7 @@ public final class CarbonUtil {
     }
   }
 
-  public static String getCarbonStorePath(String databaseName, String tableName) {
+  public static String getCarbonStorePath() {
     CarbonProperties prop = CarbonProperties.getInstance();
     if (null == prop) {
       return null;
