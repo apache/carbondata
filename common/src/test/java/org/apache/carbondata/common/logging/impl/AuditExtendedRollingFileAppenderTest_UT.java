@@ -19,7 +19,7 @@
 
 package org.apache.carbondata.common.logging.impl;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import mockit.Deencapsulation;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;

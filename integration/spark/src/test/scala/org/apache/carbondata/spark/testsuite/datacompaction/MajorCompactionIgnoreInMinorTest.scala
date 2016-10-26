@@ -154,7 +154,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       assert(false)
     }
     catch {
-      case _ => assert(true)
+      case _:Throwable => assert(true)
     }
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
         AbsoluteTableIdentifier(

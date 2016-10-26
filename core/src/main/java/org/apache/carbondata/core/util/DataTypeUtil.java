@@ -35,7 +35,7 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDime
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
-import org.apache.commons.lang.NumberUtils;
+import org.apache.commons.lang.math.NumberUtils;
 import org.apache.spark.unsafe.types.UTF8String;
 
 public final class DataTypeUtil {
