@@ -151,7 +151,7 @@ public class CarbonColumn implements Serializable {
   /**
    * @return if column use inverted index return true, else false.
    */
-  public Boolean isUseInvertedIndnex() {
+  public Boolean isUseInvertedIndex() {
     return columnSchema.isUseInvertedIndex();
   }
   public ColumnSchema getColumnSchema() {

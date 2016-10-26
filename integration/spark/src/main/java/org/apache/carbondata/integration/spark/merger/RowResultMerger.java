@@ -256,7 +256,7 @@ public class RowResultMerger {
     boolean[] isUseInvertedIndexes = new boolean[dimensionByTableName.size()];
     int index = 0;
     for (CarbonDimension dimension : dimensionByTableName) {
-      isUseInvertedIndexes[index++] = dimension.isUseInvertedIndnex();
+      isUseInvertedIndexes[index++] = dimension.isUseInvertedIndex();
     }
     carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndexes);
     return carbonFactDataHandlerModel;

@@ -274,7 +274,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
 
     cm.msrCols.foreach(field => {
       val encoders = new java.util.ArrayList[Encoding]()
-      val coloumnSchema: ColumnSchema = getColumnSchema(
+      val columnSchema: ColumnSchema = getColumnSchema(
         DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
         field.name.getOrElse(field.column),
         index,
@@ -284,7 +284,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
         -1,
         field.precision,
         field.scale)
-      val measureCol = coloumnSchema
+      val measureCol = columnSchema
 
       allColumns ++= Seq(measureCol)
       index = index + 1
@@ -327,7 +327,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
 
     }
 
-    // Setting the boolen value of useInvertedIndex in column shcehma
+    // Setting the boolean value of useInvertedIndex in column schema
     val noInvertedIndexCols = cm.noInvertedIdxCols.getOrElse(Seq())
     for (column <- allColumns) {
       // When the column is measure or the specified no inverted index column in DDL,
@@ -343,15 +343,15 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     // Adding dummy measure if no measure is provided
     if (measures.size < 1) {
       val encoders = new java.util.ArrayList[Encoding]()
-      val coloumnSchema: ColumnSchema = getColumnSchema(DataType.DOUBLE,
+      val columnSchema: ColumnSchema = getColumnSchema(DataType.DOUBLE,
         CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
         index,
         true,
         encoders,
         false,
         -1, 0, 0)
-      coloumnSchema.setInvisible(true)
-      val measureColumn = coloumnSchema
+      columnSchema.setInvisible(true)
+      val measureColumn = columnSchema
       measures += measureColumn
       allColumns = allColumns ++ measures
     }
