@@ -986,7 +986,7 @@ public class GraphGenerator {
       GraphConfigurationInfo graphConfig) {
     List<Boolean> isUseInvertedIndexList = new ArrayList<Boolean>();
     for (CarbonDimension dimension : dims) {
-      if (dimension.isUseInvertedIndnex()) {
+      if (dimension.isUseInvertedIndex()) {
         isUseInvertedIndexList.add(true);
       } else {
         isUseInvertedIndexList.add(false);
