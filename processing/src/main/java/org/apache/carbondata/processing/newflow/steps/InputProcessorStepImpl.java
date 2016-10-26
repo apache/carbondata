@@ -85,7 +85,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
    */
   private List<Iterator<Object[]>>[] partitionInputReaderIterators() {
     // Get the number of cores configured in property.
-    int numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
+    int numberOfCores = CarbonProperties.getInstance().getNumberOfCoresForLoadingData();
     // Get the minimum of number of cores and iterators size to get the number of parallel threads
     // to be launched.
     int parallelThreadNumber = Math.min(inputIterators.size(), numberOfCores);

@@ -118,7 +118,7 @@ public class BlockIndexStore {
     int numberOfCores = 1;
     try {
       numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.NUM_CORES,
+          .getProperty(CarbonCommonConstants.NUM_CORES_LOAD_BLOCKS,
               CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
     } catch (NumberFormatException e) {
       numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);

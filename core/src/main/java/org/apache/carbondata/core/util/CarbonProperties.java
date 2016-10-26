@@ -76,7 +76,7 @@ public final class CarbonProperties {
     }
 
     validateBlockletSize();
-    validateNumCores();
+    validateNumCoresForLoadingBlocks();
     validateNumCoresBlockSort();
     validateSortSize();
     validateBadRecordsLocation();
@@ -121,27 +121,27 @@ public final class CarbonProperties {
   }
 
   /**
-   * This method validates the number cores specified
+   * This method validates the number cores specified for loading blocks
    */
-  private void validateNumCores() {
-    String numCoresStr = carbonProperties
-        .getProperty(CarbonCommonConstants.NUM_CORES, CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+  private void validateNumCoresForLoadingBlocks() {
+    String numCoresStr = carbonProperties.getProperty(CarbonCommonConstants.NUM_CORES_LOAD_BLOCKS,
+        CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
     try {
       int numCores = Integer.parseInt(numCoresStr);
 
       if (numCores < CarbonCommonConstants.NUM_CORES_MIN_VAL
           || numCores > CarbonCommonConstants.NUM_CORES_MAX_VAL) {
-        LOGGER.info("The num Cores  value \"" + numCoresStr
+        LOGGER.info("The num of cores value \"" + numCoresStr
             + "\" is invalid. Using the default value \""
             + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-        carbonProperties.setProperty(CarbonCommonConstants.NUM_CORES,
+        carbonProperties.setProperty(CarbonCommonConstants.NUM_CORES_LOAD_BLOCKS,
             CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
       }
     } catch (NumberFormatException e) {
-      LOGGER.info("The num Cores  value \"" + numCoresStr
+      LOGGER.info("The num of cores value \"" + numCoresStr
           + "\" is invalid. Using the default value \""
           + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-      carbonProperties.setProperty(CarbonCommonConstants.NUM_CORES,
+      carbonProperties.setProperty(CarbonCommonConstants.NUM_CORES_LOAD_BLOCKS,
           CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
     }
   }
@@ -452,16 +452,16 @@ public final class CarbonProperties {
    *
    * @return
    */
-  public int getNumberOfCores() {
-    int numberOfCores;
+  public int getNumberOfCoresForLoadingData() {
+    int numberOfCoresForLoadingData;
     try {
-      numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
+      numberOfCoresForLoadingData = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
               CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
     } catch (NumberFormatException exc) {
-      numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
+      numberOfCoresForLoadingData = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
     }
-    return numberOfCores;
+    return numberOfCoresForLoadingData;
   }
 
   /**
