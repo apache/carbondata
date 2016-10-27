@@ -24,6 +24,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.carbondata.hadoop.CarbonProjection;
+import org.apache.carbondata.hadoop.internal.CarbonInputSplit;
 import org.apache.carbondata.hadoop.internal.segment.Segment;
 import org.apache.carbondata.hadoop.internal.segment.SegmentManager;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
@@ -38,10 +39,10 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
 /**
- * Base class of all input format of CarbonData file.
+ * Input format of CarbonData file.
  * @param <T>
  */
-public abstract class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
+public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
 
   private static final String FILTER_PREDICATE =
       "mapreduce.input.carboninputformat.filter.predicate";
@@ -53,8 +54,17 @@ public abstract class CarbonTableInputFormat<T> extends FileInputFormat<Void, T>
   }
 
   @Override
-  public abstract RecordReader<Void, T> createRecordReader(InputSplit split,
-      TaskAttemptContext context) throws IOException, InterruptedException;
+  public RecordReader<Void, T> createRecordReader(InputSplit split,
+      TaskAttemptContext context) throws IOException, InterruptedException {
+    switch (((CarbonInputSplit)split).formatType()) {
+      case COLUMNR:
+        // TODO: create record reader for columnar format
+        break;
+      default:
+        throw new RuntimeException("Unsupported format type");
+    }
+    return null;
+  }
 
   @Override
   public List<InputSplit> getSplits(JobContext job) throws IOException {

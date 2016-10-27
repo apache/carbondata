@@ -17,9 +17,8 @@
  * under the License.
  */
 
-package org.apache.carbondata.hadoop.api.columnar;
+package org.apache.carbondata.hadoop.internal;
 
-import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
-
-public class CarbonColumnarOutputFormat<T> extends CarbonTableOutputFormat<T> {
+public enum CarbonFormat {
+  COLUMNR
 }
