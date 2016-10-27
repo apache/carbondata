@@ -28,7 +28,7 @@ public class BlockInfoTest {
   static BlockInfo blockInfo;
 
   @BeforeClass public static void setup() {
-    blockInfo = new BlockInfo(new TableBlockInfo("filePath", 6, "segmentId", null, 6));
+    blockInfo = new BlockInfo(new TableBlockInfo("filePath", 6, "segmentId", null, 6,(short)1));
   }
 
   @Test public void hashCodeTest() {
@@ -44,7 +44,7 @@ public class BlockInfoTest {
 
   @Test public void equalsTestWithSimilarObject() {
     BlockInfo blockInfoTest =
-        new BlockInfo(new TableBlockInfo("filePath", 6, "segmentId", null, 6));
+        new BlockInfo(new TableBlockInfo("filePath", 6, "segmentId", null, 6, (short)1));
     Boolean res = blockInfo.equals(blockInfoTest);
     assert (res);
   }
@@ -61,28 +61,28 @@ public class BlockInfoTest {
 
   @Test public void equalsTestWithDifferentSegmentId() {
     BlockInfo blockInfoTest =
-        new BlockInfo(new TableBlockInfo("filePath", 6, "diffSegmentId", null, 6));
+        new BlockInfo(new TableBlockInfo("filePath", 6, "diffSegmentId", null, 6,(short)1));
     Boolean res = blockInfo.equals(blockInfoTest);
     assert (!res);
   }
 
   @Test public void equalsTestWithDifferentOffset() {
     BlockInfo blockInfoTest =
-        new BlockInfo(new TableBlockInfo("filePath", 62, "segmentId", null, 6));
+        new BlockInfo(new TableBlockInfo("filePath", 62, "segmentId", null, 6, (short)1));
     Boolean res = blockInfo.equals(blockInfoTest);
     assert (!res);
   }
 
   @Test public void equalsTestWithDifferentBlockLength() {
     BlockInfo blockInfoTest =
-        new BlockInfo(new TableBlockInfo("filePath", 6, "segmentId", null, 62));
+        new BlockInfo(new TableBlockInfo("filePath", 6, "segmentId", null, 62, (short)1));
     Boolean res = blockInfo.equals(blockInfoTest);
     assert (!res);
   }
 
   @Test public void equalsTestWithDiffFilePath() {
     BlockInfo blockInfoTest =
-        new BlockInfo(new TableBlockInfo("diffFilePath", 6, "segmentId", null, 62));
+        new BlockInfo(new TableBlockInfo("diffFilePath", 6, "segmentId", null, 62, (short)1));
     Boolean res = blockInfoTest.equals(blockInfo);
     assert (!res);
   }

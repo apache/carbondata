@@ -893,7 +893,23 @@ public final class CarbonCommonConstants {
    * Default size of data load batch size.
    */
   public static final String DATA_LOAD_BATCH_SIZE_DEFAULT = "1000";
-
+  /**
+   * carbon data file version property
+   */
+  public static final String CARBON_DATA_FILE_VERSION = "carbon.data.file.version";
+  /**
+   * current data file version
+   */
+  public static final short CARBON_DATA_FILE_DEFAULT_VERSION = 2;
+  /**
+   * number of column data will read in IO operation
+   * during query execution
+   */
+  public static final short NUMBER_OF_COLUMN_READ_IN_IO = 10;
+  /**
+   * data file version header
+   */
+  public static final String CARBON_DATA_VERSION_HEADER = "CARBONDATAVERSION#";
   private CarbonCommonConstants() {
   }
 }

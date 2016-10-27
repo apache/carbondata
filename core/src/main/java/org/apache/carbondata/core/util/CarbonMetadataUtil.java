@@ -33,6 +33,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
@@ -40,11 +41,13 @@ import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.BlockletBTreeIndex;
 import org.apache.carbondata.format.BlockletIndex;
 import org.apache.carbondata.format.BlockletInfo;
+import org.apache.carbondata.format.BlockletInfo2;
 import org.apache.carbondata.format.BlockletMinMaxIndex;
 import org.apache.carbondata.format.ChunkCompressionMeta;
 import org.apache.carbondata.format.ColumnSchema;
 import org.apache.carbondata.format.CompressionCodec;
 import org.apache.carbondata.format.DataChunk;
+import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.Encoding;
 import org.apache.carbondata.format.FileFooter;
 import org.apache.carbondata.format.IndexHeader;
@@ -72,22 +75,60 @@ public class CarbonMetadataUtil {
    * @return FileFooter
    */
   public static FileFooter convertFileFooter(List<BlockletInfoColumnar> infoList, int numCols,
-      int[] cardinalities, List<ColumnSchema> columnSchemaList,
-      SegmentProperties segmentProperties) throws IOException {
+      int[] cardinalities, List<ColumnSchema> columnSchemaList, SegmentProperties segmentProperties)
+      throws IOException {
+    FileFooter footer = getFileFooter(infoList, cardinalities, columnSchemaList);
+    for (BlockletInfoColumnar info : infoList) {
+      footer.addToBlocklet_info_list(getBlockletInfo(info, columnSchemaList, segmentProperties));
+    }
+    return footer;
+  }
 
+  /**
+   * Below method will be used to get the file footer object
+   *
+   * @param infoList         blocklet info
+   * @param cardinalities    cardinlaity of dimension columns
+   * @param columnSchemaList column schema list
+   * @return file footer
+   */
+  private static FileFooter getFileFooter(List<BlockletInfoColumnar> infoList, int[] cardinalities,
+      List<ColumnSchema> columnSchemaList) {
     SegmentInfo segmentInfo = new SegmentInfo();
     segmentInfo.setNum_cols(columnSchemaList.size());
     segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(cardinalities));
-
+    short version = Short.parseShort(
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION));
     FileFooter footer = new FileFooter();
+    footer.setVersion(version);
     footer.setNum_rows(getTotalNumberOfRows(infoList));
     footer.setSegment_info(segmentInfo);
+    footer.setTable_columns(columnSchemaList);
     for (BlockletInfoColumnar info : infoList) {
       footer.addToBlocklet_index_list(getBlockletIndex(info));
     }
-    footer.setTable_columns(columnSchemaList);
+    return footer;
+  }
+
+  /**
+   * Below method will be used to get the file footer object for
+   *
+   * @param infoList         blocklet info
+   * @param cardinalities    cardinality of each column
+   * @param columnSchemaList column schema list
+   * @param dataChunksOffset data chunks offsets
+   * @param dataChunksLength data chunks length
+   * @return filefooter thrift object
+   */
+  public static FileFooter convertFilterFooter2(List<BlockletInfoColumnar> infoList,
+      int[] cardinalities, List<ColumnSchema> columnSchemaList, List<List<Long>> dataChunksOffset,
+      List<List<Short>> dataChunksLength) {
+    FileFooter footer = getFileFooter(infoList, cardinalities, columnSchemaList);
+    int index = 0;
     for (BlockletInfoColumnar info : infoList) {
-      footer.addToBlocklet_info_list(getBlockletInfo(info, columnSchemaList, segmentProperties));
+      footer.addToBlocklet_info_list2(
+          getBlockletInfo2(info, dataChunksOffset.get(index), dataChunksLength.get(index)));
+      index++;
     }
     return footer;
   }
@@ -142,15 +183,31 @@ public class CarbonMetadataUtil {
     return blockletIndex;
   }
 
+  /**
+   * Below method will be used to get the blocklet info object for
+   * data version 2 file
+   *
+   * @param blockletInfoColumnar blocklet info
+   * @param dataChunkOffsets     data chunks offsets
+   * @param dataChunksLength     data chunks length
+   * @return blocklet info version 2
+   */
+  private static BlockletInfo2 getBlockletInfo2(BlockletInfoColumnar blockletInfoColumnar,
+      List<Long> dataChunkOffsets, List<Short> dataChunksLength) {
+    BlockletInfo2 blockletInfo = new BlockletInfo2();
+    blockletInfo.setNum_rows(blockletInfoColumnar.getNumberOfKeys());
+    blockletInfo.setColumn_data_chunks_length(dataChunksLength);
+    blockletInfo.setColumn_data_chunks_offsets(dataChunkOffsets);
+    return blockletInfo;
+  }
+
   private static BlockletInfo getBlockletInfo(BlockletInfoColumnar blockletInfoColumnar,
-      List<ColumnSchema> columnSchenma,
-      SegmentProperties segmentProperties) throws IOException {
+      List<ColumnSchema> columnSchenma, SegmentProperties segmentProperties) throws IOException {
 
     BlockletInfo blockletInfo = new BlockletInfo();
     blockletInfo.setNum_rows(blockletInfoColumnar.getNumberOfKeys());
 
     List<DataChunk> colDataChunks = new ArrayList<DataChunk>();
-    blockletInfoColumnar.getKeyLengths();
     int j = 0;
     int aggregateIndex = 0;
     boolean[] isSortedKeyColumn = blockletInfoColumnar.getIsSortedKeyColumn();
@@ -419,6 +476,9 @@ public class CarbonMetadataUtil {
     segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(columnCardinality));
     // create index header object
     IndexHeader indexHeader = new IndexHeader();
+    short version = Short.parseShort(
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION));
+    indexHeader.setVersion(version);
     // set the segment info
     indexHeader.setSegment_info(segmentInfo);
     // set the column names
@@ -440,11 +500,91 @@ public class CarbonMetadataUtil {
     for (BlockIndexInfo blockIndexInfo : blockIndexInfoList) {
       blockIndex = new BlockIndex();
       blockIndex.setNum_rows(blockIndexInfo.getNumberOfRows());
-      blockIndex.setOffset(blockIndexInfo.getNumberOfRows());
+      blockIndex.setOffset(blockIndexInfo.getOffset());
       blockIndex.setFile_name(blockIndexInfo.getFileName());
       blockIndex.setBlock_index(getBlockletIndex(blockIndexInfo.getBlockletIndex()));
       thriftBlockIndexList.add(blockIndex);
     }
     return thriftBlockIndexList;
+  }
+
+  /**
+   * Below method will be used to get the data chunk object for all the
+   * columns
+   *
+   * @param blockletInfoColumnar blocklet info
+   * @param columnSchenma        list of columns
+   * @param segmentProperties    segment properties
+   * @return list of data chunks
+   * @throws IOException
+   */
+  public static List<DataChunk2> getDatachunk2(BlockletInfoColumnar blockletInfoColumnar,
+      List<ColumnSchema> columnSchenma, SegmentProperties segmentProperties) throws IOException {
+    List<DataChunk2> colDataChunks = new ArrayList<DataChunk2>();
+    int rowIdIndex = 0;
+    int aggregateIndex = 0;
+    boolean[] isSortedKeyColumn = blockletInfoColumnar.getIsSortedKeyColumn();
+    boolean[] aggKeyBlock = blockletInfoColumnar.getAggKeyBlock();
+    boolean[] colGrpblock = blockletInfoColumnar.getColGrpBlocks();
+    for (int i = 0; i < blockletInfoColumnar.getKeyLengths().length; i++) {
+      DataChunk2 dataChunk = new DataChunk2();
+      dataChunk.setChunk_meta(getChunkCompressionMeta());
+      List<Encoding> encodings = new ArrayList<Encoding>();
+      if (containsEncoding(i, Encoding.DICTIONARY, columnSchenma, segmentProperties)) {
+        encodings.add(Encoding.DICTIONARY);
+      }
+      if (containsEncoding(i, Encoding.DIRECT_DICTIONARY, columnSchenma, segmentProperties)) {
+        encodings.add(Encoding.DIRECT_DICTIONARY);
+      }
+      dataChunk.setRowMajor(colGrpblock[i]);
+      //TODO : Once schema PR is merged and information needs to be passed here.
+      dataChunk.setData_page_length(blockletInfoColumnar.getKeyLengths()[i]);
+      if (aggKeyBlock[i]) {
+        dataChunk.setRle_page_length(blockletInfoColumnar.getDataIndexMapLength()[aggregateIndex]);
+        encodings.add(Encoding.RLE);
+        aggregateIndex++;
+      }
+      dataChunk
+          .setSort_state(isSortedKeyColumn[i] ? SortState.SORT_EXPLICIT : SortState.SORT_NATIVE);
+
+      if (!isSortedKeyColumn[i]) {
+        dataChunk.setRowid_page_length(blockletInfoColumnar.getKeyBlockIndexLength()[rowIdIndex]);
+        encodings.add(Encoding.INVERTED_INDEX);
+        rowIdIndex++;
+      }
+
+      //TODO : Right now the encodings are happening at runtime. change as per this encoders.
+      dataChunk.setEncoders(encodings);
+
+      colDataChunks.add(dataChunk);
+    }
+
+    for (int i = 0; i < blockletInfoColumnar.getMeasureLength().length; i++) {
+      DataChunk2 dataChunk = new DataChunk2();
+      dataChunk.setChunk_meta(getChunkCompressionMeta());
+      dataChunk.setRowMajor(false);
+      //TODO : Once schema PR is merged and information needs to be passed here.
+      dataChunk.setData_page_length(blockletInfoColumnar.getMeasureLength()[i]);
+      //TODO : Right now the encodings are happening at runtime. change as per this encoders.
+      List<Encoding> encodings = new ArrayList<Encoding>();
+      encodings.add(Encoding.DELTA);
+      dataChunk.setEncoders(encodings);
+      //TODO writing dummy presence meta need to set actual presence
+      //meta
+      PresenceMeta presenceMeta = new PresenceMeta();
+      presenceMeta.setPresent_bit_streamIsSet(true);
+      presenceMeta.setPresent_bit_stream(SnappyByteCompression.INSTANCE
+          .compress(blockletInfoColumnar.getMeasureNullValueIndex()[i].toByteArray()));
+      dataChunk.setPresence(presenceMeta);
+      //TODO : PresenceMeta needs to be implemented and set here
+      // dataChunk.setPresence(new PresenceMeta());
+      //TODO : Need to write ValueCompression meta here.
+      List<ByteBuffer> encoderMetaList = new ArrayList<ByteBuffer>();
+      encoderMetaList.add(ByteBuffer.wrap(serializeEncoderMeta(
+          createValueEncoderMeta(blockletInfoColumnar.getCompressionModel(), i))));
+      dataChunk.setEncoder_meta(encoderMetaList);
+      colDataChunks.add(dataChunk);
+    }
+    return colDataChunks;
   }
 }

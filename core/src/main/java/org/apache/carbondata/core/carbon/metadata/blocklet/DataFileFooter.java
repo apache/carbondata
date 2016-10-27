@@ -38,7 +38,7 @@ public class DataFileFooter implements Serializable {
   /**
    * version used for data compatibility
    */
-  private int versionId;
+  private short versionId;
 
   /**
    * total number of rows in this file
@@ -73,14 +73,14 @@ public class DataFileFooter implements Serializable {
   /**
    * @return the versionId
    */
-  public int getVersionId() {
+  public short getVersionId() {
     return versionId;
   }
 
   /**
    * @param versionId the versionId to set
    */
-  public void setVersionId(int versionId) {
+  public void setVersionId(short versionId) {
     this.versionId = versionId;
   }
 

@@ -113,14 +113,12 @@ public class CarbonCompactionUtil {
     for (TableBlockInfo blockInfo : tableBlockInfoList) {
       List<DataFileFooter> eachSegmentBlocks = new ArrayList<>();
       String segId = blockInfo.getSegmentId();
-
       DataFileFooter dataFileMatadata = null;
       // check if segId is already present in map
       List<DataFileFooter> metadataList = segmentBlockInfoMapping.get(segId);
       try {
         dataFileMatadata = CarbonUtil
-            .readMetadatFile(blockInfo.getFilePath(), blockInfo.getBlockOffset(),
-                blockInfo.getBlockLength());
+            .readMetadatFile(blockInfo);
       } catch (CarbonUtilException e) {
         throw new IndexBuilderException(e);
       }

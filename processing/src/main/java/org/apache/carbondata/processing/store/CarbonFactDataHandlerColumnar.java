@@ -70,8 +70,8 @@ import org.apache.carbondata.processing.store.colgroup.ColGroupDataHolder;
 import org.apache.carbondata.processing.store.colgroup.ColGroupMinMax;
 import org.apache.carbondata.processing.store.colgroup.ColumnDataHolder;
 import org.apache.carbondata.processing.store.colgroup.DataHolder;
+import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
-import org.apache.carbondata.processing.store.writer.CarbonFactDataWriterImplForIntIndexAndAggBlock;
 import org.apache.carbondata.processing.store.writer.NodeHolder;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
@@ -1306,8 +1306,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     System.arraycopy(blockKeySize, noOfColStore, keyBlockSize, noOfColStore,
         blockKeySize.length - noOfColStore);
     this.dataWriter =
-        getFactDataWriter(this.storeLocation, this.measureCount, this.mdkeyLength, this.tableName,
-            fileManager, keyBlockSize);
+        getFactDataWriter(keyBlockSize);
     this.dataWriter.setIsNoDictionary(isNoDictionary);
     // initialize the channel;
     this.dataWriter.initializeWriter();
@@ -1396,13 +1395,45 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     return nullvalueIndexBitset;
   }
 
-  private CarbonFactDataWriter<?> getFactDataWriter(String storeLocation, int measureCount,
-      int mdKeyLength, String tableName, IFileManagerComposite fileManager, int[] keyBlockSize) {
-    return new CarbonFactDataWriterImplForIntIndexAndAggBlock(storeLocation, measureCount,
-        mdKeyLength, tableName, fileManager, keyBlockSize, aggKeyBlock, isComplexTypes(),
-        noDictionaryCount, carbonDataFileAttributes, databaseName, wrapperColumnSchemaList,
-        noDictionaryCount, dimensionType, carbonDataDirectoryPath, colCardinality,
-        segmentProperties, tableBlockSize);
+  /**
+   * Below method will be used to get the fact data writer instance
+   *
+   * @param keyBlockSize
+   * @return data writer instance
+   */
+  private CarbonFactDataWriter<?> getFactDataWriter(int[] keyBlockSize) {
+    short version = Short.parseShort(
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION));
+    return CarbonDataWriterFactory.getInstance()
+        .getFactDataWriter(version, getDataWriterVo(keyBlockSize));
+  }
+
+  /**
+   * Below method will be used to get the writer vo
+   *
+   * @param keyBlockSize size of each key block
+   * @return data writer vo object
+   */
+  private CarbonDataWriterVo getDataWriterVo(int[] keyBlockSize) {
+    CarbonDataWriterVo carbonDataWriterVo = new CarbonDataWriterVo();
+    carbonDataWriterVo.setStoreLocation(storeLocation);
+    carbonDataWriterVo.setMeasureCount(measureCount);
+    carbonDataWriterVo.setMdKeyLength(mdkeyLength);
+    carbonDataWriterVo.setTableName(tableName);
+    carbonDataWriterVo.setKeyBlockSize(keyBlockSize);
+    carbonDataWriterVo.setFileManager(fileManager);
+    carbonDataWriterVo.setAggBlocks(aggKeyBlock);
+    carbonDataWriterVo.setIsComplexType(isComplexTypes());
+    carbonDataWriterVo.setNoDictionaryCount(noDictionaryCount);
+    carbonDataWriterVo.setCarbonDataFileAttributes(carbonDataFileAttributes);
+    carbonDataWriterVo.setDatabaseName(databaseName);
+    carbonDataWriterVo.setWrapperColumnSchemaList(wrapperColumnSchemaList);
+    carbonDataWriterVo.setIsDictionaryColumn(dimensionType);
+    carbonDataWriterVo.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
+    carbonDataWriterVo.setColCardinality(colCardinality);
+    carbonDataWriterVo.setSegmentProperties(segmentProperties);
+    carbonDataWriterVo.setTableBlocksize(tableBlockSize);
+    return carbonDataWriterVo;
   }
 
   private boolean[] isComplexTypes() {
@@ -1571,7 +1602,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           if (!processingComplete || blockletProcessingCount.get() > 0) {
             producerExecutorService.shutdownNow();
             resetBlockletProcessingCount();
-            throw new CarbonDataWriterException(throwable.getMessage(), throwable);
+            LOGGER.error(throwable, "Problem while writing the carbon data file");
+            throw new CarbonDataWriterException(throwable.getMessage());
           }
         } finally {
           semaphore.release();

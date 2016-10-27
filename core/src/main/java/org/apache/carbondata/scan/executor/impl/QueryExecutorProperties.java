@@ -27,6 +27,7 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.scan.filter.GenericQueryType;
@@ -79,6 +80,8 @@ public class QueryExecutorProperties {
    * all the complex dimension which is on filter
    */
   public Set<CarbonDimension> complexFilterDimension;
+
+  public Set<CarbonMeasure> filterMeasures;
   /**
    * to record the query execution details phase wise
    */
@@ -91,5 +94,4 @@ public class QueryExecutorProperties {
    * list of blocks in which query will be executed
    */
   protected List<AbstractIndex> dataBlocks;
-
 }

@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.carbon.datastore.chunk.reader.DimensionColumnChunkReader;
-import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression;
@@ -41,12 +40,6 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
    */
   protected static final Compressor<byte[]> COMPRESSOR =
       SnappyCompression.SnappyByteCompression.INSTANCE;
-
-  /**
-   * data chunk list which holds the information
-   * about the data block metadata
-   */
-  protected List<DataChunk> dimensionColumnChunk;
 
   /**
    * size of the each column value
@@ -79,9 +72,8 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
    * @param eachColumnValueSize  size of the each column value
    * @param filePath             file from which data will be read
    */
-  public AbstractChunkReader(List<DataChunk> dimensionColumnChunk, int[] eachColumnValueSize,
-      String filePath) {
-    this.dimensionColumnChunk = dimensionColumnChunk;
+  public AbstractChunkReader(final int[] eachColumnValueSize,
+      final String filePath) {
     this.eachColumnValueSize = eachColumnValueSize;
     this.filePath = filePath;
     int numberOfElement = 0;

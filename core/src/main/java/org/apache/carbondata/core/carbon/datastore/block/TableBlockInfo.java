@@ -56,18 +56,21 @@ public class TableBlockInfo implements Distributable, Serializable {
   private String segmentId;
 
   private String[] locations;
+
+  private short version;
   /**
    * The class holds the blockletsinfo
    */
   private BlockletInfos blockletInfos = new BlockletInfos();
 
   public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
-      long blockLength) {
+      long blockLength, short version) {
     this.filePath = FileFactory.getUpdatedFilePath(filePath);
     this.blockOffset = blockOffset;
     this.segmentId = segmentId;
     this.locations = locations;
     this.blockLength = blockLength;
+    this.version = version;
   }
 
   /**
@@ -81,13 +84,14 @@ public class TableBlockInfo implements Distributable, Serializable {
    * @param blockletInfos
    */
   public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
-      long blockLength, BlockletInfos blockletInfos) {
+      long blockLength, BlockletInfos blockletInfos, short version) {
     this.filePath = FileFactory.getUpdatedFilePath(filePath);
     this.blockOffset = blockOffset;
     this.segmentId = segmentId;
     this.locations = locations;
     this.blockLength = blockLength;
     this.blockletInfos = blockletInfos;
+    this.version = version;
   }
 
   /**
@@ -102,6 +106,10 @@ public class TableBlockInfo implements Distributable, Serializable {
    */
   public long getBlockOffset() {
     return blockOffset;
+  }
+
+  public void setBlockOffset(long blockOffset) {
+    this.blockOffset = blockOffset;
   }
 
   /**
@@ -249,5 +257,13 @@ public class TableBlockInfo implements Distributable, Serializable {
    */
   public void setBlockletInfos(BlockletInfos blockletInfos) {
     this.blockletInfos = blockletInfos;
+  }
+
+  public short getVersion() {
+    return version;
+  }
+
+  public void setVersion(short version) {
+    this.version = version;
   }
 }
