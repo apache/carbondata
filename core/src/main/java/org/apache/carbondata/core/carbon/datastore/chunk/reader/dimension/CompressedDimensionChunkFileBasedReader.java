@@ -25,6 +25,7 @@ import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChun
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.ColumnGroupDimensionDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.VariableLengthDimensionDataChunk;
+import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
@@ -37,15 +38,22 @@ import org.apache.carbondata.core.util.CarbonUtil;
 public class CompressedDimensionChunkFileBasedReader extends AbstractChunkReader {
 
   /**
+   * data chunk list which holds the information
+   * about the data block metadata
+   */
+  private final List<DataChunk> dimensionColumnChunk;
+
+  /**
    * Constructor to get minimum parameter to create instance of this class
    *
-   * @param dimensionColumnChunk dimension chunk metadata
-   * @param eachColumnValueSize  size of the each column value
-   * @param filePath             file from which data will be read
+   * @param blockletInfo        blocklet info
+   * @param eachColumnValueSize size of the each column value
+   * @param filePath            file from which data will be read
    */
-  public CompressedDimensionChunkFileBasedReader(List<DataChunk> dimensionColumnChunk,
-      int[] eachColumnValueSize, String filePath) {
-    super(dimensionColumnChunk, eachColumnValueSize, filePath);
+  public CompressedDimensionChunkFileBasedReader(final BlockletInfo blockletInfo,
+      final int[] eachColumnValueSize, final String filePath) {
+    super(eachColumnValueSize, filePath);
+    this.dimensionColumnChunk = blockletInfo.getDimensionColumnChunk();
   }
 
   /**
@@ -56,12 +64,14 @@ public class CompressedDimensionChunkFileBasedReader extends AbstractChunkReader
    * @return dimension column chunks
    */
   @Override public DimensionColumnDataChunk[] readDimensionChunks(FileHolder fileReader,
-      int... blockIndexes) {
+      int[][] blockIndexes) {
     // read the column chunk based on block index and add
     DimensionColumnDataChunk[] dataChunks =
         new DimensionColumnDataChunk[dimensionColumnChunk.size()];
     for (int i = 0; i < blockIndexes.length; i++) {
-      dataChunks[blockIndexes[i]] = readDimensionChunk(fileReader, blockIndexes[i]);
+      for (int j = blockIndexes[i][0]; j <= blockIndexes[i][1]; j++) {
+        dataChunks[j] = readDimensionChunk(fileReader, j);
+      }
     }
     return dataChunks;
   }

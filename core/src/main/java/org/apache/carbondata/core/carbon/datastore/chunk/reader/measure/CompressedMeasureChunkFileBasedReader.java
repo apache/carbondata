@@ -21,11 +21,13 @@ package org.apache.carbondata.core.carbon.datastore.chunk.reader.measure;
 import java.util.List;
 
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * Compressed measure chunk reader
@@ -33,16 +35,20 @@ import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHol
 public class CompressedMeasureChunkFileBasedReader extends AbstractMeasureChunkReader {
 
   /**
+   * measure chunk have the information about the metadata present in the file
+   */
+  private final List<DataChunk> measureColumnChunks;
+
+  /**
    * Constructor to get minimum parameter to create instance of this class
    *
-   * @param measureColumnChunk measure chunk metadata
-   * @param compression        model metadata which was to used to compress and uncompress
-   *                           the measure value
-   * @param filePath           file from which data will be read
+   * @param blockletInfo BlockletInfo
+   * @param filePath     file from which data will be read
    */
-  public CompressedMeasureChunkFileBasedReader(List<DataChunk> measureColumnChunk,
-      ValueCompressionModel compressionModel, String filePath) {
-    super(measureColumnChunk, compressionModel, filePath, false);
+  public CompressedMeasureChunkFileBasedReader(final BlockletInfo blockletInfo,
+      final String filePath) {
+    super(filePath);
+    this.measureColumnChunks = blockletInfo.getMeasureColumnChunk();
   }
 
   /**
@@ -52,11 +58,13 @@ public class CompressedMeasureChunkFileBasedReader extends AbstractMeasureChunkR
    * @param blockIndexes blocks to be read
    * @return measure data chunks
    */
-  @Override public MeasureColumnDataChunk[] readMeasureChunks(FileHolder fileReader,
-      int... blockIndexes) {
-    MeasureColumnDataChunk[] datChunk = new MeasureColumnDataChunk[values.length];
+  @Override public MeasureColumnDataChunk[] readMeasureChunks(final FileHolder fileReader,
+      final int[][] blockIndexes) {
+    MeasureColumnDataChunk[] datChunk = new MeasureColumnDataChunk[measureColumnChunks.size()];
     for (int i = 0; i < blockIndexes.length; i++) {
-      datChunk[blockIndexes[i]] = readMeasureChunk(fileReader, blockIndexes[i]);
+      for (int j = blockIndexes[i][0]; j <= blockIndexes[i][1]; j++) {
+        datChunk[j] = readMeasureChunk(fileReader, j);
+      }
     }
     return datChunk;
   }
@@ -68,24 +76,29 @@ public class CompressedMeasureChunkFileBasedReader extends AbstractMeasureChunkR
    * @param blockIndex block to be read
    * @return measure data chunk
    */
-  @Override public MeasureColumnDataChunk readMeasureChunk(FileHolder fileReader, int blockIndex) {
+  @Override public MeasureColumnDataChunk readMeasureChunk(final FileHolder fileReader,
+      final int blockIndex) {
     MeasureColumnDataChunk datChunk = new MeasureColumnDataChunk();
     // create a new uncompressor
-    ValueCompressonHolder.UnCompressValue copy = values[blockIndex].getNew();
+    final ValueCompressionModel compressionModel = CarbonUtil
+        .getValueCompressionModel(measureColumnChunks.get(blockIndex).getValueEncoderMeta());
+    UnCompressValue values =
+        compressionModel.getUnCompressValues()[0].getNew().getCompressorObject();
+    // create a new uncompressor
     // read data from file and set to uncompressor
-    copy.setValue(fileReader
-        .readByteArray(filePath, measureColumnChunk.get(blockIndex).getDataPageOffset(),
-            measureColumnChunk.get(blockIndex).getDataPageLength()));
+    // read data from file and set to uncompressor
+    values.setValue(fileReader
+        .readByteArray(filePath, measureColumnChunks.get(blockIndex).getDataPageOffset(),
+            measureColumnChunks.get(blockIndex).getDataPageLength()));
     // get the data holder after uncompressing
     CarbonReadDataHolder measureDataHolder =
-        copy.uncompress(compressionModel.getChangedDataType()[blockIndex])
-            .getValues(compressionModel.getDecimal()[blockIndex],
-                compressionModel.getMaxValue()[blockIndex]);
+        values.uncompress(compressionModel.getChangedDataType()[0])
+            .getValues(compressionModel.getDecimal()[0], compressionModel.getMaxValue()[0]);
     // set the data chunk
     datChunk.setMeasureDataHolder(measureDataHolder);
     // set the enun value indexes
     datChunk
-        .setNullValueIndexHolder(measureColumnChunk.get(blockIndex).getNullValueIndexForColumn());
+        .setNullValueIndexHolder(measureColumnChunks.get(blockIndex).getNullValueIndexForColumn());
     return datChunk;
   }
 

@@ -74,7 +74,7 @@ public interface DataRefNode {
    * @param blockIndexes indexes of the blocks need to be read
    * @return dimension data chunks
    */
-  DimensionColumnDataChunk[] getDimensionChunks(FileHolder fileReader, int[] blockIndexes);
+  DimensionColumnDataChunk[] getDimensionChunks(FileHolder fileReader, int[][] blockIndexes);
 
   /**
    * Below method will be used to get the dimension chunk
@@ -92,7 +92,7 @@ public interface DataRefNode {
    * @param blockIndexes block indexes to be read from file
    * @return measure column data chunk
    */
-  MeasureColumnDataChunk[] getMeasureChunks(FileHolder fileReader, int[] blockIndexes);
+  MeasureColumnDataChunk[] getMeasureChunks(FileHolder fileReader, int[][] blockIndexes);
 
   /**
    * Below method will be used to read the measure chunk

@@ -50,6 +50,14 @@ public class BlockletInfo implements Serializable {
    */
   private List<DataChunk> measureColumnChunk;
 
+  private List<Long> dimensionChunkOffsets;
+
+  private List<Short> dimensionChunksLength;
+
+  private List<Long> measureChunkOffsets;
+
+  private List<Short> measureChunksLength;
+
   /**
    * to store the index like min max and start and end key of each column of the blocklet
    */
@@ -109,6 +117,38 @@ public class BlockletInfo implements Serializable {
    */
   public void setBlockletIndex(BlockletIndex blockletIndex) {
     this.blockletIndex = blockletIndex;
+  }
+
+  public List<Long> getDimensionChunkOffsets() {
+    return dimensionChunkOffsets;
+  }
+
+  public void setDimensionChunkOffsets(List<Long> dimensionChunkOffsets) {
+    this.dimensionChunkOffsets = dimensionChunkOffsets;
+  }
+
+  public List<Short> getDimensionChunksLength() {
+    return dimensionChunksLength;
+  }
+
+  public void setDimensionChunksLength(List<Short> dimensionChunksLength) {
+    this.dimensionChunksLength = dimensionChunksLength;
+  }
+
+  public List<Long> getMeasureChunkOffsets() {
+    return measureChunkOffsets;
+  }
+
+  public void setMeasureChunkOffsets(List<Long> measureChunkOffsets) {
+    this.measureChunkOffsets = measureChunkOffsets;
+  }
+
+  public List<Short> getMeasureChunksLength() {
+    return measureChunksLength;
+  }
+
+  public void setMeasureChunksLength(List<Short> measureChunksLength) {
+    this.measureChunksLength = measureChunksLength;
   }
 
 }

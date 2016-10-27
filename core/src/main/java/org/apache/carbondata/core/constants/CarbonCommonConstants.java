@@ -706,7 +706,7 @@ public final class CarbonCommonConstants {
   public static final String CARBON_MERGE_SORT_PREFETCH_DEFAULT = "true";
 
   /**
-   *  default name of data base
+   * default name of data base
    */
   public static final String DATABASE_DEFAULT_NAME = "default";
 
@@ -723,8 +723,7 @@ public final class CarbonCommonConstants {
   /**
    * this variable is to enable/disable identify high cardinality during first data loading
    */
-  public static final String HIGH_CARDINALITY_IDENTIFY_ENABLE =
-      "high.cardinality.identify.enable";
+  public static final String HIGH_CARDINALITY_IDENTIFY_ENABLE = "high.cardinality.identify.enable";
   public static final String HIGH_CARDINALITY_IDENTIFY_ENABLE_DEFAULT = "true";
 
   /**
@@ -744,11 +743,11 @@ public final class CarbonCommonConstants {
   /**
    * 16 mb size
    */
-  public static final long CARBON_16MB = 16*1024*1024;
+  public static final long CARBON_16MB = 16 * 1024 * 1024;
   /**
    * 256 mb size
    */
-  public static final long CARBON_256MB = 256*1024*1024;
+  public static final long CARBON_256MB = 256 * 1024 * 1024;
 
   /**
    * SEGMENT_COMPACTED is property to indicate whether seg is compacted or not.
@@ -768,26 +767,23 @@ public final class CarbonCommonConstants {
   /**
    * ZOOKEEPERLOCK TYPE
    */
-  public static final String CARBON_LOCK_TYPE_ZOOKEEPER =
-      "ZOOKEEPERLOCK";
+  public static final String CARBON_LOCK_TYPE_ZOOKEEPER = "ZOOKEEPERLOCK";
 
   /**
    * LOCALLOCK TYPE
    */
-  public static final String CARBON_LOCK_TYPE_LOCAL =
-      "LOCALLOCK";
+  public static final String CARBON_LOCK_TYPE_LOCAL = "LOCALLOCK";
 
   /**
    * HDFSLOCK TYPE
    */
-  public static final String CARBON_LOCK_TYPE_HDFS =
-      "HDFSLOCK";
+  public static final String CARBON_LOCK_TYPE_HDFS = "HDFSLOCK";
 
   /**
    * Invalid filter member log string
    */
-  public static final String FILTER_INVALID_MEMBER = " Invalid Record(s) are present "
-                                                     + "while filter evaluation. ";
+  public static final String FILTER_INVALID_MEMBER =
+      " Invalid Record(s) are present " + "while filter evaluation. ";
 
   /**
    * Number of unmerged segments to be merged.
@@ -814,85 +810,81 @@ public final class CarbonCommonConstants {
    * Rocord size in case of compaction.
    */
   public static final int COMPACTION_INMEMORY_RECORD_SIZE = 120000;
-
-  /**
-   * If the level 2 compaction is done in minor then new compacted segment will end with .2
-   */
-  public static String LEVEL2_COMPACTION_INDEX = ".2";
-
-  /**
-   * Indicates compaction
-   */
-  public static String COMPACTION_KEY_WORD = "COMPACTION";
-
   /**
    * hdfs temporary directory key
    */
   public static final String HDFS_TEMP_LOCATION = "hadoop.tmp.dir";
-
   /**
    * zookeeper url key
    */
   public static final String ZOOKEEPER_URL = "spark.deploy.zookeeper.url";
-
   /**
    * configure the minimum blocklet size eligible for blocklet distribution
    */
   public static final String CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE =
       "carbon.blockletdistribution.min.blocklet.size";
-
   /**
    * default blocklet size eligible for blocklet distribution
    */
   public static final int DEFAULT_CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE = 2;
-
+  /**
+   * This batch size is used to send rows from load step to another step in batches.
+   */
+  public static final String DATA_LOAD_BATCH_SIZE = "DATA_LOAD_BATCH_SIZE";
+  /**
+   * Default size of data load batch size.
+   */
+  public static final String DATA_LOAD_BATCH_SIZE_DEFAULT = "1000";
+  /**
+   * carbon data file version property
+   */
+  public static final String CARBON_DATA_FILE_VERSION = "carbon.data.file.version";
+  /**
+   * current data file version
+   */
+  public static final short CARBON_DATA_FILE_CURRENT_VERSION = 2;
+  /**
+   * data file version header
+   */
+  public static final String CARBON_DATA_VERSION_HEADER = "CARBONDATAVERSION#";
+  /**
+   * If the level 2 compaction is done in minor then new compacted segment will end with .2
+   */
+  public static String LEVEL2_COMPACTION_INDEX = ".2";
+  /**
+   * Indicates compaction
+   */
+  public static String COMPACTION_KEY_WORD = "COMPACTION";
   /**
    * File created in case of minor compaction request
    */
   public static String minorCompactionRequiredFile = "compactionRequired_minor";
-
   /**
    * File created in case of major compaction request
    */
   public static String majorCompactionRequiredFile = "compactionRequired_major";
-
   /**
    * @Deprecated : This property has been deprecated.
    * Property for enabling system level compaction lock.1 compaction can run at once.
    */
-  public static String ENABLE_CONCURRENT_COMPACTION =
-      "carbon.concurrent.compaction";
-
+  public static String ENABLE_CONCURRENT_COMPACTION = "carbon.concurrent.compaction";
   /**
    * Default value of Property for enabling system level compaction lock.1 compaction can run
    * at once.
    */
   public static String DEFAULT_ENABLE_CONCURRENT_COMPACTION = "true";
-
   /**
    * Compaction system level lock folder.
    */
   public static String SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER = "SystemCompactionLock";
-
   /**
    * to enable blocklet distribution
    */
   public static String ENABLE_BLOCKLET_DISTRIBUTION = "enable.blocklet.distribution";
-
   /**
    * to enable blocklet distribution default value
    */
   public static String ENABLE_BLOCKLET_DISTRIBUTION_DEFAULTVALUE = "false";
-
-  /**
-   * This batch size is used to send rows from load step to another step in batches.
-   */
-  public static final String DATA_LOAD_BATCH_SIZE = "DATA_LOAD_BATCH_SIZE";
-
-  /**
-   * Default size of data load batch size.
-   */
-  public static final String DATA_LOAD_BATCH_SIZE_DEFAULT = "1000";
 
   private CarbonCommonConstants() {
   }

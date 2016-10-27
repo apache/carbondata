@@ -745,4 +745,11 @@ public class SegmentProperties {
     return blockTodimensionOrdinalMapping.get(blockIndex);
   }
 
+  /**
+   * @return It returns block index to dimension ordinal mapping
+   */
+  public Map<Integer, Set<Integer>> getBlockTodimensionOrdinalMapping() {
+    return blockTodimensionOrdinalMapping;
+  }
+
 }
