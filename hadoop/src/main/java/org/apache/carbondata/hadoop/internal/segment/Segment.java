@@ -30,11 +30,17 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 
+/**
+ * Within a carbon table, each data load becomes one Segment, which stores all data files belong to this load in
+ * the segment folder.
+ */
 public abstract class Segment {
 
   protected String id;
 
-  // Path of the segment folder
+  /**
+   * Path of the segment folder
+   */
   private String path;
 
   public Segment(String id, String path) {
@@ -84,6 +90,5 @@ public abstract class Segment {
    * @param job job context
    */
   public abstract void setupForRead(JobContext job) throws IOException;
-
 
 }

@@ -24,6 +24,9 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.carbondata.hadoop.CarbonProjection;
+import org.apache.carbondata.hadoop.internal.segment.Segment;
+import org.apache.carbondata.hadoop.internal.segment.SegmentManager;
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
 import org.apache.carbondata.scan.expression.Expression;
 import org.apache.carbondata.scan.filter.resolver.FilterResolverIntf;
@@ -34,12 +37,8 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 
-import org.apache.carbondata.hadoop.internal.segment.Segment;
-import org.apache.carbondata.hadoop.internal.segment.SegmentManager;
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
-
 /**
- * Base class of all input format of CarbonData
+ * Base class of all input format of CarbonData file.
  * @param <T>
  */
 public abstract class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {

@@ -19,6 +19,9 @@
 
 package org.apache.carbondata.hadoop.internal.segment;
 
+/**
+ * Used to get the global segment manager instance
+ */
 public class SegmentManagerFactory {
   public static SegmentManager getGlobalSegmentManager() {
     return null;

@@ -17,25 +17,28 @@
  * under the License.
  */
 
-package org.apache.carbondata.hadoop.api;
+package org.apache.carbondata.hadoop.internal.index;
 
-import java.io.IOException;
-
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.RecordWriter;
-import org.apache.hadoop.util.Progressable;
+import java.util.List;
 
 /**
- * Base class for all output format for CarbonData file.
- * @param <T>
+ * Represent one HDFS Block (one CarbonData file).
  */
-public abstract class CarbonTableOutputFormat<T> extends FileOutputFormat<Void, T> {
+public interface Block {
 
-  @Override
-  public RecordWriter<Void, T> getRecordWriter(FileSystem ignored, JobConf job, String name,
-      Progressable progress) throws IOException {
-    return null;
-  }
+  /**
+   * @return the file path of this block
+   */
+  String getPath();
+
+  /**
+   * return all matched blocklets for scanning
+   * @return list of blocklet offset in the block
+   */
+  List<Long> getMatchedBlocklets();
+
+  /**
+   * @return true if need to do full scan of this block
+   */
+  boolean fullScan();
 }

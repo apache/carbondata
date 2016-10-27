@@ -23,12 +23,26 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.scan.filter.resolver.FilterResolverIntf;
-import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 
+/**
+ * An index is associate with one segment, it is used for filtering on files in the segment.
+ */
 public interface Index {
+
+  /**
+   * Index name
+   * @return index name
+   */
   String getName();
 
-  List<InputSplit> filter(JobContext job, FilterResolverIntf filter) throws IOException;
+  /**
+   * Used to filter blocks based on filter
+   * @param job job
+   * @param filter filter
+   * @return filtered block
+   * @throws IOException
+   */
+  List<Block> filter(JobContext job, FilterResolverIntf filter) throws IOException;
 
 }

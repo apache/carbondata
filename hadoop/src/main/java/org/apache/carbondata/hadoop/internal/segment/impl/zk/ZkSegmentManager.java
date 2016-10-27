@@ -24,7 +24,10 @@ import java.io.IOException;
 import org.apache.carbondata.hadoop.internal.segment.Segment;
 import org.apache.carbondata.hadoop.internal.segment.SegmentManager;
 
-// This class leverage Zookeeper and HDFS file to manage segments
+/**
+ * This class leverage Zookeeper and HDFS file to manage segments.
+ * Zookeeper is used for locking, and HDFS is for storing the state of segments.
+ */
 public class ZkSegmentManager implements SegmentManager {
   @Override
   public Segment[] getAllValidSegments() {
@@ -47,7 +50,7 @@ public class ZkSegmentManager implements SegmentManager {
   }
 
   @Override
-  public void markSegmentForMutation(Segment segment) throws IOException {
+  public void deleteSegment(Segment segment) throws IOException {
 
   }
 }

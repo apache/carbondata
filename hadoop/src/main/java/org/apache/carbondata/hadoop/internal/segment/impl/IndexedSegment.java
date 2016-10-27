@@ -23,6 +23,8 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.carbondata.hadoop.CarbonInputSplit;
+import org.apache.carbondata.hadoop.internal.index.Block;
 import org.apache.carbondata.hadoop.internal.segment.Segment;
 import org.apache.carbondata.hadoop.internal.index.Index;
 import org.apache.carbondata.hadoop.internal.index.IndexLoader;
@@ -30,6 +32,9 @@ import org.apache.carbondata.scan.filter.resolver.FilterResolverIntf;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 
+/**
+ * This segment is backed by index, thus getSplits can use the index to do file pruning.
+ */
 public class IndexedSegment extends Segment {
 
   private IndexLoader loader;
@@ -42,12 +47,17 @@ public class IndexedSegment extends Segment {
   @Override
   public List<InputSplit> getSplits(JobContext job, FilterResolverIntf filterResolver)
       throws IOException {
+    // do as following
     // 1. create the index or get from cache by the filter name in the configuration
     // 2. filter by index to get the filtered block
+    // 3. create input split from filtered block
 
     List<InputSplit> output = new LinkedList<>();
     Index index = loader.load(job.getConfiguration());
-    output.addAll(index.filter(job, filterResolver));
+    List<Block> blocks = index.filter(job, filterResolver);
+    for (Block block: blocks) {
+      output.add(makeInputSplit(block));
+    }
     return output;
   }
 
@@ -56,4 +66,8 @@ public class IndexedSegment extends Segment {
 
   }
 
+  private InputSplit makeInputSplit(Block block) {
+    // TODO: get all required parameter from block
+    return new CarbonInputSplit();
+  }
 }

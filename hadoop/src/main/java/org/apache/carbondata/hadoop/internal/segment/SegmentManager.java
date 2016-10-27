@@ -21,22 +21,36 @@ package org.apache.carbondata.hadoop.internal.segment;
 
 import java.io.IOException;
 
+/**
+ * Segment manager is used to manage all segment within one table. It manages segment state internally in a
+ * transactional manner.
+ */
 public interface SegmentManager {
 
-  // use for get all segments for scann
+  /**
+   * Used for getting all segments for scan
+   */
   Segment[] getAllValidSegments();
 
-  // use for data load
-  // caller should open new segment by calling this, after data success, call commitSegment,
-  // call closeSegment if any failure
+  /**
+   * Used for data load
+   * caller should open new segment by calling this, after data success, call commitSegment,
+   * call closeSegment if any failure
+   */
   Segment openNewSegment() throws IOException;
 
-  // use for finishing data load or compaction
+  /**
+   * Call this function when data load or compaction is completed successfully.
+   */
   void commitSegment(Segment segment) throws IOException;
 
-  // use for ending failed data load or compaction
+  /**
+   * Call this function when data load or compaction failed.
+   */
   void closeSegment(Segment segment) throws IOException;
 
-  // use for mutation of the segment
-  void markSegmentForMutation(Segment segment) throws IOException;
+  /**
+   * Delete this segment
+   */
+  void deleteSegment(Segment segment) throws IOException;
 }
