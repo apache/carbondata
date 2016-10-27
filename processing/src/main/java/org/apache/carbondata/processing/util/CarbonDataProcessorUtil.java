@@ -343,26 +343,23 @@ public final class CarbonDataProcessorUtil {
 
   /**
    * This method will return all the child dimensions under complex dimension
-   *
    */
   private static void addAllComplexTypeChildren(CarbonDimension dimension, StringBuilder dimString,
       String parent) {
-    dimString.append(
-        dimension.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER + dimension.getDataType()
-            + CarbonCommonConstants.COLON_SPC_CHARACTER + parent
-            + CarbonCommonConstants.COLON_SPC_CHARACTER + dimension.getColumnId()
-            + CarbonCommonConstants.HASH_SPC_CHARACTER);
+    dimString.append(dimension.getColName()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
+        .append(dimension.getDataType()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
+        .append(parent).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
+        .append(dimension.getColumnId()).append(CarbonCommonConstants.HASH_SPC_CHARACTER);
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
       CarbonDimension childDim = dimension.getListOfChildDimensions().get(i);
       if (childDim.getNumberOfChild() > 0) {
         addAllComplexTypeChildren(childDim, dimString, dimension.getColName());
       } else {
-        dimString.append(
-            childDim.getColName() + CarbonCommonConstants.COLON_SPC_CHARACTER + childDim
-                .getDataType() + CarbonCommonConstants.COLON_SPC_CHARACTER + dimension.getColName()
-                + CarbonCommonConstants.COLON_SPC_CHARACTER + childDim.getColumnId()
-                + CarbonCommonConstants.COLON_SPC_CHARACTER + childDim.getOrdinal()
-                + CarbonCommonConstants.HASH_SPC_CHARACTER);
+        dimString.append(childDim.getColName()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
+            .append(childDim.getDataType()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
+            .append(dimension.getColName()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
+            .append(childDim.getColumnId()).append(CarbonCommonConstants.COLON_SPC_CHARACTER)
+            .append(childDim.getOrdinal()).append(CarbonCommonConstants.HASH_SPC_CHARACTER);
       }
     }
   }
