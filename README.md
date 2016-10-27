@@ -52,6 +52,9 @@ Read the [quick start](https://cwiki.apache.org/confluence/display/CARBONDATA/Qu
 ### CarbonData File Structure and interfaces
 Please refer [CarbonData File Format](https://cwiki.apache.org/confluence/display/CARBONDATA/CarbonData+File+Structure+and+Format) and [CarbonData Interfaces](https://cwiki.apache.org/confluence/display/CARBONDATA/Carbon+Packaging+and+Interfaces)
 
+### CarbonData FAQ 
+[Configurations For Optimizing CarbonData Performance](https://cwiki.apache.org/confluence/display/CARBONDATA/Configurations+For+Optimizing+CarbonData+Performance)
+
 ### Other Technical Material
 [Apache CarbonData meetup material](docs/Apache-CarbonData-meetup-material.pdf)
 
