@@ -44,9 +44,4 @@ public class CarbonColumnarInputFormat<T> extends CarbonTableInputFormat<T> {
     return wrap.createRecordReader(split, context);
   }
 
-  @Override
-  public void selectIndex(JobContext job) {
-    // TODO: by default, there is only one index in Carbon, set it directly
-  }
-
 }

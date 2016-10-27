@@ -26,11 +26,12 @@ import org.apache.carbondata.hadoop.internal.segment.SegmentManager;
 import org.apache.hadoop.mapred.FileOutputCommitter;
 import org.apache.hadoop.mapred.JobContext;
 
-public class CarbonOutputCommitter extends FileOutputCommitter {
+public class CarbonTableOutputCommitter extends FileOutputCommitter {
   private SegmentManager segmentManager;
   private Segment newSegment;
 
-  @Override public void setupJob(JobContext context) throws IOException {
+  @Override
+  public void setupJob(JobContext context) throws IOException {
     // steps:
     // call segment manager to open new segment for loading
     // load data synchronously
@@ -40,12 +41,14 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     super.setupJob(context);
   }
 
-  @Override public void abortJob(JobContext context, int runState) throws IOException {
+  @Override
+  public void abortJob(JobContext context, int runState) throws IOException {
     segmentManager.closeSegment(newSegment);
     super.abortJob(context, runState);
   }
 
-  @Override public void commitJob(JobContext context) throws IOException {
+  @Override
+  public void commitJob(JobContext context) throws IOException {
     newSegment.setupForRead(context);
     segmentManager.commitSegment(newSegment);
     super.commitJob(context);

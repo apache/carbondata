@@ -27,7 +27,7 @@ import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.RecordWriter;
 import org.apache.hadoop.util.Progressable;
 
-public abstract class CarbonOutputFormatBase<T> extends FileOutputFormat<Void, T> {
+public abstract class CarbonTableOutputFormat<T> extends FileOutputFormat<Void, T> {
 
   @Override
   public RecordWriter<Void, T> getRecordWriter(FileSystem ignored, JobConf job, String name,

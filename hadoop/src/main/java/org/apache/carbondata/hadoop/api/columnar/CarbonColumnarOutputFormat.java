@@ -19,7 +19,7 @@
 
 package org.apache.carbondata.hadoop.api.columnar;
 
-import org.apache.carbondata.hadoop.api.CarbonOutputFormatBase;
+import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat;
 
-public class CarbonColumnarOutputFormat<T> extends CarbonOutputFormatBase<T> {
+public class CarbonColumnarOutputFormat<T> extends CarbonTableOutputFormat<T> {
 }
