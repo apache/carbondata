@@ -742,13 +742,13 @@ object GlobalDictionaryUtil extends Logging {
    */
   def generateGlobalDictionary(sqlContext: SQLContext,
                                carbonLoadModel: CarbonLoadModel,
-                               hdfsLocation: String,
+                               storePath: String,
                                dataFrame: Option[DataFrame] = None): Unit = {
     try {
       val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getAbsoluteTableIdentifier
         .getCarbonTableIdentifier
       // create dictionary folder if not exists
-      val carbonTablePath = CarbonStorePath.getCarbonTablePath(hdfsLocation, table)
+      val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, table)
       val dictfolderPath = carbonTablePath.getMetadataDirectoryPath
       // columns which need to generate global dictionary file
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
@@ -777,7 +777,7 @@ object GlobalDictionaryUtil extends Logging {
         if (colDictFilePath != null) {
           // generate predefined dictionary
           generatePredefinedColDictionary(colDictFilePath, table,
-            dimensions, carbonLoadModel, sqlContext, hdfsLocation, dictfolderPath)
+            dimensions, carbonLoadModel, sqlContext, storePath, dictfolderPath)
         }
         if (headers.length > df.columns.length) {
           val msg = "The number of columns in the file header do not match the number of " +
@@ -792,7 +792,7 @@ object GlobalDictionaryUtil extends Logging {
           // select column to push down pruning
           df = df.select(requireColumnNames.head, requireColumnNames.tail: _*)
           val model = createDictionaryLoadModel(carbonLoadModel, table, requireDimension,
-            hdfsLocation, dictfolderPath, false)
+            storePath, dictfolderPath, false)
           // combine distinct value in a block and partition by column
           val inputRDD = new CarbonBlockDistinctValuesCombineRDD(df.rdd, model)
             .partitionBy(new ColumnPartitioner(model.primDimensions.length))
@@ -815,7 +815,7 @@ object GlobalDictionaryUtil extends Logging {
               dimDataframe = dimDataframe.select(requireColumnNamesForDim.head,
                 requireColumnNamesForDim.tail: _*)
               val modelforDim = createDictionaryLoadModel(carbonLoadModel, table,
-                requireDimensionForDim, hdfsLocation, dictfolderPath, false)
+                requireDimensionForDim, storePath, dictfolderPath, false)
               val inputRDDforDim = new CarbonBlockDistinctValuesCombineRDD(
                 dimDataframe.rdd, modelforDim)
                 .partitionBy(new ColumnPartitioner(modelforDim.primDimensions.length))
@@ -842,7 +842,7 @@ object GlobalDictionaryUtil extends Logging {
             pruneDimensions(dimensions, headers, headers)
           if (requireDimension.nonEmpty) {
             val model = createDictionaryLoadModel(carbonLoadModel, table, requireDimension,
-              hdfsLocation, dictfolderPath, false)
+              storePath, dictfolderPath, false)
             // check if dictionary files contains bad record
             val accumulator = sqlContext.sparkContext.accumulator(0)
             // read local dictionary file, and group by key
