@@ -44,6 +44,7 @@ import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
+import org.apache.carbondata.hadoop.internal.index.Block;
 import org.apache.carbondata.hadoop.internal.index.Index;
 import org.apache.carbondata.hadoop.internal.segment.Segment;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
@@ -71,20 +72,19 @@ class InMemoryBTreeIndex implements Index {
   }
 
   @Override
-  public List<InputSplit> filter(JobContext job, FilterResolverIntf filter)
+  public List<Block> filter(JobContext job, FilterResolverIntf filter)
       throws IOException {
 
-    List<InputSplit> result = new LinkedList<InputSplit>();
+    List<Block> result = new LinkedList<>();
 
     FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
 
-    AbsoluteTableIdentifier absoluteTableIdentifier = null;
+    AbsoluteTableIdentifier identifier = null;
 
     //for this segment fetch blocks matching filter in BTree
     List<DataRefNode> dataRefNodes = null;
     try {
-      dataRefNodes = getDataBlocksOfSegment(job, filterExpressionProcessor, absoluteTableIdentifier,
-          filter);
+      dataRefNodes = getDataBlocksOfSegment(job, filterExpressionProcessor, identifier, filter);
     } catch (IndexBuilderException e) {
       throw new IOException(e.getMessage());
     }
@@ -123,7 +123,6 @@ class InMemoryBTreeIndex implements Index {
    * Below method will be used to get the table block info
    *
    * @param job                     job context
-   * @param segmentId               number of segment id
    * @return list of table block
    * @throws IOException
    */

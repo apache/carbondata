@@ -29,5 +29,5 @@ public abstract class CarbonInputSplit extends InputSplit {
   /**
    * @return the format type of this split.
    */
-  public abstract CarbonFormat formatType();
+  public abstract CarbonFormatType formatType();
 }

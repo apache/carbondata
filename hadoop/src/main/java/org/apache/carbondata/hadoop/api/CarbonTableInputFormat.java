@@ -27,6 +27,7 @@ import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.hadoop.internal.CarbonInputSplit;
 import org.apache.carbondata.hadoop.internal.segment.Segment;
 import org.apache.carbondata.hadoop.internal.segment.SegmentManager;
+import org.apache.carbondata.hadoop.internal.segment.SegmentManagerFactory;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
 import org.apache.carbondata.scan.expression.Expression;
@@ -49,8 +50,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
 
   private SegmentManager segmentManager;
 
-  public CarbonTableInputFormat(SegmentManager segmentManager) {
-    this.segmentManager = segmentManager;
+  public CarbonTableInputFormat() {
+    this.segmentManager = SegmentManagerFactory.getGlobalSegmentManager();
   }
 
   @Override

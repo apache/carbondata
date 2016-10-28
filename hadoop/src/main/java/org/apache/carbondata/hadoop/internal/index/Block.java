@@ -27,9 +27,9 @@ import java.util.List;
 public interface Block {
 
   /**
-   * @return the file path of this block
+   * @return the path of this block
    */
-  String getPath();
+  String getBlockPath();
 
   /**
    * return all matched blocklets for scanning

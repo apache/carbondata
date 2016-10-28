@@ -24,6 +24,7 @@ package org.apache.carbondata.hadoop.internal.segment;
  */
 public class SegmentManagerFactory {
   public static SegmentManager getGlobalSegmentManager() {
+    //TODO return the default implementation
     return null;
   }
 }

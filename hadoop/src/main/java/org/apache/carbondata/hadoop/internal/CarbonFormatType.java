@@ -19,6 +19,6 @@
 
 package org.apache.carbondata.hadoop.internal;
 
-public enum CarbonFormat {
-  COLUMNR
+public enum CarbonFormatType {
+  COLUMNAR
 }
