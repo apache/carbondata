@@ -19,6 +19,7 @@
 
 package org.apache.carbondata.hadoop.internal.index;
 
+import org.apache.carbondata.hadoop.internal.segment.Segment;
 import org.apache.hadoop.conf.Configuration;
 
 /**
@@ -28,8 +29,8 @@ public interface IndexLoader {
 
   /**
    * load the index based on the index information set in the configuration
-   * @param conf configuration
+   * @param segment the index from which segment to load
    * @return the loaded index
    */
-  Index load(Configuration conf);
+  Index load(Segment segment);
 }

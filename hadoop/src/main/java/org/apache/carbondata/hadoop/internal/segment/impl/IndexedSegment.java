@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
-import org.apache.carbondata.hadoop.CarbonInputSplit;
+import org.apache.carbondata.hadoop.internal.CarbonInputSplit;
 import org.apache.carbondata.hadoop.internal.index.Block;
 import org.apache.carbondata.hadoop.internal.segment.Segment;
 import org.apache.carbondata.hadoop.internal.index.Index;
@@ -53,7 +53,7 @@ public class IndexedSegment extends Segment {
     // 3. create input split from filtered block
 
     List<InputSplit> output = new LinkedList<>();
-    Index index = loader.load(job.getConfiguration());
+    Index index = loader.load(this);
     List<Block> blocks = index.filter(job, filterResolver);
     for (Block block: blocks) {
       output.add(makeInputSplit(block));
@@ -68,6 +68,6 @@ public class IndexedSegment extends Segment {
 
   private InputSplit makeInputSplit(Block block) {
     // TODO: get all required parameter from block
-    return new CarbonInputSplit();
+    return null;
   }
 }
