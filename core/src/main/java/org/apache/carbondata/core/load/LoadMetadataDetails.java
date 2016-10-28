@@ -150,7 +150,7 @@ public class LoadMetadataDetails implements Serializable {
    * return loadStartTime
    * @return
    */
-  public long getLoadStartTimeAsLong() {
+  public Long getLoadStartTimeAsLong() {
     return getTimeStamp(loadStartTime);
   }
 
