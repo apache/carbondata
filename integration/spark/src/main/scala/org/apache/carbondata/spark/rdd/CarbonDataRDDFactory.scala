@@ -31,9 +31,8 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{util => _, _}
 import org.apache.spark.sql.{CarbonEnv, DataFrame, SQLContext}
-import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel,
-CompactionModel, Partitioner}
-import org.apache.spark.sql.hive.{DistributionUtil}
+import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel, CompactionModel, Partitioner}
+import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.util.{FileUtils, SplitUtils}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -44,8 +43,7 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.integration.spark.merger.{CarbonCompactionUtil, CompactionCallable,
-CompactionType}
+import org.apache.carbondata.integration.spark.merger.{CarbonCompactionUtil, CompactionCallable, CompactionType}
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.etl.DataLoadingException
@@ -54,6 +52,7 @@ import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.merger.CarbonDataMergerUtil
 import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.{CarbonQueryUtil, LoadMetadataUtil}
+
 
 /**
  * This is the factory class which can create different RDD depends on user needs.
@@ -710,9 +709,15 @@ object CarbonDataRDDFactory extends Logging {
           }
           else {
             logger.audit("Not able to acquire the compaction lock for table " +
-                         s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+                         s"${ carbonLoadModel.getDatabaseName }.${
+                           carbonLoadModel
+                             .getTableName
+                         }")
             logger.error("Not able to acquire the compaction lock for table " +
-                         s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+                         s"${ carbonLoadModel.getDatabaseName }.${
+                           carbonLoadModel
+                             .getTableName
+                         }")
           }
         }
       }
@@ -756,7 +761,8 @@ object CarbonDataRDDFactory extends Logging {
         CarbonLoaderUtil.deletePartialLoadDataIfExist(carbonLoadModel, false)
       } catch {
         case e: Exception =>
-          logger.error(s"Exception in data load while clean up of stale segments ${ e.getMessage }")
+          logger
+            .error(s"Exception in data load while clean up of stale segments ${ e.getMessage }")
       }
 
       // reading the start time of data load.
@@ -778,11 +784,11 @@ object CarbonDataRDDFactory extends Logging {
       def loadDataFile(): Unit = {
         if (isTableSplitPartition) {
           /*
-           * when data handle by table split partition
-           * 1) get partition files, direct load or not will get the different files path
-           * 2) get files blocks by using SplitUtils
-           * 3) output Array[(partitionID,Array[BlockDetails])] to blocksGroupBy
-           */
+         * when data handle by table split partition
+         * 1) get partition files, direct load or not will get the different files path
+         * 2) get files blocks by using SplitUtils
+         * 3) output Array[(partitionID,Array[BlockDetails])] to blocksGroupBy
+         */
           var splits = Array[TableSplit]()
           if (carbonLoadModel.isDirectLoad) {
             // get all table Splits, this part means files were divide to different partitions
@@ -825,13 +831,13 @@ object CarbonDataRDDFactory extends Logging {
         }
         else {
           /*
-           * when data load handle by node partition
-           * 1)clone the hadoop configuration,and set the file path to the configuration
-           * 2)use NewHadoopRDD to get split,size:Math.max(minSize, Math.min(maxSize, blockSize))
-           * 3)use DummyLoadRDD to group blocks by host,and let spark balance the block location
-           * 4)DummyLoadRDD output (host,Array[BlockDetails])as the parameter to CarbonDataLoadRDD
-           *   which parititon by host
-           */
+         * when data load handle by node partition
+         * 1)clone the hadoop configuration,and set the file path to the configuration
+         * 2)use NewHadoopRDD to get split,size:Math.max(minSize, Math.min(maxSize, blockSize))
+         * 3)use DummyLoadRDD to group blocks by host,and let spark balance the block location
+         * 4)DummyLoadRDD output (host,Array[BlockDetails])as the parameter to CarbonDataLoadRDD
+         *   which parititon by host
+         */
           val hadoopConfiguration = new Configuration(sqlContext.sparkContext.hadoopConfiguration)
           // FileUtils will skip file which is no csv, and return all file path which split by ','
           val filePaths = carbonLoadModel.getFactFilePath
@@ -871,7 +877,10 @@ object CarbonDataRDDFactory extends Logging {
               .toSeq
           val timeElapsed: Long = System.currentTimeMillis - startTime
           logInfo("Total Time taken in block allocation: " + timeElapsed)
-          logInfo(s"Total no of blocks: ${blockList.length}, No.of Nodes: ${nodeBlockMapping.size}"
+          logInfo(s"Total no of blocks: ${ blockList.length }, No.of Nodes: ${
+            nodeBlockMapping
+              .size
+          }"
           )
           var str = ""
           nodeBlockMapping.foreach(entry => {
@@ -922,7 +931,7 @@ object CarbonDataRDDFactory extends Logging {
         var rdd = dataFrame.get.rdd
         var numPartitions = DistributionUtil.getNodeList(sqlContext.sparkContext).length
         numPartitions = Math.max(1, Math.min(numPartitions, rdd.partitions.length))
-        rdd = rdd.coalesce(numPartitions, false)
+        rdd = rdd.coalesce(numPartitions, shuffle = false)
 
         status = new DataFrameLoaderRDD(sqlContext.sparkContext,
           new DataLoadResultImpl(),
@@ -1011,7 +1020,10 @@ object CarbonDataRDDFactory extends Logging {
           if (!status) {
             val errorMessage = "Dataload failed due to failure in table status updation."
             logger.audit("Data load is failed for " +
-                         s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+                         s"${ carbonLoadModel.getDatabaseName }.${
+                           carbonLoadModel
+                             .getTableName
+                         }")
             logger.error("Dataload failed due to failure in table status updation.")
             throw new Exception(errorMessage)
           }
@@ -1144,5 +1156,6 @@ object CarbonDataRDDFactory extends Logging {
       CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
     }
   }
+
 
 }
