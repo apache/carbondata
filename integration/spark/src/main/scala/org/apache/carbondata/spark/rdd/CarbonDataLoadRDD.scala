@@ -211,12 +211,13 @@ class DataFileLoaderRDD[K, V](
       splits.zipWithIndex.map { case (split, index) =>
         // filter the same partition unique id, because only one will match, so get 0 element
         val blocksDetails: Array[BlockDetails] = blocksGroupBy.filter { case (uniqueId, _) =>
-          uniqueId == split.getPartition.getUniqueID}(0)._2
+          uniqueId == split.getPartition.getUniqueID
+        }(0)._2
         new CarbonTableSplitPartition(id, index, split, blocksDetails)
       }
     } else {
       // for node partition
-      blocksGroupBy.zipWithIndex.map {case ((uniqueId, blockDetails),index) =>
+      blocksGroupBy.zipWithIndex.map { case ((uniqueId, blockDetails), index) =>
         new CarbonNodePartition(id, index, uniqueId, blockDetails)
       }
     }
