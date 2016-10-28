@@ -318,7 +318,7 @@ public final class CarbonDataProcessorUtil {
   public static boolean[] getIsUseInvertedIndex(DataField[] fields) {
     List<Boolean> isUseInvertedIndexList = new ArrayList<Boolean>();
     for (DataField field : fields) {
-      if (field.getColumn().isUseInvertedIndnex() && field.getColumn().isDimesion()) {
+      if (field.getColumn().isUseInvertedIndex() && field.getColumn().isDimesion()) {
         isUseInvertedIndexList.add(true);
       } else if(field.getColumn().isDimesion()){
         isUseInvertedIndexList.add(false);
