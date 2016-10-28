@@ -54,6 +54,8 @@ Please refer [CarbonData File Format](https://cwiki.apache.org/confluence/displa
 
 ### CarbonData FAQ 
 [Configurations For Optimizing CarbonData Performance](https://cwiki.apache.org/confluence/display/CARBONDATA/Configurations+For+Optimizing+CarbonData+Performance)
+[Suggestion to create CarbonData table]
+(https://cwiki.apache.org/confluence/display/CARBONDATA/Suggestion+to+create+CarbonData+table)
 
 ### Other Technical Material
 [Apache CarbonData meetup material](docs/Apache-CarbonData-meetup-material.pdf)
