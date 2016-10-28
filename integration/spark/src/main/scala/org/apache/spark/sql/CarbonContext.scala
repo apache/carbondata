@@ -107,7 +107,7 @@ class CarbonContext(
     if (sc.hadoopConfiguration.get(CarbonCommonConstants.HIVE_CONNECTION_URL) == null) {
       val metaStorePathAbsolute = new File(metaStorePath).getCanonicalPath
       val hiveMetaStoreDB = metaStorePathAbsolute + "/metastore_db"
-      logDebug(s"metastore db is going to be created in location : $hiveMetaStoreDB")
+      logDebug(s"metastore db is going to be created in location: $hiveMetaStoreDB")
       super.configure() ++ Map((CarbonCommonConstants.HIVE_CONNECTION_URL,
         s"jdbc:derby:;databaseName=$hiveMetaStoreDB;create=true"),
         ("hive.metastore.warehouse.dir", metaStorePathAbsolute + "/hivemetadata"))

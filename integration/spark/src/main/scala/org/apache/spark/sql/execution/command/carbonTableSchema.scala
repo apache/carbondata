@@ -302,12 +302,12 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
     // Its based on the dimension name and measure name
     allColumns.groupBy(_.getColumnName).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(s"Duplicate column found with name : $name")
+      LOGGER.error(s"Duplicate column found with name: $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Table Operation " +
         s"for ${ cm.databaseName }.${ cm.tableName }" +
-        s"Duplicate column found with name : $name")
-      sys.error(s"Duplicate dimensions found with name : $name")
+        s"Duplicate column found with name: $name")
+      sys.error(s"Duplicate dimensions found with name: $name")
     })
 
     val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
@@ -392,12 +392,12 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
           }
         } else if (definedpartCols.nonEmpty) {
           val msg = definedpartCols.mkString(", ")
-          LOGGER.error(s"partition columns specified are not part of Dimension columns : $msg")
+          LOGGER.error(s"partition columns specified are not part of Dimension columns: $msg")
           LOGGER.audit(
             s"Validation failed for Create/Alter Table Operation for " +
             s"${ cm.databaseName }.${ cm.tableName } " +
-            s"partition columns specified are not part of Dimension columns : $msg")
-          sys.error(s"partition columns specified are not part of Dimension columns : $msg")
+            s"partition columns specified are not part of Dimension columns: $msg")
+          sys.error(s"partition columns specified are not part of Dimension columns: $msg")
         } else {
 
           try {
@@ -408,8 +408,8 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
               LOGGER.audit(
                 s"Validation failed for Create/Alter Table Operation for " +
                 s"${ cm.databaseName }.${ cm.tableName } " +
-                s"partition class specified can not be found or loaded : $cl")
-              sys.error(s"partition class specified can not be found or loaded : $cl")
+                s"partition class specified can not be found or loaded: $cl")
+              sys.error(s"partition class specified can not be found or loaded: $cl")
           }
 
           Partitioner(part.partitionClass, columnBuffer.toArray, part.partitionCount, null)
@@ -580,42 +580,42 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
     // Its based on the dimension name and measure name
     levels.groupBy(_.name).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(s"Duplicate dimensions found with name : $name")
+      LOGGER.error(s"Duplicate dimensions found with name: $name")
       LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation " +
+        "Validation failed for Create/Alter Table Operation " +
         s"for ${ cm.databaseName }.${ cm.tableName } " +
-        s"Duplicate dimensions found with name : $name")
-      sys.error(s"Duplicate dimensions found with name : $name")
+        s"Duplicate dimensions found with name: $name")
+      sys.error(s"Duplicate dimensions found with name: $name")
     })
 
     levels.groupBy(_.column).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(s"Duplicate dimensions found with column name : $name")
+      LOGGER.error(s"Duplicate dimensions found with column name: $name")
       LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation " +
+        "Validation failed for Create/Alter Table Operation " +
         s"for ${ cm.databaseName }.${ cm.tableName } " +
-        s"Duplicate dimensions found with column name : $name")
-      sys.error(s"Duplicate dimensions found with column name : $name")
+        s"Duplicate dimensions found with column name: $name")
+      sys.error(s"Duplicate dimensions found with column name: $name")
     })
 
     measures.groupBy(_.name).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(s"Duplicate measures found with name : $name")
+      LOGGER.error(s"Duplicate measures found with name: $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Table Operation " +
         s"for ${ cm.databaseName }.${ cm.tableName } " +
-        s"Duplicate measures found with name : $name")
-      sys.error(s"Duplicate measures found with name : $name")
+        s"Duplicate measures found with name: $name")
+      sys.error(s"Duplicate measures found with name: $name")
     })
 
     measures.groupBy(_.column).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(s"Duplicate measures found with column name : $name")
+      LOGGER.error(s"Duplicate measures found with column name: $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Table Operation " +
         s"for ${ cm.databaseName }.${ cm.tableName } " +
-        s"Duplicate measures found with column name : $name")
-      sys.error(s"Duplicate measures found with column name : $name")
+        s"Duplicate measures found with column name: $name")
+      sys.error(s"Duplicate measures found with column name: $name")
     })
 
     val levelsArray = levels.map(_.name)
@@ -635,12 +635,12 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
 
     levelsNdMesures.groupBy(x => x).foreach(f => if (f._2.size > 1) {
       val name = f._1
-      LOGGER.error(s"Dimension and Measure defined with same name : $name")
+      LOGGER.error(s"Dimension and Measure defined with same name: $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Table Operation " +
         s"for ${ cm.databaseName }.${ cm.tableName } " +
-        s"Dimension and Measure defined with same name : $name")
-      sys.error(s"Dimension and Measure defined with same name : $name")
+        s"Dimension and Measure defined with same name: $name")
+      sys.error(s"Dimension and Measure defined with same name: $name")
     })
 
     dimSrcDimensions.foreach(d => {
@@ -711,11 +711,11 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
             Array(""), part.partitionCount, null)
         } else if (definedpartCols.nonEmpty) {
           val msg = definedpartCols.mkString(", ")
-          LOGGER.error(s"partition columns specified are not part of Dimension columns : $msg")
+          LOGGER.error(s"partition columns specified are not part of Dimension columns: $msg")
           LOGGER.audit(
             s"Validation failed for Create/Alter Table Operation - " +
-            s"partition columns specified are not part of Dimension columns : $msg")
-          sys.error(s"partition columns specified are not part of Dimension columns : $msg")
+            s"partition columns specified are not part of Dimension columns: $msg")
+          sys.error(s"partition columns specified are not part of Dimension columns: $msg")
         } else {
           try {
             Class.forName(part.partitionClass).newInstance()
@@ -725,8 +725,8 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
               LOGGER.audit(
                 s"Validation failed for Create/Alter Table Operation for " +
                 s"${ cm.databaseName }.${ cm.tableName } " +
-                s"partition class specified can not be found or loaded : $cl")
-              sys.error(s"partition class specified can not be found or loaded : $cl")
+                s"partition class specified can not be found or loaded: $cl")
+              sys.error(s"partition class specified can not be found or loaded: $cl")
           }
 
           Partitioner(part.partitionClass, columnBuffer.toArray, part.partitionCount, null)
@@ -933,8 +933,8 @@ private[sql] case class DeleteLoadsById(
         LOGGER.audit(s"Delete segment by Id is successfull for $databaseName.$tableName.")
       }
       else {
-        sys.error("Delete segment by Id is failed. Invalid ID is :"
-                  + invalidLoadIds.mkString(","))
+        sys.error("Delete segment by Id is failed. Invalid ID is:" +
+                  s" ${ invalidLoadIds.mkString(",") }")
       }
     } catch {
       case ex: Exception =>
@@ -1425,11 +1425,11 @@ private[sql] case class DescribeCommandFormatted(
       colProps.toString()
     }
     results ++= Seq(("", "", ""), ("##Detailed Table Information", "", ""))
-    results ++= Seq(("Database Name : ", relation.tableMeta.carbonTableIdentifier
+    results ++= Seq(("Database Name: ", relation.tableMeta.carbonTableIdentifier
       .getDatabaseName, "")
     )
-    results ++= Seq(("Table Name : ", relation.tableMeta.carbonTableIdentifier.getTableName, ""))
-    results ++= Seq(("CARBON Store Path : ", relation.tableMeta.storePath, ""))
+    results ++= Seq(("Table Name: ", relation.tableMeta.carbonTableIdentifier.getTableName, ""))
+    results ++= Seq(("CARBON Store Path: ", relation.tableMeta.storePath, ""))
     val carbonTable = relation.tableMeta.carbonTable
     results ++= Seq(("Table Block Size : ", carbonTable.getBlockSizeInMB + " MB", ""))
     results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))
@@ -1490,10 +1490,9 @@ private[sql] case class DeleteLoadByDate(
       filter => filter.name.equalsIgnoreCase(dateField) &&
                 filter.dataType.isInstanceOf[TimestampType]).toList
     if (matches.isEmpty) {
-      LOGGER.audit(
-        "The delete load by date is failed. " +
-        "Table $dbName.$tableName does not contain date field :" + dateField)
-      sys.error(s"Table $dbName.$tableName does not contain date field " + dateField)
+      LOGGER.audit("The delete load by date is failed. " +
+                   s"Table $dbName.$tableName does not contain date field: $dateField")
+      sys.error(s"Table $dbName.$tableName does not contain date field $dateField")
     } else {
       level = matches.asJava.get(0).name
     }

@@ -171,8 +171,8 @@ class CarbonScanRDD[V: ClassTag](
         statisticRecorder.logStatisticsAsTableDriver()
         result.asScala.foreach { r =>
           val cp = r.asInstanceOf[CarbonSparkPartition]
-          logInfo(s"Node : " + cp.locations.toSeq.mkString(",")
-                  + ", No.Of Blocks : " + cp.tableBlockInfos.size()
+          logInfo(s"Node: ${ cp.locations.toSeq.mkString(",") }" +
+                  s", No.Of Blocks:  ${ cp.tableBlockInfos.size() }"
           )
         }
       } else {

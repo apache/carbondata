@@ -326,7 +326,7 @@ class CarbonSqlParser()
                   match {
                     case Success(field, _) => field
                     case failureOrError => throw new MalformedCarbonCommandException(
-                        s"Unsupported data type : $col.getType")
+                        s"Unsupported data type: $col.getType")
                   }
                   // the data type of the decimal type will be like decimal(10,0)
                   // so checking the start of the string and taking the precision and scale.

@@ -362,13 +362,13 @@ class CarbonMergerRDD[K, V](
     logInfo(s"Identified  no.of.Blocks: $noOfBlocks,"
             + s"parallelism: $defaultParallelism , no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks"
     )
-    logInfo("Time taken to identify Blocks to scan : " + (System
+    logInfo("Time taken to identify Blocks to scan: " + (System
                                                             .currentTimeMillis() - startTime)
     )
     for (j <- 0 until result.size) {
       val cp = result.get(j).asInstanceOf[CarbonSparkPartition]
-      logInfo(s"Node : " + cp.locations.toSeq.mkString(",")
-              + ", No.Of Blocks : " + cp.tableBlockInfos.size
+      logInfo(s"Node: " + cp.locations.toSeq.mkString(",")
+              + ", No.Of Blocks: " + cp.tableBlockInfos.size
       )
     }
     result.toArray(new Array[Partition](result.size))

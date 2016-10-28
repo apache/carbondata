@@ -143,8 +143,8 @@ object DistributionUtil {
       maxTimes = maxTimes - 1
     }
     val timDiff = System.currentTimeMillis() - startTime
-    LOGGER.info(s"Total Time taken to ensure the required executors : $timDiff")
-    LOGGER.info(s"Time elapsed to allocate the required executors : ${ (30 - maxTimes) * 500 }")
+    LOGGER.info(s"Total Time taken to ensure the required executors: $timDiff")
+    LOGGER.info(s"Time elapsed to allocate the required executors: ${ (30 - maxTimes) * 500 }")
     nodes.distinct
   }
 }

@@ -51,7 +51,7 @@ object CommonUtil {
       else if (!dims.exists(dim => dim.column.equalsIgnoreCase(x))) {
         // present
         throw new MalformedCarbonCommandException(
-          "column in column group is not a valid column :" + x
+          "column in column group is not a valid column: " + x
         )
       }
     }

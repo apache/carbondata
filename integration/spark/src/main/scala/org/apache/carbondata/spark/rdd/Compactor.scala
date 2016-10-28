@@ -121,29 +121,24 @@ object Compactor {
           mergedLoadName, carbonLoadModel, mergeLoadStartTime, compactionType
         )) {
         logger.audit(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
-                     s"${ carbonLoadModel.getTableName }"
-        )
-        logger.error(s"Compaction request failed for table" +
-                     s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }"
-        )
-        throw new Exception("Compaction failed to update metadata for table " +
-                            s"${ carbonLoadModel.getDatabaseName }." +
+                     s"${ carbonLoadModel.getTableName }")
+        logger.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
+                     s"${ carbonLoadModel.getTableName }")
+        throw new Exception(s"Compaction failed to update metadata for table" +
+                            s" ${ carbonLoadModel.getDatabaseName }." +
                             s"${ carbonLoadModel.getTableName }")
       } else {
-        logger.audit("Compaction request completed for table" +
-                     s" ${ carbonLoadModel.getDatabaseName } .${ carbonLoadModel.getTableName }"
-        )
+        logger.audit(s"Compaction request completed for table " +
+                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         logger.info("Compaction request completed for table ${ carbonLoadModel.getDatabaseName } " +
-                    s".${ carbonLoadModel.getTableName }"
-        )
+                    s".${ carbonLoadModel.getTableName }")
       }
     } else {
       logger.audit("Compaction request failed for table ${ carbonLoadModel.getDatabaseName } " +
                    s".${ carbonLoadModel.getTableName }"
       )
       logger.error("Compaction request failed for table ${ carbonLoadModel.getDatabaseName } " +
-                   s".${ carbonLoadModel.getTableName }"
-      )
+                   s".${ carbonLoadModel.getTableName }")
       throw new Exception("Compaction Failure in Merger Rdd.")
     }
   }
