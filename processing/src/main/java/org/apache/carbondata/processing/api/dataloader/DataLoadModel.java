@@ -67,6 +67,8 @@ public class DataLoadModel {
 
   private String rddIteratorKey;
 
+  private String dateFormat;
+
   private String maxColumns;
   /**
    * @return Returns the schemaInfo.
@@ -215,6 +217,10 @@ public class DataLoadModel {
   public void setCommentCharacter(String commentCharacter) {
     this.commentCharacter = commentCharacter;
   }
+
+  public String getDateFormat() { return dateFormat; }
+
+  public void setDateFormat(String dateFormat) { this.dateFormat = dateFormat; }
   /**
    * @return
    */
