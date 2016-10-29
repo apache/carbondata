@@ -23,8 +23,7 @@ import java.util
 import java.util.UUID
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.Map
+import scala.collection.mutable.{ArrayBuffer, Map}
 import scala.language.implicitConversions
 import scala.util.Random
 
@@ -1143,6 +1142,8 @@ case class LoadTableUsingKettle(
       val allDictionaryPath = options.getOrElse("all_dictionary_path", "")
       val complex_delimiter_level_1 = options.getOrElse("complex_delimiter_level_1", "\\$")
       val complex_delimiter_level_2 = options.getOrElse("complex_delimiter_level_2", "\\:")
+      val dateFormat = options.getOrElse("dateformat", null)
+      validateDateFormat(dateFormat, table)
       val multiLine = options.getOrElse("multiline", "false").trim.toLowerCase match {
         case "true" => true
         case "false" => false
@@ -1156,6 +1157,7 @@ case class LoadTableUsingKettle(
       carbonLoadModel.setEscapeChar(escapeChar)
       carbonLoadModel.setQuoteChar(quoteChar)
       carbonLoadModel.setCommentChar(commentchar)
+      carbonLoadModel.setDateFormat(dateFormat)
       carbonLoadModel
         .setSerializationNullFormat(
           TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + "," + serializationNullFormat)
@@ -1244,6 +1246,29 @@ case class LoadTableUsingKettle(
     Seq.empty
   }
 
+  private  def validateDateFormat(dateFormat: String, table: CarbonTable): Unit = {
+    val dimensions = table.getDimensionByTableName(tableName).asScala
+    if (dateFormat != null) {
+      if (dateFormat.trim == "") {
+        throw new MalformedCarbonCommandException("Option DateFormat is set an empty " +
+          "string.")
+      } else {
+        var dateFormats: Array[String] = dateFormat.split(CarbonCommonConstants.COMMA)
+        for (singleDateFormat <- dateFormats) {
+          val dateFormatSplits: Array[String] = singleDateFormat.split(":", 2)
+          val columnName = dateFormatSplits(0).trim.toLowerCase
+          if (!dimensions.exists(_.getColName.equals(columnName))) {
+            throw new MalformedCarbonCommandException("Wrong Column Name " +
+              dateFormatSplits(0) + " is provided in Option DateFormat.")
+          }
+          if (dateFormatSplits.length < 2 || dateFormatSplits(1).trim.isEmpty) {
+            throw new MalformedCarbonCommandException("Option DateFormat is not provided " +
+              "for " + "Column " + dateFormatSplits(0) + ".")
+          }
+        }
+      }
+    }
+  }
 }
 
 private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: Option[String],

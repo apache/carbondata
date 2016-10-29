@@ -266,6 +266,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
   private GenericDataType[] complexTypes;
 
+  private DirectDictionaryGenerator[] directDictionaryGenerators;
+
   /**
    * Constructor
    *
@@ -449,7 +451,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             .parseBoolean(meta.getTableOptionWrapper().get(BAD_RECORDS_LOGGER_ENABLE.getName()));
         String bad_records_action =
             meta.getTableOptionWrapper().get(BAD_RECORDS_ACTION.getName());
-        if(null != bad_records_action) {
+        if (null != bad_records_action) {
           LoggerAction loggerAction = null;
           try {
             loggerAction = LoggerAction.valueOf(bad_records_action.toUpperCase());
@@ -468,6 +470,35 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
               badRecordsLogRedirect = false;
               badRecordConvertNullDisable = true;
               break;
+          }
+        }
+        HashMap<String, String> dateformatsHashMap = new HashMap<String, String>();
+        if (meta.dateFormat != null) {
+          String[] dateformats = meta.dateFormat.split(CarbonCommonConstants.COMMA);
+          for (String dateFormat:dateformats) {
+            String[] dateFormatSplits = dateFormat.split(":", 2);
+            dateformatsHashMap.put(dateFormatSplits[0].toLowerCase().trim(),
+                dateFormatSplits[1].trim());
+          }
+        }
+        String[] DimensionColumnIds = meta.getDimensionColumnIds();
+        directDictionaryGenerators =
+            new DirectDictionaryGenerator[DimensionColumnIds.length];
+        for (int i = 0; i < DimensionColumnIds.length; i++) {
+          ColumnSchemaDetails columnSchemaDetails = columnSchemaDetailsWrapper.get(
+              DimensionColumnIds[i]);
+          if (columnSchemaDetails.isDirectDictionary()) {
+            String columnName = columnSchemaDetails.getColumnName();
+            DataType columnType = columnSchemaDetails.getColumnType();
+            String dateFormatString = dateformatsHashMap.get(columnName);
+            if (dateFormatString != null) {
+              directDictionaryGenerators[i] =
+                  DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(
+                      columnType, dateFormatString);
+            } else {
+              directDictionaryGenerators[i] =
+                  DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(columnType);
+            }
           }
         }
       }
@@ -836,6 +867,12 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
   private void doProcess() throws RuntimeException {
     try {
+      for (DirectDictionaryGenerator directDictionaryGenerator: directDictionaryGenerators) {
+        if (directDictionaryGenerator != null) {
+          directDictionaryGenerator.initialize();
+        }
+      }
+
       while (true) {
         Object[] r = null;
         synchronized (getRowLock) {
@@ -1176,11 +1213,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
             }
             ColumnSchemaDetails details = columnSchemaDetailsWrapper.get(dimensionColumnIds[m]);
             if (details.isDirectDictionary()) {
-              DirectDictionaryGenerator directDictionaryGenerator1 =
-                  DirectDictionaryKeyGeneratorFactory
-                      .getDirectDictionaryGenerator(details.getColumnType());
               surrogateKeyForHrrchy[0] =
-                  directDictionaryGenerator1.generateDirectSurrogateKey(tuple);
+                  directDictionaryGenerators[m].generateDirectSurrogateKey(tuple);
               if (!isSerialized && surrogateKeyForHrrchy[0] == 1) {
                 addEntryToBadRecords(r, j, columnName,
                     details.getColumnType().name());
