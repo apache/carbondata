@@ -1,4 +1,4 @@
-eid,ename,sal,presal,comm,deptno,Desc
+eid,ename,sal,presal,comm,deptno,descend
 17
 
 18,,,,,,NullValue_check

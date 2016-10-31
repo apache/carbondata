@@ -17,14 +17,15 @@
 
 package org.apache.spark.sql
 
+import java.util
 import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.LinkedHashSet
-import scala.collection.mutable.Map
+import scala.collection.mutable.{LinkedHashSet, Map}
 import scala.language.implicitConversions
 import scala.util.matching.Regex
 
+import org.apache.hadoop.hive.metastore.api.FieldSchema
 import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
 import org.apache.spark.Logging
@@ -41,7 +42,7 @@ import org.apache.spark.sql.hive.HiveQlWrapper
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil}
+import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -191,11 +192,14 @@ class CarbonSqlParser()
 
   /**
    * This will convert key word to regular expression.
+ *
    * @param keys
    * @return
    */
-  private def carbonKeyWord(keys: String) =
+  private def carbonKeyWord(keys: String) = {
+    CarbonSqlParser.CARBON_RESERVED_KEYWORDS += keys
     ("(?i)" + keys).r
+  }
 
   override protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
 
@@ -305,6 +309,7 @@ class CarbonSqlParser()
             case list@Token("TOK_TABCOLLIST", _) =>
               val cols = BaseSemanticAnalyzer.getColumns(list, true)
               if (cols != null) {
+                CarbonSqlParser.validateColumnsName(cols.asScala.toList)
                 val dupColsGrp = cols.asScala.groupBy(x => x.getName) filter {
                   case (_, colList) => colList.size > 1
                 }
@@ -348,6 +353,7 @@ class CarbonSqlParser()
               val (db, tblName) = extractDbNameTableName(t)
               dbName = db
               tableName = tblName.toLowerCase()
+              CarbonSqlParser.validateTableName(tableName)
 
             case Token("TOK_TABLECOMMENT", child :: Nil) =>
               tableComment = BaseSemanticAnalyzer.unescapeSQLString(child.getText)
@@ -1234,4 +1240,33 @@ class CarbonSqlParser()
       case cascade => throw new MalformedCarbonCommandException(
           "Unsupported cascade operation in drop database/schema command")
     }
+}
+
+object CarbonSqlParser {
+  var CARBON_RESERVED_KEYWORDS: Set[String] = Set[String]()
+
+  def validateTableName(tableName: String): Unit = {
+    if (CARBON_RESERVED_KEYWORDS.exists(_.equalsIgnoreCase(tableName))) {
+      throw new MalformedCarbonCommandException("The table name " + tableName + " is " +
+        "carbon reserved key words.")
+    }
+  }
+
+  def validateDatabaseName(databaseName: String): Unit = {
+    if (CARBON_RESERVED_KEYWORDS.exists(_.equalsIgnoreCase(databaseName))) {
+      throw new MalformedCarbonCommandException("The database name " + databaseName + " is " +
+        "carbon reserved key words.")
+    }
+  }
+
+  def validateColumnsName(cols: List[FieldSchema]): Unit = {
+    cols.foreach{
+      col =>
+        val colName = col.getName
+        if (CARBON_RESERVED_KEYWORDS.exists(_.equalsIgnoreCase(colName))) {
+          throw new MalformedCarbonCommandException("The column name " + colName + " is " +
+          "carbon reserved key words.")
+      }
+    }
+  }
 }

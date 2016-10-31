@@ -182,6 +182,50 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("create carbon table with carbon reserved key words") {
+    try {
+      sql("""
+           CREATE TABLE IF NOT EXISTS Int
+           (ID Int, date Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int)
+           STORED BY 'carbondata'
+          """
+      )
+      assert(false)
+    } catch {
+      case e : MalformedCarbonCommandException => {
+        assert(e.getMessage.equals("The table name int is carbon reserved key words."))
+      }
+    }
+
+    try {
+      sql("""
+           CREATE TABLE IF NOT EXISTS carbontable
+           (LIMIT Int, date Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int)
+           STORED BY 'carbondata'
+          """
+      )
+      assert(false)
+    } catch {
+      case e : MalformedCarbonCommandException => {
+        assert(e.getMessage.equals("The column name limit is carbon reserved key words."))
+      }
+    }
+
+    try {
+      sql("""
+           CREATE DATABASE string
+          """
+      )
+      assert(false)
+    } catch {
+      case e : MalformedCarbonCommandException => {
+        assert(e.getMessage.equals("The database name string is carbon reserved key words."))
+      }
+    }
+  }
+
   override def afterAll {
     sql("drop table if exists carbontable")
   }

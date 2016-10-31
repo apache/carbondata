@@ -34,7 +34,7 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
     sql("DROP TABLE IF EXISTS t3")
     sql("""
            CREATE TABLE IF NOT EXISTS t3
-           (ID Int, date Timestamp, starttime Timestamp, country String,
+           (ID Int, date Timestamp, begintime Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            STORED BY 'carbondata'
         """)
@@ -45,18 +45,18 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
   test("test load data with different timestamp format") {
       sql(s"""
            LOAD DATA LOCAL INPATH './src/test/resources/timeStampFormatData1.csv' into table t3
-           OPTIONS('dateformat' = 'starttime:yyyy-MM-dd HH:mm:ss')
+           OPTIONS('dateformat' = 'begintime:yyyy-MM-dd HH:mm:ss')
            """)
       sql(s"""
            LOAD DATA LOCAL INPATH './src/test/resources/timeStampFormatData2.csv' into table t3
-           OPTIONS('dateformat' = ' date : yyyy-MM-dd , StartTime : yyyy/MM/dd HH:mm:ss')
+           OPTIONS('dateformat' = ' date : yyyy-MM-dd , BeginTime : yyyy/MM/dd HH:mm:ss')
            """)
       checkAnswer(
         sql("SELECT date FROM t3 WHERE ID = 1"),
         Seq(Row(Timestamp.valueOf("2015-07-23 00:00:00.0")))
       )
       checkAnswer(
-        sql("SELECT starttime FROM t3 WHERE ID = 1"),
+        sql("SELECT begintime FROM t3 WHERE ID = 1"),
         Seq(Row(Timestamp.valueOf("2016-07-23 01:01:30.0")))
       )
       checkAnswer(
@@ -64,7 +64,7 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
         Seq(Row(Timestamp.valueOf("2015-07-25 00:00:00.0")))
       )
       checkAnswer(
-        sql("SELECT starttime FROM t3 WHERE ID = 18"),
+        sql("SELECT begintime FROM t3 WHERE ID = 18"),
         Seq(Row(Timestamp.valueOf("2016-07-25 02:32:02.0")))
       )
   }

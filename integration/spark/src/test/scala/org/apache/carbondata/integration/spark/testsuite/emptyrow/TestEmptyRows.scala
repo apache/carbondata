@@ -32,16 +32,16 @@ class TestEmptyRows extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("drop table if exists emptyRowCarbonTable")
     sql("drop table if exists emptyRowHiveTable")
-    //eid,ename,sal,presal,comm,deptno,Desc
+    //eid,ename,sal,presal,comm,deptno,descend
     sql(
       "create table if not exists emptyRowCarbonTable (eid int,ename String,sal decimal,presal " +
         "decimal,comm decimal" +
-        "(37,37),deptno decimal(18,2),Desc String) STORED BY 'org.apache.carbondata.format'"
+        "(37,37),deptno decimal(18,2),descend String) STORED BY 'org.apache.carbondata.format'"
     )
     sql(
       "create table if not exists emptyRowHiveTable(eid int,ename String,sal decimal,presal " +
         "decimal,comm " +
-        "decimal(37,37),deptno decimal(18,2),Desc String)row format delimited fields " +
+        "decimal(37,37),deptno decimal(18,2),descend String)row format delimited fields " +
         "terminated by ','"
     )
     CarbonProperties.getInstance()
@@ -51,7 +51,7 @@ class TestEmptyRows extends QueryTest with BeforeAndAfterAll {
     val csvFilePath = currentDirectory + "/src/test/resources/emptyrow/emptyRows.csv"
 
     sql(
-      s"""LOAD DATA INPATH '$csvFilePath' INTO table emptyRowCarbonTable OPTIONS('DELIMITER'=',','QUOTECHAR'='"','FILEHEADER'='eid,ename,sal,presal,comm,deptno,Desc')""")
+      s"""LOAD DATA INPATH '$csvFilePath' INTO table emptyRowCarbonTable OPTIONS('DELIMITER'=',','QUOTECHAR'='"','FILEHEADER'='eid,ename,sal,presal,comm,deptno,descend')""")
 
     sql(
       "LOAD DATA LOCAL INPATH '" + csvFilePath + "' into table " +
@@ -66,10 +66,10 @@ class TestEmptyRows extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-  test("select Desc from emptyRowTable") {
+  test("select descend from emptyRowTable") {
     checkAnswer(
-      sql("select Desc from emptyRowCarbonTable"),
-      sql("select Desc from emptyRowHiveTable")
+      sql("select descend from emptyRowCarbonTable"),
+      sql("select descend from emptyRowHiveTable")
     )
   }
 

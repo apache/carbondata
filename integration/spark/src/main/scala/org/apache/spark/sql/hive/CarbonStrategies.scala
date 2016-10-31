@@ -22,6 +22,7 @@ import java.util
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.CarbonSqlParser
 import org.apache.spark.sql.catalyst.{expressions, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
@@ -253,6 +254,10 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         }
       case d: HiveNativeCommand =>
         try {
+          val tokens = d.sql.split(" +")
+          if (tokens(0).equalsIgnoreCase("CREATE") && tokens(1).equalsIgnoreCase("DATABASE")) {
+            CarbonSqlParser.validateDatabaseName(tokens.last)
+          }
           val resolvedTable = sqlContext.executePlan(CarbonHiveSyntax.parse(d.sql)).optimizedPlan
           planLater(resolvedTable) :: Nil
         } catch {
