@@ -222,7 +222,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    */
   protected void initFileLocation() {
     PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(columnIdentifier,
+    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(
                 this.hdfsStorePath, carbonTableIdentifier);
     this.columnDictionaryFilePath = carbonTablePath
         .getDictionaryFilePath(columnIdentifier.getColumnId());

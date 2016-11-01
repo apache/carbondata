@@ -19,7 +19,6 @@
 package org.apache.carbondata.core.service;
 
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
-import org.apache.carbondata.core.carbon.ColumnIdentifier;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 
 /**
@@ -33,6 +32,5 @@ public interface PathService {
    * @param tableIdentifier
    * @return store path related to tables
    */
-  CarbonTablePath getCarbonTablePath(ColumnIdentifier columnIdentifier, String storeLocation,
-      CarbonTableIdentifier tableIdentifier);
+  CarbonTablePath getCarbonTablePath(String storeLocation, CarbonTableIdentifier tableIdentifier);
 }

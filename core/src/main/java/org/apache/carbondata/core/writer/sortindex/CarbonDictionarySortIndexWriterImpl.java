@@ -153,7 +153,7 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
   protected void initPath() {
     PathService pathService = CarbonCommonFactory.getPathService();
     CarbonTablePath carbonTablePath = pathService
-        .getCarbonTablePath(columnIdentifier, carbonStorePath, carbonTableIdentifier);
+        .getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
     String dictionaryPath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId());
     long dictOffset = CarbonUtil.getFileSize(dictionaryPath);
     this.sortIndexFilePath =
