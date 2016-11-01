@@ -1,8 +1,15 @@
 package org.apache.carbondata.core.util;
 
+import mockit.Mock;
+import mockit.MockUp;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
+import org.apache.spark.unsafe.types.UTF8String;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -13,6 +20,8 @@ import java.util.Map;
 
 import static org.apache.carbondata.core.util.DataTypeUtil.*;
 import static junit.framework.TestCase.*;
+import static org.apache.carbondata.core.util.DataTypeUtil.getDataBasedOnDataType;
+
 /**
  * Created by knoldus on 28/10/16.
  */
@@ -43,6 +52,8 @@ public class DataTypeUtilTest {
         assertTrue(getAggType(DataType.DECIMAL)=='b');
         assertTrue(getAggType(DataType.INT)=='l');
         assertTrue(getAggType(DataType.LONG)=='l');
+        assertTrue(getAggType(DataType.NULL)=='n');
+
     }
 
     @Test
@@ -63,30 +74,64 @@ public class DataTypeUtilTest {
         assertEquals(DataType.ARRAY,getDataType("ARRAY"));
         assertEquals(DataType.STRUCT,getDataType("STRUCT"));
         assertEquals(DataType.STRING,getDataType("MAP"));
+        assertEquals(DataType.STRING,getDataType("default"));
+
     }
 
     @Test
-    public void testGetDataBasedOnDataType() throws Exception{
-        assertEquals(getDataBasedOnDataType("1",DataType.INT),1);
-        //assertEquals(getDataBasedOnDataType("0",DataType.SHORT),0);
-        assertEquals(getDataBasedOnDataType("0",DataType.DOUBLE),0.0d);
-        assertEquals(getDataBasedOnDataType("0",DataType.LONG),0L);
+    public void testGetDataBasedOnDataType() throws NumberFormatException {
+        String data = " ";
+        if (data.isEmpty()) {
+            assertEquals(getDataBasedOnDataType(data, DataType.INT), null);
+        }
+        assertEquals(getDataBasedOnDataType("1", DataType.INT), 1);
+        assertEquals(getDataBasedOnDataType(" ", DataType.INT), null);
+        assertEquals(getDataBasedOnDataType("0", DataType.DOUBLE), 0.0d);
+        assertEquals(getDataBasedOnDataType("0", DataType.LONG), 0L);
         java.math.BigDecimal javaDecVal = new java.math.BigDecimal(1);
         scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
         org.apache.spark.sql.types.Decimal expected = new org.apache.spark.sql.types.Decimal().set(scalaDecVal);
-        assertEquals(getDataBasedOnDataType("1",DataType.DECIMAL),expected);
+        assertEquals(getDataBasedOnDataType("1", DataType.DECIMAL), expected);
+        assertEquals(getDataBasedOnDataType("default",DataType.NULL), UTF8String.fromString("default"));
+        assertEquals(getDataBasedOnDataType(null,DataType.NULL), null);
     }
 
     @Test
-    public void testGetMeasureDataBasedOnDataType() throws Exception {
-        Object object = new Object();
-        assertEquals(getMeasureDataBasedOnDataType(object,DataType.LONG),object);
-        assertEquals(getMeasureDataBasedOnDataType(object,DataType.DOUBLE),object);
+    public void testGetMeasureDataBasedOnDataType() throws NumberFormatException {
+        assertEquals(getMeasureDataBasedOnDataType(new Long("1"),DataType.LONG),Long.parseLong("1"));
+        assertEquals(getMeasureDataBasedOnDataType(new Double("1"),DataType.DOUBLE),Double.parseDouble("1"));
         java.math.BigDecimal javaDecVal = new java.math.BigDecimal(1);
         scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
         org.apache.spark.sql.types.Decimal expected = new org.apache.spark.sql.types.Decimal().set(scalaDecVal);
         assertEquals(getMeasureDataBasedOnDataType(1,DataType.DECIMAL),expected);
+        assertEquals(getMeasureDataBasedOnDataType("1",DataType.STRING),"1");
     }
+
+    @Test
+    public void testGetMeasureValueBasedOnDataType() {
+        ColumnSchema columnSchema = new ColumnSchema();
+        CarbonMeasure carbonMeasure = new CarbonMeasure(columnSchema,1);
+        Object resultInt =  getMeasureValueBasedOnDataType("1",DataType.INT,carbonMeasure);
+        Object expectedInt = Double.valueOf(1).longValue();
+        assertEquals(expectedInt,resultInt);
+        Object resultLong =  getMeasureValueBasedOnDataType("1",DataType.LONG,carbonMeasure);
+        Object expectedLong = Long.valueOf(1);
+        assertEquals(expectedLong,resultLong);
+        Object resultDefault =  getMeasureValueBasedOnDataType("1",DataType.DOUBLE,carbonMeasure);
+        Double expectedDefault =  Double.valueOf(1);
+        assertEquals(expectedDefault,resultDefault);
+
+    }
+
+    @Test
+    public void testNormalizeIntAndLongValues() throws NumberFormatException{
+        assertEquals(null,normalizeIntAndLongValues("INT",DataType.INT));
+        assertEquals("1",normalizeIntAndLongValues("1",DataType.STRING));
+
+
+    }
+
+
 
 }
 
