@@ -37,7 +37,7 @@ public class PathFactory implements PathService {
    * @return store path related to tables
    */
   @Override public CarbonTablePath getCarbonTablePath(
-          String storeLocation, CarbonTableIdentifier tableIdentifier) {
+      String storeLocation, CarbonTableIdentifier tableIdentifier) {
     return CarbonStorePath.getCarbonTablePath(storeLocation, tableIdentifier);
   }
 
