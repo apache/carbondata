@@ -154,7 +154,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
   protected void initPath() {
     PathService pathService = CarbonCommonFactory.getPathService();
     CarbonTablePath carbonTablePath =
-        pathService.getCarbonTablePath(columnIdentifier, carbonStorePath, carbonTableIdentifier);
+        pathService.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
     try {
       CarbonDictionaryColumnMetaChunk chunkMetaObjectForLastSegmentEntry =
           getChunkMetaObjectForLastSegmentEntry();
