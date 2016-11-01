@@ -16,6 +16,7 @@
  */
 package org.apache.spark.rdd
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
 import scala.collection.mutable.HashSet
@@ -211,9 +212,9 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) extends 
   /**
    * assign no locality partitions to each host
    */
-  private def assignPartitionNoLocality(emptyHosts: Seq[String],
-      noEmptyHosts: Seq[(String, LinkedHashSet[Int])],
-      localityResult: Array[ArrayBuffer[Int]]): Array[ArrayBuffer[Int]] = {
+  private def assignPartitionNoLocality(emptyHosts: mutable.Buffer[String],
+      noEmptyHosts: mutable.Buffer[String],
+      localityResult: mutable.Buffer[ArrayBuffer[Int]]): Array[ArrayBuffer[Int]] = {
     val noLocalityResult = new Array[ArrayBuffer[Int]](emptyHosts.length)
     logInfo(s"non empty host: ${noEmptyHosts.length}, empty host: ${emptyHosts.length}")
     val avgNumber = prevPartitions.length / (noEmptyHosts.length + emptyHosts.length)
@@ -227,7 +228,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) extends 
         for (i <- 0 until avgNumber) {
           noLocalityResult.foreach { partitionIds =>
             if (noLocalityPartitionIndex < noLocalityPartitions.length) {
-              partitionIds += noLocalityPartitionIndex
+              partitionIds += noLocalityPartitions(noLocalityPartitionIndex)
               noLocalityPartitionIndex = noLocalityPartitionIndex + 1
             }
           }
@@ -275,15 +276,26 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) extends 
     logInfo("locality partition")
     val hostMapPartitionIdsSeq = hostMapPartitionIds.toSeq
     // empty host seq
-    val emptyHosts = hostMapPartitionIdsSeq.filter(_._2.isEmpty).map(_._1)
+    val emptyHosts = hostMapPartitionIdsSeq.filter(_._2.isEmpty).map(_._1).toBuffer
     // non empty host array
-    var noEmptyHosts = hostMapPartitionIdsSeq.filter(_._2.nonEmpty)
+    var tempNoEmptyHosts = hostMapPartitionIdsSeq.filter(_._2.nonEmpty)
 
     // 1. do locality repartition
     // sort host and partitions
-    noEmptyHosts = sortHostAndPartitions(noEmptyHosts)
+    tempNoEmptyHosts = sortHostAndPartitions(tempNoEmptyHosts)
     // assign locality partition to non empty hosts
-    var localityResult = assignPartitonNodeLocality(noEmptyHosts)
+    val templocalityResult = assignPartitonNodeLocality(tempNoEmptyHosts)
+    // collect non empty hosts and empty hosts
+    val noEmptyHosts = mutable.Buffer[String]()
+    val localityResult = mutable.Buffer[ArrayBuffer[Int]]()
+    for(index <- 0 until templocalityResult.size) {
+      if (templocalityResult(index).isEmpty) {
+        emptyHosts += tempNoEmptyHosts(index)._1
+      } else {
+        noEmptyHosts += tempNoEmptyHosts(index)._1
+        localityResult += templocalityResult(index)
+      }
+    }
     // 2. do no locality repartition
     // assign no locality partitions to all hosts
     val noLocalityResult = assignPartitionNoLocality(emptyHosts, noEmptyHosts, localityResult)
@@ -296,7 +308,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) extends 
         noLocalityResult(index - localityResult.length).toArray
       }
       val loc = if (index < localityResult.length) {
-        Some(noEmptyHosts(index)._1)
+        Some(noEmptyHosts(index))
       } else {
         Some(emptyHosts(index - localityResult.length))
       }
@@ -310,18 +322,42 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) extends 
     // 1. group partitions by node
     groupByNode()
     logInfo(s"partition: ${prevPartitions.length}, no locality: ${noLocalityPartitions.length}")
-    if (noLocality) {
+    val partitions = if (noLocality) {
       // 2.A no locality partition
       repartitionNoLocality()
     } else {
       // 2.B locality partition
       repartitionLocality()
     }
+    DataLoadPartitionCoalescer.checkPartition(prevPartitions, partitions)
+    partitions
   }
 }
 
 object DataLoadPartitionCoalescer {
   def getPreferredLocs(prev: RDD[_], p: Partition): Seq[TaskLocation] = {
     prev.context.getPreferredLocs(prev, p.index)
+  }
+
+  def getParentsIndices(p: Partition): Array[Int] = {
+    p.asInstanceOf[CoalescedRDDPartition].parentsIndices
+  }
+
+  def checkPartition(prevParts: Array[Partition], parts: Array[Partition]): Unit = {
+    val prevPartIds = new ArrayBuffer[Int]
+    parts.foreach{ p =>
+      prevPartIds ++= DataLoadPartitionCoalescer.getParentsIndices(p)
+    }
+    // all partitions must be arranged once.
+    assert(prevPartIds.size == prevParts.size)
+    val prevPartIdsMap = prevPartIds.map{ id =>
+      (id, id)
+    }.toMap
+    prevParts.foreach{ p =>
+      prevPartIdsMap.get(p.index) match {
+        case None => assert(false, "partition " + p.index + " not found")
+        case Some(_) =>
+      }
+    }
   }
 }

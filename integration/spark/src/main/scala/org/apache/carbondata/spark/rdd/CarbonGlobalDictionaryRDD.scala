@@ -264,7 +264,7 @@ class CarbonBlockDistinctValuesCombineRDD(
           rowCount += 1
           for (i <- 0 until dimNum) {
             dimensionParsers(i).parseString(CarbonScalaUtil.getString(row.get(i),
-                model.serializationNullFormat,model.delimiters(0), model.delimiters(1), format))
+                model.serializationNullFormat, model.delimiters(0), model.delimiters(1), format))
           }
         }
       }
