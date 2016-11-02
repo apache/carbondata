@@ -296,8 +296,7 @@ class CarbonGlobalDictionaryGenerateRDD(
       var dictionaryForSortIndexWriting: org.apache.carbondata.core.cache.dictionary.Dictionary = _
       var dictionaryForDistinctValueLookUpCleared: Boolean = false
       val pathService = CarbonCommonFactory.getPathService
-      val carbonTablePath = pathService.getCarbonTablePath(model.columnIdentifier(split.index),
-          model.hdfsLocation, model.table)
+      val carbonTablePath = pathService.getCarbonTablePath(model.hdfsLocation, model.table)
       if (StringUtils.isNotBlank(model.hdfsTempLocation )) {
          CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
            model.hdfsTempLocation)
