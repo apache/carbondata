@@ -45,8 +45,8 @@ public class DivideExpression extends BinaryArithmeticExpression {
       return divideExprLeftRes;
     }
     if (divideExprLeftRes.getDataType() != divideExprRightRes.getDataType()) {
-      if (divideExprLeftRes.getDataType().getPresedenceOrder() < divideExprRightRes.getDataType()
-          .getPresedenceOrder()) {
+      if (divideExprLeftRes.getDataType().getPrecedenceOrder() < divideExprRightRes.getDataType()
+          .getPrecedenceOrder()) {
         val2 = divideExprLeftRes;
         val1 = divideExprRightRes;
       }

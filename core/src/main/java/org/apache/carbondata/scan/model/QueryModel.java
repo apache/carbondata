@@ -84,7 +84,7 @@ public class QueryModel implements Serializable {
    */
   private FilterResolverIntf filterExpressionResolverTree;
   /**
-   * in case of lime query we need to know how many
+   * in case of limit query we need to know how many
    * records will passed from executor
    */
   private int limit;
@@ -120,9 +120,9 @@ public class QueryModel implements Serializable {
    */
   private boolean forcedDetailRawQuery;
   /**
-   * paritition column list
+   * partition column list
    */
-  private List<String> paritionColumns;
+  private List<String> partitionColumns;
   /**
    * table on which query will be executed
    * TODO need to remove this ad pass only the path
@@ -145,7 +145,7 @@ public class QueryModel implements Serializable {
     queryMeasures = new ArrayList<QueryMeasure>();
     sortDimension = new ArrayList<QueryDimension>();
     sortOrder = new byte[0];
-    paritionColumns = new ArrayList<String>();
+    partitionColumns = new ArrayList<String>();
     invalidSegmentIds = new ArrayList<>();
   }
 
@@ -448,17 +448,17 @@ public class QueryModel implements Serializable {
   }
 
   /**
-   * @return the paritionColumns
+   * @return the partitionColumns
    */
-  public List<String> getParitionColumns() {
-    return paritionColumns;
+  public List<String> getPartitionColumns() {
+    return partitionColumns;
   }
 
   /**
-   * @param paritionColumns the paritionColumns to set
+   * @param partitionColumns the partitionColumns to set
    */
-  public void setParitionColumns(List<String> paritionColumns) {
-    this.paritionColumns = paritionColumns;
+  public void setPartitionColumns(List<String> partitionColumns) {
+    this.partitionColumns = partitionColumns;
   }
 
   /**
