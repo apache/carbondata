@@ -128,8 +128,9 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
       options.tableName,
       null,
       Seq(),
-      Map("fileheader" -> header) ++ options.toMap,
-      isOverwriteExist = false,
+      Map(("fileheader" -> header)),
+      false,
+      false,
       null,
       Some(dataFrame)).run(cc)
   }

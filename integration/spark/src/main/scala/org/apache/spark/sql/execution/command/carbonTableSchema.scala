@@ -234,6 +234,7 @@ private[sql] case class LoadTableByInsert(relation: CarbonDatasourceRelation,
       Seq(),
       scala.collection.immutable.Map(("fileheader" -> header)),
       false,
+      false,
       null,
       Some(df)).run(sqlContext)
     // updating relation metadata. This is in case of auto detect high cardinality
@@ -249,6 +250,7 @@ case class LoadTable(
     dimFilesPath: Seq[DataLoadTableFileMapping],
     options: scala.collection.immutable.Map[String, String],
     isOverwriteExist: Boolean = false,
+    isLocal: Boolean = false,
     var inputSqlString: String = null,
     dataFrame: Option[DataFrame] = None) extends RunnableCommand {
 
@@ -294,12 +296,22 @@ case class LoadTable(
         sys.error("Table is locked for updation. Please try after some time")
       }
 
-      val factPath = if (dataFrame.isDefined) {
+      var factPath = if (dataFrame.isDefined) {
         ""
       } else {
         FileUtils.getPaths(
           CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser))
       }
+      // check fact path when load in local
+      if (isLocal) {
+        if (FileFactory.getFileType(factPath) != FileFactory.FileType.LOCAL) {
+          LOGGER.error("Source file system should be 'file' when 'local' is specified")
+          throw new MalformedCarbonCommandException(
+            "Source file system should be 'file' when 'local' is specified")
+        }
+        factPath = CarbonUtil.LOCAL_PREFIX + factPath
+      }
+
       val carbonLoadModel = new CarbonLoadModel()
       carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
       carbonLoadModel.setDatabaseName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)

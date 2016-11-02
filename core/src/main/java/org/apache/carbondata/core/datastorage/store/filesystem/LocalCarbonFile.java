@@ -40,6 +40,7 @@ public class LocalCarbonFile implements CarbonFile {
   private File file;
 
   public LocalCarbonFile(String filePath) {
+    filePath = CarbonUtil.removePrefixForLocal(filePath);
     Path pathWithoutSchemeAndAuthority = Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
     file = new File(pathWithoutSchemeAndAuthority.toString());
   }

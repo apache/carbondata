@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.api.dataloader.SchemaInfo;
 import org.apache.carbondata.processing.constants.DataProcessorConstants;
 import org.apache.carbondata.processing.csvreaderstep.CsvInputMeta;
@@ -486,6 +487,8 @@ public class DataGraphExecuter {
       } else {
         for (String file : model.getFilesToProcess()) {
           try {
+            // need to check whether is local file.
+            file = CarbonUtil.removePrefixForLocal(file);
             FileFactory.FileType fileType = FileFactory.getFileType(file);
             if (FileFactory.isFileExist(file, fileType)) {
               validateCSV(schemaInfo, model.getTableName(),

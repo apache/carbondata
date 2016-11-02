@@ -147,6 +147,7 @@ public final class FileFactory {
     InputStream stream;
     switch (fileType) {
       case LOCAL:
+        path = CarbonUtil.removePrefixForLocal(path);
         if (gzip) {
           stream = new GZIPInputStream(new FileInputStream(path));
         } else if (bzip2) {
@@ -274,6 +275,7 @@ public final class FileFactory {
     path = path.replace("\\", "/");
     switch (fileType) {
       case LOCAL:
+        path = CarbonUtil.removePrefixForLocal(path);
         return new DataOutputStream(
             new BufferedOutputStream(new FileOutputStream(path, append), bufferSize));
       case HDFS:
@@ -305,6 +307,7 @@ public final class FileFactory {
     path = path.replace("\\", "/");
     switch (fileType) {
       case LOCAL:
+        path = CarbonUtil.removePrefixForLocal(path);
         return new DataOutputStream(
             new BufferedOutputStream(new FileOutputStream(path), bufferSize));
       case HDFS:
@@ -375,6 +378,7 @@ public final class FileFactory {
 
       case LOCAL:
       default:
+        filePath = CarbonUtil.removePrefixForLocal(filePath);
         File defaultFile = new File(filePath);
         return defaultFile.exists();
     }
@@ -440,6 +444,7 @@ public final class FileFactory {
         return fs.mkdirs(path);
       case LOCAL:
       default:
+        filePath = CarbonUtil.removePrefixForLocal(filePath);
         File file = new File(filePath);
         return file.mkdirs();
     }
@@ -523,7 +528,11 @@ public final class FileFactory {
       default:
         Path pathWithoutSchemeAndAuthority =
             Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
-        return pathWithoutSchemeAndAuthority.toString();
+        String updatedPath = pathWithoutSchemeAndAuthority.toString();
+        if (filePath.startsWith(CarbonUtil.LOCAL_PREFIX)) {
+          updatedPath = CarbonUtil.addPrefixForLocal(updatedPath);
+        }
+        return updatedPath;
     }
   }
 
