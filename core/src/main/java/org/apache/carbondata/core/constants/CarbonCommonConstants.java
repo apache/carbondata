@@ -882,7 +882,7 @@ public final class CarbonCommonConstants {
   /**
    * to enable blocklet distribution default value
    */
-  public static String ENABLE_BLOCKLET_DISTRIBUTION_DEFAULTVALUE = "true";
+  public static String ENABLE_BLOCKLET_DISTRIBUTION_DEFAULTVALUE = "false";
 
   /**
    * This batch size is used to send rows from load step to another step in batches.
