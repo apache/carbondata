@@ -22,6 +22,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.util.ExampleUtils
 
 object CarbonExample {
+
   def main(args: Array[String]) {
     val cc = ExampleUtils.createCarbonContext("CarbonExample")
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
@@ -52,4 +53,5 @@ object CarbonExample {
 
     cc.sql("DROP TABLE IF EXISTS t3")
   }
+
 }

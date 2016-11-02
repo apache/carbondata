@@ -23,6 +23,7 @@ import scala.collection.mutable
 import org.apache.carbondata.common.factory.CarbonCommonFactory
 import org.apache.carbondata.core.cache.dictionary.Dictionary
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter
 import org.apache.carbondata.spark.rdd.DictionaryLoadModel
 
@@ -63,8 +64,7 @@ class DictionaryWriterTask(valuesBuffer: mutable.HashSet[String],
       if (values.length >= 1) {
         if (model.dictFileExists(columnIndex)) {
           for (value <- values) {
-            val parsedValue = org.apache.carbondata.core.util.DataTypeUtil
-              .normalizeColumnValueForItsDataType(value,
+            val parsedValue = DataTypeUtil.normalizeColumnValueForItsDataType(value,
                 model.primDimensions(columnIndex))
             if (null != parsedValue && dictionary.getSurrogateKey(parsedValue) ==
               CarbonCommonConstants.INVALID_SURROGATE_KEY) {
@@ -75,8 +75,7 @@ class DictionaryWriterTask(valuesBuffer: mutable.HashSet[String],
 
         } else {
           for (value <- values) {
-            val parsedValue = org.apache.carbondata.core.util.DataTypeUtil
-              .normalizeColumnValueForItsDataType(value,
+            val parsedValue = DataTypeUtil.normalizeColumnValueForItsDataType(value,
                 model.primDimensions(columnIndex))
             if (null != parsedValue) {
               writer.write(parsedValue)
@@ -88,8 +87,7 @@ class DictionaryWriterTask(valuesBuffer: mutable.HashSet[String],
     } catch {
       case ex: IOException =>
         throw ex
-    }
-    finally {
+    } finally {
       if (null != writer) {
         writer.close()
       }

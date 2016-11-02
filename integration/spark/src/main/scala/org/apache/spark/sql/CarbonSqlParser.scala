@@ -171,31 +171,39 @@ class CarbonSqlParser()
   }
 
   import lexical.Identifier
-  implicit def regexToParser(regex: Regex): Parser[String] = acceptMatch(
-    s"identifier matching regex ${regex}",
+
+  implicit def regexToParser(regex: Regex): Parser[String] = {
+    acceptMatch(
+    s"identifier matching regex ${ regex }",
     { case Identifier(str) if regex.unapplySeq(str).isDefined => str }
-  )
-  override def parse(input: String): LogicalPlan = synchronized {
-    // Initialize the Keywords.
-    initLexical
-    phrase(start)(new lexical.Scanner(input)) match {
-      case Success(plan, _) => plan match {
-        case x: LoadTable =>
-          x.inputSqlString = input
-          x
-        case logicalPlan => logicalPlan
+    )
+  }
+
+  override def parse(input: String): LogicalPlan = {
+    synchronized {
+      // Initialize the Keywords.
+      initLexical
+      phrase(start)(new lexical.Scanner(input)) match {
+        case Success(plan, _) => plan match {
+          case x: LoadTable =>
+            x.inputSqlString = input
+            x
+          case logicalPlan => logicalPlan
+        }
+        case failureOrError => sys.error(failureOrError.toString)
       }
-      case failureOrError => sys.error(failureOrError.toString)
     }
   }
 
   /**
    * This will convert key word to regular expression.
+   *
    * @param keys
    * @return
    */
-  private def carbonKeyWord(keys: String) =
+  private def carbonKeyWord(keys: String) = {
     ("(?i)" + keys).r
+  }
 
   override protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
 
@@ -203,7 +211,7 @@ class CarbonSqlParser()
     dropDatabaseCascade | loadManagement | describeTable | showLoads | alterTable | createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] = deleteLoadsByID | deleteLoadsByLoadDate |
-    cleanFiles | loadDataNew
+                                                           cleanFiles | loadDataNew
 
   protected val escapedIdentifier = "`([^`]+)`".r
 
@@ -212,9 +220,9 @@ class CarbonSqlParser()
     var dimensions: Seq[Field] = Seq()
     dims.foreach { dimension =>
       dimension.dataType.getOrElse("NIL") match {
-        case "Array" => complexDimensions = complexDimensions:+dimension
-        case "Struct" => complexDimensions = complexDimensions:+dimension
-        case _ => dimensions = dimensions:+dimension
+        case "Array" => complexDimensions = complexDimensions :+ dimension
+        case "Struct" => complexDimensions = complexDimensions :+ dimension
+        case _ => dimensions = dimensions :+ dimension
       }
     }
     dimensions ++ complexDimensions
@@ -240,22 +248,22 @@ class CarbonSqlParser()
    * For handling the create table DDl systax compatible to Hive syntax
    */
   protected lazy val createTable: Parser[LogicalPlan] =
-    restInput ^^ {
+  restInput ^^ {
 
-      case statement =>
-        try {
-          // DDl will be parsed and we get the AST tree from the HiveQl
-          val node = HiveQlWrapper.getAst(statement)
-          // processing the AST tree
-          nodeToPlan(node)
-        } catch {
-          // MalformedCarbonCommandException need to be throw directly, parser will catch it
-          case ce: MalformedCarbonCommandException =>
-            throw ce
-          case e: Exception =>
-            sys.error("Parsing error") // no need to do anything.
-        }
-    }
+    case statement =>
+      try {
+        // DDl will be parsed and we get the AST tree from the HiveQl
+        val node = HiveQlWrapper.getAst(statement)
+        // processing the AST tree
+        nodeToPlan(node)
+      } catch {
+        // MalformedCarbonCommandException need to be throw directly, parser will catch it
+        case ce: MalformedCarbonCommandException =>
+          throw ce
+        case e: Exception =>
+          sys.error("Parsing error") // no need to do anything.
+      }
+  }
 
   private def getScaleAndPrecision(dataType: String): (Int, Int) = {
     val m: Matcher = Pattern.compile("^decimal\\(([^)]+)\\)").matcher(dataType)
@@ -277,17 +285,17 @@ class CarbonSqlParser()
       case Token("TOK_CREATETABLE", children) =>
 
 
-          var fields: Seq[Field] = Seq[Field]()
-          var tableComment: String = ""
-          var tableProperties = Map[String, String]()
-          var partitionCols: Seq[PartitionerField] = Seq[PartitionerField]()
-          var likeTableName: String = ""
-          var storedBy: String = ""
-          var ifNotExistPresent: Boolean = false
-          var dbName: Option[String] = None
-          var tableName: String = ""
+        var fields: Seq[Field] = Seq[Field]()
+        var tableComment: String = ""
+        var tableProperties = Map[String, String]()
+        var partitionCols: Seq[PartitionerField] = Seq[PartitionerField]()
+        var likeTableName: String = ""
+        var storedBy: String = ""
+        var ifNotExistPresent: Boolean = false
+        var dbName: Option[String] = None
+        var tableName: String = ""
 
-          try {
+        try {
 
           // Checking whether create table request is carbon table
           children.collect {
@@ -296,7 +304,7 @@ class CarbonSqlParser()
             case _ =>
           }
           if (!(storedBy.equals(CarbonContext.datasourceName) ||
-              storedBy.equals(CarbonContext.datasourceShortName))) {
+                storedBy.equals(CarbonContext.datasourceShortName))) {
             sys.error("Not a carbon format request")
           }
 
@@ -326,7 +334,7 @@ class CarbonSqlParser()
                   match {
                     case Success(field, _) => field
                     case failureOrError => throw new MalformedCarbonCommandException(
-                        s"Unsupported data type : $col.getType")
+                      s"Unsupported data type: $col.getType")
                   }
                   // the data type of the decimal type will be like decimal(10,0)
                   // so checking the start of the string and taking the precision and scale.
@@ -369,7 +377,7 @@ class CarbonSqlParser()
               if (repeatedProperties.nonEmpty) {
                 val repeatedPropStr: String = repeatedProperties.mkString(",")
                 throw new MalformedCarbonCommandException("Table properties is repeated: " +
-                  repeatedPropStr)
+                                                          repeatedPropStr)
               }
               tableProperties ++= propertySeq
 
@@ -394,12 +402,17 @@ class CarbonSqlParser()
 
           // get logical plan.
           CreateTable(tableModel)
-        }
-        catch {
+        } catch {
           case ce: MalformedCarbonCommandException =>
-            val message = if (tableName.isEmpty) "Create table command failed. "
-            else if (dbName.isEmpty) s"Create table command failed for $tableName. "
-            else s"Create table command failed for ${dbName.get}.$tableName. "
+            val message = if (tableName.isEmpty) {
+              "Create table command failed. "
+            }
+            else if (dbName.isEmpty) {
+              s"Create table command failed for $tableName. "
+            }
+            else {
+              s"Create table command failed for ${ dbName.get }.$tableName. "
+            }
             LOGGER.audit(message + ce.getMessage)
             throw ce
         }
@@ -452,19 +465,24 @@ class CarbonSqlParser()
    * @return
    */
   protected def prepareTableModel(ifNotExistPresent: Boolean, dbName: Option[String]
-                                  , tableName: String, fields: Seq[Field],
-                                  partitionCols: Seq[PartitionerField],
-                                  tableProperties: Map[String, String]): tableModel
+      , tableName: String, fields: Seq[Field],
+      partitionCols: Seq[PartitionerField],
+      tableProperties: Map[String, String]): tableModel
   = {
 
     val (dims: Seq[Field], noDictionaryDims: Seq[String]) = extractDimColsAndNoDictionaryFields(
       fields, tableProperties)
     if (dims.isEmpty) {
-      throw new MalformedCarbonCommandException(s"Table ${dbName.getOrElse(
-        CarbonCommonConstants.DATABASE_DEFAULT_NAME)}.$tableName"
-        + " can not be created without key columns. Please use DICTIONARY_INCLUDE or " +
-        "DICTIONARY_EXCLUDE to set at least one key column " +
-        "if all specified columns are numeric types")
+      throw new MalformedCarbonCommandException(s"Table ${
+        dbName.getOrElse(
+          CarbonCommonConstants.DATABASE_DEFAULT_NAME)
+      }.$tableName"
+                                                +
+                                                " can not be created without key columns. Please " +
+                                                "use DICTIONARY_INCLUDE or " +
+                                                "DICTIONARY_EXCLUDE to set at least one key " +
+                                                "column " +
+                                                "if all specified columns are numeric types")
     }
     val msrs: Seq[Field] = extractMsrColsFromFields(fields, tableProperties)
 
@@ -472,7 +490,7 @@ class CarbonSqlParser()
     val colProps = extractColumnProperties(fields, tableProperties)
     // get column groups configuration from table properties.
     val groupCols: Seq[String] = updateColumnGroupsInField(tableProperties,
-        noDictionaryDims, msrs, dims)
+      noDictionaryDims, msrs, dims)
 
     // get no inverted index columns from table properties.
     val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
@@ -518,8 +536,7 @@ class CarbonSqlParser()
       }
       // This will  be furthur handled.
       CommonUtil.arrangeColGrpsInSchemaOrder(splittedColGrps, dims)
-    }
-    else {
+    } else {
       null
     }
   }
@@ -567,7 +584,7 @@ class CarbonSqlParser()
    * @return
    */
   protected def getPartitionerObject(partitionCols: Seq[PartitionerField],
-                                     tableProperties: Map[String, String]):
+      tableProperties: Map[String, String]):
   Option[Partitioner] = {
 
     // by default setting partition class empty.
@@ -613,8 +630,8 @@ class CarbonSqlParser()
   }
 
   protected def fillAllChildrenColumnProperty(parent: String, fieldChildren: Option[List[Field]],
-    tableProperties: Map[String, String],
-    colPropMap: java.util.HashMap[String, java.util.List[ColumnProperty]]) {
+      tableProperties: Map[String, String],
+      colPropMap: java.util.HashMap[String, java.util.List[ColumnProperty]]) {
     fieldChildren.foreach(fields => {
       fields.foreach(field => {
         fillColumnProperty(Some(parent), field.column, tableProperties, colPropMap)
@@ -625,9 +642,9 @@ class CarbonSqlParser()
   }
 
   protected def fillColumnProperty(parentColumnName: Option[String],
-    columnName: String,
-    tableProperties: Map[String, String],
-    colPropMap: java.util.HashMap[String, java.util.List[ColumnProperty]]) {
+      columnName: String,
+      tableProperties: Map[String, String],
+      colPropMap: java.util.HashMap[String, java.util.List[ColumnProperty]]) {
     val (tblPropKey, colProKey) = getKey(parentColumnName, columnName)
     val colProps = CommonUtil.getColumnProperties(tblPropKey, tableProperties)
     if (colProps.isDefined) {
@@ -636,7 +653,7 @@ class CarbonSqlParser()
   }
 
   def getKey(parentColumnName: Option[String],
-    columnName: String): (String, String) = {
+      columnName: String): (String, String) = {
     if (parentColumnName.isDefined) {
       if (columnName == "val") {
         (parentColumnName.get, parentColumnName.get + "." + columnName)
@@ -647,6 +664,7 @@ class CarbonSqlParser()
       (columnName, columnName)
     }
   }
+
   /**
    * This will extract the no inverted columns fields.
    * By default all dimensions use inverted index.
@@ -656,7 +674,7 @@ class CarbonSqlParser()
    * @return
    */
   protected def extractNoInvertedIndexColumns(fields: Seq[Field],
-    tableProperties: Map[String, String]):
+      tableProperties: Map[String, String]):
   Seq[String] = {
     // check whether the column name is in fields
     var noInvertedIdxColsProps: Array[String] = Array[String]()
@@ -667,17 +685,17 @@ class CarbonSqlParser()
         tableProperties.get("NO_INVERTED_INDEX").get.split(',').map(_.trim)
       noInvertedIdxColsProps
         .map { noInvertedIdxColProp =>
-        if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
-          val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
-            " does not exist in table. Please check create table statement."
-          throw new MalformedCarbonCommandException(errormsg)
+          if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
+            val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
+                           " does not exist in table. Please check create table statement."
+            throw new MalformedCarbonCommandException(errormsg)
+          }
         }
-      }
     }
     // check duplicate columns and only 1 col left
     val distinctCols = noInvertedIdxColsProps.toSet
     // extract the no inverted index columns
-    fields.foreach( field => {
+    fields.foreach(field => {
       if (distinctCols.exists(x => x.equalsIgnoreCase(field.column))) {
         noInvertedIdxCols :+= field.column
       }
@@ -695,7 +713,7 @@ class CarbonSqlParser()
    * @return
    */
   protected def extractDimColsAndNoDictionaryFields(fields: Seq[Field],
-                                                    tableProperties: Map[String, String]):
+      tableProperties: Map[String, String]):
   (Seq[Field], Seq[String]) = {
     var dimFields: LinkedHashSet[Field] = LinkedHashSet[Field]()
     var dictExcludeCols: Array[String] = Array[String]()
@@ -710,18 +728,18 @@ class CarbonSqlParser()
         .map { dictExcludeCol =>
           if (!fields.exists(x => x.column.equalsIgnoreCase(dictExcludeCol))) {
             val errormsg = "DICTIONARY_EXCLUDE column: " + dictExcludeCol +
-              " does not exist in table. Please check create table statement."
+                           " does not exist in table. Please check create table statement."
             throw new MalformedCarbonCommandException(errormsg)
           } else {
-            val dataType = fields.find (x =>
+            val dataType = fields.find(x =>
               x.column.equalsIgnoreCase(dictExcludeCol)).get.dataType.get
             if (isComplexDimDictionaryExclude(dataType)) {
               val errormsg = "DICTIONARY_EXCLUDE is unsupported for complex datatype column: " +
-                dictExcludeCol
+                             dictExcludeCol
               throw new MalformedCarbonCommandException(errormsg)
             } else if (!isStringAndTimestampColDictionaryExclude(dataType)) {
               val errorMsg = "DICTIONARY_EXCLUDE is unsupported for " + dataType.toLowerCase() +
-                " data type column: " + dictExcludeCol
+                             " data type column: " + dictExcludeCol
               throw new MalformedCarbonCommandException(errorMsg)
             }
           }
@@ -732,19 +750,19 @@ class CarbonSqlParser()
       dictIncludeCols =
         tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).get.split(",").map(_.trim)
       dictIncludeCols.map { distIncludeCol =>
-          if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol.trim))) {
-            val errormsg = "DICTIONARY_INCLUDE column: " + distIncludeCol.trim +
-              " does not exist in table. Please check create table statement."
-            throw new MalformedCarbonCommandException(errormsg)
-          }
+        if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol.trim))) {
+          val errormsg = "DICTIONARY_INCLUDE column: " + distIncludeCol.trim +
+                         " does not exist in table. Please check create table statement."
+          throw new MalformedCarbonCommandException(errormsg)
         }
+      }
     }
 
     // include cols should contain exclude cols
     dictExcludeCols.foreach { dicExcludeCol =>
       if (dictIncludeCols.exists(x => x.equalsIgnoreCase(dicExcludeCol))) {
         val errormsg = "DICTIONARY_EXCLUDE can not contain the same column: " + dicExcludeCol +
-          " with DICTIONARY_INCLUDE. Please check create table statement."
+                       " with DICTIONARY_INCLUDE. Please check create table statement."
         throw new MalformedCarbonCommandException(errormsg)
       }
     }
@@ -758,11 +776,9 @@ class CarbonSqlParser()
           noDictionaryDims :+= field.column
         }
         dimFields += field
-      }
-      else if (dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
+      } else if (dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
         dimFields += (field)
-      }
-      else if (isDetectAsDimentionDatatype(field.dataType.get)) {
+      } else if (isDetectAsDimentionDatatype(field.dataType.get)) {
         dimFields += (field)
       }
     }
@@ -770,11 +786,12 @@ class CarbonSqlParser()
 
     (dimFields.toSeq, noDictionaryDims)
   }
+
   /**
    * It fills non string dimensions in dimFields
    */
   def fillNonStringDimension(dictIncludeCols: Seq[String],
-    field: Field, dimFields: LinkedHashSet[Field]) {
+      field: Field, dimFields: LinkedHashSet[Field]) {
     var dictInclude = false
     if (dictIncludeCols.nonEmpty) {
       dictIncludeCols.foreach(dictIncludeCol =>
@@ -805,9 +822,9 @@ class CarbonSqlParser()
     dimensionType.exists(x => x.equalsIgnoreCase(dimensionDataType))
   }
 
-   /**
-    * detects whether double or decimal column is part of dictionary_exclude
-    */
+  /**
+   * detects whether double or decimal column is part of dictionary_exclude
+   */
   def isStringAndTimestampColDictionaryExclude(columnDataType: String): Boolean = {
     val dataTypes = Array("string", "timestamp")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
@@ -821,7 +838,7 @@ class CarbonSqlParser()
    * @return
    */
   protected def extractMsrColsFromFields(fields: Seq[Field],
-                                         tableProperties: Map[String, String]): Seq[Field] = {
+      tableProperties: Map[String, String]): Seq[Field] = {
     var msrFields: Seq[Field] = Seq[Field]()
     var dictIncludedCols: Array[String] = Array[String]()
     var dictExcludedCols: Array[String] = Array[String]()
@@ -841,10 +858,10 @@ class CarbonSqlParser()
     // by default consider all non string cols as msrs. consider all include/ exclude cols as dims
     fields.foreach(field => {
       if (!isDetectAsDimentionDatatype(field.dataType.get)) {
-          if (!dictIncludedCols.exists(x => x.equalsIgnoreCase(field.column)) &&
+        if (!dictIncludedCols.exists(x => x.equalsIgnoreCase(field.column)) &&
             !dictExcludedCols.exists(x => x.equalsIgnoreCase(field.column))) {
-            msrFields :+= field
-          }
+          msrFields :+= field
+        }
       }
     })
 
@@ -869,35 +886,43 @@ class CarbonSqlParser()
     (db, tableName)
   }
 
-  protected def cleanIdentifier(ident: String): String = ident match {
-    case escapedIdentifier(i) => i
-    case plainIdent => plainIdent
+  protected def cleanIdentifier(ident: String): String = {
+    ident match {
+      case escapedIdentifier(i) => i
+      case plainIdent => plainIdent
+    }
   }
 
   protected def getClauses(clauseNames: Seq[String], nodeList: Seq[ASTNode]): Seq[Option[Node]] = {
     var remainingNodes = nodeList
     val clauses = clauseNames.map { clauseName =>
       val (matches, nonMatches) = remainingNodes.partition(_.getText.toUpperCase == clauseName)
-      remainingNodes = nonMatches ++ (if (matches.nonEmpty) matches.tail else Nil)
+      remainingNodes = nonMatches ++ (if (matches.nonEmpty) {
+        matches.tail
+      } else {
+        Nil
+      })
       matches.headOption
     }
 
     if (remainingNodes.nonEmpty) {
       sys.error(
         s"""Unhandled clauses:
-           |You are likely trying to use an unsupported carbon feature."""".stripMargin)
+            |You are likely trying to use an unsupported carbon feature."""".stripMargin)
     }
     clauses
   }
 
   object Token {
     /** @return matches of the form (tokenName, children). */
-    def unapply(t: Any): Option[(String, Seq[ASTNode])] = t match {
-      case t: ASTNode =>
-        CurrentOrigin.setPosition(t.getLine, t.getCharPositionInLine)
-        Some((t.getText,
-          Option(t.getChildren).map(_.asScala.toList).getOrElse(Nil).asInstanceOf[Seq[ASTNode]]))
-      case _ => None
+    def unapply(t: Any): Option[(String, Seq[ASTNode])] = {
+      t match {
+        case t: ASTNode =>
+          CurrentOrigin.setPosition(t.getLine, t.getCharPositionInLine)
+          Some((t.getText,
+            Option(t.getChildren).map(_.asScala.toList).getOrElse(Nil).asInstanceOf[Seq[ASTNode]]))
+        case _ => None
+      }
     }
   }
 
@@ -907,36 +932,40 @@ class CarbonSqlParser()
    * @param node
    * @return
    */
-  protected def getProperties(node: Node): Seq[(String, String)] = node match {
-    case Token("TOK_TABLEPROPLIST", list) =>
-      list.map {
-        case Token("TOK_TABLEPROPERTY", Token(key, Nil) :: Token(value, Nil) :: Nil) =>
-          (unquoteString(key) -> unquoteString(value))
-      }
+  protected def getProperties(node: Node): Seq[(String, String)] = {
+    node match {
+      case Token("TOK_TABLEPROPLIST", list) =>
+        list.map {
+          case Token("TOK_TABLEPROPERTY", Token(key, Nil) :: Token(value, Nil) :: Nil) =>
+            (unquoteString(key) -> unquoteString(value))
+        }
+    }
   }
 
-  protected def unquoteString(str: String) = str match {
-    case singleQuotedString(s) => s.toLowerCase()
-    case doubleQuotedString(s) => s.toLowerCase()
-    case other => other
+  protected def unquoteString(str: String) = {
+    str match {
+      case singleQuotedString(s) => s.toLowerCase()
+      case doubleQuotedString(s) => s.toLowerCase()
+      case other => other
+    }
   }
 
   protected lazy val loadDataNew: Parser[LogicalPlan] =
     LOAD ~> DATA ~> opt(LOCAL) ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
-      (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
-      (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
-        case filePath ~ isOverwrite ~ table ~ optionsList =>
-          val (databaseNameOp, tableName) = table match {
-            case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
-          }
-          if(optionsList.isDefined) {
-            validateOptions(optionsList)
-          }
-          val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
-          val useKettle = optionsMap.getOrElse("USE_KETTLE", "true").toBoolean
-          LoadTable(databaseNameOp, tableName, filePath, Seq(), optionsMap,
-            isOverwrite.isDefined, useKettle = useKettle)
-      }
+    (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
+    (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
+      case filePath ~ isOverwrite ~ table ~ optionsList =>
+        val (databaseNameOp, tableName) = table match {
+          case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
+        }
+        if (optionsList.isDefined) {
+          validateOptions(optionsList)
+        }
+        val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
+        val useKettle = optionsMap.getOrElse("USE_KETTLE", "true").toBoolean
+        LoadTable(databaseNameOp, tableName, filePath, Seq(), optionsMap,
+          isOverwrite.isDefined, useKettle = useKettle)
+    }
 
   private def validateOptions(optionList: Option[List[(String, String)]]): Unit = {
 
@@ -964,9 +993,9 @@ class CarbonSqlParser()
 
     //  COLUMNDICT and ALL_DICTIONARY_PATH can not be used together.
     if (options.exists(_._1.equalsIgnoreCase("COLUMNDICT")) &&
-      options.exists(_._1.equalsIgnoreCase("ALL_DICTIONARY_PATH"))) {
+        options.exists(_._1.equalsIgnoreCase("ALL_DICTIONARY_PATH"))) {
       val errorMessage = "Error: COLUMNDICT and ALL_DICTIONARY_PATH can not be used together" +
-        " in options"
+                         " in options"
       throw new MalformedCarbonCommandException(errorMessage)
     }
 
@@ -1017,20 +1046,21 @@ class CarbonSqlParser()
 
   protected lazy val primitiveTypes =
     STRING ^^^ "string" | INTEGER ^^^ "integer" | TIMESTAMP ^^^
-    "timestamp" | NUMERIC ^^^ "numeric" | BIGINT ^^^ "bigint" |
-       INT ^^^ "int" | DOUBLE ^^^ "double" | decimalType
+                                                  "timestamp" | NUMERIC ^^^ "numeric" |
+    BIGINT ^^^ "bigint" |
+    INT ^^^ "int" | DOUBLE ^^^ "double" | decimalType
 
   /**
    * Matching the decimal(10,0) data type and returning the same.
    */
   private lazy val decimalType =
-    DECIMAL ~ ("(" ~> numericLit <~",") ~ (numericLit <~ ")")  ^^ {
-      case decimal ~ precision ~scale =>
-        s"$decimal($precision, $scale)"
-    }
+  DECIMAL ~ ("(" ~> numericLit <~ ",") ~ (numericLit <~ ")") ^^ {
+    case decimal ~ precision ~ scale =>
+      s"$decimal($precision, $scale)"
+  }
 
   protected lazy val nestedType: Parser[Field] = structFieldType | arrayFieldType |
-    primitiveFieldType
+                                                 primitiveFieldType
 
   protected lazy val anyFieldDef: Parser[Field] =
     (ident | stringLit) ~ ((":").? ~> nestedType) ~ (IN ~> (ident | stringLit)).? ^^ {
@@ -1060,8 +1090,8 @@ class CarbonSqlParser()
 
   protected lazy val measureCol: Parser[Field] =
     (ident | stringLit) ~ (INTEGER ^^^ "integer" | NUMERIC ^^^ "numeric" |
-      BIGINT ^^^ "bigint" | DECIMAL ^^^ "decimal").? ~
-      (AS ~> (ident | stringLit)).? ~ (IN ~> (ident | stringLit)).? ^^ {
+                           BIGINT ^^^ "bigint" | DECIMAL ^^^ "decimal").? ~
+    (AS ~> (ident | stringLit)).? ~ (IN ~> (ident | stringLit)).? ^^ {
       case e1 ~ e2 ~ e3 ~ e4 => Field(e1, e2, e3, Some(null))
     }
 
@@ -1077,11 +1107,11 @@ class CarbonSqlParser()
         if (ef.isDefined && "FORMATTED".equalsIgnoreCase(ef.get)) {
           new DescribeFormattedCommand("describe formatted " + tblIdentifier,
             tblIdentifier)
-        }
-        else {
+        } else {
           new DescribeCommand(UnresolvedRelation(tblIdentifier, None), ef.isDefined)
         }
     }
+
   private def normalizeType(field: Field): Field = {
     val dataType = field.dataType.getOrElse("NIL")
     dataType match {
@@ -1182,22 +1212,23 @@ class CarbonSqlParser()
 
   protected lazy val showLoads: Parser[LogicalPlan] =
     SHOW ~> SEGMENTS ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident ~
-      (LIMIT ~> numericLit).? <~
-      opt(";") ^^ {
+    (LIMIT ~> numericLit).? <~
+    opt(";") ^^ {
       case databaseName ~ tableName ~ limit =>
         ShowLoadsCommand(databaseName, tableName.toLowerCase(), limit)
     }
 
   protected lazy val segmentId: Parser[String] =
     numericLit ^^ { u => u } |
-      elem("decimal", p => {
-        p.getClass.getSimpleName.equals("FloatLit") ||
-        p.getClass.getSimpleName.equals("DecimalLit") } ) ^^ (_.chars)
+    elem("decimal", p => {
+      p.getClass.getSimpleName.equals("FloatLit") ||
+      p.getClass.getSimpleName.equals("DecimalLit")
+    }) ^^ (_.chars)
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
     DELETE ~> SEGMENT ~> repsep(segmentId, ",") ~ (FROM ~> TABLE ~>
-      (ident <~ ".").? ~ ident) <~
-      opt(";") ^^ {
+                                                   (ident <~ ".").? ~ ident) <~
+    opt(";") ^^ {
       case loadids ~ table => table match {
         case databaseName ~ tableName =>
           DeleteLoadsById(loadids, databaseName, tableName.toLowerCase())
@@ -1206,8 +1237,8 @@ class CarbonSqlParser()
 
   protected lazy val deleteLoadsByLoadDate: Parser[LogicalPlan] =
     DELETE ~> SEGMENTS ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
-      (WHERE ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
-      opt(";") ^^ {
+    (WHERE ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
+    opt(";") ^^ {
       case schema ~ table ~ condition =>
         condition match {
           case dateField ~ dateValue =>
@@ -1226,12 +1257,12 @@ class CarbonSqlParser()
         logicalPlan match {
           case plan: CreateTable => ExplainCommand(logicalPlan, extended = isExtended.isDefined)
           case _ => ExplainCommand(OneRowRelation)
-      }
+        }
     }
 
   protected lazy val dropDatabaseCascade: Parser[LogicalPlan] =
-    DROP ~> (DATABASE|SCHEMA) ~> opt(IF ~> EXISTS) ~> ident ~> CASCADE <~ opt(";") ^^ {
+    DROP ~> (DATABASE | SCHEMA) ~> opt(IF ~> EXISTS) ~> ident ~> CASCADE <~ opt(";") ^^ {
       case cascade => throw new MalformedCarbonCommandException(
-          "Unsupported cascade operation in drop database/schema command")
+        "Unsupported cascade operation in drop database/schema command")
     }
 }

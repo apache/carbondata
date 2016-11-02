@@ -120,8 +120,8 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
       options.tableName,
       null,
       Seq(),
-      Map(("fileheader" -> header)),
-      false,
+      Map("fileheader" -> header),
+      isOverwriteExist = false,
       null,
       Some(dataFrame),
       options.useKettle).run(cc)
