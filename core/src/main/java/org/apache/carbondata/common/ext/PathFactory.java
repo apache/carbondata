@@ -31,7 +31,6 @@ public class PathFactory implements PathService {
   private static PathService pathService = new PathFactory();
 
   /**
-   * @param columnIdentifier
    * @param storeLocation
    * @param tableIdentifier
    * @return store path related to tables

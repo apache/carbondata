@@ -27,7 +27,6 @@ import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 public interface PathService {
 
   /**
-   * @param columnIdentifier
    * @param storeLocation
    * @param tableIdentifier
    * @return store path related to tables
