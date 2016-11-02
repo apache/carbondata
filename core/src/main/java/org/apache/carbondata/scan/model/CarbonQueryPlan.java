@@ -100,7 +100,7 @@ public class CarbonQueryPlan implements Serializable {
   private List<QueryDimension> sortedDimensions;
 
   /**
-   * If it is raw detail query, no need to aggregate in backend. And it reurns with dictionary data
+   * If it is raw detail query, no need to aggregate in backend. And it returns with dictionary data
    * with out decoding.
    */
   private boolean rawDetailQuery;
