@@ -46,8 +46,8 @@ public class NotInExpression extends BinaryConditionalExpression {
       ExpressionResult rightRsult = right.evaluate(value);
       setOfExprResult = new HashSet<ExpressionResult>(10);
       for (ExpressionResult exprResVal : rightRsult.getList()) {
-        if (exprResVal.getDataType().getPresedenceOrder() < leftRsult.getDataType()
-            .getPresedenceOrder()) {
+        if (exprResVal.getDataType().getPrecedenceOrder() < leftRsult.getDataType()
+            .getPrecedenceOrder()) {
           val = leftRsult;
         } else {
           val = exprResVal;

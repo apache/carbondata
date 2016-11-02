@@ -36,16 +36,16 @@ public enum DataType {
   STRUCT(10, "STRUCT"),
   MAP(11, "MAP");
 
-  private int presedenceOrder;
+  private int precedenceOrder;
   private String name ;
 
   DataType(int value ,String  name) {
-    this.presedenceOrder = value;
+    this.precedenceOrder = value;
     this.name = name;
   }
 
-  public int getPresedenceOrder() {
-    return presedenceOrder;
+  public int getPrecedenceOrder() {
+    return precedenceOrder;
   }
 
   public String getName() {
