@@ -144,6 +144,7 @@ class CarbonSqlParser()
   protected val SEGMENT = carbonKeyWord("SEGMENT")
 
   protected val STRING = carbonKeyWord("STRING")
+  protected val SHORT = carbonKeyWord("SMALLINT")
   protected val INTEGER = carbonKeyWord("INTEGER")
   protected val TIMESTAMP = carbonKeyWord("TIMESTAMP")
   protected val NUMERIC = carbonKeyWord("NUMERIC")
@@ -1016,7 +1017,7 @@ class CarbonSqlParser()
   protected lazy val dimCol: Parser[Field] = anyFieldDef
 
   protected lazy val primitiveTypes =
-    STRING ^^^ "string" | INTEGER ^^^ "integer" | TIMESTAMP ^^^
+    STRING ^^^ "string" | SHORT ^^^ "smallint" | INTEGER ^^^ "integer" | TIMESTAMP ^^^
     "timestamp" | NUMERIC ^^^ "numeric" | BIGINT ^^^ "bigint" |
        INT ^^^ "int" | DOUBLE ^^^ "double" | decimalType
 
