@@ -1258,8 +1258,10 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
     val carbonLock = CarbonLockFactory
       .getCarbonLockObj(carbonTableIdentifier, LockUsage.DROP_TABLE_LOCK)
     val storePath = CarbonEnv.getInstance(sqlContext).carbonCatalog.storePath
+    var isLocked = false
     try {
-      if (carbonLock.lockWithRetries()) {
+      isLocked = carbonLock.lockWithRetries()
+      if (isLocked) {
         logInfo("Successfully able to get the lock for drop.")
       }
       else {
@@ -1271,7 +1273,7 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
       LOGGER.audit(s"Deleted table [$tableName] under database [$dbName]")
     }
     finally {
-      if (carbonLock != null) {
+      if (carbonLock != null && isLocked) {
         if (carbonLock.unlock()) {
           logInfo("Table MetaData Unlocked Successfully after dropping the table")
           // deleting any remaining files.
