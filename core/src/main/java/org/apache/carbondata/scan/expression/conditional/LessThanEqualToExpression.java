@@ -44,7 +44,7 @@ public class LessThanEqualToExpression extends BinaryConditionalExpression {
       return elRes;
     }
     if (elRes.getDataType() != erRes.getDataType()) {
-      if (elRes.getDataType().getPresedenceOrder() < erRes.getDataType().getPresedenceOrder()) {
+      if (elRes.getDataType().getPrecedenceOrder() < erRes.getDataType().getPrecedenceOrder()) {
         exprResValue1 = erRes;
       }
 

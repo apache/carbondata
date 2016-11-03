@@ -157,7 +157,7 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
   protected void initFileLocation() {
     PathService pathService = CarbonCommonFactory.getPathService();
     CarbonTablePath carbonTablePath =
-        pathService.getCarbonTablePath(columnIdentifier, this.hdfsStorePath, carbonTableIdentifier);
+        pathService.getCarbonTablePath(this.hdfsStorePath, carbonTableIdentifier);
     this.columnDictionaryMetadataFilePath =
         carbonTablePath.getDictionaryMetaFilePath(columnIdentifier.getColumnId());
   }

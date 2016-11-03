@@ -252,7 +252,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
 
   protected void initPaths() {
     PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(columnIdentifier,
+    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(
             this.hdfsStorePath, carbonTableIdentifier);
     this.dictionaryFilePath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId());
     this.dictionaryMetaFilePath =

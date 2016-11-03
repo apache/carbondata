@@ -17,37 +17,32 @@
  * under the License.
  */
 
-package org.apache.carbondata.processing.sortdatastep;
+package org.apache.carbondata.processing.store;
 
-import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.trans.step.BaseStepData;
-import org.pentaho.di.trans.step.StepDataInterface;
-
-public class SortKeyStepData extends BaseStepData implements StepDataInterface {
-
-  /**
-   * outputRowMeta
-   */
-  private RowMetaInterface outputRowMeta;
+/**
+ * Factory class for CarbonFactHandler.
+ */
+public final class CarbonFactHandlerFactory {
 
   /**
-   * rowMeta
+   * Creating fact handler to write data.
+   * @param model
+   * @param handlerType
+   * @return
    */
-  private RowMetaInterface rowMeta;
-
-  public RowMetaInterface getOutputRowMeta() {
-    return outputRowMeta;
+  public static CarbonFactHandler createCarbonFactHandler(CarbonFactDataHandlerModel model,
+      FactHandlerType handlerType) {
+    switch (handlerType) {
+      case COLUMNAR:
+        return new CarbonFactDataHandlerColumnar(model);
+      default:
+        return new CarbonFactDataHandlerColumnar(model);
+    }
   }
 
-  public void setOutputRowMeta(RowMetaInterface outputRowMeta) {
-    this.outputRowMeta = outputRowMeta;
+  public enum FactHandlerType {
+    COLUMNAR
   }
 
-  public RowMetaInterface getRowMeta() {
-    return rowMeta;
-  }
-
-  public void setRowMeta(RowMetaInterface rowMeta) {
-    this.rowMeta = rowMeta;
-  }
 }
+

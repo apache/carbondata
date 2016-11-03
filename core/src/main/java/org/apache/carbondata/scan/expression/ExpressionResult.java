@@ -34,7 +34,6 @@ import org.apache.carbondata.scan.expression.exception.FilterIllegalMemberExcept
 
 public class ExpressionResult implements Comparable<ExpressionResult> {
 
-  private static final long serialVersionUID = 1L;
   protected DataType dataType;
 
   protected Object value;
@@ -60,7 +59,6 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     return dataType;
   }
 
-  //CHECKSTYLE:OFF Approval No:Approval-V1R2C10_009
   public Integer getInt() throws FilterIllegalMemberException {
     if (value == null) {
       return null;
@@ -200,7 +198,6 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           "Cannot convert" + this.getDataType().name() + " to Double type value");
     }
   }
-  //CHECKSTYLE:ON
 
   public Long getLong() throws FilterIllegalMemberException {
     if (value == null) {

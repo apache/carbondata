@@ -16,20 +16,38 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.core.service;
 
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
-import org.apache.carbondata.core.carbon.path.CarbonTablePath;
+package org.apache.carbondata.processing.sortandgroupby.sortdatastep;
 
-/**
- * Create helper to get path details
- */
-public interface PathService {
+import org.pentaho.di.core.row.RowMetaInterface;
+import org.pentaho.di.trans.step.BaseStepData;
+import org.pentaho.di.trans.step.StepDataInterface;
+
+public class SortKeyStepData extends BaseStepData implements StepDataInterface {
 
   /**
-   * @param storeLocation
-   * @param tableIdentifier
-   * @return store path related to tables
+   * outputRowMeta
    */
-  CarbonTablePath getCarbonTablePath(String storeLocation, CarbonTableIdentifier tableIdentifier);
+  private RowMetaInterface outputRowMeta;
+
+  /**
+   * rowMeta
+   */
+  private RowMetaInterface rowMeta;
+
+  public RowMetaInterface getOutputRowMeta() {
+    return outputRowMeta;
+  }
+
+  public void setOutputRowMeta(RowMetaInterface outputRowMeta) {
+    this.outputRowMeta = outputRowMeta;
+  }
+
+  public RowMetaInterface getRowMeta() {
+    return rowMeta;
+  }
+
+  public void setRowMeta(RowMetaInterface rowMeta) {
+    this.rowMeta = rowMeta;
+  }
 }

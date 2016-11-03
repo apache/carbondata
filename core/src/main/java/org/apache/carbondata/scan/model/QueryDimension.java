@@ -38,8 +38,8 @@ public class QueryDimension extends QueryColumn implements Serializable {
    */
   private transient CarbonDimension dimension;
 
-  public QueryDimension(String columName) {
-    super(columName);
+  public QueryDimension(String columnName) {
+    super(columnName);
   }
 
   /**

@@ -48,8 +48,8 @@ public class InExpression extends BinaryConditionalExpression {
       ExpressionResult val = null;
       setOfExprResult = new HashSet<ExpressionResult>(10);
       for (ExpressionResult expressionResVal : rightRsult.getList()) {
-        if (expressionResVal.getDataType().getPresedenceOrder() < leftRsult.getDataType()
-            .getPresedenceOrder()) {
+        if (expressionResVal.getDataType().getPrecedenceOrder() < leftRsult.getDataType()
+            .getPrecedenceOrder()) {
           val = leftRsult;
         } else {
           val = expressionResVal;
