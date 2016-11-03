@@ -79,6 +79,7 @@ public final class CarbonUtil {
 
   public static final String HDFS_PREFIX = "hdfs://";
   public static final String VIEWFS_PREFIX = "viewfs://";
+  public static final String ALLUXIO_PREFIX = "alluxio://";
   private static final String FS_DEFAULT_FS = "fs.defaultFS";
 
   /**
