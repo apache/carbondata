@@ -20,84 +20,79 @@ package org.apache.carbondata.core.cache.dictionary;
 
 import mockit.Mock;
 import mockit.MockUp;
+
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.ColumnIdentifier;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 import java.util.HashMap;
 import java.util.Map;
+
 import static junit.framework.TestCase.*;
 
 public class DictionaryColumnUniqueIdentifierTest {
 
-    private static DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier1;
-    private static DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier2;
-    private static DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier3;
+  private static DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier1;
+  private static DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier2;
+  private static DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier3;
 
-    @BeforeClass
-    public static void setUp() throws Exception {
-        CarbonTableIdentifier carbonTableIdentifier1 =
-                new CarbonTableIdentifier("testDatabase","testTable","1");
-        CarbonTableIdentifier carbonTableIdentifier2 =
-                new CarbonTableIdentifier("testDatabase","testTable","2");
-        Map<String,String> properties = new HashMap<>();
-        ColumnIdentifier columnIdentifier = new ColumnIdentifier("2",properties, DataType.STRING);
-        ColumnIdentifier columnIdentifier2 = new ColumnIdentifier("1",properties, DataType.INT);
-        dictionaryColumnUniqueIdentifier1 =
-                new DictionaryColumnUniqueIdentifier(carbonTableIdentifier1,columnIdentifier,DataType.MAP);
-        dictionaryColumnUniqueIdentifier2 =
-                new DictionaryColumnUniqueIdentifier(carbonTableIdentifier2,columnIdentifier2,DataType.MAP);
-        dictionaryColumnUniqueIdentifier3 =
-                new DictionaryColumnUniqueIdentifier(carbonTableIdentifier2,columnIdentifier,DataType.MAP);
-    }
+  @BeforeClass public static void setUp() throws Exception {
+    CarbonTableIdentifier carbonTableIdentifier1 =
+        new CarbonTableIdentifier("testDatabase", "testTable", "1");
+    CarbonTableIdentifier carbonTableIdentifier2 =
+        new CarbonTableIdentifier("testDatabase", "testTable", "2");
+    Map<String, String> properties = new HashMap<>();
+    ColumnIdentifier columnIdentifier = new ColumnIdentifier("2", properties, DataType.STRING);
+    ColumnIdentifier columnIdentifier2 = new ColumnIdentifier("1", properties, DataType.INT);
+    dictionaryColumnUniqueIdentifier1 =
+        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier1, columnIdentifier,
+            DataType.MAP);
+    dictionaryColumnUniqueIdentifier2 =
+        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier2, columnIdentifier2,
+            DataType.MAP);
+    dictionaryColumnUniqueIdentifier3 =
+        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier2, columnIdentifier,
+            DataType.MAP);
+  }
 
-    @Test
-    public void testToGetDataType(){
-        assertEquals(dictionaryColumnUniqueIdentifier1.getDataType(), DataType.MAP);
-    }
+  @Test public void testToGetDataType() {
+    assertEquals(dictionaryColumnUniqueIdentifier1.getDataType(), DataType.MAP);
+  }
 
-    @Test
-    public void testForEqualsWithDifferentObjectsWithDifferentColumnIdentifier(){
-        assertTrue(!dictionaryColumnUniqueIdentifier1.equals(dictionaryColumnUniqueIdentifier2));
-    }
+  @Test public void testForEqualsWithDifferentObjectsWithDifferentColumnIdentifier() {
+    assertTrue(!dictionaryColumnUniqueIdentifier1.equals(dictionaryColumnUniqueIdentifier2));
+  }
 
-    @Test
-    public void testForEqualsWithDifferentObjectsWithSameCarbonTableIdentifier(){
-        assertTrue(!dictionaryColumnUniqueIdentifier3.equals(dictionaryColumnUniqueIdentifier2));
-    }
+  @Test public void testForEqualsWithDifferentObjectsWithSameCarbonTableIdentifier() {
+    assertTrue(!dictionaryColumnUniqueIdentifier3.equals(dictionaryColumnUniqueIdentifier2));
+  }
 
-    @Test
-    public void testForEquals(){
-        assertTrue(dictionaryColumnUniqueIdentifier1.equals(dictionaryColumnUniqueIdentifier1));
-    }
+  @Test public void testForEquals() {
+    assertTrue(dictionaryColumnUniqueIdentifier1.equals(dictionaryColumnUniqueIdentifier1));
+  }
 
-    @Test
-    public void testForEqualsWithNull(){
-        assertTrue(!dictionaryColumnUniqueIdentifier1.equals(null));
-    }
+  @Test public void testForEqualsWithNull() {
+    assertNotNull(dictionaryColumnUniqueIdentifier1);
+  }
 
-    @Test
-    public void testForEqualsWithDifferentClass(){
-        assertTrue(!dictionaryColumnUniqueIdentifier1.equals(""));
-    }
+  @Test public void testForEqualsWithDifferentClass() {
+    assertTrue(!dictionaryColumnUniqueIdentifier1.equals(""));
+  }
 
-    @Test
-    public void testToGetHashCode(){
-        new MockUp<CarbonTableIdentifier>() {
-            @SuppressWarnings("unused")
-            @Mock
-            public int hashCode() {
-                return 1;
-            }
-        };
-        new MockUp<ColumnIdentifier>() {
-            @SuppressWarnings("unused")
-            @Mock
-            public int hashCode() {
-                return 2;
-            }
-        };
-        assertEquals(dictionaryColumnUniqueIdentifier1.hashCode(),33);
-    }
+  @Test public void testToGetHashCode() {
+    new MockUp<CarbonTableIdentifier>() {
+      @SuppressWarnings("unused") @Mock public int hashCode() {
+        return 1;
+      }
+    };
+    new MockUp<ColumnIdentifier>() {
+      @SuppressWarnings("unused") @Mock public int hashCode() {
+        return 2;
+      }
+    };
+    assertEquals(dictionaryColumnUniqueIdentifier1.hashCode(), 33);
+  }
 }

@@ -22,84 +22,77 @@ import mockit.Mock;
 import mockit.MockUp;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
 import java.util.Arrays;
 import java.util.List;
+
 import static junit.framework.TestCase.assertEquals;
 
 public class ReverseDictionaryTest {
 
-    private static ReverseDictionary reverseDictionary;
+  private static ReverseDictionary reverseDictionary;
 
-    @BeforeClass
-    public static void setUp() throws Exception {
-        ColumnReverseDictionaryInfo columnReverseDictionaryInfo = new ColumnReverseDictionaryInfo();
-        reverseDictionary = new ReverseDictionary(columnReverseDictionaryInfo);
-    }
+  @BeforeClass public static void setUp() throws Exception {
+    ColumnReverseDictionaryInfo columnReverseDictionaryInfo = new ColumnReverseDictionaryInfo();
+    reverseDictionary = new ReverseDictionary(columnReverseDictionaryInfo);
+  }
 
-    @Test
-    public void testToGetSurrogateKey() {
-        new MockUp<ColumnReverseDictionaryInfo>() {
-            @SuppressWarnings("unused")
-            @Mock
-            public int getSurrogateKey(byte[] value) {
-                return 123;
-            }
-        };
-        int surrogateKey = reverseDictionary.getSurrogateKey("123".getBytes());
-        assertEquals(surrogateKey, 123);
-    }
+  @Test public void testToGetSurrogateKey() {
+    new MockUp<ColumnReverseDictionaryInfo>() {
+      @SuppressWarnings("unused") @Mock public int getSurrogateKey(byte[] value) {
+        return 123;
+      }
+    };
+    int surrogateKey = reverseDictionary.getSurrogateKey("123".getBytes());
+    int expectedResult = 123;
+    assertEquals(surrogateKey, expectedResult);
+  }
 
-    @Test
-    public void testToGetDictionaryValueForKey() {
-        new MockUp<ColumnReverseDictionaryInfo>() {
-            @SuppressWarnings("unused")
-            @Mock
-            public String getDictionaryValueForKey(int surrogateKey) {
-                return "123";
-            }
-        };
-        String dictionaryValue = reverseDictionary.getDictionaryValueForKey(123);
-        assertEquals(dictionaryValue, "123");
-    }
+  @Test public void testToGetDictionaryValueForKey() {
+    new MockUp<ColumnReverseDictionaryInfo>() {
+      @SuppressWarnings("unused") @Mock public String getDictionaryValueForKey(int surrogateKey) {
+        return "123";
+      }
+    };
+    String dictionaryValue = reverseDictionary.getDictionaryValueForKey(123);
+    String expectedResult = "123";
+    assertEquals(dictionaryValue, expectedResult);
+  }
 
-    @Test
-    public void testToGetSortedIndex() {
-        new MockUp<ColumnReverseDictionaryInfo>() {
-            @SuppressWarnings("unused")
-            @Mock
-            public int getSortedIndex(int surrogateKey) {
-                return 1;
-            }
-        };
-        int sortedIndex = reverseDictionary.getSortedIndex(123);
-        assertEquals(sortedIndex, 1);
-    }
+  @Test public void testToGetSortedIndex() {
+    new MockUp<ColumnReverseDictionaryInfo>() {
+      @SuppressWarnings("unused") @Mock public int getSortedIndex(int surrogateKey) {
+        return 1;
+      }
+    };
+    int sortedIndex = reverseDictionary.getSortedIndex(123);
+    int expectedResult = 1;
+    assertEquals(sortedIndex, expectedResult);
+  }
 
-    @Test
-    public void testToGetDictionaryValueFromSortedIndex() {
-        new MockUp<ColumnReverseDictionaryInfo>() {
-            @SuppressWarnings("unused")
-            @Mock
-            public String getDictionaryValueFromSortedIndex(int sortedIndex) {
-                return "A";
-            }
-        };
-        String dictionaryValue = reverseDictionary.getDictionaryValueFromSortedIndex(123);
-        assertEquals(dictionaryValue, "A");
-    }
+  @Test public void testToGetDictionaryValueFromSortedIndex() {
+    new MockUp<ColumnReverseDictionaryInfo>() {
+      @SuppressWarnings("unused") @Mock
+      public String getDictionaryValueFromSortedIndex(int sortedIndex) {
+        return "A";
+      }
+    };
+    String dictionaryValue = reverseDictionary.getDictionaryValueFromSortedIndex(123);
+    String expectedResult = "A";
+    assertEquals(dictionaryValue, expectedResult);
+  }
 
-    @Test
-    public void testToGetDictionaryChunks() {
-        new MockUp<ColumnReverseDictionaryInfo>() {
-            @SuppressWarnings("unused")
-            @Mock
-            public DictionaryChunksWrapper getDictionaryChunks() {
-                List<List<byte[]>> dictionaryChunks = Arrays.asList(Arrays.asList("123".getBytes()), Arrays.asList("321".getBytes()));
-                return new DictionaryChunksWrapper(dictionaryChunks);
-            }
-        };
-        DictionaryChunksWrapper dictionaryValue = reverseDictionary.getDictionaryChunks();
-        assertEquals(dictionaryValue.getSize(), 2);
-    }
+  @Test public void testToGetDictionaryChunks() {
+    new MockUp<ColumnReverseDictionaryInfo>() {
+      @SuppressWarnings("unused") @Mock public DictionaryChunksWrapper getDictionaryChunks() {
+        List<List<byte[]>> dictionaryChunks =
+            Arrays.asList(Arrays.asList("123".getBytes()), Arrays.asList("321".getBytes()));
+        return new DictionaryChunksWrapper(dictionaryChunks);
+      }
+    };
+    DictionaryChunksWrapper dictionaryValue = reverseDictionary.getDictionaryChunks();
+    int expectedResult = 2;
+    assertEquals(dictionaryValue.getSize(), expectedResult);
+  }
 
 }
