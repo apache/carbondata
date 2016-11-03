@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.carbondata.core.cache.dictionary;
 
 import mockit.Deencapsulation;
@@ -6,23 +24,18 @@ import mockit.MockUp;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.CoreMatchers.*;
 
-/**
- * Created by harmeet on 28/10/16.
- */
 public class ColumnDictionaryInfoTest {
 
     private ColumnDictionaryInfo columnDictionaryInfo;
@@ -45,7 +58,7 @@ public class ColumnDictionaryInfoTest {
         Deencapsulation.invoke(columnDictionaryInfo, "setSortOrderIndex", Arrays.asList(1, 2, 3, 4, 5, 6, 7));
 
         List<byte[]> chunks = Arrays.asList(new byte[]{64, 78, 85, 35, 76, 76, 36, 33},
-                new byte[]{98,114, 97, 122, 105, 108},
+                new byte[]{98, 114, 97, 122, 105, 108},
                 new byte[]{99, 97, 110, 97, 100, 97},
                 new byte[]{99, 104, 105, 110, 97},
                 new byte[]{102, 114, 97, 110, 99, 101},
@@ -62,13 +75,13 @@ public class ColumnDictionaryInfoTest {
         columnDictionaryInfo.getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers,
                 surrogates);
 
-        assertThat(2 , is(equalTo(surrogates.size())));
+        assertThat(surrogates.size(), is(equalTo(2)));
 
         List<Integer> expectedSurrogates = new ArrayList<>();
         expectedSurrogates.add(4);
         expectedSurrogates.add(5);
 
-        assertThat(expectedSurrogates, is(equalTo(surrogates)));
+        assertThat(surrogates, is(equalTo(expectedSurrogates)));
     }
 
     @Test
@@ -92,11 +105,12 @@ public class ColumnDictionaryInfoTest {
         columnDictionaryInfo.getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers,
                 surrogates);
 
-        assertThat(1 , is(equalTo(surrogates.size())));
+        assertThat(surrogates.size(), is(equalTo(1)));
 
         List<Integer> expectedSurrogates = new ArrayList<>();
         expectedSurrogates.add(0);
-        assertThat(expectedSurrogates, is(equalTo(surrogates)));
+
+        assertThat(surrogates, is(equalTo(expectedSurrogates)));
     }
 
     @Test
@@ -120,11 +134,11 @@ public class ColumnDictionaryInfoTest {
         columnDictionaryInfo.getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers,
                 surrogates);
 
-        assertThat(1 , is(equalTo(surrogates.size())));
+        assertThat(surrogates.size(), is(equalTo(1)));
 
         List<Integer> expectedSurrogates = new ArrayList<>();
         expectedSurrogates.add(1);
-        assertThat(expectedSurrogates, is(equalTo(surrogates)));
+        assertThat(surrogates, is(equalTo(expectedSurrogates)));
     }
 
     @Test
@@ -145,7 +159,7 @@ public class ColumnDictionaryInfoTest {
         Deencapsulation.invoke(columnDictionaryInfo, "setSortOrderIndex", Arrays.asList(1, 2, 3, 4, 5, 6, 7));
 
         List<byte[]> chunks = Arrays.asList(new byte[]{64, 78, 85, 35, 76, 76, 36, 33},
-                new byte[]{98,114, 97, 122, 105, 108},
+                new byte[]{98, 114, 97, 122, 105, 108},
                 new byte[]{99, 97, 110, 97, 100, 97},
                 new byte[]{99, 104, 105, 110, 97},
                 new byte[]{102, 114, 97, 110, 99, 101},
@@ -162,13 +176,13 @@ public class ColumnDictionaryInfoTest {
         columnDictionaryInfo.getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers,
                 surrogates);
 
-        assertThat(2 , is(equalTo(surrogates.size())));
+        assertThat(surrogates.size(), is(equalTo(2)));
 
         List<Integer> expectedSurrogates = new ArrayList<>();
         expectedSurrogates.add(4);
         expectedSurrogates.add(5);
 
-        assertThat(expectedSurrogates, is(equalTo(surrogates)));
+        assertThat(surrogates, is(equalTo(expectedSurrogates)));
     }
 
     @Test
@@ -200,12 +214,12 @@ public class ColumnDictionaryInfoTest {
         columnDictionaryInfo.getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers,
                 surrogates);
 
-        assertThat(1 , is(equalTo(surrogates.size())));
+        assertThat(surrogates.size(), is(equalTo(1)));
 
         List<Integer> expectedSurrogates = new ArrayList<>();
         expectedSurrogates.add(1);
 
-        assertThat(expectedSurrogates, is(equalTo(surrogates)));
+        assertThat(surrogates, is(equalTo(expectedSurrogates)));
     }
 
     @Test
@@ -237,12 +251,12 @@ public class ColumnDictionaryInfoTest {
         columnDictionaryInfo.getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers,
                 surrogates);
 
-        assertThat(1 , is(equalTo(surrogates.size())));
+        assertThat(surrogates.size(), is(equalTo(1)));
 
         List<Integer> expectedSurrogates = new ArrayList<>();
         expectedSurrogates.add(1);
 
-        assertThat(expectedSurrogates, is(equalTo(surrogates)));
+        assertThat(surrogates, is(equalTo(expectedSurrogates)));
     }
 
     @Test
@@ -277,12 +291,12 @@ public class ColumnDictionaryInfoTest {
         columnDictionaryInfo.getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers,
                 surrogates);
 
-        assertThat(1 , is(equalTo(surrogates.size())));
+        assertThat(surrogates.size(), is(equalTo(1)));
 
         List<Integer> expectedSurrogates = new ArrayList<>();
         expectedSurrogates.add(3);
 
-        assertThat(expectedSurrogates, is(equalTo(surrogates)));
+        assertThat(surrogates, is(equalTo(expectedSurrogates)));
     }
 
     @Test
@@ -317,12 +331,12 @@ public class ColumnDictionaryInfoTest {
         columnDictionaryInfo.getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers,
                 surrogates);
 
-        assertThat(1 , is(equalTo(surrogates.size())));
+        assertThat(surrogates.size(), is(equalTo(1)));
 
         List<Integer> expectedSurrogates = new ArrayList<>();
         expectedSurrogates.add(3);
 
-        assertThat(expectedSurrogates, is(equalTo(surrogates)));
+        assertThat(surrogates, is(equalTo(expectedSurrogates)));
     }
 
     private List<byte[]> convertListElementsIntoByteArray(List<String> stringList) {
