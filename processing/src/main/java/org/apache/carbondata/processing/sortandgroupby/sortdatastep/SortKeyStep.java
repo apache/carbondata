@@ -30,7 +30,6 @@ import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAn
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortIntermediateFileMerger;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
-import org.apache.carbondata.processing.sortdatastep.SortKeyStepData;
 import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
 
 import org.pentaho.di.core.exception.KettleException;
