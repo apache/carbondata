@@ -22,7 +22,6 @@ package org.apache.carbondata.processing.sortandgroupby.sortdatastep;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.processing.sortdatastep.SortKeyStepData;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.pentaho.di.core.CheckResultInterface;

@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.processing.sortdatastep;
+package org.apache.carbondata.processing.sortandgroupby.sortdatastep;
 
 import org.pentaho.di.core.row.RowMetaInterface;
 import org.pentaho.di.trans.step.BaseStepData;
