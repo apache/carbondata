@@ -92,6 +92,7 @@ public class ColumnSchema implements Serializable {
 
   private int precision;
 
+  private int schemaOrdinal;
   /**
    * Nested fields.  Since thrift does not support nested fields,
    * the nesting is flattened to a single list by a depth-first traversal.
@@ -415,4 +416,11 @@ public class ColumnSchema implements Serializable {
     this.columnReferenceId = columnReferenceId;
   }
 
+  public int getSchemaOrdinal() {
+    return schemaOrdinal;
+  }
+
+  public void setSchemaOrdinal(int schemaOrdinal) {
+    this.schemaOrdinal = schemaOrdinal;
+  }
 }

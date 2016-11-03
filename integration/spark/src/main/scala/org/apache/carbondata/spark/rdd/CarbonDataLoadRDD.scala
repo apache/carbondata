@@ -46,6 +46,7 @@ import org.apache.carbondata.spark.DataLoadResult
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.CarbonQueryUtil
+import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
  * This partition class use to split by TableSplit
@@ -563,58 +564,23 @@ class RddIterator(rddIter: Iterator[Row],
   val format = new SimpleDateFormat(formatString)
   val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
   val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
-
+  val serializationNullFormat =
+      carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
   def hasNext: Boolean = rddIter.hasNext
-
-  private def getString(value: Any, level: Int = 1): String = {
-    if (value == null) {
-      ""
-    } else {
-      value match {
-        case s: String => s
-        case i: java.lang.Integer => i.toString
-        case d: java.lang.Double => d.toString
-        case t: java.sql.Timestamp => format format t
-        case d: java.sql.Date => format format d
-        case d: java.math.BigDecimal => d.toPlainString
-        case b: java.lang.Boolean => b.toString
-        case s: java.lang.Short => s.toString
-        case f: java.lang.Float => f.toString
-        case bs: Array[Byte] => new String(bs)
-        case s: scala.collection.Seq[Any] =>
-          val delimiter = if (level == 1) {
-            delimiterLevel1
-          } else {
-            delimiterLevel2
-          }
-          val builder = new StringBuilder()
-          s.foreach { x =>
-            builder.append(getString(x, level + 1)).append(delimiter)
-          }
-          builder.substring(0, builder.length - 1)
-        case m: scala.collection.Map[Any, Any] =>
-          throw new Exception("Unsupported data type: Map")
-        case r: org.apache.spark.sql.Row =>
-          val delimiter = if (level == 1) {
-            delimiterLevel1
-          } else {
-            delimiterLevel2
-          }
-          val builder = new StringBuilder()
-          for (i <- 0 until r.length) {
-            builder.append(getString(r(i), level + 1)).append(delimiter)
-          }
-          builder.substring(0, builder.length - 1)
-        case other => other.toString
-      }
-    }
-  }
 
   def next: Array[String] = {
     val row = rddIter.next()
     val columns = new Array[String](row.length)
     for (i <- 0 until row.length) {
-      columns(i) = getString(row(i))
+      columns(i) = CarbonScalaUtil.getString(row(i), serializationNullFormat,
+          delimiterLevel1, delimiterLevel2)
+      if (columns(i).length() > CarbonCommonConstants.DEFAULT_COLUMN_LENGTH) {
+         sys.error(s" Error processing input: Length of parsed input (${
+            CarbonCommonConstants
+              .DEFAULT_COLUMN_LENGTH
+          }) exceeds the maximum number of characters defined"
+          )
+      }
     }
     columns
   }

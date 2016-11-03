@@ -323,6 +323,8 @@ object GlobalDictionaryUtil {
       CarbonCommonConstants.HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE,
       CarbonCommonConstants.HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT).toDouble
 
+    val serializationNullFormat =
+      carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
     // get load count
     if (null == carbonLoadModel.getLoadMetadataDetails) {
       CarbonDataRDDFactory.readLoadMetadataDetails(carbonLoadModel, hdfsLocation)
@@ -343,7 +345,8 @@ object GlobalDictionaryUtil {
       carbonLoadModel.getLoadMetadataDetails.size() == 0,
       hdfsTempLocation,
       lockType,
-      zookeeperUrl)
+      zookeeperUrl,
+      serializationNullFormat)
   }
 
   /**
@@ -763,11 +766,7 @@ object GlobalDictionaryUtil {
       if (StringUtils.isEmpty(allDictionaryPath)) {
         LOGGER.info("Generate global dictionary from source data files!")
         // load data by using dataSource com.databricks.spark.csv
-        var df = if (dataFrame.isDefined) {
-          dataFrame.get
-        } else {
-          loadDataFrame(sqlContext, carbonLoadModel)
-        }
+        var df = dataFrame.getOrElse(loadDataFrame(sqlContext, carbonLoadModel))
         var headers = if (StringUtils.isEmpty(carbonLoadModel.getCsvHeader)) {
           df.columns
         } else {
