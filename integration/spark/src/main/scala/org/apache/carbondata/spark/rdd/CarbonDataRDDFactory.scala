@@ -65,7 +65,7 @@ object CarbonDataRDDFactory extends Logging {
       sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       storeLocation: String,
-      hdfsStoreLocation: String,
+      StoreLocation: String,
       partitioner: Partitioner) {
     val table = CarbonMetadata.getInstance()
       .getCarbonTable(carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName)
@@ -77,7 +77,7 @@ object CarbonDataRDDFactory extends Logging {
       schema: CarbonDataLoadSchema,
       databaseName: String,
       tableName: String,
-      hdfsStoreLocation: String,
+      StoreLocation: String,
       dateField: String,
       dateFieldActualName: String,
       dateValue: String,
@@ -101,7 +101,7 @@ object CarbonDataRDDFactory extends Logging {
       partitioner,
       table.getFactTableName,
       tableName,
-      hdfsStoreLocation,
+      StoreLocation,
       loadMetadataDetailsArray).collect.groupBy(_._1)
 
     var updatedLoadMetadataDetailsList = new ListBuffer[LoadMetadataDetails]()
@@ -196,7 +196,7 @@ object CarbonDataRDDFactory extends Logging {
 
   def alterTableForCompaction(sqlContext: SQLContext,
     alterTableModel: AlterTableModel,
-    carbonLoadModel: CarbonLoadModel, partitioner: Partitioner, hdfsStoreLocation: String,
+    carbonLoadModel: CarbonLoadModel, partitioner: Partitioner, StoreLocation: String,
     kettleHomePath: String, storeLocation: String): Unit = {
     var compactionSize: Long = 0
     var compactionType: CompactionType = CompactionType.MINOR_COMPACTION
@@ -217,7 +217,7 @@ object CarbonDataRDDFactory extends Logging {
       .getTableCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
 
     if (null == carbonLoadModel.getLoadMetadataDetails) {
-      readLoadMetadataDetails(carbonLoadModel, hdfsStoreLocation)
+      readLoadMetadataDetails(carbonLoadModel, StoreLocation)
     }
     // reading the start time of data load.
     val loadStartTime = CarbonLoaderUtil.readCurrentTime()
@@ -247,7 +247,7 @@ object CarbonDataRDDFactory extends Logging {
       handleCompactionForSystemLocking(sqlContext,
         carbonLoadModel,
         partitioner,
-        hdfsStoreLocation,
+        StoreLocation,
         kettleHomePath,
         storeLocation,
         compactionType,
@@ -271,7 +271,7 @@ object CarbonDataRDDFactory extends Logging {
           startCompactionThreads(sqlContext,
             carbonLoadModel,
             partitioner,
-            hdfsStoreLocation,
+            StoreLocation,
             kettleHomePath,
             storeLocation,
             compactionModel,
@@ -301,7 +301,7 @@ object CarbonDataRDDFactory extends Logging {
   def handleCompactionForSystemLocking(sqlContext: SQLContext,
     carbonLoadModel: CarbonLoadModel,
     partitioner: Partitioner,
-    hdfsStoreLocation: String,
+    StoreLocation: String,
     kettleHomePath: String,
     storeLocation: String,
     compactionType: CompactionType,
@@ -320,7 +320,7 @@ object CarbonDataRDDFactory extends Logging {
         startCompactionThreads(sqlContext,
           carbonLoadModel,
           partitioner,
-          hdfsStoreLocation,
+          StoreLocation,
           kettleHomePath,
           storeLocation,
           compactionModel,
@@ -363,7 +363,7 @@ object CarbonDataRDDFactory extends Logging {
   }
 
   def executeCompaction(carbonLoadModel: CarbonLoadModel,
-    hdfsStoreLocation: String,
+    StoreLocation: String,
     compactionModel: CompactionModel,
     partitioner: Partitioner,
     executor: ExecutorService,
@@ -377,7 +377,7 @@ object CarbonDataRDDFactory extends Logging {
 
     var segList = carbonLoadModel.getLoadMetadataDetails
     var loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
-      hdfsStoreLocation,
+      StoreLocation,
       carbonLoadModel,
       partitioner.partitionCount,
       compactionModel.compactionSize,
@@ -395,7 +395,7 @@ object CarbonDataRDDFactory extends Logging {
       scanSegmentsAndSubmitJob(futureList,
         loadsToMerge,
         executor,
-        hdfsStoreLocation,
+        StoreLocation,
         sqlContext,
         compactionModel,
         kettleHomePath,
@@ -419,7 +419,7 @@ object CarbonDataRDDFactory extends Logging {
 
 
       // scan again and determine if anything is there to merge again.
-      readLoadMetadataDetails(carbonLoadModel, hdfsStoreLocation)
+      readLoadMetadataDetails(carbonLoadModel, StoreLocation)
       segList = carbonLoadModel.getLoadMetadataDetails
       // in case of major compaction we will scan only once and come out as it will keep
       // on doing major for the new loads also.
@@ -430,7 +430,7 @@ object CarbonDataRDDFactory extends Logging {
           .filterOutNewlyAddedSegments(carbonLoadModel.getLoadMetadataDetails, lastSegment)
       }
       loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
-        hdfsStoreLocation,
+        StoreLocation,
         carbonLoadModel,
         partitioner.partitionCount,
         compactionModel.compactionSize,
@@ -448,7 +448,7 @@ object CarbonDataRDDFactory extends Logging {
     loadsToMerge: util
     .List[LoadMetadataDetails],
     executor: ExecutorService,
-    hdfsStoreLocation: String,
+    StoreLocation: String,
     sqlContext: SQLContext,
     compactionModel: CompactionModel,
     kettleHomePath: String,
@@ -461,7 +461,7 @@ object CarbonDataRDDFactory extends Logging {
     }
     )
 
-    val compactionCallableModel = CompactionCallableModel(hdfsStoreLocation,
+    val compactionCallableModel = CompactionCallableModel(StoreLocation,
       carbonLoadModel,
       partitioner,
       storeLocation,
@@ -483,14 +483,14 @@ object CarbonDataRDDFactory extends Logging {
   def startCompactionThreads(sqlContext: SQLContext,
     carbonLoadModel: CarbonLoadModel,
     partitioner: Partitioner,
-    hdfsStoreLocation: String,
+    StoreLocation: String,
     kettleHomePath: String,
     storeLocation: String,
     compactionModel: CompactionModel,
     compactionLock: ICarbonLock): Unit = {
     val executor: ExecutorService = Executors.newFixedThreadPool(1)
     // update the updated table status.
-    readLoadMetadataDetails(carbonLoadModel, hdfsStoreLocation)
+    readLoadMetadataDetails(carbonLoadModel, StoreLocation)
     var segList: util.List[LoadMetadataDetails] = carbonLoadModel.getLoadMetadataDetails
 
     // clean up of the stale segments.
@@ -514,7 +514,7 @@ object CarbonDataRDDFactory extends Logging {
             var exception : Exception = null
             try {
               executeCompaction(carbonLoadModel: CarbonLoadModel,
-                hdfsStoreLocation: String,
+                StoreLocation: String,
                 compactionModel: CompactionModel,
                 partitioner: Partitioner,
                 executor, sqlContext, kettleHomePath, storeLocation
@@ -550,7 +550,7 @@ object CarbonDataRDDFactory extends Logging {
                 val compactionType = CarbonCompactionUtil.determineCompactionType(metadataPath)
 
                 val newCarbonLoadModel = new CarbonLoadModel()
-                prepareCarbonLoadModel(hdfsStoreLocation, table, newCarbonLoadModel)
+                prepareCarbonLoadModel(StoreLocation, table, newCarbonLoadModel)
                 val tableCreationTime = CarbonEnv.getInstance(sqlContext).carbonCatalog
                   .getTableCreationTime(newCarbonLoadModel.getDatabaseName,
                     newCarbonLoadModel.getTableName
@@ -625,7 +625,7 @@ object CarbonDataRDDFactory extends Logging {
     compactionThread.run()
   }
 
-  def prepareCarbonLoadModel(hdfsStoreLocation: String,
+  def prepareCarbonLoadModel(StoreLocation: String,
     table: CarbonTable,
     newCarbonLoadModel: CarbonLoadModel): Unit = {
     newCarbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.toArray)
@@ -636,7 +636,7 @@ object CarbonDataRDDFactory extends Logging {
     newCarbonLoadModel.setTableName(table.getCarbonTableIdentifier.getTableName)
     newCarbonLoadModel.setDatabaseName(table.getCarbonTableIdentifier.getDatabaseName)
     newCarbonLoadModel.setStorePath(table.getStorePath)
-    readLoadMetadataDetails(newCarbonLoadModel, hdfsStoreLocation)
+    readLoadMetadataDetails(newCarbonLoadModel, StoreLocation)
     val loadStartTime = CarbonLoaderUtil.readCurrentTime()
     newCarbonLoadModel.setFactTimeStamp(loadStartTime)
   }
@@ -661,7 +661,7 @@ object CarbonDataRDDFactory extends Logging {
   def loadCarbonData(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       storeLocation: String,
-      hdfsStoreLocation: String,
+      StoreLocation: String,
       kettleHomePath: String,
       partitioner: Partitioner,
       columinar: Boolean,
@@ -708,7 +708,7 @@ object CarbonDataRDDFactory extends Logging {
           handleCompactionForSystemLocking(sqlContext,
             carbonLoadModel,
             partitioner,
-            hdfsStoreLocation,
+            StoreLocation,
             kettleHomePath,
             storeLocation,
             CompactionType.MINOR_COMPACTION,
@@ -728,7 +728,7 @@ object CarbonDataRDDFactory extends Logging {
               startCompactionThreads(sqlContext,
                 carbonLoadModel,
                 partitioner,
-                hdfsStoreLocation,
+                StoreLocation,
                 kettleHomePath,
                 storeLocation,
                 compactionModel,
@@ -762,10 +762,10 @@ object CarbonDataRDDFactory extends Logging {
           .getDatabaseName + "." + carbonLoadModel.getTableName
         )
       // Check if any load need to be deleted before loading new data
-      deleteLoadsAndUpdateMetadata(carbonLoadModel, carbonTable, partitioner, hdfsStoreLocation,
+      deleteLoadsAndUpdateMetadata(carbonLoadModel, carbonTable, partitioner, StoreLocation,
         isForceDeletion = false)
       if (null == carbonLoadModel.getLoadMetadataDetails) {
-        readLoadMetadataDetails(carbonLoadModel, hdfsStoreLocation)
+        readLoadMetadataDetails(carbonLoadModel, StoreLocation)
       }
 
       var currentLoadCount = -1
@@ -951,7 +951,7 @@ object CarbonDataRDDFactory extends Logging {
               new DataLoadResultImpl(),
               carbonLoadModel,
               storeLocation,
-              hdfsStoreLocation,
+              StoreLocation,
               kettleHomePath,
               partitioner,
               columinar,
@@ -973,7 +973,7 @@ object CarbonDataRDDFactory extends Logging {
           new DataLoadResultImpl(),
           carbonLoadModel,
           storeLocation,
-          hdfsStoreLocation,
+          StoreLocation,
           kettleHomePath,
           columinar,
           currentLoadCount,
@@ -982,7 +982,7 @@ object CarbonDataRDDFactory extends Logging {
           rdd).collect()
       }
 
-      CarbonLoaderUtil.checkAndCreateCarbonDataLocation(hdfsStoreLocation,
+      CarbonLoaderUtil.checkAndCreateCarbonDataLocation(StoreLocation,
         carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName,
         partitioner.partitionCount, currentLoadCount.toString)
       var loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
@@ -1085,7 +1085,7 @@ object CarbonDataRDDFactory extends Logging {
 
   }
 
-  def readLoadMetadataDetails(model: CarbonLoadModel, hdfsStoreLocation: String): Unit = {
+  def readLoadMetadataDetails(model: CarbonLoadModel, StoreLocation: String): Unit = {
     val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetaDataFilepath
     val segmentStatusManager =
       new SegmentStatusManager(
@@ -1097,7 +1097,7 @@ object CarbonDataRDDFactory extends Logging {
   def deleteLoadsAndUpdateMetadata(
     carbonLoadModel: CarbonLoadModel,
     table: CarbonTable, partitioner: Partitioner,
-    hdfsStoreLocation: String,
+    StoreLocation: String,
     isForceDeletion: Boolean) {
     if (LoadMetadataUtil.isLoadDeletionRequired(carbonLoadModel)) {
       val loadMetadataFilePath = CarbonLoaderUtil
@@ -1111,7 +1111,7 @@ object CarbonDataRDDFactory extends Logging {
 
       // Delete marked loads
       val isUpdationRequired = DeleteLoadFolders
-        .deleteLoadFoldersFromFileSystem(carbonLoadModel, hdfsStoreLocation,
+        .deleteLoadFoldersFromFileSystem(carbonLoadModel, StoreLocation,
           partitioner.partitionCount, isForceDeletion, details)
 
       if (isUpdationRequired) {
@@ -1164,7 +1164,7 @@ object CarbonDataRDDFactory extends Logging {
   def cleanFiles(
       sc: SparkContext,
       carbonLoadModel: CarbonLoadModel,
-      hdfsStoreLocation: String,
+      StoreLocation: String,
       partitioner: Partitioner) {
     val table = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName)
@@ -1179,7 +1179,7 @@ object CarbonDataRDDFactory extends Logging {
         deleteLoadsAndUpdateMetadata(carbonLoadModel,
           table,
           partitioner,
-          hdfsStoreLocation,
+          StoreLocation,
           isForceDeletion = true)
       }
       else {
