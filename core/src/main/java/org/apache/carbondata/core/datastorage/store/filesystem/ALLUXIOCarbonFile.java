@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
+
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -33,22 +34,22 @@ import org.apache.hadoop.hdfs.DistributedFileSystem;
 
 
 
-public class ALLUXIOCarbonFile extends AbstractDFSCarbonFile {
+public class AlluxioCarbonFile extends AbstractDFSCarbonFile {
   /**
    * LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(ALLUXIOCarbonFile.class.getName());
+      LogServiceFactory.getLogService(AlluxioCarbonFile.class.getName());
 
-  public ALLUXIOCarbonFile(String filePath) {
+  public AlluxioCarbonFile(String filePath) {
     super(filePath);
   }
 
-  public ALLUXIOCarbonFile(Path path) {
+  public AlluxioCarbonFile(Path path) {
     super(path);
   }
 
-  public ALLUXIOCarbonFile(FileStatus fileStatus) {
+  public AlluxioCarbonFile(FileStatus fileStatus) {
     super(fileStatus);
   }
 
@@ -62,7 +63,7 @@ public class ALLUXIOCarbonFile extends AbstractDFSCarbonFile {
     }
     CarbonFile[] files = new CarbonFile[listStatus.length];
     for (int i = 0; i < files.length; i++) {
-      files[i] = new ALLUXIOCarbonFile(listStatus[i]);
+      files[i] = new AlluxioCarbonFile(listStatus[i]);
     }
     return files;
   }
@@ -106,7 +107,7 @@ public class ALLUXIOCarbonFile extends AbstractDFSCarbonFile {
   @Override
   public CarbonFile getParentFile() {
     Path parent = fileStatus.getPath().getParent();
-    return null == parent ? null : new ALLUXIOCarbonFile(parent);
+    return null == parent ? null : new AlluxioCarbonFile(parent);
   }
 
   @Override

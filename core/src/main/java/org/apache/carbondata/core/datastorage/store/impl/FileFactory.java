@@ -31,7 +31,7 @@ import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.carbondata.core.datastorage.store.FileHolder;
-import org.apache.carbondata.core.datastorage.store.filesystem.ALLUXIOCarbonFile;
+import org.apache.carbondata.core.datastorage.store.filesystem.AlluxioCarbonFile;
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastorage.store.filesystem.HDFSCarbonFile;
 import org.apache.carbondata.core.datastorage.store.filesystem.LocalCarbonFile;
@@ -58,18 +58,16 @@ public final class FileFactory {
     if (property != null) {
       if (property.startsWith(CarbonUtil.HDFS_PREFIX)) {
         storeDefaultFileType = FileType.HDFS;
-      }
-      else if (property.startsWith(CarbonUtil.ALLUXIO_PREFIX)) {
+      } else if (property.startsWith(CarbonUtil.ALLUXIO_PREFIX)) {
         storeDefaultFileType = FileType.ALLUXIO;
-      }
-      else if (property.startsWith(CarbonUtil.VIEWFS_PREFIX)) {
+      } else if (property.startsWith(CarbonUtil.VIEWFS_PREFIX)) {
         storeDefaultFileType = FileType.VIEWFS;
       }
     }
 
     configuration = new Configuration();
     configuration.addResource(new Path("../core-default.xml"));
-    }
+  }
 
   private FileFactory() {
 
@@ -128,7 +126,7 @@ public final class FileFactory {
       case HDFS:
         return new HDFSCarbonFile(path);
       case ALLUXIO:
-        return new ALLUXIOCarbonFile(path);
+        return new AlluxioCarbonFile(path);
       case VIEWFS:
         return new ViewFSCarbonFile(path);
       default:
@@ -199,7 +197,6 @@ public final class FileFactory {
       case ALLUXIO:
       case VIEWFS:
         Path pt = new Path(path);
-        //FileSystem fs = FileSystem.get(configuration);
         FileSystem fs = pt.getFileSystem(configuration);
         FSDataInputStream stream = fs.open(pt, bufferSize);
         stream.seek(offset);
