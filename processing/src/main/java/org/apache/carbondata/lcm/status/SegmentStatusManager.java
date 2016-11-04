@@ -50,7 +50,6 @@ import org.apache.carbondata.lcm.locks.CarbonLockFactory;
 import org.apache.carbondata.lcm.locks.CarbonLockUtil;
 import org.apache.carbondata.lcm.locks.ICarbonLock;
 import org.apache.carbondata.lcm.locks.LockUsage;
-import org.apache.carbondata.processing.util.CarbonTableStatusUtil;
 
 import com.google.gson.Gson;
 /**
@@ -289,7 +288,7 @@ public class SegmentStatusManager {
               // To handle concurrency scenarios, always take latest metadata before writing
               // into status file.
               LoadMetadataDetails[] latestLoadMetadataDetails = readLoadMetadata(tableFolderPath);
-              CarbonTableStatusUtil.updateLatestTableStatusDetails(listOfLoadFolderDetailsArray,
+              updateLatestTableStatusDetails(listOfLoadFolderDetailsArray,
                   latestLoadMetadataDetails);
               writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
             }
@@ -374,7 +373,7 @@ public class SegmentStatusManager {
               // To handle concurrency scenarios, always take latest metadata before writing
               // into status file.
               LoadMetadataDetails[] latestLoadMetadataDetails = readLoadMetadata(tableFolderPath);
-              CarbonTableStatusUtil.updateLatestTableStatusDetails(listOfLoadFolderDetailsArray,
+              updateLatestTableStatusDetails(listOfLoadFolderDetailsArray,
                   latestLoadMetadataDetails);
               writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
             }
@@ -478,7 +477,7 @@ public class SegmentStatusManager {
           }
           if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())) {
             loadFound = true;
-            CarbonTableStatusUtil.updateSegmentMetadataDetails(loadMetadata);
+            updateSegmentMetadataDetails(loadMetadata);
             LOG.info("Segment ID " + loadId + " Marked for Delete");
           }
           break;
@@ -522,7 +521,7 @@ public class SegmentStatusManager {
         }
         if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())) {
           loadFound = true;
-          CarbonTableStatusUtil.updateSegmentMetadataDetails(loadMetadata);
+          updateSegmentMetadataDetails(loadMetadata);
           LOG.info("Info: " +
               loadStartTimeString + loadMetadata.getLoadStartTime() +
               " Marked for Delete");
@@ -558,6 +557,41 @@ public class SegmentStatusManager {
       }
     }
   }
+
+  /**
+   * updates table status details using latest metadata
+   *
+   * @param oldMetadata
+   * @param newMetadata
+   * @return
+   */
+
+  public List<LoadMetadataDetails> updateLatestTableStatusDetails(
+      LoadMetadataDetails[] oldMetadata, LoadMetadataDetails[] newMetadata) {
+
+    List<LoadMetadataDetails> newListMetadata =
+        new ArrayList<LoadMetadataDetails>(Arrays.asList(newMetadata));
+    for (LoadMetadataDetails oldSegment : oldMetadata) {
+      if (CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oldSegment.getLoadStatus())) {
+        updateSegmentMetadataDetails(newListMetadata.get(newListMetadata.indexOf(oldSegment)));
+      }
+    }
+    return newListMetadata;
+  }
+
+  /**
+   * updates segment status and modificaton time details
+   *
+   * @param loadMetadata
+   */
+  public void updateSegmentMetadataDetails(LoadMetadataDetails loadMetadata) {
+    // update status only if the segment is not marked for delete
+    if (!CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(loadMetadata.getLoadStatus())) {
+      loadMetadata.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
+      loadMetadata.setModificationOrdeletionTimesStamp(readCurrentTime());
+    }
+  }
+
 
   public static class ValidAndInvalidSegmentsInfo {
     private final List<String> listOfValidSegments;
