@@ -575,6 +575,21 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     (databaseName, tableName, dataPath, schema, partitioner, tableCreationTime)
   }
 
+  def createDatabaseDirectory(dbName: String) {
+    val databasePath = storePath + File.separator + dbName
+    val fileType = FileFactory.getFileType(databasePath)
+    FileFactory.mkdirs(databasePath, fileType)
+  }
+
+  def dropDatabaseDirectory(dbName: String) {
+    val databasePath = storePath + File.separator + dbName
+    val fileType = FileFactory.getFileType(databasePath)
+    if (FileFactory.isFileExist(databasePath, fileType)) {
+      val dbPath = FileFactory.getCarbonFile(databasePath, fileType)
+      CarbonUtil.deleteFoldersAndFiles(dbPath)
+    }
+  }
+
 }
 
 
@@ -653,5 +668,4 @@ object CarbonMetastoreTypes extends RegexParsers {
       case TimestampType => "timestamp"
     }
   }
-
 }

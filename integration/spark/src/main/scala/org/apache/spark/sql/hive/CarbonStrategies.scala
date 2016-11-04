@@ -32,6 +32,7 @@ import org.apache.spark.sql.execution.{ExecutedCommand, Filter, Project, SparkPl
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.{DescribeCommand => LogicalDescribeCommand, LogicalRelation}
 import org.apache.spark.sql.hive.execution.{DropTable, HiveNativeCommand}
+import org.apache.spark.sql.hive.execution.command._
 import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
 import org.apache.spark.sql.types.IntegerType
 
@@ -250,6 +251,14 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           }
         } else {
           ExecutedCommand(HiveNativeCommand(altertablemodel.alterSql)) :: Nil
+        }
+      case CreateDatabase(dbName, sql) =>
+        ExecutedCommand(CreateDatabaseCommand(dbName, HiveNativeCommand(sql))) :: Nil
+      case DropDatabase(dbName, isCascade, sql) =>
+        if (isCascade) {
+          ExecutedCommand(DropDatabaseCascadeCommand(dbName, HiveNativeCommand(sql))) :: Nil
+        } else {
+          ExecutedCommand(DropDatabaseCommand(dbName, HiveNativeCommand(sql))) :: Nil
         }
       case d: HiveNativeCommand =>
         try {
