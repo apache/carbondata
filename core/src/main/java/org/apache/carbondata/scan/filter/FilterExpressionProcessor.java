@@ -239,6 +239,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
       case GREATERTHAN_EQUALTO:
       case LESSTHAN:
       case LESSTHAN_EQUALTO:
+      case STARTS_WITH:
+      case ENDS_WITH:
+      case CONTAINS:
         return getFilterResolverBasedOnExpressionType(ExpressionType.EQUALS, true, expressionTree,
             tableIdentifier, expressionTree);
 
@@ -285,6 +288,13 @@ public class FilterExpressionProcessor implements FilterProcessor {
                     .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, true,
                   tableIdentifier);
+            }
+            if (currentCondExpression.getFilterExpressionType() == ExpressionType.CONTAINS
+                    || currentCondExpression.getFilterExpressionType() == ExpressionType.ENDS_WITH
+                    || currentCondExpression.getFilterExpressionType()
+                    == ExpressionType.STARTS_WITH) {
+              return new RowLevelFilterResolverImpl(expression, isExpressionResolve, true,
+                      tableIdentifier);
             }
             if (currentCondExpression.getFilterExpressionType() == ExpressionType.GREATERTHAN
                 || currentCondExpression.getFilterExpressionType() == ExpressionType.LESSTHAN

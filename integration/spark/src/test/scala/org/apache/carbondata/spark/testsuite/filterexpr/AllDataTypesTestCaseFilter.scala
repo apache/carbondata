@@ -59,6 +59,23 @@ class AllDataTypesTestCaseFilter extends QueryTest with BeforeAndAfterAll {
       sql("select empno,empname from alldatatypestableFilter_hive where regexp_replace(workgroupcategoryname, 'er', 'ment') != 'development'"))
   }
   
+    test("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableFilter where empname like 'arv%' group by empno,empname,utilization") {
+    checkAnswer(
+      sql("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableFilter where empname like 'arv%' group by empno,empname,utilization"),
+      sql("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableFilter_hive  where empname like 'arv%' group by empno,empname,utilization"))
+  }
+        test("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableFilter where empname like '%ind' group by empno,empname,utilization") {
+    checkAnswer(
+      sql("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableFilter where empname like '%ind' group by empno,empname,utilization"),
+      sql("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableFilter_hive  where empname like '%ind' group by empno,empname,utilization"))
+  }
+        
+         test("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableFilter where empname like '%ind%' group by empno,empname,utilization") {
+    checkAnswer(
+      sql("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableFilter where empname like '%ind%' group by empno,empname,utilization"),
+      sql("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableFilter_hive  where empname like '%ind%' group by empno,empname,utilization"))
+  }
+  
   override def afterAll {
     sql("drop table alldatatypestableFilter")
     sql("drop table alldatatypestableFilter_hive")
