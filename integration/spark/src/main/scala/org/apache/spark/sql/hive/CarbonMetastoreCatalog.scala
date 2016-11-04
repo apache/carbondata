@@ -131,16 +131,29 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
       alias: Option[String] = None)(sqlContext: SQLContext): LogicalPlan = {
     checkSchemasModifiedTimeAndReloadTables()
     val database = tableIdentifier.database.getOrElse(getDB.getDatabaseName(None, sqlContext))
-    val tables = metadata.tablesMeta.filter(
-      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
-           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableIdentifier.table))
-    if (tables.nonEmpty) {
-      CarbonRelation(database, tableIdentifier.table,
-        CarbonSparkUtil.createSparkMeta(tables.head.carbonTable), tables.head, alias)(sqlContext)
-    } else {
-      LOGGER.audit(s"Table Not Found: ${tableIdentifier.table}")
-      throw new NoSuchTableException
+    val tables = getTableFromMetadata(database, tableIdentifier.table)
+    tables match {
+      case Some(t) =>
+        CarbonRelation(database, tableIdentifier.table,
+          CarbonSparkUtil.createSparkMeta(tables.head.carbonTable), tables.head, alias)(sqlContext)
+      case None =>
+        LOGGER.audit(s"Table Not Found: ${tableIdentifier.table}")
+        throw new NoSuchTableException
     }
+  }
+
+  /**
+   * This method will search for a table in the catalog metadata
+   *
+   * @param database
+   * @param tableName
+   * @return
+   */
+  def getTableFromMetadata(database: String,
+      tableName: String): Option[TableMeta] = {
+    metadata.tablesMeta
+      .find(c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
+                 c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))
   }
 
   def tableExists(tableIdentifier: TableIdentifier)(sqlContext: SQLContext): Boolean = {
@@ -178,7 +191,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     val fileType = FileFactory.getFileType(metadataPath)
     val metaDataBuffer = new ArrayBuffer[TableMeta]
     fillMetaData(metadataPath, fileType, metaDataBuffer)
-    updateSchemasUpdatedTime("", "")
+    updateSchemasUpdatedTime(readSchemaFileSystemTime("", ""))
     statistic.addStatistics(QueryStatisticsConstants.LOAD_META,
       System.currentTimeMillis())
     recorder.recordStatisticsForDriver(statistic, queryId)
@@ -314,7 +327,7 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     metadata.tablesMeta += tableMeta
     logInfo(s"Table $tableName for Database $dbName created successfully.")
     LOGGER.info("Table " + tableName + " for Database " + dbName + " created successfully.")
-    updateSchemasUpdatedTime(dbName, tableName)
+    updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
     carbonTablePath.getPath
   }
 
@@ -434,51 +447,78 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     val fileType = FileFactory.getFileType(metadataFilePath)
 
     if (FileFactory.isFileExist(metadataFilePath, fileType)) {
-
+      // while drop we should refresh the schema modified time so that if any thing has changed
+      // in the other beeline need to update.
+      checkSchemasModifiedTimeAndReloadTables
       val file = FileFactory.getCarbonFile(metadataFilePath, fileType)
       CarbonUtil.deleteFoldersAndFilesSilent(file.getParentFile)
-
-      metadata.tablesMeta -= metadata.tablesMeta.filter(
-        c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(dbName) &&
-             c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))(0)
-      org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
-        .removeTable(dbName + "_" + tableName)
-
+      val metadataToBeRemoved: Option[TableMeta] = getTableFromMetadata(dbName,
+        tableIdentifier.table)
+      metadataToBeRemoved match {
+        case Some(tableMeta) =>
+          metadata.tablesMeta -= tableMeta
+          org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
+            .removeTable(dbName + "_" + tableName)
+          org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
+            .removeTable(dbName + "_" + tableName)
+          updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
+        case None =>
+          logInfo(s"Metadata does not contain entry for table $tableName in database $dbName")
+      }
       CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sqlContext)
-      updateSchemasUpdatedTime(dbName, tableName)
-
       // discard cached table info in cachedDataSourceTables
       sqlContext.catalog.refreshTable(tableIdentifier)
     }
   }
 
   private def getTimestampFileAndType(databaseName: String, tableName: String) = {
-
     val timestampFile = storePath + "/" + CarbonCommonConstants.SCHEMAS_MODIFIED_TIME_FILE
-
     val timestampFileType = FileFactory.getFileType(timestampFile)
     (timestampFile, timestampFileType)
   }
 
-  def updateSchemasUpdatedTime(databaseName: String, tableName: String) {
-    val (timestampFile, timestampFileType) = getTimestampFileAndType(databaseName, tableName)
+  /**
+   * This method will put the updated timestamp of schema file in the table modified time store map
+   *
+   * @param timeStamp
+   */
+  def updateSchemasUpdatedTime(timeStamp: Long) {
+    tableModifiedTimeStore.put("default", timeStamp)
+  }
 
+  /**
+   * This method will read the timestamp of empty schema file
+   *
+   * @param databaseName
+   * @param tableName
+   * @return
+   */
+  def readSchemaFileSystemTime(databaseName: String, tableName: String): Long = {
+    val (timestampFile, timestampFileType) = getTimestampFileAndType(databaseName, tableName)
+    if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
+      FileFactory.getCarbonFile(timestampFile, timestampFileType).getLastModifiedTime
+    } else {
+      System.currentTimeMillis()
+    }
+  }
+
+  /**
+   * This method will check and create an empty schema timestamp file
+   *
+   * @param databaseName
+   * @param tableName
+   * @return
+   */
+  def touchSchemaFileSystemTime(databaseName: String, tableName: String): Long = {
+    val (timestampFile, timestampFileType) = getTimestampFileAndType(databaseName, tableName)
     if (!FileFactory.isFileExist(timestampFile, timestampFileType)) {
       LOGGER.audit(s"Creating timestamp file for $databaseName.$tableName")
       FileFactory.createNewFile(timestampFile, timestampFileType)
     }
-
-    touchSchemasTimestampFile(databaseName, tableName)
-
-    tableModifiedTimeStore.put(CarbonCommonConstants.DATABASE_DEFAULT_NAME,
-      FileFactory.getCarbonFile(timestampFile, timestampFileType).getLastModifiedTime)
-
-  }
-
-  def touchSchemasTimestampFile(databaseName: String, tableName: String) {
-    val (timestampFile, timestampFileType) = getTimestampFileAndType(databaseName, tableName)
+    val systemTime = System.currentTimeMillis()
     FileFactory.getCarbonFile(timestampFile, timestampFileType)
-      .setLastModifiedTime(System.currentTimeMillis())
+      .setLastModifiedTime(systemTime)
+    systemTime
   }
 
   def checkSchemasModifiedTimeAndReloadTables() {
