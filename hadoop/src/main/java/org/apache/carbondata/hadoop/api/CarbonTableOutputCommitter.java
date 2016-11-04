@@ -23,6 +23,7 @@ import java.io.IOException;
 
 import org.apache.carbondata.hadoop.internal.segment.Segment;
 import org.apache.carbondata.hadoop.internal.segment.SegmentManager;
+
 import org.apache.hadoop.mapred.FileOutputCommitter;
 import org.apache.hadoop.mapred.JobContext;
 

@@ -20,7 +20,6 @@
 package org.apache.carbondata.hadoop.internal.index;
 
 import org.apache.carbondata.hadoop.internal.segment.Segment;
-import org.apache.hadoop.conf.Configuration;
 
 /**
  * Used to load the index

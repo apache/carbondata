@@ -21,11 +21,11 @@ package org.apache.carbondata.hadoop.internal.index.impl;
 
 import org.apache.carbondata.hadoop.internal.index.Index;
 import org.apache.carbondata.hadoop.internal.index.IndexLoader;
-import org.apache.hadoop.conf.Configuration;
+import org.apache.carbondata.hadoop.internal.segment.Segment;
 
 public class InMemoryBTreeIndexLoader implements IndexLoader {
   @Override
-  public Index load(Configuration conf) {
+  public Index load(Segment segment) {
     return null;
   }
 }
