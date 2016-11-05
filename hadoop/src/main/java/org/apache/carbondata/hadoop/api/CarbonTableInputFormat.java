@@ -32,6 +32,7 @@ import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
 import org.apache.carbondata.scan.expression.Expression;
 import org.apache.carbondata.scan.filter.resolver.FilterResolverIntf;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
@@ -58,7 +59,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   public RecordReader<Void, T> createRecordReader(InputSplit split,
       TaskAttemptContext context) throws IOException, InterruptedException {
     switch (((CarbonInputSplit)split).formatType()) {
-      case COLUMNR:
+      case COLUMNAR:
         // TODO: create record reader for columnar format
         break;
       default:

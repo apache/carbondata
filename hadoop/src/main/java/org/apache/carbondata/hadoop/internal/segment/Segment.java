@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.scan.filter.resolver.FilterResolverIntf;
+
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -31,8 +32,8 @@ import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 
 /**
- * Within a carbon table, each data load becomes one Segment, which stores all data files belong to this load in
- * the segment folder.
+ * Within a carbon table, each data load becomes one Segment,
+ * which stores all data files belong to this load in the segment folder.
  */
 public abstract class Segment {
 

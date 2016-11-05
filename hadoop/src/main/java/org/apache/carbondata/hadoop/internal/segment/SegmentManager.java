@@ -22,8 +22,8 @@ package org.apache.carbondata.hadoop.internal.segment;
 import java.io.IOException;
 
 /**
- * Segment manager is used to manage all segment within one table. It manages segment state internally in a
- * transactional manner.
+ * Segment manager is used to manage all segment within one table.
+ * It manages segment state internally in a transactional manner.
  */
 public interface SegmentManager {
 

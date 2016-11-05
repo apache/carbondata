@@ -22,7 +22,8 @@ package org.apache.carbondata.hadoop.internal;
 import org.apache.hadoop.mapreduce.InputSplit;
 
 /**
- * Carbon input split can be different format, application should create the record reader based on format type.
+ * Carbon input split can be different format, application should create the record reader
+ * based on format type.
  */
 public abstract class CarbonInputSplit extends InputSplit {
 
