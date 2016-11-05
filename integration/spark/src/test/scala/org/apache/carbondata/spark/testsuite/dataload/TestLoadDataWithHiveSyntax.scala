@@ -61,6 +61,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbontable1")
     sql("drop table if exists hivetable1")
     sql("drop table if exists comment_test")
+    sql("drop table if exists smallinttable")
     sql(
       "CREATE table carbontable (empno int, empname String, designation String, doj String, " +
         "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
@@ -75,6 +76,35 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     )
 
   }
+
+  test("create table with smallint type and query smallint table")({
+    sql(
+      "create table smallinttable(empno smallint, empname String, designation string, " +
+        "doj String, workgroupcategory int, workgroupcategoryname String,deptno int, " +
+        "deptname String, projectcode int, projectjoindate String,projectenddate String, " +
+        "attendance String, utilization String,salary String)" +
+        "row format delimited fields terminated by ','"
+    )
+
+    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table smallinttable")
+
+    checkAnswer(
+      sql("select empno from smallinttable"),
+      Seq(Row(11),
+        Row(12),
+        Row(13),
+        Row(14),
+        Row(15),
+        Row(16),
+        Row(17),
+        Row(18),
+        Row(19),
+        Row(20),
+        Row(null)
+    ))
+
+    sql("drop table if exists smallinttable")
+  })
 
   test("test data loading and validate query output") {
     //Create test cube and hive table
