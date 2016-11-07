@@ -102,7 +102,8 @@ public class RowResultMerger {
     this.tableName = tableName;
 
     this.measureCount = segprop.getMeasures().size();
-
+    CarbonTable carbonTable = CarbonMetadata.getInstance()
+            .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     CarbonFactDataHandlerModel carbonFactDataHandlerModel =
         getCarbonFactDataHandlerModel(loadModel);
     carbonFactDataHandlerModel.setPrimitiveDimLens(segprop.getDimColumnsCardinality());
@@ -117,7 +118,7 @@ public class RowResultMerger {
       carbonFactDataHandlerModel.setMdKeyIndex(measureCount);
     }
     carbonFactDataHandlerModel.setColCardinality(colCardinality);
-
+    carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
     dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
 
     tupleConvertor = new TupleConversionAdapter(segProp);
