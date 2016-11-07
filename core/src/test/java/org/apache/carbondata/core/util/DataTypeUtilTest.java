@@ -41,9 +41,7 @@ import static org.apache.carbondata.core.util.DataTypeUtil.*;
 import static junit.framework.TestCase.*;
 import static org.apache.carbondata.core.util.DataTypeUtil.getDataBasedOnDataType;
 
-/**
- * Created by knoldus on 28/10/16.
- */
+
 public class DataTypeUtilTest {
 
 
