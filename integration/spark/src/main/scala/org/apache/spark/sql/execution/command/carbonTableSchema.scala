@@ -591,6 +591,29 @@ case class LoadTable(
   }
 }
 
+private[sql] case class CreateLikeTableCommand(likeTableName: String,
+                                               createHiveLikeTableSql: String)
+  extends RunnableCommand {
+
+  def run(sqlContext: SQLContext): Seq[Row] = {
+    if (isCarbonTable(likeTableName)) {
+      throw new MalformedCarbonCommandException("Carbon does not support CREATE TABLE LIKE syntax")
+    } else {
+      CarbonHiveMetadataUtil.createHiveLikeTable(sqlContext, createHiveLikeTableSql)
+    }
+
+    def isCarbonTable(tableName: String): Boolean = {
+      val databaseName = getDB.getDatabaseName(None, sqlContext)
+      val tableExists = CarbonEnv.getInstance(sqlContext).carbonCatalog
+        .tableExists(TableIdentifier(tableName, None))(sqlContext)
+      tableExists
+    }
+
+    Seq.empty
+  }
+
+}
+
 private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: Option[String],
     tableName: String)
   extends RunnableCommand {

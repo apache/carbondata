@@ -125,4 +125,21 @@ case class InsertIntoCarbonTable(
   // This is the expected schema of the table prepared to be inserted into,
   // including dynamic partition columns.
   val tableOutput = table.carbonRelation.output
+
+}
+
+/**
+ * Here the syntax is 'CREATE TABLE target LIKE src'.
+ *
+ * @param likeTableName the src table's name, used to create target table, should check
+ *                      whether the src table is carbon table.
+ * @param createHiveLikeTableSql the sql string only used to create hive target table.
+ */
+case class CreateLikeTable(likeTableName: String, createHiveLikeTableSql: String)
+  extends LogicalPlan with Command {
+
+  override def children: Seq[LogicalPlan] = Seq.empty
+
+  override def output: Seq[Attribute] = Seq.empty
+
 }

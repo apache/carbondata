@@ -302,6 +302,8 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         } else {
           ExecutedCommand(HiveNativeCommand(sql)) :: Nil
         }
+      case CreateLikeTable(likeTableName, sql) =>
+        ExecutedCommand(CreateLikeTableCommand(likeTableName, sql)) :: Nil
       case _ =>
         Nil
     }

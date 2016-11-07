@@ -55,4 +55,9 @@ object CarbonHiveMetadataUtil {
     }
   }
 
+  def createHiveLikeTable(sqlContext: SQLContext, sql: String): Unit = {
+    val hiveContext = sqlContext.asInstanceOf[HiveContext]
+    hiveContext.runSqlHive(sql)
+  }
+
 }

@@ -320,7 +320,6 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
       // if create table taken is found then only we will handle.
       case Token("TOK_CREATETABLE", children) =>
 
-
         var fields: Seq[Field] = Seq[Field]()
         var tableComment: String = ""
         var tableProperties = Map[String, String]()
@@ -330,6 +329,8 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
         var ifNotExistPresent: Boolean = false
         var dbName: Option[String] = None
         var tableName: String = ""
+        var targetTableName = ""
+        var createHiveLikeTableSql = ""
 
         try {
 
@@ -337,7 +338,15 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
           children.collect {
             case Token("TOK_STORAGEHANDLER", child :: Nil) =>
               storedBy = BaseSemanticAnalyzer.unescapeSQLString(child.getText).trim.toLowerCase
+            case Token("TOK_TABNAME", child :: Nil) =>
+              targetTableName = child.getText
+            case Token("TOK_LIKETABLE", child :: Nil) =>
+              likeTableName = child.getChild(0).getText
             case _ =>
+          }
+          if ("" != likeTableName) {
+            createHiveLikeTableSql = s"CREATE TABLE $targetTableName LIKE $likeTableName"
+            return CreateLikeTable(likeTableName, createHiveLikeTableSql)
           }
           if (!(storedBy.equals(CarbonContext.datasourceName) ||
                 storedBy.equals(CarbonContext.datasourceShortName))) {
