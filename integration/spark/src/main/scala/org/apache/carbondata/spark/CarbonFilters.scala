@@ -258,10 +258,10 @@ object CarbonFilters {
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
         case Not(EqualTo(l@Literal(v, t), Cast(a: Attribute, _))) => new
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case IsNotNull(child) =>
+        case IsNotNull(child: Attribute) =>
             Some(new NotEqualsExpression(transformExpression(child).get,
              transformExpression(Literal(null)).get, true))
-        case IsNull(child) =>
+        case IsNull(child: Attribute) =>
             Some(new EqualToExpression(transformExpression(child).get,
              transformExpression(Literal(null)).get, true))
         case Not(In(a: Attribute, list))
