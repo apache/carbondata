@@ -107,6 +107,7 @@ case class DropDatabase(dbName: String, isCascade: Boolean, sql: String)
 }
 
 /**
+<<<<<<< 28eb96f84af708e273d5dcab0859952c08f5aac9
  * A logical plan representing insertion into Hive table.
  * This plan ignores nullability of ArrayType, MapType, StructType unlike InsertIntoTable
  * because Hive table doesn't have nullability for ARRAY, MAP, STRUCT types.
