@@ -82,10 +82,10 @@ case class CarbonDictionaryDecoder(
     profile match {
       case ip: IncludeProfile if ip.attributes.nonEmpty =>
         ip.attributes
-          .exists(a => a.name.equalsIgnoreCase(attr.name))
+          .exists(a => a.name.equalsIgnoreCase(attr.name) && a.exprId == attr.exprId)
       case ep: ExcludeProfile =>
         !ep.attributes
-          .exists(a => a.name.equalsIgnoreCase(attr.name))
+          .exists(a => a.name.equalsIgnoreCase(attr.name) && a.exprId == attr.exprId)
       case _ => true
     }
   }
