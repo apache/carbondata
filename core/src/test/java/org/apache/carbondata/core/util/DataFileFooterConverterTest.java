@@ -213,7 +213,6 @@ public class DataFileFooterConverterTest {
             @SuppressWarnings("unused")
             @Mock
             public FileFactory.FileType getFileType(String path){
-                System.out.println("inside filefactory");
                 return FileFactory.FileType.LOCAL;
             }
             @SuppressWarnings("unused")
@@ -236,13 +235,9 @@ public class DataFileFooterConverterTest {
             @SuppressWarnings("unused")
             @Mock
             public FileFooter readFooter() throws IOException {
-                System.out.println("inside file foooter");
                 return fileFooter;
             }
         };
-
-        CarbonFooterReader reader = new CarbonFooterReader(filePath, 1L);
-
         SegmentInfo segmentInfo = new SegmentInfo();
         int [] arr = {1,2,3};
         segmentInfo.setColumnCardinality(arr);
