@@ -118,17 +118,26 @@ public final class CarbonUtil {
     // Added if to avoid NullPointerException in case one stream is being passed as null
     if (null != streams) {
       for (Closeable stream : streams) {
-        if (null != stream) {
-          try {
-            stream.close();
-          } catch (IOException e) {
-            LOGGER.error("Error while closing stream" + stream);
-          }
+        try {
+          closeStream(stream);
+        } catch (IOException e) {
+          LOGGER.error("Error while closing stream:" + e);
         }
       }
     }
   }
 
+  /**
+   * This method closes stream
+   *
+   * @param stream
+   * @throws IOException
+   */
+  public static void closeStream(Closeable stream) throws IOException {
+    if (null != stream) {
+      stream.close();
+    }
+  }
   /**
    * @param baseStorePath
    * @return
