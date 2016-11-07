@@ -26,9 +26,7 @@ import org.junit.Test;
 
 import static org.apache.carbondata.core.util.CarbonMergerUtil.getCardinalityFromLevelMetadata;
 
-/**
- * Created by knoldus on 26/10/16.
- */
+
 public class CarbonMergerUtilTest {
 
 
