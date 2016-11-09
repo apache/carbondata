@@ -19,6 +19,7 @@
 
 package org.apache.carbondata.core.carbon;
 
+import java.io.File;
 import java.io.Serializable;
 
 /**
@@ -76,6 +77,13 @@ public class CarbonTableIdentifier implements Serializable {
    */
   public String getTableUniqueName() {
     return databaseName + '_' + tableName;
+  }
+
+  /**
+   *Creates the key for bad record lgger.
+   */
+  public String getBadRecordLoggerKey() {
+    return databaseName + File.separator + tableName + '_' + tableName;
   }
 
   @Override public int hashCode() {

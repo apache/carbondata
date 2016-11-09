@@ -19,6 +19,8 @@
 package org.apache.carbondata.hadoop.test.util;
 
 import com.google.gson.Gson;
+import org.apache.hadoop.fs.Path;
+
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
@@ -350,7 +352,7 @@ public class StoreCreator {
     DataProcessTaskStatus dataProcessTaskStatus = new DataProcessTaskStatus(databaseName, tableName);
     dataProcessTaskStatus.setCsvFilePath(loadModel.getFactFilePath());
     SchemaInfo info = new SchemaInfo();
-    BlockDetails blockDetails = new BlockDetails(loadModel.getFactFilePath(),
+    BlockDetails blockDetails = new BlockDetails(new Path(loadModel.getFactFilePath()),
         0, new File(loadModel.getFactFilePath()).length(), new String[] {"localhost"});
     GraphGenerator.blockInfo.put("qwqwq", new BlockDetails[] { blockDetails });
     dataProcessTaskStatus.setBlocksID("qwqwq");

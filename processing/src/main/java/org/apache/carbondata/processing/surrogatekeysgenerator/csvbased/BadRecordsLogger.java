@@ -36,13 +36,13 @@ import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.apache.carbondata.core.util.CarbonUtil;
 
-public class BadRecordslogger {
+public class BadRecordsLogger {
 
   /**
    * Comment for <code>LOGGER</code>
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(BadRecordslogger.class.getName());
+      LogServiceFactory.getLogService(BadRecordsLogger.class.getName());
   /**
    * Which holds the key and if any bad rec found to check from API to update
    * the status
@@ -81,13 +81,24 @@ public class BadRecordslogger {
    */
   private String taskKey;
 
+  private boolean badRecordsLogRedirect;
+
+  private boolean badRecordLoggerEnable;
+
+  private boolean badRecordConvertNullDisable;
+
   // private final Object syncObject =new Object();
 
-  public BadRecordslogger(String key, String fileName, String storePath) {
+  public BadRecordsLogger(String key, String fileName, String storePath,
+      boolean badRecordsLogRedirect, boolean badRecordLoggerEnable,
+      boolean badRecordConvertNullDisable) {
     // Initially no bad rec
     taskKey = key;
     this.fileName = fileName;
     this.storePath = storePath;
+    this.badRecordsLogRedirect = badRecordsLogRedirect;
+    this.badRecordLoggerEnable = badRecordLoggerEnable;
+    this.badRecordConvertNullDisable = badRecordConvertNullDisable;
   }
 
   /**
@@ -98,8 +109,7 @@ public class BadRecordslogger {
     return badRecordEntry.remove(key);
   }
 
-  public void addBadRecordsToBuilder(Object[] row, String reason, String valueComparer,
-      boolean badRecordsLogRedirect, boolean badRecordLoggerEnable) {
+  public void addBadRecordsToBuilder(Object[] row, String reason) {
     if (badRecordsLogRedirect || badRecordLoggerEnable) {
       StringBuilder logStrings = new StringBuilder();
       int size = row.length;
@@ -113,7 +123,7 @@ public class BadRecordslogger {
           }
           break;
         } else if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(row[i].toString())) {
-          logStrings.append(valueComparer);
+          logStrings.append("null");
         } else {
           logStrings.append(row[i]);
         }
@@ -130,7 +140,7 @@ public class BadRecordslogger {
         if (null != reason) {
           if (reason.indexOf(CarbonCommonConstants.MEMBER_DEFAULT_VAL) > -1) {
             logStrings
-                .append(reason.replace(CarbonCommonConstants.MEMBER_DEFAULT_VAL, valueComparer));
+                .append(reason.replace(CarbonCommonConstants.MEMBER_DEFAULT_VAL, "null"));
           } else {
             logStrings.append(reason);
           }
@@ -222,6 +232,10 @@ public class BadRecordslogger {
     finally {
       badRecordEntry.put(taskKey, "Partially");
     }
+  }
+
+  public boolean isBadRecordConvertNullDisable() {
+    return badRecordConvertNullDisable;
   }
 
   /**

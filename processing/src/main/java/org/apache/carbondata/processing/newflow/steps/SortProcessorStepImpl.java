@@ -50,6 +50,7 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   @Override
   public void initialize() throws CarbonDataLoadingException {
+    child.initialize();
     SortParameters sortParameters = SortParameters.createSortParameters(configuration);
     sorter = new ParallelReadMergeSorterImpl(child.getOutput());
     sorter.initialize(sortParameters);
