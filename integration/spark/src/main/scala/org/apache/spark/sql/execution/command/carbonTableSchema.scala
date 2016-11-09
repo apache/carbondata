@@ -1284,10 +1284,10 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
       .getCarbonLockObj(carbonTableIdentifier, LockUsage.DROP_TABLE_LOCK)
     val storePath = CarbonEnv.getInstance(sqlContext).carbonCatalog.storePath
     var isLocked = false
-    val tmpTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-      .getCarbonTable(dbName + '_' + tableName)
+    val tableExists = CarbonEnv.getInstance(sqlContext).carbonCatalog
+      .tableExists(TableIdentifier(tableName, databaseNameOp))(sqlContext)
     try {
-      if (null != tmpTable) {
+      if (tableExists) {
         isLocked = carbonLock.lockWithRetries()
         if (isLocked) {
           logInfo("Successfully able to get the lock for drop.")
