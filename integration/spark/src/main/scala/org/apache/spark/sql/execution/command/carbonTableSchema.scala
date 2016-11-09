@@ -1284,14 +1284,18 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
       .getCarbonLockObj(carbonTableIdentifier, LockUsage.DROP_TABLE_LOCK)
     val storePath = CarbonEnv.getInstance(sqlContext).carbonCatalog.storePath
     var isLocked = false
+    val tmpTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
+      .getCarbonTable(dbName + '_' + tableName)
     try {
-      isLocked = carbonLock.lockWithRetries()
-      if (isLocked) {
-        logInfo("Successfully able to get the lock for drop.")
-      }
-      else {
-        LOGGER.audit(s"Dropping table $dbName.$tableName failed as the Table is locked")
-        sys.error("Table is locked for deletion. Please try after some time")
+      if (null != tmpTable) {
+        isLocked = carbonLock.lockWithRetries()
+        if (isLocked) {
+          logInfo("Successfully able to get the lock for drop.")
+        }
+        else {
+          LOGGER.audit(s"Dropping table $dbName.$tableName failed as the Table is locked")
+          sys.error("Table is locked for deletion. Please try after some time")
+        }
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
       CarbonEnv.getInstance(sqlContext).carbonCatalog.dropTable(storePath, identifier)(sqlContext)
