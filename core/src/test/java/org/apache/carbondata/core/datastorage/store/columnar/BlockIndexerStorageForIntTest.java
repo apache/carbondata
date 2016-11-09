@@ -19,12 +19,9 @@
 
 package org.apache.carbondata.core.datastorage.store.columnar;
 
-import org.apache.carbondata.core.datastorage.store.columnar.BlockIndexerStorageForInt;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.CoreMatchers.*;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class BlockIndexerStorageForIntTest {

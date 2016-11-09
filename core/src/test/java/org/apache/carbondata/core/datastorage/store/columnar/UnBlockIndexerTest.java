@@ -19,7 +19,6 @@
 
 package org.apache.carbondata.core.datastorage.store.columnar;
 
-import org.apache.carbondata.core.datastorage.store.columnar.UnBlockIndexer;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
