@@ -31,7 +31,7 @@ trait ColumnValidator {
  */
 trait DictionaryDetailService {
   def getDictionaryDetail(dictFolderPath: String, primDimensions: Array[CarbonDimension],
-      table: CarbonTableIdentifier, hdfsLocation: String): DictionaryDetail
+      table: CarbonTableIdentifier, storePath: String): DictionaryDetail
 }
 
 /**
