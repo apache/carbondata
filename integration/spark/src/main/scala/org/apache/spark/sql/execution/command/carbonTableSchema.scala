@@ -146,7 +146,7 @@ case class Default(key: String, value: String)
 case class DataLoadTableFileMapping(table: String, loadPath: String)
 
 case class CarbonMergerMapping(storeLocation: String,
-    hdfsStoreLocation: String,
+    storePath: String,
     partitioner: Partitioner,
     metadataFilePath: String,
     mergedLoadName: String,
@@ -173,7 +173,7 @@ case class CompactionModel(compactionSize: Long,
   tableCreationTime: Long,
   isDDLTrigger: Boolean)
 
-case class CompactionCallableModel(hdfsStoreLocation: String, carbonLoadModel: CarbonLoadModel,
+case class CompactionCallableModel(storePath: String, carbonLoadModel: CarbonLoadModel,
   partitioner: Partitioner, storeLocation: String, carbonTable: CarbonTable, kettleHomePath: String,
   cubeCreationTime: Long, loadsToMerge: util.List[LoadMetadataDetails], sqlContext: SQLContext,
   compactionType: CompactionType)

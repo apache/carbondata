@@ -59,7 +59,7 @@ class CarbonMergerRDD[K, V](
   sc.setLocalProperty("spark.job.interruptOnCancel", "true")
 
   var storeLocation: String = null
-  val hdfsStoreLocation = carbonMergerMapping.hdfsStoreLocation
+  val storePath = carbonMergerMapping.storePath
   val metadataFilePath = carbonMergerMapping.metadataFilePath
   val mergedLoadName = carbonMergerMapping.mergedLoadName
   val databaseName = carbonMergerMapping.databaseName
@@ -120,10 +120,10 @@ class CarbonMergerRDD[K, V](
         val dataFileMetadataSegMapping: java.util.Map[String, List[DataFileFooter]] =
           CarbonCompactionUtil.createDataFileFooterMappingForSegments(tableBlockInfoList)
 
-        carbonLoadModel.setStorePath(hdfsStoreLocation)
+        carbonLoadModel.setStorePath(storePath)
 
           exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties, databaseName,
-          factTableName, hdfsStoreLocation, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
+          factTableName, storePath, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
           dataFileMetadataSegMapping
         )
 
@@ -221,7 +221,7 @@ class CarbonMergerRDD[K, V](
 
     val startTime = System.currentTimeMillis()
     val absoluteTableIdentifier: AbsoluteTableIdentifier = new AbsoluteTableIdentifier(
-      hdfsStoreLocation, new CarbonTableIdentifier(databaseName, factTableName, tableId)
+      storePath, new CarbonTableIdentifier(databaseName, factTableName, tableId)
     )
     val (carbonInputFormat: CarbonInputFormat[Array[Object]], job: Job) =
       QueryPlanUtil.createCarbonInputFormat(absoluteTableIdentifier)

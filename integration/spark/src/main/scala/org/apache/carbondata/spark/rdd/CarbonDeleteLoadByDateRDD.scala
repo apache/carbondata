@@ -40,7 +40,7 @@ class CarbonDeleteLoadByDateRDD[K, V](
     partitioner: Partitioner,
     factTableName: String,
     dimTableName: String,
-    hdfsStoreLocation: String,
+    storePath: String,
     loadMetadataDetails: List[LoadMetadataDetails])
   extends RDD[(K, V)](sc, Nil) with Logging {
 

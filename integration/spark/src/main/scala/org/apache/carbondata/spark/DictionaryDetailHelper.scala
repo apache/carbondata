@@ -26,8 +26,8 @@ import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 
 class DictionaryDetailHelper extends DictionaryDetailService {
   def getDictionaryDetail(dictfolderPath: String, primDimensions: Array[CarbonDimension],
-      table: CarbonTableIdentifier, hdfsLocation: String): DictionaryDetail = {
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(hdfsLocation, table)
+      table: CarbonTableIdentifier, storePath: String): DictionaryDetail = {
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, table)
     val dictFilePaths = new Array[String](primDimensions.length)
     val dictFileExists = new Array[Boolean](primDimensions.length)
     val columnIdentifier = new Array[ColumnIdentifier](primDimensions.length)
