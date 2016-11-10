@@ -56,7 +56,7 @@ object SplitUtils {
         part.asInstanceOf[NewHadoopPartition].serializableHadoopSplit.value.asInstanceOf[FileSplit]
       }
       splits.map { block =>
-        new BlockDetails(block.getPath.toString,
+        new BlockDetails(block.getPath,
           block.getStart,
           block.getLength,
           block.getLocations

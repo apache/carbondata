@@ -30,42 +30,47 @@ public final class CarbonParserFactory {
 
   /**
    * Create parser for the carbon column.
+   *
    * @param carbonColumn
    * @param complexDelimiters
    * @return
    */
-  public static GenericParser createParser(CarbonColumn carbonColumn, String[] complexDelimiters) {
-    return createParser(carbonColumn, complexDelimiters, 0);
+  public static GenericParser createParser(CarbonColumn carbonColumn, String[] complexDelimiters,
+      String nullFormat) {
+    return createParser(carbonColumn, complexDelimiters, nullFormat, 0);
   }
 
   /**
    * This method may be called recursively if the carbon column is complex type.
+   *
    * @param carbonColumn
    * @param complexDelimiters, these delimiters which are used to separate the complex data types.
-   * @param depth It is like depth of tree, if column has children then depth is 1, And depth
-   *              becomes 2 if children has children. This depth is used select the complex
-   *              delimiters
+   * @param depth              It is like depth of tree, if column has children then depth is 1,
+   *                           And depth becomes 2 if children has children.
+   *                           This depth is used select the complex
+   *                           delimiters
    * @return GenericParser
    */
   private static GenericParser createParser(CarbonColumn carbonColumn, String[] complexDelimiters,
-      int depth) {
+      String nullFormat, int depth) {
     switch (carbonColumn.getDataType()) {
       case ARRAY:
         List<CarbonDimension> listOfChildDimensions =
             ((CarbonDimension) carbonColumn).getListOfChildDimensions();
         // Create array parser with complex delimiter
-        ArrayParserImpl arrayParser = new ArrayParserImpl(complexDelimiters[depth]);
+        ArrayParserImpl arrayParser = new ArrayParserImpl(complexDelimiters[depth], nullFormat);
         for (CarbonDimension dimension : listOfChildDimensions) {
-          arrayParser.addChildren(createParser(dimension, complexDelimiters, depth + 1));
+          arrayParser
+              .addChildren(createParser(dimension, complexDelimiters, nullFormat, depth + 1));
         }
         return arrayParser;
       case STRUCT:
         List<CarbonDimension> dimensions =
             ((CarbonDimension) carbonColumn).getListOfChildDimensions();
         // Create struct parser with complex delimiter
-        StructParserImpl parser = new StructParserImpl(complexDelimiters[depth]);
+        StructParserImpl parser = new StructParserImpl(complexDelimiters[depth], nullFormat);
         for (CarbonDimension dimension : dimensions) {
-          parser.addChildren(createParser(dimension, complexDelimiters, depth + 1));
+          parser.addChildren(createParser(dimension, complexDelimiters, nullFormat, depth + 1));
         }
         return parser;
       case MAP:

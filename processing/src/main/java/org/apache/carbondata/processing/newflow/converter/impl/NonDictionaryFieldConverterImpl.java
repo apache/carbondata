@@ -21,9 +21,11 @@ package org.apache.carbondata.processing.newflow.converter.impl;
 import java.nio.charset.Charset;
 
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.DataField;
+import org.apache.carbondata.processing.newflow.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.newflow.converter.FieldConverter;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
@@ -33,17 +35,29 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
 
   private int index;
 
-  public NonDictionaryFieldConverterImpl(DataField dataField, int index) {
+  private String nullformat;
+
+  private CarbonColumn column;
+
+  public NonDictionaryFieldConverterImpl(DataField dataField, String nullformat, int index) {
     this.dataType = dataField.getColumn().getDataType();
+    this.column = dataField.getColumn();
     this.index = index;
+    this.nullformat = nullformat;
   }
 
   @Override
-  public void convert(CarbonRow row) {
+  public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
     String dimensionValue = row.getString(index);
+    if (dimensionValue == null || dimensionValue.equals(nullformat)) {
+      dimensionValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
+    }
     if (dataType != DataType.STRING) {
       if (null == DataTypeUtil.normalizeIntAndLongValues(dimensionValue, dataType)) {
-        dimensionValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
+        logHolder.setReason(
+            "The value " + " \"" + dimensionValue + "\"" + " with column name " + column
+                .getColName() + " and column data type " + dataType + " is not a valid " + dataType
+                + " type.");
       }
     }
     row.update(dimensionValue.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),

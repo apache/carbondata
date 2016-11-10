@@ -39,7 +39,7 @@ object Compactor {
 
   def triggerCompaction(compactionCallableModel: CompactionCallableModel): Unit = {
 
-    val hdfsStoreLocation = compactionCallableModel.hdfsStoreLocation
+    val storePath = compactionCallableModel.storePath
     val partitioner = compactionCallableModel.partitioner
     val storeLocation = compactionCallableModel.storeLocation
     val carbonTable = compactionCallableModel.carbonTable
@@ -55,12 +55,11 @@ object Compactor {
     var finalMergeStatus = false
     val schemaName: String = carbonLoadModel.getDatabaseName
     val factTableName = carbonLoadModel.getTableName
-    val storePath = hdfsStoreLocation
     val validSegments: Array[String] = CarbonDataMergerUtil
       .getValidSegments(loadsToMerge).split(',')
     val mergeLoadStartTime = CarbonLoaderUtil.readCurrentTime();
     val carbonMergerMapping = CarbonMergerMapping(storeLocation,
-      hdfsStoreLocation,
+      storePath,
       partitioner,
       carbonTable.getMetaDataFilepath(),
       mergedLoadName,
@@ -73,7 +72,7 @@ object Compactor {
       maxSegmentColCardinality = null,
       maxSegmentColumnSchemaList = null
     )
-    carbonLoadModel.setStorePath(carbonMergerMapping.hdfsStoreLocation)
+    carbonLoadModel.setStorePath(carbonMergerMapping.storePath)
     val segmentStatusManager = new SegmentStatusManager(new AbsoluteTableIdentifier
     (CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION),
       new CarbonTableIdentifier(carbonLoadModel.getDatabaseName,

@@ -11,10 +11,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
-import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
-import org.apache.carbondata.processing.newflow.parser.CarbonParserFactory;
-import org.apache.carbondata.processing.newflow.parser.GenericParser;
 import org.apache.carbondata.processing.newflow.parser.RowParser;
 import org.apache.carbondata.processing.newflow.parser.impl.RowParserImpl;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
@@ -28,42 +25,24 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(InputProcessorStepImpl.class.getName());
 
-  private GenericParser[] genericParsers;
+  private RowParser rowParser;
 
-  private List<Iterator<Object[]>> inputIterators;
+  private Iterator<Object[]>[] inputIterators;
 
   public InputProcessorStepImpl(CarbonDataLoadConfiguration configuration,
-      AbstractDataLoadProcessorStep child, List<Iterator<Object[]>> inputIterators) {
-    super(configuration, child);
+      Iterator<Object[]>[] inputIterators) {
+    super(configuration, null);
     this.inputIterators = inputIterators;
   }
 
   @Override
   public DataField[] getOutput() {
-    DataField[] fields = configuration.getDataFields();
-    String[] header = configuration.getHeader();
-    DataField[] output = new DataField[fields.length];
-    int k = 0;
-    for (int i = 0; i < header.length; i++) {
-      for (int j = 0; j < fields.length; j++) {
-        if (header[j].equalsIgnoreCase(fields[j].getColumn().getColName())) {
-          output[k++] = fields[j];
-          break;
-        }
-      }
-    }
-    return output;
+    return configuration.getDataFields();
   }
 
   @Override
   public void initialize() throws CarbonDataLoadingException {
-    DataField[] output = getOutput();
-    genericParsers = new GenericParser[output.length];
-    for (int i = 0; i < genericParsers.length; i++) {
-      genericParsers[i] = CarbonParserFactory.createParser(output[i].getColumn(),
-          (String[]) configuration
-              .getDataLoadProperty(DataLoadProcessorConstants.COMPLEX_DELIMITERS));
-    }
+    rowParser = new RowParserImpl(getOutput(), configuration);
   }
 
 
@@ -74,7 +53,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     List<Iterator<Object[]>>[] readerIterators = partitionInputReaderIterators();
     Iterator<CarbonRowBatch>[] outIterators = new Iterator[readerIterators.length];
     for (int i = 0; i < outIterators.length; i++) {
-      outIterators[i] = new InputProcessorIterator(readerIterators[i], genericParsers, batchSize);
+      outIterators[i] = new InputProcessorIterator(readerIterators[i], rowParser, batchSize);
     }
     return outIterators;
   }
@@ -88,15 +67,15 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     int numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
     // Get the minimum of number of cores and iterators size to get the number of parallel threads
     // to be launched.
-    int parallelThreadNumber = Math.min(inputIterators.size(), numberOfCores);
+    int parallelThreadNumber = Math.min(inputIterators.length, numberOfCores);
 
     List<Iterator<Object[]>>[] iterators = new List[parallelThreadNumber];
     for (int i = 0; i < parallelThreadNumber; i++) {
       iterators[i] = new ArrayList<>();
     }
     // Equally partition the iterators as per number of threads
-    for (int i = 0; i < inputIterators.size(); i++) {
-      iterators[i % parallelThreadNumber].add(inputIterators.get(i));
+    for (int i = 0; i < inputIterators.length; i++) {
+      iterators[i % parallelThreadNumber].add(inputIterators[i]);
     }
     return iterators;
   }
@@ -123,10 +102,10 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     private RowParser rowParser;
 
     public InputProcessorIterator(List<Iterator<Object[]>> inputIterators,
-        GenericParser[] genericParsers, int batchSize) {
+        RowParser rowParser, int batchSize) {
       this.inputIterators = inputIterators;
       this.batchSize = batchSize;
-      this.rowParser = new RowParserImpl(genericParsers);
+      this.rowParser = rowParser;
       this.counter = 0;
       // Get the first iterator from the list.
       currentIterator = inputIterators.get(counter++);
@@ -145,8 +124,8 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
         if (counter < inputIterators.size()) {
           // Get the next iterator from the list.
           currentIterator = inputIterators.get(counter++);
+          hasNext = internalHasNext();
         }
-        hasNext = internalHasNext();
       }
       return hasNext;
     }

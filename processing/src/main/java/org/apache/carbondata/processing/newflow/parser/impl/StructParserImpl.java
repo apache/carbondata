@@ -28,12 +28,11 @@ import org.apache.carbondata.processing.newflow.parser.ComplexParser;
 import org.apache.carbondata.processing.newflow.parser.GenericParser;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * It parses the string to @{@link StructObject} using delimiter.
  * It is thread safe as the state of class don't change while
- * calling @{@link GenericParser#parse(String)} method
+ * calling @{@link GenericParser#parse(Object)} method
  */
 public class StructParserImpl implements ComplexParser<StructObject> {
 
@@ -41,20 +40,26 @@ public class StructParserImpl implements ComplexParser<StructObject> {
 
   private List<GenericParser> children = new ArrayList<>();
 
-  public StructParserImpl(String delimiter) {
+  private String nullFormat;
+
+  public StructParserImpl(String delimiter, String nullFormat) {
     pattern = Pattern.compile(CarbonUtil.delimiterConverter(delimiter));
+    this.nullFormat = nullFormat;
   }
 
   @Override
-  public StructObject parse(String data) {
-    if (StringUtils.isNotEmpty(data)) {
-      String[] split = pattern.split(data, -1);
-      if (ArrayUtils.isNotEmpty(split)) {
-        Object[] array = new Object[children.size()];
-        for (int i = 0; i < children.size(); i++) {
-          array[i] = children.get(i).parse(split[i]);
+  public StructObject parse(Object data) {
+    if (data != null) {
+      String value = data.toString();
+      if (!value.isEmpty() && !value.equals(nullFormat)) {
+        String[] split = pattern.split(value, -1);
+        if (ArrayUtils.isNotEmpty(split)) {
+          Object[] array = new Object[children.size()];
+          for (int i = 0; i < split.length && i < array.length; i++) {
+            array[i] = children.get(i).parse(split[i]);
+          }
+          return new StructObject(array);
         }
-        return new StructObject(array);
       }
     }
     return null;

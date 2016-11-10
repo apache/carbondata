@@ -26,7 +26,6 @@ import org.apache.spark.sql.common.util.CarbonHiveContext.sql
 import org.apache.spark.sql.common.util.QueryTest
 
 import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
-import org.apache.carbondata.spark.load.CarbonLoadModel
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
@@ -39,11 +38,11 @@ import java.util.concurrent.Callable
 import java.util.concurrent.TimeUnit
 
 import org.apache.carbondata.common.ext.PathFactory
-
 import org.apache.carbondata.core.carbon.path.CarbonTablePath
 import org.apache.carbondata.core.carbon.ColumnIdentifier
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.processing.model.CarbonLoadModel
 
 class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAfterAll {
 

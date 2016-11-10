@@ -154,7 +154,12 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
   private int getDirectSurrogateForMember(String memberStr) {
     Date dateToStr = null;
     try {
-      dateToStr = simpleDateFormatLocal.get().parse(memberStr);
+      SimpleDateFormat simpleDateFormat = simpleDateFormatLocal.get();
+      if (null == simpleDateFormat) {
+        initialize();
+        simpleDateFormat = simpleDateFormatLocal.get();
+      }
+      dateToStr = simpleDateFormat.parse(memberStr);
     } catch (ParseException e) {
       LOGGER.debug(
           "Cannot convert " + memberStr + " to Time/Long type value. Value considered as null." + e

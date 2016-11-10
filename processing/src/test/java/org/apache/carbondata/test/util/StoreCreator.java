@@ -85,6 +85,7 @@ import org.apache.carbondata.processing.graphgenerator.GraphGeneratorException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import com.google.gson.Gson;
+import org.apache.hadoop.fs.Path;
 
 /**
  * This class will create store file based on provided schema
@@ -360,7 +361,7 @@ public class StoreCreator {
     DataProcessTaskStatus dataProcessTaskStatus = new DataProcessTaskStatus(databaseName, tableName);
     dataProcessTaskStatus.setCsvFilePath(loadModel.getFactFilePath());
     SchemaInfo info = new SchemaInfo();
-    BlockDetails blockDetails = new BlockDetails(loadModel.getFactFilePath(),
+    BlockDetails blockDetails = new BlockDetails(new Path(loadModel.getFactFilePath()),
         0, new File(loadModel.getFactFilePath()).length(), new String[] {"localhost"});
     GraphGenerator.blockInfo.put("qwqwq", new BlockDetails[] { blockDetails });
     dataProcessTaskStatus.setBlocksID("qwqwq");

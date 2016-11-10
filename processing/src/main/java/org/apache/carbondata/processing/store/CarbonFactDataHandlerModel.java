@@ -19,7 +19,11 @@
 
 package org.apache.carbondata.processing.store;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
@@ -178,15 +182,22 @@ public class CarbonFactDataHandlerModel {
   private boolean isCompactionFlow;
 
   /**
+   * To use kettle flow to load or not.
+   */
+  private boolean useKettle = true;
+
+  /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    * @param configuration
    * @return CarbonFactDataHandlerModel
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
-      CarbonDataLoadConfiguration configuration) {
+      CarbonDataLoadConfiguration configuration, String storeLocation) {
 
-    CarbonTableIdentifier tableIdentifier =
+    CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
+    CarbonTableIdentifier tableIdentifier =
+        identifier;
     boolean[] isUseInvertedIndex =
         CarbonDataProcessorUtil.getIsUseInvertedIndex(configuration.getDataFields());
 
@@ -206,7 +217,7 @@ public class CarbonFactDataHandlerModel {
     int complexDimensionCount = configuration.getComplexDimensionCount();
     int measureCount = configuration.getMeasureCount();
 
-    int simpleDimsCount = dimensionCount - complexDimensionCount;
+    int simpleDimsCount = dimensionCount - noDictionaryCount - complexDimensionCount;
     int[] simpleDimsLen = new int[simpleDimsCount];
     for (int i = 0; i < simpleDimsCount; i++) {
       simpleDimsLen[i] = dimLens[i];
@@ -251,26 +262,30 @@ public class CarbonFactDataHandlerModel {
 
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setDatabaseName(
-        configuration.getTableIdentifier().getCarbonTableIdentifier().getDatabaseName());
+        identifier.getDatabaseName());
     carbonFactDataHandlerModel
-        .setTableName(configuration.getTableIdentifier().getCarbonTableIdentifier().getTableName());
+        .setTableName(identifier.getTableName());
     carbonFactDataHandlerModel.setMeasureCount(measureCount);
     carbonFactDataHandlerModel.setMdKeyLength(keyGenerator.getKeySizeInBytes());
-    carbonFactDataHandlerModel.setStoreLocation(configuration.getTableIdentifier().getStorePath());
+    carbonFactDataHandlerModel.setStoreLocation(storeLocation);
     carbonFactDataHandlerModel.setDimLens(dimLens);
     carbonFactDataHandlerModel.setNoDictionaryCount(noDictionaryCount);
-    carbonFactDataHandlerModel.setDimensionCount(configuration.getDimensionCount());
+    carbonFactDataHandlerModel
+        .setDimensionCount(configuration.getDimensionCount() - noDictionaryCount);
     carbonFactDataHandlerModel.setComplexIndexMap(complexIndexMap);
     carbonFactDataHandlerModel.setSegmentProperties(segmentProperties);
     carbonFactDataHandlerModel.setColCardinality(colCardinality);
     carbonFactDataHandlerModel.setDataWritingRequest(true);
-    carbonFactDataHandlerModel.setAggType(null);
+    carbonFactDataHandlerModel.setAggType(CarbonDataProcessorUtil
+        .getAggType(measureCount, identifier.getDatabaseName(), identifier.getTableName()));
     carbonFactDataHandlerModel.setFactDimLens(dimLens);
     carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
     carbonFactDataHandlerModel.setPrimitiveDimLens(simpleDimsLen);
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndex);
+    carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
+    carbonFactDataHandlerModel.setUseKettle(false);
     if (noDictionaryCount > 0 || complexDimensionCount > 0) {
       carbonFactDataHandlerModel.setMdKeyIndex(measureCount + 1);
     } else {
@@ -536,5 +551,12 @@ public class CarbonFactDataHandlerModel {
     this.wrapperColumnSchema = wrapperColumnSchema;
   }
 
+  public boolean isUseKettle() {
+    return useKettle;
+  }
+
+  public void setUseKettle(boolean useKettle) {
+    this.useKettle = useKettle;
+  }
 }
 
