@@ -41,6 +41,7 @@ import org.apache.carbondata.processing.constants.DataProcessorConstants
 import org.apache.carbondata.processing.csvreaderstep.RddInputUtils
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator
+import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.DataLoadResult
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.splits.TableSplit
@@ -78,7 +79,7 @@ class CarbonNodePartition(rddId: Int, val idx: Int, host: String,
 
 class SparkPartitionLoader(model: CarbonLoadModel,
                            splitIndex: Int,
-                           hdfsStoreLocation: String,
+                           storePath: String,
                            kettleHomePath: String,
                            loadCount: Int,
                            loadMetadataDetails: LoadMetadataDetails) extends Logging{
@@ -122,7 +123,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
 
   def run(): Unit = {
     try {
-      CarbonLoaderUtil.executeGraph(model, storeLocation, hdfsStoreLocation,
+      CarbonLoaderUtil.executeGraph(model, storeLocation, storePath,
         kettleHomePath)
     } catch {
       case e: DataLoadingException => if (e.getErrorCode ==
@@ -165,8 +166,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
  * @param sc                    The SparkContext to associate the RDD with.
  * @param result                Output result
  * @param carbonLoadModel       Carbon load model which contain the load info
- * @param storeLocation         Tmp store location
- * @param hdfsStoreLocation     The store location in hdfs
+ * @param storePath             The store location
  * @param kettleHomePath        The kettle home path
  * @param partitioner           Partitioner which specify how to partition
  * @param columinar             whether it is columinar
@@ -182,8 +182,7 @@ class DataFileLoaderRDD[K, V](
     sc: SparkContext,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    var storeLocation: String,
-    hdfsStoreLocation: String,
+    storePath: String,
     kettleHomePath: String,
     partitioner: Partitioner,
     columinar: Boolean,
@@ -241,7 +240,7 @@ class DataFileLoaderRDD[K, V](
 
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         setModelAndBlocksInfo()
-        val loader = new SparkPartitionLoader(model, theSplit.index, hdfsStoreLocation,
+        val loader = new SparkPartitionLoader(model, theSplit.index, storePath,
           kettleHomePath, loadCount, loadMetadataDetails)
         loader.initialize
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
@@ -482,8 +481,7 @@ class DataFileLoaderRDD[K, V](
  * @param sc
  * @param result
  * @param carbonLoadModel
- * @param storeLocation
- * @param hdfsStoreLocation
+ * @param storePath
  * @param kettleHomePath
  * @param columinar
  * @param loadCount
@@ -497,8 +495,7 @@ class DataFrameLoaderRDD[K, V](
     sc: SparkContext,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    var storeLocation: String,
-    hdfsStoreLocation: String,
+    storePath: String,
     kettleHomePath: String,
     columinar: Boolean,
     loadCount: Integer,
@@ -522,7 +519,7 @@ class DataFrameLoaderRDD[K, V](
         carbonLoadModel.setPartitionId(partitionID)
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
-        val loader = new SparkPartitionLoader(carbonLoadModel, theSplit.index, hdfsStoreLocation,
+        val loader = new SparkPartitionLoader(carbonLoadModel, theSplit.index, storePath,
           kettleHomePath, loadCount, loadMetadataDetails)
         loader.initialize
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)

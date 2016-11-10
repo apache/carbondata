@@ -47,6 +47,20 @@ class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
       sql("select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableJoin_hive where empname in ('arvind','ayushi') group by empno,empname,utilization"))
   }
 
+  test("select e.empid from employee e inner join manager m on e.mgrid=m.empid") {
+    sql("drop table if exists employee")
+    sql("create table employee(name string, empid string, mgrid string, mobileno bigint) stored by 'carbondata'")
+    sql("load data inpath './src/test/resources/join/emp.csv' into table employee options('fileheader'='name,empid,mgrid,mobileno')")
+    
+    sql("drop table if exists manager")
+    sql("create table manager(name string, empid string, mgrid string, mobileno bigint) stored by 'carbondata'")
+    sql("load data inpath './src/test/resources/join/mgr.csv' into table manager options('fileheader'='name,empid,mgrid,mobileno')")
+    checkAnswer(
+    sql("select e.empid from employee e inner join manager m on e.mgrid=m.empid"),
+    Seq(Row("t23717"))
+    )
+   
+  }
   override def afterAll {
     sql("drop table alldatatypestableJoin")
     sql("drop table alldatatypestableJoin_hive")

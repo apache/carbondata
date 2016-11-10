@@ -32,7 +32,7 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.load.LoadMetadataDetails;
 import org.apache.carbondata.lcm.status.SegmentStatusManager;
-import org.apache.carbondata.spark.load.CarbonLoadModel;
+import org.apache.carbondata.processing.model.CarbonLoadModel;
 
 public final class LoadMetadataUtil {
   private LoadMetadataUtil() {

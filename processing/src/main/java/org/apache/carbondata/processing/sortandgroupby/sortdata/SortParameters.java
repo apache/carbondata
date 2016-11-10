@@ -19,18 +19,12 @@
 package org.apache.carbondata.processing.sortandgroupby.sortdata;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
-import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
-import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.schema.metadata.SortObserver;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
@@ -121,6 +115,11 @@ public class SortParameters {
   private boolean[] noDictionaryDimnesionColumn;
 
   private int numberOfCores;
+
+  /**
+   * TODO Temporary conf , it will be removed after kettle removal.
+   */
+  private boolean useKettle = true;
 
   public String getTempFileLocation() {
     return tempFileLocation;
@@ -298,6 +297,14 @@ public class SortParameters {
     this.numberOfCores = numberOfCores;
   }
 
+  public boolean isUseKettle() {
+    return useKettle;
+  }
+
+  public void setUseKettle(boolean useKettle) {
+    this.useKettle = useKettle;
+  }
+
   public static SortParameters createSortParameters(CarbonDataLoadConfiguration configuration) {
     SortParameters parameters = new SortParameters();
     CarbonTableIdentifier tableIdentifier =
@@ -394,16 +401,11 @@ public class SortParameters {
     parameters.setPrefetch(CarbonCommonConstants.CARBON_PREFETCH_IN_MERGE_VALUE);
     parameters.setBufferSize(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE);
 
-    char[] aggType = new char[parameters.getMeasureColCount()];
-    Arrays.fill(aggType, 'n');
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        parameters.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + parameters
-            .getTableName());
-    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(parameters.getTableName());
-    for (int i = 0; i < aggType.length; i++) {
-      aggType[i] = DataTypeUtil.getAggType(measures.get(i).getDataType());
-    }
+    char[] aggType = CarbonDataProcessorUtil
+        .getAggType(parameters.getMeasureColCount(), parameters.getDatabaseName(),
+            parameters.getTableName());
     parameters.setAggType(aggType);
+    parameters.setUseKettle(false);
     return parameters;
   }
 
@@ -500,15 +502,9 @@ public class SortParameters {
     parameters.setPrefetch(CarbonCommonConstants.CARBON_PREFETCH_IN_MERGE_VALUE);
     parameters.setBufferSize(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE);
 
-    char[] aggType = new char[parameters.getMeasureColCount()];
-    Arrays.fill(aggType, 'n');
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        parameters.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + parameters
-            .getTableName());
-    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(parameters.getTableName());
-    for (int i = 0; i < aggType.length; i++) {
-      aggType[i] = DataTypeUtil.getAggType(measures.get(i).getDataType());
-    }
+    char[] aggType = CarbonDataProcessorUtil
+        .getAggType(parameters.getMeasureColCount(), parameters.getDatabaseName(),
+            parameters.getTableName());
     parameters.setAggType(aggType);
     return parameters;
   }

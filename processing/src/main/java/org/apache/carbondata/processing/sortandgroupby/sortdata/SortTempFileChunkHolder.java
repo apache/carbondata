@@ -136,6 +136,9 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    */
   private boolean[] isNoDictionaryDimensionColumn;
 
+  // TODO temporary configuration, remove after kettle removal
+  private boolean useKettle;
+
   /**
    * Constructor to initialize
    *
@@ -150,7 +153,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    */
   public SortTempFileChunkHolder(File tempFile, int dimensionCount, int complexDimensionCount,
       int measureCount, int fileBufferSize, int noDictionaryCount, char[] aggType,
-      boolean[] isNoDictionaryDimensionColumn) {
+      boolean[] isNoDictionaryDimensionColumn, boolean useKettle) {
     // set temp file
     this.tempFile = tempFile;
 
@@ -165,6 +168,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     this.executorService = Executors.newFixedThreadPool(1);
     this.aggType = aggType;
     this.isNoDictionaryDimensionColumn = isNoDictionaryDimensionColumn;
+    this.useKettle = useKettle;
   }
 
   /**
@@ -302,7 +306,15 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    */
   private Object[] getRowFromStream() throws CarbonSortKeyAndGroupByException {
     // create new row of size 3 (1 for dims , 1 for high card , 1 for measures)
+    if (useKettle) {
+      return getRowFromStreamWithKettle();
+    } else {
+      return getRowFromStreamWithOutKettle();
+    }
+  }
 
+  // TODO remove after kettle flow is removed
+  private Object[] getRowFromStreamWithKettle() throws CarbonSortKeyAndGroupByException {
     Object[] holder = new Object[3];
     int index = 0;
     Integer[] dim = new Integer[this.dimensionCount];
@@ -361,6 +373,72 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   }
 
   /**
+   * Reads row from file
+   * @return Object[]
+   * @throws CarbonSortKeyAndGroupByException
+   */
+  private Object[] getRowFromStreamWithOutKettle() throws CarbonSortKeyAndGroupByException {
+    // create new row of size 3 (1 for dims , 1 for high card , 1 for measures)
+
+    Object[] holder = new Object[3];
+    int index = 0;
+    int nonDicIndex = 0;
+    int[] dim = new int[this.dimensionCount];
+    byte[][] nonDicArray = new byte[this.noDictionaryCount + this.complexDimensionCount][];
+    Object[] measures = new Object[this.measureCount];
+    try {
+      // read dimension values
+      for (int i = 0; i < isNoDictionaryDimensionColumn.length; i++) {
+        if (isNoDictionaryDimensionColumn[i]) {
+          short len = stream.readShort();
+          byte[] array = new byte[len];
+          stream.readFully(array);
+          nonDicArray[nonDicIndex++] = array;
+        } else {
+          dim[index++] = stream.readInt();
+        }
+      }
+
+      for (int i = 0; i < complexDimensionCount; i++) {
+        short len = stream.readShort();
+        byte[] array = new byte[len];
+        stream.readFully(array);
+        nonDicArray[nonDicIndex++] = array;
+      }
+
+      index = 0;
+      // read measure values
+      for (int i = 0; i < this.measureCount; i++) {
+        if (stream.readByte() == 1) {
+          if (aggType[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+            measures[index++] = stream.readDouble();
+          } else if (aggType[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
+            measures[index++] = stream.readLong();
+          } else {
+            int len = stream.readInt();
+            byte[] buff = new byte[len];
+            stream.readFully(buff);
+            measures[index++] = buff;
+          }
+        } else {
+          measures[index++] = null;
+        }
+      }
+
+      RemoveDictionaryUtil.prepareOutObj(holder, dim, nonDicArray, measures);
+
+      // increment number if record read
+      this.numberOfObjectRead++;
+    } catch (IOException e) {
+      LOGGER.error("Problme while reading the madkey fom sort temp file");
+      throw new CarbonSortKeyAndGroupByException("Problem while reading the sort temp file ", e);
+    }
+
+    //return out row
+    return holder;
+  }
+
+  /**
    * below method will be used to get the row
    *
    * @return row
@@ -400,11 +478,16 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   }
 
   @Override public int compareTo(SortTempFileChunkHolder other) {
+    if (useKettle) {
+      return compareWithKettle(other);
 
-    return compare(other);
+    } else {
+      return compareWithOutKettle(other);
+    }
   }
 
-  private int compare(SortTempFileChunkHolder other) {
+  // TODO Remove after kettle flow is removed.
+  private int compareWithKettle(SortTempFileChunkHolder other) {
     int diff = 0;
 
     int normalIndex = 0;
@@ -448,6 +531,34 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     return diff;
   }
 
+  private int compareWithOutKettle(SortTempFileChunkHolder other) {
+    int diff = 0;
+    int index = 0;
+    int noDictionaryIndex = 0;
+    int[] leftMdkArray = (int[]) returnRow[0];
+    int[] rightMdkArray = (int[]) other.returnRow[0];
+    byte[][] leftNonDictArray = (byte[][]) returnRow[1];
+    byte[][] rightNonDictArray = (byte[][]) other.returnRow[1];
+    for (boolean isNoDictionary : isNoDictionaryDimensionColumn) {
+      if (isNoDictionary) {
+        diff = UnsafeComparer.INSTANCE
+            .compareTo(leftNonDictArray[noDictionaryIndex], rightNonDictArray[noDictionaryIndex]);
+        if (diff != 0) {
+          return diff;
+        }
+        noDictionaryIndex++;
+      } else {
+        diff = leftMdkArray[index] - rightMdkArray[index];
+        if (diff != 0) {
+          return diff;
+        }
+        index++;
+      }
+
+    }
+    return diff;
+  }
+
   @Override public boolean equals(Object obj) {
     if (!(obj instanceof SortTempFileChunkHolder)) {
       return false;
@@ -456,7 +567,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
 
 
 
-    return o.compare(o) == 0;
+    return o.compareTo(o) == 0;
   }
 
   @Override public int hashCode() {

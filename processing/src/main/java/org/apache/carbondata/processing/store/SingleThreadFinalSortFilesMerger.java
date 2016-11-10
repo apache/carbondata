@@ -97,6 +97,8 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
 
   private char[] aggType;
 
+  private boolean useKettle;
+
   /**
    * below code is to check whether dimension
    * is of no dictionary type or not
@@ -105,7 +107,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
 
   public SingleThreadFinalSortFilesMerger(String tempFileLocation, String tableName,
       int dimensionCount, int complexDimensionCount, int measureCount, int noDictionaryCount,
-      char[] aggType, boolean[] isNoDictionaryColumn) {
+      char[] aggType, boolean[] isNoDictionaryColumn, boolean useKettle) {
     this.tempFileLocation = tempFileLocation;
     this.tableName = tableName;
     this.dimensionCount = dimensionCount;
@@ -114,6 +116,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
     this.aggType = aggType;
     this.noDictionaryCount = noDictionaryCount;
     this.isNoDictionaryColumn = isNoDictionaryColumn;
+    this.useKettle = useKettle;
   }
 
   /**
@@ -178,7 +181,8 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
           // create chunk holder
           SortTempFileChunkHolder sortTempFileChunkHolder =
               new SortTempFileChunkHolder(tempFile, dimensionCount, complexDimensionCount,
-                  measureCount, fileBufferSize, noDictionaryCount, aggType, isNoDictionaryColumn);
+                  measureCount, fileBufferSize, noDictionaryCount, aggType, isNoDictionaryColumn,
+                  useKettle);
 
           // initialize
           sortTempFileChunkHolder.initialize();

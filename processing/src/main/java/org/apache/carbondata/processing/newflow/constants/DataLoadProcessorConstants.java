@@ -34,4 +34,12 @@ public final class DataLoadProcessorConstants {
 
   public static final String DIMENSION_LENGTHS = "DIMENSION_LENGTHS";
 
+  public static final String SERIALIZATION_NULL_FORMAT = "SERIALIZATION_NULL_FORMAT";
+
+  public static final String BAD_RECORDS_LOGGER_ENABLE = "BAD_RECORDS_LOGGER_ENABLE";
+
+  public static final String BAD_RECORDS_LOGGER_ACTION = "BAD_RECORDS_LOGGER_ACTION";
+
+  public static final String FACT_FILE_PATH = "FACT_FILE_PATH";
+
 }

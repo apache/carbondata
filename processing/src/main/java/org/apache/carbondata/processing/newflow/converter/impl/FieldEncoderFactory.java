@@ -18,11 +18,19 @@
  */
 package org.apache.carbondata.processing.newflow.converter.impl;
 
+import java.util.List;
+
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.processing.datatypes.ArrayDataType;
+import org.apache.carbondata.processing.datatypes.GenericDataType;
+import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
+import org.apache.carbondata.processing.datatypes.StructDataType;
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.converter.FieldConverter;
 
@@ -43,27 +51,83 @@ public class FieldEncoderFactory {
 
   /**
    * Creates the FieldConverter for all dimensions, for measures return null.
-   * @param dataField column schema
-   * @param cache dicionary cache.
+   *
+   * @param dataField             column schema
+   * @param cache                 dicionary cache.
    * @param carbonTableIdentifier table identifier
-   * @param index index of column in the row.
+   * @param index                 index of column in the row.
    * @return
    */
   public FieldConverter createFieldEncoder(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
-      CarbonTableIdentifier carbonTableIdentifier, int index) {
+      CarbonTableIdentifier carbonTableIdentifier, int index, String nullFormat) {
     // Converters are only needed for dimensions and measures it return null.
     if (dataField.getColumn().isDimesion()) {
-      if (dataField.getColumn().hasEncoding(Encoding.DICTIONARY)) {
-        return new DictionaryFieldConverterImpl(dataField, cache, carbonTableIdentifier, index);
-      } else if (dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-        return new DirectDictionaryFieldConverterImpl(dataField, index);
+      if (dataField.getColumn().hasEncoding(Encoding.DIRECT_DICTIONARY) &&
+          !dataField.getColumn().isComplex()) {
+        return new DirectDictionaryFieldConverterImpl(dataField, nullFormat, index);
+      } else if (dataField.getColumn().hasEncoding(Encoding.DICTIONARY) &&
+          !dataField.getColumn().isComplex()) {
+        return new DictionaryFieldConverterImpl(dataField, cache, carbonTableIdentifier, nullFormat,
+            index);
       } else if (dataField.getColumn().isComplex()) {
-        return new ComplexFieldConverterImpl();
+        return new ComplexFieldConverterImpl(
+            createComplexType(dataField, cache, carbonTableIdentifier), index);
       } else {
-        return new NonDictionaryFieldConverterImpl(dataField, index);
+        return new NonDictionaryFieldConverterImpl(dataField, nullFormat, index);
       }
+    } else {
+      return new MeasureFieldConverterImpl(dataField, nullFormat, index);
     }
-    return null;
+  }
+
+  /**
+   * Create parser for the carbon column.
+   */
+  private static GenericDataType createComplexType(DataField dataField,
+      Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
+      CarbonTableIdentifier carbonTableIdentifier) {
+    return createComplexType(dataField.getColumn(), dataField.getColumn().getColName(), cache,
+        carbonTableIdentifier);
+  }
+
+  /**
+   * This method may be called recursively if the carbon column is complex type.
+   *
+   * @return GenericDataType
+   */
+  private static GenericDataType createComplexType(CarbonColumn carbonColumn, String parentName,
+      Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
+      CarbonTableIdentifier carbonTableIdentifier) {
+    switch (carbonColumn.getDataType()) {
+      case ARRAY:
+        List<CarbonDimension> listOfChildDimensions =
+            ((CarbonDimension) carbonColumn).getListOfChildDimensions();
+        // Create array parser with complex delimiter
+        ArrayDataType arrayDataType =
+            new ArrayDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId());
+        for (CarbonDimension dimension : listOfChildDimensions) {
+          arrayDataType.addChildren(createComplexType(dimension, carbonColumn.getColName(), cache,
+              carbonTableIdentifier));
+        }
+        return arrayDataType;
+      case STRUCT:
+        List<CarbonDimension> dimensions =
+            ((CarbonDimension) carbonColumn).getListOfChildDimensions();
+        // Create struct parser with complex delimiter
+        StructDataType structDataType =
+            new StructDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId());
+        for (CarbonDimension dimension : dimensions) {
+          structDataType.addChildren(createComplexType(dimension, carbonColumn.getColName(), cache,
+              carbonTableIdentifier));
+        }
+        return structDataType;
+      case MAP:
+        throw new UnsupportedOperationException("Complex type Map is not supported yet");
+      default:
+        return new PrimitiveDataType(carbonColumn.getColName(), parentName,
+            carbonColumn.getColumnId(), (CarbonDimension) carbonColumn, cache,
+            carbonTableIdentifier);
+    }
   }
 }

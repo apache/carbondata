@@ -199,13 +199,49 @@ class CarbonSqlParser()
 
   override protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
 
-  protected lazy val startCommand: Parser[LogicalPlan] =
-    dropDatabaseCascade | loadManagement | describeTable | showLoads | alterTable | createTable
+  protected lazy val startCommand: Parser[LogicalPlan] = createDatabase | dropDatabase |
+    loadManagement | describeTable | showLoads | alterTable | createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] = deleteLoadsByID | deleteLoadsByLoadDate |
     cleanFiles | loadDataNew
 
   protected val escapedIdentifier = "`([^`]+)`".r
+
+  protected lazy val createDatabase: Parser[LogicalPlan] =
+    CREATE ~> (DATABASE | SCHEMA) ~> restInput ^^ {
+      case statement =>
+        val createDbSql = "CREATE DATABASE " + statement
+        var dbName = ""
+        // Get Ast node for create db command
+        val node = HiveQlWrapper.getAst(createDbSql)
+        node match {
+          // get dbname
+          case Token("TOK_CREATEDATABASE", children) =>
+            dbName = BaseSemanticAnalyzer.unescapeIdentifier(children(0).getText)
+        }
+        CreateDatabase(dbName, createDbSql)
+    }
+
+  protected lazy val dropDatabase: Parser[LogicalPlan] =
+    DROP ~> (DATABASE | SCHEMA) ~> restInput ^^ {
+      case statement =>
+        val dropDbSql = "DROP DATABASE " + statement
+        var dbName = ""
+        var isCascade = false
+        // Get Ast node for drop db command
+        val node = HiveQlWrapper.getAst(dropDbSql)
+        node match {
+          case Token("TOK_DROPDATABASE", children) =>
+            dbName = BaseSemanticAnalyzer.unescapeIdentifier(children(0).getText)
+            // check whether cascade drop db
+            children.collect {
+              case t@Token("TOK_CASCADE", _) =>
+                isCascade = true
+              case _ => // Unsupport features
+            }
+        }
+        DropDatabase(dbName, isCascade, dropDbSql)
+    }
 
   private def reorderDimensions(dims: Seq[Field]): Seq[Field] = {
     var complexDimensions: Seq[Field] = Seq()
@@ -933,9 +969,8 @@ class CarbonSqlParser()
             validateOptions(optionsList)
           }
           val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
-          val useKettle = optionsMap.getOrElse("USE_KETTLE", "true").toBoolean
           LoadTable(databaseNameOp, tableName, filePath, Seq(), optionsMap,
-            isOverwrite.isDefined, useKettle = useKettle)
+            isOverwrite.isDefined)
       }
 
   private def validateOptions(optionList: Option[List[(String, String)]]): Unit = {
@@ -1227,11 +1262,5 @@ class CarbonSqlParser()
           case plan: CreateTable => ExplainCommand(logicalPlan, extended = isExtended.isDefined)
           case _ => ExplainCommand(OneRowRelation)
       }
-    }
-
-  protected lazy val dropDatabaseCascade: Parser[LogicalPlan] =
-    DROP ~> (DATABASE|SCHEMA) ~> opt(IF ~> EXISTS) ~> ident ~> CASCADE <~ opt(";") ^^ {
-      case cascade => throw new MalformedCarbonCommandException(
-          "Unsupported cascade operation in drop database/schema command")
     }
 }

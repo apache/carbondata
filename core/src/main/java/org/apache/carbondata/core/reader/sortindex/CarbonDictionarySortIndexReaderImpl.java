@@ -53,7 +53,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
   protected ColumnIdentifier columnIdentifier;
 
   /**
-   * hdfs store location
+   * store location
    */
   protected String carbonStorePath;
 

@@ -18,8 +18,6 @@
  */
 package org.apache.carbondata.processing.newflow.parser.impl;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Pattern;
 
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -28,33 +26,38 @@ import org.apache.carbondata.processing.newflow.parser.ComplexParser;
 import org.apache.carbondata.processing.newflow.parser.GenericParser;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * It parses the string to @{@link ArrayObject} using delimiter.
  * It is thread safe as the state of class don't change while
- * calling @{@link GenericParser#parse(String)} method
+ * calling @{@link GenericParser#parse(Object)} method
  */
 public class ArrayParserImpl implements ComplexParser<ArrayObject> {
 
   private Pattern pattern;
 
-  private List<GenericParser> children = new ArrayList<>();
+  private GenericParser child;
 
-  public ArrayParserImpl(String delimiter) {
+  private String nullFormat;
+
+  public ArrayParserImpl(String delimiter, String nullFormat) {
     pattern = Pattern.compile(CarbonUtil.delimiterConverter(delimiter));
+    this.nullFormat = nullFormat;
   }
 
   @Override
-  public ArrayObject parse(String data) {
-    if (StringUtils.isNotEmpty(data)) {
-      String[] split = pattern.split(data, -1);
-      if (ArrayUtils.isNotEmpty(split)) {
-        Object[] array = new Object[children.size()];
-        for (int i = 0; i < children.size(); i++) {
-          array[i] = children.get(i).parse(split[i]);
+  public ArrayObject parse(Object data) {
+    if (data != null) {
+      String value = data.toString();
+      if (!value.isEmpty() && !value.equals(nullFormat)) {
+        String[] split = pattern.split(value, -1);
+        if (ArrayUtils.isNotEmpty(split)) {
+          Object[] array = new Object[split.length];
+          for (int i = 0; i < split.length; i++) {
+            array[i] = child.parse(split[i]);
+          }
+          return new ArrayObject(array);
         }
-        return new ArrayObject(array);
       }
     }
     return null;
@@ -62,6 +65,6 @@ public class ArrayParserImpl implements ComplexParser<ArrayObject> {
 
   @Override
   public void addChildren(GenericParser parser) {
-    children.add(parser);
+    child = parser;
   }
 }
