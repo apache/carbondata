@@ -26,7 +26,11 @@ import org.apache.carbondata.processing.newflow.row.CarbonRow;
  */
 public interface RowConverter {
 
+  void initialize();
+
   CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException;
+
+  RowConverter createCopyForNewThread();
 
   void finish();
 }

@@ -24,7 +24,7 @@ import java.io.File
 import org.apache.spark.sql.common.util.{CarbonHiveContext, QueryTest}
 import org.apache.spark.util.FileUtils
 
-import org.apache.carbondata.spark.load.CarbonLoadModel
+import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.util.GlobalDictionaryUtil
 
 /**

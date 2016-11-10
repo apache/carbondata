@@ -41,6 +41,7 @@ import org.apache.carbondata.processing.constants.DataProcessorConstants
 import org.apache.carbondata.processing.csvreaderstep.RddInputUtils
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator
+import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.DataLoadResult
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.splits.TableSplit
@@ -165,7 +166,6 @@ class SparkPartitionLoader(model: CarbonLoadModel,
  * @param sc                    The SparkContext to associate the RDD with.
  * @param result                Output result
  * @param carbonLoadModel       Carbon load model which contain the load info
- * @param storeLocation         Tmp store location
  * @param storePath             The store location
  * @param kettleHomePath        The kettle home path
  * @param partitioner           Partitioner which specify how to partition
@@ -182,7 +182,6 @@ class DataFileLoaderRDD[K, V](
     sc: SparkContext,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    var storeLocation: String,
     storePath: String,
     kettleHomePath: String,
     partitioner: Partitioner,
@@ -482,7 +481,6 @@ class DataFileLoaderRDD[K, V](
  * @param sc
  * @param result
  * @param carbonLoadModel
- * @param storeLocation
  * @param storePath
  * @param kettleHomePath
  * @param columinar
@@ -497,7 +495,6 @@ class DataFrameLoaderRDD[K, V](
     sc: SparkContext,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    var storeLocation: String,
     storePath: String,
     kettleHomePath: String,
     columinar: Boolean,

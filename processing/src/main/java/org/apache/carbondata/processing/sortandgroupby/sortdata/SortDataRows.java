@@ -151,11 +151,19 @@ public class SortDataRows {
       toSort = new Object[entryCount][];
       System.arraycopy(recordHolderList, 0, toSort, 0, entryCount);
 
-      if (parameters.getNoDictionaryCount() > 0) {
-        Arrays.sort(toSort, new RowComparator(parameters.getNoDictionaryDimnesionColumn(),
-            parameters.getNoDictionaryCount()));
+      if (parameters.isUseKettle()) {
+        if (parameters.getNoDictionaryCount() > 0) {
+          Arrays.sort(toSort, new RowComparator(parameters.getNoDictionaryDimnesionColumn(),
+              parameters.getNoDictionaryCount()));
+        } else {
+          Arrays.sort(toSort, new RowComparatorForNormalDims(parameters.getDimColCount()));
+        }
       } else {
-        Arrays.sort(toSort, new RowComparatorForNormalDims(parameters.getDimColCount()));
+        if (parameters.getNoDictionaryCount() > 0) {
+          Arrays.sort(toSort, new NewRowComparator(parameters.getNoDictionaryDimnesionColumn()));
+        } else {
+          Arrays.sort(toSort, new NewRowComparatorForNormalDims(parameters.getDimColCount()));
+        }
       }
       recordHolderList = toSort;
 
@@ -183,7 +191,11 @@ public class SortDataRows {
       writeSortTempFile(recordHolderList, entryCountLocal, file);
       return;
     }
-    writeData(recordHolderList, entryCountLocal, file);
+    if (parameters.isUseKettle()) {
+      writeData(recordHolderList, entryCountLocal, file);
+    } else {
+      writeDataWithOutKettle(recordHolderList, entryCountLocal, file);
+    }
   }
 
   private void writeSortTempFile(Object[][] recordHolderList, int entryCountLocal, File file)
@@ -204,6 +216,7 @@ public class SortDataRows {
     }
   }
 
+  // TODO Remove it after kettle got removed
   private void writeData(Object[][] recordHolderList, int entryCountLocal, File file)
       throws CarbonSortKeyAndGroupByException {
     DataOutputStream stream = null;
@@ -254,6 +267,72 @@ public class SortDataRows {
             stream.write((byte) 0);
           }
           fieldIndex++;
+        }
+      }
+    } catch (IOException e) {
+      throw new CarbonSortKeyAndGroupByException("Problem while writing the file", e);
+    } finally {
+      // close streams
+      CarbonUtil.closeStreams(stream);
+    }
+  }
+
+  private void writeDataWithOutKettle(Object[][] recordHolderList, int entryCountLocal, File file)
+      throws CarbonSortKeyAndGroupByException {
+    DataOutputStream stream = null;
+    try {
+      // open stream
+      stream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file),
+          parameters.getFileWriteBufferSize()));
+
+      // write number of entries to the file
+      stream.writeInt(entryCountLocal);
+      int complexDimColCount = parameters.getComplexDimColCount();
+      int dimColCount = parameters.getDimColCount() + complexDimColCount;
+      char[] aggType = parameters.getAggType();
+      boolean[] noDictionaryDimnesionMapping = parameters.getNoDictionaryDimnesionColumn();
+      Object[] row = null;
+      for (int i = 0; i < entryCountLocal; i++) {
+        // get row from record holder list
+        row = recordHolderList[i];
+        int dimCount = 0;
+        // write dictionary and non dictionary dimensions here.
+        for (; dimCount < noDictionaryDimnesionMapping.length; dimCount++) {
+          if (noDictionaryDimnesionMapping[dimCount]) {
+            byte[] col = (byte[]) row[dimCount];
+            stream.writeShort(col.length);
+            stream.write(col);
+          } else {
+            stream.writeInt((int)row[dimCount]);
+          }
+        }
+        // write complex dimensions here.
+        for (; dimCount < dimColCount; dimCount++) {
+          byte[] value = (byte[])row[dimCount];
+          stream.writeShort(value.length);
+          stream.write(value);
+        }
+        // as measures are stored in separate array.
+        for (int mesCount = 0;
+             mesCount < parameters.getMeasureColCount(); mesCount++) {
+          Object value = row[mesCount + dimColCount];
+          if (null != value) {
+            stream.write((byte) 1);
+            if (aggType[mesCount] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+              Double val = (Double) value;
+              stream.writeDouble(val);
+            } else if (aggType[mesCount] == CarbonCommonConstants.BIG_INT_MEASURE) {
+              Long val = (Long) value;
+              stream.writeLong(val);
+            } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
+              BigDecimal val = (BigDecimal) value;
+              byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
+              stream.writeInt(bigDecimalInBytes.length);
+              stream.write(bigDecimalInBytes);
+            }
+          } else {
+            stream.write((byte) 0);
+          }
         }
       }
     } catch (IOException e) {
@@ -339,14 +418,25 @@ public class SortDataRows {
     @Override public Void call() throws Exception {
       try {
         long startTime = System.currentTimeMillis();
-        if (parameters.getNoDictionaryCount() > 0) {
-          Arrays.sort(recordHolderArray,
-              new RowComparator(parameters.getNoDictionaryDimnesionColumn(),
-                  parameters.getNoDictionaryCount()));
+        if (parameters.isUseKettle()) {
+          if (parameters.getNoDictionaryCount() > 0) {
+            Arrays.sort(recordHolderArray,
+                new RowComparator(parameters.getNoDictionaryDimnesionColumn(),
+                    parameters.getNoDictionaryCount()));
+          } else {
+            Arrays.sort(recordHolderArray,
+                new RowComparatorForNormalDims(parameters.getDimColCount()));
+          }
         } else {
-          Arrays
-              .sort(recordHolderArray, new RowComparatorForNormalDims(parameters.getDimColCount()));
+          if (parameters.getNoDictionaryCount() > 0) {
+            Arrays.sort(recordHolderArray,
+                new NewRowComparator(parameters.getNoDictionaryDimnesionColumn()));
+          } else {
+            Arrays.sort(recordHolderArray,
+                new NewRowComparatorForNormalDims(parameters.getDimColCount()));
+          }
         }
+
         // create a new file every time
         File sortTempFile = new File(
             parameters.getTempFileLocation() + File.separator + parameters.getTableName() + System

@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
@@ -35,7 +36,7 @@ import org.pentaho.di.core.exception.KettleException;
  * Generic DataType interface which will be used while data loading for complex types like Array &
  * Struct
  */
-public interface GenericDataType {
+public interface GenericDataType<T> {
 
   /**
    * @return name of the column
@@ -76,6 +77,14 @@ public interface GenericDataType {
   void parseStringAndWriteByteArray(String tableName, String inputString, String[] delimiter,
       int delimiterIndex, DataOutputStream dataOutputStream,
       CarbonCSVBasedDimSurrogateKeyGen surrogateKeyGen) throws KettleException, IOException;
+
+  /**
+   * writes to byte stream
+   * @param dataOutputStream
+   * @throws IOException
+   */
+  void writeByteArray(T input, DataOutputStream dataOutputStream)
+      throws IOException, DictionaryGenerationException;
 
   /**
    * @return surrogateIndex for primitive column in complex type
@@ -151,4 +160,11 @@ public interface GenericDataType {
    * @param maxSurrogateKeyArray
    */
   void fillCardinalityAfterDataLoad(List<Integer> dimCardWithComplex, int[] maxSurrogateKeyArray);
+
+  /**
+   * Fill the cardinality of the primitive datatypes
+   * @param dimCardWithComplex
+   */
+  void fillCardinality(List<Integer> dimCardWithComplex);
+
 }

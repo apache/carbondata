@@ -263,6 +263,15 @@ public class RemoveDictionaryUtil {
 
   }
 
+  public static void prepareOutObj(Object[] out, int[] dimArray, byte[][] byteBufferArr,
+      Object[] measureArray) {
+
+    out[IgnoreDictionary.DIMENSION_INDEX_IN_ROW.getIndex()] = dimArray;
+    out[IgnoreDictionary.BYTE_ARRAY_INDEX_IN_ROW.getIndex()] = byteBufferArr;
+    out[IgnoreDictionary.MEASURES_INDEX_IN_ROW.getIndex()] = measureArray;
+
+  }
+
   /**
    * @param row
    * @return

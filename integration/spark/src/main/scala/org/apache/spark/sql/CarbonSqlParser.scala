@@ -969,9 +969,8 @@ class CarbonSqlParser()
             validateOptions(optionsList)
           }
           val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
-          val useKettle = optionsMap.getOrElse("USE_KETTLE", "true").toBoolean
           LoadTable(databaseNameOp, tableName, filePath, Seq(), optionsMap,
-            isOverwrite.isDefined, useKettle = useKettle)
+            isOverwrite.isDefined)
       }
 
   private def validateOptions(optionList: Option[List[(String, String)]]): Unit = {

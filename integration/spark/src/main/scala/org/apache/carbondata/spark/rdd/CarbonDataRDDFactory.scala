@@ -27,12 +27,13 @@ import scala.util.Random
 import scala.util.control.Breaks._
 
 import org.apache.hadoop.conf.{Configurable, Configuration}
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{util => _, _}
 import org.apache.spark.sql.{CarbonEnv, DataFrame, SQLContext}
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel, CompactionModel, Partitioner}
-import org.apache.spark.sql.hive.{DistributionUtil}
+import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.util.{FileUtils, SplitUtils}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -47,6 +48,8 @@ import org.apache.carbondata.integration.spark.merger.{CarbonCompactionUtil, Com
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.etl.DataLoadingException
+import org.apache.carbondata.processing.model.CarbonLoadModel
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
 import org.apache.carbondata.spark._
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.merger.CarbonDataMergerUtil
@@ -660,16 +663,15 @@ object CarbonDataRDDFactory extends Logging {
 
   def loadCarbonData(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
-      storeLocation: String,
       storePath: String,
       kettleHomePath: String,
       partitioner: Partitioner,
       columinar: Boolean,
-      isAgg: Boolean,
       partitionStatus: String = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS,
+      useKettle: Boolean,
       dataFrame: Option[DataFrame] = None): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-
+    val isAgg = false
     // for handling of the segment Merging.
     def handleSegmentMerging(tableCreationTime: Long): Unit = {
       logger
@@ -761,6 +763,11 @@ object CarbonDataRDDFactory extends Logging {
         .audit("Data load request has been received for table " + carbonLoadModel
           .getDatabaseName + "." + carbonLoadModel.getTableName
         )
+      if (!useKettle) {
+        logger.audit("Data is loading with New Data Flow for table " + carbonLoadModel
+            .getDatabaseName + "." + carbonLoadModel.getTableName
+          )
+      }
       // Check if any load need to be deleted before loading new data
       deleteLoadsAndUpdateMetadata(carbonLoadModel, carbonTable, partitioner, storePath,
         isForceDeletion = false)
@@ -938,7 +945,7 @@ object CarbonDataRDDFactory extends Logging {
             val blockDetailsList =
               entry._2.asScala.map(distributable => {
                 val tableBlock = distributable.asInstanceOf[TableBlockInfo]
-                new BlockDetails(tableBlock.getFilePath,
+                new BlockDetails(new Path(tableBlock.getFilePath),
                   tableBlock.getBlockOffset, tableBlock.getBlockLength, tableBlock.getLocations
                 )
               }).toArray
@@ -947,20 +954,29 @@ object CarbonDataRDDFactory extends Logging {
           ).toArray
         }
 
-        status = new DataFileLoaderRDD(sqlContext.sparkContext,
-              new DataLoadResultImpl(),
-              carbonLoadModel,
-              storeLocation,
-          storePath,
-              kettleHomePath,
-              partitioner,
-              columinar,
-              currentLoadCount,
-              tableCreationTime,
-              schemaLastUpdatedTime,
-              blocksGroupBy,
-              isTableSplitPartition
-            ).collect()
+        if (useKettle) {
+          status = new DataFileLoaderRDD(sqlContext.sparkContext,
+            new DataLoadResultImpl(),
+            carbonLoadModel,
+            storePath,
+            kettleHomePath,
+            partitioner,
+            columinar,
+            currentLoadCount,
+            tableCreationTime,
+            schemaLastUpdatedTime,
+            blocksGroupBy,
+            isTableSplitPartition
+          ).collect()
+        } else {
+          status = new NewCarbonDataLoadRDD(sqlContext.sparkContext,
+            new DataLoadResultImpl(),
+            carbonLoadModel,
+            partitioner,
+            currentLoadCount,
+            blocksGroupBy,
+            isTableSplitPartition).collect()
+        }
       }
 
       def loadDataFrame(): Unit = {
@@ -972,7 +988,6 @@ object CarbonDataRDDFactory extends Logging {
         status = new DataFrameLoaderRDD(sqlContext.sparkContext,
           new DataLoadResultImpl(),
           carbonLoadModel,
-          storeLocation,
           storePath,
           kettleHomePath,
           columinar,
@@ -1028,7 +1043,8 @@ object CarbonDataRDDFactory extends Logging {
           loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
           ex match {
             case sparkException: SparkException =>
-              if (sparkException.getCause.isInstanceOf[DataLoadingException]) {
+              if (sparkException.getCause.isInstanceOf[DataLoadingException] ||
+                  sparkException.getCause.isInstanceOf[CarbonDataLoadingException]) {
                 executorMessage = sparkException.getCause.getMessage
                 errorMessage = errorMessage + ": " + executorMessage
               }

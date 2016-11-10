@@ -56,6 +56,7 @@ import org.apache.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
+import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.CarbonSparkFactory
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.load._
@@ -1026,33 +1027,6 @@ case class LoadTable(
     options: scala.collection.immutable.Map[String, String],
     isOverwriteExist: Boolean = false,
     var inputSqlString: String = null,
-    dataFrame: Option[DataFrame] = None,
-    useKettle: Boolean = true) extends RunnableCommand {
-
-  def run(sqlContext: SQLContext): Seq[Row] = {
-    if (useKettle) {
-      LoadTableUsingKettle(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
-        options, isOverwriteExist, inputSqlString, dataFrame).run(sqlContext)
-    } else {
-      LoadTableUsingProcessorStep().run(sqlContext)
-    }
-  }
-}
-
-case class LoadTableUsingProcessorStep() extends RunnableCommand {
-  def run(sqlContext: SQLContext): Seq[Row] = {
-    throw new UnsupportedOperationException("work in progress")
-  }
-}
-
-case class LoadTableUsingKettle(
-    databaseNameOp: Option[String],
-    tableName: String,
-    factPathFromUser: String,
-    dimFilesPath: Seq[DataLoadTableFileMapping],
-    options: scala.collection.immutable.Map[String, String],
-    isOverwriteExist: Boolean = false,
-    var inputSqlString: String = null,
     dataFrame: Option[DataFrame] = None) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -1112,23 +1086,27 @@ case class LoadTableUsingKettle(
       val dataLoadSchema = new CarbonDataLoadSchema(table)
       // Need to fill dimension relation
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
-      var storeLocation = ""
       val configuredStore = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
-      if (null != configuredStore && configuredStore.nonEmpty) {
-        storeLocation = configuredStore(Random.nextInt(configuredStore.length))
-      }
-      if (storeLocation == null) {
-        storeLocation = System.getProperty("java.io.tmpdir")
-      }
 
       var partitionLocation = relation.tableMeta.storePath + "/partition/" +
                               relation.tableMeta.carbonTableIdentifier.getDatabaseName + "/" +
                               relation.tableMeta.carbonTableIdentifier.getTableName + "/"
 
-      storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
       val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
       val kettleHomePath = CarbonScalaUtil.getKettleHome(sqlContext)
+
+      // TODO It will be removed after kettle is removed.
+      val useKettle = options.get("use_kettle") match {
+        case Some(value) => value.toBoolean
+        case _ =>
+          val useKettleLocal = System.getProperty("use.kettle")
+          if (useKettleLocal == null) {
+            sqlContext.sparkContext.getConf.get("use_kettle_default", "true").toBoolean
+          } else {
+            useKettleLocal.toBoolean
+          }
+      }
 
       val delimiter = options.getOrElse("delimiter", ",")
       val quoteChar = options.getOrElse("quotechar", "\"")
@@ -1198,10 +1176,15 @@ case class LoadTableUsingKettle(
         GlobalDictionaryUtil
           .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.tableMeta.storePath,
             dataFrame)
-        CarbonDataRDDFactory
-          .loadCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.tableMeta.storePath,
+        CarbonDataRDDFactory.loadCarbonData(sqlContext,
+            carbonLoadModel,
+            relation.tableMeta.storePath,
             kettleHomePath,
-            relation.tableMeta.partitioner, columinar, isAgg = false, partitionStatus, dataFrame)
+            relation.tableMeta.partitioner,
+            columinar,
+            partitionStatus,
+            useKettle,
+            dataFrame)
       }
       catch {
         case ex: Exception =>

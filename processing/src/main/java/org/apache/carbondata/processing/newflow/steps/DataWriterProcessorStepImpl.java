@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.processing.newflow.steps.writer;
+package org.apache.carbondata.processing.newflow.steps;
 
 import java.io.File;
 import java.util.Iterator;
@@ -49,9 +49,6 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataWriterProcessorStepImpl.class.getName());
 
-  private String storeLocation;
-
-
   private SegmentProperties segmentProperties;
 
   private KeyGenerator keyGenerator;
@@ -74,6 +71,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   private int dimsArrayIndex = IgnoreDictionary.DIMENSION_INDEX_IN_ROW.getIndex();
 
+  private String storeLocation;
+
   public DataWriterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
     super(configuration, child);
@@ -86,19 +85,19 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   @Override
   public void initialize() throws CarbonDataLoadingException {
+    child.initialize();
     CarbonTableIdentifier tableIdentifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
 
-    String storeLocation = CarbonDataProcessorUtil
+    storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
             tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()),
             configuration.getPartitionId(), configuration.getSegmentId() + "", false);
 
-    if (!(new File(storeLocation).exists())) {
+    if (!(new File(storeLocation).mkdirs())) {
       LOGGER.error("Local data load folder location does not exist: " + storeLocation);
       return;
     }
-
   }
 
   @Override
@@ -107,7 +106,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     String tableName = configuration.getTableIdentifier().getCarbonTableIdentifier().getTableName();
     try {
       CarbonFactDataHandlerModel dataHandlerModel =
-          CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(configuration);
+          CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(configuration, storeLocation);
       noDictionaryCount = dataHandlerModel.getNoDictionaryCount();
       complexDimensionCount = configuration.getComplexDimensionCount();
       measureCount = dataHandlerModel.getMeasureCount();
@@ -119,8 +118,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
           .recordDictionaryValue2MdkAdd2FileTime(configuration.getPartitionId(),
               System.currentTimeMillis());
-      for (int i = 0; i < iterators.length; i++) {
-        Iterator<CarbonRowBatch> iterator = iterators[i];
+      for (Iterator<CarbonRowBatch> iterator : iterators) {
         while (iterator.hasNext()) {
           processBatch(iterator.next());
         }
@@ -133,16 +131,19 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     } catch (Exception e) {
       LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterProcessorStepImpl");
       throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage());
-    } finally {
-      try {
-        dataHandler.finish();
-      } catch (CarbonDataWriterException e) {
-        LOGGER.error(e, "Failed for table: " + tableName + " in  finishing data handler");
-      } catch (Exception e) {
-        LOGGER.error(e, "Failed for table: " + tableName + " in  finishing data handler");
-      }
     }
-    LOGGER.info("Record Procerssed For table: " + tableName);
+    return null;
+  }
+
+  @Override
+  public void close() {
+    String tableName = configuration.getTableIdentifier().getCarbonTableIdentifier().getTableName();
+    try {
+      dataHandler.finish();
+    } catch (Exception e) {
+      LOGGER.error(e, "Failed for table: " + tableName + " in  finishing data handler");
+    }
+    LOGGER.info("Record Processed For table: " + tableName);
     String logMessage =
         "Finished Carbon DataWriterProcessorStepImpl: Read: " + readCounter + ": Write: "
             + writeCounter;
@@ -154,13 +155,6 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
             System.currentTimeMillis());
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
         .recordMdkGenerateTotalTime(configuration.getPartitionId(), System.currentTimeMillis());
-
-    return null;
-  }
-
-  @Override
-  public void close() {
-
   }
 
   private void processingComplete() throws CarbonDataLoadingException {
@@ -183,7 +177,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       while (iterator.hasNext()) {
         CarbonRow row = iterator.next();
         readCounter++;
-        Object[] outputRow = null;
+        Object[] outputRow;
         // adding one for the high cardinality dims byte array.
         if (noDictionaryCount > 0 || complexDimensionCount > 0) {
           outputRow = new Object[measureCount + 1 + 1];
@@ -197,10 +191,10 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
         for (int i = 0; i < measureCount; i++) {
           outputRow[l++] = measures[index++];
         }
-        outputRow[l] = row.getBinary(noDimByteArrayIndex);
+        outputRow[l] = row.getObject(noDimByteArrayIndex);
 
         int[] highCardExcludedRows = new int[segmentProperties.getDimColumnsCardinality().length];
-        Integer[] dimsArray = row.getIntegerArray(dimsArrayIndex);
+        int[] dimsArray = row.getIntArray(dimsArrayIndex);
         for (int i = 0; i < highCardExcludedRows.length; i++) {
           highCardExcludedRows[i] = dimsArray[i];
         }

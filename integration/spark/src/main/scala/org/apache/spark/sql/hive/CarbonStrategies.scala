@@ -228,12 +228,12 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       case ShowLoadsCommand(databaseName, table, limit) =>
         ExecutedCommand(ShowLoads(databaseName, table, limit, plan.output)) :: Nil
       case LoadTable(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
-      options, isOverwriteExist, inputSqlString, dataFrame, useKettle) =>
+      options, isOverwriteExist, inputSqlString, dataFrame) =>
         val isCarbonTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
             .tableExists(TableIdentifier(tableName, databaseNameOp))(sqlContext)
         if (isCarbonTable || options.nonEmpty) {
           ExecutedCommand(LoadTable(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
-            options, isOverwriteExist, inputSqlString, dataFrame, useKettle)) :: Nil
+            options, isOverwriteExist, inputSqlString, dataFrame)) :: Nil
         } else {
           ExecutedCommand(HiveNativeCommand(inputSqlString)) :: Nil
         }

@@ -36,6 +36,11 @@ public class CarbonWriteDataHolder {
   private byte[][] byteValues;
 
   /**
+   * byteValues for no dictionary and non kettle flow.
+   */
+  private byte[][][] byteValuesForNonDictionary;
+
+  /**
    * byteValues
    */
   private byte[][][] columnByteValues;
@@ -69,6 +74,7 @@ public class CarbonWriteDataHolder {
 
   /**
    * Method to initialise double array
+   * TODO Remove after kettle flow got removed.
    *
    * @param size
    */
@@ -79,6 +85,27 @@ public class CarbonWriteDataHolder {
 
     byteValues = new byte[size][];
     columnByteValues = new byte[size][][];
+  }
+
+  /**
+   * Method to initialise byte array
+   *
+   * @param size
+   */
+  public void initialiseByteArrayValuesWithOutKettle(int size) {
+    if (size < 1) {
+      throw new IllegalArgumentException("Invalid array size");
+    }
+
+    byteValues = new byte[size][];
+  }
+
+  public void initialiseByteArrayValuesForNonDictionary(int size) {
+    if (size < 1) {
+      throw new IllegalArgumentException("Invalid array size");
+    }
+
+    byteValuesForNonDictionary = new byte[size][][];
   }
 
   /**
@@ -127,6 +154,12 @@ public class CarbonWriteDataHolder {
     if (null != value) totalSize += value.length;
   }
 
+  public void setWritableNonDictByteArrayValueByIndex(int index, byte[][] value) {
+    byteValuesForNonDictionary[index] = value;
+    size++;
+    if (null != value) totalSize += value.length;
+  }
+
   /**
    * set byte array value by index
    */
@@ -170,6 +203,15 @@ public class CarbonWriteDataHolder {
       byteValues = temp;
     }
     return byteValues;
+  }
+
+  public byte[][][] getNonDictByteArrayValues() {
+    if (size < byteValuesForNonDictionary.length) {
+      byte[][][] temp = new byte[size][][];
+      System.arraycopy(byteValuesForNonDictionary, 0, temp, 0, size);
+      byteValuesForNonDictionary = temp;
+    }
+    return byteValuesForNonDictionary;
   }
 
   /**

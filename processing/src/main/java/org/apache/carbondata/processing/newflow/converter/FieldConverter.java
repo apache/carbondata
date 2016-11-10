@@ -30,7 +30,9 @@ public interface FieldConverter {
   /**
    * It converts the column field and updates the data in same location/index in row.
    * @param row
+   * @return the status whether it could be loaded or not, usually when record is added
+   * to bad records then it returns false.
    * @throws CarbonDataLoadingException
    */
-  void convert(CarbonRow row) throws CarbonDataLoadingException;
+  void convert(CarbonRow row, BadRecordLogHolder logHolder) throws CarbonDataLoadingException;
 }
