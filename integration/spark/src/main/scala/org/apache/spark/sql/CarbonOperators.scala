@@ -39,6 +39,7 @@ case class CarbonScan(
     var attributesRaw: Seq[Attribute],
     relationRaw: CarbonRelation,
     dimensionPredicatesRaw: Seq[Expression],
+    segmentId: Int = -1,
     useUnsafeCoversion: Boolean = true)(@transient val ocRaw: SQLContext) extends LeafNode {
   val carbonTable = relationRaw.metaData.carbonTable
   val selectedDims = scala.collection.mutable.MutableList[QueryDimension]()
@@ -137,7 +138,7 @@ case class CarbonScan(
   }
 
 
-  def inputRdd: CarbonScanRDD[Array[Any]] = {
+  def inputRdd(segmentId: Int): CarbonScanRDD[Array[Any]] = {
 
     val conf = new Configuration()
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
@@ -159,7 +160,9 @@ case class CarbonScan(
       conf,
       tableCreationTime,
       schemaLastUpdatedTime,
-      carbonCatalog.storePath)
+      carbonCatalog.storePath,
+      segmentId
+    )
     big
   }
 
@@ -169,7 +172,7 @@ case class CarbonScan(
 
   override def doExecute(): RDD[InternalRow] = {
     val outUnsafeRows: Boolean = (attributesNeedToDecode.size() == 0) && useUnsafeCoversion
-    inputRdd.mapPartitions { iter =>
+    inputRdd(segmentId).mapPartitions { iter =>
       val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)
       new Iterator[InternalRow] {
         override def hasNext: Boolean = iter.hasNext

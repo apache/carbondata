@@ -57,11 +57,12 @@ import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.CarbonLoadModel
-import org.apache.carbondata.spark.CarbonSparkFactory
+import org.apache.carbondata.spark.{CarbonDataFrameWriter, CarbonSparkFactory}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil, GlobalDictionaryUtil}
+
 
 case class tableModel(
     ifNotExistsSet: Boolean,
@@ -1373,6 +1374,40 @@ private[sql] case class ShowLoads(
     }
   }
 
+}
+
+private[sql] case class CreateCarbonTableAsSelect(
+    databaseName: Option[String],
+    tableName: String,
+    allowExisting: Boolean,
+    createSql: String) extends RunnableCommand {
+
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
+  override def run(sqlContext: SQLContext): Seq[Row] = {
+    val dbName = getDB.getDatabaseName(databaseName, sqlContext)
+    // split first to make sure getting the exact SELECT index
+    val queryTokens = createSql.split("\\s+")
+    val selectIndex = queryTokens.indexWhere(_.equalsIgnoreCase("SELECT"))
+    val subQuery = new Array[String](queryTokens.length - selectIndex)
+    Array.copy(queryTokens, selectIndex, subQuery, 0, subQuery.length)
+    var subLogicalPlan = sqlContext.parseSql(subQuery.mkString(" "))
+    // check whether is for creating aggregation table
+    val (factTable, aggFlag) = tableName.splitAt(tableName.indexOf("_"))
+    val tableExists = CarbonEnv.getInstance(sqlContext).carbonCatalog
+      .tableExists(TableIdentifier(factTable, databaseName))(sqlContext)
+    if (tableExists &&
+      aggFlag.split("_")(1).equals(CarbonCommonConstants.AGG_TABLE_FLAG)) {
+      LOGGER.info(s"Create aggregation table: $tableName for factable: $factTable")
+      subLogicalPlan = AddSegmentId(0, subLogicalPlan)
+    }
+    val dataFrame = DataFrame(sqlContext, subLogicalPlan)
+    val options = Map("dbName" -> dbName,
+      "tableName" -> tableName,
+    "allowExisting" -> allowExisting.toString)
+    new CarbonDataFrameWriter(dataFrame).saveAsCarbonFile(options.toMap)
+    Seq.empty
+  }
 }
 
 private[sql] case class DescribeCommandFormatted(
