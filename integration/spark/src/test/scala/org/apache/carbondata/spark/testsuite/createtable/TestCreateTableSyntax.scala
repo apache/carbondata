@@ -19,11 +19,12 @@
 
 package org.apache.carbondata.spark.testsuite.createtable
 
+import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.{CarbonContext, Row}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-
 import org.scalatest.BeforeAndAfterAll
 
 /**
@@ -179,6 +180,55 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
       case e : MalformedCarbonCommandException => {
         assert(e.getMessage.equals("Table properties is repeated: dictionary_include,dictionary_exclude"))
       }
+    }
+  }
+  test("Create carbon table as select from other table") {
+    try {
+      // create and load into hive table
+      sql("CREATE TABLE IF NOT EXISTS otherHiveTable (ID Int, date Timestamp, country String," +
+        "name String, phonetype String, serialname String, salary Int) " +
+        "row format delimited fields terminated by ','")
+      sql("LOAD DATA LOCAL INPATH './src/test/resources/data2.csv' INTO TABLE " +
+        "otherHiveTable")
+      // create and load into carbon table
+      sql("CREATE TABLE IF NOT EXISTS otherCarbonTable (ID Int, date Timestamp, country String," +
+        "name String, phonetype String, serialname String, salary Int) " +
+        "STORED BY 'carbondata'")
+      sql("LOAD DATA LOCAL INPATH './src/test/resources/data2.csv' INTO TABLE " +
+        "otherCarbonTable")
+      // create as select from hive table
+      sql("CREATE TABLE IF NOT EXISTS carbonFromHive STORED BY 'carbondata' as SELECT * FROM otherHiveTable")
+      // create as select from carbon table
+      sql("CREATE TABLE IF NOT EXISTS carbonFromCarbon STORED BY 'carbondata' as SELECT * FROM otherCarbonTable")
+      // test when table name contains keywords 'select'
+      sql("CREATE TABLE IF NOT EXISTS selectTable STORED BY 'carbondata' as SELECT * FROM OtherHiveTable")
+      // test create as select with table properties
+      sql("CREATE TABLE IF NOT EXISTS carbonWithTblpro STORED BY 'carbondata'" +
+        " TBLPROPERTIES('DICTIONARY_INCLUDE'='ID','DICTIONARY_EXCLUDE'='phonetype') " +
+        "as SELECT * FROM OtherHiveTable")
+      // compare with original table
+      checkAnswer(sql("SELECT salary FROM carbonFromHive order by phonetype"),
+        sql("SELECT salary FROM otherHiveTable order by phonetype"))
+      checkAnswer(sql("SELECT salary FROM carbonFromCarbon order by phonetype"),
+        sql("SELECT salary FROM otherCarbonTable order by phonetype"))
+      // check whether tableproeprties works
+      val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
+        .getCarbonTable("default" + CarbonCommonConstants.UNDERSCORE + "carbonWithtblpro")
+      assert(carbonTable.getDimensionByName("carbonwithtblpro", "id").
+        hasEncoding(Encoding.DICTIONARY))
+      assert(!carbonTable.getDimensionByName("carbonwithtblpro", "phonetype").
+        hasEncoding(Encoding.DICTIONARY))
+      sql("drop table if exists hivetable")
+      sql("drop table if exists otherCarbonTable")
+      sql("drop table if exists carbonFromHive")
+      sql("drop table if exists carbonFromCarbon")
+      sql("drop table if exists selectTable")
+      sql("drop table if exists carbonwithtblpro")
+
+    } catch {
+      case ex: Exception =>
+        throw ex
+        assert(false)
     }
   }
 

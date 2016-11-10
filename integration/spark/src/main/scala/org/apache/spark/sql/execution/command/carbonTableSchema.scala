@@ -48,9 +48,12 @@ import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.CarbonLoadModel
+import org.apache.carbondata.spark.{CarbonDataFrameWriter, CarbonSparkFactory}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DataManagementFunc, DataManagementFunc$, DictionaryLoadModel}
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil, GlobalDictionaryUtil}
+
 
 /**
  * Command for the compaction in alter table command
@@ -705,6 +708,33 @@ private[sql] case class ShowLoads(
     }
   }
 
+}
+
+private[sql] case class CreateCarbonTableAsSelect(
+    databaseName: Option[String],
+    tableName: String,
+    allowExisting: Boolean,
+    tableProperties: Map[String, String],
+    createSql: String) extends RunnableCommand {
+
+  override def run(sqlContext: SQLContext): Seq[Row] = {
+    val dbName = getDB.getDatabaseName(databaseName, sqlContext)
+    // split first to make sure getting the exact SELECT index
+    val queryTokens = createSql.split("\\s+")
+    val selectIndex = queryTokens.indexWhere(_.equalsIgnoreCase("SELECT"))
+    val subQuery = new Array[String](queryTokens.length - selectIndex)
+    Array.copy(queryTokens, selectIndex, subQuery, 0, subQuery.length)
+    val dataFrame = sqlContext.sql(subQuery.mkString(" "))
+    val properties = tableProperties.map { property =>
+      s"'${property._1}' = '${property._2}'"
+    }.mkString(",")
+    val options = Map("dbName" -> dbName,
+      "tableName" -> tableName,
+      "allowExisting" -> allowExisting.toString,
+      "tblproperties" -> properties)
+    new CarbonDataFrameWriter(dataFrame).saveAsCarbonFile(options)
+    Seq.empty
+  }
 }
 
 private[sql] case class DescribeCommandFormatted(

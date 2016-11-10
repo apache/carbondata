@@ -118,6 +118,7 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
 
   /**
    * Loading DataFrame directly without saving DataFrame to CSV files.
+   *
    * @param options
    * @param cc
    */
@@ -156,10 +157,24 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
     val carbonSchema = schema.map { field =>
       s"${ field.name } ${ convertToCarbonType(field.dataType) }"
     }
+    val ifNotExists =
+      if (options.allowExisting.toBoolean) {
+        "IF NOT EXISTS"
+      } else {
+        ""
+      }
+    val tblProperties =
+      if (options.tblProperties != "") {
+        s"TBLPROPERTIES(${options.tblProperties})"
+      } else {
+        ""
+      }
+
     s"""
-          CREATE TABLE IF NOT EXISTS ${options.dbName}.${options.tableName}
+          CREATE TABLE $ifNotExists ${options.dbName}.${options.tableName}
           (${ carbonSchema.mkString(", ") })
           STORED BY '${ CarbonContext.datasourceName }'
+          $tblProperties
       """
   }
 
