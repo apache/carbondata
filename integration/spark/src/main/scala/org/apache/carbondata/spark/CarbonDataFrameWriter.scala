@@ -60,7 +60,8 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
    */
   private def loadTempCSV(options: CarbonOption, cc: CarbonContext): Unit = {
     // temporary solution: write to csv file, then load the csv into carbon
-    val tempCSVFolder = "./tempCSV"
+    val storePath = CarbonEnv.getInstance(cc).carbonCatalog.storePath
+    val tempCSVFolder = storePath + "/tempCSV" + options.tableIdentifier + System.nanoTime()
     writeToTempCSVFile(tempCSVFolder, options)
 
     val tempCSVPath = new Path(tempCSVFolder)
