@@ -1,0 +1,104 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.carbondata.core.carbon;
+
+
+import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.Map;
+
+
+public class ColumnIdentifierTest {
+
+    static ColumnIdentifier columnIdentifier;
+    static Map<String, String> columnProperties;
+
+    @BeforeClass
+    public static void setup() {
+        columnProperties = new HashMap<String, String>();
+        columnProperties.put("key","value");
+        columnIdentifier = new ColumnIdentifier("columnId", columnProperties, DataType.INT);
+    }
+
+    @Test
+    public void hashCodeTest() {
+        int res = columnIdentifier.hashCode();
+        assert (res == -623419600);
+    }
+
+    @Test
+    public void equalsTestwithSameObject() {
+        Boolean res = columnIdentifier.equals(columnIdentifier);
+        assert (res);
+    }
+
+    @Test
+    public void equalsTestwithSimilarObject() {
+        ColumnIdentifier columnIdentifierTest = new ColumnIdentifier("columnId", columnProperties, DataType.INT);
+        Boolean res = columnIdentifier.equals(columnIdentifierTest);
+        assert (res);
+    }
+
+    @Test
+    public void equalsTestwithNullObject() {
+        Boolean res = columnIdentifier.equals(null);
+        assert (!res);
+    }
+
+    @Test
+    public void equalsTestwithStringObject() {
+        Boolean res = columnIdentifier.equals("String Object");
+        assert (!res);
+    }
+
+    @Test
+    public void equalsTestwithNullColumnId() {
+        ColumnIdentifier columnIdentifierTest = new ColumnIdentifier(null, columnProperties, DataType.INT);
+        Boolean res = columnIdentifierTest.equals(columnIdentifier);
+        assert (!res );
+    }
+
+    @Test
+    public void equalsTestwithDiffColumnId() {
+        ColumnIdentifier columnIdentifierTest = new ColumnIdentifier("diffColumnId", columnProperties, DataType.INT);
+        Boolean res = columnIdentifierTest.equals(columnIdentifier);
+        assert (!res);
+    }
+
+    @Test
+    public void toStringTest(){
+        String res = columnIdentifier.toString();
+        assert (res.equals("ColumnIdentifier [columnId=columnId]"));
+    }
+
+    @Test
+    public void getColumnPropertyTest(){
+        ColumnIdentifier columnIdentifierTest = new ColumnIdentifier("diffColumnId", null, DataType.INT);
+        String res = columnIdentifierTest.getColumnProperty("key");
+        assert (res == null);
+    }
+
+    @Test
+    public void getColumnPropertyTestwithNull(){
+        assert (columnIdentifier.getColumnProperty("key").equals("value"));
+    }
+}
