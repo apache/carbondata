@@ -19,9 +19,9 @@
 
 package org.apache.carbondata.core.carbon.datastore.chunk.impl;
 
-
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -29,49 +29,46 @@ import java.util.Arrays;
 
 public class FixedLengthDimensionDataChunkTest {
 
-    static FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk;
-    static DimensionChunkAttributes dimensionChunkAttributes;
-    static byte[] data;
+  static FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk;
+  static DimensionChunkAttributes dimensionChunkAttributes;
+  static byte[] data;
 
-    @BeforeClass
-    public static void setup() {
-        data = "dummy string".getBytes();
-        dimensionChunkAttributes = new DimensionChunkAttributes();
-        dimensionChunkAttributes.setEachRowSize(4);
+  @BeforeClass public static void setup() {
+    data = "dummy string".getBytes();
+    dimensionChunkAttributes = new DimensionChunkAttributes();
+    dimensionChunkAttributes.setEachRowSize(4);
 
-        int invertedIndex[] = {1, 3, 5, 7, 8};
-        dimensionChunkAttributes.setInvertedIndexes(invertedIndex);
+    int invertedIndex[] = { 1, 3, 5, 7, 8 };
+    dimensionChunkAttributes.setInvertedIndexes(invertedIndex);
 
-        int invertedIndexReverse[] = {1, 0, 5, 7, 8};
-        dimensionChunkAttributes.setInvertedIndexesReverse(invertedIndexReverse);
+    int invertedIndexReverse[] = { 1, 0, 5, 7, 8 };
+    dimensionChunkAttributes.setInvertedIndexesReverse(invertedIndexReverse);
 
-        fixedLengthDimensionDataChunk = new FixedLengthDimensionDataChunk(data, dimensionChunkAttributes);
-    }
+    fixedLengthDimensionDataChunk =
+        new FixedLengthDimensionDataChunk(data, dimensionChunkAttributes);
+  }
 
-    @Test
-    public void fillChunkDataTest() {
-        KeyStructureInfo keyStructureInfo = new KeyStructureInfo();
-        int[] maskByteRanges = {1, 2, 4, 6,5};
-        keyStructureInfo.setMaskByteRanges(maskByteRanges);
-        keyStructureInfo.setMaxKey("1234567".getBytes());
-        int res = fixedLengthDimensionDataChunk.fillChunkData(data, 0, 0, keyStructureInfo);
-        assert (res == 4);
-    }
+  @Test public void fillChunkDataTest() {
+    KeyStructureInfo keyStructureInfo = new KeyStructureInfo();
+    int[] maskByteRanges = { 1, 2, 4, 6, 5 };
+    keyStructureInfo.setMaskByteRanges(maskByteRanges);
+    keyStructureInfo.setMaxKey("1234567".getBytes());
+    int res = fixedLengthDimensionDataChunk.fillChunkData(data, 0, 0, keyStructureInfo);
+    assert (res == 4);
+  }
 
-    @Test
-    public void getChunkDataTest() {
-        byte expected[] = {121, 32, 115, 116};
-        byte res[] = fixedLengthDimensionDataChunk.getChunkData(0);
-        assert (Arrays.equals(res, expected));
-    }
+  @Test public void getChunkDataTest() {
+    byte expected[] = { 121, 32, 115, 116 };
+    byte res[] = fixedLengthDimensionDataChunk.getChunkData(0);
+    assert (Arrays.equals(res, expected));
+  }
 
-    @Test
-    public void fillConvertedChunkDataTest(){
-        int[] row = {1, 2, 4, 6};
-        KeyStructureInfo keyStructureInfo = new KeyStructureInfo();
-        int res = fixedLengthDimensionDataChunk.fillConvertedChunkData(1,0,row,keyStructureInfo);
-        assert (res == 1);
-    }
+  @Test public void fillConvertedChunkDataTest() {
+    int[] row = { 1, 2, 4, 6 };
+    KeyStructureInfo keyStructureInfo = new KeyStructureInfo();
+    int res = fixedLengthDimensionDataChunk.fillConvertedChunkData(1, 0, row, keyStructureInfo);
+    assert (res == 1);
+  }
 }
 
 

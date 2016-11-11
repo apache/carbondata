@@ -1,14 +1,15 @@
 package org.apache.carbondata.core.carbon.datastore.chunk.reader.measure;
 
-
 import mockit.Mock;
 import mockit.MockUp;
+
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.compression.type.UnCompressByteArray;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -17,21 +18,22 @@ import java.util.List;
 
 public class CompressedMeasureChunkFileBasedReaderTest {
 
-    static CompressedMeasureChunkFileBasedReader compressedMeasureChunkFileBasedReader;
+  static CompressedMeasureChunkFileBasedReader compressedMeasureChunkFileBasedReader;
 
-    @BeforeClass
-    public static void setup() {
-        List<DataChunk> dataChunkList = new ArrayList<>();
-        dataChunkList.add(new DataChunk());
-        ValueCompressionModel valueCompressionModel = new ValueCompressionModel();
+  @BeforeClass public static void setup() {
+    List<DataChunk> dataChunkList = new ArrayList<>();
+    dataChunkList.add(new DataChunk());
+    ValueCompressionModel valueCompressionModel = new ValueCompressionModel();
 
-        ValueCompressonHolder.UnCompressValue unCompressValue[] = {new UnCompressByteArray(UnCompressByteArray.ByteArrayType.BYTE_ARRAY)};
-        byte valueInByte[] = {1, 5, 4, 8, 7};
-        unCompressValue[0].setValueInBytes(valueInByte);
+    ValueCompressonHolder.UnCompressValue unCompressValue[] =
+        { new UnCompressByteArray(UnCompressByteArray.ByteArrayType.BYTE_ARRAY) };
+    byte valueInByte[] = { 1, 5, 4, 8, 7 };
+    unCompressValue[0].setValueInBytes(valueInByte);
 
-        valueCompressionModel.setUnCompressValues(unCompressValue);
-        compressedMeasureChunkFileBasedReader = new CompressedMeasureChunkFileBasedReader(dataChunkList,valueCompressionModel,"filePath");
-    }
+    valueCompressionModel.setUnCompressValues(unCompressValue);
+    compressedMeasureChunkFileBasedReader =
+        new CompressedMeasureChunkFileBasedReader(dataChunkList, valueCompressionModel, "filePath");
+  }
 
    /* @Test
     public void readMeasureChunksTest(){

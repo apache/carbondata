@@ -36,6 +36,11 @@ public class DictionaryByteArrayWrapperTest {
 
   }
 
+  @Test public void equalsTestWithSameObject() {
+    Boolean res = dictionaryByteArrayWrapper.equals(dictionaryByteArrayWrapper);
+    assert (res);
+  }
+
   @Test public void equalsTestWithString() {
     Boolean res = dictionaryByteArrayWrapper.equals("Rahul");
     assert (!res);

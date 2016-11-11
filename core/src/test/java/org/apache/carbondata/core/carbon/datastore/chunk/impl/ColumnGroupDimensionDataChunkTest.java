@@ -22,6 +22,7 @@ package org.apache.carbondata.core.carbon.datastore.chunk.impl;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
+
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -29,50 +30,47 @@ import java.util.Arrays;
 
 public class ColumnGroupDimensionDataChunkTest {
 
-    static ColumnGroupDimensionDataChunk columnGroupDimensionDataChunk;
-    static byte[] data;
+  static ColumnGroupDimensionDataChunk columnGroupDimensionDataChunk;
+  static byte[] data;
 
-    @BeforeClass
-    public static void setup() {
-        data = "dummy string".getBytes();
-        DimensionChunkAttributes dimensionChunkAttributes = new DimensionChunkAttributes();
-        dimensionChunkAttributes.setEachRowSize(4);
+  @BeforeClass public static void setup() {
+    data = "dummy string".getBytes();
+    DimensionChunkAttributes dimensionChunkAttributes = new DimensionChunkAttributes();
+    dimensionChunkAttributes.setEachRowSize(4);
 
-        int invertedIndex[] = {1, 3, 5, 7, 8};
-        dimensionChunkAttributes.setInvertedIndexes(invertedIndex);
-        columnGroupDimensionDataChunk = new ColumnGroupDimensionDataChunk(data, dimensionChunkAttributes);
-    }
+    int invertedIndex[] = { 1, 3, 5, 7, 8 };
+    dimensionChunkAttributes.setInvertedIndexes(invertedIndex);
+    columnGroupDimensionDataChunk =
+        new ColumnGroupDimensionDataChunk(data, dimensionChunkAttributes);
+  }
 
-    @Test
-    public void fillChunkDataTest() {
-        KeyStructureInfo keyStructureInfo = new KeyStructureInfo();
-        int[] maskByteRanges = {1, 2, 4, 6};
-        keyStructureInfo.setMaskByteRanges(maskByteRanges);
-        keyStructureInfo.setMaxKey("1234567".getBytes());
+  @Test public void fillChunkDataTest() {
+    KeyStructureInfo keyStructureInfo = new KeyStructureInfo();
+    int[] maskByteRanges = { 1, 2, 4, 6 };
+    keyStructureInfo.setMaskByteRanges(maskByteRanges);
+    keyStructureInfo.setMaxKey("1234567".getBytes());
 
-        int res = columnGroupDimensionDataChunk.fillChunkData(data, 2, 1, keyStructureInfo);
-        assert (res == 4);
-    }
+    int res = columnGroupDimensionDataChunk.fillChunkData(data, 2, 1, keyStructureInfo);
+    assert (res == 4);
+  }
 
-    @Test
-    public void getChunkDataTest() {
-        byte expected[] = {121, 32, 115, 116};
-        byte res[] = columnGroupDimensionDataChunk.getChunkData(1);
-        assert (Arrays.equals(res, expected));
-    }
+  @Test public void getChunkDataTest() {
+    byte expected[] = { 121, 32, 115, 116 };
+    byte res[] = columnGroupDimensionDataChunk.getChunkData(1);
+    assert (Arrays.equals(res, expected));
+  }
 
-    @Test
-    public void fillConvertedChunkDataTest() {
-        int[] row = {1, 2, 4, 6};
-        int[] lens = {3, 5, 7, 9};
-        int[] mdkeyQueryDimensionOrdinal = {0, 1, 2, 3};
+  @Test public void fillConvertedChunkDataTest() {
+    int[] row = { 1, 2, 4, 6 };
+    int[] lens = { 3, 5, 7, 9 };
+    int[] mdkeyQueryDimensionOrdinal = { 0, 1, 2, 3 };
 
-        KeyStructureInfo keyStructureInfo = new KeyStructureInfo();
-        keyStructureInfo.setKeyGenerator(new MultiDimKeyVarLengthGenerator(lens));
-        keyStructureInfo.setMdkeyQueryDimensionOrdinal(mdkeyQueryDimensionOrdinal);
+    KeyStructureInfo keyStructureInfo = new KeyStructureInfo();
+    keyStructureInfo.setKeyGenerator(new MultiDimKeyVarLengthGenerator(lens));
+    keyStructureInfo.setMdkeyQueryDimensionOrdinal(mdkeyQueryDimensionOrdinal);
 
-        int res = columnGroupDimensionDataChunk.fillConvertedChunkData(0, 0, row, keyStructureInfo);
-        assert (res == 4);
-    }
+    int res = columnGroupDimensionDataChunk.fillConvertedChunkData(0, 0, row, keyStructureInfo);
+    assert (res == 4);
+  }
 }
 
