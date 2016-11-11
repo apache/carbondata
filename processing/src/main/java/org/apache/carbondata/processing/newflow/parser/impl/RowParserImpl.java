@@ -18,6 +18,10 @@
  */
 package org.apache.carbondata.processing.newflow.parser.impl;
 
+import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
+import org.apache.carbondata.processing.newflow.DataField;
+import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
+import org.apache.carbondata.processing.newflow.parser.CarbonParserFactory;
 import org.apache.carbondata.processing.newflow.parser.GenericParser;
 import org.apache.carbondata.processing.newflow.parser.RowParser;
 
@@ -25,15 +29,69 @@ public class RowParserImpl implements RowParser {
 
   private GenericParser[] genericParsers;
 
-  public RowParserImpl(GenericParser[] genericParsers) {
-    this.genericParsers = genericParsers;
+  private int[] outputMapping;
+
+  private int[] inputMapping;
+
+  private int numberOfColumns;
+
+  public RowParserImpl(DataField[] output, CarbonDataLoadConfiguration configuration) {
+    String[] complexDelimiters =
+        (String[]) configuration.getDataLoadProperty(DataLoadProcessorConstants.COMPLEX_DELIMITERS);
+    String nullFormat =
+        configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
+            .toString();
+    DataField[] input = getInput(configuration);
+    genericParsers = new GenericParser[input.length];
+    for (int i = 0; i < genericParsers.length; i++) {
+      genericParsers[i] =
+          CarbonParserFactory.createParser(input[i].getColumn(), complexDelimiters, nullFormat);
+    }
+    outputMapping = new int[output.length];
+    for (int i = 0; i < input.length; i++) {
+      for (int j = 0; j < output.length; j++) {
+        if (input[i].getColumn().equals(output[j].getColumn())) {
+          outputMapping[i] = j;
+          break;
+        }
+      }
+    }
+  }
+
+  public DataField[] getInput(CarbonDataLoadConfiguration configuration) {
+    DataField[] fields = configuration.getDataFields();
+    String[] header = configuration.getHeader();
+    numberOfColumns = header.length;
+    DataField[] input = new DataField[fields.length];
+    inputMapping = new int[input.length];
+    int k = 0;
+    for (int i = 0; i < numberOfColumns; i++) {
+      for (int j = 0; j < fields.length; j++) {
+        if (header[i].equalsIgnoreCase(fields[j].getColumn().getColName())) {
+          input[k] = fields[j];
+          inputMapping[k] = i;
+          k++;
+          break;
+        }
+      }
+    }
+    return input;
   }
 
   @Override
   public Object[] parseRow(Object[] row) {
-    for (int i = 0; i < row.length; i++) {
-      row[i] = genericParsers[i].parse(row[i].toString());
+    // If number of columns are less in a row then create new array with same size of header.
+    if (row.length < numberOfColumns) {
+      String[] temp = new String[numberOfColumns];
+      System.arraycopy(row, 0, temp, 0, row.length);
+      row = temp;
     }
-    return row;
+    Object[] out = new Object[genericParsers.length];
+    for (int i = 0; i < genericParsers.length; i++) {
+      Object obj = row[inputMapping[i]];
+      out[outputMapping[i]] = genericParsers[i].parse(obj);
+    }
+    return out;
   }
+
 }

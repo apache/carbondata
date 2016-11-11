@@ -30,9 +30,15 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColu
  */
 public class DataField implements Serializable {
 
+  public DataField(CarbonColumn column) {
+    this.column = column;
+  }
+
   private CarbonColumn column;
 
   private CompressionCodec compressionCodec;
+
+  private String dateFormat;
 
   public boolean hasDictionaryEncoding() {
     return column.hasEncoding(Encoding.DICTIONARY);
@@ -40,10 +46,6 @@ public class DataField implements Serializable {
 
   public CarbonColumn getColumn() {
     return column;
-  }
-
-  public void setColumn(CarbonColumn column) {
-    this.column = column;
   }
 
   public CompressionCodec getCompressionCodec() {
@@ -54,4 +56,11 @@ public class DataField implements Serializable {
     this.compressionCodec = compressionCodec;
   }
 
+  public String getDateFormat() {
+    return dateFormat;
+  }
+
+  public void setDateFormat(String dateFormat) {
+    this.dateFormat = dateFormat;
+  }
 }

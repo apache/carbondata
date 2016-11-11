@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql
 
+import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.errors.attachTree
@@ -82,10 +83,10 @@ case class CarbonDictionaryDecoder(
     profile match {
       case ip: IncludeProfile if ip.attributes.nonEmpty =>
         ip.attributes
-          .exists(a => a.name.equalsIgnoreCase(attr.name))
+          .exists(a => a.name.equalsIgnoreCase(attr.name) && a.exprId == attr.exprId)
       case ep: ExcludeProfile =>
         !ep.attributes
-          .exists(a => a.name.equalsIgnoreCase(attr.name))
+          .exists(a => a.name.equalsIgnoreCase(attr.name) && a.exprId == attr.exprId)
       case _ => true
     }
   }
@@ -169,6 +170,16 @@ case class CarbonDictionaryDecoder(
           val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
             forwardDictionaryCache)
           val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
+          // add a task completion listener to clear dictionary that is a decisive factor for
+          // LRU eviction policy
+          val dictionaryTaskCleaner = TaskContext.get
+          dictionaryTaskCleaner.addTaskCompletionListener(context =>
+            dicts.foreach { dictionary =>
+              if (null != dictionary) {
+                dictionary.clear
+              }
+            }
+          )
           new Iterator[InternalRow] {
             val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)
             var flag = true

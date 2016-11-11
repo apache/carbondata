@@ -20,7 +20,6 @@
 package org.apache.carbondata.processing.csvload;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -39,7 +38,8 @@ import org.apache.carbondata.processing.constants.DataProcessorConstants;
 import org.apache.carbondata.processing.csvreaderstep.CsvInputMeta;
 import org.apache.carbondata.processing.dataprocessor.IDataProcessStatus;
 import org.apache.carbondata.processing.etl.DataLoadingException;
-import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordslogger;
+import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordsLogger;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.pentaho.di.core.KettleEnvironment;
 import org.pentaho.di.core.exception.KettleException;
@@ -97,7 +97,7 @@ public class DataGraphExecuter {
   private String[] getColumnNames(SchemaInfo schemaInfo, String tableName, String partitionId,
       CarbonDataLoadSchema schema) {
 
-    Set<String> columnNames = GraphExecutionUtil.getSchemaColumnNames(schema, tableName);
+    Set<String> columnNames = CarbonDataProcessorUtil.getSchemaColumnNames(schema, tableName);
 
     return columnNames.toArray(new String[columnNames.size()]);
   }
@@ -210,7 +210,7 @@ public class DataGraphExecuter {
     if (trans.getErrors() > 0) {
       LOGGER.error("Graph Execution had errors");
       throw new DataLoadingException("Due to internal errors, please check logs for more details.");
-    } else if (null != BadRecordslogger.hasBadRecord(key)) {
+    } else if (null != BadRecordsLogger.hasBadRecord(key)) {
       LOGGER.error("Graph Execution is partcially success");
       throw new DataLoadingException(DataProcessorConstants.BAD_REC_FOUND,
           "Graph Execution is partcially success");
@@ -417,34 +417,6 @@ public class DataGraphExecuter {
     trans.setLogLevel(LogLevel.NOTHING);
   }
 
-  private void validateHeader(SchemaInfo schemaInfo, String partitionId,
-      CarbonDataLoadSchema schema) throws DataLoadingException {
-    String[] columnNames = getColumnNames(schemaInfo, model.getTableName(), partitionId, schema);
-    String[] csvHeader = model.getCsvHeader().toLowerCase().split(",");
-
-    List<String> csvColumnsList = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-
-    for (String column : csvHeader) {
-      csvColumnsList.add(column.replaceAll("\"", "").trim());
-    }
-
-    int count = 0;
-
-    for (String columns : columnNames) {
-      if (csvColumnsList.contains(columns.toLowerCase())) {
-        count++;
-      }
-    }
-
-    if (count != columnNames.length) {
-      LOGGER.error("CSV header provided in DDL is not proper." +
-          " Column names in schema and CSV header are not the same.");
-      throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
-          "CSV header provided in DDL is not proper. Column names in schema and CSV header are " +
-              "not the same.");
-    }
-  }
-
   /**
    * This method will validate the both fact as well as dimension csv files.
    *
@@ -503,7 +475,14 @@ public class DataGraphExecuter {
       }
     } else if (model.isDirectLoad()) {
       if (null != model.getCsvHeader() && !model.getCsvHeader().isEmpty()) {
-        validateHeader(schemaInfo, partitionId, schema);
+        if (!CarbonDataProcessorUtil
+            .isHeaderValid(model.getTableName(), model.getCsvHeader(), schema, ",")) {
+          LOGGER.error("CSV header provided in DDL is not proper."
+              + " Column names in schema and CSV header are not the same.");
+          throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
+              "CSV header provided in DDL is not proper. Column names in schema and CSV header are "
+                  + "not the same.");
+        }
       } else {
         for (String file : model.getFilesToProcess()) {
           try {

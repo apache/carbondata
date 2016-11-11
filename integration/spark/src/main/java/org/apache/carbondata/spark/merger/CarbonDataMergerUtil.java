@@ -48,7 +48,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.integration.spark.merger.CompactionType;
 import org.apache.carbondata.lcm.locks.ICarbonLock;
 import org.apache.carbondata.lcm.status.SegmentStatusManager;
-import org.apache.carbondata.spark.load.CarbonLoadModel;
+import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.spark.load.CarbonLoaderUtil;
 
 /**

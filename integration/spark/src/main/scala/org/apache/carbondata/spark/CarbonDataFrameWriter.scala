@@ -123,8 +123,7 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
       Map(("fileheader" -> header)),
       false,
       null,
-      Some(dataFrame),
-      options.useKettle).run(cc)
+      Some(dataFrame)).run(cc)
   }
 
   private def csvPackage: String = "com.databricks.spark.csv.newapi"

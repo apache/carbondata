@@ -282,9 +282,14 @@ public class SegmentStatusManager {
         if (listOfLoadFolderDetailsArray != null && listOfLoadFolderDetailsArray.length != 0) {
           updateDeletionStatus(loadIds, listOfLoadFolderDetailsArray, invalidLoadIds);
           if (invalidLoadIds.isEmpty()) {
+            // All or None , if anything fails then dont write
             if(carbonTableStatusLock.lockWithRetries()) {
               LOG.info("Table status lock has been successfully acquired");
-              // All or None , if anything fails then dont write
+              // To handle concurrency scenarios, always take latest metadata before writing
+              // into status file.
+              LoadMetadataDetails[] latestLoadMetadataDetails = readLoadMetadata(tableFolderPath);
+              updateLatestTableStatusDetails(listOfLoadFolderDetailsArray,
+                  latestLoadMetadataDetails);
               writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
             }
             else {
@@ -365,6 +370,11 @@ public class SegmentStatusManager {
           if (invalidLoadTimestamps.isEmpty()) {
             if(carbonTableStatusLock.lockWithRetries()) {
               LOG.info("Table status lock has been successfully acquired.");
+              // To handle concurrency scenarios, always take latest metadata before writing
+              // into status file.
+              LoadMetadataDetails[] latestLoadMetadataDetails = readLoadMetadata(tableFolderPath);
+              updateLatestTableStatusDetails(listOfLoadFolderDetailsArray,
+                  latestLoadMetadataDetails);
               writeLoadDetailsIntoFile(dataLoadLocation, listOfLoadFolderDetailsArray);
             }
             else {
@@ -467,8 +477,7 @@ public class SegmentStatusManager {
           }
           if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())) {
             loadFound = true;
-            loadMetadata.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
-            loadMetadata.setModificationOrdeletionTimesStamp(readCurrentTime());
+            updateSegmentMetadataDetails(loadMetadata);
             LOG.info("Segment ID " + loadId + " Marked for Delete");
           }
           break;
@@ -512,8 +521,7 @@ public class SegmentStatusManager {
         }
         if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())) {
           loadFound = true;
-          loadMetadata.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
-          loadMetadata.setModificationOrdeletionTimesStamp(readCurrentTime());
+          updateSegmentMetadataDetails(loadMetadata);
           LOG.info("Info: " +
               loadStartTimeString + loadMetadata.getLoadStartTime() +
               " Marked for Delete");
@@ -549,6 +557,41 @@ public class SegmentStatusManager {
       }
     }
   }
+
+  /**
+   * updates table status details using latest metadata
+   *
+   * @param oldMetadata
+   * @param newMetadata
+   * @return
+   */
+
+  public List<LoadMetadataDetails> updateLatestTableStatusDetails(
+      LoadMetadataDetails[] oldMetadata, LoadMetadataDetails[] newMetadata) {
+
+    List<LoadMetadataDetails> newListMetadata =
+        new ArrayList<LoadMetadataDetails>(Arrays.asList(newMetadata));
+    for (LoadMetadataDetails oldSegment : oldMetadata) {
+      if (CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oldSegment.getLoadStatus())) {
+        updateSegmentMetadataDetails(newListMetadata.get(newListMetadata.indexOf(oldSegment)));
+      }
+    }
+    return newListMetadata;
+  }
+
+  /**
+   * updates segment status and modificaton time details
+   *
+   * @param loadMetadata
+   */
+  public void updateSegmentMetadataDetails(LoadMetadataDetails loadMetadata) {
+    // update status only if the segment is not marked for delete
+    if (!CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(loadMetadata.getLoadStatus())) {
+      loadMetadata.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
+      loadMetadata.setModificationOrdeletionTimesStamp(readCurrentTime());
+    }
+  }
+
 
   public static class ValidAndInvalidSegmentsInfo {
     private final List<String> listOfValidSegments;

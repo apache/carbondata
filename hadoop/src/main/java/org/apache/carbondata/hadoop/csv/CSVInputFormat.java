@@ -84,6 +84,60 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
   }
 
   /**
+   * Sets the comment char to configuration. Default it is #.
+   * @param commentChar
+   * @param configuration
+   */
+  public static void setCommentCharacter(String commentChar, Configuration configuration) {
+    if (commentChar != null && !commentChar.isEmpty()) {
+      configuration.set(COMMENT, commentChar);
+    }
+  }
+
+  /**
+   * Sets the delimiter to configuration. Default it is ','
+   * @param delimiter
+   * @param configuration
+   */
+  public static void setCSVDelimiter(String delimiter, Configuration configuration) {
+    if (delimiter != null && !delimiter.isEmpty()) {
+      configuration.set(DELIMITER, delimiter);
+    }
+  }
+
+  /**
+   * Sets the escape character to configuration. Default it is \
+   * @param escapeCharacter
+   * @param configuration
+   */
+  public static void setEscapeCharacter(String escapeCharacter, Configuration configuration) {
+    if (escapeCharacter != null && !escapeCharacter.isEmpty()) {
+      configuration.set(ESCAPE, escapeCharacter);
+    }
+  }
+
+  /**
+   * Whether header needs to read from csv or not. By default it is false.
+   * @param headerExtractEnable
+   * @param configuration
+   */
+  public static void setHeaderExtractionEnabled(boolean headerExtractEnable,
+      Configuration configuration) {
+    configuration.set(HEADER_PRESENT, String.valueOf(headerExtractEnable));
+  }
+
+  /**
+   * Sets the quote character to configuration. Default it is "
+   * @param quoteCharacter
+   * @param configuration
+   */
+  public static void setQuoteCharacter(String quoteCharacter, Configuration configuration) {
+    if (quoteCharacter != null && !quoteCharacter.isEmpty()) {
+      configuration.set(QUOTE, quoteCharacter);
+    }
+  }
+
+  /**
    * Treats value as line in file. Key is null.
    */
   public static class CSVRecordReader extends RecordReader<NullWritable, StringArrayWritable> {

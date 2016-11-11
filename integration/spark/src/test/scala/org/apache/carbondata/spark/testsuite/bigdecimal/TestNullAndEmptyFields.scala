@@ -99,6 +99,20 @@ class TestNullAndEmptyFields extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("test  subquery on column having null values") {
+    checkAnswer(
+      sql("select * from (select if(country='china','c', country) test from carbonTable)qq where test is null"),
+      sql("select * from (select if(country='china','c', country) test from hiveTable)qq where test is null")
+    )
+  }
+
+  test("test  subquery on column having not null values") {
+    checkAnswer(
+      sql("select * from (select if(country='china','c', country) test from carbonTable)qq where test is not null"),
+      sql("select * from (select if(country='china','c', country) test from hiveTable)qq where test is not null")
+    )
+  }
+
   override def afterAll {
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")
