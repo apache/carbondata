@@ -27,7 +27,7 @@ import org.apache.spark.sql.common.util.{CarbonHiveContext, QueryTest}
 import org.scalatest.BeforeAndAfterAll
 
 /**
- * Test Class for hadoop fs relation
+ * Test Class for dataframe of carbon
  *
  */
 class DataFrameTestCase extends QueryTest with BeforeAndAfterAll {
