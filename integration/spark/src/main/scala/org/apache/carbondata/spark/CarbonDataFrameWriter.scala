@@ -24,6 +24,7 @@ import org.apache.spark.sql.execution.command.LoadTable
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.carbon.metadata.datatype.{DataType => CarbonType}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
 
@@ -61,7 +62,11 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
   private def loadTempCSV(options: CarbonOption, cc: CarbonContext): Unit = {
     // temporary solution: write to csv file, then load the csv into carbon
     val storePath = CarbonEnv.getInstance(cc).carbonCatalog.storePath
-    val tempCSVFolder = storePath + "/tempCSV" + options.tableIdentifier + System.nanoTime()
+    val tempCSVFolder = new StringBuilder(storePath).append(CarbonCommonConstants.FILE_SEPARATOR)
+      .append("tempCSV")
+      .append(CarbonCommonConstants.UNDERSCORE).append(options.dbName)
+      .append(CarbonCommonConstants.UNDERSCORE + options.tableName)
+      .append(CarbonCommonConstants.UNDERSCORE).append(System.nanoTime()).toString
     writeToTempCSVFile(tempCSVFolder, options)
 
     val tempCSVPath = new Path(tempCSVFolder)
