@@ -65,7 +65,7 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
     val tempCSVFolder = new StringBuilder(storePath).append(CarbonCommonConstants.FILE_SEPARATOR)
       .append("tempCSV")
       .append(CarbonCommonConstants.UNDERSCORE).append(options.dbName)
-      .append(CarbonCommonConstants.UNDERSCORE + options.tableName)
+      .append(CarbonCommonConstants.UNDERSCORE).append(options.tableName)
       .append(CarbonCommonConstants.UNDERSCORE).append(System.nanoTime()).toString
     writeToTempCSVFile(tempCSVFolder, options)
 
