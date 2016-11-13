@@ -61,8 +61,8 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbontable1")
     sql("drop table if exists hivetable1")
     sql("drop table if exists comment_test")
-    sql("drop table if exists smallinttable1")
-    sql("drop table if exists smallinttable2")
+    sql("drop table if exists smallinttable")
+    sql("drop table if exists smallinthivetable")
     sql(
       "CREATE table carbontable (empno int, empname String, designation String, doj String, " +
         "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
@@ -80,7 +80,7 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
 
   test("create table with smallint type and query smallint table") {
     sql(
-      "create table smallinttable1(empno smallint, empname String, designation string, " +
+      "create table smallinttable(empno smallint, empname String, designation string, " +
         "doj String, workgroupcategory int, workgroupcategoryname String,deptno int, " +
         "deptname String, projectcode int, projectjoindate String,projectenddate String, " +
         "attendance String, utilization String,salary String)" +
@@ -88,48 +88,23 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     )
 
     sql(
-      "create table smallinttable2(empno smallint, empname String, designation string, " +
+      "create table smallinthivetable(empno smallint, empname String, designation string, " +
         "doj String, workgroupcategory int, workgroupcategoryname String,deptno int, " +
         "deptname String, projectcode int, projectjoindate String,projectenddate String, " +
         "attendance String, utilization String,salary String)" +
         "row format delimited fields terminated by ','"
     )
 
-    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table smallinttable1")
-    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table smallinttable2")
+    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table smallinttable OPTIONS('USE_KETTLE'='false')")
+    sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' overwrite INTO table smallinthivetable")
 
     checkAnswer(
-      sql("select empno from smallinttable1"),
-      Seq(Row(11.toShort),
-        Row(12.toShort),
-        Row(13.toShort),
-        Row(14.toShort),
-        Row(15.toShort),
-        Row(16.toShort),
-        Row(17.toShort),
-        Row(18.toShort),
-        Row(19.toShort),
-        Row(20.toShort),
-        Row(null)
-    ))
+      sql("select empno from smallinttable"),
+      sql("select empno from smallinthivetable")
+    )
 
-    checkAnswer(
-      sql("select empno from smallinttable2"),
-      Seq(Row(11),
-        Row(12),
-        Row(13),
-        Row(14),
-        Row(15),
-        Row(16),
-        Row(17),
-        Row(18),
-        Row(19),
-        Row(20),
-        Row(null)
-      ))
-
-    sql("drop table if exists smallinttable1")
-    sql("drop table if exists smallinttable2")
+    sql("drop table if exists smallinttable")
+    sql("drop table if exists smallinthivetable")
   }
 
   test("test data loading and validate query output") {
