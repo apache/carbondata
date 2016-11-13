@@ -77,4 +77,4 @@ if [[ "$@" = *--help ]] || [[ "$@" = *-h ]]; then
   usage "" 0
 fi
 
-exec "$FWDIR"/bin/spark-submit "$@" --class "$CLASS" "$JAR"
+exec "$FWDIR"/bin/spark-submit --class "$CLASS" "$JAR" "$@"
