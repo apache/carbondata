@@ -83,6 +83,12 @@ case class CarbonDictionaryCatalystDecoder(
   override def output: Seq[Attribute] = child.output
 }
 
+case class AddSegmentId(
+    segmentId: Int,
+    child: LogicalPlan) extends UnaryNode {
+  override def output: Seq[Attribute] = child.output
+}
+
 abstract class CarbonProfile(attributes: Seq[Attribute]) extends Serializable {
   def isEmpty: Boolean = attributes.isEmpty
 }

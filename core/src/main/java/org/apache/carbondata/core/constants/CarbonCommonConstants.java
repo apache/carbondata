@@ -162,6 +162,10 @@ public final class CarbonCommonConstants {
    */
   public static final String DUMMY = "dummy";
   /**
+   * Aggregation table flag
+   */
+  public static final String AGG_TABLE_FLAG = "agg";
+  /**
    * MEMBER_DEFAULT_VAL
    */
   public static final String MEMBER_DEFAULT_VAL = "@NU#LL$!";

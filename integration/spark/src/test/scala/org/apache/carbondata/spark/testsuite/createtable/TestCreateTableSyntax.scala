@@ -181,8 +181,39 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
       }
     }
   }
+  test("Create carbon table as select from other table") {
+    try {
+      sql("CREATE TABLE IF NOT EXISTS otherHiveTable (ID Int, date Timestamp, country String," +
+        "name String, phonetype String, serialname String, salary Int) " +
+        "row format delimited fields terminated by ','")
+      sql("LOAD DATA LOCAL INPATH './src/test/resources/data2.csv' INTO TABLE " +
+        "otherHiveTable")
+      sql("CREATE TABLE IF NOT EXISTS otherCarbonTable (ID Int, date Timestamp, country String," +
+        "name String, phonetype String, serialname String, salary Int) " +
+        "STORED BY 'carbondata'")
+      sql("LOAD DATA LOCAL INPATH './src/test/resources/data2.csv' INTO TABLE " +
+        "otherCarbonTable")
+      sql("CREATE TABLE IF NOT EXISTS carbonFromHive STORED BY 'carbondata' as SELECT * FROM otherHiveTable")
+      sql("CREATE TABLE IF NOT EXISTS carbonFromCarbon STORED BY 'carbondata' as SELECT * FROM otherCarbonTable")
+      // test when table name contains keywords
+      sql("CREATE TABLE IF NOT EXISTS selectTable STORED BY 'carbondata' as SELECT * FROM OtherHiveTable")
+      // compare with original table
+      checkAnswer(sql("SELECT salary FROM carbonFromHive order by phonetype"),
+        sql("SELECT salary FROM otherHiveTable order by phonetype"))
+      checkAnswer(sql("SELECT salary FROM carbonFromCarbon order by phonetype"),
+        sql("SELECT salary FROM otherCarbonTable order by phonetype"))
+    } catch {
+      case ex: Exception =>
+        assert(false)
+    }
+  }
 
   override def afterAll {
     sql("drop table if exists carbontable")
+    sql("drop table if exists hivetable")
+    sql("drop table if exists otherCarbonTable")
+    sql("drop table if exists carbonFromHive")
+    sql("drop table if exists carbonFromCarbon")
+    sql("drop table if exists selectTable")
   }
 }

@@ -153,8 +153,14 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
     val carbonSchema = schema.map { field =>
       s"${ field.name } ${ convertToCarbonType(field.dataType) }"
     }
+    val ifNotExists =
+      if (options.allowExisting.toBoolean) {
+        "IF NOT EXISTS"
+      } else {
+        ""
+      }
     s"""
-          CREATE TABLE IF NOT EXISTS ${options.dbName}.${options.tableName}
+          CREATE TABLE $ifNotExists ${options.dbName}.${options.tableName}
           (${ carbonSchema.mkString(", ") })
           STORED BY '${ CarbonContext.datasourceName }'
       """

@@ -76,7 +76,8 @@ class CarbonScanRDD[V: ClassTag](
     @transient conf: Configuration,
     tableCreationTime: Long,
     schemaLastUpdatedTime: Long,
-    baseStoreLocation: String)
+    baseStoreLocation: String,
+    SegmentId: Int = -1)
   extends RDD[V](sc, Nil) with Logging {
 
 

@@ -130,7 +130,8 @@ class CarbonSource extends RelationProvider
  */
 private[sql] case class CarbonDatasourceRelation(
     tableIdentifier: TableIdentifier,
-    alias: Option[String])
+    alias: Option[String],
+    var segmentId: Int = -1)
     (@transient context: SQLContext)
     extends BaseRelation with Serializable with Logging {
 
