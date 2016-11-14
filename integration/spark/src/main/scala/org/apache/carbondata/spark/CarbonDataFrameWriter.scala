@@ -136,15 +136,15 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
 
   private def convertToCarbonType(sparkType: DataType): String = {
     sparkType match {
-      case StringType => CarbonType.STRING.name
-      case IntegerType => CarbonType.INT.name
-      case ByteType => CarbonType.INT.name
-      case ShortType => CarbonType.SHORT.name
-      case LongType => CarbonType.LONG.name
-      case FloatType => CarbonType.DOUBLE.name
-      case DoubleType => CarbonType.DOUBLE.name
-      case BooleanType => CarbonType.DOUBLE.name
-      case TimestampType => CarbonType.TIMESTAMP.name
+      case StringType => CarbonType.STRING.getName
+      case IntegerType => CarbonType.INT.getName
+      case ByteType => CarbonType.INT.getName
+      case ShortType => CarbonType.SHORT.getName
+      case LongType => CarbonType.LONG.getName
+      case FloatType => CarbonType.DOUBLE.getName
+      case DoubleType => CarbonType.DOUBLE.getName
+      case BooleanType => CarbonType.DOUBLE.getName
+      case TimestampType => CarbonType.TIMESTAMP.getName
       case other => sys.error(s"unsupported type: $other")
     }
   }
