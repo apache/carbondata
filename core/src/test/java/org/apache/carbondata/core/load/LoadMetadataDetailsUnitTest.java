@@ -22,6 +22,10 @@ package org.apache.carbondata.core.load;
 import org.junit.Before;
 import org.junit.Test;
 
+import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertNotSame;
+import static junit.framework.Assert.assertNull;
+
 public class LoadMetadataDetailsUnitTest {
 
   private LoadMetadataDetails loadMetadataDetails;
@@ -37,45 +41,46 @@ public class LoadMetadataDetailsUnitTest {
    */
 
   @Test public void testHashCodeLoadNameNull() throws Exception {
-    Integer data = loadMetadataDetails.hashCode();
-    assert (data == 31);
+    int expected_result = 31;
+    int data = loadMetadataDetails.hashCode();
+    assertEquals(expected_result, data);
   }
 
   @Test public void testHashCodeValueInLoadName() throws Exception {
     loadMetadataDetails.setLoadName("test");
-    Integer data = loadMetadataDetails.hashCode();
-    assert (data != 31);
+    int data = loadMetadataDetails.hashCode();
+    assertNotSame(31, data);
   }
 
   @Test public void testEqualsObjectIsNotLoadMetadataDetails() throws Exception {
     Object obj = new Object();
     boolean result = loadMetadataDetails.equals(obj);
-    assert (!result);
+    assertEquals(false, result);
   }
 
   @Test public void testEqualsObjectIsNull() throws Exception {
     boolean result = loadMetadataDetails.equals(new Object());
-    assert (!result);
+    assertEquals(false, result);
   }
 
   @Test public void testEqualsObjectIsLoadMetadataDetailsWithoutLoadName() throws Exception {
     LoadMetadataDetails obj = new LoadMetadataDetails();
     boolean result = loadMetadataDetails.equals(obj);
-    assert (result);
+    assertEquals(true, result);
   }
 
   @Test public void testEqualsObjectIsLoadMetadataDetails() throws Exception {
     loadMetadataDetails.setLoadName("test");
     LoadMetadataDetails obj = new LoadMetadataDetails();
     boolean result = loadMetadataDetails.equals(obj);
-    assert (!result);
+    assertEquals(false, result);
   }
 
   @Test public void testEqualsObjectIsLoadMetadataDetailsLoadNameNull() throws Exception {
     LoadMetadataDetails obj = new LoadMetadataDetails();
     obj.setLoadName("test");
     boolean result = loadMetadataDetails.equals(obj);
-    assert (!result);
+    assertEquals(false, result);
   }
 
   @Test public void testEqualsObjectIsLoadMetadataDetailsLoadNameEqualsObjectLoadName()
@@ -84,25 +89,26 @@ public class LoadMetadataDetailsUnitTest {
     LoadMetadataDetails obj = new LoadMetadataDetails();
     obj.setLoadName("test");
     boolean result = loadMetadataDetails.equals(obj);
-    assert (result);
+    assertEquals(true, result);
   }
 
   @Test public void testGetTimeStampWithEmptyTimeStamp() throws Exception {
     loadMetadataDetails.setLoadStartTime("");
     Long result = loadMetadataDetails.getLoadStartTimeAsLong();
-    assert (result == null);
+    assertNull(result);
   }
 
   @Test public void testGetTimeStampWithParserException() throws Exception {
     loadMetadataDetails.setLoadStartTime("00.00.00");
     Long result = loadMetadataDetails.getLoadStartTimeAsLong();
-    assert (result == null);
+    assertNull(result);
   }
 
   @Test public void testGetTimeStampWithDate() throws Exception {
     String oldString = "01-01-2016 00:00:00";
     loadMetadataDetails.setLoadStartTime(oldString);
+    Long expected_result = 1451586600000000L;
     Long result = loadMetadataDetails.getLoadStartTimeAsLong();
-    assert (result == 1451586600000000L);
+    assertEquals(expected_result, result);
   }
 }
