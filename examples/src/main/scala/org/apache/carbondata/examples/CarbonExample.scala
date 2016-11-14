@@ -32,7 +32,7 @@ object CarbonExample {
 
     cc.sql("DROP TABLE IF EXISTS t3")
 
-    // create table, 6 dimensions, 1 measure
+    // Create table, 6 dimensions, 1 measure
     cc.sql("""
            CREATE TABLE IF NOT EXISTS t3
            (ID Int, date Timestamp, country String,
@@ -40,18 +40,15 @@ object CarbonExample {
            STORED BY 'carbondata'
            """)
 
-    // load data using kettle
+    // Currently there are two data loading flows in CarbonData, one uses Kettle as ETL tool
+    // in each node to do data loading, another uses a multi-thread framework without Kettle（See
+    // AbstractDataLoadProcessorStep)
+    // Load data with Kettle
     cc.sql(s"""
            LOAD DATA LOCAL INPATH '$testData' into table t3
            """)
 
-    // load data without kettle
-    cc.sql(s"""
-           LOAD DATA LOCAL INPATH '$testData' into table t3
-           OPTIONS('USE_KETTLE'='false')
-           """)
-
-    // do a query
+    // Perform a query
     cc.sql("""
            SELECT country, count(salary) AS amount
            FROM t3
@@ -59,7 +56,21 @@ object CarbonExample {
            GROUP BY country
            """).show()
 
-    // drop table
+    // Load data without kettle
+    cc.sql(s"""
+           LOAD DATA LOCAL INPATH '$testData' into table t3
+           OPTIONS('USE_KETTLE'='false')
+           """)
+
+    // Perform a query
+    cc.sql("""
+           SELECT country, count(salary) AS amount
+           FROM t3
+           WHERE country IN ('china','france')
+           GROUP BY country
+           """).show()
+
+    // Drop table
     cc.sql("DROP TABLE IF EXISTS t3")
   }
 }
