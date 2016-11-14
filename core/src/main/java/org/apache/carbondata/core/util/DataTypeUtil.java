@@ -182,7 +182,7 @@ public final class DataTypeUtil {
       case "INT":
         dataType = DataType.INT;
         break;
-      case "SHORT":
+      case "SMALLINT":
         dataType = DataType.SHORT;
         break;
       case "LONG":
