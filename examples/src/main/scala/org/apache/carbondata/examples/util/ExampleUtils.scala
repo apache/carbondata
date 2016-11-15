@@ -84,6 +84,7 @@ object ExampleUtils {
         .format("carbondata")
         .option("tableName", tableName)
         .option("compress", "true")
+        .option("useKettle", "false")
         .mode(mode)
         .save()
   }
