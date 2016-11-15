@@ -211,7 +211,7 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
         return surrogateKey; // key found
       }
     }
-    return 0;
+    return CarbonCommonConstants.INVALID_SURROGATE_KEY;
   }
 
   /**

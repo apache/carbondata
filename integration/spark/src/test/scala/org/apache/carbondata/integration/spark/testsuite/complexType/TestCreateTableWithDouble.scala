@@ -44,6 +44,8 @@ class TestCreateTableWithDouble extends QueryTest with BeforeAndAfterAll {
       .getCanonicalPath + "/src/test/resources/sampleComplex.csv"
     countNum = Array(Row(0))
     doubleField = Array(Row(0))
+    sql("drop table if exists doubleComplex")
+    sql("drop table if exists doubleComplex2")
   }
 
   test("test creating carbon table with double in complex type") {

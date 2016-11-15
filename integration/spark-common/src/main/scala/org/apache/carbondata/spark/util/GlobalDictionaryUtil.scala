@@ -518,13 +518,13 @@ object GlobalDictionaryUtil {
    * @param hdfsLocation    store location on hdfs
    * @param dictFolderPath  generated global dict file path
    */
-  private def generatePredefinedColDictionary(colDictFilePath: String,
+  def generatePredefinedColDictionary(colDictFilePath: String,
       table: CarbonTableIdentifier,
       dimensions: Array[CarbonDimension],
       carbonLoadModel: CarbonLoadModel,
       sqlContext: SQLContext,
       hdfsLocation: String,
-      dictFolderPath: String) = {
+      dictFolderPath: String): Unit = {
     // set pre defined dictionary column
     setPredefinedColumnDictPath(carbonLoadModel, colDictFilePath, table, dimensions)
     val dictLoadModel = createDictionaryLoadModel(carbonLoadModel, table, dimensions,

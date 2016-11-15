@@ -43,6 +43,7 @@ import org.apache.carbondata.core.carbon.datastore.block.{Distributable, TableBl
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
@@ -341,6 +342,7 @@ object CarbonDataRDDFactory {
       columnar: Boolean,
       partitionStatus: String = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS,
       useKettle: Boolean,
+      result: Future[DictionaryServer],
       dataFrame: Option[DataFrame] = None): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val isAgg = false
@@ -759,6 +761,19 @@ object CarbonDataRDDFactory {
           // TODO : Handle it
           LOGGER.info("********Database updated**********")
         }
+
+        // write dictionary file and shutdown dictionary server
+        if (carbonLoadModel.getUseOnePass) {
+          try {
+            result.get().shutdown()
+          } catch {
+            case ex: Exception =>
+              LOGGER.error("Error while close dictionary server and write dictionary file for " +
+                s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+              throw new Exception("Dataload failed due to error while write dictionary file!")
+          }
+        }
+
         LOGGER.audit("Data load is successful for " +
             s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         try {
