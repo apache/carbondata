@@ -23,7 +23,9 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
@@ -34,11 +36,15 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDime
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
+import org.apache.carbondata.core.dictionary.client.DictionaryClient;
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.processing.newflow.dictionary.DictionaryServerClientDictionary;
 import org.apache.carbondata.processing.newflow.dictionary.DirectDictionary;
 import org.apache.carbondata.processing.newflow.dictionary.PreCreatedDictionary;
 import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
@@ -116,8 +122,10 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    * @param columnId
    */
   public PrimitiveDataType(String name, String parentname, String columnId,
-      CarbonDimension carbonDimension, Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
-      CarbonTableIdentifier carbonTableIdentifier) {
+                           CarbonDimension carbonDimension,
+                           Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
+                           CarbonTableIdentifier carbonTableIdentifier,
+                           DictionaryClient client, Boolean useOnePass, String storePath) {
     this.name = name;
     this.parentname = parentname;
     this.columnId = columnId;
@@ -130,8 +138,33 @@ public class PrimitiveDataType implements GenericDataType<Object> {
         dictionaryGenerator = new DirectDictionary(DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(carbonDimension.getDataType()));
       } else {
-        Dictionary dictionary = cache.get(identifier);
-        dictionaryGenerator = new PreCreatedDictionary(dictionary);
+        Dictionary dictionary = null;
+        if (useOnePass) {
+          if (CarbonUtil.isFileExistsForGivenColumn(storePath, identifier)) {
+            try {
+              dictionary = cache.get(identifier);
+            } catch (CarbonUtilException e) {
+              throw new RuntimeException(e);
+            }
+          }
+          String threadNo = "initial";
+          DictionaryKey dictionaryKey = new DictionaryKey();
+          dictionaryKey.setColumnName(carbonDimension.getColName());
+          dictionaryKey.setTableUniqueName(carbonTableIdentifier.getTableUniqueName());
+          dictionaryKey.setThreadNo(threadNo);
+          // for table initialization
+          dictionaryKey.setType("TABLE_INTIALIZATION");
+          dictionaryKey.setData("0");
+          client.getDictionary(dictionaryKey);
+          Map<Object, Integer> localCache = new HashMap<>();
+          // for generate dictionary
+          dictionaryKey.setType("DICTIONARY_GENERATION");
+          dictionaryGenerator = new DictionaryServerClientDictionary(dictionary, client,
+                  dictionaryKey, localCache);
+        } else {
+          dictionary = cache.get(identifier);
+          dictionaryGenerator = new PreCreatedDictionary(dictionary);
+        }
       }
     } catch (CarbonUtilException e) {
       throw new RuntimeException(e);
