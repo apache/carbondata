@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
-import static java.lang.System.out;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -276,7 +275,7 @@ public class HDFSCarbonFileTest {
     }
 
     @Test
-    public void testgetParentFileForNull() {
+    public void testGetParentFileForNull() {
 
         new MockUp<Path>() {
             @Mock
@@ -312,7 +311,7 @@ public class HDFSCarbonFileTest {
     }
 
     @Test
-    public void testgetParentFile() {
+    public void testGetParentFile() {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
