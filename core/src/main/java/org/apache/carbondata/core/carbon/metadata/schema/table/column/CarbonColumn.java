@@ -154,6 +154,14 @@ public class CarbonColumn implements Serializable {
   public Boolean isUseInvertedIndex() {
     return columnSchema.isUseInvertedIndex();
   }
+
+  /**
+   * @return if column use trim return true, else false.
+   */
+  public Boolean isUseTrim() {
+    return columnSchema.isUseTrim();
+  }
+
   public ColumnSchema getColumnSchema() {
     return this.columnSchema;
   }

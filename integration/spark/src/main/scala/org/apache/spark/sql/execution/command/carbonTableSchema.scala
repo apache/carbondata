@@ -79,6 +79,7 @@ case class tableModel(
     simpleDimRelations: Seq[DimensionRelation],
     highcardinalitydims: Option[Seq[String]],
     noInvertedIdxCols: Option[Seq[String]],
+    trimCols: Option[Seq[String]],
     aggregation: Seq[Aggregation],
     partitioner: Option[Partitioner],
     columnGroups: Seq[String],
@@ -337,6 +338,19 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
         column.setUseInvertedIndex(false)
       } else {
         column.setUseInvertedIndex(true)
+      }
+    }
+
+    // Setting the boolean value of useTrimCols in column schema
+    val trimCols = cm.trimCols.getOrElse(Seq())
+    for (column <- allColumns) {
+      // When the column is not measure and the specified trim column in DDL,
+      // set useTrim to true, otherwise false.
+      if (trimCols.contains(column.getColumnName) &&
+        !cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
+        column.setUseTrim(true)
+      } else {
+        column.setUseTrim(false)
       }
     }
 

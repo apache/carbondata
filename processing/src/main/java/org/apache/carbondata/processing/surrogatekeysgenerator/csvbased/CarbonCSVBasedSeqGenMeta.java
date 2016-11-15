@@ -386,6 +386,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    */
   private String columnsDataTypeString;
 
+  private String isUseTrim = "";
+
   public CarbonCSVBasedSeqGenMeta() {
     super();
   }
@@ -655,6 +657,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     columnsDataTypeString="";
     tableOption = "";
     dateFormat = "";
+    isUseTrim = "";
   }
 
   // helper method to allocate the arrays
@@ -721,6 +724,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
         .append(XMLHandler.addTagValue("columnSchemaDetails", columnSchemaDetails));
     retval.append("    ")
         .append(XMLHandler.addTagValue("tableOption", tableOption));
+    retval.append("    ").append(XMLHandler.addTagValue("isUseTrim", isUseTrim));
     return retval.toString();
   }
 
@@ -770,6 +774,7 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       taskNo = XMLHandler.getTagValue(stepnode, "taskNo");
       columnSchemaDetails = XMLHandler.getTagValue(stepnode, "columnSchemaDetails");
       tableOption = XMLHandler.getTagValue(stepnode, "tableOption");
+      isUseTrim = XMLHandler.getTagValue(stepnode, "isUseTrim");
       String batchConfig = XMLHandler.getTagValue(stepnode, "batchSize");
 
       if (batchConfig != null) {
@@ -1693,6 +1698,20 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    */
   public TableOptionWrapper getTableOptionWrapper() {
     return tableOptionWrapper;
+  }
+
+  public String getIsUseTrim() {
+    return isUseTrim;
+  }
+
+  public void setIsUseTrim(Boolean[] isUseTrim) {
+    for (Boolean flag: isUseTrim) {
+      if (flag) {
+        this.isUseTrim += "T";
+      } else {
+        this.isUseTrim += "F";
+      }
+    }
   }
 }
 

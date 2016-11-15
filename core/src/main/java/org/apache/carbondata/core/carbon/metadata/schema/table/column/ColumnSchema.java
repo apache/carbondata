@@ -80,6 +80,11 @@ public class ColumnSchema implements Serializable {
   private boolean useInvertedIndex = true;
 
   /**
+   * Whether the column should use trim
+   */
+  private boolean useTrim = false;
+
+  /**
    * The group ID for column used for row format columns,
    * where in columns in each group are chunked together.
    */
@@ -188,6 +193,20 @@ public class ColumnSchema implements Serializable {
    */
   public void setUseInvertedIndex(boolean useInvertedIndex) {
     this.useInvertedIndex = useInvertedIndex;
+  }
+
+  /**
+   * the isUseTrim
+   */
+  public boolean isUseTrim() {
+    return useTrim;
+  }
+
+  /**
+   * @param useTrim the useInvertedIndex to set
+   */
+  public void setUseTrim(boolean useTrim) {
+    this.useTrim = useTrim;
   }
 
   /**

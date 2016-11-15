@@ -583,6 +583,7 @@ public class GraphGenerator {
     seqMeta.setHeirKeySize(graphConfiguration.getHeirAndKeySizeString());
     seqMeta.setColumnSchemaDetails(graphConfiguration.getColumnSchemaDetails().toString());
     seqMeta.setTableOption(graphConfiguration.getTableOptionWrapper().toString());
+    seqMeta.setIsUseTrim(graphConfiguration.getIsUseTrim());
     String[] aggType = graphConfiguration.getAggType();
     StringBuilder builder = new StringBuilder();
     for (int i = 0; i < aggType.length; i++) {
@@ -800,6 +801,7 @@ public class GraphGenerator {
     List<CarbonDimension> dimensions = carbonDataLoadSchema.getCarbonTable()
         .getDimensionByTableName(carbonDataLoadSchema.getCarbonTable().getFactTableName());
     prepareIsUseInvertedIndex(dimensions, graphConfiguration);
+    prepareIsUseTrim(dimensions, graphConfiguration);
     graphConfiguration
         .setDimensions(CarbonSchemaParser.getTableDimensions(dimensions, carbonDataLoadSchema));
     graphConfiguration
@@ -997,5 +999,25 @@ public class GraphGenerator {
     }
     graphConfig.setIsUseInvertedIndex(
         isUseInvertedIndexList.toArray(new Boolean[isUseInvertedIndexList.size()]));
+  }
+
+  /**
+   * Preparing the boolean [] to map whether the dimension use trim or not.
+   *
+   * @param dims
+   * @param graphConfig
+   */
+  private void prepareIsUseTrim(List<CarbonDimension> dims,
+                                GraphConfigurationInfo graphConfig) {
+    List<Boolean> isUseTrimList = new ArrayList<Boolean>();
+    for (CarbonDimension dimension : dims) {
+      if (dimension.isUseTrim()) {
+        isUseTrimList.add(true);
+      } else {
+        isUseTrimList.add(false);
+      }
+    }
+    graphConfig.setIsUseTrim(
+            isUseTrimList.toArray(new Boolean[isUseTrimList.size()]));
   }
 }

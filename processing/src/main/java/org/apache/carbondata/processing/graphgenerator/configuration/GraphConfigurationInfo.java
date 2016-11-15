@@ -192,6 +192,8 @@ public class GraphConfigurationInfo {
 
   private Boolean[] isUseInvertedIndex;
 
+  private Boolean[] isUseTrim;
+
   private String columnPropertiesString;
 
   /**
@@ -225,6 +227,17 @@ public class GraphConfigurationInfo {
    */
   public void setIsUseInvertedIndex(Boolean[] isUseInvertedIndex) {
     this.isUseInvertedIndex = isUseInvertedIndex;
+  }
+
+  public Boolean[] getIsUseTrim() {
+    return isUseTrim;
+  }
+
+  /**
+   * @param isUseTrim the bool array whether use trim to set
+   */
+  public void setIsUseTrim(Boolean[] isUseTrim) {
+    this.isUseTrim = isUseTrim;
   }
 
   /**

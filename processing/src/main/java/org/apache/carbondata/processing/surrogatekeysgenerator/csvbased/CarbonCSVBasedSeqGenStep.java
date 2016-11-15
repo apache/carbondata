@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -268,6 +269,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
   private DirectDictionaryGenerator[] directDictionaryGenerators;
 
+  private HashSet<String> trimDimensions = new HashSet<>();
+
   /**
    * Constructor
    *
@@ -296,8 +299,8 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
       Object[] r = getRow();  // get row, blocks when needed!
       if (first) {
         CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-                .recordGeneratingDictionaryValuesTime(meta.getPartitionID(),
-                        System.currentTimeMillis());
+            .recordGeneratingDictionaryValuesTime(meta.getPartitionID(),
+                System.currentTimeMillis());
         first = false;
         meta.initialize();
         final Object dataProcessingLockObject = CarbonDataProcessorManager.getInstance()
@@ -478,7 +481,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
         HashMap<String, String> dateformatsHashMap = new HashMap<String, String>();
         if (meta.dateFormat != null) {
           String[] dateformats = meta.dateFormat.split(CarbonCommonConstants.COMMA);
-          for (String dateFormat:dateformats) {
+          for (String dateFormat : dateformats) {
             String[] dateFormatSplits = dateFormat.split(":", 2);
             dateformatsHashMap.put(dateFormatSplits[0].toLowerCase().trim(),
                 dateFormatSplits[1].trim());
@@ -504,11 +507,16 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           }
         }
       }
+      for (int j = 0; j < meta.dimColNames.length; j++) {
+        if (meta.getIsUseTrim().charAt(j) == 'T') {
+          trimDimensions.add(meta.dimColNames[j]);
+        }
+      }
       // no more input to be expected...
       if (r == null) {
         return processWhenRowIsNull();
       }
-      // proecess the first
+      // process the first
       Object[] out = process(r);
       readCounter++;
       if (null != out) {
@@ -938,6 +946,15 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     }
   }
 
+  private Object[] prepareForPopulate(Object[] r) {
+    for (int i = 0; i < r.length; i++) {
+      if (meta.getIsUseTrim().charAt(i) == 'T') {
+        r[i] = r.toString().trim();
+      }
+    }
+    return r;
+  }
+
   private Object[] populateOutputRow(Object[] r) throws KettleException {
 
     // Copy the dimension String values to output
@@ -981,6 +998,9 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           CarbonCommonConstants.MEMBER_DEFAULT_VAL :
           (String) r[j];
       // check whether the column value is the value to be  serialized as null.
+      if (trimDimensions.contains(meta.getTableName() + "_" + columnName)) {
+        tuple = tuple.trim();
+      }
       boolean isSerialized = false;
       if(tuple.equalsIgnoreCase(serializationNullFormat)) {
         tuple = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
