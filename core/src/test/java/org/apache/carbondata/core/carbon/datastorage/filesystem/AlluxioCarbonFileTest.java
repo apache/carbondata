@@ -203,7 +203,7 @@ public class AlluxioCarbonFileTest {
     }
 
     @Test
-    public void testParentFIle() {
+    public void testgetParentFile() {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {

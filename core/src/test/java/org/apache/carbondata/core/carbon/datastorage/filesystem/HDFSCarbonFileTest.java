@@ -43,8 +43,8 @@ public class HDFSCarbonFileTest {
     static public void setUp() throws IOException {
         Configuration config = new Configuration();
 //adding local hadoop configuration
-        config.addResource(new Path("/usr/local/Cellar/hadoop/2.4.0/libexec/etc/hadoop/core-site.xml"));
-        config.addResource(new Path("/usr/local/Cellar/hadoop/2.4.0/libexec/etc/hadoop/hdfs-site.xml"));
+        config.addResource(new Path("core-site.xml"));
+        config.addResource(new Path("hdfs-site.xml"));
 
         String filename = "Test.carbondata"; //this path is HDFS path
         pt = new Path(filename);
@@ -72,7 +72,7 @@ public class HDFSCarbonFileTest {
     @AfterClass
     static public void cleanUp() {
         try {
-            fs.delete(pt, true);
+           fs.delete(pt, true);
         } catch (IOException e) {
             LOGGER.error("Exception Occured" + e.getMessage());
         }
@@ -276,7 +276,7 @@ public class HDFSCarbonFileTest {
     }
 
     @Test
-    public void testParentFileForNull() {
+    public void testgetParentFileForNull() {
 
         new MockUp<Path>() {
             @Mock
@@ -312,7 +312,7 @@ public class HDFSCarbonFileTest {
     }
 
     @Test
-    public void testParentFile() {
+    public void testgetParentFile() {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {

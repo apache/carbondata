@@ -213,7 +213,7 @@ public class ViewFsCarbonFileTest {
     }
 
     @Test
-    public void testParentFIle() {
+    public void testgetParentFIle() {
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
