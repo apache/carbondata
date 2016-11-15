@@ -19,6 +19,14 @@
 
 package org.apache.carbondata.core.load;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
+
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,6 +37,8 @@ import static junit.framework.Assert.assertNull;
 public class LoadMetadataDetailsUnitTest {
 
   private LoadMetadataDetails loadMetadataDetails;
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(LoadMetadataDetails.class.getName());
 
   @Before public void setup() {
     loadMetadataDetails = new LoadMetadataDetails();
@@ -105,10 +115,20 @@ public class LoadMetadataDetailsUnitTest {
   }
 
   @Test public void testGetTimeStampWithDate() throws Exception {
-    String oldString = "01-01-2016 00:00:00";
-    loadMetadataDetails.setLoadStartTime(oldString);
-    Long expected_result = 1451586600000000L;
+    String date = "01-01-2016 00:00:00";
+    loadMetadataDetails.setLoadStartTime(date);
+    Long expected_result = getTime(date);
     Long result = loadMetadataDetails.getLoadStartTimeAsLong();
     assertEquals(expected_result, result);
+  }
+
+  public static Long getTime(String date) {
+    SimpleDateFormat simpleDateFormat = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
+    try {
+      return simpleDateFormat.parse(date).getTime() * 1000;
+    } catch (ParseException e) {
+      LOGGER.error("Error while parsing " + date + " " + e.getMessage());
+      return null;
+    }
   }
 }
