@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 
+import static java.lang.System.out;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -35,7 +36,7 @@ public class HDFSCarbonFileTest {
     private static HDFSCarbonFile hdfsCarbonFile;
     private static FileStatus fileStatus = null;
     private static FileStatus fileStatusWithOutDirectoryPermission;
-    private static String fileName;
+    private static String fileName = null;
     private static FileSystem fs = null;
     private static Path pt;
 
@@ -45,9 +46,8 @@ public class HDFSCarbonFileTest {
 //adding local hadoop configuration
         config.addResource(new Path("core-site.xml"));
         config.addResource(new Path("hdfs-site.xml"));
-
-        String filename = "Test.carbondata"; //this path is HDFS path
-        pt = new Path(filename);
+        fileName = "Test.carbondata"; //this path is HDFS path
+        pt = new Path(fileName);
         fs = FileSystem.get(new Configuration(config));
         fs.create(pt);
         if (fs.exists(pt)) {
@@ -62,8 +62,8 @@ public class HDFSCarbonFileTest {
             br.close();
             fs.close();
 
-            fileStatus = new FileStatus(12L, true, 60, 120l, 180L, new Path(fs.getName()));
-            fileStatusWithOutDirectoryPermission = new FileStatus(12L, false, 60, 120l, 180L, new Path(fs.getName()));
+            fileStatus = new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName));
+            fileStatusWithOutDirectoryPermission = new FileStatus(12L, false, 60, 120l, 180L, new Path(fileName));
             hdfsCarbonFile = new HDFSCarbonFile(fileStatus);
 
         }
@@ -72,7 +72,7 @@ public class HDFSCarbonFileTest {
     @AfterClass
     static public void cleanUp() {
         try {
-           fs.delete(pt, true);
+            fs.delete(pt, true);
         } catch (IOException e) {
             LOGGER.error("Exception Occured" + e.getMessage());
         }
@@ -114,7 +114,7 @@ public class HDFSCarbonFileTest {
         new MockUp<FileStatus>() {
             @Mock
             public Path getPath() {
-                return new Path(fs.getName());
+                return new Path(fileName);
             }
 
         };
@@ -123,7 +123,7 @@ public class HDFSCarbonFileTest {
 
     @Test
     public void testConstructorWithFilePath() {
-        hdfsCarbonFile = new HDFSCarbonFile(fs.getName());
+        hdfsCarbonFile = new HDFSCarbonFile(fileName);
         assertTrue(hdfsCarbonFile instanceof HDFSCarbonFile);
     }
 
@@ -162,7 +162,7 @@ public class HDFSCarbonFileTest {
             @Mock
             public FileStatus[] listStatus(Path var1) throws IOException {
 
-                FileStatus[] fileStatus = new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fs.getName()))};
+                FileStatus[] fileStatus = new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
                 return fileStatus;
             }
 
@@ -178,7 +178,7 @@ public class HDFSCarbonFileTest {
         new MockUp<FileStatus>() {
             @Mock
             public Path getPath() {
-                return new Path(fs.getName());
+                return new Path(fileName);
             }
 
         };
@@ -229,7 +229,7 @@ public class HDFSCarbonFileTest {
         new MockUp<FileStatus>() {
             @Mock
             public Path getPath() {
-                return new Path(fs.getName());
+                return new Path(fileName);
             }
 
         };
@@ -237,7 +237,7 @@ public class HDFSCarbonFileTest {
             @Mock
             public FileStatus[] listStatus(Path var1) throws IOException {
 
-                FileStatus fileStatus[] = new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fs.getName()))};
+                FileStatus fileStatus[] = new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
                 return fileStatus;
             }
 
@@ -266,7 +266,7 @@ public class HDFSCarbonFileTest {
             @Mock
             public FileStatus[] listStatus(Path var1) throws IOException {
 
-                FileStatus[] fileStatus = new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fs.getName()))};
+                FileStatus[] fileStatus = new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
                 return fileStatus;
             }
 
@@ -288,7 +288,7 @@ public class HDFSCarbonFileTest {
         new MockUp<FileStatus>() {
             @Mock
             public Path getPath() {
-                return new Path(fs.getName());
+                return new Path(fileName);
             }
 
         };
@@ -303,7 +303,7 @@ public class HDFSCarbonFileTest {
         new MockUp<FileStatus>() {
             @Mock
             public Path getPath() {
-                return new Path(fs.getName());
+                return new Path(fileName);
             }
 
         };
@@ -323,14 +323,14 @@ public class HDFSCarbonFileTest {
         new MockUp<Path>() {
             @Mock
             public Path getParent() {
-                return new Path(fs.getName());
+                return new Path(fileName);
             }
 
         };
         new MockUp<FileStatus>() {
             @Mock
             public Path getPath() {
-                return new Path(fs.getName());
+                return new Path(fileName);
             }
 
         };
@@ -338,7 +338,7 @@ public class HDFSCarbonFileTest {
             @Mock
             public FileStatus getFileStatus(Path f) throws IOException {
 
-                return new FileStatus(12L, true, 60, 120l, 180L, new Path(fs.getName()));
+                return new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName));
             }
 
         };
@@ -377,7 +377,7 @@ public class HDFSCarbonFileTest {
 
         };
         hdfsCarbonFile = new HDFSCarbonFile(fileStatus);
-        assertEquals(hdfsCarbonFile.renameForce(fs.getName()), true);
+        assertEquals(hdfsCarbonFile.renameForce(fileName), true);
 
     }
 }
