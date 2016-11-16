@@ -22,10 +22,15 @@ package org.apache.carbondata.integration.spark.testsuite.dataload
 import java.io.File
 import java.math.BigDecimal
 
+import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile
+import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.{CarbonHiveContext, QueryTest}
 import org.scalatest.BeforeAndAfterAll
+
+import scala.collection.mutable.ArrayBuffer
 
 class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
 
@@ -41,6 +46,24 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
 
     currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
         .getCanonicalPath
+  }
+
+  private def checkSegmentExists(
+      segmentId: String,
+      datbaseName: String,
+      tableName: String): Boolean = {
+    val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
+      .getCarbonTable(datbaseName + "_" + tableName)
+    val partitionPath = CarbonStorePath.getCarbonTablePath(
+      CarbonHiveContext.hdfsCarbonBasePath,
+      carbonTable.getCarbonTableIdentifier).getPartitionDir("0")
+    val fileType: FileFactory.FileType = FileFactory.getFileType(partitionPath)
+    val carbonFile = FileFactory.getCarbonFile(partitionPath, fileType)
+    val segments: ArrayBuffer[String] = ArrayBuffer()
+    carbonFile.listFiles.foreach { file =>
+      segments += CarbonTablePath.DataPathUtil.getSegmentId(file.getAbsolutePath + "/dummy")
+    }
+    segments.contains(segmentId)
   }
 
   test("test data loading CSV file") {
@@ -97,6 +120,23 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
       sql("SELECT * FROM invalidMeasures"),
       Seq(Row("India",null,new BigDecimal("22.44")), Row("Russia",null,null), Row("USA",234.43,null))
     )
+  }
+
+  test("test data loading into table whose name has '_'") {
+    sql("DROP TABLE IF EXISTS load_test")
+    sql(""" CREATE TABLE load_test(id int, name string, city string, age int)
+        STORED BY 'org.apache.carbondata.format' """)
+    val testData = currentDirectory + "/src/test/resources/sample.csv"
+    try {
+      sql(s"LOAD DATA LOCAL INPATH '$testData' into table load_test")
+      sql(s"LOAD DATA LOCAL INPATH '$testData' into table load_test")
+    } catch {
+      case ex: Exception =>
+        assert(false)
+    }
+    assert(checkSegmentExists("0", "default", "load_test"))
+    assert(checkSegmentExists("1", "default", "load_test"))
+    sql("DROP TABLE load_test")
   }
 
   override def afterAll {

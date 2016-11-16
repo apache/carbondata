@@ -456,6 +456,10 @@ public final class CarbonCommonConstants {
    */
   public static final String POINT = ".";
   /**
+   * Windows File separator
+   */
+  public static final String WINDOWS_FILE_SEPARATOR = "\\";
+  /**
    * File separator
    */
   public static final String FILE_SEPARATOR = "/";
