@@ -267,7 +267,10 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
   private GenericDataType[] complexTypes;
 
   private DirectDictionaryGenerator[] directDictionaryGenerators;
-
+  /**
+   * dimension column ids
+   */
+  private String[] dimensionColumnIds;
   /**
    * Constructor
    *
@@ -350,7 +353,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           if (null != getInputRowMeta()) {
             data.setOutputRowMeta((RowMetaInterface) getInputRowMeta().clone());
           }
-
+          this.dimensionColumnIds = meta.getDimensionColumnIds();
           ColumnsInfo columnsInfo = new ColumnsInfo();
           columnsInfo.setDims(meta.dims);
           columnsInfo.setDimColNames(meta.dimColNames);
@@ -373,7 +376,7 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
           columnsInfo.setPrimaryKeyMap(meta.getPrimaryKeyMap());
           columnsInfo.setMeasureColumns(meta.measureColumn);
           columnsInfo.setComplexTypesMap(meta.getComplexTypes());
-          columnsInfo.setDimensionColumnIds(meta.getDimensionColumnIds());
+          columnsInfo.setDimensionColumnIds(this.dimensionColumnIds);
           columnsInfo.setColumnSchemaDetailsWrapper(meta.getColumnSchemaDetailsWrapper());
           columnsInfo.setColumnProperties(meta.getColumnPropertiesMap());
           updateBagLogFileName();
@@ -945,7 +948,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
     int inputColumnsSize = metaColumnNames.length;
     boolean isGenerated = false;
     int generatedSurrogate = -1;
-    String[] dimensionColumnIds = meta.getDimensionColumnIds();
 
     //If CSV Exported from DB and we enter one row down then that row become empty.
     // In that case it will have first value empty and other values will be null
