@@ -27,6 +27,8 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
+import static junit.framework.TestCase.assertEquals;
+
 public class FixedLengthDimensionDataChunkTest {
 
   static FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk;
@@ -54,7 +56,8 @@ public class FixedLengthDimensionDataChunkTest {
     keyStructureInfo.setMaskByteRanges(maskByteRanges);
     keyStructureInfo.setMaxKey("1234567".getBytes());
     int res = fixedLengthDimensionDataChunk.fillChunkData(data, 0, 0, keyStructureInfo);
-    assert (res == 4);
+    int expectedResult = 4 ;
+    assertEquals(res, expectedResult);
   }
 
   @Test public void getChunkDataTest() {
@@ -67,7 +70,8 @@ public class FixedLengthDimensionDataChunkTest {
     int[] row = { 1, 2, 4, 6 };
     KeyStructureInfo keyStructureInfo = new KeyStructureInfo();
     int res = fixedLengthDimensionDataChunk.fillConvertedChunkData(1, 0, row, keyStructureInfo);
-    assert (res == 1);
+    int expectedResult = 1;
+    assertEquals(res, expectedResult);
   }
 }
 

@@ -17,6 +17,8 @@ import mockit.MockUp;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static junit.framework.TestCase.assertEquals;
+
 public class CompressedMeasureChunkFileBasedReaderTest {
 
   static CompressedMeasureChunkFileBasedReader compressedMeasureChunkFileBasedReader;
@@ -70,8 +72,8 @@ public class CompressedMeasureChunkFileBasedReaderTest {
 
     byte expectedValue[] = { 3, 7, 9 };
     for (int i = 0; i < 3; i++) {
-      assert (expectedValue[i] == measureColumnDataChunks.getMeasureDataHolder()
-          .getReadableByteArrayValueByIndex(0)[i]);
+      assertEquals(expectedValue[i],
+          measureColumnDataChunks.getMeasureDataHolder().getReadableByteArrayValueByIndex(0)[i]);
     }
   }
 
@@ -102,8 +104,8 @@ public class CompressedMeasureChunkFileBasedReaderTest {
 
     byte expectedValue[] = { 3, 7, 9 };
     for (int i = 0; i < 3; i++) {
-      assert (expectedValue[i] == measureColumnDataChunks[0].getMeasureDataHolder()
-          .getReadableByteArrayValueByIndex(0)[i]);
+      assertEquals(expectedValue[i],
+          measureColumnDataChunks[0].getMeasureDataHolder().getReadableByteArrayValueByIndex(0)[i]);
     }
   }
 }

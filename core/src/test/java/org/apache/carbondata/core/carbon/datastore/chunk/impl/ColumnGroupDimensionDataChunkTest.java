@@ -28,6 +28,8 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
+import static junit.framework.TestCase.assertEquals;
+
 public class ColumnGroupDimensionDataChunkTest {
 
   static ColumnGroupDimensionDataChunk columnGroupDimensionDataChunk;
@@ -51,7 +53,8 @@ public class ColumnGroupDimensionDataChunkTest {
     keyStructureInfo.setMaxKey("1234567".getBytes());
 
     int res = columnGroupDimensionDataChunk.fillChunkData(data, 2, 1, keyStructureInfo);
-    assert (res == 4);
+    int expectedResult = 4;
+    assertEquals(res, expectedResult);
   }
 
   @Test public void getChunkDataTest() {
@@ -70,7 +73,8 @@ public class ColumnGroupDimensionDataChunkTest {
     keyStructureInfo.setMdkeyQueryDimensionOrdinal(mdkeyQueryDimensionOrdinal);
 
     int res = columnGroupDimensionDataChunk.fillConvertedChunkData(0, 0, row, keyStructureInfo);
-    assert (res == 4);
+    int expectedresult = 4;
+    assertEquals(res, expectedresult);
   }
 }
 

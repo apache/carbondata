@@ -19,9 +19,10 @@
 package org.apache.carbondata.core.cache.dictionary;
 
 import net.jpountz.xxhash.XXHashFactory;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static junit.framework.TestCase.assertEquals;
 
 public class DictionaryByteArrayWrapperTest {
 
@@ -65,7 +66,8 @@ public class DictionaryByteArrayWrapperTest {
 
   @Test public void hashCodeTest() {
     int res = dictionaryByteArrayWrapper.hashCode();
-    assert (res == -967077647);
+    int expectedResult = -967077647;
+    assertEquals(res, expectedResult);
   }
 
 }

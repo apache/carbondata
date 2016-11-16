@@ -26,6 +26,8 @@ import org.junit.Test;
 import java.util.HashMap;
 import java.util.Map;
 
+import static junit.framework.TestCase.assertEquals;
+
 public class ColumnIdentifierTest {
 
   static ColumnIdentifier columnIdentifier;
@@ -39,7 +41,8 @@ public class ColumnIdentifierTest {
 
   @Test public void hashCodeTest() {
     int res = columnIdentifier.hashCode();
-    assert (res == -623419600);
+    int expectedResult = -623419600;
+    assertEquals(res, expectedResult);
   }
 
   @Test public void equalsTestwithSameObject() {
@@ -87,7 +90,7 @@ public class ColumnIdentifierTest {
     ColumnIdentifier columnIdentifierTest =
         new ColumnIdentifier("diffColumnId", null, DataType.INT);
     String res = columnIdentifierTest.getColumnProperty("key");
-    assert (res == null);
+    assertEquals(res, null);
   }
 
   @Test public void getColumnPropertyTestwithNull() {

@@ -21,6 +21,8 @@ package org.apache.carbondata.core.carbon.datastore.block;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static junit.framework.TestCase.assertEquals;
+
 public class BlockInfoTest {
 
   static BlockInfo blockInfo;
@@ -31,7 +33,8 @@ public class BlockInfoTest {
 
   @Test public void hashCodeTest() {
     int res = blockInfo.hashCode();
-    assert (res == -520590451);
+    int expectedResult = -520590451;
+    assertEquals(res, expectedResult);
   }
 
   @Test public void equalsTestwithSameObject() {

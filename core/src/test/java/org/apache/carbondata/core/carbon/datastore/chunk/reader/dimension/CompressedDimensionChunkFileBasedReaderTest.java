@@ -91,9 +91,11 @@ public class CompressedDimensionChunkFileBasedReaderTest {
     int blockIndexes[] = { 0 };
     DimensionColumnDataChunk dimensionColumnDataChunk[] =
         compressedDimensionChunkFileBasedReader.readDimensionChunks(fileHolder, blockIndexes);
-
+    byte expectedResult[] = { 1 };
     assertEquals(dimensionColumnDataChunk[0].getAttributes().getColumnValueSize(), 1);
-    assertEquals(dimensionColumnDataChunk[0].getChunkData(0).length, 1);
+    for (int i = 0; i < dimensionColumnDataChunk[0].getChunkData(0).length; i++) {
+      assertEquals(dimensionColumnDataChunk[0].getChunkData(0)[i], expectedResult[i]);
+    }
   }
 
   @Test public void readDimensionChunksTestForIfStatement() {
@@ -139,7 +141,11 @@ public class CompressedDimensionChunkFileBasedReaderTest {
     DimensionColumnDataChunk dimensionColumnDataChunk[] =
         compressedDimensionChunkFileBasedReader.readDimensionChunks(fileHolder, blockIndexes);
 
+    byte expectedResult[] = { 1 };
     assertEquals(dimensionColumnDataChunk[0].getAttributes().getColumnValueSize(), 1);
-    assertEquals(dimensionColumnDataChunk[0].getChunkData(0).length, 1);
+
+    for (int i = 0; i < dimensionColumnDataChunk[0].getChunkData(0).length; i++) {
+      assertEquals(dimensionColumnDataChunk[0].getChunkData(0)[i], expectedResult[i]);
+    }
   }
 }

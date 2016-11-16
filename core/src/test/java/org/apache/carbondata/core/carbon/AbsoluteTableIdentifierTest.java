@@ -22,6 +22,8 @@ package org.apache.carbondata.core.carbon;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static junit.framework.TestCase.assertEquals;
+
 public class AbsoluteTableIdentifierTest {
   static AbsoluteTableIdentifier absoluteTableIdentifier;
   static AbsoluteTableIdentifier absoluteTableIdentifier1;
@@ -77,7 +79,8 @@ public class AbsoluteTableIdentifierTest {
 
   @Test public void hashCodeTest() {
     int res = absoluteTableIdentifier4.hashCode();
-    assert (res == 804398706);
+    int expectedResult = 804398706;
+    assertEquals(res, expectedResult);
   }
 
   @Test public void gettablePathTest() {

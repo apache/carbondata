@@ -26,6 +26,8 @@ import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static junit.framework.TestCase.assertEquals;
+
 public class TableBlockInfoTest {
 
   static TableBlockInfo tableBlockInfo;
@@ -93,17 +95,20 @@ public class TableBlockInfoTest {
     TableBlockInfo tableBlockInfo =
         new TableBlockInfo("difffilepath", 6, "5", null, 6, new BlockletInfos(6, 3, 2));
     int res = tableBlockInfos.compareTo(tableBlockInfo);
-    assert (res == 2);
+    int expectedResult = 2;
+    assertEquals(res, expectedResult);
 
     TableBlockInfo tableBlockInfo1 =
         new TableBlockInfo("difffilepath", 6, "6", null, 6, new BlockletInfos(6, 3, 2));
     int res1 = tableBlockInfos.compareTo(tableBlockInfo1);
-    assert (res1 == -1);
+    int expectedResult1 = -1;
+    assertEquals(res1, expectedResult1);
 
     TableBlockInfo tableBlockInfo2 =
         new TableBlockInfo("difffilepath", 6, "4", null, 6, new BlockletInfos(6, 3, 2));
     int res2 = tableBlockInfos.compareTo(tableBlockInfo2);
-    assert (res2 == 1);
+    int expectedresult2 = 1;
+    assertEquals(res2, expectedresult2);
   }
 
   @Test public void compareToTestForOffsetAndLength() {
@@ -127,38 +132,44 @@ public class TableBlockInfoTest {
 
     TableBlockInfo tableBlockInfo = new TableBlockInfo("difffilepaths", 6, "5", null, 3);
     int res = tableBlockInfos.compareTo(tableBlockInfo);
-    assert (res == -5);
+    int expectedResult = -5;
+    assertEquals(res, expectedResult);
 
     TableBlockInfo tableBlockInfo1 = new TableBlockInfo("filepath", 6, "5", null, 3);
     int res1 = tableBlockInfos.compareTo(tableBlockInfo1);
-    assert (res1 == 1);
+    int expectedResult1 = 1;
+    assertEquals(res1, expectedResult1);
 
     TableBlockInfo tableBlockInfoTest =
         new TableBlockInfo("filePath", 6, "5", null, 7, new BlockletInfos(6, 2, 2));
     int res2 = tableBlockInfos.compareTo(tableBlockInfoTest);
-    assert (res2 == -1);
+    int expectedResult2 = -1;
+    assertEquals(res2, expectedResult2);
   }
 
   @Test public void compareToTestWithStartBlockletNo() {
     TableBlockInfo tableBlockInfo =
         new TableBlockInfo("filepath", 6, "5", null, 6, new BlockletInfos(6, 3, 2));
     int res = tableBlockInfos.compareTo(tableBlockInfo);
-    assert (res == -1);
+    int expectedresult =-1;
+    assertEquals(res, expectedresult);
 
     TableBlockInfo tableBlockInfo1 =
         new TableBlockInfo("filepath", 6, "5", null, 6, new BlockletInfos(6, 1, 2));
     int res1 = tableBlockInfos.compareTo(tableBlockInfo1);
-    assert (res1 == 1);
+    int expectedresult1 = 1;
+    assertEquals(res1, expectedresult1);
   }
 
   @Test public void compareToTest() {
     int res = tableBlockInfos.compareTo(tableBlockInfos);
-    assert (res == 0);
+    int expectedResult = 0;
+    assertEquals(res, expectedResult);
   }
 
   @Test public void hashCodeTest() {
     int res = tableBlockInfo.hashCode();
-    System.out.println(res);
-    assert (res == 1041505621);
+    int expectedResult = 1041505621;
+    assertEquals(res, expectedResult);
   }
 }
