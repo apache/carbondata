@@ -510,10 +510,13 @@ public final class CarbonDataMergerUtil {
 
     int level1Size = 0;
     int level2Size = 0;
+    int size = noOfSegmentLevelsCount.length;
 
-    if (noOfSegmentLevelsCount.length != 0) {
+    if (size >= 2) {
       level1Size = noOfSegmentLevelsCount[0];
       level2Size = noOfSegmentLevelsCount[1];
+    } else if (size == 1) {
+      level1Size = noOfSegmentLevelsCount[0];
     }
 
     int unMergeCounter = 0;
