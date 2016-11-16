@@ -26,8 +26,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.processing.newflow.complexobjects.ArrayObject;
 import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.CarbonCSVBasedDimSurrogateKeyGen;
 
 import org.pentaho.di.core.exception.KettleException;
@@ -35,7 +37,7 @@ import org.pentaho.di.core.exception.KettleException;
 /**
  * Array DataType stateless object used in data loading
  */
-public class ArrayDataType implements GenericDataType {
+public class ArrayDataType implements GenericDataType<ArrayObject> {
 
   /**
    * child columns
@@ -177,7 +179,28 @@ public class ArrayDataType implements GenericDataType {
     }
   }
 
-  /*
+  @Override
+  public void writeByteArray(ArrayObject input, DataOutputStream dataOutputStream)
+      throws IOException, DictionaryGenerationException {
+    if (input == null) {
+      dataOutputStream.writeInt(1);
+      children.writeByteArray(null, dataOutputStream);
+    } else {
+      Object[] data = input.getData();
+      dataOutputStream.writeInt(data.length);
+      for (Object eachInput : data) {
+        children.writeByteArray(eachInput, dataOutputStream);
+      }
+    }
+  }
+
+  @Override
+  public void fillCardinality(List<Integer> dimCardWithComplex) {
+    dimCardWithComplex.add(0);
+    children.fillCardinality(dimCardWithComplex);
+  }
+
+  /**
    * parse byte array and bit pack
    */
   @Override

@@ -46,8 +46,8 @@ public class MultiplyExpression extends BinaryArithmeticExpression {
     }
 
     if (multiplyExprLeftRes.getDataType() != multiplyExprRightRes.getDataType()) {
-      if (multiplyExprLeftRes.getDataType().getPresedenceOrder() < multiplyExprRightRes
-          .getDataType().getPresedenceOrder()) {
+      if (multiplyExprLeftRes.getDataType().getPrecedenceOrder() < multiplyExprRightRes
+          .getDataType().getPrecedenceOrder()) {
         val2 = multiplyExprLeftRes;
         val1 = multiplyExprRightRes;
       }

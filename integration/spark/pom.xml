@@ -182,6 +182,7 @@
           </environmentVariables>
           <systemProperties>
             <java.awt.headless>true</java.awt.headless>
+            <use.kettle>${use.kettle}</use.kettle>
           </systemProperties>
         </configuration>
         <executions>

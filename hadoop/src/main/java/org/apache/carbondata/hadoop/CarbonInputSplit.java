@@ -22,6 +22,9 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.List;
+
+import org.apache.carbondata.hadoop.internal.index.Block;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Writable;
@@ -30,7 +33,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 /**
  * Carbon input split to allow distributed read of CarbonInputFormat.
  */
-public class CarbonInputSplit extends FileSplit implements Serializable, Writable {
+public class CarbonInputSplit extends FileSplit implements Serializable, Writable, Block {
 
   private static final long serialVersionUID = 3520344046772190207L;
   private String segmentId;
@@ -84,4 +87,18 @@ public class CarbonInputSplit extends FileSplit implements Serializable, Writabl
     return numberOfBlocklets;
   }
 
+  @Override
+  public String getBlockPath() {
+    return getPath().getName();
+  }
+
+  @Override
+  public List<Long> getMatchedBlocklets() {
+    return null;
+  }
+
+  @Override
+  public boolean fullScan() {
+    return true;
+  }
 }

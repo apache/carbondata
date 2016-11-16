@@ -18,10 +18,12 @@
  */
 package org.apache.carbondata.processing.newflow.converter.impl;
 
+import java.util.List;
+
 import org.apache.carbondata.processing.newflow.converter.FieldConverter;
 
 public abstract class AbstractDictionaryFieldConverterImpl implements FieldConverter {
 
-  public abstract int getColumnCardinality();
+  public abstract void fillColumnCardinality(List<Integer> cardinality);
 
 }

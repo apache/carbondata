@@ -91,7 +91,7 @@ public class BlockInfo {
     if (info.getBlockOffset() != other.info.getBlockOffset()) {
       return false;
     }
-    if (info.getBlockLength() != info.getBlockLength()) {
+    if (info.getBlockLength() != other.info.getBlockLength()) {
       return false;
     }
 

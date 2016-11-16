@@ -80,6 +80,13 @@ public class BlockIndexStore {
    */
   private Map<AbsoluteTableIdentifier, Object> tableLockMap;
 
+  /**
+   * block info to future task mapping
+   * useful when blocklet distribution is enabled and
+   * same block is loaded by multiple thread
+   */
+  private Map<BlockInfo, Future<AbstractIndex>> mapOfBlockInfoToFuture;
+
   private BlockIndexStore() {
     tableBlocksMap = new ConcurrentHashMap<AbsoluteTableIdentifier, Map<BlockInfo, AbstractIndex>>(
         CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -87,6 +94,7 @@ public class BlockIndexStore {
         CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     blockInfoLock = new ConcurrentHashMap<BlockInfo, Object>();
     segmentIdToBlockListMap = new ConcurrentHashMap<>();
+    mapOfBlockInfoToFuture = new ConcurrentHashMap<>();
   }
 
   /**
@@ -137,7 +145,6 @@ public class BlockIndexStore {
       blockInfosNeedToLoad = fillSegmentIdToTableInfoMap(tableBlocksInfos, absoluteTableIdentifier);
     }
     AbstractIndex tableBlock = null;
-    List<Future<AbstractIndex>> blocksList = new ArrayList<Future<AbstractIndex>>();
     int counter = -1;
     for (BlockInfo blockInfo : blockInfosNeedToLoad) {
       counter++;
@@ -173,7 +180,12 @@ public class BlockIndexStore {
           tableBlock = tableBlockMapTemp.get(blockInfo);
           // if still block is not present then load the block
           if (null == tableBlock) {
-            blocksList.add(executor.submit(new BlockLoaderThread(blockInfo, tableBlockMapTemp)));
+            if (null == mapOfBlockInfoToFuture.get(blockInfo)) {
+              mapOfBlockInfoToFuture.put(blockInfo, executor
+                  .submit(new BlockLoaderThread(blockInfo, tableBlockMapTemp)));
+            }
+          } else {
+            loadedBlock[counter] = tableBlock;
           }
         }
       } else {
@@ -190,7 +202,7 @@ public class BlockIndexStore {
       throw new IndexBuilderException(e);
     }
     // fill the block which were not loaded before to loaded blocks array
-    fillLoadedBlocks(loadedBlock, blocksList);
+    fillLoadedBlocks(loadedBlock, blockInfosNeedToLoad);
     return Arrays.asList(loadedBlock);
   }
 
@@ -234,13 +246,12 @@ public class BlockIndexStore {
    * @param blocksList       blocks loaded in thread
    * @throws IndexBuilderException in case of any failure
    */
-  private void fillLoadedBlocks(AbstractIndex[] loadedBlockArray,
-      List<Future<AbstractIndex>> blocksList) throws IndexBuilderException {
-    int blockCounter = 0;
+  private void fillLoadedBlocks(AbstractIndex[] loadedBlockArray, List<BlockInfo> blockInfos)
+      throws IndexBuilderException {
     for (int i = 0; i < loadedBlockArray.length; i++) {
       if (null == loadedBlockArray[i]) {
         try {
-          loadedBlockArray[i] = blocksList.get(blockCounter++).get();
+          loadedBlockArray[i] = mapOfBlockInfoToFuture.get(blockInfos.get(i)).get();
         } catch (InterruptedException | ExecutionException e) {
           throw new IndexBuilderException(e);
         }

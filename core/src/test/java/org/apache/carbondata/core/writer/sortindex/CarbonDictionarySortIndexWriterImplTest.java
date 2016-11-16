@@ -44,10 +44,10 @@ import org.junit.Test;
  */
 public class CarbonDictionarySortIndexWriterImplTest {
 
-  private String hdfsStorePath;
+  private String storePath;
 
   @Before public void setUp() throws Exception {
-    hdfsStorePath = "target/carbonStore";
+      storePath = "target/carbonStore";
   }
 
   @After public void tearDown() throws Exception {
@@ -62,13 +62,12 @@ public class CarbonDictionarySortIndexWriterImplTest {
    * @throws Exception
    */
   @Test public void write() throws Exception {
-    String storePath = hdfsStorePath;
     CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("testSchema", "carbon", UUID.randomUUID().toString());
     ColumnIdentifier columnIdentifier = new ColumnIdentifier("Name", null, null);
 
-    String metaFolderPath =hdfsStorePath+File.separator+carbonTableIdentifier.getDatabaseName()+File.separator+carbonTableIdentifier.getTableName()+File.separator+"Metadata";
+    String metaFolderPath =storePath+File.separator+carbonTableIdentifier.getDatabaseName()+File.separator+carbonTableIdentifier.getTableName()+File.separator+"Metadata";
     CarbonUtil.checkAndCreateFolder(metaFolderPath);
-    CarbonDictionaryWriter dictionaryWriter = new CarbonDictionaryWriterImpl(hdfsStorePath,
+    CarbonDictionaryWriter dictionaryWriter = new CarbonDictionaryWriterImpl(storePath,
     	       carbonTableIdentifier, columnIdentifier);
     CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
         new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, columnIdentifier, storePath);
@@ -100,7 +99,6 @@ public class CarbonDictionarySortIndexWriterImplTest {
    * @throws Exception
    */
   @Test public void writingEmptyValue() throws Exception {
-    String storePath = hdfsStorePath;
     CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("testSchema", "carbon", UUID.randomUUID().toString());
     ColumnIdentifier columnIdentifier = new ColumnIdentifier("Name", null, null);
 
@@ -135,8 +133,8 @@ public class CarbonDictionarySortIndexWriterImplTest {
    * this method will delete the store path
    */
   private void deleteStorePath() {
-    FileFactory.FileType fileType = FileFactory.getFileType(this.hdfsStorePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(this.hdfsStorePath, fileType);
+    FileFactory.FileType fileType = FileFactory.getFileType(this.storePath);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(this.storePath, fileType);
     deleteRecursiveSilent(carbonFile);
   }
 

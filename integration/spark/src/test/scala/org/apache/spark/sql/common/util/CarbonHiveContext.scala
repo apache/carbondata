@@ -31,7 +31,8 @@ class LocalSQLContext(val hdfsCarbonBasePath: String)
   extends CarbonContext(new SparkContext(new SparkConf()
     .setAppName("CarbonSpark")
     .setMaster("local[2]")
-    .set("spark.sql.shuffle.partitions", "20")),
+    .set("spark.sql.shuffle.partitions", "20")
+    .set("use_kettle_default", "true")),
     hdfsCarbonBasePath,
     hdfsCarbonBasePath) {
 

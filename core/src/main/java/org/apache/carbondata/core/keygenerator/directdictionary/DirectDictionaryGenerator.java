@@ -53,4 +53,6 @@ public interface DirectDictionaryGenerator {
    */
   int generateDirectSurrogateKey(String memberStr, String format);
 
+  void initialize();
+
 }

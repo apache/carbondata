@@ -162,7 +162,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   }
 
   /**
-   * Below method will be used to get the key structure info for the uqery
+   * Below method will be used to get the key structure info for the query
    *
    * @param queryModel   query model
    * @param keyGenerator

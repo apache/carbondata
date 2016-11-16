@@ -32,6 +32,7 @@ import org.apache.spark.sql.execution.{ExecutedCommand, Filter, Project, SparkPl
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.{DescribeCommand => LogicalDescribeCommand, LogicalRelation}
 import org.apache.spark.sql.hive.execution.{DropTable, HiveNativeCommand}
+import org.apache.spark.sql.hive.execution.command._
 import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
 import org.apache.spark.sql.types.IntegerType
 
@@ -227,12 +228,12 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       case ShowLoadsCommand(databaseName, table, limit) =>
         ExecutedCommand(ShowLoads(databaseName, table, limit, plan.output)) :: Nil
       case LoadTable(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
-      options, isOverwriteExist, inputSqlString, dataFrame, useKettle) =>
+      options, isOverwriteExist, inputSqlString, dataFrame) =>
         val isCarbonTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
             .tableExists(TableIdentifier(tableName, databaseNameOp))(sqlContext)
         if (isCarbonTable || options.nonEmpty) {
           ExecutedCommand(LoadTable(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
-            options, isOverwriteExist, inputSqlString, dataFrame, useKettle)) :: Nil
+            options, isOverwriteExist, inputSqlString, dataFrame)) :: Nil
         } else {
           ExecutedCommand(HiveNativeCommand(inputSqlString)) :: Nil
         }
@@ -250,6 +251,14 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           }
         } else {
           ExecutedCommand(HiveNativeCommand(altertablemodel.alterSql)) :: Nil
+        }
+      case CreateDatabase(dbName, sql) =>
+        ExecutedCommand(CreateDatabaseCommand(dbName, HiveNativeCommand(sql))) :: Nil
+      case DropDatabase(dbName, isCascade, sql) =>
+        if (isCascade) {
+          ExecutedCommand(DropDatabaseCascadeCommand(dbName, HiveNativeCommand(sql))) :: Nil
+        } else {
+          ExecutedCommand(DropDatabaseCommand(dbName, HiveNativeCommand(sql))) :: Nil
         }
       case d: HiveNativeCommand =>
         try {

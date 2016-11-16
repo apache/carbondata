@@ -19,16 +19,22 @@
 
 package org.apache.carbondata.processing.newflow.converter.impl;
 
+import java.util.List;
+
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.util.CarbonUtilException;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.DataField;
+import org.apache.carbondata.processing.newflow.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.newflow.dictionary.PreCreatedDictionary;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
@@ -38,14 +44,20 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DictionaryFieldConverterImpl.class.getName());
 
-  private BiDictionary<Integer, String> dictionaryGenerator;
+  private BiDictionary<Integer, Object> dictionaryGenerator;
 
   private int index;
 
+  private CarbonDimension carbonDimension;
+
+  private String nullFormat;
+
   public DictionaryFieldConverterImpl(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
-      CarbonTableIdentifier carbonTableIdentifier, int index) {
+      CarbonTableIdentifier carbonTableIdentifier, String nullFormat, int index) {
     this.index = index;
+    this.carbonDimension = (CarbonDimension) dataField.getColumn();
+    this.nullFormat = nullFormat;
     DictionaryColumnUniqueIdentifier identifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
             dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType());
@@ -58,17 +70,22 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
     }
   }
 
-  @Override
-  public void convert(CarbonRow row) throws CarbonDataLoadingException {
+  @Override public void convert(CarbonRow row, BadRecordLogHolder logHolder)
+      throws CarbonDataLoadingException {
     try {
-      row.update(dictionaryGenerator.getOrGenerateKey(row.getString(index)), index);
+      String parsedValue = DataTypeUtil.parseValue(row.getString(index), carbonDimension);
+      if(null == parsedValue || parsedValue.equals(nullFormat)) {
+        row.update(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY, index);
+      } else {
+        row.update(dictionaryGenerator.getOrGenerateKey(parsedValue), index);
+      }
     } catch (DictionaryGenerationException e) {
       throw new CarbonDataLoadingException(e);
     }
   }
 
   @Override
-  public int getColumnCardinality() {
-    return dictionaryGenerator.size();
+  public void fillColumnCardinality(List<Integer> cardinality) {
+    cardinality.add(dictionaryGenerator.size());
   }
 }

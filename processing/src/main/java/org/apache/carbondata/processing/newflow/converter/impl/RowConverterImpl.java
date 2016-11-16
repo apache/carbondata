@@ -30,10 +30,12 @@ import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
+import org.apache.carbondata.processing.newflow.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.newflow.converter.FieldConverter;
 import org.apache.carbondata.processing.newflow.converter.RowConverter;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
+import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordsLogger;
 
 /**
  * It converts the complete row if necessary, dictionary columns are encoded with dictionary values
@@ -43,14 +45,30 @@ public class RowConverterImpl implements RowConverter {
 
   private CarbonDataLoadConfiguration configuration;
 
+  private DataField[] fields;
+
   private FieldConverter[] fieldConverters;
 
-  public RowConverterImpl(DataField[] fields, CarbonDataLoadConfiguration configuration) {
+  private BadRecordsLogger badRecordLogger;
+
+  private BadRecordLogHolder logHolder;
+
+  public RowConverterImpl(DataField[] fields, CarbonDataLoadConfiguration configuration,
+      BadRecordsLogger badRecordLogger) {
+    this.fields = fields;
     this.configuration = configuration;
+    this.badRecordLogger = badRecordLogger;
+  }
+
+  @Override
+  public void initialize() {
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache =
         cacheProvider.createCache(CacheType.REVERSE_DICTIONARY,
             configuration.getTableIdentifier().getStorePath());
+    String nullFormat =
+        configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
+            .toString();
     List<FieldConverter> fieldConverterList = new ArrayList<>();
 
     long lruCacheStartTime = System.currentTimeMillis();
@@ -58,20 +76,27 @@ public class RowConverterImpl implements RowConverter {
     for (int i = 0; i < fields.length; i++) {
       FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
           .createFieldEncoder(fields[i], cache,
-              configuration.getTableIdentifier().getCarbonTableIdentifier(), i);
-      if (fieldConverter != null) {
-        fieldConverterList.add(fieldConverter);
-      }
+              configuration.getTableIdentifier().getCarbonTableIdentifier(), i, nullFormat);
+      fieldConverterList.add(fieldConverter);
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
         .recordLruCacheLoadTime((System.currentTimeMillis() - lruCacheStartTime) / 1000.0);
     fieldConverters = fieldConverterList.toArray(new FieldConverter[fieldConverterList.size()]);
+    logHolder = new BadRecordLogHolder();
   }
 
   @Override
   public CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException {
+    CarbonRow copy = row.getCopy();
     for (int i = 0; i < fieldConverters.length; i++) {
-      fieldConverters[i].convert(row);
+      fieldConverters[i].convert(row, logHolder);
+      if (logHolder.isBadRecordNotAdded()) {
+        badRecordLogger.addBadRecordsToBuilder(copy.getData(), logHolder.getReason());
+        logHolder.clear();
+        if(badRecordLogger.isBadRecordConvertNullDisable()) {
+          return null;
+        }
+      }
     }
     return row;
   }
@@ -81,8 +106,8 @@ public class RowConverterImpl implements RowConverter {
     List<Integer> dimCardinality = new ArrayList<>();
     for (int i = 0; i < fieldConverters.length; i++) {
       if (fieldConverters[i] instanceof AbstractDictionaryFieldConverterImpl) {
-        dimCardinality.add(
-            ((AbstractDictionaryFieldConverterImpl) fieldConverters[i]).getColumnCardinality());
+        ((AbstractDictionaryFieldConverterImpl) fieldConverters[i])
+            .fillColumnCardinality(dimCardinality);
       }
     }
     int[] cardinality = new int[dimCardinality.size()];
@@ -91,6 +116,15 @@ public class RowConverterImpl implements RowConverter {
     }
     // Set the cardinality to configuration, it will be used by further step for mdk key.
     configuration.setDataLoadProperty(DataLoadProcessorConstants.DIMENSION_LENGTHS, cardinality);
+  }
+
+  @Override
+  public RowConverter createCopyForNewThread() {
+    RowConverterImpl converter =
+        new RowConverterImpl(this.fields, this.configuration, this.badRecordLogger);
+    converter.fieldConverters = fieldConverters;
+    converter.logHolder = new BadRecordLogHolder();
+    return converter;
   }
 
 }

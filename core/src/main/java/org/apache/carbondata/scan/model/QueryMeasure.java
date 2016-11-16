@@ -40,8 +40,8 @@ public class QueryMeasure extends QueryColumn implements Serializable {
    */
   private transient CarbonMeasure measure;
 
-  public QueryMeasure(String columName) {
-    super(columName);
+  public QueryMeasure(String columnName) {
+    super(columnName);
   }
 
   /**

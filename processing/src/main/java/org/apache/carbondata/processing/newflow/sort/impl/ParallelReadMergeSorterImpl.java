@@ -81,10 +81,10 @@ public class ParallelReadMergeSorterImpl implements Sorter {
         storeLocation + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
     finalMerger =
         new SingleThreadFinalSortFilesMerger(dataFolderLocation, sortParameters.getTableName(),
-            sortParameters.getDimColCount() - sortParameters.getComplexDimColCount(),
+            sortParameters.getDimColCount(),
             sortParameters.getComplexDimColCount(), sortParameters.getMeasureColCount(),
             sortParameters.getNoDictionaryCount(), sortParameters.getAggType(),
-            sortParameters.getNoDictionaryDimnesionColumn());
+            sortParameters.getNoDictionaryDimnesionColumn(), sortParameters.isUseKettle());
   }
 
   @Override
@@ -102,21 +102,14 @@ public class ParallelReadMergeSorterImpl implements Sorter {
     }
     this.executorService = Executors.newFixedThreadPool(iterators.length);
 
-    // First prepare the data for sort.
-    Iterator<CarbonRowBatch>[] sortPrepIterators = new Iterator[iterators.length];
-    for (int i = 0; i < sortPrepIterators.length; i++) {
-      sortPrepIterators[i] = new SortPreparatorIterator(iterators[i], inputDataFields);
-    }
-
-    for (int i = 0; i < sortDataRows.length; i++) {
-      executorService
-          .submit(new SortIteratorThread(sortPrepIterators[i], sortDataRows[i], sortParameters));
-    }
-
     try {
+      for (int i = 0; i < sortDataRows.length; i++) {
+        executorService.submit(
+            new SortIteratorThread(iterators[i], sortDataRows[i], sortParameters));
+      }
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
-    } catch (InterruptedException e) {
+    } catch (Exception e) {
       throw new CarbonDataLoadingException("Problem while shutdown the server ", e);
     }
     try {
@@ -182,12 +175,15 @@ public class ParallelReadMergeSorterImpl implements Sorter {
           CarbonRowBatch batch = iterator.next();
           Iterator<CarbonRow> batchIterator = batch.getBatchIterator();
           while (batchIterator.hasNext()) {
-            sortDataRows.addRow(batchIterator.next().getData());
+            CarbonRow row = batchIterator.next();
+            if (row != null) {
+              sortDataRows.addRow(row.getData());
+            }
           }
         }
 
         processRowToNextStep(sortDataRows);
-      } catch (CarbonSortKeyAndGroupByException e) {
+      } catch (Exception e) {
         LOGGER.error(e);
         throw new CarbonDataLoadingException(e);
       }
