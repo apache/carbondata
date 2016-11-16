@@ -203,6 +203,7 @@ public class ColumnDictionaryInfoTest {
     int expectedSize = 1;
     assertThat(surrogates.size(), is(equalTo(expectedSize)));
 
+
     List<Integer> expectedSurrogates = new ArrayList<>();
     expectedSurrogates.add(1);
 
