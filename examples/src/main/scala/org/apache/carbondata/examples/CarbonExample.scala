@@ -41,7 +41,7 @@ object CarbonExample {
            """)
 
     // Currently there are two data loading flows in CarbonData, one uses Kettle as ETL tool
-    // in each node to do data loading, another uses a multi-thread framework without Kettle（See
+    // in each node to do data loading, another uses a multi-thread framework without Kettle (See
     // AbstractDataLoadProcessorStep)
     // Load data with Kettle
     cc.sql(s"""
