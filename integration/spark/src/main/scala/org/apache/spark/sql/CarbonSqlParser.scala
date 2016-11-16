@@ -233,7 +233,7 @@ class CarbonSqlParser()
         node match {
           case Token("TOK_DROPDATABASE", children) =>
             dbName = BaseSemanticAnalyzer.unescapeIdentifier(children(0).getText)
-            // check whether cascade drop db
+            // check whether cascade drop database
             children.collect {
               case t@Token("TOK_CASCADE", _) =>
                 isCascade = true
