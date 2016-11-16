@@ -90,3 +90,18 @@ abstract class CarbonProfile(attributes: Seq[Attribute]) extends Serializable {
 case class IncludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attributes)
 
 case class ExcludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attributes)
+
+case class CreateDatabase(dbName: String, sql: String) extends LogicalPlan with Command {
+  override def children: Seq[LogicalPlan] = Seq.empty
+  override def output: Seq[AttributeReference] = {
+    Seq()
+  }
+}
+
+case class DropDatabase(dbName: String, isCascade: Boolean, sql: String)
+    extends LogicalPlan with Command {
+  override def children: Seq[LogicalPlan] = Seq.empty
+  override def output: Seq[AttributeReference] = {
+    Seq()
+  }
+}

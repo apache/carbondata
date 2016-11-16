@@ -46,8 +46,8 @@ public class SubstractExpression extends BinaryArithmeticExpression {
       return subtractExprLeftRes;
     }
     if (subtractExprLeftRes.getDataType() != subtractExprRightRes.getDataType()) {
-      if (subtractExprLeftRes.getDataType().getPresedenceOrder() < subtractExprRightRes
-          .getDataType().getPresedenceOrder()) {
+      if (subtractExprLeftRes.getDataType().getPrecedenceOrder() < subtractExprRightRes
+          .getDataType().getPrecedenceOrder()) {
         val2 = subtractExprLeftRes;
         val1 = subtractExprRightRes;
       }

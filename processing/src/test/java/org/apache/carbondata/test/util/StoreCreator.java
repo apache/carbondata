@@ -85,6 +85,7 @@ import org.apache.carbondata.processing.graphgenerator.GraphGeneratorException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import com.google.gson.Gson;
+import org.apache.hadoop.fs.Path;
 
 /**
  * This class will create store file based on provided schema
@@ -360,13 +361,14 @@ public class StoreCreator {
     DataProcessTaskStatus dataProcessTaskStatus = new DataProcessTaskStatus(databaseName, tableName);
     dataProcessTaskStatus.setCsvFilePath(loadModel.getFactFilePath());
     SchemaInfo info = new SchemaInfo();
-    BlockDetails blockDetails = new BlockDetails(loadModel.getFactFilePath(),
+    BlockDetails blockDetails = new BlockDetails(new Path(loadModel.getFactFilePath()),
         0, new File(loadModel.getFactFilePath()).length(), new String[] {"localhost"});
     GraphGenerator.blockInfo.put("qwqwq", new BlockDetails[] { blockDetails });
     dataProcessTaskStatus.setBlocksID("qwqwq");
     dataProcessTaskStatus.setEscapeCharacter("\\");
     dataProcessTaskStatus.setQuoteCharacter("\"");
     dataProcessTaskStatus.setCommentCharacter("#");
+    dataProcessTaskStatus.setDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
     info.setDatabaseName(databaseName);
     info.setTableName(tableName);
 
@@ -476,6 +478,7 @@ public class StoreCreator {
     model.setEscapeCharacter(dataProcessTaskStatus.getEscapeCharacter());
     model.setQuoteCharacter(dataProcessTaskStatus.getQuoteCharacter());
     model.setCommentCharacter(dataProcessTaskStatus.getCommentCharacter());
+    model.setDateFormat(dataProcessTaskStatus.getDateFormat());
     if (null != loadMetadataDetails && !loadMetadataDetails.isEmpty()) {
       model.setLoadNames(
           CarbonDataProcessorUtil.getLoadNameFromLoadMetaDataDetails(loadMetadataDetails));

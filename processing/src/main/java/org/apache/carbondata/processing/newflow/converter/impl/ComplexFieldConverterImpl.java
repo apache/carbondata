@@ -19,12 +19,42 @@
 
 package org.apache.carbondata.processing.newflow.converter.impl;
 
-import org.apache.carbondata.processing.newflow.converter.FieldConverter;
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.util.List;
+
+import org.apache.carbondata.processing.datatypes.GenericDataType;
+import org.apache.carbondata.processing.newflow.converter.BadRecordLogHolder;
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
-public class ComplexFieldConverterImpl implements FieldConverter {
+public class ComplexFieldConverterImpl extends AbstractDictionaryFieldConverterImpl {
+
+  private GenericDataType genericDataType;
+
+  private int index;
+
+  public ComplexFieldConverterImpl(GenericDataType genericDataType, int index) {
+    this.genericDataType = genericDataType;
+    this.index = index;
+  }
 
   @Override
-  public void convert(CarbonRow row) {
+  public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
+    Object object = row.getObject(index);
+    // TODO Its temporary, needs refactor here.
+    ByteArrayOutputStream byteArray = new ByteArrayOutputStream();
+    DataOutputStream dataOutputStream = new DataOutputStream(byteArray);
+    try {
+      genericDataType.writeByteArray(object, dataOutputStream);
+      dataOutputStream.close();
+      row.update(byteArray.toByteArray(), index);
+    } catch (Exception e) {
+      throw new CarbonDataLoadingException(object+"", e);
+    }
+  }
+
+  @Override public void fillColumnCardinality(List<Integer> cardinality) {
+    genericDataType.fillCardinality(cardinality);
   }
 }

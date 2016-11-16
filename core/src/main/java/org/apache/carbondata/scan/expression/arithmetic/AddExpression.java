@@ -46,8 +46,8 @@ public class AddExpression extends BinaryArithmeticExpression {
     }
 
     if (addExprLeftRes.getDataType() != addExprRightRes.getDataType()) {
-      if (addExprLeftRes.getDataType().getPresedenceOrder() < addExprRightRes.getDataType()
-          .getPresedenceOrder()) {
+      if (addExprLeftRes.getDataType().getPrecedenceOrder() < addExprRightRes.getDataType()
+          .getPrecedenceOrder()) {
         val2 = addExprLeftRes;
         val1 = addExprRightRes;
       }

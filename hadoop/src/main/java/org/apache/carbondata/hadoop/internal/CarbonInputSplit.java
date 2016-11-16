@@ -17,37 +17,18 @@
  * under the License.
  */
 
-package org.apache.carbondata.processing.sortdatastep;
+package org.apache.carbondata.hadoop.internal;
 
-import org.pentaho.di.core.row.RowMetaInterface;
-import org.pentaho.di.trans.step.BaseStepData;
-import org.pentaho.di.trans.step.StepDataInterface;
+import org.apache.hadoop.mapreduce.InputSplit;
 
-public class SortKeyStepData extends BaseStepData implements StepDataInterface {
-
-  /**
-   * outputRowMeta
-   */
-  private RowMetaInterface outputRowMeta;
+/**
+ * Carbon input split can be different format, application should create the record reader
+ * based on format type.
+ */
+public abstract class CarbonInputSplit extends InputSplit {
 
   /**
-   * rowMeta
+   * @return the format type of this split.
    */
-  private RowMetaInterface rowMeta;
-
-  public RowMetaInterface getOutputRowMeta() {
-    return outputRowMeta;
-  }
-
-  public void setOutputRowMeta(RowMetaInterface outputRowMeta) {
-    this.outputRowMeta = outputRowMeta;
-  }
-
-  public RowMetaInterface getRowMeta() {
-    return rowMeta;
-  }
-
-  public void setRowMeta(RowMetaInterface rowMeta) {
-    this.rowMeta = rowMeta;
-  }
+  public abstract CarbonFormatType formatType();
 }

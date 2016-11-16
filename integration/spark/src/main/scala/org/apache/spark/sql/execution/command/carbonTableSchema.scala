@@ -23,8 +23,7 @@ import java.util
 import java.util.UUID
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.Map
+import scala.collection.mutable.{ArrayBuffer, Map}
 import scala.language.implicitConversions
 import scala.util.Random
 
@@ -57,6 +56,7 @@ import org.apache.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
+import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.CarbonSparkFactory
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.load._
@@ -147,7 +147,7 @@ case class Default(key: String, value: String)
 case class DataLoadTableFileMapping(table: String, loadPath: String)
 
 case class CarbonMergerMapping(storeLocation: String,
-    hdfsStoreLocation: String,
+    storePath: String,
     partitioner: Partitioner,
     metadataFilePath: String,
     mergedLoadName: String,
@@ -174,7 +174,7 @@ case class CompactionModel(compactionSize: Long,
   tableCreationTime: Long,
   isDDLTrigger: Boolean)
 
-case class CompactionCallableModel(hdfsStoreLocation: String, carbonLoadModel: CarbonLoadModel,
+case class CompactionCallableModel(storePath: String, carbonLoadModel: CarbonLoadModel,
   partitioner: Partitioner, storeLocation: String, carbonTable: CarbonTable, kettleHomePath: String,
   cubeCreationTime: Long, loadsToMerge: util.List[LoadMetadataDetails], sqlContext: SQLContext,
   compactionType: CompactionType)
@@ -1027,33 +1027,6 @@ case class LoadTable(
     options: scala.collection.immutable.Map[String, String],
     isOverwriteExist: Boolean = false,
     var inputSqlString: String = null,
-    dataFrame: Option[DataFrame] = None,
-    useKettle: Boolean = true) extends RunnableCommand {
-
-  def run(sqlContext: SQLContext): Seq[Row] = {
-    if (useKettle) {
-      LoadTableUsingKettle(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
-        options, isOverwriteExist, inputSqlString, dataFrame).run(sqlContext)
-    } else {
-      LoadTableUsingProcessorStep().run(sqlContext)
-    }
-  }
-}
-
-case class LoadTableUsingProcessorStep() extends RunnableCommand {
-  def run(sqlContext: SQLContext): Seq[Row] = {
-    throw new UnsupportedOperationException("work in progress")
-  }
-}
-
-case class LoadTableUsingKettle(
-    databaseNameOp: Option[String],
-    tableName: String,
-    factPathFromUser: String,
-    dimFilesPath: Seq[DataLoadTableFileMapping],
-    options: scala.collection.immutable.Map[String, String],
-    isOverwriteExist: Boolean = false,
-    var inputSqlString: String = null,
     dataFrame: Option[DataFrame] = None) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -1113,23 +1086,27 @@ case class LoadTableUsingKettle(
       val dataLoadSchema = new CarbonDataLoadSchema(table)
       // Need to fill dimension relation
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
-      var storeLocation = ""
       val configuredStore = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
-      if (null != configuredStore && configuredStore.nonEmpty) {
-        storeLocation = configuredStore(Random.nextInt(configuredStore.length))
-      }
-      if (storeLocation == null) {
-        storeLocation = System.getProperty("java.io.tmpdir")
-      }
 
       var partitionLocation = relation.tableMeta.storePath + "/partition/" +
                               relation.tableMeta.carbonTableIdentifier.getDatabaseName + "/" +
                               relation.tableMeta.carbonTableIdentifier.getTableName + "/"
 
-      storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
       val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
       val kettleHomePath = CarbonScalaUtil.getKettleHome(sqlContext)
+
+      // TODO It will be removed after kettle is removed.
+      val useKettle = options.get("use_kettle") match {
+        case Some(value) => value.toBoolean
+        case _ =>
+          val useKettleLocal = System.getProperty("use.kettle")
+          if (useKettleLocal == null) {
+            sqlContext.sparkContext.getConf.get("use_kettle_default", "true").toBoolean
+          } else {
+            useKettleLocal.toBoolean
+          }
+      }
 
       val delimiter = options.getOrElse("delimiter", ",")
       val quoteChar = options.getOrElse("quotechar", "\"")
@@ -1143,6 +1120,8 @@ case class LoadTableUsingKettle(
       val allDictionaryPath = options.getOrElse("all_dictionary_path", "")
       val complex_delimiter_level_1 = options.getOrElse("complex_delimiter_level_1", "\\$")
       val complex_delimiter_level_2 = options.getOrElse("complex_delimiter_level_2", "\\:")
+      val dateFormat = options.getOrElse("dateformat", null)
+      validateDateFormat(dateFormat, table)
       val multiLine = options.getOrElse("multiline", "false").trim.toLowerCase match {
         case "true" => true
         case "false" => false
@@ -1156,6 +1135,7 @@ case class LoadTableUsingKettle(
       carbonLoadModel.setEscapeChar(escapeChar)
       carbonLoadModel.setQuoteChar(quoteChar)
       carbonLoadModel.setCommentChar(commentchar)
+      carbonLoadModel.setDateFormat(dateFormat)
       carbonLoadModel
         .setSerializationNullFormat(
           TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + "," + serializationNullFormat)
@@ -1196,10 +1176,15 @@ case class LoadTableUsingKettle(
         GlobalDictionaryUtil
           .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.tableMeta.storePath,
             dataFrame)
-        CarbonDataRDDFactory
-          .loadCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.tableMeta.storePath,
+        CarbonDataRDDFactory.loadCarbonData(sqlContext,
+            carbonLoadModel,
+            relation.tableMeta.storePath,
             kettleHomePath,
-            relation.tableMeta.partitioner, columinar, isAgg = false, partitionStatus, dataFrame)
+            relation.tableMeta.partitioner,
+            columinar,
+            partitionStatus,
+            useKettle,
+            dataFrame)
       }
       catch {
         case ex: Exception =>
@@ -1244,6 +1229,29 @@ case class LoadTableUsingKettle(
     Seq.empty
   }
 
+  private  def validateDateFormat(dateFormat: String, table: CarbonTable): Unit = {
+    val dimensions = table.getDimensionByTableName(tableName).asScala
+    if (dateFormat != null) {
+      if (dateFormat.trim == "") {
+        throw new MalformedCarbonCommandException("Error: Option DateFormat is set an empty " +
+          "string.")
+      } else {
+        var dateFormats: Array[String] = dateFormat.split(CarbonCommonConstants.COMMA)
+        for (singleDateFormat <- dateFormats) {
+          val dateFormatSplits: Array[String] = singleDateFormat.split(":", 2)
+          val columnName = dateFormatSplits(0).trim.toLowerCase
+          if (!dimensions.exists(_.getColName.equals(columnName))) {
+            throw new MalformedCarbonCommandException("Error: Wrong Column Name " +
+              dateFormatSplits(0) + " is provided in Option DateFormat.")
+          }
+          if (dateFormatSplits.length < 2 || dateFormatSplits(1).trim.isEmpty) {
+            throw new MalformedCarbonCommandException("Error: Option DateFormat is not provided " +
+              "for " + "Column " + dateFormatSplits(0) + ".")
+          }
+        }
+      }
+    }
+  }
 }
 
 private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: Option[String],
@@ -1258,8 +1266,10 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
     val carbonLock = CarbonLockFactory
       .getCarbonLockObj(carbonTableIdentifier, LockUsage.DROP_TABLE_LOCK)
     val storePath = CarbonEnv.getInstance(sqlContext).carbonCatalog.storePath
+    var isLocked = false
     try {
-      if (carbonLock.lockWithRetries()) {
+      isLocked = carbonLock.lockWithRetries()
+      if (isLocked) {
         logInfo("Successfully able to get the lock for drop.")
       }
       else {
@@ -1271,7 +1281,7 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
       LOGGER.audit(s"Deleted table [$tableName] under database [$dbName]")
     }
     finally {
-      if (carbonLock != null) {
+      if (carbonLock != null && isLocked) {
         if (carbonLock.unlock()) {
           logInfo("Table MetaData Unlocked Successfully after dropping the table")
           // deleting any remaining files.

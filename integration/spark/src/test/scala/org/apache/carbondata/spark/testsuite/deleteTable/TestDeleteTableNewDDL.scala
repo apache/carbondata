@@ -50,20 +50,27 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
   // normal deletion case
   test("drop table Test with new DDL") {
     sql("drop table table1")
-
   }
   
   test("test drop database cascade command") {
     sql("create database testdb")
+    sql("use testdb")
+    sql("CREATE TABLE IF NOT EXISTS testtable(empno Int, empname string, utilization Int,salary Int)"
+        + " STORED BY 'org.apache.carbondata.format' ")
     try {
-      sql("drop database testdb cascade")
+      sql("drop database testdb")
       assert(false)
     } catch {
-      case e : MalformedCarbonCommandException => {
-        assert(e.getMessage.equals("Unsupported cascade operation in drop database/schema command"))
-      }
+      case e : Exception => 
     }
-    sql("drop database testdb")
+    sql("drop database testdb cascade")
+    try {
+      sql("use testdb")
+      assert(false)
+    } catch {
+      case e : Exception => 
+    }
+    sql("use default")
   }
 
   // deletion case with if exists

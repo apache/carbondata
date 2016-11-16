@@ -19,9 +19,13 @@
 
 package org.apache.carbondata.processing.newflow.converter.impl;
 
+import java.util.List;
+
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.processing.newflow.DataField;
+import org.apache.carbondata.processing.newflow.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 
 public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldConverterImpl {
@@ -30,21 +34,50 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
 
   private int index;
 
-  public DirectDictionaryFieldConverterImpl(DataField dataField, int index) {
-    DirectDictionaryGenerator directDictionaryGenerator =
-        DirectDictionaryKeyGeneratorFactory
-            .getDirectDictionaryGenerator(dataField.getColumn().getDataType());
-    this.directDictionaryGenerator = directDictionaryGenerator;
+  private String nullFormat;
+
+  private CarbonColumn column;
+
+  public DirectDictionaryFieldConverterImpl(DataField dataField, String nullFormat, int index) {
+    this.nullFormat = nullFormat;
+    this.column = dataField.getColumn();
+    if (dataField.getDateFormat() != null && !dataField.getDateFormat().isEmpty()) {
+      this.directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+          .getDirectDictionaryGenerator(dataField.getColumn().getDataType(),
+              dataField.getDateFormat());
+
+    } else {
+      this.directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+          .getDirectDictionaryGenerator(dataField.getColumn().getDataType());
+    }
     this.index = index;
   }
 
   @Override
-  public void convert(CarbonRow row) {
-    row.update(directDictionaryGenerator.generateDirectSurrogateKey(row.getString(index)), index);
+  public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
+    String value = row.getString(index);
+    if (value == null) {
+      logHolder.setReason(
+          "The value " + " \"" + row.getString(index) + "\"" + " with column name " + column
+              .getColName() + " and column data type " + column.getDataType() + " is not a valid "
+              + column.getDataType() + " type.");
+      row.update(1, index);
+    } else if (value.equals(nullFormat)) {
+      row.update(1, index);
+    } else {
+      int key = directDictionaryGenerator.generateDirectSurrogateKey(value);
+      if (key == 1) {
+        logHolder.setReason(
+            "The value " + " \"" + row.getString(index) + "\"" + " with column name " + column
+                .getColName() + " and column data type " + column.getDataType() + " is not a valid "
+                + column.getDataType() + " type.");
+      }
+      row.update(key, index);
+    }
   }
 
   @Override
-  public int getColumnCardinality() {
-    return Integer.MAX_VALUE;
+  public void fillColumnCardinality(List<Integer> cardinality) {
+    cardinality.add(Integer.MAX_VALUE);
   }
 }

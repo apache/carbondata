@@ -94,8 +94,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
   protected boolean isFileExistsForGivenColumn(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService
-        .getCarbonTablePath(dictionaryColumnUniqueIdentifier.getColumnIdentifier(), carbonStorePath,
+    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(carbonStorePath,
             dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
 
     String dictionaryFilePath =
@@ -157,8 +156,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
   private CarbonFile getDictionaryMetaCarbonFile(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService
-        .getCarbonTablePath(dictionaryColumnUniqueIdentifier.getColumnIdentifier(), carbonStorePath,
+    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(carbonStorePath,
             dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
     String dictionaryFilePath =
         carbonTablePath.getDictionaryMetaFilePath(dictionaryColumnUniqueIdentifier

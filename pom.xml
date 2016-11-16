@@ -109,6 +109,7 @@
     <hadoop.version>2.2.0</hadoop.version>
     <scala.version>2.10.4</scala.version>
     <kettle.version>4.4.0-stable</kettle.version>
+    <use.kettle>true</use.kettle>
     <hadoop.deps.scope>compile</hadoop.deps.scope>
     <spark.deps.scope>compile</spark.deps.scope>
     <scala.deps.scope>compile</scala.deps.scope>
@@ -334,6 +335,12 @@
     </profile>
     <profile>
       <id>include-all</id>
+    </profile>
+    <profile>
+      <id>no-kettle</id>
+      <properties>
+        <use.kettle>false</use.kettle>
+      </properties>
     </profile>
     <profile>
       <id>rat</id>

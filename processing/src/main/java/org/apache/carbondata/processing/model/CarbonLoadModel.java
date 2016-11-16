@@ -20,7 +20,7 @@
 /**
  *
  */
-package org.apache.carbondata.spark.load;
+package org.apache.carbondata.processing.model;
 
 import java.io.Serializable;
 import java.util.HashMap;
@@ -105,6 +105,8 @@ public class CarbonLoadModel implements Serializable {
    * comment Char
    */
   private String commentChar;
+
+  private String dateFormat;
 
   /**
    * defines the string that should be treated as null while loadind data
@@ -353,6 +355,7 @@ public class CarbonLoadModel implements Serializable {
     copy.quoteChar = quoteChar;
     copy.commentChar = commentChar;
     copy.maxColumns = maxColumns;
+    copy.storePath = storePath;
     return copy;
   }
 
@@ -395,7 +398,9 @@ public class CarbonLoadModel implements Serializable {
     copyObj.escapeChar = escapeChar;
     copyObj.quoteChar = quoteChar;
     copyObj.commentChar = commentChar;
+    copyObj.dateFormat = dateFormat;
     copyObj.maxColumns = maxColumns;
+    copyObj.storePath = storePath;
     return copyObj;
   }
 
@@ -596,6 +601,10 @@ public class CarbonLoadModel implements Serializable {
   public void setCommentChar(String commentChar) {
     this.commentChar = commentChar;
   }
+
+  public String getDateFormat() { return dateFormat; }
+
+  public void setDateFormat(String dateFormat) { this.dateFormat = dateFormat; }
 
   /**
    * @return

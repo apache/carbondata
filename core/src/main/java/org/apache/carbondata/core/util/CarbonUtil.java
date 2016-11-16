@@ -79,6 +79,7 @@ public final class CarbonUtil {
 
   public static final String HDFS_PREFIX = "hdfs://";
   public static final String VIEWFS_PREFIX = "viewfs://";
+  public static final String ALLUXIO_PREFIX = "alluxio://";
   private static final String FS_DEFAULT_FS = "fs.defaultFS";
 
   /**
@@ -117,17 +118,26 @@ public final class CarbonUtil {
     // Added if to avoid NullPointerException in case one stream is being passed as null
     if (null != streams) {
       for (Closeable stream : streams) {
-        if (null != stream) {
-          try {
-            stream.close();
-          } catch (IOException e) {
-            LOGGER.error("Error while closing stream" + stream);
-          }
+        try {
+          closeStream(stream);
+        } catch (IOException e) {
+          LOGGER.error("Error while closing stream:" + e);
         }
       }
     }
   }
 
+  /**
+   * This method closes stream
+   *
+   * @param stream
+   * @throws IOException
+   */
+  public static void closeStream(Closeable stream) throws IOException {
+    if (null != stream) {
+      stream.close();
+    }
+  }
   /**
    * @param baseStorePath
    * @return

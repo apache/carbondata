@@ -79,6 +79,7 @@ import org.apache.carbondata.processing.dataprocessor.DataProcessTaskStatus;
 import org.apache.carbondata.processing.dataprocessor.IDataProcessStatus;
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator;
 import org.apache.carbondata.processing.graphgenerator.GraphGeneratorException;
+import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.apache.carbondata.spark.merger.NodeBlockRelation;
 import org.apache.carbondata.spark.merger.NodeMultiBlockRelation;
@@ -136,6 +137,7 @@ public final class CarbonLoaderUtil {
     model.setTaskNo(loadModel.getTaskNo());
     model.setFactTimeStamp(loadModel.getFactTimeStamp());
     model.setMaxColumns(loadModel.getMaxColumns());
+    model.setDateFormat(loadModel.getDateFormat());
     boolean hdfsReadMode =
         dataProcessTaskStatus.getCsvFilePath() != null
                 && dataProcessTaskStatus.getCsvFilePath().startsWith("hdfs:");
@@ -149,7 +151,7 @@ public final class CarbonLoaderUtil {
   }
 
   public static void executeGraph(CarbonLoadModel loadModel, String storeLocation,
-      String hdfsStoreLocation, String kettleHomePath) throws Exception {
+      String storePath, String kettleHomePath) throws Exception {
     System.setProperty("KETTLE_HOME", kettleHomePath);
     if (!new File(storeLocation).mkdirs()) {
       LOGGER.error("Error while creating the temp store path: " + storeLocation);
@@ -161,7 +163,7 @@ public final class CarbonLoaderUtil {
         + CarbonCommonConstants.UNDERSCORE + loadModel.getTaskNo();
     CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation);
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, hdfsStoreLocation);
+        .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, storePath);
     // CarbonProperties.getInstance().addProperty("store_output_location", outPutLoc);
     CarbonProperties.getInstance().addProperty("send.signal.load", "false");
 
@@ -194,6 +196,7 @@ public final class CarbonLoaderUtil {
     dataProcessTaskStatus.setQuoteCharacter(loadModel.getQuoteChar());
     dataProcessTaskStatus.setCommentCharacter(loadModel.getCommentChar());
     dataProcessTaskStatus.setRddIteratorKey(loadModel.getRddIteratorKey());
+    dataProcessTaskStatus.setDateFormat(loadModel.getDateFormat());
     SchemaInfo info = new SchemaInfo();
 
     info.setDatabaseName(databaseName);

@@ -19,10 +19,12 @@
 
 <img src="/docs/images/format/CarbonData_logo.png" width="200" height="40">
 
-Apache CarbonData is a new big data file format for faster
+Apache CarbonData(incubating) is a new big data file format for faster
 interactive query using advanced columnar storage, index, compression
 and encoding techniques to improve computing efficiency, in turn it will 
 help speedup queries an order of magnitude faster over PetaBytes of data. 
+
+You can find the latest CarbonData document and learn more at [CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA)
 
 ### Features
 CarbonData file format is a columnar store in HDFS, it has many features that a modern columnar format has, such as splittable, compression schema ,complex data type etc, and CarbonData has following unique features:
@@ -30,9 +32,6 @@ CarbonData file format is a columnar store in HDFS, it has many features that a 
 * Operable encoded data :Through supporting efficient compression and global encoding schemes, can query on compressed/encoded data, the data can be converted just before returning the results to the users, which is "late materialized". 
 * Column group: Allow multiple columns to form a column group that would be stored as row format. This reduces the row reconstruction cost at query time.
 * Supports for various use cases with one single Data format : like interactive OLAP-style query, Sequential Access (big scan), Random Access (narrow scan). 
-
-### Documentation
-Please visit [CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA)
 
 ### Building CarbonData,using development tools and cluster deployment guide
 Please refer [Building CarbonData and Configuring IDE](https://cwiki.apache.org/confluence/display/CARBONDATA/Building+CarbonData+And+IDE+Configuration)
@@ -52,6 +51,12 @@ Read the [quick start](https://cwiki.apache.org/confluence/display/CARBONDATA/Qu
 ### CarbonData File Structure and interfaces
 Please refer [CarbonData File Format](https://cwiki.apache.org/confluence/display/CARBONDATA/CarbonData+File+Structure+and+Format) and [CarbonData Interfaces](https://cwiki.apache.org/confluence/display/CARBONDATA/Carbon+Packaging+and+Interfaces)
 
+### CarbonData FAQ 
+[Configurations For Optimizing CarbonData Performance](https://cwiki.apache.org/confluence/display/CARBONDATA/Configurations+For+Optimizing+CarbonData+Performance)
+
+[Suggestion to create CarbonData table]
+(https://cwiki.apache.org/confluence/display/CARBONDATA/Suggestion+to+create+CarbonData+table)
+
 ### Other Technical Material
 [Apache CarbonData meetup material](docs/Apache-CarbonData-meetup-material.pdf)
 
@@ -67,4 +72,4 @@ To get involved in CarbonData:
 
 ## About
 Apache CarbonData is an open source project of The Apache Software Foundation (ASF).
-CarbonData project original contributed from the [Huawei](http://www.huawei.com).
+

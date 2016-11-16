@@ -43,10 +43,10 @@ import org.junit.Test;
  *
  */
 public class CarbonDictionarySortIndexReaderImplTest {
-  private String hdfsStorePath;
+  private String storePath;
 
   @Before public void setUp() throws Exception {
-    hdfsStorePath = "target/carbonStore";
+      storePath = "target/carbonStore";
   }
 
   @After public void tearDown() throws Exception {
@@ -64,12 +64,12 @@ public class CarbonDictionarySortIndexReaderImplTest {
     CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("testSchema", "carbon",
     		UUID.randomUUID().toString());
     ColumnIdentifier columnIdentifier = new ColumnIdentifier("Name", null, null);
-    CarbonDictionaryWriter dictionaryWriter = new CarbonDictionaryWriterImpl(hdfsStorePath,
+    CarbonDictionaryWriter dictionaryWriter = new CarbonDictionaryWriterImpl(storePath,
        carbonTableIdentifier, columnIdentifier);
-    String metaFolderPath =hdfsStorePath+File.separator+carbonTableIdentifier.getDatabaseName()+File.separator+carbonTableIdentifier.getTableName()+File.separator+"Metadata";
+    String metaFolderPath =storePath+File.separator+carbonTableIdentifier.getDatabaseName()+File.separator+carbonTableIdentifier.getTableName()+File.separator+"Metadata";
     CarbonUtil.checkAndCreateFolder(metaFolderPath);
     CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
-        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, columnIdentifier, hdfsStorePath);
+        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, columnIdentifier, storePath);
     List<int[]> expectedData = prepareExpectedData();
     int[] data = expectedData.get(0);
     for(int i=0;i<data.length;i++) {
@@ -83,7 +83,7 @@ public class CarbonDictionarySortIndexReaderImplTest {
     dictionarySortIndexWriter.writeInvertedSortIndex(invertedSortIndex);
     dictionarySortIndexWriter.close();
     CarbonDictionarySortIndexReader dictionarySortIndexReader =
-        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, columnIdentifier, hdfsStorePath);
+        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, columnIdentifier, storePath);
     List<Integer> actualSortIndex = dictionarySortIndexReader.readSortIndex();
     List<Integer> actualInvertedSortIndex = dictionarySortIndexReader.readInvertedSortIndex();
     for (int i = 0; i < actualSortIndex.size(); i++) {
@@ -111,8 +111,8 @@ public class CarbonDictionarySortIndexReaderImplTest {
    * this method will delete the store path
    */
   private void deleteStorePath() {
-    FileFactory.FileType fileType = FileFactory.getFileType(this.hdfsStorePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(this.hdfsStorePath, fileType);
+    FileFactory.FileType fileType = FileFactory.getFileType(this.storePath);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(this.storePath, fileType);
     deleteRecursiveSilent(carbonFile);
   }
 
