@@ -61,6 +61,9 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbontable1")
     sql("drop table if exists hivetable1")
     sql("drop table if exists comment_test")
+    sql("drop table if exists smallinttable")
+    sql("drop table if exists smallinthivetable")
+
     sql(
       "CREATE table carbontable (empno int, empname String, designation String, doj String, " +
         "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
@@ -75,6 +78,38 @@ class TestLoadDataWithHiveSyntax extends QueryTest with BeforeAndAfterAll {
     )
 
   }
+
+  test("create table with smallint type and query smallint table") {
+    sql(
+      "create table smallinttable(empno smallint, empname String, designation string, " +
+        "doj String, workgroupcategory int, workgroupcategoryname String,deptno int, " +
+        "deptname String, projectcode int, projectjoindate String,projectenddate String, " +
+        "attendance String, utilization String,salary String)" +
+        "STORED BY 'org.apache.carbondata.format'"
+    )
+
+    sql(
+      "create table smallinthivetable(empno smallint, empname String, designation string, " +
+        "doj String, workgroupcategory int, workgroupcategoryname String,deptno int, " +
+        "deptname String, projectcode int, projectjoindate String,projectenddate String, " +
+        "attendance String, utilization String,salary String)" +
+        "row format delimited fields terminated by ','"
+    )
+
+    sql("LOAD DATA local inpath './src/test/resources/data.csv' INTO table smallinttable " +
+      "OPTIONS('USE_KETTLE'='false')")
+    sql("LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' " +
+      "overwrite INTO table smallinthivetable")
+
+    checkAnswer(
+      sql("select empno from smallinttable"),
+      sql("select empno from smallinthivetable")
+    )
+
+    sql("drop table if exists smallinttable")
+    sql("drop table if exists smallinthivetable")
+  }
+
 
   test("test data loading and validate query output") {
     //Create test cube and hive table

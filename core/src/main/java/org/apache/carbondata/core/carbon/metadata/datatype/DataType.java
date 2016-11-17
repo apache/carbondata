@@ -25,7 +25,7 @@ public enum DataType {
   DATE(1, "DATE"),
   TIMESTAMP(2, "TIMESTAMP"),
   BOOLEAN(1, "BOOLEAN"),
-  SHORT(2, "SHORT"),
+  SHORT(2, "SMALLINT"),
   INT(3, "INT"),
   FLOAT(4, "FLOAT"),
   LONG(5, "BIGINT"),
