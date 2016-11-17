@@ -203,7 +203,6 @@ public class ColumnDictionaryInfoTest {
     int expectedSize = 1;
     assertThat(surrogates.size(), is(equalTo(expectedSize)));
 
-
     List<Integer> expectedSurrogates = new ArrayList<>();
     expectedSurrogates.add(1);
 
@@ -335,10 +334,10 @@ public class ColumnDictionaryInfoTest {
 
     columnDictionaryInfo.addDictionaryChunk(newDictionaryChunk);
 
-    List<List<byte[]>> dictionaryChunks = new CopyOnWriteArrayList<>();
-    dictionaryChunks.add(newDictionaryChunk);
+    List<List<byte[]>> expectedDictionaryChunks = new CopyOnWriteArrayList<>();
+    expectedDictionaryChunks.add(newDictionaryChunk);
 
-    assertThat(columnDictionaryInfo.dictionaryChunks, is(equalTo(dictionaryChunks)));
+    assertThat(columnDictionaryInfo.dictionaryChunks, is(equalTo(expectedDictionaryChunks)));
   }
 
   @Test public void testAddDictionaryChunkAppend() {
