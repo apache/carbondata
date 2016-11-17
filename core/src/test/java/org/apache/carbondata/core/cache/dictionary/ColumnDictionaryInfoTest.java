@@ -33,7 +33,9 @@ import mockit.MockUp;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ColumnDictionaryInfoTest {
@@ -62,7 +64,6 @@ public class ColumnDictionaryInfoTest {
 
     List<List<byte[]>> dictionaryChunks = new CopyOnWriteArrayList<>();
     dictionaryChunks.add(chunks);
-
 
     columnDictionaryInfo.dictionaryChunks = dictionaryChunks;
 
@@ -310,6 +311,261 @@ public class ColumnDictionaryInfoTest {
     assertThat(surrogates, is(equalTo(expectedSurrogates)));
   }
 
+  @Test public void testAddDictionaryChunkEmpty() {
+    new MockUp<CarbonUtil>() {
+
+      @Mock public int getDictionaryChunkSize() {
+        return 1;
+      }
+    };
+
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+
+    columnDictionaryInfo.dictionaryChunks = new CopyOnWriteArrayList<>();
+
+    List<byte[]> newDictionaryChunk = Arrays.asList(new byte[] { 1, 2, 3, 4 });
+
+    columnDictionaryInfo.addDictionaryChunk(newDictionaryChunk);
+
+    List<List<byte[]>> dictionaryChunks = new CopyOnWriteArrayList<>();
+    dictionaryChunks.add(newDictionaryChunk);
+
+    assertThat(columnDictionaryInfo.dictionaryChunks, is(equalTo(dictionaryChunks)));
+  }
+
+  @Test public void testAddDictionaryChunkAppend() {
+
+    new MockUp<CarbonUtil>() {
+
+      @Mock public int getDictionaryChunkSize() {
+        return 1;
+      }
+    };
+
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+
+    columnDictionaryInfo.dictionaryChunks = new CopyOnWriteArrayList<>();
+
+    List<byte[]> newDictionaryChunk1 = Arrays.asList(new byte[] { 1, 2, 3, 4 });
+
+    columnDictionaryInfo.addDictionaryChunk(newDictionaryChunk1);
+
+    List<byte[]> newDictionaryChunk2 = Arrays.asList(new byte[] { 5, 6, 7, 8 });
+
+    columnDictionaryInfo.addDictionaryChunk(newDictionaryChunk2);
+
+    List<List<byte[]>> dictionaryChunks = new CopyOnWriteArrayList<>();
+    dictionaryChunks.add(newDictionaryChunk1);
+    dictionaryChunks.add(newDictionaryChunk2);
+
+    assertThat(columnDictionaryInfo.dictionaryChunks, is(equalTo(dictionaryChunks)));
+  }
+
+  @Test public void addDictionaryChunkWithHugeChunkSize() {
+
+    new MockUp<CarbonUtil>() {
+
+      @Mock public int getDictionaryChunkSize() {
+        return 10;
+      }
+    };
+
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+
+    columnDictionaryInfo.dictionaryChunks = new CopyOnWriteArrayList<>();
+
+    List<byte[]> newDictionaryChunk1 = new ArrayList<>(Arrays.asList(new byte[] { 1, 2, 3, 4 }));
+
+    columnDictionaryInfo.addDictionaryChunk(newDictionaryChunk1);
+
+    List<byte[]> newDictionaryChunk2 = new ArrayList<>(Arrays.asList(new byte[] { 5, 6, 7, 8 }));
+
+    columnDictionaryInfo.addDictionaryChunk(newDictionaryChunk2);
+
+    List<List<byte[]>> dictionaryChunks = new CopyOnWriteArrayList<>();
+    dictionaryChunks.add(newDictionaryChunk1);
+
+    assertThat(columnDictionaryInfo.dictionaryChunks, is(equalTo(dictionaryChunks)));
+  }
+
+  @Test public void addDictionaryChunkWithSplitChunks() {
+
+    new MockUp<CarbonUtil>() {
+
+      @Mock public int getDictionaryChunkSize() {
+        return 2;
+      }
+    };
+
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+
+    columnDictionaryInfo.dictionaryChunks = new CopyOnWriteArrayList<>();
+
+    List<byte[]> newDictionaryChunk1 = new ArrayList<>(Arrays.asList(new byte[] { 1, 2, 3, 4 }));
+
+    columnDictionaryInfo.addDictionaryChunk(newDictionaryChunk1);
+
+    List<byte[]> newDictionaryChunk2 =
+        new ArrayList<>(Arrays.asList(new byte[] { 5, 6, 7 }, new byte[] { 8, 9, 10 }));
+
+    columnDictionaryInfo.addDictionaryChunk(newDictionaryChunk2);
+
+    assertThat(columnDictionaryInfo.dictionaryChunks.get(0),
+        hasItems(new byte[] { 1, 2, 3, 4 }, new byte[] { 5, 6, 7 }));
+    assertThat(columnDictionaryInfo.dictionaryChunks.get(1), hasItems(new byte[] { 8, 9, 10 }));
+  }
+
+  @Test public void testGtSortedIndexWithMinimumSurrogateKey() {
+
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+
+    columnDictionaryInfo.setSortReverseOrderIndex(Arrays.asList(1, 2, 3));
+
+    final int result = columnDictionaryInfo.getSortedIndex(0);
+
+    assertThat(result, is(equalTo(-1)));
+  }
+
+  @Test public void testGtSortedIndexWithMaximumSurrogateKey() {
+
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+
+    columnDictionaryInfo.setSortReverseOrderIndex(Arrays.asList(1, 2, 3));
+
+    final int result = columnDictionaryInfo.getSortedIndex(4);
+
+    assertThat(result, is(equalTo(-1)));
+  }
+
+  @Test public void testGtSortedIndexWithSurrogateKey() {
+
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+
+    columnDictionaryInfo.setSortReverseOrderIndex(Arrays.asList(1, 2, 3));
+
+    final int result = columnDictionaryInfo.getSortedIndex(2);
+
+    assertThat(result, is(equalTo(2)));
+  }
+
+  @Test public void testGetSizeOfLastDictionaryChunkWithDictionaryChunkZero() {
+
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+
+    final int result = columnDictionaryInfo.getSizeOfLastDictionaryChunk();
+
+    assertThat(result, is(equalTo(0)));
+  }
+
+  @Test public void testGetSizeOfLastDictionaryChunk() {
+
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+
+    columnDictionaryInfo.dictionaryChunks = new CopyOnWriteArrayList<>();
+
+    List<byte[]> newDictionaryChunk1 = new ArrayList<>(Arrays.asList(new byte[] { 1, 2, 3, 4 }));
+
+    columnDictionaryInfo.addDictionaryChunk(newDictionaryChunk1);
+
+    final int result = columnDictionaryInfo.getSizeOfLastDictionaryChunk();
+
+    assertThat(result, is(equalTo(1)));
+  }
+
+  @Test public void testGetDictionaryValueFromSortedIndexWithMinimumSurrogateKey() {
+
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+
+    columnDictionaryInfo.setSortReverseOrderIndex(Arrays.asList(1, 2, 3));
+
+    final String result = columnDictionaryInfo.getDictionaryValueFromSortedIndex(0);
+
+    assertThat(result, is(nullValue()));
+  }
+
+  @Test public void testGetDictionaryValueFromSortedIndexWithMaximumSurrogateKey() {
+
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+
+    columnDictionaryInfo.setSortReverseOrderIndex(Arrays.asList(1, 2, 3));
+
+    final String result = columnDictionaryInfo.getDictionaryValueFromSortedIndex(4);
+
+    assertThat(result, is(nullValue()));
+  }
+
+  @Test public void testGetDictionaryValueFromSortedIndex() {
+
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+
+    columnDictionaryInfo.setSortReverseOrderIndex(Arrays.asList(0, 1, 2, 3));
+
+    columnDictionaryInfo.setSortOrderIndex(Arrays.asList(1, 2, 3));
+
+    final String result = columnDictionaryInfo.getDictionaryValueFromSortedIndex(1);
+
+    assertThat(result, is(nullValue()));
+  }
+
+  @Test
+  public void testGetSurrogateKey() {
+
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+
+    byte[] value = convertListElementsIntoByteArray(Arrays.asList("china")).get(0);
+
+    new MockUp<CarbonUtil>() {
+
+      @Mock public int getDictionaryChunkSize() {
+        return 10000;
+      }
+    };
+
+    columnDictionaryInfo.setSortOrderIndex(Arrays.asList(1, 2, 3, 4, 5, 6, 7));
+
+    List<byte[]> chunks = Arrays.asList(new byte[] { 64, 78, 85, 35, 76, 76, 36, 33 },
+        new byte[] { 98, 114, 97, 122, 105, 108 }, new byte[] { 99, 97, 110, 97, 100, 97 },
+        new byte[] { 99, 104, 105, 110, 97 }, new byte[] { 102, 114, 97, 110, 99, 101 },
+        new byte[] { 117, 107 }, new byte[] { 117, 117, 97 });
+
+    List<List<byte[]>> dictionaryChunks = new CopyOnWriteArrayList<>();
+    dictionaryChunks.add(chunks);
+
+    columnDictionaryInfo.dictionaryChunks = dictionaryChunks;
+
+    int result = columnDictionaryInfo.getSurrogateKey(value);
+
+    assertThat(result, is(equalTo(4)));
+  }
+
+  @Test
+  public void testGetSurrogateKeyWithIntType() {
+
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataType.INT);
+
+    byte[] value = convertListElementsIntoByteArray(Arrays.asList("998")).get(0);
+
+    new MockUp<CarbonUtil>() {
+
+      @Mock public int getDictionaryChunkSize() {
+        return 10000;
+      }
+    };
+
+    columnDictionaryInfo.setSortOrderIndex(Arrays.asList(1, 2));
+
+    List<byte[]> chunks = Arrays.asList(new byte[] { 57, 57, 56 });
+
+    List<List<byte[]>> dictionaryChunks = new CopyOnWriteArrayList<>();
+    dictionaryChunks.add(chunks);
+
+    columnDictionaryInfo.dictionaryChunks = dictionaryChunks;
+
+    int result = columnDictionaryInfo.getSurrogateKey(value);
+
+    assertThat(result, is(equalTo(1)));
+  }
+
   private List<byte[]> convertListElementsIntoByteArray(List<String> stringList) {
     List<byte[]> byteValuesOfFilterMembers = new ArrayList<>(stringList.size());
     for (int i = 0; i < stringList.size(); i++) {
@@ -317,7 +573,6 @@ public class ColumnDictionaryInfoTest {
           stringList.get(i).getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
       byteValuesOfFilterMembers.add(keyData);
     }
-
     return byteValuesOfFilterMembers;
   }
 }
