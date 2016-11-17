@@ -59,7 +59,7 @@ public final class CarbonCommonConstants {
   /**
    * Number of cores to be used
    */
-  public static final String NUM_CORES = "carbon.number.of.cores";
+  public static final String NUM_CORES_LOAD_BLOCKS = "carbon.number.of.cores.loading.blocks";
   /**
    * carbon sort size
    */
