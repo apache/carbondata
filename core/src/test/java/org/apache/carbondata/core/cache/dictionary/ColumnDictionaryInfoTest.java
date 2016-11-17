@@ -335,10 +335,10 @@ public class ColumnDictionaryInfoTest {
 
     columnDictionaryInfo.addDictionaryChunk(newDictionaryChunk);
 
-    List<List<byte[]>> expectedDictionaryChunks = new CopyOnWriteArrayList<>();
-    expectedDictionaryChunks.add(newDictionaryChunk);
+    List<List<byte[]>> dictionaryChunks = new CopyOnWriteArrayList<>();
+    dictionaryChunks.add(newDictionaryChunk);
 
-    assertThat(columnDictionaryInfo.dictionaryChunks, is(equalTo(expectedDictionaryChunks)));
+    assertThat(columnDictionaryInfo.dictionaryChunks, is(equalTo(dictionaryChunks)));
   }
 
   @Test public void testAddDictionaryChunkAppend() {
