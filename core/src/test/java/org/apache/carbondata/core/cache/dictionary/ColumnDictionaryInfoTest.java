@@ -99,7 +99,8 @@ public class ColumnDictionaryInfoTest {
     columnDictionaryInfo
         .getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers, surrogates);
 
-    assertThat(surrogates.size(), is(equalTo(1)));
+    int expectedSize = 1;
+    assertThat(surrogates.size(), is(equalTo(expectedSize)));
 
     List<Integer> expectedSurrogates = new ArrayList<>();
     expectedSurrogates.add(0);
@@ -126,7 +127,8 @@ public class ColumnDictionaryInfoTest {
     columnDictionaryInfo
         .getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers, surrogates);
 
-    assertThat(surrogates.size(), is(equalTo(1)));
+    int expectedSize = 1;
+    assertThat(surrogates.size(), is(equalTo(expectedSize)));
 
     List<Integer> expectedSurrogates = new ArrayList<>();
     expectedSurrogates.add(1);
@@ -162,7 +164,8 @@ public class ColumnDictionaryInfoTest {
     columnDictionaryInfo
         .getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers, surrogates);
 
-    assertThat(surrogates.size(), is(equalTo(2)));
+    int expectedSize = 2;
+    assertThat(surrogates.size(), is(equalTo(expectedSize)));
 
     List<Integer> expectedSurrogates = new ArrayList<>();
     expectedSurrogates.add(4);
@@ -197,7 +200,8 @@ public class ColumnDictionaryInfoTest {
     columnDictionaryInfo
         .getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers, surrogates);
 
-    assertThat(surrogates.size(), is(equalTo(1)));
+    int expectedSize = 1;
+    assertThat(surrogates.size(), is(equalTo(expectedSize)));
 
     List<Integer> expectedSurrogates = new ArrayList<>();
     expectedSurrogates.add(1);
@@ -231,7 +235,8 @@ public class ColumnDictionaryInfoTest {
     columnDictionaryInfo
         .getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers, surrogates);
 
-    assertThat(surrogates.size(), is(equalTo(1)));
+    int expectedSize = 1;
+    assertThat(surrogates.size(), is(equalTo(expectedSize)));
 
     List<Integer> expectedSurrogates = new ArrayList<>();
     expectedSurrogates.add(1);
@@ -267,7 +272,8 @@ public class ColumnDictionaryInfoTest {
     columnDictionaryInfo
         .getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers, surrogates);
 
-    assertThat(surrogates.size(), is(equalTo(1)));
+    int expectedSize = 1;
+    assertThat(surrogates.size(), is(equalTo(expectedSize)));
 
     List<Integer> expectedSurrogates = new ArrayList<>();
     expectedSurrogates.add(3);
@@ -303,7 +309,8 @@ public class ColumnDictionaryInfoTest {
     columnDictionaryInfo
         .getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers, surrogates);
 
-    assertThat(surrogates.size(), is(equalTo(1)));
+    int expectedSize = 1;
+    assertThat(surrogates.size(), is(equalTo(expectedSize)));
 
     List<Integer> expectedSurrogates = new ArrayList<>();
     expectedSurrogates.add(3);
@@ -327,10 +334,10 @@ public class ColumnDictionaryInfoTest {
 
     columnDictionaryInfo.addDictionaryChunk(newDictionaryChunk);
 
-    List<List<byte[]>> dictionaryChunks = new CopyOnWriteArrayList<>();
-    dictionaryChunks.add(newDictionaryChunk);
+    List<List<byte[]>> expectedDictionaryChunks = new CopyOnWriteArrayList<>();
+    expectedDictionaryChunks.add(newDictionaryChunk);
 
-    assertThat(columnDictionaryInfo.dictionaryChunks, is(equalTo(dictionaryChunks)));
+    assertThat(columnDictionaryInfo.dictionaryChunks, is(equalTo(expectedDictionaryChunks)));
   }
 
   @Test public void testAddDictionaryChunkAppend() {
@@ -354,11 +361,11 @@ public class ColumnDictionaryInfoTest {
 
     columnDictionaryInfo.addDictionaryChunk(newDictionaryChunk2);
 
-    List<List<byte[]>> dictionaryChunks = new CopyOnWriteArrayList<>();
-    dictionaryChunks.add(newDictionaryChunk1);
-    dictionaryChunks.add(newDictionaryChunk2);
+    List<List<byte[]>> expectedDictionaryChunks = new CopyOnWriteArrayList<>();
+    expectedDictionaryChunks.add(newDictionaryChunk1);
+    expectedDictionaryChunks.add(newDictionaryChunk2);
 
-    assertThat(columnDictionaryInfo.dictionaryChunks, is(equalTo(dictionaryChunks)));
+    assertThat(columnDictionaryInfo.dictionaryChunks, is(equalTo(expectedDictionaryChunks)));
   }
 
   @Test public void addDictionaryChunkWithHugeChunkSize() {
@@ -382,10 +389,10 @@ public class ColumnDictionaryInfoTest {
 
     columnDictionaryInfo.addDictionaryChunk(newDictionaryChunk2);
 
-    List<List<byte[]>> dictionaryChunks = new CopyOnWriteArrayList<>();
-    dictionaryChunks.add(newDictionaryChunk1);
+    List<List<byte[]>> expectedDictionaryChunks = new CopyOnWriteArrayList<>();
+    expectedDictionaryChunks.add(newDictionaryChunk1);
 
-    assertThat(columnDictionaryInfo.dictionaryChunks, is(equalTo(dictionaryChunks)));
+    assertThat(columnDictionaryInfo.dictionaryChunks, is(equalTo(expectedDictionaryChunks)));
   }
 
   @Test public void addDictionaryChunkWithSplitChunks() {
@@ -410,9 +417,10 @@ public class ColumnDictionaryInfoTest {
 
     columnDictionaryInfo.addDictionaryChunk(newDictionaryChunk2);
 
+    byte[][] expectedResult = {{ 1, 2, 3, 4 }, { 5, 6, 7 }, { 8, 9, 10 }};
     assertThat(columnDictionaryInfo.dictionaryChunks.get(0),
-        hasItems(new byte[] { 1, 2, 3, 4 }, new byte[] { 5, 6, 7 }));
-    assertThat(columnDictionaryInfo.dictionaryChunks.get(1), hasItems(new byte[] { 8, 9, 10 }));
+        hasItems(expectedResult[0], expectedResult[1]));
+    assertThat(columnDictionaryInfo.dictionaryChunks.get(1), hasItems(expectedResult[2]));
   }
 
   @Test public void testGtSortedIndexWithMinimumSurrogateKey() {
@@ -423,7 +431,8 @@ public class ColumnDictionaryInfoTest {
 
     final int result = columnDictionaryInfo.getSortedIndex(0);
 
-    assertThat(result, is(equalTo(-1)));
+    int expectedResult = -1;
+    assertThat(result, is(equalTo(expectedResult)));
   }
 
   @Test public void testGtSortedIndexWithMaximumSurrogateKey() {
@@ -434,7 +443,8 @@ public class ColumnDictionaryInfoTest {
 
     final int result = columnDictionaryInfo.getSortedIndex(4);
 
-    assertThat(result, is(equalTo(-1)));
+    int expectedResult = -1;
+    assertThat(result, is(equalTo(expectedResult)));
   }
 
   @Test public void testGtSortedIndexWithSurrogateKey() {
@@ -445,7 +455,8 @@ public class ColumnDictionaryInfoTest {
 
     final int result = columnDictionaryInfo.getSortedIndex(2);
 
-    assertThat(result, is(equalTo(2)));
+    int expectedResult = 2;
+    assertThat(result, is(equalTo(expectedResult)));
   }
 
   @Test public void testGetSizeOfLastDictionaryChunkWithDictionaryChunkZero() {
@@ -454,7 +465,8 @@ public class ColumnDictionaryInfoTest {
 
     final int result = columnDictionaryInfo.getSizeOfLastDictionaryChunk();
 
-    assertThat(result, is(equalTo(0)));
+    int expectedResult = 0;
+    assertThat(result, is(equalTo(expectedResult)));
   }
 
   @Test public void testGetSizeOfLastDictionaryChunk() {
@@ -469,7 +481,8 @@ public class ColumnDictionaryInfoTest {
 
     final int result = columnDictionaryInfo.getSizeOfLastDictionaryChunk();
 
-    assertThat(result, is(equalTo(1)));
+    int expectedResult = 1;
+    assertThat(result, is(equalTo(expectedResult)));
   }
 
   @Test public void testGetDictionaryValueFromSortedIndexWithMinimumSurrogateKey() {
@@ -535,7 +548,8 @@ public class ColumnDictionaryInfoTest {
 
     int result = columnDictionaryInfo.getSurrogateKey(value);
 
-    assertThat(result, is(equalTo(4)));
+    int expectedResult = 4;
+    assertThat(result, is(equalTo(expectedResult)));
   }
 
   @Test
@@ -563,7 +577,8 @@ public class ColumnDictionaryInfoTest {
 
     int result = columnDictionaryInfo.getSurrogateKey(value);
 
-    assertThat(result, is(equalTo(1)));
+    int expectedResult = 1;
+    assertThat(result, is(equalTo(expectedResult)));
   }
 
   private List<byte[]> convertListElementsIntoByteArray(List<String> stringList) {
