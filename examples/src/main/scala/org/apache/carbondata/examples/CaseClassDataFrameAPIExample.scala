@@ -17,8 +17,8 @@
 
 package org.apache.carbondata.examples
 
-import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.{DataFrame, SaveMode}
 
 import org.apache.carbondata.examples.util.ExampleUtils
 
