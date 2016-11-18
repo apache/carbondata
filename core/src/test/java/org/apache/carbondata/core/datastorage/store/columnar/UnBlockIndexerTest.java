@@ -40,7 +40,9 @@ public class UnBlockIndexerTest {
     int[] indexMap = { 2 };
 
     int[] result = UnBlockIndexer.uncompressIndex(indexData, indexMap);
-    assertThat(result, is(equalTo(new int[] { 0, 9, 1, 2, 3, 4, 5, 6, 7, 8 })));
+
+    int[] expectedResult = { 0, 9, 1, 2, 3, 4, 5, 6, 7, 8 };
+    assertThat(result, is(equalTo(expectedResult)));
   }
 
   @Test public void testUncompressData() {
@@ -50,7 +52,8 @@ public class UnBlockIndexerTest {
 
     byte[] result = UnBlockIndexer.uncompressData(data, index, keyLen);
 
-    assertThat(result, is(equalTo(new byte[] { 2, 2 })));
+    byte[] expectedResult = { 2, 2 };
+    assertThat(result, is(equalTo(expectedResult)));
   }
 
   @Test public void testUncompressDataWithIndexZero() {

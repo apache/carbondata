@@ -31,12 +31,21 @@ public class BlockIndexerStorageForIntTest {
     BlockIndexerStorageForInt storageForInt =
         new BlockIndexerStorageForInt(data, false, false, true);
 
-    assertThat(storageForInt.isAlreadySorted(), is(equalTo(false)));
-    assertThat(storageForInt.getDataAfterComp(), is(equalTo(new int[] { 0, 1 })));
-    assertThat(storageForInt.getIndexMap(), is(equalTo(new int[] {})));
+    boolean expectedAlreadyStored = false;
+    assertThat(storageForInt.isAlreadySorted(), is(equalTo(expectedAlreadyStored)));
+
+    int[] expectedDataAfterComp = { 0, 1 };
+    assertThat(storageForInt.getDataAfterComp(), is(equalTo(expectedDataAfterComp)));
+
+    int[] expectedIndexMap = {};
+    assertThat(storageForInt.getIndexMap(), is(equalTo(expectedIndexMap)));
+
     assertThat(storageForInt.getKeyBlock(), is(equalTo(data)));
+
     assertThat(storageForInt.getDataIndexMap(), is(nullValue()));
-    assertThat(storageForInt.getTotalSize(), is(equalTo(0)));
+
+    int expectedTotalSize = 0;
+    assertThat(storageForInt.getTotalSize(), is(equalTo(expectedTotalSize)));
   }
 
   @Test public void testBlockIndexerStorageForIntConstructorCompressData() {
@@ -44,14 +53,28 @@ public class BlockIndexerStorageForIntTest {
     BlockIndexerStorageForInt storageForInt =
         new BlockIndexerStorageForInt(data, true, false, true);
 
-    assertThat(storageForInt.isAlreadySorted(), is(equalTo(false)));
-    assertThat(storageForInt.getDataAfterComp(), is(equalTo(new int[] { 0, 1 })));
-    assertThat(storageForInt.getIndexMap(), is(equalTo(new int[] {})));
+    boolean expectedAlreadyStored = false;
+    assertThat(storageForInt.isAlreadySorted(), is(equalTo(expectedAlreadyStored)));
+
+    int[] expectedDataAfterComp = { 0, 1 };
+    assertThat(storageForInt.getDataAfterComp(), is(equalTo(expectedDataAfterComp)));
+
+    int[] expectedIndexMap = {};
+    assertThat(storageForInt.getIndexMap(), is(equalTo(expectedIndexMap)));
+
     assertThat(storageForInt.getKeyBlock(), is(equalTo(data)));
-    assertThat(storageForInt.getDataIndexMap(), is(equalTo(new int[] {})));
-    assertThat(storageForInt.getTotalSize(), is(equalTo(2)));
-    assertThat(storageForInt.getMax(), is(equalTo(new byte[] { 3 })));
-    assertThat(storageForInt.getMin(), is(equalTo(new byte[] { 2 })));
+
+    int[] expectedDataIndexMap = {};
+    assertThat(storageForInt.getDataIndexMap(), is(equalTo(expectedDataIndexMap)));
+
+    int expectedTotalSize = 2;
+    assertThat(storageForInt.getTotalSize(), is(equalTo(expectedTotalSize)));
+
+    byte[] expectedMax = {3};
+    assertThat(storageForInt.getMax(), is(equalTo(expectedMax)));
+
+    byte[] expectedMin = {2};
+    assertThat(storageForInt.getMin(), is(equalTo(expectedMin)));
   }
 
   @Test public void testBlockIndexerStorageForIntConstructorNoDictionary() {
@@ -60,11 +83,20 @@ public class BlockIndexerStorageForIntTest {
     BlockIndexerStorageForInt storageForInt =
         new BlockIndexerStorageForInt(data, false, true, true);
 
-    assertThat(storageForInt.isAlreadySorted(), is(equalTo(false)));
-    assertThat(storageForInt.getDataAfterComp(), is(equalTo(new int[] { 1, 0 })));
-    assertThat(storageForInt.getIndexMap(), is(equalTo(new int[] {})));
+    boolean expectedAlreadyStored = false;
+    assertThat(storageForInt.isAlreadySorted(), is(equalTo(expectedAlreadyStored)));
+
+    int[] expectedDataAfterComp = { 1, 0 };
+    assertThat(storageForInt.getDataAfterComp(), is(equalTo(expectedDataAfterComp)));
+
+    int[] expectedIndexMap = {};
+    assertThat(storageForInt.getIndexMap(), is(equalTo(expectedIndexMap)));
+
     assertThat(storageForInt.getKeyBlock(), is(equalTo(data)));
+
     assertThat(storageForInt.getDataIndexMap(), is(nullValue()));
-    assertThat(storageForInt.getTotalSize(), is(equalTo(0)));
+
+    int expectedTotalSize = 0;
+    assertThat(storageForInt.getTotalSize(), is(equalTo(expectedTotalSize)));
   }
 }
