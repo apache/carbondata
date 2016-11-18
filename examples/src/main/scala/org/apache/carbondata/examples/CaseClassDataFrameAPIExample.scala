@@ -42,5 +42,7 @@ object CaseClassDataFrameAPIExample {
       .save()
 
     cc.sql("SELECT * FROM carbon2").show()
+
+    cc.sql("DROP TABLE IF EXISTS carbon2")
   }
 }
