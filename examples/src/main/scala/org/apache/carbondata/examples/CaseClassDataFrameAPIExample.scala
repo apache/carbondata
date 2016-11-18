@@ -17,9 +17,11 @@
 
 package org.apache.carbondata.examples
 
-import org.apache.carbondata.examples.util.ExampleUtils
-import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{DataFrame, SaveMode}
+
+import org.apache.spark.rdd.RDD
+
+import org.apache.carbondata.examples.util.ExampleUtils
 
 case class People(name: String, occupation: String, id: Int)
 
