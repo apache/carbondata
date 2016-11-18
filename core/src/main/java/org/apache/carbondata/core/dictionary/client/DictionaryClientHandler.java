@@ -18,16 +18,13 @@
  */
 package org.apache.carbondata.core.dictionary.client;
 
+import java.net.SocketAddress;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
 
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelHandler;
+import org.jboss.netty.channel.*;
 
 /**
  * Client handler to get data.
@@ -37,20 +34,52 @@ public class DictionaryClientHandler extends SimpleChannelHandler {
   final BlockingQueue<DictionaryKey> answer = new LinkedBlockingQueue<DictionaryKey>();
   private ChannelHandlerContext ctx;
 
-  @Override public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e)
-      throws Exception {
-    System.out.println("Connected");
-    ctx.sendUpstream(e);
+  @Override
+  public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
     this.ctx = ctx;
+    System.out.println("Connected " + ctx.getHandler());
+    super.channelConnected(ctx, e);
+  }
+
+  @Override
+  public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
+    DictionaryKey key = (DictionaryKey) e.getMessage();
+    System.out.println("Received new Dictionary Key!");
+    answer.offer(key);
+    super.messageReceived(ctx, e);
+  }
+
+//  @Override
+//  public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
+//    System.out.println("exceptionCaught");
+//    ctx.getChannel().close();
+//  }
+
+  @Override
+  public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+    System.out.println("channelDisconnected");
+    super.channelDisconnected(ctx, e);
+  }
+
+  @Override
+  public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
+    System.out.println("channelClosed");
+    super.channelClosed(ctx, e);
   }
 
   public DictionaryKey getDictionary(DictionaryKey key) {
-    ctx.getChannel().write(key);
+    DictionaryKey dictionaryKey;
+    try {
+      ctx.getChannel().write(key);
+    } catch (Exception e) {
+      e.printStackTrace();
+    }
     boolean interrupted = false;
     try {
       for (; ; ) {
         try {
-          return answer.take();
+          dictionaryKey = answer.take();
+          return dictionaryKey;
         } catch (InterruptedException ignore) {
           interrupted = true;
         }
@@ -61,16 +90,4 @@ public class DictionaryClientHandler extends SimpleChannelHandler {
       }
     }
   }
-
-  public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-    DictionaryKey key = (DictionaryKey) e.getMessage();
-    answer.offer(key);
-  }
-
-  @Override public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
-    // TODO handle properly
-    e.getCause().printStackTrace();
-    e.getChannel().close();
-  }
-
 }

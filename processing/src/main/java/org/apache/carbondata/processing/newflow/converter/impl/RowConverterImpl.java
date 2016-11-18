@@ -20,12 +20,14 @@ package org.apache.carbondata.processing.newflow.converter.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.*;
 
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
+import org.apache.carbondata.core.dictionary.client.DictionaryClient;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
@@ -53,6 +55,7 @@ public class RowConverterImpl implements RowConverter {
 
   private BadRecordLogHolder logHolder;
 
+
   public RowConverterImpl(DataField[] fields, CarbonDataLoadConfiguration configuration,
       BadRecordsLogger badRecordLogger) {
     this.fields = fields;
@@ -62,6 +65,19 @@ public class RowConverterImpl implements RowConverter {
 
   @Override
   public void initialize() {
+    ExecutorService executorService = Executors.newFixedThreadPool(1);
+    Future<DictionaryClient> result = executorService.submit(new Callable<DictionaryClient>() {
+      @Override public DictionaryClient call() throws Exception {
+        DictionaryClient dictionaryClient = new DictionaryClient();
+        dictionaryClient.startClient("127.0.0.1", 1118);
+        return dictionaryClient;
+      }
+    });
+    try {
+      Thread.sleep(1000);
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    }
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache =
         cacheProvider.createCache(CacheType.REVERSE_DICTIONARY,
@@ -73,10 +89,20 @@ public class RowConverterImpl implements RowConverter {
 
     long lruCacheStartTime = System.currentTimeMillis();
 
+    DictionaryClient client = null;
+    try {
+      client = result.get();
+    } catch (InterruptedException e) {
+      e.printStackTrace();
+    } catch (ExecutionException e) {
+      e.printStackTrace();
+    }
+
     for (int i = 0; i < fields.length; i++) {
       FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
           .createFieldEncoder(fields[i], cache,
-              configuration.getTableIdentifier().getCarbonTableIdentifier(), i, nullFormat);
+              configuration.getTableIdentifier().getCarbonTableIdentifier(), i, nullFormat,
+              client);
       fieldConverterList.add(fieldConverter);
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()

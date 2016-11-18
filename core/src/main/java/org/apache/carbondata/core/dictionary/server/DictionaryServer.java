@@ -18,41 +18,41 @@
  */
 package org.apache.carbondata.core.dictionary.server;
 
-import java.net.InetSocketAddress;
-import java.util.concurrent.Executors;
-
 import org.jboss.netty.bootstrap.ServerBootstrap;
-import org.jboss.netty.channel.ChannelFactory;
 import org.jboss.netty.channel.ChannelPipeline;
 import org.jboss.netty.channel.ChannelPipelineFactory;
 import org.jboss.netty.channel.Channels;
 import org.jboss.netty.channel.socket.nio.NioServerSocketChannelFactory;
-import org.jboss.netty.handler.codec.serialization.ClassResolvers;
 import org.jboss.netty.handler.codec.serialization.ObjectDecoder;
 import org.jboss.netty.handler.codec.serialization.ObjectEncoder;
+
+import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Dictionary Server to generate dictionary keys.
  */
 public class DictionaryServer {
   public void startServer(int port) throws Exception {
-    ChannelFactory factory = new NioServerSocketChannelFactory(Executors.newCachedThreadPool(),
-        Executors.newCachedThreadPool());
+    ServerBootstrap bootstrap = new ServerBootstrap();
 
-    ServerBootstrap bootstrap = new ServerBootstrap(factory);
+    ExecutorService boss = Executors.newCachedThreadPool();
+    ExecutorService worker = Executors.newCachedThreadPool();
+
+    bootstrap.setFactory(new NioServerSocketChannelFactory(boss, worker));
 
     bootstrap.setPipelineFactory(new ChannelPipelineFactory() {
-      public ChannelPipeline getPipeline() {
-        return Channels.pipeline(new ObjectEncoder(),
-            new ObjectDecoder(ClassResolvers.cacheDisabled(getClass().getClassLoader())),
-            new DictionaryServerHandler());
+      @Override
+      public ChannelPipeline getPipeline() throws Exception {
+        ChannelPipeline pipeline = Channels.pipeline();
+        pipeline.addLast("ObjectDecoder", new ObjectDecoder());
+        pipeline.addLast("ObjectEncoder", new ObjectEncoder());
+        pipeline.addLast("DictionaryServerHandler", new DictionaryServerHandler());
+        return pipeline;
       }
     });
-
-    bootstrap.setOption("child.tcpNoDelay", true);
-    bootstrap.setOption("child.keepAlive", true);
-    // Accept from all clients
-    bootstrap.bind(new InetSocketAddress("0.0.0.0", port));
-    System.out.println("Server Started!");
+    bootstrap.bind(new InetSocketAddress(port));
+    System.out.println("Server Start!");
   }
 }

@@ -57,6 +57,10 @@ public class DictionaryKey implements Serializable {
     this.data = data;
   }
 
+  public void setMessage(MESSAGETYPE msg) {
+    this.type = msg;
+  }
+
   public MESSAGETYPE getMessageType() {
     return type;
   }

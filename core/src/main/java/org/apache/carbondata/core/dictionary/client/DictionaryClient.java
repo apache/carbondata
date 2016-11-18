@@ -18,56 +18,49 @@
  */
 package org.apache.carbondata.core.dictionary.client;
 
-import java.net.InetSocketAddress;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
-
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
-
 import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.channel.ChannelFactory;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelPipeline;
-import org.jboss.netty.channel.ChannelPipelineFactory;
-import org.jboss.netty.channel.Channels;
+import org.jboss.netty.channel.*;
 import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.handler.codec.serialization.ClassResolvers;
 import org.jboss.netty.handler.codec.serialization.ObjectDecoder;
 import org.jboss.netty.handler.codec.serialization.ObjectEncoder;
+
+import java.net.InetSocketAddress;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * Dictionary client to connect to Dictionary server and generate dictionary values
  */
 public class DictionaryClient {
 
-  private DictionaryClientHandler clientHandler = new DictionaryClientHandler();
-  ;
+  private DictionaryClientHandler dictionaryClientHandler = new DictionaryClientHandler();
 
-  public void startClient(String host, int port) throws Exception {
-    Executor bossPool = Executors.newCachedThreadPool();
-    Executor workerPool = Executors.newCachedThreadPool();
-    ChannelFactory channelFactory = new NioClientSocketChannelFactory(bossPool, workerPool);
-    ClientBootstrap bootstrap = new ClientBootstrap(channelFactory);
-    try {
-      ChannelPipelineFactory pipelineFactory = new ChannelPipelineFactory() {
-        public ChannelPipeline getPipeline() throws Exception {
-          return Channels.pipeline(new ObjectEncoder(),
-              new ObjectDecoder(ClassResolvers.cacheDisabled(getClass().getClassLoader())),
-              clientHandler);
-        }
-      };
-      bootstrap.setPipelineFactory(pipelineFactory);
+  public void startClient(String address, int port) {
 
-      InetSocketAddress addressToConnectTo = new InetSocketAddress(host, port);
-      ChannelFuture cf = bootstrap.connect(addressToConnectTo);
-      // Wait until the connection attempt is finished and then the connection is closed.
-      cf.sync().getChannel().getCloseFuture().sync();
-    } finally {
-      bootstrap.releaseExternalResources();
-    }
+
+    ClientBootstrap clientBootstrap = new ClientBootstrap();
+
+    ExecutorService boss = Executors.newCachedThreadPool();
+    ExecutorService worker = Executors.newCachedThreadPool();
+
+    clientBootstrap.setFactory(new NioClientSocketChannelFactory(boss, worker));
+
+    clientBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
+      @Override
+      public ChannelPipeline getPipeline() throws Exception {
+        ChannelPipeline pipeline = Channels.pipeline();
+        pipeline.addLast("ObjectEncoder", new ObjectEncoder());
+        pipeline.addLast("ObjectDecoder", new ObjectDecoder());
+        pipeline.addLast("DictionaryClientHandler", dictionaryClientHandler);
+        return pipeline;
+      }
+    });
+    clientBootstrap.connect(new InetSocketAddress(address, port));
+    System.out.println("Client Start!");
   }
 
   public DictionaryKey getDictionary(DictionaryKey key) {
-    return clientHandler.getDictionary(key);
+    return dictionaryClientHandler.getDictionary(key);
   }
 }

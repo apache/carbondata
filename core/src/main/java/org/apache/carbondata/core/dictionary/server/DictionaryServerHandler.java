@@ -20,17 +20,8 @@ package org.apache.carbondata.core.dictionary.server;
 
 import org.apache.carbondata.core.dictionary.generator.DictionaryGeneratorForServer;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.jboss.netty.channel.*;
 
-import org.jboss.netty.channel.Channel;
-import org.jboss.netty.channel.ChannelEvent;
-import org.jboss.netty.channel.ChannelFuture;
-import org.jboss.netty.channel.ChannelHandlerContext;
-import org.jboss.netty.channel.ChannelStateEvent;
-import org.jboss.netty.channel.Channels;
-import org.jboss.netty.channel.DownstreamMessageEvent;
-import org.jboss.netty.channel.ExceptionEvent;
-import org.jboss.netty.channel.MessageEvent;
-import org.jboss.netty.channel.SimpleChannelHandler;
 
 /**
  * Handler for Dictionary server.
@@ -40,7 +31,6 @@ public class DictionaryServerHandler extends SimpleChannelHandler {
   private DictionaryGeneratorForServer generatorForServer = new DictionaryGeneratorForServer();
 
   public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-    ctx.sendUpstream(e);
     System.out.println("Connected " + ctx.getHandler());
   }
 
@@ -50,12 +40,7 @@ public class DictionaryServerHandler extends SimpleChannelHandler {
     int outPut = processMessage(key);
     key.setData(outPut);
     // Send back the response
-    Channel channel = e.getChannel();
-    ChannelFuture channelFuture = Channels.future(channel);
-    ChannelEvent responseEvent =
-        new DownstreamMessageEvent(channel, channelFuture, key, channel.getRemoteAddress());
-    ctx.sendDownstream(responseEvent);
-    // But still send it upstream because there might be another handler
+    ctx.getChannel().write(key);
     super.messageReceived(ctx, e);
   }
 
