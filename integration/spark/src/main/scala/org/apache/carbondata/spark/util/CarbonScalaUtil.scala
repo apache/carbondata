@@ -172,9 +172,10 @@ object CarbonScalaUtil {
       delimiterLevel2: String,
       format: SimpleDateFormat,
       level: Int = 1): String = {
-    value == null match {
-      case true => serializationNullFormat
-      case false => value match {
+    if (value == null) {
+      serializationNullFormat
+    } else {
+      value match {
         case s: String => s
         case d: java.math.BigDecimal => d.toPlainString
         case i: java.lang.Integer => i.toString

@@ -1130,5 +1130,4 @@ object CarbonDataRDDFactory {
       CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
     }
   }
-
 }
