@@ -26,6 +26,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -56,10 +57,11 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
       CarbonDataFileAttributes carbonDataFileAttributes, String databaseName,
       List<ColumnSchema> wrapperColumnSchemaList, int numberOfNoDictionaryColumn,
       boolean[] isDictionaryColumn, String carbonDataDirectoryPath, int[] colCardinality,
-      SegmentProperties segmentProperties, int tableBlocksize) {
+      SegmentProperties segmentProperties, int tableBlocksize,
+      CarbonTableIdentifier tableIdentifier) {
     super(storeLocation, measureCount, mdKeyLength, databaseName, tableName, fileManager,
         keyBlockSize, carbonDataFileAttributes, wrapperColumnSchemaList, carbonDataDirectoryPath,
-        colCardinality, segmentProperties, tableBlocksize);
+        colCardinality, segmentProperties, tableBlocksize, tableIdentifier);
     this.isComplexType = isComplexType;
     this.databaseName = databaseName;
     this.numberOfNoDictionaryColumn = numberOfNoDictionaryColumn;

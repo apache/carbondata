@@ -156,7 +156,8 @@ class CarbonMergerRDD[K, V](
           carbonLoadModel.getTaskNo,
           "0",
           mergeNumber,
-          true
+          true,
+          null
         )
 
         carbonLoadModel.setSegmentId(mergeNumber)

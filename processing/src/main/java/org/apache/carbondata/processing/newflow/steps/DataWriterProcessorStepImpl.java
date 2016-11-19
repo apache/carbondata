@@ -92,7 +92,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
             tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()),
-            configuration.getPartitionId(), configuration.getSegmentId() + "", false);
+            configuration.getPartitionId(), configuration.getSegmentId() + "", false,
+            configuration.getTableIdentifier().getCarbonTableIdentifier());
 
     if (!(new File(storeLocation).mkdirs())) {
       LOGGER.error("Local data load folder location does not exist: " + storeLocation);

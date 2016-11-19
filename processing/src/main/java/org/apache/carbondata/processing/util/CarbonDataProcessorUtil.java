@@ -38,6 +38,7 @@ import java.util.Set;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.CarbonDataLoadSchema;
+import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
@@ -282,7 +283,8 @@ public final class CarbonDataProcessorUtil {
    * @return
    */
   public static String getLocalDataFolderLocation(String databaseName, String tableName,
-      String taskId, String partitionId, String segmentId, boolean isCompactionFlow) {
+      String taskId, String partitionId, String segmentId, boolean isCompactionFlow,
+      CarbonTableIdentifier carbonTableIdentifier) {
     String tempLocationKey = databaseName + CarbonCommonConstants.UNDERSCORE + tableName
         + CarbonCommonConstants.UNDERSCORE + taskId;
     if (isCompactionFlow) {
@@ -291,10 +293,13 @@ public final class CarbonDataProcessorUtil {
 
     String baseStorePath = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    CarbonTable carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
+    if (carbonTableIdentifier == null) {
+      CarbonTable carbonTable = CarbonMetadata.getInstance()
+          .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
+      carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
+    }
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTable.getCarbonTableIdentifier());
+        CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTableIdentifier);
     String carbonDataDirectoryPath =
         carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId + "");
     String localDataLoadFolderLocation = carbonDataDirectoryPath + File.separator + taskId;
@@ -583,6 +588,21 @@ public final class CarbonDataProcessorUtil {
     List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
     for (int i = 0; i < aggType.length; i++) {
       aggType[i] = DataTypeUtil.getAggType(measures.get(i).getDataType());
+    }
+    return aggType;
+  }
+
+  /**
+   * get agg type
+   */
+  public static char[] getAggType(int measureCount, DataField[] dataFields) {
+    char[] aggType = new char[measureCount];
+    Arrays.fill(aggType, 'n');
+    int k = 0;
+    for (int i = 0; i < dataFields.length; i++) {
+      if (!dataFields[i].getColumn().isDimesion()) {
+        aggType[k++] = DataTypeUtil.getAggType(dataFields[i].getColumn().getDataType());
+      }
     }
     return aggType;
   }
