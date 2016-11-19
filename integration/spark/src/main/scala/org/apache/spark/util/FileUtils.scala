@@ -29,19 +29,18 @@ object FileUtils extends Logging {
    * append all csv file path to a String, file path separated by comma
    */
   private def getPathsFromCarbonFile(carbonFile: CarbonFile, stringBuild: StringBuilder): Unit = {
-    carbonFile.isDirectory match {
-    case true =>
+    if (carbonFile.isDirectory) {
       val files = carbonFile.listFiles()
       for (j <- 0 until files.size) {
         getPathsFromCarbonFile(files(j), stringBuild)
       }
-    case false =>
+    } else {
       val path = carbonFile.getAbsolutePath
       val fileName = carbonFile.getName
       if (carbonFile.getSize == 0) {
         logWarning(s"skip empty input file: $path")
       } else if (fileName.startsWith(CarbonCommonConstants.UNDERSCORE) ||
-          fileName.startsWith(CarbonCommonConstants.POINT)) {
+                 fileName.startsWith(CarbonCommonConstants.POINT)) {
         logWarning(s"skip invisible input file: $path")
       } else {
         stringBuild.append(path.replace('\\', '/')).append(CarbonCommonConstants.COMMA)
@@ -71,7 +70,7 @@ object FileUtils extends Logging {
         stringBuild.substring(0, stringBuild.size - 1)
       } else {
         throw new DataLoadingException("Please check your input path and make sure " +
-          "that files end with '.csv' and content is not empty.")
+                                       "that files end with '.csv' and content is not empty.")
       }
     }
   }
@@ -90,4 +89,5 @@ object FileUtils extends Logging {
       size
     }
   }
+
 }

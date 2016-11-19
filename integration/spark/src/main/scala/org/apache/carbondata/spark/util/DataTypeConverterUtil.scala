@@ -35,7 +35,7 @@ object DataTypeConverterUtil {
       case "timestamp" => DataType.TIMESTAMP
       case "array" => DataType.ARRAY
       case "struct" => DataType.STRUCT
-      case _ => sys.error("Unsupported data type : " + dataType)
+      case _ => sys.error(s"Unsupported data type: $dataType")
     }
   }
 

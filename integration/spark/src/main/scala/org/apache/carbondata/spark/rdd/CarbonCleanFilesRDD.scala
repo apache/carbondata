@@ -76,7 +76,7 @@ class CarbonCleanFilesRDD[V: ClassTag](
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val theSplit = split.asInstanceOf[CarbonLoadPartition]
     val s = theSplit.serializableHadoopSplit.value.getLocations.asScala
-    logInfo("Host Name : " + s.head + s.length)
+    logInfo("Host Name: " + s.head + s.length)
     s
   }
 }
