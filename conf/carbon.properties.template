@@ -52,7 +52,7 @@ carbon.compaction.level.threshold=4,3
 #default size (in MB) for major compaction to be triggered
 carbon.major.compaction.size=1024
 ######## Query Configuration ########
-#Number of cores to be used for loading blocks when execute query
+#Number of cores to be used for loading index into memory
 carbon.number.of.cores=4
 #Number of records to be in memory while querying :MIN=100000:MAX=240000
 carbon.inmemory.record.size=120000
