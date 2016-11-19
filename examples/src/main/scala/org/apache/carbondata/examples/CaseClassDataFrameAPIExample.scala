@@ -27,7 +27,7 @@ case class People(name: String, occupation: String, id: Int)
 object CaseClassDataFrameAPIExample {
 
   def main(args: Array[String]) {
-    val cc = ExampleUtils.createCarbonContext("DataFrameAPIExample")
+    val cc = ExampleUtils.createCarbonContext("CaseClassDataFrameAPIExample")
     import cc.implicits._
 
     val people = List(People("sangeeta", "engineer", 1), People("pallavi", "consultant", 2))
