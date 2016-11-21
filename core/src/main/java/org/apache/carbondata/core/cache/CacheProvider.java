@@ -84,14 +84,13 @@ public class CacheProvider {
     //check if cache is null for given cache type, if null create one
     if (!dictionaryCacheAlreadyExists(cacheType)) {
       synchronized (lock) {
-        if (!dictionaryCacheAlreadyExists(cacheType)) {
-          if (null == cacheTypeToLRUCacheMap.get(cacheType)) {
-            createLRULevelCacheInstance(cacheType);
-          }
-          createDictionaryCacheForGivenType(cacheType, carbonStorePath);
+        if (null == cacheTypeToLRUCacheMap.get(cacheType)) {
+          createLRULevelCacheInstance(cacheType);
         }
+        createDictionaryCacheForGivenType(cacheType, carbonStorePath);
       }
     }
+
     return cacheTypeToCacheMap.get(cacheType);
   }
 
