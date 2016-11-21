@@ -18,11 +18,16 @@
  */
 package org.apache.carbondata.core.dictionary.client;
 
-import java.net.SocketAddress;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+
+import com.alibaba.fastjson.JSON;
 
 import org.jboss.netty.channel.*;
 
@@ -31,8 +36,14 @@ import org.jboss.netty.channel.*;
  */
 public class DictionaryClientHandler extends SimpleChannelHandler {
 
-  final BlockingQueue<DictionaryKey> answer = new LinkedBlockingQueue<DictionaryKey>();
+  private static final LogService LOGGER =
+          LogServiceFactory.getLogService(DictionaryClientHandler.class.getName());
+
+  final Map<String, BlockingQueue<DictionaryKey>> dictKeyQueueMap = new ConcurrentHashMap<>();
+
   private ChannelHandlerContext ctx;
+
+  private Object lock = new Object();
 
   @Override
   public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
@@ -43,42 +54,46 @@ public class DictionaryClientHandler extends SimpleChannelHandler {
 
   @Override
   public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-    DictionaryKey key = (DictionaryKey) e.getMessage();
-    System.out.println("Received new Dictionary Key!");
-    answer.offer(key);
+    String backkeyString = (String) e.getMessage();
+    DictionaryKey key = JSON.parseObject(backkeyString, DictionaryKey.class);
+    BlockingQueue<DictionaryKey> dictKeyQueue = dictKeyQueueMap.get(key.getThreadNo());
+    dictKeyQueue.offer(key);
     super.messageReceived(ctx, e);
   }
 
-//  @Override
-//  public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
-//    System.out.println("exceptionCaught");
-//    ctx.getChannel().close();
-//  }
-
   @Override
-  public void channelDisconnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-    System.out.println("channelDisconnected");
-    super.channelDisconnected(ctx, e);
+  public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) throws Exception {
+    System.out.println("exceptionCaught");
+    ctx.getChannel().close();
   }
 
-  @Override
-  public void channelClosed(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-    System.out.println("channelClosed");
-    super.channelClosed(ctx, e);
-  }
-
+  /**
+   * client send request to server
+   *
+   * @param key
+   * @return
+   */
   public DictionaryKey getDictionary(DictionaryKey key) {
     DictionaryKey dictionaryKey;
+    BlockingQueue<DictionaryKey> dictKeyQueue = null;
     try {
-      ctx.getChannel().write(key);
+      synchronized (lock) {
+        dictKeyQueue = dictKeyQueueMap.get(key.getThreadNo());
+        if (dictKeyQueue == null) {
+          dictKeyQueue = new LinkedBlockingQueue<DictionaryKey>();
+          dictKeyQueueMap.put(key.getThreadNo(), dictKeyQueue);
+        }
+      }
+      String keyString = JSON.toJSONString(key);
+      ctx.getChannel().write(keyString);
     } catch (Exception e) {
-      e.printStackTrace();
+      LOGGER.error("Error while send request to server " + e.getMessage());
     }
     boolean interrupted = false;
     try {
       for (; ; ) {
         try {
-          dictionaryKey = answer.take();
+          dictionaryKey = dictKeyQueue.take();
           return dictionaryKey;
         } catch (InterruptedException ignore) {
           interrupted = true;

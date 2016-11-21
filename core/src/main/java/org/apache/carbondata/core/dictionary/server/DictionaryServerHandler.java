@@ -18,8 +18,11 @@
  */
 package org.apache.carbondata.core.dictionary.server;
 
-import org.apache.carbondata.core.dictionary.generator.DictionaryGeneratorForServer;
+import org.apache.carbondata.core.dictionary.generator.ServerDictionaryGenerator;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+
+import com.alibaba.fastjson.JSON;
+
 import org.jboss.netty.channel.*;
 
 
@@ -28,38 +31,70 @@ import org.jboss.netty.channel.*;
  */
 public class DictionaryServerHandler extends SimpleChannelHandler {
 
-  private DictionaryGeneratorForServer generatorForServer = new DictionaryGeneratorForServer();
+  /**
+   * dictionary generator
+   */
+  private ServerDictionaryGenerator generatorForServer = new ServerDictionaryGenerator();
 
+  /**
+   * channel connected
+   *
+   * @param ctx
+   * @param e
+   * @throws Exception
+   */
   public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
     System.out.println("Connected " + ctx.getHandler());
   }
 
+  /**
+   * receive message and handle
+   *
+   * @param ctx
+   * @param e
+   * @throws Exception
+   */
   @Override public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
       throws Exception {
-    DictionaryKey key = (DictionaryKey) e.getMessage();
+    String keyString = (String) e.getMessage();
+    DictionaryKey key = JSON.parseObject(keyString, DictionaryKey.class);
     int outPut = processMessage(key);
     key.setData(outPut);
     // Send back the response
-    ctx.getChannel().write(key);
+    String backkeyString = JSON.toJSONString(key);
+    ctx.getChannel().write(backkeyString);
     super.messageReceived(ctx, e);
   }
 
+  /**
+   * handle exceptions
+   *
+   * @param ctx
+   * @param e
+   */
   @Override public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
     e.getCause().printStackTrace();
     Channel ch = e.getChannel();
     ch.close();
   }
 
+  /**
+   * process message by message type
+   *
+   * @param key
+   * @return
+   * @throws Exception
+   */
   public Integer processMessage(DictionaryKey key) throws Exception {
-    switch (key.getMessageType()) {
-      case DICTIONARY_GENERATION:
+    switch (key.getType()) {
+      case "DICTIONARY_GENERATION":
         return generatorForServer.generateKey(key);
-      case TABLE_INTIALIZATION:
+      case "TABLE_INITIALIZATION":
         generatorForServer.initializeGeneratorForTable(key);
         return 0;
-      case SIZE:
+      case "SIZE":
         return generatorForServer.size(key);
-      case WRITE_DICTIONARY:
+      case "WRITE_DICTIONARY":
         generatorForServer.writeDictionaryData();
         return 0;
       default:

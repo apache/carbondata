@@ -21,14 +21,10 @@ package org.apache.carbondata.processing.newflow.steps;
 
 import java.io.File;
 import java.util.Iterator;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.dictionary.server.DictionaryServer;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.constants.LoggerAction;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
@@ -53,14 +49,6 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
   public DataConverterProcessorStepImpl(CarbonDataLoadConfiguration configuration,
       AbstractDataLoadProcessorStep child) {
     super(configuration, child);
-    ExecutorService executorService = Executors.newFixedThreadPool(1);
-    executorService.submit(new Callable<DictionaryServer>() {
-      @Override public DictionaryServer call() throws Exception {
-        DictionaryServer server = new DictionaryServer();
-        server.startServer(1118);
-        return server;
-      }
-    });
   }
 
   @Override

@@ -178,7 +178,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
   
     test("Greater Than equal to Filter with limit") {
     checkAnswer(
-      sql("select id from filtertestTables " + "where id >=999 limit 1"),
+      sql("select id from filtertestTables " + "where id >=999 order by id desc limit 1"),
       Seq(Row(1000))
     )
   }

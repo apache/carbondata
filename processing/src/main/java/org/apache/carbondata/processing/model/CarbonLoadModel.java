@@ -134,6 +134,21 @@ public class CarbonLoadModel implements Serializable {
   private String rddIteratorKey;
 
   /**
+   *  Use one pass to generate dictionary
+   */
+  private boolean useOnePass;
+
+  /**
+   * dictionary server host
+   */
+  private String dictionaryServerHost;
+
+  /**
+   * dictionary sever port
+   */
+  private int dictionaryServerPort;
+
+  /**
    * get escape char
    * @return
    */
@@ -336,6 +351,9 @@ public class CarbonLoadModel implements Serializable {
     copy.commentChar = commentChar;
     copy.maxColumns = maxColumns;
     copy.storePath = storePath;
+    copy.useOnePass = useOnePass;
+    copy.dictionaryServerHost = dictionaryServerHost;
+    copy.dictionaryServerPort = dictionaryServerPort;
     return copy;
   }
 
@@ -380,6 +398,9 @@ public class CarbonLoadModel implements Serializable {
     copyObj.dateFormat = dateFormat;
     copyObj.maxColumns = maxColumns;
     copyObj.storePath = storePath;
+    copyObj.useOnePass = useOnePass;
+    copyObj.dictionaryServerHost = dictionaryServerHost;
+    copyObj.dictionaryServerPort = dictionaryServerPort;
     return copyObj;
   }
 
@@ -608,5 +629,29 @@ public class CarbonLoadModel implements Serializable {
   public void setRddIteratorKey(String rddIteratorKey) {
     this.rddIteratorKey = rddIteratorKey;
 
+  }
+
+  public boolean getUseOnePass() {
+    return useOnePass;
+  }
+
+  public void setUseOnePass(boolean useOnePass) {
+    this.useOnePass = useOnePass;
+  }
+
+  public int getDictionaryServerPort() {
+    return dictionaryServerPort;
+  }
+
+  public void setDictionaryServerPort(int dictionaryServerPort) {
+    this.dictionaryServerPort = dictionaryServerPort;
+  }
+
+  public String getDictionaryServerHost() {
+    return dictionaryServerHost;
+  }
+
+  public void setDictionaryServerHost(String dictionaryServerHost) {
+    this.dictionaryServerHost = dictionaryServerHost;
   }
 }

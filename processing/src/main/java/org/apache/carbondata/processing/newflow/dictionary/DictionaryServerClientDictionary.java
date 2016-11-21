@@ -26,7 +26,6 @@ import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
-import org.apache.carbondata.core.dictionary.generator.key.MESSAGETYPE;
 
 /**
  * Dictionary implementation along with dictionary server client to get new dictionary values
@@ -41,33 +40,44 @@ public class DictionaryServerClientDictionary implements BiDictionary<Integer, O
 
   private DictionaryKey dictionaryKey;
 
+  private int base;
+
+  private Object lock = new Object();
+
   public DictionaryServerClientDictionary(Dictionary dictionary, DictionaryClient client,
       DictionaryKey key, Map<Object, Integer> localCache) {
     this.dictionary = dictionary;
     this.client = client;
     this.dictionaryKey = key;
     this.localCache = localCache;
+    this.base = (dictionary == null ? 0 : dictionary.getDictionaryChunks().getSize() - 1);
   }
 
   @Override public Integer getOrGenerateKey(Object value) throws DictionaryGenerationException {
     Integer key = getKey(value);
-    if (key == 0) {
-      if (((DictionaryKey) value).getMessageType() == MESSAGETYPE.DICTIONARY_GENERATION) {
+    if (key == null) {
+      synchronized (lock) {
         dictionaryKey.setData(value);
-        dictionaryKey.setMessage(MESSAGETYPE.DICTIONARY_GENERATION);
-      }
-      DictionaryKey dictionaryValue = client.getDictionary(dictionaryKey);
-      key = (Integer) dictionaryValue.getData();
-      synchronized (localCache) {
+        dictionaryKey.setThreadNo(Thread.currentThread().getId() + "");
+        DictionaryKey dictionaryValue = client.getDictionary(dictionaryKey);
+        key = (Integer) dictionaryValue.getData();
         localCache.put(value, key);
       }
-    } return key;
+      return key + base;
+    }
+    return key;
   }
 
   @Override public Integer getKey(Object value) {
-    int key = dictionary.getSurrogateKey(value.toString());
+    Integer key = -1;
+    if (dictionary != null) {
+      key = dictionary.getSurrogateKey(value.toString());
+    }
     if (key == CarbonCommonConstants.INVALID_SURROGATE_KEY) {
       key = localCache.get(value);
+      if (key != null) {
+        return key + base;
+      }
     }
     return key;
   }
@@ -77,7 +87,9 @@ public class DictionaryServerClientDictionary implements BiDictionary<Integer, O
   }
 
   @Override public int size() {
-    // TODO implement it
-    return 0;
+    dictionaryKey.setType("SIZE");
+    int size = (int) client.getDictionary(dictionaryKey).getData()
+            + base;
+    return size;
   }
 }

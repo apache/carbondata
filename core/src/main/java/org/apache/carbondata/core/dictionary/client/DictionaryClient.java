@@ -18,16 +18,19 @@
  */
 package org.apache.carbondata.core.dictionary.client;
 
-import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
-import org.jboss.netty.bootstrap.ClientBootstrap;
-import org.jboss.netty.channel.*;
-import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
-import org.jboss.netty.handler.codec.serialization.ObjectDecoder;
-import org.jboss.netty.handler.codec.serialization.ObjectEncoder;
-
 import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+
+import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+
+import org.jboss.netty.bootstrap.ClientBootstrap;
+import org.jboss.netty.channel.*;
+import org.jboss.netty.channel.socket.nio.NioClientSocketChannelFactory;
+import org.jboss.netty.handler.codec.serialization.ClassResolvers;
+import org.jboss.netty.handler.codec.serialization.ObjectDecoder;
+import org.jboss.netty.handler.codec.serialization.ObjectEncoder;
+
 
 /**
  * Dictionary client to connect to Dictionary server and generate dictionary values
@@ -36,22 +39,26 @@ public class DictionaryClient {
 
   private DictionaryClientHandler dictionaryClientHandler = new DictionaryClientHandler();
 
+  private ClientBootstrap clientBootstrap;
+
+  /**
+   * start dictionary client
+   *
+   * @param address
+   * @param port
+   */
   public void startClient(String address, int port) {
-
-
-    ClientBootstrap clientBootstrap = new ClientBootstrap();
-
+    clientBootstrap = new ClientBootstrap();
     ExecutorService boss = Executors.newCachedThreadPool();
     ExecutorService worker = Executors.newCachedThreadPool();
-
     clientBootstrap.setFactory(new NioClientSocketChannelFactory(boss, worker));
-
     clientBootstrap.setPipelineFactory(new ChannelPipelineFactory() {
       @Override
       public ChannelPipeline getPipeline() throws Exception {
         ChannelPipeline pipeline = Channels.pipeline();
         pipeline.addLast("ObjectEncoder", new ObjectEncoder());
-        pipeline.addLast("ObjectDecoder", new ObjectDecoder());
+        pipeline.addLast("ObjectDecoder", new ObjectDecoder(ClassResolvers.cacheDisabled(
+            getClass().getClassLoader())));
         pipeline.addLast("DictionaryClientHandler", dictionaryClientHandler);
         return pipeline;
       }
@@ -60,7 +67,21 @@ public class DictionaryClient {
     System.out.println("Client Start!");
   }
 
+  /**
+   * for client request
+   *
+   * @param key
+   * @return
+   */
   public DictionaryKey getDictionary(DictionaryKey key) {
     return dictionaryClientHandler.getDictionary(key);
+  }
+
+  /**
+   * shutdown dictionary client
+   */
+  public void shutDown() {
+    clientBootstrap.releaseExternalResources();
+    clientBootstrap.shutdown();
   }
 }

@@ -282,7 +282,7 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
    * 2. Filter scenarios where from value surrogate key has to be found.
    *
    * @param value dictionary value
-   * @return if found returns key else 0
+   * @return if found returns key else INVALID_SURROGATE_KEY
    */
   @Override public int getSurrogateKey(String value) {
     byte[] keyData = value.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));

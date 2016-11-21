@@ -23,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.devapi.DictionaryGenerator;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
@@ -31,20 +32,30 @@ import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
  * This is the dictionary generator for all tables. It generates dictionary
  * based on @{@link DictionaryKey}.
  */
-public class DictionaryGeneratorForServer implements DictionaryGenerator<Integer, DictionaryKey> {
+public class ServerDictionaryGenerator implements DictionaryGenerator<Integer, DictionaryKey> {
 
+  /**
+   * the map of tableName to TableDictionaryGenerator
+   */
   private Map<String, TableDictionaryGenerator> tableMap = new ConcurrentHashMap<>();
 
   @Override public Integer generateKey(DictionaryKey value) throws DictionaryGenerationException {
     TableDictionaryGenerator generator = tableMap.get(value.getTableUniqueName());
-    assert generator != null : "Table intialization for generator is not done";
+    assert generator != null : "Table initialization for generator is not done";
     return generator.generateKey(value);
   }
 
   public void initializeGeneratorForTable(DictionaryKey key) {
     CarbonMetadata metadata = CarbonMetadata.getInstance();
     CarbonTable carbonTable = metadata.getCarbonTable(key.getTableUniqueName());
-    tableMap.put(key.getTableUniqueName(), new TableDictionaryGenerator(carbonTable));
+    CarbonDimension dimension = carbonTable.getPrimitiveDimensionByName(
+            key.getTableUniqueName(), key.getColumnName());
+    // initialize TableDictionaryGenerator first
+    if (tableMap.get(key.getTableUniqueName()) == null) {
+      tableMap.put(key.getTableUniqueName(), new TableDictionaryGenerator(dimension));
+    } else {
+      tableMap.get(key.getTableUniqueName()).updateGenerator(dimension);
+    }
   }
 
   public Integer size(DictionaryKey key) {
@@ -53,10 +64,10 @@ public class DictionaryGeneratorForServer implements DictionaryGenerator<Integer
     return generator.size(key);
   }
 
-  // write dictionary data
-  public void writeDictionaryData() {
-    for (TableDictionaryGenerator generator : tableMap.values()) {
-      ((DictionaryWriter) generator).writeDictionaryData();
+  public void writeDictionaryData() throws Exception {
+    for (String tableUniqueName: tableMap.keySet()) {
+      TableDictionaryGenerator generator = tableMap.get(tableUniqueName);
+      ((DictionaryWriter) generator).writeDictionaryData(tableUniqueName);
     }
   }
 

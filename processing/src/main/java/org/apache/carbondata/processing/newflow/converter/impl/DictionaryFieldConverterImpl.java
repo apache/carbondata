@@ -26,19 +26,15 @@ import java.util.Map;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
-import org.apache.carbondata.core.cache.dictionary.ColumnDictionaryInfo;
-import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
-import org.apache.carbondata.core.cache.dictionary.ForwardDictionary;
+import org.apache.carbondata.core.cache.dictionary.*;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
-import org.apache.carbondata.core.dictionary.generator.key.MESSAGETYPE;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.DataField;
@@ -64,38 +60,46 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
   public DictionaryFieldConverterImpl(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       CarbonTableIdentifier carbonTableIdentifier, String nullFormat, int index,
-      DictionaryClient client) {
+      DictionaryClient client, Boolean useOnePass, String storePath) {
     this.index = index;
     this.carbonDimension = (CarbonDimension) dataField.getColumn();
     this.nullFormat = nullFormat;
     DictionaryColumnUniqueIdentifier identifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
             dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType());
-    try {
-      Dictionary dictionary = null;
-      if (true) {
-        dictionary = new ForwardDictionary(new ColumnDictionaryInfo(DataType.STRING));
-        DictionaryKey dictionaryKey = new DictionaryKey(carbonTableIdentifier.getTableUniqueName(),
-            carbonDimension.getColName(),
-            null,
-            MESSAGETYPE.TABLE_INTIALIZATION);
-        Map<Object, Integer> localCache = new HashMap<>();
-        dictionaryGenerator = new DictionaryServerClientDictionary(dictionary, client,
-            dictionaryKey, localCache);
-        try {
-          dictionaryGenerator.getOrGenerateKey(dictionaryKey);
-        } catch (DictionaryGenerationException e) {
-          e.printStackTrace();
+
+    Dictionary dictionary = null;
+    // if use one pass, use DictionaryServerClientDictionary
+    if (useOnePass) {
+      if (CarbonUtil.isFileExistsForGivenColumn(storePath, identifier)) {
+        try{
+          dictionary = cache.get(identifier);
+        } catch (CarbonUtilException e) {
+          LOGGER.error(e);
+          throw new RuntimeException(e);
         }
-
-
-      } else {
+      }
+      String threadNo = "initial";
+      DictionaryKey dictionaryKey = new DictionaryKey();
+      dictionaryKey.setColumnName(dataField.getColumn().getColName());
+      dictionaryKey.setTableUniqueName(carbonTableIdentifier.getTableUniqueName());
+      dictionaryKey.setThreadNo(threadNo);
+      // for table initialization
+      dictionaryKey.setType("TABLE_INITIALIZATION");
+      client.getDictionary(dictionaryKey);
+      Map<Object, Integer> localCache = new HashMap<>();
+      // for generate dictionary
+      dictionaryKey.setType("DICTIONARY_GENERATION");
+      dictionaryGenerator = new DictionaryServerClientDictionary(dictionary, client,
+              dictionaryKey, localCache);
+    } else {
+      try {
         dictionary = cache.get(identifier);
         dictionaryGenerator = new PreCreatedDictionary(dictionary);
+      } catch (CarbonUtilException e) {
+        LOGGER.error(e);
+        throw new RuntimeException(e);
       }
-    } catch (CarbonUtilException e) {
-      LOGGER.error(e);
-      throw new RuntimeException(e);
     }
   }
 

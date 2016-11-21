@@ -64,7 +64,7 @@ public class ColumnReverseDictionaryInfo extends AbstractColumnDictionaryInfo {
    * 2. Filter scenarios where from value surrogate key has to be found.
    *
    * @param value dictionary value as byte array. It will be treated as key here
-   * @return if found returns key else 0
+   * @return if found returns key else INVALID_SURROGATE_KEY
    */
   @Override public int getSurrogateKey(byte[] value) {
     DictionaryByteArrayWrapper dictionaryByteArrayWrapper =

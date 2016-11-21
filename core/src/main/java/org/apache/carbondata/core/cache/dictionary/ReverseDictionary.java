@@ -44,7 +44,7 @@ public class ReverseDictionary implements Dictionary {
    * 2. Filter scenarios where from value surrogate key has to be found.
    *
    * @param value dictionary value
-   * @return if found returns key else 0
+   * @return if found returns key else INVALID_SURROGATE_KEY
    */
   @Override public int getSurrogateKey(String value) {
     return columnReverseDictionaryInfo.getSurrogateKey(value);
@@ -58,7 +58,7 @@ public class ReverseDictionary implements Dictionary {
    * 2. Filter scenarios where from value surrogate key has to be found.
    *
    * @param value dictionary value as byte array
-   * @return if found returns key else 0
+   * @return if found returns key else INVALID_SURROGATE_KEY
    */
   @Override public int getSurrogateKey(byte[] value) {
     return columnReverseDictionaryInfo.getSurrogateKey(value);
