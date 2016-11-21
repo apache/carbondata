@@ -17,14 +17,10 @@
 
 package org.apache.carbondata.processing.newflow;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 
 public class CarbonDataLoadConfiguration {
 
@@ -80,26 +76,6 @@ public class CarbonDataLoadConfiguration {
       }
     }
     return msrCount;
-  }
-
-  public List<CarbonDimension> getCarbonDimensions() {
-    List<CarbonDimension> carbonDimensions = new ArrayList<>();
-    for (int i = 0; i < dataFields.length; i++) {
-      if (dataFields[i].getColumn().isDimesion()) {
-        carbonDimensions.add((CarbonDimension) dataFields[i].getColumn());
-      }
-    }
-    return carbonDimensions;
-  }
-
-  public List<CarbonMeasure> getCarbonMeasures() {
-    List<CarbonMeasure> carbonMeasures = new ArrayList<>();
-    for (int i = 0; i < dataFields.length; i++) {
-      if (!dataFields[i].getColumn().isDimesion()) {
-        carbonMeasures.add((CarbonMeasure) dataFields[i].getColumn());
-      }
-    }
-    return carbonMeasures;
   }
 
   public DataField[] getDataFields() {

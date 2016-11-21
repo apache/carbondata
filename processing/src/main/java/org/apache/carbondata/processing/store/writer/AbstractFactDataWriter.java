@@ -39,14 +39,15 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletBTreeIndex;
 import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.carbon.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.carbon.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.carbon.metadata.index.BlockIndexInfo;
+import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
@@ -179,7 +180,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       String databaseName, String tableName, IFileManagerComposite fileManager, int[] keyBlockSize,
       CarbonDataFileAttributes carbonDataFileAttributes, List<ColumnSchema> columnSchema,
       String carbonDataDirectoryPath, int[] colCardinality, SegmentProperties segmentProperties,
-      int blocksize, CarbonTableIdentifier tableIdentifier) {
+      int blocksize) {
 
     // measure count
     this.measureCount = measureCount;
@@ -213,8 +214,10 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     // in case of compaction we will pass the cardinality.
     this.localCardinality = colCardinality;
     this.carbonDataFileAttributes = carbonDataFileAttributes;
+    CarbonTable carbonTable = CarbonMetadata.getInstance()
+        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(storeLocation, tableIdentifier);
+        CarbonStorePath.getCarbonTablePath(storeLocation, carbonTable.getCarbonTableIdentifier());
     //TODO: We should delete the levelmetadata file after reading here.
     // so only data loading flow will need to read from cardinality file.
     if (null == this.localCardinality) {

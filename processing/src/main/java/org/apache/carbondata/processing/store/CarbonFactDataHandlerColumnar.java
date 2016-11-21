@@ -41,8 +41,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
+import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.columnar.BlockIndexerStorageForInt;
@@ -272,8 +273,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   private boolean useKettle;
 
-  private CarbonTableIdentifier tableIdentifier;
-
   /**
    * CarbonFactDataHandler constructor
    */
@@ -362,8 +361,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.completeDimLens = carbonFactDataHandlerModel.getDimLens();
     this.dimLens = this.segmentProperties.getDimColumnsCardinality();
     this.carbonDataFileAttributes = carbonFactDataHandlerModel.getCarbonDataFileAttributes();
+    //TODO need to pass carbon table identifier to metadata
+    CarbonTable carbonTable = CarbonMetadata.getInstance()
+        .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     dimensionType =
-        CarbonUtil.identifyDimensionType(carbonFactDataHandlerModel.getCarbonDimensions());
+        CarbonUtil.identifyDimensionType(carbonTable.getDimensionByTableName(tableName));
 
     this.compactionFlow = carbonFactDataHandlerModel.isCompactionFlow();
     // in compaction flow the measure with decimal type will come as spark decimal.
@@ -403,7 +405,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     blockletDataHolder = new BlockletDataHolder();
     consumer = new Consumer(blockletDataHolder);
     consumerExecutorServiceTaskList.add(consumerExecutorService.submit(consumer));
-    this.tableIdentifier = carbonFactDataHandlerModel.getTableIdentifier();
   }
 
   private boolean[] arrangeUniqueBlockType(boolean[] aggKeyBlock) {
@@ -1306,7 +1307,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         blockKeySize.length - noOfColStore);
     this.dataWriter =
         getFactDataWriter(this.storeLocation, this.measureCount, this.mdkeyLength, this.tableName,
-            fileManager, keyBlockSize, tableIdentifier);
+            fileManager, keyBlockSize);
     this.dataWriter.setIsNoDictionary(isNoDictionary);
     // initialize the channel;
     this.dataWriter.initializeWriter();
@@ -1396,13 +1397,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   }
 
   private CarbonFactDataWriter<?> getFactDataWriter(String storeLocation, int measureCount,
-      int mdKeyLength, String tableName, IFileManagerComposite fileManager, int[] keyBlockSize,
-      CarbonTableIdentifier tableIdentifier) {
+      int mdKeyLength, String tableName, IFileManagerComposite fileManager, int[] keyBlockSize) {
     return new CarbonFactDataWriterImplForIntIndexAndAggBlock(storeLocation, measureCount,
         mdKeyLength, tableName, fileManager, keyBlockSize, aggKeyBlock, isComplexTypes(),
         noDictionaryCount, carbonDataFileAttributes, databaseName, wrapperColumnSchemaList,
         noDictionaryCount, dimensionType, carbonDataDirectoryPath, colCardinality,
-        segmentProperties, tableBlockSize, tableIdentifier);
+        segmentProperties, tableBlockSize);
   }
 
   private boolean[] isComplexTypes() {

@@ -76,7 +76,7 @@ public class ParallelReadMergeSorterImpl implements Sorter {
         CarbonDataProcessorUtil.getLocalDataFolderLocation(
             sortParameters.getDatabaseName(), sortParameters.getTableName(),
             String.valueOf(sortParameters.getTaskNo()), sortParameters.getPartitionID(),
-            sortParameters.getSegmentId() + "", false,sortParameters.getTableIdentifier());
+            sortParameters.getSegmentId() + "", false);
     // Set the data file location
     String dataFolderLocation =
         storeLocation + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;

@@ -119,8 +119,6 @@ public class RowResultMerger {
     }
     carbonFactDataHandlerModel.setColCardinality(colCardinality);
     carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
-    carbonFactDataHandlerModel.setCarbonDimensions(carbonTable.getDimensionByTableName(tableName));
-    carbonFactDataHandlerModel.setTableIdentifier(carbonTable.getCarbonTableIdentifier());
     dataHandler = new CarbonFactDataHandlerColumnar(carbonFactDataHandlerModel);
 
     tupleConvertor = new TupleConversionAdapter(segProp);

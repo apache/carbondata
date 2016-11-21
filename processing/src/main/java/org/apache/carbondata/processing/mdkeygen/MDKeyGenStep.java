@@ -264,8 +264,7 @@ public class MDKeyGenStep extends BaseStep {
     this.tableName = meta.getTableName();
     storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(meta.getDatabaseName(), meta.getTableName(),
-            String.valueOf(meta.getTaskNo()), meta.getPartitionID(), meta.getSegmentId() + "",
-            false, null);
+            String.valueOf(meta.getTaskNo()), meta.getPartitionID(), meta.getSegmentId()+"", false);
     isNoDictionaryDimension =
         RemoveDictionaryUtil.convertStringToBooleanArr(meta.getNoDictionaryDimsMapping());
     isUseInvertedIndex =
@@ -370,11 +369,6 @@ public class MDKeyGenStep extends BaseStep {
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndex);
-    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        meta.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + meta.getTableName());
-    List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(meta.getTableName());
-    carbonFactDataHandlerModel.setCarbonDimensions(carbonTable.getDimensionByTableName(tableName));
-    carbonFactDataHandlerModel.setTableIdentifier(carbonTable.getCarbonTableIdentifier());
     if (meta.getNoDictionaryCount() > 0 || meta.getComplexDimsCount() > 0) {
       carbonFactDataHandlerModel.setMdKeyIndex(measureCount + 1);
     } else {

@@ -24,6 +24,7 @@ import java.util.Map;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
@@ -133,6 +134,9 @@ public final class DataLoadProcessBuilder {
         loadModel.getBadRecordsAction().split(",")[1]);
     configuration.setDataLoadProperty(DataLoadProcessorConstants.FACT_FILE_PATH,
         loadModel.getFactFilePath());
+    if(CarbonMetadata.getInstance().getCarbonTable(carbonTable.getTableUniqueName()) == null) {
+      CarbonMetadata.getInstance().addCarbonTable(carbonTable);
+    }
     List<CarbonDimension> dimensions =
         carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
     List<CarbonMeasure> measures =
@@ -161,8 +165,6 @@ public final class DataLoadProcessBuilder {
       }
     }
     configuration.setDataFields(dataFields.toArray(new DataField[dataFields.size()]));
-    configuration.setDataLoadProperty(
-        DataLoadProcessorConstants.BLOCK_SIZE, carbonTable.getBlockSizeInMB());
     return configuration;
   }
 

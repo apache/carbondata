@@ -194,7 +194,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
       String tableName) throws KettleException {
     String carbonDataDirectoryPath = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(databaseName, tableName, taskNo, partitionID, segmentId + "",
-            false, null);
+            false);
     boolean isDirCreated = new File(carbonDataDirectoryPath).mkdirs();
     if (!isDirCreated) {
       throw new KettleException("Unable to create data load directory" + carbonDataDirectoryPath);

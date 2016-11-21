@@ -27,7 +27,8 @@ import java.util.Map;
 
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
+import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
@@ -185,9 +186,6 @@ public class CarbonFactDataHandlerModel {
    */
   private boolean useKettle = true;
 
-  private List<CarbonDimension> carbonDimensions;
-
-  private CarbonTableIdentifier tableIdentifier;
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    * @param configuration
@@ -198,6 +196,8 @@ public class CarbonFactDataHandlerModel {
 
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
+    CarbonTableIdentifier tableIdentifier =
+        identifier;
     boolean[] isUseInvertedIndex =
         CarbonDataProcessorUtil.getIsUseInvertedIndex(configuration.getDataFields());
 
@@ -223,9 +223,12 @@ public class CarbonFactDataHandlerModel {
       simpleDimsLen[i] = dimLens[i];
     }
 
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+        tableIdentifier.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + tableIdentifier
+            .getTableName());
     List<ColumnSchema> wrapperColumnSchema = CarbonUtil
-        .getColumnSchemaList(configuration.getCarbonDimensions(),
-            configuration.getCarbonMeasures());
+        .getColumnSchemaList(carbonTable.getDimensionByTableName(tableIdentifier.getTableName()),
+            carbonTable.getMeasureByTableName(tableIdentifier.getTableName()));
     int[] colCardinality =
         CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchema);
     SegmentProperties segmentProperties =
@@ -274,17 +277,14 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setColCardinality(colCardinality);
     carbonFactDataHandlerModel.setDataWritingRequest(true);
     carbonFactDataHandlerModel.setAggType(CarbonDataProcessorUtil
-        .getAggType(measureCount, configuration.getDataFields()));
+        .getAggType(measureCount, identifier.getDatabaseName(), identifier.getTableName()));
     carbonFactDataHandlerModel.setFactDimLens(dimLens);
     carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
     carbonFactDataHandlerModel.setPrimitiveDimLens(simpleDimsLen);
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndex);
-    carbonFactDataHandlerModel.setCarbonDimensions(configuration.getCarbonDimensions());
-    carbonFactDataHandlerModel.setBlockSizeInMB(
-        (Integer) configuration.getDataLoadProperty(DataLoadProcessorConstants.BLOCK_SIZE));
-    carbonFactDataHandlerModel.setTableIdentifier(identifier);
+    carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
     carbonFactDataHandlerModel.setUseKettle(false);
     if (noDictionaryCount > 0 || complexDimensionCount > 0) {
       carbonFactDataHandlerModel.setMdKeyIndex(measureCount + 1);
@@ -304,8 +304,11 @@ public class CarbonFactDataHandlerModel {
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
     CarbonTableIdentifier tableIdentifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+        tableIdentifier.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + tableIdentifier
+            .getTableName());
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, tableIdentifier);
+        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTable.getCarbonTableIdentifier());
     String carbonDataDirectoryPath = carbonTablePath
         .getCarbonDataDirectoryPath(configuration.getPartitionId(),
             configuration.getSegmentId() + "");
@@ -554,22 +557,6 @@ public class CarbonFactDataHandlerModel {
 
   public void setUseKettle(boolean useKettle) {
     this.useKettle = useKettle;
-  }
-
-  public List<CarbonDimension> getCarbonDimensions() {
-    return carbonDimensions;
-  }
-
-  public void setCarbonDimensions(List<CarbonDimension> carbonDimensions) {
-    this.carbonDimensions = carbonDimensions;
-  }
-
-  public CarbonTableIdentifier getTableIdentifier() {
-    return tableIdentifier;
-  }
-
-  public void setTableIdentifier(CarbonTableIdentifier tableIdentifier) {
-    this.tableIdentifier = tableIdentifier;
   }
 }
 

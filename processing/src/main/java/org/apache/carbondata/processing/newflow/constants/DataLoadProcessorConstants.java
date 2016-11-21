@@ -42,5 +42,4 @@ public final class DataLoadProcessorConstants {
 
   public static final String FACT_FILE_PATH = "FACT_FILE_PATH";
 
-  public static final String BLOCK_SIZE = "BLOCK_SIZE";
 }

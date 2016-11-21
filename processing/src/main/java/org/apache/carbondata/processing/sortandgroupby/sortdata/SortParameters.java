@@ -92,8 +92,6 @@ public class SortParameters {
 
   private char[] aggType;
 
-  private CarbonTableIdentifier tableIdentifier;
-
   /**
    * To know how many columns are of high cardinality.
    */
@@ -348,8 +346,7 @@ public class SortParameters {
     String carbonDataDirectoryPath = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
             tableIdentifier.getTableName(), configuration.getTaskNo(),
-            configuration.getPartitionId(), configuration.getSegmentId(), false,
-            configuration.getTableIdentifier().getCarbonTableIdentifier());
+            configuration.getPartitionId(), configuration.getSegmentId(), false);
     parameters.setTempFileLocation(
         carbonDataDirectoryPath + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     LOGGER.info("temp file location" + parameters.getTempFileLocation());
@@ -405,10 +402,10 @@ public class SortParameters {
     parameters.setBufferSize(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE);
 
     char[] aggType = CarbonDataProcessorUtil
-        .getAggType(parameters.getMeasureColCount(), configuration.getDataFields());
+        .getAggType(parameters.getMeasureColCount(), parameters.getDatabaseName(),
+            parameters.getTableName());
     parameters.setAggType(aggType);
     parameters.setUseKettle(false);
-    parameters.setTableIdentifier(configuration.getTableIdentifier().getCarbonTableIdentifier());
     return parameters;
   }
 
@@ -450,8 +447,7 @@ public class SortParameters {
     LOGGER.info("File Buffer Size: " + parameters.getFileBufferSize());
 
     String carbonDataDirectoryPath = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(databaseName, tableName, taskNo, partitionID, segmentId, false,
-            null);
+        .getLocalDataFolderLocation(databaseName, tableName, taskNo, partitionID, segmentId, false);
     parameters.setTempFileLocation(
         carbonDataDirectoryPath + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     LOGGER.info("temp file location" + parameters.getTempFileLocation());
@@ -513,11 +509,4 @@ public class SortParameters {
     return parameters;
   }
 
-  public CarbonTableIdentifier getTableIdentifier() {
-    return tableIdentifier;
-  }
-
-  public void setTableIdentifier(CarbonTableIdentifier tableIdentifier) {
-    this.tableIdentifier = tableIdentifier;
-  }
 }
