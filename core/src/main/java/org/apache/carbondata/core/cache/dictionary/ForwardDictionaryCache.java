@@ -166,12 +166,9 @@ public class ForwardDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier)
       throws CarbonUtilException {
     Dictionary forwardDictionary = null;
-    // create column dictionary info object only if dictionary and its
-    // metadata file exists for a given column identifier
-    if (!isFileExistsForGivenColumn(dictionaryColumnUniqueIdentifier)) {
-      throw new CarbonUtilException(
-          "Either dictionary or its metadata does not exist for column identifier :: "
-              + dictionaryColumnUniqueIdentifier.getColumnIdentifier());
+    // create column dictionary info object only if it is primitive type.
+    if (dictionaryColumnUniqueIdentifier.getDataType().isComplexType()) {
+      return null;
     }
     String columnIdentifier = dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId();
     ColumnDictionaryInfo columnDictionaryInfo =
