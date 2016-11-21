@@ -215,6 +215,24 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       setSegmentsToAccess(job.getConfiguration(), validAndInvalidSegments.getValidSegments());
     }
   }
+
+  public List<InputSplit> getAllSplits(JobContext job) throws IOException {
+    AbsoluteTableIdentifier absoluteTableIdentifier =
+        getAbsoluteTableIdentifier(job.getConfiguration());
+    addSegmentsIfEmpty(job, absoluteTableIdentifier);
+    if (getSegmentsFromConfiguration(job).length == 0) {
+      return new ArrayList<>(0);
+    }
+    List<InputSplit> splits = super.getSplits(job);
+    List<InputSplit> carbonSplits = new ArrayList<InputSplit>(splits.size());
+    for(InputSplit split : splits) {
+      FileSplit fileSplit = (FileSplit) split;
+      carbonSplits.add(new CarbonInputSplit("0", fileSplit.getPath(), fileSplit.getStart(),
+          fileSplit.getLength(), fileSplit.getLocations()));
+    }
+    return carbonSplits;
+  }
+
   /**
    * {@inheritDoc}
    * Configurations FileInputFormat.INPUT_DIR
@@ -227,6 +245,10 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
     try {
       CarbonTable carbonTable = getCarbonTable(job.getConfiguration());
+      if (!carbonTable.isSort()) {
+        return this.getAllSplits(job);
+      }
+
       Object filterPredicates = getFilterPredicates(job.getConfiguration());
       AbsoluteTableIdentifier absoluteTableIdentifier =
           getAbsoluteTableIdentifier(job.getConfiguration());

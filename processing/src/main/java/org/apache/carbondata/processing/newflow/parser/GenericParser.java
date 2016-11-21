@@ -22,7 +22,7 @@ package org.apache.carbondata.processing.newflow.parser;
  * Parse the data according to implementation, The implementation classes can be struct, array or
  * map datatypes.
  * It remains thread safe as the state of implementation class should not change while
- * calling @{@link GenericParser#parse(Object)} method
+ * calling @{@link GenericParser#parse(String)} method
  */
 public interface GenericParser<E> {
 
@@ -31,6 +31,6 @@ public interface GenericParser<E> {
    * @param data
    * @return
    */
-  E parse(Object data);
+  E parse(String data);
 
 }

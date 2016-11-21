@@ -133,6 +133,16 @@ public class CarbonLoadModel implements Serializable {
    */
   private String rddIteratorKey;
 
+  private boolean isSort;
+
+  public boolean isSort() {
+    return isSort;
+  }
+
+  public void setSort(boolean isSort) {
+    this.isSort = isSort;
+  }
+
   /**
    * get escape char
    * @return

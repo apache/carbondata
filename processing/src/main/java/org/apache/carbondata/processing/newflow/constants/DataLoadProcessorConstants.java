@@ -33,6 +33,7 @@ public final class DataLoadProcessorConstants {
   public static final String COMPLEX_DELIMITERS = "COMPLEX_DELIMITERS";
 
   public static final String DIMENSION_LENGTHS = "DIMENSION_LENGTHS";
+  public static final String PRIMITIVE_DIMENSION_NUMBER = "PRIMITIVE_DIMENSION_NUMBER";
 
   public static final String SERIALIZATION_NULL_FORMAT = "SERIALIZATION_NULL_FORMAT";
 

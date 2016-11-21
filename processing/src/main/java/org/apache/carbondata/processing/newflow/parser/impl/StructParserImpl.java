@@ -32,7 +32,7 @@ import org.apache.commons.lang.ArrayUtils;
 /**
  * It parses the string to @{@link StructObject} using delimiter.
  * It is thread safe as the state of class don't change while
- * calling @{@link GenericParser#parse(Object)} method
+ * calling @{@link GenericParser#parse(String)} method
  */
 public class StructParserImpl implements ComplexParser<StructObject> {
 
@@ -48,9 +48,9 @@ public class StructParserImpl implements ComplexParser<StructObject> {
   }
 
   @Override
-  public StructObject parse(Object data) {
+  public StructObject parse(String data) {
     if (data != null) {
-      String value = data.toString();
+      String value = data;
       if (!value.isEmpty() && !value.equals(nullFormat)) {
         String[] split = pattern.split(value, -1);
         if (ArrayUtils.isNotEmpty(split)) {

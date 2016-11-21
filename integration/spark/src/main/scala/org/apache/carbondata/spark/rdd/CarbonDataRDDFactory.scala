@@ -28,12 +28,13 @@ import scala.util.control.Breaks._
 
 import org.apache.hadoop.conf.{Configurable, Configuration}
 import org.apache.hadoop.fs.Path
+import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{util => _, _}
+import org.apache.spark.rdd.NewHadoopRDD
 import org.apache.spark.sql.{CarbonEnv, DataFrame, SQLContext}
-import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel,
-CompactionModel, Partitioner}
+import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel, CompactionModel, Partitioner}
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.util.{FileUtils, SplitUtils}
 
@@ -45,14 +46,15 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.integration.spark.merger.{CarbonCompactionUtil, CompactionCallable,
-CompactionType}
+import org.apache.carbondata.hadoop.csv.CSVInputFormat
+import org.apache.carbondata.hadoop.io.StringArrayWritable
+import org.apache.carbondata.integration.spark.merger.{CarbonCompactionUtil, CompactionCallable, CompactionType}
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
-import org.apache.carbondata.spark._
+import org.apache.carbondata.spark.{DataLoadResultImpl, _}
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.merger.CarbonDataMergerUtil
 import org.apache.carbondata.spark.splits.TableSplit
@@ -782,6 +784,35 @@ object CarbonDataRDDFactory extends Logging {
       var blocksGroupBy: Array[(String, Array[BlockDetails])] = null
       var status: Array[(String, LoadMetadataDetails)] = null
 
+      def loadDataFileByNoSorting(): Unit = {
+
+        val hadoopConfiguration = new Configuration(sqlContext.sparkContext.hadoopConfiguration)
+        hadoopConfiguration.setStrings(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
+        hadoopConfiguration.set("io.compression.codecs",
+          """org.apache.hadoop.io.compress.GzipCodec,
+         org.apache.hadoop.io.compress.DefaultCodec,
+         org.apache.hadoop.io.compress.BZip2Codec""".stripMargin)
+
+        CSVInputFormat.setCommentCharacter(carbonLoadModel.getCommentChar, hadoopConfiguration)
+        CSVInputFormat.setCSVDelimiter(carbonLoadModel.getCsvDelimiter, hadoopConfiguration)
+        CSVInputFormat.setEscapeCharacter(carbonLoadModel.getEscapeChar, hadoopConfiguration)
+        CSVInputFormat.setHeaderExtractionEnabled(
+          carbonLoadModel.getCsvHeader == null || carbonLoadModel.getCsvHeader.isEmpty,
+          hadoopConfiguration)
+          CSVInputFormat.setQuoteCharacter(carbonLoadModel.getQuoteChar, hadoopConfiguration)
+        CarbonDataRDDFactory.configSplitMaxSize(sqlContext.sparkContext,
+          carbonLoadModel.getFactFilePath, hadoopConfiguration)
+        val rdd = new NewHadoopRDD[NullWritable, StringArrayWritable](
+          sqlContext.sparkContext,
+          classOf[CSVInputFormat],
+          classOf[NullWritable],
+          classOf[StringArrayWritable],
+          hadoopConfiguration)
+            .setName("newHadoopRDD-no-sort")
+        status = new NoSortCarbonDataLoadRDD(rdd, new DataLoadResultImpl(), carbonLoadModel,
+          currentLoadCount, storePath).collect()
+      }
+
       def loadDataFile(): Unit = {
         if (isTableSplitPartition) {
           /*
@@ -964,7 +995,11 @@ object CarbonDataRDDFactory extends Logging {
         if (dataFrame.isDefined) {
           loadDataFrame()
         } else {
-          loadDataFile()
+          if (carbonLoadModel.isSort) {
+            loadDataFile()
+          } else {
+            loadDataFileByNoSorting()
+          }
         }
         val newStatusMap = scala.collection.mutable.Map.empty[String, String]
         status.foreach { eachLoadStatus =>
@@ -1163,6 +1198,5 @@ object CarbonDataRDDFactory extends Logging {
       CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
     }
   }
-
 
 }

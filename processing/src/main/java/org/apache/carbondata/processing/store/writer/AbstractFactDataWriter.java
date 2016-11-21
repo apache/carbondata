@@ -176,6 +176,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
 
   private List<BlockIndexInfo> blockIndexInfoList;
 
+  protected boolean isUseIndex = true;
+
   public AbstractFactDataWriter(String storeLocation, int measureCount, int mdKeyLength,
       String databaseName, String tableName, IFileManagerComposite fileManager, int[] keyBlockSize,
       CarbonDataFileAttributes carbonDataFileAttributes, List<ColumnSchema> columnSchema,
@@ -216,6 +218,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     this.carbonDataFileAttributes = carbonDataFileAttributes;
     CarbonTable carbonTable = CarbonMetadata.getInstance()
         .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
+    this.isUseIndex = carbonTable.isSort();
     carbonTablePath =
         CarbonStorePath.getCarbonTablePath(storeLocation, carbonTable.getCarbonTableIdentifier());
     //TODO: We should delete the levelmetadata file after reading here.
@@ -367,7 +370,10 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       FileFooter convertFileMeta = CarbonMetadataUtil
           .convertFileFooter(infoList, localCardinality.length, localCardinality,
               thriftColumnSchemaList, segmentProperties);
-      fillBlockIndexInfoDetails(infoList, convertFileMeta.getNum_rows(), filePath, currentPosition);
+      if(isUseIndex) {
+        fillBlockIndexInfoDetails(infoList, convertFileMeta.getNum_rows(), filePath,
+            currentPosition);
+      }
       writer.writeFooter(convertFileMeta, currentPosition);
     } catch (IOException e) {
       throw new CarbonDataWriterException("Problem while writing the carbon file: ", e);
@@ -508,10 +514,12 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
     renameCarbonDataFile();
     copyCarbonDataFileToCarbonStorePath(this.fileName.substring(0, this.fileName.lastIndexOf('.')));
-    try {
-      writeIndexFile();
-    } catch (IOException e) {
-      throw new CarbonDataWriterException("Problem while writing the index file", e);
+    if (isUseIndex) {
+      try {
+        writeIndexFile();
+      } catch (IOException e) {
+        throw new CarbonDataWriterException("Problem while writing the index file", e);
+      }
     }
     closeExecutorService();
   }

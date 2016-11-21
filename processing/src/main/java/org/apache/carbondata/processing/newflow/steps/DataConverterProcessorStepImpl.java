@@ -19,18 +19,13 @@
 
 package org.apache.carbondata.processing.newflow.steps;
 
-import java.io.File;
 import java.util.Iterator;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.processing.constants.LoggerAction;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
-import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
+import org.apache.carbondata.processing.newflow.NewFlowDataLoadUtil;
 import org.apache.carbondata.processing.newflow.converter.RowConverter;
 import org.apache.carbondata.processing.newflow.converter.impl.RowConverterImpl;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
@@ -59,7 +54,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
   @Override
   public void initialize() throws CarbonDataLoadingException {
     child.initialize();
-    BadRecordsLogger badRecordLogger = createBadRecordLogger();
+    BadRecordsLogger badRecordLogger = NewFlowDataLoadUtil.createBadRecordLogger(configuration);
     converter = new RowConverterImpl(child.getOutput(), configuration, badRecordLogger);
     converter.initialize();
   }
@@ -102,54 +97,6 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
   @Override
   protected CarbonRow processRow(CarbonRow row) {
     throw new UnsupportedOperationException();
-  }
-
-  private BadRecordsLogger createBadRecordLogger() {
-    boolean badRecordsLogRedirect = false;
-    boolean badRecordConvertNullDisable = false;
-    boolean badRecordsLoggerEnable = Boolean.parseBoolean(
-        configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ENABLE)
-            .toString());
-    Object bad_records_action =
-        configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ACTION)
-            .toString();
-    if (null != bad_records_action) {
-      LoggerAction loggerAction = null;
-      try {
-        loggerAction = LoggerAction.valueOf(bad_records_action.toString().toUpperCase());
-      } catch (IllegalArgumentException e) {
-        loggerAction = LoggerAction.FORCE;
-      }
-      switch (loggerAction) {
-        case FORCE:
-          badRecordConvertNullDisable = false;
-          break;
-        case REDIRECT:
-          badRecordsLogRedirect = true;
-          badRecordConvertNullDisable = true;
-          break;
-        case IGNORE:
-          badRecordsLogRedirect = false;
-          badRecordConvertNullDisable = true;
-          break;
-      }
-    }
-    CarbonTableIdentifier identifier =
-        configuration.getTableIdentifier().getCarbonTableIdentifier();
-    BadRecordsLogger badRecordsLogger = new BadRecordsLogger(identifier.getBadRecordLoggerKey(),
-        identifier.getTableName() + '_' + System.currentTimeMillis(), getBadLogStoreLocation(
-        identifier.getDatabaseName() + File.separator + identifier.getTableName() + File.separator
-            + configuration.getTaskNo()), badRecordsLogRedirect, badRecordsLoggerEnable,
-        badRecordConvertNullDisable);
-    return badRecordsLogger;
-  }
-
-  private String getBadLogStoreLocation(String storeLocation) {
-    String badLogStoreLocation =
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
-    badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
-
-    return badLogStoreLocation;
   }
 
   @Override

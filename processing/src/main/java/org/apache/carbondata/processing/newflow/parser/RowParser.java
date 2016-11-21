@@ -28,6 +28,6 @@ public interface RowParser {
    * @param row input row to be parsed.
    * @return parsed row.
    */
-  Object[] parseRow(Object[] row);
+  Object[] parseRow(String[] row);
 
 }

@@ -27,6 +27,7 @@ import java.util.Arrays;
  */
 public class CarbonRow {
 
+  private String[] origin;
   private Object[] data;
 
   public CarbonRow(Object[] data) {
@@ -39,6 +40,14 @@ public class CarbonRow {
 
   public void setData(Object[] data) {
     this.data = data;
+  }
+
+  public void setOrigin(String[] origin) {
+    this.origin = origin;
+  }
+
+  public String[] getOrigin() {
+    return this.origin;
   }
 
   public int getInt(int ordinal) {

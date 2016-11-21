@@ -26,8 +26,8 @@ import java.util.UUID
 import scala.collection.JavaConverters._
 import scala.util.Random
 
-import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, SparkEnv,
-TaskContext}
+import org.apache.hadoop.io.NullWritable
+import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, SparkEnv, TaskContext}
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
@@ -38,11 +38,13 @@ import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
+import org.apache.carbondata.hadoop.io.StringArrayWritable
 import org.apache.carbondata.processing.constants.DataProcessorConstants
 import org.apache.carbondata.processing.csvreaderstep.RddInputUtils
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator
 import org.apache.carbondata.processing.model.CarbonLoadModel
+import org.apache.carbondata.processing.store.nosort.NoSortCarbonDataContainer
 import org.apache.carbondata.spark.DataLoadResult
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.splits.TableSplit
@@ -622,4 +624,91 @@ class RddIterator(rddIter: Iterator[Row],
   def remove(): Unit = {
   }
 
+}
+
+class NoSortCarbonDataLoadRDD[K, V](
+    prev: RDD[(NullWritable, StringArrayWritable)],
+    result: DataLoadResult[K, V],
+    carbonLoadModel: CarbonLoadModel,
+    loadCount: Integer,
+    storePath: String)
+    extends RDD[(K, V)](prev) with Logging {
+  @DeveloperApi
+  override def compute(split: Partition,
+     context: TaskContext): Iterator[(K, V)] = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+    LOGGER.info("Start no sort dataloading, task no:" + split.index)
+    val partitionID = "0"
+    val loadMetadataDetails = new LoadMetadataDetails()
+    val uniqueLoadStatusId = carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE +
+        split.index
+    var storeLocation: String = null
+    val carbonUseLocalDir = CarbonProperties.getInstance()
+      .getProperty("carbon.use.local.dir", "false")
+    if (carbonUseLocalDir.equalsIgnoreCase("true")) {
+      val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+      if (null != storeLocations && storeLocations.nonEmpty) {
+        storeLocation = storeLocations(Random.nextInt(storeLocations.length))
+      }
+      if (storeLocation == null) {
+        storeLocation = System.getProperty("java.io.tmpdir")
+      }
+    } else {
+      storeLocation = System.getProperty("java.io.tmpdir")
+    }
+    storeLocation = storeLocation + '/' + System.nanoTime() + "_" + split.index  + '/' + split.index
+    try {
+      loadMetadataDetails.setPartitionCount(partitionID)
+      loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
+      carbonLoadModel.setPartitionId(partitionID)
+      carbonLoadModel.setSegmentId(String.valueOf(loadCount))
+      carbonLoadModel.setTaskNo(String.valueOf(split.index))
+
+      val writer = new NoSortCarbonDataContainer(carbonLoadModel, storeLocation)
+      writer.initialise
+      val iter = firstParent[(NullWritable, StringArrayWritable)].iterator(split, context)
+      while (iter.hasNext) {
+        val (_, value) = iter.next()
+        writer.addRow(value.get())
+      }
+      writer.finish
+      loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
+    } catch {
+      case e: Exception =>
+        logInfo("No sort DataLoad failure")
+        LOGGER.error(e)
+        throw e
+    } finally {
+      try {
+        val isCompaction = false
+        CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(carbonLoadModel, isCompaction)
+      } catch {
+        case e: Exception =>
+          logError("Failed to delete local data", e)
+      }
+      if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(
+        loadMetadataDetails.getLoadStatus)) {
+        if (CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+          .equals(loadMetadataDetails.getLoadStatus)) {
+          logInfo("DataLoad complete")
+          logInfo("Data Load partially successful with LoadCount:" + loadCount)
+        } else {
+          logInfo("DataLoad complete")
+          logInfo("Data Loaded successfully with LoadCount:" + loadCount)
+        }
+      }
+    }
+    var flag = true
+    new Iterator[(K, V)] {
+      override def hasNext: Boolean = flag
+      override def next(): (K, V) = {
+        flag = false
+        result.getKey(uniqueLoadStatusId, loadMetadataDetails)
+      }
+    }
+  }
+
+  override protected def getPartitions: Array[Partition] = {
+    firstParent[(NullWritable, StringArrayWritable)].partitions
+  }
 }

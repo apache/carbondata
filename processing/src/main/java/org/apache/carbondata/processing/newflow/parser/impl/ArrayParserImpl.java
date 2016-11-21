@@ -30,7 +30,7 @@ import org.apache.commons.lang.ArrayUtils;
 /**
  * It parses the string to @{@link ArrayObject} using delimiter.
  * It is thread safe as the state of class don't change while
- * calling @{@link GenericParser#parse(Object)} method
+ * calling @{@link GenericParser#parse(String)} method
  */
 public class ArrayParserImpl implements ComplexParser<ArrayObject> {
 
@@ -46,9 +46,9 @@ public class ArrayParserImpl implements ComplexParser<ArrayObject> {
   }
 
   @Override
-  public ArrayObject parse(Object data) {
+  public ArrayObject parse(String data) {
     if (data != null) {
-      String value = data.toString();
+      String value = data;
       if (!value.isEmpty() && !value.equals(nullFormat)) {
         String[] split = pattern.split(value, -1);
         if (ArrayUtils.isNotEmpty(split)) {

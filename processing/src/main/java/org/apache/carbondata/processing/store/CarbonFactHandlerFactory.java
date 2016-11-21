@@ -19,6 +19,8 @@
 
 package org.apache.carbondata.processing.store;
 
+import org.apache.carbondata.processing.store.nosort.NoSortCarbonFactHandlerImpl;
+
 /**
  * Factory class for CarbonFactHandler.
  */
@@ -35,13 +37,16 @@ public final class CarbonFactHandlerFactory {
     switch (handlerType) {
       case COLUMNAR:
         return new CarbonFactDataHandlerColumnar(model);
+      case NOSORT:
+        return new NoSortCarbonFactHandlerImpl(model);
       default:
         return new CarbonFactDataHandlerColumnar(model);
     }
   }
 
   public enum FactHandlerType {
-    COLUMNAR
+    COLUMNAR,
+    NOSORT
   }
 
 }
