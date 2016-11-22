@@ -140,7 +140,7 @@ object QueryTest {
              |$e
              |${org.apache.spark.sql.catalyst.util.stackTraceToString(e)}
           """.stripMargin
-        Some(errorMessage)
+       return Some(errorMessage)
     }
 
     if (prepareAnswer(expectedAnswer) != prepareAnswer(sparkAnswer)) {
@@ -157,7 +157,7 @@ object QueryTest {
               prepareAnswer(sparkAnswer).map(_.toString())).mkString("\n")
         }
       """.stripMargin
-      Some(errorMessage)
+      return Some(errorMessage)
     }
 
     None
