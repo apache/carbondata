@@ -894,6 +894,20 @@ public final class CarbonCommonConstants {
    */
   public static final String DATA_LOAD_BATCH_SIZE_DEFAULT = "1000";
 
+  /**
+   * to enable offheap sort
+   */
+  public static String ENABLE_OFFHEAP_SORT = "enable.offheap.sort";
+
+  /**
+   * to enable offheap sort
+   */
+  public static String ENABLE_OFFHEAP_SORT_DEFAULT = "false";
+
+  public static String OFFHEAP_SORT_CHUNK_SIZE_IN_MB = "offheap.sort.chunk.size.inmb";
+
+  public static String OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT = "50";
+
   private CarbonCommonConstants() {
   }
 }
