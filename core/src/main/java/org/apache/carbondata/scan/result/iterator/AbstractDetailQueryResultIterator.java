@@ -114,7 +114,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
       DataRefNodeFinder finder = new BTreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
       DataRefNode startDataBlock = finder
           .findFirstDataBlock(blockInfo.getDataBlock().getDataRefNode(), blockInfo.getStartKey());
-      while (startDataBlock.nodeNumber() != blockInfo.getStartBlockletIndex()) {
+      while (startDataBlock.nodeNumber() < blockInfo.getStartBlockletIndex()) {
         startDataBlock = startDataBlock.getNextDataRefNode();
       }
 
