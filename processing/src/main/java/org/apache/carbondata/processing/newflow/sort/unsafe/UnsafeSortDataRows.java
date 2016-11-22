@@ -128,7 +128,7 @@ public class UnsafeSortDataRows {
           rowPage.addRow(rowBatch[i]);
         } else {
           try {
-            unsafeSortIntermediateFileMerger.startMergingIfPossible();
+//            unsafeSortIntermediateFileMerger.startMergingIfPossible();
             dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
           } catch (Exception e) {
             LOGGER.error(
