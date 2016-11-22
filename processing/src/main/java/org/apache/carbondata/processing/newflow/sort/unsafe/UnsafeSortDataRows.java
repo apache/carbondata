@@ -54,10 +54,6 @@ public class UnsafeSortDataRows {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(UnsafeSortDataRows.class.getName());
   /**
-   * entryCount
-   */
-  private int entryCount;
-  /**
    * threadStatusObserver
    */
   private ThreadStatusObserver threadStatusObserver;
@@ -70,8 +66,6 @@ public class UnsafeSortDataRows {
    */
 
   private SortParameters parameters;
-
-  private int sortBufferSize;
 
   private SortIntermediateFileMerger intermediateFileMerger;
 
@@ -92,7 +86,6 @@ public class UnsafeSortDataRows {
 
     this.unsafeSortIntermediateFileMerger = unsafeSortIntermediateFileMerger;
 
-    this.sortBufferSize = parameters.getSortBufferSize();
     // observer of writing file in thread
     this.threadStatusObserver = new ThreadStatusObserver();
 
@@ -135,6 +128,7 @@ public class UnsafeSortDataRows {
           rowPage.addRow(rowBatch[i]);
         } else {
           try {
+            unsafeSortIntermediateFileMerger.startMergingIfPossible();
             dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
           } catch (Exception e) {
             LOGGER.error(
@@ -159,9 +153,8 @@ public class UnsafeSortDataRows {
    * @throws CarbonSortKeyAndGroupByException
    */
   public void startSorting() throws CarbonSortKeyAndGroupByException {
-    LOGGER.info("File based sorting will be used");
+    LOGGER.info("Unsafe based sorting will be used");
     if (this.rowPage.getUsedSize() > 0) {
-      long startTime = System.currentTimeMillis();
       TimSort<Object[], PointerBuffer> timSort = new TimSort<>(
           new UnsafeSortDataFormat(parameters.getDimColCount() + parameters.getMeasureColCount(),
               rowPage));

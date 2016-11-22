@@ -74,7 +74,7 @@ public class PointerBuffer {
     if (actualSize >= length) {
       // Expand by quarter, may be we can correct the logic later
       int localLength = length + (int) (length * (0.25));
-      long memoryAddress = CarbonUnsafe.unsafe.allocateMemory(length * 4);
+      long memoryAddress = CarbonUnsafe.unsafe.allocateMemory(localLength * 4);
       CarbonUnsafe.unsafe.copyMemory(pointerBaseAddress, memoryAddress, length);
       CarbonUnsafe.unsafe.freeMemory(pointerBaseAddress);
       pointerBaseAddress = memoryAddress;

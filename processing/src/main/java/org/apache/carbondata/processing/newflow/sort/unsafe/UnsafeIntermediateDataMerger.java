@@ -166,13 +166,13 @@ public class UnsafeIntermediateDataMerger implements Callable<Void> {
    * @throws CarbonSortKeyAndGroupByException
    */
   private void startSorting() throws CarbonSortKeyAndGroupByException {
-    LOGGER.info("Number of temp file: " + this.fileCounter);
+    LOGGER.info("Number of row pages in intermediate merger: " + this.fileCounter);
 
     // create record holder heap
     createRecordHolderQueue(unsafeCarbonRowPages);
 
     // iterate over file list and create chunk holder and add to heap
-    LOGGER.info("Started adding first record from each file");
+    LOGGER.info("Started adding first record from row page");
 
     UnsafePageHolder unsafePageHolder = null;
 

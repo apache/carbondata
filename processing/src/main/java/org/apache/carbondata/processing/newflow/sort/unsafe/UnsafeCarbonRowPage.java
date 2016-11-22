@@ -43,7 +43,9 @@ public class UnsafeCarbonRowPage {
     BYTE_ARRAY_OFFSET = CarbonUnsafe.unsafe.arrayBaseOffset(byte[].class);
     LONG_ARRAY_OFFSET = CarbonUnsafe.unsafe.arrayBaseOffset(long[].class);
     buffer = new PointerBuffer(sizeInMB);
-    sizeToBeUsed = ((sizeInMB * 1024 * 1024) * 5)/100;
+    int totalSize = sizeInMB * 1024 * 1024;
+    // TODO Only using 95% of space for safe side.May be we can have different logic.
+    sizeToBeUsed = totalSize-(totalSize * 5)/100;
   }
 
   public void addRow(Object[] row) {
