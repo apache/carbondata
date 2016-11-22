@@ -99,6 +99,7 @@
     <module>integration/spark</module>
     <module>assembly</module>
     <module>examples</module>
+    <module>tools</module>
   </modules>
 
   <properties>

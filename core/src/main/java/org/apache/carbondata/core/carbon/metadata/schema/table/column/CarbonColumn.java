@@ -171,4 +171,19 @@ public class CarbonColumn implements Serializable {
   public ColumnIdentifier getColumnIdentifier() {
     return this.columnIdentifier;
   }
+
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+    builder.append(isDimesion() ? "dimension column: {" : "measure column: {");
+    builder.append("name: ").append(getColName());
+    builder.append(", data type: ").append(getDataType());
+    builder.append(", columnar: ").append(isColumnar());
+    builder.append(", encoding: ").append(getEncoder());
+    builder.append(", inverted index: ").append(isUseInvertedIndnex());
+    builder.append(", ordinal: ").append(getOrdinal());
+    builder.append(", id: ").append(getColumnId());
+    builder.append(", default value: ").append(defaultValue);
+    builder.append("}");
+    return builder.toString();
+  }
 }

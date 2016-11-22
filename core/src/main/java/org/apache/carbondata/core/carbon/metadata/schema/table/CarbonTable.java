@@ -30,6 +30,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
@@ -438,4 +439,32 @@ public class CarbonTable implements Serializable {
     this.blockSize = blockSize;
   }
 
+  public String toString() {
+    StringBuilder builder = new StringBuilder();
+
+    // table info
+    oneLine(builder.append("======= table information ======="));
+    oneLine(builder.append("path of this table: ").append(absoluteTableIdentifier.getTablePath()));
+    oneLine(builder.append("last updated time: ").append(getTableLastUpdatedTime()));
+    oneLine(builder.append("partition count: ").append(getPartitionCount()));
+    oneLine(builder.append("block size: ").append(getBlocksize()));
+
+    // schema info
+    oneLine(builder.append("======= schema information ======="));
+    List<CarbonDimension> dims = getDimensionByTableName(getFactTableName());
+    for (CarbonDimension dim : dims) {
+      oneLine(builder.append(dim));
+    }
+
+    List<CarbonMeasure> msrs = getMeasureByTableName(getFactTableName());
+    for (CarbonMeasure msr : msrs) {
+      oneLine(builder.append(msr));
+    }
+
+    return builder.toString();
+  }
+
+  private void oneLine(StringBuilder builder) {
+    builder.append("\n");
+  }
 }
