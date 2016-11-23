@@ -26,19 +26,12 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>carbondata-spark</artifactId>
-  <name>Apache CarbonData :: Spark</name>
+  <artifactId>carbondata-spark-common</artifactId>
+  <name>Apache CarbonData :: Spark Common</name>
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
   </properties>
-
-  <repositories>
-    <repository>
-      <id>pentaho-releases</id>
-      <url>http://repository.pentaho.org/artifactory/repo/</url>
-    </repository>
-  </repositories>
 
   <dependencies>
     <dependency>
@@ -64,11 +57,6 @@
     <dependency>
       <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-hadoop</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-spark-common</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -180,7 +168,7 @@
           <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
           <junitxml>.</junitxml>
           <filereports>CarbonTestSuite.txt</filereports>
-          <argLine>-ea -Xmx3g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m 
+          <argLine>-ea -Xmx3g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m
           </argLine>
           <stderr />
           <environmentVariables>

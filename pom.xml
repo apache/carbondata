@@ -96,9 +96,9 @@
     <module>core</module>
     <module>processing</module>
     <module>hadoop</module>
-    <module>integration/spark</module>
     <module>assembly</module>
     <module>examples</module>
+    <module>integration/spark-common</module>
   </modules>
 
   <properties>
@@ -286,15 +286,33 @@
     <profile>
       <id>spark-1.5</id>
       <!-- default -->
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
         <spark.version>1.5.2</spark.version>
       </properties>
+      <modules>
+        <module>integration/spark</module>
+      </modules>
     </profile>
     <profile>
       <id>spark-1.6</id>
       <properties>
         <spark.version>1.6.2</spark.version>
       </properties>
+      <modules>
+        <module>integration/spark</module>
+      </modules>
+    </profile>
+    <profile>
+      <id>spark-2.0</id>
+      <properties>
+        <spark.version>2.0.0</spark.version>
+      </properties>
+      <modules>
+        <module>integration/spark2</module>
+      </modules>
     </profile>
     <profile>
       <id>integration-test</id>

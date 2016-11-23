@@ -26,26 +26,14 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>carbondata-spark</artifactId>
-  <name>Apache CarbonData :: Spark</name>
+  <artifactId>carbondata-spark2</artifactId>
+  <name>Apache CarbonData :: Spark2</name>
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
   </properties>
 
-  <repositories>
-    <repository>
-      <id>pentaho-releases</id>
-      <url>http://repository.pentaho.org/artifactory/repo/</url>
-    </repository>
-  </repositories>
-
   <dependencies>
-    <dependency>
-      <groupId>com.databricks</groupId>
-      <artifactId>spark-csv_${scala.binary.version}</artifactId>
-      <version>1.2.0</version>
-    </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-common</artifactId>
