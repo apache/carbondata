@@ -22,12 +22,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentPropertiesTestUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.scan.model.QueryDimension;
+
+import junit.framework.TestCase;
+import mockit.Mock;
+import mockit.MockUp;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -41,12 +43,12 @@ public class QueryUtilTest extends TestCase {
   }
 
   @Test public void testGetMaskedByteRangeGivingProperMaksedByteRange() {
-	  
-	QueryDimension dimension = new QueryDimension(segmentProperties.getDimensions().get(0).getColName());
-	dimension.setDimension(segmentProperties.getDimensions().get(0));  
+
+    QueryDimension dimension =
+        new QueryDimension(segmentProperties.getDimensions().get(0).getColName());
+    dimension.setDimension(segmentProperties.getDimensions().get(0));
     int[] maskedByteRange = QueryUtil
-        .getMaskedByteRange(Arrays.asList(dimension),
-            segmentProperties.getDimensionKeyGenerator());
+        .getMaskedByteRange(Arrays.asList(dimension), segmentProperties.getDimensionKeyGenerator());
     int[] expectedMaskedByteRange = { 0 };
     for (int i = 0; i < maskedByteRange.length; i++) {
       assertEquals(expectedMaskedByteRange[i], maskedByteRange[i]);
@@ -56,7 +58,8 @@ public class QueryUtilTest extends TestCase {
   @Test public void testGetMaskedByteRangeGivingProperMaksedByteRangeOnlyForDictionaryKey() {
     List<QueryDimension> dimensions = new ArrayList<QueryDimension>();
     for (int i = 0; i < 2; i++) {
-      QueryDimension dimension = new QueryDimension(segmentProperties.getDimensions().get(i).getColName());
+      QueryDimension dimension =
+          new QueryDimension(segmentProperties.getDimensions().get(i).getColName());
       dimension.setDimension(segmentProperties.getDimensions().get(i));
       dimensions.add(dimension);
     }
@@ -80,12 +83,13 @@ public class QueryUtilTest extends TestCase {
   }
 
   @Test public void testGetMaxKeyBasedOnDimensions() {
-	  List<QueryDimension> dimensions = new ArrayList<QueryDimension>();
-	    for (int i = 0; i < 2; i++) {
-	      QueryDimension dimension = new QueryDimension(segmentProperties.getDimensions().get(i).getColName());
-	      dimension.setDimension(segmentProperties.getDimensions().get(i));
-	      dimensions.add(dimension);
-	    }
+    List<QueryDimension> dimensions = new ArrayList<QueryDimension>();
+    for (int i = 0; i < 2; i++) {
+      QueryDimension dimension =
+          new QueryDimension(segmentProperties.getDimensions().get(i).getColName());
+      dimension.setDimension(segmentProperties.getDimensions().get(i));
+      dimensions.add(dimension);
+    }
     byte[] maxKeyBasedOnDimensions = null;
     try {
       maxKeyBasedOnDimensions = QueryUtil
@@ -110,12 +114,12 @@ public class QueryUtilTest extends TestCase {
   }
 
   @Test public void testGetMaksedByte() {
-	  QueryDimension dimension = new QueryDimension(segmentProperties.getDimensions().get(0).getColName());
-		dimension.setDimension(segmentProperties.getDimensions().get(0)); 
-		dimension.setDimension(segmentProperties.getDimensions().get(0));
+    QueryDimension dimension =
+        new QueryDimension(segmentProperties.getDimensions().get(0).getColName());
+    dimension.setDimension(segmentProperties.getDimensions().get(0));
+    dimension.setDimension(segmentProperties.getDimensions().get(0));
     int[] maskedByteRange = QueryUtil
-        .getMaskedByteRange(Arrays.asList(dimension),
-            segmentProperties.getDimensionKeyGenerator());
+        .getMaskedByteRange(Arrays.asList(dimension), segmentProperties.getDimensionKeyGenerator());
     int[] maskedByte = QueryUtil
         .getMaskedByte(segmentProperties.getDimensionKeyGenerator().getDimCount(), maskedByteRange);
     int[] expectedMaskedByte = { 0, -1, -1, -1, -1, -1 };
@@ -125,6 +129,59 @@ public class QueryUtilTest extends TestCase {
         assertTrue(false);
       }
     }
+  }
+
+  @Test public void testSearchInArrayWithSearchInputNotPresentInArray() {
+    int[] dummyArray = { 1, 2, 3, 4, 5 };
+    int searchInput = 6;
+    boolean result = QueryUtil.searchInArray(dummyArray, searchInput);
+    assert (!result);
+  }
+
+  @Test public void testSearchInArrayWithSearchInputPresentInArray() {
+    int[] dummyArray = { 1, 2, 3, 4, 5 };
+    int searchInput = 1;
+    boolean result = QueryUtil.searchInArray(dummyArray, searchInput);
+    assert (result);
+  }
+
+  @Test public void testGetColumnGroupIdWhenOrdinalValueNotPresentInArrayIndex() {
+    int ordinal = 0;
+    new MockUp<SegmentProperties>() {
+      @Mock public int[][] getColumnGroups() {
+        int columnGroups[][] = { { 1, 1 }, { 2, 2 }, { 3, 3 }, { 4, 4 }, { 5, 5 } };
+        return columnGroups;
+      }
+    };
+    int actualValue = QueryUtil.getColumnGroupId(segmentProperties, ordinal);
+    int expectedValue = 4; //expectedValue will always be arrayLength - 1
+    assertEquals(expectedValue, actualValue);
+  }
+
+  @Test public void testGetColumnGroupIdWhenOrdinalValuePresentInArrayIndex() {
+    int ordinal = 1;
+    new MockUp<SegmentProperties>() {
+      @Mock public int[][] getColumnGroups() {
+        int columnGroups[][] = { { 1, 1 }, { 2, 2 }, { 3, 3 }, { 4, 4 }, { 5, 5 } };
+        return columnGroups;
+      }
+    };
+    int actualValue = QueryUtil.getColumnGroupId(segmentProperties, ordinal);
+    int expectedValue = 0;
+    assertEquals(expectedValue, actualValue);
+  }
+
+  @Test public void testGetColumnGroupIdWhenColumnGroupsIndexValueLengthLessThanOne() {
+    int ordinal = 1;
+    new MockUp<SegmentProperties>() {
+      @Mock public int[][] getColumnGroups() {
+        int columnGroups[][] = { { 1 } };
+        return columnGroups;
+      }
+    };
+    int actualValue = QueryUtil.getColumnGroupId(segmentProperties, ordinal);
+    int expectedValue = -1;
+    assertEquals(expectedValue, actualValue);
   }
 
   @AfterClass public void tearDown() {
