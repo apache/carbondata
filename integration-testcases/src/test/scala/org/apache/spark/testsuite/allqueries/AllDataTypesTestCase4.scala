@@ -205,16 +205,6 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql("drop table table27")
   }
 
-  //TC_1070
-  test("TC_1070") {
-    sql("drop table if exists myschema.table28")
-    sql(
-      "CREATE table myschema.table28  (AMSize STRING) " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table myschema.table28")
-  }
-
   //TC_1073
   test("TC_1073") {
     intercept[MalformedCarbonCommandException] {
@@ -284,26 +274,6 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql("drop table myschema.table35")
   }
 
-  //TC_1080
-  test("TC_1080") {
-    sql("drop table if exists myschema.table38")
-    sql(
-      "CREATE table myschema.table38  (AMSize STRING,Latest_Day INT) " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table myschema.table38")
-  }
-
-  //TC_1081
-  test("TC_1081") {
-    sql("drop table if exists table39")
-    sql(
-      "CREATE table table39  (AMSize STRING,Latest_Day INT)  " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table39")
-  }
-
   //TC_1082
   test("TC_1082") {
     sql("drop table if exists myschema.table40")
@@ -326,10 +296,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
 
   //TC_1086
   test("TC_1086") {
-    pending
-    intercept[Exception] {
       sql("drop table table44")
-    }
   }
 
   //TC_1087
@@ -354,10 +321,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
 
   //TC_1091
   test("TC_1091") {
-    pending
-    intercept[Exception] {
       sql("drop table table49")
-    }
   }
 
   //TC_1092
@@ -381,22 +345,6 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  //TC_1096
-  test("TC_1096") {
-    pending
-    intercept[Exception] {
-      sql("drop table table54")
-    }
-  }
-
-  //TC_1097
-  test("TC_1097") {
-    pending
-    intercept[Exception] {
-      sql("drop table table55")
-    }
-  }
-
   //TC_1098
   test("TC_1098") {
     sql("drop table if exists table106")
@@ -407,72 +355,6 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql("drop table table106")
   }
 
-  //TC_1099
-  test("TC_1099") {
-    sql("drop table if exists table107")
-    sql(
-      "CREATE table table107  (AMSize STRING,Latest_Day INT) " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table107")
-  }
-
-  //TC_1100
-  test("TC_1100") {
-    sql("drop table if exists table108")
-    sql(
-      "CREATE table table108  (AMSize STRING,Latest_Day INT) " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table108")
-  }
-
-  //TC_1101
-  test("TC_1101") {
-    sql("drop table if exists table109")
-    sql(
-      "CREATE table table109  (AMSize STRING,Latest_Day INT) " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table109")
-  }
-
-  //TC_1103
-  test("TC_1103") {
-    pending
-    intercept[Exception] {
-      sql("drop table table111")
-    }
-  }
-
-  //TC_1104
-  test("TC_1104") {
-    pending
-    intercept[Exception] {
-      sql("drop table table112")
-    }
-  }
-
-
-  //TC_1107
-  test("TC_1107") {
-    pending
-    intercept[Exception] {
-      sql("drop table table115")
-    }
-  }
-
-
-  //TC_1110
-  test("TC_1110") {
-    sql("drop table if exists table118")
-    sql(
-      "create table table118  (AMSize STRING,Latest_Day INT)  " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table118")
-  }
-
   //TC_1111
   test("TC_1111") {
     intercept[AnalysisException] {
@@ -481,16 +363,6 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       )
     }
 
-  }
-
-  //DTS2015103009506
-  test("DTS2015103009506") {
-    sql("drop table if exists table_restructure1")
-    sql(
-      "CREATE table table_restructure1  (a0 STRING,b0 INT)  " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table_restructure1")
   }
 
   //DTS2015103007487
@@ -562,16 +434,6 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql("drop table myschema.table2_drop")
   }
 
-  //TC_1116
-  test("TC_1116") {
-    sql("drop table if exists table3_drop")
-    sql(
-      "CREATE table table3_drop  (AMSize STRING,Latest_Day INT) " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table3_drop")
-  }
-
   //TC_1117
   test("TC_1117") {
     sql("drop table if exists myschema.table4_drop")
@@ -582,25 +444,6 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql("drop table myschema.table4_drop")
   }
 
-  //TC_1120
-  test("TC_1120") {
-    sql("drop table if exists table7_drop")
-    sql(
-      "CREATE table table7_drop  (AMSize STRING,Latest_Day INT)  " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table7_drop")
-  }
-
-  //TC_1121
-  test("TC_1121") {
-    sql("drop table if exists myschema.table8_drop")
-    sql(
-      "CREATE table myschema.table8_drop  (AMSize STRING,Latest_Day INT) " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table myschema.table8_drop")
-  }
 
   //TC_1124
   test("TC_1124") {
@@ -610,16 +453,6 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       "stored by 'org.apache.carbondata.format'"
     )
     sql("drop table table27_drop")
-  }
-
-  //TC_1125
-  test("TC_1125") {
-    sql("drop table if exists myschema.table28_drop")
-    sql(
-      "CREATE table myschema.table28_drop  (AMSize STRING) " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table myschema.table28_drop")
   }
 
   //TC_1128
@@ -659,36 +492,6 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       "Latest_Day INT) stored by 'org.apache.carbondata.format'"
     )
     sql("drop table table34_drop")
-  }
-
-  //TC_1130
-  test("TC_1130") {
-    sql("drop table if exists myschema.table35_drop")
-    sql(
-      "CREATE table myschema.table35_drop  (AMSize STRING,deviceInformationId STRING, " +
-      "Latest_Day INT) stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table myschema.table35_drop")
-  }
-
-  //TC_1133
-  test("TC_1133") {
-    sql("drop table if exists myschema.table38_drop")
-    sql(
-      "CREATE table myschema.table38_drop  (AMSize STRING,Latest_Day INT) " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table myschema.table38_drop")
-  }
-
-  //TC_1134
-  test("TC_1134") {
-    sql("drop table if exists table39_drop")
-    sql(
-      "CREATE table table39_drop  (AMSize STRING,Latest_Day INT)  " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table39_drop")
   }
 
   //TC_1135
@@ -733,87 +536,6 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  //TC_1143
-  test("TC_1143") {
-    sql("drop table if exists table106_drop")
-    sql(
-      "CREATE table table106_drop  (AMSize STRING,Latest_Day INT)  " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table106_drop")
-  }
-
-  //TC_1144
-  test("TC_1144") {
-    sql("drop table if exists table107_drop")
-    sql(
-      "CREATE table table107_drop  (AMSize STRING,Latest_Day INT)  " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table107_drop")
-  }
-
-  //TC_1145
-  test("TC_1145") {
-    sql("drop table if exists table108_drop")
-    sql(
-      "CREATE table table108_drop  (AMSize STRING,Latest_Day INT)  " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table108_drop")
-  }
-
-  //TC_1146
-  test("TC_1146") {
-    sql("drop table if exists table109_drop")
-    sql(
-      "CREATE table table109_drop  (AMSize STRING,Latest_Day INT)  " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table109_drop")
-  }
-
-  //TC_1147
-  test("TC_1147") {
-    sql("drop table if exists table110_drop")
-    sql(
-      "CREATE table table110_drop  (AMSize STRING,Latest_Day INT) " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table110_drop")
-  }
-
-  //TC_1148
-  test("TC_1148") {
-    sql("drop table if exists table111_drop")
-    sql(
-      "CREATE table table111_drop  (AMSize STRING,Latest_Day INT)  " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table111_drop")
-  }
-
-
-  //TC_1151
-  test("TC_1151") {
-    sql("drop table if exists table118_drop")
-    sql(
-      "create table table118_drop  (AMSize STRING,Latest_Day INT)  " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table118_drop")
-  }
-
-
-  //TC_1154
-  test("TC_1154") {
-    sql("drop table if exists table119_drop")
-    sql(
-      "create table table119_drop  (AMSize STRING,Latest_Day INT)  " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql("drop table table119_drop")
-  }
 
 
   //TC_1157
@@ -979,39 +701,6 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql("drop table vardhan100_hive")
   }
 
-  //TC_1190
-  test("TC_1190") {
-    sql("drop table if exists vardhan200")
-    sql("drop table if exists vardhan200_hive")
-    sql(
-      "create table vardhan200 (imei string,AMSize string,channelsId string," +
-      "ActiveCountry string, Activecity string,gamePointId decimal," +
-      "deviceInformationId INT) stored by 'org.apache.carbondata.format'"
-    )
-    sql(
-      "LOAD DATA LOCAL INPATH  '" + currentDirectory +
-      "/src/test/resources/TestData1.csv' INTO table vardhan200 " +
-      "OPTIONS('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId," +
-      "AMSize,channelsId,ActiveCountry,Activecity,gamePointId')"
-    )
-
-    sql(
-      "create table vardhan200_hive (imei string,AMSize string,channelsId string," +
-      "ActiveCountry string, Activecity string,gamePointId decimal," +
-      "deviceInformationId INT) row format delimited fields terminated by ','"
-    )
-    sql(
-      "LOAD DATA LOCAL INPATH  '" + currentDirectory +
-      "/src/test/resources/TestData1.csv' INTO table vardhan200_hive ")
-    checkAnswer(
-      sql("select count(*) from vardhan200"),
-      sql("select count(*) from vardhan200_hive")
-    )
-
-    sql("drop table vardhan200")
-    sql("drop table vardhan200_hive")
-  }
-
   //TC_1191
   test("TC_1191") {
     sql("drop table if exists vardhan500")
@@ -1088,40 +777,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     sql("drop table testhive1000")
   }
 
-  //TC_1193
-  test("TC_1193") {
-    sql("drop table if exists vardhan9_hive")
-    sql("drop table if exists vardhan9")
-    sql(
-      "create table vardhan9 (imei string,AMSize string,channelsId string,ActiveCountry " +
-      "string, Activecity string,gamePointId decimal,deviceInformationId INT) " +
-      "stored by 'org.apache.carbondata.format'"
-    )
-    sql(
-      "LOAD DATA LOCAL INPATH  '" + currentDirectory +
-      "/src/test/resources/TestData1.csv' INTO table vardhan9 OPTIONS" +
-      "('DELIMITER'= ',' ,'QUOTECHAR'= '/', 'FILEHEADER'= 'imei,deviceInformationId,AMSize," +
-      "channelsId," +
-      "ActiveCountry,Activecity,gamePointId')"
-    )
 
-    sql(
-      "create table vardhan9_hive (imei string,AMSize string,channelsId string,ActiveCountry " +
-      "string, Activecity string,gamePointId decimal,deviceInformationId INT) " +
-      "row format delimited fields terminated by ','"
-    )
-    sql(
-      "LOAD DATA LOCAL INPATH  '" + currentDirectory +
-      "/src/test/resources/TestData1.csv' INTO table vardhan9_hive"
-    )
-
-    checkAnswer(
-      sql("select count(*) from vardhan9"),
-      sql("select count(*) from vardhan9_hive"))
-
-    sql("drop table vardhan9")
-    sql("drop table vardhan9_hive")
-  }
 
   //TC_1194
   test("TC_1194") {
@@ -1450,81 +1106,6 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  //TC_1162
-  test("TC_1162") {
-    sql("drop table if exists vardhan1")
-    sql(
-      "create table vardhan1 (imei string,AMSize string,channelsId string," +
-      "ActiveCountry string, Activecity string,gamePointId decimal," +
-      "deviceInformationId INT) stored by 'org.apache.carbondata.format'"
-    )
-    intercept[AnalysisException] {
-      sql(
-        "LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table  OPTIONS" +
-        "('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize," +
-        "channelsId,ActiveCountry,Activecity,gamePointId')"
-      )
-      sql("drop table vardhan1")
-    }
-  }
-
-  //TC_1164
-  test("TC_1164") {
-    sql("drop table if exists vardhan1")
-
-    sql(
-      "create table vardhan1 (imei string,AMSize string,channelsId string," +
-      "ActiveCountry string, Activecity string,gamePointId decimal," +
-      "deviceInformationId INT) stored by 'org.apache.carbondata.format'"
-    )
-    intercept[AnalysisException] {
-      sql(
-        "\"LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table vardhan1 " +
-        "('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize," +
-        "channelsId,ActiveCountry,Activecity,gamePointId')"
-      )
-      sql("drop table vardhan1")
-    }
-  }
-
-  //TC_1165
-  test("TC_1165") {
-    sql("drop table if exists vardhan10")
-    sql(
-      "create table vardhan10 (imei string,AMSize string,channelsId string," +
-      "ActiveCountry string, Activecity string,gamePointId decimal," +
-      "deviceInformationId INT) stored by 'org.apache.carbondata.format'"
-    )
-    sql(
-      "LOAD DATA LOCAL INPATH  '" + currentDirectory +
-      "/src/test/resources/TestData1.csv' INTO table vardhan10 " +
-      "OPTIONS('QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
-      "ActiveCountry,Activecity,gamePointId')"
-    )
-    sql("drop table vardhan10")
-  }
-
-  //TC_1180
-  test("TC_1180") {
-    sql("drop table if exists vardhan4")
-    sql(
-      "create table vardhan4 (imei string,AMSize string,channelsId string," +
-      "ActiveCountry string, Activecity string,gamePointId decimal," +
-      "deviceInformationId INT) stored by 'org.apache.carbondata.format'"
-    )
-    intercept[AnalysisException] {
-      sql(
-        "LOAD DATA '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table vardhan4 OPTIONS" +
-        "('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize," +
-        "channelsId,ActiveCountry,Activecity,gamePointId')"
-      )
-      sql("drop table vardhan4")
-    }
-  }
-
   //TC_1181
   test("TC_1181") {
     sql("drop table if exists vardhan5")
@@ -1544,62 +1125,6 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
       sql("drop table vardhan5")
     }
 
-  }
-
-  //TC_1182
-  test("TC_1182") {
-    sql("drop table if exists vardhan1")
-
-    sql(
-      "create table vardhan1 (imei string,AMSize string,channelsId string," +
-      "ActiveCountry string, Activecity string,gamePointId decimal," +
-      "deviceInformationId INT) stored by 'org.apache.carbondata.format'"
-    )
-    intercept[AnalysisException] {
-      sql(
-        "LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table  OPTIONS" +
-        "('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize," +
-        "channelsId,ActiveCountry,Activecity,gamePointId')"
-      )
-      sql("drop table vardhan1")
-    }
-  }
-
-  //TC_1184
-  test("TC_1184") {
-    sql("drop table if exists vardhan01")
-
-    sql(
-      "create table vardhan01 (imei string,AMSize string,channelsId string," +
-      "ActiveCountry string, Activecity string,gamePointId decimal," +
-      "deviceInformationId INT) stored by 'org.apache.carbondata.format'")
-
-    intercept[Exception] {
-      sql(
-        "LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table vardhan01 " +
-        "OPTIONS('DELIMITER'= ',' ,'QUOTECHAR'= '\"\"', 'FILEHEADER'= 'imei,deviceInformationId," +
-        "AMSize," +
-        "channelsId,ActiveCountry,Activecity,gamePointId')"
-      )
-      sql("drop table vardhan01")
-    }
-  }
-
-  //TC_1185
-  test("TC_1185") {
-    sql(
-      "create table vardhan10 (imei string,AMSize string,channelsId string," +
-      "ActiveCountry string, Activecity string,gamePointId decimal," +
-      "deviceInformationId INT) stored by 'org.apache.carbondata.format'"
-    )
-    sql(
-      "LOAD DATA LOCAL INPATH  '" + currentDirectory +
-      "/src/test/resources/TestData1.csv' INTO table vardhan10 " +
-      "OPTIONS('QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
-      "ActiveCountry,Activecity,gamePointId')"
-    )
   }
 
   //DTS2015111900020
