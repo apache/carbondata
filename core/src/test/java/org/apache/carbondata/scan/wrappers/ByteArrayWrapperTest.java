@@ -22,87 +22,81 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-
 public class ByteArrayWrapperTest {
-    private static ByteArrayWrapper byteArrayWrapper;
-    byte[] dictionaryKey=new byte[]{1};
-    byte[][] complexTypesKeys = {{1},{1}};
-    byte[][] noDictionaryKeys =new byte[][]{{1},{1}};
-    @BeforeClass
+  private static ByteArrayWrapper byteArrayWrapper;
+  byte[] dictionaryKey = new byte[] { 1 };
+  byte[][] complexTypesKeys = { { 1 }, { 1 } };
+  byte[][] noDictionaryKeys = new byte[][] { { 1 }, { 1 } };
 
-    public static void setUp() {
-        byteArrayWrapper = new ByteArrayWrapper();
-    }
-    @Test
-    public void testHashCodeValue() {
-        byteArrayWrapper.setDictionaryKey(dictionaryKey);
-        byteArrayWrapper.setComplexTypesKeys(complexTypesKeys);
-        byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
+  @BeforeClass
 
-        int result = byteArrayWrapper.hashCode();
-        assert(29583456 == result);
-    }
+  public static void setUp() {
+    byteArrayWrapper = new ByteArrayWrapper();
+  }
 
-    @Test
-    public void testEqualsWithOtherAsInstanceOfByteArrayWrapper() {
-        ByteArrayWrapper other;
-        other = null;
-        boolean result = byteArrayWrapper.equals(other);
-        assert(!result);
-    }
+  @AfterClass public static void tearDown() {
+    byteArrayWrapper = null;
+  }
 
-    @Test
-    public void testEqualsWithNoDictionaryKeysOtherNotEqualNoDictionaryKeys() {
-        byte[][] noDictionaryKeysOther = {{1}};
-        byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
-        ByteArrayWrapper other =new ByteArrayWrapper();
-        other.setNoDictionaryKeys(noDictionaryKeysOther);
-        boolean result = byteArrayWrapper.equals(other);
-        assert(!result);
-    }
+  @Test public void testHashCodeValue() {
+    byteArrayWrapper.setDictionaryKey(dictionaryKey);
+    byteArrayWrapper.setComplexTypesKeys(complexTypesKeys);
+    byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
 
-    @Test
-    public void testEqualsWithComplexTypesKeysOtherNotEqualComplexTypesKeys() {
-        byte[][] complexTypesKeysOther = {{1}};
-        byteArrayWrapper.setComplexTypesKeys(complexTypesKeys);
-        byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
-        ByteArrayWrapper other =new ByteArrayWrapper();
-        other.setComplexTypesKeys(complexTypesKeysOther);
-        other.setNoDictionaryKeys(noDictionaryKeys);
-        boolean result = byteArrayWrapper.equals(other);
-        assert(!result);
-    }
+    int result = byteArrayWrapper.hashCode();
+    assert (29583456 == result);
+  }
 
-    @Test
+  @Test public void testEqualsWithOtherAsInstanceOfByteArrayWrapper() {
+    ByteArrayWrapper other;
+    other = null;
+    boolean result = byteArrayWrapper.equals(other);
+    assert (!result);
+  }
 
-    public void testEqualsForFirstElementComplexTypesKeysAndOther(){
-        ByteArrayWrapper other = new ByteArrayWrapper();
-        other.setComplexTypesKeys(complexTypesKeys);
-        other.setDictionaryKey(dictionaryKey);
-        other.setNoDictionaryKeys(noDictionaryKeys);
-        byteArrayWrapper.setComplexTypesKeys(complexTypesKeys);
-        byteArrayWrapper.setDictionaryKey(dictionaryKey);
-        byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
-        boolean result = byteArrayWrapper.equals(other);
-        assert(result);
-    }
+  @Test public void testEqualsWithNoDictionaryKeysOtherNotEqualNoDictionaryKeys() {
+    byte[][] noDictionaryKeysOther = { { 1 } };
+    byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
+    ByteArrayWrapper other = new ByteArrayWrapper();
+    other.setNoDictionaryKeys(noDictionaryKeysOther);
+    boolean result = byteArrayWrapper.equals(other);
+    assert (!result);
+  }
 
-    @Test
-    public void testCompareTo(){
-        byteArrayWrapper.setDictionaryKey(dictionaryKey);
-        ByteArrayWrapper other =new ByteArrayWrapper();
-        other.setDictionaryKey(dictionaryKey);
-        other.setNoDictionaryKeys(noDictionaryKeys);
-        other.setComplexTypesKeys(complexTypesKeys);
-        byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
-        byteArrayWrapper.setComplexTypesKeys(complexTypesKeys);
-        int result=byteArrayWrapper.compareTo(other);
-        assert (result == 0);
-    }
+  @Test public void testEqualsWithComplexTypesKeysOtherNotEqualComplexTypesKeys() {
+    byte[][] complexTypesKeysOther = { { 1 } };
+    byteArrayWrapper.setComplexTypesKeys(complexTypesKeys);
+    byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
+    ByteArrayWrapper other = new ByteArrayWrapper();
+    other.setComplexTypesKeys(complexTypesKeysOther);
+    other.setNoDictionaryKeys(noDictionaryKeys);
+    boolean result = byteArrayWrapper.equals(other);
+    assert (!result);
+  }
 
+  @Test
 
-    @AfterClass
-    public static void tearDown() {
-        byteArrayWrapper = null;
-    }
+  public void testEqualsForFirstElementComplexTypesKeysAndOther() {
+    ByteArrayWrapper other = new ByteArrayWrapper();
+    other.setComplexTypesKeys(complexTypesKeys);
+    other.setDictionaryKey(dictionaryKey);
+    other.setNoDictionaryKeys(noDictionaryKeys);
+    byteArrayWrapper.setComplexTypesKeys(complexTypesKeys);
+    byteArrayWrapper.setDictionaryKey(dictionaryKey);
+    byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
+    boolean result = byteArrayWrapper.equals(other);
+    assert (result);
+  }
+
+  @Test public void testCompareTo() {
+    byteArrayWrapper.setDictionaryKey(dictionaryKey);
+    ByteArrayWrapper other = new ByteArrayWrapper();
+    other.setDictionaryKey(dictionaryKey);
+    other.setNoDictionaryKeys(noDictionaryKeys);
+    other.setComplexTypesKeys(complexTypesKeys);
+    byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
+    byteArrayWrapper.setComplexTypesKeys(complexTypesKeys);
+    int result = byteArrayWrapper.compareTo(other);
+    assert (result == 0);
+  }
 }

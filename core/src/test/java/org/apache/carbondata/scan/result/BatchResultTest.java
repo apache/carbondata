@@ -18,86 +18,78 @@
  */
 package org.apache.carbondata.scan.result;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.NoSuchElementException;
+
 import mockit.Mock;
 import mockit.MockUp;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.NoSuchElementException;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 public class BatchResultTest {
-    private static BatchResult batchResult;
-    private static List<Object[]> rowsList = new ArrayList(2);
+  private static BatchResult batchResult;
+  private static List<Object[]> rowsList = new ArrayList(2);
 
-    @BeforeClass
-    public static void setUp(){
-        batchResult = new BatchResult();
-        rowsList.add(0,new Integer[]{1,2});
-        rowsList.add(1,new Integer[]{3});
-    }
+  @BeforeClass public static void setUp() {
+    batchResult = new BatchResult();
+    rowsList.add(0, new Integer[] { 1, 2 });
+    rowsList.add(1, new Integer[] { 3 });
+  }
 
-    @Test
-    public void testNext() throws NoSuchElementException {
-        BatchResult rows =new BatchResult();
-        rows.setRows(rowsList);
-        Object[] result = rows.next();
-        assert(result.equals(rowsList.get(0)));
-    }
+  @Test public void testNext() throws NoSuchElementException {
+    BatchResult rows = new BatchResult();
+    rows.setRows(rowsList);
+    Object[] result = rows.next();
+    assert (result.equals(rowsList.get(0)));
+  }
 
-    @Test(expected = NoSuchElementException.class)
-    public void testNextWithNoSuchElementException() {
-        BatchResult rows =new BatchResult();
-        List emptyList = new ArrayList(2);
-        rows.setRows(emptyList);
-        rows.next();
-    }
+  @Test(expected = NoSuchElementException.class) public void testNextWithNoSuchElementException() {
+    BatchResult rows = new BatchResult();
+    List emptyList = new ArrayList(2);
+    rows.setRows(emptyList);
+    rows.next();
+  }
 
-    @Test
-    public void testGetRows(){
-        new MockUp<BatchResult>(){
-            @Mock
-            public void $init(){
-                //to be left blank
-            }
-        };
-        BatchResult batchResult = new BatchResult();
-        List<Object[]> list = batchResult.getRows();
-        assertNull("Number of rows is null",list);
-    }
+  @Test public void testGetRows() {
+    new MockUp<BatchResult>() {
+      @Mock public void $init() {
+        //to be left blank
+      }
+    };
+    BatchResult batchResult = new BatchResult();
+    List<Object[]> list = batchResult.getRows();
+    assertNull("Number of rows is null", list);
+  }
 
-    @Test
-    public void testHasNext(){
-        List<Object[]> list = new ArrayList<>();
-        list.add(0,new Integer[]{1,2});
-        list.add(1,new Integer[]{1,2});
-        batchResult.setRows(list);
-        boolean result = batchResult.hasNext();
-        assert(result);
-    }
+  @Test public void testHasNext() {
+    List<Object[]> list = new ArrayList<>();
+    list.add(0, new Integer[] { 1, 2 });
+    list.add(1, new Integer[] { 1, 2 });
+    batchResult.setRows(list);
+    boolean result = batchResult.hasNext();
+    assert (result);
+  }
 
-    @Test
-    public void testGetRawRow(){
-        List<Object[]> list = new ArrayList<>();
-        list.add(0,new Integer[]{1,2});
-        batchResult.setRows(list);
-        Object[] actualValue = batchResult.getRawRow(0);
-        assert(list.get(0) == actualValue);
-    }
+  @Test public void testGetRawRow() {
+    List<Object[]> list = new ArrayList<>();
+    list.add(0, new Integer[] { 1, 2 });
+    batchResult.setRows(list);
+    Object[] actualValue = batchResult.getRawRow(0);
+    assert (list.get(0) == actualValue);
+  }
 
-    @Test
-    public void testGetSize(){
-        List<Object[]> list = new ArrayList<>();
-        list.add(0,new Integer[]{1,2});
-        list.add(1,new Integer[]{1,2});
-        batchResult.setRows(list);
-        int actualValue = batchResult.getSize();
-        int expectedValue = 2;
-        assertEquals(expectedValue,actualValue);
-    }
+  @Test public void testGetSize() {
+    List<Object[]> list = new ArrayList<>();
+    list.add(0, new Integer[] { 1, 2 });
+    list.add(1, new Integer[] { 1, 2 });
+    batchResult.setRows(list);
+    int actualValue = batchResult.getSize();
+    int expectedValue = 2;
+    assertEquals(expectedValue, actualValue);
+  }
 
 }
