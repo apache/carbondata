@@ -38,7 +38,7 @@ public class UnsafeIntermediateDataMerger implements Callable<Void> {
   /**
    * recordHolderHeap
    */
-  private AbstractQueue<UnsafePageHolder> recordHolderHeap;
+  private AbstractQueue<SortTempChunkHolder> recordHolderHeap;
 
   /**
    * fileCounter
@@ -130,7 +130,7 @@ public class UnsafeIntermediateDataMerger implements Callable<Void> {
     // be based on comparator we are passing the heap
     // when will call poll it will always delete root of the tree and then
     // it does trickel down operation complexity is log(n)
-    UnsafePageHolder poll = this.recordHolderHeap.poll();
+    SortTempChunkHolder poll = this.recordHolderHeap.poll();
 
     // get the row from chunk
     row = poll.getRow();
@@ -138,7 +138,7 @@ public class UnsafeIntermediateDataMerger implements Callable<Void> {
     // check if there no entry present
     if (!poll.hasNext()) {
       // if chunk is empty then close the stream
-      poll.freeMemory();
+      poll.close();
 
       // change the file counter
       --this.fileCounter;
@@ -198,7 +198,7 @@ public class UnsafeIntermediateDataMerger implements Callable<Void> {
    */
   private void createRecordHolderQueue(UnsafeCarbonRowPage[] pages) {
     // creating record holder heap
-    this.recordHolderHeap = new PriorityQueue<UnsafePageHolder>(pages.length);
+    this.recordHolderHeap = new PriorityQueue<SortTempChunkHolder>(pages.length);
   }
 
   /**
@@ -239,7 +239,7 @@ public class UnsafeIntermediateDataMerger implements Callable<Void> {
     if (recordHolderHeap != null) {
       int size = recordHolderHeap.size();
       for (int i = 0; i < size; i++) {
-        recordHolderHeap.poll().freeMemory();
+        recordHolderHeap.poll().close();
       }
     }
   }

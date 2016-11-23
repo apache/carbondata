@@ -24,7 +24,6 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -35,7 +34,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.NewRowComparator;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.NewRowComparatorForNormalDims;
@@ -45,7 +43,6 @@ import org.apache.carbondata.processing.sortandgroupby.sortdata.SortTempFileChun
 import org.apache.carbondata.processing.sortandgroupby.sortdata.TempSortFileWriter;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.TempSortFileWriterFactory;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
-import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
 
 public class UnsafeSortDataRows {
   /**
@@ -69,7 +66,7 @@ public class UnsafeSortDataRows {
 
   private SortIntermediateFileMerger intermediateFileMerger;
 
-  private UnsafeSortIntermediateFileMerger unsafeSortIntermediateFileMerger;
+  private UnsafeInMemoryIntermediateFileMerger unsafeInMemoryIntermediateFileMerger;
 
   private UnsafeCarbonRowPage rowPage;
 
@@ -77,14 +74,16 @@ public class UnsafeSortDataRows {
 
   private int inMemoryChunkSizeInMB;
 
+  private boolean offHeap;
+
   public UnsafeSortDataRows(SortParameters parameters,
       SortIntermediateFileMerger intermediateFileMerger,
-      UnsafeSortIntermediateFileMerger unsafeSortIntermediateFileMerger) {
+      UnsafeInMemoryIntermediateFileMerger unsafeInMemoryIntermediateFileMerger) {
     this.parameters = parameters;
 
     this.intermediateFileMerger = intermediateFileMerger;
 
-    this.unsafeSortIntermediateFileMerger = unsafeSortIntermediateFileMerger;
+    this.unsafeInMemoryIntermediateFileMerger = unsafeInMemoryIntermediateFileMerger;
 
     // observer of writing file in thread
     this.threadStatusObserver = new ThreadStatusObserver();
@@ -92,6 +91,10 @@ public class UnsafeSortDataRows {
     this.inMemoryChunkSizeInMB = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB,
             CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT));
+
+    this.offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
+            CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
   }
 
   /**
@@ -101,7 +104,7 @@ public class UnsafeSortDataRows {
 
     this.rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
         parameters.getDimColCount(), parameters.getMeasureColCount(), parameters.getAggType(),
-        inMemoryChunkSizeInMB);
+        inMemoryChunkSizeInMB, offHeap);
     // Delete if any older file exists in sort temp folder
     deleteSortLocationIfExists();
 
@@ -128,7 +131,8 @@ public class UnsafeSortDataRows {
           rowPage.addRow(rowBatch[i]);
         } else {
           try {
-//            unsafeSortIntermediateFileMerger.startMergingIfPossible();
+            unsafeInMemoryIntermediateFileMerger.startMergingIfPossible();
+            intermediateFileMerger.startMergingIfPossible();
             dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
           } catch (Exception e) {
             LOGGER.error(
@@ -137,7 +141,7 @@ public class UnsafeSortDataRows {
           }
           rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
               parameters.getDimColCount(), parameters.getMeasureColCount(), parameters.getAggType(),
-              inMemoryChunkSizeInMB);
+              inMemoryChunkSizeInMB, offHeap);
           rowPage.addRow(rowBatch[i]);
         }
       }
@@ -165,28 +169,9 @@ public class UnsafeSortDataRows {
         timSort.sort(rowPage.getBuffer(), 0, rowPage.getBuffer().getActualSize(),
             new NewRowComparatorForNormalDims(parameters.getDimColCount()));
       }
-      unsafeSortIntermediateFileMerger.addDataChunkToMerge(rowPage);
+      unsafeInMemoryIntermediateFileMerger.addDataChunkToMerge(rowPage);
     }
     startFileBasedMerge();
-  }
-
-  /**
-   * Below method will be used to write data to file
-   *
-   * @throws CarbonSortKeyAndGroupByException problem while writing
-   */
-  private void writeDataTofile(Object[][] recordHolderList, int entryCountLocal, File file)
-      throws CarbonSortKeyAndGroupByException {
-    // stream
-    if (parameters.isSortFileCompressionEnabled() || parameters.isPrefetch()) {
-      writeSortTempFile(recordHolderList, entryCountLocal, file);
-      return;
-    }
-    if (parameters.isUseKettle()) {
-      writeData(recordHolderList, entryCountLocal, file);
-    } else {
-      writeDataWithOutKettle(recordHolderList, entryCountLocal, file);
-    }
   }
 
   private void writeSortTempFile(Object[][] recordHolderList, int entryCountLocal, File file)
@@ -207,124 +192,21 @@ public class UnsafeSortDataRows {
     }
   }
 
-  // TODO Remove it after kettle got removed
-  private void writeData(Object[][] recordHolderList, int entryCountLocal, File file)
+  private void writeData(UnsafeCarbonRowPage rowPage, File file)
       throws CarbonSortKeyAndGroupByException {
     DataOutputStream stream = null;
     try {
       // open stream
       stream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file),
           parameters.getFileWriteBufferSize()));
-
+      int actualSize = rowPage.getBuffer().getActualSize();
       // write number of entries to the file
-      stream.writeInt(entryCountLocal);
-      int dimColCount = parameters.getDimColCount();
-      int combinedDimCount = parameters.getNoDictionaryCount() + parameters.getComplexDimColCount();
-      char[] aggType = parameters.getAggType();
-      Object[] row = null;
-      for (int i = 0; i < entryCountLocal; i++) {
-        // get row from record holder list
-        row = recordHolderList[i];
-        int fieldIndex = 0;
-
-        for (int dimCount = 0; dimCount < dimColCount; dimCount++) {
-          stream.writeInt(RemoveDictionaryUtil.getDimension(fieldIndex++, row));
-        }
-
-        // if any high cardinality dims are present then write it to the file.
-
-        if (combinedDimCount > 0) {
-          stream.write(RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row));
-        }
-
-        // as measures are stored in separate array.
-        fieldIndex = 0;
-        for (int mesCount = 0; mesCount < parameters.getMeasureColCount(); mesCount++) {
-          if (null != RemoveDictionaryUtil.getMeasure(fieldIndex, row)) {
-            stream.write((byte) 1);
-            if (aggType[mesCount] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-              Double val = (Double) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
-              stream.writeDouble(val);
-            } else if (aggType[mesCount] == CarbonCommonConstants.BIG_INT_MEASURE) {
-              Long val = (Long) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
-              stream.writeLong(val);
-            } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-              BigDecimal val = (BigDecimal) RemoveDictionaryUtil.getMeasure(fieldIndex, row);
-              byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
-              stream.writeInt(bigDecimalInBytes.length);
-              stream.write(bigDecimalInBytes);
-            }
-          } else {
-            stream.write((byte) 0);
-          }
-          fieldIndex++;
-        }
+      stream.writeInt(actualSize);
+      for (int i = 0; i < actualSize; i++) {
+        rowPage.fillRow(rowPage.getBuffer().get(i) + rowPage.getDataBlock().getBaseOffset(),
+            stream);
       }
-    } catch (IOException e) {
-      throw new CarbonSortKeyAndGroupByException("Problem while writing the file", e);
-    } finally {
-      // close streams
-      CarbonUtil.closeStreams(stream);
-    }
-  }
 
-  private void writeDataWithOutKettle(Object[][] recordHolderList, int entryCountLocal, File file)
-      throws CarbonSortKeyAndGroupByException {
-    DataOutputStream stream = null;
-    try {
-      // open stream
-      stream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file),
-          parameters.getFileWriteBufferSize()));
-
-      // write number of entries to the file
-      stream.writeInt(entryCountLocal);
-      int complexDimColCount = parameters.getComplexDimColCount();
-      int dimColCount = parameters.getDimColCount() + complexDimColCount;
-      char[] aggType = parameters.getAggType();
-      boolean[] noDictionaryDimnesionMapping = parameters.getNoDictionaryDimnesionColumn();
-      Object[] row = null;
-      for (int i = 0; i < entryCountLocal; i++) {
-        // get row from record holder list
-        row = recordHolderList[i];
-        int dimCount = 0;
-        // write dictionary and non dictionary dimensions here.
-        for (; dimCount < noDictionaryDimnesionMapping.length; dimCount++) {
-          if (noDictionaryDimnesionMapping[dimCount]) {
-            byte[] col = (byte[]) row[dimCount];
-            stream.writeShort(col.length);
-            stream.write(col);
-          } else {
-            stream.writeInt((int) row[dimCount]);
-          }
-        }
-        // write complex dimensions here.
-        for (; dimCount < dimColCount; dimCount++) {
-          byte[] value = (byte[]) row[dimCount];
-          stream.writeShort(value.length);
-          stream.write(value);
-        }
-        // as measures are stored in separate array.
-        for (int mesCount = 0; mesCount < parameters.getMeasureColCount(); mesCount++) {
-          Object value = row[mesCount + dimColCount];
-          if (null != value) {
-            stream.write((byte) 1);
-            if (aggType[mesCount] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-              Double val = (Double) value;
-              stream.writeDouble(val);
-            } else if (aggType[mesCount] == CarbonCommonConstants.BIG_INT_MEASURE) {
-              Long val = (Long) value;
-              stream.writeLong(val);
-            } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-              BigDecimal val = (BigDecimal) value;
-              byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
-              stream.writeInt(bigDecimalInBytes.length);
-              stream.write(bigDecimalInBytes);
-            }
-          } else {
-            stream.write((byte) 0);
-          }
-        }
-      }
     } catch (IOException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while writing the file", e);
     } finally {
@@ -418,11 +300,26 @@ public class UnsafeSortDataRows {
           timSort.sort(rowPage.getBuffer(), 0, rowPage.getBuffer().getActualSize(),
               new NewRowComparatorForNormalDims(parameters.getDimColCount()));
         }
-
-        // add sort temp filename to and arrayList. When the list size reaches 20 then
-        // intermediate merging of sort temp files will be triggered
-        unsafeSortIntermediateFileMerger.addDataChunkToMerge(rowPage);
-        LOGGER.info("Time taken to sort row page is: " + (System.currentTimeMillis() - startTime));
+        if (!rowPage.isKeepInMemory()) {
+          // create a new file every time
+          File sortTempFile = new File(
+              parameters.getTempFileLocation() + File.separator + parameters.getTableName() + System
+                  .nanoTime() + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
+          writeData(rowPage, sortTempFile);
+          rowPage.freeMemory();
+          LOGGER.info("Time taken to sort row page with size" + rowPage.getBuffer().getActualSize()
+              + " and write is: " + (System.currentTimeMillis() - startTime));
+          // add sort temp filename to and arrayList. When the list size reaches 20 then
+          // intermediate merging of sort temp files will be triggered
+          intermediateFileMerger.addFileToMerge(sortTempFile);
+        } else {
+          // add sort temp filename to and arrayList. When the list size reaches 20 then
+          // intermediate merging of sort temp files will be triggered
+          unsafeInMemoryIntermediateFileMerger.addDataChunkToMerge(rowPage);
+          LOGGER.info(
+              "Time taken to sort row page with size" + rowPage.getBuffer().getActualSize() + "is: "
+                  + (System.currentTimeMillis() - startTime));
+        }
       } catch (Throwable e) {
         threadStatusObserver.notifyFailed(e);
       }

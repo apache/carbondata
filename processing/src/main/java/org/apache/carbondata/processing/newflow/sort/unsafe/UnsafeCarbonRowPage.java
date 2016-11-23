@@ -1,5 +1,7 @@
 package org.apache.carbondata.processing.newflow.sort.unsafe;
 
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -7,15 +9,12 @@ import java.util.Iterator;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.processing.newflow.sort.unsafe.memory.MemoryBlock;
 
 /**
- * Created by root1 on 21/11/16.
+ * It can keep the data of prescribed size data in offheap/onheap memory and returns it when needed
  */
 public class UnsafeCarbonRowPage {
-
-  public final int BYTE_ARRAY_OFFSET;
-
-  public final int LONG_ARRAY_OFFSET;
 
   private boolean[] noDictionaryDimensionMapping;
 
@@ -33,23 +32,29 @@ public class UnsafeCarbonRowPage {
 
   private int sizeToBeUsed;
 
+  private MemoryBlock dataBlock;
+
+  private boolean keepInMemory;
+
   public UnsafeCarbonRowPage(boolean[] noDictionaryDimensionMapping, int dimensionSize,
-      int measureSize, char[] aggType, int sizeInMB) {
+      int measureSize, char[] aggType, int sizeInMB, boolean unsafe) {
     this.noDictionaryDimensionMapping = noDictionaryDimensionMapping;
     this.dimensionSize = dimensionSize;
     this.measureSize = measureSize;
     this.aggType = aggType;
     this.nullSetWords = new long[((measureSize - 1) >> 6) + 1];
-    BYTE_ARRAY_OFFSET = CarbonUnsafe.unsafe.arrayBaseOffset(byte[].class);
-    LONG_ARRAY_OFFSET = CarbonUnsafe.unsafe.arrayBaseOffset(long[].class);
-    buffer = new PointerBuffer(sizeInMB);
+    buffer = new PointerBuffer(sizeInMB, unsafe);
+    this.dataBlock = buffer.getBaseBlock();
     int totalSize = sizeInMB * 1024 * 1024;
-    // TODO Only using 95% of space for safe side.May be we can have different logic.
-    sizeToBeUsed = totalSize-(totalSize * 5)/100;
+    // TODO Only using 98% of space for safe side.May be we can have different logic.
+    sizeToBeUsed = totalSize - (totalSize * 2) / 100;
+    // Check memory is available, if memory is not available flush to disk.
+    this.keepInMemory = UnsafeMemoryManager.INSTANCE.allocateMemory(sizeInMB);
+
   }
 
   public void addRow(Object[] row) {
-    int size = addRow(row, buffer.getBaseAddress() + lastSize);
+    int size = addRow(row, dataBlock.getBaseOffset() + lastSize);
     buffer.set(lastSize);
     lastSize = lastSize + size;
   }
@@ -67,12 +72,14 @@ public class UnsafeCarbonRowPage {
     for (; dimCount < noDictionaryDimensionMapping.length; dimCount++) {
       if (noDictionaryDimensionMapping[dimCount]) {
         byte[] col = (byte[]) row[dimCount];
-        CarbonUnsafe.unsafe.putShort(address + size, (short) col.length);
+        CarbonUnsafe.unsafe.putShort(dataBlock.getBaseObject(), address + size, (short) col.length);
         size += 2;
-        CarbonUnsafe.unsafe.copyMemory(col, BYTE_ARRAY_OFFSET, null, address + size, col.length);
+        CarbonUnsafe.unsafe
+            .copyMemory(col, CarbonUnsafe.BYTE_ARRAY_OFFSET, dataBlock.getBaseObject(),
+                address + size, col.length);
         size += col.length;
       } else {
-        CarbonUnsafe.unsafe.putInt(address + size, (int) row[dimCount]);
+        CarbonUnsafe.unsafe.putInt(dataBlock.getBaseObject(), address + size, (int) row[dimCount]);
         size += 4;
       }
     }
@@ -80,9 +87,10 @@ public class UnsafeCarbonRowPage {
     // write complex dimensions here.
     for (; dimCount < dimensionSize; dimCount++) {
       byte[] col = (byte[]) row[dimCount];
-      CarbonUnsafe.unsafe.putShort(address + size, (short) col.length);
+      CarbonUnsafe.unsafe.putShort(dataBlock.getBaseObject(), address + size, (short) col.length);
       size += 2;
-      CarbonUnsafe.unsafe.copyMemory(col, BYTE_ARRAY_OFFSET, null, address + size, col.length);
+      CarbonUnsafe.unsafe.copyMemory(col, CarbonUnsafe.BYTE_ARRAY_OFFSET, dataBlock.getBaseObject(),
+          address + size, col.length);
       size += col.length;
     }
     for (int mesCount = 0; mesCount < measureSize; mesCount++) {
@@ -90,19 +98,20 @@ public class UnsafeCarbonRowPage {
       if (null != value) {
         if (aggType[mesCount] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
           Double val = (Double) value;
-          CarbonUnsafe.unsafe.putDouble(address + size, val);
+          CarbonUnsafe.unsafe.putDouble(dataBlock.getBaseObject(), address + size, val);
           size += 8;
         } else if (aggType[mesCount] == CarbonCommonConstants.BIG_INT_MEASURE) {
           Long val = (Long) value;
-          CarbonUnsafe.unsafe.putLong(address + size, val);
+          CarbonUnsafe.unsafe.putLong(dataBlock.getBaseObject(), address + size, val);
           size += 8;
         } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
           BigDecimal val = (BigDecimal) value;
           byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
-          CarbonUnsafe.unsafe.putShort(address + size, (short) bigDecimalInBytes.length);
+          CarbonUnsafe.unsafe.putShort(dataBlock.getBaseObject(), address + size,
+              (short) bigDecimalInBytes.length);
           size += 2;
-          CarbonUnsafe.unsafe.copyMemory(bigDecimalInBytes, BYTE_ARRAY_OFFSET, null, address + size,
-              bigDecimalInBytes.length);
+          CarbonUnsafe.unsafe.copyMemory(bigDecimalInBytes, CarbonUnsafe.BYTE_ARRAY_OFFSET,
+              dataBlock.getBaseObject(), address + size, bigDecimalInBytes.length);
           size += bigDecimalInBytes.length;
         }
         set(nullSetWords, mesCount);
@@ -110,7 +119,8 @@ public class UnsafeCarbonRowPage {
         unset(nullSetWords, mesCount);
       }
       CarbonUnsafe.unsafe
-          .copyMemory(nullSetWords, LONG_ARRAY_OFFSET, null, address, nullSetWords.length);
+          .copyMemory(nullSetWords, CarbonUnsafe.LONG_ARRAY_OFFSET, dataBlock.getBaseObject(),
+              address, nullSetWords.length);
     }
     return size;
   }
@@ -120,19 +130,21 @@ public class UnsafeCarbonRowPage {
     int size = 0;
     int nullSetSize = nullSetWords.length * 8;
     long[] words = new long[nullSetWords.length];
-    CarbonUnsafe.unsafe.copyMemory(null, address + size, words, LONG_ARRAY_OFFSET, words.length);
+    CarbonUnsafe.unsafe.copyMemory(dataBlock.getBaseObject(), address + size, words,
+        CarbonUnsafe.LONG_ARRAY_OFFSET, words.length);
     size += nullSetSize;
 
     for (; dimCount < noDictionaryDimensionMapping.length; dimCount++) {
       if (noDictionaryDimensionMapping[dimCount]) {
-        short aShort = CarbonUnsafe.unsafe.getShort(address + size);
+        short aShort = CarbonUnsafe.unsafe.getShort(dataBlock.getBaseObject(), address + size);
         byte[] col = new byte[aShort];
         size += 2;
-        CarbonUnsafe.unsafe.copyMemory(null, address + size, col, BYTE_ARRAY_OFFSET, col.length);
+        CarbonUnsafe.unsafe.copyMemory(dataBlock.getBaseObject(), address + size, col,
+            CarbonUnsafe.BYTE_ARRAY_OFFSET, col.length);
         size += col.length;
         rowToFill[dimCount] = col;
       } else {
-        int anInt = CarbonUnsafe.unsafe.getInt(address + size);
+        int anInt = CarbonUnsafe.unsafe.getInt(dataBlock.getBaseObject(), address + size);
         size += 4;
         rowToFill[dimCount] = anInt;
       }
@@ -140,10 +152,11 @@ public class UnsafeCarbonRowPage {
 
     // write complex dimensions here.
     for (; dimCount < dimensionSize; dimCount++) {
-      short aShort = CarbonUnsafe.unsafe.getShort(address + size);
+      short aShort = CarbonUnsafe.unsafe.getShort(dataBlock.getBaseObject(), address + size);
       byte[] col = new byte[aShort];
       size += 2;
-      CarbonUnsafe.unsafe.copyMemory(null, address + size, col, BYTE_ARRAY_OFFSET, col.length);
+      CarbonUnsafe.unsafe.copyMemory(dataBlock.getBaseObject(), address + size, col,
+          CarbonUnsafe.BYTE_ARRAY_OFFSET, col.length);
       size += col.length;
       rowToFill[dimCount] = col;
     }
@@ -151,19 +164,20 @@ public class UnsafeCarbonRowPage {
     for (int mesCount = 0; mesCount < measureSize; mesCount++) {
       if (isSet(words, mesCount)) {
         if (aggType[mesCount] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
-          Double val = CarbonUnsafe.unsafe.getDouble(address + size);
+          Double val = CarbonUnsafe.unsafe.getDouble(dataBlock.getBaseObject(), address + size);
           size += 8;
           rowToFill[dimensionSize + mesCount] = val;
         } else if (aggType[mesCount] == CarbonCommonConstants.BIG_INT_MEASURE) {
-          Long val = CarbonUnsafe.unsafe.getLong(address + size);
+          Long val = CarbonUnsafe.unsafe.getLong(dataBlock.getBaseObject(), address + size);
           size += 8;
           rowToFill[dimensionSize + mesCount] = val;
         } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-          short aShort = CarbonUnsafe.unsafe.getShort(address + size);
+          short aShort = CarbonUnsafe.unsafe.getShort(dataBlock.getBaseObject(), address + size);
           byte[] bigDecimalInBytes = new byte[aShort];
           size += 2;
-          CarbonUnsafe.unsafe.copyMemory(null, address + size, bigDecimalInBytes, BYTE_ARRAY_OFFSET,
-              bigDecimalInBytes.length);
+          CarbonUnsafe.unsafe
+              .copyMemory(dataBlock.getBaseObject(), address + size, bigDecimalInBytes,
+                  CarbonUnsafe.BYTE_ARRAY_OFFSET, bigDecimalInBytes.length);
           BigDecimal val = DataTypeUtil.byteToBigDecimal(bigDecimalInBytes);
           size += bigDecimalInBytes.length;
           rowToFill[dimensionSize + mesCount] = val;
@@ -175,6 +189,95 @@ public class UnsafeCarbonRowPage {
     return rowToFill;
   }
 
+  public Object[] getRowForSort(long address, Object[] rowToFill) {
+    int dimCount = 0;
+    int size = 0;
+    size += nullSetWords.length * 8;
+    for (; dimCount < noDictionaryDimensionMapping.length; dimCount++) {
+      if (noDictionaryDimensionMapping[dimCount]) {
+        short aShort = CarbonUnsafe.unsafe.getShort(dataBlock.getBaseObject(), address + size);
+        byte[] col = new byte[aShort];
+        size += 2;
+        CarbonUnsafe.unsafe.copyMemory(dataBlock.getBaseObject(), address + size, col,
+            CarbonUnsafe.BYTE_ARRAY_OFFSET, col.length);
+        size += col.length;
+        rowToFill[dimCount] = col;
+      } else {
+        int anInt = CarbonUnsafe.unsafe.getInt(dataBlock.getBaseObject(), address + size);
+        size += 4;
+        rowToFill[dimCount] = anInt;
+      }
+    }
+    return rowToFill;
+  }
+
+
+  public void fillRow(long address, DataOutputStream stream) throws IOException {
+    int dimCount = 0;
+    int size = 0;
+    int nullSetSize = nullSetWords.length * 8;
+    long[] words = new long[nullSetWords.length];
+    CarbonUnsafe.unsafe.copyMemory(dataBlock.getBaseObject(), address + size, words,
+        CarbonUnsafe.LONG_ARRAY_OFFSET, words.length);
+    size += nullSetSize;
+    for (int i = 0; i < words.length; i++) {
+      stream.writeLong(words[i]);
+    }
+
+    for (; dimCount < noDictionaryDimensionMapping.length; dimCount++) {
+      if (noDictionaryDimensionMapping[dimCount]) {
+        short aShort = CarbonUnsafe.unsafe.getShort(dataBlock.getBaseObject(), address + size);
+        byte[] col = new byte[aShort];
+        size += 2;
+        CarbonUnsafe.unsafe.copyMemory(dataBlock.getBaseObject(), address + size, col,
+            CarbonUnsafe.BYTE_ARRAY_OFFSET, col.length);
+        size += col.length;
+        stream.writeShort(aShort);
+        stream.write(col);
+      } else {
+        int anInt = CarbonUnsafe.unsafe.getInt(dataBlock.getBaseObject(), address + size);
+        size += 4;
+        stream.writeInt(anInt);
+      }
+    }
+
+    // write complex dimensions here.
+    for (; dimCount < dimensionSize; dimCount++) {
+      short aShort = CarbonUnsafe.unsafe.getShort(dataBlock.getBaseObject(), address + size);
+      byte[] col = new byte[aShort];
+      size += 2;
+      CarbonUnsafe.unsafe.copyMemory(dataBlock.getBaseObject(), address + size, col,
+          CarbonUnsafe.BYTE_ARRAY_OFFSET, col.length);
+      size += col.length;
+      stream.writeShort(aShort);
+      stream.write(col);
+    }
+
+    for (int mesCount = 0; mesCount < measureSize; mesCount++) {
+      if (isSet(words, mesCount)) {
+        if (aggType[mesCount] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
+          Double val = CarbonUnsafe.unsafe.getDouble(dataBlock.getBaseObject(), address + size);
+          size += 8;
+          stream.writeDouble(val);
+        } else if (aggType[mesCount] == CarbonCommonConstants.BIG_INT_MEASURE) {
+          Long val = CarbonUnsafe.unsafe.getLong(dataBlock.getBaseObject(), address + size);
+          size += 8;
+          stream.writeLong(val);
+        } else if (aggType[mesCount] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
+          short aShort = CarbonUnsafe.unsafe.getShort(dataBlock.getBaseObject(), address + size);
+          byte[] bigDecimalInBytes = new byte[aShort];
+          size += 2;
+          CarbonUnsafe.unsafe
+              .copyMemory(dataBlock.getBaseObject(), address + size, bigDecimalInBytes,
+                  CarbonUnsafe.BYTE_ARRAY_OFFSET, bigDecimalInBytes.length);
+          size += bigDecimalInBytes.length;
+          stream.writeShort(aShort);
+          stream.write(bigDecimalInBytes);
+        }
+      }
+    }
+  }
+
   private Object[] getRow(long address) {
     Object[] row = new Object[dimensionSize + measureSize];
     return getRow(address, row);
@@ -182,6 +285,7 @@ public class UnsafeCarbonRowPage {
 
   public void freeMemory() {
     buffer.freeMemory();
+    UnsafeMemoryManager.INSTANCE.freeMemory(sizeToBeUsed);
   }
 
   public PointerBuffer getBuffer() {
@@ -194,6 +298,14 @@ public class UnsafeCarbonRowPage {
 
   public boolean canAdd() {
     return lastSize < sizeToBeUsed;
+  }
+
+  public MemoryBlock getDataBlock() {
+    return dataBlock;
+  }
+
+  public boolean isKeepInMemory() {
+    return keepInMemory;
   }
 
   class UnsafeIterator extends CarbonIterator<Object[]> {
@@ -216,7 +328,7 @@ public class UnsafeCarbonRowPage {
     @Override public Object[] next() {
       long address = buffer.get(counter);
       counter++;
-      return getRow(address + buffer.getBaseAddress());
+      return getRow(address + dataBlock.getBaseOffset());
     }
   }
 

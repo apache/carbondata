@@ -3,7 +3,7 @@ package org.apache.carbondata.processing.newflow.sort.unsafe;
 import org.apache.spark.util.collection.SortDataFormat;
 
 /**
- * Created by root1 on 21/11/16.
+ * Interface implementation for utilities to sort the data.
  */
 public class UnsafeSortDataFormat extends SortDataFormat<Object[], PointerBuffer> {
   private int keyLength;
@@ -25,8 +25,9 @@ public class UnsafeSortDataFormat extends SortDataFormat<Object[], PointerBuffer
   }
 
   @Override public Object[] getKey(PointerBuffer data, int pos, Object[] reuse) {
-    long address = data.get(pos) + data.getBaseAddress();
-    return page.getRow(address, reuse);
+    long address = data.get(pos) + data.getBaseBlock().getBaseOffset();
+    Object[] row = page.getRowForSort(address, reuse);
+    return row;
   }
 
   @Override public void swap(PointerBuffer data, int pos0, int pos1) {
@@ -41,11 +42,13 @@ public class UnsafeSortDataFormat extends SortDataFormat<Object[], PointerBuffer
 
   @Override
   public void copyRange(PointerBuffer src, int srcPos, PointerBuffer dst, int dstPos, int length) {
-    CarbonUnsafe.unsafe.copyMemory(null, src.getPointerBaseAddress() + srcPos * 4, null,
-        dst.getPointerBaseAddress() + dstPos * 4, length * 4);
+    CarbonUnsafe.unsafe.copyMemory(src.getPointerBlock().getBaseObject(),
+        src.getPointerBlock().getBaseOffset() + srcPos * 4, dst.getPointerBlock().getBaseObject(),
+        dst.getPointerBlock().getBaseOffset() + dstPos * 4, length * 4);
   }
 
   @Override public PointerBuffer allocate(int length) {
-    return new PointerBuffer(length, page.getBuffer().getBaseAddress());
+    return new PointerBuffer(length, page.getBuffer().getBaseBlock(),
+        page.getBuffer().getAllocator());
   }
 }

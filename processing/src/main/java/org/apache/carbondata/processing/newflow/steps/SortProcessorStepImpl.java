@@ -56,8 +56,8 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
     child.initialize();
     SortParameters sortParameters = SortParameters.createSortParameters(configuration);
     boolean offheapsort = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
-            CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
+        .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
+            CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT));
     if (offheapsort) {
       sorter = new UnsafeParallelReadMergeSorterImpl(child.getOutput());
     } else {

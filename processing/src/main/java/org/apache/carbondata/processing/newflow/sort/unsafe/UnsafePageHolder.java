@@ -2,10 +2,7 @@ package org.apache.carbondata.processing.newflow.sort.unsafe;
 
 import org.apache.carbondata.processing.sortandgroupby.sortdata.NewRowComparator;
 
-/**
- * Created by root1 on 22/11/16.
- */
-public class UnsafePageHolder implements Comparable<UnsafePageHolder> {
+public class UnsafePageHolder implements SortTempChunkHolder {
 
   private int counter;
 
@@ -35,7 +32,7 @@ public class UnsafePageHolder implements Comparable<UnsafePageHolder> {
 
   public void readRow() {
     address = rowPage.getBuffer().get(counter);
-    rowPage.getRow(address + rowPage.getBuffer().getBaseAddress(), currentRow);
+    rowPage.getRow(address + rowPage.getDataBlock().getBaseOffset(), currentRow);
     counter++;
   }
 
@@ -43,15 +40,15 @@ public class UnsafePageHolder implements Comparable<UnsafePageHolder> {
     return currentRow;
   }
 
-  @Override public int compareTo(UnsafePageHolder o) {
-    return comparator.compare(currentRow, o.currentRow);
+  @Override public int compareTo(SortTempChunkHolder o) {
+    return comparator.compare(currentRow, o.getRow());
   }
 
   public int numberOfRows() {
     return actualSize;
   }
 
-  public void freeMemory() {
+  public void close() {
     rowPage.freeMemory();
   }
 }

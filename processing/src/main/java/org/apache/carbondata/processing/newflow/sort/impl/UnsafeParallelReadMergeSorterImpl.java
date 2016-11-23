@@ -40,7 +40,7 @@ import org.apache.carbondata.processing.newflow.sort.Sorter;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeSingleThreadFinalSortFilesMerger;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeSortDataRows;
-import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeSortIntermediateFileMerger;
+import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeInMemoryIntermediateFileMerger;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortIntermediateFileMerger;
@@ -60,7 +60,7 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
 
   private SortParameters sortParameters;
 
-  private UnsafeSortIntermediateFileMerger unsafeIntermediateFileMerger;
+  private UnsafeInMemoryIntermediateFileMerger unsafeIntermediateFileMerger;
 
   private SortIntermediateFileMerger intermediateFileMerger;
 
@@ -76,7 +76,7 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
 
   @Override public void initialize(SortParameters sortParameters) {
     this.sortParameters = sortParameters;
-    unsafeIntermediateFileMerger = new UnsafeSortIntermediateFileMerger(sortParameters);
+    unsafeIntermediateFileMerger = new UnsafeInMemoryIntermediateFileMerger(sortParameters);
     intermediateFileMerger = new SortIntermediateFileMerger(sortParameters);
     String storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(sortParameters.getDatabaseName(), sortParameters.getTableName(),
@@ -113,6 +113,7 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
     }
     try {
       intermediateFileMerger.finish();
+      unsafeIntermediateFileMerger.finish();
       List<UnsafeCarbonRowPage> rowPages = unsafeIntermediateFileMerger.getRowPages();
       rowPages.addAll(unsafeIntermediateFileMerger.getMergedPages());
       finalMerger.startFinalMerge(rowPages.toArray(new UnsafeCarbonRowPage[rowPages.size()]));
@@ -144,6 +145,7 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
 
   @Override public void close() {
     intermediateFileMerger.close();
+    unsafeIntermediateFileMerger.close();
     finalMerger.clear();
   }
 

@@ -27,16 +27,17 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 
 /**
  * It does mergesort intermediate files to big file.
  */
-public class UnsafeSortIntermediateFileMerger {
+public class UnsafeInMemoryIntermediateFileMerger {
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnsafeSortIntermediateFileMerger.class.getName());
+      LogServiceFactory.getLogService(UnsafeInMemoryIntermediateFileMerger.class.getName());
 
   /**
    * executorService
@@ -53,12 +54,17 @@ public class UnsafeSortIntermediateFileMerger {
 
   private final Object lockObject = new Object();
 
-  public UnsafeSortIntermediateFileMerger(SortParameters parameters) {
+  private boolean offHeap;
+
+  public UnsafeInMemoryIntermediateFileMerger(SortParameters parameters) {
     this.parameters = parameters;
     // processed file list
     this.rowPages = new ArrayList<UnsafeCarbonRowPage>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     this.mergedPages = new ArrayList<>();
     this.executorService = Executors.newFixedThreadPool(parameters.getNumberOfCores());
+    this.offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
+            CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
   }
 
   public void addDataChunkToMerge(UnsafeCarbonRowPage rowPage) {
@@ -103,7 +109,7 @@ public class UnsafeSortIntermediateFileMerger {
     }
     return new UnsafeCarbonRowPage(unsafeCarbonRowPages[0].getNoDictionaryDimensionMapping(),
         parameters.getDimColCount(), parameters.getMeasureColCount(), parameters.getAggType(),
-        totalSize);
+        totalSize, offHeap);
   }
 
   public void finish() throws CarbonSortKeyAndGroupByException {
@@ -113,14 +119,14 @@ public class UnsafeSortIntermediateFileMerger {
     } catch (InterruptedException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while shutdown the server ", e);
     }
-    rowPages.clear();
-    rowPages = null;
   }
 
   public void close() {
     if (executorService.isShutdown()) {
       executorService.shutdownNow();
     }
+    rowPages.clear();
+    rowPages = null;
   }
 
   public List<UnsafeCarbonRowPage> getRowPages() {

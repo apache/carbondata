@@ -19,6 +19,8 @@
 
 package org.apache.carbondata.processing.newflow.sort.unsafe;
 
+import java.io.File;
+import java.io.FileFilter;
 import java.util.AbstractQueue;
 import java.util.PriorityQueue;
 
@@ -50,7 +52,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
   /**
    * recordHolderHeap
    */
-  private AbstractQueue<UnsafePageHolder> recordHolderHeapLocal;
+  private AbstractQueue<SortTempChunkHolder> recordHolderHeapLocal;
 
   private SortParameters parameters;
 
@@ -73,6 +75,13 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
 
   private boolean[] isNoDictionaryDimensionColumn;
 
+  /**
+   * tempFileLocation
+   */
+  private String tempFileLocation;
+
+  private String tableName;
+
   public UnsafeSingleThreadFinalSortFilesMerger(SortParameters parameters) {
     this.parameters = parameters;
     // set measure and dimension count
@@ -82,6 +91,8 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
 
     this.noDictionaryCount = parameters.getNoDictionaryCount();
     this.isNoDictionaryDimensionColumn = parameters.getNoDictionaryDimnesionColumn();
+    this.tempFileLocation = parameters.getTempFileLocation();
+    this.tableName = parameters.getTableName();
   }
 
   /**
@@ -102,38 +113,69 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
    * @throws CarbonSortKeyAndGroupByException
    */
   private void startSorting(UnsafeCarbonRowPage[] rowPages) throws CarbonDataWriterException {
-    this.fileCounter = rowPages.length;
+    try {
+      File[] filesToMergeSort = getFilesToMergeSort();
+      this.fileCounter = rowPages.length + filesToMergeSort.length;
 
-    LOGGER.info("Number of row pages: " + this.fileCounter);
+      LOGGER.info("Number of row pages: " + this.fileCounter);
 
-    // create record holder heap
-    createRecordHolderQueue(rowPages);
+      // create record holder heap
+      createRecordHolderQueue();
 
-    // iterate over file list and create chunk holder and add to heap
-    LOGGER.info("Started adding first record from each page");
-    for (final UnsafeCarbonRowPage rowPage : rowPages) {
+      // iterate over file list and create chunk holder and add to heap
+      LOGGER.info("Started adding first record from each page");
+      for (final UnsafeCarbonRowPage rowPage : rowPages) {
 
-      UnsafePageHolder sortTempFileChunkHolder = new UnsafePageHolder(rowPage,
-          parameters.getDimColCount() + parameters.getMeasureColCount());
+        SortTempChunkHolder sortTempFileChunkHolder = new UnsafePageHolder(rowPage,
+            parameters.getDimColCount() + parameters.getMeasureColCount());
 
-      // initialize
-      sortTempFileChunkHolder.readRow();
+        // initialize
+        sortTempFileChunkHolder.readRow();
 
-      recordHolderHeapLocal.add(sortTempFileChunkHolder);
+        recordHolderHeapLocal.add(sortTempFileChunkHolder);
+      }
+
+      for (final File file : filesToMergeSort) {
+
+        SortTempChunkHolder sortTempFileChunkHolder =
+            new UnsafeSortTempFileChunkHolder(file, parameters);
+
+        // initialize
+        sortTempFileChunkHolder.readRow();
+
+        recordHolderHeapLocal.add(sortTempFileChunkHolder);
+      }
+
+      LOGGER.info("Heap Size" + this.recordHolderHeapLocal.size());
+    } catch (Exception e) {
+      LOGGER.error(e);
+      throw new CarbonDataWriterException(e.getMessage());
     }
+  }
 
-    LOGGER.info("Heap Size" + this.recordHolderHeapLocal.size());
+  private File[] getFilesToMergeSort() {
+    // get all the merged files
+    File file = new File(tempFileLocation);
+
+    File[] fileList = file.listFiles(new FileFilter() {
+      public boolean accept(File pathname) {
+        return pathname.getName().startsWith(tableName);
+      }
+    });
+
+    if (null == fileList || fileList.length < 0) {
+      return new File[0];
+    }
+    return fileList;
   }
 
   /**
    * This method will be used to create the heap which will be used to hold
    * the chunk of data
-   *
-   * @param rowPages list of temp files
    */
-  private void createRecordHolderQueue(UnsafeCarbonRowPage[] rowPages) {
+  private void createRecordHolderQueue() {
     // creating record holder heap
-    this.recordHolderHeapLocal = new PriorityQueue<UnsafePageHolder>(rowPages.length);
+    this.recordHolderHeapLocal = new PriorityQueue<SortTempChunkHolder>(fileCounter);
   }
 
   /**
@@ -160,7 +202,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
     // be based on comparator we are passing the heap
     // when will call poll it will always delete root of the tree and then
     // it does trickel down operation complexity is log(n)
-    UnsafePageHolder poll = this.recordHolderHeapLocal.poll();
+    SortTempChunkHolder poll = this.recordHolderHeapLocal.poll();
 
     // get the row from chunk
     row = poll.getRow();
@@ -168,7 +210,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
     // check if there no entry present
     if (!poll.hasNext()) {
       // if chunk is empty then close the stream
-      poll.freeMemory();
+      poll.close();
 
       // change the file counter
       --this.fileCounter;
@@ -217,7 +259,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
         if (isNoDictionaryDimensionColumn[i]) {
           nonDicArray[nonDicIndex++] = (byte[]) data[i];
         } else {
-          dim[index++] = (int)data[allCount];
+          dim[index++] = (int) data[allCount];
         }
         allCount++;
       }
@@ -247,8 +289,8 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
 
   public void clear() {
     if (null != recordHolderHeapLocal) {
-      for (UnsafePageHolder pageHolder : recordHolderHeapLocal) {
-        pageHolder.freeMemory();
+      for (SortTempChunkHolder pageHolder : recordHolderHeapLocal) {
+        pageHolder.close();
       }
       recordHolderHeapLocal = null;
     }

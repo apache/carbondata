@@ -1,51 +1,72 @@
 package org.apache.carbondata.processing.newflow.sort.unsafe;
 
+import org.apache.carbondata.processing.newflow.sort.unsafe.memory.MemoryAllocator;
+import org.apache.carbondata.processing.newflow.sort.unsafe.memory.MemoryBlock;
+
+import org.apache.spark.unsafe.Platform;
+
 /**
- * Created by root1 on 21/11/16.
+ * Holds the pointers for rows.
  */
 public class PointerBuffer {
-
-  private long pointerBaseAddress;
 
   private int length;
 
   private int actualSize;
 
-  private long baseAddress;
-
   private int totalSize;
 
-  public PointerBuffer(int sizeInMB) {
+  private MemoryAllocator allocator;
+
+  private MemoryBlock pointerBlock;
+
+  private MemoryBlock baseBlock;
+
+  public PointerBuffer(int sizeInMB, boolean unsafe) {
+    // TODO can be configurable, it is initial size and it can grow automatically.
     this.length = 100000;
     this.totalSize = sizeInMB;
-    pointerBaseAddress = CarbonUnsafe.unsafe.allocateMemory(length * 4);
-    baseAddress = CarbonUnsafe.unsafe.allocateMemory(sizeInMB * 1024 * 1024);
-    zeroOut();
+    if (unsafe) {
+      allocator = MemoryAllocator.UNSAFE;
+    } else {
+      allocator = MemoryAllocator.HEAP;
+    }
+    pointerBlock = allocator.allocate(length * 4);
+    baseBlock = allocator.allocate(sizeInMB * 1024 * 1024);
+    zeroOut(pointerBlock);
+    zeroOut(baseBlock);
   }
 
-  public PointerBuffer(int length, long baseAddress) {
+  public PointerBuffer(int length, MemoryBlock baseBlock, MemoryAllocator allocator) {
     this.length = length;
-    pointerBaseAddress = CarbonUnsafe.unsafe.allocateMemory(length * 4);
-    this.baseAddress = baseAddress;
-    zeroOut();
+    this.allocator = allocator;
+    pointerBlock = allocator.allocate(length * 4);
+    this.baseBlock = baseBlock;
+    zeroOut(pointerBlock);
   }
 
   /**
    * Fill this all with 0.
    */
-  public void zeroOut() {
-    CarbonUnsafe.unsafe.setMemory(pointerBaseAddress, length * 4, (byte) 0);
+  private void zeroOut(MemoryBlock memoryBlock) {
+    long length = memoryBlock.size() / 8;
+    long maSize = memoryBlock.getBaseOffset() + length * 8;
+    for (long off = memoryBlock.getBaseOffset(); off < maSize; off += 8) {
+      Platform.putLong(memoryBlock.getBaseObject(), off, 0);
+    }
   }
 
   public void set(int index, int value) {
     assert index >= 0 : "index (" + index + ") should >= 0";
     assert index < length : "index (" + index + ") should < length (" + length + ")";
-    CarbonUnsafe.unsafe.putInt(pointerBaseAddress + index * 4, value);
+    CarbonUnsafe.unsafe
+        .putInt(pointerBlock.getBaseObject(), pointerBlock.getBaseOffset() + index * 4, value);
   }
 
   public void set(int value) {
     ensureMemory();
-    CarbonUnsafe.unsafe.putInt(pointerBaseAddress + actualSize * 4, value);
+    CarbonUnsafe.unsafe
+        .putInt(pointerBlock.getBaseObject(), pointerBlock.getBaseOffset() + actualSize * 4, value);
     actualSize++;
   }
 
@@ -55,29 +76,35 @@ public class PointerBuffer {
   public int get(int index) {
     assert index >= 0 : "index (" + index + ") should >= 0";
     assert index < length : "index (" + index + ") should < length (" + length + ")";
-    return CarbonUnsafe.unsafe.getInt(pointerBaseAddress + index * 4);
+    return CarbonUnsafe.unsafe
+        .getInt(pointerBlock.getBaseObject(), pointerBlock.getBaseOffset() + index * 4);
   }
 
   public int getActualSize() {
     return actualSize;
   }
 
-  public long getBaseAddress() {
-    return baseAddress;
+  public MemoryBlock getBaseBlock() {
+    return baseBlock;
   }
 
-  public long getPointerBaseAddress() {
-    return pointerBaseAddress;
+  public MemoryBlock getPointerBlock() {
+    return pointerBlock;
+  }
+
+  public MemoryAllocator getAllocator() {
+    return allocator;
   }
 
   private void ensureMemory() {
     if (actualSize >= length) {
       // Expand by quarter, may be we can correct the logic later
       int localLength = length + (int) (length * (0.25));
-      long memoryAddress = CarbonUnsafe.unsafe.allocateMemory(localLength * 4);
-      CarbonUnsafe.unsafe.copyMemory(pointerBaseAddress, memoryAddress, length);
-      CarbonUnsafe.unsafe.freeMemory(pointerBaseAddress);
-      pointerBaseAddress = memoryAddress;
+      MemoryBlock memoryAddress = allocator.allocate(localLength * 4);
+      CarbonUnsafe.unsafe.copyMemory(pointerBlock.getBaseObject(), pointerBlock.getBaseOffset(),
+          memoryAddress.getBaseObject(), memoryAddress.getBaseOffset(), length);
+      allocator.free(pointerBlock);
+      pointerBlock = memoryAddress;
       length = localLength;
     }
   }
@@ -87,7 +114,7 @@ public class PointerBuffer {
   }
 
   public void freeMemory() {
-    CarbonUnsafe.unsafe.freeMemory(pointerBaseAddress);
-    CarbonUnsafe.unsafe.freeMemory(baseAddress);
+    allocator.free(pointerBlock);
+    allocator.free(baseBlock);
   }
 }
