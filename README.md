@@ -40,6 +40,8 @@ CarbonData is built using Apache Maven, to [build CarbonData](https://github.com
 
 ## Online Documentation
 * [Quick Start](https://github.com/apache/incubator-carbondata/blob/master/docs/quick-start-guide.md)
+* [CarbonData File Structure](https://github.com/apache/incubator-carbondata/blob/master/docs/file-structure-of-carbondata.md)
+* [Data Types](https://github.com/apache/incubator-carbondata/blob/master/docs/supported-data-types-in-carbondata.md)
 * [Data Management](https://github.com/apache/incubator-carbondata/blob/master/docs/data-management.md)
 * [DDL Operations on CarbonData](https://github.com/apache/incubator-carbondata/blob/master/docs/ddl-operation-on-carbondata.md) 
 * [DML Operations on CarbonData](https://github.com/apache/incubator-carbondata/blob/master/docs/dml-operation-on-carbondata.md)  
