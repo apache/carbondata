@@ -91,6 +91,8 @@ public class CarbonTable implements Serializable {
    */
   private int blockSize;
 
+  private boolean isSort = true;
+
   public CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableMeasuresMap = new HashMap<String, List<CarbonMeasure>>();
@@ -101,7 +103,7 @@ public class CarbonTable implements Serializable {
    * @param tableInfo
    */
   public void loadCarbonTable(TableInfo tableInfo) {
-    this.blockSize = getTableBlockSizeInMB(tableInfo);
+    configTableProperties(tableInfo);
     this.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
     this.tableUniqueName = tableInfo.getTableUniqueName();
     this.metaDataFilepath = tableInfo.getMetaDataFilepath();
@@ -127,21 +129,31 @@ public class CarbonTable implements Serializable {
    * @param tableInfo
    * @return
    */
-  private int getTableBlockSizeInMB(TableInfo tableInfo) {
+  private void configTableProperties(TableInfo tableInfo) {
     String tableBlockSize = null;
+    String sortConfig = null;
     // In case of old store there will not be any map for table properties so table properties
     // will be null
     Map<String, String> tableProperties = tableInfo.getFactTable().getTableProperties();
     if (null != tableProperties) {
       tableBlockSize = tableProperties.get(CarbonCommonConstants.TABLE_BLOCKSIZE);
+      sortConfig = tableProperties.get("sort");
     }
+
     if (null == tableBlockSize) {
-      tableBlockSize = CarbonCommonConstants.BLOCK_SIZE_DEFAULT_VAL;
+      this.blockSize = Integer.parseInt(CarbonCommonConstants.BLOCK_SIZE_DEFAULT_VAL);
       LOGGER.info("Table block size not specified for " + tableInfo.getTableUniqueName()
           + ". Therefore considering the default value "
           + CarbonCommonConstants.BLOCK_SIZE_DEFAULT_VAL + " MB");
+    } else {
+      this.blockSize = Integer.parseInt(tableBlockSize);
     }
-    return Integer.parseInt(tableBlockSize);
+
+    if(sortConfig != null) {
+      if("false".equalsIgnoreCase(sortConfig)) {
+        this.isSort = false;
+      }
+    }
   }
 
   /**
@@ -438,4 +450,11 @@ public class CarbonTable implements Serializable {
     this.blockSize = blockSize;
   }
 
+  public boolean isSort() {
+    return isSort;
+  }
+
+  public void setSort(boolean sort) {
+    isSort = sort;
+  }
 }

@@ -1025,6 +1025,17 @@ case class LoadTable(
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
+  def validataBoolean(input: String, desc: String): Boolean = {
+    input.trim.toLowerCase match {
+      case "true" => true
+      case "false" => false
+      case illegal =>
+        val errorMessage = s"Illegal syntax found: [$illegal] .The value $desc in " +
+            "load DDL which you set can only be 'true' or 'false', please check " +
+            "your input DDL."
+        throw new MalformedCarbonCommandException(errorMessage)
+    }
+  }
 
   def run(sqlContext: SQLContext): Seq[Row] = {
 
@@ -1121,21 +1132,14 @@ case class LoadTable(
       val complex_delimiter_level_2 = options.getOrElse("complex_delimiter_level_2", "\\:")
       val dateFormat = options.getOrElse("dateformat", null)
       validateDateFormat(dateFormat, table)
-      val multiLine = options.getOrElse("multiline", "false").trim.toLowerCase match {
-        case "true" => true
-        case "false" => false
-        case illegal =>
-          val errorMessage = "Illegal syntax found: [" + illegal + "] .The value multiline in " +
-                             "load DDL which you set can only be 'true' or 'false', please check " +
-                             "your input DDL."
-          throw new MalformedCarbonCommandException(errorMessage)
-      }
+      val multiLine = validataBoolean(options.getOrElse("multiline", "false"), "multiLine")
       val maxColumns = options.getOrElse("maxcolumns", null)
       carbonLoadModel.setMaxColumns(maxColumns)
       carbonLoadModel.setEscapeChar(escapeChar)
       carbonLoadModel.setQuoteChar(quoteChar)
       carbonLoadModel.setCommentChar(commentchar)
       carbonLoadModel.setDateFormat(dateFormat)
+      carbonLoadModel.setSort(table.isSort)
       carbonLoadModel
         .setSerializationNullFormat(
           TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + "," + serializationNullFormat)
@@ -1184,6 +1188,7 @@ case class LoadTable(
             partitionStatus,
             useKettle,
             dataFrame)
+
       } catch {
         case ex: Exception =>
           LOGGER.error(ex)

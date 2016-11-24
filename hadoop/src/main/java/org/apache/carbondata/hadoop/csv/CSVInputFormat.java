@@ -215,6 +215,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
         parserSettings.setHeaderExtractionEnabled(job.getBoolean(HEADER_PRESENT,
             HEADER_PRESENT_DEFAULT));
       }
+      parserSettings.setMaxColumns(4000);
       return parserSettings;
     }
 

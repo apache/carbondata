@@ -65,8 +65,8 @@ public class RowParserImpl implements RowParser {
     DataField[] input = new DataField[fields.length];
     inputMapping = new int[input.length];
     int k = 0;
-    for (int i = 0; i < numberOfColumns; i++) {
-      for (int j = 0; j < fields.length; j++) {
+    for (int j = 0; j < fields.length; j++) {
+      for (int i = 0; i < numberOfColumns; i++) {
         if (header[i].equalsIgnoreCase(fields[j].getColumn().getColName())) {
           input[k] = fields[j];
           inputMapping[k] = i;
@@ -79,7 +79,7 @@ public class RowParserImpl implements RowParser {
   }
 
   @Override
-  public Object[] parseRow(Object[] row) {
+  public Object[] parseRow(String[] row) {
     // If number of columns are less in a row then create new array with same size of header.
     if (row.length < numberOfColumns) {
       String[] temp = new String[numberOfColumns];
@@ -88,7 +88,7 @@ public class RowParserImpl implements RowParser {
     }
     Object[] out = new Object[genericParsers.length];
     for (int i = 0; i < genericParsers.length; i++) {
-      Object obj = row[inputMapping[i]];
+      String obj = row[inputMapping[i]];
       out[outputMapping[i]] = genericParsers[i].parse(obj);
     }
     return out;

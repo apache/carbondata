@@ -203,6 +203,15 @@ public class CarbonFactDataHandlerModel {
 
     int[] dimLensWithComplex =
         (int[]) configuration.getDataLoadProperty(DataLoadProcessorConstants.DIMENSION_LENGTHS);
+
+    if (dimLensWithComplex == null) {
+      int primitiveDimensionNumber = (int)configuration.getDataLoadProperty(
+          DataLoadProcessorConstants.PRIMITIVE_DIMENSION_NUMBER);
+      dimLensWithComplex = new int[primitiveDimensionNumber];
+      for (int i = 0; i < dimLensWithComplex.length; i++) {
+        dimLensWithComplex[i] = Integer.MAX_VALUE;
+      }
+    }
     List<Integer> dimsLenList = new ArrayList<Integer>();
     for (int eachDimLen : dimLensWithComplex) {
       if (eachDimLen != 0) dimsLenList.add(eachDimLen);

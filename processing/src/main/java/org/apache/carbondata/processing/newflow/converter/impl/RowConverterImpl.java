@@ -82,16 +82,24 @@ public class RowConverterImpl implements RowConverter {
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
         .recordLruCacheLoadTime((System.currentTimeMillis() - lruCacheStartTime) / 1000.0);
     fieldConverters = fieldConverterList.toArray(new FieldConverter[fieldConverterList.size()]);
+    List<Integer> dimCardinality = new ArrayList<>();
+    for (int i = 0; i < fieldConverters.length; i++) {
+      if (fieldConverters[i] instanceof AbstractDictionaryFieldConverterImpl) {
+        ((AbstractDictionaryFieldConverterImpl) fieldConverters[i])
+            .fillColumnCardinality(dimCardinality);
+      }
+    }
+    configuration.setDataLoadProperty(DataLoadProcessorConstants.PRIMITIVE_DIMENSION_NUMBER,
+        dimCardinality.size());
     logHolder = new BadRecordLogHolder();
   }
 
   @Override
   public CarbonRow convert(CarbonRow row) throws CarbonDataLoadingException {
-    CarbonRow copy = row.getCopy();
     for (int i = 0; i < fieldConverters.length; i++) {
       fieldConverters[i].convert(row, logHolder);
       if (logHolder.isBadRecordNotAdded()) {
-        badRecordLogger.addBadRecordsToBuilder(copy.getData(), logHolder.getReason());
+        badRecordLogger.addBadRecordsToBuilder(row.getOrigin(), logHolder.getReason());
         logHolder.clear();
         if(badRecordLogger.isBadRecordConvertNullDisable()) {
           return null;
