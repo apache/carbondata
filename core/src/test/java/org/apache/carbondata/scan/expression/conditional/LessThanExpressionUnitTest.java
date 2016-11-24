@@ -32,7 +32,6 @@ import org.apache.carbondata.scan.expression.exception.FilterIllegalMemberExcept
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.scan.filter.intf.RowImpl;
 
-import junit.framework.Assert;
 import mockit.Mock;
 import mockit.MockUp;
 import org.apache.spark.sql.types.Decimal;
@@ -42,201 +41,265 @@ import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class GreaterThanEqualToExpressionUnitTest {
+public class LessThanExpressionUnitTest {
+  static LessThanExpression lessThanExpression;
 
-  static GreaterThanEqualToExpression greaterThanEqualToExpression;
-
-  @Test public void testEvaluateForGreaterThanEqualToExpressionWithBothStringISSame()
+  @Test public void testEvaluateForLessThanExpressionWithStringDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression left = new ColumnExpression("left_name", DataType.STRING);
     left.setColIndex(0);
     ColumnExpression right = new ColumnExpression("right_name", DataType.STRING);
     right.setColIndex(1);
-    greaterThanEqualToExpression = new GreaterThanEqualToExpression(left, right);
+    lessThanExpression = new LessThanExpression(left, right);
     RowImpl value = new RowImpl();
-    String[] row = { "string1" };
+    String[] row = { "First String Value" };
     String[] row1 = { "string1" };
     Object objectRow[] = { row, row1 };
-
     new MockUp<ExpressionResult>() {
+      Boolean returnMockFlag = true;
+
       @Mock public String getString() {
-        return "string1";
+        if (returnMockFlag) {
+          returnMockFlag = false;
+          return "First String Value";
+
+        } else {
+          return "string1";
+
+        }
+
       }
     };
     value.setValues(objectRow);
-    ExpressionResult result = greaterThanEqualToExpression.evaluate(value);
+    ExpressionResult result = lessThanExpression.evaluate(value);
     assertTrue(result.getBoolean());
   }
 
-  @Test public void testEvaluateForGreaterThanEqualToExpressionWithShortDataType()
+  @Test public void testEvaluateForLessThanExpressionWithShortDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("id", DataType.SHORT);
     right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("id", DataType.SHORT);
     left.setColIndex(1);
-    greaterThanEqualToExpression = new GreaterThanEqualToExpression(left, right);
+    lessThanExpression = new LessThanExpression(left, right);
     RowImpl value = new RowImpl();
-    Short[] row = { 15 };
-    Short[] row1 = { 16 };
-    Object objectRow[] = { row1, row };
+    Short[] row = { 7052 };
+    Short[] row1 = { 7450 };
+    Object objectRow[] = { row, row1 };
     value.setValues(objectRow);
 
     new MockUp<ExpressionResult>() {
+      Boolean returnMockFlag = true;
+
       @Mock public Short getShort() {
-        return 16;
+        if (returnMockFlag) {
+          returnMockFlag = false;
+          return 7052;
+
+        } else {
+          return 7450;
+
+        }
+
       }
     };
 
-    ExpressionResult result = greaterThanEqualToExpression.evaluate(value);
+    ExpressionResult result = lessThanExpression.evaluate(value);
     assertTrue(result.getBoolean());
 
   }
 
-  @Test public void testEvaluateForGreaterThanEqualToExpressionWithIntDataType()
-      throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("right_number", DataType.INT);
-    right.setColIndex(0);
-    ColumnExpression left = new ColumnExpression("left_number", DataType.INT);
-    left.setColIndex(1);
-    greaterThanEqualToExpression = new GreaterThanEqualToExpression(left, right);
-    RowImpl value = new RowImpl();
-    Integer[] row = { 140 };
-    Integer[] row1 = { 145 };
-    Object objectRow[] = { row1, row };
-    value.setValues(objectRow);
-
-    new MockUp<ExpressionResult>() {
-      @Mock public Integer getInt() {
-        return 145;
-      }
-    };
-
-    ExpressionResult result = greaterThanEqualToExpression.evaluate(value);
-    assertTrue(result.getBoolean());
-  }
-
-  @Test public void testEvaluateForGreaterThanEqualToExpressionWithDoubleDataType()
+  @Test public void testEvaluateForLessThanExpressionWithDoubleDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("right_contact", DataType.DOUBLE);
     right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("left_contact", DataType.DOUBLE);
     left.setColIndex(1);
-    greaterThanEqualToExpression = new GreaterThanEqualToExpression(left, right);
+    lessThanExpression = new LessThanExpression(left, right);
     RowImpl value = new RowImpl();
-    Double[] row = { 44D };
-    Double[] row1 = { 45D };
+    Double[] row = { 2087D };
+    Double[] row1 = { 4454D };
     Object objectRow[] = { row1, row };
     value.setValues(objectRow);
 
     new MockUp<ExpressionResult>() {
+      Boolean returnMockFlag = true;
+
       @Mock public Double getDouble() {
-        return 45D;
+        if (returnMockFlag) {
+          returnMockFlag = false;
+          return 2087D;
+
+        } else {
+          return 4454D;
+
+        }
+
       }
     };
 
-    ExpressionResult result = greaterThanEqualToExpression.evaluate(value);
+    ExpressionResult result = lessThanExpression.evaluate(value);
     assertTrue(result.getBoolean());
   }
 
-  @Test public void testEvaluateForGreaterThanEqualToExpressionWithLongDataType()
+  @Test public void testEvaluateForLessThanExpressionWithIntDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("contact", DataType.LONG);
+    ColumnExpression right = new ColumnExpression("right_number", DataType.INT);
     right.setColIndex(0);
-    ColumnExpression left = new ColumnExpression("contact", DataType.LONG);
+    ColumnExpression left = new ColumnExpression("left_number", DataType.INT);
     left.setColIndex(1);
-    greaterThanEqualToExpression = new GreaterThanEqualToExpression(left, right);
+    lessThanExpression = new LessThanExpression(left, right);
     RowImpl value = new RowImpl();
-    Long[] row = { 1234567654321L };
-    Long[] row1 = { 1234567654321L };
-    Object objectRow[] = { row1, row };
+    Integer[] row = { 1550 };
+    Integer[] row1 = { 1420 };
+    Object objectRow[] = { row, row1 };
     value.setValues(objectRow);
 
     new MockUp<ExpressionResult>() {
-      @Mock public Long getLong() {
-        return 1234567654321L;
+      Boolean returnMockFlag = true;
+
+      @Mock public Integer getInt() {
+        if (returnMockFlag) {
+          returnMockFlag = false;
+          return 1420;
+
+        } else {
+          return 1550;
+
+        }
+
       }
     };
 
-    ExpressionResult result = greaterThanEqualToExpression.evaluate(value);
+    ExpressionResult result = lessThanExpression.evaluate(value);
     assertTrue(result.getBoolean());
   }
 
-  @Test public void testEvaluateForGreaterThanEqualToExpressionWithTimestampDataType()
+ @Test public void testEvaluateForLessThanExpressionWithTimestampDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     try {
       ColumnExpression left = new ColumnExpression("timestamp", DataType.TIMESTAMP);
       left.setColIndex(0);
       ColumnExpression right = new ColumnExpression("timestamp", DataType.TIMESTAMP);
       right.setColIndex(1);
-      greaterThanEqualToExpression = new GreaterThanEqualToExpression(left, right);
+
+      lessThanExpression = new LessThanExpression(left, right);
+
       RowImpl value = new RowImpl();
+
       DateFormat dateFormat = new SimpleDateFormat("dd/MM/yyyy");
+
       Date date = dateFormat.parse("23/09/2007");
       long time = date.getTime();
       Timestamp[] row = { new Timestamp(time) };
-      Timestamp[] row1 = { new Timestamp(time) };
+
+      Date date1 = dateFormat.parse("24/09/2007");
+      long time1 = date1.getTime();
+      Timestamp[] row1 = { new Timestamp(time1) };
+
       Object objectRow[] = { row, row1 };
       value.setValues(objectRow);
 
       new MockUp<ExpressionResult>() {
+        Boolean returnMockFlag = true;
+
         @Mock public Long getTime() {
-          return 18465213000000L;
+          if (returnMockFlag) {
+            returnMockFlag = false;
+            return 1190505600L;
+          } else {
+            return 1190592000L;
+          }
         }
       };
 
-      ExpressionResult result = greaterThanEqualToExpression.evaluate(value);
+      ExpressionResult result = lessThanExpression.evaluate(value);
       assertTrue(result.getBoolean());
     } catch (ParseException e) {
       System.out.println("Error while parsing " + e.getMessage());
     }
   }
 
-  @Test(expected = FilterUnsupportedException.class) public void testForGreaterThanEqualToExpressionWithDefaultCase()
+ @Test public void testEvaluateForLessThanExpressionWithLongDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("contact", DataType.BOOLEAN);
+    ColumnExpression right = new ColumnExpression("contact", DataType.LONG);
     right.setColIndex(0);
-    ColumnExpression left = new ColumnExpression("contact", DataType.BOOLEAN);
+    ColumnExpression left = new ColumnExpression("contact", DataType.LONG);
     left.setColIndex(1);
-    greaterThanEqualToExpression = new GreaterThanEqualToExpression(left, right);
+    lessThanExpression = new LessThanExpression(left, right);
     RowImpl value = new RowImpl();
-    Boolean[] row = { true };
-    Object objectRow[] = { row, row };
+    Long[] row = { 14523656L };
+    Long[] row1 = { 12456325L };
+    Object objectRow[] = { row1, row };
     value.setValues(objectRow);
-    greaterThanEqualToExpression.evaluate(value);
+
+    new MockUp<ExpressionResult>() {
+      Boolean returnMockFlag = true;
+
+      @Mock public Long getLong() {
+        if (returnMockFlag) {
+          returnMockFlag = false;
+          return 12456325L;
+        } else {
+          return 14523656L;
+        }
+      }
+    };
+
+    ExpressionResult result = lessThanExpression.evaluate(value);
+    assertTrue(result.getBoolean());
   }
 
-  @Test public void testEvaluateForGreaterThanEqualToExpressionWithDecimalDataType()
+ @Test public void testEvaluateForLessThanExpressionWithDecimalDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("contact", DataType.DECIMAL);
     right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("contact", DataType.DECIMAL);
     left.setColIndex(1);
-    greaterThanEqualToExpression = new GreaterThanEqualToExpression(left, right);
+    lessThanExpression = new LessThanExpression(left, right);
     RowImpl value = new RowImpl();
-    Decimal[] row = new Decimal[] { Decimal.apply(12345.0) };
-    Object objectRow[] = { row, row };
+    Decimal[] row = new Decimal[] { Decimal.apply(256324.0) };
+    Decimal[] row1 = new Decimal[] { Decimal.apply(123451245.0) };
+    Object objectRow[] = { row1, row };
     value.setValues(objectRow);
 
     new MockUp<ExpressionResult>() {
+      Boolean returnMockFlag = true;
+
       @Mock public BigDecimal getDecimal() {
-        return new BigDecimal(12345.0);
+        if (returnMockFlag) {
+          returnMockFlag = false;
+          return new BigDecimal(256324.0);
+        } else {
+          return new BigDecimal(123451245.0);
+        }
       }
     };
 
-    ExpressionResult result = greaterThanEqualToExpression.evaluate(value);
+    ExpressionResult result = lessThanExpression.evaluate(value);
     assertTrue(result.getBoolean());
   }
 
-  @Test public void testEvaluateForGreaterThanEqualToExpressionWithIsNullReturnTrue()
+  @Test(expected = FilterUnsupportedException.class) public void testForLessThanExpressionWithDefaultCase()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression left = new ColumnExpression("id", DataType.SHORT);
-    left.setColIndex(0);
+    ColumnExpression right = new ColumnExpression("contact", DataType.BOOLEAN);
+    right.setColIndex(0);
+    lessThanExpression = new LessThanExpression(right, right);
+    RowImpl value = new RowImpl();
+    Boolean[] row = { true };
+    Object objectRow[] = { row };
+    value.setValues(objectRow);
+    lessThanExpression.evaluate(value);
+  }
+
+  @Test public void testEvaluateForLessThanExpressionWithIsNullReturnTrue()
+      throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("id", DataType.SHORT);
-    right.setColIndex(1);
-    greaterThanEqualToExpression = new GreaterThanEqualToExpression(left, right);
+    right.setColIndex(0);
+    lessThanExpression = new LessThanExpression(right, right);
     RowImpl value = new RowImpl();
     Short[] row = { 15 };
-    Object objectRow[] = { row, row };
+    Object objectRow[] = { row };
     value.setValues(objectRow);
 
     new MockUp<ExpressionResult>() {
@@ -251,44 +314,51 @@ public class GreaterThanEqualToExpressionUnitTest {
       }
     };
 
-    ExpressionResult result = greaterThanEqualToExpression.evaluate(value);
+    ExpressionResult result = lessThanExpression.evaluate(value);
     assertFalse(result.getBoolean());
 
   }
 
-  @Test public void testEvaluateForGreaterThanEqualToExpressionWithLeftAndRightDifferentDataType()
+  @Test public void testEvaluateForLessThanExpressionWithLeftAndRightDifferentDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression left = new ColumnExpression("name", DataType.STRING);
-    left.setColIndex(1);
+    left.setColIndex(0);
     ColumnExpression right = new ColumnExpression("number", DataType.INT);
-    right.setColIndex(0);
-    greaterThanEqualToExpression = new GreaterThanEqualToExpression(left, right);
+    right.setColIndex(1);
+    lessThanExpression = new LessThanExpression(left, right);
     RowImpl value = new RowImpl();
-    String[] row1 = { "String1" };
-    Integer[] row = { 14 };
+    String[] row = { "S" };
+    Integer[] row1 = { 1864 };
     Object objectRow[] = { row, row1 };
     value.setValues(objectRow);
 
     new MockUp<ExpressionResult>() {
+      Boolean returnMockFlag = true;
+
       @Mock public Integer getInt() {
-        return 14;
+        if (returnMockFlag) {
+          returnMockFlag = false;
+          return 84;
+        } else {
+          return 1864;
+
+        }
+
       }
     };
 
-    ExpressionResult result = greaterThanEqualToExpression.evaluate(value);
+    ExpressionResult result = lessThanExpression.evaluate(value);
     assertTrue(result.getBoolean());
   }
 
-  @Test public void testForGreaterThanEqualToExpressionWithGetString() throws Exception {
+ @Test public void testForLessThanExpressionWithGetString() throws Exception {
+    ColumnExpression right = new ColumnExpression("right_name", DataType.STRING);
+    right.setColIndex(0);
     ColumnExpression left = new ColumnExpression("left_name", DataType.STRING);
     left.setColIndex(0);
-    ColumnExpression right = new ColumnExpression("right_name", DataType.STRING);
-    right.setColIndex(1);
-    greaterThanEqualToExpression = new GreaterThanEqualToExpression(left, right);
-    String expected_result = "GreaterThanEqualTo(ColumnExpression(left_name),ColumnExpression(right_name))";
-    String result = greaterThanEqualToExpression.getString();
+    lessThanExpression = new LessThanExpression(left, right);
+    String expected_result = "LessThan(ColumnExpression(left_name),ColumnExpression(right_name))";
+    String result = lessThanExpression.getString();
     assertEquals(expected_result, result);
   }
-
 }
-

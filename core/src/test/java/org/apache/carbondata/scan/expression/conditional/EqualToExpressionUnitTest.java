@@ -1,3 +1,21 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
 package org.apache.carbondata.scan.expression.conditional;
 
 import java.math.BigDecimal;
@@ -27,7 +45,7 @@ public class EqualToExpressionUnitTest {
 
   static EqualToExpression equalToExpression;
 
-  @Test public void testGetString() throws Exception {
+  @Test public void testForEqualToExpressionWithGetString() throws Exception {
     ColumnExpression right = new ColumnExpression("name", DataType.STRING);
     right.setColIndex(0);
     equalToExpression = new EqualToExpression(right, right);
@@ -36,7 +54,7 @@ public class EqualToExpressionUnitTest {
     assertEquals(expected_result, result);
   }
 
-  @Test public void testEvaluateWithShortDataType()
+  @Test public void testEvaluateForEqualToExpressionWithShortDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("id", DataType.SHORT);
     right.setColIndex(0);
@@ -57,7 +75,7 @@ public class EqualToExpressionUnitTest {
 
   }
 
-  @Test public void testEvaluateWithStringDataType()
+  @Test public void testEvaluateForEqualToExpressionWithStringDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("name", DataType.STRING);
     right.setColIndex(0);
@@ -78,7 +96,7 @@ public class EqualToExpressionUnitTest {
 
   }
 
-  @Test public void testEvaluateWithIntDataType()
+  @Test public void testEvaluateForEqualToExpressionWithIntDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("number", DataType.INT);
     right.setColIndex(0);
@@ -98,7 +116,7 @@ public class EqualToExpressionUnitTest {
     assertTrue(result.getBoolean());
   }
 
-  @Test public void testEvaluateWithDoubleDataType()
+  @Test public void testEvaluateForEqualToExpressionWithDoubleDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("contact", DataType.DOUBLE);
     right.setColIndex(0);
@@ -118,7 +136,7 @@ public class EqualToExpressionUnitTest {
     assertTrue(result.getBoolean());
   }
 
-  @Test public void testEvaluateWithLongDataType()
+  @Test public void testEvaluateForEqualToExpressionWithLongDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("contact", DataType.LONG);
     right.setColIndex(0);
@@ -138,7 +156,7 @@ public class EqualToExpressionUnitTest {
     assertTrue(result.getBoolean());
   }
 
-  @Test public void testEvaluateWithTimestampDataType()
+  @Test public void testEvaluateForEqualToExpressionWithTimestampDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     try {
       ColumnExpression right = new ColumnExpression("timestamp", DataType.TIMESTAMP);
@@ -165,7 +183,7 @@ public class EqualToExpressionUnitTest {
     }
   }
 
-  @Test(expected = FilterUnsupportedException.class) public void testDefaultCase()
+  @Test(expected = FilterUnsupportedException.class) public void testForEqualToExpressionForDefaultCase()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("contact", DataType.BOOLEAN);
     right.setColIndex(0);
@@ -177,7 +195,7 @@ public class EqualToExpressionUnitTest {
     ExpressionResult result = equalToExpression.evaluate(value);
   }
 
-  @Test public void testEvaluateWithBooleanParameter()
+  @Test public void testEvaluateForEqualToExpressionWithBooleanParameter()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("id", DataType.SHORT);
     right.setColIndex(0);
@@ -198,7 +216,7 @@ public class EqualToExpressionUnitTest {
 
   }
 
-  @Test public void testEvaluateWithLeftAndRightDifferentDataType()
+  @Test public void testEvaluateForEqualToExpressionWithLeftAndRightDifferentDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression left = new ColumnExpression("name", DataType.STRING);
     left.setColIndex(0);
@@ -221,7 +239,7 @@ public class EqualToExpressionUnitTest {
     assertTrue(result.getBoolean());
   }
 
-  @Test public void testEvaluateWithIsNullReturnTrue()
+  @Test public void testEvaluateForEqualToExpressionWithIsNullReturnFalse()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("id", DataType.SHORT);
     right.setColIndex(0);
@@ -248,7 +266,7 @@ public class EqualToExpressionUnitTest {
 
   }
 
-  @Test public void testEvaluateWithNullWhileCreatingObject()
+  @Test public void testEvaluateForEqualToExpressionWithNullWhileCreatingObject()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("id", DataType.SHORT);
     right.setColIndex(0);
@@ -275,7 +293,7 @@ public class EqualToExpressionUnitTest {
 
   }
 
-  @Test public void testEvaluateWithDecimalDataType()
+  @Test public void testEvaluateForEqualToExpressionWithDecimalDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("contact", DataType.DECIMAL);
     right.setColIndex(0);
