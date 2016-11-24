@@ -285,7 +285,6 @@ public class UnsafeCarbonRowPage {
 
   public void freeMemory() {
     buffer.freeMemory();
-    UnsafeMemoryManager.INSTANCE.freeMemory(sizeToBeUsed);
   }
 
   public PointerBuffer getBuffer() {

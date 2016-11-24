@@ -41,7 +41,7 @@ public class UnsafeMemoryManager {
 
   public synchronized void freeMemory(int memoryInMBtoFree) {
     memoryUsed -= memoryInMBtoFree;
-    memoryUsed = memoryUsed - memoryInMBtoFree < 0 ? 0 : memoryUsed - memoryInMBtoFree;
+    memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
     LOGGER.info("Memory released, memory used "+ memoryUsed
         + " memory left "+(getAvailableMemory()));
   }

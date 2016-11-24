@@ -116,5 +116,6 @@ public class PointerBuffer {
   public void freeMemory() {
     allocator.free(pointerBlock);
     allocator.free(baseBlock);
+    UnsafeMemoryManager.INSTANCE.freeMemory(totalSize);
   }
 }
