@@ -21,11 +21,11 @@ import java.io.File
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.Logging
 import org.apache.spark.sql._
 import org.apache.spark.sql.hive.{CarbonMetaData, DictionaryMap}
 import org.apache.spark.sql.types._
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.metadata.datatype.{DataType => CarbonDataType}
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
@@ -33,7 +33,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 
-object CarbonScalaUtil extends Logging {
+object CarbonScalaUtil {
   def convertSparkToCarbonDataType(
       dataType: org.apache.spark.sql.types.DataType): CarbonDataType = {
     dataType match {
@@ -149,7 +149,8 @@ object CarbonScalaUtil extends Logging {
           // find the kettle home under the previous folder
           // e.g:file:/srv/bigdata/install/spark/sparkJdbc/carbonlib/cabonplugins
           kettleHomePath = carbonLibPath + File.separator + CarbonCommonConstants.KETTLE_HOME_NAME
-          logInfo(s"carbon.kettle.home path is not exists, reset it as $kettleHomePath")
+          val logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+          logger.error(s"carbon.kettle.home path is not exists, reset it as $kettleHomePath")
           val newKettleHomeFileType = FileFactory.getFileType(kettleHomePath)
           val newKettleHomeFile = FileFactory.getCarbonFile(kettleHomePath, newKettleHomeFileType)
           // check if the found kettle home exists

@@ -83,7 +83,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
      TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
       """)
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
 
     try {
@@ -93,7 +93,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
      TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
       """)
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
 
     try {
@@ -108,7 +108,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
      TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
       """)
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
   }
 
@@ -204,7 +204,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
         """)
     } catch {
       case ex: Exception =>
-        logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+        LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
         assert(false)
     }
     DictionaryTestCaseUtil.checkDictionary(

@@ -26,8 +26,7 @@ import java.util.UUID
 import scala.collection.JavaConverters._
 import scala.util.Random
 
-import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, SparkEnv,
-TaskContext}
+import org.apache.spark.{Partition, SerializableWritable, SparkContext, SparkEnv, TaskContext}
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
@@ -83,7 +82,8 @@ class SparkPartitionLoader(model: CarbonLoadModel,
     storePath: String,
     kettleHomePath: String,
     loadCount: Int,
-    loadMetadataDetails: LoadMetadataDetails) extends Logging {
+    loadMetadataDetails: LoadMetadataDetails) {
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   var storeLocation: String = ""
 
@@ -129,7 +129,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
       case e: DataLoadingException => if (e.getErrorCode ==
                                           DataProcessorConstants.BAD_REC_FOUND) {
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
-        logInfo("Bad Record Found")
+        LOGGER.info("Bad Record Found")
       } else {
         throw e
       }
@@ -142,17 +142,17 @@ class SparkPartitionLoader(model: CarbonLoadModel,
         CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, isCompaction)
       } catch {
         case e: Exception =>
-          logError("Failed to delete local data", e)
+          LOGGER.error(e, "Failed to delete local data")
       }
       if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(
         loadMetadataDetails.getLoadStatus)) {
         if (CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
           .equals(loadMetadataDetails.getLoadStatus)) {
-          logInfo("DataLoad complete")
-          logInfo("Data Load partially successful with LoadCount:" + loadCount)
+          LOGGER.info("DataLoad complete")
+          LOGGER.info("Data Load partially successful with LoadCount:" + loadCount)
         } else {
-          logInfo("DataLoad complete")
-          logInfo("Data Loaded successfully with LoadCount:" + loadCount)
+          LOGGER.info("DataLoad complete")
+          LOGGER.info("Data Loaded successfully with LoadCount:" + loadCount)
           CarbonTimeStatisticsFactory.getLoadStatisticsInstance.printStatisticsInfo(
             model.getPartitionId)
         }
@@ -191,7 +191,7 @@ class DataFileLoaderRDD[K, V](
     tableCreationTime: Long,
     schemaLastUpdatedTime: Long,
     blocksGroupBy: Array[(String, Array[BlockDetails])],
-    isTableSplitPartition: Boolean) extends RDD[(K, V)](sc, Nil) with Logging {
+    isTableSplitPartition: Boolean) extends RDD[(K, V)](sc, Nil) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
@@ -496,7 +496,7 @@ class DataFrameLoaderRDD[K, V](
     loadCount: Integer,
     tableCreationTime: Long,
     schemaLastUpdatedTime: Long,
-    prev: RDD[Row]) extends RDD[(K, V)](prev) with Logging {
+    prev: RDD[Row]) extends RDD[(K, V)](prev) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 

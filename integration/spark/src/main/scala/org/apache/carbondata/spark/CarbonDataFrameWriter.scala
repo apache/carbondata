@@ -18,15 +18,17 @@
 package org.apache.carbondata.spark
 
 import org.apache.hadoop.fs.Path
-import org.apache.spark.Logging
 import org.apache.spark.sql._
 import org.apache.spark.sql.execution.command.LoadTable
 import org.apache.spark.sql.types._
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.metadata.datatype.{DataType => CarbonType}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
-class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
+class CarbonDataFrameWriter(val dataFrame: DataFrame) {
+
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def saveAsCarbonFile(parameters: Map[String, String] = Map()): Unit = {
     checkContext()
@@ -84,7 +86,7 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
       size
     }
 
-    logInfo(s"temporary CSV file size: ${countSize / 1024 / 1024} MB")
+    LOGGER.info(s"temporary CSV file size: ${countSize / 1024 / 1024} MB")
 
     try {
       cc.sql(makeLoadString(tempCSVFolder, options))
