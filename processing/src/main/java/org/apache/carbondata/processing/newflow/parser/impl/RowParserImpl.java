@@ -65,8 +65,8 @@ public class RowParserImpl implements RowParser {
     DataField[] input = new DataField[fields.length];
     inputMapping = new int[input.length];
     int k = 0;
-    for (int i = 0; i < numberOfColumns; i++) {
-      for (int j = 0; j < fields.length; j++) {
+    for (int j = 0; j < fields.length; j++) {
+      for (int i = 0; i < numberOfColumns; i++) {
         if (header[i].equalsIgnoreCase(fields[j].getColumn().getColName())) {
           input[k] = fields[j];
           inputMapping[k] = i;
