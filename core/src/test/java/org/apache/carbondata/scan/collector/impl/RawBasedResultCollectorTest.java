@@ -18,29 +18,21 @@
  */
 package org.apache.carbondata.scan.collector.impl;
 
-import java.nio.ByteBuffer;
 import java.util.BitSet;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.PresenceMeta;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
-import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampDirectDictionaryGenerator;
-import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
-import org.apache.carbondata.scan.complextypes.ArrayQueryType;
+import org.apache.carbondata.core.keygenerator.KeyGenException;
+import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.scan.executor.infos.AggregatorInfo;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
-import org.apache.carbondata.scan.filter.GenericQueryType;
+import org.apache.carbondata.scan.executor.util.QueryUtil;
 import org.apache.carbondata.scan.model.QueryDimension;
 import org.apache.carbondata.scan.model.QueryMeasure;
 import org.apache.carbondata.scan.result.AbstractScannedResult;
@@ -55,14 +47,30 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class DictionaryBasedResultCollectorTest {
+public class RawBasedResultCollectorTest {
 
-  private static DictionaryBasedResultCollector dictionaryBasedResultCollector;
+  private static RawBasedResultCollector rawBasedResultCollector;
   private static BlockExecutionInfo blockExecutionInfo;
+  private static KeyGenerator keyGenerator;
 
   @BeforeClass public static void setUp() {
+    keyGenerator = new MockUp<KeyGenerator>() {
+      @SuppressWarnings("unused") @Mock long[] getKeyArray(byte[] key, int[] maskedByteRanges) {
+        return new long[] { 1, 2 };
+      }
+
+      @SuppressWarnings("unused") @Mock byte[] generateKey(long[] keys) throws KeyGenException {
+        return new byte[] { 1, 2 };
+      }
+
+    }.getMockInstance();
+
     blockExecutionInfo = new BlockExecutionInfo();
     KeyStructureInfo keyStructureInfo = new KeyStructureInfo();
+    keyStructureInfo.setKeyGenerator(keyGenerator);
+    keyStructureInfo.setMaxKey(new byte[] { 1, 2 });
+    keyStructureInfo.setMaskedBytes(new int[] { 1, 2 });
+    keyStructureInfo.setMaskByteRanges(new int[] { 1, 2 });
     blockExecutionInfo.setKeyStructureInfo(keyStructureInfo);
     AggregatorInfo aggregatorInfo = new AggregatorInfo();
     aggregatorInfo.setMeasureOrdinals(new int[] { 10, 20, 30, 40 });
@@ -70,7 +78,14 @@ public class DictionaryBasedResultCollectorTest {
     aggregatorInfo.setDefaultValues(new Object[] { 1, 2, 3, 4 });
     aggregatorInfo.setMeasureDataTypes(
         new DataType[] { DataType.INT, DataType.TIMESTAMP, DataType.INT, DataType.INT });
-    blockExecutionInfo.setAggregatorInfo(aggregatorInfo);
+    QueryMeasure queryMeasure1 = new QueryMeasure("QMCol1");
+    queryMeasure1.setQueryOrder(1);
+    QueryMeasure queryMeasure2 = new QueryMeasure("QMCol2");
+    queryMeasure1.setQueryOrder(2);
+    QueryMeasure queryMeasure3 = new QueryMeasure("QMCol3");
+    queryMeasure1.setQueryOrder(3);
+    QueryMeasure queryMeasure4 = new QueryMeasure("QMCol4");
+    queryMeasure1.setQueryOrder(4);
     QueryDimension queryDimension1 = new QueryDimension("QDCol1");
     queryDimension1.setQueryOrder(1);
     ColumnSchema columnSchema = new ColumnSchema();
@@ -87,58 +102,25 @@ public class DictionaryBasedResultCollectorTest {
     blockExecutionInfo.setQueryDimensions(
         new QueryDimension[] { queryDimension1, queryDimension2, queryDimension3,
             queryDimension4 });
-    QueryMeasure queryMeasure1 = new QueryMeasure("QMCol1");
-    queryMeasure1.setQueryOrder(1);
-    QueryMeasure queryMeasure2 = new QueryMeasure("QMCol2");
-    queryMeasure1.setQueryOrder(2);
-    QueryMeasure queryMeasure3 = new QueryMeasure("QMCol3");
-    queryMeasure1.setQueryOrder(3);
-    QueryMeasure queryMeasure4 = new QueryMeasure("QMCol4");
-    queryMeasure1.setQueryOrder(4);
     blockExecutionInfo.setQueryMeasures(
         new QueryMeasure[] { queryMeasure1, queryMeasure2, queryMeasure3, queryMeasure4 });
-    Map<Integer, GenericQueryType> complexDimensionInfoMap = new HashMap<>();
-    complexDimensionInfoMap.put(1, new ArrayQueryType("name1", "parent1", 1));
-    complexDimensionInfoMap.put(2, new ArrayQueryType("name2", "parent2", 2));
-    complexDimensionInfoMap.put(3, new ArrayQueryType("name3", "parent3", 3));
-    complexDimensionInfoMap.put(4, new ArrayQueryType("name4", "parent4", 4));
-    blockExecutionInfo.setComplexDimensionInfoMap(complexDimensionInfoMap);
-    dictionaryBasedResultCollector = new DictionaryBasedResultCollector(blockExecutionInfo);
+    blockExecutionInfo.setFixedKeyUpdateRequired(true);
+    blockExecutionInfo.setAggregatorInfo(aggregatorInfo);
+    blockExecutionInfo.setMaskedByteForBlock(new int[] { 1, 2 });
+    blockExecutionInfo.setBlockKeyGenerator(keyGenerator);
+    rawBasedResultCollector = new RawBasedResultCollector(blockExecutionInfo);
   }
 
   @Test public void testToCollectData() {
-    new MockUp<CarbonUtil>() {
-      @SuppressWarnings("unused") @Mock boolean[] getDictionaryEncodingArray(
-          QueryDimension[] queryDimensions) {
-        return new boolean[] { true, false, true, true };
-      }
-
-      @SuppressWarnings("unused") @Mock boolean[] getDirectDictionaryEncodingArray(
-          QueryDimension[] queryDimensions) {
-        return new boolean[] { true, true, false, false };
-      }
-
-      @SuppressWarnings("unused") @Mock boolean[] getComplexDataTypeArray(
-          QueryDimension[] queryDimensions) {
-        return new boolean[] { false, false, true, false };
-      }
-    };
-    new MockUp<DataTypeUtil>() {
-      @SuppressWarnings("unused") @Mock Object getDataBasedOnDataType(String data,
-          DataType actualDataType) {
-        return 1;
-      }
-    };
 
     new MockUp<NonFilterQueryScannedResult>() {
-      @SuppressWarnings("unused") @Mock int[] getDictionaryKeyIntegerArray() {
+      @SuppressWarnings("unused") @Mock byte[] getDictionaryKeyArray() {
         this.getMockInstance().incrementCounter();
-        System.out.println("Mocked");
-        return new int[] { 1, 2 };
+        return new byte[] { 1, 2 };
       }
 
-      @SuppressWarnings("unused") @Mock String[] getNoDictionaryKeyStringArray() {
-        return new String[] { "1", "2" };
+      @SuppressWarnings("unused") @Mock byte[][] getNoDictionaryKeyArray() {
+        return new byte[][] { { 1, 2 } };
       }
 
       @SuppressWarnings("unused") @Mock byte[][] getComplexTypeKeyArray() {
@@ -159,31 +141,17 @@ public class DictionaryBasedResultCollectorTest {
       }
     };
 
-    new MockUp<DirectDictionaryKeyGeneratorFactory>() {
-      @SuppressWarnings("unused") @Mock DirectDictionaryGenerator getDirectDictionaryGenerator(
-          DataType dataType) {
-        if (dataType == DataType.TIMESTAMP) return new TimeStampDirectDictionaryGenerator(
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-        else return null;
-      }
-    };
-    new MockUp<TimeStampDirectDictionaryGenerator>() {
-      @SuppressWarnings("unused") @Mock Object getValueFromSurrogate(int key) {
-        return 100L;
-      }
-    };
-
-    new MockUp<ArrayQueryType>() {
-      @SuppressWarnings("unused") @Mock Object getDataBasedOnDataTypeFromSurrogates(
-          ByteBuffer surrogateData) {
-        return ByteBuffer.wrap("1".getBytes());
+    new MockUp<QueryUtil>() {
+      @SuppressWarnings("unused") @Mock byte[] getMaskedKey(byte[] data, byte[] maxKey,
+          int[] maskByteRanges, int byteCount) {
+        return new byte[] { 1, 2 };
       }
     };
 
     AbstractScannedResult abstractScannedResult =
         new NonFilterQueryScannedResult(blockExecutionInfo);
     abstractScannedResult.setNumberOfRows(2);
-    List<Object[]> result = dictionaryBasedResultCollector.collectData(abstractScannedResult, 2);
+    List<Object[]> result = rawBasedResultCollector.collectData(abstractScannedResult, 2);
     int expectedResult = 2;
     assertThat(result.size(), is(equalTo(expectedResult)));
   }
