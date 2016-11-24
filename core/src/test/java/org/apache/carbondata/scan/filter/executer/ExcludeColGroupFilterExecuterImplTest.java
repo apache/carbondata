@@ -19,21 +19,17 @@
 
 package org.apache.carbondata.scan.filter.executer;
 
-import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
+import java.util.Arrays;
+import java.util.BitSet;
+
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.ColumnGroupDimensionDataChunk;
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
-import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.scan.filter.DimColumnFilterInfo;
 import org.apache.carbondata.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
-import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
-
-import java.util.*;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -42,29 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class ExcludeColGroupFilterExecuterImplTest {
 
   private ExcludeColGroupFilterExecuterImpl excludeColGroupFilterExecuter;
-  private ColumnSchema columnSchema1, columnSchema2, columnSchema3, columnSchema4;
-  private SegmentProperties segmentProperties;
-
-  @Before public void init() {
-    List<Encoding> encodeList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    encodeList.add(Encoding.DICTIONARY);
-
-    columnSchema1 =
-        getWrapperDimensionColumn(DataType.INT, "ID", true, Collections.<Encoding>emptyList(),
-            false, -1);
-    columnSchema2 =
-        getWrapperDimensionColumn(DataType.INT, "salary", true, Collections.<Encoding>emptyList(),
-            false, -1);
-    columnSchema3 =
-        getWrapperDimensionColumn(DataType.STRING, "country", false, encodeList, true, 0);
-    columnSchema4 =
-        getWrapperDimensionColumn(DataType.STRING, "serialname", false, encodeList, true, 0);
-
-    List<ColumnSchema> wrapperColumnSchema =
-        Arrays.asList(columnSchema1, columnSchema2, columnSchema3, columnSchema4);
-
-    segmentProperties = new SegmentProperties(wrapperColumnSchema, new int[] { 3, 11 });
-  }
+  @Rule public FilterExecutorTestRule testRule = new FilterExecutorTestRule();
 
   @Test public void testGetFilteredIndexes() {
 
@@ -72,7 +46,7 @@ public class ExcludeColGroupFilterExecuterImplTest {
     dimColumnFilterInfo.setIncludeFilter(false);
     dimColumnFilterInfo.setFilterList(Arrays.asList(1, 4, 7));
 
-    CarbonDimension carbonDimension = new CarbonDimension(columnSchema4, 1, 1, 1, -1);
+    CarbonDimension carbonDimension = new CarbonDimension(testRule.columnSchema4, 1, 1, 1, -1);
 
     DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo = new DimColumnResolvedFilterInfo();
     dimColumnResolvedFilterInfo
@@ -82,7 +56,8 @@ public class ExcludeColGroupFilterExecuterImplTest {
     dimColumnResolvedFilterInfo.setFilterValues(dimColumnFilterInfo);
 
     excludeColGroupFilterExecuter =
-        new ExcludeColGroupFilterExecuterImpl(dimColumnResolvedFilterInfo, segmentProperties);
+        new ExcludeColGroupFilterExecuterImpl(dimColumnResolvedFilterInfo,
+            testRule.segmentProperties);
 
     DimensionChunkAttributes dimensionChunkAttributes = new DimensionChunkAttributes();
     dimensionChunkAttributes.setNoDictionary(false);
@@ -111,7 +86,7 @@ public class ExcludeColGroupFilterExecuterImplTest {
 
   @Test public void testGetFilteredIndexesException() {
 
-    CarbonDimension carbonDimension = new CarbonDimension(columnSchema4, 1, 1, 1, -1);
+    CarbonDimension carbonDimension = new CarbonDimension(testRule.columnSchema4, 1, 1, 1, -1);
 
     DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo = new DimColumnResolvedFilterInfo();
     dimColumnResolvedFilterInfo
@@ -119,7 +94,8 @@ public class ExcludeColGroupFilterExecuterImplTest {
     dimColumnResolvedFilterInfo.setDimension(carbonDimension);
 
     excludeColGroupFilterExecuter =
-        new ExcludeColGroupFilterExecuterImpl(dimColumnResolvedFilterInfo, segmentProperties);
+        new ExcludeColGroupFilterExecuterImpl(dimColumnResolvedFilterInfo,
+            testRule.segmentProperties);
 
     DimensionChunkAttributes dimensionChunkAttributes = new DimensionChunkAttributes();
     dimensionChunkAttributes.setNoDictionary(false);
@@ -149,7 +125,7 @@ public class ExcludeColGroupFilterExecuterImplTest {
   }
 
   @Test public void testIsScanRequired() {
-    CarbonDimension carbonDimension = new CarbonDimension(columnSchema4, 1, 1, 1, -1);
+    CarbonDimension carbonDimension = new CarbonDimension(testRule.columnSchema4, 1, 1, 1, -1);
 
     DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo = new DimColumnResolvedFilterInfo();
     dimColumnResolvedFilterInfo
@@ -157,7 +133,8 @@ public class ExcludeColGroupFilterExecuterImplTest {
     dimColumnResolvedFilterInfo.setDimension(carbonDimension);
 
     excludeColGroupFilterExecuter =
-        new ExcludeColGroupFilterExecuterImpl(dimColumnResolvedFilterInfo, segmentProperties);
+        new ExcludeColGroupFilterExecuterImpl(dimColumnResolvedFilterInfo,
+            testRule.segmentProperties);
 
     BitSet result = excludeColGroupFilterExecuter
         .isScanRequired(new byte[][] { { 96, 11 } }, new byte[][] { { 64, 2 } });
@@ -166,20 +143,5 @@ public class ExcludeColGroupFilterExecuterImplTest {
     expectedResult.flip(0, 1);
 
     assertThat(result, is(equalTo(expectedResult)));
-  }
-
-  private ColumnSchema getWrapperDimensionColumn(DataType dataType, String columnName,
-      boolean columnar, List<Encoding> encodeList, boolean dimensionColumn, int columnGroup) {
-    ColumnSchema dimColumn = new ColumnSchema();
-    dimColumn.setDataType(dataType);
-    dimColumn.setColumnName(columnName);
-    dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setColumnar(columnar);
-
-    dimColumn.setEncodingList(encodeList);
-    dimColumn.setDimensionColumn(dimensionColumn);
-    dimColumn.setUseInvertedIndex(true);
-    dimColumn.setColumnGroup(columnGroup);
-    return dimColumn;
   }
 }
