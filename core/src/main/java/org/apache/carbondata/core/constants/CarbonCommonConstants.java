@@ -907,7 +907,7 @@ public final class CarbonCommonConstants {
   /**
    * to enable offheap sort
    */
-  public static String ENABLE_OFFHEAP_SORT = "enable.unsafe.sort";
+  public static String ENABLE_OFFHEAP_SORT = "enable.offheap.sort";
 
   /**
    * to enable offheap sort
