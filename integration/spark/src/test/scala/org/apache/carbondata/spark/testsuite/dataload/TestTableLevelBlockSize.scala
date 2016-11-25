@@ -37,11 +37,11 @@ import org.scalatest.BeforeAndAfterAll
 class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
 
   def currentPath: String = new File(this.getClass.getResource("/").getPath + "/../../")
-    .getCanonicalPath
-  val testData1 = new File(currentPath + "/../../examples/src/main/resources/dimSample.csv")
-    .getCanonicalPath
-  val testData2 = new File(currentPath + "/../../examples/src/main/resources/data.csv")
-    .getCanonicalPath
+      .getCanonicalPath
+  val testData1 = new File(currentPath + "/src/test/resources/dimSample.csv")
+      .getCanonicalPath
+  val testData2 = new File(currentPath + "/src/test/resources/example-data.csv")
+      .getCanonicalPath
 
   override def beforeAll {
     sql("DROP TABLE IF EXISTS table_blocksize1")
@@ -63,7 +63,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
     } catch {
       case e : MalformedCarbonCommandException => {
         assert(e.getMessage.equals("Invalid table_blocksize value found: 4096, " +
-          "only int value from 1 MB to 2048 MB is supported."))
+            "only int value from 1 MB to 2048 MB is supported."))
       }
     }
   }
@@ -82,7 +82,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
     } catch {
       case e : MalformedCarbonCommandException => {
         assert(e.getMessage.equals("Invalid table_blocksize value found: 10y4, " +
-          "only int value from 1 MB to 2048 MB is supported."))
+            "only int value from 1 MB to 2048 MB is supported."))
       }
     }
   }
@@ -99,7 +99,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
       """)
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
     sql(s"""
            LOAD DATA LOCAL INPATH '$testData2' into table table_blocksize3
@@ -122,7 +122,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
     sql("DROP TABLE IF EXISTS table_blocksize2")
     sql("DROP TABLE IF EXISTS table_blocksize3")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 
 }
