@@ -25,7 +25,6 @@ import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
 import org.apache.hadoop.conf.Configuration
-
 import org.apache.hadoop.mapreduce.{InputSplit, Job, JobID}
 import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext, TaskKilledException}
 import org.apache.spark.mapred.CarbonHadoopMapReduceUtil
