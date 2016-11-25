@@ -25,7 +25,6 @@ import java.util.Map;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.carbon.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
@@ -33,7 +32,6 @@ import org.apache.carbondata.scan.executor.QueryExecutor;
 import org.apache.carbondata.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.model.QueryModel;
-import org.apache.carbondata.scan.result.BatchResult;
 import org.apache.carbondata.scan.result.iterator.ChunkRowIterator;
 
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -59,22 +57,28 @@ public class CarbonRecordReader<T> extends RecordReader<Void, T> {
     this.queryExecutor = QueryExecutorFactory.getQueryExecutor();
   }
 
-  @Override public void initialize(InputSplit split, TaskAttemptContext context)
+  @Override
+  public void initialize(InputSplit inputSplit, TaskAttemptContext context)
       throws IOException, InterruptedException {
-    CarbonInputSplit carbonInputSplit = (CarbonInputSplit) split;
-    List<TableBlockInfo> tableBlockInfoList = new ArrayList<TableBlockInfo>();
-    BlockletInfos blockletInfos = new BlockletInfos(carbonInputSplit.getNumberOfBlocklets(), 0,
-        carbonInputSplit.getNumberOfBlocklets());
-    tableBlockInfoList.add(
-        new TableBlockInfo(carbonInputSplit.getPath().toString(), carbonInputSplit.getStart(),
-            carbonInputSplit.getSegmentId(), carbonInputSplit.getLocations(),
-            carbonInputSplit.getLength(), blockletInfos));
+    // The input split can contain single HDFS block or multiple blocks, so firstly get all the
+    // blocks and then set them in the query model.
+    List<CarbonInputSplit> splitList;
+    if (inputSplit instanceof CarbonInputSplit) {
+      splitList = new ArrayList<>(1);
+      splitList.add((CarbonInputSplit) inputSplit);
+    } else if (inputSplit instanceof CarbonMultiBlockSplit){
+      // contains multiple blocks, this is an optimization for concurrent query.
+      CarbonMultiBlockSplit multiBlockSplit = (CarbonMultiBlockSplit) inputSplit;
+      splitList = multiBlockSplit.getAllSplits();
+    } else {
+      throw new RuntimeException("unsupported input split type: " + inputSplit);
+    }
+    List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
     queryModel.setTableBlockInfos(tableBlockInfoList);
-    readSupport
-        .intialize(queryModel.getProjectionColumns(), queryModel.getAbsoluteTableIdentifier());
+    readSupport.initialize(queryModel.getProjectionColumns(),
+        queryModel.getAbsoluteTableIdentifier());
     try {
-      carbonIterator =
-          new ChunkRowIterator((CarbonIterator<BatchResult>) queryExecutor.execute(queryModel));
+      carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
     } catch (QueryExecutionException e) {
       throw new InterruptedException(e.getMessage());
     }

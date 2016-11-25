@@ -50,9 +50,7 @@ import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.ColumnIdentifier;
-import org.apache.carbondata.core.carbon.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.carbon.datastore.block.Distributable;
-import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
@@ -236,9 +234,7 @@ public final class CarbonLoaderUtil {
       final boolean isCompactionFlow) throws IOException {
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     String metaDataLocation = carbonTable.getMetaDataFilepath();
-    SegmentStatusManager segmentStatusManager =
-        new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier());
-    final LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metaDataLocation);
+    final LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(loadModel.getStorePath(), carbonTable.getCarbonTableIdentifier());
 
@@ -404,10 +400,7 @@ public final class CarbonLoaderUtil {
             absoluteTableIdentifier.getCarbonTableIdentifier());
 
     String tableStatusPath = carbonTablePath.getTableStatusFilePath();
-
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
-
-    ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
+    ICarbonLock carbonLock = SegmentStatusManager.getTableStatusLock(absoluteTableIdentifier);
 
     try {
       if (carbonLock.lockWithRetries()) {
@@ -416,7 +409,7 @@ public final class CarbonLoaderUtil {
                 + " for table status updation");
 
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
-            segmentStatusManager.readLoadMetadata(metaDataFilepath);
+            SegmentStatusManager.readLoadMetadata(metaDataFilepath);
 
         String loadEnddate = readCurrentTime();
         loadMetadataDetails.setTimestamp(loadEnddate);
@@ -434,7 +427,7 @@ public final class CarbonLoaderUtil {
         }
         listOfLoadFolderDetails.add(loadMetadataDetails);
 
-        segmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
+        SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
             .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
 
         status = true;
@@ -579,9 +572,13 @@ public final class CarbonLoaderUtil {
     List<NodeBlockRelation> flattenedList =
         new ArrayList<NodeBlockRelation>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     for (Distributable blockInfo : blockInfos) {
-      for (String eachNode : blockInfo.getLocations()) {
-        NodeBlockRelation nbr = new NodeBlockRelation(blockInfo, eachNode);
-        flattenedList.add(nbr);
+      try {
+        for (String eachNode : blockInfo.getLocations()) {
+          NodeBlockRelation nbr = new NodeBlockRelation(blockInfo, eachNode);
+          flattenedList.add(nbr);
+        }
+      } catch (IOException e) {
+        throw new RuntimeException("error getting location of block: " + blockInfo.toString(), e);
       }
     }
     // sort the flattened data.
@@ -646,7 +643,7 @@ public final class CarbonLoaderUtil {
   /**
    * Assigning the blocks of a node to tasks.
    *
-   * @param nodeBlocksMap
+   * @param nodeBlocksMap nodeName to list of blocks mapping
    * @param noOfTasksPerNode
    * @return
    */
@@ -912,10 +909,14 @@ public final class CarbonLoaderUtil {
       // put the blocks in the set
       uniqueBlocks.add(blockInfo);
 
-      for (String eachNode : blockInfo.getLocations()) {
-        NodeBlockRelation nbr = new NodeBlockRelation(blockInfo, eachNode);
-        flattenedList.add(nbr);
-        nodeList.add(eachNode);
+      try {
+        for (String eachNode : blockInfo.getLocations()) {
+          NodeBlockRelation nbr = new NodeBlockRelation(blockInfo, eachNode);
+          flattenedList.add(nbr);
+          nodeList.add(eachNode);
+        }
+      } catch (IOException e) {
+        throw new RuntimeException("error getting location of block: " + blockInfo.toString(), e);
       }
     }
   }
@@ -951,66 +952,6 @@ public final class CarbonLoaderUtil {
    */
   public static String[] getConfiguredLocalDirs(SparkConf conf) {
     return Utils.getConfiguredLocalDirs(conf);
-  }
-
-  /**
-   * method to distribute the blocklets of a block in multiple blocks
-   * @param blockInfoList
-   * @param defaultParallelism
-   * @return
-     */
-  public static List<Distributable> distributeBlockLets(List<TableBlockInfo> blockInfoList,
-      int defaultParallelism) {
-    String blockletDistributionString = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_BLOCKLET_DISTRIBUTION,
-            CarbonCommonConstants.ENABLE_BLOCKLET_DISTRIBUTION_DEFAULTVALUE);
-    boolean isBlockletDistributionEnabled = Boolean.parseBoolean(blockletDistributionString);
-    LOGGER.info("No.Of Blocks before Blocklet distribution: " + blockInfoList.size());
-    List<Distributable> tableBlockInfos = new ArrayList<Distributable>();
-    if (blockInfoList.size() < defaultParallelism && isBlockletDistributionEnabled) {
-      for (TableBlockInfo tableBlockInfo : blockInfoList) {
-        int noOfBlockLets = tableBlockInfo.getBlockletInfos().getNoOfBlockLets();
-        LOGGER.info(
-            "No.Of blocklet : " + noOfBlockLets + ".Minimum blocklets required for distribution : "
-                + minBlockLetsReqForDistribution);
-        if (noOfBlockLets < minBlockLetsReqForDistribution) {
-          tableBlockInfos.add(tableBlockInfo);
-          continue;
-        }
-        TableBlockInfo tableBlockInfo1 = null;
-        int rem = noOfBlockLets % minBlockLetsReqForDistribution;
-        int count = noOfBlockLets / minBlockLetsReqForDistribution;
-        if (rem > 0) {
-          count = count + 1;
-        }
-        for (int i = 0; i < count; i++) {
-          BlockletInfos blockletInfos = new BlockletInfos();
-          blockletInfos.setStartBlockletNumber(i * minBlockLetsReqForDistribution);
-          blockletInfos.setNumberOfBlockletToScan(minBlockLetsReqForDistribution);
-          blockletInfos.setNoOfBlockLets(blockletInfos.getNoOfBlockLets());
-          tableBlockInfo1 =
-              new TableBlockInfo(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset(),
-                  tableBlockInfo.getSegmentId(), tableBlockInfo.getLocations(),
-                  tableBlockInfo.getBlockLength(), blockletInfos);
-          tableBlockInfos.add(tableBlockInfo1);
-        }
-        //if rem is greater than 0 then for the last block
-        if (rem > 0) {
-          tableBlockInfo1.getBlockletInfos().setNumberOfBlockletToScan(rem);
-        }
-      }
-    }
-    if (tableBlockInfos.size() == 0) {
-      {
-        for (TableBlockInfo tableBlockInfo : blockInfoList) {
-          tableBlockInfos.add(tableBlockInfo);
-        }
-        LOGGER.info("No.Of Blocks after Blocklet distribution: " + tableBlockInfos.size());
-        return tableBlockInfos;
-      }
-    }
-    LOGGER.info("No.Of Blocks after Blocklet distribution: " + tableBlockInfos.size());
-    return tableBlockInfos;
   }
 
   /**

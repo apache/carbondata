@@ -19,12 +19,14 @@
 
 package org.apache.carbondata.hadoop.util;
 
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.hadoop.CarbonInputFormat;
 import org.apache.carbondata.scan.expression.Expression;
 import org.apache.carbondata.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.scan.filter.resolver.FilterResolverIntf;
@@ -32,6 +34,11 @@ import org.apache.carbondata.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.scan.model.QueryDimension;
 import org.apache.carbondata.scan.model.QueryMeasure;
 import org.apache.carbondata.scan.model.QueryModel;
+
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+
 
 /**
  * Utility class
@@ -79,6 +86,13 @@ public class CarbonInputFormatUtil {
     plan.setLimit(-1);
     plan.setQueryId(System.nanoTime() + "");
     return plan;
+  }
+
+  public static <V> CarbonInputFormat<V> createCarbonInputFormat(AbsoluteTableIdentifier identifier,
+      Job job) throws IOException {
+    CarbonInputFormat<V> carbonInputFormat = new CarbonInputFormat<>();
+    FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
+    return carbonInputFormat;
   }
 
   private static void addQueryMeasure(CarbonQueryPlan plan, int order, CarbonMeasure measure) {

@@ -97,14 +97,13 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     var noOfRetries = 0
     while (!status && noOfRetries < 10) {
 
-      val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
-          AbsoluteTableIdentifier(
+      val identifier = new AbsoluteTableIdentifier(
             CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
             new CarbonTableIdentifier(
               CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", noOfRetries + "")
           )
-      )
-      val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
+      val segments = SegmentStatusManager.getSegmentStatus(identifier)
+          .getValidSegments.asScala.toList
       segments.foreach(seg =>
         System.out.println( "valid segment is =" + seg)
       )
@@ -129,15 +128,14 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     // delete merged segments
     sql("clean files for table ignoremajor")
 
-    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
-        AbsoluteTableIdentifier(
+    val identifier = new AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
           new CarbonTableIdentifier(
             CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", "rrr")
         )
-    )
     // merged segment should not be there
-    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
+    val segments = SegmentStatusManager.getSegmentStatus(identifier)
+        .getValidSegments.asScala.toList
     assert(segments.contains("0.1"))
     assert(segments.contains("2.1"))
     assert(!segments.contains("2"))
@@ -156,13 +154,6 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     catch {
       case _:Throwable => assert(true)
     }
-    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
-        AbsoluteTableIdentifier(
-          CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-          new CarbonTableIdentifier(
-            CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", "rrr")
-        )
-    )
     val carbontablePath = CarbonStorePath
       .getCarbonTablePath(CarbonProperties.getInstance
         .getProperty(CarbonCommonConstants.STORE_LOCATION),
@@ -170,7 +161,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
           CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", "rrr")
       )
       .getMetadataDirectoryPath
-    var segs = segmentStatusManager.readLoadMetadata(carbontablePath)
+    val segs = SegmentStatusManager.readLoadMetadata(carbontablePath)
 
     // status should remain as compacted.
     assert(segs(3).getLoadStatus.equalsIgnoreCase(CarbonCommonConstants.SEGMENT_COMPACTED))
@@ -185,13 +176,6 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       "DELETE SEGMENTS FROM TABLE ignoremajor where STARTTIME before" +
         " '2222-01-01 19:35:01'"
     )
-    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
-        AbsoluteTableIdentifier(
-          CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-          new CarbonTableIdentifier(
-            CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", "rrr")
-        )
-    )
     val carbontablePath = CarbonStorePath
       .getCarbonTablePath(CarbonProperties.getInstance
         .getProperty(CarbonCommonConstants.STORE_LOCATION),
@@ -199,7 +183,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
           CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", "rrr")
       )
       .getMetadataDirectoryPath
-    var segs = segmentStatusManager.readLoadMetadata(carbontablePath)
+    val segs = SegmentStatusManager.readLoadMetadata(carbontablePath)
 
     // status should remain as compacted for segment 2.
     assert(segs(3).getLoadStatus.equalsIgnoreCase(CarbonCommonConstants.SEGMENT_COMPACTED))

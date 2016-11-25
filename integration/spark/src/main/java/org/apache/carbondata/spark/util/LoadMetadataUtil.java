@@ -44,9 +44,7 @@ public final class LoadMetadataUtil {
         .getCarbonTable(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
 
     String metaDataLocation = table.getMetaDataFilepath();
-    SegmentStatusManager segmentStatusManager =
-        new SegmentStatusManager(table.getAbsoluteTableIdentifier());
-    LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metaDataLocation);
+    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
     if (details != null && details.length != 0) {
       for (LoadMetadataDetails oneRow : details) {
         if ((CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oneRow.getLoadStatus())
