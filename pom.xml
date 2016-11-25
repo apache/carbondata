@@ -97,17 +97,12 @@
     <module>processing</module>
     <module>hadoop</module>
     <module>assembly</module>
-    <module>examples</module>
-    <module>integration/spark-common</module>
   </modules>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <spark.version>1.5.2</spark.version>
-    <scala.binary.version>2.10</scala.binary.version>
     <snappy.version>1.1.2.6</snappy.version>
     <hadoop.version>2.2.0</hadoop.version>
-    <scala.version>2.10.4</scala.version>
     <kettle.version>4.4.0-stable</kettle.version>
     <use.kettle>true</use.kettle>
     <hadoop.deps.scope>compile</hadoop.deps.scope>
@@ -291,27 +286,39 @@
       </activation>
       <properties>
         <spark.version>1.5.2</spark.version>
+        <scala.binary.version>2.10</scala.binary.version>
+        <scala.version>2.10.4</scala.version>
       </properties>
       <modules>
+        <module>integration/spark-common</module>
         <module>integration/spark</module>
+        <module>examples/spark</module>
       </modules>
     </profile>
     <profile>
       <id>spark-1.6</id>
       <properties>
         <spark.version>1.6.2</spark.version>
+        <scala.binary.version>2.10</scala.binary.version>
+        <scala.version>2.10.4</scala.version>
       </properties>
       <modules>
+        <module>integration/spark-common</module>
         <module>integration/spark</module>
+        <module>examples/spark</module>
       </modules>
     </profile>
     <profile>
       <id>spark-2.0</id>
       <properties>
         <spark.version>2.0.0</spark.version>
+        <scala.binary.version>2.11</scala.binary.version>
+        <scala.version>2.11.8</scala.version>
       </properties>
       <modules>
+        <module>integration/spark-common</module>
         <module>integration/spark2</module>
+        <module>examples/spark2</module>
       </modules>
     </profile>
     <profile>
