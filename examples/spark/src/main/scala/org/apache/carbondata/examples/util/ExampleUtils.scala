@@ -28,15 +28,15 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 object ExampleUtils {
 
-  def currentPath: String = new File(this.getClass.getResource("/").getPath + "/../../")
-    .getCanonicalPath
+  def currentPath: String = new File(this.getClass.getResource("/").getPath + "../../")
+      .getCanonicalPath
   val storeLocation = currentPath + "/target/store"
-  val kettleHome = new File(currentPath + "/../processing/carbonplugins").getCanonicalPath
+  val kettleHome = new File(currentPath + "/../../processing/carbonplugins").getCanonicalPath
 
   def createCarbonContext(appName: String): CarbonContext = {
     val sc = new SparkContext(new SparkConf()
-          .setAppName(appName)
-          .setMaster("local[2]"))
+        .setAppName(appName)
+        .setMaster("local[2]"))
     sc.setLogLevel("ERROR")
 
     println(s"Starting $appName using spark version ${sc.version}")

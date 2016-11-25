@@ -37,11 +37,11 @@ import org.scalatest.BeforeAndAfterAll
 class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
 
   def currentPath: String = new File(this.getClass.getResource("/").getPath + "/../../")
-    .getCanonicalPath
-  val testData1 = new File(currentPath + "/../../examples/src/main/resources/dimSample.csv")
-    .getCanonicalPath
-  val testData2 = new File(currentPath + "/../../examples/src/main/resources/data.csv")
-    .getCanonicalPath
+      .getCanonicalPath
+  val testData1 = new File(currentPath + "/src/test/resources/dimSample.csv")
+      .getCanonicalPath
+  val testData2 = new File(currentPath + "/src/test/resources/example-data.csv")
+      .getCanonicalPath
 
   override def beforeAll {
     sql("DROP TABLE IF EXISTS index1")
@@ -79,7 +79,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
       """)
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
     sql(s"""
            LOAD DATA LOCAL INPATH '$testData2' into table index2
