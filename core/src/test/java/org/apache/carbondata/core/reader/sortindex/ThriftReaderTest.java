@@ -31,7 +31,7 @@ import org.apache.thrift.TException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+import static junit.framework.TestCase.assertNotNull;
 
 public class ThriftReaderTest {
 
@@ -73,7 +73,7 @@ public class ThriftReaderTest {
       }
 
     };
-    assertTrue(thriftReader.read(tBaseCreator) != null);
+    assertNotNull(thriftReader.read(tBaseCreator));
 
   }
 

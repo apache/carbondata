@@ -29,9 +29,11 @@ import mockit.Mock;
 import mockit.MockUp;
 import org.apache.thrift.TBase;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static junit.framework.TestCase.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class CarbonIndexFileReaderTest {
   private static CarbonIndexFileReader carbonIndexFileReader = null;
@@ -60,7 +62,7 @@ public class CarbonIndexFileReaderTest {
 
     };
 
-    Assert.assertTrue(carbonIndexFileReader.readIndexHeader() != null);
+    assertNotNull(carbonIndexFileReader.readIndexHeader());
   }
 
   @Test public void testHasNext() throws IOException {
@@ -72,7 +74,7 @@ public class CarbonIndexFileReaderTest {
       }
 
     };
-    Assert.assertTrue(carbonIndexFileReader.hasNext());
+    assertTrue(carbonIndexFileReader.hasNext());
   }
 
   @Test public void testReadBlockInfo() throws IOException {
@@ -83,6 +85,6 @@ public class CarbonIndexFileReaderTest {
       }
 
     };
-    Assert.assertTrue(carbonIndexFileReader.readBlockIndexInfo() != null);
+    assertNotNull(carbonIndexFileReader.readBlockIndexInfo());
   }
 }
