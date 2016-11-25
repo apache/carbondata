@@ -135,20 +135,6 @@ public class StandardLogServiceTest_UT extends TestCase {
     Assert.assertTrue(true);
   }
 
-  @Test public void testIsDoLog() {
-    StandardLogService.setDoLog(true);
-    Assert.assertEquals(true, StandardLogService.isDoLog());
-
-    StandardLogService.setDoLog(false);
-    Assert.assertEquals(false, StandardLogService.isDoLog());
-
-  }
-
-  @Test public void testSetDoLog() {
-    StandardLogService.setDoLog(true);
-    Assert.assertEquals(true, StandardLogService.isDoLog());
-  }
-
   @Test public void testAuditString() {
     logService.audit("audit message");
     Assert.assertTrue(true);
