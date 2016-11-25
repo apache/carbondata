@@ -36,15 +36,6 @@ import org.apache.log4j.MDC;
 public final class StandardLogService implements LogService {
 
   private static final String PARTITION_ID = "[partitionID:";
-  private static final String CARBON_AUDIT_LOG_PATH = "carbon.auditlog.file.path";
-  private static final String AUDIT_LOG_DEFAULT_PATH = "logs/CarbonAudit.log";
-  private static final String CARBON_AUDIT_LOG_ROLLING_UP_SIZE = "carbon.auditlog.max.file.size";
-  private static final String AUDIT_LOG_DEFAULT_ROLLING_UP_SIZE = "10MB";
-  private static final String CARBON_AUDIT_LOG_MAX_BACKUP = "carbon.auditlog.max.backup.files";
-  private static final String AUDIT_LOG_DEFAULT_MAX_BACKUP = "10";
-  private static final String CARBON_AUDIT_LOG_LEVEL = "carbon.logging.level";
-  private static final String AUDIT_LOG_DEFAULT_LEVEL = "INFO";
-  private static boolean doLog = true;
   private Logger logger;
 
   /**
@@ -53,76 +44,11 @@ public final class StandardLogService implements LogService {
    * @param clazzName for which the Logging is required
    */
   public StandardLogService(String clazzName) {
-    String auditLogPath = AUDIT_LOG_DEFAULT_PATH;
-    String rollupSize = AUDIT_LOG_DEFAULT_ROLLING_UP_SIZE;
-    String maxBackup = AUDIT_LOG_DEFAULT_MAX_BACKUP;
-    String logLevel = AUDIT_LOG_DEFAULT_LEVEL;
-
-    Properties props = new Properties();
-    Properties carbonProps = FileUtil.getCarbonProperties();
-
-    if (null != carbonProps) {
-      if (null != carbonProps.getProperty(CARBON_AUDIT_LOG_PATH)) {
-        auditLogPath = carbonProps.getProperty(CARBON_AUDIT_LOG_PATH);
-      }
-
-      if (null != carbonProps.getProperty(CARBON_AUDIT_LOG_ROLLING_UP_SIZE)) {
-        rollupSize = carbonProps.getProperty(CARBON_AUDIT_LOG_ROLLING_UP_SIZE);
-      }
-
-      if (null != carbonProps.getProperty(CARBON_AUDIT_LOG_MAX_BACKUP)) {
-        maxBackup = carbonProps.getProperty(CARBON_AUDIT_LOG_MAX_BACKUP);
-      }
-
-      if (null != carbonProps.getProperty(CARBON_AUDIT_LOG_LEVEL)) {
-        logLevel = carbonProps.getProperty(CARBON_AUDIT_LOG_LEVEL);
-      }
-    }
-
-    props.setProperty("log4j.rootLogger", logLevel + ",stdout,AUDL");
-
-    props.setProperty("log4j.appender.stdout", "org.apache.log4j.ConsoleAppender");
-    props.setProperty("log4j.appender.stdout.layout.ConversionPattern", "%d %-5p [%c] %m%n");
-    props.setProperty("log4j.appender.stdout.layout", "org.apache.log4j.PatternLayout");
-    props.setProperty("log4j.appender.AUDL",
-        "AuditExtendedRollingFileAppender");
-
-    props.setProperty("log4j.appender.AUDL.File", auditLogPath);
-    props.setProperty("log4j.appender.AUDL.threshold",
-        "AUDIT#AuditLevel");
-    props.setProperty("log4j.appender.AUDL.layout.ConversionPattern",
-        "%d{yy/MM/dd HH:mm:ss} %p %c{1}: %m%n");
-    props.setProperty("log4j.appender.AUDL.layout", "org.apache.log4j.PatternLayout");
-    props.setProperty("log4j.appender.AUDL.MaxFileSize", rollupSize);
-    props.setProperty("log4j.appender.AUDL.MaxBackupIndex", maxBackup);
-
-    props.setProperty("log4j.logger.com.huawei", logLevel + ",stdout");
-    props.setProperty("log4j.logger.com.huawei", logLevel + ",AUDL");
-
     logger = Logger.getLogger(clazzName);
-
   }
 
   public StandardLogService() {
     this("Carbon");
-  }
-
-  /**
-   * returns is DO Log
-   *
-   * @return the doLog
-   */
-  public static boolean isDoLog() {
-    return doLog;
-  }
-
-  /**
-   * set Do Log
-   *
-   * @param doLog the doLog to set
-   */
-  public static void setDoLog(boolean doLog) {
-    StandardLogService.doLog = doLog;
   }
 
   public static String getPartitionID(String tableName) {
@@ -187,30 +113,28 @@ public final class StandardLogService implements LogService {
    * Utility Method to log the the Message.
    */
   private void logMessage(Level logLevel, Throwable throwable, String message) {
-    if (StandardLogService.doLog) {
-      try {
-        //Append the partition id and query id if exist
-        StringBuilder buff = new StringBuilder(Thread.currentThread().getName());
-        buff.append(" ");
-        buff.append(message);
-        message = buff.toString();
-        if (Level.ERROR.toString().equalsIgnoreCase(logLevel.toString())) {
-          logErrorMessage(throwable, message);
-        } else if (Level.DEBUG.toString().equalsIgnoreCase(logLevel.toString())) {
-          logDebugMessage(throwable, message);
-        } else if (Level.INFO.toString().equalsIgnoreCase(logLevel.toString())) {
-          logInfoMessage(throwable, message);
-        } else if (Level.WARN.toString().equalsIgnoreCase(logLevel.toString())) {
-          logWarnMessage(throwable, message);
-        } else if (Level.AUDIT.toString().equalsIgnoreCase(logLevel.toString())) {
-          audit(message);
-        } else if (Level.STATISTICS == logLevel) {
-          statistic(message);
-        }
-
-      } catch (Throwable t) {
-        logger.error(t);
+    try {
+      //Append the partition id and query id if exist
+      StringBuilder buff = new StringBuilder(Thread.currentThread().getName());
+      buff.append(" ");
+      buff.append(message);
+      message = buff.toString();
+      if (Level.ERROR.toString().equalsIgnoreCase(logLevel.toString())) {
+        logErrorMessage(throwable, message);
+      } else if (Level.DEBUG.toString().equalsIgnoreCase(logLevel.toString())) {
+        logDebugMessage(throwable, message);
+      } else if (Level.INFO.toString().equalsIgnoreCase(logLevel.toString())) {
+        logInfoMessage(throwable, message);
+      } else if (Level.WARN.toString().equalsIgnoreCase(logLevel.toString())) {
+        logWarnMessage(throwable, message);
+      } else if (Level.AUDIT.toString().equalsIgnoreCase(logLevel.toString())) {
+        audit(message);
+      } else if (Level.STATISTICS == logLevel) {
+        statistic(message);
       }
+
+    } catch (Throwable t) {
+      logger.error(t);
     }
   }
 
