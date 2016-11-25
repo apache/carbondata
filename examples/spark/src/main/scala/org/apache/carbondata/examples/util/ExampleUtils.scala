@@ -52,24 +52,24 @@ object ExampleUtils {
   }
 
   /**
-    * This func will write a sample CarbonData file containing following schema:
-    * c1: String, c2: String, c3: Double
-    */
+   * This func will write a sample CarbonData file containing following schema:
+   * c1: String, c2: String, c3: Double
+   */
   def writeSampleCarbonFile(cc: CarbonContext, tableName: String, numRows: Int = 1000): Unit = {
     cc.sql(s"DROP TABLE IF EXISTS $tableName")
     writeDataframe(cc, tableName, numRows, SaveMode.Overwrite)
   }
 
   /**
-    * This func will append data to the CarbonData file
-    */
+   * This func will append data to the CarbonData file
+   */
   def appendSampleCarbonFile(cc: CarbonContext, tableName: String, numRows: Int = 1000): Unit = {
     writeDataframe(cc, tableName, numRows, SaveMode.Append)
   }
 
   /**
-    * create a new dataframe and write to CarbonData file, based on save mode
-    */
+   * create a new dataframe and write to CarbonData file, based on save mode
+   */
   private def writeDataframe(
       cc: CarbonContext, tableName: String, numRows: Int, mode: SaveMode): Unit = {
     // use CarbonContext to write CarbonData files
