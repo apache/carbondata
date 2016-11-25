@@ -59,8 +59,8 @@ object CarbonOptimizer {
   // get the carbon relation from plan.
   def collectCarbonRelation(plan: LogicalPlan): Seq[CarbonDecoderRelation] = {
     plan collect {
-      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
-        CarbonDecoderRelation(l.attributeMap, l.relation.asInstanceOf[CarbonDatasourceRelation])
+      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
+        CarbonDecoderRelation(l.attributeMap, l.relation.asInstanceOf[CarbonDatasourceHadoopRelation])
     }
   }
 }
@@ -102,7 +102,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
       plan: LogicalPlan,
       extraNodeInfos: java.util.HashMap[LogicalPlan, ExtraNodeInfo]): ExtraNodeInfo = {
     plan match {
-      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
+      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
         val extraNodeInfo = ExtraNodeInfo(true)
         extraNodeInfo
       case others =>
@@ -445,7 +445,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
             Window(wd.projectList, wd.windowExpressions, wd.partitionSpec, wd.orderSpec, child)
           }
 
-        case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
+        case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
           if (!decoder) {
             decoder = true
             CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
@@ -579,7 +579,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
         }.asInstanceOf[Seq[SortOrder]]
         Window(prExps, wdExps, partitionSpec, orderSpec, wd.child)
 
-      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
+      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
         allAttrsNotDecode = marker.revokeJoin()
         l
       case others => others
@@ -702,7 +702,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
 
 case class CarbonDecoderRelation(
     attributeMap: AttributeMap[AttributeReference],
-    carbonRelation: CarbonDatasourceRelation) {
+    carbonRelation: CarbonDatasourceHadoopRelation) {
 
   val extraAttrs = new ArrayBuffer[Attribute]()
 

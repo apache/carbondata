@@ -21,7 +21,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import scala.reflect.ClassTag
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.mapred.JobConf
@@ -36,12 +35,12 @@ import org.apache.spark.sql.hive.{DistributionUtil, TableMeta}
 import org.apache.spark.sql.sources.{Filter, HadoopFsRelation, OutputWriterFactory}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
-
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
 import org.apache.carbondata.core.carbon.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, SchemaReader}
 import org.apache.carbondata.scan.expression.logical.AndExpression
+import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 import org.apache.carbondata.spark.util.CarbonScalaUtil.CarbonSparkUtil
@@ -54,19 +53,20 @@ private[sql] case class CarbonDatasourceHadoopRelation(
   tableSchema: Option[StructType])
   extends HadoopFsRelation {
 
+  @transient
   lazy val schemaPath = new Path(CarbonTablePath.getSchemaFilePath(paths.head))
   if (!schemaPath.getFileSystem(new Configuration).exists(schemaPath)) {
     throw new IllegalArgumentException("invalid CarbonData file path: " + paths.head)
   }
-
-  lazy val job = new Job(new JobConf())
+  @transient
   lazy val options = new CarbonOption(parameters)
+
   lazy val absIdentifier = AbsoluteTableIdentifier.fromTablePath(paths.head)
-  lazy val relationRaw: CarbonRelation = {
-    val carbonTable = SchemaReader.readCarbonTableFromStore(absIdentifier)
-    if (carbonTable == null) {
-      sys.error(s"CarbonData file path ${paths.head} is not valid")
-    }
+  lazy val carbonTable = SchemaReader.readCarbonTableFromStore(absIdentifier)
+  if (carbonTable == null) {
+    sys.error(s"CarbonData file path ${paths.head} is not valid")
+  }
+  lazy val carbonRelation: CarbonRelation = {
     CarbonRelation(
       carbonTable.getDatabaseName,
       carbonTable.getFactTableName,
@@ -84,7 +84,7 @@ private[sql] case class CarbonDatasourceHadoopRelation(
     )(sqlContext)
   }
 
-  override def dataSchema: StructType = tableSchema.getOrElse(relationRaw.schema)
+  override def dataSchema: StructType = tableSchema.getOrElse(carbonRelation.schema)
 
   override def prepareJobForWrite(job: Job): OutputWriterFactory = {
     // TODO
@@ -95,23 +95,19 @@ private[sql] case class CarbonDatasourceHadoopRelation(
     requiredColumns: Array[String],
     filters: Array[Filter],
     inputFiles: Array[FileStatus]): RDD[Row] = {
+    val job = new Job(new JobConf())
     val conf = new Configuration(job.getConfiguration)
-    filters.flatMap { filter =>
+    val filterExpression = filters.flatMap { filter =>
       CarbonFilters.createCarbonFilter(dataSchema, filter)
     }.reduceOption(new AndExpression(_, _))
-      .foreach(CarbonInputFormat.setFilterPredicates(conf, _))
 
     val projection = new CarbonProjection
     requiredColumns.foreach(projection.addColumn)
     CarbonInputFormat.setColumnProjection(conf, projection)
     CarbonInputFormat.setCarbonReadSupport(classOf[SparkRowReadSupportImpl], conf)
 
-    new CarbonHadoopFSRDD[Row](sqlContext.sparkContext,
-      new SerializableConfiguration(conf),
-      absIdentifier,
-      classOf[CarbonInputFormat[Row]],
-      classOf[Row]
-    )
+    new CarbonScanRDD[Row](sqlContext.sparkContext, projection, filterExpression.orNull,
+      absIdentifier, carbonTable)
   }
 
 }

@@ -23,7 +23,6 @@ import java.util.Date
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.{InputSplit, Job, JobID}
 import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext, TaskKilledException}
@@ -31,7 +30,6 @@ import org.apache.spark.mapred.CarbonHadoopMapReduceUtil
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.hive.DistributionUtil
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
 import org.apache.carbondata.core.carbon.datastore.block.Distributable
@@ -42,6 +40,7 @@ import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, Carbon
 import org.apache.carbondata.hadoop.readsupport.impl.RawDataReadSupport
 import org.apache.carbondata.scan.expression.Expression
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
+import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
 class CarbonSparkPartition(
     val rddId: Int,
@@ -63,7 +62,7 @@ class CarbonSparkPartition(
  */
 class CarbonScanRDD[V: ClassTag](
     @transient sc: SparkContext,
-    columnProjection: Seq[Attribute],
+    columnProjection: CarbonProjection,
     filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
     @transient carbonTable: CarbonTable)
@@ -214,7 +213,7 @@ class CarbonScanRDD[V: ClassTag](
   }
 
   private def prepareInputFormatForExecutor(conf: Configuration): CarbonInputFormat[V] = {
-    CarbonInputFormat.setCarbonReadSupport(classOf[RawDataReadSupport], conf)
+    CarbonInputFormat.setCarbonReadSupport(classOf[SparkRowReadSupportImpl], conf)
     createInputFormat(conf)
   }
 
@@ -222,11 +221,7 @@ class CarbonScanRDD[V: ClassTag](
     val format = new CarbonInputFormat[V]
     CarbonInputFormat.setTablePath(conf, identifier.getTablePath)
     CarbonInputFormat.setFilterPredicates(conf, filterExpression)
-    val projection = new CarbonProjection
-    columnProjection.foreach { attr =>
-      projection.addColumn(attr.name)
-    }
-    CarbonInputFormat.setColumnProjection(conf, projection)
+    CarbonInputFormat.setColumnProjection(conf, columnProjection)
     format
   }
 

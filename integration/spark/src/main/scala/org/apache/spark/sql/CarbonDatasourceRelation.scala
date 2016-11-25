@@ -23,7 +23,6 @@ import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.hadoop.fs.Path
-import org.apache.spark._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
@@ -61,12 +60,14 @@ class CarbonSource extends RelationProvider
       case Some(path) => CarbonDatasourceHadoopRelation(sqlContext, Array(path), parameters, None)
       case _ =>
         val options = new CarbonOption(parameters)
-        val tableIdentifier = options.tableIdentifier.split("""\.""").toSeq
-        val identifier = tableIdentifier match {
-          case Seq(name) => TableIdentifier(name, None)
-          case Seq(db, name) => TableIdentifier(name, Some(db))
-        }
-        CarbonDatasourceRelation(identifier, None)(sqlContext)
+//        val tableIdentifier = options.tableIdentifier.split("""\.""").toSeq
+//        val identifier = tableIdentifier match {
+//          case Seq(name) => TableIdentifier(name, None)
+//          case Seq(db, name) => TableIdentifier(name, Some(db))
+//        }
+//        CarbonDatasourceRelation(identifier, None)(sqlContext)
+
+        CarbonDatasourceHadoopRelation(sqlContext, Array(options.talbePath), parameters, None)
     }
   }
 
@@ -124,28 +125,28 @@ class CarbonSource extends RelationProvider
   }
 }
 
-/**
- *  Creates carbon relation compliant to data source api.
- * This relation is stored to hive metastore
- */
-private[sql] case class CarbonDatasourceRelation(
-    tableIdentifier: TableIdentifier,
-    alias: Option[String])
-    (@transient context: SQLContext)
-    extends BaseRelation with Serializable {
-
-  lazy val carbonRelation: CarbonRelation = {
-    CarbonEnv.getInstance(context)
-        .carbonCatalog.lookupRelation1(tableIdentifier, None)(sqlContext)
-        .asInstanceOf[CarbonRelation]
-  }
-
-  def schema: StructType = carbonRelation.schema
-
-  def sqlContext: SQLContext = context
-
-  override def sizeInBytes: Long = carbonRelation.sizeInBytes
-}
+///**
+// *  Creates carbon relation compliant to data source api.
+// * This relation is stored to hive metastore
+// */
+//private[sql] case class CarbonDatasourceRelation(
+//    tableIdentifier: TableIdentifier,
+//    alias: Option[String])
+//    (@transient context: SQLContext)
+//    extends BaseRelation with Serializable {
+//
+//  lazy val carbonRelation: CarbonRelation = {
+//    CarbonEnv.getInstance(context)
+//        .carbonCatalog.lookupRelation1(tableIdentifier, None)(sqlContext)
+//        .asInstanceOf[CarbonRelation]
+//  }
+//
+//  def schema: StructType = carbonRelation.schema
+//
+//  def sqlContext: SQLContext = context
+//
+//  override def sizeInBytes: Long = carbonRelation.sizeInBytes
+//}
 
 /**
  * Represents logical plan for one carbon table
