@@ -45,8 +45,7 @@ class DataCompactionMinorThresholdTest extends QueryTest with BeforeAndAfterAll 
   val carbonTableIdentifier: CarbonTableIdentifier =
     new CarbonTableIdentifier("default", "minorthreshold".toLowerCase(), "1")
 
-  val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
-      AbsoluteTableIdentifier(storeLocation, carbonTableIdentifier))
+  val identifier = new AbsoluteTableIdentifier(storeLocation, carbonTableIdentifier)
 
   override def beforeAll {
     CarbonProperties.getInstance()
@@ -96,7 +95,8 @@ class DataCompactionMinorThresholdTest extends QueryTest with BeforeAndAfterAll 
 
     sql("clean files for table minorthreshold")
 
-    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
+    val segments = SegmentStatusManager.getSegmentStatus(identifier)
+        .getValidSegments.asScala.toList
 
     assert(segments.contains("0.2"))
     assert(!segments.contains("0.1"))

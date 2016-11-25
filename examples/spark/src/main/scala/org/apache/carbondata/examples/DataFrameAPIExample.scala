@@ -24,7 +24,7 @@ object DataFrameAPIExample {
 
   def main(args: Array[String]) {
     val cc = ExampleUtils.createCarbonContext("DataFrameAPIExample")
-    ExampleUtils.writeSampleCarbonFile(cc, "carbon1")
+    ExampleUtils.writeSampleCarbonFile(cc, "carbon1", 1000)
 
     // use datasource api to read
     val in = cc.read
@@ -42,7 +42,8 @@ object DataFrameAPIExample {
     println(s"count after 2 load: $count")
 
     // use SQL to read
-    cc.sql("SELECT count(*) FROM carbon1 WHERE c3 > 500").show
+    cc.sql("SELECT c1, count(c3) FROM carbon1 where c3 > 500 group by c1 limit 10").show
+
     cc.sql("DROP TABLE IF EXISTS carbon1")
   }
 }

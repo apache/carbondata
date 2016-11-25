@@ -17,49 +17,43 @@
 
 package org.apache.carbondata.spark.rdd
 
+import java.text.SimpleDateFormat
 import java.util
+import java.util.Date
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.mapreduce.InputSplit
-import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.{Partition, SparkContext, TaskContext}
+import org.apache.hadoop.mapreduce.{InputSplit, Job, JobID}
+import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext, TaskKilledException}
+import org.apache.spark.mapred.CarbonHadoopMapReduceUtil
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.hive.DistributionUtil
 
-import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.dictionary.Dictionary
-import org.apache.carbondata.core.carbon.datastore.block.{BlockletInfos, TableBlockInfo}
-import org.apache.carbondata.core.carbon.datastore.SegmentTaskIndexStore
+import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
+import org.apache.carbondata.core.carbon.datastore.block.Distributable
+import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants}
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
-import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit}
-import org.apache.carbondata.lcm.status.SegmentStatusManager
-import org.apache.carbondata.scan.executor.QueryExecutor
-import org.apache.carbondata.scan.executor.QueryExecutorFactory
+import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection}
+import org.apache.carbondata.hadoop.readsupport.impl.RawDataReadSupport
 import org.apache.carbondata.scan.expression.Expression
-import org.apache.carbondata.scan.model.QueryModel
-import org.apache.carbondata.scan.result.BatchResult
-import org.apache.carbondata.scan.result.iterator.ChunkRowIterator
-import org.apache.carbondata.spark.RawValue
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
-import org.apache.carbondata.spark.util.QueryPlanUtil
 
-
-class CarbonSparkPartition(rddId: Int, val idx: Int,
-    val locations: Array[String],
-    val tableBlockInfos: util.List[TableBlockInfo])
+class CarbonSparkPartition(
+    val rddId: Int,
+    val idx: Int,
+    @transient val multiBlockSplit: CarbonMultiBlockSplit)
   extends Partition {
+
+  val split = new SerializableWritable[CarbonMultiBlockSplit](multiBlockSplit)
 
   override val index: Int = idx
 
-  // val serializableHadoopSplit = new SerializableWritable[Array[String]](locations)
-  override def hashCode(): Int = {
-    41 * (41 + rddId) + idx
-  }
+  override def hashCode(): Int = 41 * (41 + rddId) + idx
 }
 
 /**
@@ -68,169 +62,135 @@ class CarbonSparkPartition(rddId: Int, val idx: Int,
  * level filtering in driver side.
  */
 class CarbonScanRDD[V: ClassTag](
-    sc: SparkContext,
-    queryModel: QueryModel,
+    @transient sc: SparkContext,
+    columnProjection: Seq[Attribute],
     filterExpression: Expression,
-    keyClass: RawValue[V],
-    @transient conf: Configuration,
-    tableCreationTime: Long,
-    schemaLastUpdatedTime: Long,
-    baseStoreLocation: String)
-  extends RDD[V](sc, Nil) {
+    identifier: AbsoluteTableIdentifier,
+    @transient carbonTable: CarbonTable)
+  extends RDD[V](sc, Nil)
+    with CarbonHadoopMapReduceUtil
+    with Logging {
 
+  private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
+  private val jobTrackerId: String = {
+    val formatter = new SimpleDateFormat("yyyyMMddHHmm")
+    formatter.format(new Date())
+  }
+
+  @transient private val jobId = new JobID(jobTrackerId, id)
+  @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def getPartitions: Array[Partition] = {
-    var defaultParallelism = sparkContext.defaultParallelism
-    val statisticRecorder = CarbonTimeStatisticsFactory.createDriverRecorder()
-    val (carbonInputFormat: CarbonInputFormat[Array[Object]], job: Job) =
-      QueryPlanUtil.createCarbonInputFormat(queryModel.getAbsoluteTableIdentifier)
+    val job = Job.getInstance(new Configuration())
+    val format = prepareInputFormatForDriver(job.getConfiguration)
 
     // initialise query_id for job
-    job.getConfiguration.set("query.id", queryModel.getQueryId)
+    job.getConfiguration.set("query.id", queryId)
 
-    val result = new util.ArrayList[Partition](defaultParallelism)
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    val validAndInvalidSegments = new SegmentStatusManager(queryModel.getAbsoluteTableIdentifier)
-      .getValidAndInvalidSegments
-    // set filter resolver tree
-    try {
-      // before applying filter check whether segments are available in the table.
-      if (!validAndInvalidSegments.getValidSegments.isEmpty) {
-        val filterResolver = carbonInputFormat
-          .getResolvedFilter(job.getConfiguration, filterExpression)
-        CarbonInputFormat.setFilterPredicates(job.getConfiguration, filterResolver)
-        queryModel.setFilterExpressionResolverTree(filterResolver)
-        CarbonInputFormat
-          .setSegmentsToAccess(job.getConfiguration,
-            validAndInvalidSegments.getValidSegments
-          )
-        SegmentTaskIndexStore.getInstance()
-          .removeTableBlocks(validAndInvalidSegments.getInvalidSegments,
-            queryModel.getAbsoluteTableIdentifier
-          )
-      }
-    } catch {
-      case e: Exception =>
-        LOGGER.error(e)
-        sys.error(s"Exception occurred in query execution :: ${ e.getMessage }")
-    }
     // get splits
-    val splits = carbonInputFormat.getSplits(job)
-    if (!splits.isEmpty) {
-      val carbonInputSplits = splits.asScala.map(_.asInstanceOf[CarbonInputSplit])
-      queryModel.setInvalidSegmentIds(validAndInvalidSegments.getInvalidSegments)
-      val blockListTemp = carbonInputSplits.map(inputSplit =>
-        new TableBlockInfo(inputSplit.getPath.toString,
-          inputSplit.getStart, inputSplit.getSegmentId,
-          inputSplit.getLocations, inputSplit.getLength,
-          new BlockletInfos(inputSplit.getNumberOfBlocklets, 0, inputSplit.getNumberOfBlocklets)
-        )
-      )
-      var activeNodes = Array[String]()
-      if (blockListTemp.nonEmpty) {
-        activeNodes = DistributionUtil
-          .ensureExecutorsAndGetNodeList(blockListTemp.toArray, sparkContext)
-      }
-      defaultParallelism = sparkContext.defaultParallelism
-      val blockList = CarbonLoaderUtil.
-        distributeBlockLets(blockListTemp.asJava, defaultParallelism).asScala
+    val splits = format.getSplits(job)
+    val result = distributeSplits(splits)
+    result
+  }
 
-      if (blockList.nonEmpty) {
-        var statistic = new QueryStatistic()
-        // group blocks to nodes, tasks
-        val nodeBlockMapping =
-        CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1, defaultParallelism,
-          activeNodes.toList.asJava
-        )
-        statistic.addStatistics(QueryStatisticsConstants.BLOCK_ALLOCATION, System.currentTimeMillis)
-        statisticRecorder.recordStatisticsForDriver(statistic, queryModel.getQueryId())
-        statistic = new QueryStatistic()
-        var i = 0
-        // Create Spark Partition for each task and assign blocks
-        nodeBlockMapping.asScala.foreach { entry =>
-          entry._2.asScala.foreach { blocksPerTask => {
-            val tableBlockInfo = blocksPerTask.asScala.map(_.asInstanceOf[TableBlockInfo])
-            if (blocksPerTask.size() != 0) {
-              result
-                .add(new CarbonSparkPartition(id, i, Seq(entry._1).toArray, tableBlockInfo.asJava))
-              i += 1
-            }
-          }
+  private def distributeSplits(splits: util.List[InputSplit]): Array[Partition] = {
+    // this function distributes the split based on following logic:
+    // 1. based on data locality, to make split balanced on all available nodes
+    // 2. if the number of split for one
+
+    var statistic = new QueryStatistic()
+    val statisticRecorder = CarbonTimeStatisticsFactory.createDriverRecorder()
+    val parallelism = sparkContext.defaultParallelism
+    val result = new util.ArrayList[Partition](parallelism)
+    var noOfBlocks = 0
+    var noOfNodes = 0
+    var noOfTasks = 0
+
+    if (!splits.isEmpty) {
+      // create a list of block based on split
+      val blockList = splits.asScala.map(_.asInstanceOf[Distributable])
+
+      // get the list of executors and map blocks to executors based on locality
+      val activeNodes = DistributionUtil.ensureExecutorsAndGetNodeList(blockList, sparkContext)
+
+      // divide the blocks among the tasks of the nodes as per the data locality
+      val nodeBlockMapping = CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1,
+        parallelism, activeNodes.toList.asJava)
+
+      statistic.addStatistics(QueryStatisticsConstants.BLOCK_ALLOCATION, System.currentTimeMillis)
+      statisticRecorder.recordStatisticsForDriver(statistic, queryId)
+      statistic = new QueryStatistic()
+
+      var i = 0
+      // Create Spark Partition for each task and assign blocks
+      nodeBlockMapping.asScala.foreach { case (node, blockList) =>
+        blockList.asScala.foreach { blocksPerTask =>
+          val splits = blocksPerTask.asScala.map(_.asInstanceOf[CarbonInputSplit])
+          if (blocksPerTask.size() != 0) {
+            val multiBlockSplit = new CarbonMultiBlockSplit(identifier, splits.asJava, node)
+            val partition = new CarbonSparkPartition(id, i, multiBlockSplit)
+            result.add(partition)
+            i += 1
           }
         }
-        val noOfBlocks = blockList.size
-        val noOfNodes = nodeBlockMapping.size
-        val noOfTasks = result.size()
-        logInfo(s"Identified  no.of.Blocks: $noOfBlocks,"
-                + s"parallelism: $defaultParallelism , " +
-                s"no.of.nodes: $noOfNodes, no.of.tasks: $noOfTasks"
-        )
-        statistic.addStatistics(QueryStatisticsConstants.BLOCK_IDENTIFICATION,
-          System.currentTimeMillis)
-        statisticRecorder.recordStatisticsForDriver(statistic, queryModel.getQueryId())
-        statisticRecorder.logStatisticsAsTableDriver()
-        result.asScala.foreach { r =>
-          val cp = r.asInstanceOf[CarbonSparkPartition]
-          logInfo(s"Node: ${ cp.locations.toSeq.mkString(",") }" +
-                  s", No.Of Blocks:  ${ cp.tableBlockInfos.size() }"
-          )
-        }
-      } else {
-        logInfo("No blocks identified to scan")
       }
-    } else {
-      logInfo("No valid segments found to scan")
+
+      noOfBlocks = splits.size
+      noOfNodes = nodeBlockMapping.size
+      noOfTasks = result.size()
+
+      statistic = new QueryStatistic()
+      statistic.addStatistics(QueryStatisticsConstants.BLOCK_IDENTIFICATION,
+        System.currentTimeMillis)
+      statisticRecorder.recordStatisticsForDriver(statistic, queryId)
+      statisticRecorder.logStatisticsAsTableDriver()
     }
+    logInfo(
+      s"""
+         | Identified no.of.blocks: $noOfBlocks,
+         | no.of.tasks: $noOfTasks,
+         | no.of.nodes: $noOfNodes,
+         | parallelism: $parallelism
+       """.stripMargin)
     result.toArray(new Array[Partition](result.size()))
   }
 
-  override def compute(thepartition: Partition, context: TaskContext): Iterator[V] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    val iter = new Iterator[V] {
-      var rowIterator: CarbonIterator[Array[Any]] = _
-      var queryStartTime: Long = 0
-      val queryExecutor = QueryExecutorFactory.getQueryExecutor()
-      try {
-        context.addTaskCompletionListener(context => {
-          clearDictionaryCache(queryModel.getColumnToDictionaryMapping)
-          logStatistics()
-          queryExecutor.finish
-        })
-        val carbonSparkPartition = thepartition.asInstanceOf[CarbonSparkPartition]
-        if (!carbonSparkPartition.tableBlockInfos.isEmpty) {
-          queryModel.setQueryId(queryModel.getQueryId + "_" + carbonSparkPartition.idx)
-          // fill table block info
-          queryModel.setTableBlockInfos(carbonSparkPartition.tableBlockInfos)
-          queryStartTime = System.currentTimeMillis
-          val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
-          logInfo("*************************" + carbonPropertiesFilePath)
-          if (null == carbonPropertiesFilePath) {
-            System.setProperty("carbon.properties.filepath",
-              System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties")
-          }
-          // execute query
-          rowIterator = new ChunkRowIterator(
-            queryExecutor.execute(queryModel).
-              asInstanceOf[CarbonIterator[BatchResult]]).asInstanceOf[CarbonIterator[Array[Any]]]
+  override def compute(split: Partition, context: TaskContext): Iterator[V] = {
+    val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
+    if (null == carbonPropertiesFilePath) {
+      System.setProperty("carbon.properties.filepath",
+        System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties"
+      )
+    }
 
-        }
-      } catch {
-        case e: Exception =>
-          LOGGER.error(e)
-          if (null != e.getMessage) {
-            sys.error(s"Exception occurred in query execution :: ${ e.getMessage }")
-          } else {
-            sys.error("Exception occurred in query execution.Please check logs.")
-          }
+    val attemptId = newTaskAttemptID(jobTrackerId, id, isMap = true, split.index, 0)
+    val attemptContext = newTaskAttemptContext(new Configuration(), attemptId)
+    val format = prepareInputFormatForExecutor(attemptContext.getConfiguration)
+    val inputSplit = split.asInstanceOf[CarbonSparkPartition].split.value
+    val reader = format.createRecordReader(inputSplit, attemptContext)
+    reader.initialize(inputSplit, attemptContext)
+
+    val queryStartTime = System.currentTimeMillis
+
+    new Iterator[V] {
+      private var havePair = false
+      private var finished = false
+      private var count = 0
+
+      context.addTaskCompletionListener { context =>
+        logStatistics(queryStartTime, count)
+        reader.close()
       }
 
-      var havePair = false
-      var finished = false
-      var recordCount = 0
-
       override def hasNext: Boolean = {
+        if (context.isInterrupted) {
+          throw new TaskKilledException
+        }
         if (!finished && !havePair) {
-          finished = (null == rowIterator) || (!rowIterator.hasNext)
+          finished = !reader.nextKeyValue
+          if (finished) {
+            reader.close()
+          }
           havePair = !finished
         }
         !finished
@@ -241,68 +201,55 @@ class CarbonScanRDD[V: ClassTag](
           throw new java.util.NoSuchElementException("End of stream")
         }
         havePair = false
-        recordCount += 1
-        keyClass.getValue(rowIterator.next())
-      }
-
-      def clearDictionaryCache(columnToDictionaryMap: java.util.Map[String, Dictionary]) = {
-        if (null != columnToDictionaryMap) {
-          org.apache.carbondata.spark.util.CarbonQueryUtil
-            .clearColumnDictionaryCache(columnToDictionaryMap)
-        }
-      }
-
-      def logStatistics(): Unit = {
-        if (null != queryModel.getStatisticsRecorder) {
-          var queryStatistic = new QueryStatistic()
-          queryStatistic
-            .addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
-              System.currentTimeMillis - queryStartTime
-            )
-          queryModel.getStatisticsRecorder.recordStatistics(queryStatistic)
-          // result size
-          queryStatistic = new QueryStatistic()
-          queryStatistic.addCountStatistic(QueryStatisticsConstants.RESULT_SIZE, recordCount)
-          queryModel.getStatisticsRecorder.recordStatistics(queryStatistic)
-          // print executor query statistics for each task_id
-          queryModel.getStatisticsRecorder.logStatisticsAsTableExecutor()
-        }
+        val value: V = reader.getCurrentValue
+        count += 1
+        value
       }
     }
+  }
 
-    iter
+  private def prepareInputFormatForDriver(conf: Configuration): CarbonInputFormat[V] = {
+    CarbonInputFormat.setCarbonTable(conf, carbonTable)
+    createInputFormat(conf)
+  }
+
+  private def prepareInputFormatForExecutor(conf: Configuration): CarbonInputFormat[V] = {
+    CarbonInputFormat.setCarbonReadSupport(classOf[RawDataReadSupport], conf)
+    createInputFormat(conf)
+  }
+
+  private def createInputFormat(conf: Configuration): CarbonInputFormat[V] = {
+    val format = new CarbonInputFormat[V]
+    CarbonInputFormat.setTablePath(conf, identifier.getTablePath)
+    CarbonInputFormat.setFilterPredicates(conf, filterExpression)
+    val projection = new CarbonProjection
+    columnProjection.foreach { attr =>
+      projection.addColumn(attr.name)
+    }
+    CarbonInputFormat.setColumnProjection(conf, projection)
+    format
+  }
+
+  def logStatistics(queryStartTime: Long, recordCount: Int): Unit = {
+    var queryStatistic = new QueryStatistic()
+    queryStatistic.addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
+      System.currentTimeMillis - queryStartTime)
+    val statisticRecorder = CarbonTimeStatisticsFactory.createExecutorRecorder(queryId)
+    statisticRecorder.recordStatistics(queryStatistic)
+    // result size
+    queryStatistic = new QueryStatistic()
+    queryStatistic.addCountStatistic(QueryStatisticsConstants.RESULT_SIZE, recordCount)
+    statisticRecorder.recordStatistics(queryStatistic)
+    // print executor query statistics for each task_id
+    statisticRecorder.logStatisticsAsTableExecutor()
   }
 
   /**
    * Get the preferred locations where to launch this task.
    */
-  override def getPreferredLocations(partition: Partition): Seq[String] = {
-    val theSplit = partition.asInstanceOf[CarbonSparkPartition]
-    val firstOptionLocation = theSplit.locations.filter(_ != "localhost")
-    val tableBlocks = theSplit.tableBlockInfos
-    // node name and count mapping
-    val blockMap = new util.LinkedHashMap[String, Integer]()
-
-    tableBlocks.asScala.foreach(tableBlock => tableBlock.getLocations.foreach(
-      location => {
-        if (!firstOptionLocation.exists(location.equalsIgnoreCase(_))) {
-          val currentCount = blockMap.get(location)
-          if (currentCount == null) {
-            blockMap.put(location, 1)
-          } else {
-            blockMap.put(location, currentCount + 1)
-          }
-        }
-      }
-    )
-    )
-
-    val sortedList = blockMap.entrySet().asScala.toSeq.sortWith((nodeCount1, nodeCount2) => {
-      nodeCount1.getValue > nodeCount2.getValue
-    }
-    )
-
-    val sortedNodesList = sortedList.map(nodeCount => nodeCount.getKey).take(2)
-    firstOptionLocation ++ sortedNodesList
+  override def getPreferredLocations(split: Partition): Seq[String] = {
+    val theSplit = split.asInstanceOf[CarbonSparkPartition]
+    val firstOptionLocation = theSplit.split.value.getLocations.filter(_ != "localhost")
+    firstOptionLocation
   }
 }

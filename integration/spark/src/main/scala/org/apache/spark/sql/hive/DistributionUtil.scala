@@ -16,7 +16,6 @@
  */
 package org.apache.spark.sql.hive
 
-
 import java.net.{InetAddress, InterfaceAddress, NetworkInterface}
 
 import scala.collection.JavaConverters._
@@ -44,12 +43,9 @@ object DistributionUtil {
    * localhost for retriving executor list
    */
   def getNodeList(sparkContext: SparkContext): Array[String] = {
-
-    val arr =
-      sparkContext.getExecutorMemoryStatus.map {
-        kv =>
-          kv._1.split(":")(0)
-      }.toSeq
+    val arr = sparkContext.getExecutorMemoryStatus.map { kv =>
+      kv._1.split(":")(0)
+    }.toSeq
     val localhostIPs = getLocalhostIPs
     val selectedLocalIPList = localhostIPs.filter(arr.contains(_))
 
@@ -109,10 +105,9 @@ object DistributionUtil {
    * @param sparkContext
    * @return
    */
-  def ensureExecutorsAndGetNodeList(blockList: Array[Distributable],
-      sparkContext: SparkContext):
-  Array[String] = {
-    val nodeMapping = CarbonLoaderUtil.getRequiredExecutors(blockList.toSeq.asJava)
+  def ensureExecutorsAndGetNodeList(blockList: Seq[Distributable],
+    sparkContext: SparkContext): Seq[String] = {
+    val nodeMapping = CarbonLoaderUtil.getRequiredExecutors(blockList.asJava)
     var confExecutorsTemp: String = null
     if (sparkContext.getConf.contains("spark.executor.instances")) {
       confExecutorsTemp = sparkContext.getConf.get("spark.executor.instances")
@@ -131,7 +126,9 @@ object DistributionUtil {
     }
     val requiredExecutors = if (nodeMapping.size > confExecutors) {
       confExecutors
-    } else { nodeMapping.size() }
+    } else {
+      nodeMapping.size()
+    }
 
     val startTime = System.currentTimeMillis()
     CarbonContext.ensureExecutors(sparkContext, requiredExecutors)

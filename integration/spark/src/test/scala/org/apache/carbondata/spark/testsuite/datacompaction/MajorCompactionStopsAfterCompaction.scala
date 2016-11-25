@@ -87,14 +87,13 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
     var noOfRetries = 0
     while (!status && noOfRetries < 10) {
 
-      val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
-          AbsoluteTableIdentifier(
+      val identifier = new AbsoluteTableIdentifier(
             CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
             new CarbonTableIdentifier(
               CarbonCommonConstants.DATABASE_DEFAULT_NAME, "stopmajor", noOfRetries + "")
           )
-      )
-      val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
+      val segments = SegmentStatusManager.getSegmentStatus(identifier)
+          .getValidSegments.asScala.toList
       segments.foreach(seg =>
         System.out.println( "valid segment is =" + seg)
       )
@@ -119,14 +118,13 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
     // delete merged segments
     sql("clean files for table stopmajor")
 
-    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
-        AbsoluteTableIdentifier(
+    val identifier = new AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
           new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "stopmajor", "rrr")
         )
-    )
     // merged segment should not be there
-    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
+    val segments = SegmentStatusManager.getSegmentStatus(identifier)
+        .getValidSegments.asScala.toList
     assert(segments.contains("0.1"))
     assert(!segments.contains("0.2"))
     assert(!segments.contains("0"))

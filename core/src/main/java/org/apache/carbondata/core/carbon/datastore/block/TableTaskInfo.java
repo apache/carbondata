@@ -27,7 +27,7 @@ import java.util.TreeMap;
 /**
  * This class is responsible for maintaining the mapping of tasks of a node.
  */
-public class TableTaskInfo extends Distributable {
+public class TableTaskInfo implements Distributable {
 
   private final List<TableBlockInfo> tableBlockInfoList;
   private final String taskId;
