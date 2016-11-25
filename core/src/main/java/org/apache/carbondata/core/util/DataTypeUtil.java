@@ -36,7 +36,6 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeas
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 import org.apache.commons.lang.math.NumberUtils;
-import org.apache.spark.unsafe.types.UTF8String;
 
 public final class DataTypeUtil {
 
@@ -46,6 +45,8 @@ public final class DataTypeUtil {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataTypeUtil.class.getName());
   private static final Map<String, String> dataTypeDisplayNames;
+
+  private static final SparkDataTypeAdapter DATA_TYPE_ADAPTER;
 
   static {
     dataTypeDisplayNames = new HashMap<String, String>(16);
@@ -61,6 +62,7 @@ public final class DataTypeUtil {
     dataTypeDisplayNames.put(DataType.TIMESTAMP.toString(), DataType.TIMESTAMP.getName());
     dataTypeDisplayNames.put(DataType.SHORT.toString(), DataType.SHORT.getName());
     dataTypeDisplayNames.put(DataType.STRING.toString(), DataType.STRING.getName());
+    DATA_TYPE_ADAPTER = SparkDataTypeAdapter.getInstance();
   }
 
   /**
@@ -296,13 +298,9 @@ public final class DataTypeUtil {
           if (data.isEmpty()) {
             return null;
           }
-          java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data);
-          scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
-          org.apache.spark.sql.types.Decimal decConverter =
-              new org.apache.spark.sql.types.Decimal();
-          return decConverter.set(scalaDecVal);
+          return DATA_TYPE_ADAPTER.getSparkBigDecimal(data);
         default:
-          return UTF8String.fromString(data);
+          return DATA_TYPE_ADAPTER.convertToSparkUTF8String(data);
       }
     } catch (NumberFormatException ex) {
       LOGGER.error("Problem while converting data type" + data);
@@ -323,11 +321,7 @@ public final class DataTypeUtil {
         case LONG:
           return data;
         case DECIMAL:
-          java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data.toString());
-          scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
-          org.apache.spark.sql.types.Decimal decConverter =
-              new org.apache.spark.sql.types.Decimal();
-          return decConverter.set(scalaDecVal);
+          return DATA_TYPE_ADAPTER.getSparkBigDecimal(dataType.toString());
         default:
           return data;
       }
@@ -363,7 +357,7 @@ public final class DataTypeUtil {
         default:
           return data;
       }
-      if(null != parsedValue) {
+      if (null != parsedValue) {
         return data;
       }
       return null;
