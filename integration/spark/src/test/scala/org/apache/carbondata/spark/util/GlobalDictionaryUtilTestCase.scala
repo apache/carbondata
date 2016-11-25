@@ -97,7 +97,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
           "age INT) STORED BY 'org.apache.carbondata.format'"
       )
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
     try {
       sql(
@@ -106,7 +106,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
         "TBLPROPERTIES('DICTIONARY_EXCLUDE'='id,name')"
       )
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
     try {
       sql(
@@ -120,7 +120,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
 
       )
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
 
     try {
@@ -134,7 +134,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
           "TBLPROPERTIES('DICTIONARY_INCLUDE'='deviceInformationId')"
       )
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
   }
 

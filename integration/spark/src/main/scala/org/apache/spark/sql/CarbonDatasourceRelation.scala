@@ -132,7 +132,7 @@ private[sql] case class CarbonDatasourceRelation(
     tableIdentifier: TableIdentifier,
     alias: Option[String])
     (@transient context: SQLContext)
-    extends BaseRelation with Serializable with Logging {
+    extends BaseRelation with Serializable {
 
   lazy val carbonRelation: CarbonRelation = {
     CarbonEnv.getInstance(context)

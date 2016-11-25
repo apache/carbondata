@@ -23,11 +23,11 @@ import java.io.File
 import java.io.FileWriter
 import java.util.Random
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.sql.common.util.CarbonHiveContext
 import org.apache.spark.sql.common.util.CarbonHiveContext.sql
 import org.apache.spark.sql.common.util.QueryTest
-
 import org.scalatest.BeforeAndAfterAll
 
 /**
@@ -69,7 +69,7 @@ class DefaultSourceTestCase extends QueryTest with BeforeAndAfterAll {
              (c1 string, c2 string, c3 int, c4 int)
              STORED BY 'org.apache.carbondata.format'""")
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
   }
 

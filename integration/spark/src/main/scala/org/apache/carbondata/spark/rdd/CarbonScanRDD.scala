@@ -25,7 +25,7 @@ import scala.reflect.ClassTag
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.InputSplit
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
+import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.hive.DistributionUtil
 
@@ -76,7 +76,7 @@ class CarbonScanRDD[V: ClassTag](
     tableCreationTime: Long,
     schemaLastUpdatedTime: Long,
     baseStoreLocation: String)
-  extends RDD[V](sc, Nil) with Logging {
+  extends RDD[V](sc, Nil) {
 
 
   override def getPartitions: Array[Partition] = {

@@ -27,7 +27,6 @@ import scala.util.matching.Regex
 
 import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
-import org.apache.spark.Logging
 import org.apache.spark.sql.catalyst._
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.analysis._
@@ -48,8 +47,7 @@ import org.apache.carbondata.spark.util.CommonUtil
 /**
  * Parser for All Carbon DDL, DML cases in Unified context
  */
-class CarbonSqlParser()
-  extends AbstractSparkSQLParser with Logging {
+class CarbonSqlParser() extends AbstractSparkSQLParser {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   protected val AGGREGATE = carbonKeyWord("AGGREGATE")

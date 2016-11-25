@@ -21,7 +21,7 @@ import java.io.File
 
 import scala.language.implicitConversions
 
-import org.apache.spark.{Logging, SparkContext}
+import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.catalyst.ParserDialect
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog}
@@ -41,7 +41,7 @@ import org.apache.carbondata.spark.rdd.CarbonDataFrameRDD
 class CarbonContext(
     val sc: SparkContext,
     val storePath: String,
-    metaStorePath: String) extends HiveContext(sc) with Logging {
+    metaStorePath: String) extends HiveContext(sc) {
   self =>
 
   def this(sc: SparkContext) = {

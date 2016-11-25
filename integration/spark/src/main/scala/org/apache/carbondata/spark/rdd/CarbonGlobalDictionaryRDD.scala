@@ -171,7 +171,7 @@ case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends S
 class CarbonAllDictionaryCombineRDD(
     prev: RDD[(String, Iterable[String])],
     model: DictionaryLoadModel)
-  extends RDD[(Int, ColumnDistinctValues)](prev) with Logging {
+  extends RDD[(Int, ColumnDistinctValues)](prev) {
 
   override def getPartitions: Array[Partition] = {
     firstParent[(String, Iterable[String])].partitions
@@ -235,7 +235,7 @@ class CarbonAllDictionaryCombineRDD(
 class CarbonBlockDistinctValuesCombineRDD(
     prev: RDD[Row],
     model: DictionaryLoadModel)
-  extends RDD[(Int, ColumnDistinctValues)](prev) with Logging {
+  extends RDD[(Int, ColumnDistinctValues)](prev) {
 
   override def getPartitions: Array[Partition] = firstParent[Row].partitions
 
@@ -285,7 +285,7 @@ class CarbonBlockDistinctValuesCombineRDD(
 class CarbonGlobalDictionaryGenerateRDD(
     prev: RDD[(Int, ColumnDistinctValues)],
     model: DictionaryLoadModel)
-  extends RDD[(Int, String, Boolean)](prev) with Logging {
+  extends RDD[(Int, String, Boolean)](prev) {
 
   override def getPartitions: Array[Partition] = firstParent[(Int, ColumnDistinctValues)].partitions
 
@@ -479,7 +479,7 @@ class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
     dimensions: Array[CarbonDimension],
     hdfsLocation: String,
     dictFolderPath: String)
-  extends RDD[(Int, ColumnDistinctValues)](sparkContext, Nil) with Logging {
+  extends RDD[(Int, ColumnDistinctValues)](sparkContext, Nil) {
 
   override def getPartitions: Array[Partition] = {
     val primDimensions = dictionaryLoadModel.primDimensions

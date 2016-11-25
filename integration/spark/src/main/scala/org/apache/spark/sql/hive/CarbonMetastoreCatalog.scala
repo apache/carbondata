@@ -100,19 +100,16 @@ case class DictionaryMap(dictionaryMap: Map[String, Boolean]) {
 }
 
 class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
-    client: ClientInterface, queryId: String)
-  extends HiveMetastoreCatalog(client, hiveContext)
-    with spark.Logging {
+    client: ClientInterface, queryId: String) extends HiveMetastoreCatalog(client, hiveContext) {
 
-  @transient val LOGGER = LogServiceFactory
-    .getLogService("org.apache.spark.sql.CarbonMetastoreCatalog")
+  @transient
+  val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.CarbonMetastoreCatalog")
 
   val tableModifiedTimeStore = new java.util.HashMap[String, Long]()
   tableModifiedTimeStore
     .put(CarbonCommonConstants.DATABASE_DEFAULT_NAME, System.currentTimeMillis())
 
   val metadata = loadMetadata(storePath)
-
 
   def getTableCreationTime(databaseName: String, tableName: String): Long = {
     val tableMeta = metadata.tablesMeta.filter(
