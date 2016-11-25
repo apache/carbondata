@@ -108,9 +108,9 @@ public class CarbonDictionaryReaderImplTest {
       }
 
     };
-
-    int result = carbonDictionaryReaderImpl.read().size();
-    assertTrue(result == 20);
+    int expectedResult = 20;
+    int actualResult = carbonDictionaryReaderImpl.read().size();
+    assertTrue(actualResult == expectedResult);
 
   }
 
