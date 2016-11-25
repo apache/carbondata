@@ -19,30 +19,30 @@
 
 package org.apache.carbondata.core.datastorage.store.compression;
 
-public interface Compressor {
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
 
-  byte[] compressByte(byte[] unCompInput);
+public class CompressorFactory {
 
-  byte[] unCompressByte(byte[] compInput);
+  private static Compressor snappy;
+  private static Compressor dummy;
 
-  byte[] compressShort(short[] unCompInput);
-
-  short[] unCompressShort(byte[] compInput);
-
-  byte[] compressInt(int[] unCompInput);
-
-  int[] unCompressInt(byte[] compInput);
-
-  byte[] compressLong(long[] unCompInput);
-
-  long[] unCompressLong(byte[] compInput);
-
-  byte[] compressFloat(float[] unCompInput);
-
-  float[] unCompressFloat(byte[] compInput);
-
-  byte[] compressDouble(double[] unCompInput);
-
-  double[] unCompressDouble(byte[] compInput);
-
+  public static Compressor getInstance() {
+    String compressor = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.COMPRESSOR,
+        CarbonCommonConstants.DEFAULT_COMPRESSOR);
+    switch (compressor) {
+      case "snappy":
+        if (snappy == null) {
+          snappy = new SnappyCompressor();
+        }
+        return snappy;
+      case "dummy":
+        if (dummy == null) {
+          dummy = new DummyCompressor();
+        }
+        return dummy;
+      default:
+        throw new RuntimeException("Unsupported compressor: " + compressor);
+    }
+  }
 }

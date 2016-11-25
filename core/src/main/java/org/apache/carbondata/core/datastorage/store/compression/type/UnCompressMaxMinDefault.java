@@ -23,8 +23,7 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastorage.store.compression.Compressor;
-import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression;
+import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
@@ -38,11 +37,6 @@ public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompress
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(UnCompressMaxMinDefault.class.getName());
 
-  /**
-   * doubleCompressor.
-   */
-  private static Compressor<double[]> doubleCompressor =
-      SnappyCompression.SnappyDoubleCompression.INSTANCE;
   /**
    * value.
    */
@@ -64,7 +58,7 @@ public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompress
 
   @Override public ValueCompressonHolder.UnCompressValue compress() {
     UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte();
-    byte1.setValue(doubleCompressor.compress(value));
+    byte1.setValue(CompressorFactory.getInstance().compressDouble(value));
     return byte1;
   }
 

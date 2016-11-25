@@ -27,42 +27,12 @@ import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
  */
 public final class ValueCompressonHolder {
 
-  /**
-   * byteCompressor.
-   */
-  private static Compressor<byte[]> byteCompressor =
-      SnappyCompression.SnappyByteCompression.INSTANCE;
-
-  /**
-   * shortCompressor.
-   */
-  private static Compressor<short[]> shortCompressor =
-      SnappyCompression.SnappyShortCompression.INSTANCE;
-
-  /**
-   * intCompressor.
-   */
-  private static Compressor<int[]> intCompressor = SnappyCompression.SnappyIntCompression.INSTANCE;
-
-  /**
-   * longCompressor.
-   */
-  private static Compressor<long[]> longCompressor =
-      SnappyCompression.SnappyLongCompression.INSTANCE;
-
-  /**
-   * floatCompressor
-   */
-  private static Compressor<float[]> floatCompressor =
-      SnappyCompression.SnappyFloatCompression.INSTANCE;
-  /**
-   * doubleCompressor.
-   */
-  private static Compressor<double[]> doubleCompressor =
-      SnappyCompression.SnappyDoubleCompression.INSTANCE;
-
   private ValueCompressonHolder() {
 
+  }
+
+  private static Compressor compressor() {
+    return CompressorFactory.getInstance();
   }
 
   /**
@@ -74,32 +44,32 @@ public final class ValueCompressonHolder {
     switch (dataType) {
       case DATA_BYTE:
 
-        value.setValue(byteCompressor.unCompress(data));
+        value.setValue(compressor().unCompressByte(data));
         break;
 
       case DATA_SHORT:
 
-        value.setValue(shortCompressor.unCompress(data));
+        value.setValue(compressor().unCompressShort(data));
         break;
 
       case DATA_INT:
 
-        value.setValue(intCompressor.unCompress(data));
+        value.setValue(compressor().unCompressInt(data));
         break;
 
       case DATA_LONG:
       case DATA_BIGINT:
 
-        value.setValue(longCompressor.unCompress(data));
+        value.setValue(compressor().unCompressLong(data));
         break;
 
       case DATA_FLOAT:
 
-        value.setValue(floatCompressor.unCompress(data));
+        value.setValue(compressor().unCompressFloat(data));
         break;
       default:
 
-        value.setValue(doubleCompressor.unCompress(data));
+        value.setValue(compressor().unCompressDouble(data));
         break;
 
     }

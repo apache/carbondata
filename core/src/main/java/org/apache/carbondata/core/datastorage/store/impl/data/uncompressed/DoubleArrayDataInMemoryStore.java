@@ -26,11 +26,6 @@ import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonH
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.datastorage.store.impl.CompressedDataMeasureDataWrapper;
 
-/**
- * DoubleArrayDataInMemoryStore.
- *
- * @author S71955
- */
 public class DoubleArrayDataInMemoryStore extends AbstractDoubleArrayDataStore {
 
   // /**

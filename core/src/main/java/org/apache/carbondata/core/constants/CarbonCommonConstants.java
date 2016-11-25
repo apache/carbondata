@@ -485,6 +485,17 @@ public final class CarbonCommonConstants {
    */
   public static final String MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK =
       "carbon.load.metadata.lock.retry.timeout.sec";
+
+  /**
+   * compressor for writing/reading carbondata file
+   */
+  public static final String COMPRESSOR = "carbon.column.compressor";
+
+  /**
+   * default compressor is snappy
+   */
+  public static final String DEFAULT_COMPRESSOR = "dummy";
+
   /**
    * MARKED_FOR_DELETION
    */

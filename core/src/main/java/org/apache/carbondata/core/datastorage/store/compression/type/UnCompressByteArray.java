@@ -27,8 +27,7 @@ import java.util.List;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastorage.store.compression.Compressor;
-import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression;
+import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -40,11 +39,7 @@ public class UnCompressByteArray implements ValueCompressonHolder.UnCompressValu
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(UnCompressMaxMinByte.class.getName());
-  /**
-   * byteCompressor.
-   */
-  private static Compressor<byte[]> byteCompressor =
-      SnappyCompression.SnappyByteCompression.INSTANCE;
+
   private ByteArrayType arrayType;
   /**
    * value.
@@ -81,14 +76,14 @@ public class UnCompressByteArray implements ValueCompressonHolder.UnCompressValu
 
   @Override public ValueCompressonHolder.UnCompressValue compress() {
     UnCompressByteArray byte1 = new UnCompressByteArray(arrayType);
-    byte1.setValue(byteCompressor.compress(value));
+    byte1.setValue(CompressorFactory.getInstance().compressByte(value));
     return byte1;
   }
 
   @Override
   public ValueCompressonHolder.UnCompressValue uncompress(ValueCompressionUtil.DataType dataType) {
     ValueCompressonHolder.UnCompressValue byte1 = new UnCompressByteArray(arrayType);
-    byte1.setValue(byteCompressor.unCompress(value));
+    byte1.setValue(CompressorFactory.getInstance().unCompressByte(value));
     return byte1;
   }
 

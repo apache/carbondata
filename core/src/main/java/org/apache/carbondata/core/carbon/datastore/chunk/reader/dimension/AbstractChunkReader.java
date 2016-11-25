@@ -26,7 +26,7 @@ import org.apache.carbondata.core.carbon.datastore.chunk.reader.DimensionColumnC
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
-import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression;
+import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.util.CarbonProperties;
 
@@ -35,12 +35,6 @@ import org.apache.carbondata.core.util.CarbonProperties;
  * of reader
  */
 public abstract class AbstractChunkReader implements DimensionColumnChunkReader {
-
-  /**
-   * compressor will be used to uncompress the data
-   */
-  protected static final Compressor<byte[]> COMPRESSOR =
-      SnappyCompression.SnappyByteCompression.INSTANCE;
 
   /**
    * data chunk list which holds the information
@@ -139,5 +133,9 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
       dataChunk.add(data);
     }
     return dataChunk;
+  }
+
+  protected Compressor compressor() {
+    return CompressorFactory.getInstance();
   }
 }

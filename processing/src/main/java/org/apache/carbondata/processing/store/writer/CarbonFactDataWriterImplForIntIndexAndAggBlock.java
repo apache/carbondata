@@ -30,7 +30,7 @@ import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.columnar.IndexStorage;
-import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
+import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
@@ -346,7 +346,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
           }
         }
       }
-      keyBlockData[i] = SnappyByteCompression.INSTANCE.compress(keyBlockData[i]);
+      keyBlockData[i] = CompressorFactory.getInstance().compressByte(keyBlockData[i]);
     }
     return keyBlockData;
   }

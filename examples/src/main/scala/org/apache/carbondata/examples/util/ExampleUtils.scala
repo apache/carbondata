@@ -22,6 +22,7 @@ import java.io.File
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.{CarbonContext, SaveMode}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 // scalastyle:off println
@@ -48,6 +49,9 @@ object ExampleUtils {
     // true -> use table split partition, support multiple partition loading
     // false -> use node split partition, support data load by host partition
     CarbonProperties.getInstance().addProperty("carbon.table.split.partition.enable", "false")
+    // Specify timestamp format based on raw data
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      "yyyy/MM/dd")
     cc
   }
 

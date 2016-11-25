@@ -23,8 +23,7 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastorage.store.compression.Compressor;
-import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression;
+import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
@@ -36,10 +35,7 @@ public class UnCompressNonDecimalInt implements UnCompressValue<int[]> {
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(UnCompressNonDecimalInt.class.getName());
-  /**
-   * intCompressor.
-   */
-  private static Compressor<int[]> intCompressor = SnappyCompression.SnappyIntCompression.INSTANCE;
+
   /**
    * value.
    */
@@ -61,7 +57,7 @@ public class UnCompressNonDecimalInt implements UnCompressValue<int[]> {
 
   @Override public UnCompressValue compress() {
     UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
-    byte1.setValue(intCompressor.compress(value));
+    byte1.setValue(CompressorFactory.getInstance().compressInt(value));
     return byte1;
   }
 
@@ -74,9 +70,6 @@ public class UnCompressNonDecimalInt implements UnCompressValue<int[]> {
     this.value = ValueCompressionUtil.convertToIntArray(buffer, bytesArr.length);
   }
 
-  /**
-   * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
-   */
   @Override public UnCompressValue getCompressorObject() {
     return new UnCompressNonDecimalByte();
   }
