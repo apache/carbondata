@@ -26,7 +26,7 @@ import org.apache.hadoop.io.ArrayWritable;
 
 public class ArrayWritableReadSupport implements CarbonReadSupport<ArrayWritable> {
 
-  @Override public void intialize(CarbonColumn[] carbonColumns,
+  @Override public void initialize(CarbonColumn[] carbonColumns,
       AbsoluteTableIdentifier absoluteTableIdentifier) {
   }
 

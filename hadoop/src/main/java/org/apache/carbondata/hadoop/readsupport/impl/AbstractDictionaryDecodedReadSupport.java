@@ -51,7 +51,7 @@ public abstract class AbstractDictionaryDecodedReadSupport<T> implements CarbonR
    * @param carbonColumns
    * @param absoluteTableIdentifier
    */
-  @Override public void intialize(CarbonColumn[] carbonColumns,
+  @Override public void initialize(CarbonColumn[] carbonColumns,
       AbsoluteTableIdentifier absoluteTableIdentifier) {
     this.carbonColumns = carbonColumns;
     dictionaries = new Dictionary[carbonColumns.length];

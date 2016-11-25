@@ -93,9 +93,8 @@ object CarbonDataRDDFactory {
     // Delete the records based on data
     val table = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(databaseName + "_" + tableName)
-    val segmentStatusManager = new SegmentStatusManager(table.getAbsoluteTableIdentifier)
     val loadMetadataDetailsArray =
-      segmentStatusManager.readLoadMetadata(table.getMetaDataFilepath()).toList
+      SegmentStatusManager.readLoadMetadata(table.getMetaDataFilepath).toList
     val resultMap = new CarbonDeleteLoadByDateRDD(
       sc.sparkContext,
       new DeletedLoadResultImpl(),
@@ -1055,10 +1054,7 @@ object CarbonDataRDDFactory {
 
   def readLoadMetadataDetails(model: CarbonLoadModel, storePath: String): Unit = {
     val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetaDataFilepath
-    val segmentStatusManager =
-      new SegmentStatusManager(
-        model.getCarbonDataLoadSchema.getCarbonTable.getAbsoluteTableIdentifier)
-    val details = segmentStatusManager.readLoadMetadata(metadataPath)
+    val details = SegmentStatusManager.readLoadMetadata(metadataPath)
     model.setLoadMetadataDetails(details.toList.asJava)
   }
 
@@ -1070,9 +1066,7 @@ object CarbonDataRDDFactory {
     if (LoadMetadataUtil.isLoadDeletionRequired(carbonLoadModel)) {
       val loadMetadataFilePath = CarbonLoaderUtil
         .extractLoadMetadataFileLocation(carbonLoadModel)
-      val segmentStatusManager = new SegmentStatusManager(table.getAbsoluteTableIdentifier)
-      val details = segmentStatusManager
-        .readLoadMetadata(loadMetadataFilePath)
+      val details = SegmentStatusManager.readLoadMetadata(loadMetadataFilePath)
       val carbonTableStatusLock = CarbonLockFactory
         .getCarbonLockObj(table.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
           LockUsage.TABLE_STATUS_LOCK)
@@ -1089,17 +1083,16 @@ object CarbonDataRDDFactory {
             LOGGER.info("Table status lock has been successfully acquired.")
 
             // read latest table status again.
-            val latestMetadata = segmentStatusManager.readLoadMetadata(loadMetadataFilePath)
+            val latestMetadata = SegmentStatusManager.readLoadMetadata(loadMetadataFilePath)
 
             // update the metadata details from old to new status.
             val latestStatus = CarbonLoaderUtil
-              .updateLoadMetadataFromOldToNew(details, latestMetadata)
+                .updateLoadMetadataFromOldToNew(details, latestMetadata)
 
             CarbonLoaderUtil.writeLoadMetadata(
               carbonLoadModel.getCarbonDataLoadSchema,
               carbonLoadModel.getDatabaseName,
-              carbonLoadModel.getTableName, latestStatus
-            )
+              carbonLoadModel.getTableName, latestStatus)
           } else {
             val errorMsg = "Clean files request is failed for " +
                            s"${ carbonLoadModel.getDatabaseName }." +
@@ -1109,7 +1102,6 @@ object CarbonDataRDDFactory {
             LOGGER.audit(errorMsg)
             LOGGER.error(errorMsg)
             throw new Exception(errorMsg + " Please try after some time.")
-
           }
         } finally {
           CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK)

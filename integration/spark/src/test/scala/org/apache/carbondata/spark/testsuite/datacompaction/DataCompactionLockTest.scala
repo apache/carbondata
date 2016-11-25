@@ -105,16 +105,11 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
     * Compaction should fail as lock is being held purposefully
     */
   test("check if compaction is failed or not.") {
-
-      val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
-        absoluteTableIdentifier
-      )
-      val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
-
+      val segments = SegmentStatusManager.getSegmentStatus(absoluteTableIdentifier)
+          .getValidSegments.asScala.toList
       if (!segments.contains("0.1")) {
         assert(true)
-      }
-      else {
+      } else {
         assert(false)
       }
   }

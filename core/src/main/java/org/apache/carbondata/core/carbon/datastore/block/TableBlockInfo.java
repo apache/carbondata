@@ -28,8 +28,7 @@ import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
  * class will be used to pass the block detail detail will be passed form driver
  * to all the executor to load the b+ tree
  */
-public class TableBlockInfo extends Distributable
-    implements Serializable, Comparable<Distributable> {
+public class TableBlockInfo implements Distributable, Serializable {
 
   /**
    * serialization id

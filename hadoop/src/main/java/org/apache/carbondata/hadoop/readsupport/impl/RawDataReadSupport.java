@@ -24,7 +24,8 @@ import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 public class RawDataReadSupport implements CarbonReadSupport<Object[]> {
 
-  @Override public void intialize(CarbonColumn[] carbonColumns,
+  @Override
+  public void initialize(CarbonColumn[] carbonColumns,
       AbsoluteTableIdentifier absoluteTableIdentifier) {
   }
 
@@ -34,7 +35,8 @@ public class RawDataReadSupport implements CarbonReadSupport<Object[]> {
    * @param data
    * @return
    */
-  @Override public Object[] readRow(Object[] data) {
+  @Override
+  public Object[] readRow(Object[] data) {
     return data;
   }
 

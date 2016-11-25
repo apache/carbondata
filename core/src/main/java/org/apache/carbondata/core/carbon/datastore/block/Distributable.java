@@ -16,10 +16,12 @@
  */
 package org.apache.carbondata.core.carbon.datastore.block;
 
-/**
- * Abstract class which is maintains the locations of node.
- */
-public abstract class Distributable implements Comparable<Distributable> {
+import java.io.IOException;
 
-  public abstract String[] getLocations();
+/**
+ * interface to get the locations of node. Used for making task distribution based on locality
+ */
+public interface Distributable extends Comparable<Distributable> {
+
+  String[] getLocations() throws IOException;
 }
