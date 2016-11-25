@@ -99,7 +99,7 @@ class CarbonContext(
 
   experimental.extraStrategies = {
     val carbonStrategy = new CarbonStrategies(self)
-    Seq(carbonStrategy.CarbonTableScan, carbonStrategy.DDLStrategies)
+    Seq(carbonStrategy.CarbonLateDecodeStrategy, carbonStrategy.DDLStrategies)
   }
 
   override protected def configure(): Map[String, String] = {

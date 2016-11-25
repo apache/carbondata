@@ -25,6 +25,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 class CarbonOption(options: Map[String, String]) {
   def tableIdentifier: String = options.getOrElse("tableName", s"$dbName.$tableName")
 
+  def talbePath: String = options.getOrElse("tablePath", "")
+
   def dbName: String = options.getOrElse("dbName", CarbonCommonConstants.DATABASE_DEFAULT_NAME)
 
   def tableName: String = options.getOrElse("tableName", "default_table")

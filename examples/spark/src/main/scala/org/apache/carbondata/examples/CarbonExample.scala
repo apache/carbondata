@@ -55,7 +55,7 @@ object CarbonExample {
            FROM t3
            WHERE country IN ('china','france')
            GROUP BY country
-           """).show()
+           """).explain(true)
 
     // Load data without kettle
     cc.sql(s"""
