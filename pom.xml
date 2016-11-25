@@ -97,8 +97,6 @@
     <module>processing</module>
     <module>hadoop</module>
     <module>assembly</module>
-    <module>examples</module>
-    <module>integration/spark-common</module>
   </modules>
 
   <properties>
@@ -294,6 +292,7 @@
       </properties>
       <modules>
         <module>integration/spark</module>
+        <module>examples/spark</module>
       </modules>
     </profile>
     <profile>
@@ -303,6 +302,7 @@
       </properties>
       <modules>
         <module>integration/spark</module>
+        <module>examples/spark</module>
       </modules>
     </profile>
     <profile>
@@ -312,6 +312,7 @@
       </properties>
       <modules>
         <module>integration/spark2</module>
+        <module>examples/spark2</module>
       </modules>
     </profile>
     <profile>
