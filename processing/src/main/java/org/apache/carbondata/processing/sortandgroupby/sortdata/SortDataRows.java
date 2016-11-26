@@ -74,6 +74,8 @@ public class SortDataRows {
 
   private SortIntermediateFileMerger intermediateFileMerger;
 
+  private final Object addRowsLock = new Object();
+
   public SortDataRows(SortParameters parameters,
       SortIntermediateFileMerger intermediateFileMerger) {
     this.parameters = parameters;
@@ -134,6 +136,44 @@ public class SortDataRows {
       this.entryCount = 0;
     }
     recordHolderList[entryCount++] = row;
+  }
+
+  /**
+   * This method will be used to add new row
+   *
+   * @param rowBatch new rowBatch
+   * @throws CarbonSortKeyAndGroupByException problem while writing
+   */
+  public void addRowBatch(Object[][] rowBatch, int size) throws CarbonSortKeyAndGroupByException {
+    // if record holder list size is equal to sort buffer size then it will
+    // sort the list and then write current list data to file
+    synchronized (addRowsLock) {
+      if (entryCount + size >= sortBufferSize) {
+        LOGGER.debug("************ Writing to temp file ********** ");
+        intermediateFileMerger.startMergingIfPossible();
+        Object[][] recordHolderListLocal = recordHolderList;
+        int sizeLeft = sortBufferSize - entryCount ;
+        if (sizeLeft > 0) {
+          System.arraycopy(rowBatch, 0, recordHolderListLocal, entryCount, sizeLeft);
+        }
+        try {
+          dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(recordHolderListLocal));
+        } catch (Exception e) {
+          LOGGER.error(
+              "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
+          throw new CarbonSortKeyAndGroupByException(e);
+        }
+        // create the new holder Array
+        this.recordHolderList = new Object[this.sortBufferSize][];
+        this.entryCount = 0;
+        size = size - sizeLeft;
+        if (size == 0) {
+          return;
+        }
+      }
+      System.arraycopy(rowBatch, 0, recordHolderList, entryCount, size);
+      entryCount += size;
+    }
   }
 
   /**

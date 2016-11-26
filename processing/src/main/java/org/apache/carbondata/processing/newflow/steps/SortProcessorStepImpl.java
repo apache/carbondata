@@ -20,6 +20,8 @@ package org.apache.carbondata.processing.newflow.steps;
 
 import java.util.Iterator;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
@@ -28,6 +30,7 @@ import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 import org.apache.carbondata.processing.newflow.sort.Sorter;
 import org.apache.carbondata.processing.newflow.sort.impl.ParallelReadMergeSorterImpl;
+import org.apache.carbondata.processing.newflow.sort.impl.UnsafeParallelReadMergeSorterImpl;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 
 /**
@@ -52,7 +55,14 @@ public class SortProcessorStepImpl extends AbstractDataLoadProcessorStep {
   public void initialize() throws CarbonDataLoadingException {
     child.initialize();
     SortParameters sortParameters = SortParameters.createSortParameters(configuration);
-    sorter = new ParallelReadMergeSorterImpl(child.getOutput());
+    boolean offheapsort = Boolean.parseBoolean(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
+            CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT));
+    if (offheapsort) {
+      sorter = new UnsafeParallelReadMergeSorterImpl(child.getOutput());
+    } else {
+      sorter = new ParallelReadMergeSorterImpl(child.getOutput());
+    }
     sorter.initialize(sortParameters);
   }
 
