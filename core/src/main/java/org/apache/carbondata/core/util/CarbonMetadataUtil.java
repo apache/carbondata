@@ -467,7 +467,7 @@ public class CarbonMetadataUtil {
    * @return Index header object
    */
   public static IndexHeader getIndexHeader(int[] columnCardinality,
-      List<ColumnSchema> columnSchemaList) {
+      List<ColumnSchema> columnSchemaList, int bucketNumber) {
     // create segment info object
     SegmentInfo segmentInfo = new SegmentInfo();
     // set the number of columns
@@ -482,6 +482,8 @@ public class CarbonMetadataUtil {
     indexHeader.setSegment_info(segmentInfo);
     // set the column names
     indexHeader.setTable_columns(columnSchemaList);
+    // set the bucket number
+    indexHeader.setBucket_id(bucketNumber);
     return indexHeader;
   }
 

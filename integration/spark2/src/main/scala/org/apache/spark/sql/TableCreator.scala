@@ -21,7 +21,7 @@ import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.mutable.{LinkedHashSet, Map}
 
-import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField, TableModel}
+import org.apache.spark.sql.execution.command.{BucketFields, ColumnProperty, Field, PartitionerField, TableModel}
 
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -442,6 +442,7 @@ object TableCreator {
   def prepareTableModel(ifNotExistPresent: Boolean, dbName: Option[String]
                         , tableName: String, fields: Seq[Field],
                         partitionCols: Seq[PartitionerField],
+                        bucketFields: Option[BucketFields],
                         tableProperties: Map[String, String]): TableModel
   = {
 
@@ -483,7 +484,8 @@ object TableCreator {
       Option(noDictionaryDims),
       Option(noInvertedIdxCols),
       groupCols,
-      Some(colProps))
+      Some(colProps),
+      bucketFields)
   }
 
 }

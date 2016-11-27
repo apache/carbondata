@@ -33,6 +33,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.apache.carbondata.core.carbon.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
@@ -72,6 +73,11 @@ public class CarbonTable implements Serializable {
   private Map<String, List<CarbonMeasure>> tableMeasuresMap;
 
   /**
+   * table bucket map.
+   */
+  private Map<String, BucketingInfo> tableBucketMap;
+
+  /**
    * tableUniqueName
    */
   private String tableUniqueName;
@@ -99,6 +105,7 @@ public class CarbonTable implements Serializable {
   public CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableMeasuresMap = new HashMap<String, List<CarbonMeasure>>();
+    this.tableBucketMap = new HashMap<>();
     this.aggregateTablesName = new ArrayList<String>();
     this.createOrderColumn = new HashMap<String, List<CarbonColumn>>();
   }
@@ -124,7 +131,10 @@ public class CarbonTable implements Serializable {
     for (TableSchema aggTable : aggregateTableList) {
       this.aggregateTablesName.add(aggTable.getTableName());
       fillDimensionsAndMeasuresForTables(aggTable);
+      tableBucketMap.put(aggTable.getTableName(), aggTable.getBucketingInfo());
     }
+    tableBucketMap.put(tableInfo.getFactTable().getTableName(),
+        tableInfo.getFactTable().getBucketingInfo());
   }
 
   /**
@@ -472,6 +482,10 @@ public class CarbonTable implements Serializable {
       }
     }
     return null;
+  }
+
+  public BucketingInfo getBucketingInfo(String tableName) {
+    return tableBucketMap.get(tableName);
   }
 
   /**

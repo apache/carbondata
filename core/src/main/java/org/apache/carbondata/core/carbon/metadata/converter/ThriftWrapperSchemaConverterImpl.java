@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.apache.carbondata.core.carbon.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.carbon.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.carbon.metadata.schema.SchemaEvolutionEntry;
 import org.apache.carbondata.core.carbon.metadata.schema.table.TableInfo;
@@ -190,7 +191,22 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         new org.apache.carbondata.format.TableSchema(
             wrapperTableSchema.getTableId(), thriftColumnSchema, schemaEvolution);
     externalTableSchema.setTableProperties(wrapperTableSchema.getTableProperties());
+    if (wrapperTableSchema.getBucketingInfo() != null) {
+      externalTableSchema.setBucketingInfo(
+          fromWrapperToExternalBucketingInfo(wrapperTableSchema.getBucketingInfo()));
+    }
     return externalTableSchema;
+  }
+
+  private org.apache.carbondata.format.BucketingInfo fromWrapperToExternalBucketingInfo(
+      BucketingInfo bucketingInfo) {
+    List<org.apache.carbondata.format.ColumnSchema> thriftColumnSchema =
+        new ArrayList<org.apache.carbondata.format.ColumnSchema>();
+    for (ColumnSchema wrapperColumnSchema : bucketingInfo.getListOfColumns()) {
+      thriftColumnSchema.add(fromWrapperToExternalColumnSchema(wrapperColumnSchema));
+    }
+    return new org.apache.carbondata.format.BucketingInfo(thriftColumnSchema,
+        bucketingInfo.getNumberOfBuckets());
   }
 
   /* (non-Javadoc)
@@ -365,7 +381,21 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperTableSchema.setListOfColumns(listOfColumns);
     wrapperTableSchema.setSchemaEvalution(
         fromExternalToWrapperSchemaEvolution(externalTableSchema.getSchema_evolution()));
+    if (externalTableSchema.isSetBucketingInfo()) {
+      wrapperTableSchema.setBucketingInfo(
+          fromExternalToWarpperBucketingInfo(externalTableSchema.bucketingInfo));
+    }
     return wrapperTableSchema;
+  }
+
+  private BucketingInfo fromExternalToWarpperBucketingInfo(
+      org.apache.carbondata.format.BucketingInfo externalBucketInfo) {
+    List<ColumnSchema> listOfColumns = new ArrayList<ColumnSchema>();
+    for (org.apache.carbondata.format.ColumnSchema externalColumnSchema :
+          externalBucketInfo.table_columns) {
+      listOfColumns.add(fromExternalToWrapperColumnSchema(externalColumnSchema));
+    }
+    return new BucketingInfo(listOfColumns, externalBucketInfo.number_of_buckets);
   }
 
   /* (non-Javadoc)

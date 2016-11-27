@@ -150,6 +150,10 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
    */
   private void startSorting(File[] files) throws CarbonDataWriterException {
     this.fileCounter = files.length;
+    if (fileCounter == 0) {
+      LOGGER.info("No files to merge sort");
+      return;
+    }
     this.fileBufferSize = CarbonDataProcessorUtil
         .getFileBufferSize(this.fileCounter, CarbonProperties.getInstance(),
             CarbonCommonConstants.CONSTANT_SIZE_TEN);

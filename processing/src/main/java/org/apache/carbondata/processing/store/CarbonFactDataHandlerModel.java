@@ -186,13 +186,15 @@ public class CarbonFactDataHandlerModel {
    */
   private boolean useKettle = true;
 
+  private int bucketId = 0;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    * @param configuration
    * @return CarbonFactDataHandlerModel
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
-      CarbonDataLoadConfiguration configuration, String storeLocation) {
+      CarbonDataLoadConfiguration configuration, String storeLocation, int bucketId) {
 
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
@@ -291,6 +293,7 @@ public class CarbonFactDataHandlerModel {
     } else {
       carbonFactDataHandlerModel.setMdKeyIndex(measureCount);
     }
+    carbonFactDataHandlerModel.bucketId = bucketId;
     return carbonFactDataHandlerModel;
   }
 
@@ -557,6 +560,10 @@ public class CarbonFactDataHandlerModel {
 
   public void setUseKettle(boolean useKettle) {
     this.useKettle = useKettle;
+  }
+
+  public int getBucketId() {
+    return bucketId;
   }
 }
 

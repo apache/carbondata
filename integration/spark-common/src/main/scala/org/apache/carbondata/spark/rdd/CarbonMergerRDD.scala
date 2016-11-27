@@ -302,7 +302,7 @@ class CarbonMergerRDD[K, V](
       }
       if (blockletCount != 0) {
         val multiBlockSplit = new CarbonMultiBlockSplit(absoluteTableIdentifier,
-          carbonInputSplits.asJava, nodeName)
+          carbonInputSplits.asJava, Array(nodeName))
         result.add(new CarbonSparkPartition(id, i, multiBlockSplit))
         i += 1
       }

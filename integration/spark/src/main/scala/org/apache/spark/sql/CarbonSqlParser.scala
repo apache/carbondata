@@ -159,6 +159,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
         var ifNotExistPresent: Boolean = false
         var dbName: Option[String] = None
         var tableName: String = ""
+        var bucketFields: Option[BucketFields] = None
 
         try {
 
@@ -252,6 +253,13 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
 
             case Token("TOK_LIKETABLE", child :: Nil) =>
               likeTableName = child.getChild(0).getText()
+            case Token("TOK_ALTERTABLE_BUCKETS",
+                  Token("TOK_TABCOLNAME", list)::numberOfBuckets) =>
+              val cols = list.map(_.getText)
+              if (cols != null) {
+                bucketFields = Some(BucketFields(cols,
+                  numberOfBuckets.head.getText.toInt))
+              }
 
             case _ => // Unsupport features
           }
@@ -267,7 +275,8 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
             tableName,
             fields,
             partitionCols,
-            tableProperties)
+            tableProperties,
+            bucketFields)
 
           // get logical plan.
           CreateTable(tableModel)

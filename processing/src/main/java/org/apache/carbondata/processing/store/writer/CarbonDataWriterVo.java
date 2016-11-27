@@ -66,6 +66,8 @@ public class CarbonDataWriterVo {
 
   private int tableBlocksize;
 
+  private int bucketNumber;
+
   /**
    * @return the storeLocation
    */
@@ -318,4 +320,11 @@ public class CarbonDataWriterVo {
     this.tableBlocksize = tableBlocksize;
   }
 
+  public int getBucketNumber() {
+    return bucketNumber;
+  }
+
+  public void setBucketNumber(int bucketNumber) {
+    this.bucketNumber = bucketNumber;
+  }
 }

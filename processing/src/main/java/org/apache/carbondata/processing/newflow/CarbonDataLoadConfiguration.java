@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.carbon.metadata.schema.BucketingInfo;
 
 public class CarbonDataLoadConfiguration {
 
@@ -35,6 +36,8 @@ public class CarbonDataLoadConfiguration {
   private String segmentId;
 
   private String taskNo;
+
+  private BucketingInfo bucketingInfo;
 
   private Map<String, Object> dataLoadProperties = new HashMap<>();
 
@@ -140,5 +143,13 @@ public class CarbonDataLoadConfiguration {
 
   public Object getDataLoadProperty(String key) {
     return dataLoadProperties.get(key);
+  }
+
+  public BucketingInfo getBucketingInfo() {
+    return bucketingInfo;
+  }
+
+  public void setBucketingInfo(BucketingInfo bucketingInfo) {
+    this.bucketingInfo = bucketingInfo;
   }
 }

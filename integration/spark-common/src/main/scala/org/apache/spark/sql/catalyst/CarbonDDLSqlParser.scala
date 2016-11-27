@@ -223,8 +223,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   def prepareTableModel(ifNotExistPresent: Boolean, dbName: Option[String]
       , tableName: String, fields: Seq[Field],
       partitionCols: Seq[PartitionerField],
-      tableProperties: Map[String, String]): TableModel
-  = {
+      tableProperties: Map[String, String],
+      bucketFields: Option[BucketFields]): TableModel = {
 
     fields.zipWithIndex.foreach { x =>
       x._1.schemaOrdinal = x._2
@@ -268,7 +268,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       Option(noDictionaryDims),
       Option(noInvertedIdxCols),
       groupCols,
-      Some(colProps))
+      Some(colProps),
+      bucketFields: Option[BucketFields])
   }
 
   /**

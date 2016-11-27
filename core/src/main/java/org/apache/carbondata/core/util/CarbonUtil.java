@@ -1093,7 +1093,7 @@ public final class CarbonUtil {
    * @return list of block info
    * @throws CarbonUtilException if any problem while reading
    */
-  public static List<DataFileFooter> readCarbonIndexFile(String taskId,
+  public static List<DataFileFooter> readCarbonIndexFile(String taskId, String bucketNumber,
       List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier absoluteTableIdentifier)
       throws CarbonUtilException {
     // need to sort the  block info list based for task in ascending  order so
@@ -1105,7 +1105,8 @@ public final class CarbonUtil {
     // geting the index file path
     //TODO need to pass proper partition number when partiton will be supported
     String carbonIndexFilePath = carbonTablePath
-        .getCarbonIndexFilePath(taskId, "0", tableBlockInfoList.get(0).getSegmentId());
+        .getCarbonIndexFilePath(taskId, "0", tableBlockInfoList.get(0).getSegmentId(),
+            bucketNumber);
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
     try {
       // read the index info and return
