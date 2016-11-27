@@ -192,7 +192,7 @@ public class CarbonFactDataHandlerModel {
    * @return CarbonFactDataHandlerModel
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
-      CarbonDataLoadConfiguration configuration, String storeLocation) {
+      CarbonDataLoadConfiguration configuration, String storeLocation, String partitionId) {
 
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
@@ -258,7 +258,7 @@ public class CarbonFactDataHandlerModel {
     CarbonDataFileAttributes carbonDataFileAttributes =
         new CarbonDataFileAttributes(Integer.parseInt(configuration.getTaskNo()),
             (String) configuration.getDataLoadProperty(DataLoadProcessorConstants.FACT_TIME_STAMP));
-    String carbonDataDirectoryPath = getCarbonDataFolderLocation(configuration);
+    String carbonDataDirectoryPath = getCarbonDataFolderLocation(configuration, partitionId);
 
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setDatabaseName(
@@ -299,7 +299,8 @@ public class CarbonFactDataHandlerModel {
    *
    * @return data directory path
    */
-  private static String getCarbonDataFolderLocation(CarbonDataLoadConfiguration configuration) {
+  private static String getCarbonDataFolderLocation(CarbonDataLoadConfiguration configuration,
+      String partitionId) {
     String carbonStorePath =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
     CarbonTableIdentifier tableIdentifier =
@@ -310,7 +311,7 @@ public class CarbonFactDataHandlerModel {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTable.getCarbonTableIdentifier());
     String carbonDataDirectoryPath = carbonTablePath
-        .getCarbonDataDirectoryPath(configuration.getPartitionId(),
+        .getCarbonDataDirectoryPath(partitionId,
             configuration.getSegmentId() + "");
     return carbonDataDirectoryPath;
   }

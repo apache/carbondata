@@ -1,6 +1,7 @@
 package org.apache.carbondata.core.partition.impl;
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.partition.Partitioner;
@@ -14,14 +15,14 @@ public class HashPartitionerImpl implements Partitioner<Object[]> {
 
   private Hash[] hashes;
 
-  public HashPartitionerImpl(int[] indexes, DataType[] dataTypes, int numberOfBuckets) {
+  public HashPartitionerImpl(List<Integer> indexes, List<DataType> dataTypes, int numberOfBuckets) {
     this.numberOfBuckets = numberOfBuckets;
-    hashes = new Hash[indexes.length];
-    for (int i = 0; i < indexes.length; i++) {
-      if (dataTypes[indexes[i]] == DataType.STRING) {
-        hashes[i] = new ByteArrayHash(indexes[i]);
+    hashes = new Hash[indexes.size()];
+    for (int i = 0; i < indexes.size(); i++) {
+      if (dataTypes.get(indexes.get(i)) == DataType.STRING) {
+        hashes[i] = new ByteArrayHash(indexes.get(i));
       } else {
-        hashes[i] = new NumericHash(indexes[i]);
+        hashes[i] = new NumericHash(indexes.get(i));
       }
     }
   }
