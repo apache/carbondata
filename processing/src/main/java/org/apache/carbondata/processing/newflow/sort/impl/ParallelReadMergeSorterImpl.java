@@ -29,6 +29,7 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
@@ -90,25 +91,23 @@ public class ParallelReadMergeSorterImpl implements Sorter {
   @Override
   public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
       throws CarbonDataLoadingException {
-    SortDataRows[] sortDataRows = new SortDataRows[iterators.length];
+    SortDataRows sortDataRow = new SortDataRows(sortParameters, intermediateFileMerger);
+    final int batchSize = CarbonProperties.getInstance().getBatchSize();
     try {
-      for (int i = 0; i < iterators.length; i++) {
-        sortDataRows[i] = new SortDataRows(sortParameters, intermediateFileMerger);
-        // initialize sort
-        sortDataRows[i].initialize();
-      }
+      sortDataRow.initialize();
     } catch (CarbonSortKeyAndGroupByException e) {
       throw new CarbonDataLoadingException(e);
     }
     this.executorService = Executors.newFixedThreadPool(iterators.length);
 
     try {
-      for (int i = 0; i < sortDataRows.length; i++) {
+      for (int i = 0; i < iterators.length; i++) {
         executorService.submit(
-            new SortIteratorThread(iterators[i], sortDataRows[i], sortParameters));
+            new SortIteratorThread(iterators[i], sortDataRow, sortParameters, batchSize));
       }
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
+      processRowToNextStep(sortDataRow, sortParameters);
     } catch (Exception e) {
       throw new CarbonDataLoadingException("Problem while shutdown the server ", e);
     }
@@ -120,9 +119,6 @@ public class ParallelReadMergeSorterImpl implements Sorter {
     } catch (CarbonSortKeyAndGroupByException e) {
       throw new CarbonDataLoadingException(e);
     }
-
-    //TODO get the batch size from CarbonProperties
-    final int batchSize = 1000;
 
     // Creates the iterator to read from merge sorter.
     Iterator<CarbonRowBatch> batchIterator = new CarbonIterator<CarbonRowBatch>() {
@@ -151,6 +147,36 @@ public class ParallelReadMergeSorterImpl implements Sorter {
   }
 
   /**
+   * Below method will be used to process data to next step
+   */
+  private boolean processRowToNextStep(SortDataRows sortDataRows, SortParameters parameters)
+      throws CarbonDataLoadingException {
+    if (null == sortDataRows) {
+      LOGGER.info("Record Processed For table: " + parameters.getTableName());
+      LOGGER.info("Number of Records was Zero");
+      String logMessage = "Summary: Carbon Sort Key Step: Read: " + 0 + ": Write: " + 0;
+      LOGGER.info(logMessage);
+      return false;
+    }
+
+    try {
+      // start sorting
+      sortDataRows.startSorting();
+
+      // check any more rows are present
+      LOGGER.info("Record Processed For table: " + parameters.getTableName());
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
+          .recordSortRowsStepTotalTime(parameters.getPartitionID(), System.currentTimeMillis());
+      CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
+          .recordDictionaryValuesTotalTime(parameters.getPartitionID(),
+              System.currentTimeMillis());
+      return false;
+    } catch (CarbonSortKeyAndGroupByException e) {
+      throw new CarbonDataLoadingException(e);
+    }
+  }
+
+  /**
    * This thread iterates the iterator and adds the rows to @{@link SortDataRows}
    */
   private static class SortIteratorThread implements Callable<Void> {
@@ -161,11 +187,14 @@ public class ParallelReadMergeSorterImpl implements Sorter {
 
     private SortParameters parameters;
 
+    private Object[][] buffer;
+
     public SortIteratorThread(Iterator<CarbonRowBatch> iterator, SortDataRows sortDataRows,
-        SortParameters parameters) {
+        SortParameters parameters, int batchSize) {
       this.iterator = iterator;
       this.sortDataRows = sortDataRows;
       this.parameters = parameters;
+      this.buffer = new Object[batchSize][];
     }
 
     @Override
@@ -174,15 +203,17 @@ public class ParallelReadMergeSorterImpl implements Sorter {
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
           Iterator<CarbonRow> batchIterator = batch.getBatchIterator();
+          int i = 0;
           while (batchIterator.hasNext()) {
             CarbonRow row = batchIterator.next();
             if (row != null) {
-              sortDataRows.addRow(row.getData());
+              buffer[i++] = row.getData();
             }
           }
+          if (i > 0) {
+            sortDataRows.addRowBatch(buffer, i);
+          }
         }
-
-        processRowToNextStep(sortDataRows);
       } catch (Exception e) {
         LOGGER.error(e);
         throw new CarbonDataLoadingException(e);
@@ -190,34 +221,5 @@ public class ParallelReadMergeSorterImpl implements Sorter {
       return null;
     }
 
-    /**
-     * Below method will be used to process data to next step
-     */
-    private boolean processRowToNextStep(SortDataRows sortDataRows)
-        throws CarbonDataLoadingException {
-      if (null == sortDataRows) {
-        LOGGER.info("Record Processed For table: " + parameters.getTableName());
-        LOGGER.info("Number of Records was Zero");
-        String logMessage = "Summary: Carbon Sort Key Step: Read: " + 0 + ": Write: " + 0;
-        LOGGER.info(logMessage);
-        return false;
-      }
-
-      try {
-        // start sorting
-        sortDataRows.startSorting();
-
-        // check any more rows are present
-        LOGGER.info("Record Processed For table: " + parameters.getTableName());
-        CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-            .recordSortRowsStepTotalTime(parameters.getPartitionID(), System.currentTimeMillis());
-        CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-            .recordDictionaryValuesTotalTime(parameters.getPartitionID(),
-                System.currentTimeMillis());
-        return false;
-      } catch (CarbonSortKeyAndGroupByException e) {
-        throw new CarbonDataLoadingException(e);
-      }
-    }
   }
 }

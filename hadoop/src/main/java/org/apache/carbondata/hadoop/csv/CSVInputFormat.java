@@ -66,6 +66,8 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
   public static final String ESCAPE_DEFAULT = "\\";
   public static final String HEADER_PRESENT = "caron.csvinputformat.header.present";
   public static final boolean HEADER_PRESENT_DEFAULT = false;
+  public static final String READ_BUFFER_SIZE = "carbon.csvinputformat.read.buffer.size";
+  public static final String READ_BUFFER_SIZE_DEFAULT = "65536";
 
   @Override
   public RecordReader<NullWritable, StringArrayWritable> createRecordReader(InputSplit inputSplit,
@@ -85,10 +87,10 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
 
   /**
    * Sets the comment char to configuration. Default it is #.
-   * @param commentChar
    * @param configuration
+   * @param commentChar
    */
-  public static void setCommentCharacter(String commentChar, Configuration configuration) {
+  public static void setCommentCharacter(Configuration configuration, String commentChar) {
     if (commentChar != null && !commentChar.isEmpty()) {
       configuration.set(COMMENT, commentChar);
     }
@@ -96,10 +98,10 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
 
   /**
    * Sets the delimiter to configuration. Default it is ','
-   * @param delimiter
    * @param configuration
+   * @param delimiter
    */
-  public static void setCSVDelimiter(String delimiter, Configuration configuration) {
+  public static void setCSVDelimiter(Configuration configuration, String delimiter) {
     if (delimiter != null && !delimiter.isEmpty()) {
       configuration.set(DELIMITER, delimiter);
     }
@@ -107,10 +109,10 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
 
   /**
    * Sets the escape character to configuration. Default it is \
-   * @param escapeCharacter
    * @param configuration
+   * @param escapeCharacter
    */
-  public static void setEscapeCharacter(String escapeCharacter, Configuration configuration) {
+  public static void setEscapeCharacter(Configuration configuration, String escapeCharacter) {
     if (escapeCharacter != null && !escapeCharacter.isEmpty()) {
       configuration.set(ESCAPE, escapeCharacter);
     }
@@ -118,22 +120,33 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
 
   /**
    * Whether header needs to read from csv or not. By default it is false.
-   * @param headerExtractEnable
    * @param configuration
+   * @param headerExtractEnable
    */
-  public static void setHeaderExtractionEnabled(boolean headerExtractEnable,
-      Configuration configuration) {
+  public static void setHeaderExtractionEnabled(Configuration configuration,
+      boolean headerExtractEnable) {
     configuration.set(HEADER_PRESENT, String.valueOf(headerExtractEnable));
   }
 
   /**
    * Sets the quote character to configuration. Default it is "
-   * @param quoteCharacter
    * @param configuration
+   * @param quoteCharacter
    */
-  public static void setQuoteCharacter(String quoteCharacter, Configuration configuration) {
+  public static void setQuoteCharacter(Configuration configuration, String quoteCharacter) {
     if (quoteCharacter != null && !quoteCharacter.isEmpty()) {
       configuration.set(QUOTE, quoteCharacter);
+    }
+  }
+
+  /**
+   * Sets the read buffer size to configuration.
+   * @param configuration
+   * @param bufferSize
+   */
+  public static void setReadBufferSize(Configuration configuration, String bufferSize) {
+    if (bufferSize != null && !bufferSize.isEmpty()) {
+      configuration.set(READ_BUFFER_SIZE, bufferSize);
     }
   }
 
@@ -163,8 +176,9 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
       Configuration job = context.getConfiguration();
       CompressionCodec codec = (new CompressionCodecFactory(job)).getCodec(file);
       FileSystem fs = file.getFileSystem(job);
-      FSDataInputStream fileIn = fs.open(file);
-      InputStream inputStream = null;
+      int bufferSize = Integer.parseInt(job.get(READ_BUFFER_SIZE, READ_BUFFER_SIZE_DEFAULT));
+      FSDataInputStream fileIn = fs.open(file, bufferSize);
+      InputStream inputStream;
       if (codec != null) {
         isCompressedInput = true;
         decompressor = CodecPool.getDecompressor(codec);
@@ -209,6 +223,8 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
       parserSettings.setIgnoreLeadingWhitespaces(false);
       parserSettings.setIgnoreTrailingWhitespaces(false);
       parserSettings.setSkipEmptyLines(false);
+      // TODO get from csv file.
+      parserSettings.setMaxColumns(1000);
       parserSettings.getFormat().setQuote(job.get(QUOTE, QUOTE_DEFAULT).charAt(0));
       parserSettings.getFormat().setQuoteEscape(job.get(ESCAPE, ESCAPE_DEFAULT).charAt(0));
       if (start == 0) {

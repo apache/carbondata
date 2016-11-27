@@ -16,8 +16,7 @@
  */
 package org.apache.carbondata.processing.newflow;
 
-import java.util.Iterator;
-
+import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
@@ -35,7 +34,7 @@ public class DataLoadExecutor {
       LogServiceFactory.getLogService(DataLoadExecutor.class.getName());
 
   public void execute(CarbonLoadModel loadModel, String storeLocation,
-      Iterator<Object[]>[] inputIterators) throws Exception {
+      CarbonIterator<Object[]>[] inputIterators) throws Exception {
     AbstractDataLoadProcessorStep loadProcessorStep = null;
     try {
 
