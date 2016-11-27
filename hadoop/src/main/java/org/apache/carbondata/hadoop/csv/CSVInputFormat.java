@@ -66,6 +66,8 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
   public static final String ESCAPE_DEFAULT = "\\";
   public static final String HEADER_PRESENT = "caron.csvinputformat.header.present";
   public static final boolean HEADER_PRESENT_DEFAULT = false;
+  public static final String READ_BUFFER_SIZE = "carbon.csvinputformat.read.buffer.size";
+  public static final String READ_BUFFER_SIZE_DEFAULT = "65536";
 
   @Override
   public RecordReader<NullWritable, StringArrayWritable> createRecordReader(InputSplit inputSplit,
@@ -138,6 +140,17 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
   }
 
   /**
+   * Sets the read buffer size to configuration.
+   * @param bufferSize
+   * @param configuration
+   */
+  public static void setReadBufferSize(String bufferSize, Configuration configuration) {
+    if (bufferSize != null && !bufferSize.isEmpty()) {
+      configuration.set(READ_BUFFER_SIZE, bufferSize);
+    }
+  }
+
+  /**
    * Treats value as line in file. Key is null.
    */
   public static class CSVRecordReader extends RecordReader<NullWritable, StringArrayWritable> {
@@ -163,8 +176,9 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
       Configuration job = context.getConfiguration();
       CompressionCodec codec = (new CompressionCodecFactory(job)).getCodec(file);
       FileSystem fs = file.getFileSystem(job);
-      FSDataInputStream fileIn = fs.open(file);
-      InputStream inputStream = null;
+      int bufferSize = Integer.parseInt(job.get(READ_BUFFER_SIZE, READ_BUFFER_SIZE_DEFAULT));
+      FSDataInputStream fileIn = fs.open(file, bufferSize);
+      InputStream inputStream;
       if (codec != null) {
         isCompressedInput = true;
         decompressor = CodecPool.getDecompressor(codec);
@@ -209,6 +223,8 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
       parserSettings.setIgnoreLeadingWhitespaces(false);
       parserSettings.setIgnoreTrailingWhitespaces(false);
       parserSettings.setSkipEmptyLines(false);
+      // TODO get from csv file.
+      parserSettings.setMaxColumns(1000);
       parserSettings.getFormat().setQuote(job.get(QUOTE, QUOTE_DEFAULT).charAt(0));
       parserSettings.getFormat().setQuoteEscape(job.get(ESCAPE, ESCAPE_DEFAULT).charAt(0));
       if (start == 0) {

@@ -16,14 +16,13 @@
  */
 package org.apache.carbondata.processing.newflow;
 
-import java.util.Iterator;
-
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
+import org.apache.carbondata.processing.newflow.iterator.InputIterator;
 import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordsLogger;
 
 /**
@@ -35,7 +34,7 @@ public class DataLoadExecutor {
       LogServiceFactory.getLogService(DataLoadExecutor.class.getName());
 
   public void execute(CarbonLoadModel loadModel, String storeLocation,
-      Iterator<Object[]>[] inputIterators) throws Exception {
+      InputIterator<Object[]>[] inputIterators) throws Exception {
     AbstractDataLoadProcessorStep loadProcessorStep = null;
     try {
 
