@@ -32,6 +32,7 @@ struct IndexHeader{
   1: required i32 version; // version used for data compatibility
   2: required list<schema.ColumnSchema> table_columns;	// Description of columns in this file
   3: required carbondata.SegmentInfo segment_info;	// Segment info (will be same/repeated for all files in this segment)
+  4: optional i32 bucket_id; //bucket number in which file contains
 }
 
 /**

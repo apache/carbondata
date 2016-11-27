@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.core.carbon.datastore;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -57,7 +58,8 @@ public class SegmentTaskIndexStore {
    * reason of so many map as each segment can have multiple data file and
    * each file will have its own btree
    */
-  private Map<AbsoluteTableIdentifier, Map<String, Map<String, AbstractIndex>>> tableSegmentMap;
+  private Map<AbsoluteTableIdentifier,
+      Map<String, Map<TaskBucketHolder, AbstractIndex>>> tableSegmentMap;
 
   /**
    * map of block info to lock object map, while loading the btree this will be filled
@@ -76,7 +78,7 @@ public class SegmentTaskIndexStore {
 
   private SegmentTaskIndexStore() {
     tableSegmentMap =
-        new ConcurrentHashMap<AbsoluteTableIdentifier, Map<String, Map<String, AbstractIndex>>>(
+        new ConcurrentHashMap<>(
             CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     tableLockMap = new ConcurrentHashMap<AbsoluteTableIdentifier, Object>(
         CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -103,26 +105,26 @@ public class SegmentTaskIndexStore {
    * @return map of taks id to segment mapping
    * @throws IndexBuilderException
    */
-  public Map<String, AbstractIndex> loadAndGetTaskIdToSegmentsMap(
+  public Map<TaskBucketHolder, AbstractIndex> loadAndGetTaskIdToSegmentsMap(
       Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos,
       AbsoluteTableIdentifier absoluteTableIdentifier) throws IndexBuilderException {
     // task id to segment map
-    Map<String, AbstractIndex> taskIdToTableSegmentMap =
-        new HashMap<String, AbstractIndex>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    Map<TaskBucketHolder, AbstractIndex> taskIdToTableSegmentMap =
+        new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     addLockObject(absoluteTableIdentifier);
     Iterator<Entry<String, List<TableBlockInfo>>> iteratorOverSegmentBlocksInfos =
         segmentToTableBlocksInfos.entrySet().iterator();
-    Map<String, Map<String, AbstractIndex>> tableSegmentMapTemp =
+    Map<String, Map<TaskBucketHolder, AbstractIndex>> tableSegmentMapTemp =
         addTableSegmentMap(absoluteTableIdentifier);
-    Map<String, AbstractIndex> taskIdToSegmentIndexMap = null;
+    Map<TaskBucketHolder, AbstractIndex> taskIdToSegmentIndexMap = null;
     String segmentId = null;
-    String taskId = null;
+    TaskBucketHolder taskId = null;
     try {
       while (iteratorOverSegmentBlocksInfos.hasNext()) {
         // segment id to table block mapping
         Entry<String, List<TableBlockInfo>> next = iteratorOverSegmentBlocksInfos.next();
         // group task id to table block info mapping for the segment
-        Map<String, List<TableBlockInfo>> taskIdToTableBlockInfoMap =
+        Map<TaskBucketHolder, List<TableBlockInfo>> taskIdToTableBlockInfoMap =
             mappedAndGetTaskIdToTableBlockInfo(segmentToTableBlocksInfos);
         // get the existing map of task id to table segment map
         segmentId = next.getKey();
@@ -142,11 +144,11 @@ public class SegmentTaskIndexStore {
             taskIdToSegmentIndexMap = tableSegmentMapTemp.get(segmentId);
             if (null == taskIdToSegmentIndexMap) {
               // creating a map of task id to table segment
-              taskIdToSegmentIndexMap = new ConcurrentHashMap<String, AbstractIndex>();
-              Iterator<Entry<String, List<TableBlockInfo>>> iterator =
+              taskIdToSegmentIndexMap = new ConcurrentHashMap<TaskBucketHolder, AbstractIndex>();
+              Iterator<Entry<TaskBucketHolder, List<TableBlockInfo>>> iterator =
                   taskIdToTableBlockInfoMap.entrySet().iterator();
               while (iterator.hasNext()) {
-                Entry<String, List<TableBlockInfo>> taskToBlockInfoList = iterator.next();
+                Entry<TaskBucketHolder, List<TableBlockInfo>> taskToBlockInfoList = iterator.next();
                 taskId = taskToBlockInfoList.getKey();
                 taskIdToSegmentIndexMap.put(taskId,
                     loadBlocks(taskId, taskToBlockInfoList.getValue(), absoluteTableIdentifier));
@@ -207,18 +209,18 @@ public class SegmentTaskIndexStore {
    * @param absoluteTableIdentifier
    * @return table segment map
    */
-  private Map<String, Map<String, AbstractIndex>> addTableSegmentMap(
+  private Map<String, Map<TaskBucketHolder, AbstractIndex>> addTableSegmentMap(
       AbsoluteTableIdentifier absoluteTableIdentifier) {
     // get the instance of lock object
     Object lockObject = tableLockMap.get(absoluteTableIdentifier);
-    Map<String, Map<String, AbstractIndex>> tableSegmentMapTemp =
+    Map<String, Map<TaskBucketHolder, AbstractIndex>> tableSegmentMapTemp =
         tableSegmentMap.get(absoluteTableIdentifier);
     if (null == tableSegmentMapTemp) {
       synchronized (lockObject) {
         // segment id to task id to table segment map
         tableSegmentMapTemp = tableSegmentMap.get(absoluteTableIdentifier);
         if (null == tableSegmentMapTemp) {
-          tableSegmentMapTemp = new ConcurrentHashMap<String, Map<String, AbstractIndex>>();
+          tableSegmentMapTemp = new ConcurrentHashMap<>();
           tableSegmentMap.put(absoluteTableIdentifier, tableSegmentMapTemp);
         }
       }
@@ -233,12 +235,13 @@ public class SegmentTaskIndexStore {
    * @return loaded segment
    * @throws CarbonUtilException
    */
-  private AbstractIndex loadBlocks(String taskId, List<TableBlockInfo> tableBlockInfoList,
+  private AbstractIndex loadBlocks(TaskBucketHolder holder, List<TableBlockInfo> tableBlockInfoList,
       AbsoluteTableIdentifier tableIdentifier) throws CarbonUtilException {
     // all the block of one task id will be loaded together
     // so creating a list which will have all the data file meta data to of one task
-    List<DataFileFooter> footerList =
-        CarbonUtil.readCarbonIndexFile(taskId, tableBlockInfoList, tableIdentifier);
+    List<DataFileFooter> footerList = CarbonUtil
+        .readCarbonIndexFile(holder.taskNo, holder.bucketNumber, tableBlockInfoList,
+            tableIdentifier);
     AbstractIndex segment = new SegmentTaskIndex();
     // file path of only first block is passed as it all table block info path of
     // same task id will be same
@@ -253,10 +256,10 @@ public class SegmentTaskIndexStore {
    * @param segmentToTableBlocksInfos segment if to table blocks info map
    * @return task id to table block info mapping
    */
-  private Map<String, List<TableBlockInfo>> mappedAndGetTaskIdToTableBlockInfo(
+  private Map<TaskBucketHolder, List<TableBlockInfo>> mappedAndGetTaskIdToTableBlockInfo(
       Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos) {
-    Map<String, List<TableBlockInfo>> taskIdToTableBlockInfoMap =
-        new ConcurrentHashMap<String, List<TableBlockInfo>>();
+    Map<TaskBucketHolder, List<TableBlockInfo>> taskIdToTableBlockInfoMap =
+        new ConcurrentHashMap<>();
     Iterator<Entry<String, List<TableBlockInfo>>> iterator =
         segmentToTableBlocksInfos.entrySet().iterator();
     while (iterator.hasNext()) {
@@ -264,10 +267,12 @@ public class SegmentTaskIndexStore {
       List<TableBlockInfo> value = next.getValue();
       for (TableBlockInfo blockInfo : value) {
         String taskNo = DataFileUtil.getTaskNo(blockInfo.getFilePath());
-        List<TableBlockInfo> list = taskIdToTableBlockInfoMap.get(taskNo);
+        String bucketNo = DataFileUtil.getBucketNo(blockInfo.getFilePath());
+        TaskBucketHolder bucketHolder = new TaskBucketHolder(taskNo, bucketNo);
+        List<TableBlockInfo> list = taskIdToTableBlockInfoMap.get(bucketHolder);
         if (null == list) {
           list = new ArrayList<TableBlockInfo>();
-          taskIdToTableBlockInfoMap.put(taskNo, list);
+          taskIdToTableBlockInfoMap.put(bucketHolder, list);
         }
         list.add(blockInfo);
       }
@@ -304,7 +309,8 @@ public class SegmentTaskIndexStore {
       return;
     }
     // Acquire the lock and remove only those instance which was loaded
-    Map<String, Map<String, AbstractIndex>> map = tableSegmentMap.get(absoluteTableIdentifier);
+    Map<String, Map<TaskBucketHolder, AbstractIndex>> map =
+        tableSegmentMap.get(absoluteTableIdentifier);
     // if there is no loaded blocks then return
     if (null == map) {
       return;
@@ -322,13 +328,44 @@ public class SegmentTaskIndexStore {
    * @param segmentId
    * @return is loaded then return the loaded blocks otherwise null
    */
-  public Map<String, AbstractIndex> getSegmentBTreeIfExists(
+  public Map<TaskBucketHolder, AbstractIndex> getSegmentBTreeIfExists(
       AbsoluteTableIdentifier absoluteTableIdentifier, String segmentId) {
-    Map<String, Map<String, AbstractIndex>> tableSegment =
+    Map<String, Map<TaskBucketHolder, AbstractIndex>> tableSegment =
         tableSegmentMap.get(absoluteTableIdentifier);
     if (null == tableSegment) {
       return null;
     }
     return tableSegment.get(segmentId);
+  }
+
+  public static class TaskBucketHolder implements Serializable {
+
+    public String taskNo;
+
+    public String bucketNumber;
+
+    public TaskBucketHolder(String taskNo, String bucketNumber) {
+      this.taskNo = taskNo;
+      this.bucketNumber = bucketNumber;
+    }
+
+    @Override public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      TaskBucketHolder that = (TaskBucketHolder) o;
+
+      if (taskNo != null ? !taskNo.equals(that.taskNo) : that.taskNo != null) return false;
+      return bucketNumber != null ?
+          bucketNumber.equals(that.bucketNumber) :
+          that.bucketNumber == null;
+
+    }
+
+    @Override public int hashCode() {
+      int result = taskNo != null ? taskNo.hashCode() : 0;
+      result = 31 * result + (bucketNumber != null ? bucketNumber.hashCode() : 0);
+      return result;
+    }
   }
 }

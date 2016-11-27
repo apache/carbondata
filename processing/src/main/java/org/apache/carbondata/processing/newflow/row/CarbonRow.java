@@ -28,6 +28,8 @@ public class CarbonRow {
 
   private Object[] data;
 
+  public short bucketNumber;
+
   public CarbonRow(Object[] data) {
     this.data = data;
   }
