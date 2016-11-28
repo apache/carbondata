@@ -21,15 +21,12 @@ import java.net.{InetAddress, InterfaceAddress, NetworkInterface}
 import scala.collection.JavaConverters._
 
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.CarbonContext
+import org.apache.spark.sql.{CarbonContext, CarbonEnv}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.datastore.block.Distributable
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 
-/**
- *
- */
 object DistributionUtil {
   @transient
   val LOGGER = LogServiceFactory.getLogService(CarbonContext.getClass.getName)
@@ -131,7 +128,7 @@ object DistributionUtil {
     }
 
     val startTime = System.currentTimeMillis()
-    CarbonContext.ensureExecutors(sparkContext, requiredExecutors)
+    CarbonEnv.ensureExecutors(sparkContext, requiredExecutors)
     var nodes = DistributionUtil.getNodeList(sparkContext)
     var maxTimes = 30
     while (nodes.length < requiredExecutors && maxTimes > 0) {

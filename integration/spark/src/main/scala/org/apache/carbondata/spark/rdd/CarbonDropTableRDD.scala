@@ -30,14 +30,13 @@ class CarbonDropTableRDD[V: ClassTag](
     sc: SparkContext,
     valueClass: Value[V],
     databaseName: String,
-    tableName: String,
-    partitioner: Partitioner)
+    tableName: String)
   extends RDD[V](sc, Nil) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
   override def getPartitions: Array[Partition] = {
-    val splits = CarbonQueryUtil.getTableSplits(databaseName, tableName, null, partitioner)
+    val splits = CarbonQueryUtil.getTableSplits(databaseName, tableName, null)
     splits.zipWithIndex.map { s =>
       new CarbonLoadPartition(id, s._2, s._1)
     }
@@ -46,9 +45,6 @@ class CarbonDropTableRDD[V: ClassTag](
   override def compute(theSplit: Partition, context: TaskContext): Iterator[V] = {
 
     val iter = new Iterator[V] {
-      val split = theSplit.asInstanceOf[CarbonLoadPartition]
-
-      val partitionCount = partitioner.partitionCount
       // TODO: Clear Btree from memory
 
       var havePair = false
