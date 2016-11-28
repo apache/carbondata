@@ -55,18 +55,7 @@ public class CarbonInputFormatUtil {
     // fill dimensions
     // If columns are null, set all dimensions and measures
     int i = 0;
-    List<CarbonMeasure> tableMsrs = carbonTable.getMeasureByTableName(factTableName);
-    List<CarbonDimension> tableDims = carbonTable.getDimensionByTableName(factTableName);
-    if (columns == null) {
-      for (CarbonDimension dimension : tableDims) {
-        addQueryDimension(plan, i, dimension);
-        i++;
-      }
-      for (CarbonMeasure measure : tableMsrs) {
-        addQueryMeasure(plan, i, measure);
-        i++;
-      }
-    } else {
+    if (columns != null) {
       for (String column : columns) {
         CarbonDimension dimensionByName = carbonTable.getDimensionByName(factTableName, column);
         if (dimensionByName != null) {
