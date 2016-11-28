@@ -66,6 +66,8 @@ public class AbsoluteTableIdentifier implements Serializable {
   }
 
   public static AbsoluteTableIdentifier fromTablePath(String tablePath) {
+    //Here the tablePath might has '\' running on windows, for example: '/target/store\default\t3',
+    //need to format the tablePath to '\target\store\default\t3' and use the formattedTablePath.
     String formattedTablePath = tablePath.replace('\\', '/');
     String[] names = formattedTablePath.split("/");
     if (names.length < 3) {
