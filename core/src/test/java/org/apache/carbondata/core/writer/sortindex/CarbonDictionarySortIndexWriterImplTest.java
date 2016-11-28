@@ -35,10 +35,10 @@ import org.apache.carbondata.core.writer.CarbonDictionaryWriter;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriterImpl;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * class contains the unit test cases of the dictionary sort index & sort index inverted writing
@@ -111,8 +111,8 @@ public class CarbonDictionarySortIndexWriterImplTest {
     List<Integer> actualSortIndex = carbonDictionarySortIndexReader.readSortIndex();
     List<Integer> actualInvertedSortIndex = carbonDictionarySortIndexReader.readInvertedSortIndex();
     for (int i = 0; i < actualSortIndex.size(); i++) {
-      Assert.assertEquals(sortIndex.get(i), actualSortIndex.get(i));
-      Assert.assertEquals(invertedSortIndex.get(i), actualInvertedSortIndex.get(i));
+      assertEquals(sortIndex.get(i), actualSortIndex.get(i));
+      assertEquals(invertedSortIndex.get(i), actualInvertedSortIndex.get(i));
     }
 
   }
@@ -130,8 +130,8 @@ public class CarbonDictionarySortIndexWriterImplTest {
     List<Integer> actualSortIndex = carbonDictionarySortIndexReader.readSortIndex();
     List<Integer> actualInvertedSortIndex = carbonDictionarySortIndexReader.readInvertedSortIndex();
     for (int i = 0; i < actualSortIndex.size(); i++) {
-      Assert.assertEquals(sortIndex.get(i), actualSortIndex.get(i));
-      Assert.assertEquals(invertedSortIndex.get(i), actualInvertedSortIndex.get(i));
+      assertEquals(sortIndex.get(i), actualSortIndex.get(i));
+      assertEquals(invertedSortIndex.get(i), actualInvertedSortIndex.get(i));
     }
 
   }

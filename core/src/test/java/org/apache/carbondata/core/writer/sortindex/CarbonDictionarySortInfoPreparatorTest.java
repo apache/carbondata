@@ -29,7 +29,7 @@ import org.apache.carbondata.core.util.CarbonUtilException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 /**
  * The class tests the CarbonDictionarySortInfoPreparator class that prepares the column sort info ie sortIndex
@@ -92,8 +92,8 @@ public class CarbonDictionarySortInfoPreparatorTest {
     int expectedGetSortInvertedIndexLength = 3;
     int actualGetSortIndexValue = carbonDictionarySortInfo.getSortIndex().get(0);
     int actualGetSortInvertedIndexLength = carbonDictionarySortInfo.getSortIndexInverted().size();
-    assertTrue(actualGetSortIndexValue == expectedGetSortIndexValue);
-    assertTrue(actualGetSortInvertedIndexLength == expectedGetSortInvertedIndexLength);
+    assertEquals(actualGetSortIndexValue, expectedGetSortIndexValue);
+    assertEquals(actualGetSortInvertedIndexLength, expectedGetSortInvertedIndexLength);
   }
 
   /**
@@ -113,8 +113,8 @@ public class CarbonDictionarySortInfoPreparatorTest {
     int expectedGetSortInvertedIndexLength = 2;
     int actualGetSortIndexValue = carbonDictionarySortInfo.getSortIndex().get(0);
     int actualGetSortInvertedIndexLength = carbonDictionarySortInfo.getSortIndexInverted().size();
-    assertTrue(actualGetSortIndexValue == expectedGetSortIndexValue);
-    assertTrue(actualGetSortInvertedIndexLength == expectedGetSortInvertedIndexLength);
+    assertEquals(actualGetSortIndexValue, expectedGetSortIndexValue);
+    assertEquals(actualGetSortInvertedIndexLength, expectedGetSortInvertedIndexLength);
   }
 
 }
