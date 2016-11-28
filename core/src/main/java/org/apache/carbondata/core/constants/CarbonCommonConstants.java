@@ -919,6 +919,29 @@ public final class CarbonCommonConstants {
    * maximum length of column
    */
   public static final int DEFAULT_COLUMN_LENGTH = 100000;
+  /**
+   * Maximum waiting time (in seconds) for a query for requested executors to be started
+   */
+  public static final String CARBON_EXECUTOR_STARTUP_TIMEOUT =
+      "carbon.max.executor.startup.timeout";
+
+  /**
+   * default value for executor start up waiting time out
+   */
+  public static final String CARBON_EXECUTOR_WAITING_TIMEOUT_DEFAULT = "5";
+
+  /**
+   * Max value. If value configured by user is more than this than this value will value will be
+   * considered
+   */
+  public static final int CARBON_EXECUTOR_WAITING_TIMEOUT_MAX = 60;
+
+  /**
+   * time for which thread will sleep and check again if the requested number of executors
+   * have been started
+   */
+  public static final int CARBON_EXECUTOR_STARTUP_THREAD_SLEEP_TIME = 250;
+
   private CarbonCommonConstants() {
   }
 }

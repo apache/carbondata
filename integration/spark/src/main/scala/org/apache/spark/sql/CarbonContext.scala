@@ -22,7 +22,6 @@ import java.io.File
 import scala.language.implicitConversions
 
 import org.apache.spark.SparkContext
-import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.catalyst.ParserDialect
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog}
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
@@ -183,5 +182,4 @@ object CarbonContext {
     }
     cache(sc) = cc
   }
-
 }
