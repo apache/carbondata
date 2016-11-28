@@ -17,7 +17,11 @@
 
 package org.apache.spark.sql
 
+import org.apache.spark.SparkContext
+import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.hive.{CarbonMetastoreCatalog, HiveContext}
+
+import org.apache.carbondata.common.logging.LogServiceFactory
 
 /**
  * Carbon Environment for unified context
@@ -25,6 +29,7 @@ import org.apache.spark.sql.hive.{CarbonMetastoreCatalog, HiveContext}
 case class CarbonEnv(hiveContext: HiveContext, carbonCatalog: CarbonMetastoreCatalog)
 
 object CarbonEnv {
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   val className = classOf[CarbonEnv].getCanonicalName
   var carbonEnv: CarbonEnv = _
 
@@ -35,6 +40,29 @@ object CarbonEnv {
           sqlContext.asInstanceOf[CarbonContext].catalog)
     }
     carbonEnv
+  }
+
+  /**
+   *
+   * Requesting the extra executors other than the existing ones.
+   *
+   * @param sc
+   * @param numExecutors
+   * @return
+   */
+  final def ensureExecutors(sc: SparkContext, numExecutors: Int): Boolean = {
+    sc.schedulerBackend match {
+      case b: CoarseGrainedSchedulerBackend =>
+        val requiredExecutors = numExecutors - b.numExistingExecutors
+        LOGGER.info(s"number of executors is =$numExecutors existing executors are =" +
+                s"${ b.numExistingExecutors }")
+        if (requiredExecutors > 0) {
+          b.requestExecutors(requiredExecutors)
+        }
+        true
+      case _ =>
+        false
+    }
   }
 }
 

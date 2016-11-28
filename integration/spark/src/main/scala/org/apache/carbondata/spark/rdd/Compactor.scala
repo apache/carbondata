@@ -40,7 +40,6 @@ object Compactor {
   def triggerCompaction(compactionCallableModel: CompactionCallableModel): Unit = {
 
     val storePath = compactionCallableModel.storePath
-    val partitioner = compactionCallableModel.partitioner
     val storeLocation = compactionCallableModel.storeLocation
     val carbonTable = compactionCallableModel.carbonTable
     val kettleHomePath = compactionCallableModel.kettleHomePath
@@ -60,7 +59,6 @@ object Compactor {
     val mergeLoadStartTime = CarbonLoaderUtil.readCurrentTime()
     val carbonMergerMapping = CarbonMergerMapping(storeLocation,
       storePath,
-      partitioner,
       carbonTable.getMetaDataFilepath,
       mergedLoadName,
       kettleHomePath,

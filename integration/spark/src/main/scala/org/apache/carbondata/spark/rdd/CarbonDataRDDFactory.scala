@@ -25,18 +25,14 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 import scala.util.control.Breaks._
-
 import org.apache.hadoop.conf.{Configurable, Configuration}
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
-import org.apache.spark.{util => _, _}
 import org.apache.spark.sql.{CarbonEnv, DataFrame, SQLContext}
-import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel,
-CompactionModel, Partitioner}
+import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel, CompactionModel, Partitioner}
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.util.{FileUtils, SplitUtils}
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier}
 import org.apache.carbondata.core.carbon.datastore.block.{Distributable, TableBlockInfo}
@@ -45,8 +41,7 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.integration.spark.merger.{CarbonCompactionUtil, CompactionCallable,
-CompactionType}
+import org.apache.carbondata.integration.spark.merger.{CarbonCompactionUtil, CompactionCallable, CompactionType}
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.etl.DataLoadingException
@@ -55,8 +50,10 @@ import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingExcep
 import org.apache.carbondata.spark._
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.merger.CarbonDataMergerUtil
+import org.apache.carbondata.spark.partition.api.Partition
 import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.{CarbonQueryUtil, LoadMetadataUtil}
+import org.apache.spark.{SparkContext, SparkEnv, SparkException}
 
 
 /**
@@ -67,17 +64,6 @@ object CarbonDataRDDFactory {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  def mergeCarbonData(
-      sqlContext: SQLContext,
-      carbonLoadModel: CarbonLoadModel,
-      storeLocation: String,
-      storePath: String,
-      partitioner: Partitioner) {
-    val table = CarbonMetadata.getInstance()
-      .getCarbonTable(carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName)
-    val metaDataPath: String = table.getMetaDataFilepath
-  }
-
   def deleteLoadByDate(
       sqlContext: SQLContext,
       schema: CarbonDataLoadSchema,
@@ -86,8 +72,7 @@ object CarbonDataRDDFactory {
       storePath: String,
       dateField: String,
       dateFieldActualName: String,
-      dateValue: String,
-      partitioner: Partitioner) {
+      dateValue: String) {
 
     val sc = sqlContext
     // Delete the records based on data
@@ -103,7 +88,6 @@ object CarbonDataRDDFactory {
       dateField,
       dateFieldActualName,
       dateValue,
-      partitioner,
       table.getFactTableName,
       tableName,
       storePath,
@@ -205,8 +189,10 @@ object CarbonDataRDDFactory {
 
   def alterTableForCompaction(sqlContext: SQLContext,
       alterTableModel: AlterTableModel,
-      carbonLoadModel: CarbonLoadModel, partitioner: Partitioner, storePath: String,
-      kettleHomePath: String, storeLocation: String): Unit = {
+      carbonLoadModel: CarbonLoadModel,
+      storePath: String,
+      kettleHomePath: String,
+      storeLocation: String): Unit = {
     var compactionSize: Long = 0
     var compactionType: CompactionType = CompactionType.MINOR_COMPACTION
     if (alterTableModel.compactionType.equalsIgnoreCase("major")) {
@@ -250,7 +236,6 @@ object CarbonDataRDDFactory {
       LOGGER.info("System level compaction lock is enabled.")
       handleCompactionForSystemLocking(sqlContext,
         carbonLoadModel,
-        partitioner,
         storePath,
         kettleHomePath,
         storeLocation,
@@ -271,7 +256,6 @@ object CarbonDataRDDFactory {
         try {
           startCompactionThreads(sqlContext,
             carbonLoadModel,
-            partitioner,
             storePath,
             kettleHomePath,
             storeLocation,
@@ -295,7 +279,6 @@ object CarbonDataRDDFactory {
 
   def handleCompactionForSystemLocking(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
-      partitioner: Partitioner,
       storePath: String,
       kettleHomePath: String,
       storeLocation: String,
@@ -312,7 +295,6 @@ object CarbonDataRDDFactory {
       try {
         startCompactionThreads(sqlContext,
           carbonLoadModel,
-          partitioner,
           storePath,
           kettleHomePath,
           storeLocation,
@@ -351,7 +333,6 @@ object CarbonDataRDDFactory {
   def executeCompaction(carbonLoadModel: CarbonLoadModel,
       storePath: String,
       compactionModel: CompactionModel,
-      partitioner: Partitioner,
       executor: ExecutorService,
       sqlContext: SQLContext,
       kettleHomePath: String,
@@ -365,7 +346,6 @@ object CarbonDataRDDFactory {
     var loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
       storePath,
       carbonLoadModel,
-      partitioner.partitionCount,
       compactionModel.compactionSize,
       segList,
       compactionModel.compactionType
@@ -386,7 +366,6 @@ object CarbonDataRDDFactory {
         compactionModel,
         kettleHomePath,
         carbonLoadModel,
-        partitioner,
         storeLocation
       )
 
@@ -417,7 +396,6 @@ object CarbonDataRDDFactory {
       loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
         storePath,
         carbonLoadModel,
-        partitioner.partitionCount,
         compactionModel.compactionSize,
         segList,
         compactionModel.compactionType
@@ -439,7 +417,6 @@ object CarbonDataRDDFactory {
       compactionModel: CompactionModel,
       kettleHomePath: String,
       carbonLoadModel: CarbonLoadModel,
-      partitioner: Partitioner,
       storeLocation: String): Unit = {
 
     loadsToMerge.asScala.foreach(seg => {
@@ -449,7 +426,6 @@ object CarbonDataRDDFactory {
 
     val compactionCallableModel = CompactionCallableModel(storePath,
       carbonLoadModel,
-      partitioner,
       storeLocation,
       compactionModel.carbonTable,
       kettleHomePath,
@@ -468,7 +444,6 @@ object CarbonDataRDDFactory {
 
   def startCompactionThreads(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
-      partitioner: Partitioner,
       storePath: String,
       kettleHomePath: String,
       storeLocation: String,
@@ -499,7 +474,6 @@ object CarbonDataRDDFactory {
             executeCompaction(carbonLoadModel: CarbonLoadModel,
               storePath: String,
               compactionModel: CompactionModel,
-              partitioner: Partitioner,
               executor, sqlContext, kettleHomePath, storeLocation
             )
             triggeredCompactionStatus = true
@@ -550,7 +524,6 @@ object CarbonDataRDDFactory {
                 executeCompaction(newCarbonLoadModel,
                   newCarbonLoadModel.getStorePath,
                   newcompactionModel,
-                  partitioner,
                   executor, sqlContext, kettleHomePath, storeLocation
                 )
               } catch {
@@ -672,7 +645,6 @@ object CarbonDataRDDFactory {
 
           handleCompactionForSystemLocking(sqlContext,
             carbonLoadModel,
-            partitioner,
             storePath,
             kettleHomePath,
             storeLocation,
@@ -691,7 +663,6 @@ object CarbonDataRDDFactory {
             try {
               startCompactionThreads(sqlContext,
                 carbonLoadModel,
-                partitioner,
                 storePath,
                 kettleHomePath,
                 storeLocation,
@@ -728,7 +699,7 @@ object CarbonDataRDDFactory {
                      s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       }
       // Check if any load need to be deleted before loading new data
-      deleteLoadsAndUpdateMetadata(carbonLoadModel, carbonTable, partitioner, storePath,
+      deleteLoadsAndUpdateMetadata(carbonLoadModel, carbonTable, storePath,
         isForceDeletion = false)
       if (null == carbonLoadModel.getLoadMetadataDetails) {
         readLoadMetadataDetails(carbonLoadModel, storePath)
@@ -793,9 +764,7 @@ object CarbonDataRDDFactory {
           var splits = Array[TableSplit]()
           if (carbonLoadModel.isDirectLoad) {
             // get all table Splits, this part means files were divide to different partitions
-            splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath,
-              partitioner.nodeList, partitioner.partitionCount
-            )
+            splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath)
             // get all partition blocks from file list
             blocksGroupBy = splits.map {
               split =>
@@ -813,8 +782,7 @@ object CarbonDataRDDFactory {
           } else {
             // get all table Splits,when come to this, means data have been partition
             splits = CarbonQueryUtil.getTableSplits(carbonLoadModel.getDatabaseName,
-              carbonLoadModel.getTableName, null, partitioner
-            )
+              carbonLoadModel.getTableName, null)
             // get all partition blocks from factFilePath/uniqueID/
             blocksGroupBy = splits.map {
               split =>
@@ -1060,7 +1028,7 @@ object CarbonDataRDDFactory {
 
   def deleteLoadsAndUpdateMetadata(
       carbonLoadModel: CarbonLoadModel,
-      table: CarbonTable, partitioner: Partitioner,
+      table: CarbonTable,
       storePath: String,
       isForceDeletion: Boolean) {
     if (LoadMetadataUtil.isLoadDeletionRequired(carbonLoadModel)) {
@@ -1073,8 +1041,7 @@ object CarbonDataRDDFactory {
 
       // Delete marked loads
       val isUpdationRequired = DeleteLoadFolders
-        .deleteLoadFoldersFromFileSystem(carbonLoadModel, storePath,
-          partitioner.partitionCount, isForceDeletion, details)
+        .deleteLoadFoldersFromFileSystem(carbonLoadModel, storePath, isForceDeletion, details)
 
       if (isUpdationRequired) {
         try {
@@ -1113,20 +1080,17 @@ object CarbonDataRDDFactory {
   def dropTable(
       sc: SparkContext,
       schema: String,
-      table: String,
-      partitioner: Partitioner) {
+      table: String) {
     val v: Value[Array[Object]] = new ValueImpl()
-    new CarbonDropTableRDD(sc, v, schema, table, partitioner).collect
+    new CarbonDropTableRDD(sc, v, schema, table).collect
   }
 
   def cleanFiles(
       sc: SparkContext,
       carbonLoadModel: CarbonLoadModel,
-      storePath: String,
-      partitioner: Partitioner) {
+      storePath: String) {
     val table = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName)
-    val metaDataPath: String = table.getMetaDataFilepath
     val carbonCleanFilesLock = CarbonLockFactory
       .getCarbonLockObj(table.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
         LockUsage.CLEAN_FILES_LOCK
@@ -1136,7 +1100,6 @@ object CarbonDataRDDFactory {
         LOGGER.info("Clean files lock has been successfully acquired.")
         deleteLoadsAndUpdateMetadata(carbonLoadModel,
           table,
-          partitioner,
           storePath,
           isForceDeletion = true)
       } else {
