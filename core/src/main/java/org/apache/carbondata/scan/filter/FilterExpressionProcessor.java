@@ -29,7 +29,6 @@ import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.apache.carbondata.core.carbon.datastore.IndexKey;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
-import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
@@ -127,12 +126,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
     FilterExecuter filterExecuter =
         FilterUtil.getFilterExecuterTree(filterResolver, tableSegment.getSegmentProperties(),null);
     while (startBlock != endBlock) {
-      addBlockBasedOnMinMaxValue(filterExecuter, listOfDataBlocksToScan, startBlock,
-          tableSegment.getSegmentProperties());
+      addBlockBasedOnMinMaxValue(filterExecuter, listOfDataBlocksToScan, startBlock);
       startBlock = startBlock.getNextDataRefNode();
     }
-    addBlockBasedOnMinMaxValue(filterExecuter, listOfDataBlocksToScan, endBlock,
-        tableSegment.getSegmentProperties());
+    addBlockBasedOnMinMaxValue(filterExecuter, listOfDataBlocksToScan, endBlock);
     LOGGER.info("Total Time in retrieving the data reference node" + "after scanning the btree " + (
         System.currentTimeMillis() - startTimeInMillis)
         + " Total number of data reference node for executing filter(s) " + listOfDataBlocksToScan
@@ -147,11 +144,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @param filterResolver
    * @param listOfDataBlocksToScan
    * @param dataRefNode
-   * @param segmentProperties
    */
   private void addBlockBasedOnMinMaxValue(FilterExecuter filterExecuter,
-      List<DataRefNode> listOfDataBlocksToScan, DataRefNode dataRefNode,
-      SegmentProperties segmentProperties) {
+      List<DataRefNode> listOfDataBlocksToScan, DataRefNode dataRefNode) {
 
     BitSet bitSet = filterExecuter
         .isScanRequired(dataRefNode.getColumnsMaxValue(), dataRefNode.getColumnsMinValue());
@@ -174,7 +169,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
   private FilterResolverIntf getFilterResolvertree(Expression expressionTree,
       AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException {
     FilterResolverIntf filterEvaluatorTree =
-        createFilterResolverTree(expressionTree, tableIdentifier, null);
+        createFilterResolverTree(expressionTree, tableIdentifier);
     traverseAndResolveTree(filterEvaluatorTree, tableIdentifier);
     return filterEvaluatorTree;
   }
@@ -212,24 +207,22 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @return
    */
   private FilterResolverIntf createFilterResolverTree(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier, Expression intermediateExpression) {
+      AbsoluteTableIdentifier tableIdentifier) {
     ExpressionType filterExpressionType = expressionTree.getFilterExpressionType();
     BinaryExpression currentExpression = null;
     switch (filterExpressionType) {
       case OR:
         currentExpression = (BinaryExpression) expressionTree;
         return new LogicalFilterResolverImpl(
-            createFilterResolverTree(currentExpression.getLeft(), tableIdentifier,
-                currentExpression),
-            createFilterResolverTree(currentExpression.getRight(), tableIdentifier,
-                currentExpression),currentExpression);
+            createFilterResolverTree(currentExpression.getLeft(), tableIdentifier),
+            createFilterResolverTree(currentExpression.getRight(), tableIdentifier),
+            currentExpression);
       case AND:
         currentExpression = (BinaryExpression) expressionTree;
         return new LogicalFilterResolverImpl(
-            createFilterResolverTree(currentExpression.getLeft(), tableIdentifier,
-                currentExpression),
-            createFilterResolverTree(currentExpression.getRight(), tableIdentifier,
-                currentExpression), currentExpression);
+            createFilterResolverTree(currentExpression.getLeft(), tableIdentifier),
+            createFilterResolverTree(currentExpression.getRight(), tableIdentifier),
+            currentExpression);
       case EQUALS:
       case IN:
         return getFilterResolverBasedOnExpressionType(ExpressionType.EQUALS,

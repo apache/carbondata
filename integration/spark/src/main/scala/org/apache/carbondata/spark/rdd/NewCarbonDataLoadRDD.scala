@@ -24,7 +24,7 @@ import java.util.{Date, UUID}
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.{Logging, Partition, SparkContext, TaskContext}
+import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.spark.mapred.{CarbonHadoopMapReduceUtil, CarbonSerializableConfiguration}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
@@ -55,7 +55,7 @@ class NewCarbonDataLoadRDD[K, V](
     loadCount: Integer,
     blocksGroupBy: Array[(String, Array[BlockDetails])],
     isTableSplitPartition: Boolean)
-  extends RDD[(K, V)](sc, Nil) with CarbonHadoopMapReduceUtil with Logging {
+  extends RDD[(K, V)](sc, Nil) with CarbonHadoopMapReduceUtil {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 

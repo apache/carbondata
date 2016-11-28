@@ -924,10 +924,9 @@ private[sql] case class DeleteLoadsById(
     }
     val path = carbonTable.getMetaDataFilepath
 
-    val segmentStatusManager =
-      new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
     try {
-      val invalidLoadIds = segmentStatusManager.updateDeletionStatus(loadids.asJava, path).asScala
+      val invalidLoadIds = SegmentStatusManager.updateDeletionStatus(
+        carbonTable.getAbsoluteTableIdentifier, loadids.asJava, path).asScala
 
       if (invalidLoadIds.isEmpty) {
 
@@ -986,8 +985,6 @@ private[sql] case class DeleteLoadsByLoadDate(
 
     val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
       .getCarbonTable(dbName + '_' + tableName)
-    val segmentStatusManager = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
-
     if (null == carbonTable) {
       var relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
         .lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
@@ -995,8 +992,9 @@ private[sql] case class DeleteLoadsByLoadDate(
     val path = carbonTable.getMetaDataFilepath()
 
     try {
-      val invalidLoadTimestamps = segmentStatusManager
-        .updateDeletionStatus(loadDate, path, timeObj.asInstanceOf[java.lang.Long]).asScala
+      val invalidLoadTimestamps = SegmentStatusManager.updateDeletionStatus(
+        carbonTable.getAbsoluteTableIdentifier, loadDate, path,
+        timeObj.asInstanceOf[java.lang.Long]).asScala
       if (invalidLoadTimestamps.isEmpty) {
         LOGGER.audit(s"Delete segment by date is successfull for $dbName.$tableName.")
       }
@@ -1328,12 +1326,8 @@ private[sql] case class ShowLoads(
     if (carbonTable == null) {
       sys.error(s"$databaseName.$tableName is not found")
     }
-    val path = carbonTable.getMetaDataFilepath()
-
-    val segmentStatusManager = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
-
-    val loadMetadataDetailsArray = segmentStatusManager.readLoadMetadata(path)
-
+    val path = carbonTable.getMetaDataFilepath
+    val loadMetadataDetailsArray = SegmentStatusManager.readLoadMetadata(path)
     if (loadMetadataDetailsArray.nonEmpty) {
 
       val parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP)

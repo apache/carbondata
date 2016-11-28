@@ -21,12 +21,13 @@ import java.io.DataOutputStream
 
 import scala.collection.mutable.{ArrayBuffer, HashSet}
 
-import org.apache.spark.Logging
 import org.apache.spark.SparkContext
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 
-object AllDictionaryUtil extends Logging{
+object AllDictionaryUtil {
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   def extractDictionary(sc: SparkContext,
                         srcData: String,
                         outputPath: String,
@@ -50,7 +51,7 @@ object AllDictionaryUtil extends Logging{
             result += ((i, tokens(i)))
           } catch {
             case ex: ArrayIndexOutOfBoundsException =>
-              logError("Read a bad record: " + x)
+              LOGGER.error("Read a bad record: " + x)
           }
         }
       }
@@ -75,7 +76,7 @@ object AllDictionaryUtil extends Logging{
       }
     } catch {
       case ex: Exception =>
-        logError("Clean dictionary catching exception:" + ex)
+        LOGGER.error("Clean dictionary catching exception:" + ex)
     }
   }
 
@@ -93,14 +94,14 @@ object AllDictionaryUtil extends Logging{
       }
     } catch {
       case ex: Exception =>
-        logError("Save dictionary to file catching exception:" + ex)
+        LOGGER.error("Save dictionary to file catching exception:" + ex)
     } finally {
       if (writer != null) {
         try {
           writer.close()
         } catch {
           case ex: Exception =>
-            logError("Close output stream catching exception:" + ex)
+            LOGGER.error("Close output stream catching exception:" + ex)
         }
       }
     }

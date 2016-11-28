@@ -31,7 +31,7 @@ public interface CarbonReadSupport<T> {
    *
    * @param carbonColumns
    */
-  public void intialize(CarbonColumn[] carbonColumns,
+  public void initialize(CarbonColumn[] carbonColumns,
       AbsoluteTableIdentifier absoluteTableIdentifier);
 
   public T readRow(Object[] data);

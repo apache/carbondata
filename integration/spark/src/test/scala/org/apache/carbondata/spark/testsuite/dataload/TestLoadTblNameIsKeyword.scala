@@ -32,9 +32,9 @@ import org.apache.spark.sql.Row
   */
 class TestLoadTblNameIsKeyword extends QueryTest with BeforeAndAfterAll {
   def currentPath: String = new File(this.getClass.getResource("/").getPath + "/../../")
-    .getCanonicalPath
-  val testData = new File(currentPath + "/../../examples/src/main/resources/dimSample.csv")
-    .getCanonicalPath
+      .getCanonicalPath
+  val testData = new File(currentPath + "/src/test/resources/dimSample.csv")
+      .getCanonicalPath
   override def beforeAll {
     sql("drop table if exists STRING")
     sql("drop table if exists DoUbLe")

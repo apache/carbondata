@@ -51,7 +51,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     )
      CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "MM-dd-yyyy HH:mm:ss")
-        
+
      sql("CREATE TABLE filterTimestampDataType (ID int, date Timestamp, country String, " +
       "name String, phonetype String, serialname String, salary int) " +
         "STORED BY 'org.apache.carbondata.format'"
@@ -128,7 +128,6 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql("load data local inpath './src/test/resources/big_int_Decimal.csv' into table big_int_basicc_Hive")
     sql("load data local inpath './src/test/resources/big_int_Decimal.csv' into table big_int_basicc_Hive_1")
   }
-
 
   test("Is not null filter") {
     checkAnswer(

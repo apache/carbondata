@@ -32,7 +32,7 @@ import org.apache.spark.sql.hive.CarbonMetastoreCatalog
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.scan.model._
-import org.apache.carbondata.spark.{CarbonFilters, RawValue, RawValueImpl}
+import org.apache.carbondata.spark.CarbonFilters
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 case class CarbonScan(
@@ -136,14 +136,11 @@ case class CarbonScan(
     selectedMsrs.foreach(plan.addMeasure)
   }
 
-
   def inputRdd: CarbonScanRDD[Array[Any]] = {
 
     val conf = new Configuration()
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-    val model = QueryModel.createModel(
-      absoluteTableIdentifier, buildCarbonPlan, carbonTable)
-    val kv: RawValue[Array[Any]] = new RawValueImpl
+
     // setting queryid
     buildCarbonPlan.setQueryId(ocRaw.getConf("queryId", System.nanoTime() + ""))
 
@@ -151,18 +148,14 @@ case class CarbonScan(
         .getTableCreationTime(relationRaw.databaseName, relationRaw.tableName)
     val schemaLastUpdatedTime = carbonCatalog
         .getSchemaLastUpdatedTime(relationRaw.databaseName, relationRaw.tableName)
-    val big = new CarbonScanRDD(
+    new CarbonScanRDD(
       ocRaw.sparkContext,
-      model,
+      attributesRaw,
       buildCarbonPlan.getFilterExpression,
-      kv,
-      conf,
-      tableCreationTime,
-      schemaLastUpdatedTime,
-      carbonCatalog.storePath)
-    big
+      absoluteTableIdentifier,
+      carbonTable
+    )
   }
-
 
   override def outputsUnsafeRows: Boolean =
     (attributesNeedToDecode.size() == 0) && useUnsafeCoversion
@@ -174,12 +167,14 @@ case class CarbonScan(
       new Iterator[InternalRow] {
         override def hasNext: Boolean = iter.hasNext
 
-        override def next(): InternalRow =
+        override def next(): InternalRow = {
+          val value = iter.next
           if (outUnsafeRows) {
-            unsafeProjection(new GenericMutableRow(iter.next()))
+            unsafeProjection(new GenericMutableRow(value))
           } else {
-            new GenericMutableRow(iter.next())
+            new GenericMutableRow(value)
           }
+        }
       }
     }
   }

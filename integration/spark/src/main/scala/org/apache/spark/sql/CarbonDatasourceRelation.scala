@@ -132,7 +132,7 @@ private[sql] case class CarbonDatasourceRelation(
     tableIdentifier: TableIdentifier,
     alias: Option[String])
     (@transient context: SQLContext)
-    extends BaseRelation with Serializable with Logging {
+    extends BaseRelation with Serializable {
 
   lazy val carbonRelation: CarbonRelation = {
     CarbonEnv.getInstance(context)
@@ -272,9 +272,8 @@ case class CarbonRelation(
   private var sizeInBytesLocalValue = 0L
 
   def sizeInBytes: Long = {
-    val tableStatusNewLastUpdatedTime = new SegmentStatusManager(
+    val tableStatusNewLastUpdatedTime = SegmentStatusManager.getTableStatusLastModifiedTime(
       tableMeta.carbonTable.getAbsoluteTableIdentifier)
-        .getTableStatusLastModifiedTime
     if (tableStatusLastUpdateTime != tableStatusNewLastUpdatedTime) {
       val tablePath = CarbonStorePath.getCarbonTablePath(
         tableMeta.storePath,

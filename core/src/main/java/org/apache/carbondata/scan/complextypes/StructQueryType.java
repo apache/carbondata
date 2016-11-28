@@ -29,7 +29,7 @@ import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChun
 import org.apache.carbondata.scan.filter.GenericQueryType;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 
-import org.apache.spark.sql.catalyst.expressions.GenericInternalRowWithSchema;
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Metadata;
 import org.apache.spark.sql.types.StructField;
@@ -179,6 +179,6 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
       fields[i] =  children.get(i).getDataBasedOnDataTypeFromSurrogates(surrogateData);
     }
 
-    return new GenericInternalRowWithSchema(fields, (StructType) getSchemaType());
+    return new GenericInternalRow(fields);
   }
 }

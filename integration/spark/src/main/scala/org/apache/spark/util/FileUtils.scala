@@ -17,14 +17,13 @@
 
 package org.apache.spark.util
 
-import org.apache.spark.Logging
-
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.processing.etl.DataLoadingException
 
-object FileUtils extends Logging {
+object FileUtils {
   /**
    * append all csv file path to a String, file path separated by comma
    */
@@ -38,10 +37,12 @@ object FileUtils extends Logging {
       val path = carbonFile.getAbsolutePath
       val fileName = carbonFile.getName
       if (carbonFile.getSize == 0) {
-        logWarning(s"skip empty input file: $path")
+        LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+            .warn(s"skip empty input file: $path")
       } else if (fileName.startsWith(CarbonCommonConstants.UNDERSCORE) ||
                  fileName.startsWith(CarbonCommonConstants.POINT)) {
-        logWarning(s"skip invisible input file: $path")
+        LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+            .warn(s"skip invisible input file: $path")
       } else {
         stringBuild.append(path.replace('\\', '/')).append(CarbonCommonConstants.COMMA)
       }
