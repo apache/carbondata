@@ -894,6 +894,15 @@ public final class CarbonCommonConstants {
    */
   public static final String DATA_LOAD_BATCH_SIZE_DEFAULT = "1000";
 
+  /**
+   * Maximum no of column supported
+   */
+  public static int DEFAULT_MAX_NUMBER_OF_COLUMNS = 20000;
+
+  /**
+   * maximum length of column
+   */
+  public static final int DEFAULT_COLUMN_LENGTH = 100000;
   private CarbonCommonConstants() {
   }
 }

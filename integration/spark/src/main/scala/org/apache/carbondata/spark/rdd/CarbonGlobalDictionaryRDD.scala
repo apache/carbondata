@@ -42,6 +42,7 @@ import org.apache.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.tasks.{DictionaryWriterTask, SortIndexWriterTask}
+import org.apache.carbondata.spark.util.CarbonScalaUtil
 import org.apache.carbondata.spark.util.GlobalDictionaryUtil
 import org.apache.carbondata.spark.util.GlobalDictionaryUtil._
 
@@ -157,7 +158,8 @@ case class DictionaryLoadModel(table: CarbonTableIdentifier,
     isFirstLoad: Boolean,
     hdfsTempLocation: String,
     lockType: String,
-    zooKeeperUrl: String) extends Serializable
+    zooKeeperUrl: String,
+    serializationNullFormat: String) extends Serializable
 
 case class ColumnDistinctValues(values: Array[String], rowCount: Long) extends Serializable
 
@@ -257,7 +259,9 @@ class CarbonBlockDistinctValuesCombineRDD(
         if (row != null) {
           rowCount += 1
           for (i <- 0 until dimNum) {
-            dimensionParsers(i).parseString(row.getString(i))
+            dimensionParsers(i).parseString(CarbonScalaUtil.getString(row(i),
+                model.serializationNullFormat,
+                model.delimiters(0), model.delimiters(1)))
           }
         }
       }

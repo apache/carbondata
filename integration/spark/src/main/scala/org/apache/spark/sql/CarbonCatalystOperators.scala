@@ -105,3 +105,24 @@ case class DropDatabase(dbName: String, isCascade: Boolean, sql: String)
     Seq()
   }
 }
+
+/**
+ * A logical plan representing insertion into Hive table.
+ * This plan ignores nullability of ArrayType, MapType, StructType unlike InsertIntoTable
+ * because Hive table doesn't have nullability for ARRAY, MAP, STRUCT types.
+ */
+case class InsertIntoCarbonTable(
+    table: CarbonDatasourceRelation,
+    partition: Map[String, Option[String]],
+    child: LogicalPlan,
+    overwrite: Boolean,
+    ifNotExists: Boolean)
+  extends LogicalPlan with Command {
+
+  override def children: Seq[LogicalPlan] = child :: Nil
+  override def output: Seq[Attribute] = Seq.empty
+
+  // This is the expected schema of the table prepared to be inserted into,
+  // including dynamic partition columns.
+  val tableOutput = table.carbonRelation.output
+}

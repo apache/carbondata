@@ -97,8 +97,11 @@ struct ColumnSchema{
 	/**
 	 * column reference id
 	 */
-	15: optional string columnReferenceId;	
-	
+	15: optional string columnReferenceId;
+	/**
+	 * It will have column order which user has provided
+	 */	
+	16: optional i32 schemaOrdinal
 }
 
 /**

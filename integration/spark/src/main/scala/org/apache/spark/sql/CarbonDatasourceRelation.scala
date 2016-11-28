@@ -20,6 +20,7 @@ package org.apache.spark.sql
 import java.util.LinkedHashSet
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.hadoop.fs.Path
@@ -32,7 +33,7 @@ import org.apache.spark.sql.hive.{CarbonMetaData, CarbonMetastoreTypes, TableMet
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.{DataType, StructType}
 
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.lcm.status.SegmentStatusManager
@@ -153,7 +154,7 @@ private[sql] case class CarbonDatasourceRelation(
 case class CarbonRelation(
     databaseName: String,
     tableName: String,
-    metaData: CarbonMetaData,
+    var metaData: CarbonMetaData,
     tableMeta: TableMeta,
     alias: Option[String])(@transient sqlContext: SQLContext)
     extends LeafNode with MultiInstanceRelation {
@@ -244,8 +245,40 @@ case class CarbonRelation(
           nullable = true)(qualifiers = tableName +: alias.toSeq))
   }
 
-  override val output = dimensionsAttr ++ measureAttr
-
+  override val output = {
+    val factTable = tableMeta.carbonTable.getFactTableName
+    var columns = tableMeta.carbonTable.getCreateOrderColumn(tableMeta.carbonTable.getFactTableName)
+      .asScala
+    columns.filter(!_.getColumnSchema.isInvisible).map { column =>
+      if (column.isDimesion()) {
+        val output: DataType = column.getDataType.toString.toLowerCase match {
+          case "array" =>
+            CarbonMetastoreTypes.toDataType(s"array<${getArrayChildren(column.getColName)}>")
+          case "struct" =>
+            CarbonMetastoreTypes.toDataType(s"struct<${getStructChildren(column.getColName)}>")
+          case dType =>
+            val dataType = addDecimalScaleAndPrecision(column, dType)
+            CarbonMetastoreTypes.toDataType(dataType)
+        }
+        AttributeReference(column.getColName, output,
+          nullable = true
+        )(qualifiers = tableName +: alias.toSeq)
+      } else {
+        AttributeReference(column.getColName, CarbonMetastoreTypes.toDataType(
+          column.getDataType.toString
+            .toLowerCase match {
+            case "int" => "long"
+            case "short" => "long"
+            case "decimal" => "decimal(" + column.getColumnSchema.getPrecision + "," + column
+              .getColumnSchema.getScale + ")"
+            case others => others
+          }
+        ),
+          nullable = true
+        )(qualifiers = tableName +: alias.toSeq)
+      }
+    }
+  }
   // TODO: Use data from the footers.
   override lazy val statistics = Statistics(sizeInBytes = this.sizeInBytes)
 
@@ -257,7 +290,7 @@ case class CarbonRelation(
     }
   }
 
-  def addDecimalScaleAndPrecision(dimval: CarbonDimension, dataType: String): String = {
+  def addDecimalScaleAndPrecision(dimval: CarbonColumn, dataType: String): String = {
     var dType = dataType
     if (dimval.getDataType
         == org.apache.carbondata.core.carbon.metadata.datatype.DataType.DECIMAL) {
