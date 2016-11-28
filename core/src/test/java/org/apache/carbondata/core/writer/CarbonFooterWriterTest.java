@@ -39,8 +39,8 @@ import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.ColumnSchema;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
@@ -51,9 +51,9 @@ import static org.junit.Assert.assertTrue;
  */
 public class CarbonFooterWriterTest {
 
-  private String filePath;
-  private CarbonFooterWriter writer;
-  private List<BlockletInfoColumnar> infoColumnars;
+  private static String filePath;
+  private static CarbonFooterWriter writer;
+  private static List<BlockletInfoColumnar> infoColumnars;
 
   public static ColumnSchema getDimensionColumn(String columnName) {
     ColumnSchema dimColumn = new ColumnSchema();
@@ -70,7 +70,7 @@ public class CarbonFooterWriterTest {
     return dimColumn;
   }
 
-  @Before public void setUp() throws Exception {
+  @BeforeClass public static void setUp() throws Exception {
     filePath = "testMeta.fact";
     deleteFile();
     createFile();
@@ -97,7 +97,7 @@ public class CarbonFooterWriterTest {
 
   }
 
-  @After public void tearDown() throws Exception {
+  @AfterClass public static void tearDown() throws Exception {
     deleteFile();
   }
 
@@ -110,7 +110,7 @@ public class CarbonFooterWriterTest {
     assertTrue(metaDataReader.readFooter() != null);
   }
 
-  private org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema getWrapperDimensionColumn(
+  private static org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema getWrapperDimensionColumn(
       String columnName) {
     org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema dimColumn =
         new org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema();
@@ -138,7 +138,7 @@ public class CarbonFooterWriterTest {
     assertTrue(nodeInfoColumnars.size() == infoColumnars.size());
   }
 
-  private List<BlockletInfoColumnar> getBlockletInfoColumnars() {
+  private static List<BlockletInfoColumnar> getBlockletInfoColumnars() {
     BlockletInfoColumnar infoColumnar = new BlockletInfoColumnar();
     infoColumnar.setStartKey(new byte[] { 1, 2, 3 });
     infoColumnar.setEndKey(new byte[] { 8, 9, 10 });
@@ -176,15 +176,15 @@ public class CarbonFooterWriterTest {
   /**
    * this method will delete file
    */
-  private void deleteFile() {
-    FileFactory.FileType fileType = FileFactory.getFileType(this.filePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(this.filePath, fileType);
+  private static void deleteFile() {
+    FileFactory.FileType fileType = FileFactory.getFileType(/*this.*/filePath);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(/*this.*/filePath, fileType);
     carbonFile.delete();
   }
 
-  private void createFile() {
-    FileFactory.FileType fileType = FileFactory.getFileType(this.filePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(this.filePath, fileType);
+  private static void createFile() {
+    FileFactory.FileType fileType = FileFactory.getFileType(/*this.*/filePath);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(/*this.*/filePath, fileType);
     carbonFile.createNewFile();
   }
 
