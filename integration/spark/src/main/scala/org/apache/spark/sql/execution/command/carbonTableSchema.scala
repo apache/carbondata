@@ -99,7 +99,6 @@ case class DataLoadTableFileMapping(table: String, loadPath: String)
 
 case class CarbonMergerMapping(storeLocation: String,
     storePath: String,
-    partitioner: Partitioner,
     metadataFilePath: String,
     mergedLoadName: String,
     kettleHomePath: String,
@@ -126,7 +125,6 @@ case class CompactionModel(compactionSize: Long,
 
 case class CompactionCallableModel(storePath: String,
     carbonLoadModel: CarbonLoadModel,
-    partitioner: Partitioner,
     storeLocation: String,
     carbonTable: CarbonTable,
     kettleHomePath: String,
@@ -493,7 +491,6 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
         .alterTableForCompaction(sqlContext,
           alterTableModel,
           carbonLoadModel,
-          partitioner,
           relation.tableMeta.storePath,
           kettleHomePath,
           storeLocation
@@ -1162,8 +1159,7 @@ private[sql] case class DeleteLoadByDate(
       CarbonEnv.getInstance(sqlContext).carbonCatalog.storePath,
       level,
       actualColName,
-      dateValue,
-      relation.tableMeta.partitioner)
+      dateValue)
     LOGGER.audit(s"The delete load by date $dateValue is successful for $dbName.$tableName.")
     Seq.empty
   }
@@ -1201,8 +1197,7 @@ private[sql] case class CleanFiles(
       CarbonDataRDDFactory.cleanFiles(
         sqlContext.sparkContext,
         carbonLoadModel,
-        relation.tableMeta.storePath,
-        relation.tableMeta.partitioner)
+        relation.tableMeta.storePath)
       LOGGER.audit(s"Clean files request is successfull for $dbName.$tableName.")
     } catch {
       case ex: Exception =>
