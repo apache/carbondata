@@ -56,11 +56,12 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
   }
 
   /**
-   * Firstly, saving DataFrame to CSV files
-   * Secondly, load CSV files
-   * @param options
-   * @param cc
-   */
+    * Firstly, saving DataFrame to CSV files
+    * Secondly, load CSV files
+    *
+    * @param options
+    * @param cc
+    */
   private def loadTempCSV(options: CarbonOption, cc: CarbonContext): Unit = {
     // temporary solution: write to csv file, then load the csv into carbon
     val storePath = CarbonEnv.getInstance(cc).carbonCatalog.storePath
@@ -117,10 +118,11 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
   }
 
   /**
-   * Loading DataFrame directly without saving DataFrame to CSV files.
-   * @param options
-   * @param cc
-   */
+    * Loading DataFrame directly without saving DataFrame to CSV files.
+    *
+    * @param options
+    * @param cc
+    */
   private def loadDataFrame(options: CarbonOption, cc: CarbonContext): Unit = {
     val header = dataFrame.columns.mkString(",")
     LoadTable(
@@ -128,7 +130,7 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
       options.tableName,
       null,
       Seq(),
-      Map("fileheader" -> header),
+      Map("fileheader" -> header) ++ options.toMap,
       isOverwriteExist = false,
       null,
       Some(dataFrame)).run(cc)
@@ -153,12 +155,12 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
 
   private def makeCreateTableString(schema: StructType, options: CarbonOption): String = {
     val carbonSchema = schema.map { field =>
-      s"${ field.name } ${ convertToCarbonType(field.dataType) }"
+      s"${field.name} ${convertToCarbonType(field.dataType)}"
     }
     s"""
           CREATE TABLE IF NOT EXISTS ${options.dbName}.${options.tableName}
-          (${ carbonSchema.mkString(", ") })
-          STORED BY '${ CarbonContext.datasourceName }'
+          (${carbonSchema.mkString(", ")})
+          STORED BY '${CarbonContext.datasourceName}'
       """
   }
 

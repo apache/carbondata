@@ -213,10 +213,10 @@
         <configuration>
           <configLocation>${dev.path}/javastyle-config.xml</configLocation>
           <consoleOutput>true</consoleOutput>
-          <failsOnError>true</failsOnError>
+          <failsOnError>false</failsOnError>
           <linkXRef>false</linkXRef>
           <verbose>false</verbose>
-          <failOnViolation>true</failOnViolation>
+          <failOnViolation>false</failOnViolation>
           <includeTestSourceDirectory>false</includeTestSourceDirectory>
           <sourceDirectory>${basedir}/src/main/java</sourceDirectory>
           <testSourceDirectory>${basedir}/src/test/java</testSourceDirectory>
@@ -245,7 +245,7 @@
         </executions>
         <configuration>
           <verbose>false</verbose>
-          <failOnViolation>true</failOnViolation>
+          <failOnViolation>false</failOnViolation>
           <includeTestSourceDirectory>false</includeTestSourceDirectory>
           <failOnWarning>false</failOnWarning>
           <sourceDirectory>${basedir}/src/main/scala</sourceDirectory>
@@ -254,6 +254,22 @@
           <outputFile>${basedir}/target/scalastyle-output.xml</outputFile>
           <outputEncoding>${project.build.sourceEncoding}</outputEncoding>
         </configuration>
+      </plugin>
+      <!--   要将源码放上去，需要加入这个插件    -->
+      <plugin>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>2.1</version>
+        <configuration>
+          <attach>true</attach>
+        </configuration>
+        <executions>
+          <execution>
+            <phase>compile</phase>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>
@@ -408,5 +424,15 @@
       </build>
     </profile>
   </profiles>
-
+  <distributionManagement>
+    <repository>
+      <id>releases</id>
+      <name>releases</name>
+      <url>http://mvn.letv.com/nexus/content/repositories/releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>snapshots</id>
+      <url>http://mvn.letv.com/nexus/content/repositories/snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
 </project>

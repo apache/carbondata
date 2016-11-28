@@ -36,8 +36,8 @@ public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSuppor
   @Override public void initialize(CarbonColumn[] carbonColumns,
       AbsoluteTableIdentifier absoluteTableIdentifier) {
 
-      super.initialize(carbonColumns, absoluteTableIdentifier);
-      //can initialize and generate schema here.
+    super.initialize(carbonColumns, absoluteTableIdentifier);
+    //can initialize and generate schema here.
   }
 
   @Override public Row readRow(Object[] data) {

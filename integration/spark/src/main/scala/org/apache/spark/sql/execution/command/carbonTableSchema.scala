@@ -66,30 +66,30 @@ import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil,
 GlobalDictionaryUtil}
 
 case class tableModel(
-    ifNotExistsSet: Boolean,
-    var databaseName: String,
-    databaseNameOp: Option[String],
-    tableName: String,
-    tableProperties: Map[String, String],
-    dimCols: Seq[Field],
-    msrCols: Seq[Field],
-    fromKeyword: String,
-    withKeyword: String,
-    source: Object,
-    factFieldsList: Option[FilterCols],
-    dimRelations: Seq[DimensionRelation],
-    simpleDimRelations: Seq[DimensionRelation],
-    highcardinalitydims: Option[Seq[String]],
-    noInvertedIdxCols: Option[Seq[String]],
-    aggregation: Seq[Aggregation],
-    partitioner: Option[Partitioner],
-    columnGroups: Seq[String],
-    colProps: Option[util.Map[String, util.List[ColumnProperty]]] = None)
+                       ifNotExistsSet: Boolean,
+                       var databaseName: String,
+                       databaseNameOp: Option[String],
+                       tableName: String,
+                       tableProperties: Map[String, String],
+                       dimCols: Seq[Field],
+                       msrCols: Seq[Field],
+                       fromKeyword: String,
+                       withKeyword: String,
+                       source: Object,
+                       factFieldsList: Option[FilterCols],
+                       dimRelations: Seq[DimensionRelation],
+                       simpleDimRelations: Seq[DimensionRelation],
+                       highcardinalitydims: Option[Seq[String]],
+                       noInvertedIdxCols: Option[Seq[String]],
+                       aggregation: Seq[Aggregation],
+                       partitioner: Option[Partitioner],
+                       columnGroups: Seq[String],
+                       colProps: Option[util.Map[String, util.List[ColumnProperty]]] = None)
 
 case class Field(column: String, var dataType: Option[String], name: Option[String],
-    children: Option[List[Field]], parent: String = null,
-    storeType: Option[String] = Some("columnar"),
-    var precision: Int = 0, var scale: Int = 0)
+                 children: Option[List[Field]], parent: String = null,
+                 storeType: Option[String] = Some("columnar"),
+                 var precision: Int = 0, var scale: Int = 0)
 
 case class ArrayDataType(dataType: String)
 
@@ -104,7 +104,7 @@ case class HierarchyMapping(hierName: String, hierType: String, levels: Seq[Stri
 case class ColumnProperty(key: String, value: String)
 
 case class ComplexField(complexType: String, primitiveField: Option[Field],
-    complexField: Option[ComplexField])
+                        complexField: Option[ComplexField])
 
 case class Cardinality(levelName: String, cardinality: Int)
 
@@ -113,79 +113,81 @@ case class Aggregation(msrName: String, aggType: String)
 case class AggregateTableAttributes(colName: String, aggType: String = null)
 
 case class Partitioner(partitionClass: String, partitionColumn: Array[String], partitionCount: Int,
-    nodeList: Array[String])
+                       nodeList: Array[String])
 
 case class PartitionerField(partitionColumn: String, dataType: Option[String],
-    columnComment: String)
+                            columnComment: String)
 
 case class DimensionRelation(tableName: String, dimSource: Object, relation: Relation,
-    includeKey: Option[String], cols: Option[Seq[String]])
+                             includeKey: Option[String], cols: Option[Seq[String]])
 
 case class Relation(leftColumn: String, rightColumn: String)
 
 case class LoadSchema(tableInfo: TableInfo, dimensionTables: Array[DimensionRelation])
 
 case class Level(name: String, column: String, cardinality: Int, dataType: String,
-    parent: String = null, storeType: String = "Columnar",
-    levelType: String = "Regular")
+                 parent: String = null, storeType: String = "Columnar",
+                 levelType: String = "Regular")
 
 case class Measure(name: String, column: String, dataType: String, aggregator: String = "SUM",
-    visible: Boolean = true)
+                   visible: Boolean = true)
 
 case class Hierarchy(name: String, primaryKey: Option[String], levels: Seq[Level],
-    tableName: Option[String], normalized: Boolean = false)
+                     tableName: Option[String], normalized: Boolean = false)
 
 case class Dimension(name: String, hierarchies: Seq[Hierarchy], foreignKey: Option[String],
-    dimType: String = "StandardDimension", visible: Boolean = true,
-    var highCardinality: Boolean = false)
+                     dimType: String = "StandardDimension", visible: Boolean = true,
+                     var highCardinality: Boolean = false)
 
 case class FilterCols(includeKey: String, fieldList: Seq[String])
 
 case class Table(databaseName: String, tableName: String, dimensions: Seq[Dimension],
-    measures: Seq[Measure], partitioner: Partitioner)
+                 measures: Seq[Measure], partitioner: Partitioner)
 
 case class Default(key: String, value: String)
 
 case class DataLoadTableFileMapping(table: String, loadPath: String)
 
 case class CarbonMergerMapping(storeLocation: String,
-    storePath: String,
-    partitioner: Partitioner,
-    metadataFilePath: String,
-    mergedLoadName: String,
-    kettleHomePath: String,
-    tableCreationTime: Long,
-    databaseName: String,
-    factTableName: String,
-    validSegments: Array[String],
-    tableId: String,
-    // maxSegmentColCardinality is Cardinality of last segment of compaction
-    var maxSegmentColCardinality: Array[Int],
-    // maxSegmentColumnSchemaList is list of column schema of last segment of compaction
-    var maxSegmentColumnSchemaList: List[ColumnSchema])
+                               storePath: String,
+                               partitioner: Partitioner,
+                               metadataFilePath: String,
+                               mergedLoadName: String,
+                               kettleHomePath: String,
+                               tableCreationTime: Long,
+                               databaseName: String,
+                               factTableName: String,
+                               validSegments: Array[String],
+                               tableId: String,
+                               // maxSegmentColCardinality is Cardinality
+                               // of last segment of compaction
+                               var maxSegmentColCardinality: Array[Int],
+                               // maxSegmentColumnSchemaList is list
+                               // of column schema of last segment of compaction
+                               var maxSegmentColumnSchemaList: List[ColumnSchema])
 
 case class NodeInfo(TaskId: String, noOfBlocks: Int)
 
 
 case class AlterTableModel(dbName: Option[String], tableName: String,
-    compactionType: String, alterSql: String)
+                           compactionType: String, alterSql: String)
 
 case class CompactionModel(compactionSize: Long,
-    compactionType: CompactionType,
-    carbonTable: CarbonTable,
-    tableCreationTime: Long,
-    isDDLTrigger: Boolean)
+                           compactionType: CompactionType,
+                           carbonTable: CarbonTable,
+                           tableCreationTime: Long,
+                           isDDLTrigger: Boolean)
 
 case class CompactionCallableModel(storePath: String,
-    carbonLoadModel: CarbonLoadModel,
-    partitioner: Partitioner,
-    storeLocation: String,
-    carbonTable: CarbonTable,
-    kettleHomePath: String,
-    cubeCreationTime: Long,
-    loadsToMerge: util.List[LoadMetadataDetails],
-    sqlContext: SQLContext,
-    compactionType: CompactionType)
+                                   carbonLoadModel: CarbonLoadModel,
+                                   partitioner: Partitioner,
+                                   storeLocation: String,
+                                   carbonTable: CarbonTable,
+                                   kettleHomePath: String,
+                                   cubeCreationTime: Long,
+                                   loadsToMerge: util.List[LoadMetadataDetails],
+                                   sqlContext: SQLContext,
+                                   compactionType: CompactionType)
 
 object TableNewProcessor {
   def apply(cm: tableModel, sqlContext: SQLContext): TableInfo = {
@@ -221,8 +223,8 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
   }
 
   def getColumnSchema(dataType: DataType, colName: String, index: Integer, isCol: Boolean,
-      encoders: java.util.List[Encoding], isDimensionCol: Boolean,
-      colGroup: Integer, precision: Integer, scale: Integer): ColumnSchema = {
+                      encoders: java.util.List[Encoding], isDimensionCol: Boolean,
+                      colGroup: Integer, precision: Integer, scale: Integer): ColumnSchema = {
     val columnSchema = new ColumnSchema()
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
@@ -306,8 +308,8 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
       LOGGER.error(s"Duplicate column found with name: $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Table Operation " +
-        s"for ${ cm.databaseName }.${ cm.tableName }" +
-        s"Duplicate column found with name: $name")
+          s"for ${cm.databaseName}.${cm.tableName}" +
+          s"Duplicate column found with name: $name")
       sys.error(s"Duplicate dimensions found with name: $name")
     })
 
@@ -339,7 +341,7 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
       // When the column is measure or the specified no inverted index column in DDL,
       // set useInvertedIndex to false, otherwise true.
       if (noInvertedIndexCols.contains(column.getColumnName) ||
-          cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
+        cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
         column.setUseInvertedIndex(false)
       } else {
         column.setUseInvertedIndex(true)
@@ -396,8 +398,8 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
           LOGGER.error(s"partition columns specified are not part of Dimension columns: $msg")
           LOGGER.audit(
             s"Validation failed for Create/Alter Table Operation for " +
-            s"${ cm.databaseName }.${ cm.tableName } " +
-            s"partition columns specified are not part of Dimension columns: $msg")
+              s"${cm.databaseName}.${cm.tableName} " +
+              s"partition columns specified are not part of Dimension columns: $msg")
           sys.error(s"partition columns specified are not part of Dimension columns: $msg")
         } else {
 
@@ -408,8 +410,8 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
               val cl = part.partitionClass
               LOGGER.audit(
                 s"Validation failed for Create/Alter Table Operation for " +
-                s"${ cm.databaseName }.${ cm.tableName } " +
-                s"partition class specified can not be found or loaded: $cl")
+                  s"${cm.databaseName}.${cm.tableName} " +
+                  s"partition class specified can not be found or loaded: $cl")
               sys.error(s"partition class specified can not be found or loaded: $cl")
           }
 
@@ -444,8 +446,8 @@ class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
 
   //  For checking if the specified col group columns are specified in fields list.
   protected def checkColGroupsValidity(colGrps: Seq[String],
-      allCols: Seq[ColumnSchema],
-      highCardCols: Seq[String]): Unit = {
+                                       allCols: Seq[ColumnSchema],
+                                       highCardCols: Seq[String]): Unit = {
     if (null != colGrps) {
       colGrps.foreach(columngroup => {
         val rowCols = columngroup.split(",")
@@ -552,7 +554,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       field.dataType.getOrElse(CarbonCommonConstants.NUMERIC)))
 
     if (cm.withKeyword.equalsIgnoreCase(CarbonCommonConstants.WITH) &&
-        cm.simpleDimRelations.nonEmpty) {
+      cm.simpleDimRelations.nonEmpty) {
       cm.simpleDimRelations.foreach(relationEntry => {
 
         // Split the levels and seperate levels with dimension levels
@@ -584,8 +586,8 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       LOGGER.error(s"Duplicate dimensions found with name: $name")
       LOGGER.audit(
         "Validation failed for Create/Alter Table Operation " +
-        s"for ${ cm.databaseName }.${ cm.tableName } " +
-        s"Duplicate dimensions found with name: $name")
+          s"for ${cm.databaseName}.${cm.tableName} " +
+          s"Duplicate dimensions found with name: $name")
       sys.error(s"Duplicate dimensions found with name: $name")
     })
 
@@ -594,8 +596,8 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       LOGGER.error(s"Duplicate dimensions found with column name: $name")
       LOGGER.audit(
         "Validation failed for Create/Alter Table Operation " +
-        s"for ${ cm.databaseName }.${ cm.tableName } " +
-        s"Duplicate dimensions found with column name: $name")
+          s"for ${cm.databaseName}.${cm.tableName} " +
+          s"Duplicate dimensions found with column name: $name")
       sys.error(s"Duplicate dimensions found with column name: $name")
     })
 
@@ -604,8 +606,8 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       LOGGER.error(s"Duplicate measures found with name: $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Table Operation " +
-        s"for ${ cm.databaseName }.${ cm.tableName } " +
-        s"Duplicate measures found with name: $name")
+          s"for ${cm.databaseName}.${cm.tableName} " +
+          s"Duplicate measures found with name: $name")
       sys.error(s"Duplicate measures found with name: $name")
     })
 
@@ -614,8 +616,8 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       LOGGER.error(s"Duplicate measures found with column name: $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Table Operation " +
-        s"for ${ cm.databaseName }.${ cm.tableName } " +
-        s"Duplicate measures found with column name: $name")
+          s"for ${cm.databaseName}.${cm.tableName} " +
+          s"Duplicate measures found with column name: $name")
       sys.error(s"Duplicate measures found with column name: $name")
     })
 
@@ -628,8 +630,8 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
         LOGGER.error(s"Aggregator should not be defined for dimension fields [$fault]")
         LOGGER.audit(
           s"Validation failed for Create/Alter Table Operation for " +
-          s"${ cm.databaseName }.${ cm.tableName } " +
-          s"Aggregator should not be defined for dimension fields [$fault]")
+            s"${cm.databaseName}.${cm.tableName} " +
+            s"Aggregator should not be defined for dimension fields [$fault]")
         sys.error(s"Aggregator should not be defined for dimension fields [$fault]")
       }
     })
@@ -639,8 +641,8 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
       LOGGER.error(s"Dimension and Measure defined with same name: $name")
       LOGGER.audit(
         s"Validation failed for Create/Alter Table Operation " +
-        s"for ${ cm.databaseName }.${ cm.tableName } " +
-        s"Dimension and Measure defined with same name: $name")
+          s"for ${cm.databaseName}.${cm.tableName} " +
+          s"Dimension and Measure defined with same name: $name")
       sys.error(s"Dimension and Measure defined with same name: $name")
     })
 
@@ -715,7 +717,7 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
           LOGGER.error(s"partition columns specified are not part of Dimension columns: $msg")
           LOGGER.audit(
             s"Validation failed for Create/Alter Table Operation - " +
-            s"partition columns specified are not part of Dimension columns: $msg")
+              s"partition columns specified are not part of Dimension columns: $msg")
           sys.error(s"partition columns specified are not part of Dimension columns: $msg")
         } else {
           try {
@@ -725,8 +727,8 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
               val cl = part.partitionClass
               LOGGER.audit(
                 s"Validation failed for Create/Alter Table Operation for " +
-                s"${ cm.databaseName }.${ cm.tableName } " +
-                s"partition class specified can not be found or loaded: $cl")
+                  s"${cm.databaseName}.${cm.tableName} " +
+                  s"partition class specified can not be found or loaded: $cl")
               sys.error(s"partition class specified can not be found or loaded: $cl")
           }
 
@@ -751,15 +753,17 @@ class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
 
 }
 
-// These are the assumptions made
-// 1.We have a single hierarchy under a dimension tag and a single level under a hierarchy tag
-// 2.The names of dimensions and measures are case insensitive
-// 3.CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE is always added as a measure.
-// So we need to ignore this to check duplicates
+/*
+   These are the assumptions made
+   1.We have a single hierarchy under a dimension tag and a single level under a hierarchy tag
+   2.The names of dimensions and measures are case insensitive
+   3.CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE is always added as a measure.
+   So we need to ignore this to check duplicates
+ */
 private[sql] case class AlterTable(
-    cm: tableModel,
-    dropCols: Seq[String],
-    defaultVals: Seq[Default]) extends RunnableCommand {
+                                    cm: tableModel,
+                                    dropCols: Seq[String],
+                                    defaultVals: Seq[Default]) extends RunnableCommand {
 
   def run(sqlContext: SQLContext): Seq[Row] = {
     // TODO : Implement it.
@@ -767,11 +771,11 @@ private[sql] case class AlterTable(
   }
 }
 
-/**
+/*
  * Command for the compaction in alter table command
  *
  * @param alterTableModel
- */
+*/
 private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) extends
   RunnableCommand {
 
@@ -826,7 +830,7 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
     } catch {
       case e: Exception =>
         if (null != e.getMessage) {
-          sys.error(s"Compaction failed. Please check logs for more info. ${ e.getMessage }")
+          sys.error(s"Compaction failed. Please check logs for more info. ${e.getMessage}")
         } else {
           sys.error("Exception in compaction. Please check logs for more info.")
         }
@@ -854,7 +858,7 @@ case class CreateTable(cm: tableModel) extends RunnableCommand {
       if (!cm.ifNotExistsSet) {
         LOGGER.audit(
           s"Table creation with Database name [$dbName] and Table name [$tbName] failed. " +
-          s"Table [$tbName] already exists under database [$dbName]")
+            s"Table [$tbName] already exists under database [$dbName]")
         sys.error(s"Table [$tbName] already exists under database [$dbName]")
       }
     } else {
@@ -865,7 +869,7 @@ case class CreateTable(cm: tableModel) extends RunnableCommand {
       try {
         sqlContext.sql(
           s"""CREATE TABLE $dbName.$tbName USING carbondata""" +
-          s""" OPTIONS (tableName "$dbName.$tbName", tablePath "$tablePath") """)
+            s""" OPTIONS (tableName "$dbName.$tbName", tablePath "$tablePath") """)
           .collect
       } catch {
         case e: Exception =>
@@ -876,7 +880,7 @@ case class CreateTable(cm: tableModel) extends RunnableCommand {
             .dropTable(catalog.storePath, identifier)(sqlContext)
 
           LOGGER.audit(s"Table creation with Database name [$dbName] " +
-                       s"and Table name [$tbName] failed")
+            s"and Table name [$tbName] failed")
           throw e
       }
 
@@ -893,9 +897,9 @@ case class CreateTable(cm: tableModel) extends RunnableCommand {
 }
 
 private[sql] case class DeleteLoadsById(
-    loadids: Seq[String],
-    databaseNameOp: Option[String],
-    tableName: String) extends RunnableCommand {
+                                         loadids: Seq[String],
+                                         databaseNameOp: Option[String],
+                                         tableName: String) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -934,7 +938,7 @@ private[sql] case class DeleteLoadsById(
       }
       else {
         sys.error("Delete segment by Id is failed. Invalid ID is:" +
-                  s" ${ invalidLoadIds.mkString(",") }")
+          s" ${invalidLoadIds.mkString(",")}")
       }
     } catch {
       case ex: Exception =>
@@ -956,10 +960,10 @@ private[sql] case class DeleteLoadsById(
 }
 
 private[sql] case class DeleteLoadsByLoadDate(
-    databaseNameOp: Option[String],
-    tableName: String,
-    dateField: String,
-    loadDate: String) extends RunnableCommand {
+                                               databaseNameOp: Option[String],
+                                               tableName: String,
+                                               dateField: String,
+                                               loadDate: String) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.tablemodel.tableSchema")
 
@@ -973,7 +977,7 @@ private[sql] case class DeleteLoadsByLoadDate(
     if (relation == null) {
       LOGGER
         .audit(s"Delete segment by load date is failed. Table $dbName.$tableName does not " +
-               s"exist")
+          s"exist")
       sys.error(s"Table $dbName.$tableName does not exist")
     }
 
@@ -1012,14 +1016,14 @@ private[sql] case class DeleteLoadsByLoadDate(
 }
 
 case class LoadTable(
-    databaseNameOp: Option[String],
-    tableName: String,
-    factPathFromUser: String,
-    dimFilesPath: Seq[DataLoadTableFileMapping],
-    options: scala.collection.immutable.Map[String, String],
-    isOverwriteExist: Boolean = false,
-    var inputSqlString: String = null,
-    dataFrame: Option[DataFrame] = None) extends RunnableCommand {
+                      databaseNameOp: Option[String],
+                      tableName: String,
+                      factPathFromUser: String,
+                      dimFilesPath: Seq[DataLoadTableFileMapping],
+                      options: scala.collection.immutable.Map[String, String],
+                      isOverwriteExist: Boolean = false,
+                      var inputSqlString: String = null,
+                      dataFrame: Option[DataFrame] = None) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -1086,15 +1090,14 @@ case class LoadTable(
       val configuredStore = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
 
       var partitionLocation = relation.tableMeta.storePath + "/partition/" +
-                              relation.tableMeta.carbonTableIdentifier.getDatabaseName + "/" +
-                              relation.tableMeta.carbonTableIdentifier.getTableName + "/"
+        relation.tableMeta.carbonTableIdentifier.getDatabaseName + "/" +
+        relation.tableMeta.carbonTableIdentifier.getTableName + "/"
 
 
       val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
-      val kettleHomePath = CarbonScalaUtil.getKettleHome(sqlContext)
 
       // TODO It will be removed after kettle is removed.
-      val useKettle = options.get("use_kettle") match {
+      val useKettle = options.get("useKettle") match {
         case Some(value) => value.toBoolean
         case _ =>
           val useKettleLocal = System.getProperty("use.kettle")
@@ -1104,6 +1107,8 @@ case class LoadTable(
             useKettleLocal.toBoolean
           }
       }
+
+      val kettleHomePath = if (useKettle) CarbonScalaUtil.getKettleHome(sqlContext) else ""
 
       val delimiter = options.getOrElse("delimiter", ",")
       val quoteChar = options.getOrElse("quotechar", "\"")
@@ -1124,8 +1129,8 @@ case class LoadTable(
         case "false" => false
         case illegal =>
           val errorMessage = "Illegal syntax found: [" + illegal + "] .The value multiline in " +
-                             "load DDL which you set can only be 'true' or 'false', please check " +
-                             "your input DDL."
+            "load DDL which you set can only be 'true' or 'false', please check " +
+            "your input DDL."
           throw new MalformedCarbonCommandException(errorMessage)
       }
       val maxColumns = options.getOrElse("maxcolumns", null)
@@ -1145,8 +1150,8 @@ case class LoadTable(
           TableOptionConstant.BAD_RECORDS_ACTION.getName + "," + badRecordsLoggerRedirect)
 
       if (delimiter.equalsIgnoreCase(complex_delimiter_level_1) ||
-          complex_delimiter_level_1.equalsIgnoreCase(complex_delimiter_level_2) ||
-          delimiter.equalsIgnoreCase(complex_delimiter_level_2)) {
+        complex_delimiter_level_1.equalsIgnoreCase(complex_delimiter_level_2) ||
+        delimiter.equalsIgnoreCase(complex_delimiter_level_2)) {
         sys.error(s"Field Delimiter & Complex types delimiter are same")
       }
       else {
@@ -1162,7 +1167,7 @@ case class LoadTable(
       try {
         // First system has to partition the data first and then call the load data
         if (null == relation.tableMeta.partitioner.partitionColumn ||
-            relation.tableMeta.partitioner.partitionColumn(0).isEmpty) {
+          relation.tableMeta.partitioner.partitionColumn(0).isEmpty) {
           LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
           carbonLoadModel.setFactFilePath(factPath)
           carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimiter))
@@ -1174,14 +1179,14 @@ case class LoadTable(
           .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.tableMeta.storePath,
             dataFrame)
         CarbonDataRDDFactory.loadCarbonData(sqlContext,
-            carbonLoadModel,
-            relation.tableMeta.storePath,
-            kettleHomePath,
-            relation.tableMeta.partitioner,
-            columinar,
-            partitionStatus,
-            useKettle,
-            dataFrame)
+          carbonLoadModel,
+          relation.tableMeta.storePath,
+          kettleHomePath,
+          relation.tableMeta.partitioner,
+          columinar,
+          partitionStatus,
+          useKettle,
+          dataFrame)
       } catch {
         case ex: Exception =>
           LOGGER.error(ex)
@@ -1200,7 +1205,7 @@ case class LoadTable(
           case ex: Exception =>
             LOGGER.error(ex)
             LOGGER.audit(s"Dataload failure for $dbName.$tableName. " +
-                         "Problem deleting the partition folder")
+              "Problem deleting the partition folder")
             throw ex
         }
 
@@ -1229,7 +1234,7 @@ case class LoadTable(
     if (dateFormat != null) {
       if (dateFormat.trim == "") {
         throw new MalformedCarbonCommandException("Error: Option DateFormat is set an empty " +
-                                                  "string.")
+          "string.")
       } else {
         var dateFormats: Array[String] = dateFormat.split(CarbonCommonConstants.COMMA)
         for (singleDateFormat <- dateFormats) {
@@ -1237,13 +1242,13 @@ case class LoadTable(
           val columnName = dateFormatSplits(0).trim.toLowerCase
           if (!dimensions.exists(_.getColName.equals(columnName))) {
             throw new MalformedCarbonCommandException("Error: Wrong Column Name " +
-                                                      dateFormatSplits(0) +
-                                                      " is provided in Option DateFormat.")
+              dateFormatSplits(0) +
+              " is provided in Option DateFormat.")
           }
           if (dateFormatSplits.length < 2 || dateFormatSplits(1).trim.isEmpty) {
             throw new MalformedCarbonCommandException("Error: Option DateFormat is not provided " +
-                                                      "for " + "Column " + dateFormatSplits(0) +
-                                                      ".")
+              "for " + "Column " + dateFormatSplits(0) +
+              ".")
           }
         }
       }
@@ -1252,7 +1257,7 @@ case class LoadTable(
 }
 
 private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: Option[String],
-    tableName: String)
+                                         tableName: String)
   extends RunnableCommand {
 
   def run(sqlContext: SQLContext): Seq[Row] = {
@@ -1305,10 +1310,10 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
 }
 
 private[sql] case class ShowLoads(
-    databaseNameOp: Option[String],
-    tableName: String,
-    limit: Option[String],
-    override val output: Seq[Attribute]) extends RunnableCommand {
+                                   databaseNameOp: Option[String],
+                                   tableName: String,
+                                   limit: Option[String],
+                                   override val output: Seq[Attribute]) extends RunnableCommand {
 
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
@@ -1367,9 +1372,9 @@ private[sql] case class ShowLoads(
 }
 
 private[sql] case class DescribeCommandFormatted(
-    child: SparkPlan,
-    override val output: Seq[Attribute],
-    tblIdentifier: TableIdentifier)
+                                                  child: SparkPlan,
+                                                  override val output: Seq[Attribute],
+                                                  tblIdentifier: TableIdentifier)
   extends RunnableCommand {
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
@@ -1389,7 +1394,7 @@ private[sql] case class DescribeCommandFormatted(
             .append(",")
         }
         if (dimension.hasEncoding(Encoding.DICTIONARY) &&
-            !dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+          !dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           "DICTIONARY, KEY COLUMN"
         } else {
           "KEY COLUMN"
@@ -1438,7 +1443,7 @@ private[sql] case class DescribeCommandFormatted(
     })
     var index = 1
     groups.map { x =>
-      results = results :+ (s"Column Group $index", x, "")
+      results = results :+(s"Column Group $index", x, "")
       index = index + 1
     }
     results
@@ -1446,11 +1451,11 @@ private[sql] case class DescribeCommandFormatted(
 }
 
 private[sql] case class DeleteLoadByDate(
-    databaseNameOp: Option[String],
-    tableName: String,
-    dateField: String,
-    dateValue: String
-) extends RunnableCommand {
+                                          databaseNameOp: Option[String],
+                                          tableName: String,
+                                          dateField: String,
+                                          dateValue: String
+                                        ) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -1469,10 +1474,10 @@ private[sql] case class DeleteLoadByDate(
     }
     val matches: Seq[AttributeReference] = relation.dimensionsAttr.filter(
       filter => filter.name.equalsIgnoreCase(dateField) &&
-                filter.dataType.isInstanceOf[TimestampType]).toList
+        filter.dataType.isInstanceOf[TimestampType]).toList
     if (matches.isEmpty) {
       LOGGER.audit("The delete load by date is failed. " +
-                   s"Table $dbName.$tableName does not contain date field: $dateField")
+        s"Table $dbName.$tableName does not contain date field: $dateField")
       sys.error(s"Table $dbName.$tableName does not contain date field $dateField")
     } else {
       level = matches.asJava.get(0).name
@@ -1496,8 +1501,8 @@ private[sql] case class DeleteLoadByDate(
 }
 
 private[sql] case class CleanFiles(
-    databaseNameOp: Option[String],
-    tableName: String) extends RunnableCommand {
+                                    databaseNameOp: Option[String],
+                                    tableName: String) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
