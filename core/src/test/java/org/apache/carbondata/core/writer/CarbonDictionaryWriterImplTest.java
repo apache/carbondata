@@ -174,7 +174,9 @@ public class CarbonDictionaryWriterImplTest {
     List<byte[]> dictionaryValues = readDictionaryFile(0L, 0L);
     // prepare expected dictionary chunk list
     List<String> actual = convertByteArrayListToStringValueList(dictionaryValues);
-    assertTrue(dataSet1.size() == actual.size());
+    int expectedDataSetSize=dataSet1.size();
+    int actualDataSetSize=actual.size();
+    assertTrue(expectedDataSetSize == actualDataSetSize);
     // validate the dictionary data
     compareDictionaryData(actual, dataSet1);
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE,
@@ -533,17 +535,17 @@ public class CarbonDictionaryWriterImplTest {
   /**
    * this method will delete the folders recursively
    *
-   * @param f
+   * @param file
    */
-  private static void deleteRecursiveSilent(CarbonFile f) {
-    if (f.isDirectory()) {
-      if (f.listFiles() != null) {
-        for (CarbonFile c : f.listFiles()) {
+  private static void deleteRecursiveSilent(CarbonFile file) {
+    if (file.isDirectory()) {
+      if (file.listFiles() != null) {
+        for (CarbonFile c : file.listFiles()) {
           deleteRecursiveSilent(c);
         }
       }
     }
-    if (f.exists() && !f.delete()) {
+    if (file.exists() && !file.delete()) {
       return;
     }
   }

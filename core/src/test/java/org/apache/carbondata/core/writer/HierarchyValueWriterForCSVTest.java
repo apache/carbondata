@@ -30,6 +30,8 @@ import org.junit.Test;
 import org.pentaho.di.core.exception.KettleException;
 import sun.nio.ch.FileChannelImpl;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeNoException;
 
 /**
@@ -72,7 +74,9 @@ public class HierarchyValueWriterForCSVTest {
   @Test public void testToWriteIntoHierarchyFile() throws IOException {
     try {
       valueWriterForCSV.writeIntoHierarchyFile(new byte[] { 124, 17, -8 }, 17);
-      assert (valueWriterForCSV.getBufferedOutStream().position() != 0);
+      long actual = valueWriterForCSV.getBufferedOutStream().position();
+      long expected = 0;
+      assertFalse(actual == expected);
     } catch (KettleException ke) {
       /**
        * stop test and ignore if error occurs while writing to hierarchy mapping file .
@@ -88,11 +92,11 @@ public class HierarchyValueWriterForCSVTest {
    * @throws KettleException
    */
 
-  @Test public void testToPerformRequiredOperation() throws KettleException {
+  @Test public void testToPerformRequiredOperation() {
     try {
       valueWriterForCSV.performRequiredOperation();
       List<ByteArrayHolder> byteArrayHolder = valueWriterForCSV.getByteArrayList();
-      assert (byteArrayHolder.isEmpty());
+      assertTrue(byteArrayHolder.isEmpty());
     } catch (KettleException ke) {
       /**
        * stop test and ignore if file for writing can't be opened.
