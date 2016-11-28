@@ -71,6 +71,7 @@ public class ReverseDictionaryCacheTest extends AbstractDictionaryCacheTest {
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_MAX_LEVEL_CACHE_SIZE, "10");
     CacheProvider cacheProvider = CacheProvider.getInstance();
+    cacheProvider.dropAllCache();
     reverseDictionaryCache =
         cacheProvider.createCache(CacheType.REVERSE_DICTIONARY, this.carbonStorePath);
   }
