@@ -59,7 +59,15 @@ public class CarbonInputMapperTest extends TestCase {
   @Test public void testInputFormatMapperReadAllRowsAndColumns() throws Exception {
     try {
       String outPath = "target/output";
-      runJob(outPath, null, null);
+      CarbonProjection carbonProjection = new CarbonProjection();
+      carbonProjection.addColumn("ID");
+      carbonProjection.addColumn("date");
+      carbonProjection.addColumn("country");
+      carbonProjection.addColumn("name");
+      carbonProjection.addColumn("phonetype");
+      carbonProjection.addColumn("serialname");
+      carbonProjection.addColumn("salary");
+      runJob(outPath, carbonProjection, null);
       Assert.assertEquals("Count lines are not matching", 1000, countTheLines(outPath));
       Assert.assertEquals("Column count are not matching", 7, countTheColumns(outPath));
     } catch (Exception e) {
