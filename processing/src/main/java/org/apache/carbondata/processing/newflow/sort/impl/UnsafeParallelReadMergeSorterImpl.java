@@ -47,6 +47,7 @@ import org.apache.carbondata.processing.sortandgroupby.sortdata.SortIntermediate
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+import org.apache.spark.TaskContext;
 
 /**
  * It parallely reads data from array of iterates and do merge sort.
@@ -69,6 +70,8 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
   private UnsafeSingleThreadFinalSortFilesMerger finalMerger;
 
   private DataField[] inputDataFields;
+
+  private final static Object taskContext = CarbonDataProcessorUtil.fetchTaskContext();
 
   public UnsafeParallelReadMergeSorterImpl(DataField[] inputDataFields) {
     this.inputDataFields = inputDataFields;
@@ -201,6 +204,7 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
 
     @Override public Void call() throws CarbonDataLoadingException {
       try {
+        CarbonDataProcessorUtil.configureTaskContext(taskContext);
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
           Iterator<CarbonRow> batchIterator = batch.getBatchIterator();
