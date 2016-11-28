@@ -43,6 +43,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -107,7 +108,7 @@ public class CarbonFooterWriterTest {
   @Test public void testWriteFactMetadata() throws IOException {
 
     CarbonFooterReader metaDataReader = new CarbonFooterReader(filePath, 0);
-    assertTrue(metaDataReader.readFooter() != null);
+    assertNotNull(metaDataReader.readFooter());
   }
 
   private static org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema getWrapperDimensionColumn(
@@ -134,8 +135,10 @@ public class CarbonFooterWriterTest {
     CarbonFooterReader metaDataReader = new CarbonFooterReader(filePath, 0);
     List<BlockletInfoColumnar> nodeInfoColumnars =
         CarbonMetadataUtil.convertBlockletInfo(metaDataReader.readFooter());
+    int expectedSize = nodeInfoColumnars.size();
+    int actualSize = infoColumnars.size();
 
-    assertTrue(nodeInfoColumnars.size() == infoColumnars.size());
+    assertTrue(expectedSize == actualSize);
   }
 
   private static List<BlockletInfoColumnar> getBlockletInfoColumnars() {
@@ -177,14 +180,14 @@ public class CarbonFooterWriterTest {
    * this method will delete file
    */
   private static void deleteFile() {
-    FileFactory.FileType fileType = FileFactory.getFileType(/*this.*/filePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(/*this.*/filePath, fileType);
+    FileFactory.FileType fileType = FileFactory.getFileType(filePath);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(filePath, fileType);
     carbonFile.delete();
   }
 
   private static void createFile() {
-    FileFactory.FileType fileType = FileFactory.getFileType(/*this.*/filePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(/*this.*/filePath, fileType);
+    FileFactory.FileType fileType = FileFactory.getFileType(filePath);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(filePath, fileType);
     carbonFile.createNewFile();
   }
 
