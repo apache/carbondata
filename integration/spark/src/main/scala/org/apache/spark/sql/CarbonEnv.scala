@@ -30,7 +30,6 @@ case class CarbonEnv(hiveContext: HiveContext, carbonCatalog: CarbonMetastoreCat
 
 object CarbonEnv {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-  val className = classOf[CarbonEnv].getCanonicalName
   var carbonEnv: CarbonEnv = _
 
   def getInstance(sqlContext: SQLContext): CarbonEnv = {

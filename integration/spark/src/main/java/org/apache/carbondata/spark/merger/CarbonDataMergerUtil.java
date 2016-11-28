@@ -421,7 +421,7 @@ public final class CarbonDataMergerUtil {
       String segId = segment.getLoadName();
       // variable to store one  segment size across partition.
       long sizeOfOneSegmentAcrossPartition =
-          getSizeOfOneSegmentAcrossPartition(storeLocation, tableIdentifier, segId);
+          getSizeOfSegment(storeLocation, tableIdentifier, segId);
 
       // if size of a segment is greater than the Major compaction size. then ignore it.
       if (sizeOfOneSegmentAcrossPartition > (compactionSize * 1024 * 1024)) {
@@ -458,15 +458,14 @@ public final class CarbonDataMergerUtil {
   }
 
   /**
-   * For calculating the size of a segment across all partition.
+   * For calculating the size of the specified segment
    * @param storeLocation
    * @param tableIdentifier
    * @param segId
    * @return
    */
-  private static long getSizeOfOneSegmentAcrossPartition(String storeLocation,
+  private static long getSizeOfSegment(String storeLocation,
       CarbonTableIdentifier tableIdentifier, String segId) {
-    // calculate size across partitions
     String loadPath = CarbonLoaderUtil
         .getStoreLocation(storeLocation, tableIdentifier, segId, "0");
     CarbonFile segmentFolder =
