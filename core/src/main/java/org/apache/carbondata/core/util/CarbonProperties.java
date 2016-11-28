@@ -85,6 +85,7 @@ public final class CarbonProperties {
     validateHighCardinalityThreshold();
     validateHighCardinalityInRowCountPercentage();
     validateCarbonDataFileVersion();
+    validateExecutorStartUpTime();
   }
 
   private void validateBadRecordsLocation() {
@@ -537,6 +538,28 @@ public final class CarbonProperties {
       return actual;
     }
     return defaultVal;
+  }
+
+  /**
+   * This method will validate and set the value for executor start up waiting time out
+   */
+  private void validateExecutorStartUpTime() {
+    int executorStartUpTimeOut = 0;
+    try {
+      executorStartUpTimeOut = Integer.parseInt(carbonProperties
+          .getProperty(CarbonCommonConstants.CARBON_EXECUTOR_STARTUP_TIMEOUT,
+              CarbonCommonConstants.CARBON_EXECUTOR_WAITING_TIMEOUT_DEFAULT));
+      // If value configured by user is more than max value of time out then consider the max value
+      if (executorStartUpTimeOut > CarbonCommonConstants.CARBON_EXECUTOR_WAITING_TIMEOUT_MAX) {
+        executorStartUpTimeOut = CarbonCommonConstants.CARBON_EXECUTOR_WAITING_TIMEOUT_MAX;
+      }
+    } catch (NumberFormatException ne) {
+      executorStartUpTimeOut =
+          Integer.parseInt(CarbonCommonConstants.CARBON_EXECUTOR_WAITING_TIMEOUT_DEFAULT);
+    }
+    carbonProperties.setProperty(CarbonCommonConstants.CARBON_EXECUTOR_STARTUP_TIMEOUT,
+        String.valueOf(executorStartUpTimeOut));
+    LOGGER.info("Executor start up wait time: " + executorStartUpTimeOut);
   }
 
 }

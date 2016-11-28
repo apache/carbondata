@@ -263,15 +263,16 @@ class CarbonMergerRDD[K, V](
       carbonMergerMapping.maxSegmentColumnSchemaList = dataFileFooter.getColumnInTable.asScala
         .toList
     }
+
+    val blocks = carbonInputSplits.map(_.asInstanceOf[Distributable]).asJava
     // send complete list of blocks to the mapping util.
-    nodeBlockMapping = CarbonLoaderUtil.nodeBlockMapping(
-      carbonInputSplits.map(_.asInstanceOf[Distributable]).asJava, -1)
+    nodeBlockMapping = CarbonLoaderUtil.nodeBlockMapping(blocks, -1)
 
     val confExecutors = confExecutorsTemp.toInt
     val requiredExecutors = if (nodeBlockMapping.size > confExecutors) {
       confExecutors
     } else { nodeBlockMapping.size() }
-    DistributionUtil.ensureExecutors(sparkContext, requiredExecutors)
+    DistributionUtil.ensureExecutors(sparkContext, requiredExecutors, blocks.size)
     logInfo("No.of Executors required=" + requiredExecutors +
             " , spark.executor.instances=" + confExecutors +
             ", no.of.nodes where data present=" + nodeBlockMapping.size())
