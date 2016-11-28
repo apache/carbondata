@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.reader.sortindex;
+package org.apache.carbondata.core.reader;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
