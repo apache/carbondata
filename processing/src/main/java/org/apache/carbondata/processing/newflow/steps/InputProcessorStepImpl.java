@@ -21,6 +21,7 @@ import org.apache.carbondata.processing.newflow.parser.RowParser;
 import org.apache.carbondata.processing.newflow.parser.impl.RowParserImpl;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
  * It reads data from record reader and sends data to next step.
@@ -173,9 +174,11 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     }
 
     private Future<CarbonRowBatch> getCarbonRowBatch() {
+      final Object taskContext = CarbonDataProcessorUtil.fetchTaskContext();
       return executorService.submit(new Callable<CarbonRowBatch>() {
         @Override public CarbonRowBatch call() throws Exception {
           // Create batch and fill it.
+          CarbonDataProcessorUtil.configureTaskContext(taskContext);
           CarbonRowBatch carbonRowBatch = new CarbonRowBatch();
           int count = 0;
           while (internalHasNext() && count < batchSize) {

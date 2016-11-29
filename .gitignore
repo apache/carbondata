@@ -16,3 +16,5 @@ target/
 .classpath
 metastore_db/
 derby.log
+.DS_Store
+/core/Testdb.carbon

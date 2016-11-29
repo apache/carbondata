@@ -38,11 +38,11 @@ import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 import org.apache.carbondata.processing.newflow.sort.Sorter;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeCarbonRowPage;
+import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeInMemoryIntermediateFileMerger;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeSingleThreadFinalSortFilesMerger;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeSortDataRows;
-import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeInMemoryIntermediateFileMerger;
+
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
-import org.apache.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortIntermediateFileMerger;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
@@ -57,6 +57,8 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(UnsafeParallelReadMergeSorterImpl.class.getName());
+
+  private static final Object taskContext = CarbonDataProcessorUtil.fetchTaskContext();
 
   private SortParameters sortParameters;
 
@@ -179,7 +181,7 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
   }
 
   /**
-   * This thread iterates the iterator and adds the rows to @{@link SortDataRows}
+   * This thread iterates the iterator and adds the rows to @{@link UnsafeSortDataRows}
    */
   private static class SortIteratorThread implements Callable<Void> {
 
@@ -201,6 +203,7 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
 
     @Override public Void call() throws CarbonDataLoadingException {
       try {
+        CarbonDataProcessorUtil.configureTaskContext(taskContext);
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
           Iterator<CarbonRow> batchIterator = batch.getBatchIterator();

@@ -223,6 +223,7 @@
           <outputFile>${basedir}/target/checkstyle-output.xml</outputFile>
           <inputEncoding>${project.build.sourceEncoding}</inputEncoding>
           <outputEncoding>${project.build.sourceEncoding}</outputEncoding>
+          <excludes>org/apache/carbondata/processing/newflow/sort/unsafe/TimSort.java</excludes>
         </configuration>
         <executions>
           <execution>
@@ -408,5 +409,15 @@
       </build>
     </profile>
   </profiles>
-
+  <distributionManagement>
+    <repository>
+      <id>releases</id>
+      <name>releases</name>
+      <url>http://mvn.letv.com/nexus/content/repositories/releases/</url>
+    </repository>
+    <snapshotRepository>
+      <id>snapshots</id>
+      <url>http://mvn.letv.com/nexus/content/repositories/snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
 </project>

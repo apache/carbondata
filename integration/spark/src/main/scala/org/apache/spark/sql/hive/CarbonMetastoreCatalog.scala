@@ -307,10 +307,17 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
       FileFactory.mkdirs(schemaMetadataPath, fileType)
     }
+
+    /**
+     * schemaFilePath starts with file:// will not create meta files successfully
+     * while thriftWriter will have no complains.
+     * This will cause some weired error eg. No table found.
+     */
     val thriftWriter = new ThriftWriter(schemaFilePath, false)
     thriftWriter.open()
     thriftWriter.write(thriftTableInfo)
     thriftWriter.close()
+
     metadata.tablesMeta += tableMeta
     logInfo(s"Table $tableName for Database $dbName created successfully.")
     LOGGER.info(s"Table $tableName for Database $dbName created successfully.")
