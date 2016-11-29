@@ -88,39 +88,28 @@ case class CarbonScan(
       columnProjection = attributeOut
     }
 
-    val dimensions = carbonTable.getDimensionByTableName(carbonTable.getFactTableName)
-    val measures = carbonTable.getMeasureByTableName(carbonTable.getFactTableName)
-    val dimAttr = new Array[Attribute](dimensions.size())
-    val msrAttr = new Array[Attribute](measures.size())
+    val columns = carbonTable.getCreateOrderColumn(carbonTable.getFactTableName)
+    val colAttr = new Array[Attribute](columns.size())
     columnProjection.foreach { attr =>
-      val carbonDimension =
-        carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
-      if(carbonDimension != null) {
-        dimAttr(dimensions.indexOf(carbonDimension)) = attr
-      } else {
-        val carbonMeasure =
-          carbonTable.getMeasureByName(carbonTable.getFactTableName, attr.name)
-        if(carbonMeasure != null) {
-          msrAttr(measures.indexOf(carbonMeasure)) = attr
-        }
-      }
+    val column =
+        carbonTable.getColumnByName(carbonTable.getFactTableName, attr.name)
+      if(column != null) {
+        colAttr(columns.indexOf(column)) = attr
+       }
     }
 
-    columnProjection = dimAttr.filter(f => f != null) ++ msrAttr.filter(f => f != null)
+    columnProjection = colAttr.filter(f => f != null)
 
     var queryOrder: Integer = 0
     columnProjection.foreach { attr =>
-      val carbonDimension =
-        carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
-      if (carbonDimension != null) {
-        val dim = new QueryDimension(attr.name)
-        dim.setQueryOrder(queryOrder)
-        queryOrder = queryOrder + 1
-        selectedDims += dim
-      } else {
-        val carbonMeasure =
-          carbonTable.getMeasureByName(carbonTable.getFactTableName, attr.name)
-        if (carbonMeasure != null) {
+      val carbonColumn = carbonTable.getColumnByName(carbonTable.getFactTableName, attr.name)
+      if (carbonColumn != null) {
+        if (carbonColumn.isDimesion()) {
+          val dim = new QueryDimension(attr.name)
+          dim.setQueryOrder(queryOrder)
+          queryOrder = queryOrder + 1
+          selectedDims += dim
+         } else {
           val m1 = new QueryMeasure(attr.name)
           m1.setQueryOrder(queryOrder)
           queryOrder = queryOrder + 1

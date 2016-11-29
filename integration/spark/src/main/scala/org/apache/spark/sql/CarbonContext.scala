@@ -78,7 +78,7 @@ class CarbonContext(
       override val extendedResolutionRules =
         catalog.ParquetConversions ::
         catalog.CreateTables ::
-        catalog.PreInsertionCasts ::
+        CarbonPreInsertionCasts ::
         ExtractPythonUDFs ::
         ResolveHiveWindowFunction ::
         PreInsertCastAndRename ::

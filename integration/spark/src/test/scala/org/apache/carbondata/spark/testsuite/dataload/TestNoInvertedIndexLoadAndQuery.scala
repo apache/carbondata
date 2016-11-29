@@ -63,7 +63,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll{
       sql("""
            SELECT * FROM index1 WHERE city = "Bangalore"
           """),
-      Seq(Row("Emily", "Bangalore", 19.0)))
+      Seq(Row(19.0,"Emily", "Bangalore" )))
 
   }
 

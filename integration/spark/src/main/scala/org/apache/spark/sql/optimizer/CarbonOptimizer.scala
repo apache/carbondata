@@ -92,6 +92,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
   def isOptimized(plan: LogicalPlan): Boolean = {
     plan find {
       case cd: CarbonDictionaryCatalystDecoder => true
+      case ic: InsertIntoCarbonTable => true
       case other => false
     } isDefined
   }
