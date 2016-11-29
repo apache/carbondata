@@ -106,7 +106,7 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   def buildRelation() = {
-    val catalog = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
+    val catalog = CarbonEnv.get.carbonMetastore
     sampleRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
       "sample")(CarbonHiveContext).asInstanceOf[CarbonRelation]
     complexRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),

@@ -57,8 +57,10 @@ class CarbonContext(
 
   CarbonContext.addInstance(sc, this)
   CodeGenerateFactory.init(sc.version)
+  CarbonEnv.init(this)
 
   var lastSchemaUpdatedTime = System.currentTimeMillis()
+  val hiveClientInterface = metadataHive
 
   protected[sql] override lazy val conf: SQLConf = new CarbonSQLConf
 
@@ -66,7 +68,7 @@ class CarbonContext(
   override lazy val catalog = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
-    new CarbonMetastoreCatalog(this, storePath, metadataHive, queryId) with OverrideCatalog
+    new CarbonMetastore(this, storePath, metadataHive, queryId) with OverrideCatalog
   }
 
   @transient

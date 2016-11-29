@@ -47,7 +47,7 @@ class CarbonSparkPartition(
     val rddId: Int,
     val idx: Int,
     @transient val multiBlockSplit: CarbonMultiBlockSplit)
-  extends Partition {
+    extends Partition {
 
   val split = new SerializableWritable[CarbonMultiBlockSplit](multiBlockSplit)
 
@@ -67,9 +67,9 @@ class CarbonScanRDD[V: ClassTag](
     filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
     @transient carbonTable: CarbonTable)
-  extends RDD[V](sc, Nil)
-    with CarbonHadoopMapReduceUtil
-    with Logging {
+    extends RDD[V](sc, Nil)
+        with CarbonHadoopMapReduceUtil
+        with Logging {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
   private val jobTrackerId: String = {
