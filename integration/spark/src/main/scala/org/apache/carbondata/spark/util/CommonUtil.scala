@@ -122,12 +122,27 @@ object CommonUtil {
     var isValid: Boolean = true
     tableProperties.foreach {
       case (key, value) =>
-        if (!validateFields(key, fields)) {
+        if (!validateTblOption(key) || !validateFields(key, fields)) {
           isValid = false
           throw new MalformedCarbonCommandException(s"Invalid table properties ${ key }")
         }
     }
     isValid
+  }
+
+  def validateTblOption(option: String): Boolean = {
+    val supportedOptions = Seq[String]("DICTIONARY_EXCLUDE", "DICTIONARY_INCLUDE", "COLUMN_GROUPS",
+      "TABLE_BLOCKSIZE", "NO_INVERTED_INDEX", "PARTITIONCLASS", "PARTITIONCOUNT",
+      "COLUMNPROPERTIES"
+    )
+    var isSupported = true
+    if (!supportedOptions.exists(x => x.equalsIgnoreCase(option))) {
+      isSupported = false
+    }
+    if (option.toUpperCase.startsWith("COLUMNPROPERTIES.")) {
+      isSupported = true
+    }
+    isSupported
   }
 
   def validateFields(key: String, fields: Seq[Field]): Boolean = {

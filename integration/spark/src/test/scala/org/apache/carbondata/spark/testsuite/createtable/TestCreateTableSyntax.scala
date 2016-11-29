@@ -182,6 +182,24 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("create carbon table with unsupported table properties") {
+    try {
+      sql(
+        """
+          CREATE TABLE IF NOT EXISTS carbontable
+          (ID Int, date Timestamp, country String,
+          name String, phonetype String, serialname String, salary Int)
+          STORED BY 'carbondata'
+          TBLPROPERTIES('DICTIONARY_EXECLUDE'='country')
+        """)
+      assert(false)
+    } catch {
+      case e : MalformedCarbonCommandException => {
+        assert(e.getMessage.equals("Invalid table properties dictionary_execlude"))
+      }
+    }
+  }
+
   override def afterAll {
     sql("drop table if exists carbontable")
   }
