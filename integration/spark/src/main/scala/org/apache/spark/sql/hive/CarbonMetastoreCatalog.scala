@@ -30,7 +30,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.command.{AggregateTableAttributes, Partitioner}
+import org.apache.spark.sql.execution.command.Partitioner
 import org.apache.spark.sql.hive.client.ClientInterface
 import org.apache.spark.sql.types._
 
@@ -346,47 +346,6 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     updateMetadataByWrapperTable(wrapperTableInfo)
   }
 
-
-  def getDimensions(carbonTable: CarbonTable,
-      aggregateAttributes: List[AggregateTableAttributes]): Array[String] = {
-    var dimArray = Array[String]()
-    aggregateAttributes.filter { agg => null == agg.aggType }.foreach { agg =>
-      val colName = agg.colName
-      if (null != carbonTable.getMeasureByName(carbonTable.getFactTableName, colName)) {
-        sys
-          .error(s"Measure must be provided along with aggregate function :: $colName")
-      }
-      if (null == carbonTable.getDimensionByName(carbonTable.getFactTableName, colName)) {
-        sys
-          .error(s"Invalid column name. Cannot create an aggregate table :: $colName")
-      }
-      if (dimArray.contains(colName)) {
-        sys.error(s"Duplicate column name. Cannot create an aggregate table :: $colName")
-      }
-      dimArray :+= colName
-    }
-    dimArray
-  }
-
-  /**
-   * Shows all schemas which has Database name like
-   */
-  def showDatabases(schemaLike: Option[String]): Seq[String] = {
-    checkSchemasModifiedTimeAndReloadTables()
-    metadata.tablesMeta.map { c =>
-      schemaLike match {
-        case Some(name) =>
-          if (c.carbonTableIdentifier.getDatabaseName.contains(name)) {
-            c.carbonTableIdentifier
-              .getDatabaseName
-          } else {
-            null
-          }
-        case _ => c.carbonTableIdentifier.getDatabaseName
-      }
-    }.filter(f => f != null)
-  }
-
   /**
    * Shows all tables for given schema.
    */
@@ -398,17 +357,6 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
     metadata.tablesMeta.filter { c =>
       c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(dbName)
     }.map { c => (c.carbonTableIdentifier.getTableName, false) }
-  }
-
-  /**
-   * Shows all tables in all schemas.
-   */
-  def getAllTables()(sqlContext: SQLContext): Seq[TableIdentifier] = {
-    checkSchemasModifiedTimeAndReloadTables()
-    metadata.tablesMeta.map { c =>
-      TableIdentifier(c.carbonTableIdentifier.getTableName,
-        Some(c.carbonTableIdentifier.getDatabaseName))
-    }
   }
 
   def isTablePathExists(tableIdentifier: TableIdentifier)(sqlContext: SQLContext): Boolean = {
@@ -530,75 +478,6 @@ class CarbonMetastoreCatalog(hiveContext: HiveContext, val storePath: String,
         .getLastModifiedTime
     }
     schemaLastUpdatedTime
-  }
-
-  def readTableMetaDataFile(tableFolder: CarbonFile,
-      fileType: FileFactory.FileType):
-  (String, String, String, String, Partitioner, Long) = {
-    val tableMetadataFile = tableFolder.getAbsolutePath + "/metadata"
-
-    var schema: String = ""
-    var databaseName: String = ""
-    var tableName: String = ""
-    var dataPath: String = ""
-    var partitioner: Partitioner = null
-    val cal = new GregorianCalendar(2011, 1, 1)
-    var tableCreationTime = cal.getTime.getTime
-
-    if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
-      // load metadata
-      val in = FileFactory.getDataInputStream(tableMetadataFile, fileType)
-      var len = 0
-      try {
-        len = in.readInt()
-      } catch {
-        case others: EOFException => len = 0
-      }
-
-      while (len > 0) {
-        val databaseNameBytes = new Array[Byte](len)
-        in.readFully(databaseNameBytes)
-
-        databaseName = new String(databaseNameBytes, "UTF8")
-        val tableNameLen = in.readInt()
-        val tableNameBytes = new Array[Byte](tableNameLen)
-        in.readFully(tableNameBytes)
-        tableName = new String(tableNameBytes, "UTF8")
-
-        val dataPathLen = in.readInt()
-        val dataPathBytes = new Array[Byte](dataPathLen)
-        in.readFully(dataPathBytes)
-        dataPath = new String(dataPathBytes, "UTF8")
-
-        val versionLength = in.readInt()
-        val versionBytes = new Array[Byte](versionLength)
-        in.readFully(versionBytes)
-
-        val schemaLen = in.readInt()
-        val schemaBytes = new Array[Byte](schemaLen)
-        in.readFully(schemaBytes)
-        schema = new String(schemaBytes, "UTF8")
-
-        val partitionLength = in.readInt()
-        val partitionBytes = new Array[Byte](partitionLength)
-        in.readFully(partitionBytes)
-        val inStream = new ByteArrayInputStream(partitionBytes)
-        val objStream = new ObjectInputStream(inStream)
-        partitioner = objStream.readObject().asInstanceOf[Partitioner]
-        objStream.close()
-
-        try {
-          tableCreationTime = in.readLong()
-          len = in.readInt()
-        } catch {
-          case others: EOFException => len = 0
-        }
-
-      }
-      in.close()
-    }
-
-    (databaseName, tableName, dataPath, schema, partitioner, tableCreationTime)
   }
 
   def createDatabaseDirectory(dbName: String) {

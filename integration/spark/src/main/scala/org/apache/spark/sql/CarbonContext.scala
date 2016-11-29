@@ -36,7 +36,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
-import org.apache.carbondata.spark.rdd.CarbonDataFrameRDD
 
 class CarbonContext(
     val sc: SparkContext,
@@ -134,7 +133,7 @@ class CarbonContext(
     val logicPlan: LogicalPlan = parseSql(sql)
     statistic.addStatistics(QueryStatisticsConstants.SQL_PARSE, System.currentTimeMillis())
     recorder.recordStatisticsForDriver(statistic, queryId)
-    val result = new CarbonDataFrameRDD(this, logicPlan)
+    val result = new DataFrame(this, logicPlan)
 
     // We force query optimization to happen right away instead of letting it happen lazily like
     // when using the query DSL.  This is so DDL commands behave as expected.  This is only
@@ -183,29 +182,4 @@ object CarbonContext {
     cache(sc) = cc
   }
 
-  /**
-   *
-   * Requesting the extra executors other than the existing ones.
-   *
-   * @param sc
-   * @param numExecutors
-   * @return
-   */
-  final def ensureExecutors(sc: SparkContext, numExecutors: Int): Boolean = {
-    sc.schedulerBackend match {
-      case b: CoarseGrainedSchedulerBackend =>
-        val requiredExecutors = numExecutors - b.numExistingExecutors
-        LOGGER
-          .info(s"number of executors is =$numExecutors existing executors are =" +
-                s"${ b.numExistingExecutors }"
-          )
-        if (requiredExecutors > 0) {
-          b.requestExecutors(requiredExecutors)
-        }
-        true
-      case _ =>
-        false
-    }
-
-  }
 }

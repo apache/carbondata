@@ -219,12 +219,11 @@ public final class CarbonDataMergerUtil {
    *
    * @param storeLocation
    * @param carbonLoadModel
-   * @param partitionCount
    * @param compactionSize
    * @return
    */
   public static List<LoadMetadataDetails> identifySegmentsToBeMerged(String storeLocation,
-      CarbonLoadModel carbonLoadModel, int partitionCount, long compactionSize,
+      CarbonLoadModel carbonLoadModel, long compactionSize,
       List<LoadMetadataDetails> segments, CompactionType compactionType) {
 
     List sortedSegments = new ArrayList(segments);
@@ -245,7 +244,7 @@ public final class CarbonDataMergerUtil {
     if (compactionType.equals(CompactionType.MAJOR_COMPACTION)) {
 
       listOfSegmentsToBeMerged = identifySegmentsToBeMergedBasedOnSize(compactionSize,
-          listOfSegmentsLoadedInSameDateInterval, carbonLoadModel, partitionCount, storeLocation);
+          listOfSegmentsLoadedInSameDateInterval, carbonLoadModel, storeLocation);
     } else {
 
       listOfSegmentsToBeMerged =
@@ -399,13 +398,12 @@ public final class CarbonDataMergerUtil {
    * @param compactionSize
    * @param listOfSegmentsAfterPreserve
    * @param carbonLoadModel
-   * @param partitionCount
    * @param storeLocation
    * @return
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnSize(
       long compactionSize, List<LoadMetadataDetails> listOfSegmentsAfterPreserve,
-      CarbonLoadModel carbonLoadModel, int partitionCount, String storeLocation) {
+      CarbonLoadModel carbonLoadModel, String storeLocation) {
 
     List<LoadMetadataDetails> segmentsToBeMerged =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -423,7 +421,7 @@ public final class CarbonDataMergerUtil {
       String segId = segment.getLoadName();
       // variable to store one  segment size across partition.
       long sizeOfOneSegmentAcrossPartition =
-          getSizeOfOneSegmentAcrossPartition(partitionCount, storeLocation, tableIdentifier, segId);
+          getSizeOfSegment(storeLocation, tableIdentifier, segId);
 
       // if size of a segment is greater than the Major compaction size. then ignore it.
       if (sizeOfOneSegmentAcrossPartition > (compactionSize * 1024 * 1024)) {
@@ -460,30 +458,19 @@ public final class CarbonDataMergerUtil {
   }
 
   /**
-   * For calculating the size of a segment across all partition.
-   * @param partitionCount
+   * For calculating the size of the specified segment
    * @param storeLocation
    * @param tableIdentifier
    * @param segId
    * @return
    */
-  private static long getSizeOfOneSegmentAcrossPartition(int partitionCount, String storeLocation,
+  private static long getSizeOfSegment(String storeLocation,
       CarbonTableIdentifier tableIdentifier, String segId) {
-    long sizeOfOneSegmentAcrossPartition = 0;
-    // calculate size across partitions
-    for (int partition = 0; partition < partitionCount; partition++) {
-
-      String loadPath = CarbonLoaderUtil
-          .getStoreLocation(storeLocation, tableIdentifier, segId, partition + "");
-
-      CarbonFile segmentFolder =
-          FileFactory.getCarbonFile(loadPath, FileFactory.getFileType(loadPath));
-
-      long sizeOfEachSegment = getSizeOfFactFileInLoad(segmentFolder);
-
-      sizeOfOneSegmentAcrossPartition += sizeOfEachSegment;
-    }
-    return sizeOfOneSegmentAcrossPartition;
+    String loadPath = CarbonLoaderUtil
+        .getStoreLocation(storeLocation, tableIdentifier, segId, "0");
+    CarbonFile segmentFolder =
+        FileFactory.getCarbonFile(loadPath, FileFactory.getFileType(loadPath));
+    return getSizeOfFactFileInLoad(segmentFolder);
   }
 
   /**
@@ -691,9 +678,6 @@ public final class CarbonDataMergerUtil {
 
   /**
    * Removing the already merged segments from list.
-   * @param segments
-   * @param loadsToMerge
-   * @return
    */
   public static List<LoadMetadataDetails> filterOutNewlyAddedSegments(
       List<LoadMetadataDetails> segments,
@@ -701,17 +685,11 @@ public final class CarbonDataMergerUtil {
 
     // take complete list of segments.
     List<LoadMetadataDetails> list = new ArrayList<>(segments);
-
-    List<LoadMetadataDetails> trimmedList =
-        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
     // sort list
     CarbonDataMergerUtil.sortSegments(list);
 
     // first filter out newly added segments.
-    trimmedList = list.subList(0, list.indexOf(lastSeg) + 1);
-
-    return trimmedList;
+    return list.subList(0, list.indexOf(lastSeg) + 1);
 
   }
 

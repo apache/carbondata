@@ -534,13 +534,19 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
     // validate the tableBlockSize from table properties
     CommonUtil.validateTableBlockSize(tableProperties)
 
-    tableModel(ifNotExistPresent,
+    tableModel(
+      ifNotExistPresent,
       dbName.getOrElse(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
-      dbName, tableName, tableProperties,
+      dbName,
+      tableName,
+      tableProperties,
       reorderDimensions(dims.map(f => normalizeType(f)).map(f => addParent(f))),
-      msrs.map(f => normalizeType(f)), "", null, "",
-      None, Seq(), null, Option(noDictionaryDims), Option(noInvertedIdxCols), null, partitioner,
-      groupCols, Some(colProps))
+      msrs.map(f => normalizeType(f)),
+      Option(noDictionaryDims),
+      Option(noInvertedIdxCols),
+      partitioner,
+      groupCols,
+      Some(colProps))
   }
 
   /**

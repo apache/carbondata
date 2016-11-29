@@ -29,13 +29,13 @@ import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.CarbonContext
+import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, NodeInfo}
 import org.apache.spark.sql.hive.DistributionUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
-import org.apache.carbondata.core.carbon.datastore.block.{Distributable, SegmentProperties, TableBlockInfo, TaskBlockInfo}
+import org.apache.carbondata.core.carbon.datastore.block.{Distributable, SegmentProperties, TaskBlockInfo}
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, CarbonUtilException}
@@ -273,7 +273,7 @@ class CarbonMergerRDD[K, V](
     val requiredExecutors = if (nodeBlockMapping.size > confExecutors) {
       confExecutors
     } else { nodeBlockMapping.size() }
-    CarbonContext.ensureExecutors(sparkContext, requiredExecutors)
+    CarbonEnv.ensureExecutors(sparkContext, requiredExecutors)
     logInfo("No.of Executors required=" + requiredExecutors +
             " , spark.executor.instances=" + confExecutors +
             ", no.of.nodes where data present=" + nodeBlockMapping.size())
