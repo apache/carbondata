@@ -21,6 +21,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
+
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.expressions.aggregate._
@@ -28,7 +29,8 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.types.{IntegerType, StringType}
+import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
@@ -51,13 +53,24 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     }
   }
 
+  def updateCarbonRelationDataType(plan: LogicalPlan): LogicalPlan = {
+    plan transformDown {
+      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
+        val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+        val newRelation = updateRelation(relation)
+        LogicalRelation(newRelation, l.expectedOutputAttributes, l
+            .metastoreTableIdentifier)
+    }
+  }
+
   def apply(plan: LogicalPlan): LogicalPlan = {
-    relations = collectCarbonRelation(plan)
-    if (relations.nonEmpty && !isOptimized(plan)) {
+    val updatePlan = updateCarbonRelationDataType(plan)
+    relations = collectCarbonRelation(updatePlan)
+    if (relations.nonEmpty && !isOptimized(updatePlan)) {
       LOGGER.info("Starting to optimize plan")
       val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("")
       val queryStatistic = new QueryStatistic()
-      val result = transformCarbonPlan(plan, relations)
+      val result = transformCarbonPlan(updatePlan, relations)
       queryStatistic.addStatistics("Time taken for Carbon Optimizer to optimize: ",
         System.currentTimeMillis)
       recorder.recordStatistics(queryStatistic)
@@ -531,6 +544,24 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         l
       case others => others
     }
+  }
+
+  private def updateRelation(relation: CarbonDatasourceHadoopRelation):
+  CarbonDatasourceHadoopRelation = {
+    val fields = relation.schema.fields
+    val numberOfFields = relation.schema.fields.length
+    val newFields = new Array[StructField](numberOfFields)
+    val dictionaryMap = relation.carbonRelation.metaData.dictionaryMap
+    for (i <- 0 until numberOfFields ) {
+      dictionaryMap.get(fields(i).name) match {
+        case Some(true) =>
+          val field = fields(i)
+          newFields(i) = StructField(field.name, IntegerType, field.nullable, field.metadata)
+        case _ => newFields(i) = fields(i)
+      }
+    }
+    CarbonDatasourceHadoopRelation(relation.sparkSession,
+      relation.paths, relation.parameters, Option(StructType(newFields)))
   }
 
   private def updateProjection(plan: LogicalPlan): LogicalPlan = {

@@ -35,7 +35,7 @@ import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
-private[sql] case class CarbonDatasourceHadoopRelation(
+case class CarbonDatasourceHadoopRelation(
     sparkSession: SparkSession,
     paths: Array[String],
     parameters: Map[String, String],

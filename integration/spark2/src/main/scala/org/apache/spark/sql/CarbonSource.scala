@@ -19,20 +19,23 @@ package org.apache.spark.sql
 
 import java.io.File
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-
 import scala.language.implicitConversions
+
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.StructType
-import org.apache.carbondata.spark.CarbonOption
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
 import org.apache.spark.sql.execution.command.{CreateTable, Field}
+import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.spark.CarbonOption
 
 /**
- * Carbon relation provider compliant to data source api.
- * Creates carbon relations
- */
+  * Carbon relation provider compliant to data source api.
+  * Creates carbon relations
+  */
 class CarbonSource extends CreatableRelationProvider
     with SchemaRelationProvider with DataSourceRegister {
 
@@ -40,10 +43,10 @@ class CarbonSource extends CreatableRelationProvider
 
   // called by any write operation like INSERT INTO DDL or DataFrame.write API
   override def createRelation(
-      sqlContext: SQLContext,
-      mode: SaveMode,
-      parameters: Map[String, String],
-      data: DataFrame): BaseRelation = {
+                               sqlContext: SQLContext,
+                               mode: SaveMode,
+                               parameters: Map[String, String],
+                               data: DataFrame): BaseRelation = {
     CarbonEnv.init(sqlContext)
     // User should not specify path since only one store is supported in carbon currently,
     // after we support multi-store, we can remove this limitation
@@ -81,9 +84,9 @@ class CarbonSource extends CreatableRelationProvider
 
   // called by DDL operation with a USING clause
   override def createRelation(
-      sqlContext: SQLContext,
-      parameters: Map[String, String],
-      dataSchema: StructType): BaseRelation = {
+                               sqlContext: SQLContext,
+                               parameters: Map[String, String],
+                               dataSchema: StructType): BaseRelation = {
     CarbonEnv.init(sqlContext)
     addLateDecodeOptimization(sqlContext.sparkSession)
     val path = createTableIfNotExists(sqlContext.sparkSession, parameters, dataSchema)
@@ -93,8 +96,8 @@ class CarbonSource extends CreatableRelationProvider
   }
 
   private def addLateDecodeOptimization(ss: SparkSession): Unit = {
-    //ss.sessionState.experimentalMethods.extraStrategies = Seq(new CarbonLateDecodeStrategy)
-    //ss.sessionState.experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
+    ss.sessionState.experimentalMethods.extraStrategies = Seq(new CarbonLateDecodeStrategy)
+    ss.sessionState.experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
   }
 
   private def createTableIfNotExists(sparkSession: SparkSession, parameters: Map[String, String],
