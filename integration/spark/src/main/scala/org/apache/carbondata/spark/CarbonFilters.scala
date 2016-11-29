@@ -168,7 +168,6 @@ object CarbonFilters {
         case In(Cast(a: Attribute, _), list) if !list.exists(!_.isInstanceOf[Literal]) =>
           val hSet = list.map(e => e.eval(EmptyRow))
           Some(sources.In(a.name, hSet.toArray))
-
         case GreaterThan(a: Attribute, Literal(v, t)) =>
           Some(sources.GreaterThan(a.name, v))
         case GreaterThan(Literal(v, t), a: Attribute) =>
@@ -177,7 +176,6 @@ object CarbonFilters {
           Some(sources.GreaterThan(a.name, v))
         case GreaterThan(Literal(v, t), Cast(a: Attribute, _)) =>
           Some(sources.LessThan(a.name, v))
-
         case LessThan(a: Attribute, Literal(v, t)) =>
           Some(sources.LessThan(a.name, v))
         case LessThan(Literal(v, t), a: Attribute) =>
@@ -186,7 +184,30 @@ object CarbonFilters {
           Some(sources.LessThan(a.name, v))
         case LessThan(Literal(v, t), Cast(a: Attribute, _)) =>
           Some(sources.GreaterThan(a.name, v))
-
+        case StartsWith(a: Attribute, Literal(v, t)) =>
+          Some(sources.StringStartsWith(a.name, v.toString()))
+        case StartsWith(Literal(v, t), a: Attribute) =>
+          Some(sources.StringStartsWith(a.name, v.toString()))
+        case StartsWith(Cast(a: Attribute, _), Literal(v, t)) =>
+          Some(sources.StringStartsWith(a.name, v.toString()))
+        case StartsWith(Literal(v, t), Cast(a: Attribute, _)) =>
+          Some(sources.StringStartsWith(a.name, v.toString()))
+        case EndsWith(a: Attribute, Literal(v, t)) =>
+          Some(sources.StringEndsWith(a.name, v.toString()))
+        case EndsWith(Literal(v, t), a: Attribute) =>
+          Some(sources.StringEndsWith(a.name, v.toString()))
+        case EndsWith(Cast(a: Attribute, _), Literal(v, t)) =>
+          Some(sources.StringEndsWith(a.name, v.toString()))
+        case EndsWith(Literal(v, t), Cast(a: Attribute, _)) =>
+          Some(sources.StringEndsWith(a.name, v.toString()))
+        case Contains(a: Attribute, Literal(v, t)) =>
+          Some(sources.StringContains(a.name, v.toString()))
+        case Contains(Literal(v, t), a: Attribute) =>
+          Some(sources.StringContains(a.name, v.toString()))
+        case Contains(Cast(a: Attribute, _), Literal(v, t)) =>
+          Some(sources.StringContains(a.name, v.toString()))
+        case Contains(Literal(v, t), Cast(a: Attribute, _)) =>
+          Some(sources.StringContains(a.name, v.toString()))
         case GreaterThanOrEqual(a: Attribute, Literal(v, t)) =>
           Some(sources.GreaterThanOrEqual(a.name, v))
         case GreaterThanOrEqual(Literal(v, t), a: Attribute) =>
@@ -195,7 +216,6 @@ object CarbonFilters {
           Some(sources.GreaterThanOrEqual(a.name, v))
         case GreaterThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
           Some(sources.LessThanOrEqual(a.name, v))
-
         case LessThanOrEqual(a: Attribute, Literal(v, t)) =>
           Some(sources.LessThanOrEqual(a.name, v))
         case LessThanOrEqual(Literal(v, t), a: Attribute) =>
@@ -249,7 +269,6 @@ object CarbonFilters {
             Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
         case EqualTo(l@Literal(v, t), Cast(a: Attribute, _)) => new
             Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-
         case Not(EqualTo(a: Attribute, l@Literal(v, t))) => new
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
         case Not(EqualTo(l@Literal(v, t), a: Attribute)) => new
@@ -289,7 +308,12 @@ object CarbonFilters {
         case In(Cast(a: Attribute, _), list) if !list.exists(!_.isInstanceOf[Literal]) =>
           Some(new InExpression(transformExpression(a).get,
             new ListExpression(convertToJavaList(list.map(transformExpression(_).get)))))
-
+        case StartsWith(a: Attribute, l@Literal(v, t)) =>
+          Some(new StartsWithExpression(transformExpression(a).get, transformExpression(l).get))
+        case EndsWith(a: Attribute, l@Literal(v, t)) =>
+          Some(new EndsWithExpression(transformExpression(a).get, transformExpression(l).get))
+        case Contains(a: Attribute, l@Literal(v, t)) =>
+          Some(new ContainsExpression(transformExpression(a).get, transformExpression(l).get))
         case GreaterThan(a: Attribute, l@Literal(v, t)) =>
           Some(new GreaterThanExpression(transformExpression(a).get, transformExpression(l).get))
         case GreaterThan(Cast(a: Attribute, _), l@Literal(v, t)) =>
