@@ -26,7 +26,7 @@ case class DataLoadPartitionWrap[T: ClassTag](rdd: RDD[T], partition: Partition)
 class DataLoadCoalescedRDD[T: ClassTag](
   @transient var prev: RDD[T],
   nodeList: Array[String])
-    extends RDD[DataLoadPartitionWrap[T]](prev.context, Nil) with Logging {
+    extends RDD[DataLoadPartitionWrap[T]](prev.context, Nil) {
 
   override def getPartitions: Array[Partition] = {
     new DataLoadPartitionCoalescer(prev, nodeList).run

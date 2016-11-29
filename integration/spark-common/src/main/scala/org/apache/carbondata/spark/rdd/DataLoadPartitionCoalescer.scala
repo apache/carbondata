@@ -20,8 +20,10 @@ package org.apache.spark.rdd
 import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet, LinkedHashSet}
 import scala.collection.mutable
 
-import org.apache.spark.{Logging, Partition}
+import org.apache.spark.Partition
 import org.apache.spark.scheduler.TaskLocation
+
+import org.apache.carbondata.common.logging.LogServiceFactory
 
 /**
  * DataLoadPartitionCoalescer
@@ -65,8 +67,9 @@ import org.apache.spark.scheduler.TaskLocation
  * host2:                      block6
  * host4:        block3
  */
-class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) extends Logging {
+class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) {
 
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   val prevPartitions = prev.partitions
   var numOfParts = Math.max(1, Math.min(nodeList.length, prevPartitions.length))
   // host => partition id list
@@ -213,7 +216,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) extends 
       noEmptyHosts: mutable.Buffer[String],
       localityResult: mutable.Buffer[ArrayBuffer[Int]]): Array[ArrayBuffer[Int]] = {
     val noLocalityResult = new Array[ArrayBuffer[Int]](emptyHosts.length)
-    logInfo(s"non empty host: ${noEmptyHosts.length}, empty host: ${emptyHosts.length}")
+    LOGGER.info(s"non empty host: ${noEmptyHosts.length}, empty host: ${emptyHosts.length}")
     val avgNumber = prevPartitions.length / (noEmptyHosts.length + emptyHosts.length)
     for (i <- 0 until noLocalityResult.length) {
       noLocalityResult(i) = new ArrayBuffer[Int]
@@ -256,7 +259,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) extends 
    */
   private def repartitionNoLocality(): Array[Partition] = {
     // no locality repartition
-    logInfo("no locality partition")
+    LOGGER.info("no locality partition")
     val prevPartIndexs = new Array[ArrayBuffer[Int]](numOfParts)
     for (i <- 0 until numOfParts) {
       prevPartIndexs(i) = new ArrayBuffer[Int]
@@ -270,7 +273,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) extends 
   }
 
   private def repartitionLocality(): Array[Partition] = {
-    logInfo("locality partition")
+    LOGGER.info("locality partition")
     val hostMapPartitionIdsSeq = hostMapPartitionIds.toSeq
     // empty host seq
     val emptyHosts = hostMapPartitionIdsSeq.filter(_._2.isEmpty).map(_._1).toBuffer
@@ -309,7 +312,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) extends 
       } else {
         Some(emptyHosts(index - localityResult.length))
       }
-      logInfo(s"CoalescedRDDPartition ${index}, ${ids.length}, ${loc} ")
+      LOGGER.info(s"CoalescedRDDPartition ${index}, ${ids.length}, ${loc} ")
       new CoalescedRDDPartition(index, prev, ids, loc)
     }.filter(_.parentsIndices.nonEmpty).toArray
 
@@ -318,7 +321,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) extends 
   def run(): Array[Partition] = {
     // 1. group partitions by node
     groupByNode()
-    logInfo(s"partition: ${prevPartitions.length}, no locality: ${noLocalityPartitions.length}")
+    LOGGER.info(s"partition: ${prevPartitions.length}, no locality: ${noLocalityPartitions.length}")
     val partitions = if (noLocality) {
       // 2.A no locality partition
       repartitionNoLocality()
