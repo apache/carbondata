@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.execution.command
 
+import java.text.SimpleDateFormat
 import java.util
 import java.util.UUID
 
@@ -322,7 +323,7 @@ import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil,
  *
  * @param alterTableModel
  */
-private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) extends
+case class AlterTableCompaction(alterTableModel: AlterTableModel) extends
   RunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
@@ -439,7 +440,7 @@ case class CreateTable(cm: TableModel) extends RunnableCommand {
   }
 }
 
-private[sql] case class DeleteLoadsById(
+case class DeleteLoadsById(
     loadids: Seq[String],
     databaseNameOp: Option[String],
     tableName: String) extends RunnableCommand {
@@ -501,7 +502,7 @@ private[sql] case class DeleteLoadsById(
   }
 }
 
-private[sql] case class DeleteLoadsByLoadDate(
+case class DeleteLoadsByLoadDate(
     databaseNameOp: Option[String],
     tableName: String,
     dateField: String,
@@ -916,7 +917,7 @@ private[sql] case class DeleteLoadByDate(
 
 }
 
-private[sql] case class CleanFiles(
+case class CleanFiles(
     databaseNameOp: Option[String],
     tableName: String) extends RunnableCommand {
 
@@ -954,4 +955,65 @@ private[sql] case class CleanFiles(
     }
     Seq.empty
   }
+}
+
+case class ShowLoads(
+    databaseNameOp: Option[String],
+    tableName: String,
+    limit: Option[String],
+    override val output: Seq[Attribute]) extends RunnableCommand {
+
+  override def run(sparkSession: SparkSession): Seq[Row] = {
+    val databaseName = databaseNameOp.getOrElse(sparkSession.catalog.currentDatabase)
+    val tableUniqueName = databaseName + "_" + tableName
+    // Here using checkSchemasModifiedTimeAndReloadTables in tableExists to reload metadata if
+    // schema is changed by other process, so that tableInfoMap woulb be refilled.
+    val tableExists = CarbonEnv.get.carbonMetastore
+        .tableExists(TableIdentifier(tableName, databaseNameOp))(sparkSession)
+    if (!tableExists) {
+      sys.error(s"$databaseName.$tableName is not found")
+    }
+    val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
+        .getCarbonTable(tableUniqueName)
+    if (carbonTable == null) {
+      sys.error(s"$databaseName.$tableName is not found")
+    }
+    val path = carbonTable.getMetaDataFilepath
+    val loadMetadataDetailsArray = SegmentStatusManager.readLoadMetadata(path)
+    if (loadMetadataDetailsArray.nonEmpty) {
+
+      val parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP)
+
+      var loadMetadataDetailsSortedArray = loadMetadataDetailsArray.sortWith(
+        (l1, l2) => java.lang.Double.parseDouble(l1.getLoadName) > java.lang.Double
+            .parseDouble(l2.getLoadName)
+      )
+
+
+      if (limit.isDefined) {
+        loadMetadataDetailsSortedArray = loadMetadataDetailsSortedArray
+            .filter(load => load.getVisibility.equalsIgnoreCase("true"))
+        val limitLoads = limit.get
+        try {
+          val lim = Integer.parseInt(limitLoads)
+          loadMetadataDetailsSortedArray = loadMetadataDetailsSortedArray.slice(0, lim)
+        } catch {
+          case ex: NumberFormatException => sys.error(s" Entered limit is not a valid Number")
+        }
+
+      }
+
+      loadMetadataDetailsSortedArray.filter(load => load.getVisibility.equalsIgnoreCase("true"))
+          .map(load =>
+            Row(
+              load.getLoadName,
+              load.getLoadStatus,
+              new java.sql.Timestamp(parser.parse(load.getLoadStartTime).getTime),
+              new java.sql.Timestamp(parser.parse(load.getTimestamp).getTime))).toSeq
+    } else {
+      Seq.empty
+
+    }
+  }
+
 }
