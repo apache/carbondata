@@ -56,10 +56,7 @@ import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.{CarbonQueryUtil, LoadMetadataUtil}
 
 
-/**
-  * This is the factory class which can create different RDD depends on user needs.
-  *
-  */
+// This is the factory class which can create different RDD depends on user needs.
 object CarbonDataRDDFactory {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -404,10 +401,10 @@ object CarbonDataRDDFactory {
   }
 
   /**
-    * This will submit the loads to be merged into the executor.
-    *
-    * @param futureList
-    */
+  * This will submit the loads to be merged into the executor.
+  *
+  * @param futureList
+  */
   def scanSegmentsAndSubmitJob(futureList: util.List[Future[Void]],
                                loadsToMerge: util
                                .List[LoadMetadataDetails],
@@ -907,7 +904,7 @@ object CarbonDataRDDFactory {
         numPartitions = Math.max(1, Math.min(numPartitions, rdd.partitions.length))
         rdd = rdd.coalesce(numPartitions, shuffle = false)
 
-        if(useKettle){
+        if (useKettle) {
           status = new DataFrameLoaderRDD(sqlContext.sparkContext,
             new DataLoadResultImpl(),
             carbonLoadModel,
@@ -918,13 +915,11 @@ object CarbonDataRDDFactory {
             tableCreationTime,
             schemaLastUpdatedTime,
             rdd).collect()
-        }else{
-          status = new DataFrameLoaderRDD(sqlContext.sparkContext,
+        } else {
+          status = new NewDataFrameLoaderRDD(sqlContext.sparkContext,
             new DataLoadResultImpl(),
             carbonLoadModel,
-            storePath,
-            kettleHomePath,
-            columinar,
+            partitioner,
             currentLoadCount,
             tableCreationTime,
             schemaLastUpdatedTime,
@@ -1129,6 +1124,4 @@ object CarbonDataRDDFactory {
       CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
     }
   }
-
-
 }
