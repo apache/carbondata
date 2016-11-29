@@ -30,7 +30,8 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{SparkContext, SparkEnv, SparkException}
-import org.apache.spark.sql.{CarbonEnv, DataFrame, SQLContext}
+import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer}
+import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel, CompactionModel, Partitioner}
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.util.{FileUtils, SplitUtils}
@@ -902,21 +903,30 @@ object CarbonDataRDDFactory {
       }
 
       def loadDataFrame(): Unit = {
-        var rdd = dataFrame.get.rdd
-        var numPartitions = DistributionUtil.getNodeList(sqlContext.sparkContext).length
-        numPartitions = Math.max(1, Math.min(numPartitions, rdd.partitions.length))
-        rdd = rdd.coalesce(numPartitions, shuffle = false)
+        try {
+          val rdd = dataFrame.get.rdd
+          val nodeNumOfData = rdd.partitions.flatMap[String, Array[String]]{ p =>
+            DataLoadPartitionCoalescer.getPreferredLocs(rdd, p).map(_.host)
+          }.distinct.size
+          val nodes = DistributionUtil.ensureExecutorsByNumberAndGetNodeList(nodeNumOfData,
+            sqlContext.sparkContext)
+          val newRdd = new DataLoadCoalescedRDD[Row](rdd, nodes.toArray.distinct)
 
-        status = new DataFrameLoaderRDD(sqlContext.sparkContext,
-          new DataLoadResultImpl(),
-          carbonLoadModel,
-          storePath,
-          kettleHomePath,
-          columinar,
-          currentLoadCount,
-          tableCreationTime,
-          schemaLastUpdatedTime,
-          rdd).collect()
+          status = new DataFrameLoaderRDD(sqlContext.sparkContext,
+            new DataLoadResultImpl(),
+            carbonLoadModel,
+            storePath,
+            kettleHomePath,
+            columinar,
+            currentLoadCount,
+            tableCreationTime,
+            schemaLastUpdatedTime,
+            newRdd).collect()
+        } catch {
+          case ex: Exception =>
+            LOGGER.error(ex, "load data frame failed")
+            throw ex
+        }
       }
 
       CarbonLoaderUtil.checkAndCreateCarbonDataLocation(storePath,
@@ -932,28 +942,32 @@ object CarbonDataRDDFactory {
           loadDataFile()
         }
         val newStatusMap = scala.collection.mutable.Map.empty[String, String]
-        status.foreach { eachLoadStatus =>
-          val state = newStatusMap.get(eachLoadStatus._1)
-          state match {
-            case Some(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) =>
-              newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
-            case Some(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
-              if eachLoadStatus._2.getLoadStatus ==
-                 CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS =>
-              newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
-            case _ =>
-              newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
-          }
-        }
-
-        newStatusMap.foreach {
-          case (key, value) =>
-            if (value == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
-              loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-            } else if (value == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS &&
-                       !loadStatus.equals(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)) {
-              loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+        if (status.nonEmpty) {
+          status.foreach { eachLoadStatus =>
+            val state = newStatusMap.get(eachLoadStatus._1)
+            state match {
+              case Some(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) =>
+                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
+              case Some(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+                if eachLoadStatus._2.getLoadStatus ==
+                    CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS =>
+                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
+              case _ =>
+                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
             }
+          }
+
+          newStatusMap.foreach {
+            case (key, value) =>
+              if (value == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
+                loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
+              } else if (value == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS &&
+                  !loadStatus.equals(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)) {
+                loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+              }
+          }
+        } else {
+          loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
         }
 
         if (loadStatus != CarbonCommonConstants.STORE_LOADSTATUS_FAILURE &&
@@ -1116,6 +1130,4 @@ object CarbonDataRDDFactory {
       CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
     }
   }
-
-
 }
