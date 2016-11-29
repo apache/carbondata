@@ -28,6 +28,8 @@ import static org.hamcrest.core.Is.is;
 
 import java.util.Arrays;
 
+import org.apache.carbondata.core.keygenerator.KeyGenException;
+
 public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
 
   static MultiDimKeyVarLengthEquiSplitGenerator multiDimKeyVarLengthEquiSplitGenerator;
@@ -37,6 +39,38 @@ public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
     byte dimensionsToSplit = 1;
     multiDimKeyVarLengthEquiSplitGenerator =
         new MultiDimKeyVarLengthEquiSplitGenerator(lens, dimensionsToSplit);
+  }
+
+  @Test public void testSplitKeyWithNewDimensionToSplit() {
+    int[] lens = new int[] { 24, 8, 16, 16, 16 };
+    byte dimensionsToSplit = 3;
+    MultiDimKeyVarLengthEquiSplitGenerator multiDimKeyVarLengthEquiSplitGeneratorNew =
+        new MultiDimKeyVarLengthEquiSplitGenerator(lens, dimensionsToSplit);
+    byte[][] result_value = new byte[][] { { 16, 8, 24, 46, 76, 64 }, { 80, 36, 72, 48 } };
+    byte[] key = new byte[] { 16, 8, 24, 46, 76, 64, 80, 36, 72, 48 };
+    byte[][] result = multiDimKeyVarLengthEquiSplitGeneratorNew.splitKey(key);
+    assert (Arrays.deepEquals(result, result_value));
+  }
+
+  @Test public void testSplitKeyWithNewDimensionToSplitValue16() {
+    int[] lens = new int[] { 24, 8, 16, 16, 16 };
+    byte dimensionsToSplit = 16;
+    MultiDimKeyVarLengthEquiSplitGenerator multiDimKeyVarLengthEquiSplitGeneratorNew =
+        new MultiDimKeyVarLengthEquiSplitGenerator(lens, dimensionsToSplit);
+    byte[][] result_value = new byte[][] { { 16, 8, 24, 46, 76, 64, 80, 36, 72, 48 } };
+    byte[] key = new byte[] { 16, 8, 24, 46, 76, 64, 80, 36, 72, 48 };
+    byte[][] result = multiDimKeyVarLengthEquiSplitGeneratorNew.splitKey(key);
+    assert (Arrays.deepEquals(result, result_value));
+  }
+
+  @Test public void testGenerateAndSplitKeyAndGetKeyArrayWithActualLogic() throws KeyGenException {
+    long[] keys = new long[] { 12253L, 48254L, 451245L, 52245L, 36458L, 48123L, 264L, 5852L, 42L };
+    long[] expected_result = { 12253, 126, 58029, 52245, 36458 };
+    byte[][] result_GenerateAndSplitKey =
+        multiDimKeyVarLengthEquiSplitGenerator.generateAndSplitKey(keys);
+    long[] result_GetKeyArray =
+        multiDimKeyVarLengthEquiSplitGenerator.getKeyArray(result_GenerateAndSplitKey);
+    assertThat(result_GetKeyArray, is(equalTo(expected_result)));
   }
 
   @Test public void testSplitKey() throws Exception {
@@ -61,7 +95,7 @@ public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
     assert (Arrays.equals(result, result_value));
   }
 
-  /**
+  /*
    * In this test scenario We will send  blockIndexes { 0 }.
    * Where value of blockKeySize is {4,1,2,2,2}
    * It will add value 0f {0} indexes and will return the size which is 4.
@@ -76,7 +110,7 @@ public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
     assertEquals(result_value, result);
   }
 
-  /**
+  /*
    * In this test scenario We will send  blockIndexes { 0, 1, 2 }.
    * Where value of blockKeySize is {4,1,2,2,2}
    * It will add value 0f {0, 1, 2} indexes and will return the size which is 7.
@@ -92,7 +126,7 @@ public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
     assertEquals(result_value, result);
   }
 
-  /**
+  /*
    * In this test scenario We will send  blockIndexes {1, 2, 7} where {7} > blockKeySize.length which is 5.
    * Where value of blockKeySize is {4,1,2,2,2}
    * It will add value 0f {1, 2, 7} indexes and will return the size which is 3.
@@ -108,7 +142,7 @@ public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
     assertEquals(result_value, result);
   }
 
-  /**
+  /*
    * In this test scenario We will send  blockIndexes {10} where {10} > blockKeySize.length which is 5.
    * Where value of blockKeySize is {4,1,2,2,2}
    * It will return default value 0.
@@ -146,4 +180,20 @@ public class MultiDimKeyVarLengthEquiSplitGeneratorUnitTest {
         .equals(new MultiDimKeyVarLengthEquiSplitGenerator(lens, dimensionsToSplit));
     assert (result);
   }
+
+  /**
+   * Test case for exception when Key size is less than byte key size
+   */
+
+  @Test(expected = ArrayIndexOutOfBoundsException.class) public void testSplitKeyWithException() {
+    int[] lens = new int[] { 24, 8, 16, 16, 16 };
+    byte dimensionsToSplit = 3;
+    MultiDimKeyVarLengthEquiSplitGenerator multiDimKeyVarLengthEquiSplitGeneratorNew =
+        new MultiDimKeyVarLengthEquiSplitGenerator(lens, dimensionsToSplit);
+    byte[][] result_value = new byte[][] { { 16, 8, 24, 46, 76, 64 }, { 80, 36, 72, 48 } };
+    byte[] key = new byte[] { 16, 8, 24, 46, 76 };
+    byte[][] result = multiDimKeyVarLengthEquiSplitGeneratorNew.splitKey(key);
+    assert (Arrays.deepEquals(result, result_value));
+  }
+
 }

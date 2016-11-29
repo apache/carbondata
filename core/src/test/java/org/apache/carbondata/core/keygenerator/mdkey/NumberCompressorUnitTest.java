@@ -82,7 +82,8 @@ public class NumberCompressorUnitTest {
   @Test public void testUnCompressWithTenKeys() throws Exception {
     int cardinality = 10;
     numberCompressor = new NumberCompressor(cardinality);
-    int[] expected_result = new int[] { 0, 10, 0, 2, 0, 10, 0, 2, 0, 10, 0, 2, 0, 10, 0, 2, 0, 10, 0, 2 };
+    int[] expected_result =
+        new int[] { 0, 10, 0, 2, 0, 10, 0, 2, 0, 10, 0, 2, 0, 10, 0, 2, 0, 10, 0, 2 };
     byte[] keys = new byte[] { 10, 2, 10, 2, 10, 2, 10, 2, 10, 2 };
     int[] result = numberCompressor.unCompress(keys);
     System.out.println(result);
@@ -112,15 +113,6 @@ public class NumberCompressorUnitTest {
     numberCompressor = new NumberCompressor(cardinality);
     byte[] expected_result = new byte[] { -35, -52, -52 };
     int[] keys = new int[] { 214748364, 5456, 214748364, 214748364, 214748364 };
-    byte[] result = numberCompressor.compress(keys);
-    assertThat(result, is(equalTo(expected_result)));
-  }
-
-  @Test public void testCompressForNegativeKeyValue() throws Exception {
-    int cardinality = 120000;
-    numberCompressor = new NumberCompressor(cardinality);
-    byte[] expected_result = new byte[] { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -35 };
-    int[] keys = new int[] { 20, -546, 67, -70, -35 };
     byte[] result = numberCompressor.compress(keys);
     assertThat(result, is(equalTo(expected_result)));
   }
