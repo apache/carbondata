@@ -20,14 +20,15 @@ package com.databricks.spark.csv.newapi
 import java.nio.charset.Charset
 
 import com.databricks.spark.csv.util.TextFile
-import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.{LongWritable, Text}
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, TextInputFormat}
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.{NewHadoopRDD, RDD}
 import org.apache.spark.util.FileUtils
+
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 /**
  * create RDD use CarbonDataLoadInputFormat
@@ -81,7 +82,7 @@ object CarbonTextFile {
     if (Charset.forName(charset) == TextFile.DEFAULT_CHARSET) {
       newHadoopRDD(sc, location).map(pair => pair._2.toString)
     } else {
-      // can't pass a Charset object here cause its not hserializable
+      // can't pass a Charset object here cause its not serializable
       // TODO: maybe use mapPartitions instead?
       newHadoopRDD(sc, location).map(
         pair => new String(pair._2.getBytes, 0, pair._2.getLength, charset))

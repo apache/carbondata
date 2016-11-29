@@ -17,15 +17,16 @@
 
 package org.apache.carbondata.spark.rdd
 
+import scala.collection.JavaConverters._
+
+import org.apache.spark.{Partition, SparkContext, TaskContext}
+import org.apache.spark.rdd.RDD
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.LoadMetadataDetails
 import org.apache.carbondata.spark.DeletedLoadResult
 import org.apache.carbondata.spark.load.DeletedLoadMetadata
 import org.apache.carbondata.spark.util.CarbonQueryUtil
-import org.apache.spark.rdd.RDD
-import org.apache.spark.{Partition, SparkContext, TaskContext}
-
-import scala.collection.JavaConverters._
 
 class CarbonDeleteLoadByDateRDD[K, V](
     sc: SparkContext,

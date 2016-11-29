@@ -26,6 +26,7 @@ import org.apache.spark.sql.execution.{SparkPlan, UnaryNode}
 import org.apache.spark.sql.hive.{CarbonMetastore, CarbonMetastoreTypes}
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types._
+
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, ColumnIdentifier}
@@ -37,8 +38,7 @@ import org.apache.carbondata.core.util.{CarbonTimeStatisticsFactory, DataTypeUti
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
 /**
- * It decodes the data.
- *
+ * It decodes the dictionary key to value
  */
 case class CarbonDictionaryDecoder(
     relations: Seq[CarbonDecoderRelation],
@@ -47,7 +47,6 @@ case class CarbonDictionaryDecoder(
     child: SparkPlan)
   (@transient sqlContext: SQLContext)
   extends UnaryNode {
-
 
   override def otherCopyArgs: Seq[AnyRef] = sqlContext :: Nil
 
@@ -148,8 +147,6 @@ case class CarbonDictionaryDecoder(
   override def canProcessUnsafeRows: Boolean = true
 
   override def canProcessSafeRows: Boolean = true
-
-
 
   override def doExecute(): RDD[InternalRow] = {
     attachTree(this, "execute") {

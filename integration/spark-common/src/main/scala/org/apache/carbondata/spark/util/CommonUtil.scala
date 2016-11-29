@@ -22,8 +22,9 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
 
-import org.apache.spark.sql.execution.command.Field
 import org.apache.spark.sql.execution.command.ColumnProperty
+import org.apache.spark.sql.execution.command.Field
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.model.CarbonLoadModel

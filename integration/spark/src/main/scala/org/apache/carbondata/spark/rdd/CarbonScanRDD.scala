@@ -43,6 +43,19 @@ import org.apache.carbondata.hadoop.readsupport.impl.RawDataReadSupport
 import org.apache.carbondata.scan.expression.Expression
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 
+class CarbonSparkPartition(
+    val rddId: Int,
+    val idx: Int,
+    @transient val multiBlockSplit: CarbonMultiBlockSplit)
+    extends Partition {
+
+  val split = new SerializableWritable[CarbonMultiBlockSplit](multiBlockSplit)
+
+  override val index: Int = idx
+
+  override def hashCode(): Int = 41 * (41 + rddId) + idx
+}
+
 /**
  * This RDD is used to perform query on CarbonData file. Before sending tasks to scan
  * CarbonData file, this RDD will leverage CarbonData's index information to do CarbonData file
@@ -54,9 +67,9 @@ class CarbonScanRDD[V: ClassTag](
     filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
     @transient carbonTable: CarbonTable)
-  extends RDD[V](sc, Nil)
-    with CarbonHadoopMapReduceUtil
-    with Logging {
+    extends RDD[V](sc, Nil)
+        with CarbonHadoopMapReduceUtil
+        with Logging {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
   private val jobTrackerId: String = {

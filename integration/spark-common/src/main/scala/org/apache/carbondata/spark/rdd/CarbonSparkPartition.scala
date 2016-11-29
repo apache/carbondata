@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.spark.rdd
 
-import org.apache.carbondata.hadoop.CarbonMultiBlockSplit
 import org.apache.spark.{Partition, SerializableWritable}
 
+import org.apache.carbondata.hadoop.CarbonMultiBlockSplit
 
 class CarbonSparkPartition(
     val rddId: Int,

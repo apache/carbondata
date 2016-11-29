@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 import scala.reflect.ClassTag
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.mapred.JobConf
@@ -30,11 +31,10 @@ import org.apache.spark._
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.mapreduce.SparkHadoopMapReduceUtil
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.execution.command.Partitioner
-import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.sources.{Filter, HadoopFsRelation, OutputWriterFactory}
 import org.apache.spark.sql.types.StructType
 import org.apache.spark.util.SerializableConfiguration
+
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
 import org.apache.carbondata.core.carbon.path.CarbonTablePath
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonProjection}
@@ -43,7 +43,6 @@ import org.apache.carbondata.integration.spark.merger.TableMeta
 import org.apache.carbondata.scan.expression.logical.AndExpression
 import org.apache.carbondata.spark.{CarbonFilters, CarbonOption}
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
-
 
 private[sql] case class CarbonDatasourceHadoopRelation(
   sqlContext: SQLContext,

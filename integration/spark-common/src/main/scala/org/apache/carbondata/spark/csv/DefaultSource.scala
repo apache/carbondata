@@ -21,9 +21,9 @@ import com.databricks.spark.csv.{CarbonCsvRelation, CsvSchemaRDD}
 import com.databricks.spark.csv.util.{ParserLibs, TextFile, TypeCast}
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.compress.{CompressionCodec, GzipCodec}
+import org.apache.spark.sql.{DataFrame, SaveMode, SQLContext}
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.StructType
-import org.apache.spark.sql.{DataFrame, SQLContext, SaveMode}
 
 /**
  * Provides access to CSV data from pure SQL statements (i.e. for users of the

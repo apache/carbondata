@@ -21,12 +21,14 @@ import java.util.ArrayList
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.LeafNode
-import org.apache.spark.sql.hive.{CarbonMetastore, CarbonMetastore$}
+import org.apache.spark.sql.hive.CarbonMetastore
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.scan.model._
@@ -34,7 +36,7 @@ import org.apache.carbondata.spark.CarbonFilters
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 case class CarbonScan(
-    var attributesRaw: Seq[Attribute],
+    var columnProjection: Seq[Attribute],
     relationRaw: CarbonRelation,
     dimensionPredicatesRaw: Seq[Expression],
     useUnsafeCoversion: Boolean = true)(@transient val ocRaw: SQLContext) extends LeafNode {
@@ -77,21 +79,21 @@ case class CarbonScan(
 
   private def processExtraAttributes(plan: CarbonQueryPlan) {
     if (attributesNeedToDecode.size() > 0) {
-      val attributeOut = new ArrayBuffer[Attribute]() ++ attributesRaw
+      val attributeOut = new ArrayBuffer[Attribute]() ++ columnProjection
 
       attributesNeedToDecode.asScala.foreach { attr =>
-        if (!attributesRaw.exists(_.name.equalsIgnoreCase(attr.name))) {
+        if (!columnProjection.exists(_.name.equalsIgnoreCase(attr.name))) {
           attributeOut += attr
         }
       }
-      attributesRaw = attributeOut
+      columnProjection = attributeOut
     }
 
     val dimensions = carbonTable.getDimensionByTableName(carbonTable.getFactTableName)
     val measures = carbonTable.getMeasureByTableName(carbonTable.getFactTableName)
     val dimAttr = new Array[Attribute](dimensions.size())
     val msrAttr = new Array[Attribute](measures.size())
-    attributesRaw.foreach { attr =>
+    columnProjection.foreach { attr =>
       val carbonDimension =
         carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
       if(carbonDimension != null) {
@@ -105,10 +107,10 @@ case class CarbonScan(
       }
     }
 
-    attributesRaw = dimAttr.filter(f => f != null) ++ msrAttr.filter(f => f != null)
+    columnProjection = dimAttr.filter(f => f != null) ++ msrAttr.filter(f => f != null)
 
     var queryOrder: Integer = 0
-    attributesRaw.foreach { attr =>
+    columnProjection.foreach { attr =>
       val carbonDimension =
         carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
       if (carbonDimension != null) {
@@ -135,22 +137,11 @@ case class CarbonScan(
   }
 
   def inputRdd: CarbonScanRDD[Array[Any]] = {
-
-    val conf = new Configuration()
-    val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-
-    // setting queryid
-    buildCarbonPlan.setQueryId(ocRaw.getConf("queryId", System.nanoTime() + ""))
-
-    val tableCreationTime = carbonCatalog
-        .getTableCreationTime(relationRaw.databaseName, relationRaw.tableName)
-    val schemaLastUpdatedTime = carbonCatalog
-        .getSchemaLastUpdatedTime(relationRaw.databaseName, relationRaw.tableName)
     new CarbonScanRDD(
       ocRaw.sparkContext,
-      attributesRaw,
+      columnProjection,
       buildCarbonPlan.getFilterExpression,
-      absoluteTableIdentifier,
+      carbonTable.getAbsoluteTableIdentifier,
       carbonTable
     )
   }
@@ -178,7 +169,7 @@ case class CarbonScan(
   }
 
   def output: Seq[Attribute] = {
-    attributesRaw
+    columnProjection
   }
 
 }

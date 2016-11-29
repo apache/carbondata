@@ -19,10 +19,14 @@
 
 package org.apache.carbondata.integration.spark.merger;
 
+import java.io.Serializable;
+
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 
-public class TableMeta {
+public class TableMeta implements Serializable {
+
+  private static final long serialVersionUID = -1749874611119829431L;
 
   public CarbonTableIdentifier carbonTableIdentifier;
   public String storePath;

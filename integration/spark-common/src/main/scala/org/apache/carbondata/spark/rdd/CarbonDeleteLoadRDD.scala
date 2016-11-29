@@ -17,14 +17,15 @@
 
 package org.apache.carbondata.spark.rdd
 
-import org.apache.carbondata.spark.Value
-import org.apache.carbondata.spark.util.CarbonQueryUtil
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.execution.command.Partitioner
-import org.apache.spark.{Partition, SparkContext, TaskContext}
-
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
+
+import org.apache.spark.{Partition, SparkContext, TaskContext}
+import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.execution.command.Partitioner
+
+import org.apache.carbondata.spark.Value
+import org.apache.carbondata.spark.util.CarbonQueryUtil
 
 class CarbonDeleteLoadRDD[V: ClassTag](
     sc: SparkContext,

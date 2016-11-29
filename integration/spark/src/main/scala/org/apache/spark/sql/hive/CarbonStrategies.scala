@@ -20,6 +20,7 @@ package org.apache.spark.sql.hive
 import java.util
 
 import scala.collection.JavaConverters._
+
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -27,14 +28,15 @@ import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.catalyst.expressions.{AttributeSet, _}
 import org.apache.spark.sql.catalyst.planning.{PhysicalOperation, QueryPlanner}
-import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Filter => LogicalFilter}
+import org.apache.spark.sql.catalyst.plans.logical.{Filter => LogicalFilter, LogicalPlan}
 import org.apache.spark.sql.execution.{ExecutedCommand, Filter, Project, SparkPlan}
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.datasources.{LogicalRelation, DescribeCommand => LogicalDescribeCommand}
+import org.apache.spark.sql.execution.datasources.{DescribeCommand => LogicalDescribeCommand, LogicalRelation}
 import org.apache.spark.sql.hive.execution.{DropTable, HiveNativeCommand}
 import org.apache.spark.sql.hive.execution.command._
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types.IntegerType
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -120,7 +122,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           scan
         }
 
-      if (projectList.map(_.toAttribute) == scan.attributesRaw &&
+      if (projectList.map(_.toAttribute) == scan.columnProjection &&
           projectSet.size == projectList.size &&
           filterSet.subsetOf(projectSet)) {
         // copied from spark pruneFilterProjectRaw
@@ -150,9 +152,9 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         predicates,
         useUnsafeCoversion = false)(sqlContext)
       projectExprsNeedToDecode.addAll(scan.attributesNeedToDecode)
-      val updatedAttrs = scan.attributesRaw.map(attr =>
+      val updatedAttrs = scan.columnProjection.map(attr =>
         updateDataType(attr.asInstanceOf[AttributeReference], relation, projectExprsNeedToDecode))
-      scan.attributesRaw = updatedAttrs
+      scan.columnProjection = updatedAttrs
       if (projectExprsNeedToDecode.size() > 0
           && isDictionaryEncoded(projectExprsNeedToDecode.asScala.toSeq, relation)) {
         val decoder = getCarbonDecoder(logicalRelation,

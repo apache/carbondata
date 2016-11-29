@@ -19,11 +19,11 @@ package org.apache.spark.sql.optimizer
 
 import java.util
 
-import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.catalyst.plans.logical._
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable
+
+import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.plans.logical._
 
 abstract class AbstractNode
 

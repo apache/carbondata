@@ -18,13 +18,14 @@ package org.apache.spark.sql.hive
 
 import java.net.{InetAddress, InterfaceAddress, NetworkInterface}
 
-import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.datastore.block.Distributable
-import org.apache.carbondata.spark.load.CarbonLoaderUtil
+import scala.collection.JavaConverters._
+
 import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 
-import scala.collection.JavaConverters._
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.carbon.datastore.block.Distributable
+import org.apache.carbondata.spark.load.CarbonLoaderUtil
 
 object DistributionUtil {
   @transient
@@ -143,13 +144,12 @@ object DistributionUtil {
   }
 
   /**
-    *
-    * Requesting the extra executors other than the existing ones.
-    *
-    * @param sc
-    * @param numExecutors
-    * @return
-    */
+   * Requesting the extra executors other than the existing ones.
+   *
+   * @param sc
+   * @param numExecutors
+   * @return
+   */
   def ensureExecutors(sc: SparkContext, numExecutors: Int): Boolean = {
     sc.schedulerBackend match {
       case b: CoarseGrainedSchedulerBackend =>

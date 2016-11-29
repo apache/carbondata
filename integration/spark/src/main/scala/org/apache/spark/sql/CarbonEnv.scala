@@ -17,11 +17,7 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.SparkContext
-import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.hive.CarbonMetastore
-
-import org.apache.carbondata.common.logging.LogServiceFactory
 
 /**
  * Carbon Environment for unified context
@@ -29,9 +25,8 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 case class CarbonEnv(carbonMetastore: CarbonMetastore)
 
 object CarbonEnv {
-  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  @volatile private var carbonEnv: CarbonEnv  = _
+  @volatile private var carbonEnv: CarbonEnv = _
 
   var initialized = false
 
