@@ -26,6 +26,7 @@ import scala.language.implicitConversions
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Cast, Literal}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
 import org.apache.spark.sql.hive.CarbonMetastore
 import org.apache.spark.sql.types.TimestampType
@@ -331,6 +332,27 @@ object LoadTable {
 
 }
 
+private[sql] case class LoadTableByInsert(relation: CarbonDatasourceRelation,
+                                          child: LogicalPlan) extends RunnableCommand {
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+  def run(sqlContext: SQLContext): Seq[Row] = {
+    val df = new DataFrame(sqlContext, child)
+    val header = relation.carbonRelation.output.map(_.name).mkString(",")
+    val load = LoadTable(
+      Some(relation.carbonRelation.databaseName),
+      relation.carbonRelation.tableName,
+      null,
+      Seq(),
+      scala.collection.immutable.Map(("fileheader" -> header)),
+      false,
+      null,
+      Some(df)).run(sqlContext)
+    // updating relation metadata. This is in case of auto detect high cardinality
+    relation.carbonRelation.metaData =
+      CarbonSparkUtil.createSparkMeta(relation.carbonRelation.tableMeta.carbonTable)
+    load
+  }
+}
 case class LoadTable(
     databaseNameOp: Option[String],
     tableName: String,

@@ -55,6 +55,7 @@ case class TableModel(
 case class Field(column: String, var dataType: Option[String], name: Option[String],
     children: Option[List[Field]], parent: String = null,
     storeType: Option[String] = Some("columnar"),
+    var schemaOrdinal: Int = -1,
     var precision: Int = 0, var scale: Int = 0)
 
 case class ColumnProperty(key: String, value: String)
@@ -126,7 +127,8 @@ class TableNewProcessor(cm: TableModel, sqlContext: SQLContext) {
         val columnSchema: ColumnSchema = getColumnSchema(
           DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
           field.name.getOrElse(field.column), index,
-          isCol = true, encoders, isDimensionCol = true, rowGroup, field.precision, field.scale)
+          isCol = true, encoders, isDimensionCol = true, rowGroup, field.precision, field.scale,
+          field.schemaOrdinal)
         allColumns ++= Seq(columnSchema)
         index = index + 1
         rowGroup = rowGroup + 1
@@ -141,7 +143,7 @@ class TableNewProcessor(cm: TableModel, sqlContext: SQLContext) {
 
   def getColumnSchema(dataType: DataType, colName: String, index: Integer, isCol: Boolean,
       encoders: java.util.List[Encoding], isDimensionCol: Boolean,
-      colGroup: Integer, precision: Integer, scale: Integer): ColumnSchema = {
+      colGroup: Integer, precision: Integer, scale: Integer, schemaOrdinal: Int): ColumnSchema = {
     val columnSchema = new ColumnSchema()
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
@@ -169,6 +171,7 @@ class TableNewProcessor(cm: TableModel, sqlContext: SQLContext) {
     columnSchema.setColumnGroup(colGroup)
     columnSchema.setPrecision(precision)
     columnSchema.setScale(scale)
+    columnSchema.setSchemaOrdinal(schemaOrdinal)
     // TODO: Need to fill RowGroupID, converted type
     // & Number of Children after DDL finalization
     columnSchema
@@ -191,7 +194,8 @@ class TableNewProcessor(cm: TableModel, sqlContext: SQLContext) {
         isDimensionCol = true,
         -1,
         field.precision,
-        field.scale)
+        field.scale,
+        field.schemaOrdinal)
       allColumns ++= Seq(columnSchema)
       index = index + 1
       if (field.children.isDefined && field.children.get != null) {
@@ -211,7 +215,8 @@ class TableNewProcessor(cm: TableModel, sqlContext: SQLContext) {
         isDimensionCol = false,
         -1,
         field.precision,
-        field.scale)
+        field.scale,
+        field.schemaOrdinal)
       val measureCol = columnSchema
 
       allColumns ++= Seq(measureCol)
@@ -274,7 +279,7 @@ class TableNewProcessor(cm: TableModel, sqlContext: SQLContext) {
         true,
         encoders,
         false,
-        -1, 0, 0)
+        -1, 0, 0, schemaOrdinal = -1)
       columnSchema.setInvisible(true)
       val measureColumn = columnSchema
       measures += measureColumn

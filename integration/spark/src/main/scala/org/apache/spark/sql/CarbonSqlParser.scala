@@ -505,6 +505,9 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
       tableProperties: Map[String, String]): TableModel
   = {
 
+    fields.zipWithIndex.foreach { x =>
+      x._1.schemaOrdinal = x._2
+    }
     val (dims: Seq[Field], noDictionaryDims: Seq[String]) = extractDimColsAndNoDictionaryFields(
       fields, tableProperties)
     if (dims.isEmpty) {
@@ -1154,36 +1157,36 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
     val dataType = field.dataType.getOrElse("NIL")
     dataType match {
       case "string" => Field(field.column, Some("String"), field.name, Some(null), field.parent,
-        field.storeType
+        field.storeType, field.schemaOrdinal
       )
       case "integer" | "int" => Field(field.column, Some("Integer"), field.name, Some(null),
-        field.parent, field.storeType
+        field.parent, field.storeType, field.schemaOrdinal
       )
       case "long" => Field(field.column, Some("Long"), field.name, Some(null), field.parent,
-        field.storeType
+        field.storeType, field.schemaOrdinal
       )
       case "double" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
-        field.storeType
+        field.storeType, field.schemaOrdinal
       )
       case "timestamp" => Field(field.column, Some("Timestamp"), field.name, Some(null),
-        field.parent, field.storeType
+        field.parent, field.storeType, field.schemaOrdinal
       )
       case "numeric" => Field(field.column, Some("Numeric"), field.name, Some(null), field.parent,
-        field.storeType
+        field.storeType, field.schemaOrdinal
       )
       case "array" => Field(field.column, Some("Array"), field.name,
         field.children.map(f => f.map(normalizeType(_))),
-        field.parent, field.storeType
+        field.parent, field.storeType, field.schemaOrdinal
       )
       case "struct" => Field(field.column, Some("Struct"), field.name,
         field.children.map(f => f.map(normalizeType(_))),
-        field.parent, field.storeType
+        field.parent, field.storeType, field.schemaOrdinal
       )
       case "bigint" => Field(field.column, Some("BigInt"), field.name, Some(null), field.parent,
-        field.storeType
+        field.storeType, field.schemaOrdinal
       )
       case "decimal" => Field(field.column, Some("Decimal"), field.name, Some(null), field.parent,
-        field.storeType, field.precision, field.scale
+        field.storeType, field.schemaOrdinal, field.precision, field.scale
       )
       // checking if the nested data type contains the child type as decimal(10,0),
       // if it is present then extracting the precision and scale. resetting the data type
@@ -1195,7 +1198,7 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
           field.name,
           Some(null),
           field.parent,
-          field.storeType, precision,
+          field.storeType, field.schemaOrdinal, precision,
           scale
         )
       case _ =>
@@ -1207,10 +1210,10 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
     field.dataType.getOrElse("NIL") match {
       case "Array" => Field(field.column, Some("Array"), field.name,
         field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent,
-        field.storeType)
+        field.storeType, field.schemaOrdinal)
       case "Struct" => Field(field.column, Some("Struct"), field.name,
         field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent,
-        field.storeType)
+        field.storeType, field.schemaOrdinal)
       case _ => field
     }
   }
@@ -1243,7 +1246,7 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
       case "Decimal" => Field(parentName + "." + field.column, Some("Decimal"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName,
-        field.storeType, field.precision, field.scale)
+        field.storeType, field.schemaOrdinal, field.precision, field.scale)
       case _ => field
     }
   }
