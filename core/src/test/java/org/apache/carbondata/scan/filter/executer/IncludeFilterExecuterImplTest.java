@@ -58,14 +58,12 @@ import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.scan.filter.DimColumnFilterInfo;
-import org.apache.carbondata.scan.filter.FilterUtil;
 import org.apache.carbondata.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 
 import mockit.Mock;
 import mockit.MockUp;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -74,11 +72,11 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class IncludeFilterExecuterImplTest {
 
-  SegmentProperties segmentProperties;
-  ColumnSchema columnSchema1, columnSchema2, columnSchema3, columnSchema4;
-  CarbonDimension carbonDimension;
-  DimColumnFilterInfo dimColumnFilterInfo;
-  DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo;
+  private SegmentProperties segmentProperties;
+  private ColumnSchema columnSchema1, columnSchema2, columnSchema3, columnSchema4;
+  private CarbonDimension carbonDimension;
+  private DimColumnFilterInfo dimColumnFilterInfo;
+  private DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo;
   private IncludeFilterExecuterImpl includeFilterExecuter;
 
   @Before
@@ -600,7 +598,7 @@ public class IncludeFilterExecuterImplTest {
     return dataChunk;
   }
 
-  List<DataFileFooter> getDataFileFooterList() {
+  private List<DataFileFooter> getDataFileFooterList() {
     DataFileFooter fileFooter = new DataFileFooter();
 
     fileFooter.setVersionId(1);
