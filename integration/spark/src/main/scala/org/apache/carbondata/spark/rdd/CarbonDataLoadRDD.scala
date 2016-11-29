@@ -554,7 +554,7 @@ class DataFrameLoaderRDD[K, V](
 
 class PartitionIterator(partitionIter: Iterator[DataLoadPartitionWrap[Row]],
     carbonLoadModel: CarbonLoadModel,
-    context: TaskContext) extends  JavaRddIterator[JavaRddIterator[Array[String]]] {
+    context: TaskContext) extends JavaRddIterator[JavaRddIterator[Array[String]]] {
   def hasNext: Boolean = partitionIter.hasNext
   def next: JavaRddIterator[Array[String]] = {
     val value = partitionIter.next

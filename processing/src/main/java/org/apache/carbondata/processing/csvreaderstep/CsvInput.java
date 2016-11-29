@@ -421,7 +421,7 @@ public class CsvInput extends BaseStep implements StepInterface {
       }
       return null;
     }
-  };
+  }
 
   private void scanRddIterator(int numberOfNodes) throws RuntimeException {
     JavaRddIterator<JavaRddIterator<String[]>> iter = RddInputUtils.getAndRemove(rddIteratorKey);
