@@ -63,7 +63,7 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
    */
   private def loadTempCSV(options: CarbonOption, cc: CarbonContext): Unit = {
     // temporary solution: write to csv file, then load the csv into carbon
-    val storePath = CarbonEnv.getInstance(cc).carbonCatalog.storePath
+    val storePath = CarbonEnv.get.carbonMetastore.storePath
     val tempCSVFolder = new StringBuilder(storePath).append(CarbonCommonConstants.FILE_SEPARATOR)
       .append("tempCSV")
       .append(CarbonCommonConstants.UNDERSCORE).append(options.dbName)

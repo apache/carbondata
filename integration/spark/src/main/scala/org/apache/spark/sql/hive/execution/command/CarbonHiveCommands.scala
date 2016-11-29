@@ -26,7 +26,7 @@ private[hive] case class CreateDatabaseCommand(dbName: String,
     command: HiveNativeCommand) extends RunnableCommand {
   def run(sqlContext: SQLContext): Seq[Row] = {
     val rows = command.run(sqlContext)
-    CarbonEnv.getInstance(sqlContext).carbonCatalog.createDatabaseDirectory(dbName)
+    CarbonEnv.get.carbonMetastore.createDatabaseDirectory(dbName)
     rows
   }
 }
@@ -35,7 +35,7 @@ private[hive] case class DropDatabaseCommand(dbName: String,
     command: HiveNativeCommand) extends RunnableCommand {
   def run(sqlContext: SQLContext): Seq[Row] = {
     val rows = command.run(sqlContext)
-    CarbonEnv.getInstance(sqlContext).carbonCatalog.dropDatabaseDirectory(dbName)
+    CarbonEnv.get.carbonMetastore.dropDatabaseDirectory(dbName)
     rows
   }
 }
@@ -43,13 +43,13 @@ private[hive] case class DropDatabaseCommand(dbName: String,
 private[hive] case class DropDatabaseCascadeCommand(dbName: String,
     command: HiveNativeCommand) extends RunnableCommand {
   def run(sqlContext: SQLContext): Seq[Row] = {
-    val tablesInDB = CarbonEnv.getInstance(sqlContext).carbonCatalog
+    val tablesInDB = CarbonEnv.get.carbonMetastore
         .getTables(Some(dbName))(sqlContext).map(x => x._1)
     val rows = command.run(sqlContext)
     tablesInDB.foreach{tableName =>
       DropTableCommand(true, Some(dbName), tableName).run(sqlContext)
     }
-    CarbonEnv.getInstance(sqlContext).carbonCatalog.dropDatabaseDirectory(dbName)
+    CarbonEnv.get.carbonMetastore.dropDatabaseDirectory(dbName)
     rows
   }
 }

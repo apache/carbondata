@@ -20,7 +20,6 @@ package org.apache.spark.sql.hive
 import java.util
 
 import scala.collection.JavaConverters._
-
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -28,16 +27,16 @@ import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.catalyst.expressions.{AttributeSet, _}
 import org.apache.spark.sql.catalyst.planning.{PhysicalOperation, QueryPlanner}
-import org.apache.spark.sql.catalyst.plans.logical.{Filter => LogicalFilter, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Filter => LogicalFilter}
 import org.apache.spark.sql.execution.{ExecutedCommand, Filter, Project, SparkPlan}
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.datasources.{DescribeCommand => LogicalDescribeCommand, LogicalRelation}
+import org.apache.spark.sql.execution.datasources.{LogicalRelation, DescribeCommand => LogicalDescribeCommand}
 import org.apache.spark.sql.hive.execution.{DropTable, HiveNativeCommand}
 import org.apache.spark.sql.hive.execution.command._
-import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
+import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types.IntegerType
-
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
@@ -235,15 +234,15 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
   object DDLStrategies extends Strategy {
     def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
       case DropTable(tableName, ifNotExists)
-        if (CarbonEnv.getInstance(sqlContext).carbonCatalog
-            .isTablePathExists(toTableIdentifier(tableName.toLowerCase))(sqlContext)) =>
+        if CarbonEnv.get.carbonMetastore
+            .isTablePathExists(toTableIdentifier(tableName.toLowerCase))(sqlContext) =>
         val identifier = toTableIdentifier(tableName.toLowerCase)
         ExecutedCommand(DropTableCommand(ifNotExists, identifier.database, identifier.table)) :: Nil
       case ShowLoadsCommand(databaseName, table, limit) =>
         ExecutedCommand(ShowLoads(databaseName, table, limit, plan.output)) :: Nil
       case LoadTable(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
       options, isOverwriteExist, inputSqlString, dataFrame) =>
-        val isCarbonTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
+        val isCarbonTable = CarbonEnv.get.carbonMetastore
             .tableExists(TableIdentifier(tableName, databaseNameOp))(sqlContext)
         if (isCarbonTable || options.nonEmpty) {
           ExecutedCommand(LoadTable(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
@@ -252,7 +251,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           ExecutedCommand(HiveNativeCommand(inputSqlString)) :: Nil
         }
       case alterTable@AlterTableCompaction(altertablemodel) =>
-        val isCarbonTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
+        val isCarbonTable = CarbonEnv.get.carbonMetastore
             .tableExists(TableIdentifier(altertablemodel.tableName,
                  altertablemodel.dbName))(sqlContext)
         if (isCarbonTable) {
@@ -286,7 +285,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           case e: Exception => ExecutedCommand(d) :: Nil
         }
       case DescribeFormattedCommand(sql, tblIdentifier) =>
-        val isTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
+        val isTable = CarbonEnv.get.carbonMetastore
             .tableExists(tblIdentifier)(sqlContext)
         if (isTable) {
           val describe =

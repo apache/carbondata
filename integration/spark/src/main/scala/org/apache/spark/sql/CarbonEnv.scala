@@ -19,49 +19,34 @@ package org.apache.spark.sql
 
 import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
-import org.apache.spark.sql.hive.{CarbonMetastoreCatalog, HiveContext}
+import org.apache.spark.sql.hive.CarbonMetastore
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 
 /**
  * Carbon Environment for unified context
  */
-case class CarbonEnv(hiveContext: HiveContext, carbonCatalog: CarbonMetastoreCatalog)
+case class CarbonEnv(carbonMetastore: CarbonMetastore)
 
 object CarbonEnv {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-  var carbonEnv: CarbonEnv = _
 
-  def getInstance(sqlContext: SQLContext): CarbonEnv = {
-    if (carbonEnv == null) {
-      carbonEnv =
-        CarbonEnv(sqlContext.asInstanceOf[CarbonContext],
-          sqlContext.asInstanceOf[CarbonContext].catalog)
+  @volatile private var carbonEnv: CarbonEnv  = _
+
+  var initialized = false
+
+  def init(sqlContext: SQLContext): Unit = {
+    if (!initialized) {
+      val cc = sqlContext.asInstanceOf[CarbonContext]
+      val catalog = new CarbonMetastore(cc, cc.storePath, cc.hiveClientInterface, "")
+      carbonEnv = CarbonEnv(catalog)
+      initialized = true
     }
-    carbonEnv
   }
 
-  /**
-   *
-   * Requesting the extra executors other than the existing ones.
-   *
-   * @param sc
-   * @param numExecutors
-   * @return
-   */
-  final def ensureExecutors(sc: SparkContext, numExecutors: Int): Boolean = {
-    sc.schedulerBackend match {
-      case b: CoarseGrainedSchedulerBackend =>
-        val requiredExecutors = numExecutors - b.numExistingExecutors
-        LOGGER.info(s"number of executors is =$numExecutors existing executors are =" +
-                s"${ b.numExistingExecutors }")
-        if (requiredExecutors > 0) {
-          b.requestExecutors(requiredExecutors)
-        }
-        true
-      case _ =>
-        false
-    }
+  def get: CarbonEnv = {
+    if (initialized) carbonEnv
+    else throw new RuntimeException("CarbonEnv not initialized")
   }
 }
 

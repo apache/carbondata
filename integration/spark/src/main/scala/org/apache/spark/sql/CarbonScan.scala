@@ -21,14 +21,12 @@ import java.util.ArrayList
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
-
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.LeafNode
-import org.apache.spark.sql.hive.CarbonMetastoreCatalog
-
+import org.apache.spark.sql.hive.{CarbonMetastore, CarbonMetastore$}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.scan.model._
@@ -43,7 +41,7 @@ case class CarbonScan(
   val carbonTable = relationRaw.metaData.carbonTable
   val selectedDims = scala.collection.mutable.MutableList[QueryDimension]()
   val selectedMsrs = scala.collection.mutable.MutableList[QueryMeasure]()
-  @transient val carbonCatalog = ocRaw.catalog.asInstanceOf[CarbonMetastoreCatalog]
+  @transient val carbonCatalog = ocRaw.catalog.asInstanceOf[CarbonMetastore]
 
   val attributesNeedToDecode = new java.util.LinkedHashSet[AttributeReference]()
   val unprocessedExprs = new ArrayBuffer[Expression]()

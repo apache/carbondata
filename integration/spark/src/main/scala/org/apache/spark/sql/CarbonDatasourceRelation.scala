@@ -21,20 +21,18 @@ import java.util.LinkedHashSet
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
-
 import org.apache.hadoop.fs.Path
-import org.apache.spark._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.hive.{CarbonMetaData, CarbonMetastoreTypes, TableMeta}
+import org.apache.spark.sql.hive.{CarbonMetaData, CarbonMetastoreTypes}
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.{DataType, StructType}
-
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import org.apache.carbondata.integration.spark.merger.TableMeta
 import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.spark.{CarbonOption, _}
 
@@ -135,8 +133,8 @@ private[sql] case class CarbonDatasourceRelation(
     extends BaseRelation with Serializable {
 
   lazy val carbonRelation: CarbonRelation = {
-    CarbonEnv.getInstance(context)
-        .carbonCatalog.lookupRelation1(tableIdentifier, None)(sqlContext)
+    CarbonEnv.get
+        .carbonMetastore.lookupRelation1(tableIdentifier, None)(sqlContext)
         .asInstanceOf[CarbonRelation]
   }
 

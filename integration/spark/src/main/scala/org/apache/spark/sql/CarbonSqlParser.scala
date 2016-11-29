@@ -428,7 +428,7 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
             throw new MalformedCarbonCommandException("Invalid table properties")
           }
           // prepare table model of the collected tokens
-          val tableModel: tableModel = prepareTableModel(ifNotExistPresent,
+          val tableModel: TableModel = prepareTableModel(ifNotExistPresent,
             dbName,
             tableName,
             fields,
@@ -502,7 +502,7 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
   protected def prepareTableModel(ifNotExistPresent: Boolean, dbName: Option[String]
       , tableName: String, fields: Seq[Field],
       partitionCols: Seq[PartitionerField],
-      tableProperties: Map[String, String]): tableModel
+      tableProperties: Map[String, String]): TableModel
   = {
 
     val (dims: Seq[Field], noDictionaryDims: Seq[String]) = extractDimColsAndNoDictionaryFields(
@@ -530,11 +530,10 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
     // get no inverted index columns from table properties.
     val noInvertedIdxCols = extractNoInvertedIndexColumns(fields, tableProperties)
 
-    val partitioner: Option[Partitioner] = getPartitionerObject(partitionCols, tableProperties)
     // validate the tableBlockSize from table properties
     CommonUtil.validateTableBlockSize(tableProperties)
 
-    tableModel(
+    TableModel(
       ifNotExistPresent,
       dbName.getOrElse(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
       dbName,
@@ -544,7 +543,6 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
       msrs.map(f => normalizeType(f)),
       Option(noDictionaryDims),
       Option(noInvertedIdxCols),
-      partitioner,
       groupCols,
       Some(colProps))
   }
