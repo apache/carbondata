@@ -17,11 +17,12 @@
 
 package org.apache.carbondata.processing.newflow.sort.unsafe.memory;
 
-import javax.annotation.concurrent.GuardedBy;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+
+import javax.annotation.concurrent.GuardedBy;
 
 import org.apache.carbondata.processing.newflow.sort.unsafe.CarbonUnsafe;
 

@@ -38,16 +38,15 @@ import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 import org.apache.carbondata.processing.newflow.sort.Sorter;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeCarbonRowPage;
+import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeInMemoryIntermediateFileMerger;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeSingleThreadFinalSortFilesMerger;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeSortDataRows;
-import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeInMemoryIntermediateFileMerger;
+
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
-import org.apache.carbondata.processing.sortandgroupby.sortdata.SortDataRows;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortIntermediateFileMerger;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
-import org.apache.spark.TaskContext;
 
 /**
  * It parallely reads data from array of iterates and do merge sort.
@@ -58,6 +57,8 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(UnsafeParallelReadMergeSorterImpl.class.getName());
+
+  private static final Object taskContext = CarbonDataProcessorUtil.fetchTaskContext();
 
   private SortParameters sortParameters;
 
@@ -70,8 +71,6 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
   private UnsafeSingleThreadFinalSortFilesMerger finalMerger;
 
   private DataField[] inputDataFields;
-
-  private final static Object taskContext = CarbonDataProcessorUtil.fetchTaskContext();
 
   public UnsafeParallelReadMergeSorterImpl(DataField[] inputDataFields) {
     this.inputDataFields = inputDataFields;
@@ -182,7 +181,7 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
   }
 
   /**
-   * This thread iterates the iterator and adds the rows to @{@link SortDataRows}
+   * This thread iterates the iterator and adds the rows to @{@link UnsafeSortDataRows}
    */
   private static class SortIteratorThread implements Callable<Void> {
 

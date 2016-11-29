@@ -22,7 +22,6 @@ import org.apache.carbondata.processing.newflow.parser.impl.RowParserImpl;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
-import org.apache.spark.TaskContext;
 
 /**
  * It reads data from record reader and sends data to next step.

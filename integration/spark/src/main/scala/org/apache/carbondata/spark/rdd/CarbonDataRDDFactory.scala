@@ -60,9 +60,9 @@ import org.apache.carbondata.spark.util.{CarbonQueryUtil, LoadMetadataUtil}
 
 
 /**
-  * This is the factory class which can create different RDD depends on user needs.
-  *
-  */
+* This is the factory class which can create different RDD depends on user needs.
+*
+*/
 object CarbonDataRDDFactory {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -205,7 +205,9 @@ object CarbonDataRDDFactory {
 
   def alterTableForCompaction(sqlContext: SQLContext,
                               alterTableModel: AlterTableModel,
-                              carbonLoadModel: CarbonLoadModel, partitioner: Partitioner, storePath: String,
+                              carbonLoadModel: CarbonLoadModel,
+                              partitioner: Partitioner,
+                              storePath: String,
                               kettleHomePath: String, storeLocation: String): Unit = {
     var compactionSize: Long = 0
     var compactionType: CompactionType = CompactionType.MINOR_COMPACTION
@@ -307,7 +309,8 @@ object CarbonDataRDDFactory {
         LockUsage.SYSTEMLEVEL_COMPACTION_LOCK
       )
     if (lock.lockWithRetries()) {
-      LOGGER.info(s"Acquired the compaction lock for table ${carbonLoadModel.getDatabaseName}" +
+      LOGGER.info(s"Acquired the compaction lock for table" +
+        s" ${carbonLoadModel.getDatabaseName}" +
         s".${carbonLoadModel.getTableName}")
       try {
         startCompactionThreads(sqlContext,
@@ -323,7 +326,8 @@ object CarbonDataRDDFactory {
         case e: Exception =>
           LOGGER.error(s"Exception in start compaction thread. ${e.getMessage}")
           lock.unlock()
-          // if the compaction is a blocking call then only need to throw the exception.
+          // if the compaction is a blocking call then only
+          // need to throw the exception.
           if (compactionModel.isDDLTrigger) {
             throw e
           }
@@ -426,10 +430,10 @@ object CarbonDataRDDFactory {
   }
 
   /**
-    * This will submit the loads to be merged into the executor.
-    *
-    * @param futureList
-    */
+  * This will submit the loads to be merged into the executor.
+  *
+  * @param futureList
+  */
   def scanSegmentsAndSubmitJob(futureList: util.List[Future[Void]],
                                loadsToMerge: util
                                .List[LoadMetadataDetails],

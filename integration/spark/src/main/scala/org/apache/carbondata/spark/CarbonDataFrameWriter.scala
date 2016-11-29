@@ -56,12 +56,12 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
   }
 
   /**
-    * Firstly, saving DataFrame to CSV files
-    * Secondly, load CSV files
-    *
-    * @param options
-    * @param cc
-    */
+  * Firstly, saving DataFrame to CSV files
+  * Secondly, load CSV files
+  *
+  * @param options
+  * @param cc
+  */
   private def loadTempCSV(options: CarbonOption, cc: CarbonContext): Unit = {
     // temporary solution: write to csv file, then load the csv into carbon
     val storePath = CarbonEnv.getInstance(cc).carbonCatalog.storePath
@@ -118,11 +118,11 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
   }
 
   /**
-    * Loading DataFrame directly without saving DataFrame to CSV files.
-    *
-    * @param options
-    * @param cc
-    */
+  * Loading DataFrame directly without saving DataFrame to CSV files.
+  *
+  * @param options
+  * @param cc
+  */
   private def loadDataFrame(options: CarbonOption, cc: CarbonContext): Unit = {
     val header = dataFrame.columns.mkString(",")
     LoadTable(

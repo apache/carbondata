@@ -21,16 +21,13 @@ import java.text.SimpleDateFormat
 import java.util
 import java.util.{Date, UUID}
 
-import org.apache.carbondata.processing.csvreaderstep.RddInputUtils
-import org.apache.spark.annotation.DeveloperApi
-import org.apache.spark.sql.Row
-
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.spark.mapred.{CarbonHadoopMapReduceUtil, CarbonSerializableConfiguration}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.execution.command.Partitioner
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -44,14 +41,11 @@ import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.DataLoadExecutor
 import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException
 import org.apache.carbondata.processing.newflow.iterator.InputIterator
-import org.apache.carbondata.spark.DataLoadResult
-import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.CarbonQueryUtil
+import org.apache.carbondata.spark.DataLoadResult
 
-/**
-  * It loads the data to carbon using @AbstractDataLoadProcessorStep
-  */
+// It loads the data to carbon using @AbstractDataLoadProcessorStep
 class NewCarbonDataLoadRDD[K, V](
                                   sc: SparkContext,
                                   result: DataLoadResult[K, V],
@@ -213,10 +207,10 @@ class NewCarbonDataLoadRDD[K, V](
       }
 
       /**
-        * generate blocks id
-        *
-        * @return
-        */
+      * generate blocks id
+      *
+      * @return
+      */
       def gernerateBlocksID: String = {
         if (isTableSplitPartition) {
           carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" +
@@ -307,9 +301,12 @@ class NewDataFrameLoaderRDD[K, V](
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
 
-        val iterator = new NewRddIterator(firstParent[Row].iterator(theSplit, context), carbonLoadModel)
+        val iterator = new NewRddIterator(
+          firstParent[Row].iterator(theSplit, context),
+          carbonLoadModel)
 
-        class InputIteratorImpl(iterator: util.Iterator[Array[AnyRef]]) extends InputIterator[Array[AnyRef]] {
+        class InputIteratorImpl(iterator: util.Iterator[Array[AnyRef]])
+          extends InputIterator[Array[AnyRef]] {
           override def initialize(): Unit = {}
 
           override def close(): Unit = {}
@@ -324,7 +321,8 @@ class NewDataFrameLoaderRDD[K, V](
         }
 
 
-        val recordReaders: Array[InputIterator[Array[AnyRef]]] = Array(new InputIteratorImpl(iterator))
+        val recordReaders: Array[InputIterator[Array[AnyRef]]] =
+          Array(new InputIteratorImpl(iterator))
 
         val loader = new SparkPartitionLoader(model,
           theSplit.index,

@@ -43,7 +43,6 @@ import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 import org.apache.carbondata.processing.store.SingleThreadFinalSortFilesMerger;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
-import org.apache.spark.TaskContext;
 
 /**
  * It parallely reads data from array of iterates and do merge sort.
@@ -55,6 +54,8 @@ public class ParallelReadMergeSorterImpl implements Sorter {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(ParallelReadMergeSorterImpl.class.getName());
 
+  private static final Object taskContext = CarbonDataProcessorUtil.fetchTaskContext();
+
   private SortParameters sortParameters;
 
   private SortIntermediateFileMerger intermediateFileMerger;
@@ -64,8 +65,6 @@ public class ParallelReadMergeSorterImpl implements Sorter {
   private SingleThreadFinalSortFilesMerger finalMerger;
 
   private DataField[] inputDataFields;
-
-  private final static Object taskContext = CarbonDataProcessorUtil.fetchTaskContext();
 
   public ParallelReadMergeSorterImpl(DataField[] inputDataFields) {
     this.inputDataFields = inputDataFields;

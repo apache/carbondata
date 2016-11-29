@@ -27,7 +27,7 @@ import java.util.PriorityQueue;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
+
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.RemoveDictionaryUtil;
@@ -98,7 +98,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
   /**
    * This method will be used to merger the merged files
    *
-   * @throws CarbonSortKeyAndGroupByException
+   * @throws CarbonDataWriterException
    */
   public void startFinalMerge(UnsafeCarbonRowPage[] rowPages) throws CarbonDataWriterException {
     startSorting(rowPages);
@@ -110,7 +110,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
    * record holder heap and then it will read first record from each file and
    * initialize the heap
    *
-   * @throws CarbonSortKeyAndGroupByException
+   * @throws CarbonDataWriterException
    */
   private void startSorting(UnsafeCarbonRowPage[] rowPages) throws CarbonDataWriterException {
     try {
