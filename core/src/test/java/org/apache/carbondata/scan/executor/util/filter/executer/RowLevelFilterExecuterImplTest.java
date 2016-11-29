@@ -90,7 +90,6 @@ public class RowLevelFilterExecuterImplTest {
     double[] doubleArr = { 1, 2, 3, 4, 5, 6 };
 
     DimColumnFilterInfo dimColumnFilterInfo = new DimColumnFilterInfo();
-    DimColumnFilterInfo dimColumnFilterInfo1 = new DimColumnFilterInfo();
 
     List<Encoding> encodingList = new ArrayList<>();
     encodingList.add(Encoding.INVERTED_INDEX);
@@ -101,8 +100,6 @@ public class RowLevelFilterExecuterImplTest {
 
     ColumnSchema columnSchema = new ColumnSchema();
     columnSchema.setEncodingList(encodingList);
-    ColumnSchema columnSchema1 = new ColumnSchema();
-    columnSchema1.setEncodingList(encodingList);
 
     IndexKey indexKey = new IndexKey(dictKeys, noDictKeys);
 
@@ -111,12 +108,6 @@ public class RowLevelFilterExecuterImplTest {
     carbonDimension.hasEncoding(Encoding.BIT_PACKED);
     carbonDimension.hasEncoding(Encoding.DELTA);
     carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY);
-
-    CarbonDimension carbonDimension1 = new CarbonDimension(columnSchema1, 2, 2, 2, 2);
-    carbonDimension1.hasEncoding(Encoding.DICTIONARY);
-    carbonDimension1.hasEncoding(Encoding.BIT_PACKED);
-    carbonDimension1.hasEncoding(Encoding.DELTA);
-    carbonDimension1.hasEncoding(Encoding.DIRECT_DICTIONARY);
 
     DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo = new DimColumnResolvedFilterInfo();
     dimColumnResolvedFilterInfo.setColumnIndex(1);
@@ -130,19 +121,6 @@ public class RowLevelFilterExecuterImplTest {
     dimColumnResolvedFilterInfo.setEndIndexKey(indexKey);
     dimColumnResolvedFilterInfo.setEndIndexKey(indexKey);
     dimColumnResolvedFilterInfo.setDimension(carbonDimension);
-
-    DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo1 = new DimColumnResolvedFilterInfo();
-    dimColumnResolvedFilterInfo1.setColumnIndex(2);
-    dimColumnResolvedFilterInfo1.setFilterValues(dimColumnFilterInfo1);
-    dimColumnResolvedFilterInfo1.setDimension(carbonDimension1);
-    dimColumnResolvedFilterInfo1.setDefaultValue("default");
-    dimColumnResolvedFilterInfo1.setDimensionExistsInCurrentSilce(true);
-    dimColumnResolvedFilterInfo1.setNeedCompressedData(true);
-    dimColumnResolvedFilterInfo1.setRowIndex(5);
-    dimColumnResolvedFilterInfo1.setRsSurrogates(2);
-    dimColumnResolvedFilterInfo1.setEndIndexKey(indexKey);
-    dimColumnResolvedFilterInfo1.setStarIndexKey(indexKey);
-    dimColumnResolvedFilterInfo1.setDimension(carbonDimension1);
 
     final Map<Integer, Integer> dimensionOrdinalMap = new HashMap<>();
     dimensionOrdinalMap.put(new Integer("1"), new Integer("2"));
@@ -186,7 +164,7 @@ public class RowLevelFilterExecuterImplTest {
 
     List<DimColumnResolvedFilterInfo> dimColumnResolvedFilterInfoList = new ArrayList<>();
     dimColumnResolvedFilterInfoList.add(dimColumnResolvedFilterInfo);
-    dimColumnResolvedFilterInfoList.add(dimColumnResolvedFilterInfo1);
+    dimColumnResolvedFilterInfoList.add(dimColumnResolvedFilterInfo);
     dimColumnResolvedFilterInfoList.add(dimColumnResolvedFilterInfo);
 
     MeasureColumnResolvedFilterInfo measureColumnResolvedFilterInfo =
@@ -202,22 +180,9 @@ public class RowLevelFilterExecuterImplTest {
     measureColumnResolvedFilterInfo.setMeasureExistsInCurrentSlice(true);
     measureColumnResolvedFilterInfo.setRowIndex(5);
 
-    MeasureColumnResolvedFilterInfo measureColumnResolvedFilterInfo1 =
-        new MeasureColumnResolvedFilterInfo();
-    measureColumnResolvedFilterInfo1.setColumnIndex(5);
-    measureColumnResolvedFilterInfo1.setType(DataType.DECIMAL);
-    measureColumnResolvedFilterInfo1.setType(DataType.LONG);
-    measureColumnResolvedFilterInfo1.setType(DataType.INT);
-    measureColumnResolvedFilterInfo1.setType(DataType.DOUBLE);
-    measureColumnResolvedFilterInfo1.setDefaultValue(6);
-    measureColumnResolvedFilterInfo1.setAggregator("aggregator");
-    measureColumnResolvedFilterInfo1.setUniqueValue(new Integer("5"));
-    measureColumnResolvedFilterInfo1.setMeasureExistsInCurrentSlice(true);
-    measureColumnResolvedFilterInfo1.setRowIndex(5);
-
     List<MeasureColumnResolvedFilterInfo> measureColumnResolvedFilterInfoList = new ArrayList<>();
     measureColumnResolvedFilterInfoList.add(measureColumnResolvedFilterInfo);
-    measureColumnResolvedFilterInfoList.add(measureColumnResolvedFilterInfo1);
+    measureColumnResolvedFilterInfoList.add(measureColumnResolvedFilterInfo);
     measureColumnResolvedFilterInfoList.add(measureColumnResolvedFilterInfo);
 
     new RowImpl();
@@ -247,8 +212,6 @@ public class RowLevelFilterExecuterImplTest {
 
     DimensionChunkAttributes dimensionChunkAttributes = new DimensionChunkAttributes();
     dimensionChunkAttributes.setEachRowSize(6);
-    ColumnGroupDimensionDataChunk columnGroupDimensionDataChunk =
-        new ColumnGroupDimensionDataChunk(bytArr, dimensionChunkAttributes);
 
     new MockUp<ColumnGroupDimensionDataChunk>() {
       @SuppressWarnings("unused") @Mock public byte[] getChunkData(int rowId) {
@@ -351,7 +314,7 @@ public class RowLevelFilterExecuterImplTest {
     assertFalse(result.get(1));
   }
 
-  @Test public void testisScanRequired() {
+  @Test public void testIsScanRequired() {
     byte[][] maxValue = { { 32, 22 }, { 12, 13 }, { 13, 14 }, { 14, 15 }, { 15, 16 }, { 61, 71 } };
     byte[][] minValue = { { 1, 2 }, { 2, 3 }, { 3, 4 }, { 4, 5 }, { 5, 6 }, { 6, 7 } };
     BitSet expected = new BitSet();
