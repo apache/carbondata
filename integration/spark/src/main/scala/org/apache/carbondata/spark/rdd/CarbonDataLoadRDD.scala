@@ -28,9 +28,12 @@ import scala.util.Random
 
 import org.apache.spark.{Partition, SerializableWritable, SparkContext, SparkEnv, TaskContext}
 import org.apache.spark.annotation.DeveloperApi
+import org.apache.spark.rdd.DataLoadCoalescedRDD
+import org.apache.spark.rdd.DataLoadPartitionWrap
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
 import org.apache.spark.sql.Row
+import org.apache.spark.util.TaskContextUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
@@ -38,6 +41,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
 import org.apache.carbondata.processing.constants.DataProcessorConstants
+import org.apache.carbondata.processing.csvreaderstep.JavaRddIterator
 import org.apache.carbondata.processing.csvreaderstep.RddInputUtils
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator
@@ -46,6 +50,7 @@ import org.apache.carbondata.spark.DataLoadResult
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.CarbonQueryUtil
+import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
  * This partition class use to split by TableSplit
@@ -125,6 +130,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
     try {
       CarbonLoaderUtil.executeGraph(model, storeLocation, storePath,
         kettleHomePath)
+      loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
     } catch {
       case e: DataLoadingException => if (e.getErrorCode ==
                                           DataProcessorConstants.BAD_REC_FOUND) {
@@ -235,14 +241,11 @@ class DataFileLoaderRDD[K, V](
                                theSplit.index
       try {
         loadMetadataDetails.setPartitionCount(partitionID)
-        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
-
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         setModelAndBlocksInfo()
         val loader = new SparkPartitionLoader(model, theSplit.index, storePath,
           kettleHomePath, loadCount, loadMetadataDetails)
-        loader.initialize()
-        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
+        loader.initialize
         if (model.isRetentionRequest) {
           recreateAggregationTableForRetention
         } else if (model.isAggLoadRequest) {
@@ -495,7 +498,7 @@ class DataFrameLoaderRDD[K, V](
     loadCount: Integer,
     tableCreationTime: Long,
     schemaLastUpdatedTime: Long,
-    prev: RDD[Row]) extends RDD[(K, V)](prev) {
+    prev: DataLoadCoalescedRDD[Row]) extends RDD[(K, V)](prev) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
@@ -509,18 +512,19 @@ class DataFrameLoaderRDD[K, V](
                                theSplit.index
       try {
         loadMetadataDetails.setPartitionCount(partitionID)
-        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
         carbonLoadModel.setPartitionId(partitionID)
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
         val loader = new SparkPartitionLoader(carbonLoadModel, theSplit.index, storePath,
           kettleHomePath, loadCount, loadMetadataDetails)
-        loader.initialize()
-        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
+        loader.initialize
         val rddIteratorKey = UUID.randomUUID().toString
         try {
           RddInputUtils.put(rddIteratorKey,
-            new RddIterator(firstParent[Row].iterator(theSplit, context), carbonLoadModel))
+              new PartitionIterator(
+                  firstParent[DataLoadPartitionWrap[Row]].iterator(theSplit, context),
+                  carbonLoadModel,
+                  context))
           carbonLoadModel.setRddIteratorKey(rddIteratorKey)
           loader.run()
         } finally {
@@ -548,77 +552,53 @@ class DataFrameLoaderRDD[K, V](
   override protected def getPartitions: Array[Partition] = firstParent[Row].partitions
 }
 
+class PartitionIterator(partitionIter: Iterator[DataLoadPartitionWrap[Row]],
+    carbonLoadModel: CarbonLoadModel,
+    context: TaskContext) extends JavaRddIterator[JavaRddIterator[Array[String]]] {
+  def hasNext: Boolean = partitionIter.hasNext
+  def next: JavaRddIterator[Array[String]] = {
+    val value = partitionIter.next
+    new RddIterator(value.rdd.iterator(value.partition, context),
+        carbonLoadModel,
+        context)
+  }
+  def initialize: Unit = {
+    TaskContextUtil.setTaskContext(context)
+  }
+}
 /**
  * This class wrap Scala's Iterator to Java's Iterator.
  * It also convert all columns to string data to use csv data loading flow.
  *
  * @param rddIter
  * @param carbonLoadModel
+ * @param context
  */
 class RddIterator(rddIter: Iterator[Row],
-    carbonLoadModel: CarbonLoadModel) extends java.util.Iterator[Array[String]] {
+                  carbonLoadModel: CarbonLoadModel,
+                  context: TaskContext) extends JavaRddIterator[Array[String]] {
+
   val formatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
     .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   val format = new SimpleDateFormat(formatString)
   val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
   val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
-
+  val serializationNullFormat =
+      carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
   def hasNext: Boolean = rddIter.hasNext
-
-  private def getString(value: Any, level: Int = 1): String = {
-    if (value == null) {
-      ""
-    } else {
-      value match {
-        case s: String => s
-        case i: java.lang.Integer => i.toString
-        case d: java.lang.Double => d.toString
-        case t: java.sql.Timestamp => format format t
-        case d: java.sql.Date => format format d
-        case d: java.math.BigDecimal => d.toPlainString
-        case b: java.lang.Boolean => b.toString
-        case s: java.lang.Short => s.toString
-        case f: java.lang.Float => f.toString
-        case bs: Array[Byte] => new String(bs)
-        case s: scala.collection.Seq[Any] =>
-          val delimiter = if (level == 1) {
-            delimiterLevel1
-          } else {
-            delimiterLevel2
-          }
-          val builder = new StringBuilder()
-          s.foreach { x =>
-            builder.append(getString(x, level + 1)).append(delimiter)
-          }
-          builder.substring(0, builder.length - 1)
-        case m: scala.collection.Map[Any, Any] =>
-          throw new Exception("Unsupported data type: Map")
-        case r: org.apache.spark.sql.Row =>
-          val delimiter = if (level == 1) {
-            delimiterLevel1
-          } else {
-            delimiterLevel2
-          }
-          val builder = new StringBuilder()
-          for (i <- 0 until r.length) {
-            builder.append(getString(r(i), level + 1)).append(delimiter)
-          }
-          builder.substring(0, builder.length - 1)
-        case other => other.toString
-      }
-    }
-  }
 
   def next: Array[String] = {
     val row = rddIter.next()
     val columns = new Array[String](row.length)
-    for (i <- 0 until row.length) {
-      columns(i) = getString(row(i))
+    for (i <- 0 until columns.length) {
+      columns(i) = CarbonScalaUtil.getString(row.get(i), serializationNullFormat,
+          delimiterLevel1, delimiterLevel2, format)
     }
     columns
   }
 
-  def remove(): Unit = {
+  def initialize: Unit = {
+    TaskContextUtil.setTaskContext(context)
   }
 
 }

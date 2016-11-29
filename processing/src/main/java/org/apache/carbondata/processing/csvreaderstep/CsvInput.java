@@ -22,7 +22,6 @@ package org.apache.carbondata.processing.csvreaderstep;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -384,21 +383,75 @@ public class CsvInput extends BaseStep implements StepInterface {
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordCsvInputStepTime(
               meta.getPartitionID(), System.currentTimeMillis());
     } else {
-      scanRddIterator();
+      scanRddIterator(numberOfNodes);
     }
     setOutputDone();
     return false;
   }
 
-  private void scanRddIterator() throws RuntimeException {
-    Iterator<String[]> iterator = RddInputUtils.getAndRemove(rddIteratorKey);
-    if (iterator != null) {
-      try{
-        while(iterator.hasNext()){
-          putRow(data.outputRowMeta, iterator.next());
+  class RddScanCallable implements Callable<Void> {
+    List<JavaRddIterator<String[]>> iterList;
+
+    RddScanCallable() {
+      this.iterList = new ArrayList<JavaRddIterator<String[]>>(1000);
+    }
+
+    public void addJavaRddIterator(JavaRddIterator<String[]> iter) {
+      this.iterList.add(iter);
+    }
+
+    @Override
+    public Void call() throws Exception {
+      StandardLogService.setThreadName(("PROCESS_DataFrame_PARTITIONS"),
+          Thread.currentThread().getName());
+      try {
+        String[] values = null;
+        for (JavaRddIterator<String[]> iter: iterList) {
+          iter.initialize();
+          while (iter.hasNext()) {
+            values = iter.next();
+            synchronized (putRowLock) {
+              putRow(data.outputRowMeta, values);
+            }
+          }
         }
-      } catch (KettleException e) {
-        throw new RuntimeException(e);
+      } catch (Exception e) {
+        LOGGER.error(e, "Scan rdd during data load is terminated due to error.");
+        throw e;
+      }
+      return null;
+    }
+  }
+
+  private void scanRddIterator(int numberOfNodes) throws RuntimeException {
+    JavaRddIterator<JavaRddIterator<String[]>> iter = RddInputUtils.getAndRemove(rddIteratorKey);
+    if (iter != null) {
+      iter.initialize();
+      exec = Executors.newFixedThreadPool(numberOfNodes);
+      List<Future<Void>> results = new ArrayList<Future<Void>>(numberOfNodes);
+      RddScanCallable[] calls = new RddScanCallable[numberOfNodes];
+      for (int i = 0; i < numberOfNodes; i++ ) {
+        calls[i] = new RddScanCallable();
+      }
+      int index = 0 ;
+      while (iter.hasNext()) {
+        calls[index].addJavaRddIterator(iter.next());
+        index = index + 1;
+        if (index == numberOfNodes) {
+          index = 0;
+        }
+      }
+      for (RddScanCallable call: calls) {
+        results.add(exec.submit(call));
+      }
+      try {
+        for (Future<Void> futrue : results) {
+          futrue.get();
+        }
+      } catch (InterruptedException | ExecutionException e) {
+        throw new RuntimeException("Thread InterruptedException", e);
+      } finally {
+        exec.shutdownNow();
       }
     }
   }
