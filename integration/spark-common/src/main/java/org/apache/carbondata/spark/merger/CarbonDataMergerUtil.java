@@ -45,7 +45,6 @@ import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.load.LoadMetadataDetails;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.integration.spark.merger.CompactionType;
 import org.apache.carbondata.lcm.locks.ICarbonLock;
 import org.apache.carbondata.lcm.status.SegmentStatusManager;
 import org.apache.carbondata.processing.model.CarbonLoadModel;

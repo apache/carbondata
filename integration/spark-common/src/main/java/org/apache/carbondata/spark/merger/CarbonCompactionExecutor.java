@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.integration.spark.merger;
+package org.apache.carbondata.spark.merger;
 
 import java.util.ArrayList;
 import java.util.Collections;

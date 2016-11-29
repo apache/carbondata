@@ -34,9 +34,9 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.{CarbonTable, Tab
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.LoadMetadataDetails
-import org.apache.carbondata.integration.spark.merger.CompactionType
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.CarbonSparkFactory
+import org.apache.carbondata.spark.merger.CompactionType
 import org.apache.carbondata.spark.util.DataTypeConverterUtil
 
 case class TableModel(

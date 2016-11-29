@@ -40,12 +40,13 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, CarbonUtilException}
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
-import org.apache.carbondata.integration.spark.merger.{CarbonCompactionExecutor, CarbonCompactionUtil, RowResultMerger}
+import org.apache.carbondata.integration.spark.merger.{CarbonCompactionExecutor, RowResultMerger}
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.spark.MergeResult
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
+import org.apache.carbondata.spark.merger.{CarbonCompactionExecutor, CarbonCompactionUtil, RowResultMerger}
 import org.apache.carbondata.spark.splits.TableSplit
 
 class CarbonMergerRDD[K, V](

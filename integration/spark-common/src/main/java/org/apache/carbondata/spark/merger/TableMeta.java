@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.integration.spark.merger;
+package org.apache.carbondata.spark.merger;
 
 import java.io.Serializable;
 
