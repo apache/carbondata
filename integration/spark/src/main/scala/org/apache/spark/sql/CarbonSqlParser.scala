@@ -142,6 +142,7 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
   protected val SEGMENT = carbonKeyWord("SEGMENT")
 
   protected val STRING = carbonKeyWord("STRING")
+  protected val SHORT = carbonKeyWord("SMALLINT")
   protected val INTEGER = carbonKeyWord("INTEGER")
   protected val TIMESTAMP = carbonKeyWord("TIMESTAMP")
   protected val NUMERIC = carbonKeyWord("NUMERIC")
@@ -1085,10 +1086,9 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
   protected lazy val dimCol: Parser[Field] = anyFieldDef
 
   protected lazy val primitiveTypes =
-    STRING ^^^ "string" | INTEGER ^^^ "integer" | TIMESTAMP ^^^
-                                                  "timestamp" | NUMERIC ^^^ "numeric" |
-    BIGINT ^^^ "bigint" |
-    INT ^^^ "int" | DOUBLE ^^^ "double" | decimalType
+    STRING ^^^ "string" | SHORT ^^^ "smallint" | INTEGER ^^^ "integer" |
+    TIMESTAMP ^^^ "timestamp" | NUMERIC ^^^ "numeric" |
+    BIGINT ^^^ "bigint" | INT ^^^ "int" | DOUBLE ^^^ "double" | decimalType
 
   /**
    * Matching the decimal(10,0) data type and returning the same.
@@ -1129,7 +1129,7 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
     }
 
   protected lazy val measureCol: Parser[Field] =
-    (ident | stringLit) ~ (INTEGER ^^^ "integer" | NUMERIC ^^^ "numeric" |
+    (ident | stringLit) ~ (SHORT ^^^ "smallint" | INTEGER ^^^ "integer" | NUMERIC ^^^ "numeric" |
                            BIGINT ^^^ "bigint" | DECIMAL ^^^ "decimal").? ~
     (AS ~> (ident | stringLit)).? ~ (IN ~> (ident | stringLit)).? ^^ {
       case e1 ~ e2 ~ e3 ~ e4 => Field(e1, e2, e3, Some(null))
@@ -1157,6 +1157,9 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
     dataType match {
       case "string" => Field(field.column, Some("String"), field.name, Some(null), field.parent,
         field.storeType
+      )
+      case "smallint" => Field(field.column, Some("SmallInt"), field.name, Some(null),
+        field.parent, field.storeType
       )
       case "integer" | "int" => Field(field.column, Some("Integer"), field.name, Some(null),
         field.parent, field.storeType
@@ -1220,6 +1223,8 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
   private def appendParentForEachChild(field: Field, parentName: String): Field = {
     field.dataType.getOrElse("NIL") match {
       case "String" => Field(parentName + "." + field.column, Some("String"),
+        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
+      case "SmallInt" => Field(parentName + "." + field.column, Some("SmallInt"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
       case "Integer" => Field(parentName + "." + field.column, Some("Integer"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
