@@ -16,13 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.core.carbon.datastore.chunk.reader.measure;
+package org.apache.carbondata.core.carbon.datastore.chunk.reader.measure.v2;
 
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.carbon.datastore.chunk.reader.measure.AbstractMeasureChunkReader;
 import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.PresenceMeta;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
@@ -37,7 +38,7 @@ import org.apache.carbondata.format.DataChunk2;
 /**
  * Class to read the measure column data for version 2
  */
-public class CompressedMeasureChunkFileReader2 extends AbstractMeasureChunkReader {
+public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChunkReader {
 
   /**
    * measure column chunks offset
@@ -55,7 +56,8 @@ public class CompressedMeasureChunkFileReader2 extends AbstractMeasureChunkReade
    * @param blockletInfo BlockletInfo
    * @param filePath     file from which data will be read
    */
-  public CompressedMeasureChunkFileReader2(final BlockletInfo blockletInfo, final String filePath) {
+  public CompressedMeasureChunkFileBasedReaderV2(final BlockletInfo blockletInfo,
+      final String filePath) {
     super(filePath);
     this.measureColumnChunkOffsets = blockletInfo.getMeasureChunkOffsets();
     this.measureColumnChunkLength = blockletInfo.getMeasureChunksLength();

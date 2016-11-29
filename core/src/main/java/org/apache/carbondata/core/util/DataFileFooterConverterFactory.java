@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.core.util;
 
+
 /**
  * Factory class to get the thrift reader object based on version
  */

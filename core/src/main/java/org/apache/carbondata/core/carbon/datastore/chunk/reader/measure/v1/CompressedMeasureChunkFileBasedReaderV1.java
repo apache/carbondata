@@ -16,11 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.core.carbon.datastore.chunk.reader.measure;
+package org.apache.carbondata.core.carbon.datastore.chunk.reader.measure.v1;
 
 import java.util.List;
 
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.carbon.datastore.chunk.reader.measure.AbstractMeasureChunkReader;
 import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
@@ -32,7 +33,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 /**
  * Compressed measure chunk reader
  */
-public class CompressedMeasureChunkFileBasedReader extends AbstractMeasureChunkReader {
+public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChunkReader {
 
   /**
    * measure chunk have the information about the metadata present in the file
@@ -45,7 +46,7 @@ public class CompressedMeasureChunkFileBasedReader extends AbstractMeasureChunkR
    * @param blockletInfo BlockletInfo
    * @param filePath     file from which data will be read
    */
-  public CompressedMeasureChunkFileBasedReader(final BlockletInfo blockletInfo,
+  public CompressedMeasureChunkFileBasedReaderV1(final BlockletInfo blockletInfo,
       final String filePath) {
     super(filePath);
     this.measureColumnChunks = blockletInfo.getMeasureColumnChunk();

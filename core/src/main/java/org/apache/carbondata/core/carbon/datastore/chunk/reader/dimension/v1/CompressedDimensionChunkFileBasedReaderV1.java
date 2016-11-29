@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension;
+package org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension.v1;
 
 import java.util.List;
 
@@ -25,6 +25,7 @@ import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChun
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.ColumnGroupDimensionDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.VariableLengthDimensionDataChunk;
+import org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension.AbstractChunkReader;
 import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
@@ -35,7 +36,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 /**
  * Compressed dimension chunk reader class
  */
-public class CompressedDimensionChunkFileBasedReader extends AbstractChunkReader {
+public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkReader {
 
   /**
    * data chunk list which holds the information
@@ -50,7 +51,7 @@ public class CompressedDimensionChunkFileBasedReader extends AbstractChunkReader
    * @param eachColumnValueSize size of the each column value
    * @param filePath            file from which data will be read
    */
-  public CompressedDimensionChunkFileBasedReader(final BlockletInfo blockletInfo,
+  public CompressedDimensionChunkFileBasedReaderV1(final BlockletInfo blockletInfo,
       final int[] eachColumnValueSize, final String filePath) {
     super(eachColumnValueSize, filePath);
     this.dimensionColumnChunk = blockletInfo.getDimensionColumnChunk();

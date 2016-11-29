@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension;
+package org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension.v2;
 
 import java.util.List;
 
@@ -25,6 +25,7 @@ import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChun
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.ColumnGroupDimensionDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.VariableLengthDimensionDataChunk;
+import org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension.AbstractChunkReader;
 import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.columnar.UnBlockIndexer;
@@ -35,7 +36,7 @@ import org.apache.carbondata.format.Encoding;
 /**
  * Compressed dimension chunk reader class for version 2
  */
-public class CompressedDimensionChunkFileBasedReader2 extends AbstractChunkReader {
+public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkReader {
 
   /**
    * dimension chunks offset
@@ -54,7 +55,7 @@ public class CompressedDimensionChunkFileBasedReader2 extends AbstractChunkReade
    * @param eachColumnValueSize
    * @param filePath
    */
-  public CompressedDimensionChunkFileBasedReader2(final BlockletInfo blockletInfo,
+  public CompressedDimensionChunkFileBasedReaderV2(final BlockletInfo blockletInfo,
       final int[] eachColumnValueSize, final String filePath) {
     super(eachColumnValueSize, filePath);
     this.dimensionChunksOffset = blockletInfo.getDimensionChunkOffsets();
@@ -231,7 +232,7 @@ public class CompressedDimensionChunkFileBasedReader2 extends AbstractChunkReade
     DataChunk2 dimensionColumnChunk = null;
     int index = 0;
     for (int i = startBlockIndex; i <= endBlockIndex; i++) {
-      invertedIndexes= null;
+      invertedIndexes = null;
       invertedIndexesReverse = null;
       dimensionChunk = new byte[dimensionChunksLength.get(i)];
       System.arraycopy(data, copySourcePoint, dimensionChunk, 0, dimensionChunksLength.get(i));

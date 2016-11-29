@@ -18,10 +18,10 @@
  */
 package org.apache.carbondata.core.carbon.datastore.chunk.reader;
 
-import org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension.CompressedDimensionChunkFileBasedReader;
-import org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension.CompressedDimensionChunkFileBasedReader2;
-import org.apache.carbondata.core.carbon.datastore.chunk.reader.measure.CompressedMeasureChunkFileBasedReader;
-import org.apache.carbondata.core.carbon.datastore.chunk.reader.measure.CompressedMeasureChunkFileReader2;
+import org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension.v1.CompressedDimensionChunkFileBasedReaderV1;
+import org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension.v2.CompressedDimensionChunkFileBasedReaderV2;
+import org.apache.carbondata.core.carbon.datastore.chunk.reader.measure.v1.CompressedMeasureChunkFileBasedReaderV1;
+import org.apache.carbondata.core.carbon.datastore.chunk.reader.measure.v2.CompressedMeasureChunkFileBasedReaderV2;
 import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 
 /**
@@ -64,10 +64,10 @@ public class CarbonDataReaderFactory {
       BlockletInfo blockletInfo, int[] eachColumnValueSize, String filePath) {
     switch (version) {
       case 2:
-        return new CompressedDimensionChunkFileBasedReader2(blockletInfo, eachColumnValueSize,
+        return new CompressedDimensionChunkFileBasedReaderV2(blockletInfo, eachColumnValueSize,
             filePath);
       default:
-        return new CompressedDimensionChunkFileBasedReader(blockletInfo, eachColumnValueSize,
+        return new CompressedDimensionChunkFileBasedReaderV1(blockletInfo, eachColumnValueSize,
             filePath);
     }
   }
@@ -84,9 +84,9 @@ public class CarbonDataReaderFactory {
       BlockletInfo blockletInfo, String filePath) {
     switch (version) {
       case 2:
-        return new CompressedMeasureChunkFileReader2(blockletInfo, filePath);
+        return new CompressedMeasureChunkFileBasedReaderV2(blockletInfo, filePath);
       default:
-        return new CompressedMeasureChunkFileBasedReader(blockletInfo, filePath);
+        return new CompressedMeasureChunkFileBasedReaderV1(blockletInfo, filePath);
     }
 
   }

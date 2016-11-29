@@ -94,7 +94,8 @@ class InMemoryBTreeIndex implements Index {
       TableBlockInfo tableBlockInfo = leafNode.getTableBlockInfo();
       result.add(new CarbonInputSplit(segment.getId(), new Path(tableBlockInfo.getFilePath()),
           tableBlockInfo.getBlockOffset(), tableBlockInfo.getBlockLength(),
-          tableBlockInfo.getLocations(), tableBlockInfo.getBlockletInfos().getNoOfBlockLets()));
+          tableBlockInfo.getLocations(), tableBlockInfo.getBlockletInfos().getNoOfBlockLets(),
+          tableBlockInfo.getVersion()));
     }
     return result;
   }
@@ -138,7 +139,7 @@ class InMemoryBTreeIndex implements Index {
       tableBlockInfoList.add(
           new TableBlockInfo(carbonInputSplit.getPath().toString(), carbonInputSplit.getStart(),
               segment.getId(), carbonInputSplit.getLocations(), carbonInputSplit.getLength(),
-              blockletInfos));
+              blockletInfos, carbonInputSplit.getVersion()));
     }
     return tableBlockInfoList;
   }

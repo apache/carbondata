@@ -98,6 +98,7 @@ public class CarbonFactDataWriterImpl2 extends CarbonFactDataWriterImplForIntInd
     // channel object
     updateBlockletFileChannel(blockletDataSize);
     // writer the version header in the file if current file size is zero
+    // this is done so carbondata file can be read separately
     try {
       if (fileChannel.size() == 0) {
         short version = Short.parseShort(CarbonProperties.getInstance()

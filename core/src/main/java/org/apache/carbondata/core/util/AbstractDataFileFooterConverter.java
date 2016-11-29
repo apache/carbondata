@@ -224,7 +224,7 @@ public abstract class AbstractDataFileFooterConverter {
       case DIRECT_DICTIONARY:
         return Encoding.DIRECT_DICTIONARY;
       default:
-        return Encoding.DICTIONARY;
+        throw new IllegalArgumentException(encoderThrift.toString() + " is not supported");
     }
   }
 

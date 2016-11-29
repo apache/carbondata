@@ -263,23 +263,23 @@ public final class CarbonProperties {
    * if parameter is invalid current version will be set
    */
   private void validateCarbonDataFileVersion() {
-    short carbondataFileVersion = CarbonCommonConstants.CARBON_DATA_FILE_CURRENT_VERSION;
+    short carbondataFileVersion = CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION;
     String carbondataFileVersionString =
         carbonProperties.getProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION);
     try {
       carbondataFileVersion = Short.parseShort(carbondataFileVersionString);
     } catch (NumberFormatException e) {
-      carbondataFileVersion = CarbonCommonConstants.CARBON_DATA_FILE_CURRENT_VERSION;
+      carbondataFileVersion = CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION;
       LOGGER.info("Current Data file version property is invalid  \"" + carbondataFileVersionString
           + "\" is invalid. Using the Current data file version value \"" + carbondataFileVersion);
       carbonProperties
           .setProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, carbondataFileVersion + "");
     }
-    if (carbondataFileVersion > CarbonCommonConstants.CARBON_DATA_FILE_CURRENT_VERSION
+    if (carbondataFileVersion > CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION
         || carbondataFileVersion < 0) {
       LOGGER.info("Current Data file version property is invalid  \"" + carbondataFileVersionString
           + "\" is invalid. Using the Current data file version value \"" + carbondataFileVersion);
-      carbondataFileVersion = CarbonCommonConstants.CARBON_DATA_FILE_CURRENT_VERSION;
+      carbondataFileVersion = CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION;
       carbonProperties
           .setProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, carbondataFileVersion + "");
     }

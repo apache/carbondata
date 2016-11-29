@@ -331,8 +331,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           == segmentProperties.getBlockTodimensionOrdinalMapping().size() - 1 ?
           dimensionsBlockIndexes.length - 1 :
           dimensionsBlockIndexes.length;
-      blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(
-          CarbonUtil.getRangeIndex(dimensionsBlockIndexes, numberOfElementToConsider, 10));
+      blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(CarbonUtil
+          .getRangeIndex(dimensionsBlockIndexes, numberOfElementToConsider,
+              CarbonCommonConstants.NUMBER_OF_COLUMN_READ_IN_IO));
     } else {
       blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(new int[0][0]);
     }
@@ -347,8 +348,9 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
           measureBlockIndexes.length - 1 :
           measureBlockIndexes.length;
       // setting all the measure chunk indexes to be read from file
-      blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(
-          CarbonUtil.getRangeIndex(measureBlockIndexes, numberOfElementToConsider, 10));
+      blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(CarbonUtil
+          .getRangeIndex(measureBlockIndexes, numberOfElementToConsider,
+              CarbonCommonConstants.NUMBER_OF_COLUMN_READ_IN_IO));
     } else {
       blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(new int[0][0]);
     }
