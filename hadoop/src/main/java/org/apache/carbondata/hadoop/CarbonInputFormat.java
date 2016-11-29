@@ -42,7 +42,9 @@ import org.apache.carbondata.core.carbon.datastore.impl.btree.BlockBTreeLeafNode
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
-import org.apache.carbondata.core.carbon.querystatistics.*;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
@@ -319,7 +321,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       String segmentId) throws IndexBuilderException, IOException {
     QueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.createDriverRecorder();
     QueryStatistic statistic = new QueryStatistic();
-    Map<String, AbstractIndex> segmentIndexMap =
+    Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap =
         getSegmentAbstractIndexs(job, absoluteTableIdentifier, segmentId);
 
     List<DataRefNode> resultFilterredBlocks = new LinkedList<DataRefNode>();
@@ -379,10 +381,11 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return tableBlockInfoList;
   }
 
-  private Map<String, AbstractIndex> getSegmentAbstractIndexs(JobContext job,
-      AbsoluteTableIdentifier absoluteTableIdentifier, String segmentId)
+  private Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> getSegmentAbstractIndexs(
+      JobContext job, AbsoluteTableIdentifier absoluteTableIdentifier, String segmentId)
       throws IOException, IndexBuilderException {
-    Map<String, AbstractIndex> segmentIndexMap = SegmentTaskIndexStore.getInstance()
+    Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap =
+        SegmentTaskIndexStore.getInstance()
         .getSegmentBTreeIfExists(absoluteTableIdentifier, segmentId);
 
     // if segment tree is not loaded, load the segment tree

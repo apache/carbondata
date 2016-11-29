@@ -189,6 +189,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)));
     this.dataChunksOffsets = new ArrayList<>();
     this.dataChunksLength = new ArrayList<>();
+    this.bucketNumber = bucketNumber;
   }
 
   /**
@@ -424,7 +425,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   private void writeIndexFile() throws IOException, CarbonDataWriterException {
     // get the header
     IndexHeader indexHeader =
-        CarbonMetadataUtil.getIndexHeader(localCardinality, thriftColumnSchemaList);
+        CarbonMetadataUtil.getIndexHeader(localCardinality, thriftColumnSchemaList, bucketNumber);
     // get the block index info thrift
     List<BlockIndex> blockIndexThrift = CarbonMetadataUtil.getBlockIndexInfo(blockIndexInfoList);
     String fileName = dataWriterVo.getStoreLocation() + File.separator + carbonTablePath

@@ -100,10 +100,10 @@ class InMemoryBTreeIndex implements Index {
     return result;
   }
 
-  private Map<String, AbstractIndex> getSegmentAbstractIndexs(JobContext job,
-      AbsoluteTableIdentifier identifier)
+  private Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> getSegmentAbstractIndexs(
+      JobContext job, AbsoluteTableIdentifier identifier)
       throws IOException, IndexBuilderException {
-    Map<String, AbstractIndex> segmentIndexMap =
+    Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap =
         SegmentTaskIndexStore.getInstance().getSegmentBTreeIfExists(identifier, segment.getId());
 
     // if segment tree is not loaded, load the segment tree
@@ -153,7 +153,8 @@ class InMemoryBTreeIndex implements Index {
 
     QueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.createDriverRecorder();
     QueryStatistic statistic = new QueryStatistic();
-    Map<String, AbstractIndex> segmentIndexMap = getSegmentAbstractIndexs(job, identifier);
+    Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap =
+        getSegmentAbstractIndexs(job, identifier);
 
     List<DataRefNode> resultFilterredBlocks = new LinkedList<DataRefNode>();
 

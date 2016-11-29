@@ -87,10 +87,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
             tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()), partitionId,
             configuration.getSegmentId() + "", false);
-
-    if (!(new File(storeLocation).mkdirs())) {
-      LOGGER.error("Local data load folder location does not exist: " + storeLocation);
-    }
+    new File(storeLocation).mkdirs();
     return storeLocation;
   }
 
@@ -102,7 +99,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     try {
       CarbonFactDataHandlerModel dataHandlerModel = CarbonFactDataHandlerModel
           .createCarbonFactDataHandlerModel(configuration,
-              getStoreLocation(tableIdentifier, String.valueOf(0)), String.valueOf(0));
+              getStoreLocation(tableIdentifier, String.valueOf(0)), 0);
       noDictionaryCount = dataHandlerModel.getNoDictionaryCount();
       complexDimensionCount = configuration.getComplexDimensionCount();
       measureCount = dataHandlerModel.getMeasureCount();
@@ -116,15 +113,21 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       for (Iterator<CarbonRowBatch> iterator : iterators) {
         String storeLocation = getStoreLocation(tableIdentifier, String.valueOf(i));
         CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
-            .createCarbonFactDataHandlerModel(configuration, storeLocation, String.valueOf(i));
-        CarbonFactHandler dataHandler = CarbonFactHandlerFactory
-            .createCarbonFactHandler(model,
-                CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
-        dataHandler.initialise();
+            .createCarbonFactDataHandlerModel(configuration, storeLocation, i);
+        CarbonFactHandler dataHandler = null;
+        boolean rowsNotExist = true;
         while (iterator.hasNext()) {
+          if (rowsNotExist) {
+            rowsNotExist = false;
+            dataHandler = CarbonFactHandlerFactory
+                .createCarbonFactHandler(model, CarbonFactHandlerFactory.FactHandlerType.COLUMNAR);
+            dataHandler.initialise();
+          }
           processBatch(iterator.next(), dataHandler);
         }
-        finish(tableName, dataHandler);
+        if (!rowsNotExist) {
+          finish(tableName, dataHandler);
+        }
         i++;
       }
 

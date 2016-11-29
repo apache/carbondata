@@ -186,13 +186,15 @@ public class CarbonFactDataHandlerModel {
    */
   private boolean useKettle = true;
 
+  private int bucketId = -1;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    * @param configuration
    * @return CarbonFactDataHandlerModel
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
-      CarbonDataLoadConfiguration configuration, String storeLocation, String partitionId) {
+      CarbonDataLoadConfiguration configuration, String storeLocation, int bucketId) {
 
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
@@ -258,7 +260,7 @@ public class CarbonFactDataHandlerModel {
     CarbonDataFileAttributes carbonDataFileAttributes =
         new CarbonDataFileAttributes(Integer.parseInt(configuration.getTaskNo()),
             (String) configuration.getDataLoadProperty(DataLoadProcessorConstants.FACT_TIME_STAMP));
-    String carbonDataDirectoryPath = getCarbonDataFolderLocation(configuration, partitionId);
+    String carbonDataDirectoryPath = getCarbonDataFolderLocation(configuration);
 
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setDatabaseName(
@@ -291,6 +293,7 @@ public class CarbonFactDataHandlerModel {
     } else {
       carbonFactDataHandlerModel.setMdKeyIndex(measureCount);
     }
+    carbonFactDataHandlerModel.bucketId = bucketId;
     return carbonFactDataHandlerModel;
   }
 
@@ -299,8 +302,7 @@ public class CarbonFactDataHandlerModel {
    *
    * @return data directory path
    */
-  private static String getCarbonDataFolderLocation(CarbonDataLoadConfiguration configuration,
-      String partitionId) {
+  private static String getCarbonDataFolderLocation(CarbonDataLoadConfiguration configuration) {
     String carbonStorePath =
         CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
     CarbonTableIdentifier tableIdentifier =
@@ -311,7 +313,7 @@ public class CarbonFactDataHandlerModel {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTable.getCarbonTableIdentifier());
     String carbonDataDirectoryPath = carbonTablePath
-        .getCarbonDataDirectoryPath(partitionId,
+        .getCarbonDataDirectoryPath(configuration.getPartitionId(),
             configuration.getSegmentId() + "");
     return carbonDataDirectoryPath;
   }
@@ -558,6 +560,10 @@ public class CarbonFactDataHandlerModel {
 
   public void setUseKettle(boolean useKettle) {
     this.useKettle = useKettle;
+  }
+
+  public int getBucketId() {
+    return bucketId;
   }
 }
 

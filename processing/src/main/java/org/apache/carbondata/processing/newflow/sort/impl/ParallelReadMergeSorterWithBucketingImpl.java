@@ -30,7 +30,8 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.carbon.metadata.schema.BucketingInfo;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.partition.Partitioner;
 import org.apache.carbondata.core.partition.impl.HashPartitionerImpl;
@@ -65,46 +66,54 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
 
   private ExecutorService executorService;
 
-  private int numberOfBuckets;
-
-  private DataField[] bucketFields;
+  private BucketingInfo bucketingInfo;
 
   private Partitioner<Object[]> partitioner;
 
   private DataField[] inputDataFields;
 
+  private int sortBufferSize;
+
   public ParallelReadMergeSorterWithBucketingImpl(DataField[] inputDataFields,
-      DataField[] bucketFields, int numberOfBuckets) {
+      BucketingInfo bucketingInfo) {
     this.inputDataFields = inputDataFields;
-    this.numberOfBuckets = numberOfBuckets;
-    this.bucketFields = bucketFields;
+    this.bucketingInfo = bucketingInfo;
   }
 
   @Override public void initialize(SortParameters sortParameters) {
     this.sortParameters = sortParameters;
     intermediateFileMerger = new SortIntermediateFileMerger(sortParameters);
     List<Integer> indexes = new ArrayList<>();
-    List<DataType> bucketDataTypes = new ArrayList<>();
+    List<ColumnSchema> columnSchemas = new ArrayList<>();
     for (int i = 0; i < inputDataFields.length; i++) {
-      for (int j = 0; j < bucketFields.length; j++) {
+      for (int j = 0; j < bucketingInfo.getListOfColumns().size(); j++) {
         if (inputDataFields[i].getColumn().getColName()
-            .equals(bucketFields[j].getColumn().getColName())) {
+            .equals(bucketingInfo.getListOfColumns().get(j).getColumnName())) {
           indexes.add(i);
-          bucketDataTypes.add(inputDataFields[i].getColumn().getDataType());
+          columnSchemas.add(inputDataFields[i].getColumn().getColumnSchema());
           break;
         }
       }
     }
-    partitioner = new HashPartitionerImpl(indexes, bucketDataTypes, numberOfBuckets);
+    partitioner =
+        new HashPartitionerImpl(indexes, columnSchemas, bucketingInfo.getNumberOfBuckets());
+    int buffer = Integer.parseInt(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.SORT_SIZE, CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
+    sortBufferSize = buffer/bucketingInfo.getNumberOfBuckets();
+    if (sortBufferSize < 100) {
+      sortBufferSize = 100;
+    }
   }
 
   @Override public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
       throws CarbonDataLoadingException {
-    SortDataRows[] sortDataRows = new SortDataRows[numberOfBuckets];
+    SortDataRows[] sortDataRows = new SortDataRows[bucketingInfo.getNumberOfBuckets()];
     try {
-      for (int i = 0; i < numberOfBuckets; i++) {
+      for (int i = 0; i < bucketingInfo.getNumberOfBuckets(); i++) {
         SortParameters parameters = sortParameters.getCopy();
         parameters.setPartitionID(i + "");
+        setTempLocation(parameters);
+        parameters.setBufferSize(sortBufferSize);
         sortDataRows[i] = new SortDataRows(parameters, intermediateFileMerger);
         sortDataRows[i].initialize();
       }
@@ -131,8 +140,8 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
       throw new CarbonDataLoadingException(e);
     }
 
-    Iterator<CarbonRowBatch>[] batchIterator = new Iterator[numberOfBuckets];
-    for (int i = 0; i < numberOfBuckets; i++) {
+    Iterator<CarbonRowBatch>[] batchIterator = new Iterator[bucketingInfo.getNumberOfBuckets()];
+    for (int i = 0; i < bucketingInfo.getNumberOfBuckets(); i++) {
       batchIterator[i] = new MergedDataIterator(String.valueOf(i), batchSize);
     }
 
@@ -188,6 +197,15 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
     } catch (CarbonSortKeyAndGroupByException e) {
       throw new CarbonDataLoadingException(e);
     }
+  }
+
+  private void setTempLocation(SortParameters parameters) {
+    String carbonDataDirectoryPath = CarbonDataProcessorUtil
+        .getLocalDataFolderLocation(parameters.getDatabaseName(),
+            parameters.getTableName(), parameters.getTaskNo(),
+            parameters.getPartitionID(), parameters.getSegmentId(), false);
+    parameters.setTempFileLocation(
+        carbonDataDirectoryPath + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
   }
 
   /**

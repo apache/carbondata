@@ -274,6 +274,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   private boolean useKettle;
 
+  private int bucketNumber;
+
   /**
    * CarbonFactDataHandler constructor
    */
@@ -293,6 +295,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
     this.aggKeyBlock = new boolean[columnStoreCount];
     this.isNoDictionary = new boolean[columnStoreCount];
+    this.bucketNumber = carbonFactDataHandlerModel.getBucketId();
     this.isUseInvertedIndex = new boolean[columnStoreCount];
     if (null != carbonFactDataHandlerModel.getIsUseInvertedIndex()) {
       for (int i = 0; i < isUseInvertedIndex.length; i++) {

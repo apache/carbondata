@@ -19,7 +19,8 @@ package org.apache.carbondata.core.partition.impl;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.partition.Partitioner;
 
 /**
@@ -31,11 +32,12 @@ public class HashPartitionerImpl implements Partitioner<Object[]> {
 
   private Hash[] hashes;
 
-  public HashPartitionerImpl(List<Integer> indexes, List<DataType> dataTypes, int numberOfBuckets) {
+  public HashPartitionerImpl(List<Integer> indexes, List<ColumnSchema> columnSchemas,
+      int numberOfBuckets) {
     this.numberOfBuckets = numberOfBuckets;
     hashes = new Hash[indexes.size()];
     for (int i = 0; i < indexes.size(); i++) {
-      if (dataTypes.get(indexes.get(i)) == DataType.STRING) {
+      if (!columnSchemas.get(i).hasEncoding(Encoding.DICTIONARY)) {
         hashes[i] = new ByteArrayHash(indexes.get(i));
       } else {
         hashes[i] = new NumericHash(indexes.get(i));
