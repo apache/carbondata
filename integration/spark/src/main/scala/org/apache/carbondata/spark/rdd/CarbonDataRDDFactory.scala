@@ -30,12 +30,12 @@ import org.apache.hadoop.conf.{Configurable, Configuration}
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
+import org.apache.spark.{SparkContext, SparkEnv, SparkException}
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer}
+import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel, CompactionModel}
 import org.apache.spark.sql.hive.DistributionUtil
-import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
-import org.apache.spark.util.SplitUtils
-import org.apache.spark.{SparkContext, SparkEnv, SparkException}
+import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier}
@@ -750,7 +750,7 @@ object CarbonDataRDDFactory {
                 if (pathBuilder.nonEmpty) {
                   pathBuilder.substring(0, pathBuilder.size - 1)
                 }
-                (split.getPartition.getUniqueID, SplitUtils.getSplits(pathBuilder.toString(),
+                (split.getPartition.getUniqueID, SparkUtil.getSplits(pathBuilder.toString(),
                   sqlContext.sparkContext
                 ))
             }
@@ -769,7 +769,7 @@ object CarbonDataRDDFactory {
                 }
                 pathBuilder.append(split.getPartition.getUniqueID).append("/")
                 (split.getPartition.getUniqueID,
-                  SplitUtils.getSplits(pathBuilder.toString, sqlContext.sparkContext))
+                  SparkUtil.getSplits(pathBuilder.toString, sqlContext.sparkContext))
             }
           }
         } else {

@@ -27,8 +27,9 @@ import scala.util.Random
 
 import org.apache.spark.{Partition, SerializableWritable, SparkContext, SparkEnv, TaskContext}
 import org.apache.spark.annotation.DeveloperApi
-import org.apache.spark.rdd.RDD
+import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionWrap, RDD}
 import org.apache.spark.sql.Row
+import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
@@ -556,7 +557,7 @@ class PartitionIterator(partitionIter: Iterator[DataLoadPartitionWrap[Row]],
         context)
   }
   def initialize: Unit = {
-    TaskContextUtil.setTaskContext(context)
+    SparkUtil.setTaskContext(context)
   }
 }
 /**
@@ -591,7 +592,7 @@ class RddIterator(rddIter: Iterator[Row],
   }
 
   def initialize: Unit = {
-    TaskContextUtil.setTaskContext(context)
+    SparkUtil.setTaskContext(context)
   }
 
 }

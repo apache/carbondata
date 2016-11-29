@@ -14,16 +14,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.rdd
 
+import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet, LinkedHashSet}
 import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.HashMap
-import scala.collection.mutable.HashSet
-import scala.collection.mutable.LinkedHashSet
 
-import org.apache.spark.Logging
-import org.apache.spark.Partition
+import org.apache.spark.{Logging, Partition}
 import org.apache.spark.scheduler.TaskLocation
 
 /**

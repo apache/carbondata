@@ -18,8 +18,6 @@
  */
 package org.apache.carbondata.spark.testsuite.dataload
 
-import scala.collection.mutable.ArrayBuffer
-
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.lib.input.FileSplit
 import org.apache.spark.{Partition, SerializableWritable, SparkContext, TaskContext}

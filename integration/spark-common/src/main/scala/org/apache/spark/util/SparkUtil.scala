@@ -20,7 +20,7 @@ package org.apache.spark.util
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.{LongWritable, Text}
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
-import org.apache.spark.SparkContext
+import org.apache.spark.{SparkContext, TaskContext}
 import org.apache.spark.rdd.{NewHadoopPartition, NewHadoopRDD}
 
 import org.apache.carbondata.core.load.BlockDetails
@@ -28,7 +28,14 @@ import org.apache.carbondata.core.load.BlockDetails
 /*
  * this object use to handle file splits
  */
-object SplitUtils {
+object SparkUtil {
+
+  def setTaskContext(context: TaskContext): Unit = {
+    val localThreadContext = TaskContext.get()
+    if (localThreadContext == null) {
+      TaskContext.setTaskContext(context)
+    }
+  }
 
   /**
    * get file splits,return Array[BlockDetails], if file path is empty,then return empty Array
