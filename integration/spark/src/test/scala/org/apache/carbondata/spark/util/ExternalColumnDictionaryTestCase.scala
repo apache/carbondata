@@ -115,7 +115,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
   }
 
   def buildRelation() = {
-    val catalog = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
+    val catalog = CarbonEnv.get.carbonMetastore
     extComplexRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
       "extComplextypes")(CarbonHiveContext)
       .asInstanceOf[CarbonRelation]

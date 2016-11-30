@@ -34,10 +34,11 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.{DescribeCommand => LogicalDescribeCommand, LogicalRelation}
 import org.apache.spark.sql.hive.execution.{DropTable, HiveNativeCommand}
 import org.apache.spark.sql.hive.execution.command._
-import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
+import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types.IntegerType
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
@@ -121,7 +122,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           scan
         }
 
-      if (projectList.map(_.toAttribute) == scan.attributesRaw &&
+      if (projectList.map(_.toAttribute) == scan.columnProjection &&
           projectSet.size == projectList.size &&
           filterSet.subsetOf(projectSet)) {
         // copied from spark pruneFilterProjectRaw
@@ -151,9 +152,9 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         predicates,
         useUnsafeCoversion = false)(sqlContext)
       projectExprsNeedToDecode.addAll(scan.attributesNeedToDecode)
-      val updatedAttrs = scan.attributesRaw.map(attr =>
+      val updatedAttrs = scan.columnProjection.map(attr =>
         updateDataType(attr.asInstanceOf[AttributeReference], relation, projectExprsNeedToDecode))
-      scan.attributesRaw = updatedAttrs
+      scan.columnProjection = updatedAttrs
       if (projectExprsNeedToDecode.size() > 0
           && isDictionaryEncoded(projectExprsNeedToDecode.asScala.toSeq, relation)) {
         val decoder = getCarbonDecoder(logicalRelation,
@@ -235,15 +236,15 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
   object DDLStrategies extends Strategy {
     def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
       case DropTable(tableName, ifNotExists)
-        if (CarbonEnv.getInstance(sqlContext).carbonCatalog
-            .isTablePathExists(toTableIdentifier(tableName.toLowerCase))(sqlContext)) =>
+        if CarbonEnv.get.carbonMetastore
+            .isTablePathExists(toTableIdentifier(tableName.toLowerCase))(sqlContext) =>
         val identifier = toTableIdentifier(tableName.toLowerCase)
         ExecutedCommand(DropTableCommand(ifNotExists, identifier.database, identifier.table)) :: Nil
       case ShowLoadsCommand(databaseName, table, limit) =>
         ExecutedCommand(ShowLoads(databaseName, table, limit, plan.output)) :: Nil
       case LoadTable(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
       options, isOverwriteExist, inputSqlString, dataFrame) =>
-        val isCarbonTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
+        val isCarbonTable = CarbonEnv.get.carbonMetastore
             .tableExists(TableIdentifier(tableName, databaseNameOp))(sqlContext)
         if (isCarbonTable || options.nonEmpty) {
           ExecutedCommand(LoadTable(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
@@ -252,7 +253,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           ExecutedCommand(HiveNativeCommand(inputSqlString)) :: Nil
         }
       case alterTable@AlterTableCompaction(altertablemodel) =>
-        val isCarbonTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
+        val isCarbonTable = CarbonEnv.get.carbonMetastore
             .tableExists(TableIdentifier(altertablemodel.tableName,
                  altertablemodel.dbName))(sqlContext)
         if (isCarbonTable) {
@@ -286,7 +287,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           case e: Exception => ExecutedCommand(d) :: Nil
         }
       case DescribeFormattedCommand(sql, tblIdentifier) =>
-        val isTable = CarbonEnv.getInstance(sqlContext).carbonCatalog
+        val isTable = CarbonEnv.get.carbonMetastore
             .tableExists(tblIdentifier)(sqlContext)
         if (isTable) {
           val describe =

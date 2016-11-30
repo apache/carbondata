@@ -111,7 +111,7 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
     }
   }
   def relation(tableName: String): CarbonRelation = {
-    CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
+    CarbonEnv.get.carbonMetastore
         .lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
           tableName)(CarbonHiveContext)
         .asInstanceOf[CarbonRelation]

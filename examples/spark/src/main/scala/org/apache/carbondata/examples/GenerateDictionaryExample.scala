@@ -63,7 +63,7 @@ object GenerateDictionaryExample {
                       dictFolderPath: String) {
     val dataBaseName = carbonTableIdentifier.getDatabaseName
     val tableName = carbonTableIdentifier.getTableName
-    val carbonRelation = CarbonEnv.getInstance(cc).carbonCatalog.
+    val carbonRelation = CarbonEnv.get.carbonMetastore.
       lookupRelation1(Option(dataBaseName),
         tableName) (cc).asInstanceOf[CarbonRelation]
     val carbonTable = carbonRelation.tableMeta.carbonTable

@@ -23,8 +23,8 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.errors.attachTree
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.{SparkPlan, UnaryNode}
-import org.apache.spark.sql.hive.{CarbonMetastoreCatalog, CarbonMetastoreTypes}
-import org.apache.spark.sql.optimizer.{CarbonAliasDecoderRelation, CarbonDecoderRelation}
+import org.apache.spark.sql.hive.{CarbonMetastore, CarbonMetastoreTypes}
+import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
@@ -35,10 +35,10 @@ import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.carbon.querystatistics._
 import org.apache.carbondata.core.util.{CarbonTimeStatisticsFactory, DataTypeUtil}
+import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
 /**
- * It decodes the data.
- *
+ * It decodes the dictionary key to value
  */
 case class CarbonDictionaryDecoder(
     relations: Seq[CarbonDecoderRelation],
@@ -47,7 +47,6 @@ case class CarbonDictionaryDecoder(
     child: SparkPlan)
   (@transient sqlContext: SQLContext)
   extends UnaryNode {
-
 
   override def otherCopyArgs: Seq[AnyRef] = sqlContext :: Nil
 
@@ -149,11 +148,9 @@ case class CarbonDictionaryDecoder(
 
   override def canProcessSafeRows: Boolean = true
 
-
-
   override def doExecute(): RDD[InternalRow] = {
     attachTree(this, "execute") {
-      val storePath = sqlContext.catalog.asInstanceOf[CarbonMetastoreCatalog].storePath
+      val storePath = sqlContext.catalog.asInstanceOf[CarbonMetastore].storePath
       val queryId = sqlContext.getConf("queryId", System.nanoTime() + "")
       val absoluteTableIdentifiers = relations.map { relation =>
         val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
