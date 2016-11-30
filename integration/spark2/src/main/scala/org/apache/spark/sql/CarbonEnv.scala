@@ -41,8 +41,10 @@ object CarbonEnv extends Logging {
         new CarbonMetastore(sqlContext.sparkSession.conf, storePath)
       }
       carbonEnv = CarbonEnv(catalog)
-      DistributionUtil.numExistingExecutors =
-          sqlContext.sparkContext.schedulerBackend.getExecutorIds().length
+      DistributionUtil.numExistingExecutors = sqlContext.sparkContext.schedulerBackend match {
+        case b: CoarseGrainedSchedulerBackend => b.getExecutorIds().length
+        case _ => 0
+      }
       initialized = true
     }
   }

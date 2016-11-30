@@ -38,7 +38,6 @@ import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.CarbonUtilException;
 
-
 /**
  * Utility Class for the Compaction Flow.
  */

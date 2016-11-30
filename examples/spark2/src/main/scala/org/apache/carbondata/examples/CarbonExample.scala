@@ -90,10 +90,15 @@ object CarbonExample {
 //           """).show()
 
     spark.sql("""
-           SELECT sum(intField), stringField
-           FROM carbon_table
-           GROUP BY stringField
-           """).show
+             SELECT *
+             FROM carbon_table
+              """).show
+
+//    spark.sql("""
+//           SELECT sum(intField), stringField
+//           FROM carbon_table
+//           GROUP BY stringField
+//           """).show
 
     // Drop table
     spark.sql("DROP TABLE IF EXISTS carbon_table")

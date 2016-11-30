@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql
 
+import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.hive.{CarbonMetastore, DistributionUtil}
 
 case class CarbonEnv(carbonMetastore: CarbonMetastore)
@@ -32,8 +33,10 @@ object CarbonEnv {
       val cc = sqlContext.asInstanceOf[CarbonContext]
       val catalog = new CarbonMetastore(cc, cc.storePath, cc.hiveClientInterface, "")
       carbonEnv = CarbonEnv(catalog)
-      DistributionUtil.numExistingExecutors =
-          sqlContext.sparkContext.schedulerBackend.numExistingExecutors
+      DistributionUtil.numExistingExecutors = sqlContext.sparkContext.schedulerBackend match {
+        case b: CoarseGrainedSchedulerBackend => b.numExistingExecutors
+        case _ => 0
+      }
       initialized = true
     }
   }

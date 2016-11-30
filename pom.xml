@@ -293,6 +293,9 @@
     </profile>
     <profile>
       <id>spark-1.5</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
         <spark.version>1.5.2</spark.version>
         <scala.binary.version>2.10</scala.binary.version>
