@@ -60,15 +60,8 @@ public class ThriftWriterTest {
   /**
    * test thriftWriters Functionality if stream and binary out is opened.
    */
-  @Test public void testToCheckIfStreamAndBinaryOutIsOpen() {
-    try {
-      thriftWriter.open();
-    } catch (IOException ex) {
-      /**
-       * stop test and ignore if file for writing can't be opened.
-       */
-      assumeNoException(ex);
-    }
+  @Test public void testToCheckIfStreamAndBinaryOutIsOpen() throws IOException {
+    thriftWriter.open();
     boolean result = thriftWriter.isOpen();
     assertTrue(result);
   }

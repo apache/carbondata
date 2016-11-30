@@ -24,7 +24,8 @@ import mockit.Mock;
 import mockit.MockUp;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertTrue;
+import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 /**
  * this class will test the functionality of ByteArrayHolder
@@ -37,33 +38,33 @@ public class ByteArrayHolderTest {
     byteArrayHolder = new ByteArrayHolder(new byte[] { 1, 2 }, 1);
     byte[] mdKey = { 1, 2 };
     ByteArrayHolder testByteArrayHolder = new ByteArrayHolder(mdKey, 1);
-    assertTrue(byteArrayHolder.compareTo(testByteArrayHolder) == 0);
+    assertEquals(0, byteArrayHolder.compareTo(testByteArrayHolder));
   }
 
   @Test public void testLessThanCaseForCompareTo() {
     byteArrayHolder = new ByteArrayHolder(new byte[] { 1, 2 }, 2);
     byte[] mdKey = { 1, 7 };
     ByteArrayHolder testByteArrayHolder = new ByteArrayHolder(mdKey, 1);
-    assertTrue(byteArrayHolder.compareTo(testByteArrayHolder) == -5);
+    assertEquals(-5, byteArrayHolder.compareTo(testByteArrayHolder));
   }
 
   @Test public void testGreaterThanCaseForCompareTo() {
     byteArrayHolder = new ByteArrayHolder(new byte[] { 1, 7 }, 2);
     byte[] mdKey = { 1, 2 };
     ByteArrayHolder testByteArrayHolder = new ByteArrayHolder(mdKey, 1);
-    assertTrue(byteArrayHolder.compareTo(testByteArrayHolder) == 5);
+    assertEquals(5, byteArrayHolder.compareTo(testByteArrayHolder));
   }
 
   @Test public void testEqualsTrueCase() {
     byteArrayHolder = new ByteArrayHolder(new byte[] { 1, 2 }, 1);
     ByteArrayHolder testByteArrayHolder = new ByteArrayHolder(new byte[] { 1, 2 }, 1);
-    assertTrue(byteArrayHolder.equals(testByteArrayHolder) == true);
+    assertEquals(byteArrayHolder, testByteArrayHolder);
   }
 
   @Test public void testEqualsFalseCase() {
     byteArrayHolder = new ByteArrayHolder(new byte[] { 1, 8 }, 1);
     ByteArrayHolder testByteArrayHolder = new ByteArrayHolder(new byte[] { 1, 2 }, 1);
-    assertTrue(byteArrayHolder.equals(testByteArrayHolder) == false);
+    assertNotEquals(byteArrayHolder, testByteArrayHolder);
   }
 
   @Test public void testHashcode() {
@@ -73,7 +74,7 @@ public class ByteArrayHolderTest {
         return 1;
       }
     };
-    assertTrue(byteArrayHolder.hashCode() == 62);
+    assertEquals(62, byteArrayHolder.hashCode());
   }
 
 }

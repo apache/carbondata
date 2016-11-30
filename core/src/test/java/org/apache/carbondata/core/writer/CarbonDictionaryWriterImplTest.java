@@ -53,6 +53,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -160,7 +161,7 @@ public class CarbonDictionaryWriterImplTest {
         readDictionaryMetadataFile();
     int expectedResult = 1;
     int actualResult = carbonDictionaryColumnMetaChunks.size();
-    assertTrue(expectedResult == actualResult);
+    assertEquals(expectedResult, actualResult);
     // prepare retrieved chunk metadata
     long start_offset = 0L;
     CarbonDictionaryColumnMetaChunk expected =
@@ -174,9 +175,9 @@ public class CarbonDictionaryWriterImplTest {
     List<byte[]> dictionaryValues = readDictionaryFile(0L, 0L);
     // prepare expected dictionary chunk list
     List<String> actual = convertByteArrayListToStringValueList(dictionaryValues);
-    int expectedDataSetSize=dataSet1.size();
-    int actualDataSetSize=actual.size();
-    assertTrue(expectedDataSetSize == actualDataSetSize);
+    int expectedDataSetSize = dataSet1.size();
+    int actualDataSetSize = actual.size();
+    assertEquals(expectedDataSetSize, actualDataSetSize);
     // validate the dictionary data
     compareDictionaryData(actual, dataSet1);
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE,
@@ -311,7 +312,7 @@ public class CarbonDictionaryWriterImplTest {
         readDictionaryMetadataFile();
     int actualResult = carbonDictionaryColumnMetaChunks.size();
     // assert for metadata chunk size
-    assertTrue(expectedResult == actualResult);
+    assertEquals(expectedResult, actualResult);
   }
 
   /**
@@ -349,7 +350,7 @@ public class CarbonDictionaryWriterImplTest {
     List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
         readDictionaryMetadataFile();
     // assert for metadata chunk size
-    assertTrue(3 == carbonDictionaryColumnMetaChunks.size());
+    assertEquals(3, carbonDictionaryColumnMetaChunks.size());
     CarbonDictionaryColumnMetaChunk expected =
         new CarbonDictionaryColumnMetaChunk(3, 4, dictionaryStartOffset, dictionaryFileEndOffset,
             1);
@@ -421,7 +422,7 @@ public class CarbonDictionaryWriterImplTest {
     int expectedResult = 1;
     int actualResult = carbonDictionaryColumnMetaChunks.size();
     // assert
-    assertTrue(expectedResult == actualResult);
+    assertEquals(expectedResult, actualResult);
     long start_offset = 0L;
     // validate actual chunk metadata with expected
     CarbonDictionaryColumnMetaChunk expected =
@@ -453,11 +454,11 @@ public class CarbonDictionaryWriterImplTest {
    */
   private void validateDictionaryMetadata(CarbonDictionaryColumnMetaChunk actual,
       CarbonDictionaryColumnMetaChunk expected) {
-    assertTrue(expected.getMin_surrogate_key() == actual.getMin_surrogate_key());
-    assertTrue(expected.getMax_surrogate_key() == actual.getMax_surrogate_key());
-    assertTrue(expected.getStart_offset() == actual.getStart_offset());
-    assertTrue(expected.getEnd_offset() == actual.getEnd_offset());
-    assertTrue(expected.getChunk_count() == actual.getChunk_count());
+    assertEquals(expected.getMin_surrogate_key(), actual.getMin_surrogate_key());
+    assertEquals(expected.getMax_surrogate_key(), actual.getMax_surrogate_key());
+    assertEquals(expected.getStart_offset(), actual.getStart_offset());
+    assertEquals(expected.getEnd_offset(), actual.getEnd_offset());
+    assertEquals(expected.getChunk_count(), actual.getChunk_count());
   }
 
   /**
@@ -467,9 +468,9 @@ public class CarbonDictionaryWriterImplTest {
    * @param expected
    */
   private void compareDictionaryData(List<String> actual, List<String> expected) {
-    assertTrue(expected.size() == actual.size());
+    assertEquals(expected.size(), actual.size());
     for (int i = 0; i < actual.size(); i++) {
-      assertTrue(actual.get(i).equals(expected.get(i)));
+      assertEquals(actual.get(i), expected.get(i));
     }
   }
 
