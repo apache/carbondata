@@ -82,7 +82,7 @@ object CarbonTextFile {
     if (Charset.forName(charset) == TextFile.DEFAULT_CHARSET) {
       newHadoopRDD(sc, location).map(pair => pair._2.toString)
     } else {
-      // can't pass a Charset object here cause its not serializable
+      // can't pass a Charset object here cause its not hserializable
       // TODO: maybe use mapPartitions instead?
       newHadoopRDD(sc, location).map(
         pair => new String(pair._2.getBytes, 0, pair._2.getLength, charset))

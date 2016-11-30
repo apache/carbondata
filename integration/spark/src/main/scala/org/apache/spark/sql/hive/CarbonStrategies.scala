@@ -20,7 +20,6 @@ package org.apache.spark.sql.hive
 import java.util
 
 import scala.collection.JavaConverters._
-
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -28,15 +27,14 @@ import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.catalyst.expressions.{AttributeSet, _}
 import org.apache.spark.sql.catalyst.planning.{PhysicalOperation, QueryPlanner}
-import org.apache.spark.sql.catalyst.plans.logical.{Filter => LogicalFilter, LogicalPlan}
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Filter => LogicalFilter}
 import org.apache.spark.sql.execution.{ExecutedCommand, Filter, Project, SparkPlan}
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.datasources.{DescribeCommand => LogicalDescribeCommand, LogicalRelation}
+import org.apache.spark.sql.execution.datasources.{LogicalRelation, DescribeCommand => LogicalDescribeCommand}
 import org.apache.spark.sql.hive.execution.{DropTable, HiveNativeCommand}
 import org.apache.spark.sql.hive.execution.command._
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types.IntegerType
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException

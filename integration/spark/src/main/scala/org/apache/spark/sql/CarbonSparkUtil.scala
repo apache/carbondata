@@ -1,3 +1,4 @@
+<<<<<<< d94b99f366465b2426bbcd8277f80651f2408770
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,6 +18,8 @@
 
 package org.apache.spark.sql
 
+package org.apache.spark.sql
+
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.hive.{CarbonMetaData, DictionaryMap}
@@ -31,7 +34,8 @@ object CarbonSparkUtil {
 
   def createSparkMeta(carbonTable: CarbonTable): CarbonMetaData = {
     val dimensionsAttr = carbonTable.getDimensionByTableName(carbonTable.getFactTableName)
-        .asScala.map(x => x.getColName) // wf : may be problem
+        .asScala.map(x => x.getColName)
+    // wf : may be problem
     val measureAttr = carbonTable.getMeasureByTableName(carbonTable.getFactTableName)
         .asScala.map(x => x.getColName)
     val dictionary =

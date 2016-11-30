@@ -22,22 +22,41 @@ import java.text.SimpleDateFormat
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
+<<<<<<< d94b99f366465b2426bbcd8277f80651f2408770
 
+=======
+import scala.util.Random
+import org.apache.spark.SparkEnv
+>>>>>>> rebase
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Cast, Literal}
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
+<<<<<<< d94b99f366465b2426bbcd8277f80651f2408770
 import org.apache.spark.sql.hive.CarbonMetastore
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
 
+=======
+import org.apache.spark.sql.hive.{CarbonHiveMetadataUtil, CarbonMetastore, CarbonMetastore$, HiveContext}
+import org.apache.spark.sql.types.TimestampType
+import org.apache.spark.util.FileUtils
+import org.codehaus.jackson.map.ObjectMapper
+import org.apache.carbondata.common.factory.CarbonCommonFactory
+>>>>>>> rebase
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier}
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
+<<<<<<< d94b99f366465b2426bbcd8277f80651f2408770
 import org.apache.carbondata.core.carbon.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
+=======
+import org.apache.carbondata.core.carbon.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
+import org.apache.carbondata.core.carbon.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
+>>>>>>> rebase
 import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
@@ -48,8 +67,14 @@ import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+<<<<<<< d94b99f366465b2426bbcd8277f80651f2408770
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
+=======
+import org.apache.carbondata.spark.load._
+import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil, GlobalDictionaryUtil}
+>>>>>>> rebase
 
 /**
  * Command for the compaction in alter table command

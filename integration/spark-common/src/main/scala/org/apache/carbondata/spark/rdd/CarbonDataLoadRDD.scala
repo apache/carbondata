@@ -37,16 +37,14 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
 import org.apache.carbondata.processing.constants.DataProcessorConstants
-import org.apache.carbondata.processing.csvreaderstep.JavaRddIterator
-import org.apache.carbondata.processing.csvreaderstep.RddInputUtils
+import org.apache.carbondata.processing.csvreaderstep.{JavaRddIterator, RddInputUtils}
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.DataLoadResult
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.splits.TableSplit
-import org.apache.carbondata.spark.util.CarbonQueryUtil
-import org.apache.carbondata.spark.util.CarbonScalaUtil
+import org.apache.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil}
 
 /**
  * This partition class use to split by TableSplit

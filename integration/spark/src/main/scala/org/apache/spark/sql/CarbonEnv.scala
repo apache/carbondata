@@ -19,14 +19,11 @@ package org.apache.spark.sql
 
 import org.apache.spark.sql.hive.CarbonMetastore
 
-/**
- * Carbon Environment for unified context
- */
 case class CarbonEnv(carbonMetastore: CarbonMetastore)
 
 object CarbonEnv {
 
-  @volatile private var carbonEnv: CarbonEnv = _
+  @volatile private var carbonEnv: CarbonEnv  = _
 
   var initialized = false
 
