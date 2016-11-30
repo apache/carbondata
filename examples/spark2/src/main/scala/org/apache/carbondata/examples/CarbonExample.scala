@@ -24,7 +24,8 @@ import org.apache.spark.util.TableLoader
 object CarbonExample {
 
   def main(args: Array[String]): Unit = {
-    val rootPath = "/Users/jackylk/code/incubator-carbondata"
+    // to run the example, plz change this path to your local machine path
+    val rootPath = "/Users/wangfei/code/incubator-carbondata"
     val spark = SparkSession
         .builder()
         .master("local")
@@ -104,5 +105,4 @@ object CarbonExample {
     spark.sql("DROP TABLE IF EXISTS carbon_table")
     spark.sql("DROP TABLE IF EXISTS csv_table")
   }
-
 }
