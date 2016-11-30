@@ -33,13 +33,6 @@
     <dev.path>${basedir}/../../dev</dev.path>
   </properties>
 
-  <repositories>
-    <repository>
-      <id>pentaho-releases</id>
-      <url>http://repository.pentaho.org/artifactory/repo/</url>
-    </repository>
-  </repositories>
-
   <dependencies>
     <dependency>
       <groupId>com.databricks</groupId>
