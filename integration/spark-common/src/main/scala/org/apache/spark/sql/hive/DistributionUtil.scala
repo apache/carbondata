@@ -14,6 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.spark.sql.hive
 
 import java.net.{InetAddress, InterfaceAddress, NetworkInterface}
@@ -143,19 +144,15 @@ object DistributionUtil {
     nodes.distinct
   }
 
-  /**
-   * Requesting the extra executors other than the existing ones.
-   *
-   * @param sc
-   * @param numExecutors
-   * @return
-   */
+  // Hack for spark2 integration
+  var numExistingExecutors: Int = _
+
   def ensureExecutors(sc: SparkContext, numExecutors: Int): Boolean = {
     sc.schedulerBackend match {
       case b: CoarseGrainedSchedulerBackend =>
-        val requiredExecutors = numExecutors - b.numExistingExecutors
-        LOGGER.info(s"number of executors is =$numExecutors existing executors are =" +
-            s"${ b.numExistingExecutors }")
+        val requiredExecutors = numExecutors - numExistingExecutors
+        LOGGER.info(s"number of executors is = $numExecutors existing executors are = " +
+                    s"$numExistingExecutors")
         if (requiredExecutors > 0) {
           b.requestExecutors(requiredExecutors)
         }

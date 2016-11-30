@@ -31,7 +31,8 @@ object CarbonSparkUtil {
 
   def createSparkMeta(carbonTable: CarbonTable): CarbonMetaData = {
     val dimensionsAttr = carbonTable.getDimensionByTableName(carbonTable.getFactTableName)
-        .asScala.map(x => x.getColName) // wf : may be problem
+        .asScala.map(x => x.getColName)
+    // wf : may be problem
     val measureAttr = carbonTable.getMeasureByTableName(carbonTable.getFactTableName)
         .asScala.map(x => x.getColName)
     val dictionary =

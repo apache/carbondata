@@ -57,12 +57,19 @@ public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSuppor
             break;
           default:
         }
-      } else if (carbonColumns[i].hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      }
+      else if (carbonColumns[i].hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         //convert the long to timestamp in case of direct dictionary column
         if (DataType.TIMESTAMP == carbonColumns[i].getDataType()) {
           data[i] = new Timestamp((long) data[i] / 1000);
         }
       }
+//      else if(dataTypes[i].equals(DataType.INT)) {
+//        data[i] = ((Long)(data[i])).intValue();
+//      }
+//        else if(dataTypes[i].equals(DataType.SHORT)) {
+//        data[i] = ((Double)(data[i])).shortValue();
+//      }
     }
     return new GenericRow(data);
   }
