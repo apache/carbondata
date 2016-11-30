@@ -17,12 +17,13 @@
 
 package org.apache.spark.util
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.spark.sql.SparkSession
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+
 /**
-  * table api util
-  */
+ * table api util
+ */
 object TableAPIUtil {
   def parseSchemaName(tableName: String): (String, String) = {
     if (tableName.contains(".")) {

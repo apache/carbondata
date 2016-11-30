@@ -1,45 +1,53 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.spark.sql
 
 import java.util.regex.{Matcher, Pattern}
+
+import scala.collection.mutable.{LinkedHashSet, Map}
+
+import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField, TableModel}
 
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
-import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField, TableModel}
 
-import scala.collection.mutable.{LinkedHashSet, Map}
-
-/**
-  * Created by david on 16-11-25.
-  */
 object TableCreator {
 
-  /**
-    * detects whether complex dimension is part of dictionary_exclude
-    */
+  // detects whether complex dimension is part of dictionary_exclude
   def isComplexDimDictionaryExclude(dimensionDataType: String): Boolean = {
     val dimensionType = Array("array", "struct")
     dimensionType.exists(x => x.equalsIgnoreCase(dimensionDataType))
   }
 
-  /**
-    * detects whether double or decimal column is part of dictionary_exclude
-    */
+  // detects whether double or decimal column is part of dictionary_exclude
   def isStringAndTimestampColDictionaryExclude(columnDataType: String): Boolean = {
     val dataTypes = Array("string", "timestamp")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }
 
-  /**
-    * detect dimention data type
-    *
-    * @param dimensionDatatype
-    */
+  // detect dimention data type
   def isDetectAsDimentionDatatype(dimensionDatatype: String): Boolean = {
     val dimensionType =
-      Array("string", "stringtype", "array", "arraytype", "struct", "structtype", "timestamp", "timestamptype")
+      Array("string", "stringtype", "array", "arraytype", "struct",
+        "structtype", "timestamp", "timestamptype")
     dimensionType.exists(x => x.equalsIgnoreCase(dimensionDatatype))
   }
 
@@ -54,36 +62,36 @@ object TableCreator {
     // All excluded cols should be there in create table cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).isDefined) {
       dictExcludeCols =
-          tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).get.split(',').map(_.trim)
+        tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).get.split(',').map(_.trim)
       dictExcludeCols
-          .map { dictExcludeCol =>
-            if (!fields.exists(x => x.column.equalsIgnoreCase(dictExcludeCol))) {
-              val errormsg = "DICTIONARY_EXCLUDE column: " + dictExcludeCol +
-                  " does not exist in table. Please check create table statement."
+        .map { dictExcludeCol =>
+          if (!fields.exists(x => x.column.equalsIgnoreCase(dictExcludeCol))) {
+            val errormsg = "DICTIONARY_EXCLUDE column: " + dictExcludeCol +
+              " does not exist in table. Please check create table statement."
+            throw new MalformedCarbonCommandException(errormsg)
+          } else {
+            val dataType = fields.find(x =>
+              x.column.equalsIgnoreCase(dictExcludeCol)).get.dataType.get
+            if (isComplexDimDictionaryExclude(dataType)) {
+              val errormsg = "DICTIONARY_EXCLUDE is unsupported for complex datatype column: " +
+                dictExcludeCol
               throw new MalformedCarbonCommandException(errormsg)
-            } else {
-              val dataType = fields.find(x =>
-                x.column.equalsIgnoreCase(dictExcludeCol)).get.dataType.get
-              if (isComplexDimDictionaryExclude(dataType)) {
-                val errormsg = "DICTIONARY_EXCLUDE is unsupported for complex datatype column: " +
-                    dictExcludeCol
-                throw new MalformedCarbonCommandException(errormsg)
-              } else if (!isStringAndTimestampColDictionaryExclude(dataType)) {
-                val errorMsg = "DICTIONARY_EXCLUDE is unsupported for " + dataType.toLowerCase() +
-                    " data type column: " + dictExcludeCol
-                throw new MalformedCarbonCommandException(errorMsg)
-              }
+            } else if (!isStringAndTimestampColDictionaryExclude(dataType)) {
+              val errorMsg = "DICTIONARY_EXCLUDE is unsupported for " + dataType.toLowerCase() +
+                " data type column: " + dictExcludeCol
+              throw new MalformedCarbonCommandException(errorMsg)
             }
           }
+        }
     }
     // All included cols should be there in create table cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
       dictIncludeCols =
-          tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).get.split(",").map(_.trim)
+        tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).get.split(",").map(_.trim)
       dictIncludeCols.map { distIncludeCol =>
         if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol.trim))) {
           val errormsg = "DICTIONARY_INCLUDE column: " + distIncludeCol.trim +
-              " does not exist in table. Please check create table statement."
+            " does not exist in table. Please check create table statement."
           throw new MalformedCarbonCommandException(errormsg)
         }
       }
@@ -93,7 +101,7 @@ object TableCreator {
     dictExcludeCols.foreach { dicExcludeCol =>
       if (dictIncludeCols.exists(x => x.equalsIgnoreCase(dicExcludeCol))) {
         val errormsg = "DICTIONARY_EXCLUDE can not contain the same column: " + dicExcludeCol +
-            " with DICTIONARY_INCLUDE. Please check create table statement."
+          " with DICTIONARY_INCLUDE. Please check create table statement."
         throw new MalformedCarbonCommandException(errormsg)
       }
     }
@@ -119,12 +127,12 @@ object TableCreator {
   }
 
   /**
-    * Extract the Measure Cols fields. By default all non string cols will be measures.
-    *
-    * @param fields
-    * @param tableProperties
-    * @return
-    */
+   * Extract the Measure Cols fields. By default all non string cols will be measures.
+   *
+   * @param fields
+   * @param tableProperties
+   * @return
+   */
   protected def extractMsrColsFromFields(fields: Seq[Field],
                                          tableProperties: Map[String, String]): Seq[Field] = {
     var msrFields: Seq[Field] = Seq[Field]()
@@ -134,20 +142,20 @@ object TableCreator {
     // get all included cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
       dictIncludedCols =
-          tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).get.split(',').map(_.trim)
+        tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).get.split(',').map(_.trim)
     }
 
     // get all excluded cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).isDefined) {
       dictExcludedCols =
-          tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).get.split(',').map(_.trim)
+        tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).get.split(',').map(_.trim)
     }
 
     // by default consider all non string cols as msrs. consider all include/ exclude cols as dims
     fields.foreach(field => {
       if (!isDetectAsDimentionDatatype(field.dataType.get)) {
         if (!dictIncludedCols.exists(x => x.equalsIgnoreCase(field.column)) &&
-            !dictExcludedCols.exists(x => x.equalsIgnoreCase(field.column))) {
+          !dictExcludedCols.exists(x => x.equalsIgnoreCase(field.column))) {
           msrFields :+= field
         }
       }
@@ -169,10 +177,11 @@ object TableCreator {
     }
   }
 
-  protected def fillColumnProperty(parentColumnName: Option[String],
-                                   columnName: String,
-                                   tableProperties: Map[String, String],
-                                   colPropMap: java.util.HashMap[String, java.util.List[ColumnProperty]]) {
+  protected def fillColumnProperty(
+      parentColumnName: Option[String],
+      columnName: String,
+      tableProperties: Map[String, String],
+      colPropMap: java.util.HashMap[String, java.util.List[ColumnProperty]]) {
     val (tblPropKey, colProKey) = getKey(parentColumnName, columnName)
     val colProps = CommonUtil.getColumnProperties(tblPropKey, tableProperties)
     if (colProps.isDefined) {
@@ -241,12 +250,12 @@ object TableCreator {
   }
 
   /**
-    * Extract the column groups configuration from table properties.
-    * Based on this Row groups of fields will be determined.
-    *
-    * @param tableProperties
-    * @return
-    */
+   * Extract the column groups configuration from table properties.
+   * Based on this Row groups of fields will be determined.
+   *
+   * @param tableProperties
+   * @return
+   */
   protected def updateColumnGroupsInField(tableProperties: Map[String, String],
                                           noDictionaryDims: Seq[String],
                                           msrs: Seq[Field],
@@ -287,13 +296,13 @@ object TableCreator {
   }
 
   /**
-    * This will extract the no inverted columns fields.
-    * By default all dimensions use inverted index.
-    *
-    * @param fields
-    * @param tableProperties
-    * @return
-    */
+   * This will extract the no inverted columns fields.
+   * By default all dimensions use inverted index.
+   *
+   * @param fields
+   * @param tableProperties
+   * @return
+   */
   protected def extractNoInvertedIndexColumns(fields: Seq[Field],
                                               tableProperties: Map[String, String]):
   Seq[String] = {
@@ -303,15 +312,15 @@ object TableCreator {
 
     if (tableProperties.get("NO_INVERTED_INDEX").isDefined) {
       noInvertedIdxColsProps =
-          tableProperties.get("NO_INVERTED_INDEX").get.split(',').map(_.trim)
+        tableProperties.get("NO_INVERTED_INDEX").get.split(',').map(_.trim)
       noInvertedIdxColsProps
-          .map { noInvertedIdxColProp =>
-            if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
-              val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
-                  " does not exist in table. Please check create table statement."
-              throw new MalformedCarbonCommandException(errormsg)
-            }
+        .map { noInvertedIdxColProp =>
+          if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
+            val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
+              " does not exist in table. Please check create table statement."
+            throw new MalformedCarbonCommandException(errormsg)
           }
+        }
     }
     // check duplicate columns and only 1 col left
     val distinctCols = noInvertedIdxColsProps.toSet
@@ -395,12 +404,12 @@ object TableCreator {
       case "Array" => Field(parentName + "." + field.column, Some("Array"),
         Some(parentName + "." + field.name.getOrElse(None)),
         field.children
-            .map(f => f.map(appendParentForEachChild(_, parentName + "." + field.column))),
+          .map(f => f.map(appendParentForEachChild(_, parentName + "." + field.column))),
         parentName)
       case "Struct" => Field(parentName + "." + field.column, Some("Struct"),
         Some(parentName + "." + field.name.getOrElse(None)),
         field.children
-            .map(f => f.map(appendParentForEachChild(_, parentName + "." + field.column))),
+          .map(f => f.map(appendParentForEachChild(_, parentName + "." + field.column))),
         parentName)
       case "BigInt" => Field(parentName + "." + field.column, Some("BigInt"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
@@ -444,12 +453,12 @@ object TableCreator {
         dbName.getOrElse(
           CarbonCommonConstants.DATABASE_DEFAULT_NAME)
       }.$tableName"
-          +
-          " can not be created without key columns. Please " +
-          "use DICTIONARY_INCLUDE or " +
-          "DICTIONARY_EXCLUDE to set at least one key " +
-          "column " +
-          "if all specified columns are numeric types")
+        +
+        " can not be created without key columns. Please " +
+        "use DICTIONARY_INCLUDE or " +
+        "DICTIONARY_EXCLUDE to set at least one key " +
+        "column " +
+        "if all specified columns are numeric types")
     }
     val msrs: Seq[Field] = extractMsrColsFromFields(fields, tableProperties)
 

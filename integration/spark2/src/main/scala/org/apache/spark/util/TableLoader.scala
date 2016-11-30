@@ -19,19 +19,20 @@ package org.apache.spark.util
 
 import java.util.Properties
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import scala.collection.{immutable, mutable}
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql._
 import org.apache.spark.sql.execution.command.LoadTable
 
-import scala.collection.immutable
-import scala.collection.mutable
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * load data api
  */
+// scalastyle:off
 object TableLoader {
 
   def extractOptions(propertiesFile: String): immutable.Map[String, String] = {

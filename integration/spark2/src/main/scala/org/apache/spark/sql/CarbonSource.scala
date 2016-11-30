@@ -22,20 +22,20 @@ import java.io.File
 import scala.language.implicitConversions
 
 import org.apache.hadoop.fs.Path
-import org.apache.spark.sql.sources._
-import org.apache.spark.sql.types.StructType
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
 import org.apache.spark.sql.execution.command.{CreateTable, Field}
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
+import org.apache.spark.sql.sources._
+import org.apache.spark.sql.types.StructType
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.CarbonOption
 
 /**
-  * Carbon relation provider compliant to data source api.
-  * Creates carbon relations
-  */
+ * Carbon relation provider compliant to data source api.
+ * Creates carbon relations
+ */
 class CarbonSource extends CreatableRelationProvider
     with SchemaRelationProvider with DataSourceRegister {
 

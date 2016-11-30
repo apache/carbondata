@@ -23,12 +23,15 @@ import java.util.Date
 
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.{InputSplit, Job, JobID, TaskAttemptID, TaskType}
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Partition, SerializableWritable, SparkContext, TaskContext, TaskKilledException}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.hive.DistributionUtil
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
 import org.apache.carbondata.core.carbon.datastore.block.Distributable
@@ -40,7 +43,6 @@ import org.apache.carbondata.hadoop.readsupport.impl.RawDataReadSupport
 import org.apache.carbondata.scan.expression.Expression
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
-import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 
 class CarbonSparkPartition(
     val rddId: Int,
@@ -56,10 +58,10 @@ class CarbonSparkPartition(
 }
 
 /**
-  * This RDD is used to perform query on CarbonData file. Before sending tasks to scan
-  * CarbonData file, this RDD will leverage CarbonData's index information to do CarbonData file
-  * level filtering in driver side.
-  */
+ * This RDD is used to perform query on CarbonData file. Before sending tasks to scan
+ * CarbonData file, this RDD will leverage CarbonData's index information to do CarbonData file
+ * level filtering in driver side.
+ */
 class CarbonScanRDD[V: ClassTag](
     @transient sc: SparkContext,
     columnProjection: CarbonProjection,
@@ -238,8 +240,8 @@ class CarbonScanRDD[V: ClassTag](
   }
 
   /**
-    * Get the preferred locations where to launch this task.
-    */
+   * Get the preferred locations where to launch this task.
+   */
   override def getPreferredLocations(split: Partition): Seq[String] = {
     val theSplit = split.asInstanceOf[CarbonSparkPartition]
     val firstOptionLocation = theSplit.split.value.getLocations.filter(_ != "localhost")

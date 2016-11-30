@@ -18,16 +18,19 @@
 package org.apache.spark.sql.hive
 
 import java.io._
-import java.util.concurrent.atomic.AtomicLong
 import java.util.{GregorianCalendar, LinkedHashSet, UUID}
+import java.util.concurrent.atomic.AtomicLong
 
 import scala.Array.canBuildFrom
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.JavaConverters._
 import scala.util.parsing.combinator.RegexParsers
 
+import org.apache.spark.internal.Logging
+import org.apache.spark.sql.{RuntimeConfig, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{MultiInstanceRelation, NoSuchTableException}
+import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Statistics}
 import org.apache.spark.sql.execution.command.Partitioner
 import org.apache.spark.sql.types._
@@ -50,12 +53,8 @@ import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.lcm.locks.ZookeeperInit
 import org.apache.carbondata.lcm.status.SegmentStatusManager
-import org.apache.carbondata.spark.util.CarbonSparkUtil
-import org.apache.spark.internal.Logging
-import org.apache.spark.sql.{RuntimeConfig, SparkSession}
-import org.apache.spark.sql.catalyst.expressions.AttributeReference
-
 import org.apache.carbondata.spark.merger.TableMeta
+import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 case class MetaData(var tablesMeta: ArrayBuffer[TableMeta])
 
@@ -661,8 +660,8 @@ object CarbonMetastoreTypes extends RegexParsers {
 
 
 /**
-  * Represents logical plan for one carbon table
-  */
+ * Represents logical plan for one carbon table
+ */
 case class CarbonRelation(
     databaseName: String,
     tableName: String,

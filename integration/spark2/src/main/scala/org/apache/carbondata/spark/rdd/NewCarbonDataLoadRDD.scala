@@ -23,10 +23,15 @@ import java.util
 import java.util.{Date, UUID}
 
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
+
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -40,10 +45,7 @@ import org.apache.carbondata.processing.newflow.exception.BadRecordFoundExceptio
 import org.apache.carbondata.spark.DataLoadResult
 import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.CarbonQueryUtil
-import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
 
-import scala.util.control.NonFatal
 
 class SerializableConfiguration(@transient var value: Configuration) extends Serializable {
 

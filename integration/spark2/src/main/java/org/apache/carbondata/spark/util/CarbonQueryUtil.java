@@ -20,11 +20,7 @@
 package org.apache.carbondata.spark.util;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -42,8 +38,7 @@ import org.apache.carbondata.spark.partition.api.impl.QueryPartitionHelper;
 import org.apache.carbondata.spark.splits.TableSplit;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.spark.SparkContext;
-import org.apache.spark.sql.execution.command.Partitioner;
+
 /**
  * This utilty parses the Carbon query plan to actual query model object.
  */
@@ -74,7 +69,8 @@ public final class CarbonQueryUtil {
       splits[i] = new TableSplit();
       List<String> locations = new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
       Partition partition = allPartitions.get(i);
-      String location = QueryPartitionHelper.getInstance().getLocation(partition, databaseName, tableName);
+      String location =
+              QueryPartitionHelper.getInstance().getLocation(partition, databaseName, tableName);
       locations.add(location);
       splits[i].setPartition(partition);
       splits[i].setLocations(locations);

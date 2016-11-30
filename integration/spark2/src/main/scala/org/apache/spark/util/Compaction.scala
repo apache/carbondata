@@ -22,10 +22,11 @@ import org.apache.spark.sql.execution.command.{AlterTableCompaction, AlterTableM
 /**
  * table compaction api
  */
+ // scalastyle:off
 object Compaction {
 
   def compaction(spark: SparkSession, dbName: Option[String], tableName: String,
-      compactionType: String):   Unit = {
+      compactionType: String): Unit = {
     AlterTableCompaction(AlterTableModel(dbName, tableName, compactionType, "")).run(spark)
   }
 

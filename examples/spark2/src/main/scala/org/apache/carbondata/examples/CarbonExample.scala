@@ -17,9 +17,10 @@
 
 package org.apache.spark.sql.examples
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.util.TableLoader
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 object CarbonExample {
 

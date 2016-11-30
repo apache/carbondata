@@ -18,11 +18,12 @@
 package org.apache.spark.util
 
 import org.apache.commons.lang3.StringUtils
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.execution.command.ShowLoads
 import org.apache.spark.sql.types.{StringType, TimestampType}
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 
+// scalastyle:off
 object ShowSegments {
 
   def showSegments(spark: SparkSession, dbName: Option[String], tableName: String,

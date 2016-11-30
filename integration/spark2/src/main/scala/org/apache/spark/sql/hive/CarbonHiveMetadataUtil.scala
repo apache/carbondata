@@ -17,6 +17,7 @@
 package org.apache.spark.sql.hive
 
 import org.apache.spark.sql.SparkSession
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 
 

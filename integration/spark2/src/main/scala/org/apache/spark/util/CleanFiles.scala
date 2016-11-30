@@ -17,12 +17,13 @@
 
 package org.apache.spark.util
 
-import org.apache.spark.sql.execution.command.{CleanFiles => TableCleanFiles}
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.execution.command.{CleanFiles => TableCleanFiles}
 
 /**
  * clean files api
  */
+ // scalastyle:off
 object CleanFiles {
 
   def cleanFiles(spark: SparkSession, dbName: Option[String], tableName: String): Unit = {

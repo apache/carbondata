@@ -20,16 +20,17 @@ package org.apache.carbondata.spark.rdd
 import java.util
 import java.util.concurrent._
 
-import com.databricks.spark.csv.newapi.CarbonTextFile
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 import scala.util.control.Breaks._
 
+import com.databricks.spark.csv.newapi.CarbonTextFile
 import org.apache.hadoop.conf.{Configurable, Configuration}
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
+import org.apache.spark.{SparkContext, SparkEnv, SparkException}
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer}
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionCallableModel, CompactionModel}
@@ -54,7 +55,6 @@ import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionCallable, CompactionType}
 import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.{CarbonQueryUtil, LoadMetadataUtil}
-import org.apache.spark.{SparkContext, SparkEnv, SparkException}
 
 
 /**

@@ -18,45 +18,36 @@
 package org.apache.spark.sql.execution.command
 
 import java.text.SimpleDateFormat
-import java.util
-import java.util.UUID
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.{ArrayBuffer, Map}
 import scala.language.implicitConversions
-import org.apache.spark.SparkEnv
+
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Cast, Literal}
 import org.apache.spark.sql.execution.SparkPlan
-import org.apache.spark.sql.hive.{CarbonHiveMetadataUtil, CarbonRelation, HiveContext}
+import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
-import org.apache.carbondata.common.factory.CarbonCommonFactory
+
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier}
+import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
-import org.apache.carbondata.core.carbon.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
-import org.apache.carbondata.core.carbon.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
-import org.apache.carbondata.core.carbon.path.CarbonStorePath
+import org.apache.carbondata.core.carbon.metadata.schema.table.{CarbonTable, TableInfo}
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
-import org.apache.carbondata.core.load.LoadMetadataDetails
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.CarbonLoadModel
-import org.apache.carbondata.spark.CarbonSparkFactory
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil, GlobalDictionaryUtil}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
 
 /**
  * Command for the compaction in alter table command
@@ -450,8 +441,8 @@ case class LoadTable(
         carbonLoadModel.setColDictFilePath(columnDict)
         carbonLoadModel.setDirectLoad(true)
         GlobalDictionaryUtil
-          .generateGlobalDictionary(sparkSession.sqlContext, carbonLoadModel, relation.tableMeta.storePath,
-            dataFrame)
+          .generateGlobalDictionary(
+          sparkSession.sqlContext, carbonLoadModel, relation.tableMeta.storePath, dataFrame)
         CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
             carbonLoadModel,
             relation.tableMeta.storePath,

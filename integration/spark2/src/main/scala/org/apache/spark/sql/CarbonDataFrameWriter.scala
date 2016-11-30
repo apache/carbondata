@@ -20,6 +20,7 @@ package org.apache.spark.sql
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.execution.command.LoadTable
 import org.apache.spark.sql.types._
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.metadata.datatype.{DataType => CarbonType}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -31,7 +32,8 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
 
   def saveAsCarbonFile(parameters: Map[String, String] = Map()): Unit = {
     // create a new table using dataframe's schema and write its content into the table
-    sqlContext.sparkSession.sql(makeCreateTableString(dataFrame.schema, new CarbonOption(parameters)))
+    sqlContext.sparkSession.sql(makeCreateTableString(dataFrame.schema,
+    new CarbonOption(parameters)))
     writeToCarbonFile(parameters)
   }
 
@@ -49,11 +51,11 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
   }
 
   /**
-    * Firstly, saving DataFrame to CSV files
-    * Secondly, load CSV files
-    * @param options
-    * @param sqlContext
-    */
+   * Firstly, saving DataFrame to CSV files
+   * Secondly, load CSV files
+   * @param options
+   * @param sqlContext
+   */
   private def loadTempCSV(options: CarbonOption): Unit = {
     // temporary solution: write to csv file, then load the csv into carbon
     val storePath = CarbonEnv.get.carbonMetastore.storePath
@@ -103,9 +105,9 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
   }
 
   /**
-    * Loading DataFrame directly without saving DataFrame to CSV files.
-    * @param options
-    */
+   * Loading DataFrame directly without saving DataFrame to CSV files.
+   * @param options
+   */
   private def loadDataFrame(options: CarbonOption): Unit = {
     val header = dataFrame.columns.mkString(",")
     LoadTable(

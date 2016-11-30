@@ -50,7 +50,8 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
   private def collectCarbonRelation(plan: LogicalPlan): Seq[CarbonDecoderRelation] = {
     plan collect {
       case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        CarbonDecoderRelation(l.attributeMap, l.relation.asInstanceOf[CarbonDatasourceHadoopRelation])
+        CarbonDecoderRelation(l.attributeMap,
+        l.relation.asInstanceOf[CarbonDatasourceHadoopRelation])
     }
   }
 
