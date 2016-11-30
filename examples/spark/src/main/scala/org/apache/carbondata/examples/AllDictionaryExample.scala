@@ -18,7 +18,7 @@ package org.apache.carbondata.examples
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.examples.util.{AllDictionaryUtil, ExampleUtils}
+import org.apache.carbondata.examples.util.ExampleUtils
 
 object AllDictionaryExample {
 

@@ -1,0 +1,71 @@
+#
+#  Licensed to the Apache Software Foundation (ASF) under one
+#  or more contributor license agreements.  See the NOTICE file
+#  distributed with this work for additional information
+#  regarding copyright ownership.  The ASF licenses this file
+#  to you under the Apache License, Version 2.0 (the
+#  "License"); you may not use this file except in compliance
+#  with the License.  You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS,
+#  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#  See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+#carbon store path
+carbon.storelocation=/Users/jackylk/code/incubator-carbondata/examples/spark2/target/store
+
+#true: use kettle to load data
+#false: use new flow to load data
+use_kettle=true
+
+carbon.kettle.home=/Users/jackylk/code/incubator-carbondata/processing/carbonplugins
+
+#csv delimiter character
+delimiter=,
+
+#csv quote character
+#quotechar=\"
+
+#csv file header
+#fileheader=
+
+#csv data escape character
+#escapechar=\\
+
+#csv comment character
+#commentchar=#
+
+#column dictionary list
+#columndict=
+
+#null value's serialization format  
+#serialization_null_format=\\N
+
+#bad records logger
+#bad_records_logger_enable=false
+
+#bad records action
+#bad_records_action=force
+
+#all dictionary folder path
+#all_dictionary_path=
+
+#complex column's level 1 delimiter
+#complex_delimiter_level_1=\\$
+
+#complex column's level 2 delimiter
+#complex_delimiter_level_2=\\:
+
+#timestamp type column's data format
+#dateformat=
+
+#csv data whether support multiline
+#multiline=false
+
+#max number of csv file columns
+#maxColumns=

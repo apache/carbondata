@@ -73,17 +73,17 @@ public class SegmentStatusManager {
   /**
    * This method will return last modified time of tablestatus file
    */
-  public static long getTableStatusLastModifiedTime(AbsoluteTableIdentifier identifier)
-      throws IOException {
+  public static long getTableStatusLastModifiedTime(AbsoluteTableIdentifier identifier) throws IOException {
     String tableStatusPath = CarbonStorePath.getCarbonTablePath(identifier.getStorePath(),
             identifier.getCarbonTableIdentifier()).getTableStatusFilePath();
     if (!FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
       return 0L;
     } else {
       return FileFactory.getCarbonFile(tableStatusPath, FileFactory.getFileType(tableStatusPath))
-          .getLastModifiedTime();
+              .getLastModifiedTime();
     }
   }
+
 
   /**
    * get valid segment for given table

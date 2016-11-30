@@ -42,26 +42,30 @@ public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSuppor
   @Override public Row readRow(Object[] data) {
     for (int i = 0; i < dictionaries.length; i++) {
       if (dictionaries[i] != null) {
-        data[i] = DataTypeUtil
-            .getDataBasedOnDataType(dictionaries[i].getDictionaryValueForKey((int) data[i]),
-                dataTypes[i]);
-        switch (dataTypes[i]) {
-          case STRING:
-            data[i] = UTF8String.fromString(data[i].toString());
-            break;
-          case TIMESTAMP:
-            data[i] = new Timestamp((long) data[i] / 1000);
-            break;
-          case LONG:
-            data[i] = data[i];
-            break;
-          default:
-        }
+//        data[i] = DataTypeUtil
+//            .getDataBasedOnDataType(dictionaries[i].getDictionaryValueForKey((int) data[i]),
+//                dataTypes[i]);
+//        switch (dataTypes[i]) {
+//          case STRING:
+//            data[i] = UTF8String.fromString(data[i].toString());
+//            break;
+//          case TIMESTAMP:
+//            data[i] = new Timestamp((long) data[i] / 1000);
+//            break;
+//          case LONG:
+//            data[i] = data[i];
+//            break;
+//          default:
+//        }
       } else if (carbonColumns[i].hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         //convert the long to timestamp in case of direct dictionary column
         if (DataType.TIMESTAMP == carbonColumns[i].getDataType()) {
           data[i] = new Timestamp((long) data[i] / 1000);
         }
+      } else if(dataTypes[i].equals(DataType.INT)) {
+        data[i] = ((Long)(data[i])).intValue();
+      } else if(dataTypes[i].equals(DataType.SHORT)) {
+        data[i] = ((Double)(data[i])).shortValue();
       }
     }
     return new GenericRow(data);
