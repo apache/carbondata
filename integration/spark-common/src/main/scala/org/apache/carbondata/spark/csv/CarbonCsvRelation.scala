@@ -19,10 +19,12 @@ package com.databricks.spark.csv
 
 import java.io.IOException
 
+import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
+
 import com.databricks.spark.csv.newapi.CarbonTextFile
 import com.databricks.spark.csv.util._
 import com.databricks.spark.sql.readers._
-import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.commons.csv._
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.fs.Path
@@ -32,8 +34,7 @@ import org.apache.spark.sql.sources.{BaseRelation, InsertableRelation, TableScan
 import org.apache.spark.sql.types._
 import org.slf4j.LoggerFactory
 
-import scala.collection.JavaConverters._
-import scala.util.control.NonFatal
+import org.apache.carbondata.processing.etl.DataLoadingException
 
 case class CarbonCsvRelation protected[spark] (
     location: String,

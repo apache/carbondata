@@ -17,13 +17,13 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.hive.CarbonMetastore
+import org.apache.spark.sql.hive.{CarbonMetastore, DistributionUtil}
 
 case class CarbonEnv(carbonMetastore: CarbonMetastore)
 
 object CarbonEnv {
 
-  @volatile private var carbonEnv: CarbonEnv  = _
+  @volatile private var carbonEnv: CarbonEnv = _
 
   var initialized = false
 
@@ -32,6 +32,8 @@ object CarbonEnv {
       val cc = sqlContext.asInstanceOf[CarbonContext]
       val catalog = new CarbonMetastore(cc, cc.storePath, cc.hiveClientInterface, "")
       carbonEnv = CarbonEnv(catalog)
+      DistributionUtil.numExistingExecutors =
+          sqlContext.sparkContext.schedulerBackend.numExistingExecutors
       initialized = true
     }
   }

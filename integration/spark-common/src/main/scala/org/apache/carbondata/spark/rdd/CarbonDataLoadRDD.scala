@@ -44,7 +44,8 @@ import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.DataLoadResult
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.splits.TableSplit
-import org.apache.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil}
+import org.apache.carbondata.spark.util.CarbonScalaUtil
+import org.apache.carbondata.spark.util.CarbonQueryUtil
 
 /**
  * This partition class use to split by TableSplit

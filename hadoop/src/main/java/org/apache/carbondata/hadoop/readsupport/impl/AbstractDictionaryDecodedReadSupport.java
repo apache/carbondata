@@ -70,6 +70,8 @@ public abstract class AbstractDictionaryDecodedReadSupport<T> implements CarbonR
         } catch (CarbonUtilException e) {
           throw new RuntimeException(e);
         }
+      } else {
+        dataTypes[i] = carbonColumns[i].getDataType();
       }
     }
   }

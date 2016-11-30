@@ -1,4 +1,3 @@
-<<<<<<< d94b99f366465b2426bbcd8277f80651f2408770
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -15,8 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.apache.spark.sql
 
 package org.apache.spark.sql
 

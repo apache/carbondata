@@ -18,14 +18,14 @@ package org.apache.carbondata.spark.tasks
 
 import java.io.IOException
 
+import scala.collection.mutable
+
 import org.apache.carbondata.common.factory.CarbonCommonFactory
 import org.apache.carbondata.core.cache.dictionary.Dictionary
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter
 import org.apache.carbondata.spark.rdd.DictionaryLoadModel
-
-import scala.collection.mutable
 
 /**
  *
