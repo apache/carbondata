@@ -17,9 +17,10 @@
 
 package org.apache.carbondata.examples
 
+import org.apache.spark.sql.SQLContext
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.examples.util.ExampleUtils
-import org.apache.spark.sql.SQLContext
 
 /**
  * This example needs Spark 1.6 or later version to run

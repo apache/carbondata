@@ -19,11 +19,12 @@ package org.apache.carbondata.examples.util
 
 import java.io.DataOutputStream
 
-import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import scala.collection.mutable.{ArrayBuffer, HashSet}
+
 import org.apache.spark.SparkContext
 
-import scala.collection.mutable.{ArrayBuffer, HashSet}
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 
 object AllDictionaryUtil {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)

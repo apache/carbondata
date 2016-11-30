@@ -922,28 +922,32 @@ object CarbonDataRDDFactory {
           loadDataFile()
         }
         val newStatusMap = scala.collection.mutable.Map.empty[String, String]
-        status.foreach { eachLoadStatus =>
-          val state = newStatusMap.get(eachLoadStatus._1)
-          state match {
-            case Some(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) =>
-              newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
-            case Some(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
-              if eachLoadStatus._2.getLoadStatus ==
-                 CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS =>
-              newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
-            case _ =>
-              newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
-          }
-        }
-
-        newStatusMap.foreach {
-          case (key, value) =>
-            if (value == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
-              loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-            } else if (value == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS &&
-                       !loadStatus.equals(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)) {
-              loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+        if (status.nonEmpty) {
+          status.foreach { eachLoadStatus =>
+            val state = newStatusMap.get(eachLoadStatus._1)
+            state match {
+              case Some(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) =>
+                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
+              case Some(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+                if eachLoadStatus._2.getLoadStatus ==
+                    CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS =>
+                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
+              case _ =>
+                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2.getLoadStatus)
             }
+          }
+
+          newStatusMap.foreach {
+            case (key, value) =>
+              if (value == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
+                loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
+              } else if (value == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS &&
+                  !loadStatus.equals(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)) {
+                loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+              }
+          }
+        } else {
+          loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
         }
 
         if (loadStatus != CarbonCommonConstants.STORE_LOADSTATUS_FAILURE &&
