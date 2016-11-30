@@ -17,8 +17,8 @@
 
 package org.apache.spark.rdd
 
-import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet, LinkedHashSet}
 import scala.collection.mutable
+import scala.collection.mutable.{ArrayBuffer, HashMap, HashSet, LinkedHashSet}
 
 import org.apache.spark.Partition
 import org.apache.spark.scheduler.TaskLocation
