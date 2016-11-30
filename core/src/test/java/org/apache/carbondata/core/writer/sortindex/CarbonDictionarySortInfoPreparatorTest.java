@@ -26,6 +26,8 @@ import org.apache.carbondata.core.cache.dictionary.DictionaryChunksWrapper;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonUtilException;
 
+import mockit.Mock;
+import mockit.MockUp;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -53,39 +55,22 @@ public class CarbonDictionarySortInfoPreparatorTest {
     List<String> newDistinctValues = new ArrayList<>();
     newDistinctValues.add("abc");
     newDistinctValues.add("xyz");
-    Dictionary dictionary = new Dictionary() {
-      @Override public int getSortedIndex(int surrogateKey) {
-        return 1;
-      }
-
-      @Override public int getSurrogateKey(String value) {
-        return 1;
-      }
-
-      @Override public String getDictionaryValueForKey(int surrogateKey) {
-        return "";
-      }
-
-      @Override public int getSurrogateKey(byte[] value) {
-        return 1;
-      }
-
-      @Override public void clear() {
-      }
-
-      @Override public String getDictionaryValueFromSortedIndex(int sortedIndex) {
-        return "";
-      }
-
-      @Override public DictionaryChunksWrapper getDictionaryChunks() {
+    Dictionary dictionary = new MockUp<Dictionary>() {
+      @Mock public DictionaryChunksWrapper getDictionaryChunks() {
         List<byte[]> data = new ArrayList<>();
         data.add(new byte[] { 1, 2 });
         List<List<byte[]>> dictionaryChunks = new ArrayList<>();
         dictionaryChunks.add(data);
         return new DictionaryChunksWrapper(dictionaryChunks);
       }
+    }.getMockInstance();
 
+    new MockUp<DictionaryChunksWrapper>() {
+      @Mock public int getSize() {
+        return 1;
+      }
     };
+
     CarbonDictionarySortInfo carbonDictionarySortInfo = carbonDictionarySortInfoPreparator
         .getDictionarySortInfo(newDistinctValues, dictionary, DataType.ARRAY);
     int expectedGetSortIndexValue = 1;

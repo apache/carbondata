@@ -26,8 +26,6 @@ import java.util.UUID;
 
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.ColumnIdentifier;
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReader;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReaderImpl;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -45,28 +43,12 @@ import static org.junit.Assert.assertEquals;
  */
 public class CarbonDictionarySortIndexWriterImplTest {
 
-  private static String storePath;
-  private static CarbonTableIdentifier carbonTableIdentifier = null;
-  private static ColumnIdentifier columnIdentifier = null;
-  private static CarbonDictionaryWriter dictionaryWriter = null;
-  private static CarbonDictionarySortIndexWriter dictionarySortIndexWriter = null;
-  private static CarbonDictionarySortIndexReader carbonDictionarySortIndexReader = null;
-
-  /**
-   * this method will delete the folders recursively
-   */
-  private static void deleteRecursiveSilent(CarbonFile file) {
-    if (file.isDirectory()) {
-      if (file.listFiles() != null) {
-        for (CarbonFile c : file.listFiles()) {
-          deleteRecursiveSilent(c);
-        }
-      }
-    }
-    if (file.exists() && !file.delete()) {
-      return;
-    }
-  }
+  private String storePath;
+  private CarbonTableIdentifier carbonTableIdentifier = null;
+  private ColumnIdentifier columnIdentifier = null;
+  private CarbonDictionaryWriter dictionaryWriter = null;
+  private CarbonDictionarySortIndexWriter dictionarySortIndexWriter = null;
+  private CarbonDictionarySortIndexReader carbonDictionarySortIndexReader = null;
 
   @Before public void setUp() throws Exception {
     storePath = "target/carbonStore";
@@ -145,12 +127,4 @@ public class CarbonDictionarySortIndexWriterImplTest {
     return indexList;
   }
 
-  /**
-   * this method will delete the store path
-   */
-  private void deleteStorePath() {
-    FileFactory.FileType fileType = FileFactory.getFileType(this.storePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(this.storePath, fileType);
-    deleteRecursiveSilent(carbonFile);
-  }
 }
