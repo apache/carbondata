@@ -112,6 +112,22 @@
     <dev.path>${basedir}/dev</dev.path>
   </properties>
 
+  <repositories>
+    <repository>
+      <id>central</id>
+      <!-- This should be at top, it makes maven try the central repo first and then others and hence faster dep resolution -->
+      <name>Maven Repository</name>
+      <url>http://repo1.maven.org/maven2</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+    </repository>
+    <repository>
+      <id>pentaho-releases</id>
+      <url>http://repository.pentaho.org/artifactory/repo/</url>
+    </repository>
+  </repositories>
+
   <dependencyManagement>
     <dependencies>
       <dependency>
@@ -322,10 +338,6 @@
     </profile>
     <profile>
       <id>spark-2.0</id>
-      <!-- default -->
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <properties>
         <spark.version>2.0.0</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
