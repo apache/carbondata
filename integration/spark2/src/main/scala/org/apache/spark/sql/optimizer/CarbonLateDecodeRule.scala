@@ -20,6 +20,7 @@ package org.apache.spark.sql.optimizer
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql._
@@ -54,19 +55,105 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
   }
 
   def updateCarbonRelationDataType(plan: LogicalPlan): LogicalPlan = {
-    plan transformDown {
+    val relations = plan collect {
       case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-        val newRelation = updateRelation(relation)
-        LogicalRelation(newRelation, l.expectedOutputAttributes, l
-            .metastoreTableIdentifier)
+        l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+    }
+    if(relations.nonEmpty && !isOptimized(plan)) {
+      val map = mutable.HashMap[ExprId, AttributeReference]()
+      val updateRelationPlan = plan transformDown {
+        case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
+          val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+          val newRelation = updateRelation(relation)
+          val newl = LogicalRelation(newRelation, l.expectedOutputAttributes, l
+              .metastoreTableIdentifier)
+          for(i <- 0 until l.output.size) {
+            map.put(l.output(i).exprId, newl.output(i))
+          }
+          newl
+      }
+
+      updateRelationPlan transformDown {
+        case sort: Sort =>
+          val sortExprs = sort.order.map { s =>
+            s.transform {
+              case attr: AttributeReference =>
+                map.getOrElse(attr.exprId, attr)
+            }.asInstanceOf[SortOrder]
+          }
+          Sort(sortExprs, sort.global, sort.child)
+        case agg: Aggregate =>
+          val aggExps = agg.aggregateExpressions.map { aggExp =>
+            aggExp transform {
+              case attr: AttributeReference =>
+                map.getOrElse(attr.exprId, attr)
+              case other => other
+            }
+          }.asInstanceOf[Seq[NamedExpression]]
+
+          val grpExps = agg.groupingExpressions.map { gexp =>
+            gexp.transform {
+              case attr: AttributeReference =>
+                map.getOrElse(attr.exprId, attr)
+            }
+          }
+          Aggregate(grpExps, aggExps, agg.child)
+        case expand: Expand =>
+          expand.transformExpressions {
+            case attr: AttributeReference =>
+              map.getOrElse(attr.exprId, attr)
+          }
+        case filter: Filter =>
+          val filterExps = filter.condition transform {
+            case attr: AttributeReference =>
+              map.getOrElse(attr.exprId, attr)
+          }
+          Filter(filterExps, filter.child)
+        case p: Project if relations.nonEmpty =>
+          val prExps = p.projectList.map { prExp =>
+            prExp.transform {
+              case attr: AttributeReference =>
+                map.getOrElse(attr.exprId, attr)
+            }
+          }.asInstanceOf[Seq[NamedExpression]]
+          Project(prExps, p.child)
+        case wd: Window if relations.nonEmpty =>
+          val prExps = wd.output.map { prExp =>
+            prExp.transform {
+              case attr: AttributeReference =>
+                map.getOrElse(attr.exprId, attr)
+            }
+          }.asInstanceOf[Seq[Attribute]]
+          val wdExps = wd.windowExpressions.map { gexp =>
+            gexp.transform {
+              case attr: AttributeReference =>
+                map.getOrElse(attr.exprId, attr)
+            }
+          }.asInstanceOf[Seq[NamedExpression]]
+          val partitionSpec = wd.partitionSpec.map{ exp =>
+            exp.transform {
+              case attr: AttributeReference =>
+                map.getOrElse(attr.exprId, attr)
+            }
+          }
+          val orderSpec = wd.orderSpec.map { exp =>
+            exp.transform {
+              case attr: AttributeReference =>
+                map.getOrElse(attr.exprId, attr)
+            }
+          }.asInstanceOf[Seq[SortOrder]]
+          Window(wdExps, partitionSpec, orderSpec, wd.child)
+        case others => others
+      }
+    } else {
+      plan
     }
   }
 
   def apply(plan: LogicalPlan): LogicalPlan = {
     val updatePlan = updateCarbonRelationDataType(plan)
     relations = collectCarbonRelation(updatePlan)
-    if (relations.nonEmpty && !isOptimized(updatePlan)) {
+    if (relations.nonEmpty && !isOptimized(plan)) {
       LOGGER.info("Starting to optimize plan")
       val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("")
       val queryStatistic = new QueryStatistic()
