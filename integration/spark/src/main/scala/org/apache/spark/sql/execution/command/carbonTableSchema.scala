@@ -22,7 +22,6 @@ import java.text.SimpleDateFormat
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
-
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Cast, Literal}
@@ -31,7 +30,6 @@ import org.apache.spark.sql.hive.CarbonMetastore
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
-
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier}
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
@@ -41,7 +39,7 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDime
 import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.constants.TableOptionConstant
@@ -613,6 +611,39 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
       }
     }
     Seq.empty
+  }
+}
+
+private[sql] case class InsertValueIntoTableCommand(tableName: String, valueString: String)
+  extends RunnableCommand {
+
+  def run(sqlContext: SQLContext): Seq[Row] = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+    val solvedRelation = sqlContext.asInstanceOf[CarbonContext].catalog.lookupRelation1(None,
+      tableName)
+    val carbonRelation = solvedRelation.asInstanceOf[CarbonRelation]
+    val carbonSchema = carbonRelation.schema
+    val valueSeq = valueString.split(",").toSeq.map{ str => str.trim}
+    val bytes = valueSeq.zipWithIndex.map(v =>
+    DataTypeUtil.getDataBasedOnDataType(v._1,
+      DataTypeUtil.getDataType(carbonSchema(v._2).dataType.toString)))
+    val rows = sqlContext.sparkContext.makeRDD(Seq(Row.fromSeq(bytes)))
+    val insertDataFrame = sqlContext.createDataFrame(rows, schema)
+    //TODO: using df to insert values without produce mamy segments
+    val header = carbonRelation.output.map(_.name).mkString(",")
+    val insertByLoad = LoadTable(
+      Some(carbonRelation.databaseName),
+      carbonRelation.tableName,
+      null,
+      Seq(),
+      scala.collection.immutable.Map(("fileheader" -> header)),
+      false,
+      null,
+      Some(insertDataFrame)
+    ).run(sqlContext)
+    carbonRelation.metaData =
+      CarbonSparkUtil.createSparkMeta(carbonRelation.tableMeta.carbonTable)
+    insertByLoad
   }
 }
 

@@ -155,6 +155,9 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
   protected val doubleQuotedString = "\"([^\"]+)\"".r
   protected val singleQuotedString = "'([^']+)'".r
 
+  protected val INSERT = carbonKeyWord("INSERT")
+  protected val VALUE = carbonKeyWord("VALUE")
+
   protected val newReservedWords =
     this.getClass
       .getMethods
@@ -248,6 +251,12 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
             }
         }
         DropDatabase(dbName, isCascade, dropDbSql)
+    }
+
+  protected lazy val insertValues: Parser[LogicalPlan] =
+    INSERT ~> INTO ~> TABLE ~> ident ~ (VALUE ~> "(" ~> stringLit <~ ")") ^^ {
+      case tableName ~ valueString =>
+        InsertValueIntoTableCommand(tableName, valueString)
     }
 
   private def reorderDimensions(dims: Seq[Field]): Seq[Field] = {

@@ -154,7 +154,7 @@ private[sql] case class CarbonDatasourceRelation(
 case class CarbonRelation(
     databaseName: String,
     tableName: String,
-    metaData: CarbonMetaData,
+    var metaData: CarbonMetaData,
     tableMeta: TableMeta,
     alias: Option[String])(@transient sqlContext: SQLContext)
     extends LeafNode with MultiInstanceRelation {
