@@ -254,9 +254,9 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
     }
 
   protected lazy val insertValues: Parser[LogicalPlan] =
-    INSERT ~> INTO ~> TABLE ~> ident ~ (VALUE ~> "(" ~> stringLit <~ ")") ^^ {
-      case tableName ~ valueString =>
-        InsertValueIntoTableCommand(tableName, valueString)
+    INSERT ~> INTO ~> TABLE ~> (ident <~ ".").? ~ ident ~ (VALUE ~> "(" ~> stringLit <~ ")") ^^ {
+      case dbName ~ tableName ~ valueString =>
+        InsertValueIntoTableCommand(dbName, tableName, valueString)
     }
 
   private def reorderDimensions(dims: Seq[Field]): Seq[Field] = {

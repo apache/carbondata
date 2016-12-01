@@ -616,12 +616,13 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
   }
 }
 
-private[sql] case class InsertValueIntoTableCommand(tableName: String, valueString: String)
+private[sql] case class InsertValueIntoTableCommand(dbName: Option[String],
+    tableName: String, valueString: String)
   extends RunnableCommand {
 
   def run(sqlContext: SQLContext): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    val solvedRelation = sqlContext.asInstanceOf[CarbonContext].catalog.lookupRelation1(None,
+    val solvedRelation = sqlContext.asInstanceOf[CarbonContext].catalog.lookupRelation1(dbName,
       tableName)(sqlContext)
     val carbonRelation = solvedRelation.asInstanceOf[CarbonRelation]
     val carbonSchema = carbonRelation.schema
