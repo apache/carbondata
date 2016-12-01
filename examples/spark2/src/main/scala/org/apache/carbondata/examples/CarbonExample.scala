@@ -26,7 +26,7 @@ object CarbonExample {
 
   def main(args: Array[String]): Unit = {
     // to run the example, plz change this path to your local machine path
-    val rootPath = "/Users/jackylk/code/incubator-carbondata"
+    val rootPath = "/home/david/Documents/incubator-carbondata"
     val spark = SparkSession
         .builder()
         .master("local")
@@ -38,10 +38,10 @@ object CarbonExample {
     spark.sparkContext.setLogLevel("WARN")
 
     // Drop table
-    spark.sql("DROP TABLE IF EXISTS carbon_table")
-    spark.sql("DROP TABLE IF EXISTS csv_table")
-
-    // Create table
+//    spark.sql("DROP TABLE IF EXISTS carbon_table")
+//    spark.sql("DROP TABLE IF EXISTS csv_table")
+//
+//    // Create table
     spark.sql(
       s"""
          | CREATE TABLE carbon_table(
@@ -96,14 +96,26 @@ object CarbonExample {
              FROM carbon_table
               """).show
 
-//    spark.sql("""
-//           SELECT sum(intField), stringField
-//           FROM carbon_table
-//           GROUP BY stringField
-//           """).show
+    spark.sql("""
+             SELECT *
+             FROM carbon_table where length(stringField) = 5
+              """).show
+
+    spark.sql("""
+           SELECT sum(intField), stringField
+           FROM carbon_table
+           GROUP BY stringField
+           """).show
+
+    spark.sql(
+      """
+        |select t1.*, t2.*
+        |from carbon_table t1, carbon_table t2
+        |where t1.stringField = t2.stringField
+      """.stripMargin).show
 
     // Drop table
-    spark.sql("DROP TABLE IF EXISTS carbon_table")
-    spark.sql("DROP TABLE IF EXISTS csv_table")
+//    spark.sql("DROP TABLE IF EXISTS carbon_table")
+//    spark.sql("DROP TABLE IF EXISTS csv_table")
   }
 }

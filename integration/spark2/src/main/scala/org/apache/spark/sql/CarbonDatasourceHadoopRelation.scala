@@ -41,7 +41,7 @@ case class CarbonDatasourceHadoopRelation(
     paths: Array[String],
     parameters: Map[String, String],
     tableSchema: Option[StructType])
-  extends BaseRelation with PrunedFilteredScan {
+  extends BaseRelation {
 
   lazy val absIdentifier = AbsoluteTableIdentifier.fromTablePath(paths.head)
   lazy val carbonTable = SchemaReader.readCarbonTableFromStore(absIdentifier)
@@ -59,7 +59,7 @@ case class CarbonDatasourceHadoopRelation(
 
   override def schema: StructType = tableSchema.getOrElse(carbonRelation.schema)
 
-  override def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
+  def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
     val job = new Job(new JobConf())
     val conf = new Configuration(job.getConfiguration)
     val filterExpression: Option[Expression] = filters.flatMap { filter =>
@@ -74,5 +74,5 @@ case class CarbonDatasourceHadoopRelation(
     new CarbonScanRDD[Row](sqlContext.sparkContext, projection, filterExpression.orNull,
       absIdentifier, carbonTable)
   }
-
+  override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)
 }
