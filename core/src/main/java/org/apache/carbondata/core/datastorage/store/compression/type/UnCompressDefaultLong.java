@@ -22,18 +22,21 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
 public class UnCompressDefaultLong extends UnCompressNoneLong {
+  private static final LogService LOGGER = LogServiceFactory
+      .getLogService(UnCompressDefaultLong.class.getName());
 
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnCompressDefaultLong.class.getName());
+  public UnCompressDefaultLong(DataType actualDataType) {
+    super(actualDataType);
+  }
 
   public ValueCompressonHolder.UnCompressValue getNew() {
     try {
       return (ValueCompressonHolder.UnCompressValue) clone();
     } catch (CloneNotSupportedException clnNotSupportedExc) {
-      LOGGER.error(clnNotSupportedExc,
-          clnNotSupportedExc.getMessage());
+      LOGGER.error(clnNotSupportedExc, clnNotSupportedExc.getMessage());
     }
     return null;
   }

@@ -47,6 +47,12 @@ public class UnCompressMaxMinFloat implements UnCompressValue<float[]> {
    */
   private float[] value;
 
+  private DataType actualDataType;
+
+  public UnCompressMaxMinFloat(DataType actualDataType) {
+    this.actualDataType = actualDataType;
+  }
+
   @Override public void setValue(float[] value) {
     this.value = (float[]) value;
 
@@ -63,7 +69,7 @@ public class UnCompressMaxMinFloat implements UnCompressValue<float[]> {
 
   @Override public UnCompressValue compress() {
 
-    UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte();
+    UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte(actualDataType);
     byte1.setValue(floatCompressor.compress(value));
     return byte1;
   }
@@ -85,7 +91,7 @@ public class UnCompressMaxMinFloat implements UnCompressValue<float[]> {
    * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
    */
   @Override public UnCompressValue getCompressorObject() {
-    return new UnCompressMaxMinByte();
+    return new UnCompressMaxMinByte(actualDataType);
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {

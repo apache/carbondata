@@ -46,6 +46,12 @@ public class UnCompressNoneDefault implements UnCompressValue<double[]> {
    */
   private double[] value;
 
+  private DataType actualDataType;
+
+  public UnCompressNoneDefault(DataType actualDataType) {
+    this.actualDataType = actualDataType;
+  }
+
   @Override public void setValue(double[] value) {
     this.value = value;
 
@@ -61,7 +67,7 @@ public class UnCompressNoneDefault implements UnCompressValue<double[]> {
   }
 
   @Override public UnCompressValue compress() {
-    UnCompressNoneByte byte1 = new UnCompressNoneByte();
+    UnCompressNoneByte byte1 = new UnCompressNoneByte(actualDataType);
     byte1.setValue(doubleCompressor.compress(value));
 
     return byte1;
@@ -75,7 +81,7 @@ public class UnCompressNoneDefault implements UnCompressValue<double[]> {
    * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
    */
   @Override public UnCompressValue getCompressorObject() {
-    return new UnCompressNoneByte();
+    return new UnCompressNoneByte(actualDataType);
   }
 
   @Override public byte[] getBackArrayData() {

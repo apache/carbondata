@@ -25,6 +25,7 @@ import org.apache.carbondata.core.datastorage.store.compression.SnappyCompressio
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
+import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
 public class UnCompressMaxMinDefaultLong extends UnCompressMaxMinLong {
 
@@ -33,6 +34,10 @@ public class UnCompressMaxMinDefaultLong extends UnCompressMaxMinLong {
   private static Compressor<long[]> longCompressor =
       SnappyCompression.SnappyLongCompression.INSTANCE;
 
+  public UnCompressMaxMinDefaultLong(DataType actualDataType) {
+    super(actualDataType);
+    // TODO Auto-generated constructor stub
+  }
   @Override public ValueCompressonHolder.UnCompressValue getNew() {
     try {
       return (ValueCompressonHolder.UnCompressValue) clone();
@@ -43,7 +48,7 @@ public class UnCompressMaxMinDefaultLong extends UnCompressMaxMinLong {
   }
 
   @Override public ValueCompressonHolder.UnCompressValue compress() {
-    UnCompressMaxMinByteForLong byte1 = new UnCompressMaxMinByteForLong();
+    UnCompressMaxMinByteForLong byte1 = new UnCompressMaxMinByteForLong(actualDataType);
     byte1.setValue(longCompressor.compress(value));
     return byte1;
   }
@@ -53,7 +58,7 @@ public class UnCompressMaxMinDefaultLong extends UnCompressMaxMinLong {
   }
 
   @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-    return new UnCompressMaxMinByteForLong();
+    return new UnCompressMaxMinByteForLong(actualDataType);
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {

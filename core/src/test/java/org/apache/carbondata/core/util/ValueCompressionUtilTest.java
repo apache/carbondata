@@ -320,7 +320,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToUnCompressNone() {
     ValueCompressonHolder.UnCompressValue result =
         ValueCompressionUtil.unCompressNone(DataType.DATA_BIGINT, DataType.DATA_BIGINT);
-    assertEquals(result.getClass(), UnCompressDefaultLong.class);
+    assertEquals(result.getClass(), UnCompressNoneDefault.class);
   }
 
   @Test public void testToUnCompressNoneForByte() {
@@ -563,10 +563,10 @@ public class ValueCompressionUtilTest {
   }
 
   @Test public void testToGetValueCompressionModel() {
-    Object[] maxValues = { 10, 20, 30 };
-    Object[] minValues = { 1, 2, 3 };
+    Object[] maxValues = { 10, 20, 30l };
+    Object[] minValues = { 1, 2, 3l };
     int[] decimalLength = { 0, 0, 0 };
-    Object[] uniqueValues = { 5, 3, 2 };
+    Object[] uniqueValues = { 5, 3, 2l };
     char[] types = { 'c', 'b', 'l' };
     byte[] dataTypeSelected = { 1, 2, 4 };
     MeasureMetaDataModel measureMetaDataModel =
