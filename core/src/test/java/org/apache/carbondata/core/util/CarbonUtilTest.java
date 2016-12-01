@@ -21,6 +21,7 @@ package org.apache.carbondata.core.util;
 import mockit.Mock;
 import mockit.MockUp;
 
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
@@ -555,18 +556,18 @@ public class CarbonUtilTest {
       @SuppressWarnings("unused") @Mock
       public DataFileFooter readDataFileFooter(TableBlockInfo info) {
         DataFileFooter fileFooter = new DataFileFooter();
-        fileFooter.setVersionId((short)1);
+        fileFooter.setVersionId(ColumnarFormatVersion.V1);
         return fileFooter;
       }
     };
-    TableBlockInfo info = new TableBlockInfo("file:/", 1, "0", new String[0], 1, (short)1);
+    TableBlockInfo info = new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1);
     
-    assertEquals(CarbonUtil.readMetadatFile(info).getVersionId(), 1);
+    assertEquals(CarbonUtil.readMetadatFile(info).getVersionId().number(), 1);
   }
 
   @Test(expected = CarbonUtilException.class) public void testToReadMetadatFileWithException()
       throws Exception {
-	TableBlockInfo info = new TableBlockInfo("file:/", 1, "0", new String[0], 1, (short)1);
+	TableBlockInfo info = new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1);
     CarbonUtil.readMetadatFile(info);
   }
 

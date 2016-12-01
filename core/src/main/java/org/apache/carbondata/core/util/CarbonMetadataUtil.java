@@ -30,6 +30,7 @@ import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -97,10 +98,9 @@ public class CarbonMetadataUtil {
     SegmentInfo segmentInfo = new SegmentInfo();
     segmentInfo.setNum_cols(columnSchemaList.size());
     segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(cardinalities));
-    short version = Short.parseShort(
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION));
+    ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
     FileFooter footer = new FileFooter();
-    footer.setVersion(version);
+    footer.setVersion(version.number());
     footer.setNum_rows(getTotalNumberOfRows(infoList));
     footer.setSegment_info(segmentInfo);
     footer.setTable_columns(columnSchemaList);
@@ -476,9 +476,8 @@ public class CarbonMetadataUtil {
     segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(columnCardinality));
     // create index header object
     IndexHeader indexHeader = new IndexHeader();
-    short version = Short.parseShort(
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION));
-    indexHeader.setVersion(version);
+    ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
+    indexHeader.setVersion(version.number());
     // set the segment info
     indexHeader.setSegment_info(segmentInfo);
     // set the column names

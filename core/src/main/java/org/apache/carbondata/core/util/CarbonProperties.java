@@ -27,6 +27,7 @@ import java.util.Properties;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 public final class CarbonProperties {
@@ -263,27 +264,25 @@ public final class CarbonProperties {
    * if parameter is invalid current version will be set
    */
   private void validateCarbonDataFileVersion() {
-    short carbondataFileVersion = CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION;
     String carbondataFileVersionString =
         carbonProperties.getProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION);
-    try {
-      carbondataFileVersion = Short.parseShort(carbondataFileVersionString);
-    } catch (NumberFormatException e) {
-      carbondataFileVersion = CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION;
-      LOGGER.info("Current Data file version property is invalid  \"" + carbondataFileVersionString
-          + "\" is invalid. Using the Current data file version value \"" + carbondataFileVersion);
+    if (carbondataFileVersionString == null) {
+      // use default property if user does not specify version property
       carbonProperties
-          .setProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, carbondataFileVersion + "");
+          .setProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION,
+              CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION);
+    } else {
+      try {
+        ColumnarFormatVersion.valueOf(carbondataFileVersionString);
+      } catch (IllegalArgumentException e) {
+        // use default property if user specifies an invalid version property
+        LOGGER.warn("Specified file version property is invalid: " +
+            carbondataFileVersionString + ". Using " +
+            CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION + " as default file version");
+        carbonProperties.setProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION,
+            CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION);
+      }
     }
-    if (carbondataFileVersion > CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION
-        || carbondataFileVersion < 0) {
-      LOGGER.info("Current Data file version property is invalid  \"" + carbondataFileVersionString
-          + "\" is invalid. Using the Current data file version value \"" + carbondataFileVersion);
-      carbondataFileVersion = CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION;
-      carbonProperties
-          .setProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, carbondataFileVersion + "");
-    }
-
   }
 
   /**
@@ -362,7 +361,23 @@ public final class CarbonProperties {
    */
   public void addProperty(String key, String value) {
     carbonProperties.setProperty(key, value);
+  }
 
+  private ColumnarFormatVersion getDefaultFormatVersion() {
+    return ColumnarFormatVersion.valueOf(CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION);
+  }
+
+  public ColumnarFormatVersion getFormatVersion() {
+    String versionStr = getInstance().getProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION);
+    if (versionStr == null) {
+      return getDefaultFormatVersion();
+    } else {
+      try {
+        return ColumnarFormatVersion.valueOf(versionStr);
+      } catch (IllegalArgumentException e) {
+        return getDefaultFormatVersion();
+      }
+    }
   }
 
   /**

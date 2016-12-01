@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.processing.store.writer;
+package org.apache.carbondata.processing.store.writer.v2;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -26,6 +26,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
@@ -34,25 +35,28 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.writer.CarbonFooterWriter;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.FileFooter;
+import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
+import org.apache.carbondata.processing.store.writer.NodeHolder;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
+import org.apache.carbondata.processing.store.writer.v1.CarbonFactDataWriterImplV1;
 
 /**
  * Below method will be used to write the data in version 2 format
  */
-public class CarbonFactDataWriterImpl2 extends CarbonFactDataWriterImplForIntIndexAndAggBlock {
+public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
 
   /**
    * logger
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(CarbonFactDataWriterImpl2.class.getName());
+      LogServiceFactory.getLogService(CarbonFactDataWriterImplV2.class.getName());
 
   /**
    * Constructor create instance of this class
    *
    * @param dataWriterVo
    */
-  public CarbonFactDataWriterImpl2(CarbonDataWriterVo dataWriterVo) {
+  public CarbonFactDataWriterImplV2(CarbonDataWriterVo dataWriterVo) {
     super(dataWriterVo);
   }
 
@@ -101,8 +105,7 @@ public class CarbonFactDataWriterImpl2 extends CarbonFactDataWriterImplForIntInd
     // this is done so carbondata file can be read separately
     try {
       if (fileChannel.size() == 0) {
-        short version = Short.parseShort(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION));
+        ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
         byte[] header = (CarbonCommonConstants.CARBON_DATA_VERSION_HEADER + version).getBytes();
         ByteBuffer buffer = ByteBuffer.allocate(header.length);
         buffer.put(header);

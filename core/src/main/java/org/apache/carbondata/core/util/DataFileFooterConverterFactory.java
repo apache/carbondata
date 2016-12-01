@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.core.util;
 
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 
 /**
  * Factory class to get the thrift reader object based on version
@@ -49,15 +50,18 @@ public class DataFileFooterConverterFactory {
   /**
    * Method will be used to get the file footer converter instance based on version
    *
-   * @param versionNumber
+   * @param version
    * @return footer reader instance
    */
-  public AbstractDataFileFooterConverter getDataFileFooterConverter(final short versionNumber) {
-    switch (versionNumber) {
-      case 2:
+  public AbstractDataFileFooterConverter getDataFileFooterConverter(
+      final ColumnarFormatVersion version) {
+    switch (version) {
+      case V2:
         return new DataFileFooterConverter2();
-      default:
+      case V1:
         return new DataFileFooterConverter();
+      default:
+        throw new IllegalArgumentException("invalid format version: " + version);
     }
   }
 

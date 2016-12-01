@@ -21,6 +21,7 @@ package org.apache.carbondata.core.carbon.metadata.blocklet;
 import java.io.Serializable;
 import java.util.List;
 
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.datastore.block.BlockInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
@@ -38,7 +39,7 @@ public class DataFileFooter implements Serializable {
   /**
    * version used for data compatibility
    */
-  private short versionId;
+  private ColumnarFormatVersion versionId;
 
   /**
    * total number of rows in this file
@@ -73,14 +74,14 @@ public class DataFileFooter implements Serializable {
   /**
    * @return the versionId
    */
-  public short getVersionId() {
+  public ColumnarFormatVersion getVersionId() {
     return versionId;
   }
 
   /**
    * @param versionId the versionId to set
    */
-  public void setVersionId(short versionId) {
+  public void setVersionId(ColumnarFormatVersion versionId) {
     this.versionId = versionId;
   }
 

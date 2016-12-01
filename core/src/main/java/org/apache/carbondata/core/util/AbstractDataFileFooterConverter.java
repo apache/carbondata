@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.datastore.block.BlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
@@ -99,7 +100,8 @@ public abstract class AbstractDataFileFooterConverter {
         dataFileFooter = new DataFileFooter();
         TableBlockInfo tableBlockInfo = tableBlockInfoList.get(counter++);
         tableBlockInfo.setBlockOffset(readBlockIndexInfo.getOffset());
-        tableBlockInfo.setVersion((short) readIndexHeader.getVersion());
+        tableBlockInfo.setVersion(
+            ColumnarFormatVersion.valueOf((short) readIndexHeader.getVersion()));
         int blockletSize = getBlockletSize(readBlockIndexInfo);
         tableBlockInfo.getBlockletInfos().setNoOfBlockLets(blockletSize);
         dataFileFooter.setBlockletIndex(blockletIndex);

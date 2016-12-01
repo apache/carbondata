@@ -41,6 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
@@ -1400,8 +1401,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @return data writer instance
    */
   private CarbonFactDataWriter<?> getFactDataWriter(int[] keyBlockSize) {
-    short version = Short.parseShort(
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION));
+    ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
     return CarbonDataWriterFactory.getInstance()
         .getFactDataWriter(version, getDataWriterVo(keyBlockSize));
   }
