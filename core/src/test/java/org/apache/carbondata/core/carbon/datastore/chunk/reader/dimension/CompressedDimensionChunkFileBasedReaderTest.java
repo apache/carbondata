@@ -19,10 +19,17 @@
 
 package org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension;
 
+import static junit.framework.TestCase.assertEquals;
+
 import java.util.ArrayList;
 import java.util.List;
 
+import mockit.Mock;
+import mockit.MockUp;
+
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension.v1.CompressedDimensionChunkFileBasedReaderV1;
+import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
@@ -30,17 +37,12 @@ import org.apache.carbondata.core.datastorage.store.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.util.CarbonUtil;
-
-import mockit.Mock;
-import mockit.MockUp;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertEquals;
-
 public class CompressedDimensionChunkFileBasedReaderTest {
 
-  static CompressedDimensionChunkFileBasedReader compressedDimensionChunkFileBasedReader;
+  static CompressedDimensionChunkFileBasedReaderV1 compressedDimensionChunkFileBasedReader;
   static List<DataChunk> dataChunkList;
 
   @BeforeClass public static void setup() {
@@ -49,9 +51,10 @@ public class CompressedDimensionChunkFileBasedReaderTest {
 
     DataChunk dataChunk = new DataChunk();
     dataChunkList.add(dataChunk);
-
+    BlockletInfo info = new BlockletInfo();
+    info.setDimensionColumnChunk(dataChunkList);
     compressedDimensionChunkFileBasedReader =
-        new CompressedDimensionChunkFileBasedReader(dataChunkList, eachColumnBlockSize, "filePath");
+        new CompressedDimensionChunkFileBasedReaderV1(info, eachColumnBlockSize, "filePath");
   }
 
   @Test public void readDimensionChunksTest() {
@@ -88,7 +91,7 @@ public class CompressedDimensionChunkFileBasedReaderTest {
       }
     };
 
-    int blockIndexes[] = { 0 };
+    int[][] blockIndexes = {{0,0}};
     DimensionColumnDataChunk dimensionColumnDataChunk[] =
         compressedDimensionChunkFileBasedReader.readDimensionChunks(fileHolder, blockIndexes);
     byte expectedResult[] = { 1 };
@@ -137,7 +140,7 @@ public class CompressedDimensionChunkFileBasedReaderTest {
         return true;
       }
     };
-    int blockIndexes[] = { 0 };
+    int[][] blockIndexes = {{0,0}};
     DimensionColumnDataChunk dimensionColumnDataChunk[] =
         compressedDimensionChunkFileBasedReader.readDimensionChunks(fileHolder, blockIndexes);
 

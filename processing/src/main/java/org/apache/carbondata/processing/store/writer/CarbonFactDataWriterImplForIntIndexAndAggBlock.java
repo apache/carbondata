@@ -26,48 +26,23 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.columnar.IndexStorage;
-import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
-import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
-import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.processing.mdkeygen.file.IFileManagerComposite;
-import org.apache.carbondata.processing.store.CarbonDataFileAttributes;
+import org.apache.carbondata.core.util.CarbonMetadataUtil;
+import org.apache.carbondata.core.writer.CarbonFooterWriter;
+import org.apache.carbondata.format.FileFooter;
 import org.apache.carbondata.processing.store.colgroup.ColGroupBlockStorage;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
 public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactDataWriter<int[]> {
 
-  protected boolean[] aggBlocks;
-  private NumberCompressor numberCompressor;
-  private boolean[] isComplexType;
-  private int numberOfNoDictionaryColumn;
-  private boolean[] isDictionaryColumn;
-  private static final LogService LOGGER = LogServiceFactory.getLogService(
-      CarbonFactDataWriterImplForIntIndexAndAggBlock.class.getName());
+  private static final LogService LOGGER = LogServiceFactory
+      .getLogService(CarbonFactDataWriterImplForIntIndexAndAggBlock.class.getName());
 
-  public CarbonFactDataWriterImplForIntIndexAndAggBlock(String storeLocation, int measureCount,
-      int mdKeyLength, String tableName, IFileManagerComposite fileManager, int[] keyBlockSize,
-      boolean[] aggBlocks, boolean[] isComplexType, int NoDictionaryCount,
-      CarbonDataFileAttributes carbonDataFileAttributes, String databaseName,
-      List<ColumnSchema> wrapperColumnSchemaList, int numberOfNoDictionaryColumn,
-      boolean[] isDictionaryColumn, String carbonDataDirectoryPath, int[] colCardinality,
-      SegmentProperties segmentProperties, int tableBlocksize) {
-    super(storeLocation, measureCount, mdKeyLength, databaseName, tableName, fileManager,
-        keyBlockSize, carbonDataFileAttributes, wrapperColumnSchemaList, carbonDataDirectoryPath,
-        colCardinality, segmentProperties, tableBlocksize);
-    this.isComplexType = isComplexType;
-    this.databaseName = databaseName;
-    this.numberOfNoDictionaryColumn = numberOfNoDictionaryColumn;
-    this.isDictionaryColumn = isDictionaryColumn;
-    this.aggBlocks = aggBlocks;
-    this.numberCompressor = new NumberCompressor(Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)));
+  public CarbonFactDataWriterImplForIntIndexAndAggBlock(CarbonDataWriterVo dataWriterVo) {
+    super(dataWriterVo);
   }
 
   @Override
@@ -110,7 +85,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
 
       }
       totalKeySize += keyLengths[i];
-      if (isComplexType[i] || isDictionaryColumn[i]) {
+      if (dataWriterVo.getIsComplexType()[i] || dataWriterVo.getIsDictionaryColumn()[i]) {
         allMinValue[i] = keyStorageArray[i].getMin();
         allMaxValue[i] = keyStorageArray[i].getMax();
       } else {
@@ -142,16 +117,16 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
       }
     }
     int compressDataBlockSize = 0;
-    for (int i = 0; i < aggBlocks.length; i++) {
-      if (aggBlocks[i]) {
+    for (int i = 0; i < dataWriterVo.getAggBlocks().length; i++) {
+      if (dataWriterVo.getAggBlocks()[i]) {
         compressDataBlockSize++;
       }
     }
     byte[][] compressedDataIndex = new byte[compressDataBlockSize][];
     int[] dataIndexMapLength = new int[compressDataBlockSize];
     idx = 0;
-    for (int i = 0; i < aggBlocks.length; i++) {
-      if (aggBlocks[i]) {
+    for (int i = 0; i < dataWriterVo.getAggBlocks().length; i++) {
+      if (dataWriterVo.getAggBlocks()[i]) {
         try {
           compressedDataIndex[idx] =
               numberCompressor.compress(keyStorageArray[i].getDataIndexMap());
@@ -163,13 +138,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
       }
     }
 
-    byte[] writableKeyArray = new byte[totalKeySize];
-    int startPosition = 0;
-    for (int i = 0; i < keyLengths.length; i++) {
-      System.arraycopy(keyBlockData[i], 0, writableKeyArray, startPosition, keyBlockData[i].length);
-      startPosition += keyLengths[i];
-    }
-    int[] msrLength = new int[this.measureCount];
+    int[] msrLength = new int[dataWriterVo.getMeasureCount()];
     // calculate the total size required for all the measure and get the
     // each measure size
     for (int i = 0; i < dataArray.length; i++) {
@@ -177,30 +146,9 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
       totalMsrArrySize += currentMsrLenght;
       msrLength[i] = currentMsrLenght;
     }
-    byte[] writableDataArray = new byte[totalMsrArrySize];
-
-    // start position will be used for adding the measure in
-    // writableDataArray after adding measure increment the start position
-    // by added measure length which will be used for next measure start
-    // position
-    startPosition = 0;
-    for (int i = 0; i < dataArray.length; i++) {
-      System.arraycopy(dataArray[i], 0, writableDataArray, startPosition, dataArray[i].length);
-      startPosition += msrLength[i];
-    }
-    // current file size;
-    int indexBlockSize = 0;
-    for (int i = 0; i < keyBlockIdxLengths.length; i++) {
-      indexBlockSize += keyBlockIdxLengths[i] + CarbonCommonConstants.INT_SIZE_IN_BYTE;
-    }
-
-    for (int i = 0; i < dataIndexMapLength.length; i++) {
-      indexBlockSize += dataIndexMapLength[i];
-    }
-
     NodeHolder holder = new NodeHolder();
-    holder.setDataArray(writableDataArray);
-    holder.setKeyArray(writableKeyArray);
+    holder.setDataArray(dataArray);
+    holder.setKeyArray(keyBlockData);
     // end key format will be <length of dictionary key><length of no
     // dictionary key><DictionaryKey><No Dictionary key>
     byte[] updatedNoDictionaryEndKey = updateNoDictionaryStartAndEndKey(noDictionaryEndKey);
@@ -235,10 +183,12 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     holder.setDataIndexMapLength(dataIndexMapLength);
     holder.setCompressedDataIndex(compressedDataIndex);
     holder.setCompressionModel(compressionModel);
+    holder.setTotalDimensionArrayLength(totalKeySize);
+    holder.setTotalMeasureArrayLength(totalMsrArrySize);
     //setting column min max value
     holder.setColumnMaxData(allMaxValue);
     holder.setColumnMinData(allMinValue);
-    holder.setAggBlocks(aggBlocks);
+    holder.setAggBlocks(dataWriterVo.getAggBlocks());
     holder.setColGrpBlocks(colGrpBlock);
     return holder;
   }
@@ -252,103 +202,18 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     for (int i = 0; i < holder.getDataIndexMapLength().length; i++) {
       indexBlockSize += holder.getDataIndexMapLength()[i];
     }
+
     long blockletDataSize =
-        holder.getKeyArray().length + holder.getDataArray().length + indexBlockSize;
+        holder.getTotalDimensionArrayLength() + holder.getTotalMeasureArrayLength()
+            + indexBlockSize;
     updateBlockletFileChannel(blockletDataSize);
-    writeDataToFile(holder);
+    // write data to file and get its offset
+    long offset = writeDataToFile(holder, fileChannel);
+    // get the blocklet info for currently added blocklet
+    BlockletInfoColumnar blockletInfo = getBlockletInfo(holder, offset);
+    // add blocklet info to list
+    blockletInfoList.add(blockletInfo);
     LOGGER.info("A new blocklet is added, its data size is: " + blockletDataSize + " Byte");
-  }
-
-  /**
-   * Below method will be used to update the min or max value
-   * by removing the length from it
-   *
-   * @return min max value without length
-   */
-  private byte[] updateMinMaxForNoDictionary(byte[] valueWithLength) {
-    ByteBuffer buffer = ByteBuffer.wrap(valueWithLength);
-    byte[] actualValue = new byte[buffer.getShort()];
-    buffer.get(actualValue);
-    return actualValue;
-  }
-
-  /**
-   * Below method will be used to update the no dictionary start and end key
-   *
-   * @param key key to be updated
-   * @return return no dictionary key
-   */
-  private byte[] updateNoDictionaryStartAndEndKey(byte[] key) {
-    if (key.length == 0) {
-      return key;
-    }
-    // add key to byte buffer remove the length part of the data
-    ByteBuffer buffer = ByteBuffer.wrap(key, 2, key.length - 2);
-    // create a output buffer without length
-    ByteBuffer output = ByteBuffer.allocate(key.length - 2);
-    short numberOfByteToStorLength = 2;
-    // as length part is removed, so each no dictionary value index
-    // needs to be reshuffled by 2 bytes
-    for (int i = 0; i < numberOfNoDictionaryColumn; i++) {
-      output.putShort((short) (buffer.getShort() - numberOfByteToStorLength));
-    }
-    // copy the data part
-    while (buffer.hasRemaining()) {
-      output.put(buffer.get());
-    }
-    output.rewind();
-    return output.array();
-  }
-
-  protected byte[][] fillAndCompressedKeyBlockData(IndexStorage<int[]>[] keyStorageArray,
-      int entryCount) {
-    byte[][] keyBlockData = new byte[keyStorageArray.length][];
-    int destPos = 0;
-    int keyBlockSizePosition = -1;
-    for (int i = 0; i < keyStorageArray.length; i++) {
-      destPos = 0;
-      //handling for high card dims
-      if (!isComplexType[i] && !this.isDictionaryColumn[i]) {
-        int totalLength = 0;
-        // calc size of the total bytes in all the colmns.
-        for (int k = 0; k < keyStorageArray[i].getKeyBlock().length; k++) {
-          byte[] colValue = keyStorageArray[i].getKeyBlock()[k];
-          totalLength += colValue.length;
-        }
-        keyBlockData[i] = new byte[totalLength];
-
-        for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
-          int length = keyStorageArray[i].getKeyBlock()[j].length;
-          System
-              .arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i], destPos, length);
-          destPos += length;
-        }
-      } else {
-        keyBlockSizePosition++;
-        if (aggBlocks[i]) {
-          keyBlockData[i] = new byte[keyStorageArray[i].getTotalSize()];
-          for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
-            System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i], destPos,
-                keyStorageArray[i].getKeyBlock()[j].length);
-            destPos += keyStorageArray[i].getKeyBlock()[j].length;
-          }
-        } else {
-          if (isComplexType[i]) {
-            keyBlockData[i] = new byte[keyStorageArray[i].getKeyBlock().length
-                * keyBlockSize[keyBlockSizePosition]];
-          } else {
-            keyBlockData[i] = new byte[entryCount * keyBlockSize[keyBlockSizePosition]];
-          }
-          for (int j = 0; j < keyStorageArray[i].getKeyBlock().length; j++) {
-            System.arraycopy(keyStorageArray[i].getKeyBlock()[j], 0, keyBlockData[i], destPos,
-                keyBlockSize[keyBlockSizePosition]);
-            destPos += keyBlockSize[keyBlockSizePosition];
-          }
-        }
-      }
-      keyBlockData[i] = SnappyByteCompression.INSTANCE.compress(keyBlockData[i]);
-    }
-    return keyBlockData;
   }
 
   /**
@@ -358,7 +223,7 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
    * @throws CarbonDataWriterException if will throw CarbonDataWriterException when any thing
    *                                   goes wrong while while writing the leaf file
    */
-  protected long writeDataToFile(NodeHolder nodeHolder, FileChannel channel)
+  private long writeDataToFile(NodeHolder nodeHolder, FileChannel channel)
       throws CarbonDataWriterException {
     // create byte buffer
     byte[][] compressedIndex = nodeHolder.getCompressedIndex();
@@ -375,15 +240,20 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
       indexBlockSize += nodeHolder.getDataIndexMapLength()[i];
     }
     ByteBuffer byteBuffer = ByteBuffer.allocate(
-        nodeHolder.getKeyArray().length + nodeHolder.getDataArray().length + indexBlockSize);
+        nodeHolder.getTotalDimensionArrayLength() + nodeHolder.getTotalMeasureArrayLength()
+            + indexBlockSize);
     long offset = 0;
     try {
       // get the current offset
       offset = channel.size();
       // add key array to byte buffer
-      byteBuffer.put(nodeHolder.getKeyArray());
+      for (int i = 0; i < nodeHolder.getKeyArray().length; i++) {
+        byteBuffer.put(nodeHolder.getKeyArray()[i]);
+      }
+      for (int i = 0; i < nodeHolder.getDataArray().length; i++) {
+        byteBuffer.put(nodeHolder.getDataArray()[i]);
+      }
       // add measure data array to byte buffer
-      byteBuffer.put(nodeHolder.getDataArray());
 
       ByteBuffer buffer1 = null;
       for (int i = 0; i < compressedIndex.length; i++) {
@@ -448,9 +318,9 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     // add measure length
     info.setMeasureLength(nodeHolder.getMeasureLenght());
 
-    long[] msrOffset = new long[this.measureCount];
+    long[] msrOffset = new long[dataWriterVo.getMeasureCount()];
 
-    for (int i = 0; i < this.measureCount; i++) {
+    for (int i = 0; i < msrOffset.length; i++) {
       // increment the current offset by 4 bytes because 4 bytes will be
       // used for measure byte length
       //            offset += CarbonCommonConstants.INT_SIZE_IN_BYTE;
@@ -489,4 +359,21 @@ public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFact
     return info;
   }
 
+  /**
+   * This method will write metadata at the end of file file format in thrift format
+   */
+  protected void writeBlockletInfoToFile(List<BlockletInfoColumnar> infoList, FileChannel channel,
+      String filePath) throws CarbonDataWriterException {
+    try {
+      long currentPosition = channel.size();
+      CarbonFooterWriter writer = new CarbonFooterWriter(filePath);
+      FileFooter convertFileMeta = CarbonMetadataUtil
+          .convertFileFooter(infoList, localCardinality.length, localCardinality,
+              thriftColumnSchemaList, dataWriterVo.getSegmentProperties());
+      fillBlockIndexInfoDetails(infoList, convertFileMeta.getNum_rows(), filePath, currentPosition);
+      writer.writeFooter(convertFileMeta, currentPosition);
+    } catch (IOException e) {
+      throw new CarbonDataWriterException("Problem while writing the carbon file: ", e);
+    }
+  }
 }

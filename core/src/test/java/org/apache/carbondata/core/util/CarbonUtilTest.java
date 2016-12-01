@@ -20,6 +20,8 @@ package org.apache.carbondata.core.util;
 
 import mockit.Mock;
 import mockit.MockUp;
+
+import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
@@ -41,11 +43,13 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.pentaho.di.core.exception.KettleException;
+
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static junit.framework.TestCase.*;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -549,19 +553,21 @@ public class CarbonUtilTest {
   @Test public void testToReadMetadatFile() throws CarbonUtilException {
     new MockUp<DataFileFooterConverter>() {
       @SuppressWarnings("unused") @Mock
-      public DataFileFooter readDataFileFooter(String filePath, long blockOffset,
-          long blockLength) {
+      public DataFileFooter readDataFileFooter(TableBlockInfo info) {
         DataFileFooter fileFooter = new DataFileFooter();
-        fileFooter.setVersionId(1);
+        fileFooter.setVersionId((short)1);
         return fileFooter;
       }
     };
-    assertEquals(CarbonUtil.readMetadatFile("", 1L, 1L).getVersionId(), 1);
+    TableBlockInfo info = new TableBlockInfo("file:/", 1, "0", new String[0], 1, (short)1);
+    
+    assertEquals(CarbonUtil.readMetadatFile(info).getVersionId(), 1);
   }
 
   @Test(expected = CarbonUtilException.class) public void testToReadMetadatFileWithException()
       throws Exception {
-    CarbonUtil.readMetadatFile("", 1L, 1L);
+	TableBlockInfo info = new TableBlockInfo("file:/", 1, "0", new String[0], 1, (short)1);
+    CarbonUtil.readMetadatFile(info);
   }
 
   @Test public void testToFindDimension() {
@@ -695,7 +701,7 @@ public class CarbonUtilTest {
     dataChunk.setValueEncoderMeta(valueEncoderMetas);
     dataChunkList.add(dataChunk);
     ValueCompressionModel valueCompressionModel =
-        CarbonUtil.getValueCompressionModel(dataChunkList);
+        CarbonUtil.getValueCompressionModel(dataChunkList.get(0).getValueEncoderMeta());
     assertEquals(1, valueCompressionModel.getMaxValue().length);
   }
 

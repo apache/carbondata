@@ -265,9 +265,7 @@ public class BlockIndexStore {
     AbstractIndex tableBlock;
     DataFileFooter footer;
     // getting the data file meta data of the block
-    footer = CarbonUtil.readMetadatFile(blockInfo.getTableBlockInfo().getFilePath(),
-        blockInfo.getTableBlockInfo().getBlockOffset(),
-        blockInfo.getTableBlockInfo().getBlockLength());
+    footer = CarbonUtil.readMetadatFile(blockInfo.getTableBlockInfo());
     tableBlock = new BlockIndex();
     footer.setBlockInfo(blockInfo);
     // building the block

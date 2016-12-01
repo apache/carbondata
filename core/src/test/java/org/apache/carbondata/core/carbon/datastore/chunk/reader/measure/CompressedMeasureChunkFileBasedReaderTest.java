@@ -1,27 +1,30 @@
 package org.apache.carbondata.core.carbon.datastore.chunk.reader.measure;
 
+import static junit.framework.TestCase.assertEquals;
+
 import java.util.ArrayList;
 import java.util.List;
 
+import mockit.Mock;
+import mockit.MockUp;
+
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.carbon.datastore.chunk.reader.measure.v1.CompressedMeasureChunkFileBasedReaderV1;
+import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.compression.type.UnCompressByteArray;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
-
-import mockit.Mock;
-import mockit.MockUp;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertEquals;
-
 public class CompressedMeasureChunkFileBasedReaderTest {
 
-  static CompressedMeasureChunkFileBasedReader compressedMeasureChunkFileBasedReader;
+  static CompressedMeasureChunkFileBasedReaderV1 compressedMeasureChunkFileBasedReader;
 
   @BeforeClass public static void setup() {
     List<DataChunk> dataChunkList = new ArrayList<>();
@@ -41,9 +44,18 @@ public class CompressedMeasureChunkFileBasedReaderTest {
     valueCompressionModel.setDecimal(decimal);
     Object maxValue[] = { 8 };
     valueCompressionModel.setMaxValue(maxValue);
-
+    ValueEncoderMeta meta = new ValueEncoderMeta();
+    meta.setMaxValue(8.0);
+    meta.setMinValue(1.0);
+    meta.setDecimal(1);
+    meta.setType('b');
+    List<ValueEncoderMeta> valueEncoderMetaList = new ArrayList<>();
+    valueEncoderMetaList.add(meta);
+    dataChunkList.get(0).setValueEncoderMeta(valueEncoderMetaList);
+    BlockletInfo info = new BlockletInfo();
+    info.setMeasureColumnChunk(dataChunkList);
     compressedMeasureChunkFileBasedReader =
-        new CompressedMeasureChunkFileBasedReader(dataChunkList, valueCompressionModel, "filePath");
+        new CompressedMeasureChunkFileBasedReaderV1(info, "filePath");
   }
 
   @Test public void readMeasureChunkTest() {
@@ -98,7 +110,7 @@ public class CompressedMeasureChunkFileBasedReaderTest {
       }
     };
 
-    int blockIndexes[] = { 0 };
+    int[][] blockIndexes = {{0,0}};
     MeasureColumnDataChunk measureColumnDataChunks[] =
         compressedMeasureChunkFileBasedReader.readMeasureChunks(fileHolder, blockIndexes);
 

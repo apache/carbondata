@@ -82,6 +82,7 @@ import org.apache.hadoop.mapreduce.security.TokenCache;
 import org.apache.hadoop.mapreduce.task.JobContextImpl;
 import org.apache.hadoop.util.StringUtils;
 
+
 /**
  * Carbon Input format class representing one carbon table
  */
@@ -180,8 +181,17 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * Set list of segments to access
    */
   public static void setSegmentsToAccess(Configuration configuration, List<String> validSegments) {
-    configuration.set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS,
-        CarbonUtil.getSegmentString(validSegments));
+    configuration
+        .set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, CarbonUtil.getSegmentString(validSegments));
+  }
+
+  private static AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration) {
+    String dirs = configuration.get(INPUT_DIR, "");
+    String[] inputPaths = StringUtils.split(dirs);
+    if (inputPaths.length == 0) {
+      throw new InvalidPathException("No input paths specified in job");
+    }
+    return AbsoluteTableIdentifier.fromTablePath(inputPaths[0]);
   }
 
   /**
@@ -193,8 +203,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @return List<InputSplit> list of CarbonInputSplit
    * @throws IOException
    */
-  @Override
-  public List<InputSplit> getSplits(JobContext job) throws IOException {
+  @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
     List<String> invalidSegments = new ArrayList<>();
 
@@ -245,7 +254,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       if (segmentId.equals(CarbonCommonConstants.INVALID_SEGMENT_ID)) {
         continue;
       }
-      carbonSplits.add(CarbonInputSplit.from(segmentId, fileSplit));
+      carbonSplits.add(CarbonInputSplit
+          .from(segmentId, fileSplit, CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION));
     }
     return carbonSplits;
   }
@@ -278,19 +288,11 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         TableBlockInfo tableBlockInfo = leafNode.getTableBlockInfo();
         result.add(new CarbonInputSplit(segmentNo, new Path(tableBlockInfo.getFilePath()),
             tableBlockInfo.getBlockOffset(), tableBlockInfo.getBlockLength(),
-            tableBlockInfo.getLocations(), tableBlockInfo.getBlockletInfos().getNoOfBlockLets()));
+            tableBlockInfo.getLocations(), tableBlockInfo.getBlockletInfos().getNoOfBlockLets(),
+            tableBlockInfo.getVersion()));
       }
     }
     return result;
-  }
-
-  private static AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration) {
-    String dirs = configuration.get(INPUT_DIR, "");
-    String[] inputPaths = StringUtils.split(dirs);
-    if (inputPaths.length == 0) {
-      throw new InvalidPathException("No input paths specified in job");
-    }
-    return AbsoluteTableIdentifier.fromTablePath(inputPaths[0]);
   }
 
   private Expression getFilterPredicates(Configuration configuration) {
@@ -313,8 +315,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       FilterExpressionProcessor filterExpressionProcessor,
       AbsoluteTableIdentifier absoluteTableIdentifier, FilterResolverIntf resolver,
       String segmentId) throws IndexBuilderException, IOException {
-    QueryStatisticsRecorder recorder =
-            CarbonTimeStatisticsFactory.createDriverRecorder();
+    QueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.createDriverRecorder();
     QueryStatistic statistic = new QueryStatistic();
     Map<String, AbstractIndex> segmentIndexMap =
         getSegmentAbstractIndexs(job, absoluteTableIdentifier, segmentId);
@@ -340,8 +341,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       }
       resultFilterredBlocks.addAll(filterredBlocks);
     }
-    statistic.addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_DRIVER,
-        System.currentTimeMillis());
+    statistic
+        .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_DRIVER, System.currentTimeMillis());
     recorder.recordStatisticsForDriver(statistic, job.getConfiguration().get("query.id"));
     return resultFilterredBlocks;
   }
@@ -349,8 +350,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * Below method will be used to get the table block info
    *
-   * @param job                     job context
-   * @param segmentId               number of segment id
+   * @param job       job context
+   * @param segmentId number of segment id
    * @return list of table block
    * @throws IOException
    */
@@ -371,7 +372,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       tableBlockInfoList.add(
           new TableBlockInfo(carbonInputSplit.getPath().toString(), carbonInputSplit.getStart(),
               segmentId, carbonInputSplit.getLocations(), carbonInputSplit.getLength(),
-              blockletInfos));
+              blockletInfos, carbonInputSplit.getVersion()));
     }
     return tableBlockInfoList;
   }
@@ -384,8 +385,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
     // if segment tree is not loaded, load the segment tree
     if (segmentIndexMap == null) {
-      List<TableBlockInfo> tableBlockInfoList =
-          getTableBlockInfo(job, segmentId);
+      List<TableBlockInfo> tableBlockInfoList = getTableBlockInfo(job, segmentId);
 
       Map<String, List<TableBlockInfo>> segmentToTableBlocksInfos = new HashMap<>();
       segmentToTableBlocksInfos.put(segmentId, tableBlockInfoList);
@@ -428,8 +428,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return blocks;
   }
 
-  @Override
-  public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
+  @Override public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
       TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
     Configuration configuration = taskAttemptContext.getConfiguration();
     CarbonTable carbonTable = getCarbonTable(configuration);
@@ -482,18 +481,15 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return readSupport;
   }
 
-  @Override
-  protected long computeSplitSize(long blockSize, long minSize, long maxSize) {
+  @Override protected long computeSplitSize(long blockSize, long minSize, long maxSize) {
     return super.computeSplitSize(blockSize, minSize, maxSize);
   }
 
-  @Override
-  protected int getBlockIndex(BlockLocation[] blkLocations, long offset) {
+  @Override protected int getBlockIndex(BlockLocation[] blkLocations, long offset) {
     return super.getBlockIndex(blkLocations, offset);
   }
 
-  @Override
-  protected List<FileStatus> listStatus(JobContext job) throws IOException {
+  @Override protected List<FileStatus> listStatus(JobContext job) throws IOException {
     List<FileStatus> result = new ArrayList<FileStatus>();
     String[] segmentsToConsider = getSegmentsToAccess(job);
     if (segmentsToConsider.length == 0) {
@@ -504,13 +500,11 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return result;
   }
 
-  @Override
-  protected boolean isSplitable(JobContext context, Path filename) {
+  @Override protected boolean isSplitable(JobContext context, Path filename) {
     try {
       // Don't split the file if it is local file system
       FileSystem fileSystem = filename.getFileSystem(context.getConfiguration());
-      if (fileSystem instanceof LocalFileSystem)
-      {
+      if (fileSystem instanceof LocalFileSystem) {
         return false;
       }
     } catch (Exception e) {

@@ -250,8 +250,8 @@ class CarbonMergerRDD[K, V](
       var dataFileFooter: DataFileFooter = null
 
       try {
-        dataFileFooter = CarbonUtil.readMetadatFile(carbonInputSplit.getPath.toString(),
-          carbonInputSplit.getStart, carbonInputSplit.getLength)
+        dataFileFooter = CarbonUtil.readMetadatFile(
+            CarbonInputSplit.getTableBlockInfo(carbonInputSplit))
       } catch {
         case e: CarbonUtilException =>
           logError("Exception in preparing the data file footer for compaction " + e.getMessage)

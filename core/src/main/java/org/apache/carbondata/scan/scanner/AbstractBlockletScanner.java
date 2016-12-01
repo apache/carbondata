@@ -50,13 +50,12 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
 
   protected void fillKeyValue(BlocksChunkHolder blocksChunkHolder) {
     scannedResult.reset();
-    scannedResult.setMeasureChunks(blocksChunkHolder.getDataBlock()
-        .getMeasureChunks(blocksChunkHolder.getFileReader(),
-            blockExecutionInfo.getAllSelectedMeasureBlocksIndexes()));
     scannedResult.setNumberOfRows(blocksChunkHolder.getDataBlock().nodeSize());
-
     scannedResult.setDimensionChunks(blocksChunkHolder.getDataBlock()
         .getDimensionChunks(blocksChunkHolder.getFileReader(),
             blockExecutionInfo.getAllSelectedDimensionBlocksIndexes()));
+    scannedResult.setMeasureChunks(blocksChunkHolder.getDataBlock()
+            .getMeasureChunks(blocksChunkHolder.getFileReader(),
+                blockExecutionInfo.getAllSelectedMeasureBlocksIndexes()));
   }
 }

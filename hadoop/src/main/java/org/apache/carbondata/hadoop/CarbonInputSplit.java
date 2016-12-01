@@ -29,6 +29,7 @@ import org.apache.carbondata.core.carbon.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.carbon.datastore.block.Distributable;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.hadoop.internal.index.Block;
 
 import org.apache.hadoop.fs.Path;
@@ -38,13 +39,12 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 /**
  * Carbon input split to allow distributed read of CarbonInputFormat.
  */
-public class CarbonInputSplit extends FileSplit implements Distributable, Serializable, Writable,
-    Block {
+public class CarbonInputSplit extends FileSplit
+    implements Distributable, Serializable, Writable, Block {
 
   private static final long serialVersionUID = 3520344046772190207L;
-  private String segmentId;
   public String taskId;
-
+  private String segmentId;
   /*
    * Invalid segments that need to be removed in task side index
    */
@@ -55,40 +55,72 @@ public class CarbonInputSplit extends FileSplit implements Distributable, Serial
    */
   private int numberOfBlocklets;
 
-  public  CarbonInputSplit() {
+  private short version = CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION;
+
+  public CarbonInputSplit() {
     segmentId = null;
     taskId = "0";
     numberOfBlocklets = 0;
     invalidSegments = new ArrayList<>();
   }
 
-  private CarbonInputSplit(String segmentId, Path path, long start, long length,
-      String[] locations) {
+  private CarbonInputSplit(String segmentId, Path path, long start, long length, String[] locations,
+      short version) {
     super(path, start, length, locations);
     this.segmentId = segmentId;
     this.taskId = CarbonTablePath.DataFileUtil.getTaskNo(path.getName());
     this.invalidSegments = new ArrayList<>();
+    this.version = version;
   }
 
-  public CarbonInputSplit(String segmentId, Path path, long start, long length,
-      String[] locations, int numberOfBlocklets) {
-    this(segmentId, path, start, length, locations);
+  public CarbonInputSplit(String segmentId, Path path, long start, long length, String[] locations,
+      int numberOfBlocklets, short version) {
+    this(segmentId, path, start, length, locations, version);
     this.numberOfBlocklets = numberOfBlocklets;
   }
 
-  public static CarbonInputSplit from(String segmentId, FileSplit split) throws IOException {
+  public static CarbonInputSplit from(String segmentId, FileSplit split, short version)
+      throws IOException {
     return new CarbonInputSplit(segmentId, split.getPath(), split.getStart(), split.getLength(),
-        split.getLocations());
+        split.getLocations(), version);
+  }
+
+  public static List<TableBlockInfo> createBlocks(List<CarbonInputSplit> splitList) {
+    List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
+    for (CarbonInputSplit split : splitList) {
+      BlockletInfos blockletInfos =
+          new BlockletInfos(split.getNumberOfBlocklets(), 0, split.getNumberOfBlocklets());
+      try {
+        tableBlockInfoList.add(
+            new TableBlockInfo(split.getPath().toString(), split.getStart(), split.getSegmentId(),
+                split.getLocations(), split.getLength(), blockletInfos, split.getVersion()));
+      } catch (IOException e) {
+        throw new RuntimeException("fail to get location of split: " + split, e);
+      }
+    }
+    return tableBlockInfoList;
+  }
+
+  public static TableBlockInfo getTableBlockInfo(CarbonInputSplit inputSplit) {
+    BlockletInfos blockletInfos =
+        new BlockletInfos(inputSplit.getNumberOfBlocklets(), 0, inputSplit.getNumberOfBlocklets());
+    try {
+      return new TableBlockInfo(inputSplit.getPath().toString(), inputSplit.getStart(),
+          inputSplit.getSegmentId(), inputSplit.getLocations(), inputSplit.getLength(),
+          blockletInfos, inputSplit.getVersion());
+    } catch (IOException e) {
+      throw new RuntimeException("fail to get location of split: " + inputSplit, e);
+    }
   }
 
   public String getSegmentId() {
     return segmentId;
   }
 
-  @Override
-  public void readFields(DataInput in) throws IOException {
+  @Override public void readFields(DataInput in) throws IOException {
     super.readFields(in);
     this.segmentId = in.readUTF();
+    this.version = in.readShort();
     int numInvalidSegment = in.readInt();
     invalidSegments = new ArrayList<>(numInvalidSegment);
     for (int i = 0; i < numInvalidSegment; i++) {
@@ -96,17 +128,17 @@ public class CarbonInputSplit extends FileSplit implements Distributable, Serial
     }
   }
 
-  @Override
-  public void write(DataOutput out) throws IOException {
+  @Override public void write(DataOutput out) throws IOException {
     super.write(out);
     out.writeUTF(segmentId);
+    out.writeShort(version);
     out.writeInt(invalidSegments.size());
-    for (String invalidSegment: invalidSegments) {
+    for (String invalidSegment : invalidSegments) {
       out.writeUTF(invalidSegment);
     }
   }
 
-  public List<String> getInvalidSegments(){
+  public List<String> getInvalidSegments() {
     return invalidSegments;
   }
 
@@ -116,15 +148,23 @@ public class CarbonInputSplit extends FileSplit implements Distributable, Serial
 
   /**
    * returns the number of blocklets
+   *
    * @return
    */
   public int getNumberOfBlocklets() {
     return numberOfBlocklets;
   }
 
-  @Override
-  public int compareTo(Distributable o) {
-    CarbonInputSplit other = (CarbonInputSplit)o;
+  public short getVersion() {
+    return version;
+  }
+
+  public void setVersion(short version) {
+    this.version = version;
+  }
+
+  @Override public int compareTo(Distributable o) {
+    CarbonInputSplit other = (CarbonInputSplit) o;
     int compareResult = 0;
     // get the segment id
     // converr seg ID to double.
@@ -163,34 +203,15 @@ public class CarbonInputSplit extends FileSplit implements Distributable, Serial
     return 0;
   }
 
-  public static List<TableBlockInfo> createBlocks(List<CarbonInputSplit> splitList) {
-    List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
-    for (CarbonInputSplit split : splitList) {
-      BlockletInfos blockletInfos = new BlockletInfos(split.getNumberOfBlocklets(), 0,
-          split.getNumberOfBlocklets());
-      try {
-        tableBlockInfoList.add(
-            new TableBlockInfo(split.getPath().toString(), split.getStart(), split.getSegmentId(),
-                split.getLocations(), split.getLength(), blockletInfos));
-      } catch (IOException e) {
-        throw new RuntimeException("fail to get location of split: " + split, e);
-      }
-    }
-    return tableBlockInfoList;
-  }
-
-  @Override
-  public String getBlockPath() {
+  @Override public String getBlockPath() {
     return getPath().getName();
   }
 
-  @Override
-  public List<Long> getMatchedBlocklets() {
+  @Override public List<Long> getMatchedBlocklets() {
     return null;
   }
 
-  @Override
-  public boolean fullScan() {
+  @Override public boolean fullScan() {
     return true;
   }
 }

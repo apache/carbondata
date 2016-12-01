@@ -33,7 +33,7 @@ public interface MeasureColumnChunkReader {
    * @param blockIndexes blocks to be read
    * @return measure data chunks
    */
-  MeasureColumnDataChunk[] readMeasureChunks(FileHolder fileReader, int... blockIndexes);
+  MeasureColumnDataChunk[] readMeasureChunks(FileHolder fileReader, int[][] blockIndexes);
 
   /**
    * Method to read the blocks data based on block index

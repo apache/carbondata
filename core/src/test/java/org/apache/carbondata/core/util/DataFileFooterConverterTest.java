@@ -152,7 +152,7 @@ public class DataFileFooterConverterTest {
       }
     };
     String[] arr = { "a", "b", "c" };
-    TableBlockInfo tableBlockInfo = new TableBlockInfo("file", 3, "id", arr, 3);
+    TableBlockInfo tableBlockInfo = new TableBlockInfo("file", 3, "id", arr, 3, (short) 1);
     tableBlockInfo.getBlockletInfos().setNoOfBlockLets(3);
     List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
     tableBlockInfoList.add(tableBlockInfo);
@@ -214,9 +214,9 @@ public class DataFileFooterConverterTest {
         new org.apache.carbondata.format.BlockletInfo();
     List<org.apache.carbondata.format.BlockletInfo> blockletInfoArrayList = new ArrayList<>();
     blockletInfoArrayList.add(blockletInfo);
-    final FileFooter fileFooter =
-        new FileFooter(1, 3, columnSchemas, segmentInfo1, blockletIndexArrayList,
-            blockletInfoArrayList);
+    final FileFooter fileFooter = 
+        new FileFooter(1, 3, columnSchemas, segmentInfo1, blockletIndexArrayList);
+    fileFooter.setBlocklet_info_list(blockletInfoArrayList);
     BlockletBTreeIndex blockletBTreeIndex = new BlockletBTreeIndex();
     blockletBTreeIndex.setStart_key("1".getBytes());
     blockletBTreeIndex.setEnd_key("3".getBytes());
@@ -254,7 +254,8 @@ public class DataFileFooterConverterTest {
     segmentInfo.setNumberOfColumns(segmentInfo1.getNum_cols());
     dataFileFooter.setNumberOfRows(3);
     dataFileFooter.setSegmentInfo(segmentInfo);
-    DataFileFooter result = dataFileFooterConverter.readDataFileFooter("file", 1, 1);
+    TableBlockInfo info = new TableBlockInfo("file", 1, "0", new String[0], 1, (short)1);
+    DataFileFooter result = dataFileFooterConverter.readDataFileFooter(info);
     assertEquals(result.getNumberOfRows(), 3);
   }
 

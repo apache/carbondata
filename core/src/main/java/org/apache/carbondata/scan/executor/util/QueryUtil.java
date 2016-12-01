@@ -211,16 +211,19 @@ public class QueryUtil {
    */
   public static int[] getDimensionsBlockIndexes(List<QueryDimension> queryDimensions,
       Map<Integer, Integer> dimensionOrdinalToBlockMapping,
-      List<CarbonDimension> customAggregationDimension) {
+      List<CarbonDimension> customAggregationDimension, Set<CarbonDimension> filterDimensions) {
     // using set as in row group columns will point to same block
     Set<Integer> dimensionBlockIndex = new HashSet<Integer>();
+    Set<Integer> filterDimensionOrdinal = getFilterDimensionOrdinal(filterDimensions);
     int blockIndex = 0;
     for (int i = 0; i < queryDimensions.size(); i++) {
-      blockIndex =
-          dimensionOrdinalToBlockMapping.get(queryDimensions.get(i).getDimension().getOrdinal());
-      dimensionBlockIndex.add(blockIndex);
-      if (queryDimensions.get(i).getDimension().numberOfChild() > 0) {
-        addChildrenBlockIndex(dimensionBlockIndex, queryDimensions.get(i).getDimension());
+      if (!filterDimensionOrdinal.contains(queryDimensions.get(i).getDimension().getOrdinal())) {
+        blockIndex =
+            dimensionOrdinalToBlockMapping.get(queryDimensions.get(i).getDimension().getOrdinal());
+        dimensionBlockIndex.add(blockIndex);
+        if (queryDimensions.get(i).getDimension().numberOfChild() > 0) {
+          addChildrenBlockIndex(dimensionBlockIndex, queryDimensions.get(i).getDimension());
+        }
       }
     }
     for (int i = 0; i < customAggregationDimension.size(); i++) {
@@ -230,8 +233,10 @@ public class QueryUtil {
       // is not push down in case of complex dimension
       dimensionBlockIndex.add(blockIndex);
     }
-    return ArrayUtils
+    int[] dimensionIndex = ArrayUtils
         .toPrimitive(dimensionBlockIndex.toArray(new Integer[dimensionBlockIndex.size()]));
+    Arrays.sort(dimensionIndex);
+    return dimensionIndex;
   }
 
   /**
@@ -252,15 +257,14 @@ public class QueryUtil {
    * Below method will be used to get the dictionary mapping for all the
    * dictionary encoded dimension present in the query
    *
-   * @param queryDimensions            query dimension present in the query this will be used to
-   *                                   convert the result from surrogate key to actual data
-   * @param absoluteTableIdentifier    absolute table identifier
+   * @param queryDimensions         query dimension present in the query this will be used to
+   *                                convert the result from surrogate key to actual data
+   * @param absoluteTableIdentifier absolute table identifier
    * @return dimension unique id to its dictionary map
    * @throws QueryExecutionException
    */
   public static Map<String, Dictionary> getDimensionDictionaryDetail(
-      List<QueryDimension> queryDimensions,
-      Set<CarbonDimension> filterComplexDimensions,
+      List<QueryDimension> queryDimensions, Set<CarbonDimension> filterComplexDimensions,
       AbsoluteTableIdentifier absoluteTableIdentifier) throws QueryExecutionException {
     // to store dimension unique column id list, this is required as
     // dimension can be present in
@@ -387,16 +391,23 @@ public class QueryUtil {
    * @return block indexes
    */
   public static int[] getMeasureBlockIndexes(List<QueryMeasure> queryMeasures,
-      List<CarbonMeasure> expressionMeasure, Map<Integer, Integer> ordinalToBlockIndexMapping) {
+      List<CarbonMeasure> expressionMeasure, Map<Integer, Integer> ordinalToBlockIndexMapping,
+      Set<CarbonMeasure> filterMeasures) {
     Set<Integer> measureBlockIndex = new HashSet<Integer>();
+    Set<Integer> filterMeasureOrdinal = getFilterMeasureOrdinal(filterMeasures);
     for (int i = 0; i < queryMeasures.size(); i++) {
-      measureBlockIndex
-          .add(ordinalToBlockIndexMapping.get(queryMeasures.get(i).getMeasure().getOrdinal()));
+      if (!filterMeasureOrdinal.contains(queryMeasures.get(i).getMeasure().getOrdinal())) {
+        measureBlockIndex
+            .add(ordinalToBlockIndexMapping.get(queryMeasures.get(i).getMeasure().getOrdinal()));
+      }
     }
     for (int i = 0; i < expressionMeasure.size(); i++) {
       measureBlockIndex.add(ordinalToBlockIndexMapping.get(expressionMeasure.get(i).getOrdinal()));
     }
-    return ArrayUtils.toPrimitive(measureBlockIndex.toArray(new Integer[measureBlockIndex.size()]));
+    int[] measureIndexes =
+        ArrayUtils.toPrimitive(measureBlockIndex.toArray(new Integer[measureBlockIndex.size()]));
+    Arrays.sort(measureIndexes);
+    return measureIndexes;
   }
 
   /**
@@ -912,21 +923,19 @@ public class QueryUtil {
     return parentBlockIndex;
   }
 
-  public static Set<CarbonDimension> getAllFilterDimensions(FilterResolverIntf filterResolverTree) {
-    Set<CarbonDimension> filterDimensions = new HashSet<CarbonDimension>();
+  public static void getAllFilterDimensions(FilterResolverIntf filterResolverTree,
+      Set<CarbonDimension> filterDimensions, Set<CarbonMeasure> filterMeasure) {
     if (null == filterResolverTree) {
-      return filterDimensions;
+      return;
     }
     List<ColumnExpression> dimensionResolvedInfos = new ArrayList<ColumnExpression>();
     Expression filterExpression = filterResolverTree.getFilterExpression();
-    addColumnDimensions(filterExpression, filterDimensions);
+    addColumnDimensions(filterExpression, filterDimensions, filterMeasure);
     for (ColumnExpression info : dimensionResolvedInfos) {
       if (info.isDimension() && info.getDimension().getNumberOfChild() > 0) {
         filterDimensions.add(info.getDimension());
       }
     }
-    return filterDimensions;
-
   }
 
   /**
@@ -938,14 +947,53 @@ public class QueryUtil {
    * @return
    */
   private static void addColumnDimensions(Expression expression,
-      Set<CarbonDimension> filterDimensions) {
-    if (null != expression && expression instanceof ColumnExpression
-        && ((ColumnExpression) expression).isDimension()) {
-      filterDimensions.add(((ColumnExpression) expression).getDimension());
+      Set<CarbonDimension> filterDimensions, Set<CarbonMeasure> filterMeasure) {
+    if (null != expression && expression instanceof ColumnExpression) {
+      if (((ColumnExpression) expression).isDimension()) {
+        filterDimensions.add(((ColumnExpression) expression).getDimension());
+      } else {
+        filterMeasure.add((CarbonMeasure) ((ColumnExpression) expression).getCarbonColumn());
+      }
       return;
     }
     for (Expression child : expression.getChildren()) {
-      addColumnDimensions(child, filterDimensions);
+      addColumnDimensions(child, filterDimensions, filterMeasure);
+    }
+  }
+
+  private static Set<Integer> getFilterMeasureOrdinal(Set<CarbonMeasure> filterMeasures) {
+    Set<Integer> filterMeasuresOrdinal = new HashSet<>();
+    for (CarbonMeasure filterMeasure : filterMeasures) {
+      filterMeasuresOrdinal.add(filterMeasure.getOrdinal());
+    }
+    return filterMeasuresOrdinal;
+  }
+
+  private static Set<Integer> getFilterDimensionOrdinal(Set<CarbonDimension> filterDimensions) {
+    Set<Integer> filterDimensionsOrdinal = new HashSet<>();
+    for (CarbonDimension filterDimension : filterDimensions) {
+      filterDimensionsOrdinal.add(filterDimension.getOrdinal());
+      getChildDimensionOrdinal(filterDimension, filterDimensionsOrdinal);
+    }
+    return filterDimensionsOrdinal;
+  }
+
+  /**
+   * Below method will be used to fill the children dimension column id
+   *
+   * @param queryDimensions              query dimension
+   * @param dictionaryDimensionFromQuery dictionary dimension for query
+   */
+  private static void getChildDimensionOrdinal(CarbonDimension queryDimensions,
+      Set<Integer> filterDimensionsOrdinal) {
+    for (int j = 0; j < queryDimensions.numberOfChild(); j++) {
+      List<Encoding> encodingList = queryDimensions.getListOfChildDimensions().get(j).getEncoder();
+      if (queryDimensions.getListOfChildDimensions().get(j).numberOfChild() > 0) {
+        getChildDimensionOrdinal(queryDimensions.getListOfChildDimensions().get(j),
+            filterDimensionsOrdinal);
+      } else if (!CarbonUtil.hasEncoding(encodingList, Encoding.DIRECT_DICTIONARY)) {
+        filterDimensionsOrdinal.add(queryDimensions.getListOfChildDimensions().get(j).getOrdinal());
+      }
     }
   }
 }
