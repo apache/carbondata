@@ -36,7 +36,7 @@ public class SnappyCompression {
   /**
    * SnappyByteCompression.
    */
-  public static enum SnappyByteCompression implements Compressor<byte[]> {
+  public static enum SnappyByteCompression implements SnappyCompressor<byte[]> {
     /**
      *
      */
@@ -72,7 +72,7 @@ public class SnappyCompression {
   /**
    * enum class for SnappyDoubleCompression.
    */
-  public static enum SnappyDoubleCompression implements Compressor<double[]> {
+  public static enum SnappyDoubleCompression implements SnappyCompressor<double[]> {
     /**
      *
      */
@@ -112,7 +112,7 @@ public class SnappyCompression {
    *
    * @author S71955
    */
-  public static enum SnappyShortCompression implements Compressor<short[]> {
+  public static enum SnappyShortCompression implements SnappyCompressor<short[]> {
     /**
      *
      */
@@ -152,7 +152,7 @@ public class SnappyCompression {
   /**
    * enum class for SnappyIntCompression.
    */
-  public static enum SnappyIntCompression implements Compressor<int[]> {
+  public static enum SnappyIntCompression implements SnappyCompressor<int[]> {
     /**
      *
      */
@@ -192,7 +192,7 @@ public class SnappyCompression {
   /**
    * enum class for SnappyLongCompression.
    */
-  public static enum SnappyLongCompression implements Compressor<long[]> {
+  public static enum SnappyLongCompression implements SnappyCompressor<long[]> {
     /**
      *
      */
@@ -233,7 +233,7 @@ public class SnappyCompression {
    * enum class for SnappyFloatCompression.
    */
 
-  public static enum SnappyFloatCompression implements Compressor<float[]> {
+  public static enum SnappyFloatCompression implements SnappyCompressor<float[]> {
     /**
      *
      */
