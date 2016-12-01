@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.core.carbon.datastore.chunk.reader;
 
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension.v1.CompressedDimensionChunkFileBasedReaderV1;
 import org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension.v2.CompressedDimensionChunkFileBasedReaderV2;
 import org.apache.carbondata.core.carbon.datastore.chunk.reader.measure.v1.CompressedMeasureChunkFileBasedReaderV1;
@@ -60,15 +61,17 @@ public class CarbonDataReaderFactory {
    * @param filePath            carbon data file path
    * @return dimension column data reader based on version number
    */
-  public DimensionColumnChunkReader getDimensionColumnChunkReader(short version,
+  public DimensionColumnChunkReader getDimensionColumnChunkReader(ColumnarFormatVersion version,
       BlockletInfo blockletInfo, int[] eachColumnValueSize, String filePath) {
     switch (version) {
-      case 2:
+      case V2:
         return new CompressedDimensionChunkFileBasedReaderV2(blockletInfo, eachColumnValueSize,
             filePath);
-      default:
+      case V1:
         return new CompressedDimensionChunkFileBasedReaderV1(blockletInfo, eachColumnValueSize,
             filePath);
+      default:
+        throw new IllegalArgumentException("invalid format version: " + version);
     }
   }
 
@@ -80,13 +83,15 @@ public class CarbonDataReaderFactory {
    * @param filePath     carbon data file path
    * @return measure column data reader based on version number
    */
-  public MeasureColumnChunkReader getMeasureColumnChunkReader(short version,
+  public MeasureColumnChunkReader getMeasureColumnChunkReader(ColumnarFormatVersion version,
       BlockletInfo blockletInfo, String filePath) {
     switch (version) {
-      case 2:
+      case V2:
         return new CompressedMeasureChunkFileBasedReaderV2(blockletInfo, filePath);
-      default:
+      case V1:
         return new CompressedMeasureChunkFileBasedReaderV1(blockletInfo, filePath);
+      default:
+        throw new IllegalArgumentException("invalid format version: " + version);
     }
 
   }

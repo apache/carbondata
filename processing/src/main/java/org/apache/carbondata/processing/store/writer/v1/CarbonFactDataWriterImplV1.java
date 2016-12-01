@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.processing.store.writer;
+package org.apache.carbondata.processing.store.writer.v1;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -34,14 +34,17 @@ import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.writer.CarbonFooterWriter;
 import org.apache.carbondata.format.FileFooter;
 import org.apache.carbondata.processing.store.colgroup.ColGroupBlockStorage;
+import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
+import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
+import org.apache.carbondata.processing.store.writer.NodeHolder;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 
-public class CarbonFactDataWriterImplForIntIndexAndAggBlock extends AbstractFactDataWriter<int[]> {
+public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
 
   private static final LogService LOGGER = LogServiceFactory
-      .getLogService(CarbonFactDataWriterImplForIntIndexAndAggBlock.class.getName());
+      .getLogService(CarbonFactDataWriterImplV1.class.getName());
 
-  public CarbonFactDataWriterImplForIntIndexAndAggBlock(CarbonDataWriterVo dataWriterVo) {
+  public CarbonFactDataWriterImplV1(CarbonDataWriterVo dataWriterVo) {
     super(dataWriterVo);
   }
 

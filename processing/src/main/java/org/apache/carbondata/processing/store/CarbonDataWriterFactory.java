@@ -16,12 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.carbondata.processing.store;
 
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
-import org.apache.carbondata.processing.store.writer.CarbonFactDataWriterImpl2;
-import org.apache.carbondata.processing.store.writer.CarbonFactDataWriterImplForIntIndexAndAggBlock;
+import org.apache.carbondata.processing.store.writer.v1.CarbonFactDataWriterImplV1;
+import org.apache.carbondata.processing.store.writer.v2.CarbonFactDataWriterImplV2;
 
 /**
  * Factory class to get the writer instance
@@ -57,13 +59,15 @@ public class CarbonDataWriterFactory {
    * @param carbonDataWriterVo writer vo object
    * @return writer instance
    */
-  public CarbonFactDataWriter<?> getFactDataWriter(final short version,
+  public CarbonFactDataWriter<?> getFactDataWriter(final ColumnarFormatVersion version,
       final CarbonDataWriterVo carbonDataWriterVo) {
     switch (version) {
-      case 2:
-        return new CarbonFactDataWriterImpl2(carbonDataWriterVo);
+      case V2:
+        return new CarbonFactDataWriterImplV2(carbonDataWriterVo);
+      case V1:
+        return new CarbonFactDataWriterImplV1(carbonDataWriterVo);
       default:
-        return new CarbonFactDataWriterImplForIntIndexAndAggBlock(carbonDataWriterVo);
+        throw new IllegalArgumentException("invalid format version: " + version);
     }
   }
 

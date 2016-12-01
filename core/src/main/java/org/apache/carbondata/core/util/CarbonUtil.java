@@ -1056,11 +1056,6 @@ public final class CarbonUtil {
 
   /**
    * Below method will be used to read the data file matadata
-   *
-   * @param filePath file path
-   * @param blockOffset   offset in the file
-   * @return Data file metadata instance
-   * @throws CarbonUtilException
    */
   public static DataFileFooter readMetadatFile(TableBlockInfo tableBlockInfo)
       throws CarbonUtilException {

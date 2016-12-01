@@ -22,6 +22,7 @@ package org.apache.carbondata.core.util;
 import mockit.Mock;
 import mockit.MockUp;
 
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.datastore.block.BlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
@@ -152,7 +153,7 @@ public class DataFileFooterConverterTest {
       }
     };
     String[] arr = { "a", "b", "c" };
-    TableBlockInfo tableBlockInfo = new TableBlockInfo("file", 3, "id", arr, 3, (short) 1);
+    TableBlockInfo tableBlockInfo = new TableBlockInfo("file", 3, "id", arr, 3, ColumnarFormatVersion.V1);
     tableBlockInfo.getBlockletInfos().setNoOfBlockLets(3);
     List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
     tableBlockInfoList.add(tableBlockInfo);
@@ -254,7 +255,7 @@ public class DataFileFooterConverterTest {
     segmentInfo.setNumberOfColumns(segmentInfo1.getNum_cols());
     dataFileFooter.setNumberOfRows(3);
     dataFileFooter.setSegmentInfo(segmentInfo);
-    TableBlockInfo info = new TableBlockInfo("file", 1, "0", new String[0], 1, (short)1);
+    TableBlockInfo info = new TableBlockInfo("file", 1, "0", new String[0], 1, ColumnarFormatVersion.V1);
     DataFileFooter result = dataFileFooterConverter.readDataFileFooter(info);
     assertEquals(result.getNumberOfRows(), 3);
   }

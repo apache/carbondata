@@ -32,7 +32,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
  */
 class TestQueryWithOldCarbonDataFile extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
-	  CarbonProperties.getInstance.addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, "1");         
+	  CarbonProperties.getInstance.addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, "V1");
     sql("drop table if exists OldFormatTable")
     sql("drop table if exists OldFormatTableHIVE")
      sql("""
@@ -47,14 +47,14 @@ class TestQueryWithOldCarbonDataFile extends QueryTest with BeforeAndAfterAll {
            name String, phonetype String, serialname String, salary Int)
           row format delimited fields terminated by ','
            """)      
-    sql("LOAD DATA local inpath './src/test/resources/OLDFORMATTABLE.csv' INTO table OldFormatTable");       
+    sql("LOAD DATA local inpath './src/test/resources/OLDFORMATTABLE.csv' INTO table OldFormatTable")
    sql(s"""
            LOAD DATA LOCAL INPATH './src/test/resources/OLDFORMATTABLEHIVE.csv' into table OldFormatTableHIVE
            """)
 
   }
 
-  CarbonProperties.getInstance.addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, "2");
+  CarbonProperties.getInstance.addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, "V2")
   test("Test select * query") {
     checkAnswer(
       sql("select * from OldFormatTable"), sql("select * from OldFormatTableHIVE")
@@ -62,7 +62,7 @@ class TestQueryWithOldCarbonDataFile extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-     CarbonProperties.getInstance.addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, "1");
+     CarbonProperties.getInstance.addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, "V1")
     sql("drop table if exists OldFormatTable")
     sql("drop table if exists OldFormatTableHIVE")
   }

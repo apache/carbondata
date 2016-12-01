@@ -26,7 +26,7 @@ object CarbonExample {
 
   def main(args: Array[String]): Unit = {
     // to run the example, plz change this path to your local machine path
-    val rootPath = "/Users/wangfei/code/incubator-carbondata"
+    val rootPath = "/Users/jackylk/code/incubator-carbondata"
     val spark = SparkSession
         .builder()
         .master("local")

@@ -25,11 +25,12 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.carbon.datastore.block.Distributable;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.hadoop.internal.index.Block;
 
 import org.apache.hadoop.fs.Path;
@@ -55,17 +56,18 @@ public class CarbonInputSplit extends FileSplit
    */
   private int numberOfBlocklets;
 
-  private short version = CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION;
+  private ColumnarFormatVersion version;
 
   public CarbonInputSplit() {
     segmentId = null;
     taskId = "0";
     numberOfBlocklets = 0;
     invalidSegments = new ArrayList<>();
+    version = CarbonProperties.getInstance().getFormatVersion();
   }
 
   private CarbonInputSplit(String segmentId, Path path, long start, long length, String[] locations,
-      short version) {
+      ColumnarFormatVersion version) {
     super(path, start, length, locations);
     this.segmentId = segmentId;
     this.taskId = CarbonTablePath.DataFileUtil.getTaskNo(path.getName());
@@ -74,12 +76,13 @@ public class CarbonInputSplit extends FileSplit
   }
 
   public CarbonInputSplit(String segmentId, Path path, long start, long length, String[] locations,
-      int numberOfBlocklets, short version) {
+      int numberOfBlocklets, ColumnarFormatVersion version) {
     this(segmentId, path, start, length, locations, version);
     this.numberOfBlocklets = numberOfBlocklets;
   }
 
-  public static CarbonInputSplit from(String segmentId, FileSplit split, short version)
+  public static CarbonInputSplit from(String segmentId, FileSplit split,
+      ColumnarFormatVersion version)
       throws IOException {
     return new CarbonInputSplit(segmentId, split.getPath(), split.getStart(), split.getLength(),
         split.getLocations(), version);
@@ -120,7 +123,7 @@ public class CarbonInputSplit extends FileSplit
   @Override public void readFields(DataInput in) throws IOException {
     super.readFields(in);
     this.segmentId = in.readUTF();
-    this.version = in.readShort();
+    this.version = ColumnarFormatVersion.valueOf(in.readShort());
     int numInvalidSegment = in.readInt();
     invalidSegments = new ArrayList<>(numInvalidSegment);
     for (int i = 0; i < numInvalidSegment; i++) {
@@ -131,7 +134,7 @@ public class CarbonInputSplit extends FileSplit
   @Override public void write(DataOutput out) throws IOException {
     super.write(out);
     out.writeUTF(segmentId);
-    out.writeShort(version);
+    out.writeShort(version.number());
     out.writeInt(invalidSegments.size());
     for (String invalidSegment : invalidSegments) {
       out.writeUTF(invalidSegment);
@@ -155,11 +158,11 @@ public class CarbonInputSplit extends FileSplit
     return numberOfBlocklets;
   }
 
-  public short getVersion() {
+  public ColumnarFormatVersion getVersion() {
     return version;
   }
 
-  public void setVersion(short version) {
+  public void setVersion(ColumnarFormatVersion version) {
     this.version = version;
   }
 
