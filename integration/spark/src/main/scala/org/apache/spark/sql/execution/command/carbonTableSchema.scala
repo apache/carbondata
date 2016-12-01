@@ -620,7 +620,7 @@ private[sql] case class InsertValueIntoTableCommand(tableName: String, valueStri
   def run(sqlContext: SQLContext): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val solvedRelation = sqlContext.asInstanceOf[CarbonContext].catalog.lookupRelation1(None,
-      tableName)
+      tableName)(sqlContext)
     val carbonRelation = solvedRelation.asInstanceOf[CarbonRelation]
     val carbonSchema = carbonRelation.schema
     val valueSeq = valueString.split(",").toSeq.map{ str => str.trim}
