@@ -264,7 +264,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataType.STRING);
     dimColumn.setDimensionColumn(true);
-    final CarbonColumn carbonColumn = new CarbonColumn(dimColumn, ordinal);
+    final CarbonColumn carbonColumn = new CarbonColumn(dimColumn, ordinal, -1);
     new MockUp<ColumnExpression>() {
       @Mock public CarbonColumn getCarbonColumn() {
         return carbonColumn;
@@ -295,7 +295,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
     dimColumn.setDataType(DataType.STRING);
     dimColumn.setDimensionColumn(true);
-    final CarbonColumn carbonColumn = new CarbonColumn(dimColumn, ordinal);
+    final CarbonColumn carbonColumn = new CarbonColumn(dimColumn, ordinal, -1);
     new MockUp<ColumnExpression>() {
       @Mock public CarbonColumn getCarbonColumn() {
         return carbonColumn;
@@ -318,7 +318,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     String defaultValues = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
     int defaultSurrogate = 1;
     int ordinal = 1;
-    final CarbonColumn carbonColumn = new CarbonColumn(columnSchema, ordinal);
+    final CarbonColumn carbonColumn = new CarbonColumn(columnSchema, ordinal, -1);
     new MockUp<ColumnExpression>() {
       @Mock public CarbonColumn getCarbonColumn() {
         return carbonColumn;
@@ -385,7 +385,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
       }
     };
 
-    final CarbonColumn carbonColumn = new CarbonColumn(columnSchema, ordinal);
+    final CarbonColumn carbonColumn = new CarbonColumn(columnSchema, ordinal, -1);
     new MockUp<ColumnExpression>() {
       @Mock public CarbonColumn getCarbonColumn() {
         return carbonColumn;
