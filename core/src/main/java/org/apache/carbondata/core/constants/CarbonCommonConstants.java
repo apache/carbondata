@@ -900,7 +900,7 @@ public final class CarbonCommonConstants {
   /**
    * current data file version
    */
-  public static final short CARBON_DATA_FILE_DEFAULT_VERSION = 2;
+  public static final String CARBON_DATA_FILE_DEFAULT_VERSION = "V2";
   /**
    * number of column data will read in IO operation
    * during query execution

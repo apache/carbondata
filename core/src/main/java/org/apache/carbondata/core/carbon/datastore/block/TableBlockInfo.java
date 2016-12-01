@@ -20,6 +20,7 @@ package org.apache.carbondata.core.carbon.datastore.block;
 
 import java.io.Serializable;
 
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath.DataFileUtil;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
@@ -57,14 +58,14 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   private String[] locations;
 
-  private short version;
+  private ColumnarFormatVersion version;
   /**
    * The class holds the blockletsinfo
    */
   private BlockletInfos blockletInfos = new BlockletInfos();
 
   public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
-      long blockLength, short version) {
+      long blockLength, ColumnarFormatVersion version) {
     this.filePath = FileFactory.getUpdatedFilePath(filePath);
     this.blockOffset = blockOffset;
     this.segmentId = segmentId;
@@ -84,7 +85,7 @@ public class TableBlockInfo implements Distributable, Serializable {
    * @param blockletInfos
    */
   public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
-      long blockLength, BlockletInfos blockletInfos, short version) {
+      long blockLength, BlockletInfos blockletInfos, ColumnarFormatVersion version) {
     this.filePath = FileFactory.getUpdatedFilePath(filePath);
     this.blockOffset = blockOffset;
     this.segmentId = segmentId;
@@ -259,11 +260,11 @@ public class TableBlockInfo implements Distributable, Serializable {
     this.blockletInfos = blockletInfos;
   }
 
-  public short getVersion() {
+  public ColumnarFormatVersion getVersion() {
     return version;
   }
 
-  public void setVersion(short version) {
+  public void setVersion(ColumnarFormatVersion version) {
     this.version = version;
   }
 }
