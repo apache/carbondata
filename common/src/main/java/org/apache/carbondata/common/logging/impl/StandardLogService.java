@@ -22,7 +22,6 @@ package org.apache.carbondata.common.logging.impl;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.Properties;
 
 import org.apache.carbondata.common.logging.LogService;
 
