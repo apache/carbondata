@@ -90,15 +90,12 @@ public class DataGraphExecuter {
   /**
    * This method returns the Columns names from the schema.
    *
-   * @param schemaInfo
+   * @param schema
    * @param tableName
    * @return column names array.
    */
-  private String[] getColumnNames(SchemaInfo schemaInfo, String tableName, String partitionId,
-      CarbonDataLoadSchema schema) {
-
+  private String[] getColumnNames(String tableName, CarbonDataLoadSchema schema) {
     Set<String> columnNames = CarbonDataProcessorUtil.getSchemaColumnNames(schema, tableName);
-
     return columnNames.toArray(new String[columnNames.size()]);
   }
 
@@ -106,40 +103,34 @@ public class DataGraphExecuter {
    * This method returns the Columns names for the dimension only from the schema.
    *
    * @param schema
-   * @param schemaInfo
+   * @param dimTableName
    * @return column names array.
    */
-  private String[] getDimColumnNames(SchemaInfo schemaInfo, String factTableName,
-      String dimTableName, String partitionId, CarbonDataLoadSchema schema) {
+  private String[] getDimColumnNames(String dimTableName, CarbonDataLoadSchema schema) {
 
     Set<String> columnNames = GraphExecutionUtil.getDimensionColumnNames(dimTableName, schema);
     return columnNames.toArray(new String[columnNames.size()]);
   }
 
-  private void validateCSV(SchemaInfo schemaInfo, String tableName, CarbonFile f,
-      String partitionId, CarbonDataLoadSchema schema, String delimiter)
-      throws DataLoadingException {
-
-    String[] columnNames = getColumnNames(schemaInfo, tableName, partitionId, schema);
-
+  private void validateCSV(String tableName, CarbonFile f, CarbonDataLoadSchema schema,
+      String delimiter) throws DataLoadingException {
+    String[] columnNames = getColumnNames(tableName, schema);
     if (!checkCSVAndRequestedTableColumns(columnNames, f.getAbsolutePath(), delimiter)) {
       LOGGER.error(
           "CSV File provided is not proper. Column names in schema and csv header are not same. "
-              + "CSVFile Name : "
-              + f.getName());
+              + "CSVFile Name : " + f.getName());
       throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
           "CSV File provided is not proper. Column names in schema and csv header are not same. "
-              + "CSVFile Name : "
-              + f.getName());
+              + "CSVFile Name : " + f.getName());
     }
   }
 
   public void executeGraph(String graphFilePath, List<String> measureColumns, SchemaInfo schemaInfo,
-      String partitionId, CarbonDataLoadSchema schema) throws DataLoadingException {
+      CarbonDataLoadSchema schema) throws DataLoadingException {
 
     //This Method will validate the both fact and dimension csv files.
-    if (!schemaInfo.isAutoAggregateRequest() && model.getRddIteratorKey() == null ) {
-      validateCSVFiles(schemaInfo, partitionId, schema);
+    if (!schemaInfo.isAutoAggregateRequest() && model.getRddIteratorKey() == null) {
+      validateCSVFiles(schema);
     }
     execute(graphFilePath, measureColumns, schemaInfo);
   }
@@ -156,7 +147,7 @@ public class DataGraphExecuter {
     //This Method will validate the both fact and dimension csv files.
 
     initKettleEnv();
-    TransMeta transMeta = null;
+    TransMeta transMeta;
     try {
       transMeta = new TransMeta(graphFilePath);
       transMeta.setFilename(graphFilePath);
@@ -169,12 +160,12 @@ public class DataGraphExecuter {
         trans.setVariable("csvInputFilePath", model.getCsvFilePath());
         trans.setVariable("dimFileLocDir", model.getDimCSVDirLoc());
         if (hdfsReadMode) {
-          trans.addParameterDefinition("vfs.hdfs.dfs.client.read.shortcircuit", "true", "");
-          trans.addParameterDefinition("vfs.hdfs.dfs.domain.socket.path",
+          trans.addParameterDefinition(DataProcessorConstants.SHORTCIRCUIT, "true", "");
+          trans.addParameterDefinition(DataProcessorConstants.SOCKET_PATH,
               "/var/lib/hadoop-hdfs-new/dn_socket", "");
-          trans.addParameterDefinition("vfs.hdfs.dfs.block.local-path-access.user", "hadoop,root",
+          trans.addParameterDefinition(DataProcessorConstants.LOCAL_PATH_ACCESS_USER, "hadoop,root",
               "");
-          trans.addParameterDefinition("vfs.hdfs.io.file.buffer.size", "5048576", "");
+          trans.addParameterDefinition(DataProcessorConstants.FILE_BUFFER_SIZE, DataProcessorConstants.FILE_BUFFER_SIZE_VALUE , "");
         }
         List<StepMeta> stepsMeta = trans.getTransMeta().getSteps();
         StringBuilder builder = new StringBuilder();
@@ -189,18 +180,8 @@ public class DataGraphExecuter {
       LOGGER.info("Graph execution is started " + graphFilePath);
       trans.waitUntilFinished();
       LOGGER.info("Graph execution is finished.");
-    } catch (KettleXMLException e) {
-      LOGGER.error(e,
-          "Unable to start execution of graph " + e.getMessage());
-      throw new DataLoadingException("Unable to start execution of graph ", e);
-
-    } catch (KettleException e) {
-      LOGGER.error(e,
-          "Unable to start execution of graph " + e.getMessage());
-      throw new DataLoadingException("Unable to start execution of graph ", e);
-    } catch (Throwable e) {
-      LOGGER.error(e,
-          "Unable to start execution of graph " + e.getMessage());
+    } catch (Exception e) {
+      LOGGER.error(e, "Unable to start execution of graph " + e.getMessage());
       throw new DataLoadingException("Unable to start execution of graph ", e);
     }
 
@@ -225,7 +206,7 @@ public class DataGraphExecuter {
       }
     }
 
-    map = null;
+    map =null ;
     XMLHandlerCache.getInstance().clear();
     trans.cleanup();
     trans.eraseParameters();
@@ -264,11 +245,8 @@ public class DataGraphExecuter {
               .getTextInputFiles(csvFileToRead, measureColumns, builder, measuresInCSVFile, ",");
           stepMetaInterface.setInputFields(inputFields);
         } else if (model.isDirectLoad()) {
-          String[] files = new String[model.getFilesToProcess().size()];
-          int i = 0;
-          for (String file : model.getFilesToProcess()) {
-            files[i++] = file;
-          }
+          List<String> filesList = model.getFilesToProcess();
+          String[] files = filesList.toArray(new String[filesList.size()]);
           stepMetaInterface.setFileName(files);
           stepMetaInterface.setFilenameField("filename");
           stepMetaInterface.setDefault();
@@ -287,23 +265,22 @@ public class DataGraphExecuter {
             ((CsvInputMeta) step.getStepMetaInterface()).setInputFields(inputParams);
             ((CsvInputMeta) step.getStepMetaInterface()).setDelimiter(model.getCsvDelimiter());
             ((CsvInputMeta) step.getStepMetaInterface())
-              .setEscapeCharacter(model.getEscapeCharacter());
+                .setEscapeCharacter(model.getEscapeCharacter());
             ((CsvInputMeta) step.getStepMetaInterface()).setHeaderPresent(false);
 
-          } else if (model.getFilesToProcess().size() > 0) {
+          } else if (filesList.size() > 0) {
             CarbonFile csvFile =
-                GraphExecutionUtil.getCsvFileToRead(model.getFilesToProcess().get(0));
+                GraphExecutionUtil.getCsvFileToRead(filesList.get(0));
             TextFileInputField[] inputFields = GraphExecutionUtil
                 .getTextInputFiles(csvFile, measureColumns, builder, measuresInCSVFile,
                     model.getCsvDelimiter());
             ((CsvInputMeta) step.getStepMetaInterface()).setInputFields(inputFields);
             ((CsvInputMeta) step.getStepMetaInterface()).setDelimiter(model.getCsvDelimiter());
             ((CsvInputMeta) step.getStepMetaInterface())
-              .setEscapeCharacter(model.getEscapeCharacter());
+                .setEscapeCharacter(model.getEscapeCharacter());
             ((CsvInputMeta) step.getStepMetaInterface()).setHeaderPresent(true);
           }
         }
-
         break;
       }
     }
@@ -391,7 +368,7 @@ public class DataGraphExecuter {
             ((CsvInputMeta) step.getStepMetaInterface()).setInputFields(inputFields);
             ((CsvInputMeta) step.getStepMetaInterface()).setDelimiter(model.getCsvDelimiter());
             ((CsvInputMeta) step.getStepMetaInterface())
-              .setEscapeCharacter(model.getEscapeCharacter());
+                .setEscapeCharacter(model.getEscapeCharacter());
             ((CsvInputMeta) step.getStepMetaInterface()).setHeaderPresent(true);
           }
         }
@@ -412,7 +389,6 @@ public class DataGraphExecuter {
     }
   }
 
-
   private void setGraphLogLevel() {
     trans.setLogLevel(LogLevel.NOTHING);
   }
@@ -420,11 +396,9 @@ public class DataGraphExecuter {
   /**
    * This method will validate the both fact as well as dimension csv files.
    *
-   * @param schemaInfo
    * @throws DataLoadingException
    */
-  private void validateCSVFiles(SchemaInfo schemaInfo, String partitionId,
-      CarbonDataLoadSchema schema) throws DataLoadingException {
+  private void validateCSVFiles(CarbonDataLoadSchema schema) throws DataLoadingException {
     // Validate the Fact CSV Files.
     String csvFilePath = model.getCsvFilePath();
     if (csvFilePath != null) {
@@ -436,17 +410,14 @@ public class DataGraphExecuter {
           CarbonFile[] listFiles = fileDir.listFiles(new CarbonFileFilter() {
 
             @Override public boolean accept(CarbonFile pathname) {
-              if (pathname.getName().endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION) || pathname
-                  .getName().endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION
-                      + CarbonCommonConstants.FILE_INPROGRESS_STATUS)) {
-                return true;
-              }
-              return false;
+              return pathname.getName().endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION)
+                  || pathname.getName().endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION
+                  + CarbonCommonConstants.FILE_INPROGRESS_STATUS);
             }
           });
 
-          for (CarbonFile f : listFiles) {
-            validateCSV(schemaInfo, model.getTableName(), f, partitionId, schema, ",");
+          for (CarbonFile file : listFiles) {
+            validateCSV(model.getTableName(), file, schema, ",");
           }
         } else {
 
@@ -459,19 +430,18 @@ public class DataGraphExecuter {
           }
 
           if (exists) {
-            validateCSV(schemaInfo, model.getTableName(),
-                FileFactory.getCarbonFile(csvFilePath, fileType), partitionId, schema, ",");
+            validateCSV(model.getTableName(), FileFactory.getCarbonFile(csvFilePath, fileType),
+                schema, ",");
           } else {
-            validateCSV(schemaInfo, model.getTableName(), FileFactory
+            validateCSV(model.getTableName(), FileFactory
                 .getCarbonFile(csvFilePath + CarbonCommonConstants.FILE_INPROGRESS_STATUS,
-                    fileType), partitionId, schema, ",");
+                    fileType), schema, ",");
           }
 
         }
 
       } catch (IOException e) {
-        LOGGER.error(e,
-            "Error while checking file exists" + csvFilePath);
+        LOGGER.error(e, "Error while checking file exists" + csvFilePath);
       }
     } else if (model.isDirectLoad()) {
       if (null != model.getCsvHeader() && !model.getCsvHeader().isEmpty()) {
@@ -488,13 +458,11 @@ public class DataGraphExecuter {
           try {
             FileFactory.FileType fileType = FileFactory.getFileType(file);
             if (FileFactory.isFileExist(file, fileType)) {
-              validateCSV(schemaInfo, model.getTableName(),
-                  FileFactory.getCarbonFile(file, fileType), partitionId, schema,
+              validateCSV(model.getTableName(), FileFactory.getCarbonFile(file, fileType), schema,
                   model.getCsvDelimiter());
             }
           } catch (IOException e) {
-            LOGGER.error(e,
-                "Error while checking file exists" + file);
+            LOGGER.error(e, "Error while checking file exists" + file);
           }
         }
       }
@@ -523,8 +491,7 @@ public class DataGraphExecuter {
               if (dimFileName.endsWith(CarbonCommonConstants.CSV_FILE_EXTENSION)) {
                 String dimTableName = dimFileMap.split(":")[0];
 
-                validateDimensionCSV(schemaInfo, model.getTableName(), dimTableName, dimCsvFile,
-                    partitionId, schema, ",");
+                validateDimensionCSV(dimTableName, dimCsvFile, schema, ",");
               } else {
                 LOGGER.error(
                     "Dimension table file provided to load Dimension tables is not a CSV file : "
@@ -536,24 +503,20 @@ public class DataGraphExecuter {
             } else {
               LOGGER.error(
                   "Dimension table csv file not present in the path provided to load Dimension "
-                      + "tables : "
-                      + dimCSVFileLoc);
+                      + "tables : " + dimCSVFileLoc);
               throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
                   "Dimension table csv file not present in the path provided to load Dimension "
-                      + "tables : "
-                      + dimCSVFileLoc);
+                      + "tables : " + dimCSVFileLoc);
             }
           }
         } catch (IOException e) {
           LOGGER.error(
               "Dimension table csv file not present in the path provided to load Dimension tables"
-                  + " : "
-                  + dimCSVFileLoc);
+                  + " : " + dimCSVFileLoc);
 
           throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
               "Dimension table csv file not present in the path provided to load Dimension tables"
-                  + " : "
-                  + dimCSVFileLoc);
+                  + " : " + dimCSVFileLoc);
         }
       }
     }
@@ -563,15 +526,12 @@ public class DataGraphExecuter {
    * Validate the dimension csv files.
    *
    * @param schema
-   * @param schemaInfo
    * @param dimFile
    * @throws DataLoadingException
    */
-  private void validateDimensionCSV(SchemaInfo schemaInfo, String factTableName,
-      String dimTableName, CarbonFile dimFile, String partitionId, CarbonDataLoadSchema schema,
-      String delimiter) throws DataLoadingException {
-    String[] columnNames =
-        getDimColumnNames(schemaInfo, factTableName, dimTableName, partitionId, schema);
+  private void validateDimensionCSV(String dimTableName, CarbonFile dimFile,
+      CarbonDataLoadSchema schema, String delimiter) throws DataLoadingException {
+    String[] columnNames = getDimColumnNames(dimTableName, schema);
 
     if (null == columnNames || columnNames.length < 1) {
       return;
@@ -579,12 +539,10 @@ public class DataGraphExecuter {
     if (!checkAllColumnsPresent(columnNames, dimFile.getAbsolutePath(), delimiter)) {
       LOGGER.error(
           "CSV File provided is not proper. Column names in schema and csv header are not same. "
-              + "CSVFile Name : "
-              + dimFile.getName());
+              + "CSVFile Name : " + dimFile.getName());
       throw new DataLoadingException(DataProcessorConstants.CSV_VALIDATION_ERRROR_CODE,
           "Dimension CSV file provided is not proper. Column names in Schema and csv header are "
-              + "not same. CSVFile Name : "
-              + dimFile.getName());
+              + "not same. CSVFile Name : " + dimFile.getName());
     }
 
   }

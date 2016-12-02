@@ -53,6 +53,31 @@ public final class DataProcessorConstants {
    */
   public static final String YEAR = "YEAR";
 
+  /**
+   * Client Read ShortCircuit
+   */
+  public static final String SHORTCIRCUIT = "vfs.hdfs.dfs.client.read.shortcircuit";
+
+  /**
+   * Domain Socket Path
+   */
+  public static final String SOCKET_PATH = "vfs.hdfs.dfs.domain.socket.path";
+
+  /**
+   * Local Path Access User
+   */
+  public static final String LOCAL_PATH_ACCESS_USER = "vfs.hdfs.dfs.block.local-path-access.user";
+
+  /**
+   * File Buffer Size
+   */
+  public static final String FILE_BUFFER_SIZE = "vfs.hdfs.io.file.buffer.size";
+
+  /**
+   * File Buffer Size Value
+   */
+  public static final String FILE_BUFFER_SIZE_VALUE = "5048576";
+
   private DataProcessorConstants() {
 
   }

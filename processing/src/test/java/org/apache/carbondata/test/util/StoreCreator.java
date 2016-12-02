@@ -378,7 +378,7 @@ public class StoreCreator {
     DataGraphExecuter graphExecuter = new DataGraphExecuter(dataProcessTaskStatus);
     graphExecuter
         .executeGraph(graphPath, new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN),
-            info, "0", loadModel.getSchema());
+            info, loadModel.getSchema());
     //    LoadMetadataDetails[] loadDetails =
     //        CarbonUtil.readLoadMetadata(loadModel.schema.getCarbonTable().getMetaDataFilepath());
     writeLoadMetadata(loadModel.schema, loadModel.getTableName(), loadModel.getTableName(),

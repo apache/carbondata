@@ -211,7 +211,7 @@ public final class CarbonLoaderUtil {
     DataGraphExecuter graphExecuter = new DataGraphExecuter(dataProcessTaskStatus);
     graphExecuter
         .executeGraph(graphPath, new ArrayList<String>(CarbonCommonConstants.CONSTANT_SIZE_TEN),
-            info, loadModel.getPartitionId(), loadModel.getCarbonDataLoadSchema());
+            info, loadModel.getCarbonDataLoadSchema());
   }
 
   public static List<String> addNewSliceNameToList(String newSlice, List<String> activeSlices) {
