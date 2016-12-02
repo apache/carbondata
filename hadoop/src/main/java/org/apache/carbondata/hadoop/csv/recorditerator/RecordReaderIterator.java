@@ -16,12 +16,16 @@
  */
 package org.apache.carbondata.hadoop.csv.recorditerator;
 
+import java.io.IOException;
+
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.hadoop.io.StringArrayWritable;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 
 import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
+import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 /**
  * It is wrapper iterator around @{@link RecordReader}.
@@ -38,8 +42,15 @@ public class RecordReaderIterator extends CarbonIterator<Object []> {
    */
   private boolean isConsumed;
 
-  public RecordReaderIterator(RecordReader<NullWritable, StringArrayWritable> recordReader) {
+  private InputSplit split;
+
+  private TaskAttemptContext context;
+
+  public RecordReaderIterator(RecordReader<NullWritable, StringArrayWritable> recordReader,
+      InputSplit split, TaskAttemptContext context) {
     this.recordReader = recordReader;
+    this.split = split;
+    this.context = context;
   }
 
   @Override
@@ -63,6 +74,24 @@ public class RecordReaderIterator extends CarbonIterator<Object []> {
       return data;
     } catch (Exception e) {
       throw new CarbonDataLoadingException(e);
+    }
+  }
+
+  @Override
+  public void initialize() {
+    try {
+      recordReader.initialize(split, context);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  @Override
+  public void close() {
+    try {
+      recordReader.close();
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
   }
 }
