@@ -30,7 +30,6 @@ import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.execution.command.Partitioner
 
 import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -47,9 +46,9 @@ import org.apache.carbondata.spark.DataLoadResult
 import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.CarbonQueryUtil
 
-
 class SerializableConfiguration(@transient var value: Configuration) extends Serializable {
 
+  @transient
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   private def writeObject(out: ObjectOutputStream): Unit =
@@ -172,7 +171,6 @@ class NewCarbonDataLoadRDD[K, V](
       def getInputIterators: Array[CarbonIterator[Array[AnyRef]]] = {
         val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, theSplit.index, 0)
         var configuration: Configuration = confBroadcast.value.value
-        // Broadcast fails in some cases
         if (configuration == null) {
           configuration = new Configuration()
         }

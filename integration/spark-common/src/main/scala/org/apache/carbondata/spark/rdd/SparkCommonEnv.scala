@@ -15,18 +15,16 @@
  * limitations under the License.
  */
 
-package org.apache.spark.mapred
+package org.apache.carbondata.spark.rdd
 
-import org.apache.hadoop.conf.Configuration
-import org.apache.spark.mapreduce.SparkHadoopMapReduceUtil
-import org.apache.spark.util.SerializableConfiguration
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 
-/**
- * It is just dummy class to use Sparks package restricted SparkHadoopMapReduceUtil.
- */
-trait CarbonHadoopMapReduceUtil extends SparkHadoopMapReduceUtil {
+// Used to solve cyclic-dependency issue of carbon-spark-common and carbon-spark, carbon-spark2
+// modules, variables or functions that different in carbon-spark and carbon-spark2 are set here
+object SparkCommonEnv {
+
+  var readSupportClass: Class[_ <: CarbonReadSupport[_]] = _
+
+  var numExistingExecutors: Int = _
 
 }
-
-class CarbonSerializableConfiguration(@transient var conf: Configuration)
-  extends SerializableConfiguration(conf)

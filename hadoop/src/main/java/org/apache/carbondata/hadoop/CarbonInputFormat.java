@@ -166,8 +166,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return configuration.get(COLUMN_PROJECTION);
   }
 
-  public static void setCarbonReadSupport(Class<? extends CarbonReadSupport> readSupportClass,
-      Configuration configuration) {
+  public static void setCarbonReadSupport(Configuration configuration,
+      Class<? extends CarbonReadSupport> readSupportClass) {
     if (readSupportClass != null) {
       configuration.set(CARBON_READ_SUPPORT, readSupportClass.getName());
     }
