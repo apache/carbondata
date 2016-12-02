@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
@@ -35,7 +36,6 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
-import org.apache.carbondata.processing.newflow.iterator.InputIterator;
 import org.apache.carbondata.processing.newflow.steps.DataConverterProcessorStepImpl;
 import org.apache.carbondata.processing.newflow.steps.DataWriterProcessorStepImpl;
 import org.apache.carbondata.processing.newflow.steps.InputProcessorStepImpl;
@@ -51,7 +51,7 @@ public final class DataLoadProcessBuilder {
       LogServiceFactory.getLogService(DataLoadProcessBuilder.class.getName());
 
   public AbstractDataLoadProcessorStep build(CarbonLoadModel loadModel, String storeLocation,
-      InputIterator[] inputIterators) throws Exception {
+      CarbonIterator[] inputIterators) throws Exception {
     CarbonDataLoadConfiguration configuration =
         createConfiguration(loadModel, storeLocation);
     // 1. Reads the data input iterators and parses the data.

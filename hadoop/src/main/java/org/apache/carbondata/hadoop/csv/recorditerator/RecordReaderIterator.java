@@ -18,9 +18,9 @@ package org.apache.carbondata.hadoop.csv.recorditerator;
 
 import java.io.IOException;
 
+import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.hadoop.io.StringArrayWritable;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
-import org.apache.carbondata.processing.newflow.iterator.InputIterator;
 
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -30,7 +30,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 /**
  * It is wrapper iterator around @{@link RecordReader}.
  */
-public class RecordReaderIterator extends InputIterator<Object []> {
+public class RecordReaderIterator extends CarbonIterator<Object []> {
 
   private RecordReader<NullWritable, StringArrayWritable> recordReader;
 

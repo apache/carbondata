@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -16,7 +17,6 @@ import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
-import org.apache.carbondata.processing.newflow.iterator.InputIterator;
 import org.apache.carbondata.processing.newflow.parser.RowParser;
 import org.apache.carbondata.processing.newflow.parser.impl.RowParserImpl;
 import org.apache.carbondata.processing.newflow.row.CarbonRow;
@@ -32,7 +32,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   private RowParser rowParser;
 
-  private InputIterator<Object[]>[] inputIterators;
+  private CarbonIterator<Object[]>[] inputIterators;
 
   /**
    * executor service to execute the query
@@ -40,7 +40,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
   public ExecutorService executorService;
 
   public InputProcessorStepImpl(CarbonDataLoadConfiguration configuration,
-      InputIterator<Object[]>[] inputIterators) {
+      CarbonIterator<Object[]>[] inputIterators) {
     super(configuration, null);
     this.inputIterators = inputIterators;
   }
@@ -56,7 +56,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   @Override public Iterator<CarbonRowBatch>[] execute() {
     int batchSize = CarbonProperties.getInstance().getBatchSize();
-    List<InputIterator<Object[]>>[] readerIterators = partitionInputReaderIterators();
+    List<CarbonIterator<Object[]>>[] readerIterators = partitionInputReaderIterators();
     Iterator<CarbonRowBatch>[] outIterators = new Iterator[readerIterators.length];
     for (int i = 0; i < outIterators.length; i++) {
       outIterators[i] =
@@ -69,14 +69,14 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
    * Partition input iterators equally as per the number of threads.
    * @return
    */
-  private List<InputIterator<Object[]>>[] partitionInputReaderIterators() {
+  private List<CarbonIterator<Object[]>>[] partitionInputReaderIterators() {
     // Get the number of cores configured in property.
     int numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
     // Get the minimum of number of cores and iterators size to get the number of parallel threads
     // to be launched.
     int parallelThreadNumber = Math.min(inputIterators.length, numberOfCores);
 
-    List<InputIterator<Object[]>>[] iterators = new List[parallelThreadNumber];
+    List<CarbonIterator<Object[]>>[] iterators = new List[parallelThreadNumber];
     for (int i = 0; i < parallelThreadNumber; i++) {
       iterators[i] = new ArrayList<>();
     }
@@ -93,7 +93,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   @Override public void close() {
     executorService.shutdown();
-    for (InputIterator inputIterator : inputIterators) {
+    for (CarbonIterator inputIterator : inputIterators) {
       inputIterator.close();
     }
   }
@@ -104,9 +104,9 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
    */
   private static class InputProcessorIterator extends CarbonIterator<CarbonRowBatch> {
 
-    private List<InputIterator<Object[]>> inputIterators;
+    private List<CarbonIterator<Object[]>> inputIterators;
 
-    private InputIterator<Object[]> currentIterator;
+    private CarbonIterator<Object[]> currentIterator;
 
     private int counter;
 
@@ -118,9 +118,9 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
     private ExecutorService executorService;
 
-    private boolean nextBatch = false;
+    private boolean nextBatch;
 
-    public InputProcessorIterator(List<InputIterator<Object[]>> inputIterators,
+    public InputProcessorIterator(List<CarbonIterator<Object[]>> inputIterators,
         RowParser rowParser, int batchSize, ExecutorService executorService) {
       this.inputIterators = inputIterators;
       this.batchSize = batchSize;
@@ -130,9 +130,11 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
       currentIterator = inputIterators.get(counter++);
       currentIterator.initialize();
       this.executorService = executorService;
+      this.nextBatch = false;
     }
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
       return nextBatch || internalHasNext();
     }
 
@@ -152,20 +154,23 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
       return hasNext;
     }
 
-    @Override public CarbonRowBatch next() {
+    @Override
+    public CarbonRowBatch next() {
       CarbonRowBatch result = null;
+      if (future == null) {
+        future = getCarbonRowBatch();
+      }
       try {
-        if (future == null) {
-          future = getCarbonRowBatch();
-        }
         result = future.get();
-        nextBatch = false;
-        if (hasNext()) {
-          nextBatch = true;
-          future = getCarbonRowBatch();
-        }
-      } catch (Exception e) {
+      } catch (InterruptedException e) {
         throw new RuntimeException(e);
+      } catch (ExecutionException e) {
+        throw new RuntimeException(e);
+      }
+      nextBatch = false;
+      if (hasNext()) {
+        nextBatch = true;
+        future = getCarbonRowBatch();
       }
 
       return result;

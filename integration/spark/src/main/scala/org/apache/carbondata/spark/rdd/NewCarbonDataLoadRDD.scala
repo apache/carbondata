@@ -29,6 +29,7 @@ import org.apache.spark.mapred.{CarbonHadoopMapReduceUtil, CarbonSerializableCon
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
 
+import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -39,9 +40,7 @@ import org.apache.carbondata.hadoop.csv.recorditerator.RecordReaderIterator
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.DataLoadExecutor
 import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException
-import org.apache.carbondata.processing.newflow.iterator.InputIterator
 import org.apache.carbondata.spark.DataLoadResult
-import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.CarbonQueryUtil
 
@@ -134,7 +133,7 @@ class NewCarbonDataLoadRDD[K, V](
           throw e
       }
 
-      def getInputIterators: Array[InputIterator[Array[AnyRef]]] = {
+      def getInputIterators: Array[CarbonIterator[Array[AnyRef]]] = {
         val attemptId = newTaskAttemptID(jobTrackerId, id, isMap = true, theSplit.index, 0)
         var configuration: Configuration = confBroadcast.value.value
         // Broadcast fails in some cases WTF??
@@ -198,16 +197,15 @@ class NewCarbonDataLoadRDD[K, V](
       }
 
       def configureCSVInputFormat(configuration: Configuration): Unit = {
-        CSVInputFormat.setCommentCharacter(carbonLoadModel.getCommentChar, configuration)
-        CSVInputFormat.setCSVDelimiter(carbonLoadModel.getCsvDelimiter, configuration)
-        CSVInputFormat.setEscapeCharacter(carbonLoadModel.getEscapeChar, configuration)
-        CSVInputFormat.setHeaderExtractionEnabled(
-          carbonLoadModel.getCsvHeader == null || carbonLoadModel.getCsvHeader.isEmpty,
-          configuration)
-        CSVInputFormat.setQuoteCharacter(carbonLoadModel.getQuoteChar, configuration)
-        CSVInputFormat.setReadBufferSize(CarbonProperties.getInstance
+        CSVInputFormat.setCommentCharacter(configuration, carbonLoadModel.getCommentChar)
+        CSVInputFormat.setCSVDelimiter(configuration, carbonLoadModel.getCsvDelimiter)
+        CSVInputFormat.setEscapeCharacter(configuration, carbonLoadModel.getEscapeChar)
+        CSVInputFormat.setHeaderExtractionEnabled(configuration,
+          carbonLoadModel.getCsvHeader == null || carbonLoadModel.getCsvHeader.isEmpty)
+        CSVInputFormat.setQuoteCharacter(configuration, carbonLoadModel.getQuoteChar)
+        CSVInputFormat.setReadBufferSize(configuration, CarbonProperties.getInstance
           .getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
-            CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT), configuration)
+            CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT))
       }
 
       /**
