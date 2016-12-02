@@ -262,7 +262,7 @@ public final class ValueCompressionUtil {
   }
 
   /**
-   *
+   * It returns Compressor for given datatype
    * @param actualDataType
    * @return compressor based on actualdatatype
    */

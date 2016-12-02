@@ -47,44 +47,33 @@ public class BigIntCompressor extends ValueCompressor {
     int i = 0;
     switch (changedDataType) {
       case DATA_BYTE:
-
         byte[] result = new byte[value.length];
-        for (long a : value) {
-          result[i] = (byte) (maxValue - a);
+        for (int j = 0; j < value.length; j++) {
+          result[i] = (byte) (maxValue - value[j]);
           i++;
         }
         return result;
-
       case DATA_SHORT:
-
         short[] shortResult = new short[value.length];
-
-        for (long a : value) {
-          shortResult[i] = (short) (maxValue - a);
+        for (int j = 0; j < value.length; j++) {
+          shortResult[i] = (short) (maxValue - value[j]);
           i++;
         }
         return shortResult;
-
       case DATA_INT:
-
         int[] intResult = new int[value.length];
-
-        for (long a : value) {
-          intResult[i] = (int) (maxValue - a);
+        for (int j = 0; j < value.length; j++) {
+          intResult[i] = (int) (maxValue - value[j]);
           i++;
         }
         return intResult;
-
       default:
-
         long[] defaultResult = new long[value.length];
-
-        for (long a : value) {
-          defaultResult[i] = (long) (maxValue - a);
+        for (int j = 0; j < value.length; j++) {
+          defaultResult[i] = (long) (maxValue - value[j]);
           i++;
         }
         return defaultResult;
-
     }
   }
 
@@ -93,42 +82,29 @@ public class BigIntCompressor extends ValueCompressor {
     long[] value = dataHolder.getWritableLongValues();
     int i = 0;
     switch (changedDataType) {
-
       case DATA_BYTE:
-
         byte[] result = new byte[value.length];
-
-        for (long a : value) {
-          result[i] = (byte) a;
+        for (int j = 0; j < value.length; j++)  {
+          result[i] = (byte) value[j];
           i++;
         }
         return result;
-
       case DATA_SHORT:
-
         short[] shortResult = new short[value.length];
-
-        for (long a : value) {
-          shortResult[i] = (short) a;
+        for (int j = 0; j < value.length; j++) {
+          shortResult[i] = (short) value[j];
           i++;
         }
         return shortResult;
-
       case DATA_INT:
-
         int[] intResult = new int[value.length];
-
-        for (long a : value) {
-          intResult[i] = (int) a;
+        for (int j = 0; j < value.length; j++) {
+          intResult[i] = (int) value[j];
           i++;
         }
         return intResult;
-
       default:
-
         return value;
-
     }
   }
-
 }
