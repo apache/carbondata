@@ -93,6 +93,9 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
   @Override public void close() {
     executorService.shutdown();
+    for (InputIterator inputIterator : inputIterators) {
+      inputIterator.close();
+    }
   }
 
   /**
@@ -139,8 +142,6 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
       if (!hasNext) {
         // Check next iterator is available in the list.
         if (counter < inputIterators.size()) {
-          // close the old iterator
-          currentIterator.close();
           // Get the next iterator from the list.
           currentIterator = inputIterators.get(counter++);
           // Initialize the new iterator
@@ -162,8 +163,6 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
         if (hasNext()) {
           nextBatch = true;
           future = getCarbonRowBatch();
-        } else {
-          currentIterator.close();
         }
       } catch (Exception e) {
         throw new RuntimeException(e);

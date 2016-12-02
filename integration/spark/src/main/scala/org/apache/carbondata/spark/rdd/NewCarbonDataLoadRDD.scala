@@ -136,7 +136,11 @@ class NewCarbonDataLoadRDD[K, V](
 
       def getInputIterators: Array[InputIterator[Array[AnyRef]]] = {
         val attemptId = newTaskAttemptID(jobTrackerId, id, isMap = true, theSplit.index, 0)
-        val configuration: Configuration = confBroadcast.value.value
+        var configuration: Configuration = confBroadcast.value.value
+        // Broadcast fails in some cases WTF??
+        if (configuration == null) {
+          configuration = new Configuration()
+        }
         configureCSVInputFormat(configuration)
         val hadoopAttemptContext = newTaskAttemptContext(configuration, attemptId)
         val format = new CSVInputFormat
