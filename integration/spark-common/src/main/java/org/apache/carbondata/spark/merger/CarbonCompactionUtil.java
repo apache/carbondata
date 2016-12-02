@@ -144,10 +144,11 @@ public class CarbonCompactionUtil {
   public static boolean isCompactionRequiredForTable(String metaFolderPath) {
     String statusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR;
     try {
-      return (FileFactory.isFileExist(statusFile + CarbonCommonConstants.minorCompactionRequiredFile,
-              FileFactory.getFileType(statusFile + CarbonCommonConstants.minorCompactionRequiredFile)) ||
-              FileFactory.isFileExist(statusFile + CarbonCommonConstants.majorCompactionRequiredFile,
-                      FileFactory.getFileType(statusFile + CarbonCommonConstants.majorCompactionRequiredFile)));
+      if (FileFactory.isFileExist(statusFile + CarbonCommonConstants.minorCompactionRequiredFile,
+          FileFactory.getFileType(statusFile + CarbonCommonConstants.minorCompactionRequiredFile))
+          || FileFactory.isFileExist(statusFile + CarbonCommonConstants.majorCompactionRequiredFile,
+          FileFactory.getFileType(statusFile + CarbonCommonConstants.majorCompactionRequiredFile)))
+        return true;
     } catch (IOException e) {
       LOGGER.error("Exception in isFileExist compaction request file " + e.getMessage());
     }
