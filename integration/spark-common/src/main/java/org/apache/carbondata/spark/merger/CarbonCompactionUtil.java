@@ -164,7 +164,7 @@ public class CarbonCompactionUtil {
         + CarbonCommonConstants.majorCompactionRequiredFile;
     try {
       if (FileFactory.isFileExist(majorCompactionStatusFile,
-              FileFactory.getFileType(majorCompactionStatusFile)))
+          FileFactory.getFileType(majorCompactionStatusFile)))
         return CompactionType.MAJOR_COMPACTION;
     } catch (IOException e) {
       LOGGER.error("Exception in determining the compaction request file " + e.getMessage());
@@ -185,10 +185,10 @@ public class CarbonCompactionUtil {
             file + CarbonCommonConstants.minorCompactionRequiredFile : file + CarbonCommonConstants.majorCompactionRequiredFile;
     try {
       if (FileFactory
-              .isFileExist(compactionRequiredFile, FileFactory.getFileType(compactionRequiredFile))) {
+          .isFileExist(compactionRequiredFile, FileFactory.getFileType(compactionRequiredFile))) {
         if (FileFactory
-                .getCarbonFile(compactionRequiredFile, FileFactory.getFileType(compactionRequiredFile))
-                .delete()) {
+            .getCarbonFile(compactionRequiredFile, FileFactory.getFileType(compactionRequiredFile))
+            .delete()) {
           LOGGER.info("Deleted the compaction request file " + compactionRequiredFile);
           return true;
         } else {
