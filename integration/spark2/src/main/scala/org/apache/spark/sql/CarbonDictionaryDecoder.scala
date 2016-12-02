@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.TaskContext
+import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.errors.attachTree
@@ -33,8 +33,7 @@ import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, ColumnIdentif
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
-import org.apache.carbondata.core.carbon.querystatistics._
-import org.apache.carbondata.core.util.{CarbonTimeStatisticsFactory, DataTypeUtil}
+import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
 /**
@@ -219,4 +218,150 @@ case class CarbonDictionaryDecoder(
     dicts
   }
 
+}
+
+
+
+
+class CarbonDecoderRDD(relations: Seq[CarbonDecoderRelation],
+                profile: CarbonProfile,
+                aliasMap: CarbonAliasDecoderRelation,
+                prev: RDD[Row],
+                       output: Seq[Attribute])
+    extends RDD[Row](prev) {
+
+  def canBeDecoded(attr: Attribute): Boolean = {
+    profile match {
+      case ip: IncludeProfile if ip.attributes.nonEmpty =>
+        ip.attributes
+            .exists(a => a.name.equalsIgnoreCase(attr.name) && a.exprId == attr.exprId)
+      case ep: ExcludeProfile =>
+        !ep.attributes
+            .exists(a => a.name.equalsIgnoreCase(attr.name) && a.exprId == attr.exprId)
+      case _ => true
+    }
+  }
+
+  def convertCarbonToSparkDataType(carbonDimension: CarbonDimension,
+                                   relation: CarbonRelation): types.DataType = {
+    carbonDimension.getDataType match {
+      case DataType.STRING => StringType
+      case DataType.SHORT => ShortType
+      case DataType.INT => IntegerType
+      case DataType.LONG => LongType
+      case DataType.DOUBLE => DoubleType
+      case DataType.BOOLEAN => BooleanType
+      case DataType.DECIMAL =>
+        val scale: Int = carbonDimension.getColumnSchema.getScale
+        val precision: Int = carbonDimension.getColumnSchema.getPrecision
+        if (scale == 0 && precision == 0) {
+          DecimalType(18, 2)
+        } else {
+          DecimalType(precision, scale)
+        }
+      case DataType.TIMESTAMP => TimestampType
+      case DataType.STRUCT =>
+        CarbonMetastoreTypes
+            .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
+      case DataType.ARRAY =>
+        CarbonMetastoreTypes
+            .toDataType(s"array<${ relation.getArrayChildren(carbonDimension.getColName) }>")
+    }
+  }
+
+  val getDictionaryColumnIds = {
+    val dictIds: Array[(String, ColumnIdentifier, DataType)] = output.map { a =>
+      val attr = aliasMap.getOrElse(a, a)
+      val relation = relations.find(p => p.contains(attr))
+      if(relation.isDefined && canBeDecoded(attr)) {
+        val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
+        val carbonDimension =
+          carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
+        if (carbonDimension != null &&
+            carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
+            !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+          (carbonTable.getFactTableName, carbonDimension.getColumnIdentifier,
+              carbonDimension.getDataType)
+        } else {
+          (null, null, null)
+        }
+      } else {
+        (null, null, null)
+      }
+
+    }.toArray
+    dictIds
+  }
+
+  override def compute(split: Partition, context: TaskContext): Iterator[Row] = {
+          val storepath = CarbonEnv.get.carbonMetastore.storePath
+    val absoluteTableIdentifiers = relations.map { relation =>
+      val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
+      (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
+    }.toMap
+
+      val cacheProvider: CacheProvider = CacheProvider.getInstance
+      val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
+        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storepath)
+      val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
+        forwardDictionaryCache)
+      val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
+      // add a task completion listener to clear dictionary that is a decisive factor for
+      // LRU eviction policy
+      val dictionaryTaskCleaner = TaskContext.get
+      dictionaryTaskCleaner.addTaskCompletionListener(context =>
+        dicts.foreach { dictionary =>
+          if (null != dictionary) {
+            dictionary.clear
+          }
+        }
+      )
+      val iter = firstParent[Row].iterator(split, context)
+      new Iterator[Row] {
+        var flag = true
+        var total = 0L
+
+        override final def hasNext: Boolean = iter.hasNext
+
+        override final def next(): Row = {
+          val startTime = System.currentTimeMillis()
+          val data = iter.next().asInstanceOf[GenericRow].toSeq.toArray
+          dictIndex.foreach { index =>
+            if ( data(index) != null) {
+              data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
+                  .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
+                getDictionaryColumnIds(index)._3)
+            }
+          }
+          new GenericRow(data)
+        }
+      }
+  }
+
+  private def isRequiredToDecode = {
+    getDictionaryColumnIds.find(p => p._1 != null) match {
+      case Some(value) => true
+      case _ => false
+    }
+  }
+
+  private def getDictionary(atiMap: Map[String, AbsoluteTableIdentifier],
+                            cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary]) = {
+    val dicts: Seq[Dictionary] = getDictionaryColumnIds.map { f =>
+      if (f._2 != null) {
+        try {
+          cache.get(new DictionaryColumnUniqueIdentifier(
+            atiMap(f._1).getCarbonTableIdentifier,
+            f._2, f._3))
+        } catch {
+          case _: Throwable => null
+        }
+      } else {
+        null
+      }
+    }
+    dicts
+  }
+
+  override protected def getPartitions: Array[Partition] = firstParent[Row].partitions
 }
