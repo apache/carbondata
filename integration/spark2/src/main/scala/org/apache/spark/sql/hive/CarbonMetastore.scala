@@ -665,7 +665,7 @@ object CarbonMetastoreTypes extends RegexParsers {
 case class CarbonRelation(
     databaseName: String,
     tableName: String,
-    metaData: CarbonMetaData,
+    var metaData: CarbonMetaData,
     tableMeta: TableMeta,
     alias: Option[String])
   extends LeafNode with MultiInstanceRelation {
