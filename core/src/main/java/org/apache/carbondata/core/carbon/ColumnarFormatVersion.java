@@ -39,9 +39,14 @@ public enum ColumnarFormatVersion {
 
   public static ColumnarFormatVersion valueOf(short version) {
     switch (version) {
+      case 0:
+        // before multiple reader support, for existing carbon file, it is version 1
+        return V1;
       case 1:
+        // after multiple reader support, user can write new file with version 1
         return V1;
       case 2:
+        // after multiple reader support, user can write new file with version 2
         return V2;
       default:
         throw new IllegalArgumentException("invalid format version: " + version);
