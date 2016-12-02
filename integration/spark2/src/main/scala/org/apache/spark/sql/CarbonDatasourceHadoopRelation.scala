@@ -21,11 +21,13 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.execution.command.{ExecutedCommandExec, LoadTableByInsert}
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.sources.{BaseRelation, Filter, PrunedFilteredScan}
+import org.apache.spark.sql.sources.{BaseRelation, Filter, InsertableRelation, PrunedFilteredScan}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonProjection}
 import org.apache.carbondata.hadoop.util.SchemaReader
 import org.apache.carbondata.scan.expression.Expression
@@ -41,7 +43,7 @@ case class CarbonDatasourceHadoopRelation(
     paths: Array[String],
     parameters: Map[String, String],
     tableSchema: Option[StructType])
-  extends BaseRelation {
+  extends BaseRelation with InsertableRelation {
 
   lazy val absIdentifier = AbsoluteTableIdentifier.fromTablePath(paths.head)
   lazy val carbonTable = SchemaReader.readCarbonTableFromStore(absIdentifier)
@@ -75,4 +77,16 @@ case class CarbonDatasourceHadoopRelation(
       absIdentifier, carbonTable)
   }
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)
+
+  override def insert(data: DataFrame, overwrite: Boolean): Unit = {
+    if (carbonRelation.output.size > CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS) {
+      sys.error("Maximum supported column by carbon is:" +
+          CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS)
+    }
+    if(data.logicalPlan.output.size >= carbonRelation.output.size) {
+      LoadTableByInsert(this, data.logicalPlan).run(sparkSession)
+    } else {
+      sys.error("Cannot insert into target table because column number are different")
+    }
+  }
 }
