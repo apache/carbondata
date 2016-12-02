@@ -161,7 +161,7 @@ public class CarbonCompactionUtil {
    */
   public static CompactionType determineCompactionType(String metaFolderPath) {
     String majorCompactionStatusFile = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR
-            + CarbonCommonConstants.majorCompactionRequiredFile;
+        + CarbonCommonConstants.majorCompactionRequiredFile;
     try {
       if (FileFactory.isFileExist(majorCompactionStatusFile,
               FileFactory.getFileType(majorCompactionStatusFile)))
@@ -181,7 +181,7 @@ public class CarbonCompactionUtil {
   public static boolean deleteCompactionRequiredFile(String metaFolderPath,
                                                      CompactionType compactionType) {
     String file = metaFolderPath + CarbonCommonConstants.FILE_SEPARATOR;
-    String compactionRequiredFile = compactionType.equals(CompactionType.MINOR_COMPACTION) ?
+    String compactionRequiredFile = compactionType == CompactionType.MINOR_COMPACTION ?
             file + CarbonCommonConstants.minorCompactionRequiredFile : file + CarbonCommonConstants.majorCompactionRequiredFile;
     try {
       if (FileFactory
