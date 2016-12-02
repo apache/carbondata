@@ -18,6 +18,7 @@
 package org.apache.carbondata.spark.rdd
 
 import java.lang.Long
+import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util
 import java.util.UUID
@@ -548,10 +549,22 @@ class DataFrameLoaderRDD[K, V](
 class PartitionIterator(partitionIter: Iterator[DataLoadPartitionWrap[Row]],
     carbonLoadModel: CarbonLoadModel,
     context: TaskContext) extends JavaRddIterator[JavaRddIterator[Array[String]]] {
+  val serializer = SparkEnv.get.closureSerializer.newInstance()
+  var serializeBuffer: ByteBuffer = null
   def hasNext: Boolean = partitionIter.hasNext
+
   def next: JavaRddIterator[Array[String]] = {
     val value = partitionIter.next
-    new RddIterator(value.rdd.iterator(value.partition, context),
+    // The rdd (which come from Hive Table) don't support to read dataframe concurrently.
+    // So here will create different rdd instance for each thread.
+    val newInstance = {
+      if (serializeBuffer == null) {
+        serializeBuffer = serializer.serialize[RDD[Row]](value.rdd)
+      }
+      serializeBuffer.rewind()
+      serializer.deserialize[RDD[Row]](serializeBuffer)
+    }
+    new RddIterator(newInstance.iterator(value.partition, context),
         carbonLoadModel,
         context)
   }
