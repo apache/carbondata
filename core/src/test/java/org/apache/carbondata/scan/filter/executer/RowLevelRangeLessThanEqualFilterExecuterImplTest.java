@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.scan.executor.util.filter.executer;
+package org.apache.carbondata.scan.filter.executer;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;

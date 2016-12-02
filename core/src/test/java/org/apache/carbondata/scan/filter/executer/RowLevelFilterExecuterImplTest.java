@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.scan.executor.util.filter.executer;
+package org.apache.carbondata.scan.filter.executer;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -35,7 +35,6 @@ import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.ColumnGroupDimensionDataChunk;
-import org.apache.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.carbon.datastore.impl.btree.BlockBTreeLeafNode;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.PresenceMeta;
@@ -48,8 +47,6 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDime
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
-import org.apache.carbondata.core.datastorage.store.impl.FileHolderImpl;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampDirectDictionaryGenerator;
@@ -58,32 +55,27 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.scan.complextypes.ArrayQueryType;
 import org.apache.carbondata.scan.expression.ColumnExpression;
 import org.apache.carbondata.scan.filter.DimColumnFilterInfo;
-import org.apache.carbondata.scan.filter.FilterUtil;
 import org.apache.carbondata.scan.filter.GenericQueryType;
-import org.apache.carbondata.scan.filter.executer.RowLevelRangeLessThanEqualFilterExecuterImpl;
-import org.apache.carbondata.scan.filter.executer.RowLevelRangeLessThanFiterExecuterImpl;
+import org.apache.carbondata.scan.filter.executer.RowLevelFilterExecuterImpl;
 import org.apache.carbondata.scan.filter.intf.RowImpl;
 import org.apache.carbondata.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
+
+import static junit.framework.TestCase.*;
 
 import mockit.Mock;
 import mockit.MockUp;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertEquals;
-import static junit.framework.TestCase.assertFalse;
-
-public class RowLevelRangeLessThanFiterExecuterImplTest {
-  static RowLevelRangeLessThanFiterExecuterImpl rowLevelRangeLessThanFiterExecuterImpl;
+public class RowLevelFilterExecuterImplTest {
+  static RowLevelFilterExecuterImpl rowLevelFilterExecuter;
   static BlocksChunkHolder blocksChunkHolder;
   static BTreeBuilderInfo bTreeBuilderInfo;
   static ColumnGroupDimensionDataChunk[] columnGroupDimensionDataChunks;
   static MeasureColumnDataChunk[] measureColumnDataChunks;
   static BlockBTreeLeafNode blockBTreeLeafNode;
-  static DimensionChunkAttributes dimensionChunkAttributes;
-  static FixedLengthDimensionDataChunk[] fixedLengthDimensionDataChunk;
 
   @BeforeClass public static void setUp() {
     byte[] dictKeys = { 1, 2, 3, 4, 5, 6 };
@@ -214,15 +206,12 @@ public class RowLevelRangeLessThanFiterExecuterImplTest {
     complexDimensionInfoMap.put(new Integer("1"), arrayQueryType);
     complexDimensionInfoMap.put(new Integer("2"), arrayQueryType2);
 
-    rowLevelRangeLessThanFiterExecuterImpl =
-        new RowLevelRangeLessThanFiterExecuterImpl(dimColumnResolvedFilterInfoList,
-            measureColumnResolvedFilterInfoList, columnExpression, absoluteTableIdentifier, byteArr,
-            segmentProperties);
-    dimensionChunkAttributes = new DimensionChunkAttributes();
-    dimensionChunkAttributes.setEachRowSize(0);
-    dimensionChunkAttributes.setInvertedIndexes(intArr);
-    dimensionChunkAttributes.setInvertedIndexesReverse(intArr);
-    dimensionChunkAttributes.setNoDictionary(true);
+    rowLevelFilterExecuter = new RowLevelFilterExecuterImpl(dimColumnResolvedFilterInfoList,
+        measureColumnResolvedFilterInfoList, columnExpression, absoluteTableIdentifier,
+        segmentProperties, complexDimensionInfoMap);
+
+    DimensionChunkAttributes dimensionChunkAttributes = new DimensionChunkAttributes();
+    dimensionChunkAttributes.setEachRowSize(6);
 
     new MockUp<ColumnGroupDimensionDataChunk>() {
       @SuppressWarnings("unused") @Mock public byte[] getChunkData(int rowId) {
@@ -234,17 +223,21 @@ public class RowLevelRangeLessThanFiterExecuterImplTest {
       @SuppressWarnings("unused") @Mock public int getSurrogateKey(byte[] data, ByteBuffer buffer) {
         return 6;
       }
-
     };
 
-    new MockUp<FilterUtil>() {
-      @SuppressWarnings("unused") @Mock
-      public byte[] getMaskKey(int surrogate, CarbonDimension carbonDimension,
-          KeyGenerator blockLevelKeyGenerator) {
-        return bytArr;
-      }
-
-    };
+    columnGroupDimensionDataChunks = new ColumnGroupDimensionDataChunk[6];
+    columnGroupDimensionDataChunks[0] =
+        new ColumnGroupDimensionDataChunk(bytArr, dimensionChunkAttributes);
+    columnGroupDimensionDataChunks[1] =
+        new ColumnGroupDimensionDataChunk(bytArr, dimensionChunkAttributes);
+    columnGroupDimensionDataChunks[2] =
+        new ColumnGroupDimensionDataChunk(bytArr, dimensionChunkAttributes);
+    columnGroupDimensionDataChunks[3] =
+        new ColumnGroupDimensionDataChunk(bytArr, dimensionChunkAttributes);
+    columnGroupDimensionDataChunks[4] =
+        new ColumnGroupDimensionDataChunk(bytArr, dimensionChunkAttributes);
+    columnGroupDimensionDataChunks[5] =
+        new ColumnGroupDimensionDataChunk(bytArr, dimensionChunkAttributes);
 
     BigDecimal[] bigDecimals = new BigDecimal[6];
     bigDecimals[0] = new BigDecimal("1111");
@@ -311,69 +304,23 @@ public class RowLevelRangeLessThanFiterExecuterImplTest {
 
   }
 
+  @Test public void testApplyFilter() throws Exception {
+
+    blocksChunkHolder = new BlocksChunkHolder(6, 6);
+    blocksChunkHolder.setDimensionDataChunk(columnGroupDimensionDataChunks);
+    blocksChunkHolder.setMeasureDataChunk(measureColumnDataChunks);
+    blocksChunkHolder.setDataBlock(blockBTreeLeafNode);
+    BitSet result = rowLevelFilterExecuter.applyFilter(blocksChunkHolder);
+    assertFalse(result.get(1));
+  }
+
   @Test public void testIsScanRequired() {
     byte[][] maxValue = { { 32, 22 }, { 12, 13 }, { 13, 14 }, { 14, 15 }, { 15, 16 }, { 61, 71 } };
     byte[][] minValue = { { 1, 2 }, { 2, 3 }, { 3, 4 }, { 4, 5 }, { 5, 6 }, { 6, 7 } };
     BitSet expected = new BitSet();
     expected.flip(0);
-    BitSet result = rowLevelRangeLessThanFiterExecuterImpl.isScanRequired(maxValue, minValue);
+    BitSet result = rowLevelFilterExecuter.isScanRequired(maxValue, minValue);
     assertEquals(result, expected);
-  }
-
-  @Test public void testApplyFilter() throws Exception {
-    byte[] bytArr = { 1, 2, 3, 4, 5, 6 };
-    fixedLengthDimensionDataChunk = new FixedLengthDimensionDataChunk[6];
-    fixedLengthDimensionDataChunk[0] =
-        new FixedLengthDimensionDataChunk(bytArr, dimensionChunkAttributes);
-    fixedLengthDimensionDataChunk[1] =
-        new FixedLengthDimensionDataChunk(bytArr, dimensionChunkAttributes);
-    fixedLengthDimensionDataChunk[2] =
-        new FixedLengthDimensionDataChunk(bytArr, dimensionChunkAttributes);
-    fixedLengthDimensionDataChunk[3] =
-        new FixedLengthDimensionDataChunk(bytArr, dimensionChunkAttributes);
-    fixedLengthDimensionDataChunk[4] =
-        new FixedLengthDimensionDataChunk(bytArr, dimensionChunkAttributes);
-    fixedLengthDimensionDataChunk[5] =
-        new FixedLengthDimensionDataChunk(bytArr, dimensionChunkAttributes);
-    FileHolderImpl fileHolder = new FileHolderImpl();
-    blocksChunkHolder = new BlocksChunkHolder(6, 6);
-    blocksChunkHolder.setDimensionDataChunk(fixedLengthDimensionDataChunk);
-    blocksChunkHolder.setMeasureDataChunk(measureColumnDataChunks);
-    blocksChunkHolder.setDataBlock(blockBTreeLeafNode);
-    blocksChunkHolder.setFileReader(fileHolder);
-    BitSet result = rowLevelRangeLessThanFiterExecuterImpl.applyFilter(blocksChunkHolder);
-    int expected = 4;
-    assertEquals(result.length(), expected);
-  }
-
-  @Test public void testApplyFilterForBitSet() throws Exception {
-
-    byte[] bytArr = { 1, 2, 3, 4, 5, 6 };
-    dimensionChunkAttributes = new DimensionChunkAttributes();
-
-    columnGroupDimensionDataChunks = new ColumnGroupDimensionDataChunk[6];
-    columnGroupDimensionDataChunks[0] =
-        new ColumnGroupDimensionDataChunk(bytArr, dimensionChunkAttributes);
-    columnGroupDimensionDataChunks[1] =
-        new ColumnGroupDimensionDataChunk(bytArr, dimensionChunkAttributes);
-    columnGroupDimensionDataChunks[2] =
-        new ColumnGroupDimensionDataChunk(bytArr, dimensionChunkAttributes);
-    columnGroupDimensionDataChunks[3] =
-        new ColumnGroupDimensionDataChunk(bytArr, dimensionChunkAttributes);
-    columnGroupDimensionDataChunks[4] =
-        new ColumnGroupDimensionDataChunk(bytArr, dimensionChunkAttributes);
-    columnGroupDimensionDataChunks[5] =
-        new ColumnGroupDimensionDataChunk(bytArr, dimensionChunkAttributes);
-
-    FileHolderImpl fileHolder = new FileHolderImpl();
-    blocksChunkHolder = new BlocksChunkHolder(6, 6);
-    blocksChunkHolder.setDimensionDataChunk(columnGroupDimensionDataChunks);
-    blocksChunkHolder.setMeasureDataChunk(measureColumnDataChunks);
-    blocksChunkHolder.setDataBlock(blockBTreeLeafNode);
-    blocksChunkHolder.setFileReader(fileHolder);
-    BitSet result = rowLevelRangeLessThanFiterExecuterImpl.applyFilter(blocksChunkHolder);
-    int expected = 0;
-    assertEquals(result.length(), expected);
   }
 
 }
