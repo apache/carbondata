@@ -280,7 +280,7 @@ public class RowLevelRangeTypeExecuterFacoryTest {
 
   @Test public void testGetRowLevelRangeTypeExecuterForGreaterThan() throws Exception {
     RowLevelFilterExecuterImpl result = RowLevelRangeTypeExecuterFacory
-        .getRowLevelRangeTypeExecuter(FilterExecuterType.ROWLEVEL_LESSTHAN_EQUALTO,
+        .getRowLevelRangeTypeExecuter(FilterExecuterType.ROWLEVEL_GREATERTHAN,
             rowLevelRangeFilterResolver, segmentProperties);
     assertNotNull(result);
   }
@@ -294,7 +294,7 @@ public class RowLevelRangeTypeExecuterFacoryTest {
 
   @Test public void testGetRowLevelRangeTypeExecuterForLessThanEqualTo() throws Exception {
     RowLevelFilterExecuterImpl result = RowLevelRangeTypeExecuterFacory
-        .getRowLevelRangeTypeExecuter(FilterExecuterType.ROWLEVEL_GREATERTHAN,
+        .getRowLevelRangeTypeExecuter(FilterExecuterType.ROWLEVEL_LESSTHAN_EQUALTO,
             rowLevelRangeFilterResolver, segmentProperties);
     assertNotNull(result);
   }
