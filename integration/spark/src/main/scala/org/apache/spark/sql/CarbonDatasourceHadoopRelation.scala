@@ -93,7 +93,7 @@ private[sql] case class CarbonDatasourceHadoopRelation(
     val projection = new CarbonProjection
     requiredColumns.foreach(projection.addColumn)
     CarbonInputFormat.setColumnProjection(conf, projection)
-    CarbonInputFormat.setCarbonReadSupport(classOf[SparkRowReadSupportImpl], conf)
+    CarbonInputFormat.setCarbonReadSupport(conf, classOf[SparkRowReadSupportImpl])
 
     new CarbonHadoopFSRDD[Row](sqlContext.sparkContext,
       new SerializableConfiguration(conf),

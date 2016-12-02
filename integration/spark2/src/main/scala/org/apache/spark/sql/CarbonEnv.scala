@@ -22,6 +22,8 @@ import org.apache.spark.sql.hive.{CarbonMetastore, DistributionUtil}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
+import org.apache.carbondata.hadoop.readsupport.impl.RawDataReadSupport
 
 /**
  * Carbon Environment for unified context
@@ -56,6 +58,8 @@ object CarbonEnv {
   def get: CarbonEnv = {
     carbonEnv
   }
+
+  def readSupport: Class[_ <: CarbonReadSupport[_]] = classOf[SparkRowReadSupportImpl]
 }
 
 

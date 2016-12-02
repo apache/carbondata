@@ -40,6 +40,7 @@ import org.apache.spark.util.SparkUtil
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier, ColumnarFormatVersion}
 import org.apache.carbondata.core.carbon.datastore.block.{Distributable, TableBlockInfo}
+import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
@@ -800,7 +801,6 @@ object CarbonDataRDDFactory {
           }
           val jobContext = new Job(hadoopConfiguration)
           val rawSplits = inputFormat.getSplits(jobContext).toArray
-          val result = new Array[Partition](rawSplits.size)
           val blockList = rawSplits.map { inputSplit =>
             val fileSplit = inputSplit.asInstanceOf[FileSplit]
             new TableBlockInfo(fileSplit.getPath.toString,
@@ -1054,24 +1054,14 @@ object CarbonDataRDDFactory {
     }
   }
 
-  def dropTable(
-      sc: SparkContext,
-      schema: String,
-      table: String) {
-    val v: Value[Array[Object]] = new ValueImpl()
-    new CarbonDropTableRDD(sc, v, schema, table).collect
-  }
-
   def cleanFiles(
       sc: SparkContext,
       carbonLoadModel: CarbonLoadModel,
       storePath: String) {
-    val table = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
-      .getCarbonTable(carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName)
-    val carbonCleanFilesLock = CarbonLockFactory
-      .getCarbonLockObj(table.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
-        LockUsage.CLEAN_FILES_LOCK
-      )
+    val table = CarbonMetadata.getInstance.getCarbonTable(
+      carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName)
+    val carbonCleanFilesLock = CarbonLockFactory.getCarbonLockObj(
+      table.getAbsoluteTableIdentifier.getCarbonTableIdentifier, LockUsage.CLEAN_FILES_LOCK)
     try {
       if (carbonCleanFilesLock.lockWithRetries()) {
         LOGGER.info("Clean files lock has been successfully acquired.")

@@ -20,6 +20,9 @@ package org.apache.spark.sql
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.hive.{CarbonMetastore, DistributionUtil}
 
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
+import org.apache.carbondata.hadoop.readsupport.impl.RawDataReadSupport
+
 case class CarbonEnv(carbonMetastore: CarbonMetastore)
 
 object CarbonEnv {
@@ -45,6 +48,8 @@ object CarbonEnv {
     if (initialized) carbonEnv
     else throw new RuntimeException("CarbonEnv not initialized")
   }
+
+  def readSupport: Class[_ <: CarbonReadSupport[_]] = classOf[RawDataReadSupport]
 }
 
 

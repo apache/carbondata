@@ -37,7 +37,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
+import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.apache.carbondata.hadoop.csv.CSVInputFormat
 import org.apache.carbondata.hadoop.csv.recorditerator.RecordReaderIterator
 import org.apache.carbondata.processing.model.CarbonLoadModel
@@ -172,7 +172,6 @@ class NewCarbonDataLoadRDD[K, V](
       def getInputIterators: Array[CarbonIterator[Array[AnyRef]]] = {
         val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, theSplit.index, 0)
         var configuration: Configuration = confBroadcast.value.value
-        // Broadcast fails in some cases
         if (configuration == null) {
           configuration = new Configuration()
         }

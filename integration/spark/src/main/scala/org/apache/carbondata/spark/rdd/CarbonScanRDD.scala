@@ -25,10 +25,11 @@ import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.mapreduce.{InputSplit, Job, JobID}
+import org.apache.hadoop.mapreduce.{InputSplit, Job, JobID, TaskAttemptContext, TaskAttemptID, TaskType}
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext, TaskKilledException}
-import org.apache.spark.mapred.CarbonHadoopMapReduceUtil
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.hive.DistributionUtil
 
@@ -63,13 +64,11 @@ class CarbonSparkPartition(
  */
 class CarbonScanRDD[V: ClassTag](
     @transient sc: SparkContext,
-    columnProjection: Seq[Attribute],
+    columnProjection: CarbonProjection,
     filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
     @transient carbonTable: CarbonTable)
-    extends RDD[V](sc, Nil)
-        with CarbonHadoopMapReduceUtil
-        with Logging {
+    extends RDD[V](sc, Nil) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
   private val jobTrackerId: String = {
@@ -163,8 +162,8 @@ class CarbonScanRDD[V: ClassTag](
       )
     }
 
-    val attemptId = newTaskAttemptID(jobTrackerId, id, isMap = true, split.index, 0)
-    val attemptContext = newTaskAttemptContext(new Configuration(), attemptId)
+    val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
+    val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
     val format = prepareInputFormatForExecutor(attemptContext.getConfiguration)
     val inputSplit = split.asInstanceOf[CarbonSparkPartition].split.value
     val reader = format.createRecordReader(inputSplit, attemptContext)
@@ -214,7 +213,7 @@ class CarbonScanRDD[V: ClassTag](
   }
 
   private def prepareInputFormatForExecutor(conf: Configuration): CarbonInputFormat[V] = {
-    CarbonInputFormat.setCarbonReadSupport(classOf[RawDataReadSupport], conf)
+    CarbonInputFormat.setCarbonReadSupport(conf, CarbonEnv.readSupport)
     createInputFormat(conf)
   }
 
@@ -222,11 +221,7 @@ class CarbonScanRDD[V: ClassTag](
     val format = new CarbonInputFormat[V]
     CarbonInputFormat.setTablePath(conf, identifier.getTablePath)
     CarbonInputFormat.setFilterPredicates(conf, filterExpression)
-    val projection = new CarbonProjection
-    columnProjection.foreach { attr =>
-      projection.addColumn(attr.name)
-    }
-    CarbonInputFormat.setColumnProjection(conf, projection)
+    CarbonInputFormat.setColumnProjection(conf, columnProjection)
     format
   }
 

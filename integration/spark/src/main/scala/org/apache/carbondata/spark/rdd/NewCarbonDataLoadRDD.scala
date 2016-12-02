@@ -17,15 +17,18 @@
 
 package org.apache.carbondata.spark.rdd
 
+import java.io.{IOException, ObjectInputStream, ObjectOutputStream}
 import java.text.SimpleDateFormat
 import java.util
 import java.util.{Date, UUID}
 
 import scala.collection.JavaConverters._
+import scala.util.control.NonFatal
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Partition, SparkContext, TaskContext}
-import org.apache.spark.mapred.{CarbonHadoopMapReduceUtil, CarbonSerializableConfiguration}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
 
@@ -44,6 +47,39 @@ import org.apache.carbondata.spark.DataLoadResult
 import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.CarbonQueryUtil
 
+
+class SerializableConfiguration(@transient var value: Configuration) extends Serializable {
+
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
+  private def writeObject(out: ObjectOutputStream): Unit =
+    try {
+      out.defaultWriteObject()
+      value.write(out)
+    } catch {
+      case e: IOException =>
+        LOGGER.error(e, "Exception encountered")
+        throw e
+      case NonFatal(e) =>
+        LOGGER.error(e, "Exception encountered")
+        throw new IOException(e)
+    }
+
+
+  private def readObject(in: ObjectInputStream): Unit =
+    try {
+      value = new Configuration(false)
+      value.readFields(in)
+    } catch {
+      case e: IOException =>
+        LOGGER.error(e, "Exception encountered")
+        throw e
+      case NonFatal(e) =>
+        LOGGER.error(e, "Exception encountered")
+        throw new IOException(e)
+    }
+}
+
 /**
  * It loads the data to carbon using @AbstractDataLoadProcessorStep
  */
@@ -54,7 +90,7 @@ class NewCarbonDataLoadRDD[K, V](
     loadCount: Integer,
     blocksGroupBy: Array[(String, Array[BlockDetails])],
     isTableSplitPartition: Boolean)
-  extends RDD[(K, V)](sc, Nil) with CarbonHadoopMapReduceUtil {
+  extends RDD[(K, V)](sc, Nil) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
@@ -65,7 +101,7 @@ class NewCarbonDataLoadRDD[K, V](
 
   // A Hadoop Configuration can be about 10 KB, which is pretty big, so broadcast it
   private val confBroadcast =
-    sc.broadcast(new CarbonSerializableConfiguration(sc.hadoopConfiguration))
+    sc.broadcast(new SerializableConfiguration(sc.hadoopConfiguration))
 
   override def getPartitions: Array[Partition] = {
     if (isTableSplitPartition) {
@@ -134,14 +170,13 @@ class NewCarbonDataLoadRDD[K, V](
       }
 
       def getInputIterators: Array[CarbonIterator[Array[AnyRef]]] = {
-        val attemptId = newTaskAttemptID(jobTrackerId, id, isMap = true, theSplit.index, 0)
+        val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, theSplit.index, 0)
         var configuration: Configuration = confBroadcast.value.value
-        // Broadcast fails in some cases WTF??
         if (configuration == null) {
           configuration = new Configuration()
         }
         configureCSVInputFormat(configuration)
-        val hadoopAttemptContext = newTaskAttemptContext(configuration, attemptId)
+        val hadoopAttemptContext = new TaskAttemptContextImpl(configuration, attemptId)
         val format = new CSVInputFormat
         if (isTableSplitPartition) {
           // for table split partition
