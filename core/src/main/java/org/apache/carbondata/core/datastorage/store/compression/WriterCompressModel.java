@@ -19,6 +19,7 @@
 
 package org.apache.carbondata.core.datastorage.store.compression;
 
+import org.apache.carbondata.core.util.CompressionFinder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 
 public class WriterCompressModel {
@@ -67,6 +68,8 @@ public class WriterCompressModel {
    * unCompressValues.
    */
   private ValueCompressonHolder.UnCompressValue[] unCompressValues;
+
+  private CompressionFinder[] compressionFinders;
 
   /**
    * @return the compType
@@ -218,4 +221,12 @@ public class WriterCompressModel {
     this.uniqueValue = uniqueValue;
   }
 
+
+  public void setCompressionFinders(CompressionFinder[] compressionFinders) {
+    this.compressionFinders = compressionFinders;
+  }
+
+  public CompressionFinder[] getCompressionFinder() {
+    return this.compressionFinders;
+  }
 }

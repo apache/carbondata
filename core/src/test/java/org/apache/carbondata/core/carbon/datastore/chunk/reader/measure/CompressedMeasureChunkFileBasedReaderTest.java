@@ -2,6 +2,7 @@ package org.apache.carbondata.core.carbon.datastore.chunk.reader.measure;
 
 import static junit.framework.TestCase.assertEquals;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,10 +14,10 @@ import org.apache.carbondata.core.carbon.datastore.chunk.reader.measure.v1.Compr
 import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
+import org.apache.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
 import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressByteArray;
-import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.apache.carbondata.core.datastorage.store.dataholder.CarbonWriteDataHolder;
+import org.apache.carbondata.core.datastorage.util.StoreFactory;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.junit.BeforeClass;
@@ -25,28 +26,27 @@ import org.junit.Test;
 public class CompressedMeasureChunkFileBasedReaderTest {
 
   static CompressedMeasureChunkFileBasedReaderV1 compressedMeasureChunkFileBasedReader;
+  static CarbonWriteDataHolder[] dataHolder = new CarbonWriteDataHolder[1];
 
+  static WriterCompressModel writerCompressModel;
   @BeforeClass public static void setup() {
     List<DataChunk> dataChunkList = new ArrayList<>();
     dataChunkList.add(new DataChunk());
 
-    WriterCompressModel writerCompressModel = new WriterCompressModel();
+    writerCompressModel = new WriterCompressModel();
+    Object maxValue[] = new Object[]{new Long[]{8L, 0L}};
+    Object minValue[] = new Object[]{new Long[]{1L,0L}};
+    byte[] dataTypeSelected = new byte[1];
+    char[] aggType = new char[]{'b'};
+    MeasureMetaDataModel measureMDMdl =
+                new MeasureMetaDataModel(minValue, maxValue, new int[]{1}, maxValue.length, null,
+                    aggType, dataTypeSelected);
+    writerCompressModel = ValueCompressionUtil.getWriterCompressModel(measureMDMdl);
+    
 
-    ValueCompressonHolder.UnCompressValue unCompressValue[] =
-        { new UnCompressByteArray(UnCompressByteArray.ByteArrayType.BYTE_ARRAY) };
-    byte valueInByte[] = { 1, 5, 4, 8, 7 };
-    unCompressValue[0].setValueInBytes(valueInByte);
-    ValueCompressionUtil.DataType dataType[] = { ValueCompressionUtil.DataType.DATA_BYTE };
-
-    writerCompressModel.setUnCompressValues(unCompressValue);
-    writerCompressModel.setChangedDataType(dataType);
-    int decimal[] = { 5, 8, 2 };
-    writerCompressModel.setMantissa(decimal);
-    Object maxValue[] = { 8 };
-    writerCompressModel.setMaxValue(maxValue);
     ValueEncoderMeta meta = new ValueEncoderMeta();
-    meta.setMaxValue(8.0);
-    meta.setMinValue(1.0);
+    meta.setMaxValue(new Long[]{8L,0L});
+    meta.setMinValue(new Long[]{1L,0L});
     meta.setMantissa(1);
     meta.setType('b');
     List<ValueEncoderMeta> valueEncoderMetaList = new ArrayList<>();
@@ -61,63 +61,45 @@ public class CompressedMeasureChunkFileBasedReaderTest {
   @Test public void readMeasureChunkTest() {
     FileHolder fileHolder = new MockUp<FileHolder>() {
       @Mock public byte[] readByteArray(String filePath, long offset, int length) {
-        byte mockedValue[] = { 1, 5, 4, 8, 7 };
-        return mockedValue;
+        dataHolder[0] = new CarbonWriteDataHolder();
+        dataHolder[0].initialiseBigDecimalValues(1);
+        dataHolder[0].setWritableBigDecimalValueByIndex(0, new long[]{2L,1L});
+        byte[][] writableMeasureDataArray =
+            StoreFactory.createDataStore(writerCompressModel).getWritableMeasureDataArray(dataHolder)
+                .clone();
+        return writableMeasureDataArray[0];
       }
     }.getMockInstance();
-
-    new MockUp<UnCompressByteArray>() {
-      @Mock public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-        List<byte[]> valsList = new ArrayList<byte[]>();
-        byte mockedValue[] = { 3, 7, 9 };
-        valsList.add(mockedValue);
-        CarbonReadDataHolder holder = new CarbonReadDataHolder();
-        byte[][] value = new byte[valsList.size()][];
-        valsList.toArray(value);
-        holder.setReadableByteValues(value);
-        return holder;
-      }
-    };
 
     MeasureColumnDataChunk measureColumnDataChunks =
         compressedMeasureChunkFileBasedReader.readMeasureChunk(fileHolder, 0);
 
-    byte expectedValue[] = { 3, 7, 9 };
-    for (int i = 0; i < 3; i++) {
-      assertEquals(expectedValue[i],
-          measureColumnDataChunks.getMeasureDataHolder().getReadableByteArrayValueByIndex(0)[i]);
-    }
+    BigDecimal bigD = new BigDecimal("2.1");
+    assertEquals(bigD,
+        measureColumnDataChunks.getMeasureDataHolder().getReadableBigDecimalValueByIndex(0));
+      
   }
 
   @Test public void readMeasureChunksTest() {
     FileHolder fileHolder = new MockUp<FileHolder>() {
       @Mock public byte[] readByteArray(String filePath, long offset, int length) {
-        byte mockedValue[] = { 1, 5, 4, 8, 7 };
-        return mockedValue;
+        dataHolder[0] = new CarbonWriteDataHolder();
+        dataHolder[0].initialiseBigDecimalValues(1);
+        dataHolder[0].setWritableBigDecimalValueByIndex(0, new long[]{2L,1L});
+        byte[][] writableMeasureDataArray =
+            StoreFactory.createDataStore(writerCompressModel).getWritableMeasureDataArray(dataHolder)
+                .clone();
+        return writableMeasureDataArray[0];
       }
     }.getMockInstance();
-
-    new MockUp<UnCompressByteArray>() {
-      @Mock public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-        List<byte[]> valsList = new ArrayList<byte[]>();
-        byte mockedValue[] = { 3, 7, 9 };
-        valsList.add(mockedValue);
-        CarbonReadDataHolder holder = new CarbonReadDataHolder();
-        byte[][] value = new byte[valsList.size()][];
-        valsList.toArray(value);
-        holder.setReadableByteValues(value);
-        return holder;
-      }
-    };
 
     int[][] blockIndexes = {{0,0}};
     MeasureColumnDataChunk measureColumnDataChunks[] =
         compressedMeasureChunkFileBasedReader.readMeasureChunks(fileHolder, blockIndexes);
 
-    byte expectedValue[] = { 3, 7, 9 };
-    for (int i = 0; i < 3; i++) {
-      assertEquals(expectedValue[i],
-          measureColumnDataChunks[0].getMeasureDataHolder().getReadableByteArrayValueByIndex(0)[i]);
-    }
+    BigDecimal bigD = new BigDecimal("2.1");
+    assertEquals(bigD,
+        measureColumnDataChunks[0].getMeasureDataHolder().getReadableBigDecimalValueByIndex(0));
+
   }
 }

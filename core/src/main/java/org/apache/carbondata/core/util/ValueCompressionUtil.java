@@ -23,12 +23,14 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import org.apache.carbondata.core.compression.BigDecimalCompressor;
 import org.apache.carbondata.core.compression.BigIntCompressor;
 import org.apache.carbondata.core.compression.DoubleCompressor;
 import org.apache.carbondata.core.compression.ValueCompressor;
 import org.apache.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
 import org.apache.carbondata.core.datastorage.store.compression.ReaderCompressModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressByteArray;
 import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinByte;
@@ -55,6 +57,7 @@ import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressN
 import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneInt;
 import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneLong;
 import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneShort;
+import org.apache.carbondata.core.datastorage.store.compression.type.UnCompressBigDecimal;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 
 public final class ValueCompressionUtil {
@@ -138,19 +141,21 @@ public final class ValueCompressionUtil {
     // ''b' for decimal, 'l' for long, 'n' for double
     switch (measureStoreType) {
       case 'b':
-        return new CompressionFinder(COMPRESSION_TYPE.BIGDECIMAL, DataType.DATA_BYTE,
-            DataType.DATA_BYTE);
+        return getBigDecimalCompressorFinder(maxValue, minValue, 0, dataTypeSelected,
+            measureStoreType);
       case 'l':
-        return getLongCompressorFinder(maxValue, minValue, mantissa, dataTypeSelected);
+        return getLongCompressorFinder(maxValue, minValue, mantissa, dataTypeSelected,
+            measureStoreType);
       case 'n':
-        return getDoubleCompressorFinder(maxValue, minValue, mantissa, dataTypeSelected);
+        return getDoubleCompressorFinder(maxValue, minValue, mantissa, dataTypeSelected,
+            measureStoreType);
       default:
         throw new IllegalArgumentException("unsupported measure type");
     }
   }
 
   private static CompressionFinder getDoubleCompressorFinder(Object maxValue, Object minValue,
-      int mantissa, byte dataTypeSelected) {
+      int mantissa, byte dataTypeSelected, char measureStoreType) {
     //Here we should use the Max abs as max to getDatatype, let's say -1 and -10000000, -1 is max,
     //but we can't use -1 to getDatatype, we should use -10000000.
     double absMaxValue = Math.abs((double) maxValue) >= Math.abs((double) minValue) ?
@@ -165,13 +170,13 @@ public final class ValueCompressionUtil {
       int deltaSize = getSize(deltaDataType);
       if (adaptiveSize > deltaSize) {
         return new CompressionFinder(COMPRESSION_TYPE.DELTA_DOUBLE, DataType.DATA_DOUBLE,
-            deltaDataType);
+            deltaDataType, measureStoreType);
       } else if (adaptiveSize < deltaSize) {
         return new CompressionFinder(COMPRESSION_TYPE.ADAPTIVE, DataType.DATA_DOUBLE,
-            deltaDataType);
+            deltaDataType, measureStoreType);
       } else {
         return new CompressionFinder(COMPRESSION_TYPE.ADAPTIVE, DataType.DATA_DOUBLE,
-            adaptiveDataType);
+            adaptiveDataType, measureStoreType);
       }
     } else {
       // double
@@ -183,21 +188,47 @@ public final class ValueCompressionUtil {
 
       CompressionFinder[] finders = new CompressionFinder[] {
           new CompressionFinder(COMPRESSION_TYPE.ADAPTIVE, adaptiveDataType, adaptiveDataType,
-              CompressionFinder.PRIORITY.ACTUAL),
+              CompressionFinder.PRIORITY.ACTUAL, measureStoreType),
           new CompressionFinder(COMPRESSION_TYPE.DELTA_DOUBLE, adaptiveDataType, deltaDataType,
-              CompressionFinder.PRIORITY.DIFFSIZE),
+              CompressionFinder.PRIORITY.DIFFSIZE, measureStoreType),
           new CompressionFinder(COMPRESSION_TYPE.BIGINT, adaptiveDataType, maxNonDecDataType,
-              CompressionFinder.PRIORITY.MAXNONDECIMAL),
+              CompressionFinder.PRIORITY.MAXNONDECIMAL, measureStoreType),
           new CompressionFinder(COMPRESSION_TYPE.DELTA_NON_DECIMAL, adaptiveDataType,
-              diffNonDecDataType, CompressionFinder.PRIORITY.DIFFNONDECIMAL) };
+              diffNonDecDataType, CompressionFinder.PRIORITY.DIFFNONDECIMAL, measureStoreType) };
       // sort the compressionFinder.The top have the highest priority
       Arrays.sort(finders);
       return finders[0];
     }
   }
 
+  private static CompressionFinder getBigDecimalCompressorFinder(
+      Object maxValue, Object minValue, int mantissa,
+      byte dataTypeSelected, char measureStoreType) {
+    Long[] maxValues = (Long[])maxValue;
+    Long[] minValues = (Long[])minValue;
+    CompressionFinder leftCompressionFinder = getLongCompressorFinder(maxValues[0], minValues[0],
+        mantissa, dataTypeSelected, measureStoreType);
+    CompressionFinder rightCompressionFinder = getLongCompressorFinder(maxValues[1], minValues[1],
+        mantissa, dataTypeSelected, measureStoreType);
+    COMPRESSION_TYPE[] compressionTypes = new COMPRESSION_TYPE[2];
+    DataType[] actualDataTypes = new DataType[2];
+    DataType[] changedDataTypes = new DataType[2];
+    compressionTypes[0] = leftCompressionFinder.getCompType();
+    compressionTypes[1] = rightCompressionFinder.getCompType();
+
+    actualDataTypes[0] = leftCompressionFinder.getActualDataType();
+    actualDataTypes[1] = rightCompressionFinder.getActualDataType();
+
+    changedDataTypes[0] = leftCompressionFinder.getChangedDataType();
+    changedDataTypes[1] = rightCompressionFinder.getChangedDataType();
+
+    CompressionFinder bigdCompressionFinder = new BigDecimalCompressionFinder(
+        compressionTypes, actualDataTypes, changedDataTypes, measureStoreType);
+    return bigdCompressionFinder;
+  }
+
   private static CompressionFinder getLongCompressorFinder(Object maxValue, Object minValue,
-      int mantissa, byte dataTypeSelected) {
+      int mantissa, byte dataTypeSelected, char measureStoreType) {
     DataType adaptiveDataType = getDataType((long) maxValue, mantissa, dataTypeSelected);
     int adaptiveSize = getSize(adaptiveDataType);
     DataType deltaDataType = getDataType((long) maxValue - (long) minValue, mantissa,
@@ -205,13 +236,13 @@ public final class ValueCompressionUtil {
     int deltaSize = getSize(deltaDataType);
     if (adaptiveSize > deltaSize) {
       return new CompressionFinder(COMPRESSION_TYPE.DELTA_DOUBLE, DataType.DATA_BIGINT,
-          deltaDataType);
+          deltaDataType, measureStoreType);
     } else if (adaptiveSize < deltaSize) {
       return new CompressionFinder(COMPRESSION_TYPE.ADAPTIVE, DataType.DATA_BIGINT,
-          deltaDataType);
+          deltaDataType, measureStoreType);
     } else {
       return new CompressionFinder(COMPRESSION_TYPE.ADAPTIVE, DataType.DATA_BIGINT,
-          adaptiveDataType);
+          adaptiveDataType, measureStoreType);
     }
   }
 
@@ -240,49 +271,62 @@ public final class ValueCompressionUtil {
 
   /**
    * It returns Compressor for given datatype
-   * @param actualDataType
+   * @param msrType
    * @return compressor based on actualdatatype
    */
-  public static ValueCompressor getValueCompressor(DataType actualDataType) {
-    switch (actualDataType) {
-      case DATA_BIGINT:
-        return new BigIntCompressor();
+  public static ValueCompressor getValueCompressor(CompressionFinder compressorFinder) {
+    switch(compressorFinder.getMeasureStoreType()) {
+      case 'b': return new BigDecimalCompressor();
+      case 'l': return new BigIntCompressor();
+      default : return new DoubleCompressor();
+    }
+  }
+
+  /**
+   * get uncompressed object
+   * @param compressionFinders : Compression types for measures
+   * @return
+   */
+  private static UnCompressValue[] getUncompressedValues(
+      CompressionFinder[] compressionFinders) {
+    UnCompressValue[] unCompressedValues = new UnCompressValue[compressionFinders.length];
+    for (int i=0; i< compressionFinders.length; i++) {
+      unCompressedValues[i] = getUncompressedValue(compressionFinders[i]);
+    }
+    return unCompressedValues;
+  }
+  /**
+   *
+   * @param compressionFinder bigdecimal compression finder
+   * @return Uncompressed measure object
+   */
+  private static UnCompressValue getUncompressedValue(
+      BigDecimalCompressionFinder compressionFinder) {
+    UnCompressValue leftPart = getUncompressedValue(compressionFinder.getLeftCompType(),
+        compressionFinder.getLeftActualDataType(), compressionFinder.getLeftChangedDataType());
+    UnCompressValue rightPart = getUncompressedValue(compressionFinder.getRightCompType(),
+        compressionFinder.getRightActualDataType(), compressionFinder.getRightChangedDataType());
+    return new UnCompressBigDecimal<>(compressionFinder, leftPart, rightPart);
+  }
+
+  /**
+   *
+   * @param compressionFinder for measure other then bigdecimal
+   * @return
+   */
+  private static UnCompressValue getUncompressedValue(
+      CompressionFinder compressionFinder) {
+    switch(compressionFinder.getMeasureStoreType()) {
+      case 'b':
+        return getUncompressedValue(
+              (BigDecimalCompressionFinder) compressionFinder);
       default:
-        return new DoubleCompressor();
+        return getUncompressedValue(compressionFinder.getCompType(),
+            compressionFinder.getActualDataType(), compressionFinder.getChangedDataType());
     }
   }
 
-  private static ValueCompressonHolder.UnCompressValue[] getUncompressedValues(
-      COMPRESSION_TYPE[] compType, DataType[] actualDataType, DataType[] changedDataType) {
-
-    ValueCompressonHolder.UnCompressValue[] compressValue =
-        new ValueCompressonHolder.UnCompressValue[changedDataType.length];
-    for (int i = 0; i < changedDataType.length; i++) {
-      switch (compType[i]) {
-        case ADAPTIVE:
-          compressValue[i] = getUnCompressNone(changedDataType[i], actualDataType[i]);
-          break;
-
-        case DELTA_DOUBLE:
-          compressValue[i] = getUnCompressDecimalMaxMin(changedDataType[i], actualDataType[i]);
-          break;
-
-        case BIGINT:
-          compressValue[i] = getUnCompressNonDecimal(changedDataType[i]);
-          break;
-
-        case BIGDECIMAL:
-          compressValue[i] = new UnCompressByteArray(UnCompressByteArray.ByteArrayType.BIG_DECIMAL);
-          break;
-
-        default:
-          compressValue[i] = getUnCompressNonDecimalMaxMin(changedDataType[i]);
-      }
-    }
-    return compressValue;
-  }
-
-  private static ValueCompressonHolder.UnCompressValue getUncompressedValues(
+  private static ValueCompressonHolder.UnCompressValue getUncompressedValue(
       COMPRESSION_TYPE compType, DataType actualDataType, DataType changedDataType) {
     switch (compType) {
       case ADAPTIVE:
@@ -685,14 +729,17 @@ public final class ValueCompressionUtil {
     DataType[] actualType = new DataType[measureCount];
     DataType[] changedType = new DataType[measureCount];
     COMPRESSION_TYPE[] compType = new COMPRESSION_TYPE[measureCount];
+    CompressionFinder[] compressionFinders = new CompressionFinder[measureCount];
     for (int i = 0; i < measureCount; i++) {
       CompressionFinder compresssionFinder =
           ValueCompressionUtil.getCompressionFinder(maxValue[i],
               minValue[i], mantissa[i], type[i], dataTypeSelected[i]);
-      actualType[i] = compresssionFinder.actualDataType;
-      changedType[i] = compresssionFinder.changedDataType;
-      compType[i] = compresssionFinder.compType;
+      compressionFinders[i] = compresssionFinder;
+      actualType[i] = compresssionFinder.getActualDataType();
+      changedType[i] = compresssionFinder.getChangedDataType();
+      compType[i] = compresssionFinder.getCompType();
     }
+    compressionModel.setCompressionFinders(compressionFinders);
     compressionModel.setMaxValue(maxValue);
     compressionModel.setMantissa(mantissa);
     compressionModel.setChangedDataType(changedType);
@@ -703,8 +750,7 @@ public final class ValueCompressionUtil {
     compressionModel.setType(type);
     compressionModel.setDataTypeSelected(dataTypeSelected);
     ValueCompressonHolder.UnCompressValue[] values = ValueCompressionUtil
-        .getUncompressedValues(compressionModel.getCompType(), compressionModel.getActualDataType(),
-            compressionModel.getChangedDataType());
+        .getUncompressedValues(compressionFinders);
     compressionModel.setUnCompressValues(values);
     return compressionModel;
   }
@@ -718,11 +764,8 @@ public final class ValueCompressionUtil {
         getCompressionFinder(meta.getMaxValue(), meta.getMinValue(), meta.getMantissa(),
             meta.getType(), meta.getDataTypeSelected());
     compressModel.setUnCompressValues(
-        ValueCompressionUtil.getUncompressedValues(
-            compressFinder.compType,
-            compressFinder.actualDataType,
-            compressFinder.changedDataType));
-    compressModel.setChangedDataType(compressFinder.changedDataType);
+          ValueCompressionUtil.getUncompressedValue(compressFinder));
+    compressModel.setChangedDataType(compressFinder.getChangedDataType());
     compressModel.setValueEncoderMeta(meta);
     return compressModel;
   }
@@ -858,133 +901,5 @@ public final class ValueCompressionUtil {
     DATA_DOUBLE();
     private DataType() {
     }
-
   }
-
-  /**
-   * through the size of data type,priority and compression type, select the
-   * best compression type
-   */
-  private static class CompressionFinder implements Comparable<CompressionFinder> {
-
-    private COMPRESSION_TYPE compType;
-
-    private DataType actualDataType;
-
-    private DataType changedDataType;
-    /**
-     * the size of changed data
-     */
-    private int size;
-
-    private PRIORITY priority;
-
-    /**
-     * CompressionFinder constructor.
-     *
-     * @param compType
-     * @param actualDataType
-     * @param changedDataType
-     */
-    CompressionFinder(COMPRESSION_TYPE compType, DataType actualDataType,
-        DataType changedDataType) {
-      super();
-      this.compType = compType;
-      this.actualDataType = actualDataType;
-      this.changedDataType = changedDataType;
-    }
-
-    /**
-     * CompressionFinder overloaded constructor.
-     *
-     * @param compType
-     * @param actualDataType
-     * @param changedDataType
-     * @param priority
-     */
-
-    CompressionFinder(COMPRESSION_TYPE compType, DataType actualDataType, DataType changedDataType,
-        PRIORITY priority) {
-      super();
-      this.actualDataType = actualDataType;
-      this.changedDataType = changedDataType;
-      this.size = getSize(changedDataType);
-      this.priority = priority;
-      this.compType = compType;
-    }
-
-    @Override public boolean equals(Object obj) {
-      boolean equals = false;
-      if (obj instanceof CompressionFinder) {
-        CompressionFinder cf = (CompressionFinder) obj;
-
-        if (this.size == cf.size && this.priority == cf.priority) {
-          equals = true;
-        }
-
-      }
-      return equals;
-    }
-
-    @Override public int hashCode() {
-      final int code = 31;
-      int result = 1;
-
-      result = code * result + this.size;
-      result = code * result + ((priority == null) ? 0 : priority.hashCode());
-      return result;
-    }
-
-    @Override public int compareTo(CompressionFinder o) {
-      int returnVal = 0;
-      // the big size have high priority
-      if (this.equals(o)) {
-        returnVal = 0;
-      } else if (this.size == o.size) {
-        // the compression type priority
-        if (priority.priority > o.priority.priority) {
-          returnVal = 1;
-        } else if (priority.priority < o.priority.priority) {
-          returnVal = -1;
-        }
-
-      } else if (this.size > o.size) {
-        returnVal = 1;
-      } else {
-        returnVal = -1;
-      }
-      return returnVal;
-    }
-
-    /**
-     * Compression type priority.
-     * ACTUAL is the highest priority and DIFFNONDECIMAL is the lowest
-     * priority
-     */
-    enum PRIORITY {
-      /**
-       *
-       */
-      ACTUAL(0), /**
-       *
-       */
-      DIFFSIZE(1), /**
-       *
-       */
-      MAXNONDECIMAL(2), /**
-       *
-       */
-      DIFFNONDECIMAL(3);
-
-      /**
-       * priority.
-       */
-      private int priority;
-
-      private PRIORITY(int priority) {
-        this.priority = priority;
-      }
-    }
-  }
-
 }
