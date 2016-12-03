@@ -17,53 +17,11 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.catalyst.{TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
 import org.apache.spark.sql.optimizer.{CarbonDecoderRelation}
-import org.apache.spark.sql.types._
 
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
-
-/**
- * Top command
- */
-case class Top(count: Int, topOrBottom: Int, dim: NamedExpression, msr: NamedExpression,
-    child: LogicalPlan) extends UnaryNode {
-  def output: Seq[Attribute] = child.output
-
-  override def references: AttributeSet = {
-    val list = List(dim, msr)
-    AttributeSet(list.flatMap(_.references))
-  }
-}
-
-/**
- * Shows Loads in a table
- */
-case class ShowLoadsCommand(databaseNameOp: Option[String], table: String, limit: Option[String])
-  extends LogicalPlan with Command {
-
-  override def children: Seq[LogicalPlan] = Seq.empty
-
-  override def output: Seq[Attribute] = {
-    Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
-      AttributeReference("Status", StringType, nullable = false)(),
-      AttributeReference("Load Start Time", TimestampType, nullable = false)(),
-      AttributeReference("Load End Time", TimestampType, nullable = false)())
-  }
-}
-
-/**
- * Describe formatted for hive table
- */
-case class DescribeFormattedCommand(sql: String, tblIdentifier: TableIdentifier)
-  extends LogicalPlan with Command {
-  override def children: Seq[LogicalPlan] = Seq.empty
-
-  override def output: Seq[AttributeReference] =
-    Seq(AttributeReference("result", StringType, nullable = false)())
-}
 
 case class CarbonDictionaryCatalystDecoder(
     relations: Seq[CarbonDecoderRelation],
@@ -81,18 +39,3 @@ abstract class CarbonProfile(attributes: Seq[Attribute]) extends Serializable {
 case class IncludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attributes)
 
 case class ExcludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attributes)
-
-case class CreateDatabase(dbName: String, sql: String) extends LogicalPlan with Command {
-  override def children: Seq[LogicalPlan] = Seq.empty
-  override def output: Seq[AttributeReference] = {
-    Seq()
-  }
-}
-
-case class DropDatabase(dbName: String, isCascade: Boolean, sql: String)
-    extends LogicalPlan with Command {
-  override def children: Seq[LogicalPlan] = Seq.empty
-  override def output: Seq[AttributeReference] = {
-    Seq()
-  }
-}
