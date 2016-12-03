@@ -32,11 +32,12 @@ import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.Partitioner
 
+import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
-import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
 import org.apache.carbondata.hadoop.csv.CSVInputFormat
 import org.apache.carbondata.hadoop.csv.recorditerator.RecordReaderIterator
 import org.apache.carbondata.processing.model.CarbonLoadModel
@@ -168,9 +169,13 @@ class NewCarbonDataLoadRDD[K, V](
           throw e
       }
 
-      def getInputIterators: Array[util.Iterator[Array[AnyRef]]] = {
+      def getInputIterators: Array[CarbonIterator[Array[AnyRef]]] = {
         val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, theSplit.index, 0)
-        val configuration: Configuration = confBroadcast.value.value
+        var configuration: Configuration = confBroadcast.value.value
+        // Broadcast fails in some cases
+        if (configuration == null) {
+          configuration = new Configuration()
+        }
         configureCSVInputFormat(configuration)
         val hadoopAttemptContext = new TaskAttemptContextImpl(configuration, attemptId)
         val format = new CSVInputFormat
@@ -195,10 +200,11 @@ class NewCarbonDataLoadRDD[K, V](
               partitionID, split.partitionBlocksDetail.length)
           val readers =
           split.partitionBlocksDetail.map(format.createRecordReader(_, hadoopAttemptContext))
-          readers.zipWithIndex.foreach { case (reader, index) =>
-            reader.initialize(split.partitionBlocksDetail(index), hadoopAttemptContext)
+          readers.zipWithIndex.map { case (reader, index) =>
+            new RecordReaderIterator(reader,
+              split.partitionBlocksDetail(index),
+              hadoopAttemptContext)
           }
-          readers.map(new RecordReaderIterator(_))
         } else {
           // for node partition
           val split = theSplit.asInstanceOf[CarbonNodePartition]
@@ -220,21 +226,22 @@ class NewCarbonDataLoadRDD[K, V](
           StandardLogService.setThreadName(blocksID, null)
           val readers =
             split.nodeBlocksDetail.map(format.createRecordReader(_, hadoopAttemptContext))
-          readers.zipWithIndex.foreach { case (reader, index) =>
-            reader.initialize(split.nodeBlocksDetail(index), hadoopAttemptContext)
+          readers.zipWithIndex.map { case (reader, index) =>
+            new RecordReaderIterator(reader, split.nodeBlocksDetail(index), hadoopAttemptContext)
           }
-          readers.map(new RecordReaderIterator(_))
         }
       }
 
       def configureCSVInputFormat(configuration: Configuration): Unit = {
-        CSVInputFormat.setCommentCharacter(carbonLoadModel.getCommentChar, configuration)
-        CSVInputFormat.setCSVDelimiter(carbonLoadModel.getCsvDelimiter, configuration)
-        CSVInputFormat.setEscapeCharacter(carbonLoadModel.getEscapeChar, configuration)
-        CSVInputFormat.setHeaderExtractionEnabled(
-          carbonLoadModel.getCsvHeader == null || carbonLoadModel.getCsvHeader.isEmpty,
-          configuration)
-        CSVInputFormat.setQuoteCharacter(carbonLoadModel.getQuoteChar, configuration)
+        CSVInputFormat.setCommentCharacter(configuration, carbonLoadModel.getCommentChar)
+        CSVInputFormat.setCSVDelimiter(configuration, carbonLoadModel.getCsvDelimiter)
+        CSVInputFormat.setEscapeCharacter(configuration, carbonLoadModel.getEscapeChar)
+        CSVInputFormat.setHeaderExtractionEnabled(configuration,
+          carbonLoadModel.getCsvHeader == null || carbonLoadModel.getCsvHeader.isEmpty)
+        CSVInputFormat.setQuoteCharacter(configuration, carbonLoadModel.getQuoteChar)
+        CSVInputFormat.setReadBufferSize(configuration, CarbonProperties.getInstance
+          .getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
+            CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT))
       }
 
       /**
