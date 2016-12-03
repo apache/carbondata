@@ -27,7 +27,7 @@ import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
 import org.apache.spark.sql.execution.command.{CreateTable, Field}
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.sources._
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.{DecimalType, StructType}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.CarbonOption
@@ -114,20 +114,18 @@ class CarbonSource extends CreatableRelationProvider
     } catch {
       case ex: NoSuchTableException =>
         val fields = dataSchema.map { col =>
-          val column = col.name
           val dataType = Option(col.dataType.toString)
-          val name = Option(col.name)
           // This is to parse complex data types
-          val x = col.name + ' ' + col.dataType
-          val f: Field = Field(column, dataType, name, None, null)
+          val f: Field = Field(col.name, dataType, Option(col.name), None, null)
           // the data type of the decimal type will be like decimal(10,0)
           // so checking the start of the string and taking the precision and scale.
           // resetting the data type with decimal
-          if (f.dataType.getOrElse("").startsWith("decimal")) {
-            val (precision, scale) = TableCreator.getScaleAndPrecision(col.dataType.toString)
-            f.precision = precision
-            f.scale = scale
-            f.dataType = Some("decimal")
+          Option(col.dataType).foreach {
+            case d: DecimalType =>
+              f.precision = d.precision
+              f.scale = d.scale
+              f.dataType = Some("decimal")
+            case _ => // do nothing
           }
           f
         }
@@ -136,7 +134,8 @@ class CarbonSource extends CreatableRelationProvider
         val cm = TableCreator.prepareTableModel(false, Option(dbName), tableName, fields, Nil, map)
         CreateTable(cm).run(sparkSession)
         CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
-      case _ => throw new Exception("do not have dbname and tablename for carbon table")
+      case x => println(x)
+        throw new Exception("do not have dbname and tablename for carbon table")
     }
   }
 

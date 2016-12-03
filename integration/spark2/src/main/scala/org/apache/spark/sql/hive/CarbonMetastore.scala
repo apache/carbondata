@@ -125,6 +125,17 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) extends Loggin
     tableCreationTime
   }
 
+  def cleanStore(): Unit = {
+    try {
+      val fileType = FileFactory.getFileType(storePath)
+      val b = FileFactory.deleteFile(storePath, fileType)
+      println(s"#######  $b")
+    } catch {
+      case e => logError("clean store failed", e)
+    }
+
+  }
+
   def lookupRelation(dbName: Option[String],
                      tableName: String)(sparkSession: SparkSession): LogicalPlan = {
     lookupRelation(TableIdentifier(tableName, dbName))(sparkSession)
@@ -632,7 +643,7 @@ object CarbonMetastoreTypes extends RegexParsers {
   def toDataType(metastoreType: String): DataType = {
     parseAll(dataType, metastoreType) match {
       case Success(result, _) => result
-      case failure: NoSuccess => sys.error(s"Unsupported dataType: $metastoreType")
+      case failure: NoSuccess => throw new Exception(s"Unsupported dataType: $metastoreType")
     }
   }
 
