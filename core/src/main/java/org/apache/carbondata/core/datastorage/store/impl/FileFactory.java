@@ -397,6 +397,38 @@ public final class FileFactory {
     }
   }
 
+  public static boolean deleteFile(String filePath, FileType fileType) throws IOException {
+    filePath = filePath.replace("\\", "/");
+    switch (fileType) {
+      case HDFS:
+      case ALLUXIO:
+      case VIEWFS:
+        Path path = new Path(filePath);
+        FileSystem fs = path.getFileSystem(configuration);
+        return fs.delete(path, true);
+
+      case LOCAL:
+      default:
+        File file = new File(filePath);
+        return deleteAllFilesOfDir(file);
+    }
+  }
+
+  public static boolean deleteAllFilesOfDir(File path) {
+    if (!path.exists()) {
+      return true;
+    }
+    if (path.isFile()) {
+      return path.delete();
+    }
+    File[] files = path.listFiles();
+    for (int i = 0; i < files.length; i++) {
+      deleteAllFilesOfDir(files[i]);
+    }
+    return path.delete();
+  }
+
+
   public static boolean mkdirs(String filePath, FileType fileType) throws IOException {
     filePath = filePath.replace("\\", "/");
     switch (fileType) {

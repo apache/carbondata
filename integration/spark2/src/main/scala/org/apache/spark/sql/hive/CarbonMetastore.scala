@@ -100,7 +100,7 @@ case class DictionaryMap(dictionaryMap: Map[String, Boolean]) {
   }
 }
 
-class CarbonMetastore(conf: RuntimeConfig, val storePath: String) extends Logging {
+class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
 
   @transient
   val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.CarbonMetastoreCatalog")
@@ -123,6 +123,15 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) extends Loggin
            c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))
     val tableCreationTime = tableMeta.head.carbonTable.getTableLastUpdatedTime
     tableCreationTime
+  }
+
+  def cleanStore(): Unit = {
+    try {
+      val fileType = FileFactory.getFileType(storePath)
+      FileFactory.deleteFile(storePath, fileType)
+    } catch {
+      case e => LOGGER.error(e, "clean store failed")
+    }
   }
 
   def lookupRelation(dbName: Option[String],
@@ -309,7 +318,6 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) extends Loggin
     thriftWriter.write(thriftTableInfo)
     thriftWriter.close()
     metadata.tablesMeta += tableMeta
-    logInfo(s"Table $tableName for Database $dbName created successfully.")
     LOGGER.info(s"Table $tableName for Database $dbName created successfully.")
     updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
     carbonTablePath.getPath
@@ -411,7 +419,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) extends Loggin
             .removeTable(dbName + "_" + tableName)
           updateSchemasUpdatedTime(touchSchemaFileSystemTime(dbName, tableName))
         case None =>
-          logInfo(s"Metadata does not contain entry for table $tableName in database $dbName")
+          LOGGER.info(s"Metadata does not contain entry for table $tableName in database $dbName")
       }
       CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
       // discard cached table info in cachedDataSourceTables
