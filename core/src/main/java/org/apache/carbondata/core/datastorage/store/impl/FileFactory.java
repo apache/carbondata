@@ -415,11 +415,11 @@ public final class FileFactory {
   }
 
   public static boolean deleteAllFilesOfDir(File path) {
-    if (!path.exists())
+    if (!path.exists()) {
       return true;
+    }
     if (path.isFile()) {
-      path.delete();
-      return true;
+      return path.delete();
     }
     File[] files = path.listFiles();
     for (int i = 0; i < files.length; i++) {
