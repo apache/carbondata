@@ -115,6 +115,16 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) extends Loggin
     s"query_${nextId.getAndIncrement()}"
   }
 
+  def cleanStore(): Unit = {
+    try {
+      val fileType = FileFactory.getFileType(storePath)
+      FileFactory.deleteFile(storePath, fileType)
+    } catch {
+      case e => logError("clean store failed", e)
+    }
+
+  }
+
   val metadata = loadMetadata(storePath, nextQueryId)
 
   def getTableCreationTime(databaseName: String, tableName: String): Long = {
