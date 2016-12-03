@@ -62,7 +62,7 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
     spark.sql(
       """
         | create table dwcjk(
-        | CJRQ DATE,--成交日期
+        | CJRQ STRING,--成交日期
         | CJXH CHAR (10),--成交序号
         | ZQDH CHAR (6),--证券代号
         | BXWDH CHAR (6),--买方席位
@@ -89,7 +89,7 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
       """
         |create table dwwtk(
         | JLHM DECIMAL (10,0) ,--记录号码
-        | WTRQ DATE ,--委托日期
+        | WTRQ STRING ,--委托日期
         | WTSJ DECIMAL (8, 0) ,--委托时间
         | ZQDH CHAR (6) ,--证券代号
         | XWDH CHAR (6) ,--席位代号
@@ -184,12 +184,12 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         | CITY_CD CHAR (6) , --市代码
         | STPRV_CD CHAR (6) , --统计省市代码
         | SEX_FLG CHAR (1) , --股东性别
-        | BORN_DT DATE , --出生日期
+        | BORN_DT STRING , --出生日期
         | EDBG_TYP CHAR (2) , --学历类型
         | PROF_TYP CHAR (2) , --职业性质
-        | OPEN_DT DATE , --开户日期
+        | OPEN_DT STRING , --开户日期
         | CNCL_FLG CHAR (1) , --注销标志
-        | CNCL_DT DATE , --注销日期
+        | CNCL_DT STRING , --注销日期
         | INV_STS CHAR (1) , --账户状态
         | STATE_FLG CHAR (1) , --国有属性
         | LIST_FLG CHAR (1) , --上市属性
@@ -201,7 +201,7 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
     spark.sql(
       """
         |create table tsquotat(
-        | TRD_DT date , --成交日期
+        | TRD_DT STRING , --成交日期
         | TANDEM_TM DECIMAL (6, 0) , --交易主机时间
         | AS400_TM DECIMAL (6, 0) , --监察主机时间
         | ADJUST_TM DECIMAL (6, 0) , --调整刷新时间
@@ -261,8 +261,8 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
       """
         |create table wwtnbrch(
         | BRCH_CD CHAR (6)  , --营业部代码
-        | BRCH_FDT DATE , --营业部起始日期
-        | BRCH_EDT DATE , --营业部终止日期
+        | BRCH_FDT STRING , --营业部起始日期
+        | BRCH_EDT STRING , --营业部终止日期
         | BRCH_NM VARCHAR (200), --营业部名称
         | BRCH_SNM VARCHAR (128), --营业部简称
         | BRCH_TYP CHAR (1) , --营业部类别代码
@@ -272,7 +272,7 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         | CITY_CD CHAR (6) , --市代码
         | PRV_CD CHAR (6) , --省代码
         | CNTRY_CD CHAR (3) , --国家代码
-        | OPEN_DT DATE , --开业日期
+        | OPEN_DT STRING , --开业日期
         | BRCH_ZIP VARCHAR (22) , --邮政编码
         | MAIL_ADDR VARCHAR (108), --通信地址
         | REG_ADDR VARCHAR (150), --注册地址
@@ -289,8 +289,8 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         | SEAT_CD CHAR (6) , --席位代码
         | INV_CD CHAR (10) , --股东代码
         | SHRNAT_CD CHAR (2) , --股份性质代码
-        | REC_FDT DATE , --记录起始日期
-        | REC_EDT DATE , --记录终止日期
+        | REC_FDT STRING , --记录起始日期
+        | REC_EDT STRING , --记录终止日期
         | SHR_QTY DECIMAL (13, 0), --持有数量
         | CHG_QTY DECIMAL (13, 0) --变更数量
         |)
@@ -300,8 +300,8 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
       """
         |create table wwtnmmbr(
         | MBR_CD CHAR (6)  , --会员代码
-        | MBR_FDT DATE  , --会员起始日期
-        | MBR_EDT DATE , --会员终止日期
+        | MBR_FDT STRING  , --会员起始日期
+        | MBR_EDT STRING , --会员终止日期
         | MBR_NM VARCHAR (100) , --会员名称
         | MBR_SNM VARCHAR (32) , --会员简称
         | SPELL_ABBR VARCHAR (32) , --拼音缩写
@@ -318,10 +318,10 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         | PRV_CD CHAR (6) , --省代码
         | CNTRY_CD CHAR (3) , --国家代码
         | SUPV_CD CHAR (3) , --证监局编码
-        | JOIN_DT DATE , --入会日期
-        | OPEN_DT DATE , --开业日期
-        | APP_DT DATE , --申请日期
-        | SETUP_DT DATE , --设立日期
+        | JOIN_DT STRING , --入会日期
+        | OPEN_DT STRING , --开业日期
+        | APP_DT STRING , --申请日期
+        | SETUP_DT STRING , --设立日期
         | LIC_NUM VARCHAR (16) , --营业执照号码
         | REGCAP_AMT DECIMAL (20, 4), --注册资本
         | REG_ADDR VARCHAR (150) , --注册地址
@@ -346,8 +346,8 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
       """
         |create table wwtnseat(
         | SEAT_CD CHAR (6)  , --席位代码
-        | SEAT_FDT DATE  , --席位起始日期
-        | SEAT_EDT DATE , --席位终止日期
+        | SEAT_FDT STRING  , --席位起始日期
+        | SEAT_EDT STRING , --席位终止日期
         | SEAT_NM VARCHAR (128), --席位名称
         | SEAT_SNM VARCHAR (128), --席位简称
         | SEAT_TYP CHAR (2) , --席位类别
@@ -355,8 +355,8 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         | PBRCH_CD CHAR (6) , --主营业部代码
         | CSHSEAT_CD CHAR (6) , --资金结算席位代码
         | CLRSEAT_CD CHAR (6) , --股份结算席位代码
-        | APP_DT DATE , --申请日期
-        | INIT_DT DATE , --首次开通日期
+        | APP_DT STRING , --申请日期
+        | INIT_DT STRING , --首次开通日期
         | SEAT_STS CHAR (1) , --席位状态
         | ISPEC_FLG CHAR (1) , --机构专用标志
         | ISPEC_TYP CHAR (1) , --机构专用类别
@@ -373,7 +373,7 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         | BRCH_CD CHAR(6) , --营业部代码
         | MBR_CD CHAR(6), --会员代码
         | SRC_FLG CHAR(1), --信息来源标志
-        | REC_FDT DATE --记录起始日期
+        | REC_FDT STRING --记录起始日期
         |)
       """.stripMargin)
 
