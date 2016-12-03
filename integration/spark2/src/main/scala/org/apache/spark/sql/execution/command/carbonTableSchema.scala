@@ -294,8 +294,7 @@ case class DeleteLoadsByLoadDate(
 
 }
 
-case class LoadTableByInsert(relation: CarbonDatasourceHadoopRelation,
-                                          child: LogicalPlan) {
+case class LoadTableByInsert(relation: CarbonDatasourceHadoopRelation, child: LogicalPlan) {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   def run(sparkSession: SparkSession): Seq[Row] = {
     val df = Dataset.ofRows(sparkSession, child)
@@ -550,8 +549,7 @@ private[sql] case class DeleteLoadByDate(
     databaseNameOp: Option[String],
     tableName: String,
     dateField: String,
-    dateValue: String
-){
+    dateValue: String) {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -597,7 +595,7 @@ private[sql] case class DeleteLoadByDate(
 
 case class CleanFiles(
     databaseNameOp: Option[String],
-    tableName: String){
+    tableName: String) {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -639,7 +637,7 @@ case class ShowLoads(
     databaseNameOp: Option[String],
     tableName: String,
     limit: Option[String],
-    val output: Seq[Attribute]){
+    val output: Seq[Attribute]) {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     val databaseName = databaseNameOp.getOrElse(sparkSession.catalog.currentDatabase)
