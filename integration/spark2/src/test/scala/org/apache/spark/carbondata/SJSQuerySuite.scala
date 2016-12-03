@@ -41,7 +41,7 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
     CarbonEnv.init(spark.sqlContext)
     CarbonEnv.get.carbonMetastore.cleanStore()
 
-//    spark.sql("set spark.sql.crossJoin.enabled = true")
+    spark.sql("set spark.sql.crossJoin.enabled = true")
 
     spark.sql("drop table if exists  dwcjk")
 
