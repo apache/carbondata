@@ -30,7 +30,7 @@ class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
       .appName("CarbonExample")
       .enableHiveSupport()
       .config(CarbonCommonConstants.STORE_LOCATION,
-        s"examples/spark2/target/store")
+        s"/user/hive/warehouse/store")
       .getOrCreate()
     spark.sparkContext.setLogLevel("WARN")
 
@@ -45,7 +45,7 @@ class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
          |    shortField short,
          |    intField int,
          |    bigintField long,
-         |    doubleField double,
+         |    doubleField decimal(10, 3),
          |    stringField string
          | )
          | USING org.apache.spark.sql.CarbonSource

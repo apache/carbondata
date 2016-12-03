@@ -27,7 +27,7 @@ import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
 import org.apache.spark.sql.execution.command.{CreateTable, Field}
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.sources._
-import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.types.{DecimalType, StructType}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.CarbonOption
@@ -123,11 +123,12 @@ class CarbonSource extends CreatableRelationProvider
           // the data type of the decimal type will be like decimal(10,0)
           // so checking the start of the string and taking the precision and scale.
           // resetting the data type with decimal
-          if (f.dataType.getOrElse("").startsWith("decimal")) {
-            val (precision, scale) = TableCreator.getScaleAndPrecision(col.dataType.toString)
-            f.precision = precision
-            f.scale = scale
-            f.dataType = Some("decimal")
+          Option(col.dataType).foreach {
+            case d : DecimalType =>
+              f.precision = d.precision
+              f.scale = d.scale
+              f.dataType = Some("decimal")
+            case other => // do nothing
           }
           f
         }
