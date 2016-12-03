@@ -18,7 +18,7 @@
 package org.apache.spark.carbondata
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
@@ -34,10 +34,11 @@ class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
       .getOrCreate()
     spark.sparkContext.setLogLevel("WARN")
 
-    // Drop table
-    spark.sql("DROP TABLE IF EXISTS carbon_table")
-    spark.sql("DROP TABLE IF EXISTS csv_table")
+    CarbonEnv.init(spark.sqlContext)
+    CarbonEnv.get.carbonMetastore.cleanStore()
 
+    // Drop table
+    spark.sql("DROP TABLE IF EXISTS carbon_testtable")
     // Create table
     spark.sql(
       s"""
@@ -46,7 +47,8 @@ class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
          |    intField int,
          |    bigintField long,
          |    doubleField double,
-         |    stringField string
+         |    stringField string,
+         |    decimalField decimal(13, 0)
          | )
          | USING org.apache.spark.sql.CarbonSource
        """.stripMargin)
@@ -64,7 +66,8 @@ class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
 
 
   test("agg") {
-    spark.sql("select stringField, sum(intField) from carbon_testtable group by stringField").collect()
+    spark.sql("select stringField, sum(intField) , sum(decimalField) " +
+      "from carbon_testtable group by stringField").collect()
   }
 
 }

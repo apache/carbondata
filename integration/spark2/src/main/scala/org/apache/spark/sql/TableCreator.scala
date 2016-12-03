@@ -336,7 +336,7 @@ object TableCreator {
 
   private def normalizeType(field: Field): Field = {
     val dataType = field.dataType.getOrElse("NIL")
-    dataType match {
+    dataType.toLowerCase match {
       case "string" => Field(field.column, Some("String"), field.name, Some(null), field.parent,
         field.storeType
       )
@@ -367,8 +367,7 @@ object TableCreator {
         field.storeType
       )
       case "decimal" => Field(field.column, Some("Decimal"), field.name, Some(null), field.parent,
-        field.storeType, field.precision, field.scale
-      )
+        field.storeType, field.schemaOrdinal, field.precision, field.scale)
       // checking if the nested data type contains the child type as decimal(10,0),
       // if it is present then extracting the precision and scale. resetting the data type
       // with Decimal.
