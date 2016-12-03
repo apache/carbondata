@@ -34,13 +34,16 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
     .appName("CarbonExample")
     .enableHiveSupport()
     .config(CarbonCommonConstants.STORE_LOCATION,
-    s"examples/spark2/target/store")
+    s"/user/hive/warehouse/store")
     .getOrCreate()
 
+    spark.sql("set spark.sql.crossJoin.enabled = true")
+
+    spark.sql("drop table if exists  dwcjk")
     spark.sql(
       """
         | create table dwcjk(
-        | CJRQ DATE,--成交日期
+        | CJRQ String,--成交日期
         | CJXH CHAR (10),--成交序号
         | ZQDH CHAR (6),--证券代号
         | BXWDH CHAR (6),--买方席位
@@ -53,9 +56,9 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         | SHTXH CHAR (10) ,--卖方合同序号
         | SRZRQ CHAR (1) ,--卖方融资融券
         | SPCBZ CHAR (1) ,--卖方平仓标志
-        | CJGS DECIMAL (9, 0) ,--成交数量
-        | CJJG DECIMAL (9, 3) ,--成交价格
-        | CJSJ DECIMAL (8, 0) ,--成交时间
+        | CJGS double ,--成交数量
+        | CJJG double ,--成交价格
+        | CJSJ double ,--成交时间
         | YWLB CHAR (1) ,--业务类别
         | MMLB CHAR (1) ,--买卖类别
         | EBBZ CHAR (1) ,--二版标志
@@ -64,24 +67,25 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         |USING org.apache.spark.sql.CarbonSource
       """.stripMargin)
 
+    spark.sql("drop table if exists  dwwtk")
     spark.sql(
       """
         |create table dwwtk(
-        | JLHM DECIMAL (10,0) ,--记录号码
-        | WTRQ DATE ,--委托日期
-        | WTSJ DECIMAL (8, 0) ,--委托时间
+        | JLHM double ,--记录号码
+        | WTRQ String ,--委托日期
+        | WTSJ double ,--委托时间
         | ZQDH CHAR (6) ,--证券代号
         | XWDH CHAR (6) ,--席位代号
         | GDDM CHAR (10) ,--股东代码
         | HTXH CHAR (10) ,--合同序号
-        | WTSL DECIMAL (9, 0) ,--委托数量
-        | WTJG DECIMAL (9, 3) ,--委托价格
+        | WTSL double ,--委托数量
+        | WTJG double ,--委托价格
         | RZRQ CHAR (1) ,--融资融券
         | PCBZ CHAR (1) ,--平仓标志
         | DFXW CHAR (6) ,--对方席位
         | DFGD CHAR (10) ,--对方股东
-        | WTSL2 DECIMAL (9, 0) ,--委托数量2
-        | WTJG2 DECIMAL (9, 3) ,--委托价格2
+        | WTSL2 double ,--委托数量2
+        | WTJG2 double ,--委托价格2
         | MMLB CHAR (1) ,--买卖类别
         | CXQQ CHAR (1) ,--撤消请求
         | WTLB CHAR (1) ,--委托类别
@@ -91,56 +95,57 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         |USING org.apache.spark.sql.CarbonSource
       """.stripMargin)
 
+    spark.sql("drop table if exists  dwzqxx")
     spark.sql(
       """
         |create table dwzqxx (
         | ZQDH CHAR (6) , --证券代码
         | ZQJC CHAR (14) , --证券简称
         | YWJC CHAR (20) , --英文简称
-        | ZYDW DECIMAL (4, 0) , --交易单位
+        | ZYDW double , --交易单位
         | GPLB CHAR (2) , --股票类别
         | HYLB CHAR (3) , --行业类别
         | CQCX CHAR (1) , --除权除息标志
         | HBZL CHAR (2) , --货币种类
-        | MGMZ DECIMAL (9, 3) , --每股面值
-        | ZFXL DECIMAL (18, 0) , --总发行量
-        | KLTG DECIMAL (18, 0) , --可流通股
-        | SNLR DECIMAL (9, 4) , --上年每股利润
-        | BNLR DECIMAL (9, 4) , --本年每股利润
-        | JSFL DECIMAL (9, 6) , --经手费率
-        | YHSL DECIMAL (9, 6) , --印花税率
-        | GHFL DECIMAL (9, 6) , --过户费率
-        | SSRQ DECIMAL (8, 0) , --上市日期
-        | DQRQ DECIMAL (8, 0) , --到期日/交割日
-        | MBXL DECIMAL (9, 0) , --每笔限量
-        | DW DECIMAL (9, 3) , --档位
+        | MGMZ double , --每股面值
+        | ZFXL double, --总发行量
+        | KLTG double, --可流通股
+        | SNLR double , --上年每股利润
+        | BNLR double , --本年每股利润
+        | JSFL double , --经手费率
+        | YHSL double , --印花税率
+        | GHFL double , --过户费率
+        | SSRQ double , --上市日期
+        | DQRQ double , --到期日/交割日
+        | MBXL double , --每笔限量
+        | DW double , --档位
         | FDCF CHAR (6) , --分档存放
-        | LJTP DECIMAL (4, 0) , --累计停牌日
+        | LJTP double , --累计停牌日
         | TPBZ CHAR (1) , --停牌标志
         | ZSBZ CHAR (1) , --纳入指数计算
-        | ZHYDRQ DECIMAL (8, 0) , --最后异动日期
+        | ZHYDRQ double , --最后异动日期
         | JYZT CHAR (1) , --交易状态
         | FHFS CHAR (1) , --发行方式
         | GPJB CHAR (1) , --股票级别
         | EBBZ CHAR (1) , --板块标志
         | CHFS CHAR (1) , --撮合方式
-        | JHFW DECIMAL (9, 3) , --集合竞价范围
-        | LXFW DECIMAL (9, 3) , --连续竞价范围
-        | SZFD DECIMAL (9, 5) , --上涨幅度
-        | XDFD DECIMAL (9, 5) , --下跌幅度
-        | SZXJ DECIMAL (9, 3) , --上涨限价
-        | XDXJ DECIMAL (9, 3) , --下跌限价
-        | ZTJG DECIMAL (9, 3) , --涨停价
-        | DTJG DECIMAL (9, 3) , --跌停价
-        | CLLB DECIMAL (4, 0) , --处理类别
-        | ZHBL DECIMAL (4, 2) , --折合比例
-        | JLH DECIMAL (4, 0) , --记录号
+        | JHFW double , --集合竞价范围
+        | LXFW double , --连续竞价范围
+        | SZFD double , --上涨幅度
+        | XDFD double , --下跌幅度
+        | SZXJ double , --上涨限价
+        | XDXJ double , --下跌限价
+        | ZTJG double , --涨停价
+        | DTJG double , --跌停价
+        | CLLB double , --处理类别
+        | ZHBL double , --折合比例
+        | JLH double , --记录号
         | DBQSDM CHAR (6) , --代办券商代码
         | KSZSJS CHAR (1) , --开市指数计算标志
         | ZRFS CHAR (1) , --转让方式
         | ZQZLBZ CHAR (2) , --证券种类标识
-        | BSLDW DECIMAL (9, 0) , --买数量单位
-        | SSLDW DECIMAL (9, 0) , --卖数量单位
+        | BSLDW double , --买数量单位
+        | SSLDW double , --卖数量单位
         | SPFS CHAR (1) , --收盘方式
         | TNJYR CHAR (1) , --T+n交易
         | XYSSQR CHAR (1) , --协议实时确认
@@ -149,6 +154,7 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         |USING org.apache.spark.sql.CarbonSource
       """.stripMargin)
 
+    spark.sql("drop table if exists  swtnialk")
     spark.sql(
       """
         |create table swtnialk(
@@ -165,12 +171,12 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         | CITY_CD CHAR (6) , --市代码
         | STPRV_CD CHAR (6) , --统计省市代码
         | SEX_FLG CHAR (1) , --股东性别
-        | BORN_DT DATE , --出生日期
+        | BORN_DT String , --出生日期
         | EDBG_TYP CHAR (2) , --学历类型
         | PROF_TYP CHAR (2) , --职业性质
-        | OPEN_DT DATE , --开户日期
+        | OPEN_DT String , --开户日期
         | CNCL_FLG CHAR (1) , --注销标志
-        | CNCL_DT DATE , --注销日期
+        | CNCL_DT String , --注销日期
         | INV_STS CHAR (1) , --账户状态
         | STATE_FLG CHAR (1) , --国有属性
         | LIST_FLG CHAR (1) , --上市属性
@@ -180,72 +186,74 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         |USING org.apache.spark.sql.CarbonSource
       """.stripMargin)
 
+    spark.sql("drop table if exists  tsquotat")
     spark.sql(
       """
         |create table tsquotat(
-        | TRD_DT date , --成交日期
-        | TANDEM_TM DECIMAL (6, 0) , --交易主机时间
-        | AS400_TM DECIMAL (6, 0) , --监察主机时间
-        | ADJUST_TM DECIMAL (6, 0) , --调整刷新时间
+        | TRD_DT String , --成交日期
+        | TANDEM_TM double , --交易主机时间
+        | AS400_TM double , --监察主机时间
+        | ADJUST_TM double , --调整刷新时间
         | SEC_CD CHAR (6) , --证券代号
-        | LCLOS_PRC DECIMAL (11, 4) , --昨日收盘
-        | OPEN_PRC DECIMAL (11, 4) , --今日开盘
-        | TRD_VOL DECIMAL (13, 0) , --成交数量
-        | TRD_TRNOVR DECIMAL (17, 3) , --成交金额
-        | DEAL_NUM DECIMAL (13, 0) , --总成交笔数
-        | HMTCH_PRC DECIMAL (11, 4) , --最高成交
-        | LMTCH_PRC DECIMAL (11, 4) , --最低成交
-        | LAST_PRC DECIMAL (11, 4) , --最近成交
-        | DSELL_PRC DECIMAL (9, 3) , --最高申报
-        | DBUY_PRC DECIMAL (9, 3) , --最低申报
-        | PE_RT1 DECIMAL (9, 2) , --市盈率1
-        | PE_RT2 DECIMAL (9, 2) , --市盈率2
-        | FLUTUATE_1 DECIMAL (9, 3) , --升跌1
-        | FLUTUATE_2 DECIMAL (9, 3) , --升跌2
-        | HLD_QTY DECIMAL (13, 0) , --合约持仓量
-        | BUY_PRC1 DECIMAL (9, 3) , --买价位1
-        | BUY_QTY1 DECIMAL (13, 0) , --买数量1
-        | BUY_PRC2 DECIMAL (9, 3) , --买价位2
-        | BUY_QTY2 DECIMAL (13, 0) , --买数量2
-        | BUY_PRC3 DECIMAL (9, 3) , --买价位3
-        | BUY_QTY3 DECIMAL (13, 0) , --买数量3
-        | BUY_PRC4 DECIMAL (9, 3) , --买价位4
-        | BUY_QTY4 DECIMAL (13, 0) , --买数量4
-        | BUY_PRC5 DECIMAL (9, 3) , --买价位5
-        | BUY_QTY5 DECIMAL (13, 0) , --买数量5
-        | BUY_PRC6 DECIMAL (9, 3) , --买价位6
-        | BUY_QTY6 DECIMAL (13, 0) , --买数量6
-        | BUY_PRC7 DECIMAL (9, 3) , --买价位7
-        | BUY_QTY7 DECIMAL (13, 0) , --买数量7
-        | BUY_PRC8 DECIMAL (9, 3) , --买价位8
-        | BUY_QTY8 DECIMAL (13, 0) , --买数量8
-        | SELL_PRC1 DECIMAL (9, 3) , --卖价位1
-        | SELL_QTY1 DECIMAL (13, 0) , --卖数量1
-        | SELL_PRC2 DECIMAL (9, 3) , --卖价位2
-        | SELL_QTY2 DECIMAL (13, 0) , --卖数量3
-        | SELL_PRC3 DECIMAL (9, 3) , --卖价位3
-        | SELL_QTY3 DECIMAL (13, 0) , --卖数量3
-        | SELL_PRC4 DECIMAL (9, 3) , --卖价位4
-        | SELL_QTY4 DECIMAL (13, 0) , --卖数量4
-        | SELL_PRC5 DECIMAL (9, 3) , --卖价位5
-        | SELL_QTY5 DECIMAL (13, 0) , --卖数量5
-        | SELL_PRC6 DECIMAL (9, 3) , --卖价位6
-        | SELL_QTY6 DECIMAL (13, 0) , --卖数量6
-        | SELL_PRC7 DECIMAL (9, 3) , --卖价位7
-        | SELL_QTY7 DECIMAL (13, 0) , --卖数量7
-        | SELL_PRC8 DECIMAL (9, 3) , --卖价位8
-        | SELL_QTY8 DECIMAL (13, 0) , --卖数量8
+        | LCLOS_PRC double , --昨日收盘
+        | OPEN_PRC double , --今日开盘
+        | TRD_VOL double , --成交数量
+        | TRD_TRNOVR double, --成交金额
+        | DEAL_NUM double , --总成交笔数
+        | HMTCH_PRC double , --最高成交
+        | LMTCH_PRC double , --最低成交
+        | LAST_PRC double , --最近成交
+        | DSELL_PRC double , --最高申报
+        | DBUY_PRC double , --最低申报
+        | PE_RT1 double , --市盈率1
+        | PE_RT2 double , --市盈率2
+        | FLUTUATE_1 double , --升跌1
+        | FLUTUATE_2 double , --升跌2
+        | HLD_QTY double , --合约持仓量
+        | BUY_PRC1 double , --买价位1
+        | BUY_QTY1 double , --买数量1
+        | BUY_PRC2 double , --买价位2
+        | BUY_QTY2 double , --买数量2
+        | BUY_PRC3 double , --买价位3
+        | BUY_QTY3 double , --买数量3
+        | BUY_PRC4 double , --买价位4
+        | BUY_QTY4 double , --买数量4
+        | BUY_PRC5 double , --买价位5
+        | BUY_QTY5 double , --买数量5
+        | BUY_PRC6 double , --买价位6
+        | BUY_QTY6 double , --买数量6
+        | BUY_PRC7 double , --买价位7
+        | BUY_QTY7 double , --买数量7
+        | BUY_PRC8 double , --买价位8
+        | BUY_QTY8 double , --买数量8
+        | SELL_PRC1 double , --卖价位1
+        | SELL_QTY1 double , --卖数量1
+        | SELL_PRC2 double , --卖价位2
+        | SELL_QTY2 double , --卖数量3
+        | SELL_PRC3 double , --卖价位3
+        | SELL_QTY3 double , --卖数量3
+        | SELL_PRC4 double , --卖价位4
+        | SELL_QTY4 double , --卖数量4
+        | SELL_PRC5 double , --卖价位5
+        | SELL_QTY5 double , --卖数量5
+        | SELL_PRC6 double , --卖价位6
+        | SELL_QTY6 double , --卖数量6
+        | SELL_PRC7 double , --卖价位7
+        | SELL_QTY7 double , --卖数量7
+        | SELL_PRC8 double , --卖价位8
+        | SELL_QTY8 double , --卖数量8
         | PKG_TYP CHAR (10) --行情包类别
         |)
         |USING org.apache.spark.sql.CarbonSource
       """.stripMargin)
 
+    spark.sql("drop table if exists  wwtnbrch")
     spark.sql(
       """
         |create table wwtnbrch(
         | BRCH_CD CHAR (6)  , --营业部代码
-        | BRCH_FDT DATE , --营业部起始日期
-        | BRCH_EDT DATE , --营业部终止日期
+        | BRCH_FDT String , --营业部起始日期
+        | BRCH_EDT String , --营业部终止日期
         | BRCH_NM VARCHAR (200), --营业部名称
         | BRCH_SNM VARCHAR (128), --营业部简称
         | BRCH_TYP CHAR (1) , --营业部类别代码
@@ -255,7 +263,7 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         | CITY_CD CHAR (6) , --市代码
         | PRV_CD CHAR (6) , --省代码
         | CNTRY_CD CHAR (3) , --国家代码
-        | OPEN_DT DATE , --开业日期
+        | OPEN_DT String , --开业日期
         | BRCH_ZIP VARCHAR (22) , --邮政编码
         | MAIL_ADDR VARCHAR (108), --通信地址
         | REG_ADDR VARCHAR (150), --注册地址
@@ -266,6 +274,7 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         |USING org.apache.spark.sql.CarbonSource
       """.stripMargin)
 
+    spark.sql("drop table if exists  wwtnishc")
     spark.sql(
       """
         |create table wwtnishc(
@@ -273,20 +282,21 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         | SEAT_CD CHAR (6) , --席位代码
         | INV_CD CHAR (10) , --股东代码
         | SHRNAT_CD CHAR (2) , --股份性质代码
-        | REC_FDT DATE , --记录起始日期
-        | REC_EDT DATE , --记录终止日期
-        | SHR_QTY DECIMAL (13, 0), --持有数量
-        | CHG_QTY DECIMAL (13, 0) --变更数量
+        | REC_FDT String , --记录起始日期
+        | REC_EDT String , --记录终止日期
+        | SHR_QTY double, --持有数量
+        | CHG_QTY double --变更数量
         |)
         |USING org.apache.spark.sql.CarbonSource
       """.stripMargin)
 
+    spark.sql("drop table if exists wwtnmmbr")
     spark.sql(
       """
         |create table wwtnmmbr(
         | MBR_CD CHAR (6)  , --会员代码
-        | MBR_FDT DATE  , --会员起始日期
-        | MBR_EDT DATE , --会员终止日期
+        | MBR_FDT String  , --会员起始日期
+        | MBR_EDT String , --会员终止日期
         | MBR_NM VARCHAR (100) , --会员名称
         | MBR_SNM VARCHAR (32) , --会员简称
         | SPELL_ABBR VARCHAR (32) , --拼音缩写
@@ -303,12 +313,12 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         | PRV_CD CHAR (6) , --省代码
         | CNTRY_CD CHAR (3) , --国家代码
         | SUPV_CD CHAR (3) , --证监局编码
-        | JOIN_DT DATE , --入会日期
-        | OPEN_DT DATE , --开业日期
-        | APP_DT DATE , --申请日期
-        | SETUP_DT DATE , --设立日期
+        | JOIN_DT String , --入会日期
+        | OPEN_DT String , --开业日期
+        | APP_DT String , --申请日期
+        | SETUP_DT String , --设立日期
         | LIC_NUM VARCHAR (16) , --营业执照号码
-        | REGCAP_AMT DECIMAL (20, 4), --注册资本
+        | REGCAP_AMT double, --注册资本
         | REG_ADDR VARCHAR (150) , --注册地址
         | MBR_ZIP VARCHAR (22) , --邮政编码
         | MAIL_ADDR VARCHAR (108) , --通信地址
@@ -328,12 +338,13 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         |USING org.apache.spark.sql.CarbonSource
       """.stripMargin)
 
+    spark.sql("drop table if exists  wwtnseat")
     spark.sql(
       """
         |create table wwtnseat(
         | SEAT_CD CHAR (6)  , --席位代码
-        | SEAT_FDT DATE  , --席位起始日期
-        | SEAT_EDT DATE , --席位终止日期
+        | SEAT_FDT String  , --席位起始日期
+        | SEAT_EDT String , --席位终止日期
         | SEAT_NM VARCHAR (128), --席位名称
         | SEAT_SNM VARCHAR (128), --席位简称
         | SEAT_TYP CHAR (2) , --席位类别
@@ -341,8 +352,8 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         | PBRCH_CD CHAR (6) , --主营业部代码
         | CSHSEAT_CD CHAR (6) , --资金结算席位代码
         | CLRSEAT_CD CHAR (6) , --股份结算席位代码
-        | APP_DT DATE , --申请日期
-        | INIT_DT DATE , --首次开通日期
+        | APP_DT String , --申请日期
+        | INIT_DT String , --首次开通日期
         | SEAT_STS CHAR (1) , --席位状态
         | ISPEC_FLG CHAR (1) , --机构专用标志
         | ISPEC_TYP CHAR (1) , --机构专用类别
@@ -352,6 +363,7 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         |USING org.apache.spark.sql.CarbonSource
       """.stripMargin)
 
+    spark.sql("drop table if exists  SWTNBCSA")
     spark.sql(
       """
         |create table SWTNBCSA(
@@ -360,7 +372,7 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         | BRCH_CD CHAR(6) , --营业部代码
         | MBR_CD CHAR(6), --会员代码
         | SRC_FLG CHAR(1), --信息来源标志
-        | REC_FDT DATE --记录起始日期
+        | REC_FDT String --记录起始日期
         |)
         |USING org.apache.spark.sql.CarbonSource
       """.stripMargin)
