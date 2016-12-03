@@ -683,7 +683,7 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         |              when b.sec_cd like '002%' then '2 中小板'
         |              else '3 创业板' end) sec_typ,  --证券代码分类
         |         b.SHR_QTY, b.CHG_QTY , c.LCLOS_PRC
-        |  from dt2 a, wwtnishc b, QUOTAT c
+        |  from QUOTAT c, dt2 a, wwtnishc b
         | where a.trd_dt between rec_fdt and rec_edt
         |       and a.next_dt=c.trd_dt
         |       and b.sec_cd=c.sec_cd
