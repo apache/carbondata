@@ -128,8 +128,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) extends Loggin
   def cleanStore(): Unit = {
     try {
       val fileType = FileFactory.getFileType(storePath)
-      val b = FileFactory.deleteFile(storePath, fileType)
-      println(s"#######  $b")
+      FileFactory.deleteFile(storePath, fileType)
     } catch {
       case e => logError("clean store failed", e)
     }
@@ -643,7 +642,7 @@ object CarbonMetastoreTypes extends RegexParsers {
   def toDataType(metastoreType: String): DataType = {
     parseAll(dataType, metastoreType) match {
       case Success(result, _) => result
-      case failure: NoSuccess => throw new Exception(s"Unsupported dataType: $metastoreType")
+      case failure: NoSuccess => sys.error(s"Unsupported dataType: $metastoreType")
     }
   }
 
