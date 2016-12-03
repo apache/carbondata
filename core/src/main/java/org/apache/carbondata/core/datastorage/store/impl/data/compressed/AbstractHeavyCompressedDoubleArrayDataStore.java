@@ -62,13 +62,11 @@ public abstract class AbstractHeavyCompressedDoubleArrayDataStore
   @Override public byte[][] getWritableMeasureDataArray(CarbonWriteDataHolder[] dataHolder) {
     for (int i = 0; i < compressionModel.getUnCompressValues().length; i++) {
       values[i] = compressionModel.getUnCompressValues()[i].getNew();
-      if (type[i] != CarbonCommonConstants.BYTE_VALUE_MEASURE
-          && type[i] != CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-
+      if (type[i] != CarbonCommonConstants.BYTE_VALUE_MEASURE) {
         values[i].setValue(
-            ValueCompressionUtil.getValueCompressor(compressionModel.getActualDataType()[i])
-                .getCompressedValues(compressionModel.getCompType()[i], dataHolder[i],
-                    compressionModel.getChangedDataType()[i], compressionModel.getMaxValue()[i],
+            ValueCompressionUtil.getValueCompressor(compressionModel.getCompressionFinder()[i])
+                .getCompressedValues(compressionModel.getCompressionFinder()[i], dataHolder[i],
+                    compressionModel.getMaxValue()[i],
                     compressionModel.getMantissa()[i]));
       } else {
         values[i].setValue(dataHolder[i].getWritableByteArrayValues());

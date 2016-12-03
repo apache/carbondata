@@ -590,7 +590,7 @@ public class ValueCompressionUtilTest {
     Object[] maxValues = { 10l, 20l, 30l };
     Object[] minValues = { 1l, 2l, 3l };
     int[] decimalLength = { 0, 0, 0 };
-    Object[] uniqueValues = { 5, 3, 2l };
+    Object[] uniqueValues = { 5, new Long[]{2l,4l}, 2l };
     char[] types = { 'l', 'l', 'l' };
     byte[] dataTypeSelected = { 1, 2, 4 };
     MeasureMetaDataModel measureMetaDataModel =
