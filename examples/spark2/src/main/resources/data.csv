@@ -1,4 +1,3 @@
-shortField,intField,bigintField,doubleField,stringField,timestampField
 1,10,100,48.4,spark,2015/4/23
 5,17,140,43.4,spark,2015/7/27
 1,11,100,44.4,flink,2015/5/23

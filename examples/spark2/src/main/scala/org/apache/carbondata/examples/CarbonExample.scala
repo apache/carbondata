@@ -17,31 +17,49 @@
 
 package org.apache.spark.sql.examples
 
+import java.io.File
+
+import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.util.TableLoader
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 
 object CarbonExample {
 
   def main(args: Array[String]): Unit = {
-    // to run the example, plz change this path to your local machine path
-    val rootPath = "/home/david/Documents/incubator-carbondata"
+    val rootPath = new File(this.getClass.getResource("/").getPath
+        + "../../../..").getCanonicalPath
+    val storeLocation = s"$rootPath/examples/spark2/target/store"
+    val warehouse = s"$rootPath/examples/spark2/target/warehouse"
+    val metastoredb = s"$rootPath/examples/spark2/target/metastore_db"
+
+    // clean data folder
+    if (true) {
+      val clean = (path: String) => FileUtils.deleteDirectory(new File(path))
+      clean(storeLocation)
+      clean(warehouse)
+      clean(metastoredb)
+    }
+
     val spark = SparkSession
         .builder()
         .master("local")
         .appName("CarbonExample")
         .enableHiveSupport()
-        .config(CarbonCommonConstants.STORE_LOCATION,
-          s"$rootPath/examples/spark2/target/store")
+        .config("carbon.kettle.home",
+          s"$rootPath/processing/carbonplugins")
+        .config("carbon.storelocation", storeLocation)
+        .config("spark.sql.warehouse.dir", warehouse)
+        .config("javax.jdo.option.ConnectionURL",
+          s"jdbc:derby:;databaseName=$metastoredb;create=true")
         .getOrCreate()
     spark.sparkContext.setLogLevel("WARN")
 
-    // Drop table
-//    spark.sql("DROP TABLE IF EXISTS carbon_table")
-//    spark.sql("DROP TABLE IF EXISTS csv_table")
-//
-//    // Create table
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+
+    // Create table
     spark.sql(
       s"""
          | CREATE TABLE carbon_table(
@@ -49,47 +67,47 @@ object CarbonExample {
          |    intField int,
          |    bigintField long,
          |    doubleField double,
-         |    stringField string
+         |    stringField string,
+         |    timestampField timestamp
          | )
          | USING org.apache.spark.sql.CarbonSource
        """.stripMargin)
 
-    val prop = s"$rootPath/conf/dataload.properties.template"
-    val tableName = "carbon_table"
+    // val prop = s"$rootPath/conf/dataload.properties.template"
+    // val tableName = "carbon_table"
     val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
-    TableLoader.main(Array[String](prop, tableName, path))
+    // TableLoader.main(Array[String](prop, tableName, path))
 
-//    spark.sql(
-//      s"""
-//         | CREATE TABLE csv_table
-//         | (ID int,
-//         | date timestamp,
-//         | country string,
-//         | name string,
-//         | phonetype string,
-//         | serialname string,
-//         | salary int)
-//       """.stripMargin)
-//
-//    spark.sql(
-//      s"""
-//         | LOAD DATA LOCAL INPATH '$csvPath'
-//         | INTO TABLE csv_table
-//       """.stripMargin)
+    spark.sql(
+      s"""
+         | CREATE TABLE csv_table
+         | (  shortField short,
+         |    intField int,
+         |    bigintField long,
+         |    doubleField double,
+         |    stringField string,
+         |    timestampField string)
+         |    ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+       """.stripMargin)
 
-//    spark.sql(
-//      s"""
-//         | INSERT INTO TABLE carbon_table
-//         | SELECT * FROM csv_table
-//       """.stripMargin)
+    spark.sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$path'
+         | INTO TABLE csv_table
+       """.stripMargin)
 
-    // Perform a query
-//    spark.sql("""
-//           SELECT country, count(salary) AS amount
-//           FROM carbon_table
-//           WHERE country IN ('china','france')
-//           GROUP BY country
-//           """).show()
+    spark.sql("""
+             SELECT *
+             FROM csv_table
+              """).show
+
+    spark.sql(
+      s"""
+         | INSERT INTO TABLE carbon_table
+         | SELECT shortField, intField, bigintField, doubleField, stringField,
+         | from_unixtime(unix_timestamp(timestampField,'yyyy/M/dd')) timestampField
+         | FROM csv_table
+       """.stripMargin)
 
     spark.sql("""
              SELECT *
@@ -115,7 +133,7 @@ object CarbonExample {
       """.stripMargin).show
 
     // Drop table
-//    spark.sql("DROP TABLE IF EXISTS carbon_table")
-//    spark.sql("DROP TABLE IF EXISTS csv_table")
+    spark.sql("DROP TABLE IF EXISTS carbon_table")
+    spark.sql("DROP TABLE IF EXISTS csv_table")
   }
 }
