@@ -17,7 +17,7 @@
 
 package org.apache.spark.carbondata
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.scalatest.{BeforeAndAfterAll, FunSuite}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -36,6 +36,10 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
     .config(CarbonCommonConstants.STORE_LOCATION,
     s"/user/hive/warehouse/store")
     .getOrCreate()
+
+
+    CarbonEnv.init(spark.sqlContext)
+    CarbonEnv.get.carbonMetastore.cleanStore()
 
 //    spark.sql("set spark.sql.crossJoin.enabled = true")
 
@@ -516,7 +520,7 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         |       AND cjsj>=1
         |       AND cjsj<=2
         |       AND MMLB!='C' -- mapjoin
-      """.stripMargin).collect()
+      """.stripMargin).collect
   }
 
   test("4.2.5") {
@@ -713,7 +717,7 @@ class SJSQuerySuite extends FunSuite with BeforeAndAfterAll {
         |  from ishc a, SWTNIALK b
         | where a.inv_cd = b.inv_cd) T1
         | group by trd_dt, typ, sec_typ
-      """.stripMargin).collect()
+      """.stripMargin).collect
   }
   test("4.2.8") {
     spark.sql(
