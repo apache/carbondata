@@ -30,7 +30,7 @@ case class CarbonEnv(carbonMetastore: CarbonMetastore)
 
 object CarbonEnv {
 
-  val Logger = LogServiceFactory.getLogService(this.getClass.getName)
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   @volatile private var carbonEnv: CarbonEnv = _
 
@@ -41,7 +41,7 @@ object CarbonEnv {
       val catalog = {
         val storePath = sqlContext.sparkSession.conf.get(
         CarbonCommonConstants.STORE_LOCATION, "/user/hive/warehouse/carbonstore")
-        Logger.info(s"carbon env initial: $storePath")
+        LOGGER.info(s"carbon env initial: $storePath")
         new CarbonMetastore(sqlContext.sparkSession.conf, storePath)
       }
       carbonEnv = CarbonEnv(catalog)

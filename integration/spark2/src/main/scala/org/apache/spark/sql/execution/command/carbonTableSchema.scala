@@ -132,39 +132,10 @@ case class CreateTable(cm: TableModel) {
     if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
       sys.error("No Dimensions found. Table should have at least one dimesnion !")
     }
-
-//    if (sparkSession.sqlContext.tableNames(dbName).exists(_.equalsIgnoreCase(tbName))) {
-//      if (!cm.ifNotExistsSet) {
-//        LOGGER.audit(
-//          s"Table creation with Database name [$dbName] and Table name [$tbName] failed. " +
-//          s"Table [$tbName] already exists under database [$dbName]")
-//        sys.error(s"Table [$tbName] already exists under database [$dbName]")
-//      }
-//    } else {
-      // Add Database to catalog and persist
-      val catalog = CarbonEnv.get.carbonMetastore
-      val tablePath = catalog.createTableFromThrift(tableInfo, dbName, tbName)(sparkSession)
-//      try {
-//        sparkSession.sql(
-//          s"""CREATE TABLE $dbName.$tbName USING carbondata""" +
-//          s""" OPTIONS (tableName "$dbName.$tbName", tablePath "$tablePath") """)
-//          .collect
-//      } catch {
-//        case e: Exception =>
-//          val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
-//          // call the drop table to delete the created table.
-//
-//          CarbonEnv.get.carbonMetastore
-//            .dropTable(catalog.storePath, identifier)(sparkSession)
-//
-//          LOGGER.audit(s"Table creation with Database name [$dbName] " +
-//                       s"and Table name [$tbName] failed")
-//          throw e
-//      }
-
-      LOGGER.audit(s"Table created with Database name [$dbName] and Table name [$tbName]")
-//    }
-
+    // Add Database to catalog and persist
+    val catalog = CarbonEnv.get.carbonMetastore
+    val tablePath = catalog.createTableFromThrift(tableInfo, dbName, tbName)(sparkSession)
+    LOGGER.audit(s"Table created with Database name [$dbName] and Table name [$tbName]")
     Seq.empty
   }
 
