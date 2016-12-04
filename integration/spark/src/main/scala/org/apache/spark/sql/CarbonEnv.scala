@@ -17,6 +17,12 @@
 
 package org.apache.spark.sql
 
+import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
+import org.apache.spark.sql.hive.CarbonMetastore
+
+import org.apache.carbondata.hadoop.readsupport.impl.RawDataReadSupport
+import org.apache.carbondata.spark.rdd.SparkCommonEnv
+
 case class CarbonEnv(carbonMetastore: CarbonMetastore)
 
 object CarbonEnv {
