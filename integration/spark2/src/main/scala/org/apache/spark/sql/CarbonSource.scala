@@ -132,10 +132,13 @@ class CarbonSource extends CreatableRelationProvider
         }
         val map = scala.collection.mutable.Map[String, String]()
         parameters.foreach { x => map.put(x._1, x._2) }
-        val bucketFields = if (parameters.contains("bucketnumber") && parameters.contains("bucketcolumns")) {
-          Some(BucketFields(parameters.get("bucketcolumns").get.split(","), parameters.get("bucketnumber").get.toInt))
-        } else {
-          None
+        val bucketFields = {
+          if (parameters.contains("bucketnumber") && parameters.contains("bucketcolumns")) {
+            Some(BucketFields(parameters.get("bucketcolumns").get.split(","),
+              parameters.get("bucketnumber").get.toInt))
+          } else {
+            None
+          }
         }
         val cm = TableCreator.prepareTableModel(false, Option(dbName),
           tableName, fields, Nil, bucketFields, map)
