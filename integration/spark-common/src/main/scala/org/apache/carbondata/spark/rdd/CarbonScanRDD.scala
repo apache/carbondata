@@ -115,10 +115,13 @@ class CarbonScanRDD(
         blockList.asScala.foreach { blocksPerTask =>
           val splits = blocksPerTask.asScala.map(_.asInstanceOf[CarbonInputSplit])
           if (blocksPerTask.size() != 0) {
-            val multiBlockSplit = new CarbonMultiBlockSplit(identifier, splits.asJava, node)
-            val partition = new CarbonSparkPartition(id, i, multiBlockSplit)
-            result.add(partition)
-            i += 1
+            val bucketGroups = splits.groupBy(f => f.getBucketId)
+            bucketGroups.foreach { p =>
+              val multiBlockSplit = new CarbonMultiBlockSplit(identifier, p._2.asJava, node)
+              val partition = new CarbonSparkPartition(id, i, multiBlockSplit)
+              result.add(partition)
+              i += 1
+            }
           }
         }
       }

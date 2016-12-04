@@ -17,23 +17,29 @@
 
 package org.apache.spark.sql.execution
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions
+import org.apache.spark.sql.catalyst.CatalystTypeConverters._
+import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow, expressions}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, _}
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.catalyst.plans.physical.UnknownPartitioning
+import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, Partitioning, UnknownPartitioning}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types.{AtomicType, IntegerType}
 
+import org.apache.carbondata.core.carbon.metadata.schema.BucketingInfo
+import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
+import org.apache.carbondata.spark.util.CarbonScalaUtil
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 /**
@@ -148,7 +154,6 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     // Combines all Catalyst filter `Expression`s that are either not convertible to data source
     // `Filter`s or cannot be handled by `relation`.
     val filterCondition = unhandledPredicates.reduceLeftOption(expressions.And)
-    val table = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
     val map = table.carbonRelation.metaData.dictionaryMap
 
     val metadata: Map[String, String] = {
@@ -248,20 +253,21 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       metadata: Map[String, String],
       needDecoder: ArrayBuffer[AttributeReference],
       updateRequestedColumns: Seq[AttributeReference]): DataSourceScanExec = {
+    val table = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
     if (supportBatchedDataSource(relation.relation.sqlContext, updateRequestedColumns) &&
         needDecoder.isEmpty) {
       BatchedDataSourceScanExec(
         output,
         scanBuilder(updateRequestedColumns, candidatePredicates, pushedFilters, needDecoder),
         relation.relation,
-        UnknownPartitioning(0),
+        getPartitioning(table.carbonTable, updateRequestedColumns),
         metadata,
         relation.metastoreTableIdentifier)
     } else {
       RowDataSourceScanExec(output,
         scanBuilder(updateRequestedColumns, candidatePredicates, pushedFilters, needDecoder),
         relation.relation,
-        UnknownPartitioning(0),
+        getPartitioning(table.carbonTable, updateRequestedColumns),
         metadata,
         relation.metastoreTableIdentifier)
     }
@@ -285,6 +291,34 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           attr
         }
       }
+    }
+  }
+
+  private def getPartitioning(carbonTable: CarbonTable, output: Seq[Attribute]): Partitioning = {
+    val info: BucketingInfo = carbonTable.getBucketingInfo(carbonTable.getFactTableName)
+    if (info != null) {
+      val cols = info.getListOfColumns.asScala
+      val sortColumn = carbonTable.
+        getDimensionByTableName(carbonTable.getFactTableName).get(0).getColName
+      val numBuckets = info.getNumberOfBuckets
+      val bucketColumns = cols.flatMap { n =>
+        val attrRef = output.find(_.name.equalsIgnoreCase(n.getColumnName))
+        attrRef match {
+          case Some(attr) =>
+            Some(AttributeReference(attr.name,
+              CarbonScalaUtil.convertCarbonToSparkDataType(n.getDataType),
+              attr.nullable,
+              attr.metadata)(attr.exprId, attr.qualifier))
+          case _ => None
+        }
+      }
+      if (bucketColumns.size == cols.size) {
+        HashPartitioning(bucketColumns, numBuckets)
+      } else {
+        UnknownPartitioning(0)
+      }
+    } else {
+      UnknownPartitioning(0)
     }
   }
 

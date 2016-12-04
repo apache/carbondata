@@ -16,10 +16,8 @@
  */
 package org.apache.carbondata.core.partition.impl;
 
-import java.util.Arrays;
 import java.util.List;
 
-import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.partition.Partitioner;
 
@@ -37,10 +35,19 @@ public class HashPartitionerImpl implements Partitioner<Object[]> {
     this.numberOfBuckets = numberOfBuckets;
     hashes = new Hash[indexes.size()];
     for (int i = 0; i < indexes.size(); i++) {
-      if (!columnSchemas.get(i).hasEncoding(Encoding.DICTIONARY)) {
-        hashes[i] = new ByteArrayHash(indexes.get(i));
-      } else {
-        hashes[i] = new NumericHash(indexes.get(i));
+      switch(columnSchemas.get(i).getDataType()) {
+        case SHORT:
+        case INT:
+        case LONG:
+          hashes[i] = new IntegralHash(indexes.get(i));
+          break;
+        case DOUBLE:
+        case FLOAT:
+        case DECIMAL:
+          hashes[i] = new DecimalHash(indexes.get(i));
+          break;
+        default:
+          hashes[i] = new StringHash(indexes.get(i));
       }
     }
   }
@@ -50,36 +57,49 @@ public class HashPartitionerImpl implements Partitioner<Object[]> {
     for (Hash hash : hashes) {
       hashCode += hash.getHash(objects);
     }
-    return hashCode % numberOfBuckets;
+    return (hashCode & Integer.MAX_VALUE) % numberOfBuckets;
   }
 
   private interface Hash {
     int getHash(Object[] value);
   }
 
-  private static class NumericHash implements Hash {
+  private static class IntegralHash implements Hash {
 
     private int index;
 
-    private NumericHash(int index) {
+    private IntegralHash(int index) {
       this.index = index;
     }
 
     public int getHash(Object[] value) {
-      return (Integer) value[index];
+      return value[index] != null ? Long.valueOf(value[index].toString()).hashCode() : 0;
     }
   }
 
-  private static class ByteArrayHash implements Hash {
+  private static class DecimalHash implements Hash {
 
     private int index;
 
-    private ByteArrayHash(int index) {
+    private DecimalHash(int index) {
+      this.index = index;
+    }
+
+    public int getHash(Object[] value) {
+      return value[index] != null ? Double.valueOf(value[index].toString()).hashCode() : 0;
+    }
+  }
+
+  private static class StringHash implements Hash {
+
+    private int index;
+
+    private StringHash(int index) {
       this.index = index;
     }
 
     @Override public int getHash(Object[] value) {
-      return Arrays.hashCode((byte[]) value[index]);
+      return value[index] != null ? value[index].hashCode() : 0;
     }
   }
 }

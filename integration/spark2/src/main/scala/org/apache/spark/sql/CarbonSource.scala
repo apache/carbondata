@@ -24,7 +24,7 @@ import scala.language.implicitConversions
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
-import org.apache.spark.sql.execution.command.{CreateTable, Field}
+import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field}
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.{DecimalType, StructType}
@@ -132,8 +132,13 @@ class CarbonSource extends CreatableRelationProvider
         }
         val map = scala.collection.mutable.Map[String, String]()
         parameters.foreach { x => map.put(x._1, x._2) }
+        val bucketFields = if (parameters.contains("bucketnumber") && parameters.contains("bucketcolumns")) {
+          Some(BucketFields(parameters.get("bucketcolumns").get.split(","), parameters.get("bucketnumber").get.toInt))
+        } else {
+          None
+        }
         val cm = TableCreator.prepareTableModel(false, Option(dbName),
-          tableName, fields, Nil, None, map)
+          tableName, fields, Nil, bucketFields, map)
         CreateTable(cm, false).run(sparkSession)
         CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
       case ex: Exception =>

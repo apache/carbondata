@@ -19,9 +19,7 @@
 package org.apache.carbondata.processing.newflow.sort.impl;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,10 +29,7 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.metadata.schema.BucketingInfo;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.partition.Partitioner;
-import org.apache.carbondata.core.partition.impl.HashPartitionerImpl;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.DataField;
@@ -54,6 +49,8 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
  * It parallely reads data from array of iterates and do merge sort.
  * First it sorts the data and write to temp files. These temp files will be merge sorted to get
  * final merge sort result.
+ * This step is specifically for bucketing, it sorts each bucket data separately and write to
+ * temp files.
  */
 public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
 
@@ -68,8 +65,6 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
 
   private BucketingInfo bucketingInfo;
 
-  private Partitioner<Object[]> partitioner;
-
   private DataField[] inputDataFields;
 
   private int sortBufferSize;
@@ -83,20 +78,6 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
   @Override public void initialize(SortParameters sortParameters) {
     this.sortParameters = sortParameters;
     intermediateFileMerger = new SortIntermediateFileMerger(sortParameters);
-    List<Integer> indexes = new ArrayList<>();
-    List<ColumnSchema> columnSchemas = new ArrayList<>();
-    for (int i = 0; i < inputDataFields.length; i++) {
-      for (int j = 0; j < bucketingInfo.getListOfColumns().size(); j++) {
-        if (inputDataFields[i].getColumn().getColName()
-            .equals(bucketingInfo.getListOfColumns().get(j).getColumnName())) {
-          indexes.add(i);
-          columnSchemas.add(inputDataFields[i].getColumn().getColumnSchema());
-          break;
-        }
-      }
-    }
-    partitioner =
-        new HashPartitionerImpl(indexes, columnSchemas, bucketingInfo.getNumberOfBuckets());
     int buffer = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.SORT_SIZE, CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
     sortBufferSize = buffer/bucketingInfo.getNumberOfBuckets();
@@ -124,7 +105,7 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
     final int batchSize = CarbonProperties.getInstance().getBatchSize();
     try {
       for (int i = 0; i < iterators.length; i++) {
-        executorService.submit(new SortIteratorThread(iterators[i], sortDataRows, partitioner));
+        executorService.submit(new SortIteratorThread(iterators[i], sortDataRows));
       }
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
@@ -217,13 +198,9 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
 
     private SortDataRows[] sortDataRows;
 
-    private Partitioner partitioner;
-
-    public SortIteratorThread(Iterator<CarbonRowBatch> iterator, SortDataRows[] sortDataRows,
-        Partitioner partitioner) {
+    public SortIteratorThread(Iterator<CarbonRowBatch> iterator, SortDataRows[] sortDataRows) {
       this.iterator = iterator;
       this.sortDataRows = sortDataRows;
-      this.partitioner = partitioner;
     }
 
     @Override public Void call() throws CarbonDataLoadingException {
@@ -235,8 +212,7 @@ public class ParallelReadMergeSorterWithBucketingImpl implements Sorter {
           while (batchIterator.hasNext()) {
             CarbonRow row = batchIterator.next();
             if (row != null) {
-              int bucket = partitioner.getPartition(row.getData());
-              SortDataRows sortDataRow = sortDataRows[bucket];
+              SortDataRows sortDataRow = sortDataRows[row.bucketNumber];
               synchronized (sortDataRow) {
                 sortDataRow.addRow(row.getData());
               }

@@ -186,7 +186,7 @@ public class CarbonFactDataHandlerModel {
    */
   private boolean useKettle = true;
 
-  private int bucketId = -1;
+  private int bucketId = 0;
 
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
