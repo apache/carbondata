@@ -17,12 +17,6 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
-import org.apache.spark.sql.hive.{CarbonMetastore, DistributionUtil}
-
-import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
-import org.apache.carbondata.hadoop.readsupport.impl.RawDataReadSupport
-
 case class CarbonEnv(carbonMetastore: CarbonMetastore)
 
 object CarbonEnv {
@@ -36,10 +30,7 @@ object CarbonEnv {
       val cc = sqlContext.asInstanceOf[CarbonContext]
       val catalog = new CarbonMetastore(cc, cc.storePath, cc.hiveClientInterface, "")
       carbonEnv = CarbonEnv(catalog)
-      DistributionUtil.numExistingExecutors = sqlContext.sparkContext.schedulerBackend match {
-        case b: CoarseGrainedSchedulerBackend => b.numExistingExecutors
-        case _ => 0
-      }
+      setSparkCommonEnv(sqlContext)
       initialized = true
     }
   }
@@ -49,7 +40,13 @@ object CarbonEnv {
     else throw new RuntimeException("CarbonEnv not initialized")
   }
 
-  def readSupport: Class[_ <: CarbonReadSupport[_]] = classOf[RawDataReadSupport]
+  private def setSparkCommonEnv(sqlContext: SQLContext): Unit = {
+    SparkCommonEnv.readSupportClass = classOf[RawDataReadSupport]
+    SparkCommonEnv.numExistingExecutors = sqlContext.sparkContext.schedulerBackend match {
+      case b: CoarseGrainedSchedulerBackend => b.numExistingExecutors
+      case _ => 0
+    }
+  }
 }
 
 

@@ -25,12 +25,10 @@ import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.mapreduce.{InputSplit, Job, JobID, TaskAttemptContext, TaskAttemptID, TaskType}
+import org.apache.hadoop.mapreduce.{InputSplit, Job, JobID, TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, TaskContext, TaskKilledException}
+import org.apache.spark.{Partition, SparkContext, TaskContext, TaskKilledException}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.CarbonEnv
-import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.hive.DistributionUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -40,22 +38,8 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants}
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection}
-import org.apache.carbondata.hadoop.readsupport.impl.RawDataReadSupport
 import org.apache.carbondata.scan.expression.Expression
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
-
-class CarbonSparkPartition(
-    val rddId: Int,
-    val idx: Int,
-    @transient val multiBlockSplit: CarbonMultiBlockSplit)
-    extends Partition {
-
-  val split = new SerializableWritable[CarbonMultiBlockSplit](multiBlockSplit)
-
-  override val index: Int = idx
-
-  override def hashCode(): Int = 41 * (41 + rddId) + idx
-}
 
 /**
  * This RDD is used to perform query on CarbonData file. Before sending tasks to scan
@@ -68,7 +52,7 @@ class CarbonScanRDD[V: ClassTag](
     filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
     @transient carbonTable: CarbonTable)
-    extends RDD[V](sc, Nil) {
+  extends RDD[V](sc, Nil) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
   private val jobTrackerId: String = {
@@ -213,7 +197,7 @@ class CarbonScanRDD[V: ClassTag](
   }
 
   private def prepareInputFormatForExecutor(conf: Configuration): CarbonInputFormat[V] = {
-    CarbonInputFormat.setCarbonReadSupport(conf, CarbonEnv.readSupport)
+    CarbonInputFormat.setCarbonReadSupport(conf, SparkCommonEnv.readSupportClass)
     createInputFormat(conf)
   }
 

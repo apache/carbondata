@@ -18,12 +18,12 @@
 package org.apache.spark.sql
 
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
-import org.apache.spark.sql.hive.{CarbonMetastore, DistributionUtil}
+import org.apache.spark.sql.hive.CarbonMetastore
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 import org.apache.carbondata.hadoop.readsupport.impl.RawDataReadSupport
+import org.apache.carbondata.spark.rdd.SparkCommonEnv
 
 /**
  * Carbon Environment for unified context
@@ -32,7 +32,7 @@ case class CarbonEnv(carbonMetastore: CarbonMetastore)
 
 object CarbonEnv {
 
-  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   @volatile private var carbonEnv: CarbonEnv = _
 
@@ -47,10 +47,7 @@ object CarbonEnv {
         new CarbonMetastore(sqlContext.sparkSession.conf, storePath)
       }
       carbonEnv = CarbonEnv(catalog)
-      DistributionUtil.numExistingExecutors = sqlContext.sparkContext.schedulerBackend match {
-        case b: CoarseGrainedSchedulerBackend => b.getExecutorIds().length
-        case _ => 0
-      }
+      setSparkCommonEnv(sqlContext)
       initialized = true
     }
   }
@@ -59,7 +56,13 @@ object CarbonEnv {
     carbonEnv
   }
 
-  def readSupport: Class[_ <: CarbonReadSupport[_]] = classOf[SparkRowReadSupportImpl]
+  private def setSparkCommonEnv(sqlContext: SQLContext): Unit = {
+    SparkCommonEnv.readSupportClass = classOf[RawDataReadSupport]
+    SparkCommonEnv.numExistingExecutors = sqlContext.sparkContext.schedulerBackend match {
+      case b: CoarseGrainedSchedulerBackend => b.getExecutorIds().length
+      case _ => 0
+    }
+  }
 }
 
 
