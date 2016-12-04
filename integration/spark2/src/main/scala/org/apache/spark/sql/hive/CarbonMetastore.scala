@@ -56,7 +56,12 @@ import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.spark.merger.TableMeta
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
-case class MetaData(var tablesMeta: ArrayBuffer[TableMeta])
+case class MetaData(var tablesMeta: ArrayBuffer[TableMeta]) {
+  // clear the metadata
+  def clear(): Unit = {
+    tablesMeta.clear()
+  }
+}
 
 case class CarbonMetaData(dims: Seq[String],
     msrs: Seq[String],
@@ -129,18 +134,19 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
     try {
       val fileType = FileFactory.getFileType(storePath)
       FileFactory.deleteFile(storePath, fileType)
+      metadata.clear()
     } catch {
       case e: Throwable => LOGGER.error(e, "clean store failed")
     }
   }
 
-  def lookupRelation(dbName: Option[String],
-                     tableName: String)(sparkSession: SparkSession): LogicalPlan = {
+  def lookupRelation(dbName: Option[String], tableName: String)
+                    (sparkSession: SparkSession): LogicalPlan = {
     lookupRelation(TableIdentifier(tableName, dbName))(sparkSession)
   }
 
-  def lookupRelation(tableIdentifier: TableIdentifier,
-                     alias: Option[String] = None)(sparkSession: SparkSession): LogicalPlan = {
+  def lookupRelation(tableIdentifier: TableIdentifier, alias: Option[String] = None)
+                    (sparkSession: SparkSession): LogicalPlan = {
     checkSchemasModifiedTimeAndReloadTables()
     val database = tableIdentifier.database.getOrElse(
       sparkSession.catalog.currentDatabase
