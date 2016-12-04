@@ -17,11 +17,10 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.SparkContext
-import org.apache.spark.internal.Logging
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.hive.{CarbonMetastore, DistributionUtil}
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 /**
@@ -29,7 +28,9 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
  */
 case class CarbonEnv(carbonMetastore: CarbonMetastore)
 
-object CarbonEnv extends Logging {
+object CarbonEnv {
+
+  val Logger = LogServiceFactory.getLogService(this.getClass.getName)
 
   @volatile private var carbonEnv: CarbonEnv = _
 
@@ -40,6 +41,7 @@ object CarbonEnv extends Logging {
       val catalog = {
         val storePath = sqlContext.sparkSession.conf.get(
         CarbonCommonConstants.STORE_LOCATION, "/user/hive/warehouse/carbonstore")
+        Logger.info(s"carbon env initial: $storePath")
         new CarbonMetastore(sqlContext.sparkSession.conf, storePath)
       }
       carbonEnv = CarbonEnv(catalog)
