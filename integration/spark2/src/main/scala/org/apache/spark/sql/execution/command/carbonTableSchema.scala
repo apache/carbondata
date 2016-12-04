@@ -58,8 +58,7 @@ import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonSparkUtil, Globa
  */
 case class AlterTableCompaction(alterTableModel: AlterTableModel) {
 
-  val LOGGER =
-    LogServiceFactory.getLogService("org.apache.spark.sql.execution.command.AlterTableCompaction")
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     // TODO : Implement it.
