@@ -102,6 +102,7 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
       Object msrVal;
       switch (dataType) {
+        case SHORT:
         case INT:
         case LONG:
           msrVal = dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);

@@ -78,6 +78,7 @@ public final class DataTypeUtil {
         BigDecimal bigDecimal =
             new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
         return normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
+      case SHORT:
       case INT:
         return Double.valueOf(msrValue).longValue();
       case LONG:
@@ -123,6 +124,7 @@ public final class DataTypeUtil {
     switch (dataType) {
       case DECIMAL:
         return CarbonCommonConstants.BIG_DECIMAL_MEASURE;
+      case SHORT:
       case INT:
       case LONG:
         return CarbonCommonConstants.BIG_INT_MEASURE;
@@ -180,7 +182,7 @@ public final class DataTypeUtil {
       case "INT":
         dataType = DataType.INT;
         break;
-      case "SHORT":
+      case "SMALLINT":
         dataType = DataType.SHORT;
         break;
       case "LONG":
