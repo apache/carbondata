@@ -26,7 +26,7 @@ object DataTypeConverterUtil {
       case "int" => DataType.INT
       case "integer" => DataType.INT
       case "tinyint" => DataType.SHORT
-      case "short" => DataType.SHORT
+      case "smallint" => DataType.SHORT
       case "long" => DataType.LONG
       case "bigint" => DataType.LONG
       case "numeric" => DataType.DOUBLE
