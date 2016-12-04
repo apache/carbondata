@@ -130,7 +130,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
       val fileType = FileFactory.getFileType(storePath)
       FileFactory.deleteFile(storePath, fileType)
     } catch {
-      case e => LOGGER.error(e, "clean store failed")
+      case e: Throwable => LOGGER.error(e, "clean store failed")
     }
   }
 
