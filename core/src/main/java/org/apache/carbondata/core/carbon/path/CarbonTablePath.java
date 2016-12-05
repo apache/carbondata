@@ -355,15 +355,15 @@ public class CarbonTablePath extends Path {
     /**
      * gets updated timestamp information from given carbon data file name
      */
-    public static String getBucketNo(String carbonDataFileName) {
+    public static String getBucketNo(String carbonFilePath) {
       // Get the file name from path
-      String fileName = getFileName(carbonDataFileName);
+      String fileName = getFileName(carbonFilePath);
       // + 1 for size of "-"
       int firstDashPos = fileName.indexOf("-");
       int secondDash = fileName.indexOf("-", firstDashPos + 1);
       int startIndex = fileName.indexOf("-", secondDash + 1) + 1;
       int endIndex = fileName.indexOf("-", startIndex);
-      // to support backward compatability
+      // to support backward compatibility
       if (startIndex == -1 || endIndex == -1) {
         return "0";
       }
