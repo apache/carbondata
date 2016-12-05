@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.datastore.block.BlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
@@ -71,8 +72,7 @@ public class IncludeColGroupFilterExecuterImplTest {
   private DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo;
   private IncludeColGroupFilterExecuterImpl includeFilterExecuter;
 
-  @Before
-  public void init() {
+  @Before public void init() {
 
     List<Encoding> encodeList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     encodeList.add(Encoding.DICTIONARY);
@@ -80,8 +80,9 @@ public class IncludeColGroupFilterExecuterImplTest {
     columnSchema1 =
         getWrapperDimensionColumn(DataType.INT, "ID", true, Collections.<Encoding>emptyList(),
             false, -1);
-    columnSchema2 = getWrapperDimensionColumn(DataType.INT, "salary", true,
-        Collections.<Encoding>emptyList(), false, -1);
+    columnSchema2 =
+        getWrapperDimensionColumn(DataType.INT, "salary", true, Collections.<Encoding>emptyList(),
+            false, -1);
     columnSchema3 =
         getWrapperDimensionColumn(DataType.STRING, "country", false, encodeList, true, 0);
     columnSchema4 =
@@ -110,21 +111,19 @@ public class IncludeColGroupFilterExecuterImplTest {
 
     dimColumnResolvedFilterInfo.setFilterValues(dimColumnFilterInfo);
 
-    includeFilterExecuter = new IncludeColGroupFilterExecuterImpl(dimColumnResolvedFilterInfo,
-        segmentProperties);
+    includeFilterExecuter =
+        new IncludeColGroupFilterExecuterImpl(dimColumnResolvedFilterInfo, segmentProperties);
   }
 
-  @Test
-  public void testIsScanRequiredI() {
+  @Test public void testIsScanRequiredI() {
     new MockUp<ByteUtil.UnsafeComparer>() {
-      @Mock
-      public int compareTo(byte[] buffer1, byte[] buffer2) {
+      @Mock public int compareTo(byte[] buffer1, byte[] buffer2) {
         return 0;
       }
     };
 
-    byte[][] blkMaxVal = {{3}, {11}};
-    byte[][] blkMinVal = {{2}, {2}};
+    byte[][] blkMaxVal = { { 3 }, { 11 } };
+    byte[][] blkMinVal = { { 2 }, { 2 } };
 
     BitSet result = includeFilterExecuter.isScanRequired(blkMaxVal, blkMinVal);
 
@@ -134,11 +133,9 @@ public class IncludeColGroupFilterExecuterImplTest {
     assertThat(result, is(equalTo(expectedResult)));
   }
 
-  @Test
-  public void testIsScanRequiredII() {
+  @Test public void testIsScanRequiredII() {
     new MockUp<ByteUtil.UnsafeComparer>() {
-      @Mock
-      public int compareTo(byte[] buffer1, byte[] buffer2) {
+      @Mock public int compareTo(byte[] buffer1, byte[] buffer2) {
         return 0;
       }
     };
@@ -161,11 +158,11 @@ public class IncludeColGroupFilterExecuterImplTest {
 
     dimColumnResolvedFilterInfo.setFilterValues(dimColumnFilterInfo);
 
-    includeFilterExecuter = new IncludeColGroupFilterExecuterImpl(dimColumnResolvedFilterInfo,
-        segmentProperties);
+    includeFilterExecuter =
+        new IncludeColGroupFilterExecuterImpl(dimColumnResolvedFilterInfo, segmentProperties);
 
-    byte[][] blkMaxVal = {{3}, {11}};
-    byte[][] blkMinVal = {{2}, {2}};
+    byte[][] blkMaxVal = { { 3 }, { 11 } };
+    byte[][] blkMinVal = { { 2 }, { 2 } };
 
     BitSet result = includeFilterExecuter.isScanRequired(blkMaxVal, blkMinVal);
 
@@ -174,17 +171,15 @@ public class IncludeColGroupFilterExecuterImplTest {
     assertThat(result, is(equalTo(expectedResult)));
   }
 
-  @Test
-  public void testIsScanRequiredIII() {
+  @Test public void testIsScanRequiredIII() {
     new MockUp<ByteUtil.UnsafeComparer>() {
-      @Mock
-      public int compareTo(byte[] buffer1, byte[] buffer2) {
+      @Mock public int compareTo(byte[] buffer1, byte[] buffer2) {
         return 1;
       }
     };
 
-    byte[][] blkMaxVal = {{3}, {11}};
-    byte[][] blkMinVal = {{2}, {2}};
+    byte[][] blkMaxVal = { { 3 }, { 11 } };
+    byte[][] blkMinVal = { { 2 }, { 2 } };
 
     BitSet result = includeFilterExecuter.isScanRequired(blkMaxVal, blkMinVal);
 
@@ -193,12 +188,10 @@ public class IncludeColGroupFilterExecuterImplTest {
     assertThat(result, is(equalTo(expectedResult)));
   }
 
-  @Test
-  public void testGetFilteredIndexesI() {
+  @Test public void testGetFilteredIndexesI() {
 
     new MockUp<ByteUtil.UnsafeComparer>() {
-      @Mock
-      public int compareTo(byte[] buffer1, byte[] buffer2) {
+      @Mock public int compareTo(byte[] buffer1, byte[] buffer2) {
         return 0;
       }
     };
@@ -207,8 +200,9 @@ public class IncludeColGroupFilterExecuterImplTest {
     attributes.setNoDictionary(false);
     attributes.setEachRowSize(1);
 
-    ColumnGroupDimensionDataChunk dataChunk = new ColumnGroupDimensionDataChunk(
-        new byte[] { 66, 68, 69, 70, 71, 72, 73, 74, 75, 99}, attributes);
+    ColumnGroupDimensionDataChunk dataChunk =
+        new ColumnGroupDimensionDataChunk(new byte[] { 66, 68, 69, 70, 71, 72, 73, 74, 75, 99 },
+            attributes);
 
     BitSet result = includeFilterExecuter.getFilteredIndexes(dataChunk, 10);
 
@@ -227,12 +221,10 @@ public class IncludeColGroupFilterExecuterImplTest {
     assertThat(result, is(equalTo(expectedResult)));
   }
 
-  @Test
-  public void testGetFilteredIndexesII() {
+  @Test public void testGetFilteredIndexesII() {
 
     new MockUp<ByteUtil.UnsafeComparer>() {
-      @Mock
-      public int compareTo(byte[] buffer1, byte[] buffer2) {
+      @Mock public int compareTo(byte[] buffer1, byte[] buffer2) {
         return 1;
       }
     };
@@ -241,8 +233,9 @@ public class IncludeColGroupFilterExecuterImplTest {
     attributes.setNoDictionary(false);
     attributes.setEachRowSize(1);
 
-    ColumnGroupDimensionDataChunk dataChunk = new ColumnGroupDimensionDataChunk(
-        new byte[] { 66, 68, 69, 70, 71, 72, 73, 74, 75, 99}, attributes);
+    ColumnGroupDimensionDataChunk dataChunk =
+        new ColumnGroupDimensionDataChunk(new byte[] { 66, 68, 69, 70, 71, 72, 73, 74, 75, 99 },
+            attributes);
 
     BitSet result = includeFilterExecuter.getFilteredIndexes(dataChunk, 10);
 
@@ -251,12 +244,10 @@ public class IncludeColGroupFilterExecuterImplTest {
     assertThat(result, is(equalTo(expectedResult)));
   }
 
-  @Test
-  public void testGetFilteredIndexesWithException() {
+  @Test public void testGetFilteredIndexesWithException() {
 
     new MockUp<ByteUtil.UnsafeComparer>() {
-      @Mock
-      public int compareTo(byte[] buffer1, byte[] buffer2) {
+      @Mock public int compareTo(byte[] buffer1, byte[] buffer2) {
         return 0;
       }
     };
@@ -320,7 +311,7 @@ public class IncludeColGroupFilterExecuterImplTest {
   private List<DataFileFooter> getDataFileFooterList() {
     DataFileFooter fileFooter = new DataFileFooter();
 
-    fileFooter.setVersionId(1);
+    fileFooter.setVersionId(ColumnarFormatVersion.V1);
     fileFooter.setNumberOfRows(10);
 
     SegmentInfo segmentInfo = new SegmentInfo();
@@ -385,7 +376,7 @@ public class IncludeColGroupFilterExecuterImplTest {
         final String filePath =
             this.getClass().getClassLoader().getResource("include.carbondata").getPath();
         return new BlockInfo(
-            new TableBlockInfo(filePath, 0, "0", new String[] { "localhost" }, 1324));
+            new TableBlockInfo(filePath, 0, "0", new String[] { "localhost" }, 1324, ColumnarFormatVersion.V1));
       }
     };
 

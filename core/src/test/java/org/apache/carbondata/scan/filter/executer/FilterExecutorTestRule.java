@@ -29,6 +29,7 @@ import java.util.UUID;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.datastore.BTreeBuilderInfo;
 import org.apache.carbondata.core.carbon.datastore.block.BlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
@@ -189,7 +190,7 @@ public class FilterExecutorTestRule implements TestRule {
   List<DataFileFooter> getDataFileFooterList() {
     DataFileFooter fileFooter = new DataFileFooter();
 
-    fileFooter.setVersionId(1);
+    fileFooter.setVersionId(ColumnarFormatVersion.V1);
     fileFooter.setNumberOfRows(10);
 
     SegmentInfo segmentInfo = new SegmentInfo();
@@ -254,7 +255,7 @@ public class FilterExecutorTestRule implements TestRule {
         final String filePath =
             this.getClass().getClassLoader().getResource("sample.carbondata").getPath();
         return new BlockInfo(
-            new TableBlockInfo(filePath, 0, "0", new String[] { "localhost" }, 1324));
+            new TableBlockInfo(filePath, 0, "0", new String[] { "localhost" }, 1324, ColumnarFormatVersion.V1));
       }
     };
 

@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.datastore.BTreeBuilderInfo;
 import org.apache.carbondata.core.carbon.datastore.block.BlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
@@ -79,8 +80,7 @@ public class IncludeFilterExecuterImplTest {
   private DimColumnResolvedFilterInfo dimColumnResolvedFilterInfo;
   private IncludeFilterExecuterImpl includeFilterExecuter;
 
-  @Before
-  public void init() {
+  @Before public void init() {
 
     List<Encoding> encodeList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     encodeList.add(Encoding.DICTIONARY);
@@ -88,8 +88,9 @@ public class IncludeFilterExecuterImplTest {
     columnSchema1 =
         getWrapperDimensionColumn(DataType.INT, "ID", true, Collections.<Encoding>emptyList(),
             false, -1);
-    columnSchema2 = getWrapperDimensionColumn(DataType.INT, "salary", true,
-        Collections.<Encoding>emptyList(), false, -1);
+    columnSchema2 =
+        getWrapperDimensionColumn(DataType.INT, "salary", true, Collections.<Encoding>emptyList(),
+            false, -1);
     columnSchema3 =
         getWrapperDimensionColumn(DataType.STRING, "country", false, encodeList, true, 0);
     columnSchema4 =
@@ -118,12 +119,11 @@ public class IncludeFilterExecuterImplTest {
 
     dimColumnResolvedFilterInfo.setFilterValues(dimColumnFilterInfo);
 
-    includeFilterExecuter = new IncludeFilterExecuterImpl(dimColumnResolvedFilterInfo,
-        segmentProperties);
+    includeFilterExecuter =
+        new IncludeFilterExecuterImpl(dimColumnResolvedFilterInfo, segmentProperties);
   }
 
-  @Test
-  public void testApplyFilter() {
+  @Test public void testApplyFilter() {
 
     new MockUp<ByteUtil.UnsafeComparer>() {
       @Mock
@@ -161,13 +161,12 @@ public class IncludeFilterExecuterImplTest {
     assertThat(result, is(equalTo(expectedResult)));
   }
 
-  @Test
-  public void testApplyFilterWithFixedLengthDimensionDataChunkI() {
+  @Test public void testApplyFilterWithFixedLengthDimensionDataChunkI() {
 
     new MockUp<CarbonUtil>() {
       @Mock
       public int getFirstIndexUsingBinarySearch(FixedLengthDimensionDataChunk dimColumnDataChunk,
-          int low, int high, byte[] compareValue, boolean matchUpLimit){
+          int low, int high, byte[] compareValue, boolean matchUpLimit) {
         return 0;
       }
     };
@@ -179,7 +178,6 @@ public class IncludeFilterExecuterImplTest {
         return 0;
       }
     };
-
 
     List<DataFileFooter> footerList = getDataFileFooterList();
     BTreeBuilderInfo bTreeBuilderInfo = new BTreeBuilderInfo(footerList, new int[] { 1, 1 });
@@ -217,13 +215,12 @@ public class IncludeFilterExecuterImplTest {
     assertThat(result, is(equalTo(expectedResult)));
   }
 
-  @Test
-  public void testApplyFilterWithFixedLengthDimensionDataChunkII() {
+  @Test public void testApplyFilterWithFixedLengthDimensionDataChunkII() {
 
     new MockUp<CarbonUtil>() {
       @Mock
       public int getFirstIndexUsingBinarySearch(FixedLengthDimensionDataChunk dimColumnDataChunk,
-          int low, int high, byte[] compareValue, boolean matchUpLimit){
+          int low, int high, byte[] compareValue, boolean matchUpLimit) {
         return -1;
       }
     };
@@ -235,7 +232,6 @@ public class IncludeFilterExecuterImplTest {
         return 0;
       }
     };
-
 
     List<DataFileFooter> footerList = getDataFileFooterList();
 
@@ -264,13 +260,12 @@ public class IncludeFilterExecuterImplTest {
     assertThat(result, is(equalTo(expectedResult)));
   }
 
-  @Test
-  public void testApplyFilterWithFixedLengthDimensionDataChunkIII() {
+  @Test public void testApplyFilterWithFixedLengthDimensionDataChunkIII() {
 
     new MockUp<CarbonUtil>() {
       @Mock
       public int getFirstIndexUsingBinarySearch(FixedLengthDimensionDataChunk dimColumnDataChunk,
-          int low, int high, byte[] compareValue, boolean matchUpLimit){
+          int low, int high, byte[] compareValue, boolean matchUpLimit) {
         return 0;
       }
     };
@@ -282,7 +277,6 @@ public class IncludeFilterExecuterImplTest {
         return 0;
       }
     };
-
 
     List<DataFileFooter> footerList = getDataFileFooterList();
     footerList.get(0).setNumberOfRows(0);
@@ -314,16 +308,13 @@ public class IncludeFilterExecuterImplTest {
     assertThat(result, is(equalTo(expectedResult)));
   }
 
-  @Test
-  public void testApplyFilterWithVariableLengthDimensionDataChunkI() {
+  @Test public void testApplyFilterWithVariableLengthDimensionDataChunkI() {
 
     new MockUp<ByteUtil.UnsafeComparer>() {
-      @Mock
-      public int compareTo(byte[] buffer1, byte[] buffer2) {
+      @Mock public int compareTo(byte[] buffer1, byte[] buffer2) {
         return 0;
       }
     };
-
 
     List<DataFileFooter> footerList = getDataFileFooterList();
     BTreeBuilderInfo bTreeBuilderInfo = new BTreeBuilderInfo(footerList, new int[] { 1, 1 });
@@ -366,16 +357,13 @@ public class IncludeFilterExecuterImplTest {
     assertThat(result, is(equalTo(expectedResult)));
   }
 
-  @Test
-  public void testApplyFilterWithVariableLengthDimensionDataChunkII() {
+  @Test public void testApplyFilterWithVariableLengthDimensionDataChunkII() {
 
     new MockUp<ByteUtil.UnsafeComparer>() {
-      @Mock
-      public int compareTo(byte[] buffer1, byte[] buffer2) {
+      @Mock public int compareTo(byte[] buffer1, byte[] buffer2) {
         return 0;
       }
     };
-
 
     List<DataFileFooter> footerList = getDataFileFooterList();
     BTreeBuilderInfo bTreeBuilderInfo = new BTreeBuilderInfo(footerList, new int[] { 1, 1 });
@@ -416,16 +404,13 @@ public class IncludeFilterExecuterImplTest {
     assertThat(result, is(equalTo(expectedResult)));
   }
 
-  @Test
-  public void testApplyFilterWithVariableLengthDimensionDataChunkIII() {
+  @Test public void testApplyFilterWithVariableLengthDimensionDataChunkIII() {
 
     new MockUp<ByteUtil.UnsafeComparer>() {
-      @Mock
-      public int compareTo(byte[] buffer1, byte[] buffer2) {
+      @Mock public int compareTo(byte[] buffer1, byte[] buffer2) {
         return 0;
       }
     };
-
 
     List<DataFileFooter> footerList = getDataFileFooterList();
     BTreeBuilderInfo bTreeBuilderInfo = new BTreeBuilderInfo(footerList, new int[] { 1, 1 });
@@ -467,18 +452,16 @@ public class IncludeFilterExecuterImplTest {
     assertThat(result, is(equalTo(expectedResult)));
   }
 
-  @Test
-  public void testIsScanRequiredI() {
+  @Test public void testIsScanRequiredI() {
 
     new MockUp<ByteUtil.UnsafeComparer>() {
-      @Mock
-      public int compareTo(byte[] buffer1, byte[] buffer2) {
+      @Mock public int compareTo(byte[] buffer1, byte[] buffer2) {
         return 0;
       }
     };
 
-    byte[][] blkMaxVal = {{3}, {11}};
-    byte[][] blkMinVal = {{2}, {2}};
+    byte[][] blkMaxVal = { { 3 }, { 11 } };
+    byte[][] blkMinVal = { { 2 }, { 2 } };
 
     BitSet result = includeFilterExecuter.isScanRequired(blkMaxVal, blkMinVal);
 
@@ -488,18 +471,16 @@ public class IncludeFilterExecuterImplTest {
     assertThat(result, is(equalTo(expectedResult)));
   }
 
-  @Test
-  public void testIsScanRequiredII() {
+  @Test public void testIsScanRequiredII() {
 
     new MockUp<ByteUtil.UnsafeComparer>() {
-      @Mock
-      public int compareTo(byte[] buffer1, byte[] buffer2) {
+      @Mock public int compareTo(byte[] buffer1, byte[] buffer2) {
         return 1;
       }
     };
 
-    byte[][] blkMaxVal = {{3}, {11}};
-    byte[][] blkMinVal = {{2}, {2}};
+    byte[][] blkMaxVal = { { 3 }, { 11 } };
+    byte[][] blkMinVal = { { 2 }, { 2 } };
 
     BitSet result = includeFilterExecuter.isScanRequired(blkMaxVal, blkMinVal);
 
@@ -508,12 +489,10 @@ public class IncludeFilterExecuterImplTest {
     assertThat(result, is(equalTo(expectedResult)));
   }
 
-  @Test
-  public void testIsScanRequiredIII() {
+  @Test public void testIsScanRequiredIII() {
 
     new MockUp<ByteUtil.UnsafeComparer>() {
-      @Mock
-      public int compareTo(byte[] buffer1, byte[] buffer2) {
+      @Mock public int compareTo(byte[] buffer1, byte[] buffer2) {
         return 1;
       }
     };
@@ -536,11 +515,11 @@ public class IncludeFilterExecuterImplTest {
 
     dimColumnResolvedFilterInfo.setFilterValues(dimColumnFilterInfo);
 
-    includeFilterExecuter = new IncludeFilterExecuterImpl(dimColumnResolvedFilterInfo,
-        segmentProperties);
+    includeFilterExecuter =
+        new IncludeFilterExecuterImpl(dimColumnResolvedFilterInfo, segmentProperties);
 
-    byte[][] blkMaxVal = {{3}, {11}};
-    byte[][] blkMinVal = {{2}, {2}};
+    byte[][] blkMaxVal = { { 3 }, { 11 } };
+    byte[][] blkMinVal = { { 2 }, { 2 } };
 
     BitSet result = includeFilterExecuter.isScanRequired(blkMaxVal, blkMinVal);
 
@@ -601,7 +580,7 @@ public class IncludeFilterExecuterImplTest {
   private List<DataFileFooter> getDataFileFooterList() {
     DataFileFooter fileFooter = new DataFileFooter();
 
-    fileFooter.setVersionId(1);
+    fileFooter.setVersionId(ColumnarFormatVersion.V1);
     fileFooter.setNumberOfRows(10);
 
     SegmentInfo segmentInfo = new SegmentInfo();
@@ -666,7 +645,7 @@ public class IncludeFilterExecuterImplTest {
         final String filePath =
             this.getClass().getClassLoader().getResource("include.carbondata").getPath();
         return new BlockInfo(
-            new TableBlockInfo(filePath, 0, "0", new String[] { "localhost" }, 1324));
+            new TableBlockInfo(filePath, 0, "0", new String[] { "localhost" }, 1324, ColumnarFormatVersion.V1));
       }
     };
 

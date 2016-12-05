@@ -30,6 +30,7 @@ import org.apache.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensi
 import org.apache.carbondata.core.carbon.datastore.impl.btree.BlockletBTreeLeafNode;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.datastorage.store.impl.FileHolderImpl;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -93,6 +94,13 @@ public class RowLevelRangeGrtThanFiterExecuterImplTest {
   }
 
   @Test public void testApplyFilterWithoutEncodingList() throws FilterUnsupportedException {
+
+    new MockUp<CarbonReadDataHolder>() {
+      @Mock
+      public long getReadableLongValueByIndex(int index) {
+        return 1;
+      }
+    };
 
     testRule.carbonDimension = new CarbonDimension(testRule.columnSchema1, 1, 1, 1, -1);
 
