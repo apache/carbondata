@@ -39,6 +39,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.pentaho.di.core.util.Assert.assertNull;
 
 public class DFSFileHolderImplUnitTest {
 
@@ -148,7 +149,7 @@ public class DFSFileHolderImplUnitTest {
     try {
       dfsFileHolder.readDouble(fileName, 1L);
     } catch (Exception e) {
-      assertEquals(e.getMessage(), expected);
+      assertNull(e.getMessage());
     }
 
   }
