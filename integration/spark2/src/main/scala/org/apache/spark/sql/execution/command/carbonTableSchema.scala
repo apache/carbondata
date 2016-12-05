@@ -43,9 +43,8 @@ import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
+import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DataManagementFunc}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonSparkUtil, GlobalDictionaryUtil}
-
 
 /**
  * Command for the compaction in alter table command
@@ -550,7 +549,7 @@ private[sql] case class DeleteLoadByDate(
     }
     val actualColName = relation.metaData.carbonTable.getDimensionByName(tableName, level)
       .getColName
-    CarbonDataRDDFactory.deleteLoadByDate(
+    DataManagementFunc.deleteLoadByDate(
       sparkSession.sqlContext,
       new CarbonDataLoadSchema(carbonTable),
       dbName,
@@ -592,7 +591,7 @@ case class CleanFiles(
     val dataLoadSchema = new CarbonDataLoadSchema(table)
     carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
     try {
-      CarbonDataRDDFactory.cleanFiles(
+      DataManagementFunc.cleanFiles(
         sparkSession.sqlContext.sparkContext,
         carbonLoadModel,
         relation.tableMeta.storePath)

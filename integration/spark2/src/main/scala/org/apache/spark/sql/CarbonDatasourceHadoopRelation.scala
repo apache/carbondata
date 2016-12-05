@@ -71,7 +71,7 @@ case class CarbonDatasourceHadoopRelation(
     val projection = new CarbonProjection
     requiredColumns.foreach(projection.addColumn)
     CarbonInputFormat.setColumnProjection(conf, projection)
-    CarbonInputFormat.setCarbonReadSupport(classOf[SparkRowReadSupportImpl], conf)
+    CarbonInputFormat.setCarbonReadSupport(conf, classOf[SparkRowReadSupportImpl])
 
     new CarbonScanRDD[Row](sqlContext.sparkContext, projection, filterExpression.orNull,
       absIdentifier, carbonTable)

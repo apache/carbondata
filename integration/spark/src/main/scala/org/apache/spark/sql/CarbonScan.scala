@@ -30,6 +30,7 @@ import org.apache.spark.sql.hive.CarbonMetastore
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.scan.model._
 import org.apache.carbondata.spark.CarbonFilters
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
@@ -125,9 +126,13 @@ case class CarbonScan(
   }
 
   def inputRdd: CarbonScanRDD[Array[Any]] = {
+    val projection = new CarbonProjection
+    columnProjection.foreach { attr =>
+      projection.addColumn(attr.name)
+    }
     new CarbonScanRDD(
       ocRaw.sparkContext,
-      columnProjection,
+      projection,
       buildCarbonPlan.getFilterExpression,
       carbonTable.getAbsoluteTableIdentifier,
       carbonTable

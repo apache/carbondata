@@ -49,7 +49,7 @@ import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
+import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DataManagementFunc, DataManagementFunc$, DictionaryLoadModel}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
 
 /**
@@ -98,8 +98,7 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
       )
     storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
     try {
-      CarbonDataRDDFactory
-        .alterTableForCompaction(sqlContext,
+      CarbonDataRDDFactory.alterTableForCompaction(sqlContext,
           alterTableModel,
           carbonLoadModel,
           relation.tableMeta.storePath,
@@ -820,7 +819,7 @@ private[sql] case class DeleteLoadByDate(
     }
     val actualColName = relation.metaData.carbonTable.getDimensionByName(tableName, level)
       .getColName
-    CarbonDataRDDFactory.deleteLoadByDate(
+    DataManagementFunc.deleteLoadByDate(
       sqlContext,
       new CarbonDataLoadSchema(carbonTable),
       dbName,
@@ -863,7 +862,7 @@ private[sql] case class CleanFiles(
     val dataLoadSchema = new CarbonDataLoadSchema(table)
     carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
     try {
-      CarbonDataRDDFactory.cleanFiles(
+      DataManagementFunc.cleanFiles(
         sqlContext.sparkContext,
         carbonLoadModel,
         relation.tableMeta.storePath)
