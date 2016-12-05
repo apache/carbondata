@@ -36,7 +36,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * Test Class for all queries on multiple datatypes
- * Manohar
+ *
  */
 class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
 
@@ -2453,12 +2453,6 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       assert((row(3) + "").split(":")(0) ==
              (new Timestamp(System.currentTimeMillis()) + "").split(":")(0))
     })
-    /*
-        checkAnswer(
-          sql("show segments for table table9"),
-          Seq(Row(0, "Success", "2016-11-28 03:42:05.0", "2016-11-28 03:42:05.0"),
-            Row(1, "Success", "2016-11-28 03:42:05.0", "2016-11-28 03:42:05.0 ")))
-    */
     sql("drop table table9")
   }
 
@@ -2486,9 +2480,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       assertEquals((row(3) + "").split(":")(0),
         (new Timestamp(System.currentTimeMillis()) + "").split(":")(0))
     })
-    /* checkAnswer(
-       sql("sHOw segMents for table table13"),
-       Seq(Row("0","Success", startTime,startTime)))*/
+
     sql("drop table table13")
   }
 
@@ -2522,12 +2514,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
         (new Timestamp(System.currentTimeMillis()) + "").split(":")(0))
     })
 
-    /*
-    checkAnswer(
-      sql("show segments for table table14"),
-      Seq(Row("0,Success,2016-11-28 03:42:06.0,2016-11-28 03:42:06.0"),
-        Row("1,Success,2016-11-28    03: 42: 06.0, 2016 - 11 - 28 03: 42: 06.0 ")))
-    */
+
     sql("drop table table14")
   }
 
@@ -2567,12 +2554,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
         (new Timestamp(System.currentTimeMillis()) + "").split(":")(0))
     })
 
-    /*checkAnswer(
-      sql("show segments for table table15"),
-      Seq(Row("0", "Success", "2016-11-28 03:42:06.0,2016-11-28 03:42:06.0"),
-        Row("1", "Success", "2016-11-28 03:42:07.0", "2016-11-28 03:42:07.0"),
-        Row("2", "Success", "2016-11-28 03:42:07.0", "2016-11-28 03:42:07.0"),
-        Row("3", "Success", "2016-11-28 03:42:07.0", "2016-11-28 03:42:07.0")))*/
+
     sql("drop table table15")
   }
 
@@ -2675,26 +2657,6 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       Seq())
     sql("drop table table12")
   }
-
-
-  /*//TC_1308
-    test("TC_1308", NonRunningTests) {
-      sql("drop table if exists table18")
-
-      sql(
-        "create table table18 (imei string,AMSize string,channelsId string,ActiveCountry string, " +
-        "Activecity string,gamePointId decimal,deviceInformationId INT) stored by 'org.apache" +
-        ".carbondata.format'")
-      sql("LOAD DATA LOCAL INPATH  '" + currentDirectory +
-          "/src/test/resources/TestData1.csv' INTO table table18 OPTIONS('DELIMITER'= ',' ," +
-          "'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
-          "ActiveCountry,Activecity,gamePointId')")
-      sql("delete segment 0,1 from  table table18")
-      checkAnswer(
-        sql("select ActiveCountry from table18 limit 1"),
-        Seq())
-      sql("drop table table18")
-    }*/
 
 
   //TC_1311
