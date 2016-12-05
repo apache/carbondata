@@ -196,6 +196,13 @@ public class IncludeColGroupFilterExecuterImplTest {
       }
     };
 
+    new MockUp<SegmentProperties>(){
+      @Mock
+      public int getColumnGroupMdKeyOrdinal(int colGrpId, int ordinal) {
+        return 0;
+      }
+    };
+
     DimensionChunkAttributes attributes = new DimensionChunkAttributes();
     attributes.setNoDictionary(false);
     attributes.setEachRowSize(1);
