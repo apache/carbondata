@@ -1160,7 +1160,7 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
       case "string" => Field(field.column, Some("String"), field.name, Some(null), field.parent,
         field.storeType, field.schemaOrdinal
       )
-      case "smallint"  => Field(field.column, Some("SmallInt"), field.name, Some(null),
+      case "smallint" => Field(field.column, Some("SmallInt"), field.name, Some(null),
         field.parent, field.storeType, field.schemaOrdinal
       )
       case "integer" | "int" => Field(field.column, Some("Integer"), field.name, Some(null),
