@@ -22,7 +22,8 @@ package org.apache.carbondata.core.datastorage.store.compression.type;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
-import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression;
+import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
+import org.apache.carbondata.core.datastorage.store.compression.SnappyCompressor;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
@@ -39,8 +40,7 @@ public class UnCompressNoneByte implements UnCompressValue<byte[]> {
   /**
    * byteCompressor.
    */
-  private static Compressor<byte[]> byteCompressor =
-      SnappyCompression.SnappyByteCompression.INSTANCE;
+  private static Compressor compressor = CompressorFactory.getInstance();
 
   /**
    * value.
@@ -77,7 +77,7 @@ public class UnCompressNoneByte implements UnCompressValue<byte[]> {
 
   @Override public UnCompressValue compress() {
     UnCompressNoneByte byte1 = new UnCompressNoneByte(actualDataType);
-    byte1.setValue(byteCompressor.compress(value));
+    byte1.setValue(compressor.compressByte(value));
     return byte1;
   }
 

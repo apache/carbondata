@@ -21,7 +21,7 @@ package org.apache.carbondata.core.datastorage.store.compression.type;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
-import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression;
+import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
@@ -31,8 +31,7 @@ public class UnCompressMaxMinDefaultLong extends UnCompressMaxMinLong {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(UnCompressMaxMinDefaultLong.class.getName());
-  private static Compressor<long[]> longCompressor =
-      SnappyCompression.SnappyLongCompression.INSTANCE;
+  private static Compressor compressor = CompressorFactory.getInstance();
 
   public UnCompressMaxMinDefaultLong(DataType actualDataType) {
     super(actualDataType);
@@ -49,7 +48,7 @@ public class UnCompressMaxMinDefaultLong extends UnCompressMaxMinLong {
 
   @Override public ValueCompressonHolder.UnCompressValue compress() {
     UnCompressMaxMinByteForLong byte1 = new UnCompressMaxMinByteForLong(actualDataType);
-    byte1.setValue(longCompressor.compress(value));
+    byte1.setValue(compressor.compressLong(value));
     return byte1;
   }
 

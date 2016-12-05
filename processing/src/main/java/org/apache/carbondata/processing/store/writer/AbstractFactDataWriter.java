@@ -53,7 +53,7 @@ import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.columnar.IndexStorage;
-import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
+import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
@@ -607,7 +607,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
           }
         }
       }
-      keyBlockData[i] = SnappyByteCompression.INSTANCE.compress(keyBlockData[i]);
+      keyBlockData[i] = CompressorFactory.getInstance().compressByte(keyBlockData[i]);
     }
     return keyBlockData;
   }

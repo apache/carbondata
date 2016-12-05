@@ -92,7 +92,7 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
     int[] rlePage = null;
 
     // first read the data and uncompressed it
-    dataPage = COMPRESSOR.unCompress(fileReader
+    dataPage = compressor.unCompressByte(fileReader
         .readByteArray(filePath, dimensionColumnChunk.get(blockIndex).getDataPageOffset(),
             dimensionColumnChunk.get(blockIndex).getDataPageLength()));
     // if row id block is present then read the row id chunk and uncompress it
