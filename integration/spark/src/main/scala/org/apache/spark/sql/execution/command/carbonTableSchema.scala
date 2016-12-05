@@ -367,6 +367,13 @@ case class LoadTable(
 
 
   def run(sqlContext: SQLContext): Seq[Row] = {
+    if (dataFrame.isDefined) {
+      val rdd = dataFrame.get.rdd
+      if (rdd.partitions == null || rdd.partitions.length == 0) {
+        LOGGER.warn("DataLoading finished. No data was loaded.")
+        return Seq.empty
+      }
+    }
 
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     if (isOverwriteExist) {

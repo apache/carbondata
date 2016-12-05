@@ -293,8 +293,14 @@ case class LoadTable(
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-
   def run(sparkSession: SparkSession): Seq[Row] = {
+    if (dataFrame.isDefined) {
+      val rdd = dataFrame.get.rdd
+      if (rdd.partitions == null || rdd.partitions.length == 0) {
+        LOGGER.warn("DataLoading finished. No data was loaded.")
+        return Seq.empty
+      }
+    }
 
     val dbName = databaseNameOp.getOrElse(sparkSession.catalog.currentDatabase)
     val identifier = TableIdentifier(tableName, Option(dbName))
