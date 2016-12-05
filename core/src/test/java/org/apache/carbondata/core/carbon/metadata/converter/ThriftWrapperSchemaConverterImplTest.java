@@ -107,7 +107,8 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public long getTime_stamp() {
-        return 1112745600;
+        long time = 1112745600000L;
+        return time;
       }
 
       @Mock public List<org.apache.carbondata.format.ColumnSchema> getAdded() {
@@ -1541,7 +1542,7 @@ public class ThriftWrapperSchemaConverterImplTest {
   }
 
   @Test public void testFromExternalToWrapperSchemaEvolutionEntry() {
-
+long time =1112745600000L;
     ColumnSchema wrapperColumnSchema = new ColumnSchema();
     wrapperColumnSchema.setColumnUniqueId("1");
     wrapperColumnSchema.setColumnName("columnName");
@@ -1565,7 +1566,7 @@ public class ThriftWrapperSchemaConverterImplTest {
     List<ColumnSchema> wrapperRemovedColumns = new ArrayList<ColumnSchema>();
     wrapperRemovedColumns.add(wrapperColumnSchema);
 
-    wrapperSchemaEvolutionEntry.setTimeStamp(1112745600);
+    wrapperSchemaEvolutionEntry.setTimeStamp(time);
     wrapperSchemaEvolutionEntry.setAdded(wrapperAddedColumns);
     wrapperSchemaEvolutionEntry.setRemoved(wrapperRemovedColumns);
     SchemaEvolutionEntry actualResult =
@@ -1824,6 +1825,7 @@ public class ThriftWrapperSchemaConverterImplTest {
 
   @Test public void testFromExternalToWrapperTableInfo() {
     final List<org.apache.carbondata.format.TableSchema> tableSchemas = new ArrayList();
+    long time = 1112745600000L;
     tableSchemas.add(tabSchema);
     new MockUp<org.apache.carbondata.format.TableInfo>() {
       @Mock public org.apache.carbondata.format.TableSchema getFact_table() {
@@ -1838,7 +1840,7 @@ public class ThriftWrapperSchemaConverterImplTest {
         new org.apache.carbondata.format.TableInfo();
     TableInfo actualResult = thriftWrapperSchemaConverter
         .fromExternalToWrapperTableInfo(externalTableInfo, "dbName", "tableName", "/path");
-    assertEquals(1112745600, actualResult.getLastUpdatedTime());
+    assertEquals(time, actualResult.getLastUpdatedTime());
     assertEquals("dbName_tableName", actualResult.getTableUniqueName());
   }
 
