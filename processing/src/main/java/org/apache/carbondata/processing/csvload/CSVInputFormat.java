@@ -219,6 +219,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
       parserSettings.setIgnoreLeadingWhitespaces(false);
       parserSettings.setIgnoreTrailingWhitespaces(false);
       parserSettings.setSkipEmptyLines(false);
+      parserSettings.setMaxCharsPerColumn(100000);
       // TODO get from csv file.
       parserSettings.setMaxColumns(1000);
       parserSettings.getFormat().setQuote(job.get(QUOTE, QUOTE_DEFAULT).charAt(0));

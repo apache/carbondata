@@ -27,6 +27,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.util.control.Breaks.{break, breakable}
 
 import au.com.bytecode.opencsv.CSVReader
+import com.univocity.parsers.common.TextParsingException
 import org.apache.commons.lang3.{ArrayUtils, StringUtils}
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
@@ -307,6 +308,8 @@ class CarbonBlockDistinctValuesCombineRDD(
       }
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordLoadCsvfilesToDfTime()
     } catch {
+      case txe: TextParsingException =>
+        throw txe
       case ex: Exception =>
         LOGGER.error(ex)
         throw ex
