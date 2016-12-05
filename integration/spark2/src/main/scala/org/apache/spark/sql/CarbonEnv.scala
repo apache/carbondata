@@ -24,6 +24,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.hadoop.readsupport.impl.RawDataReadSupport
 import org.apache.carbondata.spark.rdd.SparkCommonEnv
+import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
 /**
  * Carbon Environment for unified context
@@ -57,7 +58,7 @@ object CarbonEnv {
   }
 
   private def setSparkCommonEnv(sqlContext: SQLContext): Unit = {
-    SparkCommonEnv.readSupportClass = classOf[RawDataReadSupport]
+    SparkCommonEnv.readSupportClass = classOf[SparkRowReadSupportImpl]
     SparkCommonEnv.numExistingExecutors = sqlContext.sparkContext.schedulerBackend match {
       case b: CoarseGrainedSchedulerBackend => b.getExecutorIds().length
       case _ => 0
