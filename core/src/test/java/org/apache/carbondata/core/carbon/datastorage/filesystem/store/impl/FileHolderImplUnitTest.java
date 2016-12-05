@@ -16,13 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.core.datastorage.store.impl;
+package org.apache.carbondata.core.carbon.datastorage.filesystem.store.impl;
 
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
+
+import org.apache.carbondata.core.datastorage.store.impl.FileHolderImpl;
 
 import mockit.Mock;
 import mockit.MockUp;

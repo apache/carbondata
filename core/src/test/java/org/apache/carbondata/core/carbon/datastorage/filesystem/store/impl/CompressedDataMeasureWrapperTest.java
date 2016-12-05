@@ -17,9 +17,10 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.datastorage.store.impl;
+package org.apache.carbondata.core.carbon.datastorage.filesystem.store.impl;
 
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.apache.carbondata.core.datastorage.store.impl.CompressedDataMeasureDataWrapper;
 
 import org.junit.BeforeClass;
 import org.junit.Test;

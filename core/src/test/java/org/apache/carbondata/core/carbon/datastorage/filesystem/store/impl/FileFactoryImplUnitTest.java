@@ -17,10 +17,12 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.datastorage.store.impl;
+package org.apache.carbondata.core.carbon.datastorage.filesystem.store.impl;
 
 import java.io.File;
 import java.io.IOException;
+
+import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 
 import mockit.Mock;
 import mockit.MockUp;
