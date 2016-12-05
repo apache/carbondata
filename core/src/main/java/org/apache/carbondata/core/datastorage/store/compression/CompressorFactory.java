@@ -17,30 +17,26 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.datastorage.store.impl.key.compressed;
+package org.apache.carbondata.core.datastorage.store.compression;
 
-import org.apache.carbondata.core.datastorage.store.FileHolder;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
 
-public class CompressedSingleArrayKeyInMemoryStore extends AbstractCompressedSingleArrayStore {
-  /**
-   * @param size
-   * @param elementSize
-   */
-  public CompressedSingleArrayKeyInMemoryStore(int size, int elementSize) {
-    super(size, elementSize);
-  }
+public class CompressorFactory {
 
-  /**
-   * @param size
-   * @param elementSize
-   * @param offset
-   * @param filePath
-   * @param fileHolder
-   * @param length
-   */
-  public CompressedSingleArrayKeyInMemoryStore(int size, int elementSize, long offset,
-      String filePath, FileHolder fileHolder, int length) {
-    this(size, elementSize);
-    datastore = fileHolder.readByteArray(filePath, offset, length);
+  private static Compressor snappy;
+
+  public static Compressor getInstance() {
+    String compressor = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.COMPRESSOR,
+        CarbonCommonConstants.DEFAULT_COMPRESSOR);
+    switch (compressor) {
+      case "snappy":
+        if (snappy == null) {
+          snappy = new SnappyCompressor();
+        }
+        return snappy;
+      default:
+        throw new RuntimeException("Unsupported compressor: " + compressor);
+    }
   }
 }

@@ -29,6 +29,7 @@ import org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension.Abstra
 import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.columnar.UnBlockIndexer;
+import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.Encoding;
@@ -156,7 +157,7 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
         dimensionColumnChunk.data_page_length);
     copySourcePoint += dimensionColumnChunk.data_page_length;
     // first read the data and uncompressed it
-    dataPage = COMPRESSOR.unCompress(compressedDataPage);
+    dataPage = CompressorFactory.getInstance().unCompressByte(compressedDataPage);
     // if row id block is present then read the row id chunk and uncompress it
     if (hasEncoding(dimensionColumnChunk.encoders, Encoding.INVERTED_INDEX)) {
       byte[] compressedIndexPage = new byte[dimensionColumnChunk.rowid_page_length];
@@ -243,7 +244,7 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
           dimensionColumnChunk.data_page_length);
       copySourcePoint += dimensionColumnChunk.data_page_length;
       // first read the data and uncompressed it
-      dataPage = COMPRESSOR.unCompress(compressedDataPage);
+      dataPage = CompressorFactory.getInstance().unCompressByte(compressedDataPage);
       // if row id block is present then read the row id chunk and uncompress it
       if (hasEncoding(dimensionColumnChunk.encoders, Encoding.INVERTED_INDEX)) {
         byte[] compressedIndexPage = new byte[dimensionColumnChunk.rowid_page_length];

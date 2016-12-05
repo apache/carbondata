@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
-import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression;
+import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
@@ -39,8 +39,7 @@ public class UnCompressNoneLong implements ValueCompressonHolder.UnCompressValue
   /**
    * longCompressor.
    */
-  private static Compressor<long[]> longCompressor =
-      SnappyCompression.SnappyLongCompression.INSTANCE;
+  private static Compressor compressor = CompressorFactory.getInstance();
   /**
    * value.
    */
@@ -68,8 +67,8 @@ public class UnCompressNoneLong implements ValueCompressonHolder.UnCompressValue
   }
 
   @Override public ValueCompressonHolder.UnCompressValue compress() {
-    UnCompressNoneByte byte1 = new UnCompressNoneByte(this.actualDataType);
-    byte1.setValue(longCompressor.compress(value));
+    UnCompressNoneByte byte1 = new UnCompressNoneByte(actualDataType);
+    byte1.setValue(compressor.compressLong(value));
     return byte1;
 
   }
