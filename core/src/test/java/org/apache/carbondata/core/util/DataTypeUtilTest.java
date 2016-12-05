@@ -79,7 +79,7 @@ public class DataTypeUtilTest {
     assertEquals(DataType.TIMESTAMP, getDataType("TIMESTAMP"));
     assertEquals(DataType.STRING, getDataType("STRING"));
     assertEquals(DataType.INT, getDataType("INT"));
-    assertEquals(DataType.SHORT, getDataType("SHORT"));
+    assertEquals(DataType.SHORT, getDataType("SMALLINT"));
     assertEquals(DataType.LONG, getDataType("LONG"));
     assertEquals(DataType.DOUBLE, getDataType("DOUBLE"));
     assertEquals(DataType.DECIMAL, getDataType("DECIMAL"));
