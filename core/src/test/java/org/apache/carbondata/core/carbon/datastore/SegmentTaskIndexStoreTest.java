@@ -26,6 +26,7 @@ import java.util.Map;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentTaskIndex;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
@@ -36,23 +37,31 @@ import org.apache.carbondata.core.carbon.metadata.blocklet.SegmentInfo;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 
 import mockit.Mock;
 import mockit.MockUp;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertNull;
 
 public class SegmentTaskIndexStoreTest {
 
-  short version=1;
-  String locations[] = { "/tmp" };
-  SegmentTaskIndexStore taskIndexStore = SegmentTaskIndexStore.getInstance();
-  TableBlockInfo tableBlockInfo = new TableBlockInfo("file", 0L, "SG100", locations, 10L, ColumnarFormatVersion.valueOf(version));
-  AbsoluteTableIdentifier absoluteTableIdentifier = new AbsoluteTableIdentifier("/tmp",
-      new CarbonTableIdentifier("testdatabase", "testtable", "TB100"));
+  private static short version = 1;
+  private static String locations[] = { "/tmp" };
+  private static SegmentTaskIndexStore taskIndexStore;
+  private static TableBlockInfo tableBlockInfo;
+  private static AbsoluteTableIdentifier absoluteTableIdentifier;
+
+  @BeforeClass public static void setUp() {
+    taskIndexStore = SegmentTaskIndexStore.getInstance();
+    tableBlockInfo = new TableBlockInfo("file", 0L, "SG100", locations, 10L,
+        ColumnarFormatVersion.valueOf(version));
+    absoluteTableIdentifier = new AbsoluteTableIdentifier("/tmp",
+        new CarbonTableIdentifier("testdatabase", "testtable", "TB100"));
+  }
 
   private List<DataFileFooter> getDataFileFooters() {
     SegmentInfo segmentInfo = new SegmentInfo();
@@ -105,7 +114,7 @@ public class SegmentTaskIndexStoreTest {
   @Test public void checkExistenceOfSegmentBTree() {
     Map<String, AbstractIndex> result =
         taskIndexStore.getSegmentBTreeIfExists(absoluteTableIdentifier, "SG100");
-    assertEquals(result, null);
+    assertNull(result);
   }
 
 }

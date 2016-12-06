@@ -32,24 +32,34 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSche
 
 import mockit.Mock;
 import mockit.MockUp;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertEquals;
 
 public class BlockIndexTest {
 
-  SegmentInfo segmentInfo = new SegmentInfo();
-  DataFileFooter footer = new DataFileFooter();
-  ColumnSchema columnSchema = new ColumnSchema();
-  BlockletInfo blockletInfo = new BlockletInfo();
-  BlockletIndex blockletIndex = new BlockletIndex();
+  private static SegmentInfo segmentInfo;
+  private static DataFileFooter footer;
+  private static ColumnSchema columnSchema;
+  private static BlockletInfo blockletInfo;
+  private static BlockletIndex blockletIndex;
+  private static List<DataFileFooter> footerList = new ArrayList<DataFileFooter>();
+  private static List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
 
-  List<DataFileFooter> footerList = new ArrayList<DataFileFooter>();
-  List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+  @BeforeClass public static void setUp() {
+    segmentInfo = new SegmentInfo();
+    footer = new DataFileFooter();
+    columnSchema = new ColumnSchema();
+    blockletInfo = new BlockletInfo();
+    blockletIndex = new BlockletIndex();
+  }
 
   @Test public void testBuild() {
+    segmentInfo = new SegmentInfo();
     new MockUp<BlockletBTreeBuilder>() {
-      @Mock public void build(BTreeBuilderInfo segmentBuilderInfos) {}
+      @Mock public void build(BTreeBuilderInfo segmentBuilderInfos) {
+      }
     };
     int expectedValue = 0;
     BlockIndex blockIndex = new BlockIndex();
