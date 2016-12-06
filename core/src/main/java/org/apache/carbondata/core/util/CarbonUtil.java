@@ -37,13 +37,10 @@ import java.nio.charset.Charset;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -61,7 +58,6 @@ import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.columnar.ColumnGroupModel;
-import org.apache.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
 import org.apache.carbondata.core.datastorage.store.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
 import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
@@ -82,9 +78,7 @@ import org.apache.thrift.TException;
 import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TIOStreamTransport;
-
 import org.pentaho.di.core.exception.KettleException;
-
 
 public final class CarbonUtil {
 
@@ -148,56 +142,6 @@ public final class CarbonUtil {
     if (null != stream) {
       stream.close();
     }
-  }
-  /**
-   * @param baseStorePath
-   * @return
-   */
-  private static int createBaseStoreFolders(String baseStorePath) {
-    FileFactory.FileType fileType = FileFactory.getFileType(baseStorePath);
-    try {
-      if (!FileFactory.isFileExist(baseStorePath, fileType, false)) {
-        if (!FileFactory.mkdirs(baseStorePath, fileType)) {
-          return -1;
-        }
-      }
-    } catch (Exception e) {
-      return -1;
-    }
-    return 1;
-  }
-
-  /**
-   * @param filterType
-   * @param listFiles
-   * @param counter
-   * @return
-   */
-  private static int findCounterValue(final String filterType, CarbonFile[] listFiles,
-      int counter) {
-    if ("Load_".equals(filterType)) {
-      for (CarbonFile files : listFiles) {
-        String folderName = getFolderName(files);
-        if (folderName.indexOf('.') > -1) {
-          folderName = folderName.substring(0, folderName.indexOf('.'));
-        }
-        String[] split = folderName.split("_");
-
-        if (split.length > 1 && counter < Integer.parseInt(split[1])) {
-          counter = Integer.parseInt(split[1]);
-        }
-      }
-    } else {
-      // Iterate list of Directories and find the counter value
-      for (CarbonFile eachFile : listFiles) {
-        String folderName = getFolderName(eachFile);
-        String[] split = folderName.split("_");
-        if (counter < Integer.parseInt(split[1])) {
-          counter = Integer.parseInt(split[1]);
-        }
-      }
-    }
-    return counter;
   }
 
   /**
@@ -431,54 +375,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * This function will rename the table to be deleted
-   *
-   * @param partitionCount
-   * @param storePath
-   * @param databaseName
-   * @param tableName
-   */
-  public static void renameTableForDeletion(int partitionCount, String storePath,
-      String databaseName, String tableName) {
-    String tableNameWithPartition = "";
-    String databaseNameWithPartition = "";
-    String fullPath = "";
-    String newFilePath = "";
-    String newFileName = "";
-    Callable<Void> c = null;
-    long time = System.currentTimeMillis();
-    FileFactory.FileType fileType = null;
-    ExecutorService executorService = Executors.newFixedThreadPool(10);
-    for (int i = 0; i < partitionCount; i++) {
-      databaseNameWithPartition = databaseName + '_' + i;
-      tableNameWithPartition = tableName + '_' + i;
-      newFileName = tableNameWithPartition + '_' + time;
-      fullPath = storePath + File.separator + databaseNameWithPartition + File.separator
-          + tableNameWithPartition;
-      newFilePath =
-          storePath + File.separator + databaseNameWithPartition + File.separator + newFileName;
-      fileType = FileFactory.getFileType(fullPath);
-      try {
-        if (FileFactory.isFileExist(fullPath, fileType)) {
-          CarbonFile file = FileFactory.getCarbonFile(fullPath, fileType);
-          boolean isRenameSuccessfull = file.renameTo(newFilePath);
-          if (!isRenameSuccessfull) {
-            LOGGER.error("Problem renaming the table :: " + fullPath);
-            c = new DeleteFolderAndFiles(file);
-            executorService.submit(c);
-          } else {
-            c = new DeleteFolderAndFiles(FileFactory.getCarbonFile(newFilePath, fileType));
-            executorService.submit(c);
-          }
-        }
-      } catch (IOException e) {
-        LOGGER.error("Problem renaming the table :: " + fullPath);
-      }
-    }
-    executorService.shutdown();
-  }
-
-  /**
    * Recursively delete the files
    *
    * @param f File to be deleted
@@ -516,54 +412,6 @@ public final class CarbonUtil {
         throw new CarbonUtilException("Problem while deleting intermediate file");
       }
     }
-  }
-
-  public static byte[] getKeyArray(ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolder,
-      int totalKeySize, int eachKeySize) {
-    byte[] completeKeyArray = new byte[totalKeySize];
-    byte[] keyBlockData = null;
-    int destinationPosition = 0;
-    int[] columnIndex = null;
-    int blockKeySize = 0;
-    for (int i = 0; i < columnarKeyStoreDataHolder.length; i++) {
-      keyBlockData = columnarKeyStoreDataHolder[i].getKeyBlockData();
-      blockKeySize = columnarKeyStoreDataHolder[i].getColumnarKeyStoreMetadata().getEachRowSize();
-      if (columnarKeyStoreDataHolder[i].getColumnarKeyStoreMetadata().isSorted()) {
-        for (int j = 0; j < keyBlockData.length; j += blockKeySize) {
-          System.arraycopy(keyBlockData, j, completeKeyArray, destinationPosition, blockKeySize);
-          destinationPosition += eachKeySize;
-        }
-      } else {
-        columnIndex = columnarKeyStoreDataHolder[i].getColumnarKeyStoreMetadata().getColumnIndex();
-
-        for (int j = 0; j < columnIndex.length; j++) {
-          System.arraycopy(keyBlockData, columnIndex[j] * blockKeySize, completeKeyArray,
-              eachKeySize * columnIndex[j] + destinationPosition, blockKeySize);
-        }
-      }
-      destinationPosition = blockKeySize;
-    }
-    return completeKeyArray;
-  }
-
-  public static byte[] getKeyArray(ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolder,
-      int totalKeySize, int eachKeySize, short[] columnIndex) {
-    byte[] completeKeyArray = new byte[totalKeySize];
-    byte[] keyBlockData = null;
-    int destinationPosition = 0;
-    int blockKeySize = 0;
-    for (int i = 0; i < columnarKeyStoreDataHolder.length; i++) {
-      keyBlockData = columnarKeyStoreDataHolder[i].getKeyBlockData();
-      blockKeySize = columnarKeyStoreDataHolder[i].getColumnarKeyStoreMetadata().getEachRowSize();
-
-      for (int j = 0; j < columnIndex.length; j++) {
-        System.arraycopy(keyBlockData, columnIndex[j] * blockKeySize, completeKeyArray,
-            destinationPosition, blockKeySize);
-        destinationPosition += eachKeySize;
-      }
-      destinationPosition = blockKeySize;
-    }
-    return completeKeyArray;
   }
 
   public static int getFirstIndexUsingBinarySearch(FixedLengthDimensionDataChunk dimColumnDataChunk,
@@ -826,22 +674,6 @@ public final class CarbonUtil {
       }
     }
     return currentPath;
-  }
-
-  /**
-   * Below method will be used to get the aggregator type
-   * CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE will return when value is double measure
-   * CarbonCommonConstants.BYTE_VALUE_MEASURE will be returned when value is byte array
-   *
-   * @param agg
-   * @return aggregator type
-   */
-  public static char getType(String agg) {
-    if (CarbonCommonConstants.SUM.equals(agg) || CarbonCommonConstants.COUNT.equals(agg)) {
-      return CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE;
-    } else {
-      return CarbonCommonConstants.BYTE_VALUE_MEASURE;
-    }
   }
 
   public static String getCarbonStorePath() {
@@ -1107,25 +939,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * class to sort aggregate folder list in descending order
-   */
-  private static class AggTableComparator implements Comparator<String> {
-    public int compare(String aggTable1, String aggTable2) {
-      int index1 = aggTable1.lastIndexOf(CarbonCommonConstants.UNDERSCORE);
-      int index2 = aggTable2.lastIndexOf(CarbonCommonConstants.UNDERSCORE);
-      int n1 = Integer.parseInt(aggTable1.substring(index1 + 1));
-      int n2 = Integer.parseInt(aggTable2.substring(index2 + 1));
-      if (n1 > n2) {
-        return -1;
-      } else if (n1 < n2) {
-        return 1;
-      } else {
-        return 0;
-      }
-    }
-  }
-
-  /**
    * Below method will be used to get the dimension
    *
    * @param tableDimensionList table dimension list
@@ -1243,72 +1056,6 @@ public final class CarbonUtil {
     }
   }
 
-  /**
-   * convert from wrapper to external data type
-   *
-   * @param dataType
-   * @return
-   */
-  public static org.apache.carbondata.format.DataType fromWrapperToExternalDataType(
-      DataType dataType) {
-
-    if (null == dataType) {
-      return null;
-    }
-    switch (dataType) {
-      case STRING:
-        return org.apache.carbondata.format.DataType.STRING;
-      case INT:
-        return org.apache.carbondata.format.DataType.INT;
-      case LONG:
-        return org.apache.carbondata.format.DataType.LONG;
-      case DOUBLE:
-        return org.apache.carbondata.format.DataType.DOUBLE;
-      case DECIMAL:
-        return org.apache.carbondata.format.DataType.DECIMAL;
-      case TIMESTAMP:
-        return org.apache.carbondata.format.DataType.TIMESTAMP;
-      case ARRAY:
-        return org.apache.carbondata.format.DataType.ARRAY;
-      case STRUCT:
-        return org.apache.carbondata.format.DataType.STRUCT;
-      default:
-        return org.apache.carbondata.format.DataType.STRING;
-    }
-  }
-
-  /**
-   * convert from external to wrapper data type
-   *
-   * @param dataType
-   * @return
-   */
-  public static DataType fromExternalToWrapperDataType(
-      org.apache.carbondata.format.DataType dataType) {
-    if (null == dataType) {
-      return null;
-    }
-    switch (dataType) {
-      case STRING:
-        return DataType.STRING;
-      case INT:
-        return DataType.INT;
-      case LONG:
-        return DataType.LONG;
-      case DOUBLE:
-        return DataType.DOUBLE;
-      case DECIMAL:
-        return DataType.DECIMAL;
-      case TIMESTAMP:
-        return DataType.TIMESTAMP;
-      case ARRAY:
-        return DataType.ARRAY;
-      case STRUCT:
-        return DataType.STRUCT;
-      default:
-        return DataType.STRING;
-    }
-  }
   /**
    * @param dictionaryColumnCardinality
    * @param wrapperColumnSchemaList
