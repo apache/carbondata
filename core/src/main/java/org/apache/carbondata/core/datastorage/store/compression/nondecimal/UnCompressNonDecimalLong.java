@@ -17,42 +17,44 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.datastorage.store.compression.type;
+package org.apache.carbondata.core.datastorage.store.compression.nondecimal;
+
+import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
-public class UnCompressNoneByte implements UnCompressValue<byte[]> {
+public class UnCompressNonDecimalLong implements UnCompressValue<long[]> {
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnCompressNoneByte.class.getName());
+      LogServiceFactory.getLogService(UnCompressNonDecimalLong.class.getName());
 
   /**
-   * byteCompressor.
+   * longCompressor.
    */
   private static Compressor compressor = CompressorFactory.getInstance();
 
   /**
    * value.
    */
-  private byte[] value;
+  private long[] value;
 
-  /**
-   * actual data type
-   */
-  private DataType actualDataType;
+  @Override public void setValue(long[] value) {
+    this.value = value;
+  }
 
-  public UnCompressNoneByte(DataType actualDataType) {
-    this.actualDataType = actualDataType;
+  @Override public UnCompressValue compress() {
+    UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
+    byte1.setValue(compressor.compressLong(value));
+    return byte1;
   }
 
   @Override public UnCompressValue getNew() {
@@ -64,69 +66,31 @@ public class UnCompressNoneByte implements UnCompressValue<byte[]> {
     return null;
   }
 
-  @Override public void setValue(byte[] value) {
-    this.value = value;
-  }
-
   @Override public UnCompressValue uncompress(DataType dataType) {
-    UnCompressValue byte1 = ValueCompressionUtil.unCompressNone(dataType, actualDataType);
-    ValueCompressonHolder.unCompress(dataType, byte1, value);
-    return byte1;
-  }
-
-  @Override public UnCompressValue compress() {
-    UnCompressNoneByte byte1 = new UnCompressNoneByte(actualDataType);
-    byte1.setValue(compressor.compressByte(value));
-    return byte1;
+    return null;
   }
 
   @Override public byte[] getBackArrayData() {
-    return value;
+    return ValueCompressionUtil.convertToBytes(value);
   }
 
-  @Override public void setValueInBytes(byte[] value) {
-    this.value = value;
+  @Override public void setValueInBytes(byte[] bytes) {
+    ByteBuffer buffer = ByteBuffer.wrap(bytes);
+    this.value = ValueCompressionUtil.convertToLongArray(buffer, bytes.length);
   }
 
-  /**
-   * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
-   */
   @Override public UnCompressValue getCompressorObject() {
-    return new UnCompressNoneByte(actualDataType);
+    return new UnCompressNonDecimalByte();
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    switch (actualDataType) {
-      case DATA_BIGINT:
-        return unCompressLong();
-      default:
-        return unCompressDouble();
-    }
-
-  }
-
-  private CarbonReadDataHolder unCompressDouble() {
-    CarbonReadDataHolder dataHldr = new CarbonReadDataHolder();
-
     double[] vals = new double[value.length];
-
     for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i];
+      vals[i] = value[i] / Math.pow(10, decimal);
     }
-    dataHldr.setReadableDoubleValues(vals);
-    return dataHldr;
-  }
-
-  private CarbonReadDataHolder unCompressLong() {
-    CarbonReadDataHolder dataHldr = new CarbonReadDataHolder();
-
-    long[] vals = new long[value.length];
-
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i];
-    }
-    dataHldr.setReadableLongValues(vals);
-    return dataHldr;
+    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
+    dataHolder.setReadableDoubleValues(vals);
+    return dataHolder;
   }
 
 }

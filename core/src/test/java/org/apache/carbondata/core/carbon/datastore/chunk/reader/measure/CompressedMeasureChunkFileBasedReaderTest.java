@@ -13,9 +13,9 @@ import org.apache.carbondata.core.carbon.datastore.chunk.reader.measure.v1.Compr
 import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.datastorage.store.compression.type.UnCompressByteArray;
+import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressByteArray;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
@@ -30,7 +30,7 @@ public class CompressedMeasureChunkFileBasedReaderTest {
     List<DataChunk> dataChunkList = new ArrayList<>();
     dataChunkList.add(new DataChunk());
 
-    ValueCompressionModel valueCompressionModel = new ValueCompressionModel();
+    WriterCompressModel writerCompressModel = new WriterCompressModel();
 
     ValueCompressonHolder.UnCompressValue unCompressValue[] =
         { new UnCompressByteArray(UnCompressByteArray.ByteArrayType.BYTE_ARRAY) };
@@ -38,16 +38,16 @@ public class CompressedMeasureChunkFileBasedReaderTest {
     unCompressValue[0].setValueInBytes(valueInByte);
     ValueCompressionUtil.DataType dataType[] = { ValueCompressionUtil.DataType.DATA_BYTE };
 
-    valueCompressionModel.setUnCompressValues(unCompressValue);
-    valueCompressionModel.setChangedDataType(dataType);
+    writerCompressModel.setUnCompressValues(unCompressValue);
+    writerCompressModel.setChangedDataType(dataType);
     int decimal[] = { 5, 8, 2 };
-    valueCompressionModel.setDecimal(decimal);
+    writerCompressModel.setMantissa(decimal);
     Object maxValue[] = { 8 };
-    valueCompressionModel.setMaxValue(maxValue);
+    writerCompressModel.setMaxValue(maxValue);
     ValueEncoderMeta meta = new ValueEncoderMeta();
     meta.setMaxValue(8.0);
     meta.setMinValue(1.0);
-    meta.setDecimal(1);
+    meta.setMantissa(1);
     meta.setType('b');
     List<ValueEncoderMeta> valueEncoderMetaList = new ArrayList<>();
     valueEncoderMetaList.add(meta);

@@ -21,25 +21,14 @@ package org.apache.carbondata.core.datastorage.store.impl.data.compressed;
 
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.MeasureDataWrapper;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.datastorage.store.impl.CompressedDataMeasureDataWrapper;
 
 public class HeavyCompressedDoubleArrayDataInMemoryStore
     extends AbstractHeavyCompressedDoubleArrayDataStore {
 
-  public HeavyCompressedDoubleArrayDataInMemoryStore(ValueCompressionModel compressionModel,
-      long[] measuresOffsetsArray, int[] measuresLengthArray, String fileName,
-      FileHolder fileHolder) {
-    super(compressionModel);
-    for (int i = 0; i < measuresLengthArray.length; i++) {
-      values[i] = compressionModel.getUnCompressValues()[i].getCompressorObject();
-      values[i].setValue(
-          fileHolder.readByteArray(fileName, measuresOffsetsArray[i], measuresLengthArray[i]));
-    }
-  }
-
-  public HeavyCompressedDoubleArrayDataInMemoryStore(ValueCompressionModel compressionModel) {
+  public HeavyCompressedDoubleArrayDataInMemoryStore(WriterCompressModel compressionModel) {
     super(compressionModel);
   }
 
@@ -51,14 +40,14 @@ public class HeavyCompressedDoubleArrayDataInMemoryStore
     if (cols != null) {
       for (int i = 0; i < cols.length; i++) {
         vals[cols[i]] = values[cols[i]].uncompress(compressionModel.getChangedDataType()[cols[i]])
-            .getValues(compressionModel.getDecimal()[cols[i]],
+            .getValues(compressionModel.getMantissa()[cols[i]],
                 compressionModel.getMaxValue()[cols[i]]);
       }
     } else {
       for (int i = 0; i < vals.length; i++) {
 
         vals[i] = values[i].uncompress(compressionModel.getChangedDataType()[i])
-            .getValues(compressionModel.getDecimal()[i], compressionModel.getMaxValue()[i]);
+            .getValues(compressionModel.getMantissa()[i], compressionModel.getMaxValue()[i]);
       }
     }
     return new CompressedDataMeasureDataWrapper(vals);
@@ -70,7 +59,7 @@ public class HeavyCompressedDoubleArrayDataInMemoryStore
     }
     CarbonReadDataHolder[] vals = new CarbonReadDataHolder[values.length];
     vals[cols] = values[cols].uncompress(compressionModel.getChangedDataType()[cols])
-        .getValues(compressionModel.getDecimal()[cols], compressionModel.getMaxValue()[cols]);
+        .getValues(compressionModel.getMantissa()[cols], compressionModel.getMaxValue()[cols]);
     return new CompressedDataMeasureDataWrapper(vals);
   }
 }

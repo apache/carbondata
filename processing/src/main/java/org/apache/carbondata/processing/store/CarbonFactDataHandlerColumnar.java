@@ -51,7 +51,7 @@ import org.apache.carbondata.core.datastorage.store.columnar.BlockIndexerStorage
 import org.apache.carbondata.core.datastorage.store.columnar.BlockIndexerStorageForNoInvertedIndex;
 import org.apache.carbondata.core.datastorage.store.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastorage.store.columnar.IndexStorage;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonWriteDataHolder;
 import org.apache.carbondata.core.datastorage.util.StoreFactory;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
@@ -603,8 +603,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     if ((noDictionaryCount + complexColCount) > 0) {
       noDictionaryValueHolder = noDictionaryKeyDataHolder.getByteArrayValues();
     }
-    ValueCompressionModel compressionModel = ValueCompressionUtil
-        .getValueCompressionModel(max, min, decimal, uniqueValue, type, new byte[max.length]);
+    WriterCompressModel compressionModel = ValueCompressionUtil
+        .getWriterCompressModel(max, min, decimal, uniqueValue, type, new byte[max.length]);
     byte[][] writableMeasureDataArray =
         StoreFactory.createDataStore(compressionModel).getWritableMeasureDataArray(dataHolder)
             .clone();
@@ -738,8 +738,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     if ((noDictionaryCount + complexColCount) > 0) {
       noDictionaryValueHolder = noDictionaryKeyDataHolder.getNonDictByteArrayValues();
     }
-    ValueCompressionModel compressionModel = ValueCompressionUtil
-        .getValueCompressionModel(max, min, decimal, uniqueValue, type, new byte[max.length]);
+    WriterCompressModel compressionModel = ValueCompressionUtil
+        .getWriterCompressModel(max, min, decimal, uniqueValue, type, new byte[max.length]);
     byte[][] writableMeasureDataArray =
         StoreFactory.createDataStore(compressionModel).getWritableMeasureDataArray(dataHolder)
             .clone();
@@ -755,7 +755,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   // TODO remove after kettle flow is removed
   private NodeHolder getNodeHolderObject(byte[][] dataHolderLocal, byte[][] byteArrayValues,
       int entryCountLocal, byte[] startkeyLocal, byte[] endKeyLocal,
-      ValueCompressionModel compressionModel, byte[][] noDictionaryData,
+      WriterCompressModel compressionModel, byte[][] noDictionaryData,
       byte[] noDictionaryStartKey, byte[] noDictionaryEndKey)
       throws CarbonDataWriterException {
     byte[][][] noDictionaryColumnsData = null;
@@ -882,7 +882,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
 
   private NodeHolder getNodeHolderObjectWithOutKettle(byte[][] dataHolderLocal,
       byte[][] byteArrayValues, int entryCountLocal, byte[] startkeyLocal, byte[] endKeyLocal,
-      ValueCompressionModel compressionModel, byte[][][] noDictionaryData,
+      WriterCompressModel compressionModel, byte[][][] noDictionaryData,
       byte[][] noDictionaryStartKey, byte[][] noDictionaryEndKey)
       throws CarbonDataWriterException {
     byte[][][] noDictionaryColumnsData = null;

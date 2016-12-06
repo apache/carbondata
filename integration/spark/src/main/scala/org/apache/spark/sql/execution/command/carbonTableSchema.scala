@@ -757,7 +757,7 @@ private[sql] case class DescribeCommandFormatted(
     if (colPropStr.length() > 0) {
       results ++= Seq((colPropStr, "", ""))
     } else {
-      results ++= Seq(("NONE", "", ""))
+      results ++= Seq(("ADAPTIVE", "", ""))
     }
     val dimension = carbonTable
       .getDimensionByTableName(relation.tableMeta.carbonTableIdentifier.getTableName)

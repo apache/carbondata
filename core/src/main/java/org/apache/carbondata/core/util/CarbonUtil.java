@@ -64,7 +64,7 @@ import org.apache.carbondata.core.datastorage.store.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
 import org.apache.carbondata.core.datastorage.store.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
@@ -956,7 +956,7 @@ public final class CarbonUtil {
    * @param measureDataChunkList
    * @return value compression model
    */
-  public static ValueCompressionModel getValueCompressionModel(
+  public static WriterCompressModel getValueCompressionModel(
       List<ValueEncoderMeta> encodeMetaList) {
     Object[] maxValue = new Object[encodeMetaList.size()];
     Object[] minValue = new Object[encodeMetaList.size()];
@@ -968,19 +968,19 @@ public final class CarbonUtil {
     /**
      * to fill the meta data required for value compression model
      */
-    for (int i = 0; i < dataTypeSelected.length; i++) {
+    for (int i = 0; i < dataTypeSelected.length; i++) {  // always 1
       ValueEncoderMeta valueEncoderMeta = encodeMetaList.get(i);
       maxValue[i] = valueEncoderMeta.getMaxValue();
       minValue[i] = valueEncoderMeta.getMinValue();
       uniqueValue[i] = valueEncoderMeta.getUniqueValue();
-      decimal[i] = valueEncoderMeta.getDecimal();
+      decimal[i] = valueEncoderMeta.getMantissa();
       type[i] = valueEncoderMeta.getType();
       dataTypeSelected[i] = valueEncoderMeta.getDataTypeSelected();
     }
     MeasureMetaDataModel measureMetadataModel =
         new MeasureMetaDataModel(minValue, maxValue, decimal, dataTypeSelected.length, uniqueValue,
             type, dataTypeSelected);
-    return ValueCompressionUtil.getValueCompressionModel(measureMetadataModel);
+    return ValueCompressionUtil.getWriterCompressModel(measureMetadataModel);
   }
 
   /**

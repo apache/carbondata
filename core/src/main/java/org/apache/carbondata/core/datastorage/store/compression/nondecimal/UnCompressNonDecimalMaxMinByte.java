@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.datastorage.store.compression.type;
+package org.apache.carbondata.core.datastorage.store.compression.nondecimal;
 
 import java.math.BigDecimal;
 
@@ -46,9 +46,9 @@ public class UnCompressNonDecimalMaxMinByte
    */
   private byte[] value;
 
-  @Override public ValueCompressonHolder.UnCompressValue getNew() {
+  @Override public ValueCompressonHolder.UnCompressValue<byte[]> getNew() {
     try {
-      return (ValueCompressonHolder.UnCompressValue) clone();
+      return (ValueCompressonHolder.UnCompressValue<byte[]>) clone();
     } catch (CloneNotSupportedException cloneNotSupportedException) {
       LOGGER.error(cloneNotSupportedException,
           cloneNotSupportedException.getMessage());
@@ -64,7 +64,7 @@ public class UnCompressNonDecimalMaxMinByte
 
   @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
     ValueCompressonHolder.UnCompressValue byte1 =
-        ValueCompressionUtil.unCompressNonDecimalMaxMin(dataType, dataType);
+        ValueCompressionUtil.getUnCompressNonDecimalMaxMin(dataType);
     ValueCompressonHolder.unCompress(dataType, byte1, value);
     return byte1;
   }
