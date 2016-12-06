@@ -19,7 +19,6 @@
 
 package org.apache.carbondata.processing.newflow.row;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 
 /**
