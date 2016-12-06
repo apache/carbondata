@@ -161,8 +161,13 @@ public final class ValueCompressionUtil {
 
     if (mantissa == 0) {
       // short, int, long
-      if (getSize(adaptiveDataType) > getSize(deltaDataType)) {
+      int adaptiveSize = getSize(adaptiveDataType);
+      int deltaSize = getSize(deltaDataType);
+      if (adaptiveSize > deltaSize) {
         return new CompressionFinder(COMPRESSION_TYPE.DELTA_DOUBLE, DataType.DATA_DOUBLE,
+            deltaDataType);
+      } else if (adaptiveSize < deltaSize) {
+        return new CompressionFinder(COMPRESSION_TYPE.ADAPTIVE, DataType.DATA_DOUBLE，
             deltaDataType);
       } else {
         return new CompressionFinder(COMPRESSION_TYPE.ADAPTIVE, DataType.DATA_DOUBLE,
@@ -201,9 +206,12 @@ public final class ValueCompressionUtil {
     if (adaptiveSize > deltaSize) {
       return new CompressionFinder(COMPRESSION_TYPE.DELTA_DOUBLE, DataType.DATA_BIGINT,
           deltaDataType);
+    } else if (adaptiveSize < deltaSize) {
+      return new CompressionFinder(COMPRESSION_TYPE.ADAPTIVE, DataType.DATA_BIGINT,
+          deltaDataType);
     } else {
       return new CompressionFinder(COMPRESSION_TYPE.ADAPTIVE, DataType.DATA_BIGINT,
-          getDataType((long) maxValue, mantissa, dataTypeSelected));
+          adaptiveDataType);
     }
   }
 
