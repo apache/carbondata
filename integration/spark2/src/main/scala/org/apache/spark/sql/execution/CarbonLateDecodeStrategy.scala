@@ -21,8 +21,6 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.CatalystTypeConverters
-import org.apache.spark.sql.catalyst.CatalystTypeConverters._
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.catalyst.expressions.{Attribute, _}
@@ -31,13 +29,9 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
-import org.apache.spark.sql.types.{IntegerType, StringType}
-import org.apache.spark.unsafe.types.UTF8String
+import org.apache.spark.sql.types.IntegerType
 
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
-
-
-
 
 /**
  * Carbon strategy for late decode (convert dictionary key to value as late as possible), which
@@ -92,10 +86,10 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
                                    relation: LogicalRelation,
                                    output: Seq[Attribute],
                                    rdd: RDD[Row],
-                                   needoDecode: ArrayBuffer[AttributeReference]):
+                                   needDecode: ArrayBuffer[AttributeReference]):
   RDD[InternalRow] = {
-    val newRdd = if (needoDecode.size > 0) {
-      getDecoderRDD(relation, needoDecode, rdd, output)
+    val newRdd = if (needDecode.size > 0) {
+      getDecoderRDD(relation, needDecode, rdd, output)
     } else {
       rdd
     }
@@ -310,74 +304,89 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
    */
   protected[sql] def translateFilter(predicate: Expression): Option[Filter] = {
     predicate match {
-      case expressions.EqualTo(a: Attribute, Literal(v, t)) =>
-        Some(sources.EqualTo(a.name, convertToScala(v, t)))
-      case expressions.EqualTo(Literal(v, t), a: Attribute) =>
-        Some(sources.EqualTo(a.name, convertToScala(v, t)))
+      case or@ Or(left, right) =>
 
-      case expressions.EqualNullSafe(a: Attribute, Literal(v, t)) =>
-        Some(sources.EqualNullSafe(a.name, convertToScala(v, t)))
-      case expressions.EqualNullSafe(Literal(v, t), a: Attribute) =>
-        Some(sources.EqualNullSafe(a.name, convertToScala(v, t)))
+        val leftFilter = translateFilter(left)
+        val rightFilter = translateFilter(right)
+        if (leftFilter.isDefined && rightFilter.isDefined) {
+          Some( sources.Or(leftFilter.get, rightFilter.get))
+        } else {
+          None
+        }
 
-      case expressions.GreaterThan(a: Attribute, Literal(v, t)) =>
-        Some(sources.GreaterThan(a.name, convertToScala(v, t)))
-      case expressions.GreaterThan(Literal(v, t), a: Attribute) =>
-        Some(sources.LessThan(a.name, convertToScala(v, t)))
-
-      case expressions.LessThan(a: Attribute, Literal(v, t)) =>
-        Some(sources.LessThan(a.name, convertToScala(v, t)))
-      case expressions.LessThan(Literal(v, t), a: Attribute) =>
-        Some(sources.GreaterThan(a.name, convertToScala(v, t)))
-
-      case expressions.GreaterThanOrEqual(a: Attribute, Literal(v, t)) =>
-        Some(sources.GreaterThanOrEqual(a.name, convertToScala(v, t)))
-      case expressions.GreaterThanOrEqual(Literal(v, t), a: Attribute) =>
-        Some(sources.LessThanOrEqual(a.name, convertToScala(v, t)))
-
-      case expressions.LessThanOrEqual(a: Attribute, Literal(v, t)) =>
-        Some(sources.LessThanOrEqual(a.name, convertToScala(v, t)))
-      case expressions.LessThanOrEqual(Literal(v, t), a: Attribute) =>
-        Some(sources.GreaterThanOrEqual(a.name, convertToScala(v, t)))
-
-      case expressions.InSet(a: Attribute, set) =>
-        val toScala = CatalystTypeConverters.createToScalaConverter(a.dataType)
-        Some(sources.In(a.name, set.toArray.map(toScala)))
-
-      // Because we only convert In to InSet in Optimizer when there are more than certain
-      // items. So it is possible we still get an In expression here that needs to be pushed
-      // down.
-      case expressions.In(a: Attribute, list) if !list.exists(!_.isInstanceOf[Literal]) =>
-        val hSet = list.map(e => e.eval(EmptyRow))
-        val toScala = CatalystTypeConverters.createToScalaConverter(a.dataType)
-        Some(sources.In(a.name, hSet.toArray.map(toScala)))
-
-      case expressions.IsNull(a: Attribute) =>
-        Some(sources.IsNull(a.name))
-      case expressions.IsNotNull(a: Attribute) =>
-        Some(sources.IsNotNull(a.name))
-
-      case expressions.And(left, right) =>
+      case And(left, right) =>
         (translateFilter(left) ++ translateFilter(right)).reduceOption(sources.And)
 
-      case expressions.Or(left, right) =>
-        for {
-          leftFilter <- translateFilter(left)
-          rightFilter <- translateFilter(right)
-        } yield sources.Or(leftFilter, rightFilter)
+      case EqualTo(a: Attribute, Literal(v, t)) =>
+        Some(sources.EqualTo(a.name, v))
+      case EqualTo(l@Literal(v, t), a: Attribute) =>
+        Some(sources.EqualTo(a.name, v))
+      case EqualTo(Cast(a: Attribute, _), Literal(v, t)) =>
+        Some(sources.EqualTo(a.name, v))
+      case EqualTo(Literal(v, t), Cast(a: Attribute, _)) =>
+        Some(sources.EqualTo(a.name, v))
 
-      case expressions.Not(child) =>
-        translateFilter(child).map(sources.Not)
+      case Not(EqualTo(a: Attribute, Literal(v, t))) => new
+          Some(sources.Not(sources.EqualTo(a.name, v)))
+      case Not(EqualTo(Literal(v, t), a: Attribute)) => new
+          Some(sources.Not(sources.EqualTo(a.name, v)))
+      case Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) => new
+          Some(sources.Not(sources.EqualTo(a.name, v)))
+      case Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) => new
+          Some(sources.Not(sources.EqualTo(a.name, v)))
+      case IsNotNull(a: Attribute) => Some(sources.IsNotNull(a.name))
+      case IsNull(a: Attribute) => Some(sources.IsNull(a.name))
+      case Not(In(a: Attribute, list)) if !list.exists(!_.isInstanceOf[Literal]) =>
+        val hSet = list.map(e => e.eval(EmptyRow))
+        Some(sources.Not(sources.In(a.name, hSet.toArray)))
+      case In(a: Attribute, list) if !list.exists(!_.isInstanceOf[Literal]) =>
+        val hSet = list.map(e => e.eval(EmptyRow))
+        Some(sources.In(a.name, hSet.toArray))
+      case Not(In(Cast(a: Attribute, _), list))
+        if !list.exists(!_.isInstanceOf[Literal]) =>
+        val hSet = list.map(e => e.eval(EmptyRow))
+        Some(sources.Not(sources.In(a.name, hSet.toArray)))
+      case In(Cast(a: Attribute, _), list) if !list.exists(!_.isInstanceOf[Literal]) =>
+        val hSet = list.map(e => e.eval(EmptyRow))
+        Some(sources.In(a.name, hSet.toArray))
 
-      case expressions.StartsWith(a: Attribute, Literal(v: UTF8String, StringType)) =>
-        Some(sources.StringStartsWith(a.name, v.toString))
+      case GreaterThan(a: Attribute, Literal(v, t)) =>
+        Some(sources.GreaterThan(a.name, v))
+      case GreaterThan(Literal(v, t), a: Attribute) =>
+        Some(sources.LessThan(a.name, v))
+      case GreaterThan(Cast(a: Attribute, _), Literal(v, t)) =>
+        Some(sources.GreaterThan(a.name, v))
+      case GreaterThan(Literal(v, t), Cast(a: Attribute, _)) =>
+        Some(sources.LessThan(a.name, v))
 
-      case expressions.EndsWith(a: Attribute, Literal(v: UTF8String, StringType)) =>
-        Some(sources.StringEndsWith(a.name, v.toString))
+      case LessThan(a: Attribute, Literal(v, t)) =>
+        Some(sources.LessThan(a.name, v))
+      case LessThan(Literal(v, t), a: Attribute) =>
+        Some(sources.GreaterThan(a.name, v))
+      case LessThan(Cast(a: Attribute, _), Literal(v, t)) =>
+        Some(sources.LessThan(a.name, v))
+      case LessThan(Literal(v, t), Cast(a: Attribute, _)) =>
+        Some(sources.GreaterThan(a.name, v))
 
-      case expressions.Contains(a: Attribute, Literal(v: UTF8String, StringType)) =>
-        Some(sources.StringContains(a.name, v.toString))
-      case _ => None
+      case GreaterThanOrEqual(a: Attribute, Literal(v, t)) =>
+        Some(sources.GreaterThanOrEqual(a.name, v))
+      case GreaterThanOrEqual(Literal(v, t), a: Attribute) =>
+        Some(sources.LessThanOrEqual(a.name, v))
+      case GreaterThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
+        Some(sources.GreaterThanOrEqual(a.name, v))
+      case GreaterThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
+        Some(sources.LessThanOrEqual(a.name, v))
+
+      case LessThanOrEqual(a: Attribute, Literal(v, t)) =>
+        Some(sources.LessThanOrEqual(a.name, v))
+      case LessThanOrEqual(Literal(v, t), a: Attribute) =>
+        Some(sources.GreaterThanOrEqual(a.name, v))
+      case LessThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
+        Some(sources.LessThanOrEqual(a.name, v))
+      case LessThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
+        Some(sources.GreaterThanOrEqual(a.name, v))
+
+      case others => None
     }
   }
 }

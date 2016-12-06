@@ -162,7 +162,38 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
           } else {
             Sort(sort.order, sort.global, child)
           }
-
+        case union: Union
+          if !(union.children(0).isInstanceOf[CarbonDictionaryTempDecoder] ||
+            union.children(1).isInstanceOf[CarbonDictionaryTempDecoder]) =>
+          val leftCondAttrs = new util.HashSet[AttributeReferenceWrapper]
+          val rightCondAttrs = new util.HashSet[AttributeReferenceWrapper]
+          union.children(0).output.foreach(attr =>
+            leftCondAttrs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr))))
+          union.children(1).output.foreach(attr =>
+            rightCondAttrs.add(AttributeReferenceWrapper(aliasMap.getOrElse(attr, attr))))
+          var leftPlan = union.children(0)
+          var rightPlan = union.children(1)
+          if (hasCarbonRelation(leftPlan) && leftCondAttrs.size() > 0 &&
+            !leftPlan.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
+            leftPlan = CarbonDictionaryTempDecoder(leftCondAttrs,
+              new util.HashSet[AttributeReferenceWrapper](),
+              union.children(0))
+          }
+          if (hasCarbonRelation(rightPlan) && rightCondAttrs.size() > 0 &&
+            !rightPlan.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
+            rightPlan = CarbonDictionaryTempDecoder(rightCondAttrs,
+              new util.HashSet[AttributeReferenceWrapper](),
+              union.children(1))
+          }
+          if (!decoder) {
+            decoder = true
+            CarbonDictionaryTempDecoder(new util.HashSet[AttributeReferenceWrapper](),
+              new util.HashSet[AttributeReferenceWrapper](),
+              Union(leftPlan, rightPlan),
+              isOuter = true)
+          } else {
+            Union(leftPlan, rightPlan)
+          }
         case agg: Aggregate if !agg.child.isInstanceOf[CarbonDictionaryTempDecoder] =>
           val attrsOndimAggs = new util.HashSet[AttributeReferenceWrapper]
           agg.aggregateExpressions.map {
@@ -456,39 +487,71 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
       case cd: CarbonDictionaryCatalystDecoder =>
         cd
       case sort: Sort =>
+        val tmpAttrMap = new mutable.HashMap[AttributeReferenceWrapper, Attribute]()
+        if (sort.child.isInstanceOf[CarbonDictionaryTempDecoder]) {
+          val tempDecoder = sort.child.asInstanceOf[CarbonDictionaryTempDecoder]
+          tempDecoder.attrList.asScala.foreach{attr => tmpAttrMap.put(attr, attr.attr)}
+        }
         val sortExprs = sort.order.map { s =>
           s.transform {
             case attr: AttributeReference =>
-              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+              val tempAttr = tmpAttrMap.get(AttributeReferenceWrapper(attr))
+              if(tempAttr.isDefined) {
+                tempAttr.get
+              } else {
+                updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+              }
           }.asInstanceOf[SortOrder]
         }
         Sort(sortExprs, sort.global, sort.child)
       case agg: Aggregate if !agg.child.isInstanceOf[CarbonDictionaryCatalystDecoder] =>
+        val tmpAttrMap = new mutable.HashMap[AttributeReferenceWrapper, Attribute]()
+        if (agg.child.isInstanceOf[CarbonDictionaryTempDecoder]) {
+          val tempDecoder = agg.child.asInstanceOf[CarbonDictionaryTempDecoder]
+          tempDecoder.attrList.asScala.foreach{attr => tmpAttrMap.put(attr, attr.attr)}
+        }
+
         val aggExps = agg.aggregateExpressions.map { aggExp =>
           aggExp.transform {
             case attr: AttributeReference =>
-              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+              val tempAttr = tmpAttrMap.get(AttributeReferenceWrapper(attr))
+              if(tempAttr.isDefined) {
+                tempAttr.get
+              } else {
+                updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+              }
           }
         }.asInstanceOf[Seq[NamedExpression]]
 
         val grpExps = agg.groupingExpressions.map { gexp =>
           gexp.transform {
             case attr: AttributeReference =>
-              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+              val tempAttr = tmpAttrMap.get(AttributeReferenceWrapper(attr))
+              if(tempAttr.isDefined) {
+                tempAttr.get
+              } else {
+                updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+              }
           }
         }
         Aggregate(grpExps, aggExps, agg.child)
       case expand: Expand =>
+        val tmpAttrMap = new mutable.HashMap[AttributeReferenceWrapper, Attribute]()
+        if (expand.child.isInstanceOf[CarbonDictionaryTempDecoder]) {
+          val tempDecoder = expand.child.asInstanceOf[CarbonDictionaryTempDecoder]
+          tempDecoder.attrList.asScala.foreach{attr => tmpAttrMap.put(attr, attr.attr)}
+        }
         expand.transformExpressions {
           case attr: AttributeReference =>
-            updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+            val tempAttr = tmpAttrMap.get(AttributeReferenceWrapper(attr))
+            if(tempAttr.isDefined) {
+              tempAttr.get
+            } else {
+              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+            }
         }
       case filter: Filter =>
-        val filterExps = filter.condition transform {
-          case attr: AttributeReference =>
-            updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
-        }
-        Filter(filterExps, filter.child)
+        filter
       case j: Join =>
         marker.pushBinaryMarker(allAttrsNotDecode)
         j
@@ -496,36 +559,71 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         marker.pushBinaryMarker(allAttrsNotDecode)
         u
       case p: Project if relations.nonEmpty =>
+        val tmpAttrMap = new mutable.HashMap[AttributeReferenceWrapper, Attribute]()
+        if (p.child.isInstanceOf[CarbonDictionaryTempDecoder]) {
+          val tempDecoder = p.child.asInstanceOf[CarbonDictionaryTempDecoder]
+          tempDecoder.attrList.asScala.foreach{attr => tmpAttrMap.put(attr, attr.attr)}
+        }
         val prExps = p.projectList.map { prExp =>
-          prExp.transform {
-            case attr: AttributeReference =>
-              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
-          }
+              prExp.transform {
+                case attr: AttributeReference =>
+                  val tempAttr = tmpAttrMap.get(AttributeReferenceWrapper(attr))
+                  if(tempAttr.isDefined) {
+                    tempAttr.get
+                  } else {
+                    updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+                  }
+              }
         }.asInstanceOf[Seq[NamedExpression]]
         Project(prExps, p.child)
       case wd: Window if relations.nonEmpty =>
+        val tmpAttrMap = new mutable.HashMap[AttributeReferenceWrapper, Attribute]()
+        if (wd.child.isInstanceOf[CarbonDictionaryTempDecoder]) {
+          val tempDecoder = wd.child.asInstanceOf[CarbonDictionaryTempDecoder]
+          tempDecoder.attrList.asScala.foreach{attr => tmpAttrMap.put(attr, attr.attr)}
+        }
         val prExps = wd.output.map { prExp =>
           prExp.transform {
             case attr: AttributeReference =>
-              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+              val tempAttr = tmpAttrMap.get(AttributeReferenceWrapper(attr))
+              if(tempAttr.isDefined) {
+                tempAttr.get
+              } else {
+                updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+              }
           }
         }.asInstanceOf[Seq[Attribute]]
         val wdExps = wd.windowExpressions.map { gexp =>
           gexp.transform {
             case attr: AttributeReference =>
-              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+              val tempAttr = tmpAttrMap.get(AttributeReferenceWrapper(attr))
+              if(tempAttr.isDefined) {
+                tempAttr.get
+              } else {
+                updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+              }
           }
         }.asInstanceOf[Seq[NamedExpression]]
         val partitionSpec = wd.partitionSpec.map{ exp =>
           exp.transform {
             case attr: AttributeReference =>
-              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+              val tempAttr = tmpAttrMap.get(AttributeReferenceWrapper(attr))
+              if(tempAttr.isDefined) {
+                tempAttr.get
+              } else {
+                updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+              }
           }
         }
         val orderSpec = wd.orderSpec.map { exp =>
           exp.transform {
             case attr: AttributeReference =>
-              updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+              val tempAttr = tmpAttrMap.get(AttributeReferenceWrapper(attr))
+              if(tempAttr.isDefined) {
+                tempAttr.get
+              } else {
+                updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
+              }
           }
         }.asInstanceOf[Seq[SortOrder]]
         Window(wdExps, partitionSpec, orderSpec, wd.child)
