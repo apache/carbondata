@@ -88,8 +88,8 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
     // create a new uncompressor
     // read data from file and set to uncompressor
     // read data from file and set to uncompressor
-    values.setValue(fileReader
-        .readByteArray(filePath, measureColumnChunks.get(blockIndex).getDataPageOffset(),
+    values.setValue(
+        fileReader.readByteArray(filePath, measureColumnChunks.get(blockIndex).getDataPageOffset(),
             measureColumnChunks.get(blockIndex).getDataPageLength()));
     // get the data holder after uncompressing
     CarbonReadDataHolder measureDataHolder =
