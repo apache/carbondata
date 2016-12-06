@@ -41,36 +41,12 @@ public class CarbonRow {
     this.data = data;
   }
 
-  public int getInt(int ordinal) {
-    return (int) data[ordinal];
-  }
-
-  public long getLong(int ordinal) {
-    return (long) data[ordinal];
-  }
-
-  public float getFloat(int ordinal) {
-    return (float) data[ordinal];
-  }
-
-  public double getDouble(int ordinal) {
-    return (double) data[ordinal];
-  }
-
-  public BigDecimal getDecimal(int ordinal) {
-    return (BigDecimal) data[ordinal];
-  }
-
   public String getString(int ordinal) {
     return (String) data[ordinal];
   }
 
   public Object getObject(int ordinal) {
     return data[ordinal];
-  }
-
-  public byte[] getBinary(int ordinal) {
-    return (byte[]) data[ordinal];
   }
 
   public Object[] getObjectArray(int ordinal) {
