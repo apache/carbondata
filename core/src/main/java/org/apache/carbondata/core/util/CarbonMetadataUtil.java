@@ -320,7 +320,7 @@ public class CarbonMetadataUtil {
     encoderMeta.setMaxValue(compressionModel.getMaxValue()[index]);
     encoderMeta.setMinValue(compressionModel.getMinValue()[index]);
     encoderMeta.setDataTypeSelected(compressionModel.getDataTypeSelected()[index]);
-    encoderMeta.setDecimal(compressionModel.getDecimal()[index]);
+    encoderMeta.setMantissa(compressionModel.getMantissa()[index]);
     encoderMeta.setType(compressionModel.getType()[index]);
     encoderMeta.setUniqueValue(compressionModel.getUniqueValue()[index]);
     return encoderMeta;
@@ -430,7 +430,7 @@ public class CarbonMetadataUtil {
     for (int i = 0; i < encoderMetas.length; i++) {
       maxValue[i] = encoderMetas[i].getMaxValue();
       minValue[i] = encoderMetas[i].getMinValue();
-      decimalLength[i] = encoderMetas[i].getDecimal();
+      decimalLength[i] = encoderMetas[i].getMantissa();
       uniqueValue[i] = encoderMetas[i].getUniqueValue();
       aggType[i] = encoderMetas[i].getType();
       dataTypeSelected[i] = encoderMetas[i].getDataTypeSelected();

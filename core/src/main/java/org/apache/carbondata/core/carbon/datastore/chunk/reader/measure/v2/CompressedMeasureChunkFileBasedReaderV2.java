@@ -171,7 +171,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     // get the data holder after uncompressing
     CarbonReadDataHolder measureDataHolder =
         values.uncompress(compressionModel.getChangedDataType()[0])
-            .getValues(compressionModel.getDecimal()[0], compressionModel.getMaxValue()[0]);
+            .getValues(compressionModel.getMantissa()[0], compressionModel.getMaxValue()[0]);
     // set the data chunk
     datChunk.setMeasureDataHolder(measureDataHolder);
     // set the enun value indexes
@@ -225,7 +225,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
       // get the data holder after uncompressing
       CarbonReadDataHolder measureDataHolder =
           values.uncompress(compressionModel.getChangedDataType()[0])
-              .getValues(compressionModel.getDecimal()[0], compressionModel.getMaxValue()[0]);
+              .getValues(compressionModel.getMantissa()[0], compressionModel.getMaxValue()[0]);
       // set the data chunk
       dataChunk.setMeasureDataHolder(measureDataHolder);
       // set the enun value indexes

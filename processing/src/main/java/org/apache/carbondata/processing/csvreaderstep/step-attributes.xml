@@ -202,7 +202,7 @@
     <parentid>FIELD</parentid>
   </attribute>
   <attribute id="FIELD_DECIMAL">
-    <xmlcode>decimal</xmlcode>
+    <xmlcode>mantissa</xmlcode>
     <repcode>field_decimal</repcode>
     <description>CsvInputDialog.DecimalColumn.Column</description>
     <tooltip/>

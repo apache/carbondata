@@ -52,9 +52,9 @@ public class WriterCompressModel {
    */
   private Object[] uniqueValue;
   /**
-   * decimal.
+   * mantissa.
    */
-  private int[] decimal;
+  private int[] mantissa;
 
   /**
    * aggType
@@ -127,17 +127,17 @@ public class WriterCompressModel {
   }
 
   /**
-   * @return the decimal
+   * @return the mantissa
    */
-  public int[] getDecimal() {
-    return decimal;
+  public int[] getMantissa() {
+    return mantissa;
   }
 
   /**
-   * @param decimal the decimal to set
+   * @param mantissa the mantissa to set
    */
-  public void setDecimal(int[] decimal) {
-    this.decimal = decimal;
+  public void setMantissa(int[] mantissa) {
+    this.mantissa = mantissa;
   }
 
   /**

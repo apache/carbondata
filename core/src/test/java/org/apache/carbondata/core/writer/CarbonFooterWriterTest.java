@@ -185,7 +185,7 @@ public class CarbonFooterWriterTest extends TestCase{
     WriterCompressModel compressionModel = new WriterCompressModel();
     compressionModel.setMaxValue(new Object[] { 44d, 55d });
     compressionModel.setMinValue(new Object[] { 0d, 0d });
-    compressionModel.setDecimal(new int[] { 0, 0 });
+    compressionModel.setMantissa(new int[] { 0, 0 });
     compressionModel.setType(new char[] { 'n', 'n' });
     compressionModel.setUniqueValue(new Object[] { 0d, 0d });
     compressionModel.setDataTypeSelected(new byte[2]);

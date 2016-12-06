@@ -91,7 +91,7 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
     // get the data holder after uncompressing
     CarbonReadDataHolder measureDataHolder =
         values.uncompress(compressModel.getChangedDataType())
-            .getValues(compressModel.getDecimal(), compressModel.getMaxValue());
+            .getValues(compressModel.getMantissa(), compressModel.getMaxValue());
 
     // create and set the data chunk
     MeasureColumnDataChunk datChunk = new MeasureColumnDataChunk();

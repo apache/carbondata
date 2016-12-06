@@ -40,7 +40,7 @@ public class ValueEncoderMeta implements Serializable {
    */
   private Object uniqueValue;
 
-  private int decimal;
+  private int mantissa;
 
   private char type;
 
@@ -70,12 +70,12 @@ public class ValueEncoderMeta implements Serializable {
     this.uniqueValue = uniqueValue;
   }
 
-  public int getDecimal() {
-    return decimal;
+  public int getMantissa() {
+    return mantissa;
   }
 
-  public void setDecimal(int decimal) {
-    this.decimal = decimal;
+  public void setMantissa(int mantissa) {
+    this.mantissa = mantissa;
   }
 
   public char getType() {

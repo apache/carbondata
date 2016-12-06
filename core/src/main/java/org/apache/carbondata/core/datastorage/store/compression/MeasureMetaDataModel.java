@@ -31,9 +31,9 @@ public class MeasureMetaDataModel {
   private Object[] minValue;
 
   /**
-   * decimal
+   * mantissa
    */
-  private int[] decimal;
+  private int[] mantissa;
 
   /**
    * measureCount
@@ -55,27 +55,11 @@ public class MeasureMetaDataModel {
    */
   private byte[] dataTypeSelected;
 
-  private Object[] minValueFactForAgg;
-
-  public MeasureMetaDataModel() {
-
-  }
-
-  /**
-   * MeasureMetaDataModel Constructor
-   *
-   * @param minValue
-   * @param maxValue
-   * @param decimal
-   * @param measureCount
-   * @param uniqueValue
-   * @param type
-   */
-  public MeasureMetaDataModel(Object[] minValue, Object[] maxValue, int[] decimal, int measureCount,
+  public MeasureMetaDataModel(Object[] minValue, Object[] maxValue, int[] mantissa, int measureCount,
       Object[] uniqueValue, char[] type, byte[] dataTypeSelected) {
     this.minValue = minValue;
     this.maxValue = maxValue;
-    this.decimal = decimal;
+    this.mantissa = mantissa;
     this.measureCount = measureCount;
     this.uniqueValue = uniqueValue;
     this.type = type;
@@ -92,15 +76,6 @@ public class MeasureMetaDataModel {
   }
 
   /**
-   * set max value
-   *
-   * @param maxValue
-   */
-  public void setMaxValue(Object[] maxValue) {
-    this.maxValue = maxValue;
-  }
-
-  /**
    * getMinValue
    *
    * @return
@@ -110,30 +85,12 @@ public class MeasureMetaDataModel {
   }
 
   /**
-   * setMinValue
-   *
-   * @param minValue
-   */
-  public void setMinValue(Object[] minValue) {
-    this.minValue = minValue;
-  }
-
-  /**
-   * getDecimal
+   * getMantissa
    *
    * @return
    */
-  public int[] getDecimal() {
-    return decimal;
-  }
-
-  /**
-   * setDecimal
-   *
-   * @param decimal
-   */
-  public void setDecimal(int[] decimal) {
-    this.decimal = decimal;
+  public int[] getMantissa() {
+    return mantissa;
   }
 
   /**
@@ -146,30 +103,12 @@ public class MeasureMetaDataModel {
   }
 
   /**
-   * setMeasureCount
-   *
-   * @param measureCount
-   */
-  public void setMeasureCount(int measureCount) {
-    this.measureCount = measureCount;
-  }
-
-  /**
    * getUniqueValue
    *
    * @return
    */
   public Object[] getUniqueValue() {
     return uniqueValue;
-  }
-
-  /**
-   * setUniqueValue
-   *
-   * @param uniqueValue
-   */
-  public void setUniqueValue(Object[] uniqueValue) {
-    this.uniqueValue = uniqueValue;
   }
 
   /**
@@ -180,13 +119,6 @@ public class MeasureMetaDataModel {
   }
 
   /**
-   * @param type the type to set
-   */
-  public void setType(char[] type) {
-    this.type = type;
-  }
-
-  /**
    * @return the dataTypeSelected
    */
   public byte[] getDataTypeSelected() {
@@ -194,24 +126,10 @@ public class MeasureMetaDataModel {
   }
 
   /**
-   * @param dataTypeSelected the dataTypeSelected to set
-   */
-  public void setDataTypeSelected(byte[] dataTypeSelected) {
-    this.dataTypeSelected = dataTypeSelected;
-  }
-
-  /**
    * @return the minValueFactForAgg
    */
   public Object[] getMinValueFactForAgg() {
     return minValueFactForAgg;
-  }
-
-  /**
-   * @param minValueFactForAgg the minValueFactForAgg to set
-   */
-  public void setMinValueFactForAgg(Object[] minValueFactForAgg) {
-    this.minValueFactForAgg = minValueFactForAgg;
   }
 
 }

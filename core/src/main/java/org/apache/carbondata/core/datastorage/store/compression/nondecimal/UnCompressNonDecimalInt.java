@@ -78,10 +78,10 @@ public class UnCompressNonDecimalInt implements UnCompressValue<int[]> {
     return new UnCompressNonDecimalByte();
   }
 
-  @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
+  @Override public CarbonReadDataHolder getValues(int mantissa, Object maxValueObject) {
     double[] vals = new double[value.length];
     for (int k = 0; k < vals.length; k++) {
-      vals[k] = value[k] / Math.pow(10, decimal);
+      vals[k] = value[k] / Math.pow(10, mantissa);
     }
     CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
     dataHolder.setReadableDoubleValues(vals);

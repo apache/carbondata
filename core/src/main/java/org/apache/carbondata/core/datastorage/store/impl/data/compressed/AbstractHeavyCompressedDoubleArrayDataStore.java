@@ -69,7 +69,7 @@ public abstract class AbstractHeavyCompressedDoubleArrayDataStore
             ValueCompressionUtil.getValueCompressor(compressionModel.getActualDataType()[i])
                 .getCompressedValues(compressionModel.getCompType()[i], dataHolder[i],
                     compressionModel.getChangedDataType()[i], compressionModel.getMaxValue()[i],
-                    compressionModel.getDecimal()[i]));
+                    compressionModel.getMantissa()[i]));
       } else {
         values[i].setValue(dataHolder[i].getWritableByteArrayValues());
       }

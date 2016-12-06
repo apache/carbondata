@@ -40,14 +40,14 @@ public class HeavyCompressedDoubleArrayDataInMemoryStore
     if (cols != null) {
       for (int i = 0; i < cols.length; i++) {
         vals[cols[i]] = values[cols[i]].uncompress(compressionModel.getChangedDataType()[cols[i]])
-            .getValues(compressionModel.getDecimal()[cols[i]],
+            .getValues(compressionModel.getMantissa()[cols[i]],
                 compressionModel.getMaxValue()[cols[i]]);
       }
     } else {
       for (int i = 0; i < vals.length; i++) {
 
         vals[i] = values[i].uncompress(compressionModel.getChangedDataType()[i])
-            .getValues(compressionModel.getDecimal()[i], compressionModel.getMaxValue()[i]);
+            .getValues(compressionModel.getMantissa()[i], compressionModel.getMaxValue()[i]);
       }
     }
     return new CompressedDataMeasureDataWrapper(vals);
@@ -59,7 +59,7 @@ public class HeavyCompressedDoubleArrayDataInMemoryStore
     }
     CarbonReadDataHolder[] vals = new CarbonReadDataHolder[values.length];
     vals[cols] = values[cols].uncompress(compressionModel.getChangedDataType()[cols])
-        .getValues(compressionModel.getDecimal()[cols], compressionModel.getMaxValue()[cols]);
+        .getValues(compressionModel.getMantissa()[cols], compressionModel.getMaxValue()[cols]);
     return new CompressedDataMeasureDataWrapper(vals);
   }
 }

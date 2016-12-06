@@ -41,13 +41,13 @@ public class CompressedMeasureChunkFileBasedReaderTest {
     writerCompressModel.setUnCompressValues(unCompressValue);
     writerCompressModel.setChangedDataType(dataType);
     int decimal[] = { 5, 8, 2 };
-    writerCompressModel.setDecimal(decimal);
+    writerCompressModel.setMantissa(decimal);
     Object maxValue[] = { 8 };
     writerCompressModel.setMaxValue(maxValue);
     ValueEncoderMeta meta = new ValueEncoderMeta();
     meta.setMaxValue(8.0);
     meta.setMinValue(1.0);
-    meta.setDecimal(1);
+    meta.setMantissa(1);
     meta.setType('b');
     List<ValueEncoderMeta> valueEncoderMetaList = new ArrayList<>();
     valueEncoderMetaList.add(meta);

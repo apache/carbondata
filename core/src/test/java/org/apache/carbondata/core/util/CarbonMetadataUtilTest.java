@@ -110,7 +110,7 @@ public class CarbonMetadataUtilTest {
     blockletInfoList.add(blockletInfo);
 
     ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();
-    valueEncoderMeta.setDecimal(5);
+    valueEncoderMeta.setMantissa(5);
     valueEncoderMeta.setMinValue(objMinArr);
     valueEncoderMeta.setMaxValue(objMaxArr);
     valueEncoderMeta.setUniqueValue(lngObj);
@@ -191,7 +191,7 @@ public class CarbonMetadataUtilTest {
     writerCompressModel.setMaxValue(objMaxArr);
     writerCompressModel.setMinValue(objMinArr);
     writerCompressModel.setDataTypeSelected(byteArr);
-    writerCompressModel.setDecimal(intArr);
+    writerCompressModel.setMantissa(intArr);
     writerCompressModel.setType(charArr);
     writerCompressModel.setUniqueValue(objMinArr);
 

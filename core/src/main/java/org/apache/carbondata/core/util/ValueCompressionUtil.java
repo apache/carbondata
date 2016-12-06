@@ -23,8 +23,6 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.compression.BigIntCompressor;
 import org.apache.carbondata.core.compression.DoubleCompressor;
 import org.apache.carbondata.core.compression.ValueCompressor;
@@ -683,7 +681,7 @@ public final class ValueCompressionUtil {
     Object[] minValue = measureMDMdl.getMinValue();
     Object[] maxValue = measureMDMdl.getMaxValue();
     Object[] uniqueValue = measureMDMdl.getUniqueValue();
-    int[] decimal = measureMDMdl.getDecimal();
+    int[] decimal = measureMDMdl.getMantissa();
     char[] type = measureMDMdl.getType();
     byte[] dataTypeSelected = measureMDMdl.getDataTypeSelected();
     WriterCompressModel compressionModel = new WriterCompressModel();
@@ -698,7 +696,7 @@ public final class ValueCompressionUtil {
       compType[i] = compresssionFinder.compType;
     }
     compressionModel.setMaxValue(maxValue);
-    compressionModel.setDecimal(decimal);
+    compressionModel.setMantissa(decimal);
     compressionModel.setChangedDataType(changedType);
     compressionModel.setCompType(compType);
     compressionModel.setActualDataType(actualType);
@@ -720,7 +718,7 @@ public final class ValueCompressionUtil {
   public static ReaderCompressModel getReaderCompressModel(ValueEncoderMeta meta) {
     ReaderCompressModel compressModel = new ReaderCompressModel();
     CompressionFinder compressFinder =
-        getCompressionFinder(meta.getMaxValue(), meta.getMinValue(), meta.getDecimal(),
+        getCompressionFinder(meta.getMaxValue(), meta.getMinValue(), meta.getMantissa(),
             meta.getType(), meta.getDataTypeSelected());
     compressModel.setUnCompressValues(
         ValueCompressionUtil.getUncompressedValues(
