@@ -68,8 +68,8 @@ object CarbonExample {
          |    bigintField long,
          |    doubleField double,
          |    stringField string,
-         |    timestampField timestamp
-         | )
+         |    timestampField timestamp,
+         |    decimalField decimal(18,2))
          | USING org.apache.spark.sql.CarbonSource
        """.stripMargin)
 
@@ -86,7 +86,8 @@ object CarbonExample {
          |    bigintField long,
          |    doubleField double,
          |    stringField string,
-         |    timestampField string)
+         |    timestampField string,
+         |    decimalField decimal(18,2))
          |    ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
        """.stripMargin)
 
@@ -105,13 +106,14 @@ object CarbonExample {
       s"""
          | INSERT INTO TABLE carbon_table
          | SELECT shortField, intField, bigintField, doubleField, stringField,
-         | from_unixtime(unix_timestamp(timestampField,'yyyy/M/dd')) timestampField
+         | from_unixtime(unix_timestamp(timestampField,'yyyy/M/dd')) timestampField, decimalField
          | FROM csv_table
        """.stripMargin)
 
     spark.sql("""
              SELECT *
              FROM carbon_table
+             where stringfield = 'spark' and decimalField > 40
               """).show
 
     spark.sql("""

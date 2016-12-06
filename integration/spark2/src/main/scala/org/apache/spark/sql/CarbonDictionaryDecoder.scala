@@ -320,7 +320,6 @@ class CarbonDecoderRDD(relations: Seq[CarbonDecoderRelation],
       new Iterator[Row] {
         var flag = true
         var total = 0L
-
         override final def hasNext: Boolean = iter.hasNext
 
         override final def next(): Row = {
