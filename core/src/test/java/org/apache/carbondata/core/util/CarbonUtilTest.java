@@ -33,11 +33,10 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDime
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.datastorage.store.columnar.ColumnGroupModel;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastorage.store.filesystem.LocalCarbonFile;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
-import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.scan.model.QueryDimension;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.junit.AfterClass;
@@ -701,9 +700,9 @@ public class CarbonUtilTest {
     valueEncoderMetas.add(valueEncoderMeta);
     dataChunk.setValueEncoderMeta(valueEncoderMetas);
     dataChunkList.add(dataChunk);
-    ValueCompressionModel valueCompressionModel =
+    WriterCompressModel writerCompressModel =
         CarbonUtil.getValueCompressionModel(dataChunkList.get(0).getValueEncoderMeta());
-    assertEquals(1, valueCompressionModel.getMaxValue().length);
+    assertEquals(1, writerCompressModel.getMaxValue().length);
   }
 
   @Test public void testToGetDictionaryChunkSize() {

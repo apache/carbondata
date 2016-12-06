@@ -64,7 +64,7 @@ public class UnCompressNonDecimalMaxMinByte
 
   @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
     ValueCompressonHolder.UnCompressValue byte1 =
-        ValueCompressionUtil.unCompressNonDecimalMaxMin(dataType, dataType);
+        ValueCompressionUtil.unCompressNonDecimalMaxMin(dataType);
     ValueCompressonHolder.unCompress(dataType, byte1, value);
     return byte1;
   }

@@ -39,19 +39,11 @@ public class ValueEncoderMeta implements Serializable {
    * uniqueValue
    */
   private Object uniqueValue;
-  /**
-   * decimal.
-   */
+
   private int decimal;
 
-  /**
-   * aggType
-   */
   private char type;
 
-  /**
-   * dataTypeSelected
-   */
   private byte dataTypeSelected;
 
   public Object getMaxValue() {

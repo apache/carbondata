@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.datastorage.store.compression.minmax;
+package org.apache.carbondata.core.datastorage.store.compression.decimal;
 
 import java.nio.ByteBuffer;
 

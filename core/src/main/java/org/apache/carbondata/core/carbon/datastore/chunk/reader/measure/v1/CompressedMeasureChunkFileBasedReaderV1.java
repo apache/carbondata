@@ -25,10 +25,13 @@ import org.apache.carbondata.core.carbon.datastore.chunk.reader.measure.Abstract
 import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.ReaderCompressModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
+
+
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
-import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import org.apache.carbondata.core.util.ValueCompressionUtil;
 
 /**
  * Compressed measure chunk reader
@@ -79,23 +82,19 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
    */
   @Override public MeasureColumnDataChunk readMeasureChunk(final FileHolder fileReader,
       final int blockIndex) {
-    MeasureColumnDataChunk datChunk = new MeasureColumnDataChunk();
-    // create a new uncompressor
-    final ValueCompressionModel compressionModel = CarbonUtil
-        .getValueCompressionModel(measureColumnChunks.get(blockIndex).getValueEncoderMeta());
-    UnCompressValue values =
-        compressionModel.getUnCompressValues()[0].getNew().getCompressorObject();
-    // create a new uncompressor
-    // read data from file and set to uncompressor
-    // read data from file and set to uncompressor
+    ValueEncoderMeta meta = measureColumnChunks.get(blockIndex).getValueEncoderMeta().get(0);
+    ReaderCompressModel compressModel = ValueCompressionUtil.getReaderCompressModel(meta);
+    UnCompressValue values = compressModel.getUnCompressValues().getNew().getCompressorObject();
     values.setValue(
         fileReader.readByteArray(filePath, measureColumnChunks.get(blockIndex).getDataPageOffset(),
             measureColumnChunks.get(blockIndex).getDataPageLength()));
     // get the data holder after uncompressing
     CarbonReadDataHolder measureDataHolder =
-        values.uncompress(compressionModel.getChangedDataType()[0])
-            .getValues(compressionModel.getDecimal()[0], compressionModel.getMaxValue()[0]);
-    // set the data chunk
+        values.uncompress(compressModel.getChangedDataType())
+            .getValues(compressModel.getDecimal(), compressModel.getMaxValue());
+
+    // create and set the data chunk
+    MeasureColumnDataChunk datChunk = new MeasureColumnDataChunk();
     datChunk.setMeasureDataHolder(measureDataHolder);
     // set the enun value indexes
     datChunk

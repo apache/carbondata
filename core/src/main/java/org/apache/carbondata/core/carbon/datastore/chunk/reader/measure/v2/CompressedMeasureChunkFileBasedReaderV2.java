@@ -28,8 +28,10 @@ import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.PresenceMeta;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
+
+
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -160,7 +162,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
       valueEncodeMeta.add(
           CarbonUtil.deserializeEncoderMeta(measureColumnChunk.getEncoder_meta().get(i).array()));
     }
-    ValueCompressionModel compressionModel = CarbonUtil.getValueCompressionModel(valueEncodeMeta);
+    WriterCompressModel compressionModel = CarbonUtil.getValueCompressionModel(valueEncodeMeta);
     UnCompressValue values =
         compressionModel.getUnCompressValues()[0].getNew().getCompressorObject();
     // create a new uncompressor
@@ -214,7 +216,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
         valueEncodeMeta.add(
             CarbonUtil.deserializeEncoderMeta(measureColumnChunk.getEncoder_meta().get(j).array()));
       }
-      ValueCompressionModel compressionModel = CarbonUtil.getValueCompressionModel(valueEncodeMeta);
+      WriterCompressModel compressionModel = CarbonUtil.getValueCompressionModel(valueEncodeMeta);
       UnCompressValue values =
           compressionModel.getUnCompressValues()[0].getNew().getCompressorObject();
       // create a new uncompressor

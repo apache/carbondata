@@ -21,7 +21,7 @@ package org.apache.carbondata.processing.store.writer;
 
 import java.util.BitSet;
 
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 
 public class NodeHolder {
   /**
@@ -110,7 +110,7 @@ public class NodeHolder {
   /**
    * compression model for numbers data block.
    */
-  private ValueCompressionModel compressionModel;
+  private WriterCompressModel compressionModel;
 
   /**
    * array of aggBlocks flag to identify the aggBlocks
@@ -382,11 +382,11 @@ public class NodeHolder {
     this.columnMinData = columnMinData;
   }
 
-  public ValueCompressionModel getCompressionModel() {
+  public WriterCompressModel getCompressionModel() {
     return compressionModel;
   }
 
-  public void setCompressionModel(ValueCompressionModel compressionModel) {
+  public void setCompressionModel(WriterCompressModel compressionModel) {
     this.compressionModel = compressionModel;
   }
 

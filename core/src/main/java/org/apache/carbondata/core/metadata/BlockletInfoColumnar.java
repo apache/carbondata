@@ -21,7 +21,7 @@ package org.apache.carbondata.core.metadata;
 
 import java.util.BitSet;
 
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 
 public class BlockletInfoColumnar {
@@ -98,7 +98,7 @@ public class BlockletInfoColumnar {
 
   private NumberCompressor[] keyBlockUnCompressor;
 
-  private ValueCompressionModel compressionModel;
+  private WriterCompressModel compressionModel;
 
   /**
    * column min array
@@ -367,11 +367,11 @@ public class BlockletInfoColumnar {
     this.columnMinData = columnMinData;
   }
 
-  public ValueCompressionModel getCompressionModel() {
+  public WriterCompressModel getCompressionModel() {
     return compressionModel;
   }
 
-  public void setCompressionModel(ValueCompressionModel compressionModel) {
+  public void setCompressionModel(WriterCompressModel compressionModel) {
     this.compressionModel = compressionModel;
   }
 

@@ -21,7 +21,7 @@ package org.apache.carbondata.core.datastorage.store.impl.data.compressed;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.NodeMeasureDataStore;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonWriteDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
@@ -38,7 +38,7 @@ public abstract class AbstractHeavyCompressedDoubleArrayDataStore
   /**
    * compressionModel.
    */
-  protected ValueCompressionModel compressionModel;
+  protected WriterCompressModel compressionModel;
 
   /**
    * type
@@ -50,7 +50,7 @@ public abstract class AbstractHeavyCompressedDoubleArrayDataStore
    *
    * @param compressionModel
    */
-  public AbstractHeavyCompressedDoubleArrayDataStore(ValueCompressionModel compressionModel) {
+  public AbstractHeavyCompressedDoubleArrayDataStore(WriterCompressModel compressionModel) {
     this.compressionModel = compressionModel;
     if (null != compressionModel) {
       this.type = compressionModel.getType();

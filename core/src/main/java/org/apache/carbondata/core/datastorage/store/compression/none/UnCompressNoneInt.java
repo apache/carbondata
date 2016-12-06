@@ -82,7 +82,6 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
   @Override public void setValueInBytes(byte[] value) {
     ByteBuffer buffer = ByteBuffer.wrap(value);
     this.value = ValueCompressionUtil.convertToIntArray(buffer, value.length);
-
   }
 
   /**

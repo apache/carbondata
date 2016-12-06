@@ -21,7 +21,7 @@ package org.apache.carbondata.core.datastorage.store.compression;
 
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 
-public class ValueCompressionModel {
+public class WriterCompressModel {
   /**
    * COMPRESSION_TYPE[] variable.
    */

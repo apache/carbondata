@@ -23,25 +23,17 @@ import mockit.Mock;
 import mockit.MockUp;
 
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.carbon.metadata.blocklet.index.*;
-import org.apache.carbondata.core.carbon.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.carbon.metadata.index.BlockIndexInfo;
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.*;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.format.*;
-import org.apache.carbondata.format.BlockletBTreeIndex;
 import org.apache.carbondata.format.BlockletMinMaxIndex;
 import org.apache.carbondata.format.ColumnSchema;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.HashSet;
@@ -49,7 +41,6 @@ import java.util.List;
 import java.util.Set;
 
 import static junit.framework.TestCase.*;
-import static org.apache.carbondata.core.util.CarbonMetadataUtil.convertBlockletInfo;
 import static org.apache.carbondata.core.util.CarbonMetadataUtil.getIndexHeader;
 import static org.apache.carbondata.core.util.CarbonMetadataUtil.convertFileFooter;
 import static org.apache.carbondata.core.util.CarbonMetadataUtil.getBlockIndexInfo;
@@ -196,13 +187,13 @@ public class CarbonMetadataUtilTest {
     integerList.add(new Integer("1"));
     integerList.add(new Integer("2"));
 
-    ValueCompressionModel valueCompressionModel = new ValueCompressionModel();
-    valueCompressionModel.setMaxValue(objMaxArr);
-    valueCompressionModel.setMinValue(objMinArr);
-    valueCompressionModel.setDataTypeSelected(byteArr);
-    valueCompressionModel.setDecimal(intArr);
-    valueCompressionModel.setType(charArr);
-    valueCompressionModel.setUniqueValue(objMinArr);
+    WriterCompressModel writerCompressModel = new WriterCompressModel();
+    writerCompressModel.setMaxValue(objMaxArr);
+    writerCompressModel.setMinValue(objMinArr);
+    writerCompressModel.setDataTypeSelected(byteArr);
+    writerCompressModel.setDecimal(intArr);
+    writerCompressModel.setType(charArr);
+    writerCompressModel.setUniqueValue(objMinArr);
 
     BlockletInfoColumnar blockletInfoColumnar = new BlockletInfoColumnar();
 
@@ -226,7 +217,7 @@ public class CarbonMetadataUtilTest {
     blockletInfoColumnar.setMeasureLength(intArr);
     blockletInfoColumnar.setMeasureOffset(longArr);
     blockletInfoColumnar.setMeasureNullValueIndex(bitSetArr);
-    blockletInfoColumnar.setCompressionModel(valueCompressionModel);
+    blockletInfoColumnar.setCompressionModel(writerCompressModel);
 
     BlockletInfoColumnar blockletInfoColumnar1 = new BlockletInfoColumnar();
     blockletInfoColumnar1.setColumnMaxData(maxByteArr);
@@ -242,7 +233,7 @@ public class CarbonMetadataUtilTest {
     blockletInfoColumnar1.setMeasureLength(intArr);
     blockletInfoColumnar1.setMeasureOffset(longArr);
     blockletInfoColumnar1.setMeasureNullValueIndex(bitSetArr);
-    blockletInfoColumnar1.setCompressionModel(valueCompressionModel);
+    blockletInfoColumnar1.setCompressionModel(writerCompressModel);
     blockletInfoColumnar1.setColGrpBlocks(boolArr);
 
     List<BlockletInfoColumnar> blockletInfoColumnarList = new ArrayList<>();
