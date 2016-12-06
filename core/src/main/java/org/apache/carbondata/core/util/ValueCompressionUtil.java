@@ -156,7 +156,7 @@ public final class ValueCompressionUtil {
     double absMaxValue = Math.abs((double) maxValue) >= Math.abs((double) minValue) ?
         (double) maxValue:(double) minValue;
     DataType adaptiveDataType = getDataType(absMaxValue, mantissa, dataTypeSelected);
-    DataType deltaDataType = getDataType((long) maxValue - (long) minValue, mantissa,
+    DataType deltaDataType = getDataType((double) maxValue - (double) minValue, mantissa,
         dataTypeSelected);
 
     if (mantissa == 0) {

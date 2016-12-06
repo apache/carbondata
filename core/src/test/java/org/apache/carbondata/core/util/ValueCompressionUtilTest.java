@@ -587,21 +587,23 @@ public class ValueCompressionUtilTest {
   }
 
   @Test public void testToGetValueCompressionModel() {
-    Object[] maxValues = { 10, 20, 30l };
-    Object[] minValues = { 1, 2, 3l };
+    Object[] maxValues = { 10l, 20l, 30l };
+    Object[] minValues = { 1l, 2l, 3l };
     int[] decimalLength = { 0, 0, 0 };
     Object[] uniqueValues = { 5, 3, 2l };
-    char[] types = { 'b', 'l' };
+    char[] types = { 'l', 'l', 'l' };
     byte[] dataTypeSelected = { 1, 2, 4 };
     MeasureMetaDataModel measureMetaDataModel =
         new MeasureMetaDataModel(maxValues, minValues, decimalLength, 3, uniqueValues, types,
             dataTypeSelected);
     WriterCompressModel writerCompressModel =
         ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
-    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.BIGDECIMAL,
+    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE,
         writerCompressModel.getCompType()[0]);
     assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE,
         writerCompressModel.getCompType()[1]);
+    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE,
+        writerCompressModel.getCompType()[2]);
   }
 
   @Test public void testToGetValueCompressionModelForDefaultAggregatorType() {

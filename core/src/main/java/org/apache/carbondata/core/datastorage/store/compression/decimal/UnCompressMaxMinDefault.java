@@ -57,7 +57,7 @@ public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompress
   }
 
   @Override public void setValue(double[] value) {
-    this.value = (double[]) value;
+    this.value = value;
 
   }
 

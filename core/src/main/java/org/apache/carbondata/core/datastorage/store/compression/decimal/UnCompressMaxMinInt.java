@@ -95,7 +95,6 @@ public class UnCompressMaxMinInt implements ValueCompressonHolder.UnCompressValu
 
   @Override public CarbonReadDataHolder getValues(int decVal, Object maxValueObject) {
     switch (actualDataType) {
-      case DATA_INT:
       case DATA_BIGINT:
         return unCompressLong(maxValueObject);
       default:
