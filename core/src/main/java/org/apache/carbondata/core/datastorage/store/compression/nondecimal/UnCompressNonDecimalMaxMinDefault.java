@@ -47,7 +47,7 @@ public class UnCompressNonDecimalMaxMinDefault implements UnCompressValue<double
   private double[] value;
 
   @Override public void setValue(double[] value) {
-    this.value = (double[]) value;
+    this.value = value;
   }
 
   @Override public UnCompressValue getNew() {

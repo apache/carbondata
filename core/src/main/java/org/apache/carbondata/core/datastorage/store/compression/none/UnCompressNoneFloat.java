@@ -84,12 +84,12 @@ public class UnCompressNoneFloat implements ValueCompressonHolder.UnCompressValu
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    double[] vals = new double[value.length];
     CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i];
+    double[] val = new double[value.length];
+    for (int i = 0; i < val.length; i++) {
+      val[i] = value[i];
     }
-    dataHolder.setReadableDoubleValues(vals);
+    dataHolder.setReadableDoubleValues(val);
     return dataHolder;
   }
 

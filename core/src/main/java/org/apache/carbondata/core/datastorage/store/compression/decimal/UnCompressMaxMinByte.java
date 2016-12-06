@@ -77,7 +77,7 @@ public class UnCompressMaxMinByte implements UnCompressValue<byte[]> {
   }
 
   @Override public UnCompressValue uncompress(DataType dataType) {
-    UnCompressValue byte1 = ValueCompressionUtil.unCompressMaxMin(dataType, actualDataType);
+    UnCompressValue byte1 = ValueCompressionUtil.getUnCompressDecimalMaxMin(dataType, actualDataType);
     ValueCompressonHolder.unCompress(dataType, byte1, value);
     return byte1;
   }
@@ -126,11 +126,7 @@ public class UnCompressMaxMinByte implements UnCompressValue<byte[]> {
     double[] vals = new double[value.length];
     CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
     for (int i = 0; i < vals.length; i++) {
-      if (value[i] == 0) {
-        vals[i] = maxValue;
-      } else {
-        vals[i] = maxValue - value[i];
-      }
+      vals[i] = maxValue - value[i];
     }
     dataHolder.setReadableDoubleValues(vals);
     return dataHolder;

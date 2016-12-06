@@ -39,11 +39,11 @@ public abstract class ValueCompressor {
   public Object getCompressedValues(COMPRESSION_TYPE compType, CarbonWriteDataHolder dataHolder,
       DataType changedDataType, Object maxValue, int decimal) {
     switch (compType) {
-      case NONE:
+      case ADAPTIVE:
         return compressNone(changedDataType, dataHolder);
-      case MAX_MIN_DECIMAL:
+      case DELTA_DOUBLE:
         return compressMaxMin(changedDataType, dataHolder, maxValue);
-      case NON_DECIMAL_CONVERT:
+      case BIGINT:
         return compressNonDecimal(changedDataType, dataHolder, decimal);
       default:
         return compressNonDecimalMaxMin(changedDataType, dataHolder, decimal, maxValue);

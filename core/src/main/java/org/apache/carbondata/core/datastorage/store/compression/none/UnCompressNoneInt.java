@@ -53,7 +53,6 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
 
   @Override public void setValue(int[] value) {
     this.value = value;
-
   }
 
   @Override public byte[] getBackArrayData() {

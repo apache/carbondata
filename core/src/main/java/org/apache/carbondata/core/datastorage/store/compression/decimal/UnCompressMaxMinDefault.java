@@ -102,12 +102,7 @@ public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompress
     double[] vals = new double[value.length];
     CarbonReadDataHolder dataHolderInfoObj = new CarbonReadDataHolder();
     for (int i = 0; i < vals.length; i++) {
-      if (value[i] == 0) {
-        vals[i] = maxValue;
-      } else {
-        vals[i] = maxValue - value[i];
-      }
-
+      vals[i] = maxValue - value[i];
     }
     dataHolderInfoObj.setReadableDoubleValues(vals);
     return dataHolderInfoObj;

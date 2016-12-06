@@ -64,7 +64,7 @@ public class UnCompressNonDecimalByte implements ValueCompressonHolder.UnCompres
 
   @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
     ValueCompressonHolder.UnCompressValue byte1 =
-        ValueCompressionUtil.unCompressNonDecimal(dataType);
+        ValueCompressionUtil.getUnCompressNonDecimal(dataType);
     ValueCompressonHolder.unCompress(dataType, byte1, value);
     return byte1;
   }

@@ -69,7 +69,7 @@ public class UnCompressNoneByte implements UnCompressValue<byte[]> {
   }
 
   @Override public UnCompressValue uncompress(DataType dataType) {
-    UnCompressValue byte1 = ValueCompressionUtil.unCompressNone(dataType, actualDataType);
+    UnCompressValue byte1 = ValueCompressionUtil.getUnCompressNone(dataType, actualDataType);
     ValueCompressonHolder.unCompress(dataType, byte1, value);
     return byte1;
   }
@@ -107,9 +107,7 @@ public class UnCompressNoneByte implements UnCompressValue<byte[]> {
 
   private CarbonReadDataHolder unCompressDouble() {
     CarbonReadDataHolder dataHldr = new CarbonReadDataHolder();
-
     double[] vals = new double[value.length];
-
     for (int i = 0; i < vals.length; i++) {
       vals[i] = value[i];
     }
@@ -119,9 +117,7 @@ public class UnCompressNoneByte implements UnCompressValue<byte[]> {
 
   private CarbonReadDataHolder unCompressLong() {
     CarbonReadDataHolder dataHldr = new CarbonReadDataHolder();
-
     long[] vals = new long[value.length];
-
     for (int i = 0; i < vals.length; i++) {
       vals[i] = value[i];
     }

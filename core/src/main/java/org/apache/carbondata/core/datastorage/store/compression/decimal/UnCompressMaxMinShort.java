@@ -93,6 +93,8 @@ public class UnCompressMaxMinShort implements ValueCompressonHolder.UnCompressVa
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
     switch (actualDataType) {
+      case DATA_SHORT:
+      case DATA_INT:
       case DATA_BIGINT:
         return unCompressLong(decimal, maxValueObject);
       default:
@@ -106,12 +108,7 @@ public class UnCompressMaxMinShort implements ValueCompressonHolder.UnCompressVa
     double[] vals = new double[value.length];
     CarbonReadDataHolder carbonDataHolderObj = new CarbonReadDataHolder();
     for (int i = 0; i < vals.length; i++) {
-      if (value[i] == 0) {
-        vals[i] = maxValue;
-      } else {
-        vals[i] = maxValue - value[i];
-      }
-
+      vals[i] = maxValue - value[i];
     }
     carbonDataHolderObj.setReadableDoubleValues(vals);
     return carbonDataHolderObj;
@@ -122,12 +119,7 @@ public class UnCompressMaxMinShort implements ValueCompressonHolder.UnCompressVa
     long[] vals = new long[value.length];
     CarbonReadDataHolder carbonDataHolderObj = new CarbonReadDataHolder();
     for (int i = 0; i < vals.length; i++) {
-      if (value[i] == 0) {
-        vals[i] = maxValue;
-      } else {
-        vals[i] = maxValue - value[i];
-      }
-
+      vals[i] = maxValue - value[i];
     }
     carbonDataHolderObj.setReadableLongValues(vals);
     return carbonDataHolderObj;

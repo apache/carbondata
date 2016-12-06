@@ -46,8 +46,7 @@ public class UnCompressNonDecimalInt implements UnCompressValue<int[]> {
   private int[] value;
 
   @Override public void setValue(int[] value) {
-    this.value = (int[]) value;
-
+    this.value = value;
   }
 
   @Override public UnCompressValue getNew() {

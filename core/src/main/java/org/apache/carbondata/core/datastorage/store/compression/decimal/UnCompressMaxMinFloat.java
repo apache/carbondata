@@ -94,15 +94,9 @@ public class UnCompressMaxMinFloat implements UnCompressValue<float[]> {
     double[] vals = new double[value.length];
     CarbonReadDataHolder dataHolderVal = new CarbonReadDataHolder();
     for (int i = 0; i < vals.length; i++) {
-      if (value[i] == 0) {
-        vals[i] = maxValue;
-      } else {
-        vals[i] = maxValue - value[i];
-      }
-
+      vals[i] = maxValue - value[i];
     }
     dataHolderVal.setReadableDoubleValues(vals);
     return dataHolderVal;
   }
-
 }

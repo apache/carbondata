@@ -106,12 +106,7 @@ public class UnCompressMaxMinLong implements ValueCompressonHolder.UnCompressVal
     double[] vals = new double[value.length];
     CarbonReadDataHolder data = new CarbonReadDataHolder();
     for (int i = 0; i < vals.length; i++) {
-      if (value[i] == 0) {
-        vals[i] = maxValue;
-      } else {
-        vals[i] = maxValue - value[i];
-      }
-
+      vals[i] = maxValue - value[i];
     }
     data.setReadableDoubleValues(vals);
     return data;
@@ -122,12 +117,7 @@ public class UnCompressMaxMinLong implements ValueCompressonHolder.UnCompressVal
     long[] vals = new long[value.length];
     CarbonReadDataHolder data = new CarbonReadDataHolder();
     for (int i = 0; i < vals.length; i++) {
-      if (value[i] == 0) {
-        vals[i] = maxValue;
-      } else {
-        vals[i] = maxValue - value[i];
-      }
-
+      vals[i] = maxValue - value[i];
     }
     data.setReadableLongValues(vals);
     return data;
