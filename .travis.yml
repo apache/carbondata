@@ -1,0 +1,2 @@
+language: java
+script: mvn -U -Pspark-2.0 test
