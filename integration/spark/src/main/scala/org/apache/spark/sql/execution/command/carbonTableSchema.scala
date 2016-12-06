@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
+
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Cast, Literal}
@@ -31,6 +32,7 @@ import org.apache.spark.sql.hive.{CarbonHiveMetadataUtil, CarbonMetastore}
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier}
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
