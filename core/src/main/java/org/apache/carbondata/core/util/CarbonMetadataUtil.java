@@ -35,7 +35,7 @@ import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.format.BlockIndex;
@@ -314,13 +314,13 @@ public class CarbonMetadataUtil {
     return aos.toByteArray();
   }
 
-  private static ValueEncoderMeta createValueEncoderMeta(ValueCompressionModel compressionModel,
+  private static ValueEncoderMeta createValueEncoderMeta(WriterCompressModel compressionModel,
       int index) {
     ValueEncoderMeta encoderMeta = new ValueEncoderMeta();
     encoderMeta.setMaxValue(compressionModel.getMaxValue()[index]);
     encoderMeta.setMinValue(compressionModel.getMinValue()[index]);
     encoderMeta.setDataTypeSelected(compressionModel.getDataTypeSelected()[index]);
-    encoderMeta.setDecimal(compressionModel.getDecimal()[index]);
+    encoderMeta.setMantissa(compressionModel.getMantissa()[index]);
     encoderMeta.setType(compressionModel.getType()[index]);
     encoderMeta.setUniqueValue(compressionModel.getUniqueValue()[index]);
     return encoderMeta;
@@ -420,7 +420,7 @@ public class CarbonMetadataUtil {
 
   }
 
-  private static ValueCompressionModel getValueCompressionModel(ValueEncoderMeta[] encoderMetas) {
+  private static WriterCompressModel getValueCompressionModel(ValueEncoderMeta[] encoderMetas) {
     Object[] maxValue = new Object[encoderMetas.length];
     Object[] minValue = new Object[encoderMetas.length];
     int[] decimalLength = new int[encoderMetas.length];
@@ -430,13 +430,13 @@ public class CarbonMetadataUtil {
     for (int i = 0; i < encoderMetas.length; i++) {
       maxValue[i] = encoderMetas[i].getMaxValue();
       minValue[i] = encoderMetas[i].getMinValue();
-      decimalLength[i] = encoderMetas[i].getDecimal();
+      decimalLength[i] = encoderMetas[i].getMantissa();
       uniqueValue[i] = encoderMetas[i].getUniqueValue();
       aggType[i] = encoderMetas[i].getType();
       dataTypeSelected[i] = encoderMetas[i].getDataTypeSelected();
     }
     return ValueCompressionUtil
-        .getValueCompressionModel(maxValue, minValue, decimalLength, uniqueValue, aggType,
+        .getWriterCompressModel(maxValue, minValue, decimalLength, uniqueValue, aggType,
             dataTypeSelected);
   }
 

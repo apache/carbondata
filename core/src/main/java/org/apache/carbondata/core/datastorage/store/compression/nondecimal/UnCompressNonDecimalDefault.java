@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.datastorage.store.compression.type;
+package org.apache.carbondata.core.datastorage.store.compression.nondecimal;
 
 import java.nio.ByteBuffer;
 
@@ -25,71 +25,71 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
-public class UnCompressNonDecimalLong implements UnCompressValue<long[]> {
+public class UnCompressNonDecimalDefault
+    implements ValueCompressonHolder.UnCompressValue<double[]> {
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnCompressNonDecimalLong.class.getName());
-
+      LogServiceFactory.getLogService(UnCompressNonDecimalDefault.class.getName());
   /**
-   * longCompressor.
+   * doubleCompressor.
    */
   private static Compressor compressor = CompressorFactory.getInstance();
-
   /**
    * value.
    */
-  private long[] value;
+  private double[] value;
 
-  @Override public void setValue(long[] value) {
-    this.value = value;
-  }
-
-  @Override public UnCompressValue compress() {
-    UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
-    byte1.setValue(compressor.compressLong(value));
-    return byte1;
-  }
-
-  @Override public UnCompressValue getNew() {
+  @Override public ValueCompressonHolder.UnCompressValue getNew() {
     try {
-      return (UnCompressValue) clone();
-    } catch (CloneNotSupportedException e) {
-      LOGGER.error(e, e.getMessage());
+      return (ValueCompressonHolder.UnCompressValue) clone();
+    } catch (CloneNotSupportedException cnse1) {
+      LOGGER.error(cnse1, cnse1.getMessage());
     }
     return null;
   }
 
-  @Override public UnCompressValue uncompress(DataType dataType) {
+  @Override public ValueCompressonHolder.UnCompressValue compress() {
+    UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
+    byte1.setValue(compressor.compressDouble(value));
+    return byte1;
+  }
+
+  @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
     return null;
+  }
+
+  @Override public void setValue(double[] value) {
+    this.value = value;
+
+  }
+
+  @Override public void setValueInBytes(byte[] value) {
+    ByteBuffer buffer = ByteBuffer.wrap(value);
+    this.value = ValueCompressionUtil.convertToDoubleArray(buffer, value.length);
   }
 
   @Override public byte[] getBackArrayData() {
     return ValueCompressionUtil.convertToBytes(value);
   }
 
-  @Override public void setValueInBytes(byte[] bytes) {
-    ByteBuffer buffer = ByteBuffer.wrap(bytes);
-    this.value = ValueCompressionUtil.convertToLongArray(buffer, bytes.length);
-  }
-
-  @Override public UnCompressValue getCompressorObject() {
+  @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
     return new UnCompressNonDecimalByte();
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    double[] vals = new double[value.length];
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i] / Math.pow(10, decimal);
+    double[] dblVals = new double[value.length];
+    for (int i = 0; i < dblVals.length; i++) {
+      dblVals[i] = value[i] / Math.pow(10, decimal);
     }
     CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
-    dataHolder.setReadableDoubleValues(vals);
+    dataHolder.setReadableDoubleValues(dblVals);
     return dataHolder;
   }
 

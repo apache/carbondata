@@ -28,7 +28,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.columnar.IndexStorage;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.writer.CarbonFooterWriter;
@@ -50,7 +50,7 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
 
   @Override
   public NodeHolder buildDataNodeHolder(IndexStorage<int[]>[] keyStorageArray, byte[][] dataArray,
-      int entryCount, byte[] startKey, byte[] endKey, ValueCompressionModel compressionModel,
+      int entryCount, byte[] startKey, byte[] endKey, WriterCompressModel compressionModel,
       byte[] noDictionaryStartKey, byte[] noDictionaryEndKey) throws CarbonDataWriterException {
     // if there are no NO-Dictionary column present in the table then
     // set the empty byte array

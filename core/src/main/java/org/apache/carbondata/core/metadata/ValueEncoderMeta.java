@@ -39,19 +39,11 @@ public class ValueEncoderMeta implements Serializable {
    * uniqueValue
    */
   private Object uniqueValue;
-  /**
-   * decimal.
-   */
-  private int decimal;
 
-  /**
-   * aggType
-   */
+  private int mantissa;
+
   private char type;
 
-  /**
-   * dataTypeSelected
-   */
   private byte dataTypeSelected;
 
   public Object getMaxValue() {
@@ -78,12 +70,12 @@ public class ValueEncoderMeta implements Serializable {
     this.uniqueValue = uniqueValue;
   }
 
-  public int getDecimal() {
-    return decimal;
+  public int getMantissa() {
+    return mantissa;
   }
 
-  public void setDecimal(int decimal) {
-    this.decimal = decimal;
+  public void setMantissa(int mantissa) {
+    this.mantissa = mantissa;
   }
 
   public char getType() {

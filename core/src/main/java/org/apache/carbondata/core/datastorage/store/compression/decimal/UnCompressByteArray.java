@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.datastorage.store.compression.type;
+package org.apache.carbondata.core.datastorage.store.compression.decimal;
 
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;

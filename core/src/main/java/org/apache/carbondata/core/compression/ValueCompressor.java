@@ -38,26 +38,15 @@ public abstract class ValueCompressor {
    */
   public Object getCompressedValues(COMPRESSION_TYPE compType, CarbonWriteDataHolder dataHolder,
       DataType changedDataType, Object maxValue, int decimal) {
-    Object o;
     switch (compType) {
-      case NONE:
-
-        o = compressNone(changedDataType, dataHolder);
-        return o;
-
-      case MAX_MIN:
-
-        o = compressMaxMin(changedDataType, dataHolder, maxValue);
-        return o;
-
-      case NON_DECIMAL_CONVERT:
-
-        o = compressNonDecimal(changedDataType, dataHolder, decimal);
-        return o;
-
+      case ADAPTIVE:
+        return compressNone(changedDataType, dataHolder);
+      case DELTA_DOUBLE:
+        return compressMaxMin(changedDataType, dataHolder, maxValue);
+      case BIGINT:
+        return compressNonDecimal(changedDataType, dataHolder, decimal);
       default:
-        o = compressNonDecimalMaxMin(changedDataType, dataHolder, decimal, maxValue);
-        return o;
+        return compressNonDecimalMaxMin(changedDataType, dataHolder, decimal, maxValue);
     }
   }
 

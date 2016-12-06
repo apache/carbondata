@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.datastorage.store.compression.type;
+package org.apache.carbondata.core.datastorage.store.compression.nondecimal;
 
 import java.nio.ByteBuffer;
 
@@ -28,89 +28,73 @@ import org.apache.carbondata.core.datastorage.store.compression.CompressorFactor
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
-import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
-public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompressValue<double[]> {
-
+public class UnCompressNonDecimalFloat implements ValueCompressonHolder.UnCompressValue<float[]> {
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnCompressMaxMinDefault.class.getName());
-
+      LogServiceFactory.getLogService(UnCompressNonDecimalFloat.class.getName());
   /**
-   * compressor.
+   * floatCompressor
    */
   private static Compressor compressor = CompressorFactory.getInstance();
   /**
    * value.
    */
-  private double[] value;
 
-  /**
-   * actual data type
-   */
-  private DataType actualDataType;
+  private float[] value;
 
-  public UnCompressMaxMinDefault(DataType actualDataType) {
-    this.actualDataType = actualDataType;
-  }
-
-  @Override public void setValue(double[] value) {
-    this.value = (double[]) value;
+  @Override public void setValue(float[] value) {
+    this.value = value;
 
   }
 
   @Override public ValueCompressonHolder.UnCompressValue getNew() {
     try {
       return (ValueCompressonHolder.UnCompressValue) clone();
-    } catch (CloneNotSupportedException ex5) {
-      LOGGER.error(ex5, ex5.getMessage());
+    } catch (CloneNotSupportedException cnsexception) {
+      LOGGER
+          .error(cnsexception, cnsexception.getMessage());
     }
     return null;
   }
 
+  public byte[] getBackArrayData() {
+    return ValueCompressionUtil.convertToBytes(value);
+  }
+
   @Override public ValueCompressonHolder.UnCompressValue compress() {
-    UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte(actualDataType);
-    byte1.setValue(compressor.compressDouble(value));
+    UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
+    byte1.setValue(compressor.compressFloat(value));
     return byte1;
   }
 
-  @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
+  @Override
+  public ValueCompressonHolder.UnCompressValue uncompress(ValueCompressionUtil.DataType dataType) {
     return null;
-  }
-
-  @Override public byte[] getBackArrayData() {
-    return ValueCompressionUtil.convertToBytes(value);
   }
 
   @Override public void setValueInBytes(byte[] value) {
     ByteBuffer buffer = ByteBuffer.wrap(value);
-    this.value = ValueCompressionUtil.convertToDoubleArray(buffer, value.length);
+    this.value = ValueCompressionUtil.convertToFloatArray(buffer, value.length);
   }
 
   /**
    * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
    */
   @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-    return new UnCompressMaxMinByte(actualDataType);
+    return new UnCompressNonDecimalByte();
   }
 
-  //TODO SIMIAN
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    double maxValue = (double) maxValueObject;
     double[] vals = new double[value.length];
-    CarbonReadDataHolder dataHolderInfoObj = new CarbonReadDataHolder();
-    for (int i = 0; i < vals.length; i++) {
-      if (value[i] == 0) {
-        vals[i] = maxValue;
-      } else {
-        vals[i] = maxValue - value[i];
-      }
-
+    for (int m = 0; m < vals.length; m++) {
+      vals[m] = value[m] / Math.pow(10, decimal);
     }
-    dataHolderInfoObj.setReadableDoubleValues(vals);
-    return dataHolderInfoObj;
+    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
+    dataHolder.setReadableDoubleValues(vals);
+    return dataHolder;
   }
 
 }

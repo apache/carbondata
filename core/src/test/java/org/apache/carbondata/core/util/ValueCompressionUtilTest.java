@@ -19,9 +19,33 @@
 package org.apache.carbondata.core.util;
 
 import org.apache.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.datastorage.store.compression.type.*;
+import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinByte;
+import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinDefault;
+import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinFloat;
+import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinInt;
+import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinLong;
+import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinShort;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalByte;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal
+    .UnCompressNonDecimalDefault;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalFloat;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalInt;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalLong;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinByte;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinDefault;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinFloat;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinInt;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinLong;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinShort;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalShort;
+import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneByte;
+import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneDefault;
+import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneFloat;
+import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneInt;
+import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneLong;
+import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneShort;
 
 import org.junit.Test;
 
@@ -45,7 +69,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeMin_MaxForDataInt() {
     double[] values = { 25, 12, 22 };
     int[] result = (int[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.MAX_MIN, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_DOUBLE, values,
             DataType.DATA_INT, 22, 0);
     int[] expectedResult = { -3, 10, 0 };
     for (int i = 0; i < result.length; i++) {
@@ -56,7 +80,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeMin_MaxForDataByte() {
     double[] values = { 20, 21, 22 };
     byte[] result = (byte[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.MAX_MIN, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_DOUBLE, values,
             DataType.DATA_BYTE, 22, 0);
     byte[] expectedResult = { 2, 1, 0 };
     for (int i = 0; i < result.length; i++) {
@@ -67,7 +91,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeMin_MaxForDataShort() {
     double[] values = { 200, 21, 22 };
     short[] result = (short[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.MAX_MIN, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_DOUBLE, values,
             DataType.DATA_SHORT, 22, 0);
     short[] expectedResult = { -178, 1, 0 };
     for (int i = 0; i < result.length; i++) {
@@ -78,7 +102,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeMin_MaxForDataLong() {
     double[] values = { 2000, 2100, 2002 };
     long[] result = (long[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.MAX_MIN, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_DOUBLE, values,
             DataType.DATA_LONG, 2125, 0);
     long[] expectedResult = { 125, 25, 123 };
     for (int i = 0; i < result.length; i++) {
@@ -89,7 +113,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeMin_MaxForDataFloat() {
     double[] values = { 20.121, 21.223, 22.345 };
     float[] result = (float[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.MAX_MIN, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_DOUBLE, values,
             DataType.DATA_FLOAT, 22.345, 3);
     float[] expectedResult = { 2.224f, 1.122f, 0f };
     for (int i = 0; i < result.length; i++) {
@@ -100,7 +124,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeMin_MaxForDataDouble() {
     double[] values = { 20.121, 21.223, 22.345 };
     double[] result = (double[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.MAX_MIN, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_DOUBLE, values,
             DataType.DATA_DOUBLE, 102.345, 3);
     double[] expectedResult = { 82.224, 81.122, 80.0 };
     for (int i = 0; i < result.length; i++) {
@@ -111,7 +135,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeNoneForBigInt() {
     double[] values = { 20.121, 21.223, 22.345 };
     long[] result = (long[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.NONE, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE, values,
             DataType.DATA_BIGINT, 22, 0);
     long[] expectedResult = { 20, 21, 22 };
     for (int i = 0; i < result.length; i++) {
@@ -122,7 +146,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeNoneForDataByte() {
     double[] values = { 20, 21, 22 };
     byte[] result = (byte[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.NONE, values, DataType.DATA_BYTE,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE, values, DataType.DATA_BYTE,
             22, 0);
     byte[] expectedResult = { 20, 21, 22 };
     for (int i = 0; i < result.length; i++) {
@@ -133,7 +157,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeNoneForDataShort() {
     double[] values = { 200000, 21, 22 };
     short[] result = (short[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.NONE, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE, values,
             DataType.DATA_SHORT, 22, 0);
     short[] expectedResult = { 3392, 21, 22 };
     for (int i = 0; i < result.length; i++) {
@@ -144,7 +168,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeNoneForDataInt() {
     double[] values = { 20, 21, 22 };
     int[] result = (int[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.NONE, values, DataType.DATA_INT,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE, values, DataType.DATA_INT,
             22, 0);
     int[] expectedResult = { 20, 21, 22 };
     for (int i = 0; i < result.length; i++) {
@@ -155,7 +179,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeNoneForDataLong() {
     double[] values = { 20, 21, 22 };
     long[] result = (long[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.NONE, values, DataType.DATA_LONG,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE, values, DataType.DATA_LONG,
             22, 0);
     long[] expectedResult = { 20, 21, 22 };
     for (int i = 0; i < result.length; i++) {
@@ -166,7 +190,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeNoneForDataFloat() {
     double[] values = { 20.121, 21.223, 22.345 };
     float[] result = (float[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.NONE, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE, values,
             DataType.DATA_FLOAT, 22, 3);
     float[] expectedResult = { 20.121f, 21.223f, 22.345f };
     for (int i = 0; i < result.length; i++) {
@@ -177,7 +201,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeNoneForDataDouble() {
     double[] values = { 20.121, 21.223, 22.345 };
     double[] result = (double[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.NONE, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE, values,
             DataType.DATA_DOUBLE, 22, 3);
     double[] expectedResult = { 20.121, 21.223, 22.345 };
     for (int i = 0; i < result.length; i++) {
@@ -188,7 +212,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeNon_DecimalForFloat() {
     double[] values = { 20.1, 21.2, 22.3 };
     float[] result = (float[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.NON_DECIMAL_CONVERT, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.BIGINT, values,
             DataType.DATA_FLOAT, 22, 1);
     float[] expectedResult = { 201f, 212f, 223f };
     for (int i = 0; i < result.length; i++) {
@@ -199,7 +223,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeNon_DecimalForByte() {
     double[] values = { 20.1, 21.2, 22.3 };
     byte[] result = (byte[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.NON_DECIMAL_CONVERT, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.BIGINT, values,
             DataType.DATA_BYTE, 22, 1);
     byte[] expectedResult = { -55, -44, -33 };
     for (int i = 0; i < result.length; i++) {
@@ -210,7 +234,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeNon_DecimalForShort() {
     double[] values = { 20.1, 21.2, 22.3 };
     short[] result = (short[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.NON_DECIMAL_CONVERT, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.BIGINT, values,
             DataType.DATA_SHORT, 22, 1);
     short[] expectedResult = { 201, 212, 223 };
     for (int i = 0; i < result.length; i++) {
@@ -221,7 +245,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeNon_DecimalForInt() {
     double[] values = { 20.1, 21.2, 22.3 };
     int[] result = (int[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.NON_DECIMAL_CONVERT, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.BIGINT, values,
             DataType.DATA_INT, 22, 1);
     int[] expectedResult = { 201, 212, 223 };
     for (int i = 0; i < result.length; i++) {
@@ -232,7 +256,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeNon_DecimalForLong() {
     double[] values = { 20.1, 21.2, 22.3 };
     long[] result = (long[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.NON_DECIMAL_CONVERT, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.BIGINT, values,
             DataType.DATA_LONG, 22, 1);
     long[] expectedResult = { 201, 212, 223 };
     for (int i = 0; i < result.length; i++) {
@@ -243,7 +267,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeNon_DecimalForDouble() {
     double[] values = { 20.1, 21.2, 22.3 };
     double[] result = (double[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.NON_DECIMAL_CONVERT, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.BIGINT, values,
             DataType.DATA_DOUBLE, 22, 1);
     double[] expectedResult = { 201, 212, 223 };
     for (int i = 0; i < result.length; i++) {
@@ -254,7 +278,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeMax_Min_NDCForByte() {
     double[] values = { 20, 21, 22 };
     byte[] result = (byte[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.MAX_MIN_NDC, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_NON_DECIMAL, values,
             DataType.DATA_BYTE, 22, 1);
     byte[] expectedResult = { 20, 10, 0 };
     for (int i = 0; i < result.length; i++) {
@@ -265,7 +289,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeMax_Min_NDCForInt() {
     double[] values = { 20, 21, 22 };
     int[] result = (int[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.MAX_MIN_NDC, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_NON_DECIMAL, values,
             DataType.DATA_INT, 22, 1);
     int[] expectedResult = { 20, 10, 0 };
     for (int i = 0; i < result.length; i++) {
@@ -276,7 +300,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeMax_Min_NDCForDouble() {
     double[] values = { 20, 21, 22 };
     double[] result = (double[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.MAX_MIN_NDC, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_NON_DECIMAL, values,
             DataType.DATA_DOUBLE, 22, 1);
     double[] expectedResult = { 20, 10, 0 };
     for (int i = 0; i < result.length; i++) {
@@ -287,7 +311,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeMax_Min_NDCForShort() {
     double[] values = { 20000, 21, 22 };
     short[] result = (short[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.MAX_MIN_NDC, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_NON_DECIMAL, values,
             DataType.DATA_SHORT, 22, 1);
     short[] expectedResult = { -3172, 10, 0 };
     for (int i = 0; i < result.length; i++) {
@@ -298,7 +322,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeMax_Min_NDCForLong() {
     double[] values = { 20, 21, 22 };
     long[] result = (long[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.MAX_MIN_NDC, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_NON_DECIMAL, values,
             DataType.DATA_LONG, 22, 1);
     long[] expectedResult = { 20, 10, 0 };
     for (int i = 0; i < result.length; i++) {
@@ -309,7 +333,7 @@ public class ValueCompressionUtilTest {
   @Test public void testToGetCompressedValuesWithCompressionTypeMax_Min_NDCForFloat() {
     double[] values = { 20, 21, 22 };
     float[] result = (float[]) ValueCompressionUtil
-        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.MAX_MIN_NDC, values,
+        .getCompressedValues(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_NON_DECIMAL, values,
             DataType.DATA_FLOAT, 22, 1);
     float[] expectedResult = { 20f, 10f, 0f };
     for (int i = 0; i < result.length; i++) {
@@ -319,151 +343,151 @@ public class ValueCompressionUtilTest {
 
   @Test public void testToUnCompressNone() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNone(DataType.DATA_BIGINT, DataType.DATA_BIGINT);
+        ValueCompressionUtil.getUnCompressNone(DataType.DATA_BIGINT, DataType.DATA_BIGINT);
     assertEquals(result.getClass(), UnCompressNoneDefault.class);
   }
 
   @Test public void testToUnCompressNoneForByte() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNone(DataType.DATA_BYTE, DataType.DATA_FLOAT);
+        ValueCompressionUtil.getUnCompressNone(DataType.DATA_BYTE, DataType.DATA_FLOAT);
     assertEquals(result.getClass(), UnCompressNoneByte.class);
   }
 
   @Test public void testToUnCompressNoneForLong() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNone(DataType.DATA_LONG, DataType.DATA_FLOAT);
+        ValueCompressionUtil.getUnCompressNone(DataType.DATA_LONG, DataType.DATA_FLOAT);
     assertEquals(result.getClass(), UnCompressNoneLong.class);
   }
 
   @Test public void testToUnCompressNoneForShort() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNone(DataType.DATA_SHORT, DataType.DATA_FLOAT);
+        ValueCompressionUtil.getUnCompressNone(DataType.DATA_SHORT, DataType.DATA_FLOAT);
     assertEquals(result.getClass(), UnCompressNoneShort.class);
   }
 
   @Test public void testToUnCompressNoneForFloat() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNone(DataType.DATA_FLOAT, DataType.DATA_FLOAT);
+        ValueCompressionUtil.getUnCompressNone(DataType.DATA_FLOAT, DataType.DATA_FLOAT);
     assertEquals(result.getClass(), UnCompressNoneFloat.class);
   }
 
   @Test public void testToUnCompressNoneForInt() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNone(DataType.DATA_INT, DataType.DATA_FLOAT);
+        ValueCompressionUtil.getUnCompressNone(DataType.DATA_INT, DataType.DATA_FLOAT);
     assertEquals(result.getClass(), UnCompressNoneInt.class);
   }
 
   @Test public void testToUnCompressNoneForDouble() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNone(DataType.DATA_DOUBLE, DataType.DATA_FLOAT);
+        ValueCompressionUtil.getUnCompressNone(DataType.DATA_DOUBLE, DataType.DATA_FLOAT);
     assertEquals(result.getClass(), UnCompressNoneDefault.class);
   }
 
   @Test public void testToUnCompressMaxMinForDouble() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressMaxMin(DataType.DATA_DOUBLE, null);
+        ValueCompressionUtil.getUnCompressDecimalMaxMin(DataType.DATA_DOUBLE, null);
     assertEquals(result.getClass(), UnCompressMaxMinDefault.class);
   }
 
   @Test public void testToUnCompressMaxMinForInt() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressMaxMin(DataType.DATA_INT, null);
+        ValueCompressionUtil.getUnCompressDecimalMaxMin(DataType.DATA_INT, null);
     assertEquals(result.getClass(), UnCompressMaxMinInt.class);
   }
 
   @Test public void testToUnCompressMaxMinForFloat() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressMaxMin(DataType.DATA_FLOAT, null);
+        ValueCompressionUtil.getUnCompressDecimalMaxMin(DataType.DATA_FLOAT, null);
     assertEquals(result.getClass(), UnCompressMaxMinFloat.class);
   }
 
   @Test public void testToUnCompressMaxMinForLong() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressMaxMin(DataType.DATA_LONG, null);
+        ValueCompressionUtil.getUnCompressDecimalMaxMin(DataType.DATA_LONG, null);
     assertEquals(result.getClass(), UnCompressMaxMinLong.class);
   }
 
   @Test public void testToUnCompressMaxMinForByte() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressMaxMin(DataType.DATA_BYTE, null);
+        ValueCompressionUtil.getUnCompressDecimalMaxMin(DataType.DATA_BYTE, null);
     assertEquals(result.getClass(), UnCompressMaxMinByte.class);
   }
 
   @Test public void testToUnCompressMaxMinForShort() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressMaxMin(DataType.DATA_SHORT, null);
+        ValueCompressionUtil.getUnCompressDecimalMaxMin(DataType.DATA_SHORT, null);
     assertEquals(result.getClass(), UnCompressMaxMinShort.class);
   }
 
   @Test public void testToUnCompressNonDecimalForDouble() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNonDecimal(DataType.DATA_DOUBLE, null);
+        ValueCompressionUtil.getUnCompressNonDecimal(DataType.DATA_DOUBLE);
     assertEquals(result.getClass(), UnCompressNonDecimalDefault.class);
   }
 
   @Test public void testToUnCompressNonDecimalForInt() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNonDecimal(DataType.DATA_INT, null);
+        ValueCompressionUtil.getUnCompressNonDecimal(DataType.DATA_INT);
     assertEquals(result.getClass(), UnCompressNonDecimalInt.class);
   }
 
   @Test public void testToUnCompressNonDecimalForFloat() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNonDecimal(DataType.DATA_FLOAT, null);
+        ValueCompressionUtil.getUnCompressNonDecimal(DataType.DATA_FLOAT);
     assertEquals(result.getClass(), UnCompressNonDecimalFloat.class);
   }
 
   @Test public void testToUnCompressNonDecimalForLong() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNonDecimal(DataType.DATA_LONG, null);
+        ValueCompressionUtil.getUnCompressNonDecimal(DataType.DATA_LONG);
     assertEquals(result.getClass(), UnCompressNonDecimalLong.class);
   }
 
   @Test public void testToUnCompressNonDecimalForByte() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNonDecimal(DataType.DATA_BYTE, null);
+        ValueCompressionUtil.getUnCompressNonDecimal(DataType.DATA_BYTE);
     assertEquals(result.getClass(), UnCompressNonDecimalByte.class);
   }
 
   @Test public void testToUnCompressNonDecimalForShort() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNonDecimal(DataType.DATA_SHORT, null);
+        ValueCompressionUtil.getUnCompressNonDecimal(DataType.DATA_SHORT);
     assertEquals(result.getClass(), UnCompressNonDecimalShort.class);
   }
 
   @Test public void testToUnCompressNonDecimalMaxMinForDouble() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNonDecimalMaxMin(DataType.DATA_DOUBLE, null);
+        ValueCompressionUtil.getUnCompressNonDecimalMaxMin(DataType.DATA_DOUBLE);
     assertEquals(result.getClass(), UnCompressNonDecimalMaxMinDefault.class);
   }
 
   @Test public void testToUnCompressNonDecimalMaxMinForInt() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNonDecimalMaxMin(DataType.DATA_INT, null);
+        ValueCompressionUtil.getUnCompressNonDecimalMaxMin(DataType.DATA_INT);
     assertEquals(result.getClass(), UnCompressNonDecimalMaxMinInt.class);
   }
 
   @Test public void testToUnCompressNonDecimalMaxMinForFloat() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNonDecimalMaxMin(DataType.DATA_FLOAT, null);
+        ValueCompressionUtil.getUnCompressNonDecimalMaxMin(DataType.DATA_FLOAT);
     assertEquals(result.getClass(), UnCompressNonDecimalMaxMinFloat.class);
   }
 
   @Test public void testToUnCompressNonDecimalMaxMinForLong() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNonDecimalMaxMin(DataType.DATA_LONG, null);
+        ValueCompressionUtil.getUnCompressNonDecimalMaxMin(DataType.DATA_LONG);
     assertEquals(result.getClass(), UnCompressNonDecimalMaxMinLong.class);
   }
 
   @Test public void testToUnCompressNonDecimalMaxMinForByte() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNonDecimalMaxMin(DataType.DATA_BYTE, null);
+        ValueCompressionUtil.getUnCompressNonDecimalMaxMin(DataType.DATA_BYTE);
     assertEquals(result.getClass(), UnCompressNonDecimalMaxMinByte.class);
   }
 
   @Test public void testToUnCompressNonDecimalMaxMinForShort() {
     ValueCompressonHolder.UnCompressValue result =
-        ValueCompressionUtil.unCompressNonDecimalMaxMin(DataType.DATA_SHORT, null);
+        ValueCompressionUtil.getUnCompressNonDecimalMaxMin(DataType.DATA_SHORT);
     assertEquals(result.getClass(), UnCompressNonDecimalMaxMinShort.class);
   }
 
@@ -563,23 +587,23 @@ public class ValueCompressionUtilTest {
   }
 
   @Test public void testToGetValueCompressionModel() {
-    Object[] maxValues = { 10, 20, 30l };
-    Object[] minValues = { 1, 2, 3l };
+    Object[] maxValues = { 10l, 20l, 30l };
+    Object[] minValues = { 1l, 2l, 3l };
     int[] decimalLength = { 0, 0, 0 };
     Object[] uniqueValues = { 5, 3, 2l };
-    char[] types = { 'c', 'b', 'l' };
+    char[] types = { 'l', 'l', 'l' };
     byte[] dataTypeSelected = { 1, 2, 4 };
     MeasureMetaDataModel measureMetaDataModel =
         new MeasureMetaDataModel(maxValues, minValues, decimalLength, 3, uniqueValues, types,
             dataTypeSelected);
-    ValueCompressionModel valueCompressionModel =
-        ValueCompressionUtil.getValueCompressionModel(measureMetaDataModel);
-    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.CUSTOM,
-        valueCompressionModel.getCompType()[0]);
-    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.CUSTOM_BIGDECIMAL,
-        valueCompressionModel.getCompType()[1]);
-    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.NONE,
-        valueCompressionModel.getCompType()[2]);
+    WriterCompressModel writerCompressModel =
+        ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
+    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE,
+        writerCompressModel.getCompType()[0]);
+    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE,
+        writerCompressModel.getCompType()[1]);
+    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE,
+        writerCompressModel.getCompType()[2]);
   }
 
   @Test public void testToGetValueCompressionModelForDefaultAggregatorType() {
@@ -592,10 +616,10 @@ public class ValueCompressionUtilTest {
     MeasureMetaDataModel measureMetaDataModel =
         new MeasureMetaDataModel(maxValues, minValues, decimalLength, 1, uniqueValues, types,
             dataTypeSelected);
-    ValueCompressionModel valueCompressionModel =
-        ValueCompressionUtil.getValueCompressionModel(measureMetaDataModel);
-    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.NONE,
-        valueCompressionModel.getCompType()[0]);
+    WriterCompressModel writerCompressModel =
+        ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
+    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE,
+        writerCompressModel.getCompType()[0]);
   }
 
   @Test public void testToGetValueCompressionModelForShortAndByte() {
@@ -608,10 +632,10 @@ public class ValueCompressionUtilTest {
     MeasureMetaDataModel measureMetaDataModel =
         new MeasureMetaDataModel(maxValues, minValues, decimalLength, 1, uniqueValues, types,
             dataTypeSelected);
-    ValueCompressionModel valueCompressionModel =
-        ValueCompressionUtil.getValueCompressionModel(measureMetaDataModel);
-    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.MAX_MIN,
-        valueCompressionModel.getCompType()[0]);
+    WriterCompressModel writerCompressModel =
+        ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
+    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_DOUBLE,
+        writerCompressModel.getCompType()[0]);
   }
 
   @Test public void testToGetValueCompressionModelForIntAndShort() {
@@ -624,10 +648,10 @@ public class ValueCompressionUtilTest {
     MeasureMetaDataModel measureMetaDataModel =
         new MeasureMetaDataModel(maxValues, minValues, decimalLength, 1, uniqueValues, types,
             dataTypeSelected);
-    ValueCompressionModel valueCompressionModel =
-        ValueCompressionUtil.getValueCompressionModel(measureMetaDataModel);
-    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.MAX_MIN,
-        valueCompressionModel.getCompType()[0]);
+    WriterCompressModel writerCompressModel =
+        ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
+    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_DOUBLE,
+        writerCompressModel.getCompType()[0]);
   }
 
   @Test public void testToGetValueCompressionModelForByteAndInt() {
@@ -640,10 +664,10 @@ public class ValueCompressionUtilTest {
     MeasureMetaDataModel measureMetaDataModel =
         new MeasureMetaDataModel(maxValues, minValues, decimalLength, 1, uniqueValues, types,
             dataTypeSelected);
-    ValueCompressionModel valueCompressionModel =
-        ValueCompressionUtil.getValueCompressionModel(measureMetaDataModel);
-    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.NONE,
-        valueCompressionModel.getCompType()[0]);
+    WriterCompressModel writerCompressModel =
+        ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
+    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE,
+        writerCompressModel.getCompType()[0]);
   }
 
   @Test public void testToGetValueCompressionModelForByteAndIntAndDecimal1() {
@@ -656,10 +680,10 @@ public class ValueCompressionUtilTest {
     MeasureMetaDataModel measureMetaDataModel =
         new MeasureMetaDataModel(maxValues, minValues, decimalLength, 1, uniqueValues, types,
             dataTypeSelected);
-    ValueCompressionModel valueCompressionModel =
-        ValueCompressionUtil.getValueCompressionModel(measureMetaDataModel);
-    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.MAX_MIN,
-        valueCompressionModel.getCompType()[0]);
+    WriterCompressModel writerCompressModel =
+        ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
+    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.DELTA_DOUBLE,
+        writerCompressModel.getCompType()[0]);
   }
 
   @Test public void testToGetValueCompressionModelForByteAndIntAndDataTypeSelected0() {
@@ -672,10 +696,10 @@ public class ValueCompressionUtilTest {
     MeasureMetaDataModel measureMetaDataModel =
         new MeasureMetaDataModel(maxValues, minValues, decimalLength, 1, uniqueValues, types,
             dataTypeSelected);
-    ValueCompressionModel valueCompressionModel =
-        ValueCompressionUtil.getValueCompressionModel(measureMetaDataModel);
-    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.NON_DECIMAL_CONVERT,
-        valueCompressionModel.getCompType()[0]);
+    WriterCompressModel writerCompressModel =
+        ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
+    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.BIGINT,
+        writerCompressModel.getCompType()[0]);
   }
 
   @Test public void testToGetValueCompressionModelForFloatAndDataTypeSelected1() {
@@ -688,10 +712,10 @@ public class ValueCompressionUtilTest {
     MeasureMetaDataModel measureMetaDataModel =
         new MeasureMetaDataModel(maxValues, minValues, decimalLength, 1, uniqueValues, types,
             dataTypeSelected);
-    ValueCompressionModel valueCompressionModel =
-        ValueCompressionUtil.getValueCompressionModel(measureMetaDataModel);
-    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.NONE,
-        valueCompressionModel.getCompType()[0]);
+    WriterCompressModel writerCompressModel =
+        ValueCompressionUtil.getWriterCompressModel(measureMetaDataModel);
+    assertEquals(ValueCompressionUtil.COMPRESSION_TYPE.ADAPTIVE,
+        writerCompressModel.getCompType()[0]);
   }
 
 }

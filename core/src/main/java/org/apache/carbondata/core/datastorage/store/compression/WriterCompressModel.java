@@ -21,7 +21,7 @@ package org.apache.carbondata.core.datastorage.store.compression;
 
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 
-public class ValueCompressionModel {
+public class WriterCompressModel {
   /**
    * COMPRESSION_TYPE[] variable.
    */
@@ -45,16 +45,14 @@ public class ValueCompressionModel {
    */
   private Object[] minValue;
 
-  private Object[] minValueFactForAgg;
-
   /**
    * uniqueValue
    */
   private Object[] uniqueValue;
   /**
-   * decimal.
+   * mantissa.
    */
-  private int[] decimal;
+  private int[] mantissa;
 
   /**
    * aggType
@@ -127,17 +125,17 @@ public class ValueCompressionModel {
   }
 
   /**
-   * @return the decimal
+   * @return the mantissa
    */
-  public int[] getDecimal() {
-    return decimal;
+  public int[] getMantissa() {
+    return mantissa;
   }
 
   /**
-   * @param decimal the decimal to set
+   * @param mantissa the mantissa to set
    */
-  public void setDecimal(int[] decimal) {
-    this.decimal = decimal;
+  public void setMantissa(int[] mantissa) {
+    this.mantissa = mantissa;
   }
 
   /**
@@ -220,17 +218,4 @@ public class ValueCompressionModel {
     this.uniqueValue = uniqueValue;
   }
 
-  /**
-   * @return the minValueFactForAgg
-   */
-  public Object[] getMinValueFactForAgg() {
-    return minValueFactForAgg;
-  }
-
-  /**
-   * @param minValueFactForAgg the minValueFactForAgg to set
-   */
-  public void setMinValueFactForAgg(Object[] minValueFactForAgg) {
-    this.minValueFactForAgg = minValueFactForAgg;
-  }
 }

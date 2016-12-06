@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.datastorage.store.compression.type;
+package org.apache.carbondata.core.datastorage.store.compression.nondecimal;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -64,7 +64,7 @@ public class UnCompressNonDecimalByte implements ValueCompressonHolder.UnCompres
 
   @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
     ValueCompressonHolder.UnCompressValue byte1 =
-        ValueCompressionUtil.unCompressNonDecimal(dataType, dataType);
+        ValueCompressionUtil.getUnCompressNonDecimal(dataType);
     ValueCompressonHolder.unCompress(dataType, byte1, value);
     return byte1;
   }

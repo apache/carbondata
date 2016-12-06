@@ -44,46 +44,31 @@ public final class ValueCompressonHolder {
   public static void unCompress(DataType dataType, UnCompressValue value, byte[] data) {
     switch (dataType) {
       case DATA_BYTE:
-
         value.setValue(compressor.unCompressByte(data));
         break;
-
       case DATA_SHORT:
-
         value.setValue(compressor.unCompressShort(data));
         break;
-
       case DATA_INT:
-
         value.setValue(compressor.unCompressInt(data));
         break;
-
       case DATA_LONG:
       case DATA_BIGINT:
-
         value.setValue(compressor.unCompressLong(data));
         break;
-
       case DATA_FLOAT:
-
         value.setValue(compressor.unCompressFloat(data));
         break;
       default:
-
         value.setValue(compressor.unCompressDouble(data));
         break;
-
     }
   }
 
   /**
-   * interface for  UnCompressValue<T>.
-   *
-   * @param <T>
+   * interface for UnCompressValue<T>.
    */
-
   public interface UnCompressValue<T> extends Cloneable {
-    //        Object getValue(int index, int decimal, double maxValue);
 
     void setValue(T value);
 
