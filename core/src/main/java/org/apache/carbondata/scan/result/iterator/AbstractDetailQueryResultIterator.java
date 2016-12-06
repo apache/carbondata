@@ -39,6 +39,7 @@ import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.model.QueryModel;
 import org.apache.carbondata.scan.processor.AbstractDataBlockIterator;
 import org.apache.carbondata.scan.processor.impl.DataBlockIteratorImpl;
+import org.apache.carbondata.scan.result.vector.CarbonColumnarBatch;
 
 /**
  * In case of detail query we cannot keep all the records in memory so for
@@ -175,6 +176,10 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     QueryStatistic queryStatisticValidScanBlocklet = new QueryStatistic();
     queryStatisticsModel.getStatisticsTypeAndObjMap()
         .put(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM, queryStatisticValidScanBlocklet);
+  }
+
+  public void processNextBatch(CarbonColumnarBatch columnarBatch) {
+    throw new UnsupportedOperationException("Please use VectorDetailQueryResultIterator");
   }
 
 }

@@ -54,7 +54,7 @@ public class CarbonRecordReader<T> extends RecordReader<Void, T> {
   public CarbonRecordReader(QueryModel queryModel, CarbonReadSupport<T> readSupport) {
     this.queryModel = queryModel;
     this.readSupport = readSupport;
-    this.queryExecutor = QueryExecutorFactory.getQueryExecutor();
+    this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
   }
 
   @Override

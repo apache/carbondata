@@ -433,6 +433,14 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   @Override public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
       TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
     Configuration configuration = taskAttemptContext.getConfiguration();
+    QueryModel queryModel = getQueryModel(inputSplit, taskAttemptContext);
+    CarbonReadSupport readSupport = getReadSupportClass(configuration);
+    return new CarbonRecordReader<T>(queryModel, readSupport);
+  }
+
+  public QueryModel getQueryModel(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
+      throws IOException {
+    Configuration configuration = taskAttemptContext.getConfiguration();
     CarbonTable carbonTable = getCarbonTable(configuration);
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(configuration);
 
@@ -455,12 +463,10 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         queryModel.setInvalidSegmentIds(invalidSegments);
       }
     }
-
-    CarbonReadSupport readSupport = getReadSupportClass(configuration);
-    return new CarbonRecordReader<T>(queryModel, readSupport);
+    return queryModel;
   }
 
-  private CarbonReadSupport getReadSupportClass(Configuration configuration) {
+  public CarbonReadSupport getReadSupportClass(Configuration configuration) {
     String readSupportClass = configuration.get(CARBON_READ_SUPPORT);
     //By default it uses dictionary decoder read class
     CarbonReadSupport readSupport = null;

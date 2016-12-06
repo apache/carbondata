@@ -21,6 +21,8 @@ package org.apache.carbondata.core.carbon.datastore.chunk.impl;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
+import org.apache.carbondata.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.scan.result.vector.ColumnVectorInfo;
 
 /**
  * This class is holder of the dimension column chunk data of the fixed length
@@ -77,13 +79,98 @@ public class FixedLengthDimensionDataChunk implements DimensionColumnDataChunk<b
       rowId = chunkAttributes.getInvertedIndexesReverse()[rowId];
     }
     int start = rowId * chunkAttributes.getColumnValueSize();
+    int dict = getInt(chunkAttributes.getColumnValueSize(), start);
+    row[columnIndex] = dict;
+    return columnIndex + 1;
+  }
+
+  @Override public int fillConvertedChunkData(ColumnVectorInfo[] vectorInfo, int column,
+      KeyStructureInfo restructuringInfo) {
+    ColumnVectorInfo columnVectorInfo = vectorInfo[column];
+    int offset = columnVectorInfo.offset;
+    int vectorOffset = columnVectorInfo.vectorOffset;
+    int len = columnVectorInfo.size + offset;
+    int[] indexesReverse = chunkAttributes.getInvertedIndexesReverse();
+    int columnValueSize = chunkAttributes.getColumnValueSize();
+    CarbonColumnVector vector = columnVectorInfo.vector;
+    for (int j = offset; j < len; j++) {
+      int start =
+          indexesReverse == null ? j * columnValueSize : indexesReverse[j] * columnValueSize;
+      int dict = getInt(columnValueSize, start);
+      if (columnVectorInfo.directDictionaryGenerator == null) {
+        vector.putInt(vectorOffset++, dict);
+      } else {
+        Object valueFromSurrogate =
+            columnVectorInfo.directDictionaryGenerator.getValueFromSurrogate(dict);
+        if (valueFromSurrogate == null) {
+          vector.putNull(vectorOffset++);
+        } else {
+          switch (columnVectorInfo.directDictionaryGenerator.getReturnType()) {
+            case INT:
+              vector.putInt(vectorOffset++, (int) valueFromSurrogate);
+              break;
+            case LONG:
+              vector.putLong(vectorOffset++, (long) valueFromSurrogate);
+              break;
+          }
+        }
+      }
+    }
+    return column + 1;
+  }
+
+  @Override
+  public int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo, int column,
+      KeyStructureInfo restructuringInfo) {
+    ColumnVectorInfo columnVectorInfo = vectorInfo[column];
+    int offset = columnVectorInfo.offset;
+    int vectorOffset = columnVectorInfo.vectorOffset;
+    int len = columnVectorInfo.size + offset;
+    int[] indexesReverse = chunkAttributes.getInvertedIndexesReverse();
+    int columnValueSize = chunkAttributes.getColumnValueSize();
+    CarbonColumnVector vector = columnVectorInfo.vector;
+    for (int j = offset; j < len; j++) {
+      // calculate the start index to take the dictionary data. Here dictionary data size is fixed
+      // so calculate using fixed size of it.
+      int start = indexesReverse == null ?
+          rowMapping[j] * columnValueSize :
+          indexesReverse[rowMapping[j]] * columnValueSize;
+      int dict = getInt(columnValueSize, start);
+      if (columnVectorInfo.directDictionaryGenerator == null) {
+        vector.putInt(vectorOffset++, dict);
+      } else {
+        Object valueFromSurrogate =
+            columnVectorInfo.directDictionaryGenerator.getValueFromSurrogate(dict);
+        if (valueFromSurrogate == null) {
+          vector.putNull(vectorOffset++);
+        } else {
+          switch (columnVectorInfo.directDictionaryGenerator.getReturnType()) {
+            case INT:
+              vector.putInt(vectorOffset++, (int) valueFromSurrogate);
+              break;
+            case LONG:
+              vector.putLong(vectorOffset++, (long) valueFromSurrogate);
+              break;
+          }
+        }
+      }
+    }
+    return column + 1;
+  }
+
+  /**
+   * Create the integer from fixed column size and start index
+   * @param columnValueSize
+   * @param start
+   * @return
+   */
+  private int getInt(int columnValueSize, int start) {
     int dict = 0;
-    for (int i = start; i < start + chunkAttributes.getColumnValueSize(); i++) {
+    for (int i = start; i < start + columnValueSize; i++) {
       dict <<= 8;
       dict ^= dataChunk[i] & 0xFF;
     }
-    row[columnIndex] = dict;
-    return columnIndex + 1;
+    return dict;
   }
 
   /**
