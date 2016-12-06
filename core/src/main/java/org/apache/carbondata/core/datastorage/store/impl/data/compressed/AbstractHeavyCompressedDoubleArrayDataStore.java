@@ -21,8 +21,8 @@ package org.apache.carbondata.core.datastorage.store.impl.data.compressed;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.NodeMeasureDataStore;
-import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonWriteDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 

@@ -55,8 +55,8 @@ public class MeasureMetaDataModel {
    */
   private byte[] dataTypeSelected;
 
-  public MeasureMetaDataModel(Object[] minValue, Object[] maxValue, int[] mantissa, int measureCount,
-      Object[] uniqueValue, char[] type, byte[] dataTypeSelected) {
+  public MeasureMetaDataModel(Object[] minValue, Object[] maxValue, int[] mantissa,
+      int measureCount, Object[] uniqueValue, char[] type, byte[] dataTypeSelected) {
     this.minValue = minValue;
     this.maxValue = maxValue;
     this.mantissa = mantissa;
@@ -123,13 +123,6 @@ public class MeasureMetaDataModel {
    */
   public byte[] getDataTypeSelected() {
     return dataTypeSelected;
-  }
-
-  /**
-   * @return the minValueFactForAgg
-   */
-  public Object[] getMinValueFactForAgg() {
-    return minValueFactForAgg;
   }
 
 }

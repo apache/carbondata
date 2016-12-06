@@ -45,8 +45,6 @@ public class WriterCompressModel {
    */
   private Object[] minValue;
 
-  private Object[] minValueFactForAgg;
-
   /**
    * uniqueValue
    */
@@ -220,17 +218,4 @@ public class WriterCompressModel {
     this.uniqueValue = uniqueValue;
   }
 
-  /**
-   * @return the minValueFactForAgg
-   */
-  public Object[] getMinValueFactForAgg() {
-    return minValueFactForAgg;
-  }
-
-  /**
-   * @param minValueFactForAgg the minValueFactForAgg to set
-   */
-  public void setMinValueFactForAgg(Object[] minValueFactForAgg) {
-    this.minValueFactForAgg = minValueFactForAgg;
-  }
 }
