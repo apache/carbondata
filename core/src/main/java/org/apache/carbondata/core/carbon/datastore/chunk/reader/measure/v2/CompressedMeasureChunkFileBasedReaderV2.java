@@ -27,7 +27,7 @@ import org.apache.carbondata.core.carbon.datastore.chunk.reader.measure.Abstract
 import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.PresenceMeta;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
-import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
+import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
@@ -74,8 +74,9 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
       org.apache.carbondata.format.PresenceMeta presentMetadataThrift) {
     PresenceMeta presenceMeta = new PresenceMeta();
     presenceMeta.setRepresentNullValues(presentMetadataThrift.isRepresents_presence());
-    presenceMeta.setBitSet(BitSet.valueOf(
-        SnappyByteCompression.INSTANCE.unCompress(presentMetadataThrift.getPresent_bit_stream())));
+    presenceMeta.setBitSet(
+        BitSet.valueOf(CompressorFactory.getInstance().unCompressByte(
+            presentMetadataThrift.getPresent_bit_stream())));
     return presenceMeta;
   }
 

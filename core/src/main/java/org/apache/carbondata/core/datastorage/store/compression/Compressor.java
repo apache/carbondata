@@ -19,10 +19,30 @@
 
 package org.apache.carbondata.core.datastorage.store.compression;
 
-public interface Compressor<T> {
+public interface Compressor {
 
-  byte[] compress(T input);
+  byte[] compressByte(byte[] unCompInput);
 
-  T unCompress(byte[] input);
+  byte[] unCompressByte(byte[] compInput);
+
+  byte[] compressShort(short[] unCompInput);
+
+  short[] unCompressShort(byte[] compInput);
+
+  byte[] compressInt(int[] unCompInput);
+
+  int[] unCompressInt(byte[] compInput);
+
+  byte[] compressLong(long[] unCompInput);
+
+  long[] unCompressLong(byte[] compInput);
+
+  byte[] compressFloat(float[] unCompInput);
+
+  float[] unCompressFloat(byte[] compInput);
+
+  byte[] compressDouble(double[] unCompInput);
+
+  double[] unCompressDouble(byte[] compInput);
 
 }

@@ -19,26 +19,26 @@
 
 package org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension;
 
-import static junit.framework.TestCase.assertEquals;
-
 import java.util.ArrayList;
 import java.util.List;
 
 import mockit.Mock;
 import mockit.MockUp;
-
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
-import org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension.v1.CompressedDimensionChunkFileBasedReaderV1;
+import org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension
+    .v1.CompressedDimensionChunkFileBasedReaderV1;
 import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.datastorage.store.columnar.UnBlockIndexer;
-import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression;
+import org.apache.carbondata.core.datastorage.store.compression.SnappyCompressor;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static junit.framework.TestCase.assertEquals;
 
 public class CompressedDimensionChunkFileBasedReaderTest {
 
@@ -77,8 +77,8 @@ public class CompressedDimensionChunkFileBasedReaderTest {
       }
     };
 
-    new MockUp<SnappyCompression.SnappyByteCompression>() {
-      @Mock public byte[] unCompress(byte[] compInput) {
+    new MockUp<SnappyCompressor>() {
+      @Mock public byte[] unCompressByte(byte[] compInput) {
         byte mockedValue[] = { 1 };
         return mockedValue;
       }
@@ -121,8 +121,8 @@ public class CompressedDimensionChunkFileBasedReaderTest {
       }
     };
 
-    new MockUp<SnappyCompression.SnappyByteCompression>() {
-      @Mock public byte[] unCompress(byte[] compInput) {
+    new MockUp<SnappyCompressor>() {
+      @Mock public byte[] unCompressByte(byte[] compInput) {
         byte mockedValue[] = { 1 };
         return mockedValue;
       }

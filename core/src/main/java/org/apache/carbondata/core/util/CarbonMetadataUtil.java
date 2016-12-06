@@ -34,7 +34,7 @@ import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
+import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
@@ -572,8 +572,8 @@ public class CarbonMetadataUtil {
       //meta
       PresenceMeta presenceMeta = new PresenceMeta();
       presenceMeta.setPresent_bit_streamIsSet(true);
-      presenceMeta.setPresent_bit_stream(SnappyByteCompression.INSTANCE
-          .compress(blockletInfoColumnar.getMeasureNullValueIndex()[i].toByteArray()));
+      presenceMeta.setPresent_bit_stream(CompressorFactory.getInstance()
+          .compressByte(blockletInfoColumnar.getMeasureNullValueIndex()[i].toByteArray()));
       dataChunk.setPresence(presenceMeta);
       //TODO : PresenceMeta needs to be implemented and set here
       // dataChunk.setPresence(new PresenceMeta());

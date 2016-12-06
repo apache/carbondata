@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
-import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression;
+import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
@@ -39,7 +39,7 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
   /**
    * intCompressor.
    */
-  private static Compressor<int[]> intCompressor = SnappyCompression.SnappyIntCompression.INSTANCE;
+  private static Compressor compressor = CompressorFactory.getInstance();
   /**
    * value.
    */
@@ -70,9 +70,8 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
   }
 
   @Override public ValueCompressonHolder.UnCompressValue compress() {
-    UnCompressNoneByte byte1 = new UnCompressNoneByte(this.actualDataType);
-    byte1.setValue(intCompressor.compress(value));
-
+    UnCompressNoneByte byte1 = new UnCompressNoneByte(actualDataType);
+    byte1.setValue(compressor.compressInt(value));
     return byte1;
   }
 
@@ -95,11 +94,32 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
     switch (actualDataType) {
+      case DATA_SHORT:
+        return unCompressShort();
+      case DATA_INT:
+        return unCompressInt();
+      case DATA_LONG:
       case DATA_BIGINT:
         return unCompressLong();
       default:
         return unCompressDouble();
     }
+  }
+
+  private CarbonReadDataHolder unCompressShort() {
+    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
+    short[] vals = new short[value.length];
+    for (int i = 0; i < vals.length; i++) {
+      vals[i] = (short)value[i];
+    }
+    dataHolder.setReadableShortValues(vals);
+    return dataHolder;
+  }
+
+  private CarbonReadDataHolder unCompressInt() {
+    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
+    dataHolder.setReadableIntValues(value);
+    return dataHolder;
   }
 
   private CarbonReadDataHolder unCompressDouble() {
@@ -108,7 +128,6 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
     for (int i = 0; i < vals.length; i++) {
       vals[i] = value[i];
     }
-
     dataHolderInfoObj.setReadableDoubleValues(vals);
     return dataHolderInfoObj;
   }
