@@ -21,6 +21,7 @@ package org.apache.carbondata.core.carbon.datastore.chunk.impl;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
+import org.apache.carbondata.scan.result.vector.CarbonColumnVector;
 
 /**
  * This class is holder of the dimension column chunk data of the fixed length
@@ -84,6 +85,66 @@ public class FixedLengthDimensionDataChunk implements DimensionColumnDataChunk<b
     }
     row[columnIndex] = dict;
     return columnIndex + 1;
+  }
+
+  @Override public int fillConvertedChunkData(int offset, int size, CarbonColumnVector[] vectors,
+      int vectorOffset, int column, KeyStructureInfo restructuringInfo) {
+    int len = size + offset;
+    int[] indexesReverse = chunkAttributes.getInvertedIndexesReverse();
+    int columnValueSize = chunkAttributes.getColumnValueSize();
+    CarbonColumnVector vector = vectors[column];
+    if (indexesReverse != null) {
+      for (int j = offset; j < len; j++) {
+        int start = indexesReverse[j] * columnValueSize;
+        int dict = 0;
+        for (int i = start; i < start + columnValueSize; i++) {
+          dict <<= 8;
+          dict ^= dataChunk[i] & 0xFF;
+        }
+        vector.putInt(vectorOffset++, dict);
+      }
+    } else {
+      for (int j = offset; j < len; j++) {
+        int start = j * columnValueSize;
+        int dict = 0;
+        for (int i = start; i < start + columnValueSize; i++) {
+          dict <<= 8;
+          dict ^= dataChunk[i] & 0xFF;
+        }
+        vector.putInt(vectorOffset++, dict);
+      }
+    }
+    return column + 1;
+  }
+
+  @Override public int fillConvertedChunkData(int[] rowMapping, int offset, int size, CarbonColumnVector[] vectors,
+      int vectorOffset, int column, KeyStructureInfo restructuringInfo) {
+    int len = size + offset;
+    int[] indexesReverse = chunkAttributes.getInvertedIndexesReverse();
+    int columnValueSize = chunkAttributes.getColumnValueSize();
+    CarbonColumnVector vector = vectors[column];
+    if (indexesReverse != null) {
+      for (int j = offset; j < len; j++) {
+        int start = indexesReverse[rowMapping[j]] * columnValueSize;
+        int dict = 0;
+        for (int i = start; i < start + columnValueSize; i++) {
+          dict <<= 8;
+          dict ^= dataChunk[i] & 0xFF;
+        }
+        vector.putInt(vectorOffset++, dict);
+      }
+    } else {
+      for (int j = offset; j < len; j++) {
+        int start = rowMapping[j] * columnValueSize;
+        int dict = 0;
+        for (int i = start; i < start + columnValueSize; i++) {
+          dict <<= 8;
+          dict ^= dataChunk[i] & 0xFF;
+        }
+        vector.putInt(vectorOffset++, dict);
+      }
+    }
+    return column + 1;
   }
 
   /**

@@ -21,6 +21,7 @@ package org.apache.carbondata.core.carbon.datastore.chunk.impl;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
+import org.apache.carbondata.scan.result.vector.CarbonColumnVector;
 
 /**
  * This class is holder of the dimension column chunk data of the fixed length
@@ -78,6 +79,39 @@ public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<b
       row[columnIndex++] = (int)keyArray[ordinal[i]];
     }
     return columnIndex;
+  }
+
+  @Override public int fillConvertedChunkData(int offset, int size, CarbonColumnVector[] vectors,
+      int vectorOffset, int column, KeyStructureInfo info) {
+    int len = offset+size;
+    int columnValueSize = chunkAttributes.getColumnValueSize();
+    int[] ordinal = info.getMdkeyQueryDimensionOrdinal();
+    for (int k = offset; k < len; k++) {
+      int start = k * columnValueSize;
+      long[] keyArray = info.getKeyGenerator().getKeyArray(dataChunk, start);
+      for (int i = column; i < ordinal.length; i++) {
+        vectors[i].putInt(vectorOffset, (int)keyArray[ordinal[i]]);
+      }
+      vectorOffset++;
+    }
+    return column + ordinal.length;
+  }
+
+  @Override public int fillConvertedChunkData(int[] rowMapping, int offset, int size,
+      CarbonColumnVector[] vectors, int vectorOffset, int column,
+      KeyStructureInfo info) {
+    int len = offset+size;
+    int columnValueSize = chunkAttributes.getColumnValueSize();
+    int[] ordinal = info.getMdkeyQueryDimensionOrdinal();
+    for (int k = offset; k < len; k++) {
+      int start = rowMapping[k] * columnValueSize;
+      long[] keyArray = info.getKeyGenerator().getKeyArray(dataChunk, start);
+      for (int i = column; i < ordinal.length; i++) {
+        vectors[i].putInt(vectorOffset, (int)keyArray[ordinal[i]]);
+      }
+      vectorOffset++;
+    }
+    return column + ordinal.length;
   }
 
   /**

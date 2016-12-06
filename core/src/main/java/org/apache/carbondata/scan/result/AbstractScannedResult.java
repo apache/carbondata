@@ -32,6 +32,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.scan.filter.GenericQueryType;
+import org.apache.carbondata.scan.result.vector.CarbonColumnVector;
 
 /**
  * Scanned result class which will store and provide the result on request
@@ -175,6 +176,20 @@ public abstract class AbstractScannedResult {
     }
     rowCounter++;
     return completeKey;
+  }
+
+  /**
+   * Fill the column data to vector
+   */
+  protected void fillColumnarDictionaryBatch(int offset, int size, CarbonColumnVector[] vectors,
+      int vectorOffset) {
+    int column = 0;
+    for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
+      column = dataChunks[dictionaryColumnBlockIndexes[i]]
+          .fillConvertedChunkData(offset, size, vectors, vectorOffset, column,
+              columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
+    }
+    rowCounter += size;
   }
 
   /**

@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
+import org.apache.carbondata.scan.result.vector.CarbonColumnVector;
 
 /**
  * This class is holder of the dimension column chunk data of the variable
@@ -91,6 +92,41 @@ public class VariableLengthDimensionDataChunk implements DimensionColumnDataChun
       index = chunkAttributes.getInvertedIndexesReverse()[index];
     }
     return dataChunk.get(index);
+  }
+
+  @Override public int fillConvertedChunkData(int offset, int size, CarbonColumnVector[] vectors,
+      int vectorOffset, int column, KeyStructureInfo restructuringInfo) {
+    int[] indexesReverse = chunkAttributes.getInvertedIndexesReverse();
+    CarbonColumnVector vector = vectors[column];
+    int len = offset + size;
+    if (null != indexesReverse) {
+      for (int i = offset; i < len; i++) {
+        vector.putBytes(vectorOffset++, dataChunk.get(indexesReverse[i]));
+      }
+    } else {
+      for (int i = offset; i < len; i++) {
+        vector.putBytes(vectorOffset++, dataChunk.get(i));
+      }
+    }
+    return column + 1;
+  }
+
+  @Override public int fillConvertedChunkData(int[] rowMapping, int offset, int size,
+      CarbonColumnVector[] vectors, int vectorOffset, int column,
+      KeyStructureInfo restructuringInfo) {
+    int[] indexesReverse = chunkAttributes.getInvertedIndexesReverse();
+    CarbonColumnVector vector = vectors[column];
+    int len = offset + size;
+    if (null != indexesReverse) {
+      for (int i = offset; i < len; i++) {
+        vector.putBytes(vectorOffset++, dataChunk.get(indexesReverse[rowMapping[i]]));
+      }
+    } else {
+      for (int i = offset; i < len; i++) {
+        vector.putBytes(vectorOffset++, dataChunk.get(rowMapping[i]));
+      }
+    }
+    return column + 1;
   }
 
   /**
