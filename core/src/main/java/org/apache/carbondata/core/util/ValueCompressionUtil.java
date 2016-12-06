@@ -167,7 +167,7 @@ public final class ValueCompressionUtil {
         return new CompressionFinder(COMPRESSION_TYPE.DELTA_DOUBLE, DataType.DATA_DOUBLE,
             deltaDataType);
       } else if (adaptiveSize < deltaSize) {
-        return new CompressionFinder(COMPRESSION_TYPE.ADAPTIVE, DataType.DATA_DOUBLE，
+        return new CompressionFinder(COMPRESSION_TYPE.ADAPTIVE, DataType.DATA_DOUBLE,
             deltaDataType);
       } else {
         return new CompressionFinder(COMPRESSION_TYPE.ADAPTIVE, DataType.DATA_DOUBLE,
@@ -988,6 +988,3 @@ public final class ValueCompressionUtil {
   }
 
 }
-
-
-
