@@ -30,14 +30,8 @@ public class ReaderCompressModel {
 
   private ValueCompressonHolder.UnCompressValue unCompressValues;
 
-  private ValueCompressionUtil.COMPRESSION_TYPE compType;
-
   public void setValueEncoderMeta(ValueEncoderMeta valueEncoderMeta) {
     this.valueEncoderMeta = valueEncoderMeta;
-  }
-
-  public void setCompType(ValueCompressionUtil.COMPRESSION_TYPE compType) {
-    this.compType = compType;
   }
 
   public ValueCompressionUtil.DataType getChangedDataType() {

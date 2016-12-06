@@ -679,8 +679,9 @@ public final class ValueCompressionUtil {
     DataType[] changedType = new DataType[measureCount];
     COMPRESSION_TYPE[] compType = new COMPRESSION_TYPE[measureCount];
     for (int i = 0; i < measureCount; i++) {
-      CompressionFinder compresssionFinder = ValueCompressionUtil
-          .getCompressionFinder(maxValue[i], minValue[i], mantissa[i], type[i], dataTypeSelected[i]);
+      CompressionFinder compresssionFinder =
+          ValueCompressionUtil.getCompressionFinder(maxValue[i],
+              minValue[i], mantissa[i], type[i], dataTypeSelected[i]);
       actualType[i] = compresssionFinder.actualDataType;
       changedType[i] = compresssionFinder.changedDataType;
       compType[i] = compresssionFinder.compType;
@@ -715,7 +716,6 @@ public final class ValueCompressionUtil {
             compressFinder.actualDataType,
             compressFinder.changedDataType));
     compressModel.setChangedDataType(compressFinder.changedDataType);
-    compressModel.setCompType(compressFinder.compType);
     compressModel.setValueEncoderMeta(meta);
     return compressModel;
   }
