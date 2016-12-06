@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.datastorage.store.compression.type;
+package org.apache.carbondata.core.datastorage.store.compression.none;
 
 import java.nio.ByteBuffer;
 
@@ -30,15 +30,14 @@ import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHol
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
-public class UnCompressMaxMinInt implements ValueCompressonHolder.UnCompressValue<int[]> {
+public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<int[]> {
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnCompressMaxMinInt.class.getName());
-
+      LogServiceFactory.getLogService(UnCompressNoneInt.class.getName());
   /**
-   * compressor.
+   * intCompressor.
    */
   private static Compressor compressor = CompressorFactory.getInstance();
   /**
@@ -48,7 +47,7 @@ public class UnCompressMaxMinInt implements ValueCompressonHolder.UnCompressValu
 
   private DataType actualDataType;
 
-  public UnCompressMaxMinInt(DataType actualDataType) {
+  public UnCompressNoneInt(DataType actualDataType) {
     this.actualDataType = actualDataType;
   }
 
@@ -57,81 +56,90 @@ public class UnCompressMaxMinInt implements ValueCompressonHolder.UnCompressValu
 
   }
 
+  @Override public byte[] getBackArrayData() {
+    return ValueCompressionUtil.convertToBytes(value);
+  }
+
   @Override public ValueCompressonHolder.UnCompressValue getNew() {
     try {
       return (ValueCompressonHolder.UnCompressValue) clone();
-    } catch (CloneNotSupportedException e) {
-      LOGGER.error(e, e.getMessage());
+    } catch (CloneNotSupportedException exc) {
+      LOGGER.error(exc, exc.getMessage());
     }
     return null;
   }
 
   @Override public ValueCompressonHolder.UnCompressValue compress() {
-    UnCompressMaxMinByte byte1 = new UnCompressMaxMinByte(actualDataType);
+    UnCompressNoneByte byte1 = new UnCompressNoneByte(actualDataType);
     byte1.setValue(compressor.compressInt(value));
     return byte1;
   }
 
-  @Override public ValueCompressonHolder.UnCompressValue uncompress(
-      ValueCompressionUtil.DataType dataTypeValue) {
+  @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
     return null;
-  }
-
-  @Override public byte[] getBackArrayData() {
-    return ValueCompressionUtil.convertToBytes(value);
   }
 
   @Override public void setValueInBytes(byte[] value) {
     ByteBuffer buffer = ByteBuffer.wrap(value);
     this.value = ValueCompressionUtil.convertToIntArray(buffer, value.length);
+
   }
 
   /**
    * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
    */
   @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
-    return new UnCompressMaxMinByte(actualDataType);
+    return new UnCompressNoneByte(this.actualDataType);
   }
 
-  @Override public CarbonReadDataHolder getValues(int decVal, Object maxValueObject) {
+  @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
     switch (actualDataType) {
+      case DATA_SHORT:
+        return unCompressShort();
+      case DATA_INT:
+        return unCompressInt();
+      case DATA_LONG:
       case DATA_BIGINT:
-        return unCompressLong(decVal, maxValueObject);
+        return unCompressLong();
       default:
-        return unCompressDouble(decVal, maxValueObject);
+        return unCompressDouble();
     }
   }
 
-  private CarbonReadDataHolder unCompressDouble(int decVal, Object maxValueObject) {
-    double maxValue = (double) maxValueObject;
+  private CarbonReadDataHolder unCompressShort() {
+    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
+    short[] vals = new short[value.length];
+    for (int i = 0; i < vals.length; i++) {
+      vals[i] = (short)value[i];
+    }
+    dataHolder.setReadableShortValues(vals);
+    return dataHolder;
+  }
+
+  private CarbonReadDataHolder unCompressInt() {
+    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
+    dataHolder.setReadableIntValues(value);
+    return dataHolder;
+  }
+
+  private CarbonReadDataHolder unCompressDouble() {
+    CarbonReadDataHolder dataHolderInfoObj = new CarbonReadDataHolder();
     double[] vals = new double[value.length];
-    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
     for (int i = 0; i < vals.length; i++) {
-      if (value[i] == 0) {
-        vals[i] = maxValue;
-      } else {
-        vals[i] = maxValue - value[i];
-      }
-
+      vals[i] = value[i];
     }
-    dataHolder.setReadableDoubleValues(vals);
-    return dataHolder;
+    dataHolderInfoObj.setReadableDoubleValues(vals);
+    return dataHolderInfoObj;
   }
 
-  private CarbonReadDataHolder unCompressLong(int decVal, Object maxValueObject) {
-    long maxValue = (long) maxValueObject;
+  private CarbonReadDataHolder unCompressLong() {
+    CarbonReadDataHolder dataHolderInfoObj = new CarbonReadDataHolder();
     long[] vals = new long[value.length];
-    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
     for (int i = 0; i < vals.length; i++) {
-      if (value[i] == 0) {
-        vals[i] = maxValue;
-      } else {
-        vals[i] = maxValue - value[i];
-      }
-
+      vals[i] = value[i];
     }
-    dataHolder.setReadableLongValues(vals);
-    return dataHolder;
-  }
 
+    dataHolderInfoObj.setReadableLongValues(vals);
+    return dataHolderInfoObj;
+  }
 }

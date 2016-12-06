@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.datastorage.store.compression.type;
+package org.apache.carbondata.core.datastorage.store.compression.nondecimal;
 
 import java.nio.ByteBuffer;
 
@@ -25,71 +25,76 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
-import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
-public class UnCompressNonDecimalInt implements UnCompressValue<int[]> {
+public class UnCompressNonDecimalFloat implements ValueCompressonHolder.UnCompressValue<float[]> {
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnCompressNonDecimalInt.class.getName());
+      LogServiceFactory.getLogService(UnCompressNonDecimalFloat.class.getName());
   /**
-   * intCompressor.
+   * floatCompressor
    */
   private static Compressor compressor = CompressorFactory.getInstance();
   /**
    * value.
    */
-  private int[] value;
 
-  @Override public void setValue(int[] value) {
-    this.value = (int[]) value;
+  private float[] value;
+
+  @Override public void setValue(float[] value) {
+    this.value = value;
 
   }
 
-  @Override public UnCompressValue getNew() {
+  @Override public ValueCompressonHolder.UnCompressValue getNew() {
     try {
-      return (UnCompressValue) clone();
-    } catch (CloneNotSupportedException csne1) {
-      LOGGER.error(csne1, csne1.getMessage());
+      return (ValueCompressonHolder.UnCompressValue) clone();
+    } catch (CloneNotSupportedException cnsexception) {
+      LOGGER
+          .error(cnsexception, cnsexception.getMessage());
     }
     return null;
   }
 
-  @Override public UnCompressValue compress() {
-    UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
-    byte1.setValue(compressor.compressInt(value));
-    return byte1;
-  }
-
-  @Override public byte[] getBackArrayData() {
+  public byte[] getBackArrayData() {
     return ValueCompressionUtil.convertToBytes(value);
   }
 
-  @Override public void setValueInBytes(byte[] bytesArr) {
-    ByteBuffer buffer = ByteBuffer.wrap(bytesArr);
-    this.value = ValueCompressionUtil.convertToIntArray(buffer, bytesArr.length);
+  @Override public ValueCompressonHolder.UnCompressValue compress() {
+    UnCompressNonDecimalByte byte1 = new UnCompressNonDecimalByte();
+    byte1.setValue(compressor.compressFloat(value));
+    return byte1;
   }
 
-  @Override public UnCompressValue getCompressorObject() {
+  @Override
+  public ValueCompressonHolder.UnCompressValue uncompress(ValueCompressionUtil.DataType dataType) {
+    return null;
+  }
+
+  @Override public void setValueInBytes(byte[] value) {
+    ByteBuffer buffer = ByteBuffer.wrap(value);
+    this.value = ValueCompressionUtil.convertToFloatArray(buffer, value.length);
+  }
+
+  /**
+   * @see ValueCompressonHolder.UnCompressValue#getCompressorObject()
+   */
+  @Override public ValueCompressonHolder.UnCompressValue getCompressorObject() {
     return new UnCompressNonDecimalByte();
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
     double[] vals = new double[value.length];
-    for (int k = 0; k < vals.length; k++) {
-      vals[k] = value[k] / Math.pow(10, decimal);
+    for (int m = 0; m < vals.length; m++) {
+      vals[m] = value[m] / Math.pow(10, decimal);
     }
     CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
     dataHolder.setReadableDoubleValues(vals);
     return dataHolder;
-  }
-
-  @Override public UnCompressValue uncompress(DataType dataType) {
-    return null;
   }
 
 }

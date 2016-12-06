@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.datastorage.store.compression.type;
+package org.apache.carbondata.core.datastorage.store.compression.none;
 
 import java.nio.ByteBuffer;
 
@@ -30,50 +30,59 @@ import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHol
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
-public class UnCompressNoneFloat implements ValueCompressonHolder.UnCompressValue<float[]> {
+public class UnCompressNoneShort implements ValueCompressonHolder.UnCompressValue<short[]> {
   /**
    * Attribute for Carbon LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(UnCompressNoneFloat.class.getName());
+      LogServiceFactory.getLogService(UnCompressNoneShort.class.getName());
+
   /**
-   * compressor
+   * shortCompressor.
    */
   private static Compressor compressor = CompressorFactory.getInstance();
+
   /**
    * value.
    */
-  private float[] value;
+  private short[] shortValue;
 
   private DataType actualDataType;
 
-  public UnCompressNoneFloat(DataType actualDataType) {
+  public UnCompressNoneShort(DataType actualDataType) {
     this.actualDataType = actualDataType;
   }
 
-  @Override public void setValue(float[] value) {
-    this.value = value;
-
+  @Override public void setValue(short[] shortValue) {
+    this.shortValue = shortValue;
   }
 
   @Override public ValueCompressonHolder.UnCompressValue getNew() {
     try {
       return (ValueCompressonHolder.UnCompressValue) clone();
-    } catch (CloneNotSupportedException ex5) {
-      LOGGER.error(ex5, ex5.getMessage());
+    } catch (CloneNotSupportedException cns1) {
+      LOGGER.error(cns1, cns1.getMessage());
     }
     return null;
   }
 
   @Override public ValueCompressonHolder.UnCompressValue compress() {
     UnCompressNoneByte byte1 = new UnCompressNoneByte(actualDataType);
-    byte1.setValue(compressor.compressFloat(value));
+    byte1.setValue(compressor.compressShort(shortValue));
     return byte1;
+  }
+
+  @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
+    return null;
+  }
+
+  @Override public byte[] getBackArrayData() {
+    return ValueCompressionUtil.convertToBytes(shortValue);
   }
 
   @Override public void setValueInBytes(byte[] value) {
     ByteBuffer buffer = ByteBuffer.wrap(value);
-    this.value = ValueCompressionUtil.convertToFloatArray(buffer, value.length);
+    shortValue = ValueCompressionUtil.convertToShortArray(buffer, value.length);
   }
 
   /**
@@ -84,22 +93,35 @@ public class UnCompressNoneFloat implements ValueCompressonHolder.UnCompressValu
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    double[] vals = new double[value.length];
-    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i];
+    switch (actualDataType) {
+      case DATA_BIGINT:
+        return unCompressLong();
+      default:
+        return unCompressDouble();
     }
-    dataHolder.setReadableDoubleValues(vals);
-    return dataHolder;
   }
 
-  @Override
-  public ValueCompressonHolder.UnCompressValue uncompress(ValueCompressionUtil.DataType dataType) {
-    return null;
+  private CarbonReadDataHolder unCompressDouble() {
+    CarbonReadDataHolder dataHldr = new CarbonReadDataHolder();
+
+    double[] vals = new double[shortValue.length];
+
+    for (int i = 0; i < vals.length; i++) {
+      vals[i] = shortValue[i];
+    }
+    dataHldr.setReadableDoubleValues(vals);
+    return dataHldr;
   }
 
-  @Override public byte[] getBackArrayData() {
-    return ValueCompressionUtil.convertToBytes(value);
-  }
+  private CarbonReadDataHolder unCompressLong() {
+    CarbonReadDataHolder dataHldr = new CarbonReadDataHolder();
 
+    long[] vals = new long[shortValue.length];
+
+    for (int i = 0; i < vals.length; i++) {
+      vals[i] = shortValue[i];
+    }
+    dataHldr.setReadableLongValues(vals);
+    return dataHldr;
+  }
 }

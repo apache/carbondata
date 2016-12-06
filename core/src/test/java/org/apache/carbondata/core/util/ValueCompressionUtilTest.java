@@ -21,7 +21,31 @@ package org.apache.carbondata.core.util;
 import org.apache.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.datastorage.store.compression.type.*;
+import org.apache.carbondata.core.datastorage.store.compression.minmax.UnCompressMaxMinByte;
+import org.apache.carbondata.core.datastorage.store.compression.minmax.UnCompressMaxMinDefault;
+import org.apache.carbondata.core.datastorage.store.compression.minmax.UnCompressMaxMinFloat;
+import org.apache.carbondata.core.datastorage.store.compression.minmax.UnCompressMaxMinInt;
+import org.apache.carbondata.core.datastorage.store.compression.minmax.UnCompressMaxMinLong;
+import org.apache.carbondata.core.datastorage.store.compression.minmax.UnCompressMaxMinShort;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalByte;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal
+    .UnCompressNonDecimalDefault;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalFloat;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalInt;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalLong;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinByte;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinDefault;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinFloat;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinInt;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinLong;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinShort;
+import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalShort;
+import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneByte;
+import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneDefault;
+import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneFloat;
+import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneInt;
+import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneLong;
+import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneShort;
 
 import org.junit.Test;
 
