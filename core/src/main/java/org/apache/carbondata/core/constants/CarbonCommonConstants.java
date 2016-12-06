@@ -953,6 +953,38 @@ public final class CarbonCommonConstants {
    */
   public static final int CARBON_EXECUTOR_STARTUP_THREAD_SLEEP_TIME = 250;
 
+  /**
+   * to enable offheap sort
+   */
+  public static final String ENABLE_UNSAFE_SORT = "enable.unsafe.sort";
+
+  /**
+   * to enable offheap sort
+   */
+  public static final String ENABLE_UNSAFE_SORT_DEFAULT = "true";
+
+  /**
+   * to enable offheap sort
+   */
+  public static final String ENABLE_OFFHEAP_SORT = "enable.offheap.sort";
+
+  /**
+   * to enable offheap sort
+   */
+  public static final String ENABLE_OFFHEAP_SORT_DEFAULT = "true";
+
+  public static final String ENABLE_INMEMORY_MERGE_SORT = "enable.inmemory.merge.sort";
+
+  public static final String ENABLE_INMEMORY_MERGE_SORT_DEFAULT = "true";
+
+  public static final String OFFHEAP_SORT_CHUNK_SIZE_IN_MB = "offheap.sort.chunk.size.inmb";
+
+  public static final String OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT = "64";
+
+  public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB = "sort.inmemory.size.inmb";
+
+  public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT = "1024";
+
   private CarbonCommonConstants() {
   }
 }
