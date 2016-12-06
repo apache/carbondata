@@ -18,14 +18,13 @@
 package org.apache.spark.sql.hive
 
 import java.io._
-import java.util.{GregorianCalendar, UUID}
+import java.util.UUID
 
 import scala.Array.canBuildFrom
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
 import scala.util.parsing.combinator.RegexParsers
 
-import org.apache.spark
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
@@ -42,7 +41,6 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType
 import org.apache.carbondata.core.reader.ThriftReader
@@ -293,10 +291,17 @@ class CarbonMetastore(hiveContext: HiveContext, val storePath: String,
     if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
       FileFactory.mkdirs(schemaMetadataPath, fileType)
     }
+
+    /**
+    * schemaFilePath starts with file:// will not create meta files successfully
+    * while thriftWriter will have no complains.
+    * This will cause some weired error eg. No table found.
+    */
     val thriftWriter = new ThriftWriter(schemaFilePath, false)
     thriftWriter.open()
     thriftWriter.write(thriftTableInfo)
     thriftWriter.close()
+
     metadata.tablesMeta += tableMeta
     logInfo(s"Table $tableName for Database $dbName created successfully.")
     LOGGER.info(s"Table $tableName for Database $dbName created successfully.")

@@ -25,6 +25,8 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -603,5 +605,34 @@ public final class CarbonDataProcessorUtil {
       }
     }
     return dateformatsHashMap;
+  }
+
+  /**
+   * Maybe we can extract interfaces later to support task context in hive ,spark
+   */
+  public static Object fetchTaskContext() {
+    try {
+      return Class.forName("org.apache.spark.TaskContext").getMethod("get").invoke(null);
+    } catch (Exception e) {
+      //just ignore
+      LOGGER.info("org.apache.spark.TaskContext not found");
+      return null;
+    }
+  }
+
+  public static void configureTaskContext(Object context) {
+    try {
+      Class clazz = Class.forName("org.apache.spark.TaskContext$");
+      for (Method method : clazz.getDeclaredMethods()) {
+        if (method.getName().equals("setTaskContext")) {
+          Field field = clazz.getField("MODULE$");
+          Object instance = field.get(null);
+          method.invoke(instance, new Object[]{context});
+        }
+      }
+    } catch (Exception e) {
+      //just ignore
+      LOGGER.info("org.apache.spark.TaskContext not found");
+    }
   }
 }
