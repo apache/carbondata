@@ -77,7 +77,8 @@ public class UnCompressMaxMinByte implements UnCompressValue<byte[]> {
   }
 
   @Override public UnCompressValue uncompress(DataType dataType) {
-    UnCompressValue byte1 = ValueCompressionUtil.getUnCompressDecimalMaxMin(dataType, actualDataType);
+    UnCompressValue byte1 = ValueCompressionUtil.getUnCompressDecimalMaxMin(dataType,
+        actualDataType);
     ValueCompressonHolder.unCompress(dataType, byte1, value);
     return byte1;
   }

@@ -165,7 +165,8 @@ public final class ValueCompressionUtil {
         return new CompressionFinder(COMPRESSION_TYPE.DELTA_DOUBLE, DataType.DATA_DOUBLE,
             deltaDataType);
       } else {
-        return new CompressionFinder(COMPRESSION_TYPE.ADAPTIVE, DataType.DATA_DOUBLE, adaptiveDataType);
+        return new CompressionFinder(COMPRESSION_TYPE.ADAPTIVE, DataType.DATA_DOUBLE,
+            adaptiveDataType);
       }
     } else {
       // double
@@ -590,8 +591,8 @@ public final class ValueCompressionUtil {
   /**
    * uncompress data 1. value = maxValue - subValue 2. value: int->double
    */
-  public static ValueCompressonHolder.UnCompressValue getUnCompressDecimalMaxMin(DataType compDataType,
-      DataType actualDataType) {
+  public static ValueCompressonHolder.UnCompressValue getUnCompressDecimalMaxMin(
+      DataType compDataType, DataType actualDataType) {
     switch (compDataType) {
       case DATA_BYTE:
         return new UnCompressMaxMinByte(actualDataType);
@@ -611,7 +612,8 @@ public final class ValueCompressionUtil {
   /**
    * uncompress data value = value/Math.pow(10, mantissa)
    */
-  public static ValueCompressonHolder.UnCompressValue getUnCompressNonDecimal(DataType compDataType) {
+  public static ValueCompressonHolder.UnCompressValue getUnCompressNonDecimal(
+      DataType compDataType) {
     switch (compDataType) {
       case DATA_BYTE:
         return new UnCompressNonDecimalByte();
