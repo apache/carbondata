@@ -35,7 +35,6 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDime
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
-import org.apache.commons.lang.math.NumberUtils;
 import org.apache.spark.unsafe.types.UTF8String;
 
 public final class DataTypeUtil {
@@ -46,6 +45,9 @@ public final class DataTypeUtil {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataTypeUtil.class.getName());
   private static final Map<String, String> dataTypeDisplayNames;
+  private static SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
 
   static {
     dataTypeDisplayNames = new HashMap<String, String>(16);
@@ -208,43 +210,6 @@ public final class DataTypeUtil {
   }
 
   /**
-   * Below method will be used to basically to know whether the input data is valid string of
-   * giving data type. If there is any non parseable string is present return false.
-   */
-  public static boolean isValidData(String data, DataType actualDataType) {
-    if (null == data) {
-      return false;
-    }
-    try {
-      switch (actualDataType) {
-        case SHORT:
-        case INT:
-        case LONG:
-        case DOUBLE:
-        case DECIMAL:
-          return NumberUtils.isNumber(data);
-        case TIMESTAMP:
-          if (data.isEmpty()) {
-            return false;
-          }
-          SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
-          try {
-            parser.parse(data);
-            return true;
-          } catch (ParseException e) {
-            return false;
-          }
-        default:
-          return true;
-      }
-    } catch (NumberFormatException ex) {
-      return false;
-    }
-  }
-
-  /**
    * Below method will be used to convert the data passed to its actual data
    * type
    *
@@ -283,12 +248,8 @@ public final class DataTypeUtil {
           if (data.isEmpty()) {
             return null;
           }
-          SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
-          Date dateToStr = null;
           try {
-            dateToStr = parser.parse(data);
+            Date dateToStr = parser.parse(data);
             return dateToStr.getTime() * 1000;
           } catch (ParseException e) {
             LOGGER.error("Cannot convert" + data + " to Time/Long type value" + e.getMessage());
