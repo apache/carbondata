@@ -132,6 +132,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return org.apache.carbondata.format.DataType.DOUBLE;
       case DECIMAL:
         return org.apache.carbondata.format.DataType.DECIMAL;
+      case DATE:
+        return org.apache.carbondata.format.DataType.DATE;
       case TIMESTAMP:
         return org.apache.carbondata.format.DataType.TIMESTAMP;
       case ARRAY:
@@ -306,6 +308,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return DataType.DECIMAL;
       case TIMESTAMP:
         return DataType.TIMESTAMP;
+      case DATE:
+        return DataType.DATE;
       case ARRAY:
         return DataType.ARRAY;
       case STRUCT:

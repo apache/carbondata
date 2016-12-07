@@ -80,6 +80,7 @@ public class EqualToExpression extends BinaryConditionalExpression {
       case DOUBLE:
         result = FilterUtil.nanSafeEqualsDoubles(val1.getDouble(), val2.getDouble());
         break;
+      case DATE:
       case TIMESTAMP:
         result = val1.getTime().equals(val2.getTime());
         break;

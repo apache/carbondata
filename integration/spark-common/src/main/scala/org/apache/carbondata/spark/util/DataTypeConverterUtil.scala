@@ -22,7 +22,7 @@ import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 object DataTypeConverterUtil {
   def convertToCarbonType(dataType: String): DataType = {
     dataType.toLowerCase match {
-      case "string" => DataType.STRING
+      case "string" | "char" => DataType.STRING
       case "int" => DataType.INT
       case "integer" => DataType.INT
       case "tinyint" => DataType.SHORT
@@ -33,6 +33,7 @@ object DataTypeConverterUtil {
       case "double" => DataType.DOUBLE
       case "decimal" => DataType.DECIMAL
       case "timestamp" => DataType.TIMESTAMP
+      case "date" => DataType.DATE
       case "array" => DataType.ARRAY
       case "struct" => DataType.STRUCT
       case _ => convertToCarbonTypeForSpark2(dataType)
@@ -52,6 +53,7 @@ object DataTypeConverterUtil {
       case "doubletype" => DataType.DOUBLE
       case "decimaltype" => DataType.DECIMAL
       case "timestamptype" => DataType.TIMESTAMP
+      case "datetype" => DataType.DATE
       case "arraytype" => DataType.ARRAY
       case "structtype" => DataType.STRUCT
       case _ => sys.error(s"Unsupported data type: $dataType")
@@ -67,6 +69,7 @@ object DataTypeConverterUtil {
       case DataType.DOUBLE => "double"
       case DataType.DECIMAL => "decimal"
       case DataType.TIMESTAMP => "timestamp"
+      case DataType.DATE => "date"
       case DataType.ARRAY => "array"
       case DataType.STRUCT => "struct"
     }

@@ -20,15 +20,15 @@
 package org.apache.carbondata.spark.testsuite.directdictionary
 
 import java.io.File
-import java.sql.Timestamp
+import java.sql.{Date, Timestamp}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.hive.HiveContext
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.scalatest.BeforeAndAfterAll
 
 
@@ -37,20 +37,14 @@ import org.scalatest.BeforeAndAfterAll
   *
   *
   */
-class TimestampDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
+class DateDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
 
   override def beforeAll {
     try {
-      CarbonProperties.getInstance()
-        .addProperty(TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP, "2000-12-13 02:10.00.0")
-      CarbonProperties.getInstance()
-        .addProperty(TimeStampGranularityConstants.CARBON_TIME_GRANULARITY,
-          TimeStampGranularityConstants.TIME_GRAN_SEC.toString
-        )
       sql(
         """CREATE TABLE IF NOT EXISTS timestampTyeNullData
-                     (ID Int, dateField Timestamp, country String,
+                     (ID Int, dateField date, country String,
                      name String, phonetype String, serialname String, salary Int)
                     STORED BY 'org.apache.carbondata.format'"""
       )
@@ -63,7 +57,9 @@ class TimestampDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
       sql("LOAD DATA LOCAL INPATH '" + csvFilePath + "' INTO TABLE timestampTyeNullData").collect();
 
     } catch {
-      case x: Throwable => CarbonProperties.getInstance()
+      case x: Throwable =>
+        x.printStackTrace()
+        CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     }
   }
@@ -71,7 +67,7 @@ class TimestampDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
   test("SELECT max(dateField) FROM timestampTyeNullData where dateField is not null") {
     checkAnswer(
       sql("SELECT max(dateField) FROM timestampTyeNullData where dateField is not null"),
-      Seq(Row(Timestamp.valueOf("2015-07-23 00:00:00.0"))
+      Seq(Row(Date.valueOf("2015-07-23"))
       )
     )
   }

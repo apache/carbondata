@@ -609,6 +609,7 @@ object CarbonMetastoreTypes extends RegexParsers {
     fixedDecimalType |
     "decimal" ^^^ "decimal" ^^^ DecimalType(18, 2) |
     "varchar\\((\\d+)\\)".r ^^^ StringType |
+    "date" ^^^ DateType |
     "timestamp" ^^^ TimestampType
 
   protected lazy val fixedDecimalType: Parser[DataType] =
@@ -668,6 +669,7 @@ object CarbonMetastoreTypes extends RegexParsers {
       case BooleanType => "boolean"
       case DecimalType() => "decimal"
       case TimestampType => "timestamp"
+      case DateType => "date"
     }
   }
 }
