@@ -565,15 +565,15 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
           tempDecoder.attrList.asScala.foreach{attr => tmpAttrMap.put(attr, attr.attr)}
         }
         val prExps = p.projectList.map { prExp =>
-              prExp.transform {
-                case attr: AttributeReference =>
-                  val tempAttr = tmpAttrMap.get(AttributeReferenceWrapper(attr))
-                  if(tempAttr.isDefined) {
-                    tempAttr.get
-                  } else {
-                    updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
-                  }
+          prExp.transform {
+            case attr: AttributeReference =>
+              val tempAttr = tmpAttrMap.get(AttributeReferenceWrapper(attr))
+              if(tempAttr.isDefined) {
+                tempAttr.get
+              } else {
+                updateDataType(attr, attrMap, allAttrsNotDecode, aliasMap)
               }
+          }
         }.asInstanceOf[Seq[NamedExpression]]
         Project(prExps, p.child)
       case wd: Window if relations.nonEmpty =>

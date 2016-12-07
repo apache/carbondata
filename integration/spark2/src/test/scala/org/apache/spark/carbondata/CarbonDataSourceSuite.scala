@@ -26,7 +26,7 @@ class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     spark = SparkSession
       .builder()
-      .master("local[4]")
+      .master("local")
       .appName("CarbonExample")
       .enableHiveSupport()
       .config(CarbonCommonConstants.STORE_LOCATION,
@@ -48,9 +48,22 @@ class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
          |    bigintField long,
          |    doubleField double,
          |    stringField string,
-         |    decimalField decimal(13, 0)
-         | )
+         |    decimalField decimal(13, 0),
+         |    timestampField string)
          | USING org.apache.spark.sql.CarbonSource
+       """.stripMargin)
+
+    spark.sql(
+      s"""
+         | CREATE TABLE csv_table
+         | (  shortField short,
+         |    intField int,
+         |    bigintField long,
+         |    doubleField double,
+         |    stringField string,
+         |    decimalField decimal(13, 0),
+         |    timestampField string)
+         | ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
        """.stripMargin)
   }
 
@@ -64,10 +77,17 @@ class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
     spark.sql("select * from carbon_testtable").collect()
   }
 
-
   test("agg") {
     spark.sql("select stringField, sum(intField) , sum(decimalField) " +
       "from carbon_testtable group by stringField").collect()
+
+    spark.sql(
+      s"""
+         | INSERT INTO TABLE carbon_testtable
+         | SELECT shortField, intField, bigintField, doubleField, stringField,
+         | decimalField, from_unixtime(unix_timestamp(timestampField,'yyyy/M/dd')) timestampField
+         | FROM csv_table
+       """.stripMargin)
   }
 
 }
