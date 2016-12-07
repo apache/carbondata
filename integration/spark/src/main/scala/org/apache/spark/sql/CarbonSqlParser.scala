@@ -144,6 +144,8 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
   protected val STRING = carbonKeyWord("STRING")
   protected val INTEGER = carbonKeyWord("INTEGER")
   protected val TIMESTAMP = carbonKeyWord("TIMESTAMP")
+  protected val DATE = carbonKeyWord("DATE")
+  protected val CHAR = carbonKeyWord("CHAR")
   protected val NUMERIC = carbonKeyWord("NUMERIC")
   protected val DECIMAL = carbonKeyWord("DECIMAL")
   protected val DOUBLE = carbonKeyWord("DOUBLE")
@@ -380,6 +382,9 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
                     f.precision = precision
                     f.scale = scale
                     f.dataType = Some("decimal")
+                  }
+                  if(f.dataType.getOrElse("").startsWith("char")) {
+                    f.dataType = Some("char")
                   }
                   fields ++= Seq(f)
                 }
@@ -815,7 +820,8 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
     fields.foreach(field => {
 
       if (dictExcludeCols.toSeq.exists(x => x.equalsIgnoreCase(field.column))) {
-        if (DataTypeUtil.getDataType(field.dataType.get.toUpperCase()) != DataType.TIMESTAMP) {
+        val dataType = DataTypeUtil.getDataType(field.dataType.get.toUpperCase())
+        if (dataType != DataType.TIMESTAMP && dataType != DataType.DATE ) {
           noDictionaryDims :+= field.column
         }
         dimFields += field
@@ -853,7 +859,7 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
    * @param dimensionDatatype
    */
   def isDetectAsDimentionDatatype(dimensionDatatype: String): Boolean = {
-    val dimensionType = Array("string", "array", "struct", "timestamp")
+    val dimensionType = Array("string", "array", "struct", "timestamp", "date", "char")
     dimensionType.exists(x => x.equalsIgnoreCase(dimensionDatatype))
   }
 
@@ -1090,7 +1096,16 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
     STRING ^^^ "string" | INTEGER ^^^ "integer" |
     TIMESTAMP ^^^ "timestamp" | NUMERIC ^^^ "numeric" |
     BIGINT ^^^ "bigint" | SHORT ^^^ "smallint" |
-    INT ^^^ "int" | DOUBLE ^^^ "double" | decimalType
+    INT ^^^ "int" | DOUBLE ^^^ "double" | decimalType | DATE ^^^ "date" | charType
+
+  /**
+   * Matching the decimal(10,0) data type and returning the same.
+   */
+  private lazy val charType =
+    CHAR ~ ("(" ~>numericLit <~ ")").? ^^ {
+      case char ~ digit =>
+        s"$char($digit)"
+    }
 
   /**
    * Matching the decimal(10,0) data type and returning the same.

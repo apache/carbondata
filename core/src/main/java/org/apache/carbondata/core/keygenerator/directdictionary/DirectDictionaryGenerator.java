@@ -48,7 +48,7 @@ public interface DirectDictionaryGenerator {
    * filter member first it should be converted in date form as per above format and needs to
    * retrieve time stamp.
    *
-   * @param member The member string value
+   * @param memberStr The member string value
    * @return returns dictionary/ surrogate value
    */
   int generateDirectSurrogateKey(String memberStr, String format);

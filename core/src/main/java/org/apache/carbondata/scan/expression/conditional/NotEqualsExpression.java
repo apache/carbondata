@@ -77,6 +77,7 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
       case DOUBLE:
         result = val1.getDouble().doubleValue() != val2.getDouble().doubleValue();
         break;
+      case DATE:
       case TIMESTAMP:
         result = val1.getTime().longValue() != val2.getTime().longValue();
         break;

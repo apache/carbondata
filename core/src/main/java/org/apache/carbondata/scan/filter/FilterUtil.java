@@ -221,8 +221,8 @@ public final class FilterUtil {
    */
   public static boolean checkIfDataTypeNotTimeStamp(Expression expression) {
     if (expression.getFilterExpressionType() == ExpressionType.LITERAL) {
-      if (!(((LiteralExpression) expression).getLiteralExpDataType()
-          == DataType.TIMESTAMP)) {
+      DataType dataType = ((LiteralExpression) expression).getLiteralExpDataType();
+      if (!(dataType == DataType.TIMESTAMP || dataType == DataType.DATE)) {
         return true;
       }
     }
@@ -680,8 +680,9 @@ public final class FilterUtil {
    * Method will return the start key based on KeyGenerator for the respective
    * filter resolved instance.
    *
-   * @param dimColResolvedFilterInfo
-   * @param segmentProperties
+   * @param dimensionFilter
+   * @param startKey
+   * @param startKeyList
    * @return long[] start key
    */
   public static void getStartKey(Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter,
@@ -706,7 +707,6 @@ public final class FilterUtil {
    * all dimension and the indexes which will help to read the respective filter value.
    *
    * @param dimColResolvedFilterInfo
-   * @param segmentProperties
    * @param setOfStartKeyByteArray
    * @return
    */
@@ -761,7 +761,6 @@ public final class FilterUtil {
    * all dimension and the indexes which will help to read the respective filter value.
    *
    * @param dimColResolvedFilterInfo
-   * @param segmentProperties
    * @param setOfEndKeyByteArray
    * @return end key array
    */
@@ -1123,6 +1122,7 @@ public final class FilterUtil {
         case BOOLEAN:
           return Boolean
               .compare((Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
+        case DATE:
         case TIMESTAMP:
           SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
@@ -1247,6 +1247,7 @@ public final class FilterUtil {
           java.math.BigDecimal val1 = new BigDecimal(filterMember1);
           java.math.BigDecimal val2 = new BigDecimal(filterMember2);
           return val1.compareTo(val2);
+        case DATE:
         case TIMESTAMP:
           if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
             return 1;

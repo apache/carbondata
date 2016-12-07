@@ -65,6 +65,7 @@ public class NotInExpression extends BinaryConditionalExpression {
           case DOUBLE:
             val = new ExpressionResult(val.getDataType(), exprResVal.getDouble());
             break;
+          case DATE:
           case TIMESTAMP:
             val = new ExpressionResult(val.getDataType(), exprResVal.getTime());
             break;

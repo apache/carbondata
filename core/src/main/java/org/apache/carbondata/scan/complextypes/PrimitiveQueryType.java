@@ -139,6 +139,8 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
         return BooleanType$.MODULE$;
       case TIMESTAMP:
         return TimestampType$.MODULE$;
+      case DATE:
+        return DateType$.MODULE$;
       default:
         return IntegerType$.MODULE$;
     }

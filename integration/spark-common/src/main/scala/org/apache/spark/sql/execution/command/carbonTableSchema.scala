@@ -151,7 +151,7 @@ class TableNewProcessor(cm: TableModel, sqlContext: SQLContext) {
     if (highCardinalityDims.contains(colName)) {
       encoders.remove(encoders.remove(Encoding.DICTIONARY))
     }
-    if (dataType == DataType.TIMESTAMP) {
+    if (dataType == DataType.TIMESTAMP || dataType == DataType.DATE) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
     val colPropMap = new java.util.HashMap[String, String]()
