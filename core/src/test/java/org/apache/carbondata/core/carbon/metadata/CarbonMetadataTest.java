@@ -31,7 +31,6 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDime
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
-import junit.framework.TestCase;
 import mockit.Mock;
 import mockit.MockUp;
 import org.junit.AfterClass;
@@ -41,7 +40,6 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 
 public class CarbonMetadataTest {
 
@@ -92,14 +90,12 @@ public class CarbonMetadataTest {
 
   @Test public void testGetCarbonTableReturingProperTableWithProperDatabaseName() {
     String expectedResult = "carbonTestDatabase";
-    assertEquals(expectedResult,
-        carbonMetadata.getCarbonTable(tableUniqueName).getDatabaseName());
+    assertEquals(expectedResult, carbonMetadata.getCarbonTable(tableUniqueName).getDatabaseName());
   }
 
   @Test public void testGetCarbonTableReturingProperTableWithProperFactTableName() {
     String expectedResult = "carbonTestTable";
-    assertEquals(expectedResult,
-        carbonMetadata.getCarbonTable(tableUniqueName).getFactTableName());
+    assertEquals(expectedResult, carbonMetadata.getCarbonTable(tableUniqueName).getFactTableName());
   }
 
   @Test public void testGetCarbonTableReturingProperTableWithProperTableUniqueName() {
@@ -110,11 +106,13 @@ public class CarbonMetadataTest {
 
   @Test public void testloadMetadataTableWhenTableIsAlreadyExistsAndTimeStampIsChanged() {
     long expectedLastUpdatedTime = 10000L;
-    assertEquals(expectedLastUpdatedTime, carbonMetadata.getCarbonTable(tableUniqueName).getTableLastUpdatedTime());
+    assertEquals(expectedLastUpdatedTime,
+        carbonMetadata.getCarbonTable(tableUniqueName).getTableLastUpdatedTime());
     CarbonMetadata carbonMetadata1 = CarbonMetadata.getInstance();
     carbonMetadata1.loadTableMetadata(getTableInfo(100001));
     long expectedTableLastUpdatedTime = 100001L;
-    assertEquals(expectedTableLastUpdatedTime, carbonMetadata.getCarbonTable(tableUniqueName).getTableLastUpdatedTime());
+    assertEquals(expectedTableLastUpdatedTime,
+        carbonMetadata.getCarbonTable(tableUniqueName).getTableLastUpdatedTime());
     long expectedNumberOfTables = 1;
     assertEquals(expectedNumberOfTables, carbonMetadata.getNumberOfTables());
   }
