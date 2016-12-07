@@ -314,7 +314,7 @@ class NewCarbonDataLoadRDD[K, V](
 /**
  *  It loads the data to carbon from spark DataFrame using
  *  @see org.apache.carbondata.processing.newflow.DataLoadExecutor without
- *  kettle requirement                                                           *
+ *  kettle requirement
  */
 class NewDataFrameLoaderRDD[K, V](
                                    sc: SparkContext,
