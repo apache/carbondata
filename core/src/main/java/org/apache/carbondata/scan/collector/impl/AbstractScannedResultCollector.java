@@ -25,7 +25,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.scan.collector.ScannedResultCollector;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
@@ -100,20 +99,17 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
 
   private Object getMeasureData(MeasureColumnDataChunk dataChunk, int index, DataType dataType) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
-      Object msrVal;
       switch (dataType) {
         case SHORT:
         case INT:
         case LONG:
-          msrVal = dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
-          break;
+          return dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
         case DECIMAL:
-          msrVal = dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
-          break;
+          return  org.apache.spark.sql.types.Decimal.apply(
+                  dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index));
         default:
-          msrVal = dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
+          return  dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
       }
-      return DataTypeUtil.getMeasureDataBasedOnDataType(msrVal, dataType);
     }
     return null;
   }

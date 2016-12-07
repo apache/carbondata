@@ -117,7 +117,11 @@ public class DataTypeUtilTest {
     scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
     org.apache.spark.sql.types.Decimal expected =
         new org.apache.spark.sql.types.Decimal().set(scalaDecVal);
-    assertEquals(getMeasureDataBasedOnDataType(1, DataType.DECIMAL), expected);
+    assertEquals(
+            getMeasureDataBasedOnDataType(
+                    new java.math.BigDecimal(1),
+                    DataType.DECIMAL),
+            expected);
     assertEquals(getMeasureDataBasedOnDataType("1", DataType.STRING), "1");
   }
 
