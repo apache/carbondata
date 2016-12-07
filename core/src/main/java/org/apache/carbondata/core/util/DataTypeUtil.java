@@ -22,6 +22,7 @@ package org.apache.carbondata.core.util;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -45,9 +46,15 @@ public final class DataTypeUtil {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataTypeUtil.class.getName());
   private static final Map<String, String> dataTypeDisplayNames;
-  private static SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+
+  private static final ThreadLocal<DateFormat> formatter = new ThreadLocal<DateFormat>() {
+    @Override
+    protected DateFormat initialValue() {
+      return new SimpleDateFormat(
+          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+    }
+  };
 
   static {
     dataTypeDisplayNames = new HashMap<String, String>(16);
@@ -218,7 +225,6 @@ public final class DataTypeUtil {
    * @return actual data after conversion
    */
   public static Object getDataBasedOnDataType(String data, DataType actualDataType) {
-
     if (null == data || CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(data)) {
       return null;
     }
@@ -249,7 +255,7 @@ public final class DataTypeUtil {
             return null;
           }
           try {
-            Date dateToStr = parser.parse(data);
+            Date dateToStr = formatter.get().parse(data);
             return dateToStr.getTime() * 1000;
           } catch (ParseException e) {
             LOGGER.error("Cannot convert" + data + " to Time/Long type value" + e.getMessage());
