@@ -311,6 +311,11 @@ class NewCarbonDataLoadRDD[K, V](
   }
 }
 
+/**
+ *  It loads the data to carbon from spark DataFrame using
+ *  @see org.apache.carbondata.processing.newflow.DataLoadExecutor without
+ *  kettle requirement                                                           *
+ */
 class NewDataFrameLoaderRDD[K, V](
                                    sc: SparkContext,
                                    result: DataLoadResult[K, V],
@@ -395,6 +400,14 @@ class NewDataFrameLoaderRDD[K, V](
   override protected def getPartitions: Array[Partition] = firstParent[Row].partitions
 }
 
+/**
+ * This class wrap Scala's Iterator to Java's Iterator.
+ * It also convert all columns to string data since carbondata will recognize the right type
+ * according to schema from spark DataFrame.
+ * @see org.apache.carbondata.spark.rdd.RddIterator
+ * @param rddIter
+ * @param carbonLoadModel
+ */
 class NewRddIterator(rddIter: Iterator[Row],
                      carbonLoadModel: CarbonLoadModel) extends java.util.Iterator[Array[AnyRef]] {
   val formatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
