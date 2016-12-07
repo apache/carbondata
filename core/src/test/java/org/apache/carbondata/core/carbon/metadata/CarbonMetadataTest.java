@@ -39,6 +39,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -61,52 +62,61 @@ public class CarbonMetadataTest {
 
   @Test public void testOnlyOneInstanceIsCreatedofCarbonMetadata() {
     CarbonMetadata carbonMetadata1 = CarbonMetadata.getInstance();
-    assertTrue(carbonMetadata == carbonMetadata1);
+    assertEquals(carbonMetadata, carbonMetadata1);
   }
 
   @Test public void testNumberOfTablesPresentInTheMetadata() {
-    assertEquals(1, carbonMetadata.getNumberOfTables());
+    int expectedResult = 1;
+    assertEquals(expectedResult, carbonMetadata.getNumberOfTables());
   }
 
   @Test public void testGetCarbonTableReturingProperCarbonTable() {
-    assertTrue(null != carbonMetadata.getCarbonTable(tableUniqueName));
+    assertNotNull(carbonMetadata.getCarbonTable(tableUniqueName));
   }
 
   @Test public void testGetCarbonTableReturingNullWhenInvalidNameIsPassed() {
-    assertTrue(null == carbonMetadata.getCarbonTable("notpresent"));
+    assertNull(carbonMetadata.getCarbonTable("notpresent"));
   }
 
   @Test public void testGetCarbonTableReturingProperTableWithProperDimensionCount() {
-    assertEquals(1,
+    int expectedResult = 1;
+    assertEquals(expectedResult,
         carbonMetadata.getCarbonTable(tableUniqueName).getNumberOfDimensions("carbonTestTable"));
   }
 
   @Test public void testGetCarbonTableReturingProperTableWithProperMeasureCount() {
-    assertEquals(1,
+    int expectedResult = 1;
+    assertEquals(expectedResult,
         carbonMetadata.getCarbonTable(tableUniqueName).getNumberOfMeasures("carbonTestTable"));
   }
 
   @Test public void testGetCarbonTableReturingProperTableWithProperDatabaseName() {
-    assertEquals("carbonTestDatabase",
+    String expectedResult = "carbonTestDatabase";
+    assertEquals(expectedResult,
         carbonMetadata.getCarbonTable(tableUniqueName).getDatabaseName());
   }
 
   @Test public void testGetCarbonTableReturingProperTableWithProperFactTableName() {
-    assertEquals("carbonTestTable",
+    String expectedResult = "carbonTestTable";
+    assertEquals(expectedResult,
         carbonMetadata.getCarbonTable(tableUniqueName).getFactTableName());
   }
 
   @Test public void testGetCarbonTableReturingProperTableWithProperTableUniqueName() {
-    assertEquals("carbonTestDatabase_carbonTestTable",
+    String expectedResult = "carbonTestDatabase_carbonTestTable";
+    assertEquals(expectedResult,
         carbonMetadata.getCarbonTable(tableUniqueName).getTableUniqueName());
   }
 
   @Test public void testloadMetadataTableWhenTableIsAlreadyExistsAndTimeStampIsChanged() {
-    assertEquals(10000, carbonMetadata.getCarbonTable(tableUniqueName).getTableLastUpdatedTime());
+    long expectedLastUpdatedTime = 10000L;
+    assertEquals(expectedLastUpdatedTime, carbonMetadata.getCarbonTable(tableUniqueName).getTableLastUpdatedTime());
     CarbonMetadata carbonMetadata1 = CarbonMetadata.getInstance();
     carbonMetadata1.loadTableMetadata(getTableInfo(100001));
-    assertEquals(100001, carbonMetadata.getCarbonTable(tableUniqueName).getTableLastUpdatedTime());
-    assertEquals(1, carbonMetadata.getNumberOfTables());
+    long expectedTableLastUpdatedTime = 100001L;
+    assertEquals(expectedTableLastUpdatedTime, carbonMetadata.getCarbonTable(tableUniqueName).getTableLastUpdatedTime());
+    long expectedNumberOfTables = 1;
+    assertEquals(expectedNumberOfTables, carbonMetadata.getNumberOfTables());
   }
 
   private static ColumnSchema getColumnarDimensionColumn() {
