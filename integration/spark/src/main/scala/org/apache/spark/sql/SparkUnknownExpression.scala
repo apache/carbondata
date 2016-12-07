@@ -42,11 +42,7 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
 
     val values = carbonRowInstance.getValues.toSeq.map {
       case s: String => org.apache.spark.unsafe.types.UTF8String.fromString(s)
-      case d: java.math.BigDecimal =>
-        val javaDecVal = new java.math.BigDecimal(d.toString)
-        val scalaDecVal = new scala.math.BigDecimal(javaDecVal)
-        val decConverter = new org.apache.spark.sql.types.Decimal()
-        decConverter.set(scalaDecVal)
+      case d: java.math.BigDecimal => org.apache.spark.sql.types.Decimal.apply(d)
       case value => value
     }
     try {

@@ -100,20 +100,17 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
 
   private Object getMeasureData(MeasureColumnDataChunk dataChunk, int index, DataType dataType) {
     if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
-      Object msrVal;
       switch (dataType) {
         case SHORT:
         case INT:
         case LONG:
-          msrVal = dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
-          break;
+          return dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
         case DECIMAL:
-          msrVal = dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
-          break;
+          return  org.apache.spark.sql.types.Decimal.apply(
+                  dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index));
         default:
-          msrVal = dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
+          return  dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
       }
-      return DataTypeUtil.getMeasureDataBasedOnDataType(msrVal, dataType);
     }
     return null;
   }

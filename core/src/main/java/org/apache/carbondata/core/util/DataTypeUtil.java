@@ -299,10 +299,7 @@ public final class DataTypeUtil {
             return null;
           }
           java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data);
-          scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
-          org.apache.spark.sql.types.Decimal decConverter =
-              new org.apache.spark.sql.types.Decimal();
-          return decConverter.set(scalaDecVal);
+          return org.apache.spark.sql.types.Decimal.apply(javaDecVal);
         default:
           return UTF8String.fromString(data);
       }
@@ -325,11 +322,7 @@ public final class DataTypeUtil {
         case LONG:
           return data;
         case DECIMAL:
-          java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data.toString());
-          scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
-          org.apache.spark.sql.types.Decimal decConverter =
-              new org.apache.spark.sql.types.Decimal();
-          return decConverter.set(scalaDecVal);
+          return org.apache.spark.sql.types.Decimal.apply((java.math.BigDecimal) data);
         default:
           return data;
       }
