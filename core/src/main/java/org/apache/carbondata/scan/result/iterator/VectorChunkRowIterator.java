@@ -41,10 +41,11 @@ public class VectorChunkRowIterator extends CarbonIterator<Object[]> {
 
   private int currentIndex;
 
-  public VectorChunkRowIterator(AbstractDetailQueryResultIterator iterator, CarbonColumnarBatch columnarBatch) {
+  public VectorChunkRowIterator(AbstractDetailQueryResultIterator iterator,
+      CarbonColumnarBatch columnarBatch) {
     this.iterator = iterator;
     this.columnarBatch = columnarBatch;
-    if(iterator.hasNext()) {
+    if (iterator.hasNext()) {
       iterator.processNextBatch(columnarBatch);
       batchSize = columnarBatch.getActualSize();
       currentIndex = 0;
@@ -59,19 +60,19 @@ public class VectorChunkRowIterator extends CarbonIterator<Object[]> {
    * @return {@code true} if the iteration has more elements
    */
   @Override public boolean hasNext() {
-      if (currentIndex < batchSize) {
-        return true;
-      } else {
-        while (iterator.hasNext()) {
-          columnarBatch.reset();
-          iterator.processNextBatch(columnarBatch);
-          batchSize = columnarBatch.getActualSize();
-          currentIndex = 0;
-          if (currentIndex < batchSize) {
-            return true;
-          }
+    if (currentIndex < batchSize) {
+      return true;
+    } else {
+      while (iterator.hasNext()) {
+        columnarBatch.reset();
+        iterator.processNextBatch(columnarBatch);
+        batchSize = columnarBatch.getActualSize();
+        currentIndex = 0;
+        if (currentIndex < batchSize) {
+          return true;
         }
       }
+    }
     return false;
   }
 

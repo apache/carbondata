@@ -29,7 +29,7 @@ public class CarbonColumnarBatch {
 
   public void reset() {
     actualSize = 0;
-    rowCounter = -1;
+    rowCounter = 0;
     for (int i = 0; i < columnVectors.length; i++) {
       columnVectors[i].reset();
     }

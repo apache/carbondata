@@ -44,13 +44,15 @@ public class QueryExecutorFactory {
     int batchSize = 10;
     List<QueryDimension> queryDimension = queryModel.getQueryDimension();
     List<QueryMeasure> queryMeasures = queryModel.getQueryMeasures();
-    CarbonColumnVector[] vectors = new CarbonColumnVector[queryDimension.size() + queryMeasures.size()];
+    CarbonColumnVector[] vectors =
+        new CarbonColumnVector[queryDimension.size() + queryMeasures.size()];
     for (int i = 0; i < queryDimension.size(); i++) {
       QueryDimension dim = queryDimension.get(i);
       if (dim.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         vectors[dim.getQueryOrder()] = new CarbonColumnVectorImpl(batchSize, DataType.LONG);
       } else if (!dim.getDimension().hasEncoding(Encoding.DICTIONARY)) {
-        vectors[dim.getQueryOrder()] = new CarbonColumnVectorImpl(batchSize, dim.getDimension().getDataType());
+        vectors[dim.getQueryOrder()] =
+            new CarbonColumnVectorImpl(batchSize, dim.getDimension().getDataType());
       } else if (!dim.getDimension().isComplex()) {
         vectors[dim.getQueryOrder()] = new CarbonColumnVectorImpl(batchSize, DataType.INT);
       }
