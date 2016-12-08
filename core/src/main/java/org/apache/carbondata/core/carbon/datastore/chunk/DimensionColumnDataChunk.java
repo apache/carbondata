@@ -19,7 +19,7 @@
 package org.apache.carbondata.core.carbon.datastore.chunk;
 
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
-import org.apache.carbondata.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.scan.result.vector.ColumnVectorInfo;
 
 /**
  * Interface for dimension column chunk.
@@ -49,14 +49,14 @@ public interface DimensionColumnDataChunk<T> {
   /**
    * Fill the data to vector
    */
-  int fillConvertedChunkData(int offset, int size, CarbonColumnVector[] vectors, int vectorOffset,
-      int column, KeyStructureInfo restructuringInfo);
+  int fillConvertedChunkData(ColumnVectorInfo[] vectorInfo, int column,
+      KeyStructureInfo restructuringInfo);
 
   /**
    * Fill the data to vector
    */
-  int fillConvertedChunkData(int[] rowMapping, int offset, int size, CarbonColumnVector[] vectors,
-      int vectorOffset, int column, KeyStructureInfo restructuringInfo);
+  int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo, int column,
+      KeyStructureInfo restructuringInfo);
 
   /**
    * Below method to get  the data based in row id

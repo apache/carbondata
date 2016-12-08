@@ -16,34 +16,41 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.scan.executor.impl;
+package org.apache.carbondata.scan.result.iterator;
 
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
-import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.model.QueryModel;
-import org.apache.carbondata.scan.result.iterator.DetailQueryResultIterator;
-import org.apache.carbondata.scan.result.iterator.VectorDetailQueryResultIterator;
+import org.apache.carbondata.scan.result.BatchResult;
+import org.apache.carbondata.scan.result.vector.CarbonColumnarBatch;
 
 /**
- * Below class will be used to execute the detail query
- * For executing the detail query it will pass all the block execution
- * info to detail query result iterator and iterator will be returned
+ * It reads the data vector batch format
  */
-public class DetailQueryExecutor extends AbstractQueryExecutor {
+public class VectorDetailQueryResultIterator extends AbstractDetailQueryResultIterator {
 
-  @Override public CarbonIterator<Object[]> execute(QueryModel queryModel)
-      throws QueryExecutionException {
-    List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
-    if (queryModel.isVectorReader()) {
-      return new VectorDetailQueryResultIterator(blockExecutionInfoList, queryModel,
-          queryProperties.executorService);
-    } else {
-      return new DetailQueryResultIterator(blockExecutionInfoList, queryModel,
-          queryProperties.executorService);
-    }
+  private final Object lock = new Object();
+
+  public VectorDetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
+      ExecutorService execService) {
+    super(infos, queryModel, execService);
   }
 
+  @Override public Object next() {
+    throw new UnsupportedOperationException("call processNextBatch instaed");
+  }
+
+  public void processNextBatch(CarbonColumnarBatch columnarBatch) {
+    synchronized (lock) {
+      updateDataBlockIterator();
+      if (dataBlockIterator != null) {
+        dataBlockIterator.processNextBatch(columnarBatch);
+      }
+    }
+  }
 }

@@ -25,6 +25,7 @@ import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.processor.AbstractDataBlockIterator;
+import org.apache.carbondata.scan.result.vector.CarbonColumnarBatch;
 
 /**
  * Below class will be used to process the block for detail query
@@ -58,6 +59,15 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
       collectedResult = new ArrayList<>();
     }
     return collectedResult;
+  }
+
+  public void processNextBatch(CarbonColumnarBatch columnarBatch) {
+    if (updateScanner()) {
+      this.scannerResultAggregator.collectVectorBatch(scannedResult, columnarBatch);
+      while (columnarBatch.getActualSize() < columnarBatch.getBatchSize() && updateScanner()) {
+        this.scannerResultAggregator.collectVectorBatch(scannedResult, columnarBatch);
+      }
+    }
   }
 
 }

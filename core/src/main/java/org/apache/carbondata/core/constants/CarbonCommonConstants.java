@@ -165,6 +165,11 @@ public final class CarbonCommonConstants {
    * MEMBER_DEFAULT_VAL
    */
   public static final String MEMBER_DEFAULT_VAL = "@NU#LL$!";
+
+  /**
+   * MEMBER_DEFAULT_VAL_ARRAY
+   */
+  public static final byte[] MEMBER_DEFAULT_VAL_ARRAY = MEMBER_DEFAULT_VAL.getBytes();
   /**
    * FILE STATUS IN-PROGRESS
    */

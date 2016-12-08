@@ -28,10 +28,12 @@ import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.scan.collector.ScannedResultCollector;
 import org.apache.carbondata.scan.collector.impl.DictionaryBasedResultCollector;
+import org.apache.carbondata.scan.collector.impl.DictionaryBasedVectorResultCollector;
 import org.apache.carbondata.scan.collector.impl.RawBasedResultCollector;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.result.AbstractScannedResult;
+import org.apache.carbondata.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.scan.scanner.BlockletScanner;
 import org.apache.carbondata.scan.scanner.impl.FilterScanner;
 import org.apache.carbondata.scan.scanner.impl.NonFilterScanner;
@@ -96,6 +98,9 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     if (blockExecutionInfo.isRawRecordDetailQuery()) {
       this.scannerResultAggregator =
           new RawBasedResultCollector(blockExecutionInfo);
+    } else if (blockExecutionInfo.isVectorBatchCollector()) {
+      this.scannerResultAggregator =
+          new DictionaryBasedVectorResultCollector(blockExecutionInfo);
     } else {
       this.scannerResultAggregator =
           new DictionaryBasedResultCollector(blockExecutionInfo);
@@ -140,5 +145,5 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
     return null;
   }
 
-
+  public abstract void processNextBatch(CarbonColumnarBatch columnarBatch);
 }

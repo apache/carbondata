@@ -18,23 +18,21 @@
  */
 package org.apache.carbondata.scan.collector.impl;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
-import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
-import org.apache.carbondata.scan.filter.GenericQueryType;
 import org.apache.carbondata.scan.model.QueryDimension;
 import org.apache.carbondata.scan.model.QueryMeasure;
 import org.apache.carbondata.scan.result.AbstractScannedResult;
 import org.apache.carbondata.scan.result.vector.CarbonColumnarBatch;
+import org.apache.carbondata.scan.result.vector.ColumnVectorInfo;
+import org.apache.carbondata.scan.result.vector.MeasureDataVectorProcessor;
 
 /**
  * It is not a collector it is just a scanned result holder.
@@ -44,92 +42,86 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DictionaryBasedVectorResultCollector.class.getName());
 
+  private ColumnVectorInfo[] dictionaryInfo;
+
+  private ColumnVectorInfo[] noDictionaryInfo;
+
+  private ColumnVectorInfo[] measureInfo;
+
+  private ColumnVectorInfo[] allColumnInfo;
+
   public DictionaryBasedVectorResultCollector(BlockExecutionInfo blockExecutionInfos) {
     super(blockExecutionInfos);
-  }
-
-  /**
-   * This method will add a record both key and value to list object
-   * it will keep track of how many record is processed, to handle limit scenario
-   */
-  @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
-    List<Object[]> listBasedResult = new ArrayList<>(batchSize);
-    boolean isMsrsPresent = measureDatatypes.length > 0;
     QueryDimension[] queryDimensions = tableBlockExecutionInfos.getQueryDimensions();
     QueryMeasure[] queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
-    Map<Integer, GenericQueryType> comlexDimensionInfoMap =
-        tableBlockExecutionInfos.getComlexDimensionInfoMap();
-    boolean[] dictionaryEncodingArray = CarbonUtil.getDictionaryEncodingArray(queryDimensions);
-    boolean[] directDictionaryEncodingArray =
-        CarbonUtil.getDirectDictionaryEncodingArray(queryDimensions);
-    boolean[] complexDataTypeArray = CarbonUtil.getComplexDataTypeArray(queryDimensions);
-    int dimSize = queryDimensions.length;
-    boolean isDimensionsExist = dimSize > 0;
-    int[] order = new int[dimSize + queryMeasures.length];
-    for (int i = 0; i < dimSize; i++) {
-      order[i] = queryDimensions[i].getQueryOrder();
+    measureInfo = new ColumnVectorInfo[queryMeasures.length];
+    allColumnInfo = new ColumnVectorInfo[queryDimensions.length + queryMeasures.length];
+    List<ColumnVectorInfo> dictInfoList = new ArrayList<>();
+    List<ColumnVectorInfo> noDictInfoList = new ArrayList<>();
+    for (int i = 0; i < queryDimensions.length; i++) {
+      if (!queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)) {
+        ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
+        noDictInfoList.add(columnVectorInfo);
+        columnVectorInfo.dimension = queryDimensions[i];
+        columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
+        allColumnInfo[queryDimensions[i].getQueryOrder()] = columnVectorInfo;
+      } else if (queryDimensions[i].getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
+        dictInfoList.add(columnVectorInfo);
+        columnVectorInfo.dimension = queryDimensions[i];
+        columnVectorInfo.directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+            .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
+        columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
+        allColumnInfo[queryDimensions[i].getQueryOrder()] = columnVectorInfo;
+      } else if (!queryDimensions[i].getDimension().isComplex()) {
+        ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
+        dictInfoList.add(columnVectorInfo);
+        columnVectorInfo.dimension = queryDimensions[i];
+        columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
+        allColumnInfo[queryDimensions[i].getQueryOrder()] = columnVectorInfo;
+      }
     }
     for (int i = 0; i < queryMeasures.length; i++) {
-      order[i + dimSize] = queryMeasures[i].getQueryOrder();
+      ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
+      columnVectorInfo.measureVectorFiller = MeasureDataVectorProcessor.MeasureVectorFillerFactory
+          .getMeasureVectorFiller(queryMeasures[i].getMeasure().getDataType());
+      columnVectorInfo.ordinal = queryMeasures[i].getMeasure().getOrdinal();
+      measureInfo[i] = columnVectorInfo;
+      allColumnInfo[queryMeasures[i].getQueryOrder()] = columnVectorInfo;
     }
-    // scan the record and add to list
-    int rowCounter = 0;
-    int dictionaryColumnIndex = 0;
-    int noDictionaryColumnIndex = 0;
-    int complexTypeColumnIndex = 0;
-    int[] surrogateResult;
-    String[] noDictionaryKeys;
-    byte[][] complexTypeKeyArray;
-    while (scannedResult.hasNext() && rowCounter < batchSize) {
-      Object[] row = new Object[dimSize + queryMeasures.length];
-      if (isDimensionsExist) {
-        surrogateResult = scannedResult.getDictionaryKeyIntegerArray();
-        noDictionaryKeys = scannedResult.getNoDictionaryKeyStringArray();
-        complexTypeKeyArray = scannedResult.getComplexTypeKeyArray();
-        dictionaryColumnIndex = 0;
-        noDictionaryColumnIndex = 0;
-        complexTypeColumnIndex = 0;
-        for (int i = 0; i < dimSize; i++) {
-          if (!dictionaryEncodingArray[i]) {
-            row[order[i]] = DataTypeUtil
-                .getDataBasedOnDataType(noDictionaryKeys[noDictionaryColumnIndex++],
-                    queryDimensions[i].getDimension().getDataType());
-          } else if (directDictionaryEncodingArray[i]) {
-            DirectDictionaryGenerator directDictionaryGenerator =
-                DirectDictionaryKeyGeneratorFactory
-                    .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
-            if (directDictionaryGenerator != null) {
-              row[order[i]] = directDictionaryGenerator.getValueFromSurrogate(
-                  surrogateResult[dictionaryColumnIndex++]);
-            }
-          } else if (complexDataTypeArray[i]) {
-            row[order[i]] = comlexDimensionInfoMap
-                .get(queryDimensions[i].getDimension().getOrdinal())
-                .getDataBasedOnDataTypeFromSurrogates(
-                    ByteBuffer.wrap(complexTypeKeyArray[complexTypeColumnIndex++]));
-          } else {
-            row[order[i]] = surrogateResult[dictionaryColumnIndex++];
-          }
-        }
+    dictionaryInfo = dictInfoList.toArray(new ColumnVectorInfo[dictInfoList.size()]);
+    noDictionaryInfo = noDictInfoList.toArray(new ColumnVectorInfo[noDictInfoList.size()]);
+    Arrays.sort(dictionaryInfo);
+    Arrays.sort(noDictionaryInfo);
+    Arrays.sort(measureInfo);
+  }
 
-      } else {
-        scannedResult.incrementCounter();
-      }
-      if (isMsrsPresent) {
-        Object[] msrValues = new Object[measureDatatypes.length];
-        fillMeasureData(msrValues, 0, scannedResult);
-        for (int i = 0; i < msrValues.length; i++) {
-          row[order[i + dimSize]] = msrValues[i];
-        }
-      }
-      listBasedResult.add(row);
-      rowCounter++;
-    }
-    return listBasedResult;
+  @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
+    throw new UnsupportedOperationException("collectData is not supported here");
   }
 
   @Override public void collectVectorBatch(AbstractScannedResult scannedResult,
       CarbonColumnarBatch columnarBatch) {
+    int rowCounter = scannedResult.getRowCounter();
+    int availableRows = scannedResult.numberOfOutputRows() - rowCounter;
+    int requiredRows = columnarBatch.getBatchSize() - columnarBatch.getActualSize();
+    requiredRows = Math.min(requiredRows, availableRows);
+    if (requiredRows < 1) {
+      return;
+    }
+    for (int i = 0; i < allColumnInfo.length; i++) {
+      allColumnInfo[i].size = requiredRows;
+      allColumnInfo[i].offset = rowCounter;
+      allColumnInfo[i].vectorOffset = columnarBatch.getRowCounter();
+      allColumnInfo[i].vector = columnarBatch.columnVectors[i];
+    }
 
+    scannedResult.fillColumnarDictionaryBatch(dictionaryInfo);
+    scannedResult.fillColumnarNoDictionaryBatch(noDictionaryInfo);
+    scannedResult.fillColumnarMeasureBatch(measureInfo, measuresOrdinal);
+    scannedResult.setRowCounter(rowCounter + requiredRows);
+    columnarBatch.setActualSize(columnarBatch.getActualSize() + requiredRows);
+    columnarBatch.setRowCounter(columnarBatch.getRowCounter() + requiredRows);
   }
+
 }

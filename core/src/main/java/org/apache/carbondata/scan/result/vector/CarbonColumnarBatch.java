@@ -1,16 +1,14 @@
 package org.apache.carbondata.scan.result.vector;
 
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
-
 public class CarbonColumnarBatch {
 
-  private CarbonColumnVector[] columnVectors;
+  public CarbonColumnVector[] columnVectors;
 
   private int batchSize;
 
-  public CarbonColumnarBatch(DataType[] dataTypes) {
+  private int actualSize;
 
-  }
+  private int rowCounter;
 
   public CarbonColumnarBatch(CarbonColumnVector[] columnVectors, int batchSize) {
     this.columnVectors = columnVectors;
@@ -21,4 +19,27 @@ public class CarbonColumnarBatch {
     return batchSize;
   }
 
+  public int getActualSize() {
+    return actualSize;
+  }
+
+  public void setActualSize(int actualSize) {
+    this.actualSize = actualSize;
+  }
+
+  public void reset() {
+    actualSize = 0;
+    rowCounter = -1;
+    for (int i = 0; i < columnVectors.length; i++) {
+      columnVectors[i].reset();
+    }
+  }
+
+  public int getRowCounter() {
+    return rowCounter;
+  }
+
+  public void setRowCounter(int rowCounter) {
+    this.rowCounter = rowCounter;
+  }
 }

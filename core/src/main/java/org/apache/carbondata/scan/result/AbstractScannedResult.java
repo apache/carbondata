@@ -32,7 +32,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.scan.filter.GenericQueryType;
-import org.apache.carbondata.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.scan.result.vector.ColumnVectorInfo;
 
 /**
  * Scanned result class which will store and provide the result on request
@@ -60,24 +60,24 @@ public abstract class AbstractScannedResult {
   /**
    * to keep track of number of rows process
    */
-  private int rowCounter;
+  protected int rowCounter;
   /**
    * dimension column data chunk
    */
-  private DimensionColumnDataChunk[] dataChunks;
+  protected DimensionColumnDataChunk[] dataChunks;
   /**
    * measure column data chunk
    */
-  private MeasureColumnDataChunk[] measureDataChunks;
+  protected MeasureColumnDataChunk[] measureDataChunks;
   /**
    * dictionary column block index in file
    */
-  private int[] dictionaryColumnBlockIndexes;
+  protected int[] dictionaryColumnBlockIndexes;
 
   /**
    * no dictionary column block index in file
    */
-  private int[] noDictionaryColumnBlockIndexes;
+  protected int[] noDictionaryColumnBlockIndexes;
 
   /**
    * column group to is key structure info
@@ -87,7 +87,7 @@ public abstract class AbstractScannedResult {
    * then from complete column group key it will be used to mask the key and
    * get the particular column key
    */
-  private Map<Integer, KeyStructureInfo> columnGroupKeyStructureInfo;
+  protected Map<Integer, KeyStructureInfo> columnGroupKeyStructureInfo;
 
   /**
    *
@@ -179,17 +179,37 @@ public abstract class AbstractScannedResult {
   }
 
   /**
-   * Fill the column data to vector
+   * Fill the column data of dictionary to vector
    */
-  protected void fillColumnarDictionaryBatch(int offset, int size, CarbonColumnVector[] vectors,
-      int vectorOffset) {
+  public void fillColumnarDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
     int column = 0;
     for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
       column = dataChunks[dictionaryColumnBlockIndexes[i]]
-          .fillConvertedChunkData(offset, size, vectors, vectorOffset, column,
+          .fillConvertedChunkData(vectorInfo, column,
               columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
     }
-    rowCounter += size;
+  }
+
+  /**
+   * Fill the column data to vector
+   */
+  public void fillColumnarNoDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
+    int column = 0;
+    for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
+      column = dataChunks[noDictionaryColumnBlockIndexes[i]]
+          .fillConvertedChunkData(vectorInfo, column,
+              columnGroupKeyStructureInfo.get(noDictionaryColumnBlockIndexes[i]));
+    }
+  }
+
+  /**
+   * Fill the measure column data to vector
+   */
+  public void fillColumnarMeasureBatch(ColumnVectorInfo[] vectorInfo, int[] measuresOrdinal) {
+    for (int i = 0; i < measuresOrdinal.length; i++) {
+      vectorInfo[i].measureVectorFiller
+          .fillMeasureVector(measureDataChunks[measuresOrdinal[i]], vectorInfo[i]);
+    }
   }
 
   /**
@@ -198,6 +218,13 @@ public abstract class AbstractScannedResult {
   public void incrementCounter() {
     rowCounter ++;
     currentRow ++;
+  }
+
+  /**
+   * increment the counter.
+   */
+  public void setRowCounter(int rowCounter) {
+    this.rowCounter = rowCounter;
   }
 
   /**
@@ -362,6 +389,10 @@ public abstract class AbstractScannedResult {
   protected BigDecimal getBigDecimalMeasureValue(int ordinal, int rowIndex) {
     return measureDataChunks[ordinal].getMeasureDataHolder()
         .getReadableBigDecimalValueByIndex(rowIndex);
+  }
+
+  public int getRowCounter() {
+    return rowCounter;
   }
 
   /**
