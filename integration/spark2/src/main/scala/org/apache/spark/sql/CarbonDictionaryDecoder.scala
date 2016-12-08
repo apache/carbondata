@@ -303,41 +303,41 @@ class CarbonDecoderRDD(
       (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
     }.toMap
 
-      val cacheProvider: CacheProvider = CacheProvider.getInstance
-      val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storepath)
-      val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
-        forwardDictionaryCache)
-      val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
-      // add a task completion listener to clear dictionary that is a decisive factor for
-      // LRU eviction policy
-      val dictionaryTaskCleaner = TaskContext.get
-      dictionaryTaskCleaner.addTaskCompletionListener(context =>
-        dicts.foreach { dictionary =>
-          if (null != dictionary) {
-            dictionary.clear
-          }
-        }
-      )
-      val iter = firstParent[Row].iterator(split, context)
-      new Iterator[Row] {
-        var flag = true
-        var total = 0L
-        override final def hasNext: Boolean = iter.hasNext
-
-        override final def next(): Row = {
-          val startTime = System.currentTimeMillis()
-          val data = iter.next().asInstanceOf[GenericRow].toSeq.toArray
-          dictIndex.foreach { index =>
-            if ( data(index) != null) {
-              data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
-                  .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
-                getDictionaryColumnIds(index)._3)
-            }
-          }
-          new GenericRow(data)
+    val cacheProvider: CacheProvider = CacheProvider.getInstance
+    val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
+      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storepath)
+    val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
+      forwardDictionaryCache)
+    val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
+    // add a task completion listener to clear dictionary that is a decisive factor for
+    // LRU eviction policy
+    val dictionaryTaskCleaner = TaskContext.get
+    dictionaryTaskCleaner.addTaskCompletionListener(context =>
+      dicts.foreach { dictionary =>
+        if (null != dictionary) {
+          dictionary.clear
         }
       }
+    )
+    val iter = firstParent[Row].iterator(split, context)
+    new Iterator[Row] {
+      var flag = true
+      var total = 0L
+      override final def hasNext: Boolean = iter.hasNext
+
+      override final def next(): Row = {
+        val startTime = System.currentTimeMillis()
+        val data = iter.next().asInstanceOf[GenericRow].toSeq.toArray
+        dictIndex.foreach { index =>
+          if ( data(index) != null) {
+            data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
+                .getDictionaryValueForKey(data(index).asInstanceOf[Int]),
+              getDictionaryColumnIds(index)._3)
+          }
+        }
+        new GenericRow(data)
+      }
+    }
   }
 
   private def isRequiredToDecode = {

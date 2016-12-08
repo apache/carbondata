@@ -39,7 +39,10 @@ public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSuppor
 
   @Override public Row readRow(Object[] data) {
     for (int i = 0; i < dictionaries.length; i++) {
-      if (dictionaries[i] == null && data[i] != null) {
+      if (data[i] == null) {
+        continue;
+      }
+      if (dictionaries[i] == null) {
         if (carbonColumns[i].hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           //convert the long to timestamp in case of direct dictionary column
           if (DataType.TIMESTAMP == carbonColumns[i].getDataType()) {
