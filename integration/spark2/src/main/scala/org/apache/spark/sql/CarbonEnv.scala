@@ -22,6 +22,7 @@ import org.apache.spark.sql.hive.CarbonMetastore
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.readsupport.impl.RawDataReadSupport
 import org.apache.carbondata.spark.rdd.SparkCommonEnv
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
@@ -42,8 +43,7 @@ object CarbonEnv {
   def init(sqlContext: SQLContext): Unit = {
     if (!initialized) {
       val catalog = {
-        val storePath = sqlContext.sparkSession.conf.get(
-        CarbonCommonConstants.STORE_LOCATION, "/user/hive/warehouse/carbonstore")
+        val storePath = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
         LOGGER.info(s"carbon env initial: $storePath")
         new CarbonMetastore(sqlContext.sparkSession.conf, storePath)
       }
