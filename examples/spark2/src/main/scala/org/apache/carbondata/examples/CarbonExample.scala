@@ -47,13 +47,15 @@ object CarbonExample {
         .master("local")
         .appName("CarbonExample")
         .enableHiveSupport()
-        .config("carbon.kettle.home",
-          s"$rootPath/processing/carbonplugins")
-        .config("carbon.storelocation", storeLocation)
         .config("spark.sql.warehouse.dir", warehouse)
         .config("javax.jdo.option.ConnectionURL",
           s"jdbc:derby:;databaseName=$metastoredb;create=true")
         .getOrCreate()
+
+    CarbonProperties.getInstance()
+      .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")
+      .addProperty("carbon.storelocation", storeLocation)
+
     spark.sparkContext.setLogLevel("WARN")
 
     CarbonProperties.getInstance()
