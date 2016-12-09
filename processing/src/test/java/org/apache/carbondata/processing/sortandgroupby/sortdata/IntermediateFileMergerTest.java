@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
-import org.apache.carbondata.core.constants.IgnoreDictionary;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.processing.schema.metadata.SortObserver;
@@ -260,7 +259,8 @@ public class IntermediateFileMergerTest {
     };
 
     parameters.setUseKettle(false);
-
+    parameters.setNoDictionaryCount(1);
+    parameters.setNoDictionaryDimnesionColumn(new boolean[] { false, true });
     File file = new File("withoutkettle1.merge");
     intermediateFileMerger =
         new IntermediateFileMerger(parameters, new File[] { file1, file2 }, file);
@@ -297,7 +297,7 @@ public class IntermediateFileMergerTest {
 
     parameters.setPrefetch(true);
     parameters.setUseKettle(false);
-
+    parameters.setBufferSize(2);
     File file = new File("withoutkettle2.merge");
     intermediateFileMerger =
         new IntermediateFileMerger(parameters, new File[] { file1, file2 }, file);
