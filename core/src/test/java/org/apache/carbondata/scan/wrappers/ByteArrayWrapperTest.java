@@ -1,0 +1,108 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ */
+package org.apache.carbondata.scan.wrappers;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+
+public class ByteArrayWrapperTest {
+    private static ByteArrayWrapper byteArrayWrapper;
+    byte[] dictionaryKey=new byte[]{1};
+    byte[][] complexTypesKeys = {{1},{1}};
+    byte[][] noDictionaryKeys =new byte[][]{{1},{1}};
+    @BeforeClass
+
+    public static void setUp() {
+        byteArrayWrapper = new ByteArrayWrapper();
+    }
+    @Test
+    public void testHashCodeValue() {
+        byteArrayWrapper.setDictionaryKey(dictionaryKey);
+        byteArrayWrapper.setComplexTypesKeys(complexTypesKeys);
+        byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
+
+        int result = byteArrayWrapper.hashCode();
+        assert(29583456 == result);
+    }
+
+    @Test
+    public void testEqualsWithOtherAsInstanceOfByteArrayWrapper() {
+        ByteArrayWrapper other;
+        other = null;
+        boolean result = byteArrayWrapper.equals(other);
+        assert(!result);
+    }
+
+    @Test
+    public void testEqualsWithNoDictionaryKeysOtherNotEqualNoDictionaryKeys() {
+        byte[][] noDictionaryKeysOther = {{1}};
+        byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
+        ByteArrayWrapper other =new ByteArrayWrapper();
+        other.setNoDictionaryKeys(noDictionaryKeysOther);
+        boolean result = byteArrayWrapper.equals(other);
+        assert(!result);
+    }
+
+    @Test
+    public void testEqualsWithComplexTypesKeysOtherNotEqualComplexTypesKeys() {
+        byte[][] complexTypesKeysOther = {{1}};
+        byteArrayWrapper.setComplexTypesKeys(complexTypesKeys);
+        byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
+        ByteArrayWrapper other =new ByteArrayWrapper();
+        other.setComplexTypesKeys(complexTypesKeysOther);
+        other.setNoDictionaryKeys(noDictionaryKeys);
+        boolean result = byteArrayWrapper.equals(other);
+        assert(!result);
+    }
+
+    @Test
+
+    public void testEqualsForFirstElementComplexTypesKeysAndOther(){
+        ByteArrayWrapper other = new ByteArrayWrapper();
+        other.setComplexTypesKeys(complexTypesKeys);
+        other.setDictionaryKey(dictionaryKey);
+        other.setNoDictionaryKeys(noDictionaryKeys);
+        byteArrayWrapper.setComplexTypesKeys(complexTypesKeys);
+        byteArrayWrapper.setDictionaryKey(dictionaryKey);
+        byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
+        boolean result = byteArrayWrapper.equals(other);
+        assert(result);
+    }
+
+    @Test
+    public void testCompareTo(){
+        byteArrayWrapper.setDictionaryKey(dictionaryKey);
+        ByteArrayWrapper other =new ByteArrayWrapper();
+        other.setDictionaryKey(dictionaryKey);
+        other.setNoDictionaryKeys(noDictionaryKeys);
+        other.setComplexTypesKeys(complexTypesKeys);
+        byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
+        byteArrayWrapper.setComplexTypesKeys(complexTypesKeys);
+        int result=byteArrayWrapper.compareTo(other);
+        assert (result == 0);
+    }
+
+
+    @AfterClass
+    public static void tearDown() {
+        byteArrayWrapper = null;
+    }
+}
