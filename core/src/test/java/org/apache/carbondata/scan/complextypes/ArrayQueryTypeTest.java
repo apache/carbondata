@@ -20,12 +20,11 @@ package org.apache.carbondata.scan.complextypes;
 
 import java.nio.ByteBuffer;
 
-import org.apache.spark.sql.types.GenericArrayData;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.pentaho.di.core.util.Assert.assertNotNull;
 import static org.pentaho.di.core.util.Assert.assertNull;
-import static org.pentaho.di.core.util.Assert.assertTrue;
 
 public class ArrayQueryTypeTest {
 
@@ -53,7 +52,6 @@ public class ArrayQueryTypeTest {
     arrayQueryType.setName("testName");
     arrayQueryType.setParentname("testName");
     arrayQueryType.addChildren(arrayQueryType);
-    assertTrue(arrayQueryType
-        .getDataBasedOnDataTypeFromSurrogates(surrogateData) instanceof GenericArrayData);
+    assertNotNull(arrayQueryType.getDataBasedOnDataTypeFromSurrogates(surrogateData));
   }
 }

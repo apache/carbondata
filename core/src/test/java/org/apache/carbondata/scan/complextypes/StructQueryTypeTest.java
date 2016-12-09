@@ -25,15 +25,11 @@ import java.util.List;
 
 import mockit.Mock;
 import mockit.MockUp;
-import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
-import org.apache.spark.sql.catalyst.expressions.GenericInternalRowWithSchema;
-import org.apache.spark.sql.types.StructType;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 
 public class StructQueryTypeTest {
   private static StructQueryType structQueryType;
@@ -53,8 +49,7 @@ public class StructQueryTypeTest {
     structQueryType.addChildren(arrayQueryType);
     List children = new ArrayList();
     children.add(arrayQueryType);
-    assertNotNull(structQueryType.getDataBasedOnDataTypeFromSurrogates(
-        surrogateData));
+    assertNotNull(structQueryType.getDataBasedOnDataTypeFromSurrogates(surrogateData));
   }
 
   @Test public void testGetColsCount() {

@@ -22,6 +22,10 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertFalse;
+import static junit.framework.TestCase.assertTrue;
+
 public class ByteArrayWrapperTest {
   private static ByteArrayWrapper byteArrayWrapper;
   byte[] dictionaryKey = new byte[] { 1 };
@@ -51,7 +55,7 @@ public class ByteArrayWrapperTest {
     ByteArrayWrapper other;
     other = null;
     boolean result = byteArrayWrapper.equals(other);
-    assert (!result);
+    assertFalse(result);
   }
 
   @Test public void testEqualsWithNoDictionaryKeysOtherNotEqualNoDictionaryKeys() {
@@ -60,7 +64,7 @@ public class ByteArrayWrapperTest {
     ByteArrayWrapper other = new ByteArrayWrapper();
     other.setNoDictionaryKeys(noDictionaryKeysOther);
     boolean result = byteArrayWrapper.equals(other);
-    assert (!result);
+    assertFalse(result);
   }
 
   @Test public void testEqualsWithComplexTypesKeysOtherNotEqualComplexTypesKeys() {
@@ -71,7 +75,7 @@ public class ByteArrayWrapperTest {
     other.setComplexTypesKeys(complexTypesKeysOther);
     other.setNoDictionaryKeys(noDictionaryKeys);
     boolean result = byteArrayWrapper.equals(other);
-    assert (!result);
+    assertFalse(result);
   }
 
   @Test
@@ -85,7 +89,7 @@ public class ByteArrayWrapperTest {
     byteArrayWrapper.setDictionaryKey(dictionaryKey);
     byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
     boolean result = byteArrayWrapper.equals(other);
-    assert (result);
+    assertTrue(result);
   }
 
   @Test public void testCompareTo() {
@@ -96,7 +100,8 @@ public class ByteArrayWrapperTest {
     other.setComplexTypesKeys(complexTypesKeys);
     byteArrayWrapper.setNoDictionaryKeys(noDictionaryKeys);
     byteArrayWrapper.setComplexTypesKeys(complexTypesKeys);
-    int result = byteArrayWrapper.compareTo(other);
-    assert (result == 0);
+    int actualResult = byteArrayWrapper.compareTo(other);
+    int expectedResult = 0;
+    assertEquals(expectedResult, actualResult);
   }
 }
