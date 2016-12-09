@@ -18,7 +18,9 @@
  */
 package org.apache.carbondata.processing.sortandgroupby.sortdata;
 
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import org.apache.carbondata.core.constants.IgnoreDictionary;
@@ -223,11 +225,42 @@ public class IntermediateFileMergerTest {
   }
 
   @Test
-  public void testIsFailTrue() {
+  public void testIsFailTrueI() {
+    new MockUp<CarbonUtil>() {
+      @Mock public void deleteFiles(File[] intermediateFiles) throws CarbonUtilException {
+      }
+    };
+
     new MockUp<SortTempFileChunkHolder>() {
       @Mock
       public void readRow() throws CarbonSortKeyAndGroupByException {
         throw new CarbonSortKeyAndGroupByException("exception");
+      }
+    };
+
+    File file = new File("fail1.merge");
+
+    intermediateFileMerger =
+        new IntermediateFileMerger(parameters, new File[] { file1, file2 }, file);
+
+    try {
+      intermediateFileMerger.call();
+    } catch (Exception ex) {
+      fail("Test case fail, exception not expected .... ");
+    }
+  }
+
+  @Test
+  public void testIsFailTrueII() {
+    new MockUp<CarbonUtil>() {
+      @Mock public void deleteFiles(File[] intermediateFiles) throws CarbonUtilException {
+      }
+    };
+
+    new MockUp<DataOutputStream>() {
+      @Mock
+      public synchronized void write(int b) throws IOException {
+        throw new IOException("exception");
       }
     };
 
@@ -262,6 +295,58 @@ public class IntermediateFileMergerTest {
       assertThat(file.exists(), is(equalTo(expectedResult)));
       boolean result = file.delete();
       assertThat(result, is(equalTo(expectedResult)));
+    } catch (Exception ex) {
+      fail("Test case fail, exception not expected .... ");
+    }
+  }
+
+  @Test
+  public void testInitializeExceptionI() {
+    new MockUp<CarbonUtil>() {
+      @Mock public void deleteFiles(File[] intermediateFiles) throws CarbonUtilException {
+      }
+    };
+
+    new MockUp<DataOutputStream>() {
+      @Mock
+      public final void writeInt(int v) throws IOException {
+        throw  new FileNotFoundException("exception");
+      }
+    };
+
+    File file = new File("fail1.merge");
+
+    intermediateFileMerger =
+        new IntermediateFileMerger(parameters, new File[] { file1, file2 }, file);
+
+    try {
+      intermediateFileMerger.call();
+    } catch (Exception ex) {
+      fail("Test case fail, exception not expected .... ");
+    }
+  }
+
+  @Test
+  public void testInitializeExceptionII() {
+    new MockUp<CarbonUtil>() {
+      @Mock public void deleteFiles(File[] intermediateFiles) throws CarbonUtilException {
+      }
+    };
+
+    new MockUp<DataOutputStream>() {
+      @Mock
+      public final void writeInt(int v) throws IOException {
+        throw  new IOException("exception");
+      }
+    };
+
+    File file = new File("fail1.merge");
+
+    intermediateFileMerger =
+        new IntermediateFileMerger(parameters, new File[] { file1, file2 }, file);
+
+    try {
+      intermediateFileMerger.call();
     } catch (Exception ex) {
       fail("Test case fail, exception not expected .... ");
     }
