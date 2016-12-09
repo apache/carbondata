@@ -163,6 +163,96 @@ public class IntermediateFileMergerTest {
     }
   }
 
+  @Test public void testCallWithKettleByteValueMeasure() {
+    new MockUp<CarbonUtil>() {
+      @Mock public void deleteFiles(File[] intermediateFiles) throws CarbonUtilException {
+      }
+    };
+
+    new MockUp<RemoveDictionaryUtil>() {
+      @Mock
+      public Object getMeasure(int index, Object[] row) {
+        return Double.valueOf(3);
+      }
+    };
+
+    parameters.setAggType(new char[] { 'c', 'c' });
+    File file = new File("kettle4.merge");
+    intermediateFileMerger =
+        new IntermediateFileMerger(parameters, new File[] { file1, file2 }, file);
+
+    try {
+      intermediateFileMerger.call();
+      boolean expectedResult = true;
+
+      assertThat(file.exists(), is(equalTo(expectedResult)));
+      boolean result = file.delete();
+      assertThat(result, is(equalTo(expectedResult)));
+    } catch (Exception ex) {
+      fail("Test case fail, exception not expected .... ");
+    }
+  }
+
+  @Test public void testCallWithKettleCountValueMeasure() {
+    new MockUp<CarbonUtil>() {
+      @Mock public void deleteFiles(File[] intermediateFiles) throws CarbonUtilException {
+      }
+    };
+
+    new MockUp<RemoveDictionaryUtil>() {
+      @Mock
+      public Object getMeasure(int index, Object[] row) {
+        return Double.valueOf(3);
+      }
+    };
+
+    parameters.setAggType(new char[] { 'n', 'n' });
+    File file = new File("kettle5.merge");
+    intermediateFileMerger =
+        new IntermediateFileMerger(parameters, new File[] { file1, file2 }, file);
+
+    try {
+      intermediateFileMerger.call();
+      boolean expectedResult = true;
+
+      assertThat(file.exists(), is(equalTo(expectedResult)));
+      boolean result = file.delete();
+      assertThat(result, is(equalTo(expectedResult)));
+    } catch (Exception ex) {
+      fail("Test case fail, exception not expected .... ");
+    }
+  }
+
+  @Test public void testCallWithKettleBigDecimalMeasure() {
+    new MockUp<CarbonUtil>() {
+      @Mock public void deleteFiles(File[] intermediateFiles) throws CarbonUtilException {
+      }
+    };
+
+    new MockUp<RemoveDictionaryUtil>() {
+      @Mock
+      public Object getMeasure(int index, Object[] row) {
+        return new byte[]{3, 3};
+      }
+    };
+
+    parameters.setAggType(new char[] { 'b', 'b' });
+    File file = new File("kettle6.merge");
+    intermediateFileMerger =
+        new IntermediateFileMerger(parameters, new File[] { file1, file2 }, file);
+
+    try {
+      intermediateFileMerger.call();
+      boolean expectedResult = true;
+
+      assertThat(file.exists(), is(equalTo(expectedResult)));
+      boolean result = file.delete();
+      assertThat(result, is(equalTo(expectedResult)));
+    } catch (Exception ex) {
+      fail("Test case fail, exception not expected .... ");
+    }
+  }
+
   @Test public void testCallWithoutKettleI() {
     new MockUp<CarbonUtil>() {
       @Mock public void deleteFiles(File[] intermediateFiles) throws CarbonUtilException {
@@ -224,6 +314,96 @@ public class IntermediateFileMergerTest {
     }
   }
 
+  @Test public void testCallWithoutKettleByteValueMeasure() {
+    new MockUp<CarbonUtil>() {
+      @Mock public void deleteFiles(File[] intermediateFiles) throws CarbonUtilException {
+      }
+    };
+
+    new MockUp<RemoveDictionaryUtil>() {
+      @Mock
+      public Object getMeasure(int index, Object[] row) {
+        return Double.valueOf(3);
+      }
+    };
+    parameters.setUseKettle(false);
+    parameters.setAggType(new char[] { 'c', 'c' });
+    File file = new File("withoutkettle3.merge");
+    intermediateFileMerger =
+        new IntermediateFileMerger(parameters, new File[] { file1, file2 }, file);
+
+    try {
+      intermediateFileMerger.call();
+      boolean expectedResult = true;
+
+      assertThat(file.exists(), is(equalTo(expectedResult)));
+      boolean result = file.delete();
+      assertThat(result, is(equalTo(expectedResult)));
+    } catch (Exception ex) {
+      fail("Test case fail, exception not expected .... ");
+    }
+  }
+
+  @Test public void testCallWithoutKettleCountValueMeasure() {
+    new MockUp<CarbonUtil>() {
+      @Mock public void deleteFiles(File[] intermediateFiles) throws CarbonUtilException {
+      }
+    };
+
+    new MockUp<RemoveDictionaryUtil>() {
+      @Mock
+      public Object getMeasure(int index, Object[] row) {
+        return Double.valueOf(3);
+      }
+    };
+    parameters.setUseKettle(false);
+    parameters.setAggType(new char[] { 'n', 'n' });
+    File file = new File("withoutkettle4.merge");
+    intermediateFileMerger =
+        new IntermediateFileMerger(parameters, new File[] { file1, file2 }, file);
+
+    try {
+      intermediateFileMerger.call();
+      boolean expectedResult = true;
+
+      assertThat(file.exists(), is(equalTo(expectedResult)));
+      boolean result = file.delete();
+      assertThat(result, is(equalTo(expectedResult)));
+    } catch (Exception ex) {
+      fail("Test case fail, exception not expected .... ");
+    }
+  }
+
+  @Test public void testCallWithoutKettleBigDecimalMeasure() {
+    new MockUp<CarbonUtil>() {
+      @Mock public void deleteFiles(File[] intermediateFiles) throws CarbonUtilException {
+      }
+    };
+
+    new MockUp<RemoveDictionaryUtil>() {
+      @Mock
+      public Object getMeasure(int index, Object[] row) {
+        return new byte[]{3, 3};
+      }
+    };
+    parameters.setUseKettle(false);
+    parameters.setAggType(new char[] { 'b', 'b' });
+    File file = new File("withoutkettle5.merge");
+    intermediateFileMerger =
+        new IntermediateFileMerger(parameters, new File[] { file1, file2 }, file);
+
+    try {
+      intermediateFileMerger.call();
+      boolean expectedResult = true;
+
+      assertThat(file.exists(), is(equalTo(expectedResult)));
+      boolean result = file.delete();
+      assertThat(result, is(equalTo(expectedResult)));
+    } catch (Exception ex) {
+      fail("Test case fail, exception not expected .... ");
+    }
+  }
+
   @Test
   public void testIsFailTrueI() {
     new MockUp<CarbonUtil>() {
@@ -266,6 +446,32 @@ public class IntermediateFileMergerTest {
 
     File file = new File("fail1.merge");
 
+    intermediateFileMerger =
+        new IntermediateFileMerger(parameters, new File[] { file1, file2 }, file);
+
+    try {
+      intermediateFileMerger.call();
+    } catch (Exception ex) {
+      fail("Test case fail, exception not expected .... ");
+    }
+  }
+
+  @Test
+  public void testIsFailTrueIII() {
+    new MockUp<CarbonUtil>() {
+      @Mock public void deleteFiles(File[] intermediateFiles) throws CarbonUtilException {
+      }
+    };
+
+    new MockUp<DataOutputStream>() {
+      @Mock
+      public synchronized void write(int b) throws IOException {
+        throw new IOException("exception");
+      }
+    };
+
+    File file = new File("fail1.merge");
+    parameters.setUseKettle(false);
     intermediateFileMerger =
         new IntermediateFileMerger(parameters, new File[] { file1, file2 }, file);
 
