@@ -224,10 +224,10 @@ case class CarbonDictionaryDecoder(
 
 
 class CarbonDecoderRDD(
-                        relations: Seq[CarbonDecoderRelation],
-                profile: CarbonProfile,
-                aliasMap: CarbonAliasDecoderRelation,
-                prev: RDD[Row],
+    elations: Seq[CarbonDecoderRelation],
+    profile: CarbonProfile,
+    aliasMap: CarbonAliasDecoderRelation,
+    prev: RDD[Row],
                        output: Seq[Attribute])
     extends RDD[Row](prev) {
 
