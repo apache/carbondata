@@ -360,8 +360,9 @@ public final class CarbonProperties {
    * @param key
    * @return properties value
    */
-  public void addProperty(String key, String value) {
+  public CarbonProperties addProperty(String key, String value) {
     carbonProperties.setProperty(key, value);
+    return this;
   }
 
   private ColumnarFormatVersion getDefaultFormatVersion() {
