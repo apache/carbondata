@@ -73,7 +73,7 @@ case class CarbonDatasourceHadoopRelation(
     CarbonInputFormat.setColumnProjection(conf, projection)
     CarbonInputFormat.setCarbonReadSupport(conf, classOf[SparkRowReadSupportImpl])
 
-    new CarbonScanRDD[Row](sqlContext.sparkContext, projection, filterExpression.orNull,
+    new CarbonScanRDD[Row](sqlContext.sparkContext, conf, projection, filterExpression.orNull,
       absIdentifier, carbonTable)
   }
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)
