@@ -181,7 +181,7 @@ case class CarbonDictionaryDecoder(
                     getDictionaryColumnIds(index)._3)
                 }
               }
-              val result = unsafeProjection(new GenericMutableRow(data))
+              val result = unsafeProjection(new GenericInternalRow(data))
               total += System.currentTimeMillis() - startTime
               result
             }
@@ -223,11 +223,12 @@ case class CarbonDictionaryDecoder(
 
 
 
-class CarbonDecoderRDD(relations: Seq[CarbonDecoderRelation],
-                profile: CarbonProfile,
-                aliasMap: CarbonAliasDecoderRelation,
-                prev: RDD[Row],
-                       output: Seq[Attribute])
+class CarbonDecoderRDD(
+    relations: Seq[CarbonDecoderRelation],
+    profile: CarbonProfile,
+    aliasMap: CarbonAliasDecoderRelation,
+    prev: RDD[Row],
+    output: Seq[Attribute])
     extends RDD[Row](prev) {
 
   def canBeDecoded(attr: Attribute): Boolean = {
