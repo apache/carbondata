@@ -32,9 +32,7 @@ import org.apache.carbondata.scan.executor.QueryExecutor;
 import org.apache.carbondata.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.model.QueryModel;
-import org.apache.carbondata.scan.result.iterator.AbstractDetailQueryResultIterator;
 import org.apache.carbondata.scan.result.iterator.ChunkRowIterator;
-import org.apache.carbondata.scan.result.iterator.VectorChunkRowIterator;
 
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -56,7 +54,7 @@ public class CarbonRecordReader<T> extends RecordReader<Void, T> {
   public CarbonRecordReader(QueryModel queryModel, CarbonReadSupport<T> readSupport) {
     this.queryModel = queryModel;
     this.readSupport = readSupport;
-    this.queryExecutor = QueryExecutorFactory.getQueryExecutor();
+    this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
   }
 
   @Override
@@ -80,13 +78,7 @@ public class CarbonRecordReader<T> extends RecordReader<Void, T> {
     readSupport.initialize(queryModel.getProjectionColumns(),
         queryModel.getAbsoluteTableIdentifier());
     try {
-      if (queryModel.isVectorReader()) {
-        carbonIterator = new VectorChunkRowIterator(
-            (AbstractDetailQueryResultIterator) queryExecutor.execute(queryModel),
-            QueryExecutorFactory.createColuminarBatch(queryModel));
-      } else {
-        carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
-      }
+      carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
     } catch (QueryExecutionException e) {
       throw new InterruptedException(e.getMessage());
     }

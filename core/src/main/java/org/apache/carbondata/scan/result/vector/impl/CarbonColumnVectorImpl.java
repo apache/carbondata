@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.scan.result.vector.impl;
 
+import java.util.Arrays;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
@@ -104,6 +105,10 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     return nullBytes.get(rowId);
   }
 
+  @Override public void putObject(int rowId, Object obj) {
+    data[rowId] = obj;
+  }
+
   @Override public Object getData(int rowId) {
     if (nullBytes.get(rowId)) {
       return null;
@@ -126,5 +131,24 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   @Override public void reset() {
     nullBytes.clear();
+    switch (dataType) {
+      case INT:
+        Arrays.fill(ints, 0);
+        break;
+      case LONG:
+        Arrays.fill(longs, 0);
+        break;
+      case DOUBLE:
+        Arrays.fill(doubles, 0);
+        break;
+      case STRING:
+        Arrays.fill(bytes, null);
+        break;
+      case DECIMAL:
+        Arrays.fill(decimals, null);
+        break;
+      default:
+        Arrays.fill(data, null);
+    }
   }
 }

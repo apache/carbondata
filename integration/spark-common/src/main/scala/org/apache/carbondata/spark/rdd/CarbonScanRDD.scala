@@ -18,17 +18,18 @@
 package org.apache.carbondata.spark.rdd
 
 import java.text.SimpleDateFormat
-import java.util
+import java.util.ArrayList
 import java.util.Date
+import java.util.List
 
 import scala.collection.JavaConverters._
-import scala.reflect.ClassTag
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.mapreduce.{InputSplit, Job, JobID, TaskAttemptID, TaskType}
+import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
-import org.apache.spark.{Partition, SparkContext, TaskContext, TaskKilledException}
+import org.apache.spark._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.hive.DistributionUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -37,8 +38,9 @@ import org.apache.carbondata.core.carbon.datastore.block.Distributable
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants}
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
-import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonMultiBlockSplit, CarbonProjection}
+import org.apache.carbondata.hadoop._
 import org.apache.carbondata.scan.expression.Expression
+import org.apache.carbondata.scan.model.QueryModel
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 
 /**
@@ -46,19 +48,21 @@ import org.apache.carbondata.spark.load.CarbonLoaderUtil
  * CarbonData file, this RDD will leverage CarbonData's index information to do CarbonData file
  * level filtering in driver side.
  */
-class CarbonScanRDD[V: ClassTag](
+class CarbonScanRDD(
     @transient sc: SparkContext,
     columnProjection: CarbonProjection,
     filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
     @transient carbonTable: CarbonTable)
-  extends RDD[V](sc, Nil) {
+  extends RDD[InternalRow](sc, Nil) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
     formatter.format(new Date())
   }
+  private val vectorReader = sparkContext.getConf.getBoolean("carbon.enable.vector.reader", true) &&
+                             sparkContext.getConf.getBoolean("spark.sql.codegen.wholeStage", true)
 
   @transient private val jobId = new JobID(jobTrackerId, id)
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -76,7 +80,7 @@ class CarbonScanRDD[V: ClassTag](
     result
   }
 
-  private def distributeSplits(splits: util.List[InputSplit]): Array[Partition] = {
+  private def distributeSplits(splits: List[InputSplit]): Array[Partition] = {
     // this function distributes the split based on following logic:
     // 1. based on data locality, to make split balanced on all available nodes
     // 2. if the number of split for one
@@ -84,7 +88,7 @@ class CarbonScanRDD[V: ClassTag](
     var statistic = new QueryStatistic()
     val statisticRecorder = CarbonTimeStatisticsFactory.createDriverRecorder()
     val parallelism = sparkContext.defaultParallelism
-    val result = new util.ArrayList[Partition](parallelism)
+    val result = new ArrayList[Partition](parallelism)
     var noOfBlocks = 0
     var noOfNodes = 0
     var noOfTasks = 0
@@ -138,7 +142,7 @@ class CarbonScanRDD[V: ClassTag](
     result.toArray(new Array[Partition](result.size()))
   }
 
-  override def compute(split: Partition, context: TaskContext): Iterator[V] = {
+  override def compute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
     val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
     if (null == carbonPropertiesFilePath) {
       System.setProperty("carbon.properties.filepath",
@@ -150,12 +154,25 @@ class CarbonScanRDD[V: ClassTag](
     val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
     val format = prepareInputFormatForExecutor(attemptContext.getConfiguration)
     val inputSplit = split.asInstanceOf[CarbonSparkPartition].split.value
-    val reader = format.createRecordReader(inputSplit, attemptContext)
+    val model = format.getQueryModel(inputSplit, attemptContext)
+    val reader = {
+      if (supportVectorReader(model)) {
+        val carbonRecordReader = createVectorizedCarbonRecordReader(model)
+        if (carbonRecordReader == null) {
+          new CarbonRecordReader(model, format.getReadSupportClass(attemptContext.getConfiguration))
+        } else {
+          carbonRecordReader
+        }
+      } else {
+        new CarbonRecordReader(model, format.getReadSupportClass(attemptContext.getConfiguration))
+      }
+    }
+
     reader.initialize(inputSplit, attemptContext)
 
     val queryStartTime = System.currentTimeMillis
 
-    new Iterator[V] {
+    val iterator = new Iterator[Any] {
       private var havePair = false
       private var finished = false
       private var count = 0
@@ -179,30 +196,31 @@ class CarbonScanRDD[V: ClassTag](
         !finished
       }
 
-      override def next(): V = {
+      override def next(): Any = {
         if (!hasNext) {
           throw new java.util.NoSuchElementException("End of stream")
         }
         havePair = false
-        val value: V = reader.getCurrentValue
+        val value = reader.getCurrentValue
         count += 1
         value
       }
     }
+    iterator.asInstanceOf[Iterator[InternalRow]]
   }
 
-  private def prepareInputFormatForDriver(conf: Configuration): CarbonInputFormat[V] = {
+  private def prepareInputFormatForDriver(conf: Configuration): CarbonInputFormat[Object] = {
     CarbonInputFormat.setCarbonTable(conf, carbonTable)
     createInputFormat(conf)
   }
 
-  private def prepareInputFormatForExecutor(conf: Configuration): CarbonInputFormat[V] = {
+  private def prepareInputFormatForExecutor(conf: Configuration): CarbonInputFormat[Object] = {
     CarbonInputFormat.setCarbonReadSupport(conf, SparkReadSupport.readSupportClass)
     createInputFormat(conf)
   }
 
-  private def createInputFormat(conf: Configuration): CarbonInputFormat[V] = {
-    val format = new CarbonInputFormat[V]
+  private def createInputFormat(conf: Configuration): CarbonInputFormat[Object] = {
+    val format = new CarbonInputFormat[Object]
     CarbonInputFormat.setTablePath(conf, identifier.getTablePath)
     CarbonInputFormat.setFilterPredicates(conf, filterExpression)
     CarbonInputFormat.setColumnProjection(conf, columnProjection)
@@ -230,5 +248,21 @@ class CarbonScanRDD[V: ClassTag](
     val theSplit = split.asInstanceOf[CarbonSparkPartition]
     val firstOptionLocation = theSplit.split.value.getLocations.filter(_ != "localhost")
     firstOptionLocation
+  }
+
+  def createVectorizedCarbonRecordReader(queryModel: QueryModel): RecordReader[Void, Object] = {
+    val name = "org.apache.carbondata.spark.vectorreader.VectorizedCarbonRecordReader"
+    try {
+      val cons = Class.forName(name).getDeclaredConstructors
+      cons.head.setAccessible(true)
+      cons.head.newInstance(queryModel).asInstanceOf[RecordReader[Void, Object]]
+    } catch {
+      case e: Exception =>
+        null
+    }
+  }
+
+  def supportVectorReader(queryModel: QueryModel): Boolean = {
+    vectorReader && !queryModel.getQueryDimension.asScala.exists(p => p.getDimension.isComplex)
   }
 }

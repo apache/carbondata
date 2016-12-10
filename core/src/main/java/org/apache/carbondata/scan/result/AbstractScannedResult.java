@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.ByteBuffer;
 import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -32,6 +33,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.scan.filter.GenericQueryType;
+import org.apache.carbondata.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.scan.result.vector.ColumnVectorInfo;
 
 /**
@@ -209,6 +211,31 @@ public abstract class AbstractScannedResult {
     for (int i = 0; i < measuresOrdinal.length; i++) {
       vectorInfo[i].measureVectorFiller
           .fillMeasureVector(measureDataChunks[measuresOrdinal[i]], vectorInfo[i]);
+    }
+  }
+
+  public void fillColumnarComplexBatch(ColumnVectorInfo[] vectorInfos) {
+    for (int i = 0; i < vectorInfos.length; i++) {
+      int offset = vectorInfos[i].offset;
+      int len = offset + vectorInfos[i].size;
+      int vectorOffset = vectorInfos[i].vectorOffset;
+      CarbonColumnVector vector = vectorInfos[i].vector;
+      for (int j = offset; j < len; j++) {
+        ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+        DataOutputStream dataOutput = new DataOutputStream(byteStream);
+        try {
+          vectorInfos[i].genericQueryType.parseBlocksAndReturnComplexColumnByteArray(dataChunks,
+              rowMapping == null ? j : rowMapping[j], dataOutput);
+          Object data = vectorInfos[i].genericQueryType
+              .getDataBasedOnDataTypeFromSurrogates(ByteBuffer.wrap(byteStream.toByteArray()));
+          vector.putObject(vectorOffset++, data);
+        } catch (IOException e) {
+          LOGGER.error(e);
+        } finally {
+          CarbonUtil.closeStreams(dataOutput);
+          CarbonUtil.closeStreams(byteStream);
+        }
+      }
     }
   }
 

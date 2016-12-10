@@ -95,12 +95,13 @@ public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<b
     for (int k = offset; k < len; k++) {
       int start = k * columnValueSize;
       long[] keyArray = info.getKeyGenerator().getKeyArray(dataChunk, start);
-      for (int i = column; i < ordinal.length; i++) {
+      int index = 0;
+      for (int i = column; i < column + ordinal.length; i++) {
         if (vectorInfo[i].directDictionaryGenerator == null) {
-          vectorInfo[i].vector.putInt(vectorOffset, (int) keyArray[ordinal[i]]);
+          vectorInfo[i].vector.putInt(vectorOffset, (int) keyArray[ordinal[index++]]);
         } else {
           vectorInfo[i].vector.putLong(vectorOffset, (long) vectorInfo[i].directDictionaryGenerator
-              .getValueFromSurrogate((int) keyArray[ordinal[i]]));
+              .getValueFromSurrogate((int) keyArray[ordinal[index++]]));
         }
       }
       vectorOffset++;
@@ -120,12 +121,13 @@ public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<b
     for (int k = offset; k < len; k++) {
       int start = rowMapping[k] * columnValueSize;
       long[] keyArray = info.getKeyGenerator().getKeyArray(dataChunk, start);
-      for (int i = column; i < ordinal.length; i++) {
+      int index = 0;
+      for (int i = column; i < column + ordinal.length; i++) {
         if (vectorInfo[i].directDictionaryGenerator == null) {
-          vectorInfo[i].vector.putInt(vectorOffset, (int) keyArray[ordinal[i]]);
+          vectorInfo[i].vector.putInt(vectorOffset, (int) keyArray[ordinal[index++]]);
         } else {
           vectorInfo[i].vector.putLong(vectorOffset, (long) vectorInfo[i].directDictionaryGenerator
-              .getValueFromSurrogate((int) keyArray[ordinal[i]]));
+              .getValueFromSurrogate((int) keyArray[ordinal[index++]]));
         }
       }
       vectorOffset++;

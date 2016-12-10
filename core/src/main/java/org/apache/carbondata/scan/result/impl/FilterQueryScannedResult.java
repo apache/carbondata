@@ -179,5 +179,4 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
               vectorInfo[i]);
     }
   }
-
 }

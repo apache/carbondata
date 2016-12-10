@@ -21,7 +21,8 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.{CatalystTypeConverters, InternalRow}
+import org.apache.spark.sql.catalyst.CatalystTypeConverters._
 import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.catalyst.expressions.{Attribute, _}
 import org.apache.spark.sql.catalyst.planning.PhysicalOperation
@@ -30,7 +31,8 @@ import org.apache.spark.sql.catalyst.plans.physical.UnknownPartitioning
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
-import org.apache.spark.sql.types.IntegerType
+import org.apache.spark.sql.types.{AtomicType, IntegerType, StringType}
+import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
@@ -67,8 +69,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   def getDecoderRDD(
       logicalRelation: LogicalRelation,
       projectExprsNeedToDecode: ArrayBuffer[AttributeReference],
-      rdd: RDD[Row],
-      output: Seq[Attribute]): RDD[Row] = {
+      rdd: RDD[InternalRow],
+      output: Seq[Attribute]): RDD[InternalRow] = {
     val table = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
     val relation = CarbonDecoderRelation(logicalRelation.attributeMap,
       logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation])
@@ -87,18 +89,13 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   private[this] def toCatalystRDD(
       relation: LogicalRelation,
       output: Seq[Attribute],
-      rdd: RDD[Row],
+      rdd: RDD[InternalRow],
       needDecode: ArrayBuffer[AttributeReference]):
   RDD[InternalRow] = {
-    val newRdd = if (needDecode.size > 0) {
+    if (needDecode.size > 0) {
       getDecoderRDD(relation, needDecode, rdd, output)
     } else {
       rdd
-    }
-    if (relation.relation.needConversion) {
-      execution.RDDConversions.rowToRowRdd(newRdd, output.map(_.dataType))
-    } else {
-      newRdd.asInstanceOf[RDD[InternalRow]]
     }
   }
 
@@ -212,26 +209,54 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         }
         attr
       }
-      val scan = new execution.RowDataSourceScanExec(
-        updateProject,
-        scanBuilder(updateRequestedColumns, candidatePredicates, pushedFilters, needDecoder),
-        // now carbon do not support partitioning, use UnknownPartitioning here, in future if
-        // we add bucket, we should change the partitioning
-        relation.relation, UnknownPartitioning(0), metadata, None)
+      val scan = getDataSourceScan(relation,
+        scanBuilder,
+        candidatePredicates,
+        pushedFilters,
+        metadata,
+        needDecoder,
+        updateRequestedColumns)
       filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan)
     } else {
       // Don't request columns that are only referenced by pushed filters.
       val requestedColumns =
       (projectSet ++ filterSet -- handledSet).map(relation.attributeMap).toSeq
       val updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
-      val scan = new execution.RowDataSourceScanExec(
-        updateRequestedColumns,
-        scanBuilder(updateRequestedColumns, candidatePredicates, pushedFilters, needDecoder),
-        // now carbon do not support partitioning, use UnknownPartitioning here, in future if
-        // we add bucket, we should change the partitioning
-        relation.relation, UnknownPartitioning(0), metadata, None)
+      val scan = getDataSourceScan(relation,
+        scanBuilder,
+        candidatePredicates,
+        pushedFilters,
+        metadata,
+        needDecoder,
+        updateRequestedColumns)
       execution.ProjectExec(
         projects, filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan))
+    }
+  }
+
+  def getDataSourceScan(relation: LogicalRelation,
+      scanBuilder: (Seq[Attribute], Seq[Expression], Seq[Filter],
+        ArrayBuffer[AttributeReference]) => RDD[InternalRow],
+      candidatePredicates: Seq[Expression],
+      pushedFilters: Seq[Filter],
+      metadata: Map[String, String],
+      needDecoder: ArrayBuffer[AttributeReference],
+      updateRequestedColumns: Seq[AttributeReference]): DataSourceScanExec = {
+    if (supportBatchedDataSource(relation.relation.sqlContext, updateRequestedColumns)) {
+      BatchedDataSourceScanExec(
+        updateRequestedColumns,
+        scanBuilder(updateRequestedColumns, candidatePredicates, pushedFilters, needDecoder),
+        relation.relation,
+        UnknownPartitioning(0),
+        metadata,
+        relation.metastoreTableIdentifier)
+    } else {
+      RowDataSourceScanExec(updateRequestedColumns,
+        scanBuilder(updateRequestedColumns, candidatePredicates, pushedFilters, needDecoder),
+        relation.relation,
+        UnknownPartitioning(0),
+        metadata,
+        relation.metastoreTableIdentifier)
     }
   }
 
@@ -392,5 +417,11 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
       case others => None
     }
+  }
+
+  def supportBatchedDataSource(sqlContext: SQLContext, cols: Seq[AttributeReference]): Boolean = {
+    sqlContext.conf.wholeStageEnabled &&
+    sqlContext.sparkContext.getConf.getBoolean("carbon.enable.vector.reader", true) &&
+    cols.forall(_.dataType.isInstanceOf[AtomicType])
   }
 }

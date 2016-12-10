@@ -24,19 +24,17 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.model.QueryModel;
-import org.apache.carbondata.scan.result.iterator.DetailQueryResultIterator;
+import org.apache.carbondata.scan.result.iterator.VectorDetailQueryResultIterator;
 
 /**
- * Below class will be used to execute the detail query
- * For executing the detail query it will pass all the block execution
- * info to detail query result iterator and iterator will be returned
+ * Below class will be used to execute the detail query and returns columnar vectors.
  */
-public class DetailQueryExecutor extends AbstractQueryExecutor {
+public class VectorDetailQueryExecutor extends AbstractQueryExecutor {
 
   @Override public CarbonIterator<Object[]> execute(QueryModel queryModel)
       throws QueryExecutionException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
-    return new DetailQueryResultIterator(blockExecutionInfoList, queryModel,
+    return new VectorDetailQueryResultIterator(blockExecutionInfoList, queryModel,
         queryProperties.executorService);
   }
 

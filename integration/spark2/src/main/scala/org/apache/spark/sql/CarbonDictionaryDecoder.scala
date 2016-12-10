@@ -228,9 +228,9 @@ class CarbonDecoderRDD(
     relations: Seq[CarbonDecoderRelation],
     profile: CarbonProfile,
     aliasMap: CarbonAliasDecoderRelation,
-    prev: RDD[Row],
+    prev: RDD[InternalRow],
     output: Seq[Attribute])
-    extends RDD[Row](prev) {
+    extends RDD[InternalRow](prev) {
 
   def canBeDecoded(attr: Attribute): Boolean = {
     profile match {
@@ -296,7 +296,7 @@ class CarbonDecoderRDD(
     dictIds
   }
 
-  override def compute(split: Partition, context: TaskContext): Iterator[Row] = {
+  override def compute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
           val storepath = CarbonEnv.get.carbonMetastore.storePath
     val absoluteTableIdentifiers = relations.map { relation =>
       val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
@@ -319,13 +319,13 @@ class CarbonDecoderRDD(
         }
       }
     )
-    val iter = firstParent[Row].iterator(split, context)
-    new Iterator[Row] {
+    val iter = firstParent[InternalRow].iterator(split, context)
+    new Iterator[InternalRow] {
       var flag = true
       var total = 0L
       override final def hasNext: Boolean = iter.hasNext
 
-      override final def next(): Row = {
+      override final def next(): InternalRow = {
         val startTime = System.currentTimeMillis()
         val data = iter.next().asInstanceOf[GenericRow].toSeq.toArray
         dictIndex.foreach { index =>
@@ -335,7 +335,7 @@ class CarbonDecoderRDD(
               getDictionaryColumnIds(index)._3)
           }
         }
-        new GenericRow(data)
+        new GenericMutableRow(data)
       }
     }
   }
@@ -365,5 +365,5 @@ class CarbonDecoderRDD(
     dicts
   }
 
-  override protected def getPartitions: Array[Partition] = firstParent[Row].partitions
+  override protected def getPartitions: Array[Partition] = firstParent[InternalRow].partitions
 }

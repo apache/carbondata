@@ -49,6 +49,88 @@ public class MeasureDataVectorProcessor {
         if (nullBitSet.get(i)) {
           vector.putNull(vectorOffset);
         } else {
+          vector.putInt(vectorOffset,
+              (int)dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(i));
+        }
+        vectorOffset++;
+      }
+    }
+
+    @Override
+    public void fillMeasureVectorForFilter(int[] rowMapping, MeasureColumnDataChunk dataChunk,
+        ColumnVectorInfo info) {
+      int offset = info.offset;
+      int len = offset + info.size;
+      int vectorOffset = info.vectorOffset;
+      CarbonColumnVector vector = info.vector;
+      BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
+      for (int i = offset; i < len; i++) {
+        int currentRow = rowMapping[i];
+        if (nullBitSet.get(currentRow)) {
+          vector.putNull(vectorOffset);
+        } else {
+          vector.putInt(vectorOffset,
+              (int)dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(currentRow));
+        }
+        vectorOffset++;
+      }
+    }
+  }
+
+  public static class ShortMeasureVectorFiller implements MeasureVectorFiller {
+
+    @Override
+    public void fillMeasureVector(MeasureColumnDataChunk dataChunk, ColumnVectorInfo info) {
+      int offset = info.offset;
+      int len = offset + info.size;
+      int vectorOffset = info.vectorOffset;
+      CarbonColumnVector vector = info.vector;
+      BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
+      for (int i = offset; i < len; i++) {
+        if (nullBitSet.get(i)) {
+          vector.putNull(vectorOffset);
+        } else {
+          vector.putShort(vectorOffset,
+              (short) dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(i));
+        }
+        vectorOffset++;
+      }
+    }
+
+    @Override
+    public void fillMeasureVectorForFilter(int[] rowMapping, MeasureColumnDataChunk dataChunk,
+        ColumnVectorInfo info) {
+      int offset = info.offset;
+      int len = offset + info.size;
+      int vectorOffset = info.vectorOffset;
+      CarbonColumnVector vector = info.vector;
+      BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
+      for (int i = offset; i < len; i++) {
+        int currentRow = rowMapping[i];
+        if (nullBitSet.get(currentRow)) {
+          vector.putNull(vectorOffset);
+        } else {
+          vector.putShort(vectorOffset,
+              (short) dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(currentRow));
+        }
+        vectorOffset++;
+      }
+    }
+  }
+
+  public static class LongMeasureVectorFiller implements MeasureVectorFiller {
+
+    @Override
+    public void fillMeasureVector(MeasureColumnDataChunk dataChunk, ColumnVectorInfo info) {
+      int offset = info.offset;
+      int len = offset + info.size;
+      int vectorOffset = info.vectorOffset;
+      CarbonColumnVector vector = info.vector;
+      BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
+      for (int i = offset; i < len; i++) {
+        if (nullBitSet.get(i)) {
+          vector.putNull(vectorOffset);
+        } else {
           vector.putLong(vectorOffset,
               dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(i));
         }
@@ -168,9 +250,11 @@ public class MeasureDataVectorProcessor {
     public static MeasureVectorFiller getMeasureVectorFiller(DataType dataType) {
       switch (dataType) {
         case SHORT:
+          return new ShortMeasureVectorFiller();
         case INT:
-        case LONG:
           return new IntegralMeasureVectorFiller();
+        case LONG:
+          return new LongMeasureVectorFiller();
         case DECIMAL:
           return new DecimalMeasureVectorFiller();
         default:

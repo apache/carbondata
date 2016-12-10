@@ -46,6 +46,8 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
 
   private ColumnVectorInfo[] noDictionaryInfo;
 
+  private ColumnVectorInfo[] complexInfo;
+
   private ColumnVectorInfo[] measureInfo;
 
   private ColumnVectorInfo[] allColumnInfo;
@@ -58,6 +60,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     allColumnInfo = new ColumnVectorInfo[queryDimensions.length + queryMeasures.length];
     List<ColumnVectorInfo> dictInfoList = new ArrayList<>();
     List<ColumnVectorInfo> noDictInfoList = new ArrayList<>();
+    List<ColumnVectorInfo> complexList = new ArrayList<>();
     for (int i = 0; i < queryDimensions.length; i++) {
       if (!queryDimensions[i].getDimension().hasEncoding(Encoding.DICTIONARY)) {
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
@@ -73,7 +76,15 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
             .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
         columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
         allColumnInfo[queryDimensions[i].getQueryOrder()] = columnVectorInfo;
-      } else if (!queryDimensions[i].getDimension().isComplex()) {
+      } else if (queryDimensions[i].getDimension().isComplex()) {
+        ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
+        complexList.add(columnVectorInfo);
+        columnVectorInfo.dimension = queryDimensions[i];
+        columnVectorInfo.ordinal = queryDimensions[i].getDimension().getOrdinal();
+        columnVectorInfo.genericQueryType =
+            tableBlockExecutionInfos.getComlexDimensionInfoMap().get(columnVectorInfo.ordinal);
+        allColumnInfo[queryDimensions[i].getQueryOrder()] = columnVectorInfo;
+      } else {
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
         dictInfoList.add(columnVectorInfo);
         columnVectorInfo.dimension = queryDimensions[i];
@@ -91,9 +102,11 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     }
     dictionaryInfo = dictInfoList.toArray(new ColumnVectorInfo[dictInfoList.size()]);
     noDictionaryInfo = noDictInfoList.toArray(new ColumnVectorInfo[noDictInfoList.size()]);
+    complexInfo = complexList.toArray(new ColumnVectorInfo[complexList.size()]);
     Arrays.sort(dictionaryInfo);
     Arrays.sort(noDictionaryInfo);
     Arrays.sort(measureInfo);
+    Arrays.sort(complexInfo);
   }
 
   @Override public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
@@ -119,6 +132,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     scannedResult.fillColumnarDictionaryBatch(dictionaryInfo);
     scannedResult.fillColumnarNoDictionaryBatch(noDictionaryInfo);
     scannedResult.fillColumnarMeasureBatch(measureInfo, measuresOrdinal);
+    scannedResult.fillColumnarComplexBatch(complexInfo);
     scannedResult.setRowCounter(rowCounter + requiredRows);
     columnarBatch.setActualSize(columnarBatch.getActualSize() + requiredRows);
     columnarBatch.setRowCounter(columnarBatch.getRowCounter() + requiredRows);

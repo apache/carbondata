@@ -19,6 +19,7 @@
 package org.apache.carbondata.scan.result.vector;
 
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.apache.carbondata.scan.filter.GenericQueryType;
 import org.apache.carbondata.scan.model.QueryDimension;
 
 public class ColumnVectorInfo implements Comparable<ColumnVectorInfo> {
@@ -30,6 +31,7 @@ public class ColumnVectorInfo implements Comparable<ColumnVectorInfo> {
   public int ordinal;
   public DirectDictionaryGenerator directDictionaryGenerator;
   public MeasureDataVectorProcessor.MeasureVectorFiller measureVectorFiller;
+  public GenericQueryType genericQueryType;
 
   @Override public int compareTo(ColumnVectorInfo o) {
     return ordinal - o.ordinal;
