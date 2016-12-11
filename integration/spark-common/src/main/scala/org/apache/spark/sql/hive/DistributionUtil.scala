@@ -230,9 +230,6 @@ object DistributionUtil {
       hostToLocalTaskCount: Map[String, Int] = Map.empty): Boolean = {
     sc.schedulerBackend match {
       case b: CoarseGrainedSchedulerBackend =>
-        LOGGER.info(
-            s"number of required executors are = $requiredExecutors and existing executors are = " +
-            s"${b.getExecutorIds().length}")
         if (requiredExecutors > 0) {
           LOGGER.info(s"Requesting total executors: $requiredExecutors")
           b.requestTotalExecutors(requiredExecutors, localityAwareTasks, hostToLocalTaskCount)
