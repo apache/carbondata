@@ -122,7 +122,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       projects: Seq[NamedExpression],
       filterPredicates: Seq[Expression],
       scanBuilder: (Seq[Attribute], Seq[Expression], Seq[Filter],
-        ArrayBuffer[AttributeReference]) =>RDD[InternalRow]) = {
+        ArrayBuffer[AttributeReference]) => RDD[InternalRow]) = {
 
     val projectSet = AttributeSet(projects.flatMap(_.references))
     val filterSet = AttributeSet(filterPredicates.flatMap(_.references))
