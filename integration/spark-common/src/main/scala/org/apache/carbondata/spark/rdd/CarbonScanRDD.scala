@@ -197,7 +197,7 @@ class CarbonScanRDD[V: ClassTag](
   }
 
   private def prepareInputFormatForExecutor(conf: Configuration): CarbonInputFormat[V] = {
-    CarbonInputFormat.setCarbonReadSupport(conf, SparkCommonEnv.readSupportClass)
+    CarbonInputFormat.setCarbonReadSupport(conf, SparkReadSupport.readSupportClass)
     createInputFormat(conf)
   }
 

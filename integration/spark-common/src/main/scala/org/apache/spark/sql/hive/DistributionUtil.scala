@@ -29,7 +29,6 @@ import org.apache.carbondata.core.carbon.datastore.block.Distributable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
-import org.apache.carbondata.spark.rdd.SparkCommonEnv
 
 object DistributionUtil {
   @transient
@@ -231,9 +230,6 @@ object DistributionUtil {
       hostToLocalTaskCount: Map[String, Int] = Map.empty): Boolean = {
     sc.schedulerBackend match {
       case b: CoarseGrainedSchedulerBackend =>
-        LOGGER.info(
-            s"number of required executors are = $requiredExecutors and existing executors are = " +
-            s"${SparkCommonEnv.numExistingExecutors}")
         if (requiredExecutors > 0) {
           LOGGER.info(s"Requesting total executors: $requiredExecutors")
           b.requestTotalExecutors(requiredExecutors, localityAwareTasks, hostToLocalTaskCount)

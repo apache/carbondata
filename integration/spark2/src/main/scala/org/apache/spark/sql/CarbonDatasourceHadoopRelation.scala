@@ -62,16 +62,12 @@ case class CarbonDatasourceHadoopRelation(
   override def schema: StructType = tableSchema.getOrElse(carbonRelation.schema)
 
   def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[Row] = {
-    val job = new Job(new JobConf())
-    val conf = new Configuration(job.getConfiguration)
     val filterExpression: Option[Expression] = filters.flatMap { filter =>
       CarbonFilters.createCarbonFilter(schema, filter)
     }.reduceOption(new AndExpression(_, _))
 
     val projection = new CarbonProjection
     requiredColumns.foreach(projection.addColumn)
-    CarbonInputFormat.setColumnProjection(conf, projection)
-    CarbonInputFormat.setCarbonReadSupport(conf, classOf[SparkRowReadSupportImpl])
 
     new CarbonScanRDD[Row](sqlContext.sparkContext, projection, filterExpression.orNull,
       absIdentifier, carbonTable)

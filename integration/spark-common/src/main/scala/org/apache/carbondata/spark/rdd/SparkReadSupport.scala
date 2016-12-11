@@ -21,10 +21,8 @@ import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 
 // Used to solve cyclic-dependency issue of carbon-spark-common and carbon-spark, carbon-spark2
 // modules, variables or functions that different in carbon-spark and carbon-spark2 are set here
-object SparkCommonEnv {
+object SparkReadSupport {
 
   var readSupportClass: Class[_ <: CarbonReadSupport[_]] = _
-
-  var numExistingExecutors: Int = _
 
 }
