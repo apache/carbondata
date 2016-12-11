@@ -22,6 +22,7 @@ package org.apache.spark.carbondata.bucketing
 import java.io.File
 
 import org.apache.commons.io.FileUtils
+import org.apache.spark.carbondata.util.QueryTest
 import org.apache.spark.sql.execution.command.LoadTable
 import org.apache.spark.sql.execution.exchange.ShuffleExchange
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
@@ -32,39 +33,12 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class TableBucketingTestCase extends FunSuite with BeforeAndAfterAll {
-  var spark: SparkSession = null
-  var storeLocation: String = null
-  var warehouse: String = null
-  var metastoredb: String = null
-  override def beforeAll {
+class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
 
-    val rootPath = new File(this.getClass.getResource("/").getPath
-                            + "../../../..").getCanonicalPath
-    storeLocation = s"$rootPath/integration/spark2/target/store"
-    warehouse = s"$rootPath/integration/spark2/target/warehouse"
-    metastoredb = s"$rootPath/integration/spark2/target/metastore_db"
+  override def beforeAll {
 
     // clean data folder
     clean
-
-    spark = SparkSession
-      .builder()
-      .master("local")
-      .appName("TableBucketingTestCase")
-      .enableHiveSupport()
-      .config("carbon.kettle.home",
-        s"$rootPath/processing/carbonplugins")
-      .config("carbon.storelocation", storeLocation)
-      .config("spark.sql.warehouse.dir", warehouse)
-      .config("spark.sql.autoBroadcastJoinThreshold", "-1")
-      .config("javax.jdo.option.ConnectionURL",
-        s"jdbc:derby:;databaseName=$metastoredb;create=true")
-      .getOrCreate()
-    spark.sparkContext.setLogLevel("WARN")
-
-    CarbonEnv.init(spark.sqlContext)
-    CarbonEnv.get.carbonMetastore.cleanStore()
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")

@@ -295,7 +295,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     }
   }
 
-  private def getPartitioning(carbonTable: CarbonTable, output: Seq[Attribute]): Partitioning = {
+  private def getPartitioning(carbonTable: CarbonTable,
+      output: Seq[AttributeReference]): Partitioning = {
     val info: BucketingInfo = carbonTable.getBucketingInfo(carbonTable.getFactTableName)
     if (info != null) {
       val cols = info.getListOfColumns.asScala

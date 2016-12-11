@@ -90,6 +90,7 @@ public class SegmentTaskIndexStoreTest {
 
     new MockUp<CarbonUtil>() {
       @Mock List<DataFileFooter> readCarbonIndexFile(String taskId,
+          String bucketNumber,
           List<TableBlockInfo> tableBlockInfoList,
           AbsoluteTableIdentifier absoluteTableIdentifier) {
         return getDataFileFooters();
@@ -101,18 +102,17 @@ public class SegmentTaskIndexStoreTest {
       }
     };
 
-    Map<String, AbstractIndex> result =
+    Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> result =
         taskIndexStore.loadAndGetTaskIdToSegmentsMap(new HashMap<String, List<TableBlockInfo>>() {{
           put("SG100", Arrays.asList(tableBlockInfo));
         }}, absoluteTableIdentifier);
 
     assertEquals(result.size(), 1);
-    assertTrue(result.containsKey(new String("100")));
-
+    assertTrue(result.containsKey(new SegmentTaskIndexStore.TaskBucketHolder("100", "0")));
   }
 
   @Test public void checkExistenceOfSegmentBTree() {
-    Map<String, AbstractIndex> result =
+    Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> result =
         taskIndexStore.getSegmentBTreeIfExists(absoluteTableIdentifier, "SG100");
     assertNull(result);
   }
