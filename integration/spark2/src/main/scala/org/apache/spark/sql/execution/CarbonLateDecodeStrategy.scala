@@ -210,6 +210,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         attr
       }
       val scan = getDataSourceScan(relation,
+        updateProject,
         scanBuilder,
         candidatePredicates,
         pushedFilters,
@@ -223,6 +224,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       (projectSet ++ filterSet -- handledSet).map(relation.attributeMap).toSeq
       val updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
       val scan = getDataSourceScan(relation,
+        updateRequestedColumns,
         scanBuilder,
         candidatePredicates,
         pushedFilters,
@@ -235,6 +237,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   }
 
   def getDataSourceScan(relation: LogicalRelation,
+      output: Seq[Attribute],
       scanBuilder: (Seq[Attribute], Seq[Expression], Seq[Filter],
         ArrayBuffer[AttributeReference]) => RDD[InternalRow],
       candidatePredicates: Seq[Expression],
@@ -244,14 +247,14 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       updateRequestedColumns: Seq[AttributeReference]): DataSourceScanExec = {
     if (supportBatchedDataSource(relation.relation.sqlContext, updateRequestedColumns)) {
       BatchedDataSourceScanExec(
-        updateRequestedColumns,
+        output,
         scanBuilder(updateRequestedColumns, candidatePredicates, pushedFilters, needDecoder),
         relation.relation,
         UnknownPartitioning(0),
         metadata,
         relation.metastoreTableIdentifier)
     } else {
-      RowDataSourceScanExec(updateRequestedColumns,
+      RowDataSourceScanExec(output,
         scanBuilder(updateRequestedColumns, candidatePredicates, pushedFilters, needDecoder),
         relation.relation,
         UnknownPartitioning(0),

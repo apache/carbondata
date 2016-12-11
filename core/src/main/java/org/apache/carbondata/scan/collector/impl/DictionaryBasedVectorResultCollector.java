@@ -97,6 +97,7 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
       columnVectorInfo.measureVectorFiller = MeasureDataVectorProcessor.MeasureVectorFillerFactory
           .getMeasureVectorFiller(queryMeasures[i].getMeasure().getDataType());
       columnVectorInfo.ordinal = queryMeasures[i].getMeasure().getOrdinal();
+      columnVectorInfo.measure = queryMeasures[i];
       measureInfo[i] = columnVectorInfo;
       allColumnInfo[queryMeasures[i].getQueryOrder()] = columnVectorInfo;
     }

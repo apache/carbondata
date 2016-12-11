@@ -45,6 +45,7 @@ import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.spark.memory.MemoryMode;
 import org.apache.spark.sql.execution.vectorized.ColumnarBatch;
+import org.apache.spark.sql.types.DecimalType;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
@@ -194,7 +195,8 @@ public class VectorizedCarbonRecordReader extends RecordReader<Void, Object> {
           break;
         case DECIMAL:
           fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
-              CarbonScalaUtil.convertCarbonToSparkDataType(DataType.DECIMAL), true, null);
+              new DecimalType(msr.getMeasure().getPrecision(),
+                  msr.getMeasure().getScale()), true, null);
           break;
         default:
           fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),

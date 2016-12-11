@@ -21,6 +21,7 @@ package org.apache.carbondata.scan.result.vector;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.scan.filter.GenericQueryType;
 import org.apache.carbondata.scan.model.QueryDimension;
+import org.apache.carbondata.scan.model.QueryMeasure;
 
 public class ColumnVectorInfo implements Comparable<ColumnVectorInfo> {
   public int offset;
@@ -28,6 +29,7 @@ public class ColumnVectorInfo implements Comparable<ColumnVectorInfo> {
   public CarbonColumnVector vector;
   public int vectorOffset;
   public QueryDimension dimension;
+  public QueryMeasure measure;
   public int ordinal;
   public DirectDictionaryGenerator directDictionaryGenerator;
   public MeasureDataVectorProcessor.MeasureVectorFiller measureVectorFiller;
