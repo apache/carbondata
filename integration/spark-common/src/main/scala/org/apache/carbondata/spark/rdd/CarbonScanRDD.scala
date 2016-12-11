@@ -48,7 +48,6 @@ import org.apache.carbondata.spark.load.CarbonLoaderUtil
  */
 class CarbonScanRDD[V: ClassTag](
     @transient sc: SparkContext,
-    conf: Configuration,
     columnProjection: CarbonProjection,
     filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
@@ -63,7 +62,6 @@ class CarbonScanRDD[V: ClassTag](
 
   @transient private val jobId = new JobID(jobTrackerId, id)
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-  val broadCastConf = sc.broadcast(new SerializableConfiguration(conf))
 
   override def getPartitions: Array[Partition] = {
     val job = Job.getInstance(new Configuration())
@@ -149,7 +147,7 @@ class CarbonScanRDD[V: ClassTag](
     }
 
     val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
-    val attemptContext = new TaskAttemptContextImpl(broadCastConf.value.value, attemptId)
+    val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
     val format = prepareInputFormatForExecutor(attemptContext.getConfiguration)
     val inputSplit = split.asInstanceOf[CarbonSparkPartition].split.value
     val reader = format.createRecordReader(inputSplit, attemptContext)
@@ -199,7 +197,7 @@ class CarbonScanRDD[V: ClassTag](
   }
 
   private def prepareInputFormatForExecutor(conf: Configuration): CarbonInputFormat[V] = {
-    CarbonInputFormat.setCarbonReadSupport(conf, SparkCommonEnv.readSupportClass)
+    CarbonInputFormat.setCarbonReadSupport(conf, SparkReadSupport.readSupportClass)
     createInputFormat(conf)
   }
 

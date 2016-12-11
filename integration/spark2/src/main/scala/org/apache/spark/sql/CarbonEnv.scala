@@ -17,13 +17,12 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 import org.apache.spark.sql.hive.CarbonMetastore
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.rdd.SparkCommonEnv
+import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
 /**
@@ -37,6 +36,9 @@ object CarbonEnv {
 
   @volatile private var carbonEnv: CarbonEnv = _
 
+  // set readsupport class global so that the executor can get it.
+  SparkReadSupport.readSupportClass = classOf[SparkRowReadSupportImpl]
+
   var initialized = false
 
   def init(sqlContext: SQLContext): Unit = {
@@ -48,21 +50,12 @@ object CarbonEnv {
         new CarbonMetastore(sqlContext.sparkSession.conf, storePath)
       }
       carbonEnv = CarbonEnv(catalog)
-      setSparkCommonEnv(sqlContext)
       initialized = true
     }
   }
 
   def get: CarbonEnv = {
     carbonEnv
-  }
-
-  private def setSparkCommonEnv(sqlContext: SQLContext): Unit = {
-    SparkCommonEnv.readSupportClass = classOf[SparkRowReadSupportImpl]
-    SparkCommonEnv.numExistingExecutors = sqlContext.sparkContext.schedulerBackend match {
-      case b: CoarseGrainedSchedulerBackend => b.getExecutorIds().length
-      case _ => 0
-    }
   }
 }
 
