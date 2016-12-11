@@ -61,8 +61,7 @@ class CarbonScanRDD(
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
     formatter.format(new Date())
   }
-  private val vectorReader = sparkContext.getConf.getBoolean("carbon.enable.vector.reader", true) &&
-                             sparkContext.getConf.getBoolean("spark.sql.codegen.wholeStage", true)
+  private var vectorReader = false
 
   @transient private val jobId = new JobID(jobTrackerId, id)
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -156,7 +155,7 @@ class CarbonScanRDD(
     val inputSplit = split.asInstanceOf[CarbonSparkPartition].split.value
     val model = format.getQueryModel(inputSplit, attemptContext)
     val reader = {
-      if (supportVectorReader(model)) {
+      if (vectorReader) {
         val carbonRecordReader = createVectorizedCarbonRecordReader(model)
         if (carbonRecordReader == null) {
           new CarbonRecordReader(model, format.getReadSupportClass(attemptContext.getConfiguration))
@@ -262,7 +261,8 @@ class CarbonScanRDD(
     }
   }
 
-  def supportVectorReader(queryModel: QueryModel): Boolean = {
-    vectorReader && !queryModel.getQueryDimension.asScala.exists(p => p.getDimension.isComplex)
+  // TODO find the better way set it.
+  def setVectorReaderSupport(boolean: Boolean): Unit = {
+    vectorReader = boolean
   }
 }

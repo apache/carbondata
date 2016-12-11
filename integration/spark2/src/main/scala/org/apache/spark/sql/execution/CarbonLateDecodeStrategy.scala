@@ -35,6 +35,7 @@ import org.apache.spark.sql.types.{AtomicType, IntegerType, StringType}
 import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
+import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
 /**
  * Carbon strategy for late decode (convert dictionary key to value as late as possible), which
@@ -93,8 +94,11 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       needDecode: ArrayBuffer[AttributeReference]):
   RDD[InternalRow] = {
     if (needDecode.size > 0) {
+      rdd.asInstanceOf[CarbonScanRDD].setVectorReaderSupport(false)
       getDecoderRDD(relation, needDecode, rdd, output)
     } else {
+      rdd.asInstanceOf[CarbonScanRDD]
+        .setVectorReaderSupport(supportBatchedDataSource(relation.relation.sqlContext, output))
       rdd
     }
   }
@@ -245,7 +249,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       metadata: Map[String, String],
       needDecoder: ArrayBuffer[AttributeReference],
       updateRequestedColumns: Seq[AttributeReference]): DataSourceScanExec = {
-    if (supportBatchedDataSource(relation.relation.sqlContext, updateRequestedColumns)) {
+    if (supportBatchedDataSource(relation.relation.sqlContext, updateRequestedColumns) &&
+        needDecoder.length == 0) {
       BatchedDataSourceScanExec(
         output,
         scanBuilder(updateRequestedColumns, candidatePredicates, pushedFilters, needDecoder),
@@ -422,7 +427,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     }
   }
 
-  def supportBatchedDataSource(sqlContext: SQLContext, cols: Seq[AttributeReference]): Boolean = {
+  def supportBatchedDataSource(sqlContext: SQLContext, cols: Seq[Attribute]): Boolean = {
     sqlContext.conf.wholeStageEnabled &&
     sqlContext.sparkContext.getConf.getBoolean("carbon.enable.vector.reader", true) &&
     cols.forall(_.dataType.isInstanceOf[AtomicType])

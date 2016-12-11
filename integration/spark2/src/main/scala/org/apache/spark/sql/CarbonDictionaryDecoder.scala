@@ -323,11 +323,13 @@ class CarbonDecoderRDD(
     new Iterator[InternalRow] {
       var flag = true
       var total = 0L
+      val dataTypes = output.map { attr => attr.dataType }
       override final def hasNext: Boolean = iter.hasNext
 
       override final def next(): InternalRow = {
         val startTime = System.currentTimeMillis()
-        val data = iter.next().asInstanceOf[GenericRow].toSeq.toArray
+        val row: InternalRow = iter.next()
+        val data = row.toSeq(dataTypes).toArray
         dictIndex.foreach { index =>
           if ( data(index) != null) {
             data(index) = DataTypeUtil.getDataBasedOnDataType(dicts(index)
