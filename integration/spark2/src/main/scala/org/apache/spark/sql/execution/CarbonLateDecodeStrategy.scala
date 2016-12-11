@@ -107,7 +107,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       projects: Seq[NamedExpression],
       filterPredicates: Seq[Expression],
       scanBuilder: (Seq[Attribute], Array[Filter],
-      ArrayBuffer[AttributeReference]) => RDD[InternalRow]) = {
+        ArrayBuffer[AttributeReference]) => RDD[InternalRow]) = {
     pruneFilterProjectRaw(
       relation,
       projects,
@@ -215,7 +215,9 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       val scan = new execution.RowDataSourceScanExec(
         updateProject,
         scanBuilder(updateRequestedColumns, candidatePredicates, pushedFilters, needDecoder),
-        relation.relation, UnknownPartitioning(9), metadata, None)
+        // now carbon do not support partitioning, use UnknownPartitioning here, in future if
+        // we add bucket, we should change the partitioning
+        relation.relation, UnknownPartitioning(0), metadata, None)
       filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan)
     } else {
       // Don't request columns that are only referenced by pushed filters.
@@ -225,6 +227,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       val scan = new execution.RowDataSourceScanExec(
         updateRequestedColumns,
         scanBuilder(updateRequestedColumns, candidatePredicates, pushedFilters, needDecoder),
+        // now carbon do not support partitioning, use UnknownPartitioning here, in future if
+        // we add bucket, we should change the partitioning
         relation.relation, UnknownPartitioning(0), metadata, None)
       execution.ProjectExec(
         projects, filterCondition.map(execution.FilterExec(_, scan)).getOrElse(scan))

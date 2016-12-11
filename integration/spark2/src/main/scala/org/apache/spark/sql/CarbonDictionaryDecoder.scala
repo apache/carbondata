@@ -228,7 +228,7 @@ class CarbonDecoderRDD(
     profile: CarbonProfile,
     aliasMap: CarbonAliasDecoderRelation,
     prev: RDD[Row],
-                       output: Seq[Attribute])
+    output: Seq[Attribute])
     extends RDD[Row](prev) {
 
   def canBeDecoded(attr: Attribute): Boolean = {
