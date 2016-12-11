@@ -434,10 +434,9 @@ case class LoadTable(
 
 
       val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
-      val kettleHomePath = CarbonScalaUtil.getKettleHome(sqlContext)
 
       // TODO It will be removed after kettle is removed.
-      val useKettle = options.get("use_kettle") match {
+      val useKettle = options.get("useKettle") match {
         case Some(value) => value.toBoolean
         case _ =>
           val useKettleLocal = System.getProperty("use.kettle")
@@ -447,6 +446,8 @@ case class LoadTable(
             useKettleLocal.toBoolean
           }
       }
+
+      val kettleHomePath = if (useKettle) CarbonScalaUtil.getKettleHome(sqlContext) else ""
 
       val delimiter = options.getOrElse("delimiter", ",")
       val quoteChar = options.getOrElse("quotechar", "\"")
