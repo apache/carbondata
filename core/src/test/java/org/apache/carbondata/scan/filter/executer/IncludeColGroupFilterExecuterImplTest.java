@@ -31,8 +31,12 @@ import org.apache.carbondata.core.carbon.datastore.block.BlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
+import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.ColumnGroupDimensionDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
+import org.apache.carbondata.core.carbon.datastore.chunk.reader.dimension.v1.CompressedDimensionChunkFileBasedReaderV1;
+import org.apache.carbondata.core.carbon.datastore.chunk.reader.measure.v1.CompressedMeasureChunkFileBasedReaderV1;
 import org.apache.carbondata.core.carbon.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.carbon.metadata.blocklet.SegmentInfo;
@@ -49,6 +53,8 @@ import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastorage.store.FileHolder;
+import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.scan.filter.DimColumnFilterInfo;
@@ -380,10 +386,40 @@ public class IncludeColGroupFilterExecuterImplTest {
 
       @Mock public BlockInfo getBlockInfo() {
 
-        final String filePath =
-            this.getClass().getClassLoader().getResource("include.carbondata").getPath();
         return new BlockInfo(
-            new TableBlockInfo(filePath, 0, "0", new String[] { "localhost" }, 1324, ColumnarFormatVersion.V1));
+            new TableBlockInfo("file", 0, "0", new String[] { "localhost" }, 1324, ColumnarFormatVersion.V1));
+      }
+    };
+
+    new MockUp<CompressedDimensionChunkFileBasedReaderV1>() {
+      @Mock
+      public DimensionColumnDataChunk readDimensionChunk(FileHolder fileReader,
+          int blockIndex) {
+        DimensionChunkAttributes chunkAttributes = new DimensionChunkAttributes();
+        chunkAttributes.setEachRowSize(1);
+        byte[] dataChunk = {2, 2, 2, 2, 2, 2, 2, 2, 2, 3};
+        return new FixedLengthDimensionDataChunk(dataChunk, chunkAttributes);
+      }
+    };
+
+    new MockUp<CompressedMeasureChunkFileBasedReaderV1>() {
+      @Mock
+      public MeasureColumnDataChunk readMeasureChunk(final FileHolder fileReader,
+          final int blockIndex) {
+        CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
+        dataHolder.setReadableDoubleValues(new double[]{7.414E-320, 7.412E-320, 7.4115E-320,
+            7.4144E-320, 7.4135E-320, 7.4125E-320, 7.411E-320, 7.415E-320, 7.413E-320, 7.4154E-320});
+
+        PresenceMeta presenceMeta = new PresenceMeta();
+        presenceMeta.setRepresentNullValues(false);
+        BitSet bitSet = new BitSet();
+        bitSet.set(1);
+        presenceMeta.setBitSet(bitSet);
+
+        MeasureColumnDataChunk dataChunk = new MeasureColumnDataChunk();
+        dataChunk.setMeasureDataHolder(dataHolder);
+        dataChunk.setNullValueIndexHolder(presenceMeta);
+        return dataChunk;
       }
     };
 
