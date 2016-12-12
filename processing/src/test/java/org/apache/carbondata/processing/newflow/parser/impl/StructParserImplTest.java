@@ -18,8 +18,76 @@
  */
 package org.apache.carbondata.processing.newflow.parser.impl;
 
-/**
- * Created by knoldus on 12/12/16.
- */
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.processing.newflow.complexobjects.StructObject;
+import org.apache.carbondata.processing.newflow.parser.CarbonParserFactory;
+import org.apache.carbondata.processing.newflow.parser.GenericParser;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertNull;
+
 public class StructParserImplTest {
+
+  private static StructParserImpl structParser;
+  private static ColumnSchema columnSchema;
+
+  @BeforeClass public static void setUp() {
+    structParser = new StructParserImpl("!", ";");
+    columnSchema = getColumnSchema(DataType.STRUCT);
+  }
+
+  @AfterClass public static void tearDown() {
+    structParser = null;
+  }
+
+  @Test public void testStructParserForValidData() {
+    String[] data = { "0!Test!Struct!Parser!For!Valid!Data!Type;",
+        "1}Test}Struct}Parser}For}Valid}Data}Type;" };
+    String[] complexDelimiters = { "!", "}", "{" };
+    CarbonColumn carbonColumn = new CarbonDimension(columnSchema, 1, 1, 1, 1);
+    CarbonDimension carbonDimension = (CarbonDimension) carbonColumn;
+    carbonDimension.initializeChildDimensionsList(3);
+    GenericParser gp = CarbonParserFactory.createParser(carbonDimension, complexDelimiters, ";");
+    StructObject structResult = structParser.parse(gp);
+    assertNotNull(structResult);
+  }
+
+  @Test public void testStructParserForNull() {
+    StructObject structResult = structParser.parse(null);
+    assertNull(structResult);
+  }
+
+  private static ColumnSchema getColumnSchema(DataType dataType) {
+    ColumnSchema columnSchema = new ColumnSchema();
+    columnSchema.setDimensionColumn(true);
+    columnSchema.setColumnar(true);
+    columnSchema.setColumnName("Test" + UUID.randomUUID().toString());
+    columnSchema.setColumnUniqueId(UUID.randomUUID().toString());
+    columnSchema.setDataType(dataType);
+    columnSchema.setColumnGroup(2);
+    columnSchema.setPrecision(1);
+    columnSchema.setScale(1);
+    columnSchema.setUseInvertedIndex(true);
+    columnSchema.setSchemaOrdinal(2);
+    columnSchema.setDimensionColumn(true);
+    List<Encoding> list = new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    list.add(Encoding.DICTIONARY);
+    columnSchema.setEncodingList(list);
+    columnSchema.setNumberOfChild(4);
+    return columnSchema;
+  }
+
 }
