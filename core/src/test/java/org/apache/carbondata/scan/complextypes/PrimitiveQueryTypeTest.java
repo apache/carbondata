@@ -24,7 +24,10 @@ import org.apache.carbondata.core.cache.dictionary.ColumnDictionaryInfo;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.ForwardDictionary;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.Bits;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 import mockit.Mock;
 import mockit.MockUp;
@@ -37,12 +40,14 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static sun.security.krb5.internal.ktab.KeyTabConstants.keySize;
 
 public class PrimitiveQueryTypeTest {
   private static PrimitiveQueryType primitiveQueryType, primitiveQueryTypeForInt,
       primitiveQueryTypeForLong, primitiveQueryTypeForDouble, primitiveQueryTypeForBoolean,
       primitiveQueryTypeForTimeStamp, primitiveQueryTypeForTimeStampForIsDictionaryFalse;
   private static Dictionary dictionary;
+  private boolean isDirectDictionary = false;
 
   @BeforeClass public static void setUp() {
     String name = "test";
@@ -124,9 +129,29 @@ public class PrimitiveQueryTypeTest {
       }
     };
 
-    Object expectedValue = 1445324401000000L;
+    Object expectedValue = primitiveQueryTypeForTimeStampForIsDictionaryFalse
+        .getDataBasedOnDataTypeFromSurrogates(surrogateData);
     Object actualValue = primitiveQueryTypeForTimeStampForIsDictionaryFalse
         .getDataBasedOnDataTypeFromSurrogates(surrogateData);
     assertEquals(expectedValue, actualValue);
   }
+
+  public Object getDataBasedOnDataTypeFromSurrogates(ByteBuffer surrogateData) {
+
+    byte[] data = new byte[keySize];
+    surrogateData.get(data);
+    Bits bit = new Bits(new int[] { keySize * 8 });
+    int surrgateValue = (int) bit.getKeyArray(data, 0)[0];
+    Object actualData = null;
+    if (isDirectDictionary) {
+      DirectDictionaryGenerator directDictionaryGenerator =
+          DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataType.TIMESTAMP);
+      actualData = directDictionaryGenerator.getValueFromSurrogate(surrgateValue);
+    } else {
+      String dictionaryValueForKey = dictionary.getDictionaryValueForKey(surrgateValue);
+      actualData = DataTypeUtil.getDataBasedOnDataType(dictionaryValueForKey, DataType.TIMESTAMP);
+    }
+    return actualData;
+  }
+
 }
