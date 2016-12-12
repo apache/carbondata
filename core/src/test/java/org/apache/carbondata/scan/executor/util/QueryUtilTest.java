@@ -34,6 +34,8 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertArrayEquals;
+
 public class QueryUtilTest extends TestCase {
 
   private SegmentProperties segmentProperties;
@@ -182,6 +184,55 @@ public class QueryUtilTest extends TestCase {
     int actualValue = QueryUtil.getColumnGroupId(segmentProperties, ordinal);
     int expectedValue = -1;
     assertEquals(expectedValue, actualValue);
+  }
+
+  @Test public void testGetMaskedKey() {
+    byte[] data = { 1, 2, 3, 4, 5, 5 };
+    byte[] maxKey = { 15, 20, 25, 30, 35, 35 };
+    int[] maskByteRanges = { 1, 2, 3, 4, 5 };
+    int byteCount = 5;
+    byte[] actualValue = QueryUtil.getMaskedKey(data, maxKey, maskByteRanges, byteCount);
+    byte[] expectedValue = { 0, 1, 4, 1, 1 };
+    assertArrayEquals(expectedValue, actualValue);
+  }
+
+  @Test public void testGetMaxKeyBasedOnOrinal() throws Exception {
+    List<Integer> dummyList = new ArrayList<>();
+    dummyList.add(0, 1);
+    dummyList.add(1, 2);
+    byte[] actualValue =
+        QueryUtil.getMaxKeyBasedOnOrinal(dummyList, segmentProperties.getDimensionKeyGenerator());
+    byte[] expectedValue = { 0, -1, -1, 0, 0, 0 };
+    assertArrayEquals(expectedValue, actualValue);
+  }
+
+  @Test public void testGetSortDimensionIndexes() {
+    List<QueryDimension> sortedDimensions = new ArrayList<QueryDimension>();
+    for (int i = 0; i < 2; i++) {
+      QueryDimension dimension =
+          new QueryDimension(segmentProperties.getDimensions().get(i).getColName());
+      dimension.setDimension(segmentProperties.getDimensions().get(i));
+      sortedDimensions.add(dimension);
+    }
+    List<QueryDimension> queryDimensions = new ArrayList<QueryDimension>();
+    for (int i = 0; i < 2; i++) {
+      QueryDimension dimension =
+          new QueryDimension(segmentProperties.getDimensions().get(i).getColName());
+      dimension.setDimension(segmentProperties.getDimensions().get(i));
+      queryDimensions.add(dimension);
+    }
+    byte[] actualValue = QueryUtil.getSortDimensionIndexes(sortedDimensions, queryDimensions);
+    byte[] expectedValue = { 0, 0 };
+    assertArrayEquals(expectedValue, actualValue);
+  }
+
+  @Test public void testGetActualTypeIndex() {
+    List<String> dummyList = new ArrayList<>();
+    dummyList.add("test1");
+    dummyList.add("test2");
+    int[] actualValue = QueryUtil.getActualTypeIndex(dummyList);
+    int[] expectedValue = { 0, 1 };
+    assertArrayEquals(expectedValue, actualValue);
   }
 
   @AfterClass public void tearDown() {
