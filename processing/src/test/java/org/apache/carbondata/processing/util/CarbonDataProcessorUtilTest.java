@@ -57,6 +57,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.pentaho.di.core.util.Assert.assertNull;
 
 public class CarbonDataProcessorUtilTest {
 
@@ -173,41 +174,11 @@ public class CarbonDataProcessorUtilTest {
     assertThat(expectedResult, is(equalTo(actualResult)));
 
   }
-
-  @Test public void testGetFileHeader() throws DataLoadingException {
-    String expected = "Testing";
-    new MockUp<File>() {
-
-      @Mock boolean isInvalid() {
-        return false;
-      }
-
-      @Mock public boolean exists() {
-        return false;
-      }
-
-    };
-
-    new MockUp<FileInputStream>() {
-
-      @Mock private void open(String name) throws FileNotFoundException {
-
-      }
-
-    };
-    new MockUp<BufferedReader>() {
-
-      @Mock public String readLine() throws IOException {
-        return "Testing";
-
-      }
-    };
-    String actual = CarbonDataProcessorUtil.getFileHeader(carbonFile);
-    assertThat(expected, is(equalTo(actual)));
-
-  }
-
-
+@Test public void testFetchTaskContext(){
+Object object = new Object();
+  CarbonDataProcessorUtil.configureTaskContext(object);
+  assertNull(CarbonDataProcessorUtil.fetchTaskContext());
+}
 
   @Test public void testGetFileHeaderForIOException() throws DataLoadingException {
     String expected = "Not able to read CSV input File ";
