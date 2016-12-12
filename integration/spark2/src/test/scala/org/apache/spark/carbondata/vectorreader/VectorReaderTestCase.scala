@@ -21,7 +21,6 @@ package org.apache.spark.carbondata.vectorreader
 
 import java.io.File
 
-import org.apache.commons.io.FileUtils
 import org.apache.spark.carbondata.util.QueryTest
 import org.apache.spark.carbondata.util.QueryTest._
 import org.apache.spark.sql.execution.command.LoadTable
@@ -50,14 +49,6 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
       """)
     LoadTable(Some("default"), "vectorreader", "./src/test/resources/dataDiff.csv", Nil, Map()).run(spark)
   }
-
-  def clean: Unit = {
-    val clean = (path: String) => FileUtils.deleteDirectory(new File(path))
-    clean(storeLocation)
-    clean(warehouse)
-    clean(metastoredb)
-  }
-
 
   test("test vector reader") {
 

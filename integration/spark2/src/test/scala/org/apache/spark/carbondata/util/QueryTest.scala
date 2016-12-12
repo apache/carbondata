@@ -20,10 +20,10 @@ package org.apache.spark.carbondata.util
 
 import java.io.File
 
+import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.scalatest.FunSuite
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
 
@@ -46,7 +46,7 @@ object QueryTest {
       .config("javax.jdo.option.ConnectionURL",
         s"jdbc:derby:;databaseName=$metastoredb;create=true")
       .getOrCreate()
-    spark.sparkContext.setLogLevel("WARN")
+    spark.sparkContext.setLogLevel("ERROR")
     CarbonProperties.getInstance()
       .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")
       .addProperty("carbon.storelocation", storeLocation)
@@ -54,6 +54,11 @@ object QueryTest {
     CarbonEnv.init(spark.sqlContext)
     CarbonEnv.get.carbonMetastore.cleanStore()
     (spark, storeLocation, warehouse, metastoredb)
+  }
+
+  def clean: Unit = {
+    val clean = (path: String) => FileUtils.deleteDirectory(new File(path))
+    clean(storeLocation)
   }
 
 }

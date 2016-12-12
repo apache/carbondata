@@ -17,26 +17,13 @@
 
 package org.apache.spark.carbondata
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.apache.spark.carbondata.util.QueryTest
+import org.apache.spark.carbondata.util.QueryTest._
+import org.scalatest.BeforeAndAfterAll
 
-class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
-  var spark: SparkSession = null
+class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
-    spark = SparkSession
-      .builder()
-      .master("local")
-      .appName("CarbonExample")
-      .enableHiveSupport()
-      .config(CarbonCommonConstants.STORE_LOCATION,
-        s"examples/spark2/target/store")
-      .getOrCreate()
-    spark.sparkContext.setLogLevel("WARN")
-
-    CarbonEnv.init(spark.sqlContext)
-    CarbonEnv.get.carbonMetastore.cleanStore()
-
+    clean
     // Drop table
     spark.sql("DROP TABLE IF EXISTS carbon_testtable")
     spark.sql("DROP TABLE IF EXISTS csv_table")
@@ -71,8 +58,6 @@ class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
   override def afterAll(): Unit = {
     spark.sql("drop table carbon_testtable")
     spark.sql("DROP TABLE IF EXISTS csv_table")
-    spark.sparkContext.stop()
-    spark = null
   }
 
   test("project") {
