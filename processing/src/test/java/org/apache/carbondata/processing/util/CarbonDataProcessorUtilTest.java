@@ -215,6 +215,9 @@ public class CarbonDataProcessorUtilTest {
         return false;
       }
 
+      @Mock public boolean exists() {
+        return true;
+      }
     };
     new MockUp<FileInputStream>() {
 
@@ -239,6 +242,16 @@ public class CarbonDataProcessorUtilTest {
 
       @Mock boolean isInvalid() throws FileNotFoundException {
         throw new FileNotFoundException();
+      }
+
+      @Mock public boolean exists() {
+        return true;
+      }
+    };
+    new MockUp<FileInputStream>() {
+
+      @Mock private void open(String name) throws FileNotFoundException {
+
       }
 
     };
