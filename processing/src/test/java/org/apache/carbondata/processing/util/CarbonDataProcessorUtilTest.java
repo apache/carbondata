@@ -174,38 +174,7 @@ public class CarbonDataProcessorUtilTest {
 
   }
 
-  @Test public void testGetFileHeader() throws DataLoadingException {
-    String expected = "Testing";
-    new MockUp<File>() {
-
-      @Mock boolean isInvalid() {
-        return false;
-      }
-
-      @Mock public boolean exists() {
-        return true;
-      }
-
-    };
-
-    new MockUp<FileInputStream>() {
-
-      @Mock private void open(String name) throws FileNotFoundException {
-
-      }
-
-    };
-    new MockUp<BufferedReader>() {
-
-      @Mock public String readLine() throws IOException {
-        return "Testing";
-
-      }
-    };
-    String actual = CarbonDataProcessorUtil.getFileHeader(carbonFile);
-    assertThat(expected, is(equalTo(actual)));
-
-  }
+  
 
   @Test public void testGetFileHeaderForIOException() throws DataLoadingException {
     String expected = "Not able to read CSV input File ";
