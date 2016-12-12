@@ -348,7 +348,12 @@ public final class FilterUtil {
       // Reading the dictionary value from cache.
       forwardDictionary =
           getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
-      return getFilterValues(columnExpression, evaluateResultList, forwardDictionary,
+      sortFilterModelMembers(columnExpression, evaluateResultList);
+      List<Integer> surrogates =
+          new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+      // Reading the dictionary value from cache.
+      getDictionaryValue(evaluateResultList, forwardDictionary, surrogates);
+      return getFilterValues(columnExpression, surrogates, forwardDictionary,
           isIncludeFilter);
     } finally {
       CarbonUtil.clearDictionaryCache(forwardDictionary);
@@ -367,13 +372,8 @@ public final class FilterUtil {
    * @throws QueryExecutionException
    */
   private static DimColumnFilterInfo getFilterValues(ColumnExpression columnExpression,
-      List<String> evaluateResultList, Dictionary forwardDictionary, boolean isIncludeFilter)
+      List<Integer> surrogates, Dictionary forwardDictionary, boolean isIncludeFilter)
       throws QueryExecutionException {
-    sortFilterModelMembers(columnExpression, evaluateResultList);
-    List<Integer> surrogates =
-        new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    // Reading the dictionary value from cache.
-    getDictionaryValue(evaluateResultList, forwardDictionary, surrogates);
     Collections.sort(surrogates);
     DimColumnFilterInfo columnFilterInfo = null;
     if (surrogates.size() > 0) {
@@ -410,19 +410,21 @@ public final class FilterUtil {
    * @throws FilterUnsupportedException
    * @throws QueryExecutionException
    */
-  public static DimColumnFilterInfo getFilterListForAllValues(
+  public static DimColumnFilterInfo getFilterInfoByFilterExpressionEvaluation(
       AbsoluteTableIdentifier tableIdentifier, Expression expression,
       final ColumnExpression columnExpression, boolean isIncludeFilter)
       throws FilterUnsupportedException {
     Dictionary forwardDictionary = null;
-    List<String> evaluateResultListFinal = new ArrayList<String>(20);
+    List<Integer> surrogates = new ArrayList<Integer>(20);
     DictionaryChunksWrapper dictionaryWrapper = null;
     try {
       forwardDictionary =
           getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
       dictionaryWrapper = forwardDictionary.getDictionaryChunks();
+      int surrogateCount=0;
       while (dictionaryWrapper.hasNext()) {
         byte[] columnVal = dictionaryWrapper.next();
+        ++surrogateCount;
         try {
           RowIntf row = new RowImpl();
           String stringValue =
@@ -435,16 +437,20 @@ public final class FilterUtil {
           Boolean rslt = expression.evaluate(row).getBoolean();
           if (null != rslt && !(rslt ^ isIncludeFilter)) {
             if (null == stringValue) {
-              evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
+              surrogates.add(CarbonCommonConstants.NULL_DEFAULT_DICT_VALUE);
             } else {
-              evaluateResultListFinal.add(stringValue);
+              surrogates.add(surrogateCount);
             }
           }
         } catch (FilterIllegalMemberException e) {
           LOGGER.debug(e.getMessage());
         }
       }
-      return getFilterValues(columnExpression, evaluateResultListFinal, forwardDictionary,
+      //Default value has to be added
+      if (surrogates.isEmpty()) {
+        surrogates.add(0);
+      }
+      return getFilterValues(columnExpression, surrogates, forwardDictionary,
           isIncludeFilter);
     } catch (QueryExecutionException e) {
       throw new FilterUnsupportedException(e.getMessage());
