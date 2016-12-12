@@ -363,16 +363,7 @@ case class LoadTable(
       val kettleHomePath = CarbonScalaUtil.getKettleHome(sparkSession.sqlContext)
 
       // TODO It will be removed after kettle is removed.
-      val useKettle = options.get("use_kettle") match {
-        case Some(value) => value.toBoolean
-        case _ =>
-          val useKettleLocal = System.getProperty("use.kettle")
-          if (useKettleLocal == null) {
-            sparkSession.sqlContext.sparkContext.getConf.get("use_kettle_default", "true").toBoolean
-          } else {
-            useKettleLocal.toBoolean
-          }
-      }
+      val useKettle = false;
 
       val delimiter = options.getOrElse("delimiter", ",")
       val quoteChar = options.getOrElse("quotechar", "\"")
