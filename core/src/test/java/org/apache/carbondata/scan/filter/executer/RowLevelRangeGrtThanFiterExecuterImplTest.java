@@ -96,8 +96,7 @@ public class RowLevelRangeGrtThanFiterExecuterImplTest {
   @Test public void testApplyFilterWithoutEncodingList() throws FilterUnsupportedException {
 
     new MockUp<CarbonReadDataHolder>() {
-      @Mock
-      public long getReadableLongValueByIndex(int index) {
+      @Mock public long getReadableLongValueByIndex(int index) {
         return 1;
       }
     };

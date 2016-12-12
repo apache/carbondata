@@ -646,29 +646,28 @@ public class IncludeFilterExecuterImplTest {
 
       @Mock public BlockInfo getBlockInfo() {
 
-        return new BlockInfo(
-            new TableBlockInfo("file", 0, "0", new String[] { "localhost" }, 1324, ColumnarFormatVersion.V1));
+        return new BlockInfo(new TableBlockInfo("file", 0, "0", new String[] { "localhost" }, 1324,
+            ColumnarFormatVersion.V1));
       }
     };
 
     new MockUp<CompressedDimensionChunkFileBasedReaderV1>() {
       @Mock
-      public DimensionColumnDataChunk readDimensionChunk(FileHolder fileReader,
-          int blockIndex) {
+      public DimensionColumnDataChunk readDimensionChunk(FileHolder fileReader, int blockIndex) {
         DimensionChunkAttributes chunkAttributes = new DimensionChunkAttributes();
         chunkAttributes.setEachRowSize(1);
-        byte[] dataChunk = {2, 2, 2, 2, 2, 2, 2, 2, 2, 3};
+        byte[] dataChunk = { 2, 2, 2, 2, 2, 2, 2, 2, 2, 3 };
         return new FixedLengthDimensionDataChunk(dataChunk, chunkAttributes);
       }
     };
 
     new MockUp<CompressedMeasureChunkFileBasedReaderV1>() {
-      @Mock
-      public MeasureColumnDataChunk readMeasureChunk(final FileHolder fileReader,
+      @Mock public MeasureColumnDataChunk readMeasureChunk(final FileHolder fileReader,
           final int blockIndex) {
         CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
-        dataHolder.setReadableDoubleValues(new double[]{7.414E-320, 7.412E-320, 7.4115E-320,
-            7.4144E-320, 7.4135E-320, 7.4125E-320, 7.411E-320, 7.415E-320, 7.413E-320, 7.4154E-320});
+        dataHolder.setReadableDoubleValues(
+            new double[] { 7.414E-320, 7.412E-320, 7.4115E-320, 7.4144E-320, 7.4135E-320,
+                7.4125E-320, 7.411E-320, 7.415E-320, 7.413E-320, 7.4154E-320 });
 
         PresenceMeta presenceMeta = new PresenceMeta();
         presenceMeta.setRepresentNullValues(false);
