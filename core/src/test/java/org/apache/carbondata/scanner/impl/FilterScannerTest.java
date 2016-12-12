@@ -28,6 +28,7 @@ import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.carbon.datastore.chunk.impl.ColumnGroupDimensionDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.carbon.datastore.impl.btree.BlockBTreeLeafNode;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
@@ -78,8 +79,8 @@ public class FilterScannerTest {
     blockExecutionInfo.setComplexDimensionInfoMap(new HashMap<Integer, GenericQueryType>());
     blockExecutionInfo.setComplexColumnParentBlockIndexes(new int[] { 1 });
     blockExecutionInfo.setQueryDimensions(new QueryDimension[] { new QueryDimension("Col1") });
-    blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(new int[] { 0 });
-    blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(new int[] { 0 });
+    blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(new int[][] { { 0, 0 } });
+    blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(new int[][] { { 0, 0 } });
     blockExecutionInfo.setTotalNumberOfMeasureBlock(1);
     blockExecutionInfo.setTotalNumberDimensionBlock(1);
     QueryStatisticsModel queryStatisticsModel = new QueryStatisticsModel();
@@ -137,19 +138,38 @@ public class FilterScannerTest {
         return bitSet;
       }
     };
+    DataRefNode dataRefNode = new MockUp<DataRefNode>() {
+      @Mock @SuppressWarnings("unused") DimensionColumnDataChunk[] getDimensionChunks(
+          FileHolder fileReader, int[][] blockIndexes) {
+        DimensionColumnDataChunk[] dimensionChunkAttributes =
+            { new ColumnGroupDimensionDataChunk(null, null) };
+        return dimensionChunkAttributes;
+      }
+
+      @Mock @SuppressWarnings("unused") MeasureColumnDataChunk[] getMeasureChunks(
+          FileHolder fileReader, int[][] blockIndexes) {
+
+        MeasureColumnDataChunk[] measureColumnDataChunks = { new MeasureColumnDataChunk() };
+        return measureColumnDataChunks;
+      }
+    }.getMockInstance();
+
     BlocksChunkHolder blocksChunkHolder = new BlocksChunkHolder(1, 1);
-    DataRefNode dataRefNode = new BlockBTreeLeafNode(bTreeBuilderInfo, 0, 1);
     blocksChunkHolder.setDataBlock(dataRefNode);
     DimensionChunkAttributes dimensionChunkAttributes = new DimensionChunkAttributes();
     DimensionColumnDataChunk dimensionColumnDataChunk =
         new FixedLengthDimensionDataChunk(new byte[] { 0, 1 }, dimensionChunkAttributes);
-    blocksChunkHolder
-        .setDimensionDataChunk(new DimensionColumnDataChunk[] { dimensionColumnDataChunk });
+    blocksChunkHolder.setDimensionDataChunk(new DimensionColumnDataChunk[]
+
+        { dimensionColumnDataChunk });
     MeasureColumnDataChunk measureColumnDataChunk = new MeasureColumnDataChunk();
-    blocksChunkHolder.setMeasureDataChunk(new MeasureColumnDataChunk[] { measureColumnDataChunk });
+    blocksChunkHolder.setMeasureDataChunk(new MeasureColumnDataChunk[]
+
+        { measureColumnDataChunk });
     FileHolder fileHolder = new DFSFileHolderImpl();
     blocksChunkHolder.setFileReader(fileHolder);
     AbstractScannedResult abstractScannedResult = filterScanner.scanBlocklet(blocksChunkHolder);
+
     assertEquals(2, abstractScannedResult.numberOfOutputRows());
   }
 
