@@ -58,6 +58,7 @@ public class DictionaryChunksWrapperTest {
     chunks.add("b".getBytes());
     chunks.add("c".getBytes());
     chunks.add("a".getBytes());
+    dictionaryChunks.add(new ArrayList<byte[]>());
     dictionaryChunks.add(chunks);
     return dictionaryChunks;
   }
@@ -105,6 +106,10 @@ public class DictionaryChunksWrapperTest {
    */
   @Test public void getSize() throws Exception {
     int size = dictionaryChunksWrapper.getSize();
-    Assert.assertEquals("", 4, size);
+    Assert.assertEquals(4, size);
+  }
+
+  @Test(expected = UnsupportedOperationException.class) public void testRemove() {
+    dictionaryChunksWrapper.remove();
   }
 }
