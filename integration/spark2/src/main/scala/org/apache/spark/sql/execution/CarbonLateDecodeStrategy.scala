@@ -429,7 +429,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
   def supportBatchedDataSource(sqlContext: SQLContext, cols: Seq[Attribute]): Boolean = {
     sqlContext.conf.wholeStageEnabled &&
-    sqlContext.sparkContext.getConf.getBoolean("carbon.enable.vector.reader", true) &&
+    sqlContext.sparkSession.conf.get("carbon.enable.vector.reader", "true").toBoolean &&
     cols.forall(_.dataType.isInstanceOf[AtomicType])
   }
 }
