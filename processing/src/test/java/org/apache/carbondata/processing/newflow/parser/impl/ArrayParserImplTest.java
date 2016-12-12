@@ -18,8 +18,39 @@
  */
 package org.apache.carbondata.processing.newflow.parser.impl;
 
-/**
- * Created by knoldus on 12/12/16.
- */
+import org.apache.carbondata.processing.newflow.complexobjects.ArrayObject;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static junit.framework.TestCase.assertNotNull;
+
 public class ArrayParserImplTest {
+
+  private static String delimiter = null;
+  private static String nullFormat = null;
+  private static ArrayParserImpl arrayParserImpl = null;
+  private static StructParserImpl structParserImpl = null;
+
+  @BeforeClass public static void setUp() {
+    delimiter = "!";
+    nullFormat = ";";
+    arrayParserImpl = new ArrayParserImpl(delimiter, nullFormat);
+    structParserImpl = new StructParserImpl(delimiter, nullFormat);
+  }
+
+  @AfterClass public static void tearDown() {
+    delimiter = null;
+    nullFormat = null;
+  }
+
+  @Test public void testArrayParser() {
+    arrayParserImpl.addChildren(structParserImpl);
+    String[] data = { "This", "string", "is", "used", "for", "Testing" };
+    ArrayObject array = arrayParserImpl.parse(data);
+    assertNotNull(array);
+  }
+
 }
+
