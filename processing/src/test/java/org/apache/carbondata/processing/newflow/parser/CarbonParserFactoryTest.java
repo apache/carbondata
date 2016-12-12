@@ -18,8 +18,82 @@
  */
 package org.apache.carbondata.processing.newflow.parser;
 
-/**
- * Created by knoldus on 12/12/16.
- */
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+
+import org.junit.Test;
+
+import static junit.framework.TestCase.assertNotNull;
+
 public class CarbonParserFactoryTest {
+
+  private static ColumnSchema colSchema;
+  private static String[] complexDelimiters = { "!", "}", "{" };
+  private static CarbonColumn carbonColumn;
+  private static CarbonDimension carbonDimension;
+
+  @Test public void testCreateParserForArrayDataType() {
+    colSchema = getColumnSchema(DataType.ARRAY);
+    carbonColumn = new CarbonDimension(colSchema, 1, 1, 1, 1);
+    carbonDimension = (CarbonDimension) carbonColumn;
+    carbonDimension.initializeChildDimensionsList(3);
+    GenericParser parser = CarbonParserFactory.createParser(carbonDimension, complexDelimiters, "");
+    assertNotNull(parser);
+  }
+
+  @Test public void testCreateParserForStructDataType() {
+    colSchema = getColumnSchema(DataType.STRUCT);
+    carbonColumn = new CarbonDimension(colSchema, 3, 2, 1, 1);
+    carbonDimension = (CarbonDimension) carbonColumn;
+    carbonDimension.initializeChildDimensionsList(5);
+    GenericParser parser = CarbonParserFactory.createParser(carbonDimension, complexDelimiters, "");
+    assertNotNull(parser);
+  }
+
+  @Test(expected = UnsupportedOperationException.class)
+  public void testCreateParserForMapDataType() {
+    colSchema = getColumnSchema(DataType.MAP);
+    carbonColumn = new CarbonDimension(colSchema, 3, 2, 1, 1);
+    carbonDimension = (CarbonDimension) carbonColumn;
+    carbonDimension.initializeChildDimensionsList(5);
+    CarbonParserFactory.createParser(carbonDimension, complexDelimiters, "");
+  }
+
+  @Test public void testCreateParserForOtherDataTypes() {
+    colSchema = getColumnSchema(DataType.INT);
+    carbonColumn = new CarbonDimension(colSchema, 3, 2, 1, 1);
+    carbonDimension = (CarbonDimension) carbonColumn;
+    carbonDimension.initializeChildDimensionsList(5);
+    GenericParser parser = CarbonParserFactory.createParser(carbonDimension, complexDelimiters, "");
+    assertNotNull(parser);
+  }
+
+  private ColumnSchema getColumnSchema(DataType dataType) {
+    ColumnSchema columnSchema = new ColumnSchema();
+    columnSchema.setDimensionColumn(true);
+    columnSchema.setColumnar(true);
+    columnSchema.setColumnName("Test" + UUID.randomUUID().toString());
+    columnSchema.setColumnUniqueId(UUID.randomUUID().toString());
+    columnSchema.setDataType(dataType);
+    columnSchema.setColumnGroup(2);
+    columnSchema.setPrecision(1);
+    columnSchema.setScale(1);
+    columnSchema.setUseInvertedIndex(true);
+    columnSchema.setSchemaOrdinal(2);
+    columnSchema.setDimensionColumn(true);
+    List<Encoding> list = new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    list.add(Encoding.DICTIONARY);
+    columnSchema.setEncodingList(list);
+    columnSchema.setNumberOfChild(4);
+    return columnSchema;
+  }
+
 }
