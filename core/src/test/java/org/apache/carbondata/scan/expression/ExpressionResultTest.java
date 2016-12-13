@@ -19,10 +19,14 @@
 package org.apache.carbondata.scan.expression;
 
 import java.math.BigDecimal;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.scan.expression.exception.FilterIllegalMemberException;
 
 import org.junit.BeforeClass;
@@ -278,8 +282,23 @@ public class ExpressionResultTest {
     ExpressionResult expressionResultForString =
         new ExpressionResult(DataType.STRING, "2016-11-07 10:15:09");
     long actualValue = expressionResultForString.getTime();
-    long expectedValue = (1478493909000000L);
+    long expectedValue = getTime("2016-11-07 10:15:09");
     assertEquals(expectedValue, actualValue);
+  }
+
+  public Long getTime(String value) throws FilterIllegalMemberException {
+    if (value == null) {
+      return null;
+    }
+    SimpleDateFormat parser =
+        new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+    Date dateToStr;
+    try {
+      dateToStr = parser.parse(value.toString());
+      return dateToStr.getTime() * 1000;
+    } catch (ParseException e) {
+      throw new FilterIllegalMemberException("Cannot convert value to Time/Long type value");
+    }
   }
 
   @Test(expected = FilterIllegalMemberException.class) public void testGetTimeForParseException()
