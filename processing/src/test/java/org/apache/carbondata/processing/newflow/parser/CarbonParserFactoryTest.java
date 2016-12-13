@@ -29,6 +29,8 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDime
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertNotNull;
@@ -39,6 +41,18 @@ public class CarbonParserFactoryTest {
   private static String[] complexDelimiters = { "!", "}", "{" };
   private static CarbonColumn carbonColumn;
   private static CarbonDimension carbonDimension;
+
+  @BeforeClass public static void setUp() {
+    carbonColumn = null;
+    carbonDimension = null;
+    colSchema = null;
+  }
+
+  @AfterClass public static void tearDown() {
+    carbonColumn = null;
+    carbonDimension = null;
+    colSchema = null;
+  }
 
   @Test public void testCreateParserForArrayDataType() {
     colSchema = getColumnSchema(DataType.ARRAY);

@@ -19,6 +19,7 @@
 package org.apache.carbondata.processing.newflow.parser.impl;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
@@ -38,7 +39,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertEquals;
 
 public class RowParserImplTest {
 
@@ -68,7 +69,7 @@ public class RowParserImplTest {
     rowParser = null;
   }
 
-  @Test public void testGetInput() {
+  @Test public void testParseRow() {
     new MockUp<CarbonDimension>() {
       @Mock public List<CarbonDimension> getListOfChildDimensions() {
         ColumnSchema var = getColumnSchema(DataType.ARRAY);
@@ -77,22 +78,32 @@ public class RowParserImplTest {
         return listOfCD;
       }
     };
-
     rowParser = new RowParserImpl(dataFieldList, configuration);
-    DataField[] dataField = rowParser.getInput(configuration);
-    assertNotNull(dataField);
-  }
-
-  @Test public void testParseRowForMultipleRows() {
     String[] row = new String[] { "", "", "" };
     Object[] value = rowParser.parseRow(row);
-    assertNotNull(value);
+    int expected = 3;
+    int actual = value.length;
+    assertEquals(expected, actual);
   }
 
-  @Test public void testParseRowForNoRows() {
-    String[] row = new String[] {};
-    Object[] value = rowParser.parseRow(row);
-    assertNotNull(value);
+  @Test public void testGetInput() {
+    String expected = "Test";
+    new MockUp<CarbonDimension>() {
+      @Mock public List<CarbonDimension> getListOfChildDimensions() {
+        ColumnSchema var = getColumnSchema(DataType.ARRAY);
+        CarbonDimension temp = new CarbonDimension(var, 1, 1, 1, 1);
+        List<CarbonDimension> listOfCD = new ArrayList<CarbonDimension>(2);
+        return listOfCD;
+      }
+    };
+    rowParser = new RowParserImpl(dataFieldList, configuration);
+    DataField[] dataField = rowParser.getInput(configuration);
+    List<DataField> listOfDataField = Arrays.asList(dataField);
+
+    for (DataField data : listOfDataField) {
+      String actual = data.getColumn().getColName();
+      assertEquals(expected, actual);
+    }
   }
 
   private static ColumnSchema getColumnSchema(DataType dataType) {

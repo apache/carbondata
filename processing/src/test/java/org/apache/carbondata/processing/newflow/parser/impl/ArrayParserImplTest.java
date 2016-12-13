@@ -18,13 +18,16 @@
  */
 package org.apache.carbondata.processing.newflow.parser.impl;
 
+import java.util.Arrays;
+
 import org.apache.carbondata.processing.newflow.complexobjects.ArrayObject;
+import org.apache.carbondata.processing.newflow.complexobjects.StructObject;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertEquals;
 
 public class ArrayParserImplTest {
 
@@ -43,13 +46,17 @@ public class ArrayParserImplTest {
   @AfterClass public static void tearDown() {
     delimiter = null;
     nullFormat = null;
+    arrayParserImpl = null;
+    structParserImpl = null;
   }
 
   @Test public void testArrayParser() {
+    String expected = "[]";
     arrayParserImpl.addChildren(structParserImpl);
     String[] data = { "This", "string", "is", "used", "for", "Testing" };
     ArrayObject array = arrayParserImpl.parse(data);
-    assertNotNull(array);
+    String actual = Arrays.toString(((StructObject) array.getData()[0]).getData());
+    assertEquals(expected, actual);
   }
 
 }

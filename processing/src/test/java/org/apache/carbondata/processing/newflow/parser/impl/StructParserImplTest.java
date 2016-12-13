@@ -36,16 +36,18 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertNull;
 
 public class StructParserImplTest {
 
   private static StructParserImpl structParser;
+  private static StructParserImpl structParserTwo;
   private static ColumnSchema columnSchema;
 
   @BeforeClass public static void setUp() {
     structParser = new StructParserImpl("!", ";");
+    structParserTwo = new StructParserImpl("?", ":");
     columnSchema = getColumnSchema(DataType.STRUCT);
   }
 
@@ -61,8 +63,12 @@ public class StructParserImplTest {
     CarbonDimension carbonDimension = (CarbonDimension) carbonColumn;
     carbonDimension.initializeChildDimensionsList(3);
     GenericParser gp = CarbonParserFactory.createParser(carbonDimension, complexDelimiters, ";");
+    structParser.addChildren(structParserTwo);
+    structParser.addChildren(structParserTwo);
     StructObject structResult = structParser.parse(gp);
-    assertNotNull(structResult);
+    int expected = 2;
+    int actual = structResult.getData().length;
+    assertEquals(expected, actual);
   }
 
   @Test public void testStructParserForNull() {
