@@ -32,6 +32,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    System.setProperty("use.kettle", "false")
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")
     sql("drop table if exists hiveBigDecimal")
