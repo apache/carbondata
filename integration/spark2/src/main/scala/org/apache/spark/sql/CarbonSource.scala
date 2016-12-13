@@ -108,7 +108,7 @@ class CarbonSource extends CreatableRelationProvider
 
     val dbName: String = parameters.getOrElse("dbName", CarbonCommonConstants.DATABASE_DEFAULT_NAME)
     val tableName: String = parameters.getOrElse("tableName", "default_table")
-
+    val options = new CarbonOption(parameters)
     try {
       CarbonEnv.get.carbonMetastore.lookupRelation(Option(dbName), tableName)(sparkSession)
       CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
@@ -133,9 +133,8 @@ class CarbonSource extends CreatableRelationProvider
         val map = scala.collection.mutable.Map[String, String]()
         parameters.foreach { x => map.put(x._1, x._2) }
         val bucketFields = {
-          if (parameters.contains("bucketnumber") && parameters.contains("bucketcolumns")) {
-            Some(BucketFields(parameters.get("bucketcolumns").get.split(","),
-              parameters.get("bucketnumber").get.toInt))
+          if (options.isBucketingEnabled) {
+            Some(BucketFields(options.bucketColumns.split(","), options.bucketNumber))
           } else {
             None
           }
