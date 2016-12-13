@@ -172,7 +172,7 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
    * @return dimension data chunks
    */
   @Override public DimensionColumnDataChunk[] getDimensionChunks(FileHolder fileReader,
-      int[] blockIndexes) {
+      int[][] blockIndexes) {
     // No required here as leaf which will will be use this class will implement its own get
     // dimension chunks
     return null;
@@ -200,7 +200,7 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
    * @return measure column data chunk
    */
   @Override public MeasureColumnDataChunk[] getMeasureChunks(FileHolder fileReader,
-      int[] blockIndexes) {
+      int[][] blockIndexes) {
     // No required here as leaf which will will be use this class will implement its own get
     // measure chunks
     return null;

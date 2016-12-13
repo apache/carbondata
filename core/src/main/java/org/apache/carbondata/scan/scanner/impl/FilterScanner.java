@@ -22,6 +22,9 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -45,7 +48,6 @@ public class FilterScanner extends AbstractBlockletScanner {
    * filter tree
    */
   private FilterExecuter filterExecuter;
-
   /**
    * this will be used to apply min max
    * this will be useful for dimension column which is on the right side
@@ -57,7 +59,10 @@ public class FilterScanner extends AbstractBlockletScanner {
    */
   private boolean isMinMaxEnabled;
 
-  public FilterScanner(BlockExecutionInfo blockExecutionInfo) {
+  private QueryStatisticsModel queryStatisticsModel;
+
+  public FilterScanner(BlockExecutionInfo blockExecutionInfo,
+      QueryStatisticsModel queryStatisticsModel) {
     super(blockExecutionInfo);
     scannedResult = new FilterQueryScannedResult(blockExecutionInfo);
     // to check whether min max is enabled or not
@@ -69,6 +74,7 @@ public class FilterScanner extends AbstractBlockletScanner {
     }
     // get the filter tree
     this.filterExecuter = blockExecutionInfo.getFilterExecuterTree();
+    this.queryStatisticsModel = queryStatisticsModel;
   }
 
   /**
@@ -108,6 +114,11 @@ public class FilterScanner extends AbstractBlockletScanner {
       throws FilterUnsupportedException {
 
     scannedResult.reset();
+    QueryStatistic totalBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM);
+    totalBlockletStatistic.addCountStatistic(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM,
+        totalBlockletStatistic.getCount() + 1);
+    queryStatisticsModel.getRecorder().recordStatistics(totalBlockletStatistic);
     // apply min max
     if (isMinMaxEnabled) {
       BitSet bitSet = this.filterExecuter
@@ -127,6 +138,13 @@ public class FilterScanner extends AbstractBlockletScanner {
       scannedResult.setIndexes(new int[0]);
       return;
     }
+    // valid scanned blocklet
+    QueryStatistic validScannedBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .get(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM);
+    validScannedBlockletStatistic
+        .addCountStatistic(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM,
+            validScannedBlockletStatistic.getCount() + 1);
+    queryStatisticsModel.getRecorder().recordStatistics(validScannedBlockletStatistic);
     // get the row indexes from bot set
     int[] indexes = new int[bitSet.cardinality()];
     int index = 0;
@@ -135,35 +153,41 @@ public class FilterScanner extends AbstractBlockletScanner {
     }
 
     FileHolder fileReader = blocksChunkHolder.getFileReader();
-    int[] allSelectedDimensionBlocksIndexes =
+    int[][] allSelectedDimensionBlocksIndexes =
         blockExecutionInfo.getAllSelectedDimensionBlocksIndexes();
+    DimensionColumnDataChunk[] projectionListDimensionChunk = blocksChunkHolder.getDataBlock()
+        .getDimensionChunks(fileReader, allSelectedDimensionBlocksIndexes);
+
     DimensionColumnDataChunk[] dimensionColumnDataChunk =
         new DimensionColumnDataChunk[blockExecutionInfo.getTotalNumberDimensionBlock()];
     // read dimension chunk blocks from file which is not present
+    for (int i = 0; i < dimensionColumnDataChunk.length; i++) {
+      if (null != blocksChunkHolder.getDimensionDataChunk()[i]) {
+        dimensionColumnDataChunk[i] = blocksChunkHolder.getDimensionDataChunk()[i];
+      }
+    }
     for (int i = 0; i < allSelectedDimensionBlocksIndexes.length; i++) {
-      if (null == blocksChunkHolder.getDimensionDataChunk()[allSelectedDimensionBlocksIndexes[i]]) {
-        dimensionColumnDataChunk[allSelectedDimensionBlocksIndexes[i]] =
-            blocksChunkHolder.getDataBlock()
-                .getDimensionChunk(fileReader, allSelectedDimensionBlocksIndexes[i]);
-      } else {
-        dimensionColumnDataChunk[allSelectedDimensionBlocksIndexes[i]] =
-            blocksChunkHolder.getDimensionDataChunk()[allSelectedDimensionBlocksIndexes[i]];
+      for (int j = allSelectedDimensionBlocksIndexes[i][0];
+           j <= allSelectedDimensionBlocksIndexes[i][1]; j++) {
+        dimensionColumnDataChunk[j] = projectionListDimensionChunk[j];
       }
     }
     MeasureColumnDataChunk[] measureColumnDataChunk =
         new MeasureColumnDataChunk[blockExecutionInfo.getTotalNumberOfMeasureBlock()];
-    int[] allSelectedMeasureBlocksIndexes = blockExecutionInfo.getAllSelectedMeasureBlocksIndexes();
-
+    int[][] allSelectedMeasureBlocksIndexes =
+        blockExecutionInfo.getAllSelectedMeasureBlocksIndexes();
+    MeasureColumnDataChunk[] projectionListMeasureChunk = blocksChunkHolder.getDataBlock()
+        .getMeasureChunks(fileReader, allSelectedMeasureBlocksIndexes);
     // read the measure chunk blocks which is not present
+    for (int i = 0; i < measureColumnDataChunk.length; i++) {
+      if (null != blocksChunkHolder.getMeasureDataChunk()[i]) {
+        measureColumnDataChunk[i] = blocksChunkHolder.getMeasureDataChunk()[i];
+      }
+    }
     for (int i = 0; i < allSelectedMeasureBlocksIndexes.length; i++) {
-
-      if (null == blocksChunkHolder.getMeasureDataChunk()[allSelectedMeasureBlocksIndexes[i]]) {
-        measureColumnDataChunk[allSelectedMeasureBlocksIndexes[i]] =
-            blocksChunkHolder.getDataBlock()
-                .getMeasureChunk(fileReader, allSelectedMeasureBlocksIndexes[i]);
-      } else {
-        measureColumnDataChunk[allSelectedMeasureBlocksIndexes[i]] =
-            blocksChunkHolder.getMeasureDataChunk()[allSelectedMeasureBlocksIndexes[i]];
+      for (int j = allSelectedMeasureBlocksIndexes[i][0];
+           j <= allSelectedMeasureBlocksIndexes[i][1]; j++) {
+        measureColumnDataChunk[j] = projectionListMeasureChunk[j];
       }
     }
     scannedResult.setDimensionChunks(dimensionColumnDataChunk);

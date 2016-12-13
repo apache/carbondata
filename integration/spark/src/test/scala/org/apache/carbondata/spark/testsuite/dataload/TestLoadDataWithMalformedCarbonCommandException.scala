@@ -89,7 +89,7 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
       case e: MalformedCarbonCommandException =>
         assert(e.getMessage.equals("DICTIONARY_EXCLUDE column: ccc does not exist in table. " +
           "Please check create table statement."))
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 
@@ -100,7 +100,7 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
       case e: MalformedCarbonCommandException =>
         assert(e.getMessage.equals("DICTIONARY_INCLUDE column: aaa does not exist in table. " +
           "Please check create table statement."))
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 
@@ -111,7 +111,7 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
       case e: MalformedCarbonCommandException =>
         assert(e.getMessage.equals("DICTIONARY_EXCLUDE can not contain the same column: country " +
           "with DICTIONARY_INCLUDE. Please check create table statement."))
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 
@@ -123,7 +123,7 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
     } catch {
       case e: MalformedCarbonCommandException =>
         assert(e.getMessage.equals("Error: Invalid option(s): delimiterrr"))
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 
@@ -135,7 +135,7 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
     } catch {
       case e: MalformedCarbonCommandException =>
         assert(e.getMessage.equals("Error: Duplicate option(s): delimiter"))
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 
@@ -146,7 +146,7 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
           "TestLoadTableOptions options('DeLIMITEr'=',', 'qUOtECHAR'='\"')"
       )
     } catch {
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 
@@ -157,7 +157,7 @@ class TestLoadDataWithMalformedCarbonCommandException extends QueryTest with Bef
       case e: MalformedCarbonCommandException =>
         assert(e.getMessage.equals("DICTIONARY_EXCLUDE can not contain the same column: country " +
           "with DICTIONARY_INCLUDE. Please check create table statement."))
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 }

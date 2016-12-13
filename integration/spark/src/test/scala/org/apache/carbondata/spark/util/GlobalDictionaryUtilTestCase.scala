@@ -24,16 +24,16 @@ import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.apache.spark.sql.common.util.CarbonHiveContext
 import org.apache.spark.sql.common.util.CarbonHiveContext.sql
 import org.apache.spark.sql.common.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.spark.load.CarbonLoadModel
-import org.scalatest.BeforeAndAfterAll
+import org.apache.carbondata.processing.constants.TableOptionConstant
+import org.apache.carbondata.processing.model.CarbonLoadModel
+
 
 /**
   * Test Case for org.apache.carbondata.spark.util.GlobalDictionaryUtil
-  *
-  * @date: Apr 10, 2016 10:34:58 PM
-  * @See org.apache.carbondata.spark.util.GlobalDictionaryUtil
   */
 class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -69,6 +69,8 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
     carbonLoadModel.setComplexDelimiterLevel2("\\:")
     carbonLoadModel.setStorePath(relation.tableMeta.storePath)
     carbonLoadModel.setQuoteChar("\"")
+    carbonLoadModel.setSerializationNullFormat(
+      TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + ",\\N")
     carbonLoadModel
   }
 
@@ -95,7 +97,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
           "age INT) STORED BY 'org.apache.carbondata.format'"
       )
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
     try {
       sql(
@@ -104,7 +106,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
         "TBLPROPERTIES('DICTIONARY_EXCLUDE'='id,name')"
       )
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
     try {
       sql(
@@ -118,7 +120,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
 
       )
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
 
     try {
@@ -132,12 +134,12 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
           "TBLPROPERTIES('DICTIONARY_INCLUDE'='deviceInformationId')"
       )
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
   }
 
   def buildRelation() = {
-    val catalog = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
+    val catalog = CarbonEnv.get.carbonMetastore
     sampleRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
       "sample")(CarbonHiveContext)
       .asInstanceOf[CarbonRelation]

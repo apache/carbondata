@@ -21,8 +21,9 @@ package org.apache.carbondata.processing.newflow.dictionary;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.devapi.BiDictionary;
+import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 
-public class PreCreatedDictionary implements BiDictionary<Integer, String> {
+public class PreCreatedDictionary implements BiDictionary<Integer, Object> {
 
   private Dictionary dictionary;
 
@@ -31,7 +32,7 @@ public class PreCreatedDictionary implements BiDictionary<Integer, String> {
   }
 
   @Override
-  public Integer getOrGenerateKey(String value) throws Exception {
+  public Integer getOrGenerateKey(Object value) throws DictionaryGenerationException {
     Integer key = getKey(value);
     if (key == null) {
       throw new UnsupportedOperationException("trying to add new entry in PreCreatedDictionary");
@@ -40,8 +41,8 @@ public class PreCreatedDictionary implements BiDictionary<Integer, String> {
   }
 
   @Override
-  public Integer getKey(String value) {
-    return dictionary.getSurrogateKey(value);
+  public Integer getKey(Object value) {
+    return dictionary.getSurrogateKey(value.toString());
   }
 
   @Override

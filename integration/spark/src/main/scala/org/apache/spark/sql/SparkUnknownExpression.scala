@@ -40,20 +40,14 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
 
   override def evaluate(carbonRowInstance: RowIntf): ExpressionResult = {
 
-    val values = carbonRowInstance.getValues().toSeq.map { value =>
-      value match {
-        case s: String => org.apache.spark.unsafe.types.UTF8String.fromString(s)
-        case d: java.math.BigDecimal =>
-          val javaDecVal = new java.math.BigDecimal(d.toString())
-          val scalaDecVal = new scala.math.BigDecimal(javaDecVal)
-          val decConverter = new org.apache.spark.sql.types.Decimal()
-          decConverter.set(scalaDecVal)
-        case _ => value
-      }
+    val values = carbonRowInstance.getValues.toSeq.map {
+      case s: String => org.apache.spark.unsafe.types.UTF8String.fromString(s)
+      case d: java.math.BigDecimal => org.apache.spark.sql.types.Decimal.apply(d)
+      case value => value
     }
     try {
       val result = evaluateExpression(
-          new GenericMutableRow(values.map(a => a.asInstanceOf[Any]).toArray))
+        new GenericMutableRow(values.map(a => a.asInstanceOf[Any]).toArray))
       val sparkRes = if (isExecutor) {
         result.asInstanceOf[InternalRow].get(0, sparkExp.dataType)
       } else {
@@ -62,17 +56,16 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
       new ExpressionResult(CarbonScalaUtil.convertSparkToCarbonDataType(sparkExp.dataType),
         sparkRes
       )
-    }
-    catch {
-      case e: Exception => throw new FilterUnsupportedException(e.getMessage())
+    } catch {
+      case e: Exception => throw new FilterUnsupportedException(e.getMessage)
     }
   }
 
-  override def getFilterExpressionType(): ExpressionType = {
+  override def getFilterExpressionType: ExpressionType = {
     ExpressionType.UNKNOWN
   }
 
-  override def getString(): String = {
+  override def getString: String = {
     sparkExp.toString()
   }
 
@@ -81,46 +74,45 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
     isExecutor = true
   }
 
-  def getColumnList(): java.util.List[ColumnExpression] = {
+  def getColumnList: java.util.List[ColumnExpression] = {
 
     val lst = new java.util.ArrayList[ColumnExpression]()
     getColumnListFromExpressionTree(sparkExp, lst)
     lst
   }
-    def getLiterals(): java.util.List[ExpressionResult] = {
+  def getLiterals: java.util.List[ExpressionResult] = {
 
     val lst = new java.util.ArrayList[ExpressionResult]()
     lst
   }
 
-  def getAllColumnList(): java.util.List[ColumnExpression] = {
+  def getAllColumnList: java.util.List[ColumnExpression] = {
     val lst = new java.util.ArrayList[ColumnExpression]()
     getAllColumnListFromExpressionTree(sparkExp, lst)
     lst
   }
 
-  def isSingleDimension(): Boolean = {
+  def isSingleDimension: Boolean = {
     val lst = new java.util.ArrayList[ColumnExpression]()
     getAllColumnListFromExpressionTree(sparkExp, lst)
     if (lst.size == 1 && lst.get(0).isDimension) {
       true
-    }
-    else {
+    } else {
       false
     }
   }
 
   def getColumnListFromExpressionTree(sparkCurrentExp: SparkExpression,
-    list: java.util.List[ColumnExpression]): Unit = {
+      list: java.util.List[ColumnExpression]): Unit = {
     sparkCurrentExp match {
       case carbonBoundRef: CarbonBoundReference =>
         val foundExp = list.asScala
-          .find(p => p.getColumnName() == carbonBoundRef.colExp.getColumnName())
+          .find(p => p.getColumnName == carbonBoundRef.colExp.getColumnName)
         if (foundExp.isEmpty) {
           carbonBoundRef.colExp.setColIndex(list.size)
           list.add(carbonBoundRef.colExp)
         } else {
-          carbonBoundRef.colExp.setColIndex(foundExp.get.getColIndex())
+          carbonBoundRef.colExp.setColIndex(foundExp.get.getColIndex)
         }
       case _ => sparkCurrentExp.children.foreach(getColumnListFromExpressionTree(_, list))
     }
@@ -128,7 +120,7 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
 
 
   def getAllColumnListFromExpressionTree(sparkCurrentExp: SparkExpression,
-    list: List[ColumnExpression]): List[ColumnExpression] = {
+      list: List[ColumnExpression]): List[ColumnExpression] = {
     sparkCurrentExp match {
       case carbonBoundRef: CarbonBoundReference => list.add(carbonBoundRef.colExp)
       case _ => sparkCurrentExp.children.foreach(getColumnListFromExpressionTree(_, list))
@@ -136,13 +128,12 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
     list
   }
 
-  def isDirectDictionaryColumns(): Boolean = {
+  def isDirectDictionaryColumns: Boolean = {
     val lst = new ArrayList[ColumnExpression]()
     getAllColumnListFromExpressionTree(sparkExp, lst)
     if (lst.get(0).getCarbonColumn.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
       true
-    }
-    else {
+    } else {
       false
     }
   }

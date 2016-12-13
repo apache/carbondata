@@ -29,6 +29,7 @@ import org.apache.carbondata.core.carbon.datastore.DataRefNodeFinder;
 import org.apache.carbondata.core.carbon.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
@@ -79,6 +80,10 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
    * number of cores which can be used
    */
   private int batchSize;
+  /**
+   * queryStatisticsModel to store query statistics object
+   */
+  QueryStatisticsModel queryStatisticsModel;
 
   public AbstractDetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
       ExecutorService execService) {
@@ -100,6 +105,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
         FileFactory.getFileType(queryModel.getAbsoluteTableIdentifier().getStorePath()));
     this.execService = execService;
     intialiseInfos();
+    initQueryStatiticsModel();
   }
 
   private void intialiseInfos() {
@@ -108,7 +114,7 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
       DataRefNodeFinder finder = new BTreeDataRefNodeFinder(blockInfo.getEachColumnValueSize());
       DataRefNode startDataBlock = finder
           .findFirstDataBlock(blockInfo.getDataBlock().getDataRefNode(), blockInfo.getStartKey());
-      while (startDataBlock.nodeNumber() != blockInfo.getStartBlockletIndex()) {
+      while (startDataBlock.nodeNumber() < blockInfo.getStartBlockletIndex()) {
         startDataBlock = startDataBlock.getNextDataRefNode();
       }
 
@@ -154,9 +160,21 @@ public abstract class AbstractDetailQueryResultIterator extends CarbonIterator {
     if (blockExecutionInfos.size() > 0) {
       BlockExecutionInfo executionInfo = blockExecutionInfos.get(0);
       blockExecutionInfos.remove(executionInfo);
-      return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize);
+      queryStatisticsModel.setRecorder(recorder);
+      return new DataBlockIteratorImpl(executionInfo, fileReader, batchSize, queryStatisticsModel);
     }
     return null;
+  }
+
+  protected void initQueryStatiticsModel() {
+    this.queryStatisticsModel = new QueryStatisticsModel();
+    QueryStatistic queryStatisticTotalBlocklet = new QueryStatistic();
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM, queryStatisticTotalBlocklet);
+    QueryStatistic queryStatisticScanBlocklet = new QueryStatistic();
+    QueryStatistic queryStatisticValidScanBlocklet = new QueryStatistic();
+    queryStatisticsModel.getStatisticsTypeAndObjMap()
+        .put(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM, queryStatisticValidScanBlocklet);
   }
 
 }

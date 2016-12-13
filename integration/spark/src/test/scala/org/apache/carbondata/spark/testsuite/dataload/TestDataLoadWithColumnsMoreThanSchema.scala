@@ -54,7 +54,7 @@ class TestDataLoadWithColumnsMoreThanSchema extends QueryTest with BeforeAndAfte
       sql("LOAD DATA LOCAL INPATH './src/test/resources/character_carbon.csv' into table max_columns_test options('MAXCOLUMNS'='avfgd')")
       assert(false)
     } catch {
-      case _ => assert(true)
+      case _: Throwable => assert(true)
     }
   }
 
@@ -66,7 +66,7 @@ class TestDataLoadWithColumnsMoreThanSchema extends QueryTest with BeforeAndAfte
       checkAnswer(sql("select count(*) from valid_max_columns_test"),
         sql("select count(*) from hive_char_test"))
     } catch {
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 
@@ -83,7 +83,7 @@ class TestDataLoadWithColumnsMoreThanSchema extends QueryTest with BeforeAndAfte
     } catch {
       case me: MalformedCarbonCommandException =>
         assert(false)
-      case _ => assert(true)
+      case _: Throwable => assert(true)
     }
   }
 
@@ -95,7 +95,7 @@ class TestDataLoadWithColumnsMoreThanSchema extends QueryTest with BeforeAndAfte
       checkAnswer(sql("select count(*) from valid_max_columns_test"),
         sql("select count(*) from hive_char_test"))
     } catch {
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 
@@ -111,7 +111,7 @@ class TestDataLoadWithColumnsMoreThanSchema extends QueryTest with BeforeAndAfte
       sql("LOAD DATA LOCAL INPATH './src/test/resources/data.csv' into table boundary_max_columns_test options('MAXCOLUMNS'='14')")
       assert(true)
     } catch {
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 
@@ -127,7 +127,7 @@ class TestDataLoadWithColumnsMoreThanSchema extends QueryTest with BeforeAndAfte
       sql("LOAD DATA LOCAL INPATH './src/test/resources/data.csv' into table boundary_max_columns_test options('MAXCOLUMNS'='13')")
       assert(true)
     } catch {
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 

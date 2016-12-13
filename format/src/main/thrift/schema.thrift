@@ -68,7 +68,7 @@ struct ColumnSchema{
 	6: required bool dimension;  // Whether the column is a dimension or measure
 	7: optional i32 column_group_id; // The group ID for column used for row format columns, where in columns in each group are chunked together.
 	/**
-	* Used when this column contains decimal data.
+	* Used when this column contains mantissa data.
 	*/
 	8: optional i32 scale;
 	9: optional i32 precision;
@@ -97,8 +97,11 @@ struct ColumnSchema{
 	/**
 	 * column reference id
 	 */
-	15: optional string columnReferenceId;	
-	
+	15: optional string columnReferenceId;
+	/**
+	 * It will have column order which user has provided
+	 */	
+	16: optional i32 schemaOrdinal
 }
 
 /**

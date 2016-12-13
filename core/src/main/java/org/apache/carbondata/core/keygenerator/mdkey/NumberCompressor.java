@@ -40,8 +40,8 @@ public class NumberCompressor {
 
   private byte bitsLength;
 
-  public NumberCompressor(int cardinaity) {
-    bitsLength = (byte) Long.toBinaryString(cardinaity).length();
+  public NumberCompressor(int cardinality) {
+    bitsLength = (byte) Long.toBinaryString(cardinality).length();
   }
 
   public byte[] compress(int[] keys) {

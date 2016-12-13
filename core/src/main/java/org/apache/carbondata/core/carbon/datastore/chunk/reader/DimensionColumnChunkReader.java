@@ -35,7 +35,7 @@ public interface DimensionColumnChunkReader {
    * @param blockIndexes blocks to be read
    * @return dimension column chunks
    */
-  DimensionColumnDataChunk[] readDimensionChunks(FileHolder fileReader, int... blockIndexes);
+  DimensionColumnDataChunk[] readDimensionChunks(FileHolder fileReader, int[][] blockIndexes);
 
   /**
    * Below method will be used to read the chunk based on block index

@@ -28,6 +28,7 @@ import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.scan.expression.ColumnExpression;
 import org.apache.carbondata.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
@@ -98,7 +99,9 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
   private void getSurrogateValuesForDictionary(List<String> evaluateResultListFinal,
       List<Integer> surrogates, boolean isNotTimestampType,
       DirectDictionaryGenerator directDictionaryGenerator) {
-    String timeFormat = CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT;
+    String timeFormat = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
     if (isNotTimestampType) {
       timeFormat = null;
     }

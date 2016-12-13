@@ -21,18 +21,18 @@ package org.apache.carbondata.processing.store.writer;
 
 import java.util.BitSet;
 
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 
 public class NodeHolder {
   /**
    * keyArray
    */
-  private byte[] keyArray;
+  private byte[][] keyArray;
 
   /**
    * dataArray
    */
-  private byte[] dataArray;
+  private byte[][] dataArray;
 
   /**
    * measureLenght
@@ -110,7 +110,7 @@ public class NodeHolder {
   /**
    * compression model for numbers data block.
    */
-  private ValueCompressionModel compressionModel;
+  private WriterCompressModel compressionModel;
 
   /**
    * array of aggBlocks flag to identify the aggBlocks
@@ -139,30 +139,40 @@ public class NodeHolder {
   private BitSet[] measureNullValueIndex;
 
   /**
+   * total length of dimension values
+   */
+  private int totalDimensionArrayLength;
+
+  /**
+   * total length of all measure values
+   */
+  private int totalMeasureArrayLength;
+
+  /**
    * @return the keyArray
    */
-  public byte[] getKeyArray() {
+  public byte[][] getKeyArray() {
     return keyArray;
   }
 
   /**
    * @param keyArray the keyArray to set
    */
-  public void setKeyArray(byte[] keyArray) {
+  public void setKeyArray(byte[][] keyArray) {
     this.keyArray = keyArray;
   }
 
   /**
    * @return the dataArray
    */
-  public byte[] getDataArray() {
+  public byte[][] getDataArray() {
     return dataArray;
   }
 
   /**
    * @param dataArray the dataArray to set
    */
-  public void setDataArray(byte[] dataArray) {
+  public void setDataArray(byte[][] dataArray) {
     this.dataArray = dataArray;
   }
 
@@ -372,11 +382,11 @@ public class NodeHolder {
     this.columnMinData = columnMinData;
   }
 
-  public ValueCompressionModel getCompressionModel() {
+  public WriterCompressModel getCompressionModel() {
     return compressionModel;
   }
 
-  public void setCompressionModel(ValueCompressionModel compressionModel) {
+  public void setCompressionModel(WriterCompressModel compressionModel) {
     this.compressionModel = compressionModel;
   }
 
@@ -452,5 +462,21 @@ public class NodeHolder {
    */
   public void setMeasureNullValueIndex(BitSet[] measureNullValueIndex) {
     this.measureNullValueIndex = measureNullValueIndex;
+  }
+
+  public int getTotalDimensionArrayLength() {
+    return totalDimensionArrayLength;
+  }
+
+  public void setTotalDimensionArrayLength(int totalDimensionArrayLength) {
+    this.totalDimensionArrayLength = totalDimensionArrayLength;
+  }
+
+  public int getTotalMeasureArrayLength() {
+    return totalMeasureArrayLength;
+  }
+
+  public void setTotalMeasureArrayLength(int totalMeasureArrayLength) {
+    this.totalMeasureArrayLength = totalMeasureArrayLength;
   }
 }

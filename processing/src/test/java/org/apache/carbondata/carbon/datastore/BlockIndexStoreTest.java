@@ -30,14 +30,18 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
 import org.apache.carbondata.core.carbon.datastore.BlockIndexStore;
 import org.apache.carbondata.core.carbon.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.test.util.StoreCreator;
 
 import junit.framework.TestCase;
+
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -45,10 +49,22 @@ public class BlockIndexStoreTest extends TestCase {
 
   private BlockIndexStore indexStore;
 
+  private String property;
   @BeforeClass public void setUp() {
+	property = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION);
+	
+	CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, "V1");
     StoreCreator.createCarbonStore();
     indexStore = BlockIndexStore.getInstance();
   }
+  
+  @AfterClass public void tearDown() {
+	    if(null!=property) {
+		CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, property);
+	    }else {
+	    	CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION);
+	    }
+	  }
 
   @Test public void testloadAndGetTaskIdToSegmentsMapForSingleSegment() throws IOException {
     String canonicalPath =
@@ -56,7 +72,7 @@ public class BlockIndexStoreTest extends TestCase {
     File file = getPartFile();
     TableBlockInfo info =
         new TableBlockInfo(file.getAbsolutePath(), 0, "0", new String[] { "loclhost" },
-            file.length());
+            file.length(), ColumnarFormatVersion.V1);
     CarbonTableIdentifier carbonTableIdentifier =
             new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "t3", "1");
     AbsoluteTableIdentifier absoluteTableIdentifier =
@@ -78,20 +94,20 @@ public class BlockIndexStoreTest extends TestCase {
     File file = getPartFile();
     TableBlockInfo info =
         new TableBlockInfo(file.getAbsolutePath(), 0, "0", new String[] { "loclhost" },
-            file.length());
+            file.length(), ColumnarFormatVersion.V1);
     TableBlockInfo info1 =
         new TableBlockInfo(file.getAbsolutePath(), 0, "0", new String[] { "loclhost" },
-            file.length());
+            file.length(), ColumnarFormatVersion.V1);
 
     TableBlockInfo info2 =
         new TableBlockInfo(file.getAbsolutePath(), 0, "1", new String[] { "loclhost" },
-            file.length());
+            file.length(), ColumnarFormatVersion.V1);
     TableBlockInfo info3 =
         new TableBlockInfo(file.getAbsolutePath(), 0, "1", new String[] { "loclhost" },
-            file.length());
+            file.length(), ColumnarFormatVersion.V1);
     TableBlockInfo info4 =
         new TableBlockInfo(file.getAbsolutePath(), 0, "1", new String[] { "loclhost" },
-            file.length());
+            file.length(), ColumnarFormatVersion.V1);
 
     CarbonTableIdentifier carbonTableIdentifier =
             new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "t3", "1");
@@ -133,31 +149,31 @@ public class BlockIndexStoreTest extends TestCase {
     File file = getPartFile();
     TableBlockInfo info =
         new TableBlockInfo(file.getAbsolutePath(), 0, "0", new String[] { "loclhost" },
-            file.length());
+            file.length(), ColumnarFormatVersion.V1);
     TableBlockInfo info1 =
         new TableBlockInfo(file.getAbsolutePath(), 0, "0", new String[] { "loclhost" },
-            file.length());
+            file.length(), ColumnarFormatVersion.V1);
 
     TableBlockInfo info2 =
         new TableBlockInfo(file.getAbsolutePath(), 0, "1", new String[] { "loclhost" },
-            file.length());
+            file.length(), ColumnarFormatVersion.V1);
     TableBlockInfo info3 =
         new TableBlockInfo(file.getAbsolutePath(), 0, "1", new String[] { "loclhost" },
-            file.length());
+            file.length(), ColumnarFormatVersion.V1);
     TableBlockInfo info4 =
         new TableBlockInfo(file.getAbsolutePath(), 0, "1", new String[] { "loclhost" },
-            file.length());
+            file.length(), ColumnarFormatVersion.V1);
 
     TableBlockInfo info5 =
         new TableBlockInfo(file.getAbsolutePath(), 0, "2", new String[] { "loclhost" },
-            file.length());
+            file.length(),ColumnarFormatVersion.V1);
     TableBlockInfo info6 =
         new TableBlockInfo(file.getAbsolutePath(), 0, "2", new String[] { "loclhost" },
-            file.length());
+            file.length(), ColumnarFormatVersion.V1);
 
     TableBlockInfo info7 =
         new TableBlockInfo(file.getAbsolutePath(), 0, "3", new String[] { "loclhost" },
-            file.length());
+            file.length(), ColumnarFormatVersion.V1);
 
     CarbonTableIdentifier carbonTableIdentifier =
             new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "t3", "1");

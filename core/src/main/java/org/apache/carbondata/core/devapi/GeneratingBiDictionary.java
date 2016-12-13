@@ -28,7 +28,7 @@ public abstract class GeneratingBiDictionary<K, V> implements BiDictionary<K, V>
   }
 
   @Override
-  public K getOrGenerateKey(V value) throws Exception {
+  public K getOrGenerateKey(V value) throws DictionaryGenerationException {
     K key = getKey(value);
     if (key != null) {
       return key;

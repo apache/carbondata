@@ -28,6 +28,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -37,7 +38,7 @@ import org.apache.carbondata.processing.sortandgroupby.sortdata.SortTempFileChun
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
-public class SingleThreadFinalSortFilesMerger {
+public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   /**
    * LOGGER
    */
@@ -96,6 +97,8 @@ public class SingleThreadFinalSortFilesMerger {
 
   private char[] aggType;
 
+  private boolean useKettle;
+
   /**
    * below code is to check whether dimension
    * is of no dictionary type or not
@@ -104,7 +107,7 @@ public class SingleThreadFinalSortFilesMerger {
 
   public SingleThreadFinalSortFilesMerger(String tempFileLocation, String tableName,
       int dimensionCount, int complexDimensionCount, int measureCount, int noDictionaryCount,
-      char[] aggType, boolean[] isNoDictionaryColumn) {
+      char[] aggType, boolean[] isNoDictionaryColumn, boolean useKettle) {
     this.tempFileLocation = tempFileLocation;
     this.tableName = tableName;
     this.dimensionCount = dimensionCount;
@@ -113,6 +116,7 @@ public class SingleThreadFinalSortFilesMerger {
     this.aggType = aggType;
     this.noDictionaryCount = noDictionaryCount;
     this.isNoDictionaryColumn = isNoDictionaryColumn;
+    this.useKettle = useKettle;
   }
 
   /**
@@ -177,7 +181,8 @@ public class SingleThreadFinalSortFilesMerger {
           // create chunk holder
           SortTempFileChunkHolder sortTempFileChunkHolder =
               new SortTempFileChunkHolder(tempFile, dimensionCount, complexDimensionCount,
-                  measureCount, fileBufferSize, noDictionaryCount, aggType, isNoDictionaryColumn);
+                  measureCount, fileBufferSize, noDictionaryCount, aggType, isNoDictionaryColumn,
+                  useKettle);
 
           // initialize
           sortTempFileChunkHolder.initialize();
@@ -221,7 +226,7 @@ public class SingleThreadFinalSortFilesMerger {
    * @return sorted row
    * @throws CarbonSortKeyAndGroupByException
    */
-  public Object[] next() throws CarbonDataWriterException {
+  public Object[] next() {
     return getSortedRecordFromFile();
   }
 

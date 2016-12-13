@@ -35,7 +35,7 @@ import org.apache.spark.sql.types.{IntegerType, StringType}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
-import org.apache.carbondata.spark.CarbonFilters
+import org.apache.carbondata.spark.{CarbonAliasDecoderRelation, CarbonFilters}
 
 /**
  * Carbon Optimizer to add dictionary decoder.
@@ -75,7 +75,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
   def apply(plan: LogicalPlan): LogicalPlan = {
     if (relations.nonEmpty && !isOptimized(plan)) {
       LOGGER.info("Starting to optimize plan")
-      val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("");
+      val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("")
       val queryStatistic = new QueryStatistic()
       val result = transformCarbonPlan(plan, relations)
       queryStatistic.addStatistics("Time taken for Carbon Optimizer to optimize: ",
@@ -92,6 +92,7 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
   def isOptimized(plan: LogicalPlan): Boolean = {
     plan find {
       case cd: CarbonDictionaryCatalystDecoder => true
+      case ic: InsertIntoCarbonTable => true
       case other => false
     } isDefined
   }
@@ -99,8 +100,8 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
   case class ExtraNodeInfo(var hasCarbonRelation: Boolean)
 
   def fillNodeInfo(
-       plan: LogicalPlan,
-       extraNodeInfos: java.util.HashMap[LogicalPlan, ExtraNodeInfo]): ExtraNodeInfo = {
+      plan: LogicalPlan,
+      extraNodeInfos: java.util.HashMap[LogicalPlan, ExtraNodeInfo]): ExtraNodeInfo = {
     plan match {
       case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
         val extraNodeInfo = ExtraNodeInfo(true)
@@ -465,9 +466,10 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
           decoder = true
           cd
         case currentPlan =>
-          hasCarbonRelation(currentPlan) match {
-            case true => addTempDecoder(currentPlan)
-            case false => currentPlan
+          if (hasCarbonRelation(currentPlan)) {
+            addTempDecoder(currentPlan)
+          } else {
+            currentPlan
           }
       }
 
@@ -728,24 +730,3 @@ case class CarbonDecoderRelation(
   lazy val dictionaryMap = carbonRelation.carbonRelation.metaData.dictionaryMap
 }
 
-case class CarbonAliasDecoderRelation() {
-
-  val attrMap = new java.util.HashMap[AttributeReferenceWrapper, Attribute]
-
-  def put(key: Attribute, value: Attribute): Unit = {
-    attrMap.put(AttributeReferenceWrapper(key), value)
-  }
-
-  def getOrElse(key: Attribute, default: Attribute): Attribute = {
-    val value = attrMap.get(AttributeReferenceWrapper(key))
-    if (value == null) {
-      default
-    } else {
-      if (value.equals(key)) {
-        value
-      } else {
-        getOrElse(value, value)
-      }
-    }
-  }
-}

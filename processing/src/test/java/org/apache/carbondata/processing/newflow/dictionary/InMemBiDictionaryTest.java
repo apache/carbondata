@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.carbondata.core.devapi.BiDictionary;
+import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.devapi.DictionaryGenerator;
 import org.junit.Assert;
 import org.junit.Test;
@@ -58,7 +59,7 @@ public class InMemBiDictionaryTest {
         new DictionaryGenerator<Integer, String>() {
           int sequence = 1;
           @Override
-          public Integer generateKey(String value) throws Exception {
+          public Integer generateKey(String value) throws DictionaryGenerationException {
             return sequence++;
           }
         });

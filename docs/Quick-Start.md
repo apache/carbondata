@@ -59,7 +59,7 @@ scala>cc.sql("create table if not exists test_table (id string, name string, cit
 **Load data to table**
 ```
 scala>val dataFilePath = new File("../carbondata/sample.csv").getCanonicalPath
-scala>cc.sql("load data inpath '$dataFilePath' into table test_table")
+scala>cc.sql(s"load data inpath '$dataFilePath' into table test_table")
 ```
 
 **Query data from table**

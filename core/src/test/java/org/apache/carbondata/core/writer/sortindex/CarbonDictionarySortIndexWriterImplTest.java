@@ -26,33 +26,41 @@ import java.util.UUID;
 
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.ColumnIdentifier;
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReader;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReaderImpl;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriterImpl;
+
 import org.apache.commons.lang.ArrayUtils;
-import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
 
 /**
  * class contains the unit test cases of the dictionary sort index & sort index inverted writing
  */
 public class CarbonDictionarySortIndexWriterImplTest {
 
-  private String hdfsStorePath;
+  private String storePath;
+  private CarbonTableIdentifier carbonTableIdentifier = null;
+  private ColumnIdentifier columnIdentifier = null;
+  private CarbonDictionaryWriter dictionaryWriter = null;
+  private CarbonDictionarySortIndexWriter dictionarySortIndexWriter = null;
+  private CarbonDictionarySortIndexReader carbonDictionarySortIndexReader = null;
 
   @Before public void setUp() throws Exception {
-    hdfsStorePath = "target/carbonStore";
-  }
-
-  @After public void tearDown() throws Exception {
-
-    //deleteStorePath();
+    storePath = "target/carbonStore";
+    carbonTableIdentifier =
+        new CarbonTableIdentifier("testSchema", "carbon", UUID.randomUUID().toString());
+    columnIdentifier = new ColumnIdentifier("Name", null, null);
+    dictionaryWriter =
+        new CarbonDictionaryWriterImpl(storePath, carbonTableIdentifier, columnIdentifier);
+    dictionarySortIndexWriter =
+        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, columnIdentifier, storePath);
+    carbonDictionarySortIndexReader =
+        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, columnIdentifier, storePath);
   }
 
   /**
@@ -62,36 +70,31 @@ public class CarbonDictionarySortIndexWriterImplTest {
    * @throws Exception
    */
   @Test public void write() throws Exception {
-    String storePath = hdfsStorePath;
-    CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("testSchema", "carbon", UUID.randomUUID().toString());
-    ColumnIdentifier columnIdentifier = new ColumnIdentifier("Name", null, null);
 
-    String metaFolderPath =hdfsStorePath+File.separator+carbonTableIdentifier.getDatabaseName()+File.separator+carbonTableIdentifier.getTableName()+File.separator+"Metadata";
+    String metaFolderPath =
+        storePath + File.separator + carbonTableIdentifier.getDatabaseName() + File.separator
+            + carbonTableIdentifier.getTableName() + File.separator + "Metadata";
     CarbonUtil.checkAndCreateFolder(metaFolderPath);
-    CarbonDictionaryWriter dictionaryWriter = new CarbonDictionaryWriterImpl(hdfsStorePath,
-    	       carbonTableIdentifier, columnIdentifier);
-    CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
-        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, columnIdentifier, storePath);
+
     List<int[]> indexList = prepareExpectedData();
     int[] data = indexList.get(0);
-    for(int i=0;i<data.length;i++) {
-    	dictionaryWriter.write(String.valueOf(data[i]));
+    for (int i = 0; i < data.length; i++) {
+      dictionaryWriter.write(String.valueOf(data[i]));
     }
     dictionaryWriter.close();
     dictionaryWriter.commit();
-    
+
     List<Integer> sortIndex = Arrays.asList(ArrayUtils.toObject(indexList.get(0)));
     List<Integer> invertedSortIndex = Arrays.asList(ArrayUtils.toObject(indexList.get(1)));
     dictionarySortIndexWriter.writeSortIndex(sortIndex);
     dictionarySortIndexWriter.writeInvertedSortIndex(invertedSortIndex);
     dictionarySortIndexWriter.close();
-    CarbonDictionarySortIndexReader carbonDictionarySortIndexReader =
-        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, columnIdentifier, storePath);
+
     List<Integer> actualSortIndex = carbonDictionarySortIndexReader.readSortIndex();
     List<Integer> actualInvertedSortIndex = carbonDictionarySortIndexReader.readInvertedSortIndex();
     for (int i = 0; i < actualSortIndex.size(); i++) {
-      Assert.assertEquals(sortIndex.get(i), actualSortIndex.get(i));
-      Assert.assertEquals(invertedSortIndex.get(i), actualInvertedSortIndex.get(i));
+      assertEquals(sortIndex.get(i), actualSortIndex.get(i));
+      assertEquals(invertedSortIndex.get(i), actualInvertedSortIndex.get(i));
     }
 
   }
@@ -100,24 +103,17 @@ public class CarbonDictionarySortIndexWriterImplTest {
    * @throws Exception
    */
   @Test public void writingEmptyValue() throws Exception {
-    String storePath = hdfsStorePath;
-    CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("testSchema", "carbon", UUID.randomUUID().toString());
-    ColumnIdentifier columnIdentifier = new ColumnIdentifier("Name", null, null);
 
-    CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
-        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, columnIdentifier, storePath);
     List<Integer> sortIndex = new ArrayList<>();
     List<Integer> invertedSortIndex = new ArrayList<>();
     dictionarySortIndexWriter.writeSortIndex(sortIndex);
     dictionarySortIndexWriter.writeInvertedSortIndex(invertedSortIndex);
     dictionarySortIndexWriter.close();
-    CarbonDictionarySortIndexReader carbonDictionarySortIndexReader =
-        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, columnIdentifier, storePath);
     List<Integer> actualSortIndex = carbonDictionarySortIndexReader.readSortIndex();
     List<Integer> actualInvertedSortIndex = carbonDictionarySortIndexReader.readInvertedSortIndex();
     for (int i = 0; i < actualSortIndex.size(); i++) {
-      Assert.assertEquals(sortIndex.get(i), actualSortIndex.get(i));
-      Assert.assertEquals(invertedSortIndex.get(i), actualInvertedSortIndex.get(i));
+      assertEquals(sortIndex.get(i), actualSortIndex.get(i));
+      assertEquals(invertedSortIndex.get(i), actualInvertedSortIndex.get(i));
     }
 
   }
@@ -131,28 +127,4 @@ public class CarbonDictionarySortIndexWriterImplTest {
     return indexList;
   }
 
-  /**
-   * this method will delete the store path
-   */
-  private void deleteStorePath() {
-    FileFactory.FileType fileType = FileFactory.getFileType(this.hdfsStorePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(this.hdfsStorePath, fileType);
-    deleteRecursiveSilent(carbonFile);
-  }
-
-  /**
-   * this method will delete the folders recursively
-   */
-  private static void deleteRecursiveSilent(CarbonFile f) {
-    if (f.isDirectory()) {
-      if (f.listFiles() != null) {
-        for (CarbonFile c : f.listFiles()) {
-          deleteRecursiveSilent(c);
-        }
-      }
-    }
-    if (f.exists() && !f.delete()) {
-      return;
-    }
-  }
 }

@@ -18,7 +18,12 @@
  */
 package org.apache.carbondata.scan.executor.impl;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executors;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -33,7 +38,8 @@ import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.carbon.querystatistics.*;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
+import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
@@ -90,7 +96,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // Initializing statistics list to record the query statistics
     // creating copy on write to handle concurrent scenario
     queryProperties.queryStatisticsRecorder =
-            CarbonTimeStatisticsFactory.createExecutorRecorder(queryModel.getQueryId());
+        CarbonTimeStatisticsFactory.createExecutorRecorder(queryModel.getQueryId());
     queryModel.setStatisticsRecorder(queryProperties.queryStatisticsRecorder);
     QueryUtil.resolveQueryModel(queryModel);
     QueryStatistic queryStatistic = new QueryStatistic();
@@ -143,9 +149,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // and measure column start index
     queryProperties.aggExpressionStartIndex = queryModel.getQueryMeasures().size();
     queryProperties.measureStartIndex = aggTypes.length - queryModel.getQueryMeasures().size();
+    queryProperties.filterMeasures = new HashSet<>();
+    queryProperties.complexFilterDimension = new HashSet<>();
+    QueryUtil.getAllFilterDimensions(queryModel.getFilterExpressionResolverTree(),
+        queryProperties.complexFilterDimension, queryProperties.filterMeasures);
 
-    queryProperties.complexFilterDimension =
-        QueryUtil.getAllFilterDimensions(queryModel.getFilterExpressionResolverTree());
     queryStatistic = new QueryStatistic();
     // dictionary column unique column id to dictionary mapping
     // which will be used to get column actual data
@@ -162,7 +170,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   }
 
   /**
-   * Below method will be used to get the key structure info for the uqery
+   * Below method will be used to get the key structure info for the query
    *
    * @param queryModel   query model
    * @param keyGenerator
@@ -314,13 +322,38 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<CarbonMeasure> expressionMeasures =
         new ArrayList<CarbonMeasure>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // setting all the dimension chunk indexes to be read from file
-    blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(QueryUtil
-        .getDimensionsBlockIndexes(updatedQueryDimension,
-            segmentProperties.getDimensionOrdinalToBlockMapping(), expressionDimensions));
-    // setting all the measure chunk indexes to be read from file
-    blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(QueryUtil
+    int numberOfElementToConsider = 0;
+    int[] dimensionsBlockIndexes = QueryUtil.getDimensionsBlockIndexes(updatedQueryDimension,
+        segmentProperties.getDimensionOrdinalToBlockMapping(), expressionDimensions,
+        queryProperties.complexFilterDimension);
+    if (dimensionsBlockIndexes.length > 0) {
+      numberOfElementToConsider = dimensionsBlockIndexes[dimensionsBlockIndexes.length - 1]
+          == segmentProperties.getBlockTodimensionOrdinalMapping().size() - 1 ?
+          dimensionsBlockIndexes.length - 1 :
+          dimensionsBlockIndexes.length;
+      blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(CarbonUtil
+          .getRangeIndex(dimensionsBlockIndexes, numberOfElementToConsider,
+              CarbonCommonConstants.NUMBER_OF_COLUMN_READ_IN_IO));
+    } else {
+      blockExecutionInfo.setAllSelectedDimensionBlocksIndexes(new int[0][0]);
+    }
+
+    int[] measureBlockIndexes = QueryUtil
         .getMeasureBlockIndexes(queryModel.getQueryMeasures(), expressionMeasures,
-            segmentProperties.getMeasuresOrdinalToBlockMapping()));
+            segmentProperties.getMeasuresOrdinalToBlockMapping(), queryProperties.filterMeasures);
+    if (measureBlockIndexes.length > 0) {
+
+      numberOfElementToConsider = measureBlockIndexes[measureBlockIndexes.length - 1]
+          == segmentProperties.getMeasures().size() - 1 ?
+          measureBlockIndexes.length - 1 :
+          measureBlockIndexes.length;
+      // setting all the measure chunk indexes to be read from file
+      blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(CarbonUtil
+          .getRangeIndex(measureBlockIndexes, numberOfElementToConsider,
+              CarbonCommonConstants.NUMBER_OF_COLUMN_READ_IN_IO));
+    } else {
+      blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(new int[0][0]);
+    }
     // setting the key structure info which will be required
     // to update the older block key with new key generator
     blockExecutionInfo.setKeyStructureInfo(queryProperties.keyStructureInfo);

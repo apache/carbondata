@@ -19,7 +19,9 @@
 
 package org.apache.carbondata.core.cache.dictionary;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -71,6 +73,7 @@ public class ReverseDictionaryCacheTest extends AbstractDictionaryCacheTest {
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_MAX_LEVEL_CACHE_SIZE, "10");
     CacheProvider cacheProvider = CacheProvider.getInstance();
+    cacheProvider.dropAllCache();
     reverseDictionaryCache =
         cacheProvider.createCache(CacheType.REVERSE_DICTIONARY, this.carbonStorePath);
   }
@@ -176,10 +179,11 @@ public class ReverseDictionaryCacheTest extends AbstractDictionaryCacheTest {
     Dictionary reverseDictionary = null;
     try {
       reverseDictionary = (Dictionary) reverseDictionaryCache.get(dictionaryColumnUniqueIdentifier);
+      fail("not throwing exception");
     } catch (Exception e) {
       assertTrue(e instanceof CarbonUtilException);
     }
-    assertTrue(null == reverseDictionary);
+    assertEquals(null, reverseDictionary);
   }
 
   @Test public void testLRUCacheForKeyDeletionAfterMaxSizeIsReached() throws Exception {

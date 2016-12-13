@@ -19,11 +19,13 @@
 
 package org.apache.spark.sql.common.util
 
-import org.apache.spark.Logging
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.scalatest.{FunSuite, Outcome}
 
 
-private[spark] abstract class CarbonFunSuite extends FunSuite with Logging {
+private[spark] abstract class CarbonFunSuite extends FunSuite {
+
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   /**
    * Log the suite name and the test name before and after each test.
@@ -37,10 +39,10 @@ private[spark] abstract class CarbonFunSuite extends FunSuite with Logging {
     val suiteName = this.getClass.getName
     val shortSuiteName = suiteName.replaceAll("org.apache.spark", "o.a.s")
     try {
-      logInfo(s"\n\n===== TEST OUTPUT FOR $shortSuiteName: '$testName' =====\n")
+      LOGGER.info(s"\n\n===== TEST OUTPUT FOR $shortSuiteName: '$testName' =====\n")
       test()
     } finally {
-      logInfo(s"\n\n===== FINISHED $shortSuiteName: '$testName' =====\n")
+      LOGGER.info(s"\n\n===== FINISHED $shortSuiteName: '$testName' =====\n")
     }
   }
 

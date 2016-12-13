@@ -25,13 +25,14 @@ import org.apache.spark.sql.common.util.CarbonHiveContext.sql
 import org.apache.spark.sql.common.util.{CarbonHiveContext, QueryTest}
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.spark.load.CarbonLoadModel
+import org.apache.carbondata.processing.model.CarbonLoadModel
 
 /**
   * Test Case for org.apache.carbondata.spark.util.GlobalDictionaryUtil
@@ -95,7 +96,7 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
              (hc1 string, c2 string, c3 int)
              STORED BY 'org.apache.carbondata.format'""")
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
   }
 
@@ -106,11 +107,11 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
              (hc1 string, c2 string, c3 int)
              STORED BY 'org.apache.carbondata.format' tblproperties('COLUMN_GROUPS'='(hc1,c2)')""")
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
   }
   def relation(tableName: String): CarbonRelation = {
-    CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
+    CarbonEnv.get.carbonMetastore
         .lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
           tableName)(CarbonHiveContext)
         .asInstanceOf[CarbonRelation]

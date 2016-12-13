@@ -63,7 +63,7 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
            'DICTIONARY_INCLUDE'='ID')
         """)
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
   }
 
@@ -80,7 +80,7 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
            LOAD DATA LOCAL INPATH './src/test/resources/emptyDimensionDataHive.csv' into table exclude_include_hive_t3
            """)
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
   }
 

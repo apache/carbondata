@@ -116,12 +116,12 @@ public class BlockExecutionInfo {
   /**
    * will be used to read the dimension block from file
    */
-  private int[] allSelectedDimensionBlocksIndexes;
+  private int[][] allSelectedDimensionBlocksIndexes;
 
   /**
    * will be used to read the measure block from file
    */
-  private int[] allSelectedMeasureBlocksIndexes;
+  private int[][] allSelectedMeasureBlocksIndexes;
 
   /**
    * this will be used to update the older block fixed length keys with the
@@ -407,28 +407,28 @@ public class BlockExecutionInfo {
   /**
    * @return the allSelectedDimensionBlocksIndexes
    */
-  public int[] getAllSelectedDimensionBlocksIndexes() {
+  public int[][] getAllSelectedDimensionBlocksIndexes() {
     return allSelectedDimensionBlocksIndexes;
   }
 
   /**
    * @param allSelectedDimensionBlocksIndexes the allSelectedDimensionBlocksIndexes to set
    */
-  public void setAllSelectedDimensionBlocksIndexes(int[] allSelectedDimensionBlocksIndexes) {
+  public void setAllSelectedDimensionBlocksIndexes(int[][] allSelectedDimensionBlocksIndexes) {
     this.allSelectedDimensionBlocksIndexes = allSelectedDimensionBlocksIndexes;
   }
 
   /**
    * @return the allSelectedMeasureBlocksIndexes
    */
-  public int[] getAllSelectedMeasureBlocksIndexes() {
+  public int[][] getAllSelectedMeasureBlocksIndexes() {
     return allSelectedMeasureBlocksIndexes;
   }
 
   /**
    * @param allSelectedMeasureBlocksIndexes the allSelectedMeasureBlocksIndexes to set
    */
-  public void setAllSelectedMeasureBlocksIndexes(int[] allSelectedMeasureBlocksIndexes) {
+  public void setAllSelectedMeasureBlocksIndexes(int[][] allSelectedMeasureBlocksIndexes) {
     this.allSelectedMeasureBlocksIndexes = allSelectedMeasureBlocksIndexes;
   }
 

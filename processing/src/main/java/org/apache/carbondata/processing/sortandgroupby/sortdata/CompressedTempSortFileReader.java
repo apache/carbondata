@@ -21,7 +21,7 @@ package org.apache.carbondata.processing.sortandgroupby.sortdata;
 
 import java.io.File;
 
-import org.apache.carbondata.core.datastorage.store.compression.SnappyCompression.SnappyByteCompression;
+import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 
 public class CompressedTempSortFileReader extends AbstractTempSortFileReader {
 
@@ -45,8 +45,8 @@ public class CompressedTempSortFileReader extends AbstractTempSortFileReader {
   @Override public Object[][] getRow() {
     int recordLength = fileHolder.readInt(filePath);
     int byteArrayLength = fileHolder.readInt(filePath);
-    byte[] byteArrayFromFile = SnappyByteCompression.INSTANCE
-        .unCompress(fileHolder.readByteArray(filePath, byteArrayLength));
+    byte[] byteArrayFromFile = CompressorFactory.getInstance()
+        .unCompressByte(fileHolder.readByteArray(filePath, byteArrayLength));
     return prepareRecordFromByteBuffer(recordLength, byteArrayFromFile);
   }
 }

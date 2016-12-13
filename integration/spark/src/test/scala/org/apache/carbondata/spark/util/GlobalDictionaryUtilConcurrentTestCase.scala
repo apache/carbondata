@@ -20,30 +20,24 @@ package org.apache.carbondata.spark.util
 
 import java.io.File
 
+import java.util.concurrent.Executors
+import java.util.concurrent.Callable
+
+import scala.collection.mutable.ListBuffer
+
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.apache.spark.sql.common.util.CarbonHiveContext
 import org.apache.spark.sql.common.util.CarbonHiveContext.sql
 import org.apache.spark.sql.common.util.QueryTest
-
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
-import org.apache.carbondata.spark.load.CarbonLoadModel
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory
-import scala.collection.mutable.ListBuffer
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.Future
-import java.util.concurrent.FutureTask
-import java.util.concurrent.Callable
-import java.util.concurrent.TimeUnit
-
 import org.apache.carbondata.common.ext.PathFactory
-
-import org.apache.carbondata.core.carbon.path.CarbonTablePath
-import org.apache.carbondata.core.carbon.ColumnIdentifier
+import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.processing.constants.TableOptionConstant
+import org.apache.carbondata.processing.model.CarbonLoadModel
 
 class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAfterAll {
 
@@ -71,6 +65,8 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     carbonLoadModel.setComplexDelimiterLevel2("\\:")
     carbonLoadModel.setStorePath(relation.tableMeta.storePath)
     carbonLoadModel.setQuoteChar("\"")
+    carbonLoadModel.setSerializationNullFormat(
+      TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + ",\\N")
     carbonLoadModel
   }
 
@@ -89,12 +85,12 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
       sql(
         "CREATE TABLE IF NOT EXISTS employee (empid STRING) STORED BY 'org.apache.carbondata.format'")
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
   }
 
   def buildRelation() = {
-    val catalog = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
+    val catalog = CarbonEnv.get.carbonMetastore
     sampleRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
       "employee")(CarbonHiveContext)
       .asInstanceOf[CarbonRelation]
@@ -139,7 +135,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     val carbonTableIdentifier = sampleRelation.tableMeta.carbonTable.getCarbonTableIdentifier
     val columnIdentifier = sampleRelation.tableMeta.carbonTable.getDimensionByName("employee", "empid").getColumnIdentifier
     val carbonTablePath = PathFactory.getInstance()
-        .getCarbonTablePath(columnIdentifier, sampleRelation.tableMeta.storePath, carbonTableIdentifier);
+        .getCarbonTablePath(sampleRelation.tableMeta.storePath, carbonTableIdentifier);
     val dictPath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId)
     val dictFile = FileFactory.getCarbonFile(dictPath, FileFactory.getFileType(dictPath))
     val offSet = dictFile.getSize

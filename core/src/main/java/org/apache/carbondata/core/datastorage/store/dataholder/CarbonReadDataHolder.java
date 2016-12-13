@@ -21,78 +21,55 @@ package org.apache.carbondata.core.datastorage.store.dataholder;
 
 import java.math.BigDecimal;
 
+// This class is used with Uncompressor to hold the decompressed column chunk in memory
 public class CarbonReadDataHolder {
 
-  /**
-   * doubleValues
-   */
-  private double[] doubleValues;
-
-  /**
-   * longValues
-   */
-  private long[] longValues;
-
-  /**
-   * bigDecimalValues
-   */
-  private BigDecimal[] bigDecimalValues;
-
-  /**
-   * byteValues
-   */
   private byte[][] byteValues;
 
-  /**
-   * @return the doubleValues
-   */
-  public double[] getReadableDoubleValues() {
-    return doubleValues;
-  }
+  private short[] shortValues;
 
-  /**
-   * @param doubleValues the doubleValues to set
-   */
-  public void setReadableDoubleValues(double[] doubleValues) {
-    this.doubleValues = doubleValues;
-  }
+  private int[] intValues;
 
-  /**
-   * @return the byteValues
-   */
-  public byte[][] getReadableByteArrayValues() {
-    return byteValues;
-  }
+  private long[] longValues;
 
-  /**
-   * @param longValues the longValues to set
-   */
-  public void setReadableLongValues(long[] longValues) {
-    this.longValues = longValues;
-  }
+  private BigDecimal[] bigDecimalValues;
 
-  /**
-   * @param longValues the bigDecimalValues to set
-   */
-  public void setReadableBigDecimalValues(BigDecimal[] bigDecimalValues) {
-    this.bigDecimalValues = bigDecimalValues;
-  }
+  private double[] doubleValues;
 
-  /**
-   * @param byteValues the byteValues to set
-   */
   public void setReadableByteValues(byte[][] byteValues) {
     this.byteValues = byteValues;
   }
 
-  /**
-   * below method will be used to get the double value by index
-   *
-   * @param index
-   * @return double values
-   */
-  public double getReadableDoubleValueByIndex(int index) {
-    return this.doubleValues[index];
+  public void setReadableShortValues(short[] shortValues) {
+    this.shortValues = shortValues;
+  }
+
+  public void setReadableIntValues(int[] intValues) {
+    this.intValues = intValues;
+  }
+
+  public void setReadableLongValues(long[] longValues) {
+    this.longValues = longValues;
+  }
+
+  public void setReadableBigDecimalValues(BigDecimal[] bigDecimalValues) {
+    this.bigDecimalValues = bigDecimalValues;
+  }
+
+  public void setReadableDoubleValues(double[] doubleValues) {
+    this.doubleValues = doubleValues;
+  }
+
+  public byte[] getReadableByteArrayValueByIndex(int index) {
+    return this.byteValues[index];
+  }
+
+  public long getReadableShortValueByIndex(int index) {
+    return this.shortValues[index];
+  }
+
+  public long getReadableIntValueByIndex(int index) {
+    return this.intValues[index];
   }
 
   public long getReadableLongValueByIndex(int index) {
@@ -103,13 +80,8 @@ public class CarbonReadDataHolder {
     return this.bigDecimalValues[index];
   }
 
-  /**
-   * below method will be used to get the readable byte array value by index
-   *
-   * @param index
-   * @return byte array value
-   */
-  public byte[] getReadableByteArrayValueByIndex(int index) {
-    return this.byteValues[index];
+  public double getReadableDoubleValueByIndex(int index) {
+    return this.doubleValues[index];
   }
+
 }

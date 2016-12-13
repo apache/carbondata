@@ -21,8 +21,7 @@ import java.io.File
 
 import scala.language.implicitConversions
 
-import org.apache.spark.{Logging, SparkContext}
-import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
+import org.apache.spark.SparkContext
 import org.apache.spark.sql.catalyst.ParserDialect
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, OverrideCatalog}
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
@@ -36,30 +35,31 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
-import org.apache.carbondata.spark.rdd.CarbonDataFrameRDD
 
 class CarbonContext(
     val sc: SparkContext,
     val storePath: String,
-    metaStorePath: String) extends HiveContext(sc) with Logging {
+    metaStorePath: String) extends HiveContext(sc) {
   self =>
 
-  def this (sc: SparkContext) = {
-    this (sc,
+  def this(sc: SparkContext) = {
+    this(sc,
       new File(CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL).getCanonicalPath,
       new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
   }
 
-  def this (sc: SparkContext, storePath: String) = {
-    this (sc,
+  def this(sc: SparkContext, storePath: String) = {
+    this(sc,
       storePath,
       new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
   }
 
   CarbonContext.addInstance(sc, this)
   CodeGenerateFactory.init(sc.version)
+  CarbonEnv.init(this)
 
   var lastSchemaUpdatedTime = System.currentTimeMillis()
+  val hiveClientInterface = metadataHive
 
   protected[sql] override lazy val conf: SQLConf = new CarbonSQLConf
 
@@ -67,7 +67,7 @@ class CarbonContext(
   override lazy val catalog = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
-    new CarbonMetastoreCatalog(this, storePath, metadataHive, queryId) with OverrideCatalog
+    new CarbonMetastore(this, storePath, metadataHive, queryId) with OverrideCatalog
   }
 
   @transient
@@ -77,7 +77,7 @@ class CarbonContext(
       override val extendedResolutionRules =
         catalog.ParquetConversions ::
         catalog.CreateTables ::
-        catalog.PreInsertionCasts ::
+        CarbonPreInsertionCasts ::
         ExtractPythonUDFs ::
         ResolveHiveWindowFunction ::
         PreInsertCastAndRename ::
@@ -107,9 +107,9 @@ class CarbonContext(
     if (sc.hadoopConfiguration.get(CarbonCommonConstants.HIVE_CONNECTION_URL) == null) {
       val metaStorePathAbsolute = new File(metaStorePath).getCanonicalPath
       val hiveMetaStoreDB = metaStorePathAbsolute + "/metastore_db"
-      logDebug(s"metastore db is going to be created in location : $hiveMetaStoreDB")
+      logDebug(s"metastore db is going to be created in location: $hiveMetaStoreDB")
       super.configure() ++ Map((CarbonCommonConstants.HIVE_CONNECTION_URL,
-              s"jdbc:derby:;databaseName=$hiveMetaStoreDB;create=true"),
+        s"jdbc:derby:;databaseName=$hiveMetaStoreDB;create=true"),
         ("hive.metastore.warehouse.dir", metaStorePathAbsolute + "/hivemetadata"))
     } else {
       super.configure()
@@ -134,7 +134,7 @@ class CarbonContext(
     val logicPlan: LogicalPlan = parseSql(sql)
     statistic.addStatistics(QueryStatisticsConstants.SQL_PARSE, System.currentTimeMillis())
     recorder.recordStatisticsForDriver(statistic, queryId)
-    val result = new CarbonDataFrameRDD(this, logicPlan)
+    val result = new DataFrame(this, logicPlan)
 
     // We force query optimization to happen right away instead of letting it happen lazily like
     // when using the query DSL.  This is so DDL commands behave as expected.  This is only
@@ -181,31 +181,5 @@ object CarbonContext {
                 "allowed using the same SparkContext instance")
     }
     cache(sc) = cc
-  }
-
-  /**
-   *
-   * Requesting the extra executors other than the existing ones.
- *
-   * @param sc
-   * @param numExecutors
-   * @return
-   */
-  final def ensureExecutors(sc: SparkContext, numExecutors: Int): Boolean = {
-    sc.schedulerBackend match {
-      case b: CoarseGrainedSchedulerBackend =>
-        val requiredExecutors = numExecutors -  b.numExistingExecutors
-        LOGGER
-          .info("number of executors is =" + numExecutors + " existing executors are =" + b
-            .numExistingExecutors
-          )
-        if(requiredExecutors > 0) {
-          b.requestExecutors(requiredExecutors)
-        }
-        true
-      case _ =>
-        false
-    }
-
   }
 }

@@ -21,6 +21,8 @@
 package org.apache.carbondata.core.util;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.DataInputStream;
 import java.io.File;
@@ -28,19 +30,17 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -49,7 +49,6 @@ import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
-import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
@@ -59,26 +58,33 @@ import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.columnar.ColumnGroupModel;
-import org.apache.carbondata.core.datastorage.store.columnar.ColumnarKeyStoreDataHolder;
 import org.apache.carbondata.core.datastorage.store.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastorage.store.compression.MeasureMetaDataModel;
-import org.apache.carbondata.core.datastorage.store.compression.ValueCompressionModel;
+import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import org.apache.carbondata.core.reader.ThriftReader;
+import org.apache.carbondata.core.reader.ThriftReader.TBaseCreator;
+import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.scan.model.QueryDimension;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.thrift.TBase;
+import org.apache.thrift.TException;
+import org.apache.thrift.protocol.TCompactProtocol;
+import org.apache.thrift.protocol.TProtocol;
+import org.apache.thrift.transport.TIOStreamTransport;
 import org.pentaho.di.core.exception.KettleException;
-
 
 public final class CarbonUtil {
 
   public static final String HDFS_PREFIX = "hdfs://";
   public static final String VIEWFS_PREFIX = "viewfs://";
+  public static final String ALLUXIO_PREFIX = "alluxio://";
   private static final String FS_DEFAULT_FS = "fs.defaultFS";
 
   /**
@@ -117,66 +123,25 @@ public final class CarbonUtil {
     // Added if to avoid NullPointerException in case one stream is being passed as null
     if (null != streams) {
       for (Closeable stream : streams) {
-        if (null != stream) {
-          try {
-            stream.close();
-          } catch (IOException e) {
-            LOGGER.error("Error while closing stream" + stream);
-          }
+        try {
+          closeStream(stream);
+        } catch (IOException e) {
+          LOGGER.error("Error while closing stream:" + e);
         }
       }
     }
   }
 
   /**
-   * @param baseStorePath
-   * @return
+   * This method closes stream
+   *
+   * @param stream
+   * @throws IOException
    */
-  private static int createBaseStoreFolders(String baseStorePath) {
-    FileFactory.FileType fileType = FileFactory.getFileType(baseStorePath);
-    try {
-      if (!FileFactory.isFileExist(baseStorePath, fileType, false)) {
-        if (!FileFactory.mkdirs(baseStorePath, fileType)) {
-          return -1;
-        }
-      }
-    } catch (Exception e) {
-      return -1;
+  public static void closeStream(Closeable stream) throws IOException {
+    if (null != stream) {
+      stream.close();
     }
-    return 1;
-  }
-
-  /**
-   * @param filterType
-   * @param listFiles
-   * @param counter
-   * @return
-   */
-  private static int findCounterValue(final String filterType, CarbonFile[] listFiles,
-      int counter) {
-    if ("Load_".equals(filterType)) {
-      for (CarbonFile files : listFiles) {
-        String folderName = getFolderName(files);
-        if (folderName.indexOf('.') > -1) {
-          folderName = folderName.substring(0, folderName.indexOf('.'));
-        }
-        String[] split = folderName.split("_");
-
-        if (split.length > 1 && counter < Integer.parseInt(split[1])) {
-          counter = Integer.parseInt(split[1]);
-        }
-      }
-    } else {
-      // Iterate list of Directories and find the counter value
-      for (CarbonFile eachFile : listFiles) {
-        String folderName = getFolderName(eachFile);
-        String[] split = folderName.split("_");
-        if (counter < Integer.parseInt(split[1])) {
-          counter = Integer.parseInt(split[1]);
-        }
-      }
-    }
-    return counter;
   }
 
   /**
@@ -410,54 +375,6 @@ public final class CarbonUtil {
   }
 
   /**
-   * This function will rename the table to be deleted
-   *
-   * @param partitionCount
-   * @param storePath
-   * @param databaseName
-   * @param tableName
-   */
-  public static void renameTableForDeletion(int partitionCount, String storePath,
-      String databaseName, String tableName) {
-    String tableNameWithPartition = "";
-    String databaseNameWithPartition = "";
-    String fullPath = "";
-    String newFilePath = "";
-    String newFileName = "";
-    Callable<Void> c = null;
-    long time = System.currentTimeMillis();
-    FileFactory.FileType fileType = null;
-    ExecutorService executorService = Executors.newFixedThreadPool(10);
-    for (int i = 0; i < partitionCount; i++) {
-      databaseNameWithPartition = databaseName + '_' + i;
-      tableNameWithPartition = tableName + '_' + i;
-      newFileName = tableNameWithPartition + '_' + time;
-      fullPath = storePath + File.separator + databaseNameWithPartition + File.separator
-          + tableNameWithPartition;
-      newFilePath =
-          storePath + File.separator + databaseNameWithPartition + File.separator + newFileName;
-      fileType = FileFactory.getFileType(fullPath);
-      try {
-        if (FileFactory.isFileExist(fullPath, fileType)) {
-          CarbonFile file = FileFactory.getCarbonFile(fullPath, fileType);
-          boolean isRenameSuccessfull = file.renameTo(newFilePath);
-          if (!isRenameSuccessfull) {
-            LOGGER.error("Problem renaming the table :: " + fullPath);
-            c = new DeleteFolderAndFiles(file);
-            executorService.submit(c);
-          } else {
-            c = new DeleteFolderAndFiles(FileFactory.getCarbonFile(newFilePath, fileType));
-            executorService.submit(c);
-          }
-        }
-      } catch (IOException e) {
-        LOGGER.error("Problem renaming the table :: " + fullPath);
-      }
-    }
-    executorService.shutdown();
-  }
-
-  /**
    * Recursively delete the files
    *
    * @param f File to be deleted
@@ -495,54 +412,6 @@ public final class CarbonUtil {
         throw new CarbonUtilException("Problem while deleting intermediate file");
       }
     }
-  }
-
-  public static byte[] getKeyArray(ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolder,
-      int totalKeySize, int eachKeySize) {
-    byte[] completeKeyArray = new byte[totalKeySize];
-    byte[] keyBlockData = null;
-    int destinationPosition = 0;
-    int[] columnIndex = null;
-    int blockKeySize = 0;
-    for (int i = 0; i < columnarKeyStoreDataHolder.length; i++) {
-      keyBlockData = columnarKeyStoreDataHolder[i].getKeyBlockData();
-      blockKeySize = columnarKeyStoreDataHolder[i].getColumnarKeyStoreMetadata().getEachRowSize();
-      if (columnarKeyStoreDataHolder[i].getColumnarKeyStoreMetadata().isSorted()) {
-        for (int j = 0; j < keyBlockData.length; j += blockKeySize) {
-          System.arraycopy(keyBlockData, j, completeKeyArray, destinationPosition, blockKeySize);
-          destinationPosition += eachKeySize;
-        }
-      } else {
-        columnIndex = columnarKeyStoreDataHolder[i].getColumnarKeyStoreMetadata().getColumnIndex();
-
-        for (int j = 0; j < columnIndex.length; j++) {
-          System.arraycopy(keyBlockData, columnIndex[j] * blockKeySize, completeKeyArray,
-              eachKeySize * columnIndex[j] + destinationPosition, blockKeySize);
-        }
-      }
-      destinationPosition = blockKeySize;
-    }
-    return completeKeyArray;
-  }
-
-  public static byte[] getKeyArray(ColumnarKeyStoreDataHolder[] columnarKeyStoreDataHolder,
-      int totalKeySize, int eachKeySize, short[] columnIndex) {
-    byte[] completeKeyArray = new byte[totalKeySize];
-    byte[] keyBlockData = null;
-    int destinationPosition = 0;
-    int blockKeySize = 0;
-    for (int i = 0; i < columnarKeyStoreDataHolder.length; i++) {
-      keyBlockData = columnarKeyStoreDataHolder[i].getKeyBlockData();
-      blockKeySize = columnarKeyStoreDataHolder[i].getColumnarKeyStoreMetadata().getEachRowSize();
-
-      for (int j = 0; j < columnIndex.length; j++) {
-        System.arraycopy(keyBlockData, columnIndex[j] * blockKeySize, completeKeyArray,
-            destinationPosition, blockKeySize);
-        destinationPosition += eachKeySize;
-      }
-      destinationPosition = blockKeySize;
-    }
-    return completeKeyArray;
   }
 
   public static int getFirstIndexUsingBinarySearch(FixedLengthDimensionDataChunk dimColumnDataChunk,
@@ -807,23 +676,7 @@ public final class CarbonUtil {
     return currentPath;
   }
 
-  /**
-   * Below method will be used to get the aggregator type
-   * CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE will return when value is double measure
-   * CarbonCommonConstants.BYTE_VALUE_MEASURE will be returned when value is byte array
-   *
-   * @param agg
-   * @return aggregator type
-   */
-  public static char getType(String agg) {
-    if (CarbonCommonConstants.SUM.equals(agg) || CarbonCommonConstants.COUNT.equals(agg)) {
-      return CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE;
-    } else {
-      return CarbonCommonConstants.BYTE_VALUE_MEASURE;
-    }
-  }
-
-  public static String getCarbonStorePath(String databaseName, String tableName) {
+  public static String getCarbonStorePath() {
     CarbonProperties prop = CarbonProperties.getInstance();
     if (null == prop) {
       return null;
@@ -935,35 +788,31 @@ public final class CarbonUtil {
    * @param measureDataChunkList
    * @return value compression model
    */
-  public static ValueCompressionModel getValueCompressionModel(
-      List<DataChunk> measureDataChunkList) {
-    Object[] maxValue = new Object[measureDataChunkList.size()];
-    Object[] minValue = new Object[measureDataChunkList.size()];
-    Object[] uniqueValue = new Object[measureDataChunkList.size()];
-    int[] decimal = new int[measureDataChunkList.size()];
-    char[] type = new char[measureDataChunkList.size()];
-    byte[] dataTypeSelected = new byte[measureDataChunkList.size()];
+  public static WriterCompressModel getValueCompressionModel(
+      List<ValueEncoderMeta> encodeMetaList) {
+    Object[] maxValue = new Object[encodeMetaList.size()];
+    Object[] minValue = new Object[encodeMetaList.size()];
+    Object[] uniqueValue = new Object[encodeMetaList.size()];
+    int[] decimal = new int[encodeMetaList.size()];
+    char[] type = new char[encodeMetaList.size()];
+    byte[] dataTypeSelected = new byte[encodeMetaList.size()];
 
     /**
      * to fill the meta data required for value compression model
      */
-    for (int i = 0; i < dataTypeSelected.length; i++) {
-      int indexOf = measureDataChunkList.get(i).getEncodingList().indexOf(Encoding.DELTA);
-      if (indexOf > -1) {
-        ValueEncoderMeta valueEncoderMeta =
-            measureDataChunkList.get(i).getValueEncoderMeta().get(indexOf);
-        maxValue[i] = valueEncoderMeta.getMaxValue();
-        minValue[i] = valueEncoderMeta.getMinValue();
-        uniqueValue[i] = valueEncoderMeta.getUniqueValue();
-        decimal[i] = valueEncoderMeta.getDecimal();
-        type[i] = valueEncoderMeta.getType();
-        dataTypeSelected[i] = valueEncoderMeta.getDataTypeSelected();
-      }
+    for (int i = 0; i < dataTypeSelected.length; i++) {  // always 1
+      ValueEncoderMeta valueEncoderMeta = encodeMetaList.get(i);
+      maxValue[i] = valueEncoderMeta.getMaxValue();
+      minValue[i] = valueEncoderMeta.getMinValue();
+      uniqueValue[i] = valueEncoderMeta.getUniqueValue();
+      decimal[i] = valueEncoderMeta.getMantissa();
+      type[i] = valueEncoderMeta.getType();
+      dataTypeSelected[i] = valueEncoderMeta.getDataTypeSelected();
     }
     MeasureMetaDataModel measureMetadataModel =
         new MeasureMetaDataModel(minValue, maxValue, decimal, dataTypeSelected.length, uniqueValue,
             type, dataTypeSelected);
-    return ValueCompressionUtil.getValueCompressionModel(measureMetadataModel);
+    return ValueCompressionUtil.getWriterCompressModel(measureMetadataModel);
   }
 
   /**
@@ -1039,17 +888,14 @@ public final class CarbonUtil {
 
   /**
    * Below method will be used to read the data file matadata
-   *
-   * @param filePath file path
-   * @param blockOffset   offset in the file
-   * @return Data file metadata instance
-   * @throws CarbonUtilException
    */
-  public static DataFileFooter readMetadatFile(String filePath, long blockOffset, long blockLength)
+  public static DataFileFooter readMetadatFile(TableBlockInfo tableBlockInfo)
       throws CarbonUtilException {
-    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
+    AbstractDataFileFooterConverter fileFooterConverter =
+        DataFileFooterConverterFactory.getInstance()
+            .getDataFileFooterConverter(tableBlockInfo.getVersion());
     try {
-      return fileFooterConverter.readDataFileFooter(filePath, blockOffset, blockLength);
+      return fileFooterConverter.readDataFileFooter(tableBlockInfo);
     } catch (IOException e) {
       throw new CarbonUtilException("Problem while reading the file metadata", e);
     }
@@ -1090,25 +936,6 @@ public final class CarbonUtil {
       return null;
     }
 
-  }
-
-  /**
-   * class to sort aggregate folder list in descending order
-   */
-  private static class AggTableComparator implements Comparator<String> {
-    public int compare(String aggTable1, String aggTable2) {
-      int index1 = aggTable1.lastIndexOf(CarbonCommonConstants.UNDERSCORE);
-      int index2 = aggTable2.lastIndexOf(CarbonCommonConstants.UNDERSCORE);
-      int n1 = Integer.parseInt(aggTable1.substring(index1 + 1));
-      int n2 = Integer.parseInt(aggTable2.substring(index2 + 1));
-      if (n1 > n2) {
-        return -1;
-      } else if (n1 < n2) {
-        return 1;
-      } else {
-        return 0;
-      }
-    }
   }
 
   /**
@@ -1229,72 +1056,6 @@ public final class CarbonUtil {
     }
   }
 
-  /**
-   * convert from wrapper to external data type
-   *
-   * @param dataType
-   * @return
-   */
-  public static org.apache.carbondata.format.DataType fromWrapperToExternalDataType(
-      DataType dataType) {
-
-    if (null == dataType) {
-      return null;
-    }
-    switch (dataType) {
-      case STRING:
-        return org.apache.carbondata.format.DataType.STRING;
-      case INT:
-        return org.apache.carbondata.format.DataType.INT;
-      case LONG:
-        return org.apache.carbondata.format.DataType.LONG;
-      case DOUBLE:
-        return org.apache.carbondata.format.DataType.DOUBLE;
-      case DECIMAL:
-        return org.apache.carbondata.format.DataType.DECIMAL;
-      case TIMESTAMP:
-        return org.apache.carbondata.format.DataType.TIMESTAMP;
-      case ARRAY:
-        return org.apache.carbondata.format.DataType.ARRAY;
-      case STRUCT:
-        return org.apache.carbondata.format.DataType.STRUCT;
-      default:
-        return org.apache.carbondata.format.DataType.STRING;
-    }
-  }
-
-  /**
-   * convert from external to wrapper data type
-   *
-   * @param dataType
-   * @return
-   */
-  public static DataType fromExternalToWrapperDataType(
-      org.apache.carbondata.format.DataType dataType) {
-    if (null == dataType) {
-      return null;
-    }
-    switch (dataType) {
-      case STRING:
-        return DataType.STRING;
-      case INT:
-        return DataType.INT;
-      case LONG:
-        return DataType.LONG;
-      case DOUBLE:
-        return DataType.DOUBLE;
-      case DECIMAL:
-        return DataType.DECIMAL;
-      case TIMESTAMP:
-        return DataType.TIMESTAMP;
-      case ARRAY:
-        return DataType.ARRAY;
-      case STRUCT:
-        return DataType.STRUCT;
-      default:
-        return DataType.STRING;
-    }
-  }
   /**
    * @param dictionaryColumnCardinality
    * @param wrapperColumnSchemaList
@@ -1452,5 +1213,161 @@ public final class CarbonUtil {
     return segmentStringbuilder.toString();
   }
 
+  /**
+   * Below method will be used to convert the thrift object to byte array.
+   */
+  public static byte[] getByteArray(TBase t) {
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    byte[] thriftByteArray = null;
+    TProtocol binaryOut = new TCompactProtocol(new TIOStreamTransport(stream));
+    try {
+      t.write(binaryOut);
+      stream.flush();
+      thriftByteArray = stream.toByteArray();
+    } catch (TException | IOException e) {
+      closeStreams(stream);
+    } finally {
+      closeStreams(stream);
+    }
+    return thriftByteArray;
+  }
+
+  /**
+   * Below method will be used to convert the bytearray to data chunk object
+   *
+   * @param dataChunkBytes datachunk thrift object in bytes
+   * @return data chunk thrift object
+   */
+  public static DataChunk2 readDataChunk(byte[] dataChunkBytes) {
+    try {
+      return (DataChunk2) read(dataChunkBytes, new ThriftReader.TBaseCreator() {
+        @Override public TBase create() {
+          return new DataChunk2();
+        }
+      });
+    } catch (IOException e) {
+      LOGGER.error(e);
+    }
+    return null;
+  }
+
+  /**
+   * Below method will be used to convert the byte array value to thrift object for
+   * data chunk
+   *
+   * @param data    thrift byte array
+   * @param creator type of thrift
+   * @return thrift object
+   * @throws IOException any problem while converting the object
+   */
+  private static TBase read(byte[] data, TBaseCreator creator) throws IOException {
+    ByteArrayInputStream stream = new ByteArrayInputStream(data);
+    TProtocol binaryIn = new TCompactProtocol(new TIOStreamTransport(stream));
+    TBase t = creator.create();
+    try {
+      t.read(binaryIn);
+    } catch (TException e) {
+      throw new IOException(e);
+    } finally {
+      CarbonUtil.closeStreams(stream);
+    }
+    return t;
+  }
+
+  /**
+   * Below method will be used to convert the encode metadata to
+   * ValueEncoderMeta object
+   *
+   * @param encoderMeta
+   * @return ValueEncoderMeta object
+   */
+  public static ValueEncoderMeta deserializeEncoderMeta(byte[] encoderMeta) {
+    // TODO : should remove the unnecessary fields.
+    ByteArrayInputStream aos = null;
+    ObjectInputStream objStream = null;
+    ValueEncoderMeta meta = null;
+    try {
+      aos = new ByteArrayInputStream(encoderMeta);
+      objStream = new ObjectInputStream(aos);
+      meta = (ValueEncoderMeta) objStream.readObject();
+    } catch (ClassNotFoundException e) {
+      LOGGER.error(e);
+    } catch (IOException e) {
+      CarbonUtil.closeStreams(objStream);
+    }
+    return meta;
+  }
+
+  /**
+   * Below method will be used to convert indexes in range
+   * Indexes=[0,1,2,3,4,5,6,7,8,9]
+   * Length=9
+   * number of element in group =5
+   * then output will be [0,1,2,3,4],[5,6,7,8],[9]
+   *
+   * @param indexes                indexes
+   * @param length                 number of element to be considered
+   * @param numberOfElementInGroup number of element in group
+   * @return range indexes
+   */
+  public static int[][] getRangeIndex(int[] indexes, int length, int numberOfElementInGroup) {
+    List<List<Integer>> rangeList = new ArrayList<>();
+    int[][] outputArray = null;
+    int k = 0;
+    int index = 1;
+    if (indexes.length == 1) {
+      outputArray = new int[1][2];
+      outputArray[0][0] = indexes[0];
+      outputArray[0][1] = indexes[0];
+      return outputArray;
+    }
+    while (index < length) {
+      if (indexes[index] - indexes[index - 1] == 1 && k < numberOfElementInGroup - 1) {
+        k++;
+      } else {
+        if (k > 0) {
+          List<Integer> range = new ArrayList<>();
+          rangeList.add(range);
+          range.add(indexes[index - k - 1]);
+          range.add(indexes[index - 1]);
+        } else {
+          List<Integer> range = new ArrayList<>();
+          rangeList.add(range);
+          range.add(indexes[index - 1]);
+        }
+        k = 0;
+      }
+      index++;
+    }
+    if (k > 0) {
+      List<Integer> range = new ArrayList<>();
+      rangeList.add(range);
+      range.add(indexes[index - k - 1]);
+      range.add(indexes[index - 1]);
+    } else {
+      List<Integer> range = new ArrayList<>();
+      rangeList.add(range);
+      range.add(indexes[index - 1]);
+
+    }
+    if (length != indexes.length) {
+      List<Integer> range = new ArrayList<>();
+      rangeList.add(range);
+      range.add(indexes[indexes.length - 1]);
+    }
+
+    // as diving in range so array size will be always 2
+    outputArray = new int[rangeList.size()][2];
+    for (int i = 0; i < outputArray.length; i++) {
+      if (rangeList.get(i).size() == 1) {
+        outputArray[i][0] = rangeList.get(i).get(0);
+        outputArray[i][1] = rangeList.get(i).get(0);
+      } else {
+        outputArray[i][0] = rangeList.get(i).get(0);
+        outputArray[i][1] = rangeList.get(i).get(1);
+      }
+    }
+    return outputArray;
+  }
 }
 

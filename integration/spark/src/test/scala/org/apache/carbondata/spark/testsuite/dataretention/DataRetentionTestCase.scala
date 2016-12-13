@@ -55,7 +55,6 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       AbsoluteTableIdentifier(storeLocation,
         new CarbonTableIdentifier(
           CarbonCommonConstants.DATABASE_DEFAULT_NAME, "DataRetentionTable".toLowerCase(), "300"))
-  val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(absoluteTableIdentifierForRetention)
   val carbonTablePath = CarbonStorePath
     .getCarbonTablePath(absoluteTableIdentifierForRetention.getStorePath,
       absoluteTableIdentifierForRetention.getCarbonTableIdentifier).getMetadataDirectoryPath
@@ -133,8 +132,8 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("RetentionTest_DeleteSegmentsByLoadTime") {
-    val segments: Array[LoadMetadataDetails] = segmentStatusManager
-      .readLoadMetadata(carbonTablePath)
+    val segments: Array[LoadMetadataDetails] =
+      SegmentStatusManager.readLoadMetadata(carbonTablePath)
     // check segment length, it should be 3 (loads)
     if (segments.length != 2) {
       assert(false)
@@ -183,7 +182,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     } catch {
       case e: MalformedCarbonCommandException =>
         assert(e.getMessage.contains("should not be empty"))
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 
@@ -221,7 +220,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     } catch {
       case e: MalformedCarbonCommandException =>
         assert(e.getMessage.contains("Invalid load start time format"))
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
 
     try {
@@ -232,7 +231,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     } catch {
       case e: MalformedCarbonCommandException =>
         assert(e.getMessage.contains("Invalid load start time format"))
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
 
     checkAnswer(
@@ -258,7 +257,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     } catch {
       case e: MalformedCarbonCommandException =>
         assert(!e.getMessage.equalsIgnoreCase("Invalid query"))
-      case _ => assert(true)
+      case _: Throwable => assert(true)
     }
 
     try {
@@ -267,7 +266,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     } catch {
       case e: MalformedCarbonCommandException =>
         assert(!e.getMessage.equalsIgnoreCase("Invalid query"))
-      case _ => assert(true)
+      case _: Throwable => assert(true)
     }
 
     try {
@@ -276,7 +275,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     } catch {
       case e: MalformedCarbonCommandException =>
         assert(!e.getMessage.equalsIgnoreCase("Invalid query"))
-      case _ => assert(true)
+      case _: Throwable => assert(true)
     }
 
   }

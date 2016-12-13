@@ -19,12 +19,27 @@
 
 package org.apache.carbondata.processing.store;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
+import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.carbon.path.CarbonStorePath;
+import org.apache.carbondata.core.carbon.path.CarbonTablePath;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.keygenerator.KeyGenerator;
+import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
+import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
+import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
  * This class contains all the data required for processing and writing the carbon data
@@ -40,18 +55,18 @@ public class CarbonFactDataHandlerModel {
    */
   private String tableName;
 
-  public int getBlocksize() {
-    return blocksize;
+  public int getBlockSizeInMB() {
+    return blockSize;
   }
 
-  public void setBlocksize(int blocksize) {
-    this.blocksize = blocksize;
+  public void setBlockSizeInMB(int blockSize) {
+    this.blockSize = blockSize;
   }
 
   /**
-   * table blocksize
+   * table blocksize in MB
    */
-  private int blocksize;
+  private int blockSize;
   /**
    * flag to check whether to group the similar data
    */
@@ -165,6 +180,140 @@ public class CarbonFactDataHandlerModel {
    * or not.
    */
   private boolean isCompactionFlow;
+
+  /**
+   * To use kettle flow to load or not.
+   */
+  private boolean useKettle = true;
+
+  /**
+   * Create the model using @{@link CarbonDataLoadConfiguration}
+   * @param configuration
+   * @return CarbonFactDataHandlerModel
+   */
+  public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
+      CarbonDataLoadConfiguration configuration, String storeLocation) {
+
+    CarbonTableIdentifier identifier =
+        configuration.getTableIdentifier().getCarbonTableIdentifier();
+    CarbonTableIdentifier tableIdentifier =
+        identifier;
+    boolean[] isUseInvertedIndex =
+        CarbonDataProcessorUtil.getIsUseInvertedIndex(configuration.getDataFields());
+
+    int[] dimLensWithComplex =
+        (int[]) configuration.getDataLoadProperty(DataLoadProcessorConstants.DIMENSION_LENGTHS);
+    List<Integer> dimsLenList = new ArrayList<Integer>();
+    for (int eachDimLen : dimLensWithComplex) {
+      if (eachDimLen != 0) dimsLenList.add(eachDimLen);
+    }
+    int[] dimLens = new int[dimsLenList.size()];
+    for (int i = 0; i < dimsLenList.size(); i++) {
+      dimLens[i] = dimsLenList.get(i);
+    }
+
+    int dimensionCount = configuration.getDimensionCount();
+    int noDictionaryCount = configuration.getNoDictionaryCount();
+    int complexDimensionCount = configuration.getComplexDimensionCount();
+    int measureCount = configuration.getMeasureCount();
+
+    int simpleDimsCount = dimensionCount - noDictionaryCount - complexDimensionCount;
+    int[] simpleDimsLen = new int[simpleDimsCount];
+    for (int i = 0; i < simpleDimsCount; i++) {
+      simpleDimsLen[i] = dimLens[i];
+    }
+
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+        tableIdentifier.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + tableIdentifier
+            .getTableName());
+    List<ColumnSchema> wrapperColumnSchema = CarbonUtil
+        .getColumnSchemaList(carbonTable.getDimensionByTableName(tableIdentifier.getTableName()),
+            carbonTable.getMeasureByTableName(tableIdentifier.getTableName()));
+    int[] colCardinality =
+        CarbonUtil.getFormattedCardinality(dimLensWithComplex, wrapperColumnSchema);
+    SegmentProperties segmentProperties =
+        new SegmentProperties(wrapperColumnSchema, colCardinality);
+    // Actual primitive dimension used to generate start & end key
+
+    KeyGenerator keyGenerator = segmentProperties.getDimensionKeyGenerator();
+
+    //To Set MDKey Index of each primitive type in complex type
+    int surrIndex = simpleDimsCount;
+    Iterator<Map.Entry<String, GenericDataType>> complexMap =
+        CarbonDataProcessorUtil.getComplexTypesMap(configuration.getDataFields()).entrySet()
+            .iterator();
+    Map<Integer, GenericDataType> complexIndexMap = new HashMap<>(complexDimensionCount);
+    while (complexMap.hasNext()) {
+      Map.Entry<String, GenericDataType> complexDataType = complexMap.next();
+      complexDataType.getValue().setOutputArrayIndex(0);
+      complexIndexMap.put(simpleDimsCount, complexDataType.getValue());
+      simpleDimsCount++;
+      List<GenericDataType> primitiveTypes = new ArrayList<GenericDataType>();
+      complexDataType.getValue().getAllPrimitiveChildren(primitiveTypes);
+      for (GenericDataType eachPrimitive : primitiveTypes) {
+        eachPrimitive.setSurrogateIndex(surrIndex++);
+      }
+    }
+
+    CarbonDataFileAttributes carbonDataFileAttributes =
+        new CarbonDataFileAttributes(Integer.parseInt(configuration.getTaskNo()),
+            (String) configuration.getDataLoadProperty(DataLoadProcessorConstants.FACT_TIME_STAMP));
+    String carbonDataDirectoryPath = getCarbonDataFolderLocation(configuration);
+
+    CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
+    carbonFactDataHandlerModel.setDatabaseName(
+        identifier.getDatabaseName());
+    carbonFactDataHandlerModel
+        .setTableName(identifier.getTableName());
+    carbonFactDataHandlerModel.setMeasureCount(measureCount);
+    carbonFactDataHandlerModel.setMdKeyLength(keyGenerator.getKeySizeInBytes());
+    carbonFactDataHandlerModel.setStoreLocation(storeLocation);
+    carbonFactDataHandlerModel.setDimLens(dimLens);
+    carbonFactDataHandlerModel.setNoDictionaryCount(noDictionaryCount);
+    carbonFactDataHandlerModel
+        .setDimensionCount(configuration.getDimensionCount() - noDictionaryCount);
+    carbonFactDataHandlerModel.setComplexIndexMap(complexIndexMap);
+    carbonFactDataHandlerModel.setSegmentProperties(segmentProperties);
+    carbonFactDataHandlerModel.setColCardinality(colCardinality);
+    carbonFactDataHandlerModel.setDataWritingRequest(true);
+    carbonFactDataHandlerModel.setAggType(CarbonDataProcessorUtil
+        .getAggType(measureCount, identifier.getDatabaseName(), identifier.getTableName()));
+    carbonFactDataHandlerModel.setFactDimLens(dimLens);
+    carbonFactDataHandlerModel.setWrapperColumnSchema(wrapperColumnSchema);
+    carbonFactDataHandlerModel.setPrimitiveDimLens(simpleDimsLen);
+    carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
+    carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
+    carbonFactDataHandlerModel.setIsUseInvertedIndex(isUseInvertedIndex);
+    carbonFactDataHandlerModel.setBlockSizeInMB(carbonTable.getBlockSizeInMB());
+    carbonFactDataHandlerModel.setUseKettle(false);
+    if (noDictionaryCount > 0 || complexDimensionCount > 0) {
+      carbonFactDataHandlerModel.setMdKeyIndex(measureCount + 1);
+    } else {
+      carbonFactDataHandlerModel.setMdKeyIndex(measureCount);
+    }
+    return carbonFactDataHandlerModel;
+  }
+
+  /**
+   * This method will get the store location for the given path, segment id and partition id
+   *
+   * @return data directory path
+   */
+  private static String getCarbonDataFolderLocation(CarbonDataLoadConfiguration configuration) {
+    String carbonStorePath =
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS);
+    CarbonTableIdentifier tableIdentifier =
+        configuration.getTableIdentifier().getCarbonTableIdentifier();
+    CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+        tableIdentifier.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + tableIdentifier
+            .getTableName());
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTable.getCarbonTableIdentifier());
+    String carbonDataDirectoryPath = carbonTablePath
+        .getCarbonDataDirectoryPath(configuration.getPartitionId(),
+            configuration.getSegmentId() + "");
+    return carbonDataDirectoryPath;
+  }
 
   public int[] getColCardinality() {
     return colCardinality;
@@ -402,5 +551,12 @@ public class CarbonFactDataHandlerModel {
     this.wrapperColumnSchema = wrapperColumnSchema;
   }
 
+  public boolean isUseKettle() {
+    return useKettle;
+  }
+
+  public void setUseKettle(boolean useKettle) {
+    this.useKettle = useKettle;
+  }
 }
 

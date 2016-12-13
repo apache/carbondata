@@ -173,6 +173,26 @@ class SparkDatasourceSuite extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE test")
   }
 
+  test("json data with long datatype issue CARBONDATA-405") {
+    val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
+      .getCanonicalPath
+    val jsonDF = read.format("json").load("./src/test/resources/test.json")
+    jsonDF.write
+      .format("carbondata")
+      .option("tableName", "dftesttable")
+      .option("compress", "true")
+      .mode(SaveMode.Overwrite)
+      .save()
+    val carbonDF = read
+      .format("carbondata")
+      .option("tableName", "dftesttable")
+      .load()
+    checkAnswer(
+      carbonDF.select("age", "name"),
+      jsonDF.select("age", "name"))
+    sql("drop table dftesttable")
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS carbon1")
     sql("DROP TABLE IF EXISTS carbon2")

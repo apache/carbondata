@@ -88,11 +88,17 @@ public final class CarbonCommonConstants {
    * max blocklet size
    */
   public static final int BLOCKLET_SIZE_MAX_VAL = 12000000;
-
+  /**
+   * default block size in MB
+   */
   public static final String BLOCK_SIZE_DEFAULT_VAL = "1024";
-
+  /**
+   * min block size in MB
+   */
   public static final int BLOCK_SIZE_MIN_VAL = 1;
-
+  /**
+   * max block size in MB
+   */
   public static final int BLOCK_SIZE_MAX_VAL = 2048;
   /**
    * default value of number of cores to be used
@@ -479,6 +485,17 @@ public final class CarbonCommonConstants {
    */
   public static final String MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK =
       "carbon.load.metadata.lock.retry.timeout.sec";
+
+  /**
+   * compressor for writing/reading carbondata file
+   */
+  public static final String COMPRESSOR = "carbon.column.compressor";
+
+  /**
+   * default compressor is snappy
+   */
+  public static final String DEFAULT_COMPRESSOR = "snappy";
+
   /**
    * MARKED_FOR_DELETION
    */
@@ -711,6 +728,7 @@ public final class CarbonCommonConstants {
   public static final String PARTITIONCLASS = "partitionclass";
   public static final String PARTITIONCOUNT = "partitioncount";
   public static final String COLUMN_PROPERTIES = "columnproperties";
+  // table block size in MB
   public static final String TABLE_BLOCKSIZE = "table_blocksize";
 
   /**
@@ -875,7 +893,65 @@ public final class CarbonCommonConstants {
   /**
    * to enable blocklet distribution default value
    */
-  public static String ENABLE_BLOCKLET_DISTRIBUTION_DEFAULTVALUE = "true";
+  public static String ENABLE_BLOCKLET_DISTRIBUTION_DEFAULTVALUE = "false";
+
+  /**
+   * This batch size is used to send rows from load step to another step in batches.
+   */
+  public static final String DATA_LOAD_BATCH_SIZE = "DATA_LOAD_BATCH_SIZE";
+
+  /**
+   * Default size of data load batch size.
+   */
+  public static final String DATA_LOAD_BATCH_SIZE_DEFAULT = "1000";
+  /**
+   * carbon data file version property
+   */
+  public static final String CARBON_DATA_FILE_VERSION = "carbon.data.file.version";
+  /**
+   * current data file version
+   */
+  public static final String CARBON_DATA_FILE_DEFAULT_VERSION = "V2";
+  /**
+   * number of column data will read in IO operation
+   * during query execution
+   */
+  public static final short NUMBER_OF_COLUMN_READ_IN_IO = 10;
+  /**
+   * data file version header
+   */
+  public static final String CARBON_DATA_VERSION_HEADER = "CARBONDATAVERSION#";
+  /**
+   * Maximum no of column supported
+   */
+  public static int DEFAULT_MAX_NUMBER_OF_COLUMNS = 20000;
+
+  /**
+   * maximum length of column
+   */
+  public static final int DEFAULT_COLUMN_LENGTH = 100000;
+  /**
+   * Maximum waiting time (in seconds) for a query for requested executors to be started
+   */
+  public static final String CARBON_EXECUTOR_STARTUP_TIMEOUT =
+      "carbon.max.executor.startup.timeout";
+
+  /**
+   * default value for executor start up waiting time out
+   */
+  public static final String CARBON_EXECUTOR_WAITING_TIMEOUT_DEFAULT = "5";
+
+  /**
+   * Max value. If value configured by user is more than this than this value will value will be
+   * considered
+   */
+  public static final int CARBON_EXECUTOR_WAITING_TIMEOUT_MAX = 60;
+
+  /**
+   * time for which thread will sleep and check again if the requested number of executors
+   * have been started
+   */
+  public static final int CARBON_EXECUTOR_STARTUP_THREAD_SLEEP_TIME = 250;
 
   private CarbonCommonConstants() {
   }

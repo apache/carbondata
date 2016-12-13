@@ -19,7 +19,7 @@
 
 package org.apache.carbondata.processing.newflow.row;
 
-import java.math.BigDecimal;
+import java.util.Arrays;
 
 /**
  * This row class is used to transfer the row data from one step to other step
@@ -36,36 +36,37 @@ public class CarbonRow {
     return data;
   }
 
-  public int getInt(int ordinal) {
-    return (int) data[ordinal];
-  }
-
-  public long getLong(int ordinal) {
-    return (long) data[ordinal];
-  }
-
-  public float getFloat(int ordinal) {
-    return (float) data[ordinal];
-  }
-
-  public double getDouble(int ordinal) {
-    return (double) data[ordinal];
-  }
-
-  public BigDecimal getDecimal(int ordinal) {
-    return (BigDecimal) data[ordinal];
+  public void setData(Object[] data) {
+    this.data = data;
   }
 
   public String getString(int ordinal) {
     return (String) data[ordinal];
   }
 
-  public byte[] getBinary(int ordinal) {
-    return (byte[]) data[ordinal];
+  public Object getObject(int ordinal) {
+    return data[ordinal];
+  }
+
+  public Object[] getObjectArray(int ordinal) {
+    return (Object[]) data[ordinal];
+  }
+
+  public int[] getIntArray(int ordinal) {
+    return (int[]) data[ordinal];
   }
 
   public void update(Object value, int ordinal) {
     data[ordinal] = value;
   }
 
+  public CarbonRow getCopy() {
+    Object[] copy = new Object[data.length];
+    System.arraycopy(data, 0, copy, 0, copy.length);
+    return new CarbonRow(copy);
+  }
+
+  @Override public String toString() {
+    return Arrays.toString(data);
+  }
 }

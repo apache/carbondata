@@ -18,14 +18,17 @@
 package org.apache.carbondata.spark
 
 import org.apache.hadoop.fs.Path
-import org.apache.spark.Logging
 import org.apache.spark.sql._
 import org.apache.spark.sql.execution.command.LoadTable
 import org.apache.spark.sql.types._
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.metadata.datatype.{DataType => CarbonType}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 
-class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
+class CarbonDataFrameWriter(val dataFrame: DataFrame) {
+
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def saveAsCarbonFile(parameters: Map[String, String] = Map()): Unit = {
     checkContext()
@@ -60,7 +63,12 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
    */
   private def loadTempCSV(options: CarbonOption, cc: CarbonContext): Unit = {
     // temporary solution: write to csv file, then load the csv into carbon
-    val tempCSVFolder = "./tempCSV"
+    val storePath = CarbonEnv.get.carbonMetastore.storePath
+    val tempCSVFolder = new StringBuilder(storePath).append(CarbonCommonConstants.FILE_SEPARATOR)
+      .append("tempCSV")
+      .append(CarbonCommonConstants.UNDERSCORE).append(options.dbName)
+      .append(CarbonCommonConstants.UNDERSCORE).append(options.tableName)
+      .append(CarbonCommonConstants.UNDERSCORE).append(System.nanoTime()).toString
     writeToTempCSVFile(tempCSVFolder, options)
 
     val tempCSVPath = new Path(tempCSVFolder)
@@ -78,7 +86,7 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
       size
     }
 
-    logInfo(s"temporary CSV file size: ${countSize / 1024 / 1024} MB")
+    LOGGER.info(s"temporary CSV file size: ${countSize / 1024 / 1024} MB")
 
     try {
       cc.sql(makeLoadString(tempCSVFolder, options))
@@ -120,8 +128,8 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
       options.tableName,
       null,
       Seq(),
-      Map(("fileheader" -> header)),
-      false,
+      Map("fileheader" -> header) ++ options.toMap,
+      isOverwriteExist = false,
       null,
       Some(dataFrame)).run(cc)
   }
@@ -130,15 +138,15 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
 
   private def convertToCarbonType(sparkType: DataType): String = {
     sparkType match {
-      case StringType => CarbonType.STRING.name
-      case IntegerType => CarbonType.INT.name
-      case ByteType => CarbonType.INT.name
-      case ShortType => CarbonType.SHORT.name
-      case LongType => CarbonType.LONG.name
-      case FloatType => CarbonType.DOUBLE.name
-      case DoubleType => CarbonType.DOUBLE.name
-      case BooleanType => CarbonType.DOUBLE.name
-      case TimestampType => CarbonType.TIMESTAMP.name
+      case StringType => CarbonType.STRING.getName
+      case IntegerType => CarbonType.INT.getName
+      case ByteType => CarbonType.INT.getName
+      case ShortType => CarbonType.SHORT.getName
+      case LongType => CarbonType.LONG.getName
+      case FloatType => CarbonType.DOUBLE.getName
+      case DoubleType => CarbonType.DOUBLE.getName
+      case BooleanType => CarbonType.DOUBLE.getName
+      case TimestampType => CarbonType.TIMESTAMP.getName
       case other => sys.error(s"unsupported type: $other")
     }
   }
@@ -155,11 +163,19 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) extends Logging {
   }
 
   private def makeLoadString(csvFolder: String, options: CarbonOption): String = {
-    s"""
+    if (options.useKettle) {
+      s"""
           LOAD DATA INPATH '$csvFolder'
           INTO TABLE ${options.dbName}.${options.tableName}
           OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}')
       """
+    } else {
+      s"""
+          LOAD DATA INPATH '$csvFolder'
+          INTO TABLE ${options.dbName}.${options.tableName}
+          OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}', 'USE_KETTLE' = 'false')
+      """
+    }
   }
 
 }

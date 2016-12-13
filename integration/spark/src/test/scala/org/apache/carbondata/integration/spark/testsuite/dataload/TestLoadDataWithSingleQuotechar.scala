@@ -42,10 +42,10 @@ class TestLoadDataWithSingleQuotechar extends QueryTest with BeforeAndAfterAll {
           "carbontable OPTIONS('DELIMITER'= ',')")
       checkAnswer(
         sql("SELECT * from carbontable"),
-        Seq(Row("Tom",1),
-          Row("Tony\n3,Lily",2),
-          Row("Games\"",4),
-          Row("prival\"\n6,\"hello\"",5)
+        Seq(Row(1,"Tom"),
+          Row(2,"Tony\n3,Lily"),
+          Row(4,"Games\""),
+          Row(5,"prival\"\n6,\"hello\"")
         )
       )
     } catch {

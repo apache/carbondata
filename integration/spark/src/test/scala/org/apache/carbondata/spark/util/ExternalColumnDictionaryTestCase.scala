@@ -20,16 +20,19 @@ package org.apache.carbondata.spark.util
 
 import java.io.File
 
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.processing.etl.DataLoadingException
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.load.CarbonLoadModel
+import org.scalatest.BeforeAndAfterAll
+
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.apache.spark.sql.common.util.CarbonHiveContext
 import org.apache.spark.sql.common.util.CarbonHiveContext.sql
 import org.apache.spark.sql.common.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.processing.constants.TableOptionConstant
+import org.apache.carbondata.processing.etl.DataLoadingException
+import org.apache.carbondata.processing.model.CarbonLoadModel
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
   /**
  * test case for external column dictionary generation
@@ -82,7 +85,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
      TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
       """)
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
 
     try {
@@ -92,7 +95,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
      TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
       """)
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
 
     try {
@@ -107,12 +110,12 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
      TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
       """)
     } catch {
-      case ex: Throwable => logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+      case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
   }
 
   def buildRelation() = {
-    val catalog = CarbonEnv.getInstance(CarbonHiveContext).carbonCatalog
+    val catalog = CarbonEnv.get.carbonMetastore
     extComplexRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
       "extComplextypes")(CarbonHiveContext)
       .asInstanceOf[CarbonRelation]
@@ -144,6 +147,8 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
     carbonLoadModel.setComplexDelimiterLevel2("\\:")
     carbonLoadModel.setColDictFilePath(extColFilePath)
     carbonLoadModel.setQuoteChar("\"");
+    carbonLoadModel.setSerializationNullFormat(
+      TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + ",\\N")
     carbonLoadModel
   }
 
@@ -203,7 +208,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
         """)
     } catch {
       case ex: Exception =>
-        logError(ex.getMessage + "\r\n" + ex.getStackTraceString)
+        LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
         assert(false)
     }
     DictionaryTestCaseUtil.checkDictionary(
@@ -221,7 +226,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       case ex: MalformedCarbonCommandException =>
         assertResult(ex.getMessage)("Error: COLUMNDICT and ALL_DICTIONARY_PATH can not be used together " +
           "in options")
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 
@@ -236,7 +241,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       case ex: DataLoadingException =>
         assertResult(ex.getMessage)("Column gamePointId is not a key column. Only key column can be part " +
           "of dictionary and used in COLUMNDICT option.")
-      case _ => assert(false)
+      case _: Throwable => assert(false)
     }
   }
 

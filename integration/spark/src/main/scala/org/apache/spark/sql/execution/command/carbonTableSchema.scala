@@ -19,754 +19,38 @@ package org.apache.spark.sql.execution.command
 
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util
-import java.util.UUID
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ArrayBuffer
-import scala.collection.mutable.Map
 import scala.language.implicitConversions
-import scala.util.Random
 
-import org.apache.spark.SparkEnv
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Cast, Literal}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
-import org.apache.spark.sql.hive.{CarbonHiveMetadataUtil, HiveContext}
+import org.apache.spark.sql.hive.CarbonMetastore
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
 
-import org.apache.carbondata.common.factory.CarbonCommonFactory
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier}
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
-import org.apache.carbondata.core.carbon.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
-import org.apache.carbondata.core.carbon.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
+import org.apache.carbondata.core.carbon.metadata.schema.table.{CarbonTable, TableInfo}
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
-import org.apache.carbondata.core.load.LoadMetadataDetails
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.integration.spark.merger.CompactionType
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
-import org.apache.carbondata.spark.CarbonSparkFactory
+import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.load._
-import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil, GlobalDictionaryUtil}
-
-case class tableModel(
-    ifNotExistsSet: Boolean,
-    var databaseName: String,
-    databaseNameOp: Option[String],
-    tableName: String,
-    tableProperties: Map[String, String],
-    dimCols: Seq[Field],
-    msrCols: Seq[Field],
-    fromKeyword: String,
-    withKeyword: String,
-    source: Object,
-    factFieldsList: Option[FilterCols],
-    dimRelations: Seq[DimensionRelation],
-    simpleDimRelations: Seq[DimensionRelation],
-    highcardinalitydims: Option[Seq[String]],
-    noInvertedIdxCols: Option[Seq[String]],
-    aggregation: Seq[Aggregation],
-    partitioner: Option[Partitioner],
-    columnGroups: Seq[String],
-    colProps: Option[util.Map[String, util.List[ColumnProperty]]] = None)
-
-case class Field(column: String, var dataType: Option[String], name: Option[String],
-    children: Option[List[Field]], parent: String = null,
-    storeType: Option[String] = Some("columnar"),
-    var precision: Int = 0, var scale: Int = 0)
-
-case class ArrayDataType(dataType: String)
-
-case class StructDataType(dataTypes: List[String])
-
-case class StructField(column: String, dataType: String)
-
-case class FieldMapping(levelName: String, columnName: String)
-
-case class HierarchyMapping(hierName: String, hierType: String, levels: Seq[String])
-
-case class ColumnProperty(key: String, value: String)
-
-case class ComplexField(complexType: String, primitiveField: Option[Field],
-    complexField: Option[ComplexField])
-
-case class Cardinality(levelName: String, cardinality: Int)
-
-case class Aggregation(msrName: String, aggType: String)
-
-case class AggregateTableAttributes(colName: String, aggType: String = null)
-
-case class Partitioner(partitionClass: String, partitionColumn: Array[String], partitionCount: Int,
-    nodeList: Array[String])
-
-case class PartitionerField(partitionColumn: String, dataType: Option[String],
-    columnComment: String)
-
-case class DimensionRelation(tableName: String, dimSource: Object, relation: Relation,
-    includeKey: Option[String], cols: Option[Seq[String]])
-
-case class Relation(leftColumn: String, rightColumn: String)
-
-case class LoadSchema(tableInfo: TableInfo, dimensionTables: Array[DimensionRelation])
-
-case class Level(name: String, column: String, cardinality: Int, dataType: String,
-    parent: String = null, storeType: String = "Columnar",
-    levelType: String = "Regular")
-
-case class Measure(name: String, column: String, dataType: String, aggregator: String = "SUM",
-    visible: Boolean = true)
-
-case class Hierarchy(name: String, primaryKey: Option[String], levels: Seq[Level],
-    tableName: Option[String], normalized: Boolean = false)
-
-case class Dimension(name: String, hierarchies: Seq[Hierarchy], foreignKey: Option[String],
-    dimType: String = "StandardDimension", visible: Boolean = true,
-    var highCardinality: Boolean = false)
-
-case class FilterCols(includeKey: String, fieldList: Seq[String])
-
-case class Table(databaseName: String, tableName: String, dimensions: Seq[Dimension],
-    measures: Seq[Measure], partitioner: Partitioner)
-
-case class Default(key: String, value: String)
-
-case class DataLoadTableFileMapping(table: String, loadPath: String)
-
-case class CarbonMergerMapping(storeLocation: String,
-    hdfsStoreLocation: String,
-    partitioner: Partitioner,
-    metadataFilePath: String,
-    mergedLoadName: String,
-    kettleHomePath: String,
-    tableCreationTime: Long,
-    databaseName: String,
-    factTableName: String,
-    validSegments: Array[String],
-    tableId: String,
-    // maxSegmentColCardinality is Cardinality of last segment of compaction
-    var maxSegmentColCardinality: Array[Int],
-    // maxSegmentColumnSchemaList is list of column schema of last segment of compaction
-    var maxSegmentColumnSchemaList: List[ColumnSchema])
-
-case class NodeInfo(TaskId: String, noOfBlocks: Int)
-
-
-case class AlterTableModel(dbName: Option[String], tableName: String,
-  compactionType: String, alterSql: String)
-
-case class CompactionModel(compactionSize: Long,
-  compactionType: CompactionType,
-  carbonTable: CarbonTable,
-  tableCreationTime: Long,
-  isDDLTrigger: Boolean)
-
-case class CompactionCallableModel(hdfsStoreLocation: String, carbonLoadModel: CarbonLoadModel,
-  partitioner: Partitioner, storeLocation: String, carbonTable: CarbonTable, kettleHomePath: String,
-  cubeCreationTime: Long, loadsToMerge: util.List[LoadMetadataDetails], sqlContext: SQLContext,
-  compactionType: CompactionType)
-
-object TableNewProcessor {
-  def apply(cm: tableModel, sqlContext: SQLContext): TableInfo = {
-    new TableNewProcessor(cm, sqlContext).process
-  }
-}
-
-class TableNewProcessor(cm: tableModel, sqlContext: SQLContext) {
-
-  var index = 0
-  var rowGroup = 0
-  def getAllChildren(fieldChildren: Option[List[Field]]): Seq[ColumnSchema] = {
-    var allColumns: Seq[ColumnSchema] = Seq[ColumnSchema]()
-    fieldChildren.foreach(fields => {
-      fields.foreach(field => {
-        val encoders = new java.util.ArrayList[Encoding]()
-        encoders.add(Encoding.DICTIONARY)
-        val columnSchema: ColumnSchema = getColumnSchema(
-          DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
-          field.name.getOrElse(field.column), index,
-          isCol = true, encoders, isDimensionCol = true, rowGroup, field.precision, field.scale)
-        allColumns ++= Seq(columnSchema)
-        index = index + 1
-        rowGroup = rowGroup + 1
-        if (field.children.get != null) {
-          columnSchema.setNumberOfChild(field.children.get.size)
-          allColumns ++= getAllChildren(field.children)
-        }
-      })
-    })
-    allColumns
-  }
-
-  def getColumnSchema(dataType: DataType, colName: String, index: Integer, isCol: Boolean,
-      encoders: java.util.List[Encoding], isDimensionCol: Boolean,
-      colGroup: Integer, precision: Integer, scale: Integer): ColumnSchema = {
-    val columnSchema = new ColumnSchema()
-    columnSchema.setDataType(dataType)
-    columnSchema.setColumnName(colName)
-    val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
-    if (highCardinalityDims.contains(colName)) {
-      encoders.remove(encoders.remove(Encoding.DICTIONARY))
-    }
-    if (dataType == DataType.TIMESTAMP) {
-      encoders.add(Encoding.DIRECT_DICTIONARY)
-    }
-    val colPropMap = new java.util.HashMap[String, String]()
-    if (cm.colProps.isDefined && null != cm.colProps.get.get(colName)) {
-      val colProps = cm.colProps.get.get(colName)
-      colProps.asScala.foreach { x => colPropMap.put(x.key, x.value) }
-    }
-    columnSchema.setColumnProperties(colPropMap)
-    columnSchema.setEncodingList(encoders)
-    val colUniqueIdGenerator = CarbonCommonFactory.getColumnUniqueIdGenerator
-    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(cm.databaseName,
-      columnSchema)
-    columnSchema.setColumnUniqueId(columnUniqueId)
-    columnSchema.setColumnReferenceId(columnUniqueId)
-    columnSchema.setColumnar(isCol)
-    columnSchema.setDimensionColumn(isDimensionCol)
-    columnSchema.setColumnGroup(colGroup)
-    columnSchema.setPrecision(precision)
-    columnSchema.setScale(scale)
-    // TODO: Need to fill RowGroupID, converted type
-    // & Number of Children after DDL finalization
-    columnSchema
-  }
-
-  // process create dml fields and create wrapper TableInfo object
-  def process: TableInfo = {
-    val LOGGER = LogServiceFactory.getLogService(TableNewProcessor.getClass.getName)
-    var allColumns = Seq[ColumnSchema]()
-    var index = 0
-    cm.dimCols.foreach(field => {
-      val encoders = new java.util.ArrayList[Encoding]()
-      encoders.add(Encoding.DICTIONARY)
-      val columnSchema: ColumnSchema = getColumnSchema(
-        DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
-        field.name.getOrElse(field.column),
-        index,
-        isCol = true,
-        encoders,
-        isDimensionCol = true,
-        -1,
-        field.precision,
-        field.scale)
-      allColumns ++= Seq(columnSchema)
-      index = index + 1
-      if (field.children.isDefined && field.children.get != null) {
-        columnSchema.setNumberOfChild(field.children.get.size)
-        allColumns ++= getAllChildren(field.children)
-      }
-    })
-
-    cm.msrCols.foreach(field => {
-      val encoders = new java.util.ArrayList[Encoding]()
-      val coloumnSchema: ColumnSchema = getColumnSchema(
-        DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
-        field.name.getOrElse(field.column),
-        index,
-        isCol = true,
-        encoders,
-        isDimensionCol = false,
-        -1,
-        field.precision,
-        field.scale)
-      val measureCol = coloumnSchema
-
-      allColumns ++= Seq(measureCol)
-      index = index + 1
-    })
-
-    // Check if there is any duplicate measures or dimensions.
-    // Its based on the dimension name and measure name
-    allColumns.groupBy(_.getColumnName).foreach(f => if (f._2.size > 1) {
-      val name = f._1
-      LOGGER.error(s"Duplicate column found with name : $name")
-      LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation " +
-        s"for ${cm.databaseName}.${cm.tableName}" +
-        s"Duplicate column found with name : $name")
-      sys.error(s"Duplicate dimensions found with name : $name")
-    })
-
-    val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
-
-    checkColGroupsValidity(cm.columnGroups, allColumns, highCardinalityDims)
-
-    updateColumnGroupsInFields(cm.columnGroups, allColumns)
-
-    var newOrderedDims = scala.collection.mutable.ListBuffer[ColumnSchema]()
-    val complexDims = scala.collection.mutable.ListBuffer[ColumnSchema]()
-    val measures = scala.collection.mutable.ListBuffer[ColumnSchema]()
-    for (column <- allColumns) {
-      if (highCardinalityDims.contains(column.getColumnName)) {
-        newOrderedDims += column
-      }
-      else if (column.isComplex) {
-        complexDims += column
-      }
-      else if (column.isDimensionColumn) {
-        newOrderedDims += column
-      }
-      else {
-        measures += column
-      }
-
-    }
-
-    // Setting the boolen value of useInvertedIndex in column shcehma
-    val noInvertedIndexCols = cm.noInvertedIdxCols.getOrElse(Seq())
-    for (column <- allColumns) {
-      // When the column is measure or the specified no inverted index column in DDL,
-      // set useInvertedIndex to false, otherwise true.
-      if (noInvertedIndexCols.contains(column.getColumnName) ||
-        cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
-        column.setUseInvertedIndex(false)
-      } else {
-        column.setUseInvertedIndex(true)
-      }
-    }
-
-    // Adding dummy measure if no measure is provided
-    if (measures.size < 1) {
-      val encoders = new java.util.ArrayList[Encoding]()
-      val coloumnSchema: ColumnSchema = getColumnSchema(DataType.DOUBLE,
-        CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
-        index,
-        true,
-        encoders,
-        false,
-        -1, 0, 0)
-      coloumnSchema.setInvisible(true)
-      val measureColumn = coloumnSchema
-      measures += measureColumn
-      allColumns = allColumns ++ measures
-    }
-    val columnValidator = CarbonSparkFactory.getCarbonColumnValidator()
-    columnValidator.validateColumns(allColumns)
-    newOrderedDims = newOrderedDims ++ complexDims ++ measures
-
-    cm.partitioner match {
-      case Some(part: Partitioner) =>
-        var definedpartCols = part.partitionColumn
-        val columnBuffer = new ArrayBuffer[String]
-        part.partitionColumn.foreach { col =>
-          newOrderedDims.foreach { dim =>
-            if (dim.getColumnName.equalsIgnoreCase(col)) {
-              definedpartCols = definedpartCols.dropWhile { c => c.equals(col) }
-              columnBuffer += col
-            }
-          }
-        }
-
-        // Special Case, where Partition count alone is sent to Carbon for dataloading
-        if (part.partitionClass.isEmpty) {
-          if (part.partitionColumn(0).isEmpty) {
-            Partitioner(
-              "org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
-              Array(""), part.partitionCount, null)
-          }
-          else {
-            // case where partition cols are set and partition class is not set.
-            // so setting the default value.
-            Partitioner(
-              "org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
-              part.partitionColumn, part.partitionCount, null)
-          }
-        }
-        else if (definedpartCols.nonEmpty) {
-          val msg = definedpartCols.mkString(", ")
-          LOGGER.error(s"partition columns specified are not part of Dimension columns : $msg")
-          LOGGER.audit(
-            s"Validation failed for Create/Alter Table Operation for " +
-              s"${cm.databaseName}.${cm.tableName} " +
-            s"partition columns specified are not part of Dimension columns : $msg")
-          sys.error(s"partition columns specified are not part of Dimension columns : $msg")
-        }
-        else {
-
-          try {
-            Class.forName(part.partitionClass).newInstance()
-          } catch {
-            case e: Exception =>
-              val cl = part.partitionClass
-              LOGGER.audit(
-                s"Validation failed for Create/Alter Table Operation for " +
-                  s"${cm.databaseName}.${cm.tableName} " +
-                s"partition class specified can not be found or loaded : $cl")
-              sys.error(s"partition class specified can not be found or loaded : $cl")
-          }
-
-          Partitioner(part.partitionClass, columnBuffer.toArray, part.partitionCount, null)
-        }
-      case None =>
-        Partitioner("org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
-          Array(""), 20, null)
-    }
-    val tableInfo = new TableInfo()
-    val tableSchema = new TableSchema()
-    val schemaEvol = new SchemaEvolution()
-    schemaEvol
-      .setSchemaEvolutionEntryList(new util.ArrayList[SchemaEvolutionEntry]())
-    tableSchema.setTableId(UUID.randomUUID().toString)
-    // populate table properties map
-    val tablePropertiesMap = new java.util.HashMap[String, String]()
-    cm.tableProperties.foreach {
-      x => tablePropertiesMap.put(x._1, x._2)
-    }
-    tableSchema.setTableProperties(tablePropertiesMap)
-    tableSchema.setTableName(cm.tableName)
-    tableSchema.setListOfColumns(allColumns.asJava)
-    tableSchema.setSchemaEvalution(schemaEvol)
-    tableInfo.setDatabaseName(cm.databaseName)
-    tableInfo.setTableUniqueName(cm.databaseName + "_" + cm.tableName)
-    tableInfo.setLastUpdatedTime(System.currentTimeMillis())
-    tableInfo.setFactTable(tableSchema)
-    tableInfo.setAggregateTableList(new util.ArrayList[TableSchema]())
-    tableInfo
-  }
-
-  //  For checking if the specified col group columns are specified in fields list.
-  protected def checkColGroupsValidity(colGrps: Seq[String],
-      allCols: Seq[ColumnSchema],
-      highCardCols: Seq[String]): Unit = {
-    if (null != colGrps) {
-      colGrps.foreach(columngroup => {
-        val rowCols = columngroup.split(",")
-        rowCols.foreach(colForGrouping => {
-          var found: Boolean = false
-          // check for dimensions + measures
-          allCols.foreach(eachCol => {
-            if (eachCol.getColumnName.equalsIgnoreCase(colForGrouping.trim())) {
-              found = true
-            }
-          })
-          // check for No Dicitonary dimensions
-          highCardCols.foreach(noDicCol => {
-            if (colForGrouping.trim.equalsIgnoreCase(noDicCol)) {
-              found = true
-            }
-          })
-
-          if (!found) {
-            sys.error(s"column $colForGrouping is not present in Field list")
-          }
-        })
-      })
-    }
-  }
-
-  // For updating the col group details for fields.
-  private def updateColumnGroupsInFields(colGrps: Seq[String], allCols: Seq[ColumnSchema]): Unit = {
-    if (null != colGrps) {
-      var colGroupId = -1
-      colGrps.foreach(columngroup => {
-        colGroupId += 1
-        val rowCols = columngroup.split(",")
-        rowCols.foreach(row => {
-
-          allCols.foreach(eachCol => {
-
-            if (eachCol.getColumnName.equalsIgnoreCase(row.trim)) {
-              eachCol.setColumnGroup(colGroupId)
-              eachCol.setColumnar(false)
-            }
-          })
-        })
-      })
-    }
-  }
-}
-
-object TableProcessor {
-  def apply(cm: tableModel, sqlContext: SQLContext): Table = {
-    new TableProcessor(cm, sqlContext).process()
-  }
-}
-
-class TableProcessor(cm: tableModel, sqlContext: SQLContext) {
-  val timeDims = Seq("TimeYears", "TimeMonths", "TimeDays", "TimeHours", "TimeMinutes")
-  val numericTypes = Seq(CarbonCommonConstants.INTEGER_TYPE, CarbonCommonConstants.DOUBLE_TYPE,
-    CarbonCommonConstants.LONG_TYPE, CarbonCommonConstants.FLOAT_TYPE)
-
-  def getAllChildren(fieldChildren: Option[List[Field]]): Seq[Level] = {
-    var levels: Seq[Level] = Seq[Level]()
-    fieldChildren.foreach(fields => {
-      fields.foreach(field => {
-        if (field.parent != null) {
-          levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue,
-            field.dataType.getOrElse(CarbonCommonConstants.STRING), field.parent,
-            field.storeType.getOrElse("Columnar")))
-        } else {
-          levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue,
-            field.dataType.getOrElse(CarbonCommonConstants.STRING),
-            field.storeType.getOrElse("Columnar")))
-        }
-        if (field.children.get != null) {
-          levels ++= getAllChildren(field.children)
-        }
-      })
-    })
-    levels
-  }
-
-  def process(): Table = {
-
-    var levels = Seq[Level]()
-    var measures = Seq[Measure]()
-    var dimSrcDimensions = Seq[Dimension]()
-    val LOGGER = LogServiceFactory.getLogService(TableProcessor.getClass.getName)
-
-    // Create Table DDL with Database defination
-    cm.dimCols.foreach(field => {
-      if (field.parent != null) {
-        levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue,
-          field.dataType.getOrElse(CarbonCommonConstants.STRING), field.parent,
-          field.storeType.getOrElse(CarbonCommonConstants.COLUMNAR)))
-      } else {
-        levels ++= Seq(Level(field.name.getOrElse(field.column), field.column, Int.MaxValue,
-          field.dataType.getOrElse(CarbonCommonConstants.STRING), field.parent,
-          field.storeType.getOrElse(CarbonCommonConstants.COLUMNAR)))
-      }
-      if (field.children.get != null) {
-        levels ++= getAllChildren(field.children)
-      }
-    })
-    measures = cm.msrCols.map(field => Measure(field.name.getOrElse(field.column), field.column,
-      field.dataType.getOrElse(CarbonCommonConstants.NUMERIC)))
-
-    if (cm.withKeyword.equalsIgnoreCase(CarbonCommonConstants.WITH) &&
-        cm.simpleDimRelations.nonEmpty) {
-      cm.simpleDimRelations.foreach(relationEntry => {
-
-        // Split the levels and seperate levels with dimension levels
-        val split = levels.partition(x => relationEntry.cols.get.contains(x.name))
-
-        val dimLevels = split._1
-        levels = split._2
-
-        def getMissingRelationLevel: Level = {
-          Level(relationEntry.relation.rightColumn,
-            relationEntry.relation.rightColumn, Int.MaxValue, CarbonCommonConstants.STRING)
-        }
-
-        val dimHierarchies = dimLevels.map(field =>
-          Hierarchy(relationEntry.tableName, Some(dimLevels.find(dl =>
-            dl.name.equalsIgnoreCase(relationEntry.relation.rightColumn))
-            .getOrElse(getMissingRelationLevel).column),
-            Seq(field), Some(relationEntry.tableName)))
-        dimSrcDimensions = dimSrcDimensions ++ dimHierarchies.map(
-          field => Dimension(field.levels.head.name, Seq(field),
-            Some(relationEntry.relation.leftColumn)))
-      })
-    }
-
-    // Check if there is any duplicate measures or dimensions.
-    // Its based on the dimension name and measure name
-    levels.groupBy(_.name).foreach(f => if (f._2.size > 1) {
-      val name = f._1
-      LOGGER.error(s"Duplicate dimensions found with name : $name")
-      LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation " +
-        s"for ${cm.databaseName}.${cm.tableName} " +
-        s"Duplicate dimensions found with name : $name")
-      sys.error(s"Duplicate dimensions found with name : $name")
-    })
-
-    levels.groupBy(_.column).foreach(f => if (f._2.size > 1) {
-      val name = f._1
-      LOGGER.error(s"Duplicate dimensions found with column name : $name")
-      LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation " +
-        s"for ${cm.databaseName}.${cm.tableName} " +
-        s"Duplicate dimensions found with column name : $name")
-      sys.error(s"Duplicate dimensions found with column name : $name")
-    })
-
-    measures.groupBy(_.name).foreach(f => if (f._2.size > 1) {
-      val name = f._1
-      LOGGER.error(s"Duplicate measures found with name : $name")
-      LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation " +
-        s"for ${cm.databaseName}.${cm.tableName} " +
-        s"Duplicate measures found with name : $name")
-      sys.error(s"Duplicate measures found with name : $name")
-    })
-
-    measures.groupBy(_.column).foreach(f => if (f._2.size > 1) {
-      val name = f._1
-      LOGGER.error(s"Duplicate measures found with column name : $name")
-      LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation " +
-        s"for ${cm.databaseName}.${cm.tableName} " +
-        s"Duplicate measures found with column name : $name")
-      sys.error(s"Duplicate measures found with column name : $name")
-    })
-
-    val levelsArray = levels.map(_.name)
-    val levelsNdMesures = levelsArray ++ measures.map(_.name)
-
-    cm.aggregation.foreach(a => {
-      if (levelsArray.contains(a.msrName)) {
-        val fault = a.msrName
-        LOGGER.error(s"Aggregator should not be defined for dimension fields [$fault]")
-        LOGGER.audit(
-          s"Validation failed for Create/Alter Table Operation for " +
-            s"${cm.databaseName}.${cm.tableName} " +
-          s"Aggregator should not be defined for dimension fields [$fault]")
-        sys.error(s"Aggregator should not be defined for dimension fields [$fault]")
-      }
-    })
-
-    levelsNdMesures.groupBy(x => x).foreach(f => if (f._2.size > 1) {
-      val name = f._1
-      LOGGER.error(s"Dimension and Measure defined with same name : $name")
-      LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation " +
-        s"for ${cm.databaseName}.${cm.tableName} " +
-        s"Dimension and Measure defined with same name : $name")
-      sys.error(s"Dimension and Measure defined with same name : $name")
-    })
-
-    dimSrcDimensions.foreach(d => {
-      d.hierarchies.foreach(h => {
-        h.levels.foreach(l => {
-          levels = levels.dropWhile(lev => lev.name.equalsIgnoreCase(l.name))
-        })
-      })
-    })
-
-    val groupedSeq = levels.groupBy(_.name.split('.')(0))
-    val hierarchies = levels.filter(level => !level.name.contains(".")).map(
-      parentLevel => Hierarchy(parentLevel.name, None, groupedSeq.get(parentLevel.name).get, None))
-    var dimensions = hierarchies.map(field => Dimension(field.name, Seq(field), None))
-
-    dimensions = dimensions ++ dimSrcDimensions
-    val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
-    for (dimension <- dimensions) {
-
-      if (highCardinalityDims.contains(dimension.name)) {
-        dimension.highCardinality = true
-      }
-
-    }
-
-    if (measures.length <= 0) {
-      measures = measures ++ Seq(Measure(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
-        CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE, CarbonCommonConstants.NUMERIC,
-        CarbonCommonConstants.SUM, visible = false))
-    }
-
-    // Update measures with aggregators if specified.
-    val msrsUpdatedWithAggregators = cm.aggregation match {
-      case aggs: Seq[Aggregation] =>
-        measures.map { f =>
-          val matchedMapping = aggs.filter(agg => f.name.equals(agg.msrName))
-          if (matchedMapping.isEmpty) {
-            f
-          }
-          else {
-            Measure(f.name, f.column, f.dataType, matchedMapping.head.aggType)
-          }
-        }
-      case _ => measures
-    }
-
-    val partitioner = cm.partitioner match {
-      case Some(part: Partitioner) =>
-        var definedpartCols = part.partitionColumn
-        val columnBuffer = new ArrayBuffer[String]
-        part.partitionColumn.foreach { col =>
-          dimensions.foreach { dim =>
-            dim.hierarchies.foreach { hier =>
-              hier.levels.foreach { lev =>
-                if (lev.name.equalsIgnoreCase(col)) {
-                  definedpartCols = definedpartCols.dropWhile(c => c.equals(col))
-                  columnBuffer += lev.name
-                }
-              }
-            }
-          }
-        }
-
-
-        // Special Case, where Partition count alone is sent to Carbon for dataloading
-        if (part.partitionClass.isEmpty && part.partitionColumn(0).isEmpty) {
-          Partitioner(
-            "org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
-            Array(""), part.partitionCount, null)
-        }
-        else if (definedpartCols.nonEmpty) {
-          val msg = definedpartCols.mkString(", ")
-          LOGGER.error(s"partition columns specified are not part of Dimension columns : $msg")
-          LOGGER.audit(
-            s"Validation failed for Create/Alter Table Operation - " +
-            s"partition columns specified are not part of Dimension columns : $msg")
-          sys.error(s"partition columns specified are not part of Dimension columns : $msg")
-        }
-        else {
-
-          try {
-            Class.forName(part.partitionClass).newInstance()
-          } catch {
-            case e: Exception =>
-              val cl = part.partitionClass
-              LOGGER.audit(
-                s"Validation failed for Create/Alter Table Operation for " +
-                  s"${cm.databaseName}.${cm.tableName} " +
-                s"partition class specified can not be found or loaded : $cl")
-              sys.error(s"partition class specified can not be found or loaded : $cl")
-          }
-
-          Partitioner(part.partitionClass, columnBuffer.toArray, part.partitionCount, null)
-        }
-      case None =>
-        Partitioner("org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl",
-          Array(""), 20, null)
-    }
-
-    Table(cm.databaseName, cm.tableName, dimensions, msrsUpdatedWithAggregators, partitioner)
-  }
-
-  // For filtering INCLUDE and EXCLUDE fields if any is defined for Dimention relation
-  def filterRelIncludeCols(relationEntry: DimensionRelation, p: (String, String)): Boolean = {
-    if (relationEntry.includeKey.get.equalsIgnoreCase(CarbonCommonConstants.INCLUDE)) {
-      relationEntry.cols.get.map(x => x.toLowerCase()).contains(p._1.toLowerCase())
-    } else {
-      !relationEntry.cols.get.map(x => x.toLowerCase()).contains(p._1.toLowerCase())
-    }
-  }
-
-}
-
-// These are the assumptions made
-// 1.We have a single hierarchy under a dimension tag and a single level under a hierarchy tag
-// 2.The names of dimensions and measures are case insensitive
-// 3.CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE is always added as a measure.
-// So we need to ignore this to check duplicates
-private[sql] case class AlterTable(
-    cm: tableModel,
-    dropCols: Seq[String],
-    defaultVals: Seq[Default]) extends RunnableCommand {
-
-  def run(sqlContext: SQLContext): Seq[Row] = {
-    // TODO : Implement it.
-    Seq.empty
-  }
-}
+import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DataManagementFunc, DataManagementFunc$, DictionaryLoadModel}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
 
 /**
  * Command for the compaction in alter table command
@@ -782,12 +66,12 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
     val databaseName = getDB.getDatabaseName(alterTableModel.dbName, sqlContext)
     if (null == org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(databaseName + "_" + tableName)) {
-      logError("alter table failed. table not found: " + databaseName + "." + tableName)
-      sys.error("alter table failed. table not found: " + databaseName + "." + tableName)
+      logError(s"alter table failed. table not found: $databaseName.$tableName")
+      sys.error(s"alter table failed. table not found: $databaseName.$tableName")
     }
 
     val relation =
-      CarbonEnv.getInstance(sqlContext).carbonCatalog
+      CarbonEnv.get.carbonMetastore
         .lookupRelation1(Option(databaseName), tableName)(sqlContext)
         .asInstanceOf[CarbonRelation]
     if (relation == null) {
@@ -806,7 +90,6 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
     carbonLoadModel.setDatabaseName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
     carbonLoadModel.setStorePath(relation.tableMeta.storePath)
 
-    val partitioner = relation.tableMeta.partitioner
     val kettleHomePath = CarbonScalaUtil.getKettleHome(sqlContext)
 
     var storeLocation = CarbonProperties.getInstance
@@ -815,31 +98,26 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
       )
     storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
     try {
-      CarbonDataRDDFactory
-        .alterTableForCompaction(sqlContext,
+      CarbonDataRDDFactory.alterTableForCompaction(sqlContext,
           alterTableModel,
           carbonLoadModel,
-          partitioner,
           relation.tableMeta.storePath,
           kettleHomePath,
           storeLocation
         )
-    }
-    catch {
+    } catch {
       case e: Exception =>
         if (null != e.getMessage) {
-          sys.error("Compaction failed. Please check logs for more info." + e.getMessage)
-        }
-        else {
+          sys.error(s"Compaction failed. Please check logs for more info. ${ e.getMessage }")
+        } else {
           sys.error("Exception in compaction. Please check logs for more info.")
         }
     }
-
     Seq.empty
   }
 }
 
-case class CreateTable(cm: tableModel) extends RunnableCommand {
+case class CreateTable(cm: TableModel) extends RunnableCommand {
 
   def run(sqlContext: SQLContext): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -861,28 +139,26 @@ case class CreateTable(cm: tableModel) extends RunnableCommand {
           s"Table [$tbName] already exists under database [$dbName]")
         sys.error(s"Table [$tbName] already exists under database [$dbName]")
       }
-    }
-    else {
-
+    } else {
       // Add Database to catalog and persist
-      val catalog = CarbonEnv.getInstance(sqlContext).carbonCatalog
+      val catalog = CarbonEnv.get.carbonMetastore
       // Need to fill partitioner class when we support partition
       val tablePath = catalog.createTableFromThrift(tableInfo, dbName, tbName, null)(sqlContext)
       try {
         sqlContext.sql(
           s"""CREATE TABLE $dbName.$tbName USING carbondata""" +
           s""" OPTIONS (tableName "$dbName.$tbName", tablePath "$tablePath") """)
-              .collect
+          .collect
       } catch {
         case e: Exception =>
           val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
           // call the drop table to delete the created table.
 
-          CarbonEnv.getInstance(sqlContext).carbonCatalog
+          CarbonEnv.get.carbonMetastore
             .dropTable(catalog.storePath, identifier)(sqlContext)
 
           LOGGER.audit(s"Table creation with Database name [$dbName] " +
-            s"and Table name [$tbName] failed")
+                       s"and Table name [$tbName] failed")
           throw e
       }
 
@@ -915,7 +191,7 @@ private[sql] case class DeleteLoadsById(
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
 
     val identifier = TableIdentifier(tableName, Option(dbName))
-    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog.lookupRelation1(
+    val relation = CarbonEnv.get.carbonMetastore.lookupRelation1(
       identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
       LOGGER.audit(s"Delete segment by Id is failed. Table $dbName.$tableName does not exist")
@@ -925,23 +201,22 @@ private[sql] case class DeleteLoadsById(
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(dbName + '_' + tableName)
 
     if (null == carbonTable) {
-      CarbonEnv.getInstance(sqlContext).carbonCatalog
+      CarbonEnv.get.carbonMetastore
         .lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
     }
     val path = carbonTable.getMetaDataFilepath
 
-    val segmentStatusManager =
-      new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
     try {
-      val invalidLoadIds = segmentStatusManager.updateDeletionStatus(loadids.asJava, path).asScala
+      val invalidLoadIds = SegmentStatusManager.updateDeletionStatus(
+        carbonTable.getAbsoluteTableIdentifier, loadids.asJava, path).asScala
 
       if (invalidLoadIds.isEmpty) {
 
         LOGGER.audit(s"Delete segment by Id is successfull for $databaseName.$tableName.")
       }
       else {
-        sys.error("Delete segment by Id is failed. Invalid ID is :"
-                  + invalidLoadIds.mkString(","))
+        sys.error("Delete segment by Id is failed. Invalid ID is:" +
+                  s" ${ invalidLoadIds.mkString(",") }")
       }
     } catch {
       case ex: Exception =>
@@ -963,10 +238,10 @@ private[sql] case class DeleteLoadsById(
 }
 
 private[sql] case class DeleteLoadsByLoadDate(
-   databaseNameOp: Option[String],
-  tableName: String,
-  dateField: String,
-  loadDate: String) extends RunnableCommand {
+    databaseNameOp: Option[String],
+    tableName: String,
+    dateField: String,
+    loadDate: String) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.tablemodel.tableSchema")
 
@@ -975,34 +250,33 @@ private[sql] case class DeleteLoadsByLoadDate(
     LOGGER.audit("The delete segment by load date request has been received.")
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     val identifier = TableIdentifier(tableName, Option(dbName))
-    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
+    val relation = CarbonEnv.get.carbonMetastore
       .lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
     if (relation == null) {
       LOGGER
         .audit(s"Delete segment by load date is failed. Table $dbName.$tableName does not " +
-         s"exist")
+               s"exist")
       sys.error(s"Table $dbName.$tableName does not exist")
     }
 
     val timeObj = Cast(Literal(loadDate), TimestampType).eval()
-    if(null == timeObj) {
+    if (null == timeObj) {
       val errorMessage = "Error: Invalid load start time format " + loadDate
       throw new MalformedCarbonCommandException(errorMessage)
     }
 
     val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
       .getCarbonTable(dbName + '_' + tableName)
-    val segmentStatusManager = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
-
     if (null == carbonTable) {
-      var relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
+      var relation = CarbonEnv.get.carbonMetastore
         .lookupRelation1(identifier, None)(sqlContext).asInstanceOf[CarbonRelation]
     }
     val path = carbonTable.getMetaDataFilepath()
 
     try {
-      val invalidLoadTimestamps = segmentStatusManager
-        .updateDeletionStatus(loadDate, path, timeObj.asInstanceOf[java.lang.Long]).asScala
+      val invalidLoadTimestamps = SegmentStatusManager.updateDeletionStatus(
+        carbonTable.getAbsoluteTableIdentifier, loadDate, path,
+        timeObj.asInstanceOf[java.lang.Long]).asScala
       if (invalidLoadTimestamps.isEmpty) {
         LOGGER.audit(s"Delete segment by date is successfull for $dbName.$tableName.")
       }
@@ -1019,12 +293,71 @@ private[sql] case class DeleteLoadsByLoadDate(
 
 }
 
+object LoadTable {
+
+  def updateTableMetadata(carbonLoadModel: CarbonLoadModel,
+      sqlContext: SQLContext,
+      model: DictionaryLoadModel,
+      noDictDimension: Array[CarbonDimension]): Unit = {
+
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(model.hdfsLocation,
+      model.table)
+    val schemaFilePath = carbonTablePath.getSchemaFilePath
+
+    // read TableInfo
+    val tableInfo = CarbonMetastore.readSchemaFileToThriftTable(schemaFilePath)
+
+    // modify TableInfo
+    val columns = tableInfo.getFact_table.getTable_columns
+    for (i <- 0 until columns.size) {
+      if (noDictDimension.exists(x => columns.get(i).getColumn_id.equals(x.getColumnId))) {
+        columns.get(i).encoders.remove(org.apache.carbondata.format.Encoding.DICTIONARY)
+      }
+    }
+
+    // write TableInfo
+    CarbonMetastore.writeThriftTableToSchemaFile(schemaFilePath, tableInfo)
+
+    // update Metadata
+    val catalog = CarbonEnv.get.carbonMetastore
+    catalog.updateMetadataByThriftTable(schemaFilePath, tableInfo,
+      model.table.getDatabaseName, model.table.getTableName, carbonLoadModel.getStorePath)
+
+    // update CarbonDataLoadSchema
+    val carbonTable = catalog.lookupRelation1(Option(model.table.getDatabaseName),
+      model.table.getTableName)(sqlContext).asInstanceOf[CarbonRelation].tableMeta.carbonTable
+    carbonLoadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(carbonTable))
+  }
+
+}
+
+private[sql] case class LoadTableByInsert(relation: CarbonDatasourceRelation,
+                                          child: LogicalPlan) extends RunnableCommand {
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+  def run(sqlContext: SQLContext): Seq[Row] = {
+    val df = new DataFrame(sqlContext, child)
+    val header = relation.carbonRelation.output.map(_.name).mkString(",")
+    val load = LoadTable(
+      Some(relation.carbonRelation.databaseName),
+      relation.carbonRelation.tableName,
+      null,
+      Seq(),
+      scala.collection.immutable.Map(("fileheader" -> header)),
+      false,
+      null,
+      Some(df)).run(sqlContext)
+    // updating relation metadata. This is in case of auto detect high cardinality
+    relation.carbonRelation.metaData =
+      CarbonSparkUtil.createSparkMeta(relation.carbonRelation.tableMeta.carbonTable)
+    load
+  }
+}
 case class LoadTable(
     databaseNameOp: Option[String],
     tableName: String,
     factPathFromUser: String,
     dimFilesPath: Seq[DataLoadTableFileMapping],
-    partionValues: scala.collection.immutable.Map[String, String],
+    options: scala.collection.immutable.Map[String, String],
     isOverwriteExist: Boolean = false,
     var inputSqlString: String = null,
     dataFrame: Option[DataFrame] = None) extends RunnableCommand {
@@ -1033,24 +366,30 @@ case class LoadTable(
 
 
   def run(sqlContext: SQLContext): Seq[Row] = {
+    if (dataFrame.isDefined) {
+      val rdd = dataFrame.get.rdd
+      if (rdd.partitions == null || rdd.partitions.length == 0) {
+        LOGGER.warn("DataLoading finished. No data was loaded.")
+        return Seq.empty
+      }
+    }
 
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
-    val identifier = TableIdentifier(tableName, Option(dbName))
     if (isOverwriteExist) {
-      sys.error("Overwrite is not supported for carbon table with " + dbName + "." + tableName)
+      sys.error(s"Overwrite is not supported for carbon table with $dbName.$tableName")
     }
     if (null == org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
       .getCarbonTable(dbName + "_" + tableName)) {
-      logError("Data loading failed. table not found: " + dbName + "." + tableName)
-      LOGGER.audit("Data loading failed. table not found: " + dbName + "." + tableName)
-      sys.error("Data loading failed. table not found: " + dbName + "." + tableName)
+      logError(s"Data loading failed. table not found: $dbName.$tableName")
+      LOGGER.audit(s"Data loading failed. table not found: $dbName.$tableName")
+      sys.error(s"Data loading failed. table not found: $dbName.$tableName")
     }
 
-    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
-        .lookupRelation1(Option(dbName), tableName)(sqlContext)
-        .asInstanceOf[CarbonRelation]
+    val relation = CarbonEnv.get.carbonMetastore
+      .lookupRelation1(Option(dbName), tableName)(sqlContext)
+      .asInstanceOf[CarbonRelation]
     if (relation == null) {
-        sys.error(s"Table $dbName.$tableName does not exist")
+      sys.error(s"Table $dbName.$tableName does not exist")
     }
     CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
     val carbonLock = CarbonLockFactory
@@ -1061,21 +400,23 @@ case class LoadTable(
     try {
       if (carbonLock.lockWithRetries()) {
         logInfo("Successfully able to get the table metadata file lock")
-      }
-      else {
+      } else {
         sys.error("Table is locked for updation. Please try after some time")
       }
 
-      val factPath = if (dataFrame.isDefined) "" else FileUtils.getPaths(
-        CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser))
+      val factPath = if (dataFrame.isDefined) {
+        ""
+      } else {
+        FileUtils.getPaths(
+          CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser))
+      }
       val carbonLoadModel = new CarbonLoadModel()
       carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
       carbonLoadModel.setDatabaseName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
       carbonLoadModel.setStorePath(relation.tableMeta.storePath)
       if (dimFilesPath.isEmpty) {
         carbonLoadModel.setDimFolderPath(null)
-      }
-      else {
+      } else {
         val x = dimFilesPath.map(f => f.table + ":" + CarbonUtil.checkAndAppendHDFSUrl(f.loadPath))
         carbonLoadModel.setDimFolderPath(x.mkString(","))
       }
@@ -1086,49 +427,57 @@ case class LoadTable(
       val dataLoadSchema = new CarbonDataLoadSchema(table)
       // Need to fill dimension relation
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
-      var storeLocation = ""
-      val configuredStore = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
-      if (null != configuredStore && configuredStore.nonEmpty) {
-        storeLocation = configuredStore(Random.nextInt(configuredStore.length))
-      }
-      if (storeLocation == null) {
-        storeLocation = System.getProperty("java.io.tmpdir")
-      }
 
-      var partitionLocation = relation.tableMeta.storePath + "/partition/" +
+      val partitionLocation = relation.tableMeta.storePath + "/partition/" +
                               relation.tableMeta.carbonTableIdentifier.getDatabaseName + "/" +
                               relation.tableMeta.carbonTableIdentifier.getTableName + "/"
 
-      storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
       val columinar = sqlContext.getConf("carbon.is.columnar.storage", "true").toBoolean
-      val kettleHomePath = CarbonScalaUtil.getKettleHome(sqlContext)
 
-      val delimiter = partionValues.getOrElse("delimiter", ",")
-      val quoteChar = partionValues.getOrElse("quotechar", "\"")
-      val fileHeader = partionValues.getOrElse("fileheader", "")
-      val escapeChar = partionValues.getOrElse("escapechar", "\\")
-      val commentchar = partionValues.getOrElse("commentchar", "#")
-      val columnDict = partionValues.getOrElse("columndict", null)
-      val serializationNullFormat = partionValues.getOrElse("serialization_null_format", "\\N")
-      val badRecordsLoggerEnable = partionValues.getOrElse("bad_records_logger_enable", "false")
-      val badRecordsLoggerRedirect = partionValues.getOrElse("bad_records_action", "force")
-      val allDictionaryPath = partionValues.getOrElse("all_dictionary_path", "")
-      val complex_delimiter_level_1 = partionValues.getOrElse("complex_delimiter_level_1", "\\$")
-      val complex_delimiter_level_2 = partionValues.getOrElse("complex_delimiter_level_2", "\\:")
-      val multiLine = partionValues.getOrElse("multiline", "false").trim.toLowerCase match {
+      // TODO It will be removed after kettle is removed.
+      val useKettle = options.get("useKettle") match {
+        case Some(value) => value.toBoolean
+        case _ =>
+          val useKettleLocal = System.getProperty("use.kettle")
+          if (useKettleLocal == null) {
+            sqlContext.sparkContext.getConf.get("use_kettle_default", "true").toBoolean
+          } else {
+            useKettleLocal.toBoolean
+          }
+      }
+
+      val kettleHomePath = if (useKettle) CarbonScalaUtil.getKettleHome(sqlContext) else ""
+
+      val delimiter = options.getOrElse("delimiter", ",")
+      val quoteChar = options.getOrElse("quotechar", "\"")
+      val fileHeader = options.getOrElse("fileheader", "")
+      val escapeChar = options.getOrElse("escapechar", "\\")
+      val commentchar = options.getOrElse("commentchar", "#")
+      val columnDict = options.getOrElse("columndict", null)
+      val serializationNullFormat = options.getOrElse("serialization_null_format", "\\N")
+      val badRecordsLoggerEnable = options.getOrElse("bad_records_logger_enable", "false")
+      val badRecordsLoggerRedirect = options.getOrElse("bad_records_action", "force")
+      val allDictionaryPath = options.getOrElse("all_dictionary_path", "")
+      val complex_delimiter_level_1 = options.getOrElse("complex_delimiter_level_1", "\\$")
+      val complex_delimiter_level_2 = options.getOrElse("complex_delimiter_level_2", "\\:")
+      val dateFormat = options.getOrElse("dateformat", null)
+      validateDateFormat(dateFormat, table)
+      val multiLine = options.getOrElse("multiline", "false").trim.toLowerCase match {
         case "true" => true
         case "false" => false
         case illegal =>
           val errorMessage = "Illegal syntax found: [" + illegal + "] .The value multiline in " +
-            "load DDL which you set can only be 'true' or 'false', please check your input DDL."
+                             "load DDL which you set can only be 'true' or 'false', please check " +
+                             "your input DDL."
           throw new MalformedCarbonCommandException(errorMessage)
       }
-      val maxColumns = partionValues.getOrElse("maxcolumns", null)
+      val maxColumns = options.getOrElse("maxcolumns", null)
       carbonLoadModel.setMaxColumns(maxColumns)
       carbonLoadModel.setEscapeChar(escapeChar)
       carbonLoadModel.setQuoteChar(quoteChar)
       carbonLoadModel.setCommentChar(commentchar)
+      carbonLoadModel.setDateFormat(dateFormat)
       carbonLoadModel
         .setSerializationNullFormat(
           TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + "," + serializationNullFormat)
@@ -1153,34 +502,33 @@ case class LoadTable(
       // set local dictionary path, and dictionary file extension
       carbonLoadModel.setAllDictPath(allDictionaryPath)
 
-      var partitionStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
+      val partitionStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
       try {
         // First system has to partition the data first and then call the load data
-        if (null == relation.tableMeta.partitioner.partitionColumn ||
-            relation.tableMeta.partitioner.partitionColumn(0).isEmpty) {
-          LOGGER.info("Initiating Direct Load for the Table : (" +
-                      dbName + "." + tableName + ")")
-          carbonLoadModel.setFactFilePath(factPath)
-          carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimiter))
-          carbonLoadModel.setCsvHeader(fileHeader)
-          carbonLoadModel.setColDictFilePath(columnDict)
-          carbonLoadModel.setDirectLoad(true)
-        }
+        LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
+        carbonLoadModel.setFactFilePath(factPath)
+        carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimiter))
+        carbonLoadModel.setCsvHeader(fileHeader)
+        carbonLoadModel.setColDictFilePath(columnDict)
+        carbonLoadModel.setDirectLoad(true)
+        GlobalDictionaryUtil.updateTableMetadataFunc = LoadTable.updateTableMetadata
         GlobalDictionaryUtil
           .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.tableMeta.storePath,
             dataFrame)
-        CarbonDataRDDFactory
-          .loadCarbonData(sqlContext, carbonLoadModel, storeLocation, relation.tableMeta.storePath,
+        CarbonDataRDDFactory.loadCarbonData(sqlContext,
+            carbonLoadModel,
+            relation.tableMeta.storePath,
             kettleHomePath,
-            relation.tableMeta.partitioner, columinar, isAgg = false, partitionStatus, dataFrame)
-      }
-      catch {
+            columinar,
+            partitionStatus,
+            useKettle,
+            dataFrame)
+      } catch {
         case ex: Exception =>
           LOGGER.error(ex)
           LOGGER.audit(s"Dataload failure for $dbName.$tableName. Please check the logs")
           throw ex
-      }
-      finally {
+      } finally {
         // Once the data load is successful delete the unwanted partition files
         try {
           val fileType = FileFactory.getFileType(partitionLocation)
@@ -1193,7 +541,7 @@ case class LoadTable(
           case ex: Exception =>
             LOGGER.error(ex)
             LOGGER.audit(s"Dataload failure for $dbName.$tableName. " +
-              "Problem deleting the partition folder")
+                         "Problem deleting the partition folder")
             throw ex
         }
 
@@ -1217,6 +565,31 @@ case class LoadTable(
     Seq.empty
   }
 
+  private def validateDateFormat(dateFormat: String, table: CarbonTable): Unit = {
+    val dimensions = table.getDimensionByTableName(tableName).asScala
+    if (dateFormat != null) {
+      if (dateFormat.trim == "") {
+        throw new MalformedCarbonCommandException("Error: Option DateFormat is set an empty " +
+                                                  "string.")
+      } else {
+        var dateFormats: Array[String] = dateFormat.split(CarbonCommonConstants.COMMA)
+        for (singleDateFormat <- dateFormats) {
+          val dateFormatSplits: Array[String] = singleDateFormat.split(":", 2)
+          val columnName = dateFormatSplits(0).trim.toLowerCase
+          if (!dimensions.exists(_.getColName.equals(columnName))) {
+            throw new MalformedCarbonCommandException("Error: Wrong Column Name " +
+                                                      dateFormatSplits(0) +
+                                                      " is provided in Option DateFormat.")
+          }
+          if (dateFormatSplits.length < 2 || dateFormatSplits(1).trim.isEmpty) {
+            throw new MalformedCarbonCommandException("Error: Option DateFormat is not provided " +
+                                                      "for " + "Column " + dateFormatSplits(0) +
+                                                      ".")
+          }
+        }
+      }
+    }
+  }
 }
 
 private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: Option[String],
@@ -1230,9 +603,11 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
     val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "")
     val carbonLock = CarbonLockFactory
       .getCarbonLockObj(carbonTableIdentifier, LockUsage.DROP_TABLE_LOCK)
-    val storePath = CarbonEnv.getInstance(sqlContext).carbonCatalog.storePath
+    val storePath = CarbonEnv.get.carbonMetastore.storePath
+    var isLocked = false
     try {
-      if (carbonLock.lockWithRetries()) {
+      isLocked = carbonLock.lockWithRetries()
+      if (isLocked) {
         logInfo("Successfully able to get the lock for drop.")
       }
       else {
@@ -1240,11 +615,10 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
         sys.error("Table is locked for deletion. Please try after some time")
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
-      CarbonEnv.getInstance(sqlContext).carbonCatalog.dropTable(storePath, identifier)(sqlContext)
+      CarbonEnv.get.carbonMetastore.dropTable(storePath, identifier)(sqlContext)
       LOGGER.audit(s"Deleted table [$tableName] under database [$dbName]")
-    }
-    finally {
-      if (carbonLock != null) {
+    } finally {
+      if (carbonLock != null && isLocked) {
         if (carbonLock.unlock()) {
           logInfo("Table MetaData Unlocked Successfully after dropping the table")
           // deleting any remaining files.
@@ -1256,7 +630,7 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
             CarbonUtil.deleteFoldersAndFiles(file.getParentFile)
           }
           // delete bad record log after drop table
-          val badLogPath = CarbonUtil.getBadLogPath(dbName +  File.separator + tableName)
+          val badLogPath = CarbonUtil.getBadLogPath(dbName + File.separator + tableName)
           val badLogFileType = FileFactory.getFileType(badLogPath)
           if (FileFactory.isFileExist(badLogPath, badLogFileType)) {
             val file = FileFactory.getCarbonFile(badLogPath, badLogFileType)
@@ -1283,7 +657,7 @@ private[sql] case class ShowLoads(
     val tableUniqueName = databaseName + "_" + tableName
     // Here using checkSchemasModifiedTimeAndReloadTables in tableExists to reload metadata if
     // schema is changed by other process, so that tableInfoMap woulb be refilled.
-    val tableExists = CarbonEnv.getInstance(sqlContext).carbonCatalog
+    val tableExists = CarbonEnv.get.carbonMetastore
       .tableExists(TableIdentifier(tableName, databaseNameOp))(sqlContext)
     if (!tableExists) {
       sys.error(s"$databaseName.$tableName is not found")
@@ -1293,12 +667,8 @@ private[sql] case class ShowLoads(
     if (carbonTable == null) {
       sys.error(s"$databaseName.$tableName is not found")
     }
-    val path = carbonTable.getMetaDataFilepath()
-
-    val segmentStatusManager = new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
-
-    val loadMetadataDetailsArray = segmentStatusManager.readLoadMetadata(path)
-
+    val path = carbonTable.getMetaDataFilepath
+    val loadMetadataDetailsArray = SegmentStatusManager.readLoadMetadata(path)
     if (loadMetadataDetailsArray.nonEmpty) {
 
       val parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP)
@@ -1316,8 +686,7 @@ private[sql] case class ShowLoads(
         try {
           val lim = Integer.parseInt(limitLoads)
           loadMetadataDetailsSortedArray = loadMetadataDetailsSortedArray.slice(0, lim)
-        }
-        catch {
+        } catch {
           case ex: NumberFormatException => sys.error(s" Entered limit is not a valid Number")
         }
 
@@ -1345,20 +714,20 @@ private[sql] case class DescribeCommandFormatted(
   extends RunnableCommand {
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
-    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
+    val relation = CarbonEnv.get.carbonMetastore
       .lookupRelation1(tblIdentifier)(sqlContext).asInstanceOf[CarbonRelation]
     val mapper = new ObjectMapper()
     val colProps = StringBuilder.newBuilder
     var results: Seq[(String, String, String)] = child.schema.fields.map { field =>
       val comment = if (relation.metaData.dims.contains(field.name)) {
         val dimension = relation.metaData.carbonTable.getDimensionByName(
-            relation.tableMeta.carbonTableIdentifier.getTableName,
-            field.name)
+          relation.tableMeta.carbonTableIdentifier.getTableName,
+          field.name)
         if (null != dimension.getColumnProperties && dimension.getColumnProperties.size() > 0) {
           val colprop = mapper.writeValueAsString(dimension.getColumnProperties)
           colProps.append(field.name).append(".")
-          .append(mapper.writeValueAsString(dimension.getColumnProperties))
-          .append(",")
+            .append(mapper.writeValueAsString(dimension.getColumnProperties))
+            .append(",")
         }
         if (dimension.hasEncoding(Encoding.DICTIONARY) &&
             !dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
@@ -1378,20 +747,21 @@ private[sql] case class DescribeCommandFormatted(
       colProps.toString()
     }
     results ++= Seq(("", "", ""), ("##Detailed Table Information", "", ""))
-    results ++= Seq(("Database Name : ", relation.tableMeta.carbonTableIdentifier
+    results ++= Seq(("Database Name: ", relation.tableMeta.carbonTableIdentifier
       .getDatabaseName, "")
     )
-    results ++= Seq(("Table Name : ", relation.tableMeta.carbonTableIdentifier.getTableName, ""))
-    results ++= Seq(("CARBON Store Path : ", relation.tableMeta.storePath, ""))
+    results ++= Seq(("Table Name: ", relation.tableMeta.carbonTableIdentifier.getTableName, ""))
+    results ++= Seq(("CARBON Store Path: ", relation.tableMeta.storePath, ""))
     val carbonTable = relation.tableMeta.carbonTable
+    results ++= Seq(("Table Block Size : ", carbonTable.getBlockSizeInMB + " MB", ""))
     results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))
     if (colPropStr.length() > 0) {
       results ++= Seq((colPropStr, "", ""))
     } else {
-      results ++= Seq(("NONE", "", ""))
+      results ++= Seq(("ADAPTIVE", "", ""))
     }
     val dimension = carbonTable
-      .getDimensionByTableName(relation.tableMeta.carbonTableIdentifier.getTableName);
+      .getDimensionByTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
     results ++= getColumnGroups(dimension.asScala.toList)
     results.map { case (name, dataType, comment) =>
       Row(f"$name%-36s $dataType%-80s $comment%-72s")
@@ -1400,7 +770,7 @@ private[sql] case class DescribeCommandFormatted(
 
   private def getColumnGroups(dimensions: List[CarbonDimension]): Seq[(String, String, String)] = {
     var results: Seq[(String, String, String)] =
-        Seq(("", "", ""), ("##Column Group Information", "", ""))
+      Seq(("", "", ""), ("##Column Group Information", "", ""))
     val groupedDimensions = dimensions.groupBy(x => x.columnGroupId()).filter {
       case (groupId, _) => groupId != -1
     }.toSeq.sortBy(_._1)
@@ -1409,7 +779,7 @@ private[sql] case class DescribeCommandFormatted(
     })
     var index = 1
     groups.map { x =>
-      results = results:+(s"Column Group $index", x, "")
+      results = results :+ (s"Column Group $index", x, "")
       index = index + 1
     }
     results
@@ -1426,49 +796,43 @@ private[sql] case class DeleteLoadByDate(
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def run(sqlContext: SQLContext): Seq[Row] = {
-
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     LOGGER.audit(s"The delete load by date request has been received for $dbName.$tableName")
     val identifier = TableIdentifier(tableName, Option(dbName))
-    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
+    val relation = CarbonEnv.get.carbonMetastore
       .lookupRelation1(identifier)(sqlContext).asInstanceOf[CarbonRelation]
     var level: String = ""
     val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata
-         .getInstance().getCarbonTable(dbName + '_' + tableName)
+      .getInstance().getCarbonTable(dbName + '_' + tableName)
     if (relation == null) {
       LOGGER.audit(s"The delete load by date is failed. Table $dbName.$tableName does not exist")
       sys.error(s"Table $dbName.$tableName does not exist")
     }
-
     val matches: Seq[AttributeReference] = relation.dimensionsAttr.filter(
       filter => filter.name.equalsIgnoreCase(dateField) &&
                 filter.dataType.isInstanceOf[TimestampType]).toList
-
     if (matches.isEmpty) {
-      LOGGER.audit(
-        "The delete load by date is failed. " +
-        "Table $dbName.$tableName does not contain date field :" + dateField)
-      sys.error(s"Table $dbName.$tableName does not contain date field " + dateField)
-    }
-    else {
+      LOGGER.audit("The delete load by date is failed. " +
+                   s"Table $dbName.$tableName does not contain date field: $dateField")
+      sys.error(s"Table $dbName.$tableName does not contain date field $dateField")
+    } else {
       level = matches.asJava.get(0).name
     }
-
     val actualColName = relation.metaData.carbonTable.getDimensionByName(tableName, level)
       .getColName
-    CarbonDataRDDFactory.deleteLoadByDate(
+    DataManagementFunc.deleteLoadByDate(
       sqlContext,
       new CarbonDataLoadSchema(carbonTable),
       dbName,
       tableName,
-      CarbonEnv.getInstance(sqlContext).carbonCatalog.storePath,
+      CarbonEnv.get.carbonMetastore.storePath,
       level,
       actualColName,
-      dateValue,
-      relation.tableMeta.partitioner)
+      dateValue)
     LOGGER.audit(s"The delete load by date $dateValue is successful for $dbName.$tableName.")
     Seq.empty
   }
+
 }
 
 private[sql] case class CleanFiles(
@@ -1481,7 +845,7 @@ private[sql] case class CleanFiles(
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     LOGGER.audit(s"The clean files request has been received for $dbName.$tableName")
     val identifier = TableIdentifier(tableName, Option(dbName))
-    val relation = CarbonEnv.getInstance(sqlContext).carbonCatalog
+    val relation = CarbonEnv.get.carbonMetastore
       .lookupRelation1(identifier)(sqlContext).
       asInstanceOf[CarbonRelation]
     if (relation == null) {
@@ -1499,14 +863,13 @@ private[sql] case class CleanFiles(
     val dataLoadSchema = new CarbonDataLoadSchema(table)
     carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
     try {
-      CarbonDataRDDFactory.cleanFiles(
+      DataManagementFunc.cleanFiles(
         sqlContext.sparkContext,
         carbonLoadModel,
-        relation.tableMeta.storePath,
-        relation.tableMeta.partitioner)
+        relation.tableMeta.storePath)
       LOGGER.audit(s"Clean files request is successfull for $dbName.$tableName.")
     } catch {
-      case ex : Exception =>
+      case ex: Exception =>
         sys.error(ex.getMessage)
     }
     Seq.empty

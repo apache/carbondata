@@ -38,14 +38,10 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
 
   // return segment details
   def getSegments(databaseName : String, tableName : String, tableId : String): List[String] = {
-    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(new
-        AbsoluteTableIdentifier(
+    val identifier = new AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
-          new CarbonTableIdentifier(databaseName, tableName.toLowerCase , tableId)
-        )
-    )
-    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
-    segments
+          new CarbonTableIdentifier(databaseName, tableName.toLowerCase , tableId))
+    SegmentStatusManager.getSegmentStatus(identifier).getValidSegments.asScala.toList
   }
 
   val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")

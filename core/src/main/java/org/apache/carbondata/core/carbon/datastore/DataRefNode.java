@@ -71,10 +71,15 @@ public interface DataRefNode {
    * Below method will be used to get the dimension chunks
    *
    * @param fileReader   file reader to read the chunks from file
-   * @param blockIndexes indexes of the blocks need to be read
+   * @param blockIndexes range indexes of the blocks need to be read
+   *                     value can be {{0,10},{11,12},{13,13}}
+   *                     here 0 to 10 and 11 to 12 column blocks will be read in one
+   *                     IO operation 13th column block will be read separately
+   *                     This will be helpful to reduce IO by reading bigger chunk of
+   *                     data in On IO
    * @return dimension data chunks
    */
-  DimensionColumnDataChunk[] getDimensionChunks(FileHolder fileReader, int[] blockIndexes);
+  DimensionColumnDataChunk[] getDimensionChunks(FileHolder fileReader, int[][] blockIndexes);
 
   /**
    * Below method will be used to get the dimension chunk
@@ -89,10 +94,15 @@ public interface DataRefNode {
    * Below method will be used to get the measure chunk
    *
    * @param fileReader   file reader to read the chunk from file
-   * @param blockIndexes block indexes to be read from file
+   * @param blockIndexes range indexes of the blocks need to be read
+   *                     value can be {{0,10},{11,12},{13,13}}
+   *                     here 0 to 10 and 11 to 12 column blocks will be read in one
+   *                     IO operation 13th column block will be read separately
+   *                     This will be helpful to reduce IO by reading bigger chunk of
+   *                     data in On IO
    * @return measure column data chunk
    */
-  MeasureColumnDataChunk[] getMeasureChunks(FileHolder fileReader, int[] blockIndexes);
+  MeasureColumnDataChunk[] getMeasureChunks(FileHolder fileReader, int[][] blockIndexes);
 
   /**
    * Below method will be used to read the measure chunk

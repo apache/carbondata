@@ -91,12 +91,19 @@ Following are the options that can be used in load data:
     ```ruby
     OPTIONS('ALL_DICTIONARY_PATH'='/opt/alldictionary/data.dictionary')
     ```
-- **COLUMNDICT:** dictionary file path for single column.
+- **COLUMNDICT:** Dictionary file path for specified column.
 
     ```ruby
     OPTIONS('COLUMNDICT'='column1:dictionaryFilePath1, column2:dictionaryFilePath2')
     ```
     Note: ALL_DICTIONARY_PATH and COLUMNDICT can't be used together.
+- **DATEFORMAT:** Date format for specified column.
+
+    ```ruby
+    OPTIONS('DATEFORMAT'='column1:dateFormat1, column2:dateFormat2')
+    ```
+    Note: Date formats are specified by date pattern strings. The date pattern letters in Carbon are
+    the same as in JAVA [SimpleDateFormat](http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html).
 
 **Example:**
 
@@ -110,7 +117,8 @@ Following are the options that can be used in load data:
                                  'MULTILINE'='true', 'ESCAPECHAR'='\', 
                                  'COMPLEX_DELIMITER_LEVEL_1'='$', 
                                  'COMPLEX_DELIMITER_LEVEL_2'=':',
-                                 'ALL_DICTIONARY_PATH'='/opt/alldictionary/data.dictionary'
+                                 'ALL_DICTIONARY_PATH'='/opt/alldictionary/data.dictionary',
+                                 'DATEFORMAT'='projectjoindate:yyyy-MM-dd'
                                  )
   ```
 

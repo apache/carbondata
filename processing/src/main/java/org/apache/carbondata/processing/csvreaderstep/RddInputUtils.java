@@ -20,19 +20,18 @@
 package org.apache.carbondata.processing.csvreaderstep;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 public class RddInputUtils {
-  private static Map<String, Iterator<String[]>> iteratorMap = new HashMap<String,
-      Iterator<String[]>>();
+  private static Map<String, JavaRddIterator<JavaRddIterator<String[]>>> iteratorMap = new
+      HashMap<String, JavaRddIterator<JavaRddIterator<String[]>>>();
 
-  public static void put(String key, Iterator<String[]> value) {
+  public static void put(String key, JavaRddIterator<JavaRddIterator<String[]>> value) {
     iteratorMap.put(key, value);
   }
 
-  public static Iterator<String[]> getAndRemove(String key) {
-    Iterator<String[]> iter = iteratorMap.get(key);
+  public static JavaRddIterator<JavaRddIterator<String[]>> getAndRemove(String key) {
+    JavaRddIterator<JavaRddIterator<String[]>> iter = iteratorMap.get(key);
     remove(key);
     return iter;
   }

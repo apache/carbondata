@@ -45,6 +45,10 @@ public class CarbonColumn implements Serializable {
   protected int ordinal;
 
   /**
+   * order in which user has created table
+   */
+  protected int schemaOrdinal;
+  /**
    * default value for in case of restructuring will be used when older
    * segment does not have particular column
    */
@@ -55,13 +59,13 @@ public class CarbonColumn implements Serializable {
    */
   protected ColumnIdentifier columnIdentifier;
 
-  public CarbonColumn(ColumnSchema columnSchema, int ordinal) {
+  public CarbonColumn(ColumnSchema columnSchema, int ordinal, int schemaOrdinal) {
     this.columnSchema = columnSchema;
     this.ordinal = ordinal;
+    this.schemaOrdinal = schemaOrdinal;
     this.columnIdentifier =
-        new ColumnIdentifier(getColumnId(), getColumnProperties(), getDataType());
+     new ColumnIdentifier(getColumnId(), getColumnProperties(), getDataType());
   }
-
   /**
    * @return columnar or row based
    */
@@ -151,7 +155,7 @@ public class CarbonColumn implements Serializable {
   /**
    * @return if column use inverted index return true, else false.
    */
-  public Boolean isUseInvertedIndnex() {
+  public Boolean isUseInvertedIndex() {
     return columnSchema.isUseInvertedIndex();
   }
   public ColumnSchema getColumnSchema() {
@@ -170,5 +174,9 @@ public class CarbonColumn implements Serializable {
    */
   public ColumnIdentifier getColumnIdentifier() {
     return this.columnIdentifier;
+  }
+
+  public int getSchemaOrdinal() {
+    return this.schemaOrdinal;
   }
 }
