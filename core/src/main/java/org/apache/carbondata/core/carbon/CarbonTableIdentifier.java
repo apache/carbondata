@@ -43,6 +43,10 @@ public class CarbonTableIdentifier implements Serializable {
   private String tableId;
 
   /**
+   * last time new segment being loaded
+   */
+  private long lastUpdatedTime;
+  /**
    * constructor
    */
   public CarbonTableIdentifier(String databaseName, String tableName, String tableId) {
@@ -70,6 +74,23 @@ public class CarbonTableIdentifier implements Serializable {
    */
   public String getTableId() {
     return tableId;
+  }
+
+
+  /**
+   *
+   * @return lastUpdatedTime
+   */
+  public long getLastUpdatedTime() {
+    return lastUpdatedTime;
+  }
+
+  /**
+   * set lastUpdatedTime
+   * @param lastUpdatedTime
+   */
+  public void setLastUpdatedTime(long lastUpdatedTime) {
+    this.lastUpdatedTime = lastUpdatedTime;
   }
 
   /**
