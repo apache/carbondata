@@ -493,7 +493,11 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       } else if (type[i] == CarbonCommonConstants.SUM_COUNT_VALUE_MEASURE) {
         max[i] = -Double.MAX_VALUE;
       } else if (type[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-        max[i] = new BigDecimal(0.0);
+        //max[i] = new BigDecimal(0.0);
+        Long[] bigdMinVal = new Long[2];
+        bigdMinVal[0] = Long.MIN_VALUE;
+        bigdMinVal[1] = Long.MIN_VALUE;
+        max[i] = bigdMinVal;
       } else {
         max[i] = 0.0;
       }
@@ -506,8 +510,16 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         min[i] = Double.MAX_VALUE;
         uniqueValue[i] = Double.MIN_VALUE;
       } else if (type[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-        min[i] = new BigDecimal(Double.MAX_VALUE);
+        Long[] bigdMaxVal = new Long[2];
+        bigdMaxVal[0] = Long.MAX_VALUE;
+        bigdMaxVal[1] = Long.MAX_VALUE;
+        //min[i] = new BigDecimal(Double.MAX_VALUE);
+        min[i] = bigdMaxVal;
         uniqueValue[i] = new BigDecimal(Double.MIN_VALUE);
+        Long[] bigdUniqueVal = new Long[2];
+        bigdUniqueVal[0] = Long.MIN_VALUE;
+        bigdUniqueVal[1] = Long.MIN_VALUE;
+        uniqueValue[i] = bigdUniqueVal;
       } else {
         min[i] = 0.0;
         uniqueValue[i] = 0.0;
@@ -588,11 +600,23 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             b = (byte[]) row[customMeasureIndex[i]];
           }
         }
+        BigDecimal value = DataTypeUtil.byteToBigDecimal(b);
+        String[] bigdVals = value.toPlainString().split("\\.");
+        long[] bigDvalue = new long[2];
+        if (bigdVals.length == 2) {
+          bigDvalue[0] = Long.parseLong(bigdVals[0]);
+          BigDecimal bd = new BigDecimal(CarbonCommonConstants.POINT+bigdVals[1]);
+          bigDvalue[1] = (long)(bd.doubleValue()*Math.pow(10, value.scale()));
+          //bigDvalue[1] = Long.parseLong(bigdVals[1]);
+        } else {
+          bigDvalue[0] = Long.parseLong(bigdVals[0]);
+        }
         byteBuffer = ByteBuffer.allocate(b.length + CarbonCommonConstants.INT_SIZE_IN_BYTE);
         byteBuffer.putInt(b.length);
         byteBuffer.put(b);
         byteBuffer.flip();
         b = byteBuffer.array();
+        dataHolder[customMeasureIndex[i]].setWritableBigDecimalValueByIndex(count, bigDvalue);
         dataHolder[customMeasureIndex[i]].setWritableByteArrayValueByIndex(count, b);
       }
       calculateMaxMin(max, min, decimal, customMeasureIndex, row);
@@ -1207,8 +1231,28 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             buff = (byte[]) row[count];
           }
           BigDecimal value = DataTypeUtil.byteToBigDecimal(buff);
-          BigDecimal minVal = (BigDecimal) min[count];
-          min[count] = minVal.min(value);
+          decimal[count] = value.scale();
+          String[] bigdVals = value.toPlainString().split("\\.");
+          Long[] maxVal = (Long[])max[count];
+          Long[] minVal = (Long[])min[count];
+          long maxLeftVal = (long)maxVal[0];
+          long maxRightVal = (long)maxVal[1];
+          long minLeftVal = (long) minVal[0];
+          long minRightVal = (long)minVal[1];
+          if (bigdVals.length == 2) {
+            long leftPart = Long.parseLong(bigdVals[0]);
+            BigDecimal bd = new BigDecimal(CarbonCommonConstants.POINT+bigdVals[1]);
+            long rightPart = (long)(bd.doubleValue()*Math.pow(10, value.scale()));
+            //Long.parseLong(bigdVals[1]);
+            maxVal[0] = (maxLeftVal > leftPart ? maxLeftVal : leftPart);
+            maxVal[1] = (maxRightVal > rightPart ? maxRightVal : rightPart);
+            minVal[0] = (minLeftVal < leftPart ? minLeftVal : leftPart);
+            minVal[1] = (minRightVal < rightPart ? minRightVal : rightPart);
+          } else {
+            long leftPart = Long.parseLong(bigdVals[0]);
+            maxVal[0] = (maxLeftVal > leftPart ? maxLeftVal : leftPart);
+            minVal[0] = (minLeftVal < leftPart ? minLeftVal : leftPart);
+          }
         }
       }
     }
@@ -1226,8 +1270,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       if (type[i] == CarbonCommonConstants.BIG_INT_MEASURE) {
         uniqueValue[i] = (long) minValue[i] - 1;
       } else if (type[i] == CarbonCommonConstants.BIG_DECIMAL_MEASURE) {
-        BigDecimal val = (BigDecimal) minValue[i];
-        uniqueValue[i] = (val.subtract(new BigDecimal(1.0)));
+        Long[] bigdMinVal = (Long[])minValue[i];
+        Long[] bigdUniqVal = (Long[])uniqueValue[i];
+        bigdUniqVal[0] = bigdMinVal[0] -1;
+        bigdUniqVal[1] = bigdMinVal[1] -1;
       } else {
         uniqueValue[i] = (double) minValue[i] - 1;
       }
@@ -1372,6 +1418,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     for (int i = 0; i < customMeasureIndex.length; i++) {
       dataHolder[customMeasureIndex[i]] = new CarbonWriteDataHolder();
       dataHolder[customMeasureIndex[i]].initialiseByteArrayValues(size);
+      dataHolder[customMeasureIndex[i]].initialiseBigDecimalValues(size);
     }
     return dataHolder;
   }
