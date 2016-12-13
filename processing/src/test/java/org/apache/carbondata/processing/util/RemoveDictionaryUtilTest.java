@@ -161,7 +161,7 @@ public class RemoveDictionaryUtilTest {
     byte[] expectedArray = new byte[] { 0, 12, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     Object[] row = new Object[] { byteArray, expectedArray };
     byte[] actualArray = RemoveDictionaryUtil.getByteArrayForNoDictionaryCols(row);
-    assertThat(actualArray, is(equalTo(byteArray)));
+    assertThat(actualArray, is(equalTo(expectedArray)));
 
   }
 
