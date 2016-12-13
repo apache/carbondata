@@ -64,7 +64,9 @@ public class NonDictionaryFieldConverterImplTest {
     nonDictionaryFieldConverterImpl =
         new NonDictionaryFieldConverterImpl(dataField, "nullFormat", 1);
     nonDictionaryFieldConverterImpl.convert(carbonRow, badRecordLogHolder);
-    assertThat(carbonRow.getData(), is(data));
+    Object[] actualValue = carbonRow.getData();
+    Object[] expectedValue = data;
+    assertThat(actualValue, is(expectedValue));
   }
 
   @Test public void testConvertWithDimensionNotNull() {
@@ -78,7 +80,9 @@ public class NonDictionaryFieldConverterImplTest {
     nonDictionaryFieldConverterImpl =
         new NonDictionaryFieldConverterImpl(dataField, "nullFormat", 1);
     nonDictionaryFieldConverterImpl.convert(carbonRow, badRecordLogHolder);
-    assertThat(carbonRow.getData(), is(data));
+    Object[] actualValue = carbonRow.getData();
+    Object[] expectedValue = data;
+    assertThat(actualValue, is(expectedValue));
   }
 
 }

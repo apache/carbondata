@@ -54,7 +54,9 @@ public class ComplexFieldConverterImplTest {
     columnSchema.setColumnName("IMEI");
     Object[] expected = { "test", "test1" };
     complexFieldConverter.convert(carbonRow, badRecordLogHolder);
-    assertThat(carbonRow.getData(), is(data));
+    Object[] actualValue = carbonRow.getData();
+    Object[] expectedValue = data;
+    assertThat(actualValue, is(expectedValue));
   }
 
   @Test(expected = Exception.class) public void testConvertForException() {
@@ -67,7 +69,8 @@ public class ComplexFieldConverterImplTest {
     Object[] data = { "test", "test1" };
     CarbonRow carbonRow = new CarbonRow(data);
     complexFieldConverter.convert(carbonRow, badRecordLogHolder);
-    assertThat(carbonRow.getData(), is(data));
-
+    Object[] actualValue = carbonRow.getData();
+    Object[] expectedValue = data;
+    assertThat(actualValue, is(expectedValue));
   }
 }

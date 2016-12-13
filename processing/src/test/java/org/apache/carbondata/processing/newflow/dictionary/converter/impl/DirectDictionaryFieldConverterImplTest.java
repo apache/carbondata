@@ -76,8 +76,9 @@ public class DirectDictionaryFieldConverterImplTest {
     directDictionaryFieldConverter =
         new DirectDictionaryFieldConverterImpl(dataField, "nullFormat", 1);
     directDictionaryFieldConverter.convert(carbonRow, badRecordLogHolder);
-    assertThat(carbonRow.getData(), is(data));
-
+    Object[] actualValue = carbonRow.getData();
+    Object[] expectedValue = data;
+    assertThat(actualValue, is(expectedValue));
   }
 
   @Test public void testConvertWithValueNotEqualToNull() {
@@ -103,8 +104,9 @@ public class DirectDictionaryFieldConverterImplTest {
     directDictionaryFieldConverter =
         new DirectDictionaryFieldConverterImpl(dataField, "nullFormat", 1);
     directDictionaryFieldConverter.convert(carbonRow, badRecordLogHolder);
-    assertThat(carbonRow.getData(), is(data));
-
+    Object[] actualValue = carbonRow.getData();
+    Object[] expectedValue = data;
+    assertThat(actualValue, is(expectedValue));
   }
 
   @Test public void testConvertWithValueNotEqualToNullAndValueNotEqualToNullFormat() {
@@ -137,7 +139,9 @@ public class DirectDictionaryFieldConverterImplTest {
     directDictionaryFieldConverter =
         new DirectDictionaryFieldConverterImpl(dataField, "nullFormat", 1);
     directDictionaryFieldConverter.convert(carbonRow, badRecordLogHolder);
-    assertThat(carbonRow.getData(), is(data));
+    Object[] actualValue = carbonRow.getData();
+    Object[] expectedValue = data;
+    assertThat(actualValue, is(expectedValue));
   }
 
 }

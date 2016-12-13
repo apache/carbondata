@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.carbondata.processing.newflow.dictionary.converter.impl;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
@@ -35,8 +36,8 @@ import mockit.MockUp;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static junit.framework.TestCase.assertNotNull;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 
 public class RowConverterImplTest {
@@ -57,6 +58,7 @@ public class RowConverterImplTest {
     carbonDataLoadConfiguration = new CarbonDataLoadConfiguration();
     carbonDataLoadConfiguration.setHeader(new String[] { "test" });
     badRecordsLogger = new BadRecordsLogger("key", "fileName", "storePath", true, true, true);
+    rowConverterImpl = new RowConverterImpl(fields, carbonDataLoadConfiguration, badRecordsLogger);
 
   }
 
@@ -96,15 +98,16 @@ public class RowConverterImplTest {
     int ordinal = 1;
     carbonColumn = new CarbonMeasure(columnSchema, ordinal, 1);
     carbonDataLoadConfiguration = new CarbonDataLoadConfiguration();
-    rowConverterImpl = new RowConverterImpl(fields, carbonDataLoadConfiguration, badRecordsLogger);
     carbonDataLoadConfiguration.setDataLoadProperty("SERIALIZATION_NULL_FORMAT", 1);
     rowConverterImpl.initialize();
     rowConverterImpl.convert(carbonRow);
-    assertThat(carbonRow.getData(), is(data));
-
+    Object[] actualValue = carbonRow.getData();
+    Object[] expectedValue = data;
+    assertThat(actualValue, is(expectedValue));
   }
 
   @Test public void testCreateCopyForNewThread() {
     assertNotNull(rowConverterImpl.createCopyForNewThread());
   }
 }
+

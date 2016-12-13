@@ -89,13 +89,20 @@ public class DictionaryFieldConverterImplTest {
 
       }
     };
+
+    new MockUp<CarbonRow>() {
+      @Mock public void update(Object value, int ordinal) throws DictionaryGenerationException {
+      }
+    };
+
     Object[] data = { "test", "test1" };
     CarbonRow carbonRow = new CarbonRow(data);
     dictionaryFieldConverter =
         new DictionaryFieldConverterImpl(dataField, cache, carbonTableIdentifier, "nullFormat", 1);
     dictionaryFieldConverter.convert(carbonRow, badRecordLogHolder);
-    assertThat(carbonRow.getData(), is(data));
-
+    Object[] actualValue = carbonRow.getData();
+    Object[] expectedValue = data;
+    assertThat(actualValue, is(expectedValue));
   }
 
   @Test(expected = Exception.class) public void testConvertWithException() {
@@ -129,7 +136,8 @@ public class DictionaryFieldConverterImplTest {
     dictionaryFieldConverter =
         new DictionaryFieldConverterImpl(dataField, cache, carbonTableIdentifier, "nullFormat", 1);
     dictionaryFieldConverter.convert(carbonRow, badRecordLogHolder);
-    assertThat(carbonRow.getData(), is(data));
-
+    Object[] actualValue = carbonRow.getData();
+    Object[] expectedValue = data;
+    assertThat(actualValue, is(expectedValue));
   }
 }

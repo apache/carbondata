@@ -67,8 +67,9 @@ public class MeasureFieldConverterImplTest {
     };
     measureFieldConverterImpl = new MeasureFieldConverterImpl(dataField, "nullFormat", 1);
     measureFieldConverterImpl.convert(carbonRow, badRecordLogHolder);
-    assertThat(carbonRow.getData(), is(data));
-
+    Object[] actualValue = carbonRow.getData();
+    Object[] expectedValue = data;
+    assertThat(actualValue, is(expectedValue));
   }
 
   @Test public void testConvertWithValueEqualToNUllFormat() {
@@ -86,8 +87,9 @@ public class MeasureFieldConverterImplTest {
     };
     measureFieldConverterImpl = new MeasureFieldConverterImpl(dataField, "nullFormat", 1);
     measureFieldConverterImpl.convert(carbonRow, badRecordLogHolder);
-    assertThat(carbonRow.getData(), is(data));
-
+    Object[] actualValue = carbonRow.getData();
+    Object[] expectedValue = data;
+    assertThat(actualValue, is(expectedValue));
   }
 
   @Test public void testConvertWithValueNotEqualToNUllFormat() {
@@ -105,8 +107,9 @@ public class MeasureFieldConverterImplTest {
     };
     measureFieldConverterImpl = new MeasureFieldConverterImpl(dataField, "nullFormat", 1);
     measureFieldConverterImpl.convert(carbonRow, badRecordLogHolder);
-    assertThat(carbonRow.getData(), is(data));
-
+    Object[] actualValue = carbonRow.getData();
+    Object[] expectedValue = data;
+    assertThat(actualValue, is(expectedValue));
   }
 
   @Test public void testConvertWithException() {
@@ -124,7 +127,8 @@ public class MeasureFieldConverterImplTest {
     };
     measureFieldConverterImpl = new MeasureFieldConverterImpl(dataField, "nullFormat", 1);
     measureFieldConverterImpl.convert(carbonRow, badRecordLogHolder);
-    assertThat(carbonRow.getData(), is(data));
-
+    Object[] actualValue = carbonRow.getData();
+    Object[] expectedValue = data;
+    assertThat(actualValue, is(expectedValue));
   }
 }
