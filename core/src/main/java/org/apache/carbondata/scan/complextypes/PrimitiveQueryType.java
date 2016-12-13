@@ -33,11 +33,7 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.scan.filter.GenericQueryType;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 
-import org.apache.spark.sql.types.*;
-
 public class PrimitiveQueryType extends ComplexQueryType implements GenericQueryType {
-
-  private int index;
 
   private String name;
   private String parentname;
@@ -90,12 +86,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
 
   }
 
-  @Override public int getSurrogateIndex() {
-    return index;
-  }
-
   @Override public void setSurrogateIndex(int surrIndex) {
-    index = surrIndex;
   }
 
   @Override public int getBlockIndex() {
@@ -125,30 +116,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
 
   @Override public void parseAndGetResultBytes(ByteBuffer complexData, DataOutputStream dataOutput)
       throws IOException {
-  }
-
-  @Override public DataType getSchemaType() {
-    switch (dataType) {
-      case INT:
-        return IntegerType$.MODULE$;
-      case DOUBLE:
-        return DoubleType$.MODULE$;
-      case LONG:
-        return LongType$.MODULE$;
-      case BOOLEAN:
-        return BooleanType$.MODULE$;
-      case TIMESTAMP:
-        return TimestampType$.MODULE$;
-      default:
-        return IntegerType$.MODULE$;
-    }
-  }
-
-  @Override public int getKeyOrdinalForQuery() {
-    return 0;
-  }
-
-  @Override public void setKeyOrdinalForQuery(int keyOrdinalForQuery) {
   }
 
   @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder) {

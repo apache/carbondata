@@ -28,13 +28,9 @@ import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChun
 import org.apache.carbondata.scan.filter.GenericQueryType;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 
-import org.apache.spark.sql.catalyst.util.*;
-import org.apache.spark.sql.types.*;
-
 public class ArrayQueryType extends ComplexQueryType implements GenericQueryType {
 
   private GenericQueryType children;
-  private int keyOrdinalForQuery;
 
   public ArrayQueryType(String name, String parentname, int blockIndex) {
     super(name, parentname, blockIndex);
@@ -93,10 +89,6 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     }
   }
 
-  @Override public int getSurrogateIndex() {
-    return 0;
-  }
-
   @Override public void setSurrogateIndex(int surrIndex) {
 
   }
@@ -126,18 +118,6 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     children.setKeySize(keyBlockSize);
   }
 
-  @Override public DataType getSchemaType() {
-    return new ArrayType(null, true);
-  }
-
-  @Override public int getKeyOrdinalForQuery() {
-    return keyOrdinalForQuery;
-  }
-
-  @Override public void setKeyOrdinalForQuery(int keyOrdinalForQuery) {
-    this.keyOrdinalForQuery = keyOrdinalForQuery;
-  }
-
   @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder) {
     readBlockDataChunk(blockChunkHolder);
     children.fillRequiredBlockData(blockChunkHolder);
@@ -152,7 +132,7 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
     for (int i = 0; i < dataLength; i++) {
       data[i] = children.getDataBasedOnDataTypeFromSurrogates(surrogateData);
     }
-    return new GenericArrayData(data);
+    return data;
   }
 
 }

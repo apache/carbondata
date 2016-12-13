@@ -105,10 +105,9 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
         case LONG:
           return dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
         case DECIMAL:
-          return  org.apache.spark.sql.types.Decimal.apply(
-                  dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index));
+          return dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
         default:
-          return  dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
+          return dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
       }
     }
     return null;

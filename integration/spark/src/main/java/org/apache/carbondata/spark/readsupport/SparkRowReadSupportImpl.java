@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.spark.readsupport;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
@@ -28,7 +29,10 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.hadoop.readsupport.impl.AbstractDictionaryDecodedReadSupport;
 
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;
+import org.apache.spark.sql.types.Decimal;
+import org.apache.spark.sql.types.GenericArrayData;
 import org.apache.spark.unsafe.types.UTF8String;
 
 public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSupport<Row> {
@@ -57,12 +61,17 @@ public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSuppor
             break;
           default:
         }
-      }
-      else if (carbonColumns[i].hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+      } else if (carbonColumns[i].hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         //convert the long to timestamp in case of direct dictionary column
         if (DataType.TIMESTAMP == carbonColumns[i].getDataType()) {
           data[i] = new Timestamp((long) data[i] / 1000);
         }
+      } else if (carbonColumns[i].getDataType().equals(DataType.DECIMAL)) {
+        data[i] = Decimal.apply((BigDecimal) data[i]);
+      } else if (carbonColumns[i].getDataType().equals(DataType.ARRAY)) {
+        data[i] = new GenericArrayData((Object[]) data[i]);
+      } else if (carbonColumns[i].getDataType().equals(DataType.STRUCT)) {
+        data[i] = new GenericInternalRow((Object[]) data[i]);
       }
     }
     return new GenericRow(data);

@@ -18,15 +18,25 @@
  */
 package org.apache.carbondata.hadoop.readsupport.impl;
 
+import java.math.BigDecimal;
+
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
+import org.apache.spark.sql.types.Decimal;
+import org.apache.spark.sql.types.GenericArrayData;
+
 public class RawDataReadSupport implements CarbonReadSupport<Object[]> {
+
+  private CarbonColumn[] carbonColumns;
 
   @Override
   public void initialize(CarbonColumn[] carbonColumns,
       AbsoluteTableIdentifier absoluteTableIdentifier) {
+    this.carbonColumns = carbonColumns;
   }
 
   /**
@@ -37,6 +47,18 @@ public class RawDataReadSupport implements CarbonReadSupport<Object[]> {
    */
   @Override
   public Object[] readRow(Object[] data) {
+    for (int i = 0; i < carbonColumns.length; i++) {
+      if (data[i] == null) {
+        continue;
+      }
+      if (carbonColumns[i].getDataType().equals(DataType.DECIMAL)) {
+        data[i] = Decimal.apply((BigDecimal) data[i]);
+      } else if (carbonColumns[i].getDataType().equals(DataType.ARRAY)) {
+        data[i] = new GenericArrayData((Object[]) data[i]);
+      } else if (carbonColumns[i].getDataType().equals(DataType.STRUCT)) {
+        data[i] = new GenericInternalRow((Object[]) data[i]);
+      }
+    }
     return data;
   }
 

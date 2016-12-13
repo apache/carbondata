@@ -33,8 +33,6 @@ import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.scan.filter.GenericQueryType;
 import org.apache.carbondata.scan.model.QueryDimension;
 
-import org.apache.oro.text.regex.MalformedPatternException;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

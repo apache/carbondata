@@ -34,7 +34,6 @@ import org.apache.carbondata.scan.filter.intf.RowImpl;
 
 import mockit.Mock;
 import mockit.MockUp;
-import org.apache.spark.sql.types.Decimal;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
@@ -299,7 +298,7 @@ public class EqualToExpressionUnitTest {
     right.setColIndex(0);
     equalToExpression = new EqualToExpression(right, right);
     RowImpl value = new RowImpl();
-    Decimal[] row = new Decimal[] { Decimal.apply(12345.0) };
+    BigDecimal[] row = new BigDecimal[] { new BigDecimal(12345.0) };
     Object objectRow[] = { row };
     value.setValues(objectRow);
 

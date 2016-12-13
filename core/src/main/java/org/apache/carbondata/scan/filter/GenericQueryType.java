@@ -27,8 +27,6 @@ import java.util.List;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 
-import org.apache.spark.sql.types.DataType;
-
 public interface GenericQueryType {
 
   String getName();
@@ -47,22 +45,14 @@ public interface GenericQueryType {
 
   void getAllPrimitiveChildren(List<GenericQueryType> primitiveChild);
 
-  int getSurrogateIndex();
-
   void setSurrogateIndex(int surrIndex);
 
   int getColsCount();
 
   void setKeySize(int[] keyBlockSize);
 
-  int getKeyOrdinalForQuery();
-
-  void setKeyOrdinalForQuery(int keyOrdinalForQuery);
-
   void parseBlocksAndReturnComplexColumnByteArray(DimensionColumnDataChunk[] dimensionDataChunks,
       int rowNumber, DataOutputStream dataOutputStream) throws IOException;
-
-  DataType getSchemaType();
 
   void parseAndGetResultBytes(ByteBuffer complexData, DataOutputStream dataOutput)
       throws IOException;

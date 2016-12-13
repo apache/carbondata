@@ -29,19 +29,12 @@ import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChun
 import org.apache.carbondata.scan.filter.GenericQueryType;
 import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 
-import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.Metadata;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
-
 public class StructQueryType extends ComplexQueryType implements GenericQueryType {
 
   private List<GenericQueryType> children = new ArrayList<GenericQueryType>();
   private String name;
   private String parentname;
   private int blockIndex;
-  private int keyOrdinalForQuery;
 
   public StructQueryType(String name, String parentname, int blockIndex) {
     super(name, parentname, blockIndex);
@@ -87,10 +80,6 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
         child.getAllPrimitiveChildren(primitiveChild);
       }
     }
-  }
-
-  @Override public int getSurrogateIndex() {
-    return 0;
   }
 
   @Override public void setSurrogateIndex(int surrIndex) {
@@ -147,23 +136,6 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     }
   }
 
-  @Override public DataType getSchemaType() {
-    StructField[] fields = new StructField[children.size()];
-    for (int i = 0; i < children.size(); i++) {
-      fields[i] = new StructField(children.get(i).getName(), null, true,
-          Metadata.empty());
-    }
-    return new StructType(fields);
-  }
-
-  @Override public int getKeyOrdinalForQuery() {
-    return keyOrdinalForQuery;
-  }
-
-  @Override public void setKeyOrdinalForQuery(int keyOrdinalForQuery) {
-    this.keyOrdinalForQuery = keyOrdinalForQuery;
-  }
-
   @Override public void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder) {
     readBlockDataChunk(blockChunkHolder);
 
@@ -178,7 +150,6 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
     for (int i = 0; i < childLength; i++) {
       fields[i] =  children.get(i).getDataBasedOnDataTypeFromSurrogates(surrogateData);
     }
-
-    return new GenericInternalRow(fields);
+    return fields;
   }
 }

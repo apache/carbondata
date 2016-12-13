@@ -34,7 +34,6 @@ import org.apache.carbondata.scan.filter.intf.RowImpl;
 
 import mockit.Mock;
 import mockit.MockUp;
-import org.apache.spark.sql.types.Decimal;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
@@ -268,8 +267,8 @@ public class NotEqualsExpressionUnitTest {
     left.setColIndex(0);
     notEqualsExpression = new NotEqualsExpression(left, right);
     RowImpl value = new RowImpl();
-    Decimal[] row = new Decimal[] { Decimal.apply(12345.0) };
-    Decimal[] row1 = new Decimal[] { Decimal.apply(1235445.0) };
+    BigDecimal[] row = new BigDecimal[] { new BigDecimal(12345.0) };
+    BigDecimal[] row1 = new BigDecimal[] { new BigDecimal(1235445.0) };
     Object objectRow[] = { row, row1 };
     value.setValues(objectRow);
 

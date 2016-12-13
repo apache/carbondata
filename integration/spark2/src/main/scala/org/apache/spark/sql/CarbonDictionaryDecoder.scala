@@ -33,7 +33,7 @@ import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, ColumnIdentif
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
-import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.spark.util.DataTypeUtil
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
 /**

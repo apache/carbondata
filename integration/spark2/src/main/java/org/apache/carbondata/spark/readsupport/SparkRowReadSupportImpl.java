@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.spark.readsupport;
 
+import java.math.BigDecimal;
 import java.sql.Timestamp;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
@@ -27,7 +28,10 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColu
 import org.apache.carbondata.hadoop.readsupport.impl.AbstractDictionaryDecodedReadSupport;
 
 import org.apache.spark.sql.Row;
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;
+import org.apache.spark.sql.catalyst.util.GenericArrayData;
+import org.apache.spark.sql.types.Decimal;
 
 public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSupport<Row> {
 
@@ -50,6 +54,12 @@ public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSuppor
         } else if(dataTypes[i].equals(DataType.SHORT)) {
           data[i] = ((Long)(data[i])).shortValue();
         }
+      } else if (carbonColumns[i].getDataType().equals(DataType.DECIMAL)) {
+        data[i] = Decimal.apply((BigDecimal) data[i]);
+      } else if (carbonColumns[i].getDataType().equals(DataType.ARRAY)) {
+        data[i] = new GenericArrayData(data[i]);
+      } else if (carbonColumns[i].getDataType().equals(DataType.STRUCT)) {
+        data[i] = new GenericInternalRow((Object[]) data[i]);
       }
     }
     return new GenericRow(data);

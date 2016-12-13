@@ -18,6 +18,14 @@
  */
 package org.apache.carbondata.hadoop.readsupport.impl;
 
+import java.math.BigDecimal;
+
+import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
+import org.apache.spark.sql.types.Decimal;
+import org.apache.spark.sql.types.GenericArrayData;
+
 /**
  * It decodes the dictionary values to actual values.
  */
@@ -29,6 +37,12 @@ public class DictionaryDecodedReadSupportImpl
     for (int i = 0; i < dictionaries.length; i++) {
       if (dictionaries[i] != null) {
         data[i] = dictionaries[i].getDictionaryValueForKey((int) data[i]);
+      }  else if (carbonColumns[i].getDataType().equals(DataType.DECIMAL)) {
+        data[i] = Decimal.apply((BigDecimal) data[i]);
+      } else if (carbonColumns[i].getDataType().equals(DataType.ARRAY)) {
+        data[i] = new GenericArrayData((Object[]) data[i]);
+      } else if (carbonColumns[i].getDataType().equals(DataType.STRUCT)) {
+        data[i] = new GenericInternalRow((Object[]) data[i]);
       }
     }
     return data;
