@@ -19,6 +19,8 @@
 
 package org.apache.carbondata.processing.newflow.dictionary.converter.impl;
 
+import java.io.File;
+
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
@@ -33,6 +35,7 @@ import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecor
 
 import mockit.Mock;
 import mockit.MockUp;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -47,8 +50,10 @@ public class RowConverterImplTest {
   private static CarbonDataLoadConfiguration carbonDataLoadConfiguration;
   private static BadRecordsLogger badRecordsLogger;
   private static CarbonColumn carbonColumn;
-
+  private static File file;
+  private static String path;
   @BeforeClass public static void setUp() {
+
     columnSchema = new ColumnSchema();
     columnSchema.setColumnName("IMEI");
     int ordinal = 1;
@@ -62,7 +67,11 @@ public class RowConverterImplTest {
 
   }
 
-  @Test public void testConvert() {
+  @Test public void testConvert() { file = new File("./target/test.txt");
+    String dirPath = file.getAbsoluteFile().getParentFile().getAbsolutePath();
+    String regex_path = dirPath.replace("./","");
+    String add_in_regex = "/store/";
+    path = regex_path + add_in_regex;
     new MockUp<CarbonMeasure>() {
       @Mock public int hashCode() {
         return 1;
@@ -83,11 +92,17 @@ public class RowConverterImplTest {
     CarbonTableIdentifier carbonTableIdentifier =
         new CarbonTableIdentifier("databaseName", "tableName", "tableId");
     final AbsoluteTableIdentifier absoluteTableIdentifier =
-        new AbsoluteTableIdentifier("storePath", carbonTableIdentifier);
+        new AbsoluteTableIdentifier(path, carbonTableIdentifier);
 
     new MockUp<CarbonDataLoadConfiguration>() {
       @Mock public AbsoluteTableIdentifier getTableIdentifier() {
         return absoluteTableIdentifier;
+      }
+    };
+
+    new MockUp<CarbonDataLoadConfiguration>() {
+      @Mock public Object getDataLoadProperty(String key) {
+        return "nullFormat";
       }
     };
 
@@ -98,7 +113,6 @@ public class RowConverterImplTest {
     int ordinal = 1;
     carbonColumn = new CarbonMeasure(columnSchema, ordinal, 1);
     carbonDataLoadConfiguration = new CarbonDataLoadConfiguration();
-    carbonDataLoadConfiguration.setDataLoadProperty("SERIALIZATION_NULL_FORMAT", 1);
     rowConverterImpl.initialize();
     rowConverterImpl.convert(carbonRow);
     Object[] actualValue = carbonRow.getData();
@@ -108,6 +122,10 @@ public class RowConverterImplTest {
 
   @Test public void testCreateCopyForNewThread() {
     assertNotNull(rowConverterImpl.createCopyForNewThread());
+  }
+
+  @AfterClass public static void tearDown() {
+    file = null;
   }
 }
 
