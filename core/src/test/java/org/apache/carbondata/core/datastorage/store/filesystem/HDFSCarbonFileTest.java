@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.carbon.datastorage.filesystem;
+package org.apache.carbondata.core.datastorage.store.filesystem;
 
 import mockit.Mock;
 import mockit.MockUp;
