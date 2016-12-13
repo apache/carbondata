@@ -40,7 +40,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static sun.security.krb5.internal.ktab.KeyTabConstants.keySize;
 
 public class PrimitiveQueryTypeTest {
   private static PrimitiveQueryType primitiveQueryType, primitiveQueryTypeForInt,
@@ -137,7 +136,7 @@ public class PrimitiveQueryTypeTest {
   }
 
   public Object getDataBasedOnDataTypeFromSurrogates(ByteBuffer surrogateData) {
-
+    int keySize = 2;
     byte[] data = new byte[keySize];
     surrogateData.get(data);
     Bits bit = new Bits(new int[] { keySize * 8 });
