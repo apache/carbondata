@@ -358,7 +358,6 @@ public class IncludeColGroupFilterExecuterImplTest {
     measureMeta1.setMaxValue(10l);
     measureMeta1.setMinValue(1l);
     measureMeta1.setUniqueValue(0l);
-    measureMeta1.setDecimal(1);
     measureMeta1.setDataTypeSelected((byte) 0);
     measureMeta1.setType('l');
     measureDataChunk1.setValueEncoderMeta(Arrays.asList(measureMeta1));
@@ -370,7 +369,6 @@ public class IncludeColGroupFilterExecuterImplTest {
     measureMeta2.setMaxValue(15009l);
     measureMeta2.setMinValue(15000l);
     measureMeta2.setUniqueValue(14999l);
-    measureMeta2.setDecimal(1);
     measureMeta2.setDataTypeSelected((byte) 0);
     measureMeta2.setType('l');
     measureDataChunk2.setValueEncoderMeta(Arrays.asList(measureMeta2));
