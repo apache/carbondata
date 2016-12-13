@@ -79,6 +79,7 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TIOStreamTransport;
 import org.pentaho.di.core.exception.KettleException;
+import scala.StringContext;
 
 public final class CarbonUtil {
 
@@ -599,22 +600,7 @@ public final class CarbonUtil {
    * @return
    */
   public static String unescapeChar(String parseStr) {
-    switch (parseStr) {
-      case "\\001":
-        return "\001";
-      case "\\t":
-        return "\t";
-      case "\\r":
-        return "\r";
-      case "\\b":
-        return "\b";
-      case "\\f":
-        return "\f";
-      case "\\n":
-        return "\n";
-      default:
-        return parseStr;
-    }
+    return StringContext.treatEscapes(parseStr);
   }
 
   /**
