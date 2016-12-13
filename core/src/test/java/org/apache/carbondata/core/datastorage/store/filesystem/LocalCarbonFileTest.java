@@ -19,20 +19,22 @@
 
 package org.apache.carbondata.core.datastorage.store.filesystem;
 
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.channels.ReadableByteChannel;
+import java.util.Objects;
+
+import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
+
 import mockit.Mock;
 import mockit.MockUp;
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
-import org.apache.carbondata.core.datastorage.store.filesystem.LocalCarbonFile;
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import sun.nio.ch.FileChannelImpl;
-
-import java.io.*;
-import java.nio.channels.ReadableByteChannel;
-import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
