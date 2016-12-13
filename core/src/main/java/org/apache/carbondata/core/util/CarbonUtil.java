@@ -42,8 +42,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
-import scala.StringContext;
-
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
@@ -601,7 +599,7 @@ public final class CarbonUtil {
    * @return
    */
   public static String unescapeChar(String parseStr) {
-    return StringContext.treatEscapes(parseStr);
+    return scala.StringContext.treatEscapes(parseStr);
   }
 
   /**
