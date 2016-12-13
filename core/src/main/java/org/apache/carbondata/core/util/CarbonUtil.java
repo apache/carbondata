@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import scala.StringContext;
+
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
@@ -79,7 +81,6 @@ import org.apache.thrift.protocol.TCompactProtocol;
 import org.apache.thrift.protocol.TProtocol;
 import org.apache.thrift.transport.TIOStreamTransport;
 import org.pentaho.di.core.exception.KettleException;
-import scala.StringContext;
 
 public final class CarbonUtil {
 
