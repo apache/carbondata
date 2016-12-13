@@ -20,6 +20,7 @@ package org.apache.carbondata.core.memory;
 import javax.annotation.Nullable;
 
 /**
+ * Code ported from Apache Spark {org.apache.spark.unsafe.memory} package
  * A memory location. Tracked either by a memory address (with off-heap allocation),
  * or by an offset from a JVM object (in-heap allocation).
  */

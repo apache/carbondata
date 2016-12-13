@@ -17,7 +17,9 @@
 
 package org.apache.carbondata.core.memory;
 
-
+/**
+ * Code ported from Apache Spark {org.apache.spark.unsafe.memory} package
+ */
 public interface MemoryAllocator {
 
   /**

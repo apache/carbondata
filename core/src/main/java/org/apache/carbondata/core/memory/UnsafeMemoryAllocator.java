@@ -20,6 +20,7 @@ package org.apache.carbondata.core.memory;
 import org.apache.carbondata.core.unsafe.CarbonUnsafe;
 
 /**
+ * Code ported from Apache Spark {org.apache.spark.unsafe.memory} package
  * A simple {@link MemoryAllocator} that uses {@code Unsafe} to allocate off-heap memory.
  */
 public class UnsafeMemoryAllocator implements MemoryAllocator {

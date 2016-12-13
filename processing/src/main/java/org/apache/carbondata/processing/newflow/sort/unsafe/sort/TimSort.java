@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-//CHECKSTYLE.OFF
 package org.apache.carbondata.processing.newflow.sort.unsafe.sort;
 
 import java.util.Comparator;
@@ -24,7 +23,8 @@ import java.util.Comparator;
 import org.apache.spark.util.collection.SortDataFormat;
 
 /**
- * A port of the Android TimSort class, which utilizes a "stable, adaptive, iterative mergesort."
+ * A port of the Apache Spark's TimSort and they originally ported from Android TimSort class,
+ * which utilizes a "stable, adaptive, iterative mergesort."
  * See the method comment on sort() for more details.
  *
  * This has been kept in Java with the original style in order to match very closely with the
@@ -941,4 +941,3 @@ public class TimSort<K, Buffer> {
     }
   }
 }
-//CHECKSTYLE.ON
