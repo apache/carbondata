@@ -47,6 +47,8 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
@@ -349,7 +351,7 @@ public final class CarbonUtil {
 
   public static String getBadLogPath(String storeLocation) {
     String badLogStoreLocation =
-            CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
     badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
 
     return badLogStoreLocation;
@@ -419,27 +421,21 @@ public final class CarbonUtil {
     int cmpResult = 0;
     while (high >= low) {
       int mid = (low + high) / 2;
-      cmpResult = ByteUtil.UnsafeComparer.INSTANCE
-          .compareTo(dimColumnDataChunk.getCompleteDataChunk(), mid * compareValue.length,
-              compareValue.length, compareValue, 0, compareValue.length);
+      cmpResult = dimColumnDataChunk.compareTo(mid, compareValue);
       if (cmpResult < 0) {
         low = mid + 1;
       } else if (cmpResult > 0) {
         high = mid - 1;
       } else {
         int currentIndex = mid;
-        if(!matchUpLimit) {
-          while (currentIndex - 1 >= 0 && ByteUtil.UnsafeComparer.INSTANCE
-              .compareTo(dimColumnDataChunk.getCompleteDataChunk(),
-                  (currentIndex - 1) * compareValue.length, compareValue.length, compareValue, 0,
-                  compareValue.length) == 0) {
+        if (!matchUpLimit) {
+          while (currentIndex - 1 >= 0
+              && dimColumnDataChunk.compareTo(currentIndex - 1, compareValue) == 0) {
             --currentIndex;
           }
         } else {
-          while (currentIndex + 1 <= high && ByteUtil.UnsafeComparer.INSTANCE
-              .compareTo(dimColumnDataChunk.getCompleteDataChunk(),
-                  (currentIndex + 1) * compareValue.length, compareValue.length, compareValue, 0,
-                  compareValue.length) == 0) {
+          while (currentIndex + 1 <= high
+              && dimColumnDataChunk.compareTo(currentIndex + 1, compareValue) == 0) {
             currentIndex++;
           }
         }
@@ -460,10 +456,8 @@ public final class CarbonUtil {
    */
   public static int nextLesserValueToTarget(int currentIndex,
       FixedLengthDimensionDataChunk dimColumnDataChunk, byte[] compareValue) {
-    while (currentIndex - 1 >= 0 && ByteUtil.UnsafeComparer.INSTANCE
-        .compareTo(dimColumnDataChunk.getCompleteDataChunk(),
-            (currentIndex - 1) * compareValue.length, compareValue.length, compareValue, 0,
-            compareValue.length) >= 0) {
+    while (currentIndex - 1 >= 0
+        && dimColumnDataChunk.compareTo(currentIndex - 1, compareValue) >= 0) {
       --currentIndex;
     }
 
@@ -482,10 +476,8 @@ public final class CarbonUtil {
    */
   public static int nextGreaterValueToTarget(int currentIndex,
       FixedLengthDimensionDataChunk dimColumnDataChunk, byte[] compareValue, int numerOfRows) {
-    while (currentIndex + 1 < numerOfRows && ByteUtil.UnsafeComparer.INSTANCE
-        .compareTo(dimColumnDataChunk.getCompleteDataChunk(),
-            (currentIndex + 1) * compareValue.length, compareValue.length, compareValue, 0,
-            compareValue.length) <= 0) {
+    while (currentIndex + 1 < numerOfRows
+        && dimColumnDataChunk.compareTo(currentIndex + 1, compareValue) <= 0) {
       ++currentIndex;
     }
 
@@ -493,17 +485,17 @@ public final class CarbonUtil {
   }
 
   public static int[] getUnCompressColumnIndex(int totalLength, byte[] columnIndexData,
-      NumberCompressor numberCompressor) {
-    ByteBuffer buffer = ByteBuffer.wrap(columnIndexData);
-    buffer.rewind();
+      NumberCompressor numberCompressor, int offset) {
+    ByteBuffer buffer = ByteBuffer.wrap(columnIndexData, offset, totalLength);
     int indexDataLength = buffer.getInt();
     byte[] indexData = new byte[indexDataLength];
     byte[] indexMap =
         new byte[totalLength - indexDataLength - CarbonCommonConstants.INT_SIZE_IN_BYTE];
     buffer.get(indexData);
     buffer.get(indexMap);
-    return UnBlockIndexer.uncompressIndex(numberCompressor.unCompress(indexData),
-        numberCompressor.unCompress(indexMap));
+    return UnBlockIndexer
+        .uncompressIndex(numberCompressor.unCompress(indexData, 0, indexData.length),
+            numberCompressor.unCompress(indexMap, 0, indexMap.length));
   }
 
   /**
@@ -556,9 +548,9 @@ public final class CarbonUtil {
 
   public static void writeLevelCardinalityFile(String loadFolderLoc, String tableName,
       int[] dimCardinality) throws KettleException {
-    String levelCardinalityFilePath = loadFolderLoc + File.separator +
-        CarbonCommonConstants.LEVEL_METADATA_FILE + tableName
-        + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
+    String levelCardinalityFilePath =
+        loadFolderLoc + File.separator + CarbonCommonConstants.LEVEL_METADATA_FILE + tableName
+            + CarbonCommonConstants.CARBON_METADATA_EXTENSION;
     FileOutputStream fileOutputStream = null;
     FileChannel channel = null;
     try {
@@ -616,7 +608,7 @@ public final class CarbonUtil {
       case ":":
       case "^":
       case "\\":
-      case"$":
+      case "$":
       case "+":
       case "?":
       case "(":
@@ -638,9 +630,9 @@ public final class CarbonUtil {
    */
   public static String checkAndAppendHDFSUrl(String filePath) {
     String currentPath = filePath;
-    if (null != filePath && filePath.length() != 0 &&
-        FileFactory.getFileType(filePath) != FileFactory.FileType.HDFS &&
-        FileFactory.getFileType(filePath) != FileFactory.FileType.VIEWFS) {
+    if (null != filePath && filePath.length() != 0
+        && FileFactory.getFileType(filePath) != FileFactory.FileType.HDFS
+        && FileFactory.getFileType(filePath) != FileFactory.FileType.VIEWFS) {
       String baseDFSUrl = CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL);
       if (null != baseDFSUrl) {
@@ -804,7 +796,7 @@ public final class CarbonUtil {
    * Below method will be used to check whether particular encoding is present
    * in the dimension or not
    *
-   * @param encoding  encoding to search
+   * @param encoding encoding to search
    * @return if encoding is present in dimension
    */
   public static boolean hasEncoding(List<Encoding> encodings, Encoding encoding) {
@@ -830,12 +822,12 @@ public final class CarbonUtil {
   /**
    * below method is to check whether it is complex data type
    *
-   * @param dataType  data type to be searched
+   * @param dataType data type to be searched
    * @return if data type is present
    */
   public static boolean hasComplexDataType(DataType dataType) {
     switch (dataType) {
-      case ARRAY :
+      case ARRAY:
       case STRUCT:
       case MAP:
         return true;
@@ -907,7 +899,6 @@ public final class CarbonUtil {
 
   /**
    * Thread to delete the tables
-   *
    */
   private static final class DeleteFolderAndFiles implements Callable<Void> {
     private CarbonFile file;
@@ -936,7 +927,7 @@ public final class CarbonUtil {
     for (CarbonDimension carbonDimension : tableDimensionList) {
       List<CarbonDimension> childs = carbonDimension.getListOfChildDimensions();
       //assuming complex dimensions will always be atlast
-      if(null != childs && childs.size() > 0) {
+      if (null != childs && childs.size() > 0) {
         break;
       }
       if (carbonDimension.isColumnar() && hasEncoding(carbonDimension.getEncoder(),
@@ -1084,6 +1075,7 @@ public final class CarbonUtil {
       }
     }
   }
+
   /**
    * Below method will be used to get all the block index info from index file
    *
@@ -1149,7 +1141,7 @@ public final class CarbonUtil {
       fileReader =
           FileFactory.getDataInputStream(csvFilePath, FileFactory.getFileType(csvFilePath));
       bufferedReader = new BufferedReader(new InputStreamReader(fileReader,
-              Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
+          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       readLine = bufferedReader.readLine();
 
     } catch (FileNotFoundException e) {
@@ -1168,8 +1160,7 @@ public final class CarbonUtil {
    * @param a
    * @param num
    */
-  public static String printLine(String a, int num)
-  {
+  public static String printLine(String a, int num) {
     StringBuilder builder = new StringBuilder();
     for (int i = 0; i < num; i++) {
       builder.append(a);
@@ -1223,13 +1214,13 @@ public final class CarbonUtil {
    * @param dataChunkBytes datachunk thrift object in bytes
    * @return data chunk thrift object
    */
-  public static DataChunk2 readDataChunk(byte[] dataChunkBytes) {
+  public static DataChunk2 readDataChunk(byte[] dataChunkBytes, int offset, int length) {
     try {
       return (DataChunk2) read(dataChunkBytes, new ThriftReader.TBaseCreator() {
         @Override public TBase create() {
           return new DataChunk2();
         }
-      });
+      }, offset, length);
     } catch (IOException e) {
       LOGGER.error(e);
     }
@@ -1245,8 +1236,9 @@ public final class CarbonUtil {
    * @return thrift object
    * @throws IOException any problem while converting the object
    */
-  private static TBase read(byte[] data, TBaseCreator creator) throws IOException {
-    ByteArrayInputStream stream = new ByteArrayInputStream(data);
+  private static TBase read(byte[] data, TBaseCreator creator, int offset, int length)
+      throws IOException {
+    ByteArrayInputStream stream = new ByteArrayInputStream(data, offset, length);
     TProtocol binaryIn = new TCompactProtocol(new TIOStreamTransport(stream));
     TBase t = creator.create();
     try {
@@ -1353,6 +1345,24 @@ public final class CarbonUtil {
       }
     }
     return outputArray;
+  }
+
+  public static void freeMemory(DimensionColumnDataChunk[] dimensionColumnDataChunk,
+      MeasureColumnDataChunk[] measureColumnDataChunks) {
+    if (null != measureColumnDataChunks) {
+      for (int i = 0; i < measureColumnDataChunks.length; i++) {
+        if (null != measureColumnDataChunks[i]) {
+          measureColumnDataChunks[i].freeMemory();
+        }
+      }
+    }
+    if (null != dimensionColumnDataChunk) {
+      for (int i = 0; i < dimensionColumnDataChunk.length; i++) {
+        if (null != dimensionColumnDataChunk[i]) {
+          dimensionColumnDataChunk[i].freeMemory();
+        }
+      }
+    }
   }
 }
 

@@ -45,7 +45,7 @@ public class CompressedTempSortFileReader extends AbstractTempSortFileReader {
   @Override public Object[][] getRow() {
     int recordLength = fileHolder.readInt(filePath);
     int byteArrayLength = fileHolder.readInt(filePath);
-    byte[] byteArrayFromFile = CompressorFactory.getInstance()
+    byte[] byteArrayFromFile = CompressorFactory.getInstance().getCompressor()
         .unCompressByte(fileHolder.readByteArray(filePath, byteArrayLength));
     return prepareRecordFromByteBuffer(recordLength, byteArrayFromFile);
   }

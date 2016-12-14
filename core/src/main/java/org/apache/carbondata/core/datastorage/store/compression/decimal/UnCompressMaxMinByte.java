@@ -1,5 +1,5 @@
 /*
- * Licensed to the Apache Software Foundation (ASF) under one
+3 * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
@@ -19,13 +19,16 @@
 
 package org.apache.carbondata.core.datastorage.store.compression.decimal;
 
+import java.math.BigDecimal;
+
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureDataChunkStore;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.impl.ByteMeasureChunkStore;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
-import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -39,16 +42,20 @@ public class UnCompressMaxMinByte implements UnCompressValue<byte[]> {
   /**
    * compressor.
    */
-  private static Compressor compressor = CompressorFactory.getInstance();
+  private static Compressor compressor = CompressorFactory.getInstance().getCompressor();
   /**
    * value.
    */
   protected byte[] value;
 
+  private MeasureDataChunkStore<byte[]> measureChunkStore;
+
   /**
    * actual data type
    */
   protected DataType actualDataType;
+
+  private double maxValue;
 
   //TODO SIMIAN
 
@@ -76,10 +83,13 @@ public class UnCompressMaxMinByte implements UnCompressValue<byte[]> {
     return byte1;
   }
 
-  @Override public UnCompressValue uncompress(DataType dataType) {
-    UnCompressValue byte1 = ValueCompressionUtil.getUnCompressDecimalMaxMin(dataType,
-        actualDataType);
-    ValueCompressonHolder.unCompress(dataType, byte1, value);
+  @Override
+  public UnCompressValue uncompress(DataType dataType, byte[] compressData, int offset, int length,
+      int decimalPlaces, Object maxValueObject) {
+    UnCompressValue byte1 =
+        ValueCompressionUtil.getUnCompressDecimalMaxMin(dataType, actualDataType);
+    ValueCompressonHolder
+        .unCompress(dataType, byte1, compressData, offset, length, decimalPlaces, maxValueObject);
     return byte1;
   }
 
@@ -98,38 +108,39 @@ public class UnCompressMaxMinByte implements UnCompressValue<byte[]> {
     return new UnCompressMaxMinByte(actualDataType);
   }
 
-  @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    switch (actualDataType) {
-      case DATA_BIGINT:
-        return unCompressLong(maxValueObject);
-      default:
-        return unCompressDouble(maxValueObject);
+  @Override public long getLongValue(int index) {
+    byte byteValue = measureChunkStore.getByte(index);
+    if (byteValue == (byte) 0) {
+      return (long) maxValue;
+    } else {
+      return (short) (maxValue - byteValue);
     }
   }
 
-  private CarbonReadDataHolder unCompressLong(Object maxValueObject) {
-    long maxValue = (long) maxValueObject;
-    long[] vals = new long[value.length];
-    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
-    for (int i = 0; i < vals.length; i++) {
-      if (value[i] == 0) {
-        vals[i] = maxValue;
-      } else {
-        vals[i] = maxValue - value[i];
-      }
+  @Override public double getDoubleValue(int index) {
+    byte byteValue = measureChunkStore.getByte(index);
+    if (byteValue == (byte) 0) {
+      return maxValue;
+    } else {
+      return (short) (maxValue - byteValue);
     }
-    dataHolder.setReadableLongValues(vals);
-    return dataHolder;
   }
 
-  private CarbonReadDataHolder unCompressDouble(Object maxValueObject) {
-    double maxValue = (double) maxValueObject;
-    double[] vals = new double[value.length];
-    CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = maxValue - value[i];
+  @Override public BigDecimal getBigDecimalValue(int index) {
+    throw new UnsupportedOperationException("Get big decimal value is not supported");
+  }
+
+  @Override public void setUncomressValue(byte[] data, int decimalPlaces, Object maxValueObject) {
+    this.measureChunkStore = new ByteMeasureChunkStore(data.length);
+    this.measureChunkStore.putData(data);
+    if (maxValueObject instanceof Long) {
+      this.maxValue = (long) maxValueObject;
+    } else {
+      this.maxValue = (double) maxValueObject;
     }
-    dataHolder.setReadableDoubleValues(vals);
-    return dataHolder;
+  }
+
+  @Override public void freeMemory() {
+    this.measureChunkStore.freeMemory();
   }
 }

@@ -18,26 +18,14 @@
  */
 package org.apache.carbondata.core.carbon.datastore.chunk.impl;
 
-import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
-import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.impl.FixedLengthDimensionDataChunkStore;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.scan.result.vector.ColumnVectorInfo;
 
 /**
- * This class is holder of the dimension column chunk data of the fixed length
- * key size
+ * This class is gives access to column group dimension data chunk store
  */
-public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<byte[]> {
-
-  /**
-   * dimension chunk attributes
-   */
-  private DimensionChunkAttributes chunkAttributes;
-
-  /**
-   * data chunks
-   */
-  private byte[] dataChunk;
+public class ColumnGroupDimensionDataChunk extends AbstractDimensionDataChunk {
 
   /**
    * Constructor for this class
@@ -45,142 +33,153 @@ public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<b
    * @param dataChunk       data chunk
    * @param chunkAttributes chunk attributes
    */
-  public ColumnGroupDimensionDataChunk(byte[] dataChunk, DimensionChunkAttributes chunkAttributes) {
-    this.chunkAttributes = chunkAttributes;
-    this.dataChunk = dataChunk;
+  public ColumnGroupDimensionDataChunk(byte[] dataChunk, int columnValueSize, int numberOfRows) {
+    this.dataChunkStore =
+        new FixedLengthDimensionDataChunkStore(columnValueSize, false, numberOfRows,
+            dataChunk.length);
+    this.dataChunkStore.putArray(null, null, dataChunk);
   }
 
   /**
    * Below method will be used to fill the data based on offset and row id
    *
-   * @param data             data to filed
-   * @param offset           offset from which data need to be filed
-   * @param rowId            row id of the chunk
+   * @param data              data to filed
+   * @param offset            offset from which data need to be filed
+   * @param rowId             row id of the chunk
    * @param restructuringInfo define the structure of the key
    * @return how many bytes was copied
    */
-  @Override
-  public int fillChunkData(byte[] data, int offset, int rowId,
+  @Override public int fillChunkData(byte[] data, int offset, int rowId,
       KeyStructureInfo restructuringInfo) {
-    byte[] maskedKey =
-        getMaskedKey(dataChunk, rowId * chunkAttributes.getColumnValueSize(), restructuringInfo);
+    byte[] row = dataChunkStore.getRow(rowId);
+    byte[] maskedKey = getMaskedKey(row, restructuringInfo);
     System.arraycopy(maskedKey, 0, data, offset, maskedKey.length);
     return maskedKey.length;
   }
 
   /**
    * Converts to column dictionary integer value
+   *
+   * @param rowId
+   * @param columnIndex
+   * @param row
+   * @param restructuringInfo @return
    */
-  @Override
-  public int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
+  @Override public int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
       KeyStructureInfo info) {
-    int start = rowId * chunkAttributes.getColumnValueSize();
-    long[] keyArray = info.getKeyGenerator().getKeyArray(dataChunk, start);
+    byte[] data = dataChunkStore.getRow(rowId);
+    long[] keyArray = info.getKeyGenerator().getKeyArray(data);
     int[] ordinal = info.getMdkeyQueryDimensionOrdinal();
     for (int i = 0; i < ordinal.length; i++) {
-      row[columnIndex++] = (int)keyArray[ordinal[i]];
+      row[columnIndex++] = (int) keyArray[ordinal[i]];
     }
     return columnIndex;
   }
 
-  @Override
-  public int fillConvertedChunkData(ColumnVectorInfo[] vectorInfo, int column,
-      KeyStructureInfo info) {
-    ColumnVectorInfo columnVectorInfo = vectorInfo[column];
-    int offset = columnVectorInfo.offset;
-    int vectorOffset = columnVectorInfo.vectorOffset;
-    int len = offset + columnVectorInfo.size;
-    int columnValueSize = chunkAttributes.getColumnValueSize();
-    int[] ordinal = info.getMdkeyQueryDimensionOrdinal();
-    for (int k = offset; k < len; k++) {
-      int start = k * columnValueSize;
-      long[] keyArray = info.getKeyGenerator().getKeyArray(dataChunk, start);
-      int index = 0;
-      for (int i = column; i < column + ordinal.length; i++) {
-        if (vectorInfo[i].directDictionaryGenerator == null) {
-          vectorInfo[i].vector.putInt(vectorOffset, (int) keyArray[ordinal[index++]]);
-        } else {
-          vectorInfo[i].vector.putLong(vectorOffset, (long) vectorInfo[i].directDictionaryGenerator
-              .getValueFromSurrogate((int) keyArray[ordinal[index++]]));
-        }
-      }
-      vectorOffset++;
-    }
-    return column + ordinal.length;
-  }
-
-  @Override
-  public int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo, int column,
-      KeyStructureInfo info) {
-    ColumnVectorInfo columnVectorInfo = vectorInfo[column];
-    int offset = columnVectorInfo.offset;
-    int vectorOffset = columnVectorInfo.vectorOffset;
-    int len = offset + columnVectorInfo.size;
-    int columnValueSize = chunkAttributes.getColumnValueSize();
-    int[] ordinal = info.getMdkeyQueryDimensionOrdinal();
-    for (int k = offset; k < len; k++) {
-      int start = rowMapping[k] * columnValueSize;
-      long[] keyArray = info.getKeyGenerator().getKeyArray(dataChunk, start);
-      int index = 0;
-      for (int i = column; i < column + ordinal.length; i++) {
-        if (vectorInfo[i].directDictionaryGenerator == null) {
-          vectorInfo[i].vector.putInt(vectorOffset, (int) keyArray[ordinal[index++]]);
-        } else {
-          vectorInfo[i].vector.putLong(vectorOffset, (long) vectorInfo[i].directDictionaryGenerator
-              .getValueFromSurrogate((int) keyArray[ordinal[index++]]));
-        }
-      }
-      vectorOffset++;
-    }
-    return column + ordinal.length;
-  }
-
   /**
-   * Below method masks key
+   * Below method will be used to get the masked key
    *
+   * @param data   data
+   * @param offset offset of
+   * @param info
+   * @return
    */
-  public byte[] getMaskedKey(byte[] data, int offset, KeyStructureInfo info) {
+  private byte[] getMaskedKey(byte[] data, KeyStructureInfo info) {
     byte[] maskedKey = new byte[info.getMaskByteRanges().length];
     int counter = 0;
     int byteRange = 0;
     for (int i = 0; i < info.getMaskByteRanges().length; i++) {
       byteRange = info.getMaskByteRanges()[i];
-      maskedKey[counter++] = (byte) (data[byteRange + offset] & info.getMaxKey()[byteRange]);
+      maskedKey[counter++] = (byte) (data[byteRange] & info.getMaxKey()[byteRange]);
     }
     return maskedKey;
   }
 
   /**
-   * Below method to get the data based in row id
-   *
-   * @param rowId row id of the data
-   * @return chunk
+   * @return inverted index
    */
-  @Override
-  public byte[] getChunkData(int rowId) {
-    byte[] data = new byte[chunkAttributes.getColumnValueSize()];
-    System.arraycopy(dataChunk, rowId * data.length, data, 0, data.length);
-    return data;
+  @Override public int getInvertedIndex(int index) {
+    throw new UnsupportedOperationException("Operation not supported in case of cloumn group");
   }
 
   /**
-   * Below method will be used get the chunk attributes
-   *
-   * @return chunk attributes
+   * @return whether columns where explictly sorted or not
    */
-  @Override
-  public DimensionChunkAttributes getAttributes() {
-    return chunkAttributes;
+  @Override public boolean isExplictSorted() {
+    return false;
   }
 
   /**
-   * Below method will be used to return the complete data chunk
-   * This will be required during filter query
+   * to compare the data
    *
-   * @return complete chunk
+   * @param index        row index to be compared
+   * @param compareValue value to compare
+   * @return compare result
    */
-  @Override
-  public byte[] getCompleteDataChunk() {
-    return dataChunk;
+  @Override public int compareTo(int index, byte[] compareValue) {
+    throw new UnsupportedOperationException("Operation not supported in case of cloumn group");
+  }
+
+  /**
+   * Fill the data to vector
+   *
+   * @param vectorInfo
+   * @param column
+   * @param restructuringInfo
+   * @return next column index
+   */
+  @Override public int fillConvertedChunkData(ColumnVectorInfo[] vectorInfo, int column,
+      KeyStructureInfo restructuringInfo) {
+    ColumnVectorInfo columnVectorInfo = vectorInfo[column];
+    int offset = columnVectorInfo.offset;
+    int vectorOffset = columnVectorInfo.vectorOffset;
+    int len = offset + columnVectorInfo.size;
+    int[] ordinal = restructuringInfo.getMdkeyQueryDimensionOrdinal();
+    for (int k = offset; k < len; k++) {
+      long[] keyArray = restructuringInfo.getKeyGenerator().getKeyArray(dataChunkStore.getRow(k));
+      int index = 0;
+      for (int i = column; i < column + ordinal.length; i++) {
+        if (vectorInfo[i].directDictionaryGenerator == null) {
+          vectorInfo[i].vector.putInt(vectorOffset, (int) keyArray[ordinal[index++]]);
+        } else {
+          vectorInfo[i].vector.putLong(vectorOffset, (long) vectorInfo[i].directDictionaryGenerator
+              .getValueFromSurrogate((int) keyArray[ordinal[index++]]));
+        }
+      }
+      vectorOffset++;
+    }
+    return column + ordinal.length;
+  }
+
+  /**
+   * Fill the data to vector
+   *
+   * @param rowMapping
+   * @param vectorInfo
+   * @param column
+   * @param restructuringInfo
+   * @return next column index
+   */
+  @Override public int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo,
+      int column, KeyStructureInfo restructuringInfo) {
+    ColumnVectorInfo columnVectorInfo = vectorInfo[column];
+    int offset = columnVectorInfo.offset;
+    int vectorOffset = columnVectorInfo.vectorOffset;
+    int len = offset + columnVectorInfo.size;
+    int[] ordinal = restructuringInfo.getMdkeyQueryDimensionOrdinal();
+    for (int k = offset; k < len; k++) {
+      long[] keyArray = restructuringInfo.getKeyGenerator().getKeyArray(dataChunkStore.getRow(k));
+      int index = 0;
+      for (int i = column; i < column + ordinal.length; i++) {
+        if (vectorInfo[i].directDictionaryGenerator == null) {
+          vectorInfo[i].vector.putInt(vectorOffset, (int) keyArray[ordinal[index++]]);
+        } else {
+          vectorInfo[i].vector.putLong(vectorOffset, (long) vectorInfo[i].directDictionaryGenerator
+              .getValueFromSurrogate((int) keyArray[ordinal[index++]]));
+        }
+      }
+      vectorOffset++;
+    }
+    return column + ordinal.length;
   }
 }

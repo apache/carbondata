@@ -139,15 +139,15 @@ public class NumberCompressor {
     return words;
   }
 
-  public int[] unCompress(byte[] key) {
-    int ls = key.length;
+  public int[] unCompress(byte[] key, int offset, int length) {
+    int ls = length;
     int arrayLength = (ls * BYTE_LENGTH) / bitsLength;
     long[] words = new long[getWordsSizeFromBytesSize(ls)];
-    unCompressVal(key, ls, words);
+    unCompressVal(key, ls, words, offset);
     return getArray(words, arrayLength);
   }
 
-  private void unCompressVal(byte[] key, int ls, long[] words) {
+  private void unCompressVal(byte[] key, int ls, long[] words, int offset) {
     for (int i = 0; i < words.length; i++) {
       long l = 0;
       ls -= BYTE_LENGTH;
@@ -160,7 +160,7 @@ public class NumberCompressor {
       }
       for (int j = ls; j < m; j++) {
         l <<= BYTE_LENGTH;
-        l ^= key[j] & 0xFF;
+        l ^= key[offset+j] & 0xFF;
       }
       words[i] = l;
     }

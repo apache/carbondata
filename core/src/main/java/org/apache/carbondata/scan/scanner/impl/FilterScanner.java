@@ -28,6 +28,7 @@ import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.expression.exception.FilterUnsupportedException;
@@ -127,6 +128,8 @@ public class FilterScanner extends AbstractBlockletScanner {
       if (bitSet.isEmpty()) {
         scannedResult.setNumberOfRows(0);
         scannedResult.setIndexes(new int[0]);
+        CarbonUtil.freeMemory(blocksChunkHolder.getDimensionDataChunk(),
+            blocksChunkHolder.getMeasureDataChunk());
         return;
       }
     }

@@ -32,28 +32,23 @@ import org.apache.carbondata.core.datastorage.store.compression.ReaderCompressMo
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
-import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressByteArray;
 import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinByte;
 import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinDefault;
-import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinFloat;
 import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinInt;
 import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinLong;
 import org.apache.carbondata.core.datastorage.store.compression.decimal.UnCompressMaxMinShort;
 import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalByte;
 import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalDefault;
-import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalFloat;
 import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalInt;
 import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalLong;
 import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinByte;
 import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinDefault;
-import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinFloat;
 import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinInt;
 import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinLong;
 import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalMaxMinShort;
 import org.apache.carbondata.core.datastorage.store.compression.nondecimal.UnCompressNonDecimalShort;
 import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneByte;
 import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneDefault;
-import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneFloat;
 import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneInt;
 import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneLong;
 import org.apache.carbondata.core.datastorage.store.compression.none.UnCompressNoneShort;
@@ -337,8 +332,6 @@ public final class ValueCompressionUtil {
         return getUnCompressNonDecimalMaxMin(changedDataType);
       case BIGINT:
         return getUnCompressNonDecimal(changedDataType);
-      case BIGDECIMAL:
-        return new UnCompressByteArray(UnCompressByteArray.ByteArrayType.BIG_DECIMAL);
       default:
         throw new IllegalArgumentException("unsupported compType: " + compType);
     }
@@ -633,8 +626,6 @@ public final class ValueCompressionUtil {
         return new UnCompressNoneInt(actualDataType);
       case DATA_LONG:
         return new UnCompressNoneLong(actualDataType);
-      case DATA_FLOAT:
-        return new UnCompressNoneFloat(actualDataType);
       default:
         return new UnCompressNoneDefault(actualDataType);
     }
@@ -654,8 +645,6 @@ public final class ValueCompressionUtil {
         return new UnCompressMaxMinInt(actualDataType);
       case DATA_LONG:
         return new UnCompressMaxMinLong(actualDataType);
-      case DATA_FLOAT:
-        return new UnCompressMaxMinFloat(actualDataType);
       default:
         return new UnCompressMaxMinDefault(actualDataType);
     }
@@ -675,8 +664,6 @@ public final class ValueCompressionUtil {
         return new UnCompressNonDecimalInt();
       case DATA_LONG:
         return new UnCompressNonDecimalLong();
-      case DATA_FLOAT:
-        return new UnCompressNonDecimalFloat();
       default:
         return new UnCompressNonDecimalDefault();
     }
@@ -696,8 +683,6 @@ public final class ValueCompressionUtil {
         return new UnCompressNonDecimalMaxMinInt();
       case DATA_LONG:
         return new UnCompressNonDecimalMaxMinLong();
-      case DATA_FLOAT:
-        return new UnCompressNonDecimalMaxMinFloat();
       default:
         return new UnCompressNonDecimalMaxMinDefault();
     }

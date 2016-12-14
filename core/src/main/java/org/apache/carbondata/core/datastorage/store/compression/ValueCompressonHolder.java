@@ -19,7 +19,8 @@
 
 package org.apache.carbondata.core.datastorage.store.compression;
 
-import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import java.math.BigDecimal;
+
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
 /**
@@ -30,7 +31,7 @@ public final class ValueCompressonHolder {
   /**
    * byteCompressor.
    */
-  private static Compressor compressor = CompressorFactory.getInstance();
+  private static Compressor compressor = CompressorFactory.getInstance().getCompressor();
 
   private ValueCompressonHolder() {
 
@@ -41,26 +42,33 @@ public final class ValueCompressonHolder {
    * @param value
    * @param data
    */
-  public static void unCompress(DataType dataType, UnCompressValue value, byte[] data) {
+  public static void unCompress(DataType dataType, UnCompressValue value, byte[] data, int offset,
+      int length, int decimal, Object maxValueObject) {
     switch (dataType) {
       case DATA_BYTE:
-        value.setValue(compressor.unCompressByte(data));
+        value.setUncomressValue(compressor.unCompressByte(data, offset, length), decimal,
+            maxValueObject);
         break;
       case DATA_SHORT:
-        value.setValue(compressor.unCompressShort(data));
+        value.setUncomressValue(compressor.unCompressShort(data, offset, length), decimal,
+            maxValueObject);
         break;
       case DATA_INT:
-        value.setValue(compressor.unCompressInt(data));
+        value.setUncomressValue(compressor.unCompressInt(data, offset, length), decimal,
+            maxValueObject);
         break;
       case DATA_LONG:
       case DATA_BIGINT:
-        value.setValue(compressor.unCompressLong(data));
+        value.setUncomressValue(compressor.unCompressLong(data, offset, length), decimal,
+            maxValueObject);
         break;
       case DATA_FLOAT:
-        value.setValue(compressor.unCompressFloat(data));
+        value.setUncomressValue(compressor.unCompressFloat(data, offset, length), decimal,
+            maxValueObject);
         break;
       default:
-        value.setValue(compressor.unCompressDouble(data));
+        value.setUncomressValue(compressor.unCompressDouble(data, offset, length), decimal,
+            maxValueObject);
         break;
     }
   }
@@ -78,13 +86,22 @@ public final class ValueCompressonHolder {
 
     UnCompressValue compress();
 
-    UnCompressValue uncompress(DataType dataType);
+    UnCompressValue uncompress(DataType dataType, byte[] compressData, int offset, int length,
+        int decimal, Object maxValueObject);
+
+    void setUncomressValue(T data, int decimal, Object maxValueObject);
 
     byte[] getBackArrayData();
 
     UnCompressValue getCompressorObject();
 
-    CarbonReadDataHolder getValues(int decimal, Object maxValue);
+    long getLongValue(int index);
+
+    double getDoubleValue(int index);
+
+    BigDecimal getBigDecimalValue(int index);
+
+    void freeMemory();
 
   }
 

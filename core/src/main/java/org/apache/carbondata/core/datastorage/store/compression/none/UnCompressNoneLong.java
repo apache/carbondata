@@ -19,14 +19,17 @@
 
 package org.apache.carbondata.core.datastorage.store.compression.none;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureDataChunkStore;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.impl.LongMeasureChunkStore;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -39,13 +42,15 @@ public class UnCompressNoneLong implements ValueCompressonHolder.UnCompressValue
   /**
    * longCompressor.
    */
-  private static Compressor compressor = CompressorFactory.getInstance();
+  private static Compressor compressor = CompressorFactory.getInstance().getCompressor();
   /**
    * value.
    */
   protected long[] value;
 
   private DataType actualDataType;
+
+  private MeasureDataChunkStore<long[]> measureChunkStore;
 
   public UnCompressNoneLong(DataType actualDataType) {
     this.actualDataType = actualDataType;
@@ -60,8 +65,7 @@ public class UnCompressNoneLong implements ValueCompressonHolder.UnCompressValue
     try {
       return (ValueCompressonHolder.UnCompressValue) clone();
     } catch (CloneNotSupportedException clnNotSupportedExc) {
-      LOGGER.error(clnNotSupportedExc,
-          clnNotSupportedExc.getMessage());
+      LOGGER.error(clnNotSupportedExc, clnNotSupportedExc.getMessage());
     }
     return null;
   }
@@ -74,7 +78,8 @@ public class UnCompressNoneLong implements ValueCompressonHolder.UnCompressValue
   }
 
   @Override
-  public ValueCompressonHolder.UnCompressValue uncompress(ValueCompressionUtil.DataType dType) {
+  public UnCompressValue uncompress(DataType dataType, byte[] data, int offset, int length,
+      int decimalPlaces, Object maxValueObject) {
     return null;
   }
 
@@ -94,36 +99,25 @@ public class UnCompressNoneLong implements ValueCompressonHolder.UnCompressValue
     return new UnCompressNoneByte(this.actualDataType);
   }
 
-  @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    switch (actualDataType) {
-      case DATA_BIGINT:
-        return unCompressLong();
-      default:
-        return unCompressDouble();
-    }
+  @Override public long getLongValue(int index) {
+    return measureChunkStore.getLong(index);
   }
 
-  private CarbonReadDataHolder unCompressDouble() {
-    CarbonReadDataHolder dataHldr = new CarbonReadDataHolder();
-
-    double[] vals = new double[value.length];
-
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i];
-    }
-    dataHldr.setReadableDoubleValues(vals);
-    return dataHldr;
+  @Override public double getDoubleValue(int index) {
+    return measureChunkStore.getLong(index);
   }
 
-  private CarbonReadDataHolder unCompressLong() {
-    CarbonReadDataHolder dataHldr = new CarbonReadDataHolder();
+  @Override public BigDecimal getBigDecimalValue(int index) {
+    throw new UnsupportedOperationException("Get big decimal is not supported");
+  }
 
-    long[] vals = new long[value.length];
+  @Override public void setUncomressValue(long[] data, int decimalPlaces, Object maxValueObject) {
+    this.measureChunkStore = new LongMeasureChunkStore(data.length);
+    this.measureChunkStore.putData(data);
 
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i];
-    }
-    dataHldr.setReadableLongValues(vals);
-    return dataHldr;
+  }
+
+  @Override public void freeMemory() {
+    this.measureChunkStore.freeMemory();
   }
 }

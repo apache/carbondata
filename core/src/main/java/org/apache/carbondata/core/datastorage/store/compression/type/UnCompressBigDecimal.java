@@ -18,11 +18,11 @@
  */
 package org.apache.carbondata.core.datastorage.store.compression.type;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
-import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.BigDecimalCompressionFinder;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -50,47 +50,41 @@ public class UnCompressBigDecimal<T> implements UnCompressValue<T> {
     this.rightPart = rightPart;
   }
 
-  @Override
-  public void setValue(T value) {
+  @Override public void setValue(T value) {
     Object[] values = (Object[]) value;
     leftPart.setValue(values[0]);
     rightPart.setValue(values[1]);
   }
 
-  @Override
-  public void setValueInBytes(byte[] value) {
+  @Override public void setValueInBytes(byte[] value) {
     // TODO Auto-generated method stub
 
   }
 
-  @Override
-  public UnCompressValue<T> getNew() {
+  @Override public UnCompressValue<T> getNew() {
     UnCompressValue leftUnCompressClone = leftPart.getNew();
     UnCompressValue rightUnCompressClone = rightPart.getNew();
-    return new UnCompressBigDecimal(compressionFinder, leftUnCompressClone,
-        rightUnCompressClone);
+    return new UnCompressBigDecimal(compressionFinder, leftUnCompressClone, rightUnCompressClone);
   }
 
-  @Override
-  public UnCompressValue compress() {
-    UnCompressBigDecimal byt = new UnCompressBigDecimal<>(compressionFinder,
-        leftPart.compress(), rightPart.compress());
+  @Override public UnCompressValue compress() {
+    UnCompressBigDecimal byt =
+        new UnCompressBigDecimal<>(compressionFinder, leftPart.compress(), rightPart.compress());
     return byt;
   }
 
   @Override
-  public UnCompressValue uncompress(DataType dataType) {
+  public UnCompressValue uncompress(DataType dataType, byte[] data, int offset, int length,
+      int decimalPlaces, Object maxValueObject) {
     // TODO Auto-generated method stub
     return null;
   }
 
-  @Override
-  public byte[] getBackArrayData() {
+  @Override public byte[] getBackArrayData() {
     byte[] leftdata = leftPart.getBackArrayData();
     byte[] rightdata = rightPart.getBackArrayData();
     ByteBuffer byteBuffer = ByteBuffer
-        .allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE + leftdata.length
-            + rightdata.length);
+        .allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE + leftdata.length + rightdata.length);
     byteBuffer.putInt(leftdata.length);
     byteBuffer.put(leftdata);
     byteBuffer.put(rightdata);
@@ -98,15 +92,28 @@ public class UnCompressBigDecimal<T> implements UnCompressValue<T> {
     return byteBuffer.array();
   }
 
-  @Override
-  public UnCompressValue getCompressorObject() {
-    return new UnCompressBigDecimalByte<>(compressionFinder,
-        leftPart.getCompressorObject(), rightPart.getCompressorObject());
+  @Override public UnCompressValue getCompressorObject() {
+    return new UnCompressBigDecimalByte<>(compressionFinder, leftPart.getCompressorObject(),
+        rightPart.getCompressorObject(), 0, null);
   }
 
-  @Override
-  public CarbonReadDataHolder getValues(int decimal, Object maxValue) {
+  @Override public void setUncomressValue(T data, int decimalPlaces, Object maxValueObject) {
     // TODO Auto-generated method stub
-    return null;
+
+  }
+
+  @Override public long getLongValue(int index) {
+    throw new UnsupportedOperationException("Get long is not supported");
+  }
+
+  @Override public double getDoubleValue(int index) {
+    throw new UnsupportedOperationException("Get double is not supported");
+  }
+
+  @Override public BigDecimal getBigDecimalValue(int index) {
+    throw new UnsupportedOperationException("Get big decimal is not supported");
+  }
+
+  @Override public void freeMemory() {
   }
 }

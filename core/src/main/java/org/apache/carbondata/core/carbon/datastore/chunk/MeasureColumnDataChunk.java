@@ -68,4 +68,7 @@ public class MeasureColumnDataChunk {
     this.nullValueIndexHolder = nullValueIndexHolder;
   }
 
+  public void freeMemory() {
+    this.measureDataHolder.freeMemory();
+  }
 }

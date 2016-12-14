@@ -24,11 +24,13 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureDataChunkStore;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.impl.LongMeasureChunkStore;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
+import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
 public class UnCompressNonDecimalMaxMinLong
     implements ValueCompressonHolder.UnCompressValue<long[]> {
@@ -41,11 +43,17 @@ public class UnCompressNonDecimalMaxMinLong
   /**
    * longCompressor.
    */
-  private static Compressor compressor = CompressorFactory.getInstance();
+  private static Compressor compressor = CompressorFactory.getInstance().getCompressor();
   /**
    * value.
    */
   private long[] value;
+
+  private MeasureDataChunkStore<long[]> measureChunkStore;
+
+  private BigDecimal maxValue;
+
+  private double divisionFactor;
 
   @Override public void setValue(long[] value) {
     this.value = value;
@@ -69,7 +77,8 @@ public class UnCompressNonDecimalMaxMinLong
   }
 
   @Override
-  public ValueCompressonHolder.UnCompressValue uncompress(ValueCompressionUtil.DataType dataType) {
+  public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType, byte[] compressData,
+      int offset, int length, int decimalPlaces, Object maxValueObject) {
     return null;
   }
 
@@ -89,24 +98,32 @@ public class UnCompressNonDecimalMaxMinLong
     return new UnCompressNonDecimalMaxMinByte();
   }
 
-  @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    double maxValue = (double) maxValueObject;
-    double[] vals = new double[value.length];
-    CarbonReadDataHolder carbonDataHolder = new CarbonReadDataHolder();
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i] / Math.pow(10, decimal);
-
-      if (value[i] == 0) {
-        vals[i] = maxValue;
-      } else {
-        BigDecimal diff = BigDecimal.valueOf(value[i] / Math.pow(10, decimal));
-        BigDecimal max = BigDecimal.valueOf(maxValue);
-        vals[i] = max.subtract(diff).doubleValue();
-      }
-
-    }
-    carbonDataHolder.setReadableDoubleValues(vals);
-    return carbonDataHolder;
+  @Override public long getLongValue(int index) {
+    throw new UnsupportedOperationException("Get long value is not supported");
   }
 
+  @Override public double getDoubleValue(int index) {
+    long longValue = measureChunkStore.getLong(index);
+    if (longValue == 0) {
+      return maxValue.doubleValue();
+    } else {
+      BigDecimal diff = BigDecimal.valueOf(longValue / this.divisionFactor);
+      return maxValue.subtract(diff).doubleValue();
+    }
+  }
+
+  @Override public BigDecimal getBigDecimalValue(int index) {
+    throw new UnsupportedOperationException("Get big decimal value is not supported");
+  }
+
+  @Override public void setUncomressValue(long[] data, int decimalPlaces, Object maxValueObject) {
+    this.measureChunkStore = new LongMeasureChunkStore(data.length);
+    this.measureChunkStore.putData(data);
+    this.maxValue = BigDecimal.valueOf((double) maxValueObject);
+    this.divisionFactor = Math.pow(10, decimalPlaces);
+  }
+
+  @Override public void freeMemory() {
+    this.measureChunkStore.freeMemory();
+  }
 }
