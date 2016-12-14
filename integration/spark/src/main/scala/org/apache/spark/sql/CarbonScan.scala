@@ -25,6 +25,8 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.LeafNode
 import org.apache.spark.sql.hive.CarbonMetastore
+import org.apache.spark.util.CarbonInputMetrics
+import org.apache.spark.util.InputMetricsStats
 
 import org.apache.carbondata.core.scan.model._
 import org.apache.carbondata.hadoop.CarbonProjection
@@ -122,12 +124,14 @@ case class CarbonScan(
     columnProjection.foreach { attr =>
       projection.addColumn(attr.name)
     }
+    val inputMetricsStats: InputMetricsStats = new CarbonInputMetrics
     new CarbonScanRDD(
       ocRaw.sparkContext,
       projection,
       buildCarbonPlan.getFilterExpression,
       carbonTable.getAbsoluteTableIdentifier,
-      carbonTable
+      carbonTable,
+      inputMetricsStats
     )
   }
 

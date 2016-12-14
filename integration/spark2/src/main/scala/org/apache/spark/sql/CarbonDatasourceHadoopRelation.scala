@@ -23,6 +23,8 @@ import org.apache.spark.sql.execution.command.LoadTableByInsert
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.sources.{BaseRelation, Filter, InsertableRelation}
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.util.CarbonInputMetrics
+import org.apache.spark.util.InputMetricsStats
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -67,8 +69,9 @@ case class CarbonDatasourceHadoopRelation(
     val projection = new CarbonProjection
     requiredColumns.foreach(projection.addColumn)
 
+    val inputMetricsStats: InputMetricsStats = new CarbonInputMetrics
     new CarbonScanRDD(sqlContext.sparkContext, projection, filterExpression.orNull,
-      absIdentifier, carbonTable)
+      absIdentifier, carbonTable, inputMetricsStats)
   }
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)
 
