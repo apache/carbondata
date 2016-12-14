@@ -78,7 +78,10 @@ public class ExcludeFilterExecuterImplTest {
     final BitSet result = excludeFilterExecuter.applyFilter(blocksChunkHolder);
 
     BitSet expectedResult = new BitSet();
-    expectedResult.flip(9);
+    expectedResult.flip(0);
+    expectedResult.flip(2);
+    expectedResult.flip(3);
+    expectedResult.flip(4);
 
     assertThat(result, is(equalTo(expectedResult)));
   }
@@ -143,7 +146,10 @@ public class ExcludeFilterExecuterImplTest {
     final BitSet result = excludeFilterExecuter.applyFilter(blocksChunkHolder);
 
     BitSet expectedResult = new BitSet();
-    expectedResult.flip(9);
+    expectedResult.flip(5);
+    expectedResult.flip(6);
+    expectedResult.flip(7);
+    expectedResult.flip(8);
 
     assertThat(result, is(equalTo(expectedResult)));
   }
@@ -194,11 +200,6 @@ public class ExcludeFilterExecuterImplTest {
     expectedResult.flip(2);
     expectedResult.flip(3);
     expectedResult.flip(4);
-    expectedResult.flip(5);
-    expectedResult.flip(6);
-    expectedResult.flip(7);
-    expectedResult.flip(8);
-    expectedResult.flip(9);
 
     assertThat(result, is(equalTo(expectedResult)));
   }
@@ -248,11 +249,6 @@ public class ExcludeFilterExecuterImplTest {
     expectedResult.flip(2);
     expectedResult.flip(3);
     expectedResult.flip(4);
-    expectedResult.flip(5);
-    expectedResult.flip(6);
-    expectedResult.flip(7);
-    expectedResult.flip(8);
-    expectedResult.flip(9);
 
     assertThat(result, is(equalTo(expectedResult)));
   }
@@ -299,11 +295,6 @@ public class ExcludeFilterExecuterImplTest {
     expectedResult.flip(2);
     expectedResult.flip(3);
     expectedResult.flip(4);
-    expectedResult.flip(5);
-    expectedResult.flip(6);
-    expectedResult.flip(7);
-    expectedResult.flip(8);
-    expectedResult.flip(9);
 
     assertThat(result, is(equalTo(expectedResult)));
   }
@@ -350,11 +341,6 @@ public class ExcludeFilterExecuterImplTest {
     expectedResult.flip(2);
     expectedResult.flip(3);
     expectedResult.flip(4);
-    expectedResult.flip(5);
-    expectedResult.flip(6);
-    expectedResult.flip(7);
-    expectedResult.flip(8);
-    expectedResult.flip(9);
 
     assertThat(result, is(equalTo(expectedResult)));
   }

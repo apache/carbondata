@@ -116,7 +116,10 @@ public class RowLevelRangeGrtThanFiterExecuterImplTest {
         testRule.segmentProperties);
 
     List<DataFileFooter> footerList = testRule.getDataFileFooterList();
+    footerList.get(0).setNumberOfRows(2);
+
     BTreeBuilderInfo bTreeBuilderInfo = new BTreeBuilderInfo(footerList, new int[] { 1, 1 });
+    bTreeBuilderInfo.getFooterList().get(0).getBlockletList().get(0).setNumberOfRows(2);
 
     BlockletBTreeLeafNode blockletBTreeLeafNode = new BlockletBTreeLeafNode(bTreeBuilderInfo, 0, 0);
 
@@ -144,7 +147,10 @@ public class RowLevelRangeGrtThanFiterExecuterImplTest {
     };
 
     List<DataFileFooter> footerList = testRule.getDataFileFooterList();
+    footerList.get(0).setNumberOfRows(2);
+
     BTreeBuilderInfo bTreeBuilderInfo = new BTreeBuilderInfo(footerList, new int[] { 1, 1 });
+    bTreeBuilderInfo.getFooterList().get(0).getBlockletList().get(0).setNumberOfRows(2);
 
     BlockletBTreeLeafNode blockletBTreeLeafNode = new BlockletBTreeLeafNode(bTreeBuilderInfo, 0, 0);
 
@@ -157,16 +163,7 @@ public class RowLevelRangeGrtThanFiterExecuterImplTest {
     BitSet result = rowLevelRangeGrtThanFiterExecuter.applyFilter(blocksChunkHolder);
 
     BitSet expectedResult = new BitSet();
-    expectedResult.flip(0);
     expectedResult.flip(1);
-    expectedResult.flip(2);
-    expectedResult.flip(3);
-    expectedResult.flip(4);
-    expectedResult.flip(5);
-    expectedResult.flip(6);
-    expectedResult.flip(7);
-    expectedResult.flip(8);
-    expectedResult.flip(9);
 
     assertThat(result, is(equalTo(expectedResult)));
   }
@@ -214,11 +211,6 @@ public class RowLevelRangeGrtThanFiterExecuterImplTest {
     expectedResult.flip(2);
     expectedResult.flip(3);
     expectedResult.flip(4);
-    expectedResult.flip(5);
-    expectedResult.flip(6);
-    expectedResult.flip(7);
-    expectedResult.flip(8);
-    expectedResult.flip(9);
 
     assertThat(result, is(equalTo(expectedResult)));
   }

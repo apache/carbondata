@@ -40,6 +40,7 @@ import org.apache.carbondata.scan.processor.BlocksChunkHolder;
 
 import mockit.Mock;
 import mockit.MockUp;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -50,11 +51,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class RowLevelRangeGrtrThanEquaToFilterExecuterImplTest {
 
-  private RowLevelRangeGrtrThanEquaToFilterExecuterImpl rangeGrtrThanEquaToFilterExecuter;
+  static private RowLevelRangeGrtrThanEquaToFilterExecuterImpl rangeGrtrThanEquaToFilterExecuter;
   @Rule public FilterExecutorTestRule testRule = new FilterExecutorTestRule();
 
   @Before public void init() {
-
     rangeGrtrThanEquaToFilterExecuter = new RowLevelRangeGrtrThanEquaToFilterExecuterImpl(
         Arrays.asList(testRule.dimColumnResolvedFilterInfo), Arrays.asList(testRule.filterInfo),
         testRule.greaterThanEqualsTo, testRule.tableIdentifier, new byte[][] { { 0, 1, 2, 3 } },
@@ -116,7 +116,10 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImplTest {
         testRule.segmentProperties);
 
     List<DataFileFooter> footerList = testRule.getDataFileFooterList();
+    footerList.get(0).setNumberOfRows(2);
+
     BTreeBuilderInfo bTreeBuilderInfo = new BTreeBuilderInfo(footerList, new int[] { 1, 1 });
+    bTreeBuilderInfo.getFooterList().get(0).getBlockletList().get(0).setNumberOfRows(2);
 
     BlockletBTreeLeafNode blockletBTreeLeafNode = new BlockletBTreeLeafNode(bTreeBuilderInfo, 0, 0);
 
@@ -144,7 +147,10 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImplTest {
     };
 
     List<DataFileFooter> footerList = testRule.getDataFileFooterList();
+    footerList.get(0).setNumberOfRows(2);
+
     BTreeBuilderInfo bTreeBuilderInfo = new BTreeBuilderInfo(footerList, new int[] { 1, 1 });
+    bTreeBuilderInfo.getFooterList().get(0).getBlockletList().get(0).setNumberOfRows(2);
 
     BlockletBTreeLeafNode blockletBTreeLeafNode = new BlockletBTreeLeafNode(bTreeBuilderInfo, 0, 0);
 
@@ -157,16 +163,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImplTest {
     BitSet result = rangeGrtrThanEquaToFilterExecuter.applyFilter(blocksChunkHolder);
 
     BitSet expectedResult = new BitSet();
-    expectedResult.flip(0);
     expectedResult.flip(1);
-    expectedResult.flip(2);
-    expectedResult.flip(3);
-    expectedResult.flip(4);
-    expectedResult.flip(5);
-    expectedResult.flip(6);
-    expectedResult.flip(7);
-    expectedResult.flip(8);
-    expectedResult.flip(9);
 
     assertThat(result, is(equalTo(expectedResult)));
   }
@@ -189,7 +186,10 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImplTest {
     };
 
     List<DataFileFooter> footerList = testRule.getDataFileFooterList();
+    footerList.get(0).setNumberOfRows(2);
+
     BTreeBuilderInfo bTreeBuilderInfo = new BTreeBuilderInfo(footerList, new int[] { 1, 1 });
+    bTreeBuilderInfo.getFooterList().get(0).getBlockletList().get(0).setNumberOfRows(2);
 
     DimensionChunkAttributes attributes = new DimensionChunkAttributes();
     attributes.setNoDictionary(true);
@@ -212,14 +212,6 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImplTest {
     BitSet expectedResult = new BitSet();
     expectedResult.flip(0);
     expectedResult.flip(1);
-    expectedResult.flip(2);
-    expectedResult.flip(3);
-    expectedResult.flip(4);
-    expectedResult.flip(5);
-    expectedResult.flip(6);
-    expectedResult.flip(7);
-    expectedResult.flip(8);
-    expectedResult.flip(9);
 
     assertThat(result, is(equalTo(expectedResult)));
   }
@@ -268,6 +260,10 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImplTest {
     BitSet expectedResult = new BitSet();
 
     assertThat(result, is(equalTo(expectedResult)));
+  }
+
+  @AfterClass public static void clean() {
+    rangeGrtrThanEquaToFilterExecuter = null;
   }
 }
 

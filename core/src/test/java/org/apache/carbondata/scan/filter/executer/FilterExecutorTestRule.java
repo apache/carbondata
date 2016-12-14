@@ -20,6 +20,7 @@
 package org.apache.carbondata.scan.filter.executer;
 
 import java.io.File;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -201,7 +202,7 @@ public class FilterExecutorTestRule implements TestRule {
     DataFileFooter fileFooter = new DataFileFooter();
 
     fileFooter.setVersionId(ColumnarFormatVersion.V1);
-    fileFooter.setNumberOfRows(10);
+    fileFooter.setNumberOfRows(5);
 
     SegmentInfo segmentInfo = new SegmentInfo();
     segmentInfo.setNumberOfColumns(4);
@@ -253,7 +254,7 @@ public class FilterExecutorTestRule implements TestRule {
     BlockletInfo blockletInfo = new BlockletInfo();
     blockletInfo.setDimensionColumnChunk(Arrays.asList(dimenssionDataChunk1, dimenssionDataChunk2));
     blockletInfo.setMeasureColumnChunk(Arrays.asList(measureDataChunk1, measureDataChunk2));
-    blockletInfo.setNumberOfRows(10);
+    blockletInfo.setNumberOfRows(5);
     blockletInfo.setBlockletIndex(blockletIndex);
 
     new MockUp<DataFileFooter>() {
@@ -270,7 +271,10 @@ public class FilterExecutorTestRule implements TestRule {
       public DimensionColumnDataChunk readDimensionChunk(FileHolder fileReader, int blockIndex) {
         DimensionChunkAttributes chunkAttributes = new DimensionChunkAttributes();
         chunkAttributes.setEachRowSize(1);
-        byte[] dataChunk = { 2, 2, 2, 2, 2, 2, 2, 2, 2, 3 };
+        chunkAttributes.setInvertedIndexes(new int[] { 1, 1 });
+        chunkAttributes.setInvertedIndexesReverse(new int[] { 0, 1 });
+
+        byte[] dataChunk = { 1, 5, 4, 8, 7 };
         return new FixedLengthDimensionDataChunk(dataChunk, chunkAttributes);
       }
     };
@@ -282,6 +286,7 @@ public class FilterExecutorTestRule implements TestRule {
         dataHolder.setReadableDoubleValues(
             new double[] { 7.414E-320, 7.412E-320, 7.4115E-320, 7.4144E-320, 7.4135E-320,
                 7.4125E-320, 7.411E-320, 7.415E-320, 7.413E-320, 7.4154E-320 });
+        dataHolder.setReadableBigDecimalValues(new BigDecimal[] { new BigDecimal("2.1") });
 
         PresenceMeta presenceMeta = new PresenceMeta();
         presenceMeta.setRepresentNullValues(false);
