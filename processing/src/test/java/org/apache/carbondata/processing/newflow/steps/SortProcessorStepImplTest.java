@@ -38,6 +38,7 @@ import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 
 import mockit.Mock;
 import mockit.MockUp;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -128,9 +129,9 @@ public class SortProcessorStepImplTest {
     };
 
     sortProcessorStep.initialize();
+    sortProcessorStep.close();
     Iterator<CarbonRowBatch> result[] = sortProcessorStep.execute();
     assertEquals(result.length, 2);
-    sortProcessorStep.close();
 
   }
 
