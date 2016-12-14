@@ -91,7 +91,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
       DimensionColumnDataChunk[] dimensionDataChunks, int rowNumber,
       DataOutputStream dataOutputStream) throws IOException {
     byte[] currentVal =
-        new byte[dimensionDataChunks[blockIndex].getAttributes().getColumnValueSize()];
+        new byte[dimensionDataChunks[blockIndex].getColumnValueSize()];
     copyBlockDataChunk(dimensionDataChunks, rowNumber, currentVal);
     dataOutputStream.write(currentVal);
   }

@@ -254,8 +254,8 @@ public abstract class AbstractScannedResult {
    * Just increment the counter incase of query only on measures.
    */
   public void incrementCounter() {
-    rowCounter ++;
-    currentRow ++;
+    rowCounter++;
+    currentRow++;
   }
 
   /**
@@ -380,7 +380,11 @@ public abstract class AbstractScannedResult {
    * @return
    */
   public boolean hasNext() {
-    return rowCounter < this.totalNumberOfRows;
+    if (rowCounter < this.totalNumberOfRows) {
+      return true;
+    }
+    CarbonUtil.freeMemory(dataChunks, measureDataChunks);
+    return false;
   }
 
   /**

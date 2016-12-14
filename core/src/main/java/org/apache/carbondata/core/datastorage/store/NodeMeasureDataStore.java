@@ -31,5 +31,4 @@ public interface NodeMeasureDataStore {
    * @return writable array (compressed or normal)
    */
   byte[][] getWritableMeasureDataArray(CarbonWriteDataHolder[] dataHolderArray);
-
 }

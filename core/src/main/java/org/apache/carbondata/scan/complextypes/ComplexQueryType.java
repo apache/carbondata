@@ -1,4 +1,3 @@
-
 /*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -49,17 +48,8 @@ public class ComplexQueryType {
    */
   protected void copyBlockDataChunk(DimensionColumnDataChunk[] dimensionColumnDataChunks,
       int rowNumber, byte[] input) {
-    byte[] data = (byte[]) dimensionColumnDataChunks[blockIndex].getCompleteDataChunk();
-    if (null != dimensionColumnDataChunks[blockIndex].getAttributes().getInvertedIndexes()) {
-      System.arraycopy(data, dimensionColumnDataChunks[blockIndex].getAttributes()
-              .getInvertedIndexesReverse()[rowNumber] * dimensionColumnDataChunks[blockIndex]
-              .getAttributes().getColumnValueSize(), input, 0,
-          dimensionColumnDataChunks[blockIndex].getAttributes().getColumnValueSize());
-    } else {
-      System.arraycopy(data,
-          rowNumber * dimensionColumnDataChunks[blockIndex].getAttributes().getColumnValueSize(),
-          input, 0, dimensionColumnDataChunks[blockIndex].getAttributes().getColumnValueSize());
-    }
+    byte[] data = dimensionColumnDataChunks[blockIndex].getChunkData(rowNumber);
+    System.arraycopy(data, 0, input, 0, data.length);
   }
 
   /*

@@ -106,10 +106,10 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
         case LONG:
           return dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(index);
         case DECIMAL:
-          return  org.apache.spark.sql.types.Decimal.apply(
-                  dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index));
+          return org.apache.spark.sql.types.Decimal
+              .apply(dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index));
         default:
-          return  dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
+          return dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
       }
     }
     return null;
@@ -136,7 +136,7 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
       ByteArrayWrapper key = null;
       for (int i = 0; i < listBasedResult.size(); i++) {
         // get the key
-        key = (ByteArrayWrapper)listBasedResult.get(i)[0];
+        key = (ByteArrayWrapper) listBasedResult.get(i)[0];
         // unpack the key with table block key generator
         data = tableBlockExecutionInfos.getBlockKeyGenerator()
             .getKeyArray(key.getDictionaryKey(), tableBlockExecutionInfos.getMaskedByteForBlock());

@@ -28,7 +28,6 @@ import static junit.framework.TestCase.assertNotNull;
 import static org.pentaho.di.core.util.Assert.assertNull;
 
 public class DriverQueryStatisticsRecorderImplTest {
-
   private static DriverQueryStatisticsRecorderImpl driverQueryStatisticsRecorderImpl = null;
   private static QueryStatistic queryStasticsWithSQL_PARSE = null;
   private static QueryStatistic queryStasticsWithLoadMetaData = null;

@@ -1081,6 +1081,7 @@ public final class CarbonCommonConstants {
 
   /**
    * Default carbon dictionary server port
+
    */
   public static final String DICTIONARY_SERVER_PORT_DEFAULT = "2030";
 
@@ -1093,6 +1094,26 @@ public final class CarbonCommonConstants {
    * maximum length of column
    */
   public static final int DEFAULT_COLUMN_LENGTH = 100000;
+
+  /**
+   * property for enabling unsafe based query processing
+   */
+  public static final String ENABLE_UNSAFE_IN_QUERY_EXECUTION = "enable.unsafe.in.query.processing";
+
+  /**
+   * default property of unsafe processing
+   */
+  public static final String ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE = "false";
+
+  /**
+   * property for offheap based processing
+   */
+  public static final String USE_OFFHEAP_IN_QUERY_PROCSSING = "use.offheap.in.query.processing";
+
+  /**
+   * default value of offheap based processing
+   */
+  public static final String USE_OFFHEAP_IN_QUERY_PROCSSING_DEFAULT = "true";
 
   private CarbonCommonConstants() {
   }

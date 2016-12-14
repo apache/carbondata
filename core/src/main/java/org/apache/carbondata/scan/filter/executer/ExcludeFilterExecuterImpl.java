@@ -20,13 +20,11 @@ package org.apache.carbondata.scan.filter.executer;
 
 import java.io.IOException;
 import java.util.BitSet;
-import java.util.List;
 
 import org.apache.carbondata.core.carbon.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.VariableLengthDimensionDataChunk;
-import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.scan.filter.FilterUtil;
 import org.apache.carbondata.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
@@ -51,10 +49,6 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
         .get(dimColEvaluatorInfo.getColumnIndex());
     if (null == blockChunkHolder.getDimensionDataChunk()[blockIndex]) {
-      blockChunkHolder.getDataBlock()
-          .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
-    }
-    if (null == blockChunkHolder.getDimensionDataChunk()[blockIndex]) {
       blockChunkHolder.getDimensionDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
           .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
     }
@@ -65,12 +59,12 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
   protected BitSet getFilteredIndexes(DimensionColumnDataChunk dimColumnDataChunk,
       int numerOfRows) {
     // For high cardinality dimensions.
-    if (dimColumnDataChunk.getAttributes().isNoDictionary()
+    if (dimColumnDataChunk.isNoDicitionaryColumn()
         && dimColumnDataChunk instanceof VariableLengthDimensionDataChunk) {
       return setDirectKeyFilterIndexToBitSet((VariableLengthDimensionDataChunk) dimColumnDataChunk,
           numerOfRows);
     }
-    if (null != dimColumnDataChunk.getAttributes().getInvertedIndexes()
+    if (dimColumnDataChunk.isExplicitSorted()
         && dimColumnDataChunk instanceof FixedLengthDimensionDataChunk) {
       return setFilterdIndexToBitSetWithColumnIndex(
           (FixedLengthDimensionDataChunk) dimColumnDataChunk, numerOfRows);
@@ -82,44 +76,21 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
       VariableLengthDimensionDataChunk dimColumnDataChunk, int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
     bitSet.flip(0, numerOfRows);
-    List<byte[]> listOfColumnarKeyBlockDataForNoDictionaryVal =
-        dimColumnDataChunk.getCompleteDataChunk();
     byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
-    int[] columnIndexArray = dimColumnDataChunk.getAttributes().getInvertedIndexes();
-    int[] columnReverseIndexArray = dimColumnDataChunk.getAttributes().getInvertedIndexesReverse();
     for (int i = 0; i < filterValues.length; i++) {
       byte[] filterVal = filterValues[i];
-      if (null != listOfColumnarKeyBlockDataForNoDictionaryVal) {
-
-        if (null != columnReverseIndexArray) {
-          for (int index : columnIndexArray) {
-            byte[] noDictionaryVal =
-                listOfColumnarKeyBlockDataForNoDictionaryVal.get(columnReverseIndexArray[index]);
-            if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterVal, noDictionaryVal) == 0) {
-              bitSet.flip(index);
-            }
+      if (dimColumnDataChunk.isExplicitSorted()) {
+        for (int index = 0; index < numerOfRows; index++) {
+          if (dimColumnDataChunk.compareTo(index, filterVal) == 0) {
+            bitSet.flip(dimColumnDataChunk.getInvertedIndex(index));
           }
-        } else if (null != columnIndexArray) {
-
-          for (int index : columnIndexArray) {
-            byte[] noDictionaryVal =
-                listOfColumnarKeyBlockDataForNoDictionaryVal.get(columnIndexArray[index]);
-            if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterVal, noDictionaryVal) == 0) {
-              bitSet.flip(index);
-            }
-          }
-        } else {
-          for (int index = 0;
-               index < listOfColumnarKeyBlockDataForNoDictionaryVal.size(); index++) {
-            if (ByteUtil.UnsafeComparer.INSTANCE
-                .compareTo(filterVal, listOfColumnarKeyBlockDataForNoDictionaryVal.get(index))
-                == 0) {
-              bitSet.flip(index);
-            }
-          }
-
         }
-
+      } else {
+        for (int index = 0; index < numerOfRows; index++) {
+          if (dimColumnDataChunk.compareTo(index, filterVal) == 0) {
+            bitSet.flip(index);
+          }
+        }
       }
     }
     return bitSet;
@@ -128,7 +99,6 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
 
   private BitSet setFilterdIndexToBitSetWithColumnIndex(
       FixedLengthDimensionDataChunk dimColumnDataChunk, int numerOfRows) {
-    int[] columnIndex = dimColumnDataChunk.getAttributes().getInvertedIndexes();
     int startKey = 0;
     int last = 0;
     int startIndex = 0;
@@ -142,13 +112,11 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
       if (startKey < 0) {
         continue;
       }
-      bitSet.flip(columnIndex[startKey]);
+      bitSet.flip(dimColumnDataChunk.getInvertedIndex(startKey));
       last = startKey;
       for (int j = startKey + 1; j < numerOfRows; j++) {
-        if (ByteUtil.UnsafeComparer.INSTANCE
-            .compareTo(dimColumnDataChunk.getCompleteDataChunk(), j * filterValues[i].length,
-                filterValues[i].length, filterValues[i], 0, filterValues[i].length) == 0) {
-          bitSet.flip(columnIndex[j]);
+        if (dimColumnDataChunk.compareTo(j, filterValues[i]) == 0) {
+          bitSet.flip(dimColumnDataChunk.getInvertedIndex(j));
           last++;
         } else {
           break;
@@ -169,9 +137,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
     for (int k = 0; k < filterValues.length; k++) {
       for (int j = 0; j < numerOfRows; j++) {
-        if (ByteUtil.UnsafeComparer.INSTANCE
-            .compareTo(dimColumnDataChunk.getCompleteDataChunk(), j * filterValues[k].length,
-                filterValues[k].length, filterValues[k], 0, filterValues[k].length) == 0) {
+        if (dimColumnDataChunk.compareTo(j, filterValues[k]) == 0) {
           bitSet.flip(j);
         }
       }
