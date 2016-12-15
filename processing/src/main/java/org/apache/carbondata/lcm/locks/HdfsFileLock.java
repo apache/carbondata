@@ -117,4 +117,8 @@ public class HdfsFileLock extends AbstractCarbonLock {
     return true;
   }
 
+  @Override
+  public String toString() {
+    return "HdfsFileLock(" + location + ")";
+  }
 }

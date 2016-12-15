@@ -360,10 +360,9 @@ class CarbonGlobalDictionaryGenerateRDD(
               model.primDimensions(split.index).getColName
             }")
           } else {
-            sys
-              .error(s"Dictionary file ${
-                model.primDimensions(split.index).getColName
-              } is locked for updation. Please try after some time")
+            sys.error(s"Dictionary file lock($dictLock) for " +
+                s"${model.primDimensions(split.index).getColName} is locked." +
+                s" Please try after some time or remove this lock file")
           }
           val t2 = System.currentTimeMillis
           val fileType = FileFactory.getFileType(model.dictFilePaths(split.index))

@@ -33,13 +33,13 @@ object TableCreator {
 
   // detects whether complex dimension is part of dictionary_exclude
   def isComplexDimDictionaryExclude(dimensionDataType: String): Boolean = {
-    val dimensionType = Array("array", "struct")
+    val dimensionType = Array("arraytype", "structtype")
     dimensionType.exists(x => x.equalsIgnoreCase(dimensionDataType))
   }
 
   // detects whether double or decimal column is part of dictionary_exclude
   def isStringAndTimestampColDictionaryExclude(columnDataType: String): Boolean = {
-    val dataTypes = Array("string", "timestamp")
+    val dataTypes = Array("stringtype", "timestamptype")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }
 
@@ -62,27 +62,27 @@ object TableCreator {
     // All excluded cols should be there in create table cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).isDefined) {
       dictExcludeCols =
-        tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).get.split(',').map(_.trim)
-      dictExcludeCols
-        .map { dictExcludeCol =>
-          if (!fields.exists(x => x.column.equalsIgnoreCase(dictExcludeCol))) {
-            val errormsg = "DICTIONARY_EXCLUDE column: " + dictExcludeCol +
-              " does not exist in table. Please check create table statement."
+        tableProperties(CarbonCommonConstants.DICTIONARY_EXCLUDE).split(',').map(_.trim)
+      dictExcludeCols.foreach { dictExcludeCol =>
+        if (!fields.exists(x => x.column.equalsIgnoreCase(dictExcludeCol))) {
+          val errormsg = "DICTIONARY_EXCLUDE column: " + dictExcludeCol +
+            " does not exist in table. Please check create table statement."
+          throw new MalformedCarbonCommandException(errormsg)
+        } else {
+          val dataType = fields.find { x =>
+            x.column.equalsIgnoreCase(dictExcludeCol)
+          }.get.dataType.get
+          if (isComplexDimDictionaryExclude(dataType)) {
+            val errormsg = "DICTIONARY_EXCLUDE is unsupported for complex datatype column: " +
+              dictExcludeCol
             throw new MalformedCarbonCommandException(errormsg)
-          } else {
-            val dataType = fields.find(x =>
-              x.column.equalsIgnoreCase(dictExcludeCol)).get.dataType.get
-            if (isComplexDimDictionaryExclude(dataType)) {
-              val errormsg = "DICTIONARY_EXCLUDE is unsupported for complex datatype column: " +
-                dictExcludeCol
-              throw new MalformedCarbonCommandException(errormsg)
-            } else if (!isStringAndTimestampColDictionaryExclude(dataType)) {
-              val errorMsg = "DICTIONARY_EXCLUDE is unsupported for " + dataType.toLowerCase() +
-                " data type column: " + dictExcludeCol
-              throw new MalformedCarbonCommandException(errorMsg)
-            }
+          } else if (!isStringAndTimestampColDictionaryExclude(dataType)) {
+            val errorMsg = "DICTIONARY_EXCLUDE is unsupported for " + dataType.toLowerCase() +
+              " data type column: " + dictExcludeCol
+            throw new MalformedCarbonCommandException(errorMsg)
           }
         }
+      }
     }
     // All included cols should be there in create table cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {

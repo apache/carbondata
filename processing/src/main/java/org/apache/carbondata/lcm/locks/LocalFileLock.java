@@ -161,4 +161,8 @@ public class LocalFileLock extends AbstractCarbonLock {
     return status;
   }
 
+  @Override
+  public String toString() {
+    return "LocalFileLock(" + lockFilePath + ")";
+  }
 }

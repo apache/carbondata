@@ -360,11 +360,13 @@ case class LoadTable(
 
 
       val columnar = sparkSession.conf.get("carbon.is.columnar.storage", "true").toBoolean
-      val kettleHomePath = CarbonScalaUtil.getKettleHome(sparkSession.sqlContext)
+      var kettleHomePath = ""
 
       // TODO It will be removed after kettle is removed.
       val useKettle = options.get("use_kettle") match {
-        case Some(value) => value.toBoolean
+        case Some(value) =>
+          kettleHomePath = CarbonScalaUtil.getKettleHome(sparkSession.sqlContext)
+          value.toBoolean
         case _ =>
           val useKettleLocal = System.getProperty("use.kettle")
           if (useKettleLocal == null) {
