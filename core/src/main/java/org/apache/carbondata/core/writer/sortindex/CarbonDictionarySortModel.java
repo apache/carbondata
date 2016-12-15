@@ -102,6 +102,7 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
           return -1;
         }
         return val1.compareTo(val2);
+      case DATE:
       case TIMESTAMP:
         SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
             .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,

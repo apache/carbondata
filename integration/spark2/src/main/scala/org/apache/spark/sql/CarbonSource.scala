@@ -102,12 +102,10 @@ class CarbonSource extends CreatableRelationProvider
 
   private def createTableIfNotExists(sparkSession: SparkSession, parameters: Map[String, String],
                                      dataSchema: StructType): String = {
-    val (dbName, tableName) = parameters.get("path") match {
-      case Some(path) =>
-        val p = path.split(File.separator)
-        ("default", p(p.length - 1))
-      case _ => throw new Exception("do not have dbname and tablename for carbon table")
-    }
+
+    val dbName: String = parameters.getOrElse("dbName", CarbonCommonConstants.DATABASE_DEFAULT_NAME)
+    val tableName: String = parameters.getOrElse("tableName", "default_table")
+
     try {
       CarbonEnv.get.carbonMetastore.lookupRelation(Option(dbName), tableName)(sparkSession)
       CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
@@ -134,7 +132,8 @@ class CarbonSource extends CreatableRelationProvider
         val cm = TableCreator.prepareTableModel(false, Option(dbName), tableName, fields, Nil, map)
         CreateTable(cm).run(sparkSession)
         CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
-      case _ => throw new Exception("do not have dbname and tablename for carbon table")
+      case ex: Exception =>
+        throw new Exception("do not have dbname and tablename for carbon table", ex)
     }
   }
 

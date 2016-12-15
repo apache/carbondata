@@ -79,7 +79,8 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
       Expression right = binaryConditionalExpression.getRight();
       if (left instanceof ColumnExpression) {
         ColumnExpression columnExpression = (ColumnExpression) left;
-        if (columnExpression.getDataType().equals(DataType.TIMESTAMP)) {
+        if (columnExpression.getDataType().equals(DataType.TIMESTAMP) ||
+            columnExpression.getDataType().equals(DataType.DATE) ) {
           isExpressionResolve = true;
         } else {
           // If imei=imei comes in filter condition then we need to
@@ -99,7 +100,8 @@ public class RestructureFilterResolverImpl implements FilterResolverIntf {
         }
       } else if (right instanceof ColumnExpression) {
         ColumnExpression columnExpression = (ColumnExpression) right;
-        if (columnExpression.getDataType().equals(DataType.TIMESTAMP)) {
+        if (columnExpression.getDataType().equals(DataType.TIMESTAMP) ||
+            columnExpression.getDataType().equals(DataType.DATE)) {
           isExpressionResolve = true;
         } else {
 

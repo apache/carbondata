@@ -104,6 +104,7 @@ case class CarbonDictionaryDecoder(
           DecimalType(precision, scale)
         }
       case DataType.TIMESTAMP => TimestampType
+      case DataType.DATE => DateType
       case DataType.STRUCT =>
         CarbonMetastoreTypes
           .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
@@ -261,6 +262,7 @@ class CarbonDecoderRDD(
           DecimalType(precision, scale)
         }
       case DataType.TIMESTAMP => TimestampType
+      case DataType.DATE => DateType
       case DataType.STRUCT =>
         CarbonMetastoreTypes
             .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")

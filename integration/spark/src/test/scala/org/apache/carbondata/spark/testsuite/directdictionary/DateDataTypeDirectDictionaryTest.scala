@@ -20,17 +20,15 @@
 package org.apache.carbondata.spark.testsuite.directdictionary
 
 import java.io.File
-import java.sql.Timestamp
+import java.sql.Date
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.CarbonHiveContext._
+import org.apache.spark.sql.common.util.CarbonHiveContext.{sql, _}
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.hive.HiveContext
 import org.scalatest.BeforeAndAfterAll
-
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 
 /**
@@ -38,40 +36,39 @@ import org.apache.carbondata.core.util.CarbonProperties
   *
   *
   */
-class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll {
+class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
 
   override def beforeAll {
     try {
-      CarbonProperties.getInstance()
-        .addProperty(TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP, "2000-12-13 02:10.00.0")
-      CarbonProperties.getInstance()
-        .addProperty(TimeStampGranularityConstants.CARBON_TIME_GRANULARITY,
-          TimeStampGranularityConstants.TIME_GRAN_SEC.toString
-        )
       CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "true")
-      sql("drop table if exists directDictionaryTable")
-      sql("drop table if exists directDictionaryTable_hive")
+      sql("drop table if exists directDictionaryTable ")
+      sql("drop table if exists directDictionaryTable_hive ")
       sql(
-        "CREATE TABLE if not exists directDictionaryTable (empno int,doj Timestamp, salary int) " +
+        "CREATE TABLE if not exists directDictionaryTable (empno int,doj date, " +
+          "salary int) " +
           "STORED BY 'org.apache.carbondata.format'"
       )
 
       sql(
-        "CREATE TABLE if not exists directDictionaryTable_hive (empno int,doj Timestamp, salary int) " +
+        "CREATE TABLE if not exists directDictionaryTable_hive (empno int,doj date, " +
+          "salary int) " +
           "row format delimited fields terminated by ','"
       )
 
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd")
       val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
         .getCanonicalPath
-      val csvFilePath = currentDirectory + "/src/test/resources/datasample.csv"
+      val csvFilePath = currentDirectory + "/src/test/resources/datasamplefordate.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable OPTIONS" +
-        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')" )
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable_hive")
+      sql("select * from directDictionaryTable_hive").show(false)
     } catch {
-      case x: Throwable => CarbonProperties.getInstance()
+      case x: Throwable =>
+        x.printStackTrace()
+        CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     }
   }
@@ -79,8 +76,8 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
   test("test direct dictionary for not null condition") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj is not null"),
-      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
-        Row(Timestamp.valueOf("2016-04-14 15:00:09.0"))
+      Seq(Row(Date.valueOf("2016-03-14")),
+        Row(Date.valueOf("2016-04-14"))
       )
     )
   }
@@ -88,8 +85,8 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
   test("test direct dictionary for getting all the values") {
     checkAnswer(
       sql("select doj from directDictionaryTable"),
-      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
-        Row(Timestamp.valueOf("2016-04-14 15:00:09.0")),
+      Seq(Row(Date.valueOf("2016-03-14")),
+        Row(Date.valueOf("2016-04-14")),
         Row(null)
       )
     )
@@ -97,8 +94,8 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
 
   test("test direct dictionary for not equals condition") {
     checkAnswer(
-      sql("select doj from directDictionaryTable where doj != '2016-04-14 15:00:09'"),
-      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09"))
+      sql("select doj from directDictionaryTable where doj != '2016-04-14 00:00:00'"),
+      Seq(Row(Date.valueOf("2016-03-14"))
       )
     )
   }
@@ -113,30 +110,30 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
 
   test("select doj from directDictionaryTable with equals filter") {
     checkAnswer(
-      sql("select doj from directDictionaryTable where doj='2016-03-14 15:00:09'"),
-      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09")))
+      sql("select doj from directDictionaryTable where doj = '2016-03-14 00:00:00'"),
+      Seq(Row(Date.valueOf("2016-03-14")))
     )
 
   }
 
   test("select doj from directDictionaryTable with regexp_replace equals filter") {
     checkAnswer(
-      sql("select doj from directDictionaryTable where regexp_replace(doj, '-', '/') = '2016/03/14 15:00:09'"),
-      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09")))
+      sql("select doj from directDictionaryTable where regexp_replace(doj, '-', '/') = '2016/03/14'"),
+      Seq(Row(Date.valueOf("2016-03-14")))
     )
   }
 
   test("select doj from directDictionaryTable with regexp_replace NOT IN filter") {
     checkAnswer(
-      sql("select doj from directDictionaryTable where regexp_replace(doj, '-', '/') NOT IN ('2016/03/14 15:00:09')"),
-      sql("select doj from directDictionaryTable_hive where regexp_replace(doj, '-', '/') NOT IN ('2016/03/14 15:00:09')")
+      sql("select doj from directDictionaryTable where regexp_replace(doj, '-', '/') NOT IN ('2016/03/14')"),
+      sql("select doj from directDictionaryTable_hive where regexp_replace(doj, '-', '/') NOT IN ('2016/03/14')")
     )
   }
 
   test("select doj from directDictionaryTable with greater than filter") {
     checkAnswer(
-      sql("select doj from directDictionaryTable where doj>'2016-03-14 15:00:09'"),
-      Seq(Row(Timestamp.valueOf("2016-04-14 15:00:09")))
+      sql("select doj from directDictionaryTable where doj > '2016-03-14 00:00:00'"),
+      Seq(Row(Date.valueOf("2016-04-14")))
     )
   }
 

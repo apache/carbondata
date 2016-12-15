@@ -295,7 +295,7 @@ public class ExpressionResultTest {
     Date dateToStr;
     try {
       dateToStr = parser.parse(value.toString());
-      return dateToStr.getTime() * 1000;
+      return dateToStr.getTime();
     } catch (ParseException e) {
       throw new FilterIllegalMemberException("Cannot convert value to Time/Long type value");
     }
@@ -464,7 +464,7 @@ public class ExpressionResultTest {
     ExpressionResult expressionResult =
         new ExpressionResult(DataType.TIMESTAMP, "2016-11-07 10:15:09");
     int actualValue = expressionResult.compareTo(obj);
-    int expectedValue = -1;
+    int expectedValue = 0;
     assertEquals(expectedValue, actualValue);
   }
 

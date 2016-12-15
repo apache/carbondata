@@ -20,17 +20,15 @@
 package org.apache.carbondata.spark.testsuite.directdictionary
 
 import java.io.File
-import java.sql.Timestamp
+import java.sql.{Date, Timestamp}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.hive.HiveContext
 import org.scalatest.BeforeAndAfterAll
-
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 
 /**
@@ -38,22 +36,16 @@ import org.apache.carbondata.core.util.CarbonProperties
   *
   *
   */
-class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with BeforeAndAfterAll {
+class DateDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
 
   override def beforeAll {
     try {
-      CarbonProperties.getInstance()
-        .addProperty(TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP, "2000-12-13 02:10.00.0")
-      CarbonProperties.getInstance()
-        .addProperty(TimeStampGranularityConstants.CARBON_TIME_GRANULARITY,
-          TimeStampGranularityConstants.TIME_GRAN_SEC.toString
-        )
       CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "true")
       sql(
         """
          CREATE TABLE IF NOT EXISTS directDictionaryTable
-        (empno String, doj Timestamp, salary Int)
+        (empno String, doj Date, salary Int)
          STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ('DICTIONARY_EXCLUDE'='empno')"""
       )
 
@@ -65,7 +57,9 @@ class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable OPTIONS"
         + "('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
     } catch {
-      case x: Throwable => CarbonProperties.getInstance()
+      case x: Throwable =>
+        x.printStackTrace()
+        CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     }
   }
@@ -73,8 +67,8 @@ class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with
   test("select doj from directDictionaryTable") {
     checkAnswer(
       sql("select doj from directDictionaryTable"),
-      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0")),
-        Row(Timestamp.valueOf("2016-04-14 15:00:09.0")),
+      Seq(Row(Date.valueOf("2016-03-14")),
+        Row(Date.valueOf("2016-04-14")),
         Row(null)
       )
     )
@@ -84,7 +78,7 @@ class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with
   test("select doj from directDictionaryTable with equals filter") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj='2016-03-14 15:00:09'"),
-      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09")))
+      Seq(Row(Date.valueOf("2016-03-14")))
     )
 
   }
@@ -92,7 +86,7 @@ class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with
   test("select doj from directDictionaryTable with greater than filter") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj>'2016-03-14 15:00:09'"),
-      Seq(Row(Timestamp.valueOf("2016-04-14 15:00:09")))
+      Seq(Row(Date.valueOf("2016-04-14")))
     )
 
   }
