@@ -73,7 +73,6 @@ object CarbonExample {
          |    timestampField timestamp,
          |    decimalField decimal(18,2))
          | USING org.apache.spark.sql.CarbonSource
-         | OPTIONS (DICTIONARY_EXCLUDE 'stringField')
        """.stripMargin)
 
     // val prop = s"$rootPath/conf/dataload.properties.template"
