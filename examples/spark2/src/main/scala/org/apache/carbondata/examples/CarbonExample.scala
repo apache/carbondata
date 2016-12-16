@@ -153,6 +153,18 @@ object CarbonExample {
         |where t1.stringField = t2.stringField
       """.stripMargin).show
 
+    spark.sql(
+      """
+        |with t1 as (
+        |select * from carbon_table
+        |union all
+        |select * from carbon_table
+        |)
+        |select t1.*, t2.*
+        |from t1, carbon_table t2
+        |where t1.stringField = t2.stringField
+      """.stripMargin).show
+
     // Drop table
     spark.sql("DROP TABLE IF EXISTS carbon_table")
     spark.sql("DROP TABLE IF EXISTS csv_table")
