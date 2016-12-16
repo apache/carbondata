@@ -90,4 +90,22 @@ class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
        """.stripMargin)
   }
 
+  test("dictionary_exclude option") {
+    try {
+      spark.sql(
+        """
+          |create table test_option(i int, s1 string, s2 string, s3 string)
+          |using org.apache.spark.sql.CarbonSource
+          |options (dictionary_exclude 's1, s2, s3')
+        """.stripMargin)
+      spark.sql(
+        """
+          |drop table test_option
+        """.stripMargin)
+    } catch {
+      case e: Exception =>
+        fail("unexpected exception: " + e)
+    }
+  }
+
 }
