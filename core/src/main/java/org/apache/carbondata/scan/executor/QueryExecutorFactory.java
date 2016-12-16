@@ -18,18 +18,9 @@
  */
 package org.apache.carbondata.scan.executor;
 
-import java.util.List;
-
-import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
-import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.scan.executor.impl.DetailQueryExecutor;
 import org.apache.carbondata.scan.executor.impl.VectorDetailQueryExecutor;
-import org.apache.carbondata.scan.model.QueryDimension;
-import org.apache.carbondata.scan.model.QueryMeasure;
 import org.apache.carbondata.scan.model.QueryModel;
-import org.apache.carbondata.scan.result.vector.CarbonColumnVector;
-import org.apache.carbondata.scan.result.vector.CarbonColumnarBatch;
-import org.apache.carbondata.scan.result.vector.impl.CarbonColumnVectorImpl;
 
 /**
  * Factory class to get the query executor from RDD
