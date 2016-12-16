@@ -162,9 +162,12 @@ public class DictionaryBasedResultCollectorTest {
     new MockUp<DirectDictionaryKeyGeneratorFactory>() {
       @SuppressWarnings("unused") @Mock DirectDictionaryGenerator getDirectDictionaryGenerator(
           DataType dataType) {
-        if (dataType == DataType.TIMESTAMP) return new TimeStampDirectDictionaryGenerator(
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-        else return null;
+        if (dataType == DataType.TIMESTAMP || dataType == DataType.DATE) {
+          return new TimeStampDirectDictionaryGenerator(
+                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+        }  else {
+          return null;
+        }
       }
     };
     new MockUp<TimeStampDirectDictionaryGenerator>() {

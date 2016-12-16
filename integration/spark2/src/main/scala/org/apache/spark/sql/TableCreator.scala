@@ -47,7 +47,7 @@ object TableCreator {
   def isDetectAsDimentionDatatype(dimensionDatatype: String): Boolean = {
     val dimensionType =
       Array("string", "stringtype", "array", "arraytype", "struct",
-        "structtype", "timestamp", "timestamptype")
+        "structtype", "timestamp", "timestamptype", "date", "datetype")
     dimensionType.exists(x => x.equalsIgnoreCase(dimensionDatatype))
   }
 
@@ -111,7 +111,8 @@ object TableCreator {
     fields.foreach(field => {
 
       if (dictExcludeCols.toSeq.exists(x => x.equalsIgnoreCase(field.column))) {
-        if (DataTypeUtil.getDataType(field.dataType.get.toUpperCase()) != DataType.TIMESTAMP) {
+        if (DataTypeUtil.getDataType(field.dataType.get.toUpperCase()) != DataType.TIMESTAMP &&
+            DataTypeUtil.getDataType(field.dataType.get.toUpperCase()) != DataType.DATE) {
           noDictionaryDims :+= field.column
         }
         dimFields += field

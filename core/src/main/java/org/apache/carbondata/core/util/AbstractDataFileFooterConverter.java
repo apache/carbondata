@@ -322,6 +322,8 @@ public abstract class AbstractDataFileFooterConverter {
         return DataType.DOUBLE;
       case DECIMAL:
         return DataType.DECIMAL;
+      case DATE:
+        return DataType.DATE;
       case TIMESTAMP:
         return DataType.TIMESTAMP;
       case ARRAY:

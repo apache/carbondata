@@ -33,7 +33,7 @@ public interface ResolvedFilterInfoVisitorIntf {
    *
    * @param visitableObj
    * @param metadata
-   * @throws QueryExecutionException
+   * @throws FilterUnsupportedException
    */
   void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException;

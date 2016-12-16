@@ -103,7 +103,8 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
         metadata.setColumnExpression(columnExpression);
         metadata.setExpression(leftExp);
         metadata.setIncludeFilter(isIncludeFilter);
-        if (columnExpression.getDataType().equals(DataType.TIMESTAMP)) {
+        if (columnExpression.getDataType().equals(DataType.TIMESTAMP) ||
+            columnExpression.getDataType().equals(DataType.DATE)) {
           isExpressionResolve = true;
         } else {
           // if imei=imei comes in filter condition then we need to

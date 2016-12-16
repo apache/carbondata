@@ -285,6 +285,7 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
         case BOOLEAN:
           return Boolean
               .compare((Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
+        case DATE:
         case TIMESTAMP:
           SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
