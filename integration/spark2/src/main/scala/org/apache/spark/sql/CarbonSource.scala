@@ -129,7 +129,7 @@ class CarbonSource extends CreatableRelationProvider
         }
         val map = scala.collection.mutable.Map[String, String]()
         parameters.foreach { x => map.put(x._1, x._2) }
-        val cm = TableCreator.prepareTableModel(ifNotExistPresent = false, Option(dbName), tableName, fields, Nil, map)
+        val cm = TableCreator.prepareTableModel(false, Option(dbName), tableName, fields, Nil, map)
         CreateTable(cm).run(sparkSession)
         CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
       case ex: Exception =>
