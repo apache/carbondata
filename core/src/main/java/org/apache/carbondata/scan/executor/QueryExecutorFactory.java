@@ -44,43 +44,4 @@ public class QueryExecutorFactory {
       return new DetailQueryExecutor();
     }
   }
-
-  public static CarbonColumnarBatch createColuminarBatch(QueryModel queryModel) {
-    int batchSize = 10000;
-    List<QueryDimension> queryDimension = queryModel.getQueryDimension();
-    List<QueryMeasure> queryMeasures = queryModel.getQueryMeasures();
-    CarbonColumnVector[] vectors =
-        new CarbonColumnVector[queryDimension.size() + queryMeasures.size()];
-    for (int i = 0; i < queryDimension.size(); i++) {
-      QueryDimension dim = queryDimension.get(i);
-      if (dim.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-        vectors[dim.getQueryOrder()] = new CarbonColumnVectorImpl(batchSize, DataType.LONG);
-      } else if (!dim.getDimension().hasEncoding(Encoding.DICTIONARY)) {
-        vectors[dim.getQueryOrder()] =
-            new CarbonColumnVectorImpl(batchSize, dim.getDimension().getDataType());
-      } else if (dim.getDimension().isComplex()) {
-        vectors[dim.getQueryOrder()] = new CarbonColumnVectorImpl(batchSize, DataType.STRUCT);
-      } else {
-        vectors[dim.getQueryOrder()] = new CarbonColumnVectorImpl(batchSize, DataType.INT);
-      }
-    }
-
-    for (int i = 0; i < queryMeasures.size(); i++) {
-      QueryMeasure msr = queryMeasures.get(i);
-      switch (msr.getMeasure().getDataType()) {
-        case SHORT:
-        case INT:
-        case LONG:
-          vectors[msr.getQueryOrder()] =
-              new CarbonColumnVectorImpl(batchSize, msr.getMeasure().getDataType());
-          break;
-        case DECIMAL:
-          vectors[msr.getQueryOrder()] = new CarbonColumnVectorImpl(batchSize, DataType.DECIMAL);
-          break;
-        default:
-          vectors[msr.getQueryOrder()] = new CarbonColumnVectorImpl(batchSize, DataType.DOUBLE);
-      }
-    }
-    return new CarbonColumnarBatch(vectors, batchSize);
-  }
 }

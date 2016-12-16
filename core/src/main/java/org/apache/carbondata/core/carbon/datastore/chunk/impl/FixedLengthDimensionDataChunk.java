@@ -123,8 +123,11 @@ public class FixedLengthDimensionDataChunk implements DimensionColumnDataChunk<b
     int columnValueSize = chunkAttributes.getColumnValueSize();
     CarbonColumnVector vector = columnVectorInfo.vector;
     for (int j = offset; j < len; j++) {
+      // calculate the start index to take the dictionary data. Here dictionary data size is fixed
+      // so calculate using fixed size of it.
       int start = indexesReverse == null ?
-          rowMapping[j] * columnValueSize :indexesReverse[rowMapping[j]] * columnValueSize;
+          rowMapping[j] * columnValueSize :
+          indexesReverse[rowMapping[j]] * columnValueSize;
       int dict = getInt(columnValueSize, start);
       if (columnVectorInfo.directDictionaryGenerator == null) {
         vector.putInt(vectorOffset++, dict);
@@ -141,6 +144,12 @@ public class FixedLengthDimensionDataChunk implements DimensionColumnDataChunk<b
     return column + 1;
   }
 
+  /**
+   * Create the integer from fixed column size and start index
+   * @param columnValueSize
+   * @param start
+   * @return
+   */
   private int getInt(int columnValueSize, int start) {
     int dict = 0;
     for (int i = start; i < start + columnValueSize; i++) {
