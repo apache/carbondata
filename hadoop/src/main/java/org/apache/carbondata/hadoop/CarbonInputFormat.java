@@ -106,14 +106,14 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @param carbonTable
    * @throws IOException
    */
-  public static void setCarbonTable(Configuration configuration, CarbonTable carbonTable)
+  private static void setCarbonTable(Configuration configuration, CarbonTable carbonTable)
       throws IOException {
     if (null != carbonTable) {
       configuration.set(CARBON_TABLE, ObjectSerializationUtil.convertObjectToString(carbonTable));
     }
   }
 
-  public static CarbonTable getCarbonTable(Configuration configuration) throws IOException {
+  private static CarbonTable getCarbonTable(Configuration configuration) throws IOException {
     String carbonTableStr = configuration.get(CARBON_TABLE);
     if (carbonTableStr == null) {
       // read it from schema file in the store
@@ -125,16 +125,28 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return (CarbonTable) ObjectSerializationUtil.convertStringToObject(carbonTableStr);
   }
 
-  public static void setTablePath(Configuration configuration, String tablePath)
-      throws IOException {
+  /**
+   * Set the table path to read
+   * @param configuration job configuration
+   * @param tablePath path to read
+   */
+  public static void setTablePath(Configuration configuration, String tablePath) {
     configuration.set(FileInputFormat.INPUT_DIR, tablePath);
   }
 
   /**
-   * It sets unresolved filter expression.
-   *
-   * @param configuration
-   * @param filterExpression
+   * Get the table path that has been set in configuration
+   * @param configuration job configuration
+   * @return table path to read
+   */
+  public static String getTablePath(Configuration configuration) {
+    return configuration.get(FileInputFormat.INPUT_DIR);
+  }
+
+  /**
+   * Set filter expression which will be pushed down while scanning file.
+   * @param configuration job configuration
+   * @param filterExpression filter
    */
   public static void setFilterPredicates(Configuration configuration, Expression filterExpression) {
     if (filterExpression == null) {
@@ -148,6 +160,29 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     }
   }
 
+  /**
+   * Get the filter expression that has been set in job configuration
+   * @param configuration job configuration
+   * @return filter expression
+   */
+  public Expression getFilterPredicates(Configuration configuration) {
+    try {
+      String filterExprString = configuration.get(FILTER_PREDICATE);
+      if (filterExprString == null) {
+        return null;
+      }
+      Object filter = ObjectSerializationUtil.convertStringToObject(filterExprString);
+      return (Expression) filter;
+    } catch (IOException e) {
+      throw new RuntimeException("Error while reading filter expression", e);
+    }
+  }
+
+  /**
+   * Set the column projection to read
+   * @param configuration job configuration
+   * @param projection columns to read
+   */
   public static void setColumnProjection(Configuration configuration, CarbonProjection projection) {
     if (projection == null || projection.isEmpty()) {
       return;
@@ -162,18 +197,61 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     configuration.set(COLUMN_PROJECTION, columnString);
   }
 
-  public static String getColumnProjection(Configuration configuration) {
-    return configuration.get(COLUMN_PROJECTION);
+  /**
+   * Get the project column that has been set in configuration
+   * @param configuration job configuration
+   * @return project columns
+   */
+  public static String[] getColumnProjection(Configuration configuration) {
+    String columnString = configuration.get(COLUMN_PROJECTION);
+    if (columnString != null) {
+      return columnString.split(",");
+    }
+    return null;
   }
 
-  public static void setCarbonReadSupport(Configuration configuration,
+  /**
+   * Set the read support class, which is used for converting each row while scanning file
+   * @param configuration jog configuration
+   * @param readSupportClass read support class
+   */
+  public static void setReadSupportClass(Configuration configuration,
       Class<? extends CarbonReadSupport> readSupportClass) {
     if (readSupportClass != null) {
       configuration.set(CARBON_READ_SUPPORT, readSupportClass.getName());
     }
   }
 
-  public static CarbonTablePath getTablePath(Configuration configuration) throws IOException {
+  /**
+   * Get the read support class that has been set in configuration
+   * @param configuration job configuration
+   * @return read support class
+   */
+  public CarbonReadSupport getReadSupportClass(Configuration configuration) {
+    String readSupportClass = configuration.get(CARBON_READ_SUPPORT);
+    //By default it uses dictionary decoder read class
+    CarbonReadSupport readSupport = null;
+    if (readSupportClass != null) {
+      try {
+        Class<?> myClass = Class.forName(readSupportClass);
+        Constructor<?> constructor = myClass.getConstructors()[0];
+        Object object = constructor.newInstance();
+        if (object instanceof CarbonReadSupport) {
+          readSupport = (CarbonReadSupport) object;
+        }
+      } catch (ClassNotFoundException ex) {
+        LOG.error("Class " + readSupportClass + "not found", ex);
+      } catch (Exception ex) {
+        LOG.error("Error while creating " + readSupportClass, ex);
+      }
+    } else {
+      readSupport = new DictionaryDecodedReadSupportImpl();
+    }
+    return readSupport;
+  }
+
+  private static CarbonTablePath newCarbonTablePath(Configuration configuration)
+      throws IOException {
     AbsoluteTableIdentifier absIdentifier = getAbsoluteTableIdentifier(configuration);
     return CarbonStorePath.getCarbonTablePath(absIdentifier);
   }
@@ -181,7 +259,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * Set list of segments to access
    */
-  public static void setSegmentsToAccess(Configuration configuration, List<String> validSegments) {
+  private static void setSegmentsToAccess(Configuration configuration, List<String> validSegments) {
     configuration
         .set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, CarbonUtil.getSegmentString(validSegments));
   }
@@ -196,15 +274,15 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   /**
-   * {@inheritDoc}
-   * Configurations FileInputFormat.INPUT_DIR
-   * are used to get table path to read.
+   * Get all splits that satisfy the filter expression set in configuration.
+   * CarbonData uses global index to prune files to reduce IO as much as possible.
    *
-   * @param job
-   * @return List<InputSplit> list of CarbonInputSplit
+   * @param job job
+   * @return List<InputSplit> list of split
    * @throws IOException
    */
-  @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
+  @Override
+  public List<InputSplit> getSplits(JobContext job) throws IOException {
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
     List<String> invalidSegments = new ArrayList<>();
 
@@ -295,19 +373,6 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       }
     }
     return result;
-  }
-
-  private Expression getFilterPredicates(Configuration configuration) {
-    try {
-      String filterExprString = configuration.get(FILTER_PREDICATE);
-      if (filterExprString == null) {
-        return null;
-      }
-      Object filter = ObjectSerializationUtil.convertStringToObject(filterExprString);
-      return (Expression) filter;
-    } catch (IOException e) {
-      throw new RuntimeException("Error while reading filter expression", e);
-    }
   }
 
   /**
@@ -430,14 +495,26 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return blocks;
   }
 
-  @Override public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
-      TaskAttemptContext taskAttemptContext) throws IOException, InterruptedException {
+  /**
+   * Create record reader that scan the input split (CarbonData file).
+   * Column projection and filter expression will be pushed down while scanning.
+   *
+   * @param inputSplit split
+   * @param taskAttemptContext context
+   * @return record reader
+   * @throws IOException
+   */
+  @Override
+  public RecordReader<Void, T> createRecordReader(InputSplit inputSplit,
+      TaskAttemptContext taskAttemptContext) throws IOException {
     Configuration configuration = taskAttemptContext.getConfiguration();
+
+    // TODO: we should not get carbon table from file in executor side.
     CarbonTable carbonTable = getCarbonTable(configuration);
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(configuration);
 
     // query plan includes projection column
-    String projection = getColumnProjection(configuration);
+    String[] projection = getColumnProjection(configuration);
     CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(carbonTable, projection);
     QueryModel queryModel = QueryModel.createModel(identifier, queryPlan, carbonTable);
 
@@ -458,29 +535,6 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
     CarbonReadSupport readSupport = getReadSupportClass(configuration);
     return new CarbonRecordReader<T>(queryModel, readSupport);
-  }
-
-  private CarbonReadSupport getReadSupportClass(Configuration configuration) {
-    String readSupportClass = configuration.get(CARBON_READ_SUPPORT);
-    //By default it uses dictionary decoder read class
-    CarbonReadSupport readSupport = null;
-    if (readSupportClass != null) {
-      try {
-        Class<?> myClass = Class.forName(readSupportClass);
-        Constructor<?> constructor = myClass.getConstructors()[0];
-        Object object = constructor.newInstance();
-        if (object instanceof CarbonReadSupport) {
-          readSupport = (CarbonReadSupport) object;
-        }
-      } catch (ClassNotFoundException ex) {
-        LOG.error("Class " + readSupportClass + "not found", ex);
-      } catch (Exception ex) {
-        LOG.error("Error while creating " + readSupportClass, ex);
-      }
-    } else {
-      readSupport = new DictionaryDecodedReadSupportImpl();
-    }
-    return readSupport;
   }
 
   @Override protected long computeSplitSize(long blockSize, long minSize, long maxSize) {
@@ -523,7 +577,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     }
 
     PathFilter inputFilter = getDataFileFilter();
-    CarbonTablePath tablePath = getTablePath(job.getConfiguration());
+    CarbonTablePath tablePath = newCarbonTablePath(job.getConfiguration());
 
     // get tokens for all the required FileSystem for table path
     TokenCache.obtainTokensForNamenodes(job.getCredentials(), new Path[] { tablePath },

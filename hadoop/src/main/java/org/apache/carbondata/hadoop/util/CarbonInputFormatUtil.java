@@ -45,15 +45,14 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
  */
 public class CarbonInputFormatUtil {
 
-  public static CarbonQueryPlan createQueryPlan(CarbonTable carbonTable, String columnString) {
+  public static CarbonQueryPlan createQueryPlan(CarbonTable carbonTable, String[] projection) {
     String[] columns = null;
-    if (columnString != null) {
-      columns = columnString.split(",");
+    if (projection != null) {
+      columns = projection;
     }
     String factTableName = carbonTable.getFactTableName();
     CarbonQueryPlan plan = new CarbonQueryPlan(carbonTable.getDatabaseName(), factTableName);
-    // fill dimensions
-    // If columns are null, set all dimensions and measures
+    // fill dimensions, if projection columns are null, set all dimensions and measures
     int i = 0;
     if (columns != null) {
       for (String column : columns) {
@@ -69,6 +68,18 @@ public class CarbonInputFormatUtil {
           addQueryMeasure(plan, i, measure);
           i++;
         }
+      }
+    } else {
+      // query all columns
+      List<CarbonMeasure> tableMsrs = carbonTable.getMeasureByTableName(factTableName);
+      List<CarbonDimension> tableDims = carbonTable.getDimensionByTableName(factTableName);
+      for (CarbonDimension dimension : tableDims) {
+        addQueryDimension(plan, i, dimension);
+        i++;
+      }
+      for (CarbonMeasure measure : tableMsrs) {
+        addQueryMeasure(plan, i, measure);
+        i++;
       }
     }
 
