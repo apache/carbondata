@@ -402,12 +402,15 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   public void closeWriter() throws CarbonDataWriterException {
     CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
-    renameCarbonDataFile();
-    copyCarbonDataFileToCarbonStorePath(this.fileName.substring(0, this.fileName.lastIndexOf('.')));
-    try {
-      writeIndexFile();
-    } catch (IOException e) {
-      throw new CarbonDataWriterException("Problem while writing the index file", e);
+    if (this.blockletInfoList.size() > 0) {
+      renameCarbonDataFile();
+      copyCarbonDataFileToCarbonStorePath(
+          this.fileName.substring(0, this.fileName.lastIndexOf('.')));
+      try {
+        writeIndexFile();
+      } catch (IOException e) {
+        throw new CarbonDataWriterException("Problem while writing the index file", e);
+      }
     }
     closeExecutorService();
   }
@@ -539,7 +542,9 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * @throws CarbonDataWriterException
    */
   @Override public void writeBlockletInfoToFile() throws CarbonDataWriterException {
-    writeBlockletInfoToFile(this.blockletInfoList, fileChannel, fileName);
+    if (this.blockletInfoList.size() > 0) {
+      writeBlockletInfoToFile(this.blockletInfoList, fileChannel, fileName);
+    }
   }
 
   /**

@@ -134,7 +134,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
       }
     });
 
-    if (null == fileList || fileList.length < 0) {
+    if (null == fileList || fileList.length == 0) {
       return;
     }
     startSorting(fileList);
