@@ -39,6 +39,8 @@ class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
 
     // Drop table
     spark.sql("DROP TABLE IF EXISTS carbon_testtable")
+    spark.sql("DROP TABLE IF EXISTS csv_table")
+
     // Create table
     spark.sql(
       s"""
@@ -68,7 +70,8 @@ class CarbonDataSourceSuite extends FunSuite with BeforeAndAfterAll {
   }
 
   override def afterAll(): Unit = {
-    spark.sql("drop table carbon_testtable")
+    spark.sql("DROP TABLE IF EXISTS carbon_testtable")
+    spark.sql("DROP TABLE IF EXISTS csv_table")
     spark.sparkContext.stop()
     spark = null
   }
