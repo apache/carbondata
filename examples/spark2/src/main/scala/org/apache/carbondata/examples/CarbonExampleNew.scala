@@ -41,7 +41,7 @@ object CarbonExampleNew {
       .config("spark.sql.warehouse.dir", warehouse)
       .config("javax.jdo.option.ConnectionURL",
         s"jdbc:derby:;databaseName=$metastoredb;create=true")
-      .getOrCreateCarbon()
+      .getOrCreateCarbonSession()
     spark.sparkContext.setLogLevel("WARN")
     CarbonProperties.getInstance()
       .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")

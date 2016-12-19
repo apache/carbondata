@@ -125,7 +125,7 @@ class CarbonSource extends CreatableRelationProvider
         val map = scala.collection.mutable.Map[String, String]();
         parameters.foreach { x => map.put(x._1, x._2) }
         val cm = TableCreator.prepareTableModel(false, Option(dbName), tableName, fields, Nil, map)
-        CreateTable(cm).run(sparkSession)
+        CreateTable(cm, false).run(sparkSession)
         CarbonEnv.get.carbonMetastore.storePath + s"/$dbName/$tableName"
       case ex: Exception =>
         throw new Exception("do not have dbname and tablename for carbon table", ex)

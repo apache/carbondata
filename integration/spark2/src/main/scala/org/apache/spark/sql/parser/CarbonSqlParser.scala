@@ -30,7 +30,6 @@ import org.apache.spark.sql.catalyst._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.hive.HiveQlWrapper
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
@@ -59,6 +58,7 @@ class CarbonSqlParser extends AbstractCarbonSparkSQLParser {
   protected val CLEAN = carbonKeyWord("CLEAN")
   protected val COLS = carbonKeyWord("COLS")
   protected val COLUMNS = carbonKeyWord("COLUMNS")
+  protected val COMPACT = carbonKeyWord("COMPACT")
   protected val CREATE = carbonKeyWord("CREATE")
   protected val CUBE = carbonKeyWord("CUBE")
   protected val CUBES = carbonKeyWord("CUBES")
@@ -207,7 +207,7 @@ class CarbonSqlParser extends AbstractCarbonSparkSQLParser {
   protected lazy val startCommand: Parser[LogicalPlan] = loadManagement
 
   protected lazy val loadManagement: Parser[LogicalPlan] = deleteLoadsByID | deleteLoadsByLoadDate |
-                                                           cleanFiles | loadDataNew
+                                                           cleanFiles | loadDataNew | alterTable
 
   protected val escapedIdentifier = "`([^`]+)`".r
 
@@ -716,19 +716,10 @@ class CarbonSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   protected lazy val alterTable: Parser[LogicalPlan] =
-    ALTER ~> TABLE ~> restInput ^^ {
-      case statement =>
-        try {
-          val alterSql = "alter table " + statement
-          // DDl will be parsed and we get the AST tree from the HiveQl
-          val node = HiveQlWrapper.getAst(alterSql)
-          // processing the AST tree
-          nodeToPlanForAlterTable(node, alterSql)
-        } catch {
-          // MalformedCarbonCommandException need to be throw directly, parser will catch it
-          case ce: MalformedCarbonCommandException =>
-            throw ce
-        }
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (COMPACT ~ stringLit) <~ opt(";")  ^^ {
+      case dbName ~ table ~ (compact ~ compactType) =>
+        val altertablemodel = AlterTableModel(dbName, table, compactType, null)
+        AlterTableCompaction(altertablemodel)
     }
 
   /**
@@ -911,35 +902,41 @@ class CarbonSqlParser extends AbstractCarbonSparkSQLParser {
   private def normalizeType(field: Field): Field = {
     val dataType = field.dataType.getOrElse("NIL")
     dataType match {
-      case "string" => Field(field.column, Some("String"), field.name, Some(null), field.parent,
+      case "string" =>
+        Field(field.column, Some("String"), field.name, Some(null), field.parent,
         field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
       )
-      case "smallint" => Field(field.column, Some("SmallInt"), field.name, Some(null),
-        field.parent, field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
-      )
-      case "integer" | "int" => Field(field.column, Some("Integer"), field.name, Some(null),
-        field.parent, field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
-      )
+      case "smallint" =>
+        Field(field.column, Some("SmallInt"), field.name, Some(null),
+          field.parent, field.storeType, field.schemaOrdinal,
+          field.precision, field.scale, field.rawSchema)
+      case "integer" | "int" =>
+        Field(field.column, Some("Integer"), field.name, Some(null),
+          field.parent, field.storeType, field.schemaOrdinal,
+          field.precision, field.scale, field.rawSchema)
       case "long" => Field(field.column, Some("Long"), field.name, Some(null), field.parent,
         field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
       )
       case "double" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
         field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
       )
-      case "timestamp" => Field(field.column, Some("Timestamp"), field.name, Some(null),
-        field.parent, field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
-      )
+      case "timestamp" =>
+        Field(field.column, Some("Timestamp"), field.name, Some(null),
+          field.parent, field.storeType, field.schemaOrdinal,
+          field.precision, field.scale, field.rawSchema)
       case "numeric" => Field(field.column, Some("Numeric"), field.name, Some(null), field.parent,
         field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
       )
-      case "array" => Field(field.column, Some("Array"), field.name,
-        field.children.map(f => f.map(normalizeType(_))),
-        field.parent, field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
-      )
-      case "struct" => Field(field.column, Some("Struct"), field.name,
-        field.children.map(f => f.map(normalizeType(_))),
-        field.parent, field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
-      )
+      case "array" =>
+        Field(field.column, Some("Array"), field.name,
+          field.children.map(f => f.map(normalizeType(_))),
+          field.parent, field.storeType, field.schemaOrdinal,
+          field.precision, field.scale, field.rawSchema)
+      case "struct" =>
+        Field(field.column, Some("Struct"), field.name,
+          field.children.map(f => f.map(normalizeType(_))),
+          field.parent, field.storeType, field.schemaOrdinal,
+          field.precision, field.scale, field.rawSchema)
       case "bigint" => Field(field.column, Some("BigInt"), field.name, Some(null), field.parent,
         field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
       )

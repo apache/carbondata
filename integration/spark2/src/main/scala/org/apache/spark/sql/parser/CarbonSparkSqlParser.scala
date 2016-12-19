@@ -19,9 +19,9 @@ package org.apache.spark.sql.parser
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.catalyst.catalog.CatalogColumn
+import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, ParseException, SqlBaseParser}
 import org.apache.spark.sql.catalyst.parser.ParserUtils._
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{ColTypeListContext, CreateTableContext, TablePropertyListContext}
-import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, ParseException, SqlBaseParser}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
 import org.apache.spark.sql.execution.command.{CreateTable, Field, TableModel}
@@ -59,7 +59,10 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
   val parser = new CarbonSqlParser
 
   override def visitCreateTable(ctx: CreateTableContext): LogicalPlan = {
-    val fileStorage = Option(ctx.createFileFormat).get.storageHandler().STRING().getSymbol.getText
+    val fileStorage = Option(ctx.createFileFormat) match {
+      case Some(value) => value.storageHandler().STRING().getSymbol.getText
+      case _ => ""
+    }
     if (fileStorage.equalsIgnoreCase("'carbondata'")) {
       val (name, temp, ifNotExists, external) = visitCreateTableHeader(ctx.createTableHeader)
       // TODO: implement temporary tables

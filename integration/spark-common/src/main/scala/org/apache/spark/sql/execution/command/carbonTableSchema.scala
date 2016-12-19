@@ -56,7 +56,7 @@ case class Field(column: String, var dataType: Option[String], name: Option[Stri
     children: Option[List[Field]], parent: String = null,
     storeType: Option[String] = Some("columnar"),
     var schemaOrdinal: Int = -1,
-    var precision: Int = 0, var scale: Int = 0, var rawSchema:String="")
+    var precision: Int = 0, var scale: Int = 0, var rawSchema: String = "")
 
 case class ColumnProperty(key: String, value: String)
 

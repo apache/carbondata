@@ -23,7 +23,7 @@ import java.text.SimpleDateFormat
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
-import org.apache.spark.sql.{DataFrame, getDB, _}
+import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.hive.{CarbonMetastore, CarbonRelation}
@@ -112,7 +112,7 @@ case class AlterTableCompaction(alterTableModel: AlterTableModel) extends Runnab
   }
 }
 
-case class CreateTable(cm: TableModel) extends RunnableCommand {
+case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends RunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
     CarbonEnv.init(sparkSession)
@@ -128,7 +128,8 @@ case class CreateTable(cm: TableModel) extends RunnableCommand {
       sys.error("No Dimensions found. Table should have at least one dimesnion !")
     }
 
-    if (sparkSession.sessionState.catalog.listTables(dbName).exists(_.table.equalsIgnoreCase(tbName))) {
+    if (sparkSession.sessionState.catalog.listTables(dbName)
+      .exists(_.table.equalsIgnoreCase(tbName))) {
       if (!cm.ifNotExistsSet) {
         LOGGER.audit(
           s"Table creation with Database name [$dbName] and Table name [$tbName] failed. " +
@@ -140,23 +141,25 @@ case class CreateTable(cm: TableModel) extends RunnableCommand {
       val catalog = CarbonEnv.get.carbonMetastore
       // Need to fill partitioner class when we support partition
       val tablePath = catalog.createTableFromThrift(tableInfo, dbName, tbName)(sparkSession)
-      try {
-        sparkSession.sql(
-          s"""CREATE TABLE $dbName.$tbName
-             |(${(cm.dimCols ++ cm.msrCols).map(f=>f.rawSchema).mkString(",")})
-             |USING org.apache.spark.sql.CarbonSource""".stripMargin +
-          s""" OPTIONS (tableName "$tbName", dbName "${dbName}", tablePath "$tablePath") """)
-      } catch {
-        case e: Exception =>
-          val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
-          // call the drop table to delete the created table.
+      if (createDSTable) {
+        try {
+          sparkSession.sql(
+            s"""CREATE TABLE $dbName.$tbName
+                |(${(cm.dimCols ++ cm.msrCols).map(f => f.rawSchema).mkString(",")})
+                |USING org.apache.spark.sql.CarbonSource""".stripMargin +
+            s""" OPTIONS (tableName "$tbName", dbName "${dbName}", tablePath "$tablePath") """)
+        } catch {
+          case e: Exception =>
+            val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
+            // call the drop table to delete the created table.
 
-          CarbonEnv.get.carbonMetastore
-            .dropTable(catalog.storePath, identifier)(sparkSession)
+            CarbonEnv.get.carbonMetastore
+              .dropTable(catalog.storePath, identifier)(sparkSession)
 
-          LOGGER.audit(s"Table creation with Database name [$dbName] " +
-                       s"and Table name [$tbName] failed")
-          throw e
+            LOGGER.audit(s"Table creation with Database name [$dbName] " +
+                         s"and Table name [$tbName] failed")
+            throw e
+        }
       }
 
       LOGGER.audit(s"Table created with Database name [$dbName] and Table name [$tbName]")

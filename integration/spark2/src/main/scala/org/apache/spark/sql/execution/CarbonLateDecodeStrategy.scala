@@ -70,7 +70,8 @@ private[sql] class CarbonLateDecodeStrategy(sparkSession: SparkSession) extends 
       case DropTableCommand(identifier, ifNotExists, isView)
         if CarbonEnv.get.carbonMetastore
           .isTablePathExists(identifier)(sparkSession) =>
-        ExecutedCommandExec(CarbonDropTableCommand(ifNotExists, identifier.database, identifier.table)) :: Nil
+        ExecutedCommandExec(
+          CarbonDropTableCommand(ifNotExists, identifier.database, identifier.table)) :: Nil
       case ShowLoadsCommand(databaseName, table, limit) =>
         ExecutedCommandExec(ShowLoads(databaseName, table, limit, plan.output)) :: Nil
       case createDb@CreateDatabaseCommand(dbName, ifNotExists, _, _, _) =>
@@ -79,13 +80,28 @@ private[sql] class CarbonLateDecodeStrategy(sparkSession: SparkSession) extends 
       case drop@DropDatabaseCommand(dbName, ifExists, isCascade) =>
         if (isCascade) {
           val tablesInDB = CarbonEnv.get.carbonMetastore.getAllTables()
-            .filterNot(p=>p.database.exists(_.equalsIgnoreCase(dbName)))
+            .filterNot(_.database.exists(_.equalsIgnoreCase(dbName)))
           tablesInDB.foreach{tableName =>
             CarbonDropTableCommand(true, Some(dbName), tableName.table).run(sparkSession)
           }
         }
         CarbonEnv.get.carbonMetastore.dropDatabaseDirectory(dbName)
         ExecutedCommandExec(drop) :: Nil
+      case alterTable@AlterTableCompaction(altertablemodel) =>
+        val isCarbonTable = CarbonEnv.get.carbonMetastore
+          .tableExists(TableIdentifier(altertablemodel.tableName,
+            altertablemodel.dbName))(sparkSession)
+        if (isCarbonTable) {
+          if (altertablemodel.compactionType.equalsIgnoreCase("minor") ||
+              altertablemodel.compactionType.equalsIgnoreCase("major")) {
+            ExecutedCommandExec(alterTable) :: Nil
+          } else {
+            throw new MalformedCarbonCommandException(
+              "Unsupported alter operation on carbon table")
+          }
+        } else {
+          throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
+        }
       case _ => Nil
     }
   }

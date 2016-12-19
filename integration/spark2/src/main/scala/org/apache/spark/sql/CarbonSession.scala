@@ -16,9 +16,9 @@
  */
 package org.apache.spark.sql
 
+import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
-import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.sql.hive.CarbonSessionState
 import org.apache.spark.sql.internal.SessionState
 
@@ -41,7 +41,7 @@ object CarbonSession {
   implicit class CarbonBuilder(builder: Builder) {
 
 
-    def getOrCreateCarbon(): SparkSession = synchronized {
+    def getOrCreateCarbonSession(): SparkSession = synchronized {
 
       val options =
         getValue("options", builder).asInstanceOf[scala.collection.mutable.HashMap[String, String]]
