@@ -99,6 +99,7 @@ public class DataBlockIteratorImplTest {
   private BlockletBTreeLeafNode blockletBTreeLeafNode;
   private SegmentProperties segmentProperties;
   private IncludeFilterExecuterImpl includeFilterExecuter;
+  private QueryDimension queryDimension;
 
   @Before public void init() {
     List<Encoding> encodeList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -131,7 +132,7 @@ public class DataBlockIteratorImplTest {
     blockExecutionInfo.setAllSelectedMeasureBlocksIndexes(new int[][] {});
     blockExecutionInfo.setQueryMeasures(new QueryMeasure[] {});
 
-    QueryDimension queryDimension = new QueryDimension("country");
+    queryDimension = new QueryDimension("country");
     queryDimension.setSortOrder(SortOrderType.NONE);
     queryDimension.setQueryOrder(0);
     queryDimension.setAggregateFunction("dummy");
@@ -179,6 +180,15 @@ public class DataBlockIteratorImplTest {
 
   @Test public void testNextI() {
 
+    new MockUp<DictionaryBasedResultCollector>() {
+      @Mock
+      public List<Object[]> collectData(AbstractScannedResult scannedResult, int batchSize) {
+        ArrayList<Object[]> lists = new ArrayList<>();
+        lists.add(new Object[]{});
+        return lists;
+      }
+    };
+
     new MockUp<QueryStatisticsModel>() {
       @Mock public QueryStatisticsRecorder getRecorder() {
         return new QueryStatisticsRecorderDummy("123456");
@@ -213,6 +223,9 @@ public class DataBlockIteratorImplTest {
       }
     };
 
+    CarbonDimension carbonDimension = new CarbonDimension(columnSchema1, 1, 2, 3, 4);
+    queryDimension.setDimension(carbonDimension);
+    blockExecutionInfo.setQueryDimensions(new QueryDimension[] { queryDimension });
     blockExecutionInfo.setFirstDataBlock(blockletBTreeLeafNode);
     dataBlockIterator =
         new DataBlockIteratorImpl(blockExecutionInfo, fileHolder, 10, queryStatisticsModel);
