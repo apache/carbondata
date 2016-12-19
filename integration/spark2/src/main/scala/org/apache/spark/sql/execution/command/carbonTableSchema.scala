@@ -17,18 +17,27 @@
 
 package org.apache.spark.sql.execution.command
 
+import java.io.File
+import java.text.SimpleDateFormat
+
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Cast, Literal}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.SparkPlan
 import org.apache.spark.sql.hive.{CarbonMetastore, CarbonRelation}
+import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.util.FileUtils
+import org.codehaus.jackson.map.ObjectMapper
 
+import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.core.carbon.{CarbonDataLoadSchema, CarbonTableIdentifier}
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
+import org.apache.carbondata.core.carbon.metadata.encoder.Encoding
 import org.apache.carbondata.core.carbon.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.carbon.path.CarbonStorePath
@@ -36,19 +45,34 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
+import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DataManagementFunc, DictionaryLoadModel}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonSparkUtil, GlobalDictionaryUtil}
+
+object Checker {
+  def validateTableExists(
+      dbName: Option[String],
+      tableName: String,
+      session: SparkSession): Unit = {
+    val identifier = TableIdentifier(tableName, dbName)
+    if (!CarbonEnv.get.carbonMetastore.tableExists(identifier)(session)) {
+      val err = s"table $dbName.$tableName not found"
+      LogServiceFactory.getLogService(this.getClass.getName).error(err)
+      throw new IllegalArgumentException(err)
+    }
+  }
+}
 
 /**
  * Command for the compaction in alter table command
  *
  * @param alterTableModel
  */
-case class AlterTableCompaction(alterTableModel: AlterTableModel) {
+case class AlterTableCompaction(alterTableModel: AlterTableModel) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
@@ -109,24 +133,59 @@ case class AlterTableCompaction(alterTableModel: AlterTableModel) {
   }
 }
 
-case class CreateTable(cm: TableModel) {
-  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends RunnableCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
-    cm.databaseName = cm.databaseNameOp.getOrElse(sparkSession.catalog.currentDatabase)
+    CarbonEnv.init(sparkSession)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+    cm.databaseName = getDB.getDatabaseName(cm.databaseNameOp, sparkSession)
     val tbName = cm.tableName
     val dbName = cm.databaseName
     LOGGER.audit(s"Creating Table with Database name [$dbName] and Table name [$tbName]")
 
-    val tableInfo: TableInfo = TableNewProcessor(cm, sparkSession.sqlContext)
+    val tableInfo: TableInfo = TableNewProcessor(cm)
 
     if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
       sys.error("No Dimensions found. Table should have at least one dimesnion !")
     }
-    // Add Database to catalog and persist
-    val catalog = CarbonEnv.get.carbonMetastore
-    val tablePath = catalog.createTableFromThrift(tableInfo, dbName, tbName)(sparkSession)
-    LOGGER.audit(s"Table created with Database name [$dbName] and Table name [$tbName]")
+
+    if (sparkSession.sessionState.catalog.listTables(dbName)
+      .exists(_.table.equalsIgnoreCase(tbName))) {
+      if (!cm.ifNotExistsSet) {
+        LOGGER.audit(
+          s"Table creation with Database name [$dbName] and Table name [$tbName] failed. " +
+          s"Table [$tbName] already exists under database [$dbName]")
+        sys.error(s"Table [$tbName] already exists under database [$dbName]")
+      }
+    } else {
+      // Add Database to catalog and persist
+      val catalog = CarbonEnv.get.carbonMetastore
+      // Need to fill partitioner class when we support partition
+      val tablePath = catalog.createTableFromThrift(tableInfo, dbName, tbName)(sparkSession)
+      if (createDSTable) {
+        try {
+          sparkSession.sql(
+            s"""CREATE TABLE $dbName.$tbName
+                |(${(cm.dimCols ++ cm.msrCols).map(f => f.rawSchema).mkString(",")})
+                |USING org.apache.spark.sql.CarbonSource""".stripMargin +
+            s""" OPTIONS (tableName "$tbName", dbName "${dbName}", tablePath "$tablePath") """)
+        } catch {
+          case e: Exception =>
+            val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
+            // call the drop table to delete the created table.
+
+            CarbonEnv.get.carbonMetastore
+              .dropTable(catalog.storePath, identifier)(sparkSession)
+
+            LOGGER.audit(s"Table creation with Database name [$dbName] " +
+                         s"and Table name [$tbName] failed")
+            throw e
+        }
+      }
+
+      LOGGER.audit(s"Table created with Database name [$dbName] and Table name [$tbName]")
+    }
+
     Seq.empty
   }
 
@@ -136,6 +195,54 @@ case class CreateTable(cm: TableModel) {
   }
 }
 
+case class DeleteLoadsById(
+    loadids: Seq[String],
+    databaseNameOp: Option[String],
+    tableName: String) extends RunnableCommand {
+
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
+  def run(sparkSession: SparkSession): Seq[Row] = {
+
+    Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
+    CarbonStore.deleteLoadById(
+      loadids,
+      getDB.getDatabaseName(databaseNameOp, sparkSession),
+      tableName
+    )
+    Seq.empty
+
+  }
+
+  // validates load ids
+  private def validateLoadIds: Unit = {
+    if (loadids.isEmpty) {
+      val errorMessage = "Error: Segment id(s) should not be empty."
+      throw new MalformedCarbonCommandException(errorMessage)
+
+    }
+  }
+}
+
+case class DeleteLoadsByLoadDate(
+    databaseNameOp: Option[String],
+    tableName: String,
+    dateField: String,
+    loadDate: String) extends RunnableCommand {
+
+  val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.TableModel.tableSchema")
+
+  def run(sparkSession: SparkSession): Seq[Row] = {
+    Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
+    CarbonStore.deleteLoadByDate(
+      loadDate,
+      getDB.getDatabaseName(databaseNameOp, sparkSession),
+      tableName
+    )
+    Seq.empty
+  }
+
+}
 
 object LoadTable {
 
@@ -205,7 +312,7 @@ case class LoadTable(
     options: scala.collection.immutable.Map[String, String],
     isOverwriteExist: Boolean = false,
     var inputSqlString: String = null,
-    dataFrame: Option[DataFrame] = None) {
+    dataFrame: Option[DataFrame] = None) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -431,5 +538,193 @@ case class LoadTable(
         }
       }
     }
+  }
+}
+
+private[sql] case class DeleteLoadByDate(
+    databaseNameOp: Option[String],
+    tableName: String,
+    dateField: String,
+    loadDate: String) {
+
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
+  def run(sparkSession: SparkSession): Seq[Row] = {
+    Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
+    CarbonStore.deleteLoadByDate(
+      loadDate,
+      getDB.getDatabaseName(databaseNameOp, sparkSession),
+      tableName
+    )
+    Seq.empty
+  }
+
+}
+
+case class CleanFiles(
+    databaseNameOp: Option[String],
+    tableName: String) extends RunnableCommand {
+
+  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
+  def run(sparkSession: SparkSession): Seq[Row] = {
+    Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
+    val relation = CarbonEnv.get.carbonMetastore
+      .lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation]
+    CarbonStore.cleanFiles(
+      getDB.getDatabaseName(databaseNameOp, sparkSession),
+      tableName,
+      relation.asInstanceOf[CarbonRelation].tableMeta.storePath
+    )
+    Seq.empty
+  }
+}
+
+case class ShowLoads(
+    databaseNameOp: Option[String],
+    tableName: String,
+    limit: Option[String],
+    override val output: Seq[Attribute]) extends RunnableCommand {
+
+  def run(sparkSession: SparkSession): Seq[Row] = {
+    Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
+    CarbonStore.showSegments(
+      getDB.getDatabaseName(databaseNameOp, sparkSession),
+      tableName,
+      limit
+    )
+  }
+}
+
+case class CarbonDropTableCommand(ifExistsSet: Boolean,
+    databaseNameOp: Option[String],
+    tableName: String)
+  extends RunnableCommand {
+
+  def run(sparkSession: SparkSession): Seq[Row] = {
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+    val dbName = getDB.getDatabaseName(databaseNameOp, sparkSession)
+    val identifier = TableIdentifier(tableName, Option(dbName))
+    val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "")
+    val carbonLock = CarbonLockFactory
+      .getCarbonLockObj(carbonTableIdentifier, LockUsage.DROP_TABLE_LOCK)
+    val storePath = CarbonEnv.get.carbonMetastore.storePath
+    var isLocked = false
+    try {
+      isLocked = carbonLock.lockWithRetries()
+      if (isLocked) {
+        logInfo("Successfully able to get the lock for drop.")
+      }
+      else {
+        LOGGER.audit(s"Dropping table $dbName.$tableName failed as the Table is locked")
+        sys.error("Table is locked for deletion. Please try after some time")
+      }
+      LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
+      CarbonEnv.get.carbonMetastore.dropTable(storePath, identifier)(sparkSession)
+      LOGGER.audit(s"Deleted table [$tableName] under database [$dbName]")
+    } finally {
+      if (carbonLock != null && isLocked) {
+        if (carbonLock.unlock()) {
+          logInfo("Table MetaData Unlocked Successfully after dropping the table")
+          // deleting any remaining files.
+          val metadataFilePath = CarbonStorePath
+            .getCarbonTablePath(storePath, carbonTableIdentifier).getMetadataDirectoryPath
+          val fileType = FileFactory.getFileType(metadataFilePath)
+          if (FileFactory.isFileExist(metadataFilePath, fileType)) {
+            val file = FileFactory.getCarbonFile(metadataFilePath, fileType)
+            CarbonUtil.deleteFoldersAndFiles(file.getParentFile)
+          }
+          // delete bad record log after drop table
+          val badLogPath = CarbonUtil.getBadLogPath(dbName + File.separator + tableName)
+          val badLogFileType = FileFactory.getFileType(badLogPath)
+          if (FileFactory.isFileExist(badLogPath, badLogFileType)) {
+            val file = FileFactory.getCarbonFile(badLogPath, badLogFileType)
+            CarbonUtil.deleteFoldersAndFiles(file)
+          }
+        } else {
+          logError("Unable to unlock Table MetaData")
+        }
+      }
+    }
+    Seq.empty
+  }
+}
+
+private[sql] case class DescribeCommandFormatted(
+    child: SparkPlan,
+    override val output: Seq[Attribute],
+    tblIdentifier: TableIdentifier)
+  extends RunnableCommand {
+
+  override def run(sparkSession: SparkSession): Seq[Row] = {
+    val relation = CarbonEnv.get.carbonMetastore
+      .lookupRelation(tblIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
+    val mapper = new ObjectMapper()
+    val colProps = StringBuilder.newBuilder
+    var results: Seq[(String, String, String)] = child.schema.fields.map { field =>
+      val comment = if (relation.metaData.dims.contains(field.name)) {
+        val dimension = relation.metaData.carbonTable.getDimensionByName(
+          relation.tableMeta.carbonTableIdentifier.getTableName,
+          field.name)
+        if (null != dimension.getColumnProperties && dimension.getColumnProperties.size() > 0) {
+          val colprop = mapper.writeValueAsString(dimension.getColumnProperties)
+          colProps.append(field.name).append(".")
+            .append(mapper.writeValueAsString(dimension.getColumnProperties))
+            .append(",")
+        }
+        if (dimension.hasEncoding(Encoding.DICTIONARY) &&
+            !dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+          "DICTIONARY, KEY COLUMN"
+        } else {
+          "KEY COLUMN"
+        }
+      } else {
+        ("MEASURE")
+      }
+      (field.name, field.dataType.simpleString, comment)
+    }
+    val colPropStr = if (colProps.toString().trim().length() > 0) {
+      // drops additional comma at end
+      colProps.toString().dropRight(1)
+    } else {
+      colProps.toString()
+    }
+    results ++= Seq(("", "", ""), ("##Detailed Table Information", "", ""))
+    results ++= Seq(("Database Name: ", relation.tableMeta.carbonTableIdentifier
+      .getDatabaseName, "")
+    )
+    results ++= Seq(("Table Name: ", relation.tableMeta.carbonTableIdentifier.getTableName, ""))
+    results ++= Seq(("CARBON Store Path: ", relation.tableMeta.storePath, ""))
+    val carbonTable = relation.tableMeta.carbonTable
+    results ++= Seq(("Table Block Size : ", carbonTable.getBlockSizeInMB + " MB", ""))
+    results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))
+    if (colPropStr.length() > 0) {
+      results ++= Seq((colPropStr, "", ""))
+    } else {
+      results ++= Seq(("ADAPTIVE", "", ""))
+    }
+    val dimension = carbonTable
+      .getDimensionByTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
+    results ++= getColumnGroups(dimension.asScala.toList)
+    results.map { case (name, dataType, comment) =>
+      Row(f"$name%-36s $dataType%-80s $comment%-72s")
+    }
+  }
+
+  private def getColumnGroups(dimensions: List[CarbonDimension]): Seq[(String, String, String)] = {
+    var results: Seq[(String, String, String)] =
+      Seq(("", "", ""), ("##Column Group Information", "", ""))
+    val groupedDimensions = dimensions.groupBy(x => x.columnGroupId()).filter {
+      case (groupId, _) => groupId != -1
+    }.toSeq.sortBy(_._1)
+    val groups = groupedDimensions.map(colGroups => {
+      colGroups._2.map(dim => dim.getColName).mkString(", ")
+    })
+    var index = 1
+    groups.foreach { x =>
+      results = results :+ (s"Column Group $index", x, "")
+      index = index + 1
+    }
+    results
   }
 }

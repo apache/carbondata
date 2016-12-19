@@ -86,7 +86,7 @@ object TableLoader {
 
     val spark = TableAPIUtil.spark(storePath, s"TableLoader: $dbName.$tableName")
 
-    CarbonEnv.init(spark.sqlContext)
+    CarbonEnv.init(spark)
     loadTable(spark, Option(dbName), tableName, inputPaths, map)
   }
 

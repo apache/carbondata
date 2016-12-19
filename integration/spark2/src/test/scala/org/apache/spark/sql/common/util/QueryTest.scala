@@ -54,6 +54,11 @@ class QueryTest extends PlanTest {
       clean(metastoredb)
     }
 
+    CarbonProperties.getInstance()
+      .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")
+      .addProperty("carbon.storelocation", storeLocation)
+
+    import org.apache.spark.sql.CarbonSession._
     val spark = SparkSession
         .builder()
         .master("local")
@@ -62,17 +67,13 @@ class QueryTest extends PlanTest {
         .config("spark.sql.warehouse.dir", warehouse)
         .config("javax.jdo.option.ConnectionURL",
           s"jdbc:derby:;databaseName=$metastoredb;create=true")
-        .getOrCreate()
-
-    CarbonProperties.getInstance()
-        .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")
-        .addProperty("carbon.storelocation", storeLocation)
+        .getOrCreateCarbonSession()
 
     spark.sparkContext.setLogLevel("WARN")
     spark
   }
 
-  val sc = spark.sparkContext
+  val Dsc = spark.sparkContext
 
   lazy val implicits = spark.implicits
 

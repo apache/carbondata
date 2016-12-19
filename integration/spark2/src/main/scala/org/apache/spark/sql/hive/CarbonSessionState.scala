@@ -14,36 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.apache.spark.util
+package org.apache.spark.sql.hive
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
-
-import org.apache.carbondata.api.CarbonStore
+import org.apache.spark.sql.catalyst.parser.ParserInterface
+import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
+import org.apache.spark.sql.execution.command.DDLStrategy
+import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
+import org.apache.spark.sql.parser.CarbonSparkSqlParser
 
 /**
- * clean files api
+ * Session state implementation to override sql parser and adding strategies
+ * @param sparkSession
  */
- // scalastyle:off
-object CleanFiles {
+class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sparkSession) {
 
-  def cleanFiles(spark: SparkSession, dbName: String, tableName: String,
-      storePath: String): Unit = {
-    TableAPIUtil.validateTableExists(spark, dbName, tableName)
-    CarbonStore.cleanFiles(dbName, tableName, storePath)
-  }
+  override lazy val sqlParser: ParserInterface = new CarbonSparkSqlParser(conf)
 
-  def main(args: Array[String]): Unit = {
+  experimentalMethods.extraStrategies =
+    Seq(new CarbonLateDecodeStrategy, new DDLStrategy(sparkSession))
+  experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
 
-    if (args.length < 2) {
-      System.err.println("Usage: CleanFiles <store path> <table name>");
-      System.exit(1)
-    }
-
-    val storePath = TableAPIUtil.escape(args(0))
-    val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
-    val spark = TableAPIUtil.spark(storePath, s"CleanFiles: $dbName.$tableName")
-    CarbonEnv.init(spark)
-    cleanFiles(spark, dbName, tableName, storePath)
-  }
 }

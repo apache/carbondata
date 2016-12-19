@@ -75,7 +75,7 @@ object ShowSegments {
       None
     }
     val spark = TableAPIUtil.spark(storePath, s"ShowSegments: $dbName.$tableName")
-    CarbonEnv.init(spark.sqlContext)
+    CarbonEnv.init(spark)
     val rows = showSegments(spark, dbName, tableName, limit)
     System.out.println(showString(rows))
   }
