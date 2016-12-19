@@ -109,10 +109,10 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
 
       val fields = schema.map { col =>
         val x = if (col.dataType.catalogString == "float") {
-          col.name + " double"
+          '`' + col.name + '`' + " double"
         }
         else {
-          col.name + ' ' + col.dataType.catalogString
+          '`' + col.name + '`' + ' ' + col.dataType.catalogString
         }
         val f: Field = parser.anyFieldDef(new parser.lexical.Scanner(x))
         match {

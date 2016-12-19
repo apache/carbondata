@@ -195,7 +195,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
                   val dataType = Option(col.getType)
                   val name = Option(col.getName())
                   // This is to parse complex data types
-                  val x = col.getName + ' ' + col.getType
+                  val x = '`' + col.getName + '`' + ' ' + col.getType
                   val f: Field = anyFieldDef(new lexical.Scanner(x))
                   match {
                     case Success(field, _) => field
