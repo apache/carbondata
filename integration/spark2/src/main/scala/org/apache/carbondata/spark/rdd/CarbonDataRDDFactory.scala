@@ -336,7 +336,7 @@ object CarbonDataRDDFactory {
       carbonLoadModel: CarbonLoadModel,
       storePath: String,
       kettleHomePath: String,
-      columinar: Boolean,
+      columnar: Boolean,
       partitionStatus: String = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS,
       useKettle: Boolean,
       dataFrame: Option[DataFrame] = None): Unit = {
@@ -612,7 +612,7 @@ object CarbonDataRDDFactory {
             carbonLoadModel,
             storePath,
             kettleHomePath,
-            columinar,
+            columnar,
             currentLoadCount,
             tableCreationTime,
             schemaLastUpdatedTime,
@@ -632,6 +632,7 @@ object CarbonDataRDDFactory {
       def loadDataFrame(): Unit = {
         try {
           val rdd = dataFrame.get.rdd
+
           val nodeNumOfData = rdd.partitions.flatMap[String, Array[String]]{ p =>
             DataLoadPartitionCoalescer.getPreferredLocs(rdd, p).map(_.host)
           }.distinct.size
@@ -639,16 +640,27 @@ object CarbonDataRDDFactory {
             sqlContext.sparkContext)
           val newRdd = new DataLoadCoalescedRDD[Row](rdd, nodes.toArray.distinct)
 
-          status = new DataFrameLoaderRDD(sqlContext.sparkContext,
-            new DataLoadResultImpl(),
-            carbonLoadModel,
-            storePath,
-            kettleHomePath,
-            columinar,
-            currentLoadCount,
-            tableCreationTime,
-            schemaLastUpdatedTime,
-            newRdd).collect()
+          if (useKettle) {
+            status = new DataFrameLoaderRDD(sqlContext.sparkContext,
+              new DataLoadResultImpl(),
+              carbonLoadModel,
+              storePath,
+              kettleHomePath,
+              columnar,
+              currentLoadCount,
+              tableCreationTime,
+              schemaLastUpdatedTime,
+              newRdd).collect()
+          } else {
+            status = new NewDataFrameLoaderRDD(sqlContext.sparkContext,
+              new DataLoadResultImpl(),
+              carbonLoadModel,
+              currentLoadCount,
+              tableCreationTime,
+              schemaLastUpdatedTime,
+              newRdd).collect()
+          }
+
         } catch {
           case ex: Exception =>
             LOGGER.error(ex, "load data frame failed")
