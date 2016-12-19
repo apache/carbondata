@@ -22,6 +22,10 @@ import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.CarbonSparkSqlParser
 
+/**
+ * Session state implementation to override sql parser and adding strategies
+ * @param sparkSession
+ */
 class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sparkSession) {
 
   override lazy val sqlParser: ParserInterface = new CarbonSparkSqlParser(conf)

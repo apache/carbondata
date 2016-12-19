@@ -116,10 +116,14 @@ object CarbonSession {
       return session
     }
 
+    /**
+     * It is a hack to get the private field from class.
+     */
     def getValue(name: String, builder: Builder): Any = {
       val currentMirror = scala.reflect.runtime.currentMirror
       val instanceMirror = currentMirror.reflect(builder)
-      val m = currentMirror.classSymbol(builder.getClass).toType.members.find { p =>
+      val m = currentMirror.classSymbol(builder.getClass).
+        toType.members.find { p =>
         p.name.toString.equals(name)
       }.get.asTerm
       instanceMirror.reflectField(m).get

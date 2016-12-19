@@ -30,6 +30,7 @@ import org.apache.spark.sql.catalyst._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.hive.HiveQlWrapper
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType
@@ -39,9 +40,10 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
 
 /**
+ * TODO remove the duplicate code and add the common methods to common class.
  * Parser for All Carbon DDL, DML cases in Unified context
  */
-class CarbonCommonSqlParser extends AbstractCarbonSparkSQLParser {
+class CarbonSqlParser extends AbstractCarbonSparkSQLParser {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   protected val AGGREGATE = carbonKeyWord("AGGREGATE")
@@ -712,6 +714,22 @@ class CarbonCommonSqlParser extends AbstractCarbonSparkSQLParser {
       }
     }
   }
+
+  protected lazy val alterTable: Parser[LogicalPlan] =
+    ALTER ~> TABLE ~> restInput ^^ {
+      case statement =>
+        try {
+          val alterSql = "alter table " + statement
+          // DDl will be parsed and we get the AST tree from the HiveQl
+          val node = HiveQlWrapper.getAst(alterSql)
+          // processing the AST tree
+          nodeToPlanForAlterTable(node, alterSql)
+        } catch {
+          // MalformedCarbonCommandException need to be throw directly, parser will catch it
+          case ce: MalformedCarbonCommandException =>
+            throw ce
+        }
+    }
 
   /**
    * Extract the table properties token

@@ -31,6 +31,9 @@ import org.apache.spark.sql.types.DataType
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
 
+/**
+ * Concrete parser for Spark SQL statements and carbon specific statements
+ */
 class CarbonSparkSqlParser(conf: SQLConf) extends AbstractSqlParser {
 
   val astBuilder = new CarbonSqlAstBuilder(conf)
@@ -53,7 +56,7 @@ class CarbonSparkSqlParser(conf: SQLConf) extends AbstractSqlParser {
 
 class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
 
-  val parser = new CarbonCommonSqlParser
+  val parser = new CarbonSqlParser
 
   override def visitCreateTable(ctx: CreateTableContext): LogicalPlan = {
     val fileStorage = Option(ctx.createFileFormat).get.storageHandler().STRING().getSymbol.getText
