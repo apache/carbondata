@@ -35,6 +35,7 @@ import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.ColumnIdentifier;
+import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -270,7 +271,7 @@ public class ReverseDictionaryCacheTest extends AbstractDictionaryCacheTest {
   }
   protected DictionaryColumnUniqueIdentifier createDictionaryColumnUniqueIdentifier(
 	      String columnId) {
-	    ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, null);
+	    ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, DataType.DOUBLE);
 	    DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
 	        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier);
 	    return dictionaryColumnUniqueIdentifier;

@@ -416,21 +416,6 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     assertTrue(FilterUtil.prepareDefaultEndIndexKey(segmentProperties) instanceof IndexKey);
   }
 
-  @Test(expected = QueryExecutionException.class)
-  public void testGetForwardDictionaryCacheWithException() throws Exception {
-
-    AbsoluteTableIdentifier absoluteTableIdentifier =
-        new AbsoluteTableIdentifier(this.carbonStorePath, carbonTableIdentifier);
-    int ordinal = 1;
-    int keyOrdinal = 1;
-    int columnGroupOrdinal = 1;
-    int complexTypeOrdinal = 1;
-    CarbonDimension carbonDimension =
-        new CarbonDimension(columnSchema, ordinal, keyOrdinal, columnGroupOrdinal,
-            complexTypeOrdinal);
-    FilterUtil.getForwardDictionaryCache(absoluteTableIdentifier, carbonDimension);
-  }
-
   @Test public void testCheckIfRightExpressionRequireEvaluation() {
     Expression expression = new ColumnExpression("test", DataType.STRING);
     boolean result = FilterUtil.checkIfRightExpressionRequireEvaluation(expression);
