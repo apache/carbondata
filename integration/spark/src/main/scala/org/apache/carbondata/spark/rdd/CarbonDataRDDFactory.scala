@@ -635,15 +635,14 @@ object CarbonDataRDDFactory {
         try {
           val rdd = dataFrame.get.rdd
 
+          val nodeNumOfData = rdd.partitions.flatMap[String, Array[String]]{ p =>
+            DataLoadPartitionCoalescer.getPreferredLocs(rdd, p).map(_.host)
+          }.distinct.size
+          val nodes = DistributionUtil.ensureExecutorsByNumberAndGetNodeList(nodeNumOfData,
+            sqlContext.sparkContext)
+          val newRdd = new DataLoadCoalescedRDD[Row](rdd, nodes.toArray.distinct)
+
           if (useKettle) {
-
-            val nodeNumOfData = rdd.partitions.flatMap[String, Array[String]]{ p =>
-              DataLoadPartitionCoalescer.getPreferredLocs(rdd, p).map(_.host)
-            }.distinct.size
-            val nodes = DistributionUtil.ensureExecutorsByNumberAndGetNodeList(nodeNumOfData,
-              sqlContext.sparkContext)
-            val newRdd = new DataLoadCoalescedRDD[Row](rdd, nodes.toArray.distinct)
-
             status = new DataFrameLoaderRDD(sqlContext.sparkContext,
               new DataLoadResultImpl(),
               carbonLoadModel,
@@ -655,18 +654,13 @@ object CarbonDataRDDFactory {
               schemaLastUpdatedTime,
               newRdd).collect()
           } else {
-
-            var numPartitions = DistributionUtil.getNodeList(sqlContext.sparkContext).length
-            numPartitions = Math.max(1, Math.min(numPartitions, rdd.partitions.length))
-            val coalesceRdd = rdd.coalesce(numPartitions, shuffle = false)
-
             status = new NewDataFrameLoaderRDD(sqlContext.sparkContext,
               new DataLoadResultImpl(),
               carbonLoadModel,
               currentLoadCount,
               tableCreationTime,
               schemaLastUpdatedTime,
-              coalesceRdd).collect()
+              newRdd).collect()
           }
 
         } catch {

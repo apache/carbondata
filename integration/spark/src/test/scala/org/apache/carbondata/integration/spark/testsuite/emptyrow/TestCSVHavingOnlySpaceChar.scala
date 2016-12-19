@@ -61,7 +61,6 @@ class TestCSVHavingOnlySpaceChar extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     sql("drop table emptyRowCarbonTable")
-    sql("drop table emptyRowHiveTable")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }

@@ -157,7 +157,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
         CarbonRelation(database, tableIdentifier.table,
           CarbonSparkUtil.createSparkMeta(tables.head.carbonTable), tables.head, alias)
       case None =>
-        LOGGER.audit(s"Table Not Found: ${tableIdentifier.table}")
+        // LOGGER.audit(s"Table Not Found: ${tableIdentifier.table}")
         throw new NoSuchTableException(database, tableIdentifier.table)
     }
   }
