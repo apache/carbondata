@@ -42,12 +42,11 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     spark.sql(
     """
-           CREATE TABLE vectorreader
+           CREATE TABLE default.vectorreader
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            USING org.apache.spark.sql.CarbonSource
       """)
-    LoadTable(Some("default"), "vectorreader", "./src/test/resources/dataDiff.csv", Nil, Map()).run(spark)
   }
 
   test("test vector reader") {
