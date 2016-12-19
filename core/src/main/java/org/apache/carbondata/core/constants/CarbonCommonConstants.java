@@ -990,6 +990,10 @@ public final class CarbonCommonConstants {
 
   public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT = "1024";
 
+  public static final String ENABLE_VECTOR_READER = "carbon.enable.vector.reader";
+
+  public static final String ENABLE_VECTOR_READER_DEFAULT = "false";
+
   private CarbonCommonConstants() {
   }
 }

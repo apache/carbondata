@@ -26,6 +26,8 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
@@ -49,6 +51,10 @@ import org.apache.spark.sql.types.DecimalType;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 
+/**
+ * A specialized RecordReader that reads into InternalRows or ColumnarBatches directly using the
+ * carbondata column APIs and fills the data directly into columns.
+ */
 public class VectorizedCarbonRecordReader extends RecordReader<Void, Object> {
 
   private int batchIdx = 0;
@@ -167,8 +173,10 @@ public class VectorizedCarbonRecordReader extends RecordReader<Void, Object> {
     for (int i = 0; i < queryDimension.size(); i++) {
       QueryDimension dim = queryDimension.get(i);
       if (dim.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        DirectDictionaryGenerator generator = DirectDictionaryKeyGeneratorFactory
+            .getDirectDictionaryGenerator(dim.getDimension().getDataType());
         fields[dim.getQueryOrder()] = new StructField(dim.getColumnName(),
-            CarbonScalaUtil.convertCarbonToSparkDataType(DataType.LONG), true, null);
+            CarbonScalaUtil.convertCarbonToSparkDataType(generator.getReturnType()), true, null);
       } else if (!dim.getDimension().hasEncoding(Encoding.DICTIONARY)) {
         fields[dim.getQueryOrder()] = new StructField(dim.getColumnName(),
             CarbonScalaUtil.convertCarbonToSparkDataType(dim.getDimension().getDataType()), true,
@@ -212,11 +220,11 @@ public class VectorizedCarbonRecordReader extends RecordReader<Void, Object> {
     carbonColumnarBatch = new CarbonColumnarBatch(vectors, columnarBatch.capacity());
   }
 
-  public void initBatch() {
+  private void initBatch() {
     initBatch(DEFAULT_MEMORY_MODE);
   }
 
-  public ColumnarBatch resultBatch() {
+  private ColumnarBatch resultBatch() {
     if (columnarBatch == null) initBatch();
     return columnarBatch;
   }

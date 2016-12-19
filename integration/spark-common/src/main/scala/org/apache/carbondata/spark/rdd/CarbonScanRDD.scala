@@ -257,7 +257,8 @@ class CarbonScanRDD(
       cons.head.newInstance(queryModel).asInstanceOf[RecordReader[Void, Object]]
     } catch {
       case e: Exception =>
-        null
+        LOGGER.error(e)
+        throw e
     }
   }
 

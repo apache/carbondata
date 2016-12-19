@@ -34,6 +34,7 @@ import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types.{AtomicType, IntegerType, StringType}
 import org.apache.spark.unsafe.types.UTF8String
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
@@ -428,8 +429,15 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   }
 
   def supportBatchedDataSource(sqlContext: SQLContext, cols: Seq[Attribute]): Boolean = {
-    sqlContext.conf.wholeStageEnabled &&
-    sqlContext.sparkSession.conf.get("carbon.enable.vector.reader", "true").toBoolean &&
+    val enableReader = {
+      if (sqlContext.sparkSession.conf.contains(CarbonCommonConstants.ENABLE_VECTOR_READER)) {
+        sqlContext.sparkSession.conf.get(CarbonCommonConstants.ENABLE_VECTOR_READER).toBoolean
+      } else {
+        System.getProperty(CarbonCommonConstants.ENABLE_VECTOR_READER,
+          CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT).toBoolean
+      }
+    }
+    sqlContext.conf.wholeStageEnabled && enableReader &&
     cols.forall(_.dataType.isInstanceOf[AtomicType])
   }
 }

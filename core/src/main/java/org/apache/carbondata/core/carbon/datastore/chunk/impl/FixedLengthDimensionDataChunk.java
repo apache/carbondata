@@ -105,7 +105,14 @@ public class FixedLengthDimensionDataChunk implements DimensionColumnDataChunk<b
         if (valueFromSurrogate == null) {
           vector.putNull(vectorOffset++);
         } else {
-          vector.putLong(vectorOffset++, (long) valueFromSurrogate);
+          switch (columnVectorInfo.directDictionaryGenerator.getReturnType()) {
+            case INT:
+              vector.putInt(vectorOffset++, (int) valueFromSurrogate);
+              break;
+            case LONG:
+              vector.putLong(vectorOffset++, (long) valueFromSurrogate);
+              break;
+          }
         }
       }
     }
@@ -137,7 +144,14 @@ public class FixedLengthDimensionDataChunk implements DimensionColumnDataChunk<b
         if (valueFromSurrogate == null) {
           vector.putNull(vectorOffset++);
         } else {
-          vector.putLong(vectorOffset++, (long) valueFromSurrogate);
+          switch (columnVectorInfo.directDictionaryGenerator.getReturnType()) {
+            case INT:
+              vector.putInt(vectorOffset++, (int) valueFromSurrogate);
+              break;
+            case LONG:
+              vector.putLong(vectorOffset++, (long) valueFromSurrogate);
+              break;
+          }
         }
       }
     }
