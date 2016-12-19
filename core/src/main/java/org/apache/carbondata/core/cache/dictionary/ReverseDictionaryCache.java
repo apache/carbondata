@@ -167,10 +167,8 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier)
       throws CarbonUtilException {
     Dictionary reverseDictionary = null;
-    // create column dictionary info object only if it is primitive type.
-    if (dictionaryColumnUniqueIdentifier.getDataType().isComplexType()) {
-      return null;
-    }
+    // dictionary is only for primitive data type
+    assert(!dictionaryColumnUniqueIdentifier.getDataType().isComplexType());
     String columnIdentifier = dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId();
     ColumnReverseDictionaryInfo columnReverseDictionaryInfo =
         getColumnReverseDictionaryInfo(dictionaryColumnUniqueIdentifier, columnIdentifier);
