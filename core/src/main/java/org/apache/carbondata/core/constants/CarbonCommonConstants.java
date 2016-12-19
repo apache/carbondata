@@ -513,7 +513,6 @@ public final class CarbonCommonConstants {
   public static final String SHORT_TYPE = "ShortType";
   public static final String DECIMAL_TYPE = "DecimalType";
   public static final String STRING = "String";
-  public static final String COLUMNAR = "columnar";
 
   public static final String INTEGER = "Integer";
   public static final String SHORT = "Short";
@@ -521,9 +520,7 @@ public final class CarbonCommonConstants {
   public static final String TIMESTAMP = "Timestamp";
   public static final String ARRAY = "ARRAY";
   public static final String STRUCT = "STRUCT";
-  public static final String INCLUDE = "include";
   public static final String FROM = "from";
-  public static final String WITH = "with";
   /**
    * FACT_UPDATE_EXTENSION.
    */
@@ -886,16 +883,6 @@ public final class CarbonCommonConstants {
   public static String SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER = "SystemCompactionLock";
 
   /**
-   * to enable blocklet distribution
-   */
-  public static String ENABLE_BLOCKLET_DISTRIBUTION = "enable.blocklet.distribution";
-
-  /**
-   * to enable blocklet distribution default value
-   */
-  public static String ENABLE_BLOCKLET_DISTRIBUTION_DEFAULTVALUE = "false";
-
-  /**
    * This batch size is used to send rows from load step to another step in batches.
    */
   public static final String DATA_LOAD_BATCH_SIZE = "DATA_LOAD_BATCH_SIZE";
@@ -926,10 +913,6 @@ public final class CarbonCommonConstants {
    */
   public static int DEFAULT_MAX_NUMBER_OF_COLUMNS = 20000;
 
-  /**
-   * maximum length of column
-   */
-  public static final int DEFAULT_COLUMN_LENGTH = 100000;
   /**
    * Maximum waiting time (in seconds) for a query for requested executors to be started
    */
