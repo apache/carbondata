@@ -438,6 +438,6 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       }
     }
     sqlContext.conf.wholeStageEnabled && enableReader &&
-    cols.forall(_.dataType.isInstanceOf[AtomicType])
+      cols.forall(_.dataType.isInstanceOf[AtomicType])
   }
 }

@@ -258,7 +258,7 @@ class CarbonScanRDD(
     } catch {
       case e: Exception =>
         LOGGER.error(e)
-        throw e
+        null
     }
   }
 

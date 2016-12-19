@@ -50,14 +50,14 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test vector reader") {
-
+    spark.conf.set("carbon.enable.vector.reader", "true")
     val plan = spark.sql(
       """select * from vectorreader""".stripMargin).queryExecution.executedPlan
     var batchReader = false
     plan.collect {
       case s: BatchedDataSourceScanExec => batchReader = true
     }
-    assert(batchReader, "batch reader should exist by default")
+    assert(batchReader, "batch reader should exist when carbon.enable.vector.reader is true")
   }
 
   test("test without vector reader") {
@@ -68,7 +68,7 @@ class VectorReaderTestCase extends QueryTest with BeforeAndAfterAll {
     plan.collect {
       case s: RowDataSourceScanExec => rowReader = true
     }
-    assert(rowReader, "row reader should exist when carbon.enable.vector.reader is false")
+    assert(rowReader, "row reader should exist by default")
   }
 
   override def afterAll {
