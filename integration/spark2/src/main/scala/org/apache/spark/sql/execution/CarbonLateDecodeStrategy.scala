@@ -42,7 +42,7 @@ import org.apache.carbondata.spark.rdd.CarbonScanRDD
  * Carbon strategy for late decode (convert dictionary key to value as late as possible), which
  * can improve the aggregation performance and reduce memory usage
  */
-private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
+private[sql] class CarbonLateDecodeStrategy(sparkSession: SparkSession) extends SparkStrategy {
   val PUSHED_FILTERS = "PushedFilters"
 
   def apply(plan: LogicalPlan): Seq[SparkPlan] = {
@@ -63,6 +63,29 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           aliasMap,
           planLater(child)
         ) :: Nil
+      case LoadDataCommand(identifier, path, isLocal, isOverwrite, partition)
+        if CarbonEnv.get.carbonMetastore.tableExists(identifier)(sparkSession) =>
+        ExecutedCommandExec(LoadTable(identifier.database, identifier.table, path, Seq(),
+          Map(), isOverwrite)) :: Nil
+      case DropTableCommand(identifier, ifNotExists, isView)
+        if CarbonEnv.get.carbonMetastore
+          .isTablePathExists(identifier)(sparkSession) =>
+        ExecutedCommandExec(CarbonDropTableCommand(ifNotExists, identifier.database, identifier.table)) :: Nil
+      case ShowLoadsCommand(databaseName, table, limit) =>
+        ExecutedCommandExec(ShowLoads(databaseName, table, limit, plan.output)) :: Nil
+      case createDb@CreateDatabaseCommand(dbName, ifNotExists, _, _, _) =>
+        CarbonEnv.get.carbonMetastore.createDatabaseDirectory(dbName)
+        ExecutedCommandExec(createDb) :: Nil
+      case drop@DropDatabaseCommand(dbName, ifExists, isCascade) =>
+        if (isCascade) {
+          val tablesInDB = CarbonEnv.get.carbonMetastore.getAllTables()
+            .filterNot(p=>p.database.exists(_.equalsIgnoreCase(dbName)))
+          tablesInDB.foreach{tableName =>
+            CarbonDropTableCommand(true, Some(dbName), tableName.table).run(sparkSession)
+          }
+        }
+        CarbonEnv.get.carbonMetastore.dropDatabaseDirectory(dbName)
+        ExecutedCommandExec(drop) :: Nil
       case _ => Nil
     }
   }

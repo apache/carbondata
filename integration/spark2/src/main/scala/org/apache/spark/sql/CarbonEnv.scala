@@ -41,13 +41,13 @@ object CarbonEnv {
 
   var initialized = false
 
-  def init(sqlContext: SQLContext): Unit = {
+  def init(sparkSession: SparkSession): Unit = {
     if (!initialized) {
       val catalog = {
         val storePath =
           CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
         LOGGER.info(s"carbon env initial: $storePath")
-        new CarbonMetastore(sqlContext.sparkSession.conf, storePath)
+        new CarbonMetastore(sparkSession.conf, storePath)
       }
       carbonEnv = CarbonEnv(catalog)
       initialized = true
