@@ -41,10 +41,16 @@ public class FileFactoryImplUnitTest {
 
   private static String filePath;
 
-  @AfterClass public static void tearDown() {
+  @AfterClass
+  public static void tearDown() {
     File file = new File(filePath);
     if (file.exists()) {
       file.delete();
+    }
+
+    File file1 = new File(".TestFileFactory.carbondata.crc");
+    if (file1.exists()) {
+      file1.delete();
     }
   }
 
