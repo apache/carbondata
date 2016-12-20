@@ -65,6 +65,8 @@ class CarbonScanRDD(
 
   private val readSupport = SparkReadSupport.readSupportClass
 
+  private val bucketedTable = carbonTable.getBucketingInfo(carbonTable.getFactTableName)
+
   @transient private val jobId = new JobID(jobTrackerId, id)
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
@@ -95,39 +97,53 @@ class CarbonScanRDD(
     var noOfTasks = 0
 
     if (!splits.isEmpty) {
-      // create a list of block based on split
-      val blockList = splits.asScala.map(_.asInstanceOf[Distributable])
-
-      // get the list of executors and map blocks to executors based on locality
-      val activeNodes = DistributionUtil.ensureExecutorsAndGetNodeList(blockList, sparkContext)
-
-      // divide the blocks among the tasks of the nodes as per the data locality
-      val nodeBlockMapping = CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1,
-        parallelism, activeNodes.toList.asJava)
 
       statistic.addStatistics(QueryStatisticsConstants.BLOCK_ALLOCATION, System.currentTimeMillis)
       statisticRecorder.recordStatisticsForDriver(statistic, queryId)
       statistic = new QueryStatistic()
 
-      var i = 0
-      // Create Spark Partition for each task and assign blocks
-      nodeBlockMapping.asScala.foreach { case (node, blockList) =>
-        blockList.asScala.foreach { blocksPerTask =>
-          val splits = blocksPerTask.asScala.map(_.asInstanceOf[CarbonInputSplit])
-          if (blocksPerTask.size() != 0) {
-            val bucketGroups = splits.groupBy(f => f.getBucketId)
-            bucketGroups.foreach { p =>
-              val multiBlockSplit = new CarbonMultiBlockSplit(identifier, p._2.asJava, node)
+      if (bucketedTable != null) {
+        var i = 0
+         val bucketed =
+           splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).groupBy(f => f.getBucketId)
+        (0 until bucketedTable.getNumberOfBuckets).map { bucketId =>
+          val bucketPartitions = bucketed.getOrElse(bucketId.toString, Nil)
+          val multiBlockSplit =
+            new CarbonMultiBlockSplit(identifier,
+              bucketPartitions.asJava,
+              bucketPartitions.flatMap(_.getLocations).toArray)
+          val partition = new CarbonSparkPartition(id, i, multiBlockSplit)
+          i += 1
+          result.add(partition)
+        }
+      } else {
+        // create a list of block based on split
+        val blockList = splits.asScala.map(_.asInstanceOf[Distributable])
+
+        // get the list of executors and map blocks to executors based on locality
+        val activeNodes = DistributionUtil.ensureExecutorsAndGetNodeList(blockList, sparkContext)
+
+        // divide the blocks among the tasks of the nodes as per the data locality
+        val nodeBlockMapping = CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1,
+          parallelism, activeNodes.toList.asJava)
+        var i = 0
+        // Create Spark Partition for each task and assign blocks
+        nodeBlockMapping.asScala.foreach { case (node, blockList) =>
+          blockList.asScala.foreach { blocksPerTask =>
+            val splits = blocksPerTask.asScala.map(_.asInstanceOf[CarbonInputSplit])
+            if (blocksPerTask.size() != 0) {
+              val multiBlockSplit =
+                new CarbonMultiBlockSplit(identifier, splits.asJava, Array(node))
               val partition = new CarbonSparkPartition(id, i, multiBlockSplit)
               result.add(partition)
               i += 1
             }
           }
         }
+        noOfNodes = nodeBlockMapping.size
       }
 
       noOfBlocks = splits.size
-      noOfNodes = nodeBlockMapping.size
       noOfTasks = result.size()
 
       statistic = new QueryStatistic()
@@ -158,58 +174,68 @@ class CarbonScanRDD(
     val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
     val format = prepareInputFormatForExecutor(attemptContext.getConfiguration)
     val inputSplit = split.asInstanceOf[CarbonSparkPartition].split.value
-    val model = format.getQueryModel(inputSplit, attemptContext)
-    val reader = {
-      if (vectorReader) {
-        val carbonRecordReader = createVectorizedCarbonRecordReader(model)
-        if (carbonRecordReader == null) {
-          new CarbonRecordReader(model, format.getReadSupportClass(attemptContext.getConfiguration))
-        } else {
-          carbonRecordReader
-        }
-      } else {
-        new CarbonRecordReader(model, format.getReadSupportClass(attemptContext.getConfiguration))
-      }
-    }
-
-    reader.initialize(inputSplit, attemptContext)
-
-    val queryStartTime = System.currentTimeMillis
-
-    val iterator = new Iterator[Any] {
-      private var havePair = false
-      private var finished = false
-      private var count = 0
-
-      context.addTaskCompletionListener { context =>
-        logStatistics(queryStartTime, count)
-        reader.close()
-      }
-
-      override def hasNext: Boolean = {
-        if (context.isInterrupted) {
-          throw new TaskKilledException
-        }
-        if (!finished && !havePair) {
-          finished = !reader.nextKeyValue
-          if (finished) {
-            reader.close()
+    val iterator = if (inputSplit.getAllSplits.size() > 0) {
+      val model = format.getQueryModel(inputSplit, attemptContext)
+      val reader = {
+        if (vectorReader) {
+          val carbonRecordReader = createVectorizedCarbonRecordReader(model)
+          if (carbonRecordReader == null) {
+            new CarbonRecordReader(model,
+              format.getReadSupportClass(attemptContext.getConfiguration))
+          } else {
+            carbonRecordReader
           }
-          havePair = !finished
+        } else {
+          new CarbonRecordReader(model, format.getReadSupportClass(attemptContext.getConfiguration))
         }
-        !finished
       }
 
-      override def next(): Any = {
-        if (!hasNext) {
-          throw new java.util.NoSuchElementException("End of stream")
+      reader.initialize(inputSplit, attemptContext)
+      val queryStartTime = System.currentTimeMillis
+
+      new Iterator[Any] {
+        private var havePair = false
+        private var finished = false
+        private var count = 0
+
+        context.addTaskCompletionListener { context =>
+          logStatistics(queryStartTime, count)
+          reader.close()
         }
-        havePair = false
-        val value = reader.getCurrentValue
-        count += 1
-        value
+
+        override def hasNext: Boolean = {
+          if (context.isInterrupted) {
+            throw new TaskKilledException
+          }
+          if (!finished && !havePair) {
+            finished = !reader.nextKeyValue
+            if (finished) {
+              reader.close()
+            }
+            havePair = !finished
+          }
+          !finished
+        }
+
+        override def next(): Any = {
+          if (!hasNext) {
+            throw new java.util.NoSuchElementException("End of stream")
+          }
+          havePair = false
+          val value = reader.getCurrentValue
+          count += 1
+          value
+        }
+      }
+    } else {
+      new Iterator[Any] {
+        override def hasNext: Boolean = false
+
+        override def next(): Any = throw new java.util.NoSuchElementException("End of stream")
       }
     }
+
+
     iterator.asInstanceOf[Iterator[InternalRow]]
   }
 

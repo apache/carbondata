@@ -66,7 +66,8 @@ class TableBucketingTestCase extends FunSuite with BeforeAndAfterAll {
            USING org.apache.spark.sql.CarbonSource
            OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t4")
       """)
-    LoadTable(Some("default"), "t4", "./src/test/resources/dataDiff.csv", Nil, Map()).run(spark)
+    LoadTable(Some("default"), "t4", "./src/test/resources/dataDiff.csv", Nil,
+      Map(("use_kettle", "false"))).run(spark)
     val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_t4")
     if (table != null && table.getBucketingInfo("t4") != null) {
       assert(true)
@@ -84,7 +85,8 @@ class TableBucketingTestCase extends FunSuite with BeforeAndAfterAll {
            USING org.apache.spark.sql.CarbonSource
            OPTIONS("tableName"="t5")
       """)
-    LoadTable(Some("default"), "t5", "./src/test/resources/dataDiff.csv", Nil, Map()).run(spark)
+    LoadTable(Some("default"), "t5", "./src/test/resources/dataDiff.csv", Nil,
+      Map(("use_kettle", "false"))).run(spark)
 
     val plan = spark.sql(
       """
@@ -108,7 +110,8 @@ class TableBucketingTestCase extends FunSuite with BeforeAndAfterAll {
            USING org.apache.spark.sql.CarbonSource
            OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t6")
       """)
-    LoadTable(Some("default"), "t6", "./src/test/resources/dataDiff.csv", Nil, Map()).run(spark)
+    LoadTable(Some("default"), "t6", "./src/test/resources/dataDiff.csv", Nil,
+      Map(("use_kettle", "false"))).run(spark)
 
     val plan = spark.sql(
       """
@@ -132,7 +135,8 @@ class TableBucketingTestCase extends FunSuite with BeforeAndAfterAll {
            USING org.apache.spark.sql.CarbonSource
            OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t7")
       """)
-    LoadTable(Some("default"), "t7", "./src/test/resources/dataDiff.csv", Nil, Map()).run(spark)
+    LoadTable(Some("default"), "t7", "./src/test/resources/dataDiff.csv", Nil,
+      Map(("use_kettle", "false"))).run(spark)
 
     spark.sql("DROP TABLE IF EXISTS bucketed_parquet_table")
     spark.sql("select * from t7").write
@@ -162,7 +166,8 @@ class TableBucketingTestCase extends FunSuite with BeforeAndAfterAll {
            USING org.apache.spark.sql.CarbonSource
            OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t8")
       """)
-    LoadTable(Some("default"), "t8", "./src/test/resources/dataDiff.csv", Nil, Map()).run(spark)
+    LoadTable(Some("default"), "t8", "./src/test/resources/dataDiff.csv", Nil,
+      Map(("use_kettle", "false"))).run(spark)
 
     spark.sql("DROP TABLE IF EXISTS parquet_table")
     spark.sql("select * from t8").write
