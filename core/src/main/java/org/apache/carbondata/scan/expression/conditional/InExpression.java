@@ -70,6 +70,7 @@ public class InExpression extends BinaryConditionalExpression {
           case LONG:
             val = new ExpressionResult(val.getDataType(), expressionResVal.getLong());
             break;
+          case DATE:
           case TIMESTAMP:
             val = new ExpressionResult(val.getDataType(), expressionResVal.getTime());
             break;

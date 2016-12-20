@@ -18,6 +18,7 @@
  */
 package org.apache.carbondata.spark.readsupport;
 
+import java.sql.Date;
 import java.sql.Timestamp;
 
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
@@ -41,16 +42,25 @@ public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSuppor
 
   @Override public Row readRow(Object[] data) {
     for (int i = 0; i < dictionaries.length; i++) {
+      if (data[i] == null) {
+        continue;
+      }
       if (dictionaries[i] != null) {
         data[i] = DataTypeUtil
             .getDataBasedOnDataType(dictionaries[i].getDictionaryValueForKey((int) data[i]),
                 dataTypes[i]);
+        if (data[i] == null) {
+          continue;
+        }
         switch (dataTypes[i]) {
           case STRING:
             data[i] = UTF8String.fromString(data[i].toString());
             break;
           case TIMESTAMP:
-            data[i] = new Timestamp((long) data[i] / 1000);
+            data[i] = new Timestamp((long) data[i]);
+            break;
+          case DATE:
+            data[i] = new Date((long) data[i]);
             break;
           case LONG:
             data[i] = data[i];
@@ -61,7 +71,9 @@ public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSuppor
       else if (carbonColumns[i].hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         //convert the long to timestamp in case of direct dictionary column
         if (DataType.TIMESTAMP == carbonColumns[i].getDataType()) {
-          data[i] = new Timestamp((long) data[i] / 1000);
+          data[i] = new Timestamp((long) data[i]);
+        } else if (DataType.DATE == carbonColumns[i].getDataType()) {
+          data[i] = new Date((long) data[i]);
         }
       }
     }

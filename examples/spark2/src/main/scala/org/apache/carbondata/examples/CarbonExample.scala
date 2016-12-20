@@ -71,8 +71,13 @@ object CarbonExample {
          |    doubleField double,
          |    stringField string,
          |    timestampField timestamp,
-         |    decimalField decimal(18,2))
+         |    decimalField decimal(18,2),
+         |    dateField date,
+         |    charField char(5)
+         | )
          | USING org.apache.spark.sql.CarbonSource
+         | OPTIONS('DICTIONARY_INCLUDE'='dateField, charField',
+         |   'dbName'='default', 'tableName'='carbon_table')
        """.stripMargin)
 
     // val prop = s"$rootPath/conf/dataload.properties.template"
@@ -89,7 +94,9 @@ object CarbonExample {
          |    doubleField double,
          |    stringField string,
          |    timestampField string,
-         |    decimalField decimal(18,2))
+         |    decimalField decimal(18,2),
+         |    dateField string,
+         |    charField char(5))
          |    ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
        """.stripMargin)
 
@@ -108,7 +115,8 @@ object CarbonExample {
       s"""
          | INSERT INTO TABLE carbon_table
          | SELECT shortField, intField, bigintField, doubleField, stringField,
-         | from_unixtime(unix_timestamp(timestampField,'yyyy/M/dd')) timestampField, decimalField
+         | from_unixtime(unix_timestamp(timestampField,'yyyy/M/dd')) timestampField, decimalField,
+         | cast(to_date(from_unixtime(unix_timestamp(dateField,'yyyy/M/dd'))) as date), charField
          | FROM csv_table
        """.stripMargin)
 
@@ -124,6 +132,15 @@ object CarbonExample {
               """).show
 
     spark.sql("""
+             SELECT *
+             FROM carbon_table where date_format(dateField, "yyyy-MM-dd") = "2015-07-23"
+              """).show
+
+    spark.sql("""
+             select count(stringField) from carbon_table
+              """.stripMargin).show
+
+    spark.sql("""
            SELECT sum(intField), stringField
            FROM carbon_table
            GROUP BY stringField
@@ -133,6 +150,18 @@ object CarbonExample {
       """
         |select t1.*, t2.*
         |from carbon_table t1, carbon_table t2
+        |where t1.stringField = t2.stringField
+      """.stripMargin).show
+
+    spark.sql(
+      """
+        |with t1 as (
+        |select * from carbon_table
+        |union all
+        |select * from carbon_table
+        |)
+        |select t1.*, t2.*
+        |from t1, carbon_table t2
         |where t1.stringField = t2.stringField
       """.stripMargin).show
 

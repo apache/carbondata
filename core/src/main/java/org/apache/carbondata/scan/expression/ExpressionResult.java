@@ -40,9 +40,16 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
 
   private List<ExpressionResult> expressionResults;
 
+  private boolean isLiteral = false;
+
   public ExpressionResult(DataType dataType, Object value) {
     this.dataType = dataType;
     this.value = value;
+  }
+
+  public ExpressionResult(DataType dataType, Object value, boolean isLiteral) {
+    this(dataType, value);
+    this.isLiteral = isLiteral;
   }
 
   public ExpressionResult(List<ExpressionResult> expressionResults) {
@@ -79,10 +86,20 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             return ((Double) value).intValue();
           }
           return (Integer) value;
+        case DATE:
+          if (value instanceof java.sql.Date) {
+            return (int) (((java.sql.Date) value).getTime());
+          } else {
+            return (Integer) value;
+          }
         case TIMESTAMP:
           if (value instanceof Timestamp) {
-            return (int) (((Timestamp) value).getTime() % 1000);
+            return (int) (((Timestamp) value).getTime());
           } else {
+            if (isLiteral) {
+              Long l = (Long) value /1000;
+              return l.intValue();
+            }
             return (Integer) value;
           }
         default:
@@ -119,11 +136,22 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           }
           return (Short) value;
 
+        case DATE:
+
+          if (value instanceof java.sql.Date) {
+            return (short) (((java.sql.Date) value).getTime());
+          } else {
+            return (Short) value;
+          }
         case TIMESTAMP:
 
           if (value instanceof Timestamp) {
-            return (short) (((Timestamp) value).getTime() % 1000);
+            return (short) (((Timestamp) value).getTime());
           } else {
+            if (isLiteral) {
+              Long l = ((long)value/1000);
+              return l.shortValue();
+            }
             return (Short) value;
           }
 
@@ -144,16 +172,24 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     }
     try {
       switch (this.getDataType()) {
+        case DATE:
         case TIMESTAMP:
           SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
                   CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
           if (value instanceof Timestamp) {
             return parser.format((Timestamp) value);
-          } else {
-            return parser.format(new Timestamp((long) value / 1000));
+          } else if (value instanceof java.sql.Date) {
+            return parser.format((java.sql.Date) value);
+          } else if (value instanceof Long) {
+            if (isLiteral) {
+              return parser.format(new Timestamp((long) value/1000));
+            }
+            return parser.format(new Timestamp((long) value));
+          } else if (value instanceof Integer) {
+            return parser.format(new java.sql.Date((int)value));
           }
-
+          return value.toString();
         default:
           return value.toString();
       }
@@ -183,10 +219,20 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           return ((Long) value).doubleValue();
         case DOUBLE:
           return (Double) value;
+        case DATE:
+          if (value instanceof java.sql.Date) {
+            return (double) ((java.sql.Date) value).getTime();
+          } else {
+            return (Double) (value);
+          }
         case TIMESTAMP:
           if (value instanceof Timestamp) {
-            return (double) ((Timestamp) value).getTime() * 1000;
+            return (double) ((Timestamp) value).getTime();
           } else {
+            if (isLiteral) {
+              Long l = (Long) value/1000;
+              return l.doubleValue();
+            }
             return (Double) (value);
           }
         default:
@@ -219,9 +265,15 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           return (Long) value;
         case DOUBLE:
           return (Long) value;
+        case DATE:
+          if (value instanceof java.sql.Date) {
+            return ((java.sql.Date) value).getTime();
+          } else {
+            return (Long) value;
+          }
         case TIMESTAMP:
           if (value instanceof Timestamp) {
-            return 1000 * ((Timestamp) value).getTime();
+            return ((Timestamp) value).getTime();
           } else {
             return (Long) value;
           }
@@ -259,10 +311,19 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           return new BigDecimal(value.toString());
         case DECIMAL:
           return new BigDecimal(value.toString());
+        case DATE:
+          if (value instanceof java.sql.Date) {
+            return new BigDecimal(((java.sql.Date) value).getTime());
+          } else {
+            return new BigDecimal((long) value);
+          }
         case TIMESTAMP:
           if (value instanceof Timestamp) {
-            return new BigDecimal(1000 * ((Timestamp) value).getTime());
+            return new BigDecimal(((Timestamp) value).getTime());
           } else {
+            if (isLiteral) {
+              return new BigDecimal((long)value/1000);
+            }
             return new BigDecimal((long) value);
           }
         default:
@@ -292,7 +353,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           Date dateToStr;
           try {
             dateToStr = parser.parse(value.toString());
-            return dateToStr.getTime() * 1000;
+            return dateToStr.getTime();
           } catch (ParseException e) {
             throw new FilterIllegalMemberException(
                 "Cannot convert" + this.getDataType().name() + " to Time/Long type value");
@@ -304,10 +365,19 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           return (Long) value;
         case DOUBLE:
           return (Long) value;
+        case DATE:
+          if (value instanceof java.sql.Date) {
+            return ((Date) value).getTime();
+          } else {
+            return (Long) value;
+          }
         case TIMESTAMP:
           if (value instanceof Timestamp) {
-            return ((Timestamp) value).getTime() * 1000;
+            return ((Timestamp) value).getTime();
           } else {
+            if (isLiteral) {
+              return (Long) value/1000;
+            }
             return (Long) value;
           }
         default:
@@ -350,7 +420,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
   public List<ExpressionResult> getList() {
     if (null == expressionResults) {
       List<ExpressionResult> a = new ArrayList<ExpressionResult>(20);
-      a.add(new ExpressionResult(dataType, value));
+      a.add(new ExpressionResult(dataType, value, isLiteral));
       return a;
     } else {
       return expressionResults;
@@ -361,11 +431,12 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
     List<ExpressionResult> evaluateResultList = getList();
     for (ExpressionResult result : evaluateResultList) {
-      if (result.getString() == null) {
+      String resultString = result.getString();
+      if (resultString == null) {
         evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
         continue;
       }
-      evaluateResultListFinal.add(result.getString());
+      evaluateResultListFinal.add(resultString);
     }
     return evaluateResultListFinal;
   }
@@ -411,6 +482,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           result = this.getInt().equals(objToCompare.getInt());
           break;
         case LONG:
+        case DATE:
         case TIMESTAMP:
           result = this.getLong().equals(objToCompare.getLong());
           break;
@@ -448,6 +520,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           java.math.BigDecimal val1 = this.getDecimal();
           java.math.BigDecimal val2 = o.getDecimal();
           return val1.compareTo(val2);
+        case DATE:
         case TIMESTAMP:
           SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,

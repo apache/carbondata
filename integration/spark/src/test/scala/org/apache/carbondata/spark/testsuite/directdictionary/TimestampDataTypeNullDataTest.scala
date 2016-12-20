@@ -50,7 +50,7 @@ class TimestampDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
         )
       sql(
         """CREATE TABLE IF NOT EXISTS timestampTyeNullData
-                     (ID Int, date Timestamp, country String,
+                     (ID Int, dateField Timestamp, country String,
                      name String, phonetype String, serialname String, salary Int)
                     STORED BY 'org.apache.carbondata.format'"""
       )
@@ -68,18 +68,18 @@ class TimestampDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("SELECT max(date) FROM timestampTyeNullData where date is not null") {
+  test("SELECT max(dateField) FROM timestampTyeNullData where dateField is not null") {
     checkAnswer(
-      sql("SELECT max(date) FROM timestampTyeNullData where date is not null"),
+      sql("SELECT max(dateField) FROM timestampTyeNullData where dateField is not null"),
       Seq(Row(Timestamp.valueOf("2015-07-23 00:00:00.0"))
       )
     )
   }
-    test("SELECT * FROM timestampTyeNullData where date is null") {
-      checkAnswer(
-        sql("SELECT date FROM timestampTyeNullData where date is null"),
-        Seq(Row(null)
-        ))
+  test("SELECT * FROM timestampTyeNullData where dateField is null") {
+    checkAnswer(
+      sql("SELECT dateField FROM timestampTyeNullData where dateField is null"),
+      Seq(Row(null)
+      ))
   }
 
   override def afterAll {

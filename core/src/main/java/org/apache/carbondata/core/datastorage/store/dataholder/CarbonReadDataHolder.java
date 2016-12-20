@@ -72,6 +72,9 @@ public class CarbonReadDataHolder {
     return this.intValues[index];
   }
 
+  public long[] getReadableLongValue() {
+    return this.longValues;
+  }
   public long getReadableLongValueByIndex(int index) {
     return this.longValues[index];
   }

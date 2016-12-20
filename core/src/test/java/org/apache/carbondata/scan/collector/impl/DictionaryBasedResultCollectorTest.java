@@ -19,14 +19,12 @@
 package org.apache.carbondata.scan.collector.impl;
 
 import java.nio.ByteBuffer;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.carbon.metadata.blocklet.datachunk.PresenceMeta;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -74,6 +72,9 @@ public class DictionaryBasedResultCollectorTest {
     QueryDimension queryDimension1 = new QueryDimension("QDCol1");
     queryDimension1.setQueryOrder(1);
     ColumnSchema columnSchema = new ColumnSchema();
+    List encodeList= new ArrayList<Encoding>();
+    encodeList.add(Encoding.DICTIONARY);
+    columnSchema.setEncodingList(encodeList);
     queryDimension1.setDimension(new CarbonDimension(columnSchema, 0, 0, 0, 0));
     QueryDimension queryDimension2 = new QueryDimension("QDCol2");
     queryDimension2.setQueryOrder(2);
@@ -162,9 +163,12 @@ public class DictionaryBasedResultCollectorTest {
     new MockUp<DirectDictionaryKeyGeneratorFactory>() {
       @SuppressWarnings("unused") @Mock DirectDictionaryGenerator getDirectDictionaryGenerator(
           DataType dataType) {
-        if (dataType == DataType.TIMESTAMP) return new TimeStampDirectDictionaryGenerator(
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-        else return null;
+        if (dataType == DataType.TIMESTAMP || dataType == DataType.DATE) {
+          return new TimeStampDirectDictionaryGenerator(
+                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+        }  else {
+          return null;
+        }
       }
     };
     new MockUp<TimeStampDirectDictionaryGenerator>() {

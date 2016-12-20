@@ -134,6 +134,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       case DoubleType => CarbonType.DOUBLE.getName
       case BooleanType => CarbonType.DOUBLE.getName
       case TimestampType => CarbonType.TIMESTAMP.getName
+      case DateType => CarbonType.DATE.getName
       case other => sys.error(s"unsupported type: $other")
     }
   }
@@ -145,7 +146,8 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
     s"""
           CREATE TABLE IF NOT EXISTS ${options.dbName}.${options.tableName}
           (${ carbonSchema.mkString(", ") })
-          using 'org.apache.spark.sql.CarbonRelationProvider'
+          using org.apache.spark.sql.CarbonSource
+          OPTIONS('dbName'='${options.dbName}', 'tableName'='${options.tableName}')
       """
   }
 
