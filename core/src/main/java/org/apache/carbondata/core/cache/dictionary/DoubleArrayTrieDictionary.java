@@ -20,8 +20,6 @@
 package org.apache.carbondata.core.cache.dictionary;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -29,8 +27,7 @@ import java.util.TreeSet;
  * A dictionary based on DoubleArrayTrie data structure that maps enumerations
  * of byte[] to int IDs. With DoubleArrayTrie the memory footprint of the mapping
  * is minimize,d if compared to HashMap.
- * This DAT implementation is based on https://linux.thai.net/~thep/datrie/datrie.html
- * Created by hexiaoqiao on 2016/12/13.
+ * This DAT implementation is inspired by https://linux.thai.net/~thep/datrie/datrie.html
  */
 
 public class DoubleArrayTrieDictionary {
@@ -383,34 +380,5 @@ public class DoubleArrayTrieDictionary {
       }
     }
     out.println();
-  }
-
-  public static void main(String[] args) throws IOException {
-    DoubleArrayTrieDictionary dat = new DoubleArrayTrieDictionary();
-    if (null == args || 1 > args.length) {
-      return;
-    }
-    String dictpath = args[0];
-    List<String> wordList = new ArrayList<String>();
-    BufferedReader br = new BufferedReader(
-        new InputStreamReader(new FileInputStream(dictpath)));
-    String line = null;
-    while ((line = br.readLine()) != null) {
-      wordList.add(line);
-    }
-    br.close();
-    long start1 = System.currentTimeMillis();
-    for (int i = 0; i < wordList.size(); i++) {
-      dat.insert(wordList.get(i));
-    }
-    System.out.println(System.currentTimeMillis() - start1);
-    for (int i = 0; i < wordList.size(); i++) {
-      int res = dat.getValue(wordList.get(i));
-      if (res == -1) {
-        System.out.println("-1\t" + wordList.get(i));
-      } else {
-        System.out.println(res + "\t" + wordList.get(i));
-      }
-    }
   }
 }
