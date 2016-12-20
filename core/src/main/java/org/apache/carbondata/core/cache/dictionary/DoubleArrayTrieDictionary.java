@@ -29,6 +29,7 @@ import java.util.TreeSet;
  * A dictionary based on DoubleArrayTrie data structure that maps enumerations
  * of byte[] to int IDs. With DoubleArrayTrie the memory footprint of the mapping
  * is minimize,d if compared to HashMap.
+ * This DAT implementation is based on https://linux.thai.net/~thep/datrie/datrie.html
  * Created by hexiaoqiao on 2016/12/13.
  */
 
@@ -67,8 +68,9 @@ public class DoubleArrayTrieDictionary {
   private void init(int capacity, int size, int[] base, int[] check) {
     int blen = base.length;
     int clen = check.length;
-    if (capacity < size || size < 0 || blen != clen)
+    if (capacity < size || size < 0 || blen != clen) {
       throw new IllegalArgumentException("Illegal init parameters");
+    }
     this.base = new int[capacity];
     this.check = new int[capacity];
     this.capacity = capacity;
@@ -349,7 +351,7 @@ public class DoubleArrayTrieDictionary {
    */
   public void read(DataInputStream in) throws IOException {
     byte[] header = new byte[HEAD_LEN];
-      in.read(header);
+    in.read(header);
     int comp = 0;
     for (int i = 0; i < HEAD_LEN; i++) {
       comp = HEAD_MAGIC[i] - header[i];
