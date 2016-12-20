@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.result.AbstractScannedResult;
+import org.apache.carbondata.scan.result.vector.ColumnVectorInfo;
 
 /**
  * Result provider class in case of filter query
@@ -144,4 +145,38 @@ public class FilterQueryScannedResult extends AbstractScannedResult {
     return getBigDecimalMeasureValue(ordinal, rowMapping[currentRow]);
   }
 
+  /**
+   * Fill the column data to vector
+   */
+  public void fillColumnarDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
+    int column = 0;
+    for (int i = 0; i < this.dictionaryColumnBlockIndexes.length; i++) {
+      column = dataChunks[dictionaryColumnBlockIndexes[i]]
+          .fillConvertedChunkData(rowMapping, vectorInfo, column,
+              columnGroupKeyStructureInfo.get(dictionaryColumnBlockIndexes[i]));
+    }
+  }
+
+  /**
+   * Fill the column data to vector
+   */
+  public void fillColumnarNoDictionaryBatch(ColumnVectorInfo[] vectorInfo) {
+    int column = 0;
+    for (int i = 0; i < this.noDictionaryColumnBlockIndexes.length; i++) {
+      column = dataChunks[noDictionaryColumnBlockIndexes[i]]
+          .fillConvertedChunkData(rowMapping, vectorInfo, column,
+              columnGroupKeyStructureInfo.get(noDictionaryColumnBlockIndexes[i]));
+    }
+  }
+
+  /**
+   * Fill the measure column data to vector
+   */
+  public void fillColumnarMeasureBatch(ColumnVectorInfo[] vectorInfo, int[] measuresOrdinal) {
+    for (int i = 0; i < measuresOrdinal.length; i++) {
+      vectorInfo[i].measureVectorFiller
+          .fillMeasureVectorForFilter(rowMapping, measureDataChunks[measuresOrdinal[i]],
+              vectorInfo[i]);
+    }
+  }
 }

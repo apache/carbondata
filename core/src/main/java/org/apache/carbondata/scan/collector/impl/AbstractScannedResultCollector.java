@@ -30,6 +30,7 @@ import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.scan.executor.util.QueryUtil;
 import org.apache.carbondata.scan.result.AbstractScannedResult;
+import org.apache.carbondata.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.scan.wrappers.ByteArrayWrapper;
 
 /**
@@ -151,4 +152,8 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
     }
   }
 
+  @Override public void collectVectorBatch(AbstractScannedResult scannedResult,
+      CarbonColumnarBatch columnarBatch) {
+    throw new UnsupportedOperationException("Works only for batch collectors");
+  }
 }

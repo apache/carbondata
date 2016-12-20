@@ -51,4 +51,8 @@ public enum DataType {
   public String getName() {
     return name;
   }
+
+  public boolean isComplexType() {
+    return precedenceOrder >= 9 && precedenceOrder <= 11;
+  }
 }

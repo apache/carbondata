@@ -125,6 +125,10 @@ public class LocalCarbonFileTest {
     public void testRenameForce() {
         localCarbonFile = new LocalCarbonFile(file);
         assertTrue(localCarbonFile.renameForce("Testdb.carbon"));
+        File file1 = new File("Testdb.carbon");
+        if (file1.exists()) {
+            file1.delete();
+        }
     }
 
     @Test

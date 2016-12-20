@@ -16,23 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.scan.executor;
+package org.apache.carbondata.scan.executor.impl;
 
-import org.apache.carbondata.scan.executor.impl.DetailQueryExecutor;
-import org.apache.carbondata.scan.executor.impl.VectorDetailQueryExecutor;
+import java.util.List;
+
+import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.scan.executor.exception.QueryExecutionException;
+import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.model.QueryModel;
+import org.apache.carbondata.scan.result.iterator.VectorDetailQueryResultIterator;
 
 /**
- * Factory class to get the query executor from RDD
- * This will return the executor based on query type
+ * Below class will be used to execute the detail query and returns columnar vectors.
  */
-public class QueryExecutorFactory {
+public class VectorDetailQueryExecutor extends AbstractQueryExecutor {
 
-  public static QueryExecutor getQueryExecutor(QueryModel queryModel) {
-    if (queryModel.isVectorReader()) {
-      return new VectorDetailQueryExecutor();
-    } else {
-      return new DetailQueryExecutor();
-    }
+  @Override public CarbonIterator<Object[]> execute(QueryModel queryModel)
+      throws QueryExecutionException {
+    List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
+    return new VectorDetailQueryResultIterator(blockExecutionInfoList, queryModel,
+        queryProperties.executorService);
   }
+
 }
