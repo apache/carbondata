@@ -38,12 +38,12 @@ public class LiteralExpression extends LeafExpression {
   }
 
   @Override public ExpressionResult evaluate(RowIntf value) {
-    ExpressionResult expressionResult = new ExpressionResult(dataType, this.value);
+    ExpressionResult expressionResult = new ExpressionResult(dataType, this.value, true);
     return expressionResult;
   }
 
   public ExpressionResult getExpressionResult() {
-    ExpressionResult expressionResult = new ExpressionResult(dataType, this.value);
+    ExpressionResult expressionResult = new ExpressionResult(dataType, this.value, true);
     return expressionResult;
   }
 

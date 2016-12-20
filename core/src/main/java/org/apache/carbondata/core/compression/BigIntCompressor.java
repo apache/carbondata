@@ -44,6 +44,19 @@ public class BigIntCompressor extends ValueCompressor {
       Object max) {
     long maxValue = (long) max;
     long[] value = dataHolder.getWritableLongValues();
+    return compressMaxMin(changedDataType, maxValue, value);
+  }
+
+  /**
+   * 1. It gets delta value i.e difference of maximum value and actual value
+   * 2. Convert the delta value computed above to changedDatatype
+   * @param changedDataType
+   * @param maxValue
+   * @param value
+   * @return
+   */
+  protected Object compressMaxMin(DataType changedDataType, long maxValue,
+      long[] value) {
     int i = 0;
     switch (changedDataType) {
       case DATA_BYTE:
@@ -80,6 +93,19 @@ public class BigIntCompressor extends ValueCompressor {
   @Override
   protected Object compressNone(DataType changedDataType, CarbonWriteDataHolder dataHolder) {
     long[] value = dataHolder.getWritableLongValues();
+    return compressNone(changedDataType, value);
+  }
+
+  /**
+   * It convert the value to changed datatype.
+   * Changed datatype is computed based list of values it has.
+   * for instance if value is 2,10,12,45
+   * these value can be easily fit in byte and hence below method convert to byte and store it.
+   * @param changedDataType
+   * @param value
+   * @return
+   */
+  protected Object compressNone(DataType changedDataType, long[] value) {
     int i = 0;
     switch (changedDataType) {
       case DATA_BYTE:

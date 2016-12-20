@@ -19,6 +19,7 @@
 package org.apache.carbondata.core.compression;
 
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonWriteDataHolder;
+import org.apache.carbondata.core.util.CompressionFinder;
 import org.apache.carbondata.core.util.ValueCompressionUtil.COMPRESSION_TYPE;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -26,6 +27,14 @@ import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
  * Measure compressor
  */
 public abstract class ValueCompressor {
+
+  public Object getCompressedValues(CompressionFinder compressionFinder,
+      CarbonWriteDataHolder dataHolder, Object maxValue, int decimal) {
+    return getCompressedValues(compressionFinder.getCompType(),
+        dataHolder,
+        compressionFinder.getChangedDataType(),
+        maxValue, decimal);
+  }
 
   /**
    *

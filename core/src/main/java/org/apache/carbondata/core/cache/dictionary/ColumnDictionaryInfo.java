@@ -31,7 +31,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-
+import org.apache.carbondata.core.util.DataTypeUtil;
 /**
  * class that implements methods specific for dictionary data look up
  */
@@ -277,13 +277,15 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
         case INT:
           return Integer.compare((Integer.parseInt(dictionaryVal)), (Integer.parseInt(memberVal)));
         case DOUBLE:
-          return Double
-              .compare((Double.parseDouble(dictionaryVal)), (Double.parseDouble(memberVal)));
+          return DataTypeUtil
+              .compareDoubleWithNan((Double.parseDouble(dictionaryVal)),
+                  (Double.parseDouble(memberVal)));
         case LONG:
           return Long.compare((Long.parseLong(dictionaryVal)), (Long.parseLong(memberVal)));
         case BOOLEAN:
           return Boolean
               .compare((Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
+        case DATE:
         case TIMESTAMP:
           SimpleDateFormat parser = new SimpleDateFormat(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,

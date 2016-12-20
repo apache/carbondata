@@ -88,8 +88,8 @@ class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with
     )
 
   }
-  
-    test("select doj from directDictionaryTable with greater than filter") {
+
+  test("select doj from directDictionaryTable with greater than filter") {
     checkAnswer(
       sql("select doj from directDictionaryTable where doj>'2016-03-14 15:00:09'"),
       Seq(Row(Timestamp.valueOf("2016-04-14 15:00:09")))
@@ -99,7 +99,7 @@ class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with
 
 
   override def afterAll {
-     sql("drop table directDictionaryTable")
+    sql("drop table directDictionaryTable")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")

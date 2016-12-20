@@ -17,7 +17,7 @@
  * under the License.
  */
 
-package org.apache.carbondata.core.carbon.datastorage.filesystem;
+package org.apache.carbondata.core.datastorage.store.filesystem;
 
 import mockit.Mock;
 import mockit.MockUp;
@@ -125,6 +125,10 @@ public class LocalCarbonFileTest {
     public void testRenameForce() {
         localCarbonFile = new LocalCarbonFile(file);
         assertTrue(localCarbonFile.renameForce("Testdb.carbon"));
+        File file1 = new File("Testdb.carbon");
+        if (file1.exists()) {
+            file1.delete();
+        }
     }
 
     @Test

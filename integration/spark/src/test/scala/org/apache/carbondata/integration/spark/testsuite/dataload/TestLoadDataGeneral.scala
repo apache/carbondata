@@ -79,6 +79,15 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("test data loading CSV file with delimiter char \\017") {
+    val testData = currentDirectory + "/src/test/resources/sample_withDelimiter017.csv"
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest options ('delimiter'='\\017')")
+    checkAnswer(
+      sql("SELECT COUNT(*) FROM loadtest"),
+      Seq(Row(20))
+    )
+  }
+
   test("test data loading with invalid values for mesasures") {
     val testData = currentDirectory + "/src/test/resources/invalidMeasures.csv"
     sql("drop table if exists invalidMeasures")

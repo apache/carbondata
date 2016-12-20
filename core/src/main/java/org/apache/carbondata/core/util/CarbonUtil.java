@@ -599,22 +599,7 @@ public final class CarbonUtil {
    * @return
    */
   public static String unescapeChar(String parseStr) {
-    switch (parseStr) {
-      case "\\001":
-        return "\001";
-      case "\\t":
-        return "\t";
-      case "\\r":
-        return "\r";
-      case "\\b":
-        return "\b";
-      case "\\f":
-        return "\f";
-      case "\\n":
-        return "\n";
-      default:
-        return parseStr;
-    }
+    return scala.StringContext.treatEscapes(parseStr);
   }
 
   /**

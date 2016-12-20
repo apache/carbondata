@@ -83,6 +83,13 @@ object CarbonFilters {
             new ListExpression(
               convertToJavaList(values.map(f => getCarbonLiteralExpression(name, f)).toList))))
 
+        case sources.IsNull(name) =>
+          Some(new EqualToExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, null), true))
+        case sources.IsNotNull(name) =>
+          Some(new NotEqualsExpression(getCarbonExpression(name),
+            getCarbonLiteralExpression(name, null), true))
+
         case sources.And(lhs, rhs) =>
           (createFilter(lhs) ++ createFilter(rhs)).reduceOption(new AndExpression(_, _))
 

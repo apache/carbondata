@@ -50,16 +50,16 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
           TimeStampGranularityConstants.TIME_GRAN_SEC.toString
         )
       CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "true")
+      sql("drop table if exists directDictionaryTable")
+      sql("drop table if exists directDictionaryTable_hive")
       sql(
-        "CREATE TABLE if not exists directDictionaryTable (empno int,doj Timestamp, " +
-          "salary int) " +
+        "CREATE TABLE if not exists directDictionaryTable (empno int,doj Timestamp, salary int) " +
           "STORED BY 'org.apache.carbondata.format'"
       )
 
       sql(
-        "CREATE TABLE if not exists directDictionaryTable_hive (empno int,doj Timestamp, " +
-        "salary int) " +
-        "row format delimited fields terminated by ','"
+        "CREATE TABLE if not exists directDictionaryTable_hive (empno int,doj Timestamp, salary int) " +
+          "row format delimited fields terminated by ','"
       )
 
       CarbonProperties.getInstance()
@@ -68,8 +68,8 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
         .getCanonicalPath
       val csvFilePath = currentDirectory + "/src/test/resources/datasample.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable OPTIONS" +
-        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
-      sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable_hive");
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
+      sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable_hive")
     } catch {
       case x: Throwable => CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
@@ -97,8 +97,8 @@ class TimestampDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfte
 
   test("test direct dictionary for not equals condition") {
     checkAnswer(
-      sql("select doj from directDictionaryTable where doj != '2016-04-14 15:00:09.0'"),
-      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09.0"))
+      sql("select doj from directDictionaryTable where doj != '2016-04-14 15:00:09'"),
+      Seq(Row(Timestamp.valueOf("2016-03-14 15:00:09"))
       )
     )
   }
