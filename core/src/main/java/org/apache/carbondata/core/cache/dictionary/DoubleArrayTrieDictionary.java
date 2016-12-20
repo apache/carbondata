@@ -27,11 +27,8 @@ import java.util.TreeSet;
 
 /**
  * A dictionary based on DoubleArrayTrie data structure that maps enumerations
- * of byte[] to int IDs.
- * <p/>
- * With DoubleArrayTrie the memory footprint of the mapping is minimize,d if
- * compared to HashMap.
- * <p/>
+ * of byte[] to int IDs. With DoubleArrayTrie the memory footprint of the mapping
+ * is minimize,d if compared to HashMap.
  * Created by hexiaoqiao on 2016/12/13.
  */
 
@@ -41,12 +38,13 @@ public class DoubleArrayTrieDictionary {
   }; // "DATTrieDict"
   public static final int HEAD_LEN = HEAD_MAGIC.length;
 
-  private static final int INIT_CAPA_VALUE = 256;
-  private static final int BASE_ROOT_VALUE = 1;
-  private static final int CHCK_ROOT_VALUE = -1;
-  private static final int UUSD_ROOM_VALUE = -2;
-  private static final int EPTY_BACK_VALUE = 0;
-  private static final int ENCODE_BASE_VALUE = 10;
+  private static final int INIT_CAPA_VALUE = 256;  // init len of double array
+  private static final int BASE_ROOT_VALUE = 1;    // root base value of trie root
+  private static final int CHCK_ROOT_VALUE = -1;   // root check value of trie root
+  private static final int UUSD_ROOM_VALUE = -2;   // unused position, only for zero
+  private static final int EPTY_BACK_VALUE = 0;    // value of empty position
+
+  private static final int ENCODE_BASE_VALUE = 10; // encode start number
 
   private int[] base;
   private int[] check;
@@ -66,41 +64,11 @@ public class DoubleArrayTrieDictionary {
     size = 2;
   }
 
-  public static void main(String[] args) throws IOException {
-    DoubleArrayTrieDictionary dat = new DoubleArrayTrieDictionary();
-    if (null == args || 1 > args.length) {
-      return;
-    }
-    String dictpath = args[0];
-    List<String> wordList = new ArrayList<String>();
-    BufferedReader br = new BufferedReader(
-        new InputStreamReader(new FileInputStream(dictpath)));
-    String line = null;
-    while ((line = br.readLine()) != null) {
-      wordList.add(line);
-    }
-    br.close();
-    long start1 = System.currentTimeMillis();
-    for (int i = 0; i < wordList.size(); i++) {
-      dat.insert(wordList.get(i));
-    }
-    System.out.println(System.currentTimeMillis() - start1);
-    for (int i = 0; i < wordList.size(); i++) {
-      int res = dat.getValue(wordList.get(i));
-      if (res == -1) {
-        System.out.println("-1\t" + wordList.get(i));
-      } else {
-        System.out.println(res + "\t" + wordList.get(i));
-      }
-    }
-  }
-
   private void init(int capacity, int size, int[] base, int[] check) {
     int blen = base.length;
     int clen = check.length;
-    if (capacity < size || size < 0 || blen != clen) {
+    if (capacity < size || size < 0 || blen != clen)
       throw new IllegalArgumentException("Illegal init parameters");
-    }
     this.base = new int[capacity];
     this.check = new int[capacity];
     this.capacity = capacity;
@@ -140,12 +108,24 @@ public class DoubleArrayTrieDictionary {
     return capacity;
   }
 
+  /**
+   * Get encode value of key
+   *
+   * @param key
+   * @return
+   */
   public int getValue(String key) {
     String k = key + '\0';
     byte[] bKeys = k.getBytes();
     return getValue(bKeys);
   }
 
+  /**
+   * Get encode value of bKeys
+   *
+   * @param bKeys
+   * @return
+   */
   private int getValue(byte[] bKeys) {
     int from = 1;
     int to;
@@ -155,9 +135,7 @@ public class DoubleArrayTrieDictionary {
     for (int i = 0; i < len; i++) {
       current = bKeys[i] & 0xFF;
       to = base[from] + current;
-      if (check[to] != from) {
-        return -1;
-      }
+      if (check[to] != from) return -1;
       int baseValue = base[to];
       if (baseValue <= -ENCODE_BASE_VALUE) {
         if (i == len - 1) {
@@ -172,6 +150,12 @@ public class DoubleArrayTrieDictionary {
     return -1;
   }
 
+  /**
+   * Get all children of one node
+   *
+   * @param pos
+   * @return
+   */
   private TreeSet<Integer> getChildren(int pos) {
     TreeSet<Integer> children = new TreeSet<Integer>();
     for (int i = 0; i < 0xFF; i++) {
@@ -187,6 +171,15 @@ public class DoubleArrayTrieDictionary {
     return children;
   }
 
+  /**
+   * @TODO: need to optimize performance
+   *
+   * Find multiple free position for {values}
+   * the distance between free position should be as same as {values}
+   *
+   * @param values
+   * @return
+   */
   private int findFreeRoom(SortedSet<Integer> values) {
     int min = values.first();
     int max = values.last();
@@ -201,36 +194,14 @@ public class DoubleArrayTrieDictionary {
       if (res == EPTY_BACK_VALUE) return i - min;
     }
     return -1;
-    /*
-    if (free.isEmpty()) {
-      reSize(capacity + INIT_CAPA_VALUE);
-      return capacity - INIT_CAPA_VALUE;
-    }
-    int min = values.first();
-    int max = values.last();
-    free.higher(min);
-    Iterator<Integer> it = free.iterator();
-    Integer current;
-    while (it.hasNext()) {
-      current = it.next();
-      if (current < min) continue;
-      if (current + max >= capacity) {
-        reSize(capacity + INIT_CAPA_VALUE);
-        return capacity - INIT_CAPA_VALUE - min;
-      }
-      boolean find = true;
-      for (Integer v : values) {
-        if (!(free.contains(current - min + v))) {
-          find = false;
-          break;
-        }
-      }
-      if (find) return current - min;
-    }
-    return -1;
-    */
   }
 
+  /**
+   * Find one empty position for value
+   *
+   * @param value
+   * @return
+   */
   private int findAvailableHop(int value) {
     reSize(size + 1);
     int result = size - 1;
@@ -243,6 +214,13 @@ public class DoubleArrayTrieDictionary {
     return result;
   }
 
+  /**
+   * Resolve when conflict and reset current node and its children.
+   *
+   * @param start current conflict position
+   * @param bKey current byte value which for processing
+   * @return
+   */
   private int conflict(int start, int bKey) {
     int from = start;
     int newKey = bKey;
@@ -274,6 +252,15 @@ public class DoubleArrayTrieDictionary {
     return from;
   }
 
+  /**
+   * Insert element (byte[]) into DAT.
+   * 1. if the element has been DAT then return.
+   * 2. if position which is empty then insert directly.
+   * 3. if conflict then resolve it.
+   *
+   * @param bKeys
+   * @return
+   */
   private boolean insert(byte[] bKeys) {
     int from = 1;
     int klen = bKeys.length;
@@ -320,6 +307,13 @@ public class DoubleArrayTrieDictionary {
     return false;
   }
 
+  /**
+   * Insert element (String) into DAT, the element will be transformed to
+   * byte[] firstly then insert into DAT.
+   *
+   * @param key
+   * @return
+   */
   public boolean insert(String key) {
     String k = key + '\0';
     byte[] bKeys = k.getBytes();
@@ -329,6 +323,12 @@ public class DoubleArrayTrieDictionary {
     return true;
   }
 
+  /**
+   * Serialize the DAT to data output stream
+   *
+   * @param out
+   * @throws IOException
+   */
   public void write(DataOutputStream out) throws IOException {
     out.write(HEAD_MAGIC);
     out.writeInt(capacity);
@@ -341,9 +341,15 @@ public class DoubleArrayTrieDictionary {
     }
   }
 
+  /**
+   * Deserialize the DAT from data input stream
+   *
+   * @param in
+   * @throws IOException
+   */
   public void read(DataInputStream in) throws IOException {
     byte[] header = new byte[HEAD_LEN];
-    in.read(header);
+      in.read(header);
     int comp = 0;
     for (int i = 0; i < HEAD_LEN; i++) {
       comp = HEAD_MAGIC[i] - header[i];
@@ -364,6 +370,9 @@ public class DoubleArrayTrieDictionary {
     init(capacity, size, base, check);
   }
 
+  /**
+   * Dump double array value about Trie
+   */
   public void dump(PrintStream out) {
     out.println("Capacity = " + capacity + ", Size = " + size);
     for (int i = 0; i < size; i++) {
@@ -372,5 +381,34 @@ public class DoubleArrayTrieDictionary {
       }
     }
     out.println();
+  }
+
+  public static void main(String[] args) throws IOException {
+    DoubleArrayTrieDictionary dat = new DoubleArrayTrieDictionary();
+    if (null == args || 1 > args.length) {
+      return;
+    }
+    String dictpath = args[0];
+    List<String> wordList = new ArrayList<String>();
+    BufferedReader br = new BufferedReader(
+        new InputStreamReader(new FileInputStream(dictpath)));
+    String line = null;
+    while ((line = br.readLine()) != null) {
+      wordList.add(line);
+    }
+    br.close();
+    long start1 = System.currentTimeMillis();
+    for (int i = 0; i < wordList.size(); i++) {
+      dat.insert(wordList.get(i));
+    }
+    System.out.println(System.currentTimeMillis() - start1);
+    for (int i = 0; i < wordList.size(); i++) {
+      int res = dat.getValue(wordList.get(i));
+      if (res == -1) {
+        System.out.println("-1\t" + wordList.get(i));
+      } else {
+        System.out.println(res + "\t" + wordList.get(i));
+      }
+    }
   }
 }
