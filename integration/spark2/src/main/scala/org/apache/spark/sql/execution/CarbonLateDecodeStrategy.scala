@@ -155,6 +155,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     // Combines all Catalyst filter `Expression`s that are either not convertible to data source
     // `Filter`s or cannot be handled by `relation`.
     val filterCondition = unhandledPredicates.reduceLeftOption(expressions.And)
+    val table = relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
     val map = table.carbonRelation.metaData.dictionaryMap
 
     val metadata: Map[String, String] = {

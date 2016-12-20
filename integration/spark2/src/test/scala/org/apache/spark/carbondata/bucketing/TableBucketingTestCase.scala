@@ -22,7 +22,7 @@ package org.apache.spark.carbondata.bucketing
 import java.io.File
 
 import org.apache.commons.io.FileUtils
-import org.apache.spark.carbondata.util.QueryTest
+import org.apache.spark.carbondata.util.QueryTest._
 import org.apache.spark.sql.execution.command.LoadTable
 import org.apache.spark.sql.execution.exchange.ShuffleExchange
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
@@ -33,7 +33,7 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
+class TableBucketingTestCase extends FunSuite with BeforeAndAfterAll {
 
   override def beforeAll {
 
@@ -64,7 +64,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            USING org.apache.spark.sql.CarbonSource
-           OPTIONS("bucketnumber"="4", "bucketcolumns"="name")
+           OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t4")
       """)
     LoadTable(Some("default"), "t4", "./src/test/resources/dataDiff.csv", Nil, Map()).run(spark)
     val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_t4")
@@ -82,6 +82,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            USING org.apache.spark.sql.CarbonSource
+           OPTIONS("tableName"="t5")
       """)
     LoadTable(Some("default"), "t5", "./src/test/resources/dataDiff.csv", Nil, Map()).run(spark)
 
@@ -105,7 +106,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            USING org.apache.spark.sql.CarbonSource
-           OPTIONS("bucketnumber"="4", "bucketcolumns"="name")
+           OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t6")
       """)
     LoadTable(Some("default"), "t6", "./src/test/resources/dataDiff.csv", Nil, Map()).run(spark)
 
@@ -129,7 +130,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            USING org.apache.spark.sql.CarbonSource
-           OPTIONS("bucketnumber"="4", "bucketcolumns"="name")
+           OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t7")
       """)
     LoadTable(Some("default"), "t7", "./src/test/resources/dataDiff.csv", Nil, Map()).run(spark)
 
@@ -159,7 +160,7 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            USING org.apache.spark.sql.CarbonSource
-           OPTIONS("bucketnumber"="4", "bucketcolumns"="name")
+           OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t8")
       """)
     LoadTable(Some("default"), "t8", "./src/test/resources/dataDiff.csv", Nil, Map()).run(spark)
 
