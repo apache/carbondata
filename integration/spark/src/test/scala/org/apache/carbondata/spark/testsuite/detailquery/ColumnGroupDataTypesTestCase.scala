@@ -133,11 +133,11 @@ class ColumnGroupDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
     try {
       sql("create table colgrp_disorder (column1 string,column2 string,column3 string,column4 string,column5 string,column6 string,column7 string,column8 string,column9 string,column10 string,measure1 int,measure2 int,measure3 int,measure4 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES (\"COLUMN_GROUPS\"=\"(column7,column8),(column2,column3,column4)\")")
       sql("LOAD DATA LOCAL INPATH './src/test/resources/10dim_4msr.csv' INTO table colgrp_disorder options('FILEHEADER'='column1,column2,column3,column4,column5,column6,column7,column8,column9,column10,measure1,measure2,measure3,measure4')");
-      assert(true)  
+      assert(true)
     } catch {
       case ex: Exception => assert(false)
     }
-    
+
   }
   override def afterAll {
     sql("drop table colgrp")

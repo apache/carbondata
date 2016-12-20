@@ -18,11 +18,15 @@
  */
 package org.apache.carbondata.core.carbon.datastore.chunk.impl;
 
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
+import org.apache.carbondata.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.scan.result.vector.ColumnVectorInfo;
 
 /**
  * This class is holder of the dimension column chunk data of the variable
@@ -91,6 +95,50 @@ public class VariableLengthDimensionDataChunk implements DimensionColumnDataChun
       index = chunkAttributes.getInvertedIndexesReverse()[index];
     }
     return dataChunk.get(index);
+  }
+
+  @Override public int fillConvertedChunkData(ColumnVectorInfo[] vectorInfo, int column,
+      KeyStructureInfo restructuringInfo) {
+    int[] indexesReverse = chunkAttributes.getInvertedIndexesReverse();
+    ColumnVectorInfo columnVectorInfo = vectorInfo[column];
+    CarbonColumnVector vector = columnVectorInfo.vector;
+    int offset = columnVectorInfo.offset;
+    int vectorOffset = columnVectorInfo.vectorOffset;
+    int len = offset + columnVectorInfo.size;
+    for (int i = offset; i < len; i++) {
+      byte[] value = dataChunk.get(indexesReverse == null ? i : indexesReverse[i]);
+      // Considering only String case now as we support only
+      // string in no dictionary case at present.
+      if (value == null || Arrays.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, value)) {
+        vector.putNull(vectorOffset++);
+      } else {
+        vector.putBytes(vectorOffset++, value);
+      }
+    }
+    return column + 1;
+  }
+
+  @Override
+  public int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo, int column,
+      KeyStructureInfo restructuringInfo) {
+    int[] indexesReverse = chunkAttributes.getInvertedIndexesReverse();
+    ColumnVectorInfo columnVectorInfo = vectorInfo[column];
+    CarbonColumnVector vector = columnVectorInfo.vector;
+    int offset = columnVectorInfo.offset;
+    int vectorOffset = columnVectorInfo.vectorOffset;
+    int len = offset + columnVectorInfo.size;
+    for (int i = offset; i < len; i++) {
+      byte[] value =
+          dataChunk.get(indexesReverse == null ? rowMapping[i] : indexesReverse[rowMapping[i]]);
+      // Considering only String case now as we support only
+      // string in no dictionary case at present.
+      if (value == null || Arrays.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, value)) {
+        vector.putNull(vectorOffset++);
+      } else {
+        vector.putBytes(vectorOffset++, value);
+      }
+    }
+    return column + 1;
   }
 
   /**

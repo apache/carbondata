@@ -18,18 +18,15 @@
  */
 package org.apache.carbondata.spark.readsupport;
 
-import java.sql.Timestamp;
-
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
-import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.hadoop.readsupport.impl.AbstractDictionaryDecodedReadSupport;
 
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.catalyst.expressions.GenericRow;
+import org.apache.spark.sql.catalyst.InternalRow;
+import org.apache.spark.sql.catalyst.expressions.GenericMutableRow;
 
-public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSupport<Row> {
+public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSupport<InternalRow> {
 
   @Override public void initialize(CarbonColumn[] carbonColumns,
       AbsoluteTableIdentifier absoluteTableIdentifier) {
@@ -37,26 +34,19 @@ public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSuppor
     //can initialize and generate schema here.
   }
 
-  @Override public Row readRow(Object[] data) {
+  @Override public InternalRow readRow(Object[] data) {
     for (int i = 0; i < dictionaries.length; i++) {
       if (data[i] == null) {
         continue;
       }
       if (dictionaries[i] == null) {
-        if (carbonColumns[i].hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-          //convert the long to timestamp in case of direct dictionary column
-          if (DataType.TIMESTAMP == carbonColumns[i].getDataType()) {
-            data[i] = new Timestamp((long) data[i]);
-          } else if(DataType.DATE == carbonColumns[i].getDataType()) {
-            data[i] = new java.sql.Date((int) data[i]);
-          }
-        } else if(dataTypes[i].equals(DataType.INT)) {
+        if(dataTypes[i].equals(DataType.INT)) {
           data[i] = ((Long)(data[i])).intValue();
         } else if(dataTypes[i].equals(DataType.SHORT)) {
           data[i] = ((Long)(data[i])).shortValue();
         }
       }
     }
-    return new GenericRow(data);
+    return new GenericMutableRow(data);
   }
 }

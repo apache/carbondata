@@ -132,6 +132,8 @@ public class QueryModel implements Serializable {
 
   private QueryStatisticsRecorder statisticsRecorder;
 
+  private boolean vectorReader;
+
   /**
    * Invalid table blocks, which need to be removed from
    * memory, invalid blocks can be segment which are deleted
@@ -519,5 +521,13 @@ public class QueryModel implements Serializable {
 
   public void setInvalidSegmentIds(List<String> invalidSegmentIds) {
     this.invalidSegmentIds = invalidSegmentIds;
+  }
+
+  public boolean isVectorReader() {
+    return vectorReader;
+  }
+
+  public void setVectorReader(boolean vectorReader) {
+    this.vectorReader = vectorReader;
   }
 }

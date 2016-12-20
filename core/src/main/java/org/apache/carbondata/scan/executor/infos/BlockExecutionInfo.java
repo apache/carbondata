@@ -242,6 +242,11 @@ public class BlockExecutionInfo {
   private QueryMeasure[] queryMeasures;
 
   /**
+   * whether it needs to read data in vector/columnar format.
+   */
+  private boolean vectorBatchCollector;
+
+  /**
    * @param blockIndex the tableBlock to set
    */
   public void setDataBlock(AbstractIndex blockIndex) {
@@ -723,5 +728,13 @@ public class BlockExecutionInfo {
    */
   public void setStartBlockletIndex(int startBlockletIndex) {
     this.startBlockletIndex = startBlockletIndex;
+  }
+
+  public boolean isVectorBatchCollector() {
+    return vectorBatchCollector;
+  }
+
+  public void setVectorBatchCollector(boolean vectorBatchCollector) {
+    this.vectorBatchCollector = vectorBatchCollector;
   }
 }

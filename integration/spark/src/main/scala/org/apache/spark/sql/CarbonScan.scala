@@ -125,7 +125,7 @@ case class CarbonScan(
     selectedMsrs.foreach(plan.addMeasure)
   }
 
-  def inputRdd: CarbonScanRDD[Array[Any]] = {
+  def inputRdd: CarbonScanRDD = {
     val projection = new CarbonProjection
     columnProjection.foreach { attr =>
       projection.addColumn(attr.name)
@@ -152,9 +152,9 @@ case class CarbonScan(
         override def next(): InternalRow = {
           val value = iter.next
           if (outUnsafeRows) {
-            unsafeProjection(new GenericMutableRow(value))
+            unsafeProjection(value)
           } else {
-            new GenericMutableRow(value)
+            value
           }
         }
       }

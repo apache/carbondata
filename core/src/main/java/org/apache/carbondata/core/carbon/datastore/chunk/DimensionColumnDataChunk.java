@@ -19,6 +19,7 @@
 package org.apache.carbondata.core.carbon.datastore.chunk;
 
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
+import org.apache.carbondata.scan.result.vector.ColumnVectorInfo;
 
 /**
  * Interface for dimension column chunk.
@@ -43,6 +44,18 @@ public interface DimensionColumnDataChunk<T> {
    * @param restructuringInfo  @return
    */
   int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
+      KeyStructureInfo restructuringInfo);
+
+  /**
+   * Fill the data to vector
+   */
+  int fillConvertedChunkData(ColumnVectorInfo[] vectorInfo, int column,
+      KeyStructureInfo restructuringInfo);
+
+  /**
+   * Fill the data to vector
+   */
+  int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo, int column,
       KeyStructureInfo restructuringInfo);
 
   /**

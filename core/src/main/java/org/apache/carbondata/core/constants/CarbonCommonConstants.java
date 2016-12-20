@@ -165,6 +165,11 @@ public final class CarbonCommonConstants {
    * MEMBER_DEFAULT_VAL
    */
   public static final String MEMBER_DEFAULT_VAL = "@NU#LL$!";
+
+  /**
+   * MEMBER_DEFAULT_VAL_ARRAY
+   */
+  public static final byte[] MEMBER_DEFAULT_VAL_ARRAY = MEMBER_DEFAULT_VAL.getBytes();
   /**
    * FILE STATUS IN-PROGRESS
    */
@@ -967,6 +972,10 @@ public final class CarbonCommonConstants {
   public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB = "sort.inmemory.size.inmb";
 
   public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT = "1024";
+
+  public static final String ENABLE_VECTOR_READER = "carbon.enable.vector.reader";
+
+  public static final String ENABLE_VECTOR_READER_DEFAULT = "false";
 
   private CarbonCommonConstants() {
   }
