@@ -42,7 +42,7 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
   private List<CarbonInputSplit> splitList;
 
   /*
-   * The location of all wrapped splits belong to the same node
+   * The locations of all wrapped splits
    */
   private String[] locations;
 

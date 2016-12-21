@@ -381,6 +381,15 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     return tableBlockInfoList;
   }
 
+  /**
+   * It returns index for each task file.
+   * @param job
+   * @param absoluteTableIdentifier
+   * @param segmentId
+   * @return
+   * @throws IOException
+   * @throws IndexBuilderException
+   */
   private Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> getSegmentAbstractIndexs(
       JobContext job, AbsoluteTableIdentifier absoluteTableIdentifier, String segmentId)
       throws IOException, IndexBuilderException {

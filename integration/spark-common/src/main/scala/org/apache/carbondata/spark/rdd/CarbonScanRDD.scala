@@ -102,10 +102,11 @@ class CarbonScanRDD(
       statisticRecorder.recordStatisticsForDriver(statistic, queryId)
       statistic = new QueryStatistic()
 
+      // If bucketing is enabled on table then partitions should be grouped based on buckets.
       if (bucketedTable != null) {
         var i = 0
-         val bucketed =
-           splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).groupBy(f => f.getBucketId)
+        val bucketed =
+          splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).groupBy(f => f.getBucketId)
         (0 until bucketedTable.getNumberOfBuckets).map { bucketId =>
           val bucketPartitions = bucketed.getOrElse(bucketId.toString, Nil)
           val multiBlockSplit =
