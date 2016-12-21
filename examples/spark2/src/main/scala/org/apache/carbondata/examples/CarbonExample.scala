@@ -43,6 +43,7 @@ object CarbonExample {
       clean(metastoredb)
     }
 
+    import org.apache.spark.sql.CarbonSession._
     val spark = SparkSession
         .builder()
         .master("local")
@@ -51,7 +52,7 @@ object CarbonExample {
         .config("spark.sql.warehouse.dir", warehouse)
         .config("javax.jdo.option.ConnectionURL",
           s"jdbc:derby:;databaseName=$metastoredb;create=true")
-        .getOrCreate()
+        .getOrCreateCarbonSession()
 
     CarbonProperties.getInstance()
       .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")

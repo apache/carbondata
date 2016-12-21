@@ -32,7 +32,7 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
   override lazy val sqlParser: ParserInterface = new CarbonSparkSqlParser(conf)
 
   experimentalMethods.extraStrategies =
-    Seq(new CarbonLateDecodeStrategy(sparkSession), new DDLStrategy(sparkSession))
+    Seq(new CarbonLateDecodeStrategy, new DDLStrategy(sparkSession))
   experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
 
 }
