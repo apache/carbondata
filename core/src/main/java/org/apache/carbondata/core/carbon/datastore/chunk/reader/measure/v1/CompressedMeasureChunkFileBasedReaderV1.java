@@ -90,7 +90,7 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
             measureColumnChunks.get(blockIndex).getDataPageLength()));
     // get the data holder after uncompressing
     CarbonReadDataHolder measureDataHolder =
-        values.uncompress(compressModel.getChangedDataType())
+        values.uncompress(compressModel.getConvertedDataType())
             .getValues(compressModel.getMantissa(), compressModel.getMaxValue());
 
     // create and set the data chunk

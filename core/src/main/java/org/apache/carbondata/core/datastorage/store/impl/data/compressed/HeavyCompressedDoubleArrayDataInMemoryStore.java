@@ -39,14 +39,14 @@ public class HeavyCompressedDoubleArrayDataInMemoryStore
     CarbonReadDataHolder[] vals = new CarbonReadDataHolder[values.length];
     if (cols != null) {
       for (int i = 0; i < cols.length; i++) {
-        vals[cols[i]] = values[cols[i]].uncompress(compressionModel.getChangedDataType()[cols[i]])
+        vals[cols[i]] = values[cols[i]].uncompress(compressionModel.getConvertedDataType()[cols[i]])
             .getValues(compressionModel.getMantissa()[cols[i]],
                 compressionModel.getMaxValue()[cols[i]]);
       }
     } else {
       for (int i = 0; i < vals.length; i++) {
 
-        vals[i] = values[i].uncompress(compressionModel.getChangedDataType()[i])
+        vals[i] = values[i].uncompress(compressionModel.getConvertedDataType()[i])
             .getValues(compressionModel.getMantissa()[i], compressionModel.getMaxValue()[i]);
       }
     }
@@ -58,7 +58,7 @@ public class HeavyCompressedDoubleArrayDataInMemoryStore
       return null;
     }
     CarbonReadDataHolder[] vals = new CarbonReadDataHolder[values.length];
-    vals[cols] = values[cols].uncompress(compressionModel.getChangedDataType()[cols])
+    vals[cols] = values[cols].uncompress(compressionModel.getConvertedDataType()[cols])
         .getValues(compressionModel.getMantissa()[cols], compressionModel.getMaxValue()[cols]);
     return new CompressedDataMeasureDataWrapper(vals);
   }

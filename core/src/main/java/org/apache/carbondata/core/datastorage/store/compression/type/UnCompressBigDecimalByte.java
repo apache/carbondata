@@ -87,9 +87,9 @@ public class UnCompressBigDecimalByte<T> implements UnCompressValue<T> {
   @Override
   public UnCompressValue uncompress(DataType dataType) {
     ValueCompressonHolder.UnCompressValue left = leftPart
-        .uncompress(compressionFinder.getLeftChangedDataType());
+        .uncompress(compressionFinder.getLeftConvertedDataType());
     ValueCompressonHolder.UnCompressValue right = rightPart
-        .uncompress(compressionFinder.getRightChangedDataType());
+        .uncompress(compressionFinder.getRightConvertedDataType());
     return new UnCompressBigDecimalByte<>(compressionFinder, left, right);
   }
 
