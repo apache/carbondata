@@ -63,7 +63,8 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       case Some(value) => value.storageHandler().STRING().getSymbol.getText
       case _ => ""
     }
-    if (fileStorage.equalsIgnoreCase("'carbondata'")) {
+    if (fileStorage.equalsIgnoreCase("'carbondata'") ||
+        fileStorage.equalsIgnoreCase("'org.apache.carbondata.format'")) {
       val (name, temp, ifNotExists, external) = visitCreateTableHeader(ctx.createTableHeader)
       // TODO: implement temporary tables
       if (temp) {
