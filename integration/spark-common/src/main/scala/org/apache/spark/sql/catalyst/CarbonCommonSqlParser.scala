@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.parser
+package org.apache.spark.sql.catalyst
 
 import java.util.regex.{Matcher, Pattern}
 
@@ -26,8 +26,6 @@ import scala.util.matching.Regex
 
 import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
-import org.apache.spark.sql.catalyst._
-import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
 import org.apache.spark.sql.execution.command._
 
@@ -42,7 +40,7 @@ import org.apache.carbondata.spark.util.CommonUtil
  * TODO remove the duplicate code and add the common methods to common class.
  * Parser for All Carbon DDL, DML cases in Unified context
  */
-class CarbonSqlParser extends AbstractCarbonSparkSQLParser {
+abstract class CarbonCommonSqlParser extends AbstractCarbonSparkSQLParser {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   protected val AGGREGATE = carbonKeyWord("AGGREGATE")
@@ -176,22 +174,6 @@ class CarbonSqlParser extends AbstractCarbonSparkSQLParser {
     )
   }
 
-  override def parse(input: String): LogicalPlan = {
-    synchronized {
-      // Initialize the Keywords.
-      initLexical
-      phrase(start)(new lexical.Scanner(input)) match {
-        case Success(plan, _) => plan match {
-          case x: LoadTable =>
-            x.inputSqlString = input
-            x
-          case logicalPlan => logicalPlan
-        }
-        case failureOrError => sys.error(failureOrError.toString)
-      }
-    }
-  }
-
   /**
    * This will convert key word to regular expression.
    *
@@ -201,13 +183,6 @@ class CarbonSqlParser extends AbstractCarbonSparkSQLParser {
   private def carbonKeyWord(keys: String) = {
     ("(?i)" + keys).r
   }
-
-  override protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
-
-  protected lazy val startCommand: Parser[LogicalPlan] = loadManagement
-
-  protected lazy val loadManagement: Parser[LogicalPlan] = deleteLoadsByID | deleteLoadsByLoadDate |
-                                                           cleanFiles | loadDataNew | alterTable
 
   protected val escapedIdentifier = "`([^`]+)`".r
 
@@ -715,13 +690,6 @@ class CarbonSqlParser extends AbstractCarbonSparkSQLParser {
     }
   }
 
-  protected lazy val alterTable: Parser[LogicalPlan] =
-    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (COMPACT ~ stringLit) <~ opt(";")  ^^ {
-      case dbName ~ table ~ (compact ~ compactType) =>
-        val altertablemodel = AlterTableModel(dbName, table, compactType, null)
-        AlterTableCompaction(altertablemodel)
-    }
-
   /**
    * Extract the table properties token
    *
@@ -746,23 +714,7 @@ class CarbonSqlParser extends AbstractCarbonSparkSQLParser {
     }
   }
 
-  protected lazy val loadDataNew: Parser[LogicalPlan] =
-    LOAD ~> DATA ~> opt(LOCAL) ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
-    (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
-    (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
-      case filePath ~ isOverwrite ~ table ~ optionsList =>
-        val (databaseNameOp, tableName) = table match {
-          case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
-        }
-        if (optionsList.isDefined) {
-          validateOptions(optionsList)
-        }
-        val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
-        LoadTable(databaseNameOp, tableName, filePath, Seq(), optionsMap,
-          isOverwrite.isDefined)
-    }
-
-  private def validateOptions(optionList: Option[List[(String, String)]]): Unit = {
+  protected def validateOptions(optionList: Option[List[(String, String)]]): Unit = {
 
     // validate with all supported options
     val options = optionList.get.groupBy(x => x._1)
@@ -1015,40 +967,4 @@ class CarbonSqlParser extends AbstractCarbonSparkSQLParser {
       p.getClass.getSimpleName.equals("FloatLit") ||
       p.getClass.getSimpleName.equals("DecimalLit")
     }) ^^ (_.chars)
-
-  protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
-    DELETE ~> SEGMENT ~> repsep(segmentId, ",") ~ (FROM ~> TABLE ~>
-                                                   (ident <~ ".").? ~ ident) <~
-    opt(";") ^^ {
-      case loadids ~ table => table match {
-        case databaseName ~ tableName =>
-          DeleteLoadsById(loadids, databaseName, tableName.toLowerCase())
-      }
-    }
-
-  protected lazy val deleteLoadsByLoadDate: Parser[LogicalPlan] =
-    DELETE ~> SEGMENTS ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
-    (WHERE ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
-    opt(";") ^^ {
-      case schema ~ table ~ condition =>
-        condition match {
-          case dateField ~ dateValue =>
-            DeleteLoadsByLoadDate(schema, table.toLowerCase(), dateField, dateValue)
-        }
-    }
-
-  protected lazy val cleanFiles: Parser[LogicalPlan] =
-    CLEAN ~> FILES ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
-      case databaseName ~ tableName => CleanFiles(databaseName, tableName.toLowerCase())
-    }
-
-  protected lazy val explainPlan: Parser[LogicalPlan] =
-    (EXPLAIN ~> opt(EXTENDED)) ~ startCommand ^^ {
-      case isExtended ~ logicalPlan =>
-        logicalPlan match {
-          case plan: CreateTable => ExplainCommand(logicalPlan, extended = isExtended.isDefined)
-          case _ => ExplainCommand(OneRowRelation)
-        }
-    }
-
 }

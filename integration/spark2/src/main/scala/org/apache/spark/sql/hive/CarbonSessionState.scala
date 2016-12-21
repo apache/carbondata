@@ -19,6 +19,7 @@ package org.apache.spark.sql.hive
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
+import org.apache.spark.sql.execution.command.DDLStrategy
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.CarbonSparkSqlParser
 
@@ -30,7 +31,8 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
 
   override lazy val sqlParser: ParserInterface = new CarbonSparkSqlParser(conf)
 
-  experimentalMethods.extraStrategies = Seq(new CarbonLateDecodeStrategy(sparkSession))
+  experimentalMethods.extraStrategies =
+    Seq(new CarbonLateDecodeStrategy(sparkSession), new DDLStrategy(sparkSession))
   experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
 
 }

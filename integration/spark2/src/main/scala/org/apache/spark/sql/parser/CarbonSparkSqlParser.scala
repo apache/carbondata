@@ -56,7 +56,7 @@ class CarbonSparkSqlParser(conf: SQLConf) extends AbstractSqlParser {
 
 class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
 
-  val parser = new CarbonSqlParser
+  val parser = new CarbonSpark2SqlParser
 
   override def visitCreateTable(ctx: CreateTableContext): LogicalPlan = {
     val fileStorage = Option(ctx.createFileFormat) match {
