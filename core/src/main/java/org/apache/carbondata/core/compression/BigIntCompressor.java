@@ -41,8 +41,8 @@ public class BigIntCompressor extends ValueCompressor {
 
   /**
    * 1. It gets delta value i.e difference of maximum value and actual value
-   * 2. Convert the delta value computed above to convertedDatatype if it can fit
-   *    into it with less byte
+   * 2. Convert the delta value computed above to convertedDatatype if it can
+   *    be stored with less byte
    * @param convertedDataType
    * @param dataHolder
    * @param max
