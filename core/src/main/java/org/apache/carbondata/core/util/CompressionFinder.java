@@ -13,7 +13,7 @@ public class CompressionFinder implements Comparable<CompressionFinder> {
 
   private DataType actualDataType;
 
-  private DataType changedDataType;
+  private DataType convertedDataType;
   /**
    * the size of changed data
    */
@@ -28,14 +28,14 @@ public class CompressionFinder implements Comparable<CompressionFinder> {
    *
    * @param compType
    * @param actualDataType
-   * @param changedDataType
+   * @param convertedDataType
    */
   CompressionFinder(COMPRESSION_TYPE compType, DataType actualDataType,
-      DataType changedDataType, char measureStoreType) {
+      DataType convertedDataType, char measureStoreType) {
     super();
     this.compType = compType;
     this.actualDataType = actualDataType;
-    this.changedDataType = changedDataType;
+    this.convertedDataType = convertedDataType;
     this.measureStoreType = measureStoreType;
   }
 
@@ -44,16 +44,16 @@ public class CompressionFinder implements Comparable<CompressionFinder> {
    *
    * @param compType
    * @param actualDataType
-   * @param changedDataType
+   * @param convertedDataType
    * @param priority
    */
 
-  CompressionFinder(COMPRESSION_TYPE compType, DataType actualDataType, DataType changedDataType,
+  CompressionFinder(COMPRESSION_TYPE compType, DataType actualDataType, DataType convertedDataType,
       PRIORITY priority, char measureStoreType) {
     super();
     this.actualDataType = actualDataType;
-    this.changedDataType = changedDataType;
-    this.size = ValueCompressionUtil.getSize(changedDataType);
+    this.convertedDataType = convertedDataType;
+    this.size = ValueCompressionUtil.getSize(convertedDataType);
     this.priority = priority;
     this.compType = compType;
     this.measureStoreType = measureStoreType;
@@ -127,8 +127,8 @@ public class CompressionFinder implements Comparable<CompressionFinder> {
     return actualDataType;
   }
 
-  public DataType getChangedDataType() {
-    return changedDataType;
+  public DataType getConvertedDataType() {
+    return convertedDataType;
   }
 
   public int getSize() {

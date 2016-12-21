@@ -28,12 +28,13 @@ import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
  */
 public class DoubleCompressor extends ValueCompressor {
 
-  @Override protected Object compressNonDecimalMaxMin(DataType changedDataType,
+
+  @Override protected Object compressNonDecimalMaxMin(DataType convertedDataType,
       CarbonWriteDataHolder dataHolder, int decimal, Object maxValue) {
     int i = 0;
     BigDecimal max = BigDecimal.valueOf((double)maxValue);
     double[] value = dataHolder.getWritableDoubleValues();
-    switch (changedDataType) {
+    switch (convertedDataType) {
       case DATA_BYTE:
         byte[] result = new byte[value.length];
         for (int j = 0; j < value.length; j++) {
@@ -92,11 +93,11 @@ public class DoubleCompressor extends ValueCompressor {
   }
 
   @Override
-  protected Object compressNonDecimal(DataType changedDataType, CarbonWriteDataHolder dataHolder,
+  protected Object compressNonDecimal(DataType convertedDataType, CarbonWriteDataHolder dataHolder,
       int decimal) {
     int i = 0;
     double[] value = dataHolder.getWritableDoubleValues();
-    switch (changedDataType) {
+    switch (convertedDataType) {
       case DATA_BYTE:
         byte[] result = new byte[value.length];
         for (int j = 0; j < value.length; j++) {
@@ -143,12 +144,12 @@ public class DoubleCompressor extends ValueCompressor {
   }
 
   @Override
-  protected Object compressMaxMin(DataType changedDataType, CarbonWriteDataHolder dataHolder,
+  protected Object compressMaxMin(DataType convertedDataType, CarbonWriteDataHolder dataHolder,
       Object max) {
     double maxValue = (double) max;
     double[] value = dataHolder.getWritableDoubleValues();
     int i = 0;
-    switch (changedDataType) {
+    switch (convertedDataType) {
       case DATA_BYTE:
         byte[] result = new byte[value.length];
         for (int j = 0; j < value.length; j++) {
@@ -195,7 +196,7 @@ public class DoubleCompressor extends ValueCompressor {
   }
 
   @Override
-  protected Object compressNone(DataType changedDataType, CarbonWriteDataHolder dataHolder) {
+  protected Object compressAdaptive(DataType changedDataType, CarbonWriteDataHolder dataHolder) {
     double[] value = dataHolder.getWritableDoubleValues();
     int i = 0;
     switch (changedDataType) {

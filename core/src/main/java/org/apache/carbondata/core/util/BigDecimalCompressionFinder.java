@@ -44,29 +44,29 @@ public class BigDecimalCompressionFinder extends CompressionFinder {
   private DataType rightActualDataType;
 
   /**
-   * non decimal changed data type
+   * non decimal converted data type
    */
-  private DataType leftChangedDataType;
+  private DataType leftConvertedDataType;
 
   /**
-   * decimal changed data type
+   * decimal converted data type
    */
-  private DataType rightChangedDataType;
+  private DataType rightConvertedDataType;
 
   public BigDecimalCompressionFinder(COMPRESSION_TYPE compType,
-      DataType actualDataType, DataType changedDataType, char measureStoreType) {
-    super(compType, actualDataType, changedDataType, measureStoreType);
+      DataType actualDataType, DataType convertedDataType, char measureStoreType) {
+    super(compType, actualDataType, convertedDataType, measureStoreType);
   }
 
   public BigDecimalCompressionFinder(COMPRESSION_TYPE[] compType,
-      DataType[] actualDataType, DataType[] changedDataType, char measureStoreType) {
+      DataType[] actualDataType, DataType[] convertedDataType, char measureStoreType) {
     super(null, null, null, measureStoreType);
     this.leftCompType = compType[0];
     this.rightCompType = compType[1];
     this.leftActualDataType = actualDataType[0];
     this.rightActualDataType = actualDataType[1];
-    this.leftChangedDataType = changedDataType[0];
-    this.rightChangedDataType = changedDataType[1];
+    this.leftConvertedDataType = convertedDataType[0];
+    this.rightConvertedDataType = convertedDataType[1];
   }
 
   public COMPRESSION_TYPE getLeftCompType() {
@@ -85,12 +85,11 @@ public class BigDecimalCompressionFinder extends CompressionFinder {
     return rightActualDataType;
   }
 
-  public DataType getLeftChangedDataType() {
-    return leftChangedDataType;
+  public DataType getLeftConvertedDataType() { return leftConvertedDataType;
   }
 
-  public DataType getRightChangedDataType() {
-    return rightChangedDataType;
+  public DataType getRightConvertedDataType() {
+    return rightConvertedDataType;
   }
 
 }
