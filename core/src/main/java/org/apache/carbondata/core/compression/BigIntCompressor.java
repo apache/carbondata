@@ -70,22 +70,23 @@ public class BigIntCompressor extends ValueCompressor {
   }
 
   /**
-   * It convert the value or delta value (max - actual value) to converted data type.
-   * Converted datatype is computed based list of values it has.
+   * It convert the value or delta value (max - actual) to converted data type.
+   * Converted data type is computed based list of values it has.
    * for instance if value is 2,10,12,45
-   * these value can be easily fit in byte value,
-   * hence method convert it to byte and store it.
+   * these value can be easily fitted in byte value,
+   * hence it will be converted into byte to store.
    * @param convertedDataType
    * @param value
    * @param maxValue
-   * @param isMinmax
+   * @param isMinMax
    * @return
    */
-  protected Object compressValue(DataType convertedDataType, long[] value, long maxValue, boolean isMinmax) {
+  protected Object compressValue(DataType convertedDataType, long[] value, long maxValue,
+      boolean isMinMax) {
     switch (convertedDataType) {
       case DATA_BYTE:
         byte[] result = new byte[value.length];
-        if (isMinmax) {
+        if (isMinMax) {
           for (int j = 0; j < value.length; j++) {
             result[j] = (byte) (maxValue - value[j]);
           }
@@ -97,7 +98,7 @@ public class BigIntCompressor extends ValueCompressor {
         return result;
       case DATA_SHORT:
         short[] shortResult = new short[value.length];
-        if (isMinmax) {
+        if (isMinMax) {
           for (int j = 0; j < value.length; j++) {
             shortResult[j] = (short) (maxValue - value[j]);
           }
@@ -109,7 +110,7 @@ public class BigIntCompressor extends ValueCompressor {
         return shortResult;
       case DATA_INT:
         int[] intResult = new int[value.length];
-        if (isMinmax) {
+        if (isMinMax) {
           for (int j = 0; j < value.length; j++) {
             intResult[j] = (int) (maxValue - value[j]);
           }
@@ -120,7 +121,7 @@ public class BigIntCompressor extends ValueCompressor {
         }
         return intResult;
       default:
-        if (isMinmax) {
+        if (isMinMax) {
           for (int j = 0; j < value.length; j++) {
             value[j] = (maxValue - value[j]);
           }

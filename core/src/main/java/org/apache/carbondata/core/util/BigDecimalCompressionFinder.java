@@ -85,8 +85,7 @@ public class BigDecimalCompressionFinder extends CompressionFinder {
     return rightActualDataType;
   }
 
-  public DataType getLeftConvertedDataType() { return leftConvertedDataType;
-  }
+  public DataType getLeftConvertedDataType() { return leftConvertedDataType; }
 
   public DataType getRightConvertedDataType() {
     return rightConvertedDataType;
