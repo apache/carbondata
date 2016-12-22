@@ -30,7 +30,7 @@ object CleanFiles {
   def cleanFiles(spark: SparkSession, dbName: String, tableName: String,
       storePath: String): Unit = {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
-    CarbonStore.cleanFiles(dbName, Some(tableName), storePath)
+    CarbonStore.cleanFiles(dbName, tableName, storePath)
   }
 
   def main(args: Array[String]): Unit = {
