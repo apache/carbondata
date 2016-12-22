@@ -35,16 +35,16 @@ public class NewRowComparatorForNormalDimsTest {
   @Test public void testCompareWithSameValues() {
     Object[] rowA = new Integer[] { 1 };
     Object[] rowB = new Integer[] { 1 };
-    int actualValue = newRowComparatorForNormalDims.compare(rowA, rowB);
-    int expectedValue = 0;
-    assertEquals(expectedValue, actualValue);
+    int actualResult = newRowComparatorForNormalDims.compare(rowA, rowB);
+    int expectedResult = 0;
+    assertEquals(expectedResult, actualResult);
   }
 
   @Test public void testCompareWithDifferentValues() {
     Object[] rowA = new Integer[] { 1 };
     Object[] rowB = new Integer[] { 2 };
-    int actualValue = newRowComparatorForNormalDims.compare(rowA, rowB);
-    int expectedValue = -1;
-    assertEquals(expectedValue, actualValue);
+    int actualResult = newRowComparatorForNormalDims.compare(rowA, rowB);
+    int expectedResult = -1;
+    assertEquals(expectedResult, actualResult);
   }
 }

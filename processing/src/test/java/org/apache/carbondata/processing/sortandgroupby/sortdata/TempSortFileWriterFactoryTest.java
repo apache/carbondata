@@ -39,14 +39,14 @@ public class TempSortFileWriterFactoryTest {
     tempSortFileWriterFactory = TempSortFileWriterFactory.getInstance();
   }
 
-  @Test public void testGetTempSortFileWriterWithCompressionEnabled() {
+  @Test public void testGetTempSortFileWriterWithCompressionFeatureEnabled() {
 
     assertNotNull(tempSortFileWriterFactory
         .getTempSortFileWriter(isCompressionEnabled, dimensionCount, complexDimensionCount,
             measureCount, noDictionaryCount, writeBufferSize));
   }
 
-  @Test public void testGetTempSortFileWriterWithCompressionDisabled() {
+  @Test public void testGetTempSortFileWriterWithCompressionFeatureDisabled() {
     assertNotNull(tempSortFileWriterFactory
         .getTempSortFileWriter(false, dimensionCount, complexDimensionCount, measureCount,
             noDictionaryCount, writeBufferSize));

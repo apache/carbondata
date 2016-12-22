@@ -25,11 +25,11 @@ import static org.junit.Assert.assertEquals;
 
 public class NewRowComparatorTest {
   private static NewRowComparator newRowComparator;
-  private static boolean[] noDictionaryColMaping;
+  private static boolean[] noDictionaryColMapping;
 
   @BeforeClass public static void setUp() {
-    noDictionaryColMaping = new boolean[] { true };
-    newRowComparator = new NewRowComparator(noDictionaryColMaping);
+    noDictionaryColMapping = new boolean[] { true };
+    newRowComparator = new NewRowComparator(noDictionaryColMapping);
 
   }
 
@@ -65,9 +65,9 @@ public class NewRowComparatorTest {
   }
 
   @Test public void testCompareWithIsNoDictionaryFalseAndWithoutSameValue() {
-    boolean[] noDictionaryColMapingWithFalse = new boolean[] { false };
+    boolean[] noDictionaryColMappingWithFalse = new boolean[] { false };
     NewRowComparator newRowComparatorWithFalse =
-        new NewRowComparator(noDictionaryColMapingWithFalse);
+        new NewRowComparator(noDictionaryColMappingWithFalse);
     int firstValue = 1;
     int secondValue = 2;
 

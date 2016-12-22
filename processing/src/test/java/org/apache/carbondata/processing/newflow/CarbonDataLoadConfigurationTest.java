@@ -135,7 +135,7 @@ public class CarbonDataLoadConfigurationTest {
   }
 
   @Test public void testGetDataLoadProperty() {
-    String key = "key";
+    String key = "keyValue";
     Object defaultValue = "defaultValue";
     carbonDataLoadConfiguration.getDataLoadProperty(key, defaultValue);
   }

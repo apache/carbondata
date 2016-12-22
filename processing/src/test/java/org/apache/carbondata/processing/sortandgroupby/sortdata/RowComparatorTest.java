@@ -45,9 +45,9 @@ public class RowComparatorTest {
     byte[] byteArraySecond = new byte[] { 0, 0, 0, 4 };
     Object[] rowA = new Object[] { byteArrayFirst, byteArraySecond };
     Object[] rowB = new Object[] { byteArrayFirst, byteArraySecond };
-    int actualValue = rowComparator.compare(rowA, rowB);
-    int expectedValue = 0;
-    assertEquals(expectedValue, actualValue);
+    int actualResult = rowComparator.compare(rowA, rowB);
+    int expectedResult = 0;
+    assertEquals(expectedResult, actualResult);
   }
 
   @Test public void testCompareWithoutSameValue() {
@@ -55,9 +55,9 @@ public class RowComparatorTest {
     byte[] byteArraySecond = new byte[] { 0, 0, 0, 4 };
     Object[] rowA = new Object[] { byteArrayFirst, byteArraySecond };
     Object[] rowB = new Object[] { byteArraySecond, byteArrayFirst };
-    int actualValue = rowComparator.compare(rowA, rowB);
-    int expectedValue = -2;
-    assertEquals(expectedValue, actualValue);
+    int actualResult = rowComparator.compare(rowA, rowB);
+    int expectedResult = -2;
+    assertEquals(expectedResult, actualResult);
   }
 
   @Test public void testCompareWithSameValueAndNoDictionaryFalse() {
@@ -73,9 +73,9 @@ public class RowComparatorTest {
     Object[] rowA = new Object[] { byteArrayFirst, byteArraySecond };
     Object[] rowB = new Object[] { byteArrayFirst, byteArraySecond };
 
-    int actualValue = rowComparatorWithFalse.compare(rowA, rowB);
-    int expectedValue = 0;
-    assertEquals(expectedValue, actualValue);
+    int actualResult = rowComparatorWithFalse.compare(rowA, rowB);
+    int expectedResult = 0;
+    assertEquals(expectedResult, actualResult);
   }
 
   @Test public void testCompareWithoutSameValueAndNoDictionaryFalse() {
@@ -96,8 +96,8 @@ public class RowComparatorTest {
         }
       }
     };
-    int actualValue = rowComparatorWithFalse.compare(rowA, rowA);
-    int expectedValue = -1;
-    assertEquals(expectedValue, actualValue);
+    int actualResult = rowComparatorWithFalse.compare(rowA, rowA);
+    int expectedResult = -1;
+    assertEquals(expectedResult, actualResult);
   }
 }

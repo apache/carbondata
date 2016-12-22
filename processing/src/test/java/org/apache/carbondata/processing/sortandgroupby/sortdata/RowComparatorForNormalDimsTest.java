@@ -36,8 +36,8 @@ public class RowComparatorForNormalDimsTest {
     Integer[] intArray = new Integer[] { 1 };
     Object[] rowA = new Object[] { intArray };
     Object[] rowB = new Object[] { intArray };
-    int actualValue = rowComparatorForNormalDims.compare(rowA, rowB);
-    int expectedValue = 0;
-    assertEquals(expectedValue, actualValue);
+    int actualResult = rowComparatorForNormalDims.compare(rowA, rowB);
+    int expectedResult = 0;
+    assertEquals(expectedResult, actualResult);
   }
 }
