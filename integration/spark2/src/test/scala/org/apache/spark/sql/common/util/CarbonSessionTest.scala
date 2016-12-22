@@ -22,7 +22,6 @@ package org.apache.spark.sql.common.util
 import java.io.File
 
 import org.apache.spark.sql.{DataFrame, SparkSession}
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.commons.io.FileUtils
 

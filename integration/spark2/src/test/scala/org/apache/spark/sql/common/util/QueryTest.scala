@@ -20,10 +20,11 @@ package org.apache.spark.sql.common.util
 import java.util.{Locale, TimeZone}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-
 import scala.collection.JavaConversions._
+
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
+import org.apache.spark.sql.common.util.CarbonSessionTest.sql
 import org.apache.spark.sql.{DataFrame, Row, SQLContext}
 
 class QueryTest extends PlanTest {
@@ -78,6 +79,62 @@ class QueryTest extends PlanTest {
 
   protected def checkAnswer(df: DataFrame, expectedAnswer: DataFrame): Unit = {
     checkAnswer(df, expectedAnswer.collect())
+  }
+
+
+  protected def createAndLoadInputTable(inputTableName: String, inputPath: String): Unit = {
+    sql(
+      s"""
+         | CREATE TABLE $inputTableName
+         | (  shortField short,
+         |    intField int,
+         |    bigintField long,
+         |    doubleField double,
+         |    stringField string,
+         |    timestampField string,
+         |    decimalField decimal(18,2),
+         |    dateField string,
+         |    charField char(5)
+         | )
+         | ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+       """.stripMargin)
+
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$inputPath'
+         | INTO TABLE $inputTableName
+       """.stripMargin)
+  }
+
+  protected def createAndLoadTestTable(tableName: String, inputTableName: String): Unit = {
+    sql(
+      s"""
+         | CREATE TABLE $tableName(
+         |    shortField short,
+         |    intField int,
+         |    bigintField long,
+         |    doubleField double,
+         |    stringField string,
+         |    timestampField timestamp,
+         |    decimalField decimal(18,2),
+         |    dateField date,
+         |    charField char(5)
+         | )
+         | USING org.apache.spark.sql.CarbonSource
+         | OPTIONS ('tableName' '$tableName')
+       """.stripMargin)
+    sql(
+      s"""
+         | INSERT INTO TABLE $tableName
+         | SELECT shortField, intField, bigintField, doubleField, stringField,
+         | from_unixtime(unix_timestamp(timestampField,'yyyy/M/dd')) timestampField, decimalField,
+         | cast(to_date(from_unixtime(unix_timestamp(dateField,'yyyy/M/dd'))) as date), charField
+         | FROM $inputTableName
+       """.stripMargin)
+  }
+
+  protected def dropTable(tableName: String): Unit ={
+    sql(s"DROP TABLE IF EXISTS $tableName")
   }
 }
 

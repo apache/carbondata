@@ -47,7 +47,6 @@ import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.ColumnIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.Distributable;
@@ -85,7 +84,6 @@ import org.apache.carbondata.spark.merger.NodeMultiBlockRelation;
 import com.google.gson.Gson;
 import org.apache.spark.SparkConf;
 import org.apache.spark.util.Utils;
-
 
 public final class CarbonLoaderUtil {
 
@@ -449,11 +447,10 @@ public final class CarbonLoaderUtil {
     return status;
   }
 
-  public static void writeLoadMetadata(CarbonDataLoadSchema schema, String databaseName,
-      String tableName, List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(schema.getCarbonTable().getStorePath(),
-            schema.getCarbonTable().getCarbonTableIdentifier());
+  public static void writeLoadMetadata(String storeLocation, String dbName, String tableName,
+      List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(storeLocation, dbName, tableName);
     String dataLoadLocation = carbonTablePath.getTableStatusFilePath();
 
     DataOutputStream dataOutputStream;
@@ -464,11 +461,9 @@ public final class CarbonLoaderUtil {
         new AtomicFileOperationsImpl(dataLoadLocation, FileFactory.getFileType(dataLoadLocation));
 
     try {
-
       dataOutputStream = writeOperation.openForWrite(FileWriteOperation.OVERWRITE);
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
               Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
-
       String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetails.toArray());
       brWriter.write(metadataInstance);
     } finally {
@@ -478,12 +473,10 @@ public final class CarbonLoaderUtil {
         }
       } catch (Exception e) {
         LOGGER.error("error in  flushing ");
-
       }
       CarbonUtil.closeStreams(brWriter);
       writeOperation.close();
     }
-
   }
 
   public static String readCurrentTime() {
@@ -495,10 +488,10 @@ public final class CarbonLoaderUtil {
     return date;
   }
 
-  public static String extractLoadMetadataFileLocation(CarbonLoadModel loadModel) {
+  public static String extractLoadMetadataFileLocation(String dbName, String tableName) {
     CarbonTable carbonTable =
         org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-            .getCarbonTable(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
+            .getCarbonTable(dbName + '_' + tableName);
     return carbonTable.getMetaDataFilepath();
   }
 

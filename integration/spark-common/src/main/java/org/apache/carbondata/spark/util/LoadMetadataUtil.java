@@ -28,20 +28,19 @@
  */
 package org.apache.carbondata.spark.util;
 
+import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.load.LoadMetadataDetails;
 import org.apache.carbondata.lcm.status.SegmentStatusManager;
-import org.apache.carbondata.processing.model.CarbonLoadModel;
 
 public final class LoadMetadataUtil {
   private LoadMetadataUtil() {
 
   }
 
-  public static boolean isLoadDeletionRequired(CarbonLoadModel loadModel) {
-    CarbonTable table = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-        .getCarbonTable(loadModel.getDatabaseName() + '_' + loadModel.getTableName());
+  public static boolean isLoadDeletionRequired(String dbName, String tableName) {
+    CarbonTable table = CarbonMetadata.getInstance().getCarbonTable(dbName + '_' + tableName);
 
     String metaDataLocation = table.getMetaDataFilepath();
     LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);

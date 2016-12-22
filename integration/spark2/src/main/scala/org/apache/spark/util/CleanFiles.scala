@@ -18,7 +18,8 @@
 package org.apache.spark.util
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.execution.command.{CleanFiles => TableCleanFiles}
+
+import org.apache.carbondata.api.CarbonStore
 
 /**
  * clean files api
@@ -26,21 +27,23 @@ import org.apache.spark.sql.execution.command.{CleanFiles => TableCleanFiles}
  // scalastyle:off
 object CleanFiles {
 
-  def cleanFiles(spark: SparkSession, dbName: Option[String], tableName: String): Unit = {
-    TableCleanFiles(dbName, tableName).run(spark)
+  def cleanFiles(spark: SparkSession, dbName: String, tableName: String,
+      storePath: String): Unit = {
+    TableAPIUtil.validateTableExists(spark, dbName, tableName)
+    CarbonStore.cleanFiles(dbName, Some(tableName), storePath)
   }
 
   def main(args: Array[String]): Unit = {
 
     if (args.length < 2) {
-      System.err.println("Usage: TableCleanFiles <store path> <table name>");
+      System.err.println("Usage: CleanFiles <store path> <table name>");
       System.exit(1)
     }
 
     val storePath = TableAPIUtil.escape(args(0))
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
-    val spark = TableAPIUtil.spark(storePath, s"TableCleanFiles: $dbName.$tableName")
+    val spark = TableAPIUtil.spark(storePath, s"CleanFiles: $dbName.$tableName")
     CarbonEnv.init(spark.sqlContext)
-    cleanFiles(spark, Option(dbName), tableName)
+    cleanFiles(spark, dbName, tableName, storePath)
   }
 }

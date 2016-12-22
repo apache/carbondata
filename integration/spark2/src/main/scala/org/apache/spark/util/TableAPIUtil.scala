@@ -17,14 +17,19 @@
 
 package org.apache.spark.util
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.{CarbonEnv, SparkSession}
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 /**
  * table api util
  */
 object TableAPIUtil {
+
+  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+
   def parseSchemaName(tableName: String): (String, String) = {
     if (tableName.contains(".")) {
       val parts = tableName.split(".")
@@ -50,5 +55,16 @@ object TableAPIUtil {
         .master("local")
         .config(CarbonCommonConstants.STORE_LOCATION, storePath)
         .getOrCreate()
+  }
+
+  def validateTableExists(
+      spark: SparkSession,
+      dbName: String,
+      tableName: String): Unit = {
+    if (!CarbonEnv.get.carbonMetastore.tableExists(tableName, Some(dbName))(spark)) {
+      val err = s"table $dbName.$tableName not found"
+      LOGGER.error(err)
+      throw new MalformedCarbonCommandException(err)
+    }
   }
 }

@@ -589,5 +589,9 @@ public class SegmentStatusManager {
     public List<String> getInvalidSegments() {
       return invalidSegments;
     }
+
+    public boolean isValid(String segment) {
+      return validSegments.contains(segment);
+    }
   }
 }
