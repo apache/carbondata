@@ -17,15 +17,18 @@
 
 package org.apache.spark.sql.common.util
 
+import java.io.File
 import java.util.{Locale, TimeZone}
 
-import org.apache.carbondata.common.logging.LogServiceFactory
 import scala.collection.JavaConversions._
 
+import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
-import org.apache.spark.sql.common.util.CarbonSessionTest.sql
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{DataFrame, Row, SQLContext, SparkSession}
+
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.util.CarbonProperties
 
 class QueryTest extends PlanTest {
 
@@ -35,6 +38,50 @@ class QueryTest extends PlanTest {
   TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"))
   // Add Locale setting
   Locale.setDefault(Locale.US)
+
+
+  val rootPath = new File(this.getClass.getResource("/").getPath + "../../../..").getCanonicalPath
+  val storeLocation = s"$rootPath/examples/spark2/target/store"
+  val warehouse = s"$rootPath/examples/spark2/target/warehouse"
+  val metastoredb = s"$rootPath/examples/spark2/target/metastore_db"
+
+  val spark = {
+    // clean data folder
+    if (true) {
+      val clean = (path: String) => FileUtils.deleteDirectory(new File(path))
+      clean(storeLocation)
+      clean(warehouse)
+      clean(metastoredb)
+    }
+
+    val spark = SparkSession
+        .builder()
+        .master("local")
+        .appName("CarbonExample")
+        .enableHiveSupport()
+        .config("spark.sql.warehouse.dir", warehouse)
+        .config("javax.jdo.option.ConnectionURL",
+          s"jdbc:derby:;databaseName=$metastoredb;create=true")
+        .getOrCreate()
+
+    CarbonProperties.getInstance()
+        .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")
+        .addProperty("carbon.storelocation", storeLocation)
+
+    spark.sparkContext.setLogLevel("WARN")
+    spark
+  }
+
+  val sc = spark.sparkContext
+
+  lazy val implicits = spark.implicits
+
+  def sql(sqlText: String): DataFrame  = spark.sql(sqlText)
+
+  def clean: Unit = {
+    val clean = (path: String) => FileUtils.deleteDirectory(new File(path))
+    clean(storeLocation)
+  }
 
   /**
    * Runs the plan and makes sure the answer contains all of the keywords, or the
@@ -203,4 +250,5 @@ object QueryTest {
 
     return None
   }
+
 }
