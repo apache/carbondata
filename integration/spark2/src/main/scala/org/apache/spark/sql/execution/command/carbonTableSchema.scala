@@ -17,17 +17,13 @@
 
 package org.apache.spark.sql.execution.command
 
-import java.text.SimpleDateFormat
-
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Cast, Literal}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.hive.{CarbonMetastore, CarbonRelation}
-import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -40,12 +36,11 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.lcm.locks.{CarbonLockFactory, LockUsage}
-import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DataManagementFunc, DictionaryLoadModel}
+import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CarbonSparkUtil, GlobalDictionaryUtil}
 
 /**
@@ -58,7 +53,6 @@ case class AlterTableCompaction(alterTableModel: AlterTableModel) {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   def run(sparkSession: SparkSession): Seq[Row] = {
-    // TODO : Implement it.
     val tableName = alterTableModel.tableName
     val databaseName = alterTableModel.dbName.getOrElse(sparkSession.catalog.currentDatabase)
     if (null == org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance
@@ -142,124 +136,6 @@ case class CreateTable(cm: TableModel) {
   }
 }
 
-case class DeleteLoadsById(
-    loadids: Seq[String],
-    databaseNameOp: Option[String],
-    tableName: String) {
-
-  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
-  def run(sparkSession: SparkSession): Seq[Row] = {
-
-    val databaseName = databaseNameOp.getOrElse(sparkSession.catalog.currentDatabase)
-    LOGGER.audit(s"Delete segment by Id request has been received for $databaseName.$tableName")
-
-    // validate load ids first
-    validateLoadIds
-    val dbName = databaseNameOp.getOrElse(sparkSession.catalog.currentDatabase)
-    val identifier = TableIdentifier(tableName, Option(dbName))
-    val relation = CarbonEnv.get.carbonMetastore.lookupRelation(
-      identifier, None)(sparkSession).asInstanceOf[CarbonRelation]
-    if (relation == null) {
-      LOGGER.audit(s"Delete segment by Id is failed. Table $dbName.$tableName does not exist")
-      sys.error(s"Table $dbName.$tableName does not exist")
-    }
-
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(dbName + '_' + tableName)
-
-    if (null == carbonTable) {
-      CarbonEnv.get.carbonMetastore
-        .lookupRelation(identifier, None)(sparkSession).asInstanceOf[CarbonRelation]
-    }
-    val path = carbonTable.getMetaDataFilepath
-
-    try {
-      val invalidLoadIds = SegmentStatusManager.updateDeletionStatus(
-        carbonTable.getAbsoluteTableIdentifier, loadids.asJava, path).asScala
-
-      if (invalidLoadIds.isEmpty) {
-
-        LOGGER.audit(s"Delete segment by Id is successfull for $databaseName.$tableName.")
-      }
-      else {
-        sys.error("Delete segment by Id is failed. Invalid ID is:" +
-                  s" ${ invalidLoadIds.mkString(",") }")
-      }
-    } catch {
-      case ex: Exception =>
-        sys.error(ex.getMessage)
-    }
-
-    Seq.empty
-
-  }
-
-  // validates load ids
-  private def validateLoadIds: Unit = {
-    if (loadids.isEmpty) {
-      val errorMessage = "Error: Segment id(s) should not be empty."
-      throw new MalformedCarbonCommandException(errorMessage)
-
-    }
-  }
-}
-
-case class DeleteLoadsByLoadDate(
-    databaseNameOp: Option[String],
-    tableName: String,
-    dateField: String,
-    loadDate: String) {
-
-  val LOGGER = LogServiceFactory.getLogService("org.apache.spark.sql.TableModel.tableSchema")
-
-  def run(sparkSession: SparkSession): Seq[Row] = {
-
-    LOGGER.audit("The delete segment by load date request has been received.")
-    val dbName = databaseNameOp.getOrElse(sparkSession.catalog.currentDatabase)
-    val identifier = TableIdentifier(tableName, Option(dbName))
-    val relation = CarbonEnv.get.carbonMetastore
-      .lookupRelation(identifier, None)(sparkSession).asInstanceOf[CarbonRelation]
-    if (relation == null) {
-      LOGGER
-        .audit(s"Delete segment by load date is failed. Table $dbName.$tableName does not " +
-               s"exist")
-      sys.error(s"Table $dbName.$tableName does not exist")
-    }
-
-    val timeObj = Cast(Literal(loadDate), TimestampType).eval()
-    if (null == timeObj) {
-      val errorMessage = "Error: Invalid load start time format " + loadDate
-      throw new MalformedCarbonCommandException(errorMessage)
-    }
-
-    val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-      .getCarbonTable(dbName + '_' + tableName)
-
-    if (null == carbonTable) {
-      var relation = CarbonEnv.get.carbonMetastore
-        .lookupRelation(identifier, None)(sparkSession).asInstanceOf[CarbonRelation]
-    }
-    val path = carbonTable.getMetaDataFilepath()
-
-    try {
-      val invalidLoadTimestamps = SegmentStatusManager.updateDeletionStatus(
-        carbonTable.getAbsoluteTableIdentifier, loadDate, path,
-        timeObj.asInstanceOf[java.lang.Long]).asScala
-      if (invalidLoadTimestamps.isEmpty) {
-        LOGGER.audit(s"Delete segment by date is successfull for $dbName.$tableName.")
-      }
-      else {
-        sys.error("Delete segment by date is failed. No matching segment found.")
-      }
-    } catch {
-      case ex: Exception =>
-        sys.error(ex.getMessage)
-    }
-    Seq.empty
-
-  }
-
-}
 
 object LoadTable {
 
@@ -556,153 +432,4 @@ case class LoadTable(
       }
     }
   }
-}
-
-private[sql] case class DeleteLoadByDate(
-    databaseNameOp: Option[String],
-    tableName: String,
-    dateField: String,
-    dateValue: String) {
-
-  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
-  def run(sparkSession: SparkSession): Seq[Row] = {
-    val dbName = databaseNameOp.getOrElse(sparkSession.catalog.currentDatabase)
-    LOGGER.audit(s"The delete load by date request has been received for $dbName.$tableName")
-    val identifier = TableIdentifier(tableName, Option(dbName))
-    val relation = CarbonEnv.get.carbonMetastore
-      .lookupRelation(identifier)(sparkSession).asInstanceOf[CarbonRelation]
-    var level: String = ""
-    val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata
-      .getInstance().getCarbonTable(dbName + '_' + tableName)
-    if (relation == null) {
-      LOGGER.audit(s"The delete load by date is failed. Table $dbName.$tableName does not exist")
-      sys.error(s"Table $dbName.$tableName does not exist")
-    }
-    val matches: Seq[AttributeReference] = relation.dimensionsAttr.filter(
-      filter => filter.name.equalsIgnoreCase(dateField) &&
-                filter.dataType.isInstanceOf[TimestampType]).toList
-    if (matches.isEmpty) {
-      LOGGER.audit("The delete load by date is failed. " +
-                   s"Table $dbName.$tableName does not contain date field: $dateField")
-      sys.error(s"Table $dbName.$tableName does not contain date field $dateField")
-    } else {
-      level = matches.asJava.get(0).name
-    }
-    val actualColName = relation.metaData.carbonTable.getDimensionByName(tableName, level)
-      .getColName
-    DataManagementFunc.deleteLoadByDate(
-      sparkSession.sqlContext,
-      new CarbonDataLoadSchema(carbonTable),
-      dbName,
-      tableName,
-      CarbonEnv.get.carbonMetastore.storePath,
-      level,
-      actualColName,
-      dateValue)
-    LOGGER.audit(s"The delete load by date $dateValue is successful for $dbName.$tableName.")
-    Seq.empty
-  }
-
-}
-
-case class CleanFiles(
-    databaseNameOp: Option[String],
-    tableName: String) {
-
-  val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
-  def run(sparkSession: SparkSession): Seq[Row] = {
-    val dbName = databaseNameOp.getOrElse(sparkSession.catalog.currentDatabase)
-    LOGGER.audit(s"The clean files request has been received for $dbName.$tableName")
-    val identifier = TableIdentifier(tableName, Option(dbName))
-    val relation = CarbonEnv.get.carbonMetastore
-      .lookupRelation(identifier)(sparkSession).asInstanceOf[CarbonRelation]
-    if (relation == null) {
-      LOGGER.audit(s"The clean files request is failed. Table $dbName.$tableName does not exist")
-      sys.error(s"Table $dbName.$tableName does not exist")
-    }
-
-    val carbonLoadModel = new CarbonLoadModel()
-    carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
-    carbonLoadModel.setDatabaseName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
-    val table = relation.tableMeta.carbonTable
-    carbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.toArray)
-    carbonLoadModel.setTableName(table.getFactTableName)
-    carbonLoadModel.setStorePath(relation.tableMeta.storePath)
-    val dataLoadSchema = new CarbonDataLoadSchema(table)
-    carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
-    try {
-      DataManagementFunc.cleanFiles(
-        sparkSession.sqlContext.sparkContext,
-        carbonLoadModel,
-        relation.tableMeta.storePath)
-      LOGGER.audit(s"Clean files request is successfull for $dbName.$tableName.")
-    } catch {
-      case ex: Exception =>
-        sys.error(ex.getMessage)
-    }
-    Seq.empty
-  }
-}
-
-case class ShowLoads(
-    databaseNameOp: Option[String],
-    tableName: String,
-    limit: Option[String],
-    val output: Seq[Attribute]) {
-
-  def run(sparkSession: SparkSession): Seq[Row] = {
-    val databaseName = databaseNameOp.getOrElse(sparkSession.catalog.currentDatabase)
-    val tableUniqueName = databaseName + "_" + tableName
-    // Here using checkSchemasModifiedTimeAndReloadTables in tableExists to reload metadata if
-    // schema is changed by other process, so that tableInfoMap woulb be refilled.
-    val tableExists = CarbonEnv.get.carbonMetastore
-        .tableExists(TableIdentifier(tableName, databaseNameOp))(sparkSession)
-    if (!tableExists) {
-      sys.error(s"$databaseName.$tableName is not found")
-    }
-    val carbonTable = org.apache.carbondata.core.carbon.metadata.CarbonMetadata.getInstance()
-        .getCarbonTable(tableUniqueName)
-    if (carbonTable == null) {
-      sys.error(s"$databaseName.$tableName is not found")
-    }
-    val path = carbonTable.getMetaDataFilepath
-    val loadMetadataDetailsArray = SegmentStatusManager.readLoadMetadata(path)
-    if (loadMetadataDetailsArray.nonEmpty) {
-
-      val parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP)
-
-      var loadMetadataDetailsSortedArray = loadMetadataDetailsArray.sortWith(
-        (l1, l2) => java.lang.Double.parseDouble(l1.getLoadName) > java.lang.Double
-            .parseDouble(l2.getLoadName)
-      )
-
-
-      if (limit.isDefined) {
-        loadMetadataDetailsSortedArray = loadMetadataDetailsSortedArray
-            .filter(load => load.getVisibility.equalsIgnoreCase("true"))
-        val limitLoads = limit.get
-        try {
-          val lim = Integer.parseInt(limitLoads)
-          loadMetadataDetailsSortedArray = loadMetadataDetailsSortedArray.slice(0, lim)
-        } catch {
-          case ex: NumberFormatException => sys.error(s" Entered limit is not a valid Number")
-        }
-
-      }
-
-      loadMetadataDetailsSortedArray.filter(load => load.getVisibility.equalsIgnoreCase("true"))
-          .map(load =>
-            Row(
-              load.getLoadName,
-              load.getLoadStatus,
-              new java.sql.Timestamp(parser.parse(load.getLoadStartTime).getTime),
-              new java.sql.Timestamp(parser.parse(load.getTimestamp).getTime))).toSeq
-    } else {
-      Seq.empty
-
-    }
-  }
-
 }

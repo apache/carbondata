@@ -19,11 +19,7 @@
 
 package org.apache.spark.carbondata.vectorreader
 
-import java.io.File
-
-import org.apache.spark.carbondata.util.QueryTest
-import org.apache.spark.carbondata.util.QueryTest._
-import org.apache.spark.sql.execution.command.LoadTable
+import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.execution.{BatchedDataSourceScanExec, RowDataSourceScanExec}
 import org.scalatest.BeforeAndAfterAll
 

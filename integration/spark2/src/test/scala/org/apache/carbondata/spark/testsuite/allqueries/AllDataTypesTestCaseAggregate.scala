@@ -21,10 +21,10 @@ package org.apache.carbondata.spark.testsuite.allqueries
 
 import java.io.File
 
-import org.apache.spark.sql.{Row, SaveMode}
-import org.apache.spark.sql.common.util.CarbonSessionTest._
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -35,7 +35,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    clean
+    dropAllTable
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../../spark")
       .getCanonicalPath
 
@@ -57,14 +57,14 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
     sql("INSERT INTO table Carbon_automation_test select * from Carbon_automation_test_hive");
   }
 
-  def clean{
+  def dropAllTable{
     sql("drop table if exists Carbon_automation_test")
     sql("drop table if exists Carbon_automation_hive")
     sql("drop table if exists Carbon_automation_test_hive")
   }
 
   override def afterAll {
-    clean
+    dropAllTable
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
