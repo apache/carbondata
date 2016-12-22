@@ -86,14 +86,14 @@ public class WriterCompressModel {
   }
 
   /**
-   * @return the changedDataType
+   * @return the convertedDataType
    */
   public ValueCompressionUtil.DataType[] getConvertedDataType() {
     return convertedDataType;
   }
 
   /**
-   * @param convertedDataType the changedDataType to set
+   * @param convertedDataType the convertedDataType to set
    */
   public void setConvertedDataType(ValueCompressionUtil.DataType[] convertedDataType) {
     this.convertedDataType = convertedDataType;
