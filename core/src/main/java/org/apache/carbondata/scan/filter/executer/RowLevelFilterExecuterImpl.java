@@ -176,14 +176,12 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           VariableLengthDimensionDataChunk dimensionColumnDataChunk =
               (VariableLengthDimensionDataChunk) blockChunkHolder
                   .getDimensionDataChunk()[blocksIndex[i]];
-          if (null != dimensionColumnDataChunk.getCompleteDataChunk()) {
-            memberString =
-                readMemberBasedOnNoDictionaryVal(dimColumnEvaluatorInfo, dimensionColumnDataChunk,
-                    index);
-            if (null != memberString) {
-              if (memberString.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-                memberString = null;
-              }
+          memberString =
+              readMemberBasedOnNoDictionaryVal(dimColumnEvaluatorInfo, dimensionColumnDataChunk,
+                  index);
+          if (null != memberString) {
+            if (memberString.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+              memberString = null;
             }
             record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
                 .getDataBasedOnDataType(memberString,
@@ -383,15 +381,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   private String readMemberBasedOnNoDictionaryVal(
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo,
       VariableLengthDimensionDataChunk dimensionColumnDataChunk, int index) {
-    byte[] noDictionaryVals;
-    if (null != dimensionColumnDataChunk.getAttributes().getInvertedIndexesReverse()) {
-      // Getting the data for direct surrogates.
-      noDictionaryVals = dimensionColumnDataChunk.getCompleteDataChunk()
-          .get(dimensionColumnDataChunk.getAttributes().getInvertedIndexesReverse()[index]);
-    } else {
-      noDictionaryVals = dimensionColumnDataChunk.getCompleteDataChunk().get(index);
-    }
-    return new String(noDictionaryVals, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+    return new String(dimensionColumnDataChunk.getChunkData(index),
+        Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
   }
 
   @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {

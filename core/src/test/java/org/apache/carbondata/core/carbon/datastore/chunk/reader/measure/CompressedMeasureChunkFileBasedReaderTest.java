@@ -31,8 +31,9 @@ public class CompressedMeasureChunkFileBasedReaderTest {
   static WriterCompressModel writerCompressModel;
   @BeforeClass public static void setup() {
     List<DataChunk> dataChunkList = new ArrayList<>();
-    dataChunkList.add(new DataChunk());
-
+    DataChunk dataChunk = new DataChunk();
+    dataChunkList.add(dataChunk);
+    dataChunk.setDataPageLength(10);
     writerCompressModel = new WriterCompressModel();
     Object maxValue[] = new Object[]{new Long[]{8L, 0L}};
     Object minValue[] = new Object[]{new Long[]{1L,0L}};

@@ -19,13 +19,16 @@
 
 package org.apache.carbondata.core.datastorage.store.compression.none;
 
+import java.math.BigDecimal;
+
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureDataChunkStore;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.impl.ByteMeasureChunkStore;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
-import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -39,7 +42,7 @@ public class UnCompressNoneByte implements UnCompressValue<byte[]> {
   /**
    * byteCompressor.
    */
-  private static Compressor compressor = CompressorFactory.getInstance();
+  private static Compressor compressor = CompressorFactory.getInstance().getCompressor();
 
   /**
    * value.
@@ -50,6 +53,8 @@ public class UnCompressNoneByte implements UnCompressValue<byte[]> {
    * actual data type
    */
   private DataType actualDataType;
+
+  private MeasureDataChunkStore<byte[]> measureChunkStore;
 
   public UnCompressNoneByte(DataType actualDataType) {
     this.actualDataType = actualDataType;
@@ -68,9 +73,12 @@ public class UnCompressNoneByte implements UnCompressValue<byte[]> {
     this.value = value;
   }
 
-  @Override public UnCompressValue uncompress(DataType dataType) {
+  @Override
+  public UnCompressValue uncompress(DataType dataType, byte[] data, int offset, int length,
+      int mantissa, Object maxValueObject) {
     UnCompressValue byte1 = ValueCompressionUtil.getUnCompressNone(dataType, actualDataType);
-    ValueCompressonHolder.unCompress(dataType, byte1, value);
+    ValueCompressonHolder
+        .unCompress(dataType, byte1, data, offset, length, mantissa, maxValueObject);
     return byte1;
   }
 
@@ -95,34 +103,24 @@ public class UnCompressNoneByte implements UnCompressValue<byte[]> {
     return new UnCompressNoneByte(actualDataType);
   }
 
-  @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    switch (actualDataType) {
-      case DATA_BIGINT:
-        return unCompressLong();
-      default:
-        return unCompressDouble();
-    }
-
+  @Override public long getLongValue(int index) {
+    return measureChunkStore.getByte(index);
   }
 
-  private CarbonReadDataHolder unCompressDouble() {
-    CarbonReadDataHolder dataHldr = new CarbonReadDataHolder();
-    double[] vals = new double[value.length];
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i];
-    }
-    dataHldr.setReadableDoubleValues(vals);
-    return dataHldr;
+  @Override public double getDoubleValue(int index) {
+    return measureChunkStore.getByte(index);
   }
 
-  private CarbonReadDataHolder unCompressLong() {
-    CarbonReadDataHolder dataHldr = new CarbonReadDataHolder();
-    long[] vals = new long[value.length];
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i];
-    }
-    dataHldr.setReadableLongValues(vals);
-    return dataHldr;
+  @Override public BigDecimal getBigDecimalValue(int index) {
+    throw new UnsupportedOperationException("Get big decimal is not supported");
   }
 
+  @Override public void setUncomressValue(byte[] data, int decimalPlaces, Object maxValueObject) {
+    this.measureChunkStore = new ByteMeasureChunkStore(data.length);
+    this.measureChunkStore.putData(data);
+  }
+
+  @Override public void freeMemory() {
+    this.measureChunkStore.freeMemory();
+  }
 }

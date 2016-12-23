@@ -19,47 +19,12 @@
 
 package org.apache.carbondata.core.datastorage.store.impl.data.compressed;
 
-import org.apache.carbondata.core.datastorage.store.FileHolder;
-import org.apache.carbondata.core.datastorage.store.MeasureDataWrapper;
 import org.apache.carbondata.core.datastorage.store.compression.WriterCompressModel;
-import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
-import org.apache.carbondata.core.datastorage.store.impl.CompressedDataMeasureDataWrapper;
 
 public class HeavyCompressedDoubleArrayDataInMemoryStore
     extends AbstractHeavyCompressedDoubleArrayDataStore {
 
   public HeavyCompressedDoubleArrayDataInMemoryStore(WriterCompressModel compressionModel) {
     super(compressionModel);
-  }
-
-  @Override public MeasureDataWrapper getBackData(int[] cols, FileHolder fileHolder) {
-    if (null == compressionModel) {
-      return null;
-    }
-    CarbonReadDataHolder[] vals = new CarbonReadDataHolder[values.length];
-    if (cols != null) {
-      for (int i = 0; i < cols.length; i++) {
-        vals[cols[i]] = values[cols[i]].uncompress(compressionModel.getChangedDataType()[cols[i]])
-            .getValues(compressionModel.getMantissa()[cols[i]],
-                compressionModel.getMaxValue()[cols[i]]);
-      }
-    } else {
-      for (int i = 0; i < vals.length; i++) {
-
-        vals[i] = values[i].uncompress(compressionModel.getChangedDataType()[i])
-            .getValues(compressionModel.getMantissa()[i], compressionModel.getMaxValue()[i]);
-      }
-    }
-    return new CompressedDataMeasureDataWrapper(vals);
-  }
-
-  @Override public MeasureDataWrapper getBackData(int cols, FileHolder fileHolder) {
-    if (null == compressionModel) {
-      return null;
-    }
-    CarbonReadDataHolder[] vals = new CarbonReadDataHolder[values.length];
-    vals[cols] = values[cols].uncompress(compressionModel.getChangedDataType()[cols])
-        .getValues(compressionModel.getMantissa()[cols], compressionModel.getMaxValue()[cols]);
-    return new CompressedDataMeasureDataWrapper(vals);
   }
 }

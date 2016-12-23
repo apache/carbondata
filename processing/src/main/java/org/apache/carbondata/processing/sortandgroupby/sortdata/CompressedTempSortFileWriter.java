@@ -65,7 +65,8 @@ public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter {
               noDictionaryCount, complexDimensionCount);
 
       stream.writeInt(records.length);
-      byte[] byteArray = CompressorFactory.getInstance().compressByte(blockDataArray.toByteArray());
+      byte[] byteArray = CompressorFactory.getInstance().getCompressor()
+          .compressByte(blockDataArray.toByteArray());
       stream.writeInt(byteArray.length);
       stream.write(byteArray);
 

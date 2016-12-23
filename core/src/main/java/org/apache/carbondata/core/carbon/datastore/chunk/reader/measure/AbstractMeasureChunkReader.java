@@ -31,6 +31,10 @@ public abstract class AbstractMeasureChunkReader implements MeasureColumnChunkRe
   protected String filePath;
 
   /**
+   * total number of records
+   */
+  protected int numberOfRecords;
+  /**
    * Constructor to get minimum parameter to create instance of this class
    *
    * @param measureColumnChunk measure chunk metadata
@@ -38,7 +42,8 @@ public abstract class AbstractMeasureChunkReader implements MeasureColumnChunkRe
    *                           the measure value
    * @param filePath           file from which data will be read
    */
-  public AbstractMeasureChunkReader(String filePath) {
+  public AbstractMeasureChunkReader(String filePath, int numberOfRecords) {
     this.filePath = filePath;
+    this.numberOfRecords = numberOfRecords;
   }
 }

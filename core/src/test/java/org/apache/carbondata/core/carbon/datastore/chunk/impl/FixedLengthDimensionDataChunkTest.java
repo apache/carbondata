@@ -19,35 +19,28 @@
 
 package org.apache.carbondata.core.carbon.datastore.chunk.impl;
 
-import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
-import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
 
-import static junit.framework.TestCase.assertEquals;
+import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
 
 public class FixedLengthDimensionDataChunkTest {
 
   static FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk;
-  static DimensionChunkAttributes dimensionChunkAttributes;
   static byte[] data;
 
   @BeforeClass public static void setup() {
     data = "dummy string".getBytes();
-    dimensionChunkAttributes = new DimensionChunkAttributes();
-    dimensionChunkAttributes.setEachRowSize(4);
 
     int invertedIndex[] = { 1, 3, 5, 7, 8 };
-    dimensionChunkAttributes.setInvertedIndexes(invertedIndex);
 
     int invertedIndexReverse[] = { 1, 0, 5, 7, 8 };
-    dimensionChunkAttributes.setInvertedIndexesReverse(invertedIndexReverse);
-
     fixedLengthDimensionDataChunk =
-        new FixedLengthDimensionDataChunk(data, dimensionChunkAttributes);
+        new FixedLengthDimensionDataChunk(data, invertedIndex, invertedIndexReverse, 5, 4);
   }
 
   @Test public void fillChunkDataTest() {

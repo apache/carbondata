@@ -19,14 +19,17 @@
 
 package org.apache.carbondata.core.datastorage.store.compression.decimal;
 
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.MeasureDataChunkStore;
+import org.apache.carbondata.core.carbon.datastore.chunk.store.impl.DoubleMeasureChunkStore;
 import org.apache.carbondata.core.datastorage.store.compression.Compressor;
 import org.apache.carbondata.core.datastorage.store.compression.CompressorFactory;
 import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder;
-import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
+import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonHolder.UnCompressValue;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 import org.apache.carbondata.core.util.ValueCompressionUtil.DataType;
 
@@ -41,16 +44,20 @@ public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompress
   /**
    * compressor.
    */
-  private static Compressor compressor = CompressorFactory.getInstance();
+  private static Compressor compressor = CompressorFactory.getInstance().getCompressor();
   /**
    * value.
    */
   private double[] value;
 
+  private MeasureDataChunkStore<double[]> measureChunkStore;
+
   /**
    * actual data type
    */
   private DataType actualDataType;
+
+  private double maxValue;
 
   public UnCompressMaxMinDefault(DataType actualDataType) {
     this.actualDataType = actualDataType;
@@ -76,7 +83,9 @@ public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompress
     return byte1;
   }
 
-  @Override public ValueCompressonHolder.UnCompressValue uncompress(DataType dataType) {
+  @Override
+  public UnCompressValue uncompress(DataType dataType, byte[] compressData, int offset, int length,
+      int decimalPlaces, Object maxValueObject) {
     return null;
   }
 
@@ -96,16 +105,34 @@ public class UnCompressMaxMinDefault implements ValueCompressonHolder.UnCompress
     return new UnCompressMaxMinByte(actualDataType);
   }
 
-  //TODO SIMIAN
-  @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    double maxValue = (double) maxValueObject;
-    double[] vals = new double[value.length];
-    CarbonReadDataHolder dataHolderInfoObj = new CarbonReadDataHolder();
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = maxValue - value[i];
-    }
-    dataHolderInfoObj.setReadableDoubleValues(vals);
-    return dataHolderInfoObj;
+  @Override public long getLongValue(int index) {
+    throw new UnsupportedOperationException("Get long value is not supported");
   }
 
+  @Override public double getDoubleValue(int index) {
+    double doubleValue = measureChunkStore.getDouble(index);
+    if (doubleValue == 0) {
+      return maxValue;
+    } else {
+      return maxValue - doubleValue;
+    }
+  }
+
+  @Override public BigDecimal getBigDecimalValue(int index) {
+    throw new UnsupportedOperationException("Get big decimal value is not supported");
+  }
+
+  @Override public void setUncomressValue(double[] data, int decimalPlaces, Object maxValueObject) {
+    this.measureChunkStore = new DoubleMeasureChunkStore(data.length);
+    this.measureChunkStore.putData(data);
+    if (maxValueObject instanceof Long) {
+      this.maxValue = (long) maxValueObject;
+    } else {
+      this.maxValue = (double) maxValueObject;
+    }
+  }
+
+  @Override public void freeMemory() {
+    this.measureChunkStore.freeMemory();
+  }
 }
