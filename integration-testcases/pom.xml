@@ -15,7 +15,9 @@
     See the License for the specific language governing permissions and
     limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
   <modelVersion>4.0.0</modelVersion>
 
@@ -102,6 +104,23 @@
     </dependency>
   </dependencies>
 
+  <profiles>
+    <profile>
+      <id>hadoop</id>
+      <properties>
+        <file-source>hdfs://localhost:54310/</file-source>
+      </properties>
+    </profile>
+    <profile>
+      <id>local</id>
+      <properties>
+        <file-source>
+          ${basedir}/src/test/resources/
+        </file-source>
+      </properties>
+    </profile>
+  </profiles>
+
   <build>
     <testSourceDirectory>src/test/scala</testSourceDirectory>
     <resources>
@@ -112,7 +131,26 @@
         </includes>
       </resource>
     </resources>
+
     <plugins>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>properties-maven-plugin</artifactId>
+        <version>1.0.0</version>
+        <executions>
+          <execution>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>write-project-properties</goal>
+            </goals>
+            <configuration>
+              <outputFile>
+                ${project.build.outputDirectory}/app.properties
+              </outputFile>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.scala-tools</groupId>
         <artifactId>maven-scala-plugin</artifactId>

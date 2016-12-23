@@ -19,16 +19,13 @@
 
 package org.apache.carbondata.spark.testsuite.allqueries
 
-import java.io.File
+import java.io.{File, FileInputStream, InputStream}
 import java.sql.Timestamp
-import java.text.SimpleDateFormat
-import java.util.Date
 
 import junit.framework.TestCase._
-import org.apache.spark.sql.{DataFrame, Row}
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.{NonRunningTests, QueryTest}
-import org.codehaus.groovy.util.AbstractConcurrentMapBase.Segment
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -41,7 +38,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-
+    val path = getPath()
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
 
@@ -72,8 +69,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
           CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
         )
-      sql("LOAD DATA LOCAL INPATH '" + currentDirectory +
-          "/src/test/resources/100_olap.csv' INTO table Carbon_automation_test6 OPTIONS" +
+      sql("LOAD DATA LOCAL INPATH '" + path +
+          "100_olap.csv' INTO table Carbon_automation_test6 OPTIONS" +
           "('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,MAC," +
           "deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked," +
           "series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName," +
@@ -168,8 +165,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
         "String,Latest_os_version String,Latest_network String,site String, site_desc String," +
         "product String,product_desc String,check_year int) " +
         "stored by 'org.apache.carbondata.format'")
-      sql("LOAD DATA LOCAL INPATH '" + currentDirectory +
-          "/src/test/resources/100_VMALL_1_Day_DATA_2015-09-15.csv' INTO table myvmallTest " +
+      sql("LOAD DATA LOCAL INPATH '" + path +
+          "100_VMALL_1_Day_DATA_2015-09-15.csv' INTO table myvmallTest " +
           "OPTIONS('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,uuid,MAC," +
           "device_color,device_shell_color,device_name,product_name,ram,rom,cpu_clock,series," +
           "check_date,check_year,check_month,check_day,check_hour,bom,inside_name,packing_date," +
@@ -227,8 +224,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
         "pkt_num_len_1024_all  decimal,ip_flow_mark decimal)" +
         " stored by 'org.apache.carbondata.format'")
 
-      sql("LOAD DATA LOCAL INPATH '" + currentDirectory +
-          "/src/test/resources/FACT_UNITED_DATA_INFO_sample_cube.csv' INTO table traffic_2g_3g_4g" +
+      sql("LOAD DATA LOCAL INPATH '" + path +
+          "FACT_UNITED_DATA_INFO_sample_cube.csv' INTO table traffic_2g_3g_4g" +
           "OPTIONS('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'source_info   , " +
           "app_category_id    ,app_category_name   ,app_sub_category_id   , app_sub_category_name" +
           "   , rat_name   ,imsi   ,offer_msisdn   , offer_id   ,offer_option_1    ," +
@@ -277,8 +274,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       sql(
         "Create table cube_restructure444 (a0 STRING,a STRING,b0 INT)  stored by 'org.apache" +
         ".carbondata.format'")
-      sql("LOAD DATA LOCAL INPATH '" + currentDirectory +
-          "/src/test/resources/restructure_cube.csv'" +
+      sql("LOAD DATA LOCAL INPATH '" + path +
+          "restructure_cube.csv'" +
           " INTO TABLE cube_restructure444 OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '\"')")
 
       sql(
@@ -351,7 +348,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
         "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
         "Latest_operatorId string, gamePointDescription string,gamePointId decimal,contractNumber" +
         " decimal) row format delimited fields terminated by ','")
-      sql("LOAD DATA LOCAL INPATH 'hdfs://hacluster/mano/Vmall_100_olap.csv' INTO table " +
+      sql("LOAD DATA LOCAL INPATH '" + currentDirectory +
+          "/src/test/resources/Vmall_100_olap.csv' INTO table " +
           "Carbon_automation_vmall_test1_hive")
 
 
@@ -377,8 +375,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
         "Latest_phonePADPartitionedVersions string, Latest_operatorId string, " +
         "gamePointDescription string, gamePointId int,contractNumber int) stored by 'org.apache" +
         ".carbondata.format'")
-      sql("LOAD DATA LOCAL INPATH '" + currentDirectory +
-          "/src/test/resources/100_olap.csv' INTO table Carbon_automation_test5 OPTIONS" +
+      sql("LOAD DATA LOCAL INPATH '" + path +
+          "100_olap.csv' INTO table Carbon_automation_test5 OPTIONS" +
           "('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,MAC," +
           "deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked," +
           "series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName," +
@@ -447,6 +445,13 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
     } catch {
       case e: Exception => print("ERROR : " + e.getMessage)
     }
+  }
+
+  def getPath(): String = {
+    val filesystem: InputStream = new FileInputStream(new File("target/classes/app.properties"))
+    val properties = new java.util.Properties()
+    properties.load(filesystem)
+    properties.getProperty("file-source")
   }
 
   //AllDataTypesTestCases2
@@ -2434,12 +2439,12 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "create table table9 (imei string,AMSize string,channelsId string,ActiveCountry string, " +
       "Activecity string,gamePointId decimal,deviceInformationId INT) stored by 'org.apache" +
       ".carbondata.format'")
-    sql("LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table table9 OPTIONS('DELIMITER'= ',' ," +
+    sql("LOAD DATA LOCAL INPATH  \"" + getPath() +
+        "TestData1.csv\" INTO table table9 OPTIONS('DELIMITER'= ',' ," +
         "'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
         "ActiveCountry,Activecity,gamePointId')")
-    sql("LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table table9 OPTIONS('DELIMITER'= ',' ," +
+    sql("LOAD DATA LOCAL INPATH  \"" + getPath() +
+        "TestData1.csv\" INTO table table9 OPTIONS('DELIMITER'= ',' ," +
         "'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
         "ActiveCountry,Activecity,gamePointId')")
     val dataFrame = sql("show segments for table table9")
@@ -2463,9 +2468,9 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "create table table13 (imei string,AMSize string,channelsId string,ActiveCountry string, " +
       "Activecity string,gamePointId decimal,deviceInformationId INT) stored by 'org.apache" +
       ".carbondata.format'")
-    val startTime: String = new Timestamp(System.currentTimeMillis()).toString();
-    sql("LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table table13 OPTIONS('DELIMITER'= ',' ," +
+    val startTime: String = new Timestamp(System.currentTimeMillis()).toString()
+    sql("LOAD DATA LOCAL INPATH  \"" + getPath() +
+        "TestData1.csv\" INTO table table13 OPTIONS('DELIMITER'= ',' ," +
         "'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
         "ActiveCountry,Activecity,gamePointId')")
 
@@ -2491,13 +2496,13 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "create table table14 (imei string,AMSize string,channelsId string,ActiveCountry string, " +
       "Activecity string,gamePointId decimal,deviceInformationId INT) stored by 'org.apache" +
       ".carbondata.format'")
-    sql("LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table table14 OPTIONS('DELIMITER'= ',' ," +
+    sql("LOAD DATA LOCAL INPATH \"" + getPath() +
+        "TestData1.csv\" INTO table table14 OPTIONS('DELIMITER'= ',' ," +
         "'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
         "ActiveCountry,Activecity,gamePointId')")
     sql("select * from table14")
-    sql("LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table table14 OPTIONS('DELIMITER'= ',' ," +
+    sql("LOAD DATA LOCAL INPATH \"" + getPath() +
+        "TestData1.csv\" INTO table table14 OPTIONS('DELIMITER'= ',' ," +
         "'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
         "ActiveCountry,Activecity,gamePointId')")
     sql("select * from table14")
@@ -2526,20 +2531,20 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "create table table15 (imei string,AMSize string,channelsId string,ActiveCountry string, " +
       "Activecity string,gamePointId decimal,deviceInformationId INT) stored by 'org.apache" +
       ".carbondata.format'")
-    sql("LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table table15 OPTIONS('DELIMITER'= ',' ," +
+    sql("LOAD DATA LOCAL INPATH \"" + getPath() +
+        "TestData1.csv\" INTO table table15 OPTIONS('DELIMITER'= ',' ," +
         "'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
         "ActiveCountry,Activecity,gamePointId')")
-    sql("LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table table15 OPTIONS('DELIMITER'= ',' ," +
+    sql("LOAD DATA LOCAL INPATH \"" + getPath() +
+        "TestData1.csv\" INTO table table15 OPTIONS('DELIMITER'= ',' ," +
         "'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
         "ActiveCountry,Activecity,gamePointId')")
-    sql("LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table table15 OPTIONS('DELIMITER'= ',' ," +
+    sql("LOAD DATA LOCAL INPATH  \"" + getPath() +
+        "TestData1.csv\" INTO table table15 OPTIONS('DELIMITER'= ',' ," +
         "'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
         "ActiveCountry,Activecity,gamePointId')")
-    sql("LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table table15 OPTIONS('DELIMITER'= ',' ," +
+    sql("LOAD DATA LOCAL INPATH \"" + getPath() +
+        "TestData1.csv\" INTO table table15 OPTIONS('DELIMITER'= ',' ," +
         "'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
         "ActiveCountry,Activecity,gamePointId')")
     val dataFrame = sql("show segments for table table15")
@@ -2565,8 +2570,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "create table table23 (imei string,AMSize string,channelsId string,ActiveCountry string, " +
       "Activecity string,gamePointId decimal,deviceInformationId INT) stored by 'org.apache" +
       ".carbondata.format'")
-    sql("LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table table23 OPTIONS('DELIMITER'= ',' ," +
+    sql("LOAD DATA LOCAL INPATH \"" + getPath() +
+        "TestData1.csv\" INTO table table23 OPTIONS('DELIMITER'= ',' ," +
         "'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
         "ActiveCountry,Activecity,gamePointId')")
 
@@ -2583,8 +2588,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "create table table24 (imei string,AMSize string,channelsId string,ActiveCountry string, " +
       "Activecity string,gamePointId decimal,deviceInformationId INT) stored by 'org.apache" +
       ".carbondata.format'")
-    sql("LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table table24 OPTIONS('DELIMITER'= ',' ," +
+    sql("LOAD DATA LOCAL INPATH \"" + getPath() +
+        "TestData1.csv\" INTO table table24 OPTIONS('DELIMITER'= ',' ," +
         "'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
         "ActiveCountry,Activecity,gamePointId')")
 
@@ -2605,8 +2610,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "create table table25 (imei string,AMSize string,channelsId string,ActiveCountry string, " +
       "Activecity string,gamePointId decimal,deviceInformationId INT) stored by 'org.apache" +
       ".carbondata.format'")
-    sql("LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table table25 OPTIONS('DELIMITER'= ',' ," +
+    sql("LOAD DATA LOCAL INPATH \"" + getPath() +
+        "TestData1.csv\" INTO table table25 OPTIONS('DELIMITER'= ',' ," +
         "'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
         "ActiveCountry,Activecity,gamePointId')")
 
@@ -2624,8 +2629,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "create table table3 (imei string,AMSize string,channelsId string,ActiveCountry string, " +
       "Activecity string,gamePointId decimal,deviceInformationId INT) stored by 'org.apache" +
       ".carbondata.format'")
-    sql("LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table table3 OPTIONS('DELIMITER'= ',' ," +
+    sql("LOAD DATA LOCAL INPATH \"" + getPath() +
+        "TestData1.csv\" INTO table table3 OPTIONS('DELIMITER'= ',' ," +
         "'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
         "ActiveCountry,Activecity,gamePointId')")
     sql("delete segment 0 from  table table3")
@@ -2643,12 +2648,12 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "create table table12 (imei string,AMSize string,channelsId string,ActiveCountry string, " +
       "Activecity string,gamePointId decimal,deviceInformationId INT) stored by 'org.apache" +
       ".carbondata.format'")
-    sql("LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table table12 OPTIONS('DELIMITER'= ',' ," +
+    sql("LOAD DATA LOCAL INPATH \"" + getPath() +
+        "TestData1.csv\" INTO table table12 OPTIONS('DELIMITER'= ',' ," +
         "'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
         "ActiveCountry,Activecity,gamePointId')")
-    sql("LOAD DATA LOCAL INPATH  '" + currentDirectory +
-        "/src/test/resources/TestData1.csv' INTO table table12 OPTIONS('DELIMITER'= ',' ," +
+    sql("LOAD DATA LOCAL INPATH \"" + getPath() +
+        "TestData1.csv\" INTO table table12 OPTIONS('DELIMITER'= ',' ," +
         "'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId," +
         "ActiveCountry,Activecity,gamePointId')")
     sql("delete segment 0,1 from  table table12")
@@ -2668,8 +2673,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "deviceInformationId" +
       " INT) stored by 'org.apache.carbondata.format'")
     sql(
-      "LOAD DATA LOCAL INPATH '" + currentDirectory +
-      "/src/test/resources/TestData3.csv' INTO table testretention " +
+      "LOAD DATA LOCAL INPATH \"" + getPath() +
+      "TestData3.csv\" INTO table testretention " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId," +
       "AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate')")
     sql("delete segment 0 from table testretention")
@@ -2688,13 +2693,13 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "deviceInformationId" +
       " INT) stored by 'org.apache.carbondata.format'")
     sql(
-      "LOAD DATA LOCAL INPATH '" + currentDirectory +
-      "/src/test/resources/TestData3.csv' INTO table testretention3 " +
+      "LOAD DATA LOCAL INPATH \"" + getPath() +
+      "TestData3.csv\" INTO table testretention3 " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId," +
       "AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate')")
     sql(
-      "LOAD DATA LOCAL INPATH '" + currentDirectory +
-      "/src/test/resources/TestData3.csv' INTO table testretention3 " +
+      "LOAD DATA LOCAL INPATH \"" + getPath() +
+      "TestData3.csv\" INTO table testretention3 " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId," +
       "AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate')")
     sql("delete segment  0 from table testretention3")
@@ -2712,13 +2717,13 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "deviceInformationId" +
       " INT) stored by 'org.apache.carbondata.format'")
     sql(
-      "LOAD DATA LOCAL INPATH '" + currentDirectory +
-      "/src/test/resources/TestData3.csv' INTO table testretention5 " +
+      "LOAD DATA LOCAL INPATH \"" + getPath() +
+      "TestData3.csv\" INTO table testretention5 " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId," +
       "AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate')")
     sql(
-      "LOAD DATA LOCAL INPATH '" + currentDirectory +
-      "/src/test/resources/TestData3.csv' INTO table testretention5 " +
+      "LOAD DATA LOCAL INPATH \"" + getPath() +
+      "TestData3.csv\" INTO table testretention5 " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId," +
       "AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate')")
     sql("delete segment 0,1 from table testretention5")
@@ -2737,8 +2742,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "deviceInformationId" +
       " INT) stored by 'org.apache.carbondata.format'")
     sql(
-      "LOAD DATA LOCAL INPATH '" + currentDirectory +
-      "/src/test/resources/TestData3.csv' INTO table testretention6 " +
+      "LOAD DATA LOCAL INPATH \"" + getPath() +
+      "TestData3.csv\" INTO table testretention6 " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId," +
       "AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate')")
     sql("delete segment 0 from table testretention6")
@@ -2758,8 +2763,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "deviceInformationId" +
       " INT) stored by 'org.apache.carbondata.format'")
     sql(
-      "LOAD DATA LOCAL INPATH '" + currentDirectory +
-      "/src/test/resources/TestData3.csv' INTO table testretention9 " +
+      "LOAD DATA LOCAL INPATH \"" + getPath() +
+      "TestData3.csv\" INTO table testretention9 " +
       "OPTIONS('DELIMITER'= ',','QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId," +
       "AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate')")
     sql(
@@ -2778,8 +2783,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "create table table_restructure63  (a0 STRING,b0 INT) stored by 'org.apache.carbondata" +
       ".format'")
     sql(
-      "LOAD DATA LOCAL INPATH '" + currentDirectory +
-      "/src/test/resources/restructure_table.csv' INTO table " +
+      "LOAD DATA LOCAL INPATH \"" + getPath() +
+      "restructure_table.csv\" INTO table " +
       "table_restructure63 OPTIONS('DELIMITER'= ',','QUOTECHAR'=  '\"', 'FILEHEADER'= 'a0,b0')")
     sql("delete segment 0 from table table_RESTRUCTURE63")
     checkAnswer(
@@ -2819,8 +2824,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "  " +
       "decimal) stored by 'org.apache.carbondata.format'")
     sql(
-      "LOAD DATA LOCAL INPATH '" + currentDirectory +
-      "/src/test/resources/100.csv' INTO table makamraghutest002 OPTIONS" +
+      "LOAD DATA LOCAL INPATH \"" + getPath() +
+      "100.csv\" INTO table makamraghutest002 OPTIONS" +
       "('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,MAC," +
       "deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,    " +
       "series, " +
@@ -2839,8 +2844,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions," +
       "Latest_operatorId,gamePointId,gamePointDescription')")
     sql(
-      "LOAD DATA LOCAL INPATH '" + currentDirectory +
-      "/src/test/resources/100.csv' INTO table makamraghutest002 OPTIONS" +
+      "LOAD DATA LOCAL INPATH \"" + getPath() +
+      "100.csv\" INTO table makamraghutest002 OPTIONS" +
       "('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,MAC," +
       "deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,    " +
       "series, " +
@@ -2859,8 +2864,8 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions," +
       "Latest_operatorId,gamePointId,gamePointDescription')")
     sql(
-      "LOAD DATA LOCAL INPATH '" + currentDirectory +
-      "/src/test/resources/100.csv' INTO table makamraghutest002 OPTIONS" +
+      "LOAD DATA LOCAL INPATH \"" + getPath() +
+      "100.csv\" INTO table makamraghutest002 OPTIONS" +
       "('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,MAC," +
       "deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,    " +
       "series, " +
@@ -2894,14 +2899,14 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "Activecity string,productionDate timestamp) " +
       "stored by 'org.apache.carbondata.format'")
     sql(
-      "LOAD DATA LOCAL INPATH '" + currentDirectory +
-      "/src/test/resources/TestData3.csv' INTO table test60 OPTIONS" +
+      "LOAD DATA LOCAL INPATH \"" + getPath() +
+      "TestData3.csv\" INTO table test60 OPTIONS" +
       "('DELIMITER'= ',','QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize," +
       "gamePointId," +
       "channelsId,ActiveCountry,Activecity,productionDate')")
     sql(
-      "LOAD DATA LOCAL INPATH '" + currentDirectory +
-      "/src/test/resources/TestData3.csv' INTO table test60 OPTIONS" +
+      "LOAD DATA LOCAL INPATH \"" + getPath() +
+      "TestData3.csv\" INTO table test60 OPTIONS" +
       "('DELIMITER'= ',','QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize," +
       "gamePointId," +
       "channelsId,ActiveCountry,Activecity,productionDate')")
@@ -4998,17 +5003,17 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
   //Test-16
   test("select imei, Latest_DAY+ 10 as a  from Carbon_automation_test6", NonRunningTests) {
     checkAnswer(sql("select imei, Latest_DAY+ 10 as a  from Carbon_automation_test6"),
-      sql("select imei, Latest_DAY+ 10 as a  from Carbon_automation_test6_hive"));
+      sql("select imei, Latest_DAY+ 10 as a  from Carbon_automation_test6_hive"))
   }
   //Test-17
   test("select imei, gamePointId+ 10 as Total from Carbon_automation_test6", NonRunningTests) {
     checkAnswer(sql("select imei, gamePointId+ 10 as Total from Carbon_automation_test6"),
-      sql("select imei, gamePointId+ 10 as Total from Carbon_automation_test6_hive"));
+      sql("select imei, gamePointId+ 10 as Total from Carbon_automation_test6_hive"))
   }
   //Test-18
   test("select imei, modelId+ 10 Total from Carbon_automation_test6 ", NonRunningTests) {
     checkAnswer(sql("select imei, modelId+ 10 Total from Carbon_automation_test6 "),
-      sql("select imei, modelId+ 10 Total from Carbon_automation_test6_hive "));
+      sql("select imei, modelId+ 10 Total from Carbon_automation_test6_hive "))
   }
   //Test-19
 
@@ -5017,7 +5022,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select imei, gamePointId+contractNumber as a  from " +
                     "Carbon_automation_test6 "),
       sql("select imei, gamePointId+contractNumber as a  from " +
-          "Carbon_automation_test6_hive "));
+          "Carbon_automation_test6_hive "))
   }
 
   //Test-20
@@ -5026,7 +5031,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql(
       "select imei, deviceInformationId+gamePointId as Total from Carbon_automation_test6"),
       sql(
-        "select imei, deviceInformationId+gamePointId as Total from Carbon_automation_test6_hive"));
+        "select imei, deviceInformationId+gamePointId as Total from Carbon_automation_test6_hive"))
   }
   //Test-21
   test("select imei, deviceInformationId+deviceInformationId Total from " +
@@ -5036,7 +5041,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
       "select imei, deviceInformationId+deviceInformationId Total from Carbon_automation_test6"),
       sql(
         "select imei, deviceInformationId+deviceInformationId Total from " +
-        "Carbon_automation_test6_hive"));
+        "Carbon_automation_test6_hive"))
   }
 
   test(
@@ -5053,7 +5058,7 @@ class AllDataTypesTestCase6 extends QueryTest with BeforeAndAfterAll {
     )
 
     //     checkAnswer(sql("select percentile(deviceInformationId,array(0,0.2,0.3,1))  as  a
-    // from Carbon_automation_test6"),"TC_112.csv");
+    // from Carbon_automation_test6"),"TC_112.csv")
   }
 
 
