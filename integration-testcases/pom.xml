@@ -108,15 +108,15 @@
     <profile>
       <id>hadoop</id>
       <properties>
-        <file-source>hdfs://localhost:54310/</file-source>
+        <base-url>hdfs://localhost:54310/</base-url>
+        <file-source>${base-url}</file-source>
       </properties>
     </profile>
     <profile>
       <id>local</id>
       <properties>
-        <file-source>
-          ${basedir}/src/test/resources/
-        </file-source>
+        <base-url>${basedir}/src/test/resources/</base-url>
+        <file-source>${base-url}</file-source>
       </properties>
     </profile>
   </profiles>
