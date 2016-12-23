@@ -41,7 +41,6 @@ class AllDataTypesTestCase5 extends QueryTest with BeforeAndAfterAll {
     val properties = new java.util.Properties()
     properties.load(filesystem)
     val path: String = properties.getProperty("file-source")
-    println(s"++++++++++++++++++ \n $path")
 
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
