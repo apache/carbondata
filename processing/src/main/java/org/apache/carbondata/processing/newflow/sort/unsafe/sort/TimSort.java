@@ -26,17 +26,17 @@ import org.apache.spark.util.collection.SortDataFormat;
  * A port of the Apache Spark's TimSort and they originally ported from Android TimSort class,
  * which utilizes a "stable, adaptive, iterative mergesort."
  * See the method comment on sort() for more details.
- *
+ * <p>
  * This has been kept in Java with the original style in order to match very closely with the
  * Android source code, and thus be easy to verify correctness. The class is package private. We put
  * a simple Scala wrapper {@link org.apache.spark.util.collection.Sorter}, which is available to
  * package org.apache.spark.
- *
+ * <p>
  * The purpose of the port is to generalize the interface to the sort to accept input data formats
  * besides simple arrays where every element is sorted individually. For instance, the AppendOnlyMap
  * uses this to sort an Array with alternating elements of the form [key, value, key, value].
  * This generalization comes with minimal overhead -- see SortDataFormat for more information.
- *
+ * <p>
  * We allow key reuse to prevent creating many key objects -- see SortDataFormat.
  *
  * @see SortDataFormat
@@ -48,13 +48,13 @@ public class TimSort<K, Buffer> {
    * This is the minimum sized sequence that will be merged.  Shorter
    * sequences will be lengthened by calling binarySort.  If the entire
    * array is less than this length, no merges will be performed.
-   *
+   * <p>
    * This constant should be a power of two.  It was 64 in Tim Peter's C
    * implementation, but 32 was empirically determined to work better in
    * this implementation.  In the unlikely event that you set this constant
    * to be a number that's not a power of two, you'll need to change the
    * minRunLength computation.
-   *
+   * <p>
    * If you decrease this constant, you must change the stackLen
    * computation in the TimSort constructor, or you risk an
    * ArrayOutOfBounds exception.  See listsort.txt for a discussion
@@ -77,24 +77,24 @@ public class TimSort<K, Buffer> {
    * runs O(n log n) time (worst case).  In the worst case, this sort requires
    * temporary storage space for n/2 object references; in the best case,
    * it requires only a small constant amount of space.
-   *
+   * <p>
    * This implementation was adapted from Tim Peters's list sort for
    * Python, which is described in detail here:
-   *
-   *   http://svn.python.org/projects/python/trunk/Objects/listsort.txt
-   *
+   * <p>
+   * http://svn.python.org/projects/python/trunk/Objects/listsort.txt
+   * <p>
    * Tim's C code may be found here:
-   *
-   *   http://svn.python.org/projects/python/trunk/Objects/listobject.c
-   *
+   * <p>
+   * http://svn.python.org/projects/python/trunk/Objects/listobject.c
+   * <p>
    * The underlying techniques are described in this paper (and may have
    * even earlier origins):
-   *
-   *  "Optimistic Sorting and Information Theoretic Complexity"
-   *  Peter McIlroy
-   *  SODA (Fourth Annual ACM-SIAM Symposium on Discrete Algorithms),
-   *  pp 467-474, Austin, Texas, 25-27 January 1993.
-   *
+   * <p>
+   * "Optimistic Sorting and Information Theoretic Complexity"
+   * Peter McIlroy
+   * SODA (Fourth Annual ACM-SIAM Symposium on Discrete Algorithms),
+   * pp 467-474, Austin, Texas, 25-27 January 1993.
+   * <p>
    * While the API to this class consists solely of static methods, it is
    * (privately) instantiable; a TimSort instance holds the state of an ongoing
    * sort, assuming the input array is large enough to warrant the full-blown
@@ -105,9 +105,10 @@ public class TimSort<K, Buffer> {
   public void sort(Buffer a, int lo, int hi, Comparator<? super K> c) {
     assert c != null;
 
-    int nRemaining  = hi - lo;
-    if (nRemaining < 2)
+    int nRemaining = hi - lo;
+    if (nRemaining < 2) {
       return;  // Arrays of size 0 and 1 are always sorted
+    }
 
     // If array is small, do a "mini-TimSort" with no merges
     if (nRemaining < MIN_MERGE) {
@@ -154,30 +155,31 @@ public class TimSort<K, Buffer> {
    * insertion sort.  This is the best method for sorting small numbers
    * of elements.  It requires O(n log n) compares, but O(n^2) data
    * movement (worst case).
-   *
+   * <p>
    * If the initial part of the specified range is already sorted,
    * this method can take advantage of it: the method assumes that the
    * elements from index {@code lo}, inclusive, to {@code start},
    * exclusive are already sorted.
    *
-   * @param a the array in which a range is to be sorted
-   * @param lo the index of the first element in the range to be sorted
-   * @param hi the index after the last element in the range to be sorted
+   * @param a     the array in which a range is to be sorted
+   * @param lo    the index of the first element in the range to be sorted
+   * @param hi    the index after the last element in the range to be sorted
    * @param start the index of the first element in the range that is
-   *        not already known to be sorted ({@code lo <= start <= hi})
-   * @param c comparator to used for the sort
+   *              not already known to be sorted ({@code lo <= start <= hi})
+   * @param c     comparator to used for the sort
    */
   @SuppressWarnings("fallthrough")
   private void binarySort(Buffer a, int lo, int hi, int start, Comparator<? super K> c) {
     assert lo <= start && start <= hi;
-    if (start == lo)
+    if (start == lo) {
       start++;
+    }
 
     K key0 = s.newKey();
     K key1 = s.newKey();
 
     Buffer pivotStore = s.allocate(1);
-    for ( ; start < hi; start++) {
+    for (; start < hi; start++) {
       s.copyElement(a, start, pivotStore, 0);
       K pivot = s.getKey(pivotStore, 0, key0);
 
@@ -192,10 +194,11 @@ public class TimSort<K, Buffer> {
        */
       while (left < right) {
         int mid = (left + right) >>> 1;
-        if (c.compare(pivot, s.getKey(a, mid, key1)) < 0)
+        if (c.compare(pivot, s.getKey(a, mid, key1)) < 0) {
           right = mid;
-        else
+        } else {
           left = mid + 1;
+        }
       }
       assert left == right;
 
@@ -209,10 +212,15 @@ public class TimSort<K, Buffer> {
       int n = start - left;  // The number of elements to move
       // Switch is just an optimization for arraycopy in default case
       switch (n) {
-        case 2:  s.copyElement(a, left + 1, a, left + 2);
-        case 1:  s.copyElement(a, left, a, left + 1);
+        case 2:
+          s.copyElement(a, left + 1, a, left + 2);
+          s.copyElement(a, left, a, left + 1);
           break;
-        default: s.copyRange(a, left, a, left + 1, n);
+        case 1:
+          s.copyElement(a, left, a, left + 1);
+          break;
+        default:
+          s.copyRange(a, left, a, left + 1, n);
       }
       s.copyElement(pivotStore, 0, a, left);
     }
@@ -222,44 +230,47 @@ public class TimSort<K, Buffer> {
    * Returns the length of the run beginning at the specified position in
    * the specified array and reverses the run if it is descending (ensuring
    * that the run will always be ascending when the method returns).
-   *
+   * <p>
    * A run is the longest ascending sequence with:
-   *
-   *    a[lo] <= a[lo + 1] <= a[lo + 2] <= ...
-   *
+   * <p>
+   * a[lo] <= a[lo + 1] <= a[lo + 2] <= ...
+   * <p>
    * or the longest descending sequence with:
-   *
-   *    a[lo] >  a[lo + 1] >  a[lo + 2] >  ...
-   *
+   * <p>
+   * a[lo] >  a[lo + 1] >  a[lo + 2] >  ...
+   * <p>
    * For its intended use in a stable mergesort, the strictness of the
    * definition of "descending" is needed so that the call can safely
    * reverse a descending sequence without violating stability.
    *
-   * @param a the array in which a run is to be counted and possibly reversed
+   * @param a  the array in which a run is to be counted and possibly reversed
    * @param lo index of the first element in the run
    * @param hi index after the last element that may be contained in the run.
-  It is required that {@code lo < hi}.
-   * @param c the comparator to used for the sort
-   * @return  the length of the run beginning at the specified position in
-   *          the specified array
+   *           It is required that {@code lo < hi}.
+   * @param c  the comparator to used for the sort
+   * @return the length of the run beginning at the specified position in
+   * the specified array
    */
   private int countRunAndMakeAscending(Buffer a, int lo, int hi, Comparator<? super K> c) {
     assert lo < hi;
     int runHi = lo + 1;
-    if (runHi == hi)
+    if (runHi == hi) {
       return 1;
+    }
 
     K key0 = s.newKey();
     K key1 = s.newKey();
 
     // Find end of run, and reverse range if descending
     if (c.compare(s.getKey(a, runHi++, key0), s.getKey(a, lo, key1)) < 0) { // Descending
-      while (runHi < hi && c.compare(s.getKey(a, runHi, key0), s.getKey(a, runHi - 1, key1)) < 0)
+      while (runHi < hi && c.compare(s.getKey(a, runHi, key0), s.getKey(a, runHi - 1, key1)) < 0) {
         runHi++;
+      }
       reverseRange(a, lo, runHi);
     } else {                              // Ascending
-      while (runHi < hi && c.compare(s.getKey(a, runHi, key0), s.getKey(a, runHi - 1, key1)) >= 0)
+      while (runHi < hi && c.compare(s.getKey(a, runHi, key0), s.getKey(a, runHi - 1, key1)) >= 0) {
         runHi++;
+      }
     }
 
     return runHi - lo;
@@ -268,7 +279,7 @@ public class TimSort<K, Buffer> {
   /**
    * Reverse the specified range of the specified array.
    *
-   * @param a the array in which a range is to be reversed
+   * @param a  the array in which a range is to be reversed
    * @param lo the index of the first element in the range to be reversed
    * @param hi the index after the last element in the range to be reversed
    */
@@ -285,14 +296,14 @@ public class TimSort<K, Buffer> {
    * Returns the minimum acceptable run length for an array of the specified
    * length. Natural runs shorter than this will be extended with
    * {@link #binarySort}.
-   *
+   * <p>
    * Roughly speaking, the computation is:
-   *
-   *  If n < MIN_MERGE, return n (it's too small to bother with fancy stuff).
-   *  Else if n is an exact power of 2, return MIN_MERGE/2.
-   *  Else return an int k, MIN_MERGE/2 <= k <= MIN_MERGE, such that n/k
-   *   is close to, but strictly less than, an exact power of 2.
-   *
+   * <p>
+   * If n < MIN_MERGE, return n (it's too small to bother with fancy stuff).
+   * Else if n is an exact power of 2, return MIN_MERGE/2.
+   * Else return an int k, MIN_MERGE/2 <= k <= MIN_MERGE, such that n/k
+   * is close to, but strictly less than, an exact power of 2.
+   * <p>
    * For the rationale, see listsort.txt.
    *
    * @param n the length of the array to be sorted
@@ -329,7 +340,7 @@ public class TimSort<K, Buffer> {
      * When we get into galloping mode, we stay there until both runs win less
      * often than MIN_GALLOP consecutive times.
      */
-    private static final int  MIN_GALLOP = 7;
+    private static final int MIN_GALLOP = 7;
 
     /**
      * This controls when we get *into* galloping mode.  It is initialized
@@ -341,7 +352,7 @@ public class TimSort<K, Buffer> {
     /**
      * Maximum initial size of tmp array, which is used for merging.  The array
      * can grow to accommodate demand.
-     *
+     * <p>
      * Unlike Tim's original C version, we do not allocate this much storage
      * when sorting smaller arrays.  This change was required for performance.
      */
@@ -361,9 +372,9 @@ public class TimSort<K, Buffer> {
      * A stack of pending runs yet to be merged.  Run i starts at
      * address base[i] and extends for len[i] elements.  It's always
      * true (so long as the indices are in bounds) that:
-     *
-     *     runBase[i] + runLen[i] == runBase[i + 1]
-     *
+     * <p>
+     * runBase[i] + runLen[i] == runBase[i + 1]
+     * <p>
      * so we could cut the storage for this, but it's a minor amount,
      * and keeping all the info explicit simplifies the code.
      */
@@ -396,9 +407,9 @@ public class TimSort<K, Buffer> {
        * computation below must be changed if MIN_MERGE is decreased.  See
        * the MIN_MERGE declaration above for more information.
        */
-      int stackLen = (len <    120  ?  5 :
-                      len <   1542  ? 10 :
-                      len < 119151  ? 19 : 40);
+      int stackLen = (len < 120 ? 5 :
+              len < 1542 ? 10 :
+                      len < 119151 ? 19 : 40);
       runBase = new int[stackLen];
       runLen = new int[stackLen];
     }
@@ -418,10 +429,10 @@ public class TimSort<K, Buffer> {
     /**
      * Examines the stack of runs waiting to be merged and merges adjacent runs
      * until the stack invariants are reestablished:
-     *
-     *     1. runLen[i - 3] > runLen[i - 2] + runLen[i - 1]
-     *     2. runLen[i - 2] > runLen[i - 1]
-     *
+     * <p>
+     * 1. runLen[i - 3] > runLen[i - 2] + runLen[i - 1]
+     * 2. runLen[i - 2] > runLen[i - 1]
+     * <p>
      * This method is called each time a new run is pushed onto the stack,
      * so the invariants are guaranteed to hold for i < stackSize upon
      * entry to the method.
@@ -429,10 +440,11 @@ public class TimSort<K, Buffer> {
     private void mergeCollapse() {
       while (stackSize > 1) {
         int n = stackSize - 2;
-        if ( (n >= 1 && runLen[n-1] <= runLen[n] + runLen[n+1])
-          || (n >= 2 && runLen[n-2] <= runLen[n] + runLen[n-1])) {
-          if (runLen[n - 1] < runLen[n + 1])
+        if ((n >= 1 && runLen[n - 1] <= runLen[n] + runLen[n + 1])
+                || (n >= 2 && runLen[n - 2] <= runLen[n] + runLen[n - 1])) {
+          if (runLen[n - 1] < runLen[n + 1]) {
             n--;
+          }
         } else if (runLen[n] > runLen[n + 1]) {
           break; // Invariant is established
         }
@@ -447,8 +459,9 @@ public class TimSort<K, Buffer> {
     private void mergeForceCollapse() {
       while (stackSize > 1) {
         int n = stackSize - 2;
-        if (n > 0 && runLen[n - 1] < runLen[n + 1])
+        if (n > 0 && runLen[n - 1] < runLen[n + 1]) {
           n--;
+        }
         mergeAt(n);
       }
     }
@@ -494,8 +507,9 @@ public class TimSort<K, Buffer> {
       assert k >= 0;
       base1 += k;
       len1 -= k;
-      if (len1 == 0)
+      if (len1 == 0) {
         return;
+      }
 
       /*
        * Find where the last element of run1 goes in run2. Subsequent elements
@@ -503,14 +517,16 @@ public class TimSort<K, Buffer> {
        */
       len2 = gallopLeft(s.getKey(a, base1 + len1 - 1, key0), a, base2, len2, len2 - 1, c);
       assert len2 >= 0;
-      if (len2 == 0)
+      if (len2 == 0) {
         return;
+      }
 
       // Merge remaining runs, using tmp array with min(len1, len2) elements
-      if (len1 <= len2)
+      if (len1 <= len2) {
         mergeLo(base1, len1, base2, len2);
-      else
+      } else {
         mergeHi(base1, len1, base2, len2);
+      }
     }
 
     /**
@@ -518,18 +534,18 @@ public class TimSort<K, Buffer> {
      * specified sorted range; if the range contains an element equal to key,
      * returns the index of the leftmost equal element.
      *
-     * @param key the key whose insertion point to search for
-     * @param a the array in which to search
+     * @param key  the key whose insertion point to search for
+     * @param a    the array in which to search
      * @param base the index of the first element in the range
-     * @param len the length of the range; must be > 0
+     * @param len  the length of the range; must be > 0
      * @param hint the index at which to begin the search, 0 <= hint < n.
-     *     The closer hint is to the result, the faster this method will run.
-     * @param c the comparator used to order the range, and to search
+     *             The closer hint is to the result, the faster this method will run.
+     * @param c    the comparator used to order the range, and to search
      * @return the int k,  0 <= k <= n such that a[b + k - 1] < key <= a[b + k],
-     *    pretending that a[b - 1] is minus infinity and a[b + n] is infinity.
-     *    In other words, key belongs at index b + k; or in other words,
-     *    the first k elements of a should precede key, and the last n - k
-     *    should follow it.
+     * pretending that a[b - 1] is minus infinity and a[b + n] is infinity.
+     * In other words, key belongs at index b + k; or in other words,
+     * the first k elements of a should precede key, and the last n - k
+     * should follow it.
      */
     private int gallopLeft(K key, Buffer a, int base, int len, int hint, Comparator<? super K> c) {
       assert len > 0 && hint >= 0 && hint < len;
@@ -543,11 +559,13 @@ public class TimSort<K, Buffer> {
         while (ofs < maxOfs && c.compare(key, s.getKey(a, base + hint + ofs, key0)) > 0) {
           lastOfs = ofs;
           ofs = (ofs << 1) + 1;
-          if (ofs <= 0)   // int overflow
+          if (ofs <= 0) {  // int overflow
             ofs = maxOfs;
+          }
         }
-        if (ofs > maxOfs)
+        if (ofs > maxOfs) {
           ofs = maxOfs;
+        }
 
         // Make offsets relative to base
         lastOfs += hint;
@@ -558,11 +576,13 @@ public class TimSort<K, Buffer> {
         while (ofs < maxOfs && c.compare(key, s.getKey(a, base + hint - ofs, key0)) <= 0) {
           lastOfs = ofs;
           ofs = (ofs << 1) + 1;
-          if (ofs <= 0)   // int overflow
+          if (ofs <= 0) {  // int overflow
             ofs = maxOfs;
+          }
         }
-        if (ofs > maxOfs)
+        if (ofs > maxOfs) {
           ofs = maxOfs;
+        }
 
         // Make offsets relative to base
         int tmp = lastOfs;
@@ -580,10 +600,11 @@ public class TimSort<K, Buffer> {
       while (lastOfs < ofs) {
         int m = lastOfs + ((ofs - lastOfs) >>> 1);
 
-        if (c.compare(key, s.getKey(a, base + m, key0)) > 0)
+        if (c.compare(key, s.getKey(a, base + m, key0)) > 0) {
           lastOfs = m + 1;  // a[base + m] < key
-        else
+        } else {
           ofs = m;          // key <= a[base + m]
+        }
       }
       assert lastOfs == ofs;    // so a[base + ofs - 1] < key <= a[base + ofs]
       return ofs;
@@ -593,13 +614,13 @@ public class TimSort<K, Buffer> {
      * Like gallopLeft, except that if the range contains an element equal to
      * key, gallopRight returns the index after the rightmost equal element.
      *
-     * @param key the key whose insertion point to search for
-     * @param a the array in which to search
+     * @param key  the key whose insertion point to search for
+     * @param a    the array in which to search
      * @param base the index of the first element in the range
-     * @param len the length of the range; must be > 0
+     * @param len  the length of the range; must be > 0
      * @param hint the index at which to begin the search, 0 <= hint < n.
-     *     The closer hint is to the result, the faster this method will run.
-     * @param c the comparator used to order the range, and to search
+     *             The closer hint is to the result, the faster this method will run.
+     * @param c    the comparator used to order the range, and to search
      * @return the int k,  0 <= k <= n such that a[b + k - 1] <= key < a[b + k]
      */
     private int gallopRight(K key, Buffer a, int base, int len, int hint, Comparator<? super K> c) {
@@ -615,11 +636,13 @@ public class TimSort<K, Buffer> {
         while (ofs < maxOfs && c.compare(key, s.getKey(a, base + hint - ofs, key1)) < 0) {
           lastOfs = ofs;
           ofs = (ofs << 1) + 1;
-          if (ofs <= 0)   // int overflow
+          if (ofs <= 0) {  // int overflow
             ofs = maxOfs;
+          }
         }
-        if (ofs > maxOfs)
+        if (ofs > maxOfs) {
           ofs = maxOfs;
+        }
 
         // Make offsets relative to b
         int tmp = lastOfs;
@@ -631,11 +654,13 @@ public class TimSort<K, Buffer> {
         while (ofs < maxOfs && c.compare(key, s.getKey(a, base + hint + ofs, key1)) >= 0) {
           lastOfs = ofs;
           ofs = (ofs << 1) + 1;
-          if (ofs <= 0)   // int overflow
+          if (ofs <= 0) {  // int overflow
             ofs = maxOfs;
+          }
         }
-        if (ofs > maxOfs)
+        if (ofs > maxOfs) {
           ofs = maxOfs;
+        }
 
         // Make offsets relative to b
         lastOfs += hint;
@@ -652,10 +677,11 @@ public class TimSort<K, Buffer> {
       while (lastOfs < ofs) {
         int m = lastOfs + ((ofs - lastOfs) >>> 1);
 
-        if (c.compare(key, s.getKey(a, base + m, key1)) < 0)
+        if (c.compare(key, s.getKey(a, base + m, key1)) < 0) {
           ofs = m;          // key < a[b + m]
-        else
+        } else {
           lastOfs = m + 1;  // a[b + m] <= key
+        }
       }
       assert lastOfs == ofs;    // so a[b + ofs - 1] <= key < a[b + ofs]
       return ofs;
@@ -666,7 +692,7 @@ public class TimSort<K, Buffer> {
      * element of the first run must be greater than the first element of the
      * second run (a[base1] > a[base2]), and the last element of the first run
      * (a[base1 + len1-1]) must be greater than all elements of the second run.
-     *
+     * <p>
      * For performance, this method should be called only when len1 <= len2;
      * its twin, mergeHi should be called if len1 >= len2.  (Either method
      * may be called if len1 == len2.)
@@ -674,7 +700,7 @@ public class TimSort<K, Buffer> {
      * @param base1 index of first element in first run to be merged
      * @param len1  length of first run to be merged (must be > 0)
      * @param base2 index of first element in second run to be merged
-     *        (must be aBase + aLen)
+     *              (must be aBase + aLen)
      * @param len2  length of second run to be merged (must be > 0)
      */
     private void mergeLo(int base1, int len1, int base2, int len2) {
@@ -721,14 +747,16 @@ public class TimSort<K, Buffer> {
             s.copyElement(a, cursor2++, a, dest++);
             count2++;
             count1 = 0;
-            if (--len2 == 0)
+            if (--len2 == 0) {
               break outer;
+            }
           } else {
             s.copyElement(tmp, cursor1++, a, dest++);
             count1++;
             count2 = 0;
-            if (--len1 == 1)
+            if (--len1 == 1) {
               break outer;
+            }
           }
         } while ((count1 | count2) < minGallop);
 
@@ -745,12 +773,14 @@ public class TimSort<K, Buffer> {
             dest += count1;
             cursor1 += count1;
             len1 -= count1;
-            if (len1 <= 1) // len1 == 1 || len1 == 0
+            if (len1 <= 1) { // len1 == 1 || len1 == 0
               break outer;
+            }
           }
           s.copyElement(a, cursor2++, a, dest++);
-          if (--len2 == 0)
+          if (--len2 == 0) {
             break outer;
+          }
 
           count2 = gallopLeft(s.getKey(tmp, cursor1, key0), a, cursor2, len2, 0, c);
           if (count2 != 0) {
@@ -758,16 +788,19 @@ public class TimSort<K, Buffer> {
             dest += count2;
             cursor2 += count2;
             len2 -= count2;
-            if (len2 == 0)
+            if (len2 == 0) {
               break outer;
+            }
           }
           s.copyElement(tmp, cursor1++, a, dest++);
-          if (--len1 == 1)
+          if (--len1 == 1) {
             break outer;
+          }
           minGallop--;
         } while (count1 >= MIN_GALLOP | count2 >= MIN_GALLOP);
-        if (minGallop < 0)
+        if (minGallop < 0) {
           minGallop = 0;
+        }
         minGallop += 2;  // Penalize for leaving gallop mode
       }  // End of "outer" loop
       this.minGallop = minGallop < 1 ? 1 : minGallop;  // Write back to field
@@ -778,7 +811,7 @@ public class TimSort<K, Buffer> {
         s.copyElement(tmp, cursor1, a, dest + len2); //  Last elt of run 1 to end of merge
       } else if (len1 == 0) {
         throw new IllegalArgumentException(
-            "Comparison method violates its general contract!");
+                "Comparison method violates its general contract!");
       } else {
         assert len2 == 0;
         assert len1 > 1;
@@ -794,7 +827,7 @@ public class TimSort<K, Buffer> {
      * @param base1 index of first element in first run to be merged
      * @param len1  length of first run to be merged (must be > 0)
      * @param base2 index of first element in second run to be merged
-     *        (must be aBase + aLen)
+     *              (must be aBase + aLen)
      * @param len2  length of second run to be merged (must be > 0)
      */
     private void mergeHi(int base1, int len1, int base2, int len2) {
@@ -843,14 +876,16 @@ public class TimSort<K, Buffer> {
             s.copyElement(a, cursor1--, a, dest--);
             count1++;
             count2 = 0;
-            if (--len1 == 0)
+            if (--len1 == 0) {
               break outer;
+            }
           } else {
             s.copyElement(tmp, cursor2--, a, dest--);
             count2++;
             count1 = 0;
-            if (--len2 == 1)
+            if (--len2 == 1) {
               break outer;
+            }
           }
         } while ((count1 | count2) < minGallop);
 
@@ -867,12 +902,14 @@ public class TimSort<K, Buffer> {
             cursor1 -= count1;
             len1 -= count1;
             s.copyRange(a, cursor1 + 1, a, dest + 1, count1);
-            if (len1 == 0)
+            if (len1 == 0) {
               break outer;
+            }
           }
           s.copyElement(tmp, cursor2--, a, dest--);
-          if (--len2 == 1)
+          if (--len2 == 1) {
             break outer;
+          }
 
           count2 = len2 - gallopLeft(s.getKey(a, cursor1, key0), tmp, 0, len2, len2 - 1, c);
           if (count2 != 0) {
@@ -880,16 +917,19 @@ public class TimSort<K, Buffer> {
             cursor2 -= count2;
             len2 -= count2;
             s.copyRange(tmp, cursor2 + 1, a, dest + 1, count2);
-            if (len2 <= 1)  // len2 == 1 || len2 == 0
+            if (len2 <= 1) { // len2 == 1 || len2 == 0
               break outer;
+            }
           }
           s.copyElement(a, cursor1--, a, dest--);
-          if (--len1 == 0)
+          if (--len1 == 0) {
             break outer;
+          }
           minGallop--;
         } while (count1 >= MIN_GALLOP | count2 >= MIN_GALLOP);
-        if (minGallop < 0)
+        if (minGallop < 0) {
           minGallop = 0;
+        }
         minGallop += 2;  // Penalize for leaving gallop mode
       }  // End of "outer" loop
       this.minGallop = minGallop < 1 ? 1 : minGallop;  // Write back to field
@@ -902,7 +942,7 @@ public class TimSort<K, Buffer> {
         s.copyElement(tmp, cursor2, a, dest); // Move first elt of run2 to front of merge
       } else if (len2 == 0) {
         throw new IllegalArgumentException(
-            "Comparison method violates its general contract!");
+                "Comparison method violates its general contract!");
       } else {
         assert len1 == 0;
         assert len2 > 0;
@@ -929,10 +969,11 @@ public class TimSort<K, Buffer> {
         newSize |= newSize >> 16;
         newSize++;
 
-        if (newSize < 0) // Not bloody likely!
+        if (newSize < 0) { // Not bloody likely!
           newSize = minCapacity;
-        else
+        } else {
           newSize = Math.min(newSize, aLength >>> 1);
+        }
 
         tmp = s.allocate(newSize);
         tmpLength = newSize;
