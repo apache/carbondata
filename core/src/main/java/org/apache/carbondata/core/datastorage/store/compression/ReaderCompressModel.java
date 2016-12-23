@@ -26,7 +26,7 @@ import org.apache.carbondata.core.util.ValueCompressionUtil;
 public class ReaderCompressModel {
   private ValueEncoderMeta valueEncoderMeta;
 
-  private ValueCompressionUtil.DataType changedDataType;
+  private ValueCompressionUtil.DataType convertedDataType;
 
   private ValueCompressonHolder.UnCompressValue unCompressValues;
 
@@ -34,12 +34,12 @@ public class ReaderCompressModel {
     this.valueEncoderMeta = valueEncoderMeta;
   }
 
-  public ValueCompressionUtil.DataType getChangedDataType() {
-    return changedDataType;
+  public ValueCompressionUtil.DataType getConvertedDataType() {
+    return convertedDataType;
   }
 
-  public void setChangedDataType(ValueCompressionUtil.DataType changedDataType) {
-    this.changedDataType = changedDataType;
+  public void setConvertedDataType(ValueCompressionUtil.DataType convertedDataType) {
+    this.convertedDataType = convertedDataType;
   }
 
   public Object getMaxValue() {

@@ -219,8 +219,8 @@ public final class ValueCompressionUtil {
     actualDataTypes[0] = leftCompressionFinder.getActualDataType();
     actualDataTypes[1] = rightCompressionFinder.getActualDataType();
 
-    changedDataTypes[0] = leftCompressionFinder.getChangedDataType();
-    changedDataTypes[1] = rightCompressionFinder.getChangedDataType();
+    changedDataTypes[0] = leftCompressionFinder.getConvertedDataType();
+    changedDataTypes[1] = rightCompressionFinder.getConvertedDataType();
 
     CompressionFinder bigdCompressionFinder = new BigDecimalCompressionFinder(
         compressionTypes, actualDataTypes, changedDataTypes, measureStoreType);
@@ -271,7 +271,7 @@ public final class ValueCompressionUtil {
 
   /**
    * It returns Compressor for given datatype
-   * @param msrType
+   * @param compressorFinder
    * @return compressor based on actualdatatype
    */
   public static ValueCompressor getValueCompressor(CompressionFinder compressorFinder) {
@@ -303,9 +303,9 @@ public final class ValueCompressionUtil {
   private static UnCompressValue getUncompressedValue(
       BigDecimalCompressionFinder compressionFinder) {
     UnCompressValue leftPart = getUncompressedValue(compressionFinder.getLeftCompType(),
-        compressionFinder.getLeftActualDataType(), compressionFinder.getLeftChangedDataType());
+        compressionFinder.getLeftActualDataType(), compressionFinder.getLeftConvertedDataType());
     UnCompressValue rightPart = getUncompressedValue(compressionFinder.getRightCompType(),
-        compressionFinder.getRightActualDataType(), compressionFinder.getRightChangedDataType());
+        compressionFinder.getRightActualDataType(), compressionFinder.getRightConvertedDataType());
     return new UnCompressBigDecimal<>(compressionFinder, leftPart, rightPart);
   }
 
@@ -322,7 +322,7 @@ public final class ValueCompressionUtil {
               (BigDecimalCompressionFinder) compressionFinder);
       default:
         return getUncompressedValue(compressionFinder.getCompType(),
-            compressionFinder.getActualDataType(), compressionFinder.getChangedDataType());
+            compressionFinder.getActualDataType(), compressionFinder.getConvertedDataType());
     }
   }
 
@@ -727,7 +727,7 @@ public final class ValueCompressionUtil {
     byte[] dataTypeSelected = measureMDMdl.getDataTypeSelected();
     WriterCompressModel compressionModel = new WriterCompressModel();
     DataType[] actualType = new DataType[measureCount];
-    DataType[] changedType = new DataType[measureCount];
+    DataType[] convertedType = new DataType[measureCount];
     COMPRESSION_TYPE[] compType = new COMPRESSION_TYPE[measureCount];
     CompressionFinder[] compressionFinders = new CompressionFinder[measureCount];
     for (int i = 0; i < measureCount; i++) {
@@ -736,13 +736,13 @@ public final class ValueCompressionUtil {
               minValue[i], mantissa[i], type[i], dataTypeSelected[i]);
       compressionFinders[i] = compresssionFinder;
       actualType[i] = compresssionFinder.getActualDataType();
-      changedType[i] = compresssionFinder.getChangedDataType();
+      convertedType[i] = compresssionFinder.getConvertedDataType();
       compType[i] = compresssionFinder.getCompType();
     }
     compressionModel.setCompressionFinders(compressionFinders);
     compressionModel.setMaxValue(maxValue);
     compressionModel.setMantissa(mantissa);
-    compressionModel.setChangedDataType(changedType);
+    compressionModel.setConvertedDataType(convertedType);
     compressionModel.setCompType(compType);
     compressionModel.setActualDataType(actualType);
     compressionModel.setMinValue(minValue);
@@ -765,7 +765,7 @@ public final class ValueCompressionUtil {
             meta.getType(), meta.getDataTypeSelected());
     compressModel.setUnCompressValues(
           ValueCompressionUtil.getUncompressedValue(compressFinder));
-    compressModel.setChangedDataType(compressFinder.getChangedDataType());
+    compressModel.setConvertedDataType(compressFinder.getConvertedDataType());
     compressModel.setValueEncoderMeta(meta);
     return compressModel;
   }
