@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.command
 
 import java.io.File
+import java.lang.reflect.UndeclaredThrowableException
 import java.text.SimpleDateFormat
 
 import scala.collection.JavaConverters._
@@ -553,6 +554,10 @@ case class LoadTable(
       case mce: MalformedCarbonCommandException =>
         LOGGER.audit(s"Dataload failed for $dbName.$tableName. " + mce.getMessage)
         throw mce
+      case ude: UndeclaredThrowableException =>
+        LOGGER.audit(s"Dataload failed for $dbName.$tableName. " +
+          ude.getUndeclaredThrowable.getMessage)
+        throw ude.getUndeclaredThrowable
     } finally {
       if (carbonLock != null) {
         if (carbonLock.unlock()) {
