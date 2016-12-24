@@ -17,14 +17,18 @@
 
 package org.apache.spark.sql.common.util
 
+import java.io.File
 import java.util.{Locale, TimeZone}
 
-import org.apache.carbondata.common.logging.LogServiceFactory
-
 import scala.collection.JavaConversions._
+
+import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.catalyst.plans._
 import org.apache.spark.sql.catalyst.util._
-import org.apache.spark.sql.{DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{DataFrame, Row, SQLContext, SparkSession}
+
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.util.CarbonProperties
 
 class QueryTest extends PlanTest {
 
@@ -34,6 +38,50 @@ class QueryTest extends PlanTest {
   TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"))
   // Add Locale setting
   Locale.setDefault(Locale.US)
+
+
+  val rootPath = new File(this.getClass.getResource("/").getPath + "../../../..").getCanonicalPath
+  val storeLocation = s"$rootPath/examples/spark2/target/store"
+  val warehouse = s"$rootPath/examples/spark2/target/warehouse"
+  val metastoredb = s"$rootPath/examples/spark2/target/metastore_db"
+
+  val spark = {
+    // clean data folder
+    if (true) {
+      val clean = (path: String) => FileUtils.deleteDirectory(new File(path))
+      clean(storeLocation)
+      clean(warehouse)
+      clean(metastoredb)
+    }
+
+    val spark = SparkSession
+        .builder()
+        .master("local")
+        .appName("CarbonExample")
+        .enableHiveSupport()
+        .config("spark.sql.warehouse.dir", warehouse)
+        .config("javax.jdo.option.ConnectionURL",
+          s"jdbc:derby:;databaseName=$metastoredb;create=true")
+        .getOrCreate()
+
+    CarbonProperties.getInstance()
+        .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")
+        .addProperty("carbon.storelocation", storeLocation)
+
+    spark.sparkContext.setLogLevel("WARN")
+    spark
+  }
+
+  val sc = spark.sparkContext
+
+  lazy val implicits = spark.implicits
+
+  def sql(sqlText: String): DataFrame  = spark.sql(sqlText)
+
+  def clean: Unit = {
+    val clean = (path: String) => FileUtils.deleteDirectory(new File(path))
+    clean(storeLocation)
+  }
 
   /**
    * Runs the plan and makes sure the answer contains all of the keywords, or the
@@ -78,6 +126,62 @@ class QueryTest extends PlanTest {
 
   protected def checkAnswer(df: DataFrame, expectedAnswer: DataFrame): Unit = {
     checkAnswer(df, expectedAnswer.collect())
+  }
+
+
+  protected def createAndLoadInputTable(inputTableName: String, inputPath: String): Unit = {
+    sql(
+      s"""
+         | CREATE TABLE $inputTableName
+         | (  shortField short,
+         |    intField int,
+         |    bigintField long,
+         |    doubleField double,
+         |    stringField string,
+         |    timestampField string,
+         |    decimalField decimal(18,2),
+         |    dateField string,
+         |    charField char(5)
+         | )
+         | ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+       """.stripMargin)
+
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$inputPath'
+         | INTO TABLE $inputTableName
+       """.stripMargin)
+  }
+
+  protected def createAndLoadTestTable(tableName: String, inputTableName: String): Unit = {
+    sql(
+      s"""
+         | CREATE TABLE $tableName(
+         |    shortField short,
+         |    intField int,
+         |    bigintField long,
+         |    doubleField double,
+         |    stringField string,
+         |    timestampField timestamp,
+         |    decimalField decimal(18,2),
+         |    dateField date,
+         |    charField char(5)
+         | )
+         | USING org.apache.spark.sql.CarbonSource
+         | OPTIONS ('tableName' '$tableName')
+       """.stripMargin)
+    sql(
+      s"""
+         | INSERT INTO TABLE $tableName
+         | SELECT shortField, intField, bigintField, doubleField, stringField,
+         | from_unixtime(unix_timestamp(timestampField,'yyyy/M/dd')) timestampField, decimalField,
+         | cast(to_date(from_unixtime(unix_timestamp(dateField,'yyyy/M/dd'))) as date), charField
+         | FROM $inputTableName
+       """.stripMargin)
+  }
+
+  protected def dropTable(tableName: String): Unit ={
+    sql(s"DROP TABLE IF EXISTS $tableName")
   }
 }
 
@@ -146,4 +250,5 @@ object QueryTest {
 
     return None
   }
+
 }

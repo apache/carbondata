@@ -145,7 +145,7 @@ public class CarbonCompactionExecutor {
       throws QueryExecutionException {
 
     queryModel.setTableBlockInfos(blockList);
-    this.queryExecutor = QueryExecutorFactory.getQueryExecutor();
+    this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
     CarbonIterator<BatchResult> iter = null;
     try {
       iter = queryExecutor.execute(queryModel);

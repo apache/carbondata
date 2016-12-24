@@ -31,7 +31,7 @@ public class WriterCompressModel {
   /**
    * DataType[]  variable.
    */
-  private ValueCompressionUtil.DataType[] changedDataType;
+  private ValueCompressionUtil.DataType[] convertedDataType;
   /**
    * DataType[]  variable.
    */
@@ -86,17 +86,17 @@ public class WriterCompressModel {
   }
 
   /**
-   * @return the changedDataType
+   * @return the convertedDataType
    */
-  public ValueCompressionUtil.DataType[] getChangedDataType() {
-    return changedDataType;
+  public ValueCompressionUtil.DataType[] getConvertedDataType() {
+    return convertedDataType;
   }
 
   /**
-   * @param changedDataType the changedDataType to set
+   * @param convertedDataType the convertedDataType to set
    */
-  public void setChangedDataType(ValueCompressionUtil.DataType[] changedDataType) {
-    this.changedDataType = changedDataType;
+  public void setConvertedDataType(ValueCompressionUtil.DataType[] convertedDataType) {
+    this.convertedDataType = convertedDataType;
   }
 
   /**

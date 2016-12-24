@@ -32,7 +32,7 @@ public abstract class ValueCompressor {
       CarbonWriteDataHolder dataHolder, Object maxValue, int decimal) {
     return getCompressedValues(compressionFinder.getCompType(),
         dataHolder,
-        compressionFinder.getChangedDataType(),
+        compressionFinder.getConvertedDataType(),
         maxValue, decimal);
   }
 
@@ -40,62 +40,62 @@ public abstract class ValueCompressor {
    *
    * @param compType
    * @param dataHolder
-   * @param changedDataType
+   * @param convertedDataType
    * @param maxValue
    * @param decimal
    * @return compressed data
    */
   public Object getCompressedValues(COMPRESSION_TYPE compType, CarbonWriteDataHolder dataHolder,
-      DataType changedDataType, Object maxValue, int decimal) {
+      DataType convertedDataType, Object maxValue, int decimal) {
     switch (compType) {
       case ADAPTIVE:
-        return compressNone(changedDataType, dataHolder);
+        return compressAdaptive(convertedDataType, dataHolder);
       case DELTA_DOUBLE:
-        return compressMaxMin(changedDataType, dataHolder, maxValue);
+        return compressMaxMin(convertedDataType, dataHolder, maxValue);
       case BIGINT:
-        return compressNonDecimal(changedDataType, dataHolder, decimal);
+        return compressNonDecimal(convertedDataType, dataHolder, decimal);
       default:
-        return compressNonDecimalMaxMin(changedDataType, dataHolder, decimal, maxValue);
+        return compressNonDecimalMaxMin(convertedDataType, dataHolder, decimal, maxValue);
     }
   }
 
   /**
    *
-   * @param changedDataType
+   * @param convertedDataType
    * @param dataHolder
    * @param decimal
    * @param maxValue
    * @return compressed data
    */
-  protected abstract Object compressNonDecimalMaxMin(DataType changedDataType,
+  protected abstract Object compressNonDecimalMaxMin(DataType convertedDataType,
       CarbonWriteDataHolder dataHolder, int decimal, Object maxValue);
 
   /**
    *
-   * @param changedDataType
+   * @param convertedDataType
    * @param dataHolder
    * @param decimal
    * @return compressed data
    */
-  protected abstract Object compressNonDecimal(DataType changedDataType,
+  protected abstract Object compressNonDecimal(DataType convertedDataType,
       CarbonWriteDataHolder dataHolder, int decimal);
 
   /**
    *
-   * @param changedDataType
+   * @param convertedDataType
    * @param dataHolder
    * @param maxValue
    * @return compressed data
    */
-  protected abstract Object compressMaxMin(DataType changedDataType,
+  protected abstract Object compressMaxMin(DataType convertedDataType,
       CarbonWriteDataHolder dataHolder, Object maxValue);
 
   /**
    *
-   * @param changedDataType
+   * @param convertedDataType
    * @param dataHolder
    * @return compressed data
    */
-  protected abstract Object compressNone(DataType changedDataType,
+  protected abstract Object compressAdaptive(DataType convertedDataType,
       CarbonWriteDataHolder dataHolder);
 }

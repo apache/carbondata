@@ -37,6 +37,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -45,7 +46,6 @@ import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.load.LoadMetadataDetails;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.processing.model.CarbonLoadModel;
 
 public final class DeleteLoadFolders {
 
@@ -58,23 +58,13 @@ public final class DeleteLoadFolders {
 
   /**
    * returns segment path
-   *
-   * @param loadModel
-   * @param storeLocation
-   * @param partitionId
-   * @param oneLoad
-   * @return
    */
-  private static String getSegmentPath(CarbonLoadModel loadModel, String storeLocation,
+  private static String getSegmentPath(String dbName, String tableName, String storeLocation,
       int partitionId, LoadMetadataDetails oneLoad) {
-
-    String path = null;
+    CarbonTablePath carbon = new CarbonStorePath(storeLocation).getCarbonTablePath(
+        new CarbonTableIdentifier(dbName, tableName, ""));
     String segmentId = oneLoad.getLoadName();
-
-    path = new CarbonStorePath(storeLocation).getCarbonTablePath(
-        loadModel.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier())
-        .getCarbonDataDirectoryPath("" + partitionId, segmentId);
-    return path;
+    return carbon.getCarbonDataDirectoryPath("" + partitionId, segmentId);
   }
 
   private static boolean physicalFactAndMeasureMetadataDeletion(String path) {
@@ -221,32 +211,21 @@ public final class DeleteLoadFolders {
     }
   }
 
-  /**
-   * @param loadModel
-   * @param storeLocation
-   * @param isForceDelete
-   * @param details
-   * @return
-   *
-   */
-  public static boolean deleteLoadFoldersFromFileSystem(CarbonLoadModel loadModel,
+  public static boolean deleteLoadFoldersFromFileSystem(String dbName, String tableName,
       String storeLocation, boolean isForceDelete, LoadMetadataDetails[] details) {
     List<LoadMetadataDetails> deletedLoads =
         new ArrayList<LoadMetadataDetails>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
     boolean isDeleted = false;
-
     if (details != null && details.length != 0) {
       for (LoadMetadataDetails oneLoad : details) {
         if (checkIfLoadCanBeDeleted(oneLoad, isForceDelete)) {
-          String path = getSegmentPath(loadModel, storeLocation, 0, oneLoad);
+          String path = getSegmentPath(dbName, tableName, storeLocation, 0, oneLoad);
           boolean deletionStatus = physicalFactAndMeasureMetadataDeletion(path);
           if (deletionStatus) {
             isDeleted = true;
             oneLoad.setVisibility("false");
             deletedLoads.add(oneLoad);
-            LOGGER.info("Info: " +
-                " Deleted the load " + oneLoad.getLoadName());
+            LOGGER.info("Info: Deleted the load " + oneLoad.getLoadName());
           }
         }
       }

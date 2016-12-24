@@ -63,6 +63,12 @@ public class CarbonTablePath extends Path {
     this.tablePath = tablePathString;
   }
 
+  public CarbonTablePath(String storePath, String dbName, String tableName) {
+    super(storePath + File.separator + dbName + File.separator + tableName);
+    this.carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "");
+    this.tablePath = storePath + File.separator + dbName + File.separator + tableName;
+  }
+
   /**
    * The method returns the folder path containing the carbon file.
    *
@@ -249,22 +255,6 @@ public class CarbonTablePath extends Path {
   }
 
   /**
-   * Gets absolute path of data file of given aggregate table
-   *
-   * @param aggTableID          unique aggregate table identifier
-   * @param partitionId         unique partition identifier
-   * @param segmentId           unique partition identifier
-   * @param filePartNo          data file part number
-   * @param factUpdateTimeStamp unique identifier to identify an update
-   * @return absolute path of data file stored in carbon data format
-   */
-  public String getCarbonAggDataFilePath(String aggTableID, String partitionId, String segmentId,
-      Integer filePartNo, Integer taskNo, String factUpdateTimeStamp) {
-    return getAggSegmentDir(aggTableID, partitionId, segmentId) + File.separator
-        + getCarbonDataFileName(filePartNo, taskNo, factUpdateTimeStamp);
-  }
-
-  /**
    * Gets data file name only with out path
    *
    * @param filePartNo          data file part number
@@ -297,25 +287,12 @@ public class CarbonTablePath extends Path {
     return getFactDir() + File.separator + PARTITION_PREFIX + partitionId;
   }
 
-  private String getAggSegmentDir(String aggTableID, String partitionId, String segmentId) {
-    return getAggPartitionDir(aggTableID, partitionId) + File.separator + SEGMENT_PREFIX
-        + segmentId;
-  }
-
-  private String getAggPartitionDir(String aggTableID, String partitionId) {
-    return getAggregateTableDir(aggTableID) + File.separator + PARTITION_PREFIX + partitionId;
-  }
-
   private String getMetaDataDir() {
     return tablePath + File.separator + METADATA_DIR;
   }
 
   public String getFactDir() {
     return tablePath + File.separator + FACT_DIR;
-  }
-
-  private String getAggregateTableDir(String aggTableId) {
-    return tablePath + File.separator + AGGREGATE_TABLE_PREFIX + aggTableId;
   }
 
   @Override public boolean equals(Object o) {
@@ -397,10 +374,12 @@ public class CarbonTablePath extends Path {
      */
     public static String getSegmentId(String dataFileAbsolutePath) {
       // find segment id from last of data file path
-      int endIndex = dataFileAbsolutePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR);
+      String tempdataFileAbsolutePath = dataFileAbsolutePath.replace(
+              CarbonCommonConstants.WINDOWS_FILE_SEPARATOR, CarbonCommonConstants.FILE_SEPARATOR);
+      int endIndex = tempdataFileAbsolutePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR);
       // + 1 for size of "/"
-      int startIndex =
-          dataFileAbsolutePath.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR, endIndex - 1) + 1;
+      int startIndex = tempdataFileAbsolutePath.lastIndexOf(
+              CarbonCommonConstants.FILE_SEPARATOR, endIndex - 1) + 1;
       String segmentDirStr = dataFileAbsolutePath.substring(startIndex, endIndex);
       //identify id in segment_<id>
       String[] segmentDirSplits = segmentDirStr.split("_");

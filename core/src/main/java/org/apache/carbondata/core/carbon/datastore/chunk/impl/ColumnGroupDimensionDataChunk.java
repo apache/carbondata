@@ -21,6 +21,7 @@ package org.apache.carbondata.core.carbon.datastore.chunk.impl;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
+import org.apache.carbondata.scan.result.vector.ColumnVectorInfo;
 
 /**
  * This class is holder of the dimension column chunk data of the fixed length
@@ -58,7 +59,8 @@ public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<b
    * @param restructuringInfo define the structure of the key
    * @return how many bytes was copied
    */
-  @Override public int fillChunkData(byte[] data, int offset, int rowId,
+  @Override
+  public int fillChunkData(byte[] data, int offset, int rowId,
       KeyStructureInfo restructuringInfo) {
     byte[] maskedKey =
         getMaskedKey(dataChunk, rowId * chunkAttributes.getColumnValueSize(), restructuringInfo);
@@ -69,7 +71,8 @@ public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<b
   /**
    * Converts to column dictionary integer value
    */
-  @Override public int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
+  @Override
+  public int fillConvertedChunkData(int rowId, int columnIndex, int[] row,
       KeyStructureInfo info) {
     int start = rowId * chunkAttributes.getColumnValueSize();
     long[] keyArray = info.getKeyGenerator().getKeyArray(dataChunk, start);
@@ -78,6 +81,58 @@ public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<b
       row[columnIndex++] = (int)keyArray[ordinal[i]];
     }
     return columnIndex;
+  }
+
+  @Override
+  public int fillConvertedChunkData(ColumnVectorInfo[] vectorInfo, int column,
+      KeyStructureInfo info) {
+    ColumnVectorInfo columnVectorInfo = vectorInfo[column];
+    int offset = columnVectorInfo.offset;
+    int vectorOffset = columnVectorInfo.vectorOffset;
+    int len = offset + columnVectorInfo.size;
+    int columnValueSize = chunkAttributes.getColumnValueSize();
+    int[] ordinal = info.getMdkeyQueryDimensionOrdinal();
+    for (int k = offset; k < len; k++) {
+      int start = k * columnValueSize;
+      long[] keyArray = info.getKeyGenerator().getKeyArray(dataChunk, start);
+      int index = 0;
+      for (int i = column; i < column + ordinal.length; i++) {
+        if (vectorInfo[i].directDictionaryGenerator == null) {
+          vectorInfo[i].vector.putInt(vectorOffset, (int) keyArray[ordinal[index++]]);
+        } else {
+          vectorInfo[i].vector.putLong(vectorOffset, (long) vectorInfo[i].directDictionaryGenerator
+              .getValueFromSurrogate((int) keyArray[ordinal[index++]]));
+        }
+      }
+      vectorOffset++;
+    }
+    return column + ordinal.length;
+  }
+
+  @Override
+  public int fillConvertedChunkData(int[] rowMapping, ColumnVectorInfo[] vectorInfo, int column,
+      KeyStructureInfo info) {
+    ColumnVectorInfo columnVectorInfo = vectorInfo[column];
+    int offset = columnVectorInfo.offset;
+    int vectorOffset = columnVectorInfo.vectorOffset;
+    int len = offset + columnVectorInfo.size;
+    int columnValueSize = chunkAttributes.getColumnValueSize();
+    int[] ordinal = info.getMdkeyQueryDimensionOrdinal();
+    for (int k = offset; k < len; k++) {
+      int start = rowMapping[k] * columnValueSize;
+      long[] keyArray = info.getKeyGenerator().getKeyArray(dataChunk, start);
+      int index = 0;
+      for (int i = column; i < column + ordinal.length; i++) {
+        if (vectorInfo[i].directDictionaryGenerator == null) {
+          vectorInfo[i].vector.putInt(vectorOffset, (int) keyArray[ordinal[index++]]);
+        } else {
+          vectorInfo[i].vector.putLong(vectorOffset, (long) vectorInfo[i].directDictionaryGenerator
+              .getValueFromSurrogate((int) keyArray[ordinal[index++]]));
+        }
+      }
+      vectorOffset++;
+    }
+    return column + ordinal.length;
   }
 
   /**
@@ -101,7 +156,8 @@ public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<b
    * @param rowId row id of the data
    * @return chunk
    */
-  @Override public byte[] getChunkData(int rowId) {
+  @Override
+  public byte[] getChunkData(int rowId) {
     byte[] data = new byte[chunkAttributes.getColumnValueSize()];
     System.arraycopy(dataChunk, rowId * data.length, data, 0, data.length);
     return data;
@@ -112,7 +168,8 @@ public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<b
    *
    * @return chunk attributes
    */
-  @Override public DimensionChunkAttributes getAttributes() {
+  @Override
+  public DimensionChunkAttributes getAttributes() {
     return chunkAttributes;
   }
 
@@ -122,7 +179,8 @@ public class ColumnGroupDimensionDataChunk implements DimensionColumnDataChunk<b
    *
    * @return complete chunk
    */
-  @Override public byte[] getCompleteDataChunk() {
+  @Override
+  public byte[] getCompleteDataChunk() {
     return dataChunk;
   }
 }

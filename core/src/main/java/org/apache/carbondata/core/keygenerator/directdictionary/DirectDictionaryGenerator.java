@@ -18,6 +18,8 @@
  */
 package org.apache.carbondata.core.keygenerator.directdictionary;
 
+import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+
 /**
  * The interface provides the method to generate dictionary key
  * and getting the actual value from the dictionaryKey for direct dictionary column.
@@ -54,5 +56,11 @@ public interface DirectDictionaryGenerator {
   int generateDirectSurrogateKey(String memberStr, String format);
 
   void initialize();
+
+  /**
+   * Return value datatype for this generator
+   * @return
+   */
+  DataType getReturnType();
 
 }
