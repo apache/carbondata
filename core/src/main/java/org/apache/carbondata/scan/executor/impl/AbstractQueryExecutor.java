@@ -470,7 +470,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   @Override public void finish() throws QueryExecutionException {
     if (null != queryProperties.executorService) {
-      queryProperties.executorService.shutdownNow();
+      queryProperties.executorService.shutdown();
+      try {
+        queryProperties.executorService.awaitTermination(1, TimeUnit.HOURS);
+      } catch (InterruptedException e) {
+        throw new QueryExecutionException(e);
+      }
     }
   }
 
