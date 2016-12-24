@@ -90,7 +90,7 @@ public class FilterScannerTest {
     statisticsTypeAndObjMap.put(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM, queryStatistic);
     statisticsTypeAndObjMap.put(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM, queryStatistic);
     queryStatisticsModel.setStatisticsTypeAndObjMap(statisticsTypeAndObjMap);
-    QueryStatisticsRecorder queryStatisticsRecorder = new QueryStatisticsRecorderImpl("1");
+    QueryStatisticsRecorder queryStatisticsRecorder = new QueryStatisticsRecorderImpl(System.nanoTime() + "");
     queryStatisticsModel.setRecorder(queryStatisticsRecorder);
     filterScanner = new FilterScanner(blockExecutionInfo, queryStatisticsModel);
     blockletIndex = new BlockletIndex();

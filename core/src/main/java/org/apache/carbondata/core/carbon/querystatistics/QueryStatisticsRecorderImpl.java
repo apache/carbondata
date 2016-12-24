@@ -130,7 +130,7 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder,Seri
         }
       }
       String headers = "task_id,load_blocks_time,load_dictionary_time,scan_blocks_time," +
-          "total_executor_time,scan_blocks_num,total_blocklet" +
+          "total_executor_time,scan_blocks_num,total_blocklet," +
           "valid_scan_blocklet,result_size";
       List<String> values = new ArrayList<String>();
       values.add(queryIWthTask);
