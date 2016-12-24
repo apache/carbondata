@@ -17,8 +17,7 @@
 
 package org.apache.spark.carbondata
 
-import org.apache.spark.carbondata.util.QueryTest
-import org.apache.spark.carbondata.util.QueryTest._
+import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {

@@ -17,7 +17,8 @@
 package org.apache.spark.util
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.execution.command.DeleteLoadsById
+
+import org.apache.carbondata.api.CarbonStore
 
 /**
  * delete segments by id list
@@ -29,24 +30,25 @@ object DeleteSegmentById {
     segmentIds.split(",").toSeq
   }
 
-  def deleteSegmentById(spark: SparkSession, dbName: Option[String], tableName: String,
+  def deleteSegmentById(spark: SparkSession, dbName: String, tableName: String,
       segmentIds: Seq[String]): Unit = {
-    DeleteLoadsById(segmentIds, dbName, tableName).run(spark)
+    TableAPIUtil.validateTableExists(spark, dbName, tableName)
+    CarbonStore.deleteLoadById(segmentIds, dbName, tableName)
   }
 
   def main(args: Array[String]): Unit = {
 
     if (args.length < 3) {
       System.err.println(
-        "Usage: TableDeleteSegmentByID <store path> <table name> <segment id list>");
+        "Usage: DeleteSegmentByID <store path> <table name> <segment id list>");
       System.exit(1)
     }
 
     val storePath = TableAPIUtil.escape(args(0))
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
     val segmentIds = extractSegmentIds(TableAPIUtil.escape(args(2)))
-    val spark = TableAPIUtil.spark(storePath, s"TableDeleteSegmentById: $dbName.$tableName")
+    val spark = TableAPIUtil.spark(storePath, s"DeleteSegmentById: $dbName.$tableName")
     CarbonEnv.init(spark.sqlContext)
-    deleteSegmentById(spark, Option(dbName), tableName, segmentIds)
+    deleteSegmentById(spark, dbName, tableName, segmentIds)
   }
 }

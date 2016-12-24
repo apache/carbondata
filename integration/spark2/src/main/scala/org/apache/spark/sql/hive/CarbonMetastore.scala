@@ -176,12 +176,14 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
                  c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))
   }
 
-  def tableExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
+  def tableExists(
+      table: String,
+      databaseOp: Option[String] = None)(sparkSession: SparkSession): Boolean = {
     checkSchemasModifiedTimeAndReloadTables()
-    val database = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
+    val database = databaseOp.getOrElse(sparkSession.catalog.currentDatabase)
     val tables = metadata.tablesMeta.filter(
       c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
-           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableIdentifier.table))
+           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(table))
     tables.nonEmpty
   }
 
@@ -294,7 +296,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
       tableInfo: org.apache.carbondata.core.carbon.metadata.schema.table.TableInfo,
       dbName: String, tableName: String)
     (sparkSession: SparkSession): String = {
-    if (tableExists(TableIdentifier(tableName, Some(dbName)))(sparkSession)) {
+    if (tableExists(tableName, Some(dbName))(sparkSession)) {
       sys.error(s"Table [$tableName] already exists under Database [$dbName]")
     }
     val schemaConverter = new ThriftWrapperSchemaConverterImpl

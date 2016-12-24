@@ -17,7 +17,8 @@
  package org.apache.spark.util
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.execution.command.DeleteLoadsByLoadDate
+
+import org.apache.carbondata.api.CarbonStore
 
 /**
  * delete segments before some date
@@ -25,23 +26,24 @@ import org.apache.spark.sql.execution.command.DeleteLoadsByLoadDate
 // scalastyle:off
 object DeleteSegmentByDate {
 
-  def deleteSegmentByDate(spark: SparkSession, dbName: Option[String], tableName: String,
+  def deleteSegmentByDate(spark: SparkSession, dbName: String, tableName: String,
       dateValue: String): Unit = {
-    DeleteLoadsByLoadDate(dbName, tableName, "", dateValue).run(spark)
+    TableAPIUtil.validateTableExists(spark, dbName, tableName)
+    CarbonStore.deleteLoadByDate(dateValue, dbName, tableName)
   }
 
   def main(args: Array[String]): Unit = {
     if (args.length < 3) {
       System.err.println(
-        "Usage: TableDeleteSegmentByDate <store path> <table name> <before date value>");
+        "Usage: DeleteSegmentByDate <store path> <table name> <before date value>");
       System.exit(1)
     }
 
     val storePath = TableAPIUtil.escape(args(0))
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
     val dateValue = TableAPIUtil.escape(args(2))
-    val spark = TableAPIUtil.spark(storePath, s"TableCleanFiles: $dbName.$tableName")
+    val spark = TableAPIUtil.spark(storePath, s"DeleteSegmentByDate: $dbName.$tableName")
     CarbonEnv.init(spark.sqlContext)
-    deleteSegmentByDate(spark, Option(dbName), tableName, dateValue)
+    deleteSegmentByDate(spark, dbName, tableName, dateValue)
   }
 }

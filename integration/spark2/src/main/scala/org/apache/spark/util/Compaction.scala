@@ -25,22 +25,23 @@ import org.apache.spark.sql.execution.command.{AlterTableCompaction, AlterTableM
  // scalastyle:off
 object Compaction {
 
-  def compaction(spark: SparkSession, dbName: Option[String], tableName: String,
+  def compaction(spark: SparkSession, dbName: String, tableName: String,
       compactionType: String): Unit = {
-    AlterTableCompaction(AlterTableModel(dbName, tableName, compactionType, "")).run(spark)
+    TableAPIUtil.validateTableExists(spark, dbName, tableName)
+    AlterTableCompaction(AlterTableModel(Some(dbName), tableName, compactionType, "")).run(spark)
   }
 
   def main(args: Array[String]): Unit = {
     if (args.length < 3) {
-      System.err.println("Usage: TableCompaction <store path> <table name> <major|minor>");
+      System.err.println("Usage: Compaction <store path> <table name> <major|minor>");
       System.exit(1)
     }
 
     val storePath = TableAPIUtil.escape(args(0))
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
     val compactionType = TableAPIUtil.escape(args(2))
-    val spark = TableAPIUtil.spark(storePath, s"TableCompaction: $dbName.$tableName")
+    val spark = TableAPIUtil.spark(storePath, s"Compaction: $dbName.$tableName")
     CarbonEnv.init(spark.sqlContext)
-    compaction(spark, Option(dbName), tableName, compactionType)
+    compaction(spark, dbName, tableName, compactionType)
   }
 }

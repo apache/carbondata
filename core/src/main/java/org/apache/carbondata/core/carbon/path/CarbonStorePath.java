@@ -45,8 +45,12 @@ public class CarbonStorePath extends Path {
     CarbonTablePath carbonTablePath = new CarbonTablePath(tableIdentifier,
         storePath + File.separator + tableIdentifier.getDatabaseName() + File.separator
             + tableIdentifier.getTableName());
-
     return carbonTablePath;
+  }
+
+  public static CarbonTablePath getCarbonTablePath(String storePath,
+      String dbName, String tableName) {
+    return new CarbonTablePath(storePath, dbName, tableName);
   }
 
   public static CarbonTablePath getCarbonTablePath(AbsoluteTableIdentifier identifier) {
