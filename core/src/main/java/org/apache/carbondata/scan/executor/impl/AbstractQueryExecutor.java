@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -470,7 +471,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    */
   @Override public void finish() throws QueryExecutionException {
     if (null != queryProperties.executorService) {
-      queryProperties.executorService.shutdownNow();
+      queryProperties.executorService.shutdown();
+      try {
+        queryProperties.executorService.awaitTermination(1, TimeUnit.HOURS);
+      } catch (InterruptedException e) {
+        throw new QueryExecutionException(e);
+      }
     }
   }
 
