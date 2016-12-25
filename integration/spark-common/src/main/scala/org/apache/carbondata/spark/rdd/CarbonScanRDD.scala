@@ -63,6 +63,8 @@ class CarbonScanRDD(
   }
   private var vectorReader = false
 
+  private val readSupport = SparkReadSupport.readSupportClass
+
   @transient private val jobId = new JobID(jobTrackerId, id)
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
@@ -214,7 +216,7 @@ class CarbonScanRDD(
   }
 
   private def prepareInputFormatForExecutor(conf: Configuration): CarbonInputFormat[Object] = {
-    CarbonInputFormat.setCarbonReadSupport(conf, SparkReadSupport.readSupportClass)
+    CarbonInputFormat.setCarbonReadSupport(conf, readSupport)
     createInputFormat(conf)
   }
 
