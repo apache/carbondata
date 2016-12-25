@@ -24,7 +24,7 @@ import org.apache.carbondata.hadoop.CarbonInputFormat
 object HadoopFileExample {
 
   def main(args: Array[String]): Unit = {
-    val cc = ExampleUtils.createCarbonContext("DataFrameAPIExample")
+    val cc = ExampleUtils.createCarbonContext("HadoopFileExample")
     ExampleUtils.writeSampleCarbonFile(cc, "carbon1")
 
     val sc = cc.sparkContext
