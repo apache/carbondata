@@ -81,7 +81,7 @@ object ExampleUtils {
         .map(x => ("a", "b", x))
         .toDF("c1", "c2", "c3")
 
-    // save dataframe to carbon file
+    // save dataframe to carbon file:(df->csv->carbon file)
     df.write
         .format("carbondata")
         .option("tableName", tableName)
@@ -89,6 +89,17 @@ object ExampleUtils {
         .option("useKettle", "false")
         .mode(mode)
         .save()
+
+    // save dataframe directl to carbon file without tempCSV
+    df.write
+      .format("carbondata")
+      .option("tableName", tableName)
+      .option("compress", "true")
+      .option("useKettle", "false")
+      .option("tempCSV", "false")
+      .mode(mode)
+      .save()
+
   }
 }
 // scalastyle:on println
