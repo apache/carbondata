@@ -872,7 +872,7 @@ class CarbonSqlParser() extends AbstractSparkSQLParser {
   }
 
   /**
-   * detects whether double or decimal column is part of dictionary_exclude
+   * dictionary_exclude is supported for string, timestamp only
    */
   def isStringAndTimestampColDictionaryExclude(columnDataType: String): Boolean = {
     val dataTypes = Array("string", "timestamp")

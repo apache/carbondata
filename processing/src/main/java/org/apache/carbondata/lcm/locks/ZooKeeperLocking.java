@@ -192,4 +192,9 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     return true;
   }
 
+  @Override
+  public String toString() {
+    return "ZooKeeperLocking(" + lockPath + ")";
+  }
+
 }
