@@ -257,12 +257,6 @@ case class LoadTable(
       carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
       carbonLoadModel.setDatabaseName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
       carbonLoadModel.setStorePath(relation.tableMeta.storePath)
-      if (dimFilesPath.isEmpty) {
-        carbonLoadModel.setDimFolderPath(null)
-      } else {
-        val x = dimFilesPath.map(f => f.table + ":" + CarbonUtil.checkAndAppendHDFSUrl(f.loadPath))
-        carbonLoadModel.setDimFolderPath(x.mkString(","))
-      }
 
       val table = relation.tableMeta.carbonTable
       carbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.toArray)

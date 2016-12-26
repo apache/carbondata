@@ -43,7 +43,6 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
 
   def buildCarbonLoadModel(relation: CarbonRelation,
     filePath: String,
-    dimensionFilePath: String,
     header: String,
     allDictFilePath: String): CarbonLoadModel = {
     val carbonLoadModel = new CarbonLoadModel
@@ -55,7 +54,6 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
     carbonLoadModel.setTableName(table.getFactTableName)
     carbonLoadModel.setCarbonDataLoadSchema(carbonSchema)
     carbonLoadModel.setFactFilePath(filePath)
-    carbonLoadModel.setDimFolderPath(dimensionFilePath)
     carbonLoadModel.setCsvHeader(header)
     carbonLoadModel.setCsvDelimiter(",")
     carbonLoadModel.setComplexDelimiterLevel1("\\$")
@@ -115,7 +113,7 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("Support generate global dictionary from all dictionary files") {
     val header = "id,name,city,age"
-    val carbonLoadModel = buildCarbonLoadModel(sampleRelation, null, null, header, sampleAllDictionaryFile)
+    val carbonLoadModel = buildCarbonLoadModel(sampleRelation, null, header, sampleAllDictionaryFile)
     GlobalDictionaryUtil
       .generateGlobalDictionary(CarbonHiveContext,
         carbonLoadModel,
@@ -127,7 +125,7 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("Support generate global dictionary from all dictionary files for complex type") {
     val header = "deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber"
-    val carbonLoadModel = buildCarbonLoadModel(complexRelation, null, null, header, complexAllDictionaryFile)
+    val carbonLoadModel = buildCarbonLoadModel(complexRelation, null, header, complexAllDictionaryFile)
     GlobalDictionaryUtil
       .generateGlobalDictionary(CarbonHiveContext,
       carbonLoadModel,
