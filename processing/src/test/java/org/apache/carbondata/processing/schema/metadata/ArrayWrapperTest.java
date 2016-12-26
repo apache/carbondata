@@ -54,7 +54,7 @@ public class ArrayWrapperTest {
     assertEquals(expectedValue, actualValue);
   }
 
-  @Test(expected = Exception.class) public void testArrayWrapperWithException() {
+  @Test(expected = Exception.class) public void testEqualsWithException() {
     ArrayWrapper object = new ArrayWrapper(null);
     object.equals(null);
   }
