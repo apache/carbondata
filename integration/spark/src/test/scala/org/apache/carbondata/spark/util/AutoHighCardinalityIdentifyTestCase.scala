@@ -46,7 +46,6 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
 
   def buildCarbonLoadModel(relation: CarbonRelation,
     filePath: String,
-    dimensionFilePath: String,
     header: String): CarbonLoadModel = {
     val carbonLoadModel = new CarbonLoadModel
     carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
@@ -58,7 +57,6 @@ class AutoHighCardinalityIdentifyTestCase extends QueryTest with BeforeAndAfterA
     carbonLoadModel.setTableName(table.getFactTableName)
     carbonLoadModel.setCarbonDataLoadSchema(carbonSchema)
     carbonLoadModel.setFactFilePath(filePath)
-    carbonLoadModel.setDimFolderPath(dimensionFilePath)
     carbonLoadModel.setCsvHeader(header)
     carbonLoadModel.setCsvDelimiter(",")
     carbonLoadModel.setComplexDelimiterLevel1("\\$")

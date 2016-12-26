@@ -179,7 +179,6 @@ public final class CarbonLoaderUtil {
     DataProcessTaskStatus dataProcessTaskStatus
             = new DataProcessTaskStatus(databaseName, tableName);
     dataProcessTaskStatus.setCsvFilePath(loadModel.getFactFilePath());
-    dataProcessTaskStatus.setDimCSVDirLoc(loadModel.getDimFolderPath());
     if (loadModel.isDirectLoad()) {
       dataProcessTaskStatus.setFilesToProcess(loadModel.getFactFilesToProcess());
       dataProcessTaskStatus.setDirectLoad(true);
@@ -194,7 +193,6 @@ public final class CarbonLoaderUtil {
     dataProcessTaskStatus.setRddIteratorKey(loadModel.getRddIteratorKey());
     dataProcessTaskStatus.setDateFormat(loadModel.getDateFormat());
     SchemaInfo info = new SchemaInfo();
-
     info.setDatabaseName(databaseName);
     info.setTableName(tableName);
     info.setAutoAggregateRequest(loadModel.isAggLoadRequest());

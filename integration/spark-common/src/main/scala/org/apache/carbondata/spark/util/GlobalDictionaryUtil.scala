@@ -772,31 +772,6 @@ object GlobalDictionaryUtil {
         } else {
           LOGGER.info("No column found for generating global dictionary in source data files")
         }
-        // generate global dict from dimension file
-        if (carbonLoadModel.getDimFolderPath != null) {
-          val fileMapArray = carbonLoadModel.getDimFolderPath.split(",")
-          for (fileMap <- fileMapArray) {
-            val dimTableName = fileMap.split(":")(0)
-            var dimDataframe = loadDataFrame(sqlContext, carbonLoadModel)
-            val (requireDimensionForDim, requireColumnNamesForDim) =
-              pruneDimensions(dimensions, dimDataframe.columns, dimDataframe.columns)
-            if (requireDimensionForDim.length >= 1) {
-              dimDataframe = dimDataframe.select(requireColumnNamesForDim.head,
-                requireColumnNamesForDim.tail: _*)
-              val modelforDim = createDictionaryLoadModel(carbonLoadModel, carbonTableIdentifier,
-                requireDimensionForDim, storePath, dictfolderPath, false)
-              val inputRDDforDim = new CarbonBlockDistinctValuesCombineRDD(
-                dimDataframe.rdd, modelforDim)
-                .partitionBy(new ColumnPartitioner(modelforDim.primDimensions.length))
-              val statusListforDim = new CarbonGlobalDictionaryGenerateRDD(
-                inputRDDforDim, modelforDim).collect()
-              checkStatus(carbonLoadModel, sqlContext, modelforDim, statusListforDim)
-            } else {
-              LOGGER.info(s"No columns in dimension table $dimTableName " +
-                          "to generate global dictionary")
-            }
-          }
-        }
       } else {
         LOGGER.info("Generate global dictionary from dictionary files!")
         val isNonempty = validateAllDictionaryPath(allDictionaryPath)
