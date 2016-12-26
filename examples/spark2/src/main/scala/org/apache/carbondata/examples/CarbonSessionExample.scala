@@ -15,22 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.examples
+package org.apache.carbondata.examples
 
 import java.io.File
 
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.util.{CleanFiles, ShowSegments}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-object CarbonExample {
+object CarbonSessionExample {
 
-  def main(args: Array[String]): Unit = {
+  def main(args: Array[String]) {
     val rootPath = new File(this.getClass.getResource("/").getPath
-        + "../../../..").getCanonicalPath
+                            + "../../../..").getCanonicalPath
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
     val metastoredb = s"$rootPath/examples/spark2/target/metastore_db"
@@ -43,25 +42,24 @@ object CarbonExample {
       clean(metastoredb)
     }
 
-    import org.apache.spark.sql.CarbonSession._
-    val spark = SparkSession
-        .builder()
-        .master("local")
-        .appName("CarbonExample")
-        .enableHiveSupport()
-        .config("spark.sql.warehouse.dir", warehouse)
-        .config("javax.jdo.option.ConnectionURL",
-          s"jdbc:derby:;databaseName=$metastoredb;create=true")
-        .getOrCreateCarbonSession()
-
     CarbonProperties.getInstance()
       .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")
       .addProperty("carbon.storelocation", storeLocation)
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+
+    import org.apache.spark.sql.CarbonSession._
+
+    val spark = SparkSession
+      .builder()
+      .master("local")
+      .appName("CarbonExample")
+      .enableHiveSupport()
+      .config("spark.sql.warehouse.dir", warehouse)
+      .config("javax.jdo.option.ConnectionURL",
+    s"jdbc:derby:;databaseName=$metastoredb;create=true")
+      .getOrCreateCarbonSession()
 
     spark.sparkContext.setLogLevel("WARN")
-
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
     // Create table
     spark.sql(
@@ -77,9 +75,8 @@ object CarbonExample {
          |    dateField date,
          |    charField char(5)
          | )
-         | USING org.apache.spark.sql.CarbonSource
-         | OPTIONS('DICTIONARY_INCLUDE'='dateField, charField',
-         |   'dbName'='default', 'tableName'='carbon_table')
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 
     // val prop = s"$rootPath/conf/dataload.properties.template"
@@ -89,37 +86,9 @@ object CarbonExample {
 
     spark.sql(
       s"""
-         | CREATE TABLE csv_table
-         | (  shortField short,
-         |    intField int,
-         |    bigintField long,
-         |    doubleField double,
-         |    stringField string,
-         |    timestampField string,
-         |    decimalField decimal(18,2),
-         |    dateField string,
-         |    charField char(5))
-         |    ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
-       """.stripMargin)
-
-    spark.sql(
-      s"""
          | LOAD DATA LOCAL INPATH '$path'
-         | INTO TABLE csv_table
-       """.stripMargin)
-
-    spark.sql("""
-             SELECT *
-             FROM csv_table
-              """).show
-
-    spark.sql(
-      s"""
-         | INSERT INTO TABLE carbon_table
-         | SELECT shortField, intField, bigintField, doubleField, stringField,
-         | from_unixtime(unix_timestamp(timestampField,'yyyy/M/dd')) timestampField, decimalField,
-         | cast(to_date(from_unixtime(unix_timestamp(dateField,'yyyy/M/dd'))) as date), charField
-         | FROM csv_table
+         | INTO TABLE carbon_table
+         | options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField')
        """.stripMargin)
 
     spark.sql("""
@@ -146,7 +115,7 @@ object CarbonExample {
            SELECT sum(intField), stringField
            FROM carbon_table
            GROUP BY stringField
-           """).show
+              """).show
 
     spark.sql(
       """
@@ -169,6 +138,6 @@ object CarbonExample {
 
     // Drop table
     spark.sql("DROP TABLE IF EXISTS carbon_table")
-    spark.sql("DROP TABLE IF EXISTS csv_table")
   }
+
 }

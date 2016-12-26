@@ -20,7 +20,7 @@ package org.apache.spark.sql.parser
 import scala.language.implicitConversions
 
 import org.apache.spark.sql.ShowLoadsCommand
-import org.apache.spark.sql.catalyst.CarbonCommonSqlParser
+import org.apache.spark.sql.catalyst.CarbonDDLSqlParser
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
 
@@ -28,7 +28,7 @@ import org.apache.spark.sql.execution.command._
  * TODO remove the duplicate code and add the common methods to common class.
  * Parser for All Carbon DDL, DML cases in Unified context
  */
-class CarbonSpark2SqlParser extends CarbonCommonSqlParser {
+class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   override def parse(input: String): LogicalPlan = {
     synchronized {

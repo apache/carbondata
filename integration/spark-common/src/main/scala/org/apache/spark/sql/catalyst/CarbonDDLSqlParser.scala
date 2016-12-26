@@ -38,9 +38,9 @@ import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * TODO remove the duplicate code and add the common methods to common class.
- * Parser for All Carbon DDL, DML cases in Unified context
+ * Parser for All Carbon DDL cases
  */
-abstract class CarbonCommonSqlParser extends AbstractCarbonSparkSQLParser {
+abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   protected val AGGREGATE = carbonKeyWord("AGGREGATE")
@@ -437,8 +437,7 @@ abstract class CarbonCommonSqlParser extends AbstractCarbonSparkSQLParser {
    * @return
    */
   protected def extractNoInvertedIndexColumns(fields: Seq[Field],
-      tableProperties: Map[String, String]):
-  Seq[String] = {
+      tableProperties: Map[String, String]): Seq[String] = {
     // check whether the column name is in fields
     var noInvertedIdxColsProps: Array[String] = Array[String]()
     var noInvertedIdxCols: Seq[String] = Seq[String]()
@@ -446,8 +445,7 @@ abstract class CarbonCommonSqlParser extends AbstractCarbonSparkSQLParser {
     if (tableProperties.get("NO_INVERTED_INDEX").isDefined) {
       noInvertedIdxColsProps =
         tableProperties.get("NO_INVERTED_INDEX").get.split(',').map(_.trim)
-      noInvertedIdxColsProps
-        .map { noInvertedIdxColProp =>
+      noInvertedIdxColsProps.map { noInvertedIdxColProp =>
           if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
             val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
                            " does not exist in table. Please check create table statement."
