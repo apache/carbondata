@@ -22,7 +22,10 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.MESSAGETYPE;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -39,7 +42,11 @@ import org.jboss.netty.handler.codec.serialization.ObjectEncoder;
  */
 public class DictionaryServer {
 
+  private static final LogService LOGGER =
+          LogServiceFactory.getLogService(DictionaryServer.class.getName());
+
   private ServerBootstrap bootstrap;
+
   private DictionaryServerHandler dictionaryServerHandler;
 
   /**
@@ -69,7 +76,7 @@ public class DictionaryServer {
       }
     });
     bootstrap.bind(new InetSocketAddress(port));
-    System.out.println("Server Start!");
+    LOGGER.audit("Server Start!");
   }
 
   /**
@@ -79,7 +86,7 @@ public class DictionaryServer {
    */
   public void shutdown() throws Exception {
     DictionaryKey key = new DictionaryKey();
-    key.setType("WRITE_DICTIONARY");
+    key.setType(MESSAGETYPE.WRITE_DICTIONARY);
     dictionaryServerHandler.processMessage(key);
     bootstrap.releaseExternalResources();
     bootstrap.shutdown();

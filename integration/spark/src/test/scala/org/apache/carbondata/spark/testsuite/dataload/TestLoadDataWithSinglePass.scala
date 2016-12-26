@@ -32,6 +32,7 @@ class TestLoadDataWithSinglePass extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("DROP TABLE IF EXISTS table_two_pass")
     sql("DROP TABLE IF EXISTS table_one_pass")
+    sql("DROP TABLE IF EXISTS table_one_pass_2")
 
     sql(
       """
@@ -67,6 +68,26 @@ class TestLoadDataWithSinglePass extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("test data loading use one pass when offer column dictionary file") {
+    sql(
+      """
+        |CREATE TABLE table_one_pass_2 (ID int, date Timestamp, country String,
+        |name String, phonetype String, serialname String, salary int)
+        |STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(
+      """
+        |LOAD DATA local inpath './src/test/resources/dataDiff.csv' INTO TABLE table_one_pass_2
+        |OPTIONS('DELIMITER'= ',', 'USE_KETTLE'='false', 'SINGLE_PASS'='true', 'COLUMNDICT'=
+        |'country:./src/test/resources/columndictionary/country.csv, name:./src/test/resources/columndictionary/name.csv')
+      """.stripMargin)
+
+    checkAnswer(
+      sql("select * from table_one_pass_2"),
+      sql("select * from table_two_pass")
+    )
+  }
+
   test("test data loading use one pass when do incremental load") {
     sql(
       """
@@ -88,5 +109,6 @@ class TestLoadDataWithSinglePass extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("DROP TABLE IF EXISTS table_two_pass")
     sql("DROP TABLE IF EXISTS table_one_pass")
+    sql("DROP TABLE IF EXISTS table_one_pass_2")
   }
 }

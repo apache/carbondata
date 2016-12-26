@@ -22,6 +22,8 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
 
 import org.jboss.netty.bootstrap.ClientBootstrap;
@@ -36,6 +38,9 @@ import org.jboss.netty.handler.codec.serialization.ObjectEncoder;
  * Dictionary client to connect to Dictionary server and generate dictionary values
  */
 public class DictionaryClient {
+
+  private static final LogService LOGGER =
+          LogServiceFactory.getLogService(DictionaryClient.class.getName());
 
   private DictionaryClientHandler dictionaryClientHandler = new DictionaryClientHandler();
 
@@ -64,7 +69,7 @@ public class DictionaryClient {
       }
     });
     clientBootstrap.connect(new InetSocketAddress(address, port));
-    System.out.println("Client Start!");
+    LOGGER.audit("Client Start!");
   }
 
   /**

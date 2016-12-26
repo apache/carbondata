@@ -18,18 +18,20 @@
  */
 package org.apache.carbondata.core.dictionary.server;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.ServerDictionaryGenerator;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
 
-import com.alibaba.fastjson.JSON;
-
 import org.jboss.netty.channel.*;
-
 
 /**
  * Handler for Dictionary server.
  */
 public class DictionaryServerHandler extends SimpleChannelHandler {
+
+  private static final LogService LOGGER =
+          LogServiceFactory.getLogService(DictionaryServerHandler.class.getName());
 
   /**
    * dictionary generator
@@ -44,7 +46,7 @@ public class DictionaryServerHandler extends SimpleChannelHandler {
    * @throws Exception
    */
   public void channelConnected(ChannelHandlerContext ctx, ChannelStateEvent e) throws Exception {
-    System.out.println("Connected " + ctx.getHandler());
+    LOGGER.audit("Connected " + ctx.getHandler());
   }
 
   /**
@@ -56,13 +58,11 @@ public class DictionaryServerHandler extends SimpleChannelHandler {
    */
   @Override public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
       throws Exception {
-    String keyString = (String) e.getMessage();
-    DictionaryKey key = JSON.parseObject(keyString, DictionaryKey.class);
+    DictionaryKey key = (DictionaryKey) e.getMessage();
     int outPut = processMessage(key);
     key.setData(outPut);
     // Send back the response
-    String backkeyString = JSON.toJSONString(key);
-    ctx.getChannel().write(backkeyString);
+    ctx.getChannel().write(key);
     super.messageReceived(ctx, e);
   }
 
@@ -73,9 +73,9 @@ public class DictionaryServerHandler extends SimpleChannelHandler {
    * @param e
    */
   @Override public void exceptionCaught(ChannelHandlerContext ctx, ExceptionEvent e) {
+    LOGGER.error("exceptionCaught");
     e.getCause().printStackTrace();
-    Channel ch = e.getChannel();
-    ch.close();
+    ctx.getChannel().close();
   }
 
   /**
@@ -87,14 +87,14 @@ public class DictionaryServerHandler extends SimpleChannelHandler {
    */
   public Integer processMessage(DictionaryKey key) throws Exception {
     switch (key.getType()) {
-      case "DICTIONARY_GENERATION":
+      case DICTIONARY_GENERATION:
         return generatorForServer.generateKey(key);
-      case "TABLE_INITIALIZATION":
+      case TABLE_INTIALIZATION:
         generatorForServer.initializeGeneratorForTable(key);
         return 0;
-      case "SIZE":
+      case SIZE:
         return generatorForServer.size(key);
-      case "WRITE_DICTIONARY":
+      case WRITE_DICTIONARY:
         generatorForServer.writeDictionaryData();
         return 0;
       default:

@@ -34,6 +34,7 @@ import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.MESSAGETYPE;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -85,11 +86,11 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
       dictionaryKey.setTableUniqueName(carbonTableIdentifier.getTableUniqueName());
       dictionaryKey.setThreadNo(threadNo);
       // for table initialization
-      dictionaryKey.setType("TABLE_INITIALIZATION");
+      dictionaryKey.setType(MESSAGETYPE.TABLE_INTIALIZATION);
       client.getDictionary(dictionaryKey);
       Map<Object, Integer> localCache = new HashMap<>();
       // for generate dictionary
-      dictionaryKey.setType("DICTIONARY_GENERATION");
+      dictionaryKey.setType(MESSAGETYPE.DICTIONARY_GENERATION);
       dictionaryGenerator = new DictionaryServerClientDictionary(dictionary, client,
               dictionaryKey, localCache);
     } else {
