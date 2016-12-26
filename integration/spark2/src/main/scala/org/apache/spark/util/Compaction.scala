@@ -41,7 +41,7 @@ object Compaction {
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
     val compactionType = TableAPIUtil.escape(args(2))
     val spark = TableAPIUtil.spark(storePath, s"Compaction: $dbName.$tableName")
-    CarbonEnv.init(spark.sqlContext)
+    CarbonEnv.init(spark)
     compaction(spark, dbName, tableName, compactionType)
   }
 }

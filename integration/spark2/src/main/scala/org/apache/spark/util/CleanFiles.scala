@@ -43,7 +43,7 @@ object CleanFiles {
     val storePath = TableAPIUtil.escape(args(0))
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
     val spark = TableAPIUtil.spark(storePath, s"CleanFiles: $dbName.$tableName")
-    CarbonEnv.init(spark.sqlContext)
+    CarbonEnv.init(spark)
     cleanFiles(spark, dbName, tableName, storePath)
   }
 }

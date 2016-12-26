@@ -187,6 +187,15 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
     tables.nonEmpty
   }
 
+  def tableExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
+    checkSchemasModifiedTimeAndReloadTables()
+    val database = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
+    val tables = metadata.tablesMeta.filter(
+      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
+           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableIdentifier.table))
+    tables.nonEmpty
+  }
+
   def loadMetadata(metadataPath: String, queryId: String): MetaData = {
     val recorder = CarbonTimeStatisticsFactory.createDriverRecorder()
     val statistic = new QueryStatistic()
