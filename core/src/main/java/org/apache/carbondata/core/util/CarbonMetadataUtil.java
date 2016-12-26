@@ -240,7 +240,9 @@ public class CarbonMetadataUtil {
       if (!isSortedKeyColumn[i]) {
         dataChunk.setRowid_page_offset(blockletInfoColumnar.getKeyBlockIndexOffSets()[j]);
         dataChunk.setRowid_page_length(blockletInfoColumnar.getKeyBlockIndexLength()[j]);
-        encodings.add(Encoding.INVERTED_INDEX);
+        if (!encodings.contains(Encoding.INVERTED_INDEX)) {
+          encodings.add(Encoding.INVERTED_INDEX);
+        }
         j++;
       }
 
