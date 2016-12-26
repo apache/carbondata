@@ -169,7 +169,6 @@ object CarbonExample {
     // Drop table
     spark.sql("DROP TABLE IF EXISTS carbon_table")
     spark.sql("DROP TABLE IF EXISTS csv_table")
-    
     spark.stop()
   }
 }
