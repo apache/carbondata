@@ -61,6 +61,8 @@ object CarbonSessionExample {
 
     spark.sparkContext.setLogLevel("WARN")
 
+    spark.sql("DROP TABLE IF EXISTS carbon_table")
+
     // Create table
     spark.sql(
       s"""
@@ -79,17 +81,16 @@ object CarbonSessionExample {
          | TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 
-    // val prop = s"$rootPath/conf/dataload.properties.template"
-    // val tableName = "carbon_table"
     val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
-    // TableLoader.main(Array[String](prop, tableName, path))
 
+    // scalastyle:off
     spark.sql(
       s"""
          | LOAD DATA LOCAL INPATH '$path'
          | INTO TABLE carbon_table
          | options('FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField')
        """.stripMargin)
+    // scalastyle:on
 
     spark.sql("""
              SELECT *

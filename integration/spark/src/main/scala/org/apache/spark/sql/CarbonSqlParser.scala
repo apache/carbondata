@@ -38,7 +38,7 @@ import org.apache.carbondata.spark.util.CommonUtil
 /**
  * Parser for All Carbon DDL, DML cases in Unified context
  */
-class CarbonSqlParser() extends CarbonCommonSqlParser {
+class CarbonSqlParser() extends CarbonDDLSqlParser {
 
   override def parse(input: String): LogicalPlan = {
     synchronized {
