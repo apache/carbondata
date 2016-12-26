@@ -24,13 +24,15 @@ interactive query using advanced columnar storage, index, compression
 and encoding techniques to improve computing efficiency, in turn it will 
 help speedup queries an order of magnitude faster over PetaBytes of data. 
 
-You can find the latest CarbonData document and learn more at [CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA)
+You can find the latest CarbonData document and learn more at:
+[http://carbondata.incubator.apache.org](http://carbondata.incubator.apache.org/)
+
+[CarbonData cwiki](https://cwiki.apache.org/confluence/display/CARBONDATA/)
 
 ### Features
 CarbonData file format is a columnar store in HDFS, it has many features that a modern columnar format has, such as splittable, compression schema ,complex data type etc, and CarbonData has following unique features:
 * Stores data along with index: it can significantly accelerate query performance and reduces the I/O scans and CPU resources, where there are filters in the query.  CarbonData index consists of multiple level of indices, a processing framework can leverage this index to reduce the task it needs to schedule and process, and it can also do skip scan in more finer grain unit (called blocklet) in task side scanning instead of scanning the whole file. 
 * Operable encoded data :Through supporting efficient compression and global encoding schemes, can query on compressed/encoded data, the data can be converted just before returning the results to the users, which is "late materialized". 
-* Column group: Allow multiple columns to form a column group that would be stored as row format. This reduces the row reconstruction cost at query time.
 * Supports for various use cases with one single Data format : like interactive OLAP-style query, Sequential Access (big scan), Random Access (narrow scan). 
 
 ### Building CarbonData,using development tools and cluster deployment guide
