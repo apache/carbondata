@@ -307,21 +307,6 @@ public class CarbonLoadModel implements Serializable {
     this.colDictFilePath = colDictFilePath;
   }
 
-  /**
-   * @return the dimFolderPath
-   */
-  public String getDimFolderPath() {
-    return dimFolderPath;
-  }
-
-  //TODO SIMIAN
-
-  /**
-   * @param dimFolderPath the dimFolderPath to set
-   */
-  public void setDimFolderPath(String dimFolderPath) {
-    this.dimFolderPath = dimFolderPath;
-  }
 
   /**
    * get copy with parition
@@ -332,7 +317,6 @@ public class CarbonLoadModel implements Serializable {
   public CarbonLoadModel getCopyWithPartition(String uniqueId) {
     CarbonLoadModel copy = new CarbonLoadModel();
     copy.tableName = tableName;
-    copy.dimFolderPath = dimFolderPath;
     copy.factFilePath = factFilePath + '/' + uniqueId;
     copy.databaseName = databaseName;
     copy.partitionId = uniqueId;
@@ -372,7 +356,6 @@ public class CarbonLoadModel implements Serializable {
       String header, String delimiter) {
     CarbonLoadModel copyObj = new CarbonLoadModel();
     copyObj.tableName = tableName;
-    copyObj.dimFolderPath = dimFolderPath;
     copyObj.factFilePath = null;
     copyObj.databaseName = databaseName;
     copyObj.partitionId = uniqueId;

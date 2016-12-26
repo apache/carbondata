@@ -50,7 +50,6 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
 
   def buildCarbonLoadModel(relation: CarbonRelation,
     filePath: String,
-    dimensionFilePath: String,
     header: String): CarbonLoadModel = {
     val carbonLoadModel = new CarbonLoadModel
     carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
@@ -62,7 +61,6 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
     carbonLoadModel.setTableName(table.getFactTableName)
     carbonLoadModel.setCarbonDataLoadSchema(carbonSchema)
     carbonLoadModel.setFactFilePath(filePath)
-    carbonLoadModel.setDimFolderPath(dimensionFilePath)
     carbonLoadModel.setCsvHeader(header)
     carbonLoadModel.setCsvDelimiter(",")
     carbonLoadModel.setComplexDelimiterLevel1("\\$")
@@ -156,7 +154,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("[issue-80]Global Dictionary Generation") {
 
-    val carbonLoadModel = buildCarbonLoadModel(sampleRelation, filePath, null, null)
+    val carbonLoadModel = buildCarbonLoadModel(sampleRelation, filePath, null)
     GlobalDictionaryUtil
       .generateGlobalDictionary(CarbonHiveContext,
         carbonLoadModel,
@@ -174,7 +172,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
   test("[Issue-190]load csv file without header And support complex type") {
     val header = "deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC,locationinfo," +
       "proddate,gamePointId,contractNumber"
-    val carbonLoadModel = buildCarbonLoadModel(complexRelation, complexfilePath, null, header)
+    val carbonLoadModel = buildCarbonLoadModel(complexRelation, complexfilePath, header)
     GlobalDictionaryUtil
       .generateGlobalDictionary(CarbonHiveContext,
         carbonLoadModel,
@@ -188,7 +186,6 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
     // load 1
     var carbonLoadModel = buildCarbonLoadModel(incrementalLoadTableRelation,
       complexfilePath1,
-      null,
       header
     )
     GlobalDictionaryUtil
@@ -202,7 +199,6 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
     // load 2
     carbonLoadModel = buildCarbonLoadModel(incrementalLoadTableRelation,
       complexfilePath2,
-      null,
       header
     )
     GlobalDictionaryUtil
