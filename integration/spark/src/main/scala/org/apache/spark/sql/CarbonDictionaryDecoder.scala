@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
@@ -215,21 +217,39 @@ case class CarbonDictionaryDecoder(
   }
 
   private def getDictionary(atiMap: Map[String, AbsoluteTableIdentifier],
-      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary]) = {
-    val dicts: Seq[Dictionary] = getDictionaryColumnIds.map { f =>
+                            cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary]) = {
+    val dictionaryColumnIds = getDictionaryColumnIds.map { f =>
       if (f._2 != null) {
-        try {
-          cache.get(new DictionaryColumnUniqueIdentifier(
-            atiMap(f._1).getCarbonTableIdentifier,
-            f._2, f._3))
-        } catch {
-          case _: Throwable => null
-        }
+        new DictionaryColumnUniqueIdentifier(
+          atiMap(f._1).getCarbonTableIdentifier,
+          f._2, f._3)
       } else {
         null
       }
     }
-    dicts
+    try {
+      val noDictionaryIndexes = new java.util.ArrayList[Int]()
+      dictionaryColumnIds.zipWithIndex.foreach { x =>
+        if (x._1 == null) {
+          noDictionaryIndexes.add(x._2)
+        }
+      }
+      val dict = cache.getAll(dictionaryColumnIds.filter(_ != null).toSeq.asJava);
+      val finalDict = new java.util.ArrayList[Dictionary]()
+      var dictIndex: Int = 0
+      dictionaryColumnIds.zipWithIndex.foreach { x =>
+        if (!noDictionaryIndexes.contains(x._2)) {
+          finalDict.add(dict.get(dictIndex))
+          dictIndex += 1
+        } else {
+          finalDict.add(null)
+        }
+      }
+      finalDict.asScala
+    } catch {
+      case t: Throwable => Seq.empty
+    }
+
   }
 
 }
