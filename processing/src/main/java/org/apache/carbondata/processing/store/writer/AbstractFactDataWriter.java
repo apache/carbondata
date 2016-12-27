@@ -389,13 +389,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   }
 
   /**
-   * This method will be used to get the blocklet metadata
-   *
-   * @return BlockletInfo - blocklet metadata
-   */
-  protected abstract BlockletInfoColumnar getBlockletInfo(NodeHolder nodeHolder, long offset);
-
-  /**
    * Method will be used to close the open file channel
    *
    * @throws CarbonDataWriterException
