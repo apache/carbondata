@@ -330,159 +330,89 @@ object CarbonDataRDDFactory {
     compactionThread.run()
   }
 
-  def loadCarbonData(sqlContext: SQLContext,
-      carbonLoadModel: CarbonLoadModel,
-      storePath: String,
-      kettleHomePath: String,
-      columinar: Boolean,
-      partitionStatus: String = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS,
-      useKettle: Boolean,
-      dataFrame: Option[DataFrame] = None): Unit = {
-    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    val isAgg = false
-    // for handling of the segment Merging.
-    def handleSegmentMerging(tableCreationTime: Long): Unit = {
-      LOGGER.info(s"compaction need status is" +
-                  s" ${ CarbonDataMergerUtil.checkIfAutoLoadMergingRequired() }")
-      if (CarbonDataMergerUtil.checkIfAutoLoadMergingRequired()) {
-        LOGGER.audit(s"Compaction request received for table " +
-                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-        val compactionSize = 0
-        val isCompactionTriggerByDDl = false
-        val compactionModel = CompactionModel(compactionSize,
-          CompactionType.MINOR_COMPACTION,
-          carbonTable,
-          tableCreationTime,
-          isCompactionTriggerByDDl
-        )
-        var storeLocation = ""
-        val configuredStore = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
-        if (null != configuredStore && configuredStore.nonEmpty) {
-          storeLocation = configuredStore(Random.nextInt(configuredStore.length))
-        }
-        if (storeLocation == null) {
-          storeLocation = System.getProperty("java.io.tmpdir")
-        }
-        storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
+  // for handling of the segment Merging.
+  private def handleSegmentMerging(tableCreationTime: Long): Unit = {
+    LOGGER.info(s"compaction need status is" +
+        s" ${ CarbonDataMergerUtil.checkIfAutoLoadMergingRequired() }")
+    if (CarbonDataMergerUtil.checkIfAutoLoadMergingRequired()) {
+      LOGGER.audit(s"Compaction request received for table " +
+          s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+      val compactionSize = 0
+      val isCompactionTriggerByDDl = false
+      val compactionModel = CompactionModel(compactionSize,
+        CompactionType.MINOR_COMPACTION,
+        carbonTable,
+        tableCreationTime,
+        isCompactionTriggerByDDl
+      )
+      var storeLocation = ""
+      val configuredStore = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+      if (null != configuredStore && configuredStore.nonEmpty) {
+        storeLocation = configuredStore(Random.nextInt(configuredStore.length))
+      }
+      if (storeLocation == null) {
+        storeLocation = System.getProperty("java.io.tmpdir")
+      }
+      storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
-        val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
+      val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
             CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
           )
           .equalsIgnoreCase("true")
 
-        if (!isConcurrentCompactionAllowed) {
+      if (!isConcurrentCompactionAllowed) {
 
-          handleCompactionForSystemLocking(sqlContext,
-            carbonLoadModel,
-            storePath,
-            kettleHomePath,
-            storeLocation,
-            CompactionType.MINOR_COMPACTION,
-            carbonTable,
-            compactionModel
-          )
-        } else {
-          val lock = CarbonLockFactory
+        handleCompactionForSystemLocking(sqlContext,
+          carbonLoadModel,
+          storePath,
+          kettleHomePath,
+          storeLocation,
+          CompactionType.MINOR_COMPACTION,
+          carbonTable,
+          compactionModel
+        )
+      } else {
+        val lock = CarbonLockFactory
             .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
               LockUsage.COMPACTION_LOCK
             )
 
-          if (lock.lockWithRetries()) {
-            LOGGER.info("Acquired the compaction lock.")
-            try {
-              startCompactionThreads(sqlContext,
-                carbonLoadModel,
-                storePath,
-                kettleHomePath,
-                storeLocation,
-                compactionModel,
-                lock
-              )
-            } catch {
-              case e: Exception =>
-                LOGGER.error(s"Exception in start compaction thread. ${ e.getMessage }")
-                lock.unlock()
-                throw e
-            }
-          } else {
-            LOGGER.audit("Not able to acquire the compaction lock for table " +
-                         s"${ carbonLoadModel.getDatabaseName }.${
-                           carbonLoadModel
-                             .getTableName
-                         }")
-            LOGGER.error("Not able to acquire the compaction lock for table " +
-                         s"${ carbonLoadModel.getDatabaseName }.${
-                           carbonLoadModel
-                             .getTableName
-                         }")
-          }
-        }
-      }
-    }
-
-    LOGGER.audit(s"Data load request has been received for table" +
-                 s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-    if (!useKettle) {
-      LOGGER.audit("Data is loading with New Data Flow for table " +
-                   s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-    }
-    // Check if any load need to be deleted before loading new data
-    DataManagementFunc.deleteLoadsAndUpdateMetadata(carbonLoadModel.getDatabaseName,
-      carbonLoadModel.getTableName, storePath, isForceDeletion = false)
-    if (null == carbonLoadModel.getLoadMetadataDetails) {
-      CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
-    }
-
-    var currentLoadCount = -1
-    val convLoadDetails = carbonLoadModel.getLoadMetadataDetails.asScala
-    // taking the latest segment ID present.
-    // so that any other segments above this will be deleted.
-    if (convLoadDetails.nonEmpty) {
-      convLoadDetails.foreach { l =>
-        var loadCount = 0
-        breakable {
+        if (lock.lockWithRetries()) {
+          LOGGER.info("Acquired the compaction lock.")
           try {
-            loadCount = Integer.parseInt(l.getLoadName)
+            startCompactionThreads(sqlContext,
+              carbonLoadModel,
+              storePath,
+              kettleHomePath,
+              storeLocation,
+              compactionModel,
+              lock
+            )
           } catch {
-            case e: NumberFormatException => // case of merge folder. ignore it.
-              break
+            case e: Exception =>
+              LOGGER.error(s"Exception in start compaction thread. ${ e.getMessage }")
+              lock.unlock()
+              throw e
           }
-          if (currentLoadCount < loadCount) {
-            currentLoadCount = loadCount
-          }
+        } else {
+          LOGGER.audit("Not able to acquire the compaction lock for table " +
+              s"${ carbonLoadModel.getDatabaseName }.${
+                carbonLoadModel
+                    .getTableName
+              }")
+          LOGGER.error("Not able to acquire the compaction lock for table " +
+              s"${ carbonLoadModel.getDatabaseName }.${
+                carbonLoadModel
+                    .getTableName
+              }")
         }
       }
     }
-    currentLoadCount += 1
-    // Deleting the any partially loaded data if present.
-    // in some case the segment folder which is present in store will not have entry in status.
-    // so deleting those folders.
-    try {
-      CarbonLoaderUtil.deletePartialLoadDataIfExist(carbonLoadModel, false)
-    } catch {
-      case e: Exception =>
-        LOGGER
-          .error(s"Exception in data load while clean up of stale segments ${ e.getMessage }")
-    }
+  }
 
-    // reading the start time of data load.
-    val loadStartTime = CarbonLoaderUtil.readCurrentTime()
-    carbonLoadModel.setFactTimeStamp(loadStartTime)
-    val tableCreationTime = CarbonEnv.get.carbonMetastore
-      .getTableCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
-    val schemaLastUpdatedTime = CarbonEnv.get.carbonMetastore
-      .getSchemaLastUpdatedTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
-
-    // get partition way from configuration
-    // val isTableSplitPartition = CarbonProperties.getInstance().getProperty(
-    // CarbonCommonConstants.TABLE_SPLIT_PARTITION,
-    // CarbonCommonConstants.TABLE_SPLIT_PARTITION_DEFAULT_VALUE).toBoolean
-    val isTableSplitPartition = false
-    var blocksGroupBy: Array[(String, Array[BlockDetails])] = null
-    var status: Array[(String, LoadMetadataDetails)] = null
-
-    def loadDataFile(): Unit = {
+  // load carbon table from file
+  private def loadDataFile(): Unit = {
       if (isTableSplitPartition) {
         /*
        * when data handle by table split partition
@@ -626,7 +556,8 @@ object CarbonDataRDDFactory {
       }
     }
 
-    def loadDataFrame(): Unit = {
+  // load carbon table from dataframe
+  private def loadDataFrame(): Unit = {
       try {
         val rdd = dataFrame.get.rdd
         val nodeNumOfData = rdd.partitions.flatMap[String, Array[String]] { p =>
@@ -652,6 +583,74 @@ object CarbonDataRDDFactory {
           throw ex
       }
     }
+
+  def loadCarbonData(sqlContext: SQLContext,
+      carbonLoadModel: CarbonLoadModel,
+      storePath: String,
+      kettleHomePath: String,
+      columnar: Boolean,
+      partitionStatus: String = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS,
+      useKettle: Boolean,
+      dataFrame: Option[DataFrame] = None): Unit = {
+    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    val isAgg = false
+
+    LOGGER.audit(s"Data load request has been received for table" +
+                 s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+    if (!useKettle) {
+      LOGGER.audit("Data is loading with New Data Flow for table " +
+                   s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+    }
+    // Check if any load need to be deleted before loading new data
+    DataManagementFunc.deleteLoadsAndUpdateMetadata(carbonLoadModel.getDatabaseName,
+      carbonLoadModel.getTableName, storePath, isForceDeletion = false)
+    if (null == carbonLoadModel.getLoadMetadataDetails) {
+      CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
+    }
+
+    var currentLoadCount = -1
+    val convLoadDetails = carbonLoadModel.getLoadMetadataDetails.asScala
+    // taking the latest segment ID present.
+    // so that any other segments above this will be deleted.
+    if (convLoadDetails.nonEmpty) {
+      convLoadDetails.foreach { l =>
+        var loadCount = 0
+        breakable {
+          try {
+            loadCount = Integer.parseInt(l.getLoadName)
+          } catch {
+            case e: NumberFormatException => // case of merge folder. ignore it.
+              break
+          }
+          if (currentLoadCount < loadCount) {
+            currentLoadCount = loadCount
+          }
+        }
+      }
+    }
+    currentLoadCount += 1
+    // Deleting the any partially loaded data if present.
+    // in some case the segment folder which is present in store will not have entry in status.
+    // so deleting those folders.
+    try {
+      CarbonLoaderUtil.deletePartialLoadDataIfExist(carbonLoadModel, false)
+    } catch {
+      case e: Exception =>
+        LOGGER
+          .error(s"Exception in data load while clean up of stale segments ${ e.getMessage }")
+    }
+
+    // reading the start time of data load.
+    val loadStartTime = CarbonLoaderUtil.readCurrentTime()
+    carbonLoadModel.setFactTimeStamp(loadStartTime)
+    val tableCreationTime = CarbonEnv.get.carbonMetastore
+      .getTableCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
+    val schemaLastUpdatedTime = CarbonEnv.get.carbonMetastore
+      .getSchemaLastUpdatedTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
+
+    val isTableSplitPartition = false
+    var blocksGroupBy: Array[(String, Array[BlockDetails])] = null
+    var status: Array[(String, LoadMetadataDetails)] = null
 
     CarbonLoaderUtil.checkAndCreateCarbonDataLocation(storePath,
       carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName, currentLoadCount.toString)
