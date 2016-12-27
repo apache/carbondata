@@ -552,14 +552,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   public abstract void writeBlockletData(NodeHolder nodeHolder) throws CarbonDataWriterException;
 
-  @Override public int getLeafMetadataSize() {
-    return blockletInfoList.size();
-  }
-
-  @Override public String getTempStoreLocation() {
-    return this.fileName;
-  }
-
   protected byte[][] fillAndCompressedKeyBlockData(IndexStorage<int[]>[] keyStorageArray,
       int entryCount) {
     byte[][] keyBlockData = new byte[keyStorageArray.length][];

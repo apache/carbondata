@@ -216,35 +216,14 @@ public class ColumnsInfo {
   }
 
   /**
-   * @return Returns the batchSize.
-   */
-  public int getBatchSize() {
-    return batchSize;
-  }
-
-  /**
    * @param batchSize The batchSize to set.
    */
   public void setBatchSize(int batchSize) {
     this.batchSize = batchSize;
   }
 
-  /**
-   * @return Returns the isInitialLoad.
-   */
-  public boolean isAggregateLoad() {
-    return isAggregateLoad;
-  }
-
   public void setAggregateLoad(boolean isAggregateLoad) {
     this.isAggregateLoad = isAggregateLoad;
-  }
-
-  /**
-   * @return Returns the storeType.
-   */
-  public String getStoreType() {
-    return storeType;
   }
 
   /**
@@ -297,13 +276,6 @@ public class ColumnsInfo {
   }
 
   /**
-   * @return Returns the propColumns.
-   */
-  public List<String>[] getPropColumns() {
-    return propColumns;
-  }
-
-  /**
    * @param propColumns The propColumns to set.
    */
   public void setPropColumns(List<String>[] propColumns) {
@@ -332,13 +304,6 @@ public class ColumnsInfo {
   }
 
   /**
-   * @param timDimIndexEnd The timDimIndexEnd to set.
-   */
-  public void setTimDimIndexEnd(int timDimIndexEnd) {
-    this.timDimIndexEnd = timDimIndexEnd;
-  }
-
-  /**
    * @return Returns the timeOrdinalIndices.
    */
   public int[] getTimeOrdinalIndices() {
@@ -353,24 +318,10 @@ public class ColumnsInfo {
   }
 
   /**
-   * @return Returns the timeOrdinalCols.
-   */
-  public String[] getTimeOrdinalCols() {
-    return timeOrdinalCols;
-  }
-
-  /**
    * @param timeOrdinalCols The timeOrdinalCols to set.
    */
   public void setTimeOrdinalCols(String[] timeOrdinalCols) {
     this.timeOrdinalCols = timeOrdinalCols;
-  }
-
-  /**
-   * @return Returns the propTypes.
-   */
-  public List<String>[] getPropTypes() {
-    return propTypes;
   }
 
   /**
@@ -392,13 +343,6 @@ public class ColumnsInfo {
    */
   public void setBaseStoreLocation(String baseStoreLocation) {
     this.baseStoreLocation = baseStoreLocation;
-  }
-
-  /**
-   * @return Returns the dimHierRel.
-   */
-  public String[] getDimHierRel() {
-    return dimHierRel;
   }
 
   /**
@@ -429,22 +373,6 @@ public class ColumnsInfo {
    */
   public boolean[] getDimsPresent() {
     return dimsPresent;
-  }
-
-  /**
-   * setDimsPresent
-   *
-   * @param dimsPresent
-   */
-  public void setDimsPresent(boolean[] dimsPresent) {
-    this.dimsPresent = dimsPresent;
-  }
-
-  /**
-   * @return Returns the measureColumns.
-   */
-  public String[] getMeasureColumns() {
-    return measureColumns;
   }
 
   /**

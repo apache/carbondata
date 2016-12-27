@@ -95,13 +95,6 @@ public class CarbonDataWriterVo {
   }
 
   /**
-   * @return the mdKeyLength
-   */
-  public int getMdKeyLength() {
-    return mdKeyLength;
-  }
-
-  /**
    * @param mdKeyLength the mdKeyLength to set
    */
   public void setMdKeyLength(int mdKeyLength) {
@@ -232,20 +225,6 @@ public class CarbonDataWriterVo {
    */
   public void setWrapperColumnSchemaList(List<ColumnSchema> wrapperColumnSchemaList) {
     this.wrapperColumnSchemaList = wrapperColumnSchemaList;
-  }
-
-  /**
-   * @return the numberOfNoDictionaryColumn
-   */
-  public int getNumberOfNoDictionaryColumn() {
-    return numberOfNoDictionaryColumn;
-  }
-
-  /**
-   * @param numberOfNoDictionaryColumn the numberOfNoDictionaryColumn to set
-   */
-  public void setNumberOfNoDictionaryColumn(int numberOfNoDictionaryColumn) {
-    this.numberOfNoDictionaryColumn = numberOfNoDictionaryColumn;
   }
 
   /**

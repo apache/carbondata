@@ -96,10 +96,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    */
   protected int[] msrs;
   /**
-   * timehierName
-   */
-  protected String timehierName;
-  /**
    * hirches
    */
   protected Map<String, int[]> hirches;
@@ -115,10 +111,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    * timeDimeIndex
    */
   protected int timeDimeIndex = -1;
-  /**
-   * timeLevels
-   */
-  protected String[] timeLevels = new String[0];
   /**
    * timeOrdinalCols
    */
@@ -144,10 +136,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    */
   protected String[] measureColumn;
   /**
-   * column data types
-   */
-  protected String[] dimColsDataType;
-  /**
    * array of carbon measures
    */
   protected CarbonMeasure[] carbonMeasures;
@@ -156,15 +144,10 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    */
   protected int[] msrMapping;
   /**
-   * dimMapping
-   */
-  protected int[] dimMapping;
-  /**
    * dims
    */
   protected boolean[] dimPresent;
   protected int normLength;
-  protected List<String> normHierList;
   /**
    * actualDimArrays
    */
@@ -394,10 +377,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     return complexTypes;
   }
 
-  public void setComplexTypes(Map<String, GenericDataType> complexTypes) {
-    this.complexTypes = complexTypes;
-  }
-
   public String getComplexDelimiterLevel1() {
     return complexDelimiterLevel1;
   }
@@ -414,10 +393,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     this.complexDelimiterLevel2 = complexDelimiterLevel2;
   }
 
-  public String getComplexTypeString() {
-    return complexTypeString;
-  }
-
   public void setComplexTypeString(String complexTypeString) {
     this.complexTypeString = complexTypeString;
   }
@@ -430,20 +405,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     return complexTypeColumns;
   }
 
-  public void setComplexTypeColumns(String[] complexTypeColumns) {
-    this.complexTypeColumns = complexTypeColumns;
-  }
-
-  public String getCarbonMetaHier() {
-    return carbonMetaHier;
-  }
-
   public void setCarbonMetaHier(String carbonMetaHier) {
     this.carbonMetaHier = carbonMetaHier;
-  }
-
-  public String getMetaHeirSQLQueries() {
-    return metaHeirSQLQuery;
   }
 
   public void setMetaMetaHeirSQLQueries(String metaHeirSQLQuery) {
@@ -470,62 +433,26 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     return storeType;
   }
 
-  public void setStoreType(String storeType) {
-    this.storeType = storeType;
-  }
-
-  public String getCarbonSchema() {
-    return carbonSchema;
-  }
-
-  public void setCarbonSchema(String carbonSchema) {
-    this.carbonSchema = carbonSchema;
-  }
-
   public List<HierarchiesInfo> getMetahierVoList() {
     return metahierVoList;
-  }
-
-  public void setMetahierVoList(List<HierarchiesInfo> metahierVoList) {
-    this.metahierVoList = metahierVoList;
   }
 
   public String getCarbonTime() {
     return carbonTime;
   }
 
-  public void setCarbonTime(String carbonTime) {
-    this.carbonTime = carbonTime;
-  }
-
   // getters and setters for the step settings
-
-  public String getCarbonProps() {
-    return carbonProps;
-  }
 
   public void setCarbonProps(String carbonProps) {
     this.carbonProps = carbonProps;
-  }
-
-  public String getCarbonmsr() {
-    return carbonmsr;
   }
 
   public void setCarbonmsr(String carbonmsr) {
     this.carbonmsr = carbonmsr;
   }
 
-  public String getCarbondim() {
-    return carbondim;
-  }
-
   public void setCarbondim(String carbondim) {
     this.carbondim = carbondim;
-  }
-
-  public String getCarbonHier() {
-    return carbonhier;
   }
 
   public void setCarbonhier(String carbonhier) {
@@ -533,24 +460,10 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
   }
 
   /**
-   * @return the connectionURL
-   */
-  public String getConnectionURL() {
-    return connectionURL;
-  }
-
-  /**
    * @param connectionURL the connectionURL to set
    */
   public void setConnectionURL(String connectionURL) {
     this.connectionURL = connectionURL;
-  }
-
-  /**
-   * @return the driverClass
-   */
-  public String getDriverClass() {
-    return driverClass;
   }
 
   //TODO SIMIAN
@@ -563,24 +476,10 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
   }
 
   /**
-   * @return the userName
-   */
-  public String getUserName() {
-    return userName;
-  }
-
-  /**
    * @param userName the userName to set
    */
   public void setUserName(String userName) {
     this.userName = userName;
-  }
-
-  /**
-   * @return the password
-   */
-  public String getPassword() {
-    return password;
   }
 
   /**
@@ -589,22 +488,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
   public void setPassword(String password) {
     this.password = password;
   }
-
-  /**
-   * @return Returns the generateDimFiles.
-   */
-  public boolean isGenerateDimFiles() {
-    return generateDimFiles;
-  }
-
-  /**
-   * @param generateDimFiles The generateDimFiles to set.
-   */
-  public void setGenerateDimFiles(boolean generateDimFiles) {
-    this.generateDimFiles = generateDimFiles;
-  }
-
-  public String getDateFormat() { return dateFormat; }
 
   public void setDateFormat(String dateFormat) { this.dateFormat = dateFormat; }
 
@@ -822,8 +705,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     foreignKeyPrimaryKeyMap = getForeignKeyColumnNameMap(forgienKeyPrimayKeyString);
 
     actualDimArray = getActualDimensionArray(actualDimNames);
-
-    normHierList = getNormHierList(normHiers);
 
     //update non time dimension properties
     updateDimProperties();
@@ -1427,10 +1308,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     return propTypes;
   }
 
-  public String getTableNames() {
-    return dimesionTableNames;
-  }
-
   public void setTableNames(String dimHierReleation) {
     this.dimesionTableNames = dimHierReleation;
   }
@@ -1459,10 +1336,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     this.tableName = tableName;
   }
 
-  public String[] getModifiedDimension() {
-    return modifiedDimension;
-  }
-
   public void setModifiedDimension(String[] modifiedDimension) {
     this.modifiedDimension = modifiedDimension;
   }
@@ -1483,64 +1356,32 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     return primaryKeyMap;
   }
 
-  public String getCarbonMeasureNames() {
-    return carbonMeasureNames;
-  }
-
   public void setCarbonMeasureNames(String carbonMeasureNames) {
     this.carbonMeasureNames = carbonMeasureNames;
-  }
-
-  public String getActualDimNames() {
-    return actualDimNames;
   }
 
   public void setActualDimNames(String actualDimNames) {
     this.actualDimNames = actualDimNames;
   }
 
-  public String getNormHiers() {
-    return normHiers;
-  }
-
   public void setNormHiers(String normHiers) {
     this.normHiers = normHiers;
-  }
-
-  public String getMsrAggregatorString() {
-    return msrAggregatorString;
   }
 
   public void setMsrAggregatorString(String msrAggregatorString) {
     this.msrAggregatorString = msrAggregatorString;
   }
 
-  public String getHeirKeySize() {
-    return heirKeySize;
-  }
-
   public void setHeirKeySize(String heirKeySize) {
     this.heirKeySize = heirKeySize;
-  }
-
-  public String getForgienKeyPrimayKeyString() {
-    return forgienKeyPrimayKeyString;
   }
 
   public void setForgienKeyPrimayKeyString(String forgienKeyPrimayKeyString) {
     this.forgienKeyPrimayKeyString = forgienKeyPrimayKeyString;
   }
 
-  public String getHeirNadDimsLensString() {
-    return heirNadDimsLensString;
-  }
-
   public void setHeirNadDimsLensString(String heirNadDimsLensString) {
     this.heirNadDimsLensString = heirNadDimsLensString;
-  }
-
-  public String getMeasureDataType() {
-    return measureDataType;
   }
 
   public void setMeasureDataType(String measureDataType) {
@@ -1551,20 +1392,12 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     return measureSurrogateRequired;
   }
 
-  public void setMeasureSurrogateRequired(Map<String, Boolean> measureSurrogateRequired) {
-    this.measureSurrogateRequired = measureSurrogateRequired;
-  }
-
   public Map<String, String> getHierDimTableMap() {
     return hierDimTableMap;
   }
 
   public String[] getDimTableArray() {
     return dimTableArray;
-  }
-
-  public String getColumnAndTableNameColumnMapForAggString() {
-    return columnAndTableNameColumnMapForAggString;
   }
 
   public void setColumnAndTableNameColumnMapForAggString(
@@ -1580,10 +1413,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     this.databaseName = databaseName;
   }
 
-  public String getDenormColumNames() {
-    return denormColumNames;
-  }
-
   public void setDenormColumNames(String denormColumNames) {
     this.denormColumNames = denormColumNames;
   }
@@ -1594,13 +1423,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
 
   public void setNoDictionaryDims(String noDictionaryDims) {
     this.noDictionaryDims = noDictionaryDims;
-  }
-
-  /**
-   * @return columngroups
-   */
-  public String getDimensionColumnsDataType() {
-    return columnsDataTypeString;
   }
 
   /**

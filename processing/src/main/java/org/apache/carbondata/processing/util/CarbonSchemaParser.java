@@ -42,11 +42,6 @@ public final class CarbonSchemaParser {
    */
   public static final String QUOTES = "\"";
 
-  /**
-   * BACK_TICK
-   */
-  public static final String BACK_TICK = "`";
-
   private CarbonSchemaParser() {
 
   }
@@ -209,14 +204,6 @@ public final class CarbonSchemaParser {
 
     getQueryForDimension(dimensions, query, factTableName, isQuotesRequired, carbonDataLoadSchema);
 
-    //No properties in new Schema
-    //        if (checkIfDenormalized(carbonDataLoadSchema)) {
-    //            if (!isQuotesRequired) {
-    //                getPropetiesQuerypart(dimensions, query, factTableName, schema);
-    //            } else {
-    //                getPropetiesQuerypartWithQuotes(dimensions, query, factTableName, schema);
-    //            }
-    //        }
     if (!"select".equalsIgnoreCase(query.toString().trim())) {
       query.append(",");
     }
@@ -248,52 +235,6 @@ public final class CarbonSchemaParser {
     }
 
     return query.toString();
-  }
-
-  /**
-   * @param aggDim
-   * @param measures
-   * @param factTableName
-   * @param isQuotesRequired
-   * @param schemaInfo
-   * @return
-   */
-  public static String getTableInputSQLQueryForAGG(String[] aggDim, String[] measures,
-      String factTableName, boolean isQuotesRequired) {
-    StringBuilder queryBuilder = new StringBuilder("SELECT ");
-    queryBuilder.append(System.getProperty("line.separator"));
-    //query.append("\n");
-    for (int i = 0; i < aggDim.length; i++) {
-      if (isQuotesRequired) {
-        queryBuilder.append(QUOTES + aggDim[i] + QUOTES);
-      } else {
-        queryBuilder.append(aggDim[i]);
-      }
-      queryBuilder.append(",");
-      queryBuilder.append(System.getProperty("line.separator"));
-      //query.append("\n");
-    }
-
-    for (int i = 0; i < measures.length - 1; i++) {
-      if (isQuotesRequired) {
-        queryBuilder.append(QUOTES + measures[i] + QUOTES);
-      } else {
-        queryBuilder.append(measures[i]);
-      }
-      queryBuilder.append(",");
-      queryBuilder.append(System.getProperty("line.separator"));
-      //query.append("\n");
-    }
-    if (isQuotesRequired) {
-      queryBuilder.append(QUOTES + measures[measures.length - 1] + QUOTES);
-      queryBuilder.append(System.getProperty("line.separator"));
-      queryBuilder.append(" FROM " + QUOTES + factTableName + QUOTES);
-    } else {
-      queryBuilder.append(measures[measures.length - 1]);
-      queryBuilder.append(System.getProperty("line.separator"));
-      queryBuilder.append(" FROM " + factTableName);
-    }
-    return queryBuilder.toString();
   }
 
   private static void getQueryForDimension(List<CarbonDimension> dimensions, StringBuilder query,
@@ -364,38 +305,6 @@ public final class CarbonSchemaParser {
   }
 
   /**
-   * @param dimensions
-   * @param dimString
-   * @param counter
-   * @param dimCardinalities
-   * @return
-   */
-  public static int getDimensionStringForAgg(String[] dimensions, StringBuilder dimString,
-      int counter, Map<String, String> dimCardinalities, String[] acutalDimension) {
-    //
-    int len = dimensions.length;
-    for (int i = 0; i < len - 1; i++) {
-      dimString.append(dimensions[i]);
-      dimString.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
-      dimString.append(counter++);
-      dimString.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
-      dimString.append(dimCardinalities.get(acutalDimension[i]));
-      dimString.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
-      dimString.append("Y");
-      dimString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-    }
-    //
-    dimString.append(dimensions[len - 1]);
-    dimString.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
-    dimString.append(counter++);
-    dimString.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
-    dimString.append(dimCardinalities.get(acutalDimension[len - 1]));
-    dimString.append(CarbonCommonConstants.COLON_SPC_CHARACTER);
-    dimString.append("Y");
-    return counter;
-  }
-
-  /**
    * Return mapping of Column name to cardinality
    */
 
@@ -425,49 +334,6 @@ public final class CarbonSchemaParser {
       counter++;
       if (i > 1) {
         measureString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-      }
-      i--;
-
-    }
-    return measureString.toString();
-  }
-
-  /**
-   * Get measure string from a array of Measure
-   *
-   * @param measures
-   * @return
-   */
-  public static String getMeasureStringForAgg(String[] measures, int counter) {
-    StringBuilder measureString = new StringBuilder();
-    int i = measures.length;
-    for (String measure : measures) {
-
-      measureString.append(measure + CarbonCommonConstants.COLON_SPC_CHARACTER + counter);
-      counter++;
-      if (i > 1) {
-        measureString.append(CarbonCommonConstants.COMA_SPC_CHARACTER);
-      }
-      i--;
-
-    }
-    return measureString.toString();
-  }
-
-  /**
-   * Get measure string from a array of Measure
-   *
-   * @param measures
-   * @return
-   */
-  public static String getStringWithSeperator(String[] measures, String seperator) {
-    StringBuilder measureString = new StringBuilder();
-    int i = measures.length;
-    for (String measure : measures) {
-
-      measureString.append(measure);
-      if (i > 1) {
-        measureString.append(seperator);
       }
       i--;
 
@@ -646,7 +512,7 @@ public final class CarbonSchemaParser {
     return prop;
   }
 
-  public static String getTableNameString(String factTableName, List<CarbonDimension> dimensions,
+  public static String getTableNameString(List<CarbonDimension> dimensions,
       CarbonDataLoadSchema carbonDataLoadSchema) {
     StringBuilder stringBuffer = new StringBuilder();
 
@@ -702,36 +568,6 @@ public final class CarbonSchemaParser {
       dims[i] = -1;
     }
     return KeyGeneratorFactory.getKeyGenerator(dims).getKeySizeInBytes() + "";
-  }
-
-  /**
-   * @param dimensions
-   * @param dimCardinalities
-   * @return
-   */
-  public static String getMdkeySizeForAgg(String[] dimensions,
-      Map<String, String> dimCardinalities) {
-    int[] dims = new int[dimensions.length];
-    for (int i = 0; i < dimensions.length; i++) {
-      dims[i] = Integer.parseInt(dimCardinalities.get(dimensions[i]));
-    }
-    return KeyGeneratorFactory.getKeyGenerator(dims).getKeySizeInBytes() + "";
-
-  }
-
-  /**
-   * @param dimensions
-   * @param dimCardinalities
-   * @return
-   */
-  public static KeyGenerator getKeyGeneratorForAGG(String[] dimensions,
-      Map<String, String> dimCardinalities) {
-    int[] dims = new int[dimensions.length];
-    for (int i = 0; i < dimensions.length; i++) {
-      dims[i] = Integer.parseInt(dimCardinalities.get(dimensions[i]));
-    }
-    return KeyGeneratorFactory.getKeyGenerator(dims);
-
   }
 
   /**
@@ -983,30 +819,6 @@ public final class CarbonSchemaParser {
   }
 
   /**
-   * Get Measure Name String
-   *
-   * @param table
-   * @return
-   */
-  public static String getMeasuresNamesStringForAgg(String[] measures) {
-    StringBuilder measureNames = new StringBuilder();
-
-    for (int i = 0; i < measures.length; i++) {
-      measureNames.append(measures[i]);
-      measureNames.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
-    }
-
-    String measureNameString = measureNames.toString();
-
-    if (measureNameString.endsWith(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER)) {
-      measureNameString = measureNameString.substring(0,
-          measureNameString.length() - CarbonCommonConstants.AMPERSAND_SPC_CHARACTER.length());
-    }
-
-    return measureNameString;
-  }
-
-  /**
    * Get Measure Aggregator array
    *
    * @param table
@@ -1064,28 +876,6 @@ public final class CarbonSchemaParser {
     }
     String dimDataType = dimDataTypeBuilder.toString();
     return dimDataType;
-  }
-
-  /**
-   * @param table
-   * @return
-   */
-  public static String getActualDimensionsForAggregate(String[] columns) {
-    //
-    StringBuilder actualDim = new StringBuilder();
-    for (String column : columns) {
-      actualDim.append(column);
-      actualDim.append(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
-    }
-
-    String actualDimString = actualDim.toString();
-
-    if (actualDimString.endsWith(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER)) {
-      actualDimString = actualDimString.substring(0,
-          actualDimString.length() - CarbonCommonConstants.AMPERSAND_SPC_CHARACTER.length());
-    }
-
-    return actualDimString;
   }
 
   public static String getMeasuresDataType(List<CarbonMeasure> measures) {

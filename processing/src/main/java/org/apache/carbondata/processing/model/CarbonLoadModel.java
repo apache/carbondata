@@ -211,10 +211,6 @@ public class CarbonLoadModel implements Serializable {
     return factFilesToProcess;
   }
 
-  public void setFactFilesToProcess(List<String> factFilesToProcess) {
-    this.factFilesToProcess = factFilesToProcess;
-  }
-
   public String getCsvHeader() {
     return csvHeader;
   }
@@ -419,13 +415,6 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * @return the aggTables
-   */
-  public String[] getAggTables() {
-    return aggTables;
-  }
-
-  /**
    * @param aggTables the aggTables to set
    */
   public void setAggTables(String[] aggTables) {
@@ -481,13 +470,6 @@ public class CarbonLoadModel implements Serializable {
    */
   public boolean isRetentionRequest() {
     return isRetentionRequest;
-  }
-
-  /**
-   * @param isRetentionRequest
-   */
-  public void setRetentionRequest(boolean isRetentionRequest) {
-    this.isRetentionRequest = isRetentionRequest;
   }
 
   /**

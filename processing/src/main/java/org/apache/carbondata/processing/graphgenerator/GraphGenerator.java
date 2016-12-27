@@ -823,7 +823,7 @@ public class GraphGenerator {
     graphConfiguration.setNoDictionaryDims(noDictionarydimString.toString());
 
     String tableString =
-        CarbonSchemaParser.getTableNameString(factTableName, dimensions, carbonDataLoadSchema);
+        CarbonSchemaParser.getTableNameString(dimensions, carbonDataLoadSchema);
     String dimensionColumnIds = CarbonSchemaParser.getColumnIdString(dimensions);
     graphConfiguration.setDimensionTableNames(tableString);
     graphConfiguration.setDimensionString(dimString.toString());
