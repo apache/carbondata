@@ -120,31 +120,10 @@ public class DataLoadModel {
   }
 
   /**
-   * @param modifiedDimesion The modifiedDimesion to set.
-   */
-  public void setModifiedDimesion(String[] modifiedDimesion) {
-    this.modifiedDimesion = modifiedDimesion;
-  }
-
-  /**
-   * return modificationOrDeletionTime separated by HASH_SPC_CHARACTER
-   */
-  public String getModificationOrDeletionTime() {
-    return modificationOrDeletionTime;
-  }
-
-  /**
    * set modificationOrDeletionTime separated by HASH_SPC_CHARACTER
    */
   public void setModificationOrDeletionTime(String modificationOrDeletionTime) {
     this.modificationOrDeletionTime = modificationOrDeletionTime;
-  }
-
-  /**
-   * return loadNames separated by HASH_SPC_CHARACTER
-   */
-  public String getLoadNames() {
-    return loadNames;
   }
 
   /**

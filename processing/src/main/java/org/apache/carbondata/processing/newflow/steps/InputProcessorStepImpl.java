@@ -27,9 +27,6 @@ import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
  */
 public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(InputProcessorStepImpl.class.getName());
-
   private RowParser rowParser;
 
   private CarbonIterator<Object[]>[] inputIterators;

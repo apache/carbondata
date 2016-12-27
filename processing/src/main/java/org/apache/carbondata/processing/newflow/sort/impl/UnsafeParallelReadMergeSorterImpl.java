@@ -64,10 +64,7 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
 
   private UnsafeSingleThreadFinalSortFilesMerger finalMerger;
 
-  private DataField[] inputDataFields;
-
   public UnsafeParallelReadMergeSorterImpl(DataField[] inputDataFields) {
-    this.inputDataFields = inputDataFields;
   }
 
   @Override public void initialize(SortParameters sortParameters) {
@@ -180,15 +177,12 @@ public class UnsafeParallelReadMergeSorterImpl implements Sorter {
 
     private UnsafeSortDataRows sortDataRows;
 
-    private SortParameters parameters;
-
     private Object[][] buffer;
 
     public SortIteratorThread(Iterator<CarbonRowBatch> iterator, UnsafeSortDataRows sortDataRows,
         SortParameters parameters, int batchSize) {
       this.iterator = iterator;
       this.sortDataRows = sortDataRows;
-      this.parameters = parameters;
       this.buffer = new Object[batchSize][];
     }
 

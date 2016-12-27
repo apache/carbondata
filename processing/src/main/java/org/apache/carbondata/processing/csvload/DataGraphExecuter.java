@@ -261,7 +261,7 @@ public class DataGraphExecuter {
 
           CarbonFile csvFileToRead = GraphExecutionUtil.getCsvFileToRead(model.getCsvFilePath());
           TextFileInputField[] inputFields = GraphExecutionUtil
-              .getTextInputFiles(csvFileToRead, measureColumns, builder, measuresInCSVFile, ",");
+              .getTextInputFiles(csvFileToRead, builder, measuresInCSVFile, ",");
           stepMetaInterface.setInputFields(inputFields);
         } else if (model.isDirectLoad()) {
           String[] files = new String[model.getFilesToProcess().size()];
@@ -294,7 +294,7 @@ public class DataGraphExecuter {
             CarbonFile csvFile =
                 GraphExecutionUtil.getCsvFileToRead(model.getFilesToProcess().get(0));
             TextFileInputField[] inputFields = GraphExecutionUtil
-                .getTextInputFiles(csvFile, measureColumns, builder, measuresInCSVFile,
+                .getTextInputFiles(csvFile, builder, measuresInCSVFile,
                     model.getCsvDelimiter());
             ((CsvInputMeta) step.getStepMetaInterface()).setInputFields(inputFields);
             ((CsvInputMeta) step.getStepMetaInterface()).setDelimiter(model.getCsvDelimiter());
@@ -370,7 +370,7 @@ public class DataGraphExecuter {
         if (null != model.getCsvFilePath() && model.getRddIteratorKey() == null) {
           CarbonFile csvFileToRead = GraphExecutionUtil.getCsvFileToRead(model.getCsvFilePath());
           TextFileInputField[] inputFields = GraphExecutionUtil
-              .getTextInputFiles(csvFileToRead, measureColumns, builder, measuresInCSVFile, ",");
+              .getTextInputFiles(csvFileToRead, builder, measuresInCSVFile, ",");
           ((CsvInputMeta) step.getStepMetaInterface()).setInputFields(inputFields);
         } else if (model.isDirectLoad()) {
           if (null != model.getCsvHeader() && !model.getCsvHeader().isEmpty()) {
@@ -386,7 +386,7 @@ public class DataGraphExecuter {
             CarbonFile csvFileToRead =
                 GraphExecutionUtil.getCsvFileToRead(model.getFilesToProcess().get(0));
             TextFileInputField[] inputFields = GraphExecutionUtil
-                .getTextInputFiles(csvFileToRead, measureColumns, builder, measuresInCSVFile,
+                .getTextInputFiles(csvFileToRead, builder, measuresInCSVFile,
                     model.getCsvDelimiter());
             ((CsvInputMeta) step.getStepMetaInterface()).setInputFields(inputFields);
             ((CsvInputMeta) step.getStepMetaInterface()).setDelimiter(model.getCsvDelimiter());
@@ -598,17 +598,6 @@ public class DataGraphExecuter {
   private boolean checkAllColumnsPresent(String[] columnNames, String dimFilePath,
       String delimiter) {
     return GraphExecutionUtil.checkCSVAndRequestedTableColumns(dimFilePath, columnNames, delimiter);
-  }
-
-  /**
-   * Interrupts all child threads run by kettle to execute the graph
-   */
-  public void interruptGraphExecution() {
-    LOGGER.error("Graph Execution is interrupted");
-    if (null != trans) {
-      trans.killAll();
-      LOGGER.info("Graph execution steps are killed.");
-    }
   }
 
 }

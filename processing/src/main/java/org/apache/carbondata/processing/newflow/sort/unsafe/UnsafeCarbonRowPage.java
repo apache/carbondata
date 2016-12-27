@@ -73,10 +73,6 @@ public class UnsafeCarbonRowPage {
     lastSize = lastSize + size;
   }
 
-  public Iterator<Object[]> getIterator() {
-    return new UnsafeIterator();
-  }
-
   private int addRow(Object[] row, long address) {
     if (row == null) {
       throw new RuntimeException("Row is null ??");

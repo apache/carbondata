@@ -44,11 +44,6 @@ public interface GenericDataType<T> {
   String getName();
 
   /**
-   * @param name - To set column name
-   */
-  void setName(String name);
-
-  /**
    * @return - columns parent name
    */
   String getParentname();

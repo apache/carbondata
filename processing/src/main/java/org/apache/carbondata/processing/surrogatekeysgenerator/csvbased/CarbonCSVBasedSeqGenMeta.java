@@ -223,10 +223,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    */
   private String metaHeirSQLQuery;
   /**
-   * carbonMetaHier
-   */
-  private String carbonMetaHier;
-  /**
    * Foreign key and respective hierarchy String
    */
   private String foreignKeyHierarchyString;
@@ -405,10 +401,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     return complexTypeColumns;
   }
 
-  public void setCarbonMetaHier(String carbonMetaHier) {
-    this.carbonMetaHier = carbonMetaHier;
-  }
-
   public void setMetaMetaHeirSQLQueries(String metaHeirSQLQuery) {
     this.metaHeirSQLQuery = metaHeirSQLQuery;
   }
@@ -510,7 +502,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     storeType = "";
     isAggregate = false;
     metaHeirSQLQuery = "";
-    carbonMetaHier = "";
     dimesionTableNames = "";
     dimensionColumnIds = "";
     noDictionaryDims = "";
@@ -561,7 +552,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     retval.append("    ").append(XMLHandler.addTagValue("isAggregate", isAggregate));
     retval.append("    ").append(XMLHandler.addTagValue("storeType", storeType));
     retval.append("    ").append(XMLHandler.addTagValue("metadataFilePath", metaHeirSQLQuery));
-    retval.append("    ").append(XMLHandler.addTagValue("carbonMetaHier", carbonMetaHier));
     retval.append("    ")
         .append(XMLHandler.addTagValue("foreignKeyHierarchyString", foreignKeyHierarchyString));
     retval.append("    ").append(XMLHandler.addTagValue("complexTypeString", complexTypeString));
@@ -621,7 +611,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       connectionURL = XMLHandler.getTagValue(stepnode, "connectionURL");
       userName = XMLHandler.getTagValue(stepnode, "userName");
       password = XMLHandler.getTagValue(stepnode, "password");
-      carbonMetaHier = XMLHandler.getTagValue(stepnode, "carbonMetaHier");
       carbonhierColumn = XMLHandler.getTagValue(stepnode, "carbonhierColumn");
       foreignKeyHierarchyString = XMLHandler.getTagValue(stepnode, "foreignKeyHierarchyString");
       complexTypeString = XMLHandler.getTagValue(stepnode, "complexTypeString");
@@ -708,11 +697,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
 
     //update non time dimension properties
     updateDimProperties();
-
-    //update the meta Hierarichies list
-    getMetaHierarichies(carbonMetaHier);
-
-    updateMetaHierarichiesWithQueries(metaHeirSQLQuery);
 
     updateMeasureAggregator(msrAggregatorString);
 
@@ -966,79 +950,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
     return columns;
   }
 
-  private void getMetaHierarichies(String carbonMetaHier) {
-    if (null == carbonMetaHier || "".equals(carbonMetaHier)) {
-      return;
-    }
-    String[] metaHier = carbonMetaHier.split(CarbonCommonConstants.AMPERSAND_SPC_CHARACTER);
-    metahierVoList = new ArrayList<HierarchiesInfo>(metaHier.length);
-    Map<String, String[]> columnPropsMap =
-        new HashMap<String, String[]>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    for (int i = 0; i < metaHier.length; i++) {
-      HierarchiesInfo hierarichiesVo = new HierarchiesInfo();
-      String[] isTimeDim = metaHier[i].split(CarbonCommonConstants.HASH_SPC_CHARACTER);
-      String[] split = isTimeDim[0].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
-      String[] columnNames = new String[split.length - 1];
-      int[] columnIndex = new int[split.length - 1];
-      hierarichiesVo.setHierarichieName(split[0]);
-      if (null != hirches.get(split[0])) {
-        hierarichiesVo.setLoadToHierarichiTable(true);
-      }
-      int index = 0;
-      for (int j = 1; j < split.length; j++) {
-        String[] columnAndPropertyNames = split[j].split(
-            CarbonCommonConstants.COMA_SPC_CHARACTER);//CHECKSTYLE:OFF    Approval No:Approval-323
-        columnNames[index] = columnAndPropertyNames[0];//CHECKSTYLE:ON
-        columnIndex[index] = getColumnIndex(columnNames[index]);
-        String[] properties = new String[columnAndPropertyNames.length - 1];
-        System
-            .arraycopy(columnAndPropertyNames, 1, properties, 0, columnAndPropertyNames.length - 1);
-        if (null == columnPropsMap.get(columnNames[index])) {
-          columnPropsMap.put(columnNames[index], properties);
-        }
-        index++;
-      }
-      hierarichiesVo.setColumnIndex(columnIndex);
-      hierarichiesVo.setColumnNames(columnNames);
-      hierarichiesVo.setColumnPropMap(columnPropsMap);
-      metahierVoList.add(hierarichiesVo);
-    }
-  }
-
-  private void updateMetaHierarichiesWithQueries(String carbonLocation) {
-    //
-    if (null == carbonLocation) {
-      return;
-    }
-    String[] hierWithQueries = carbonLocation.split(CarbonCommonConstants.HASH_SPC_CHARACTER);
-    //
-    for (String hierarchyWithQuery : hierWithQueries) {
-      String[] hierQueryStrings =
-          hierarchyWithQuery.split(CarbonCommonConstants.COLON_SPC_CHARACTER);
-
-      Iterator<HierarchiesInfo> iterator = metahierVoList.iterator();
-      while (iterator.hasNext()) {
-        //
-        HierarchiesInfo next = iterator.next();
-        if (hierQueryStrings[0].equalsIgnoreCase(next.getHierarichieName())) {
-          next.setQuery(hierQueryStrings[1]);
-          break;
-        }
-
-      }
-    }
-
-  }
-
-  private int getColumnIndex(String colNames) {
-    for (int j = 0; j < dimColNames.length; j++) {
-      if (dimColNames[j].equalsIgnoreCase(colNames)) {
-        return j;
-      }
-    }
-    return -1;
-  }
-
   /**
    * Parse the properties string.
    * Level Entries separated by '&'
@@ -1190,7 +1101,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       password = rep.getStepAttributeString(idStep, "password");
       isAggregate = rep.getStepAttributeBoolean(idStep, "isAggregate");
       metaHeirSQLQuery = rep.getStepAttributeString(idStep, "metadataFilePath");
-      carbonMetaHier = rep.getStepAttributeString(idStep, "carbonMetaHier");
       carbonhierColumn = rep.getStepAttributeString(idStep, "carbonhierColumn");
       foreignKeyHierarchyString = rep.getStepAttributeString(idStep, "foreignKeyHierarchyString");
       primaryKeysString = rep.getStepAttributeString(idStep, "primaryKeysString");
@@ -1246,7 +1156,6 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
       rep.saveStepAttribute(idTransformation, idStep, "password", password);
       rep.saveStepAttribute(idTransformation, idStep, "isInitialLoad", isAggregate);
       rep.saveStepAttribute(idTransformation, idStep, "metadataFilePath", metaHeirSQLQuery);
-      rep.saveStepAttribute(idTransformation, idStep, "carbonMetaHier", carbonMetaHier);
       rep.saveStepAttribute(idTransformation, idStep, "batchSize", batchSize);
       rep.saveStepAttribute(idTransformation, idStep, "dimHierReleation", dimesionTableNames);
       rep.saveStepAttribute(idTransformation, idStep, "dimensionColumnIds", dimensionColumnIds);

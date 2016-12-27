@@ -93,9 +93,8 @@ public final class GraphExecutionUtil {
    * @param measuresInCSVFile
    * @throws DataLoadingException
    */
-  public static TextFileInputField[] getTextInputFiles(CarbonFile csvFile,
-      List<String> measureColumns, StringBuilder builder, StringBuilder measuresInCSVFile,
-      String delimiter) throws DataLoadingException {
+  public static TextFileInputField[] getTextInputFiles(CarbonFile csvFile, StringBuilder builder,
+      StringBuilder measuresInCSVFile, String delimiter) throws DataLoadingException {
     DataInputStream fileReader = null;
     BufferedReader bufferedReader = null;
     String readLine = null;

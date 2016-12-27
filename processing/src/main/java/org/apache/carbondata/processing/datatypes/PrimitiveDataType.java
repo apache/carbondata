@@ -155,14 +155,6 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   }
 
   /*
-   * set column name
-   */
-  @Override
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  /*
    * get column parent name
    */
   @Override

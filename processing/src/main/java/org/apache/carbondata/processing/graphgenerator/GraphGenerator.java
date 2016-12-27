@@ -561,7 +561,6 @@ public class GraphGenerator {
     seqMeta.setDatabaseName(schemaInfo.getDatabaseName());
     seqMeta.setComplexDelimiterLevel1(schemaInfo.getComplexDelimiterLevel1());
     seqMeta.setComplexDelimiterLevel2(schemaInfo.getComplexDelimiterLevel2());
-    seqMeta.setCarbonMetaHier(graphConfiguration.getMetaHeirString());
     seqMeta.setCarbonmsr(graphConfiguration.getMeasuresString());
     seqMeta.setCarbonProps(graphConfiguration.getPropertiesString());
     seqMeta.setCarbonhier(graphConfiguration.getHiersString());
@@ -959,7 +958,6 @@ public class GraphGenerator {
    */
   private void prepareNoDictionaryMapping(List<CarbonDimension> dims,
       GraphConfigurationInfo graphConfig) {
-    // boolean[] NoDictionaryMapping = new boolean[dims.size()];
     List<Boolean> noDictionaryMapping = new ArrayList<Boolean>();
     for (CarbonDimension dimension : dims) {
       // for  complex type need to break the loop

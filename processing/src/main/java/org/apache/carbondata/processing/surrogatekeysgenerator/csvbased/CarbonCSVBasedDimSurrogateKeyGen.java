@@ -70,7 +70,6 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
    * columnsInfo
    */
   protected ColumnsInfo columnsInfo;
-  protected IFileManagerComposite measureFilemanager;
   /**
    * primary key max surrogate key map
    */
@@ -227,20 +226,6 @@ public abstract class CarbonCSVBasedDimSurrogateKeyGen {
       connection.close();
     }
   }
-
-  public abstract void writeDataToFileAndCloseStreams() throws KettleException, KeyGenException;
-
-  /**
-   * Search entry and insert if not found in store.
-   *
-   * @param val
-   * @param hier
-   * @return
-   * @throws KeyGenException
-   * @throws KettleException
-   */
-  protected abstract byte[] getHierFromStore(int[] val, String hier, int primaryKey)
-      throws KettleException;
 
   /**
    * Search entry and insert if not found in store.
