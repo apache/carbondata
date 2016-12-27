@@ -166,7 +166,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
    * measureCol
    */
   private List<String> measureCol;
-  private boolean isTerminated;
   /**
    * dimPresentCsvOrder - Dim present In CSV order
    */
@@ -180,7 +179,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
    */
   private Future[] resultArray;
 
-  private int outSize;
   /**
    * denormHierarchies
    */
@@ -400,7 +398,6 @@ public class CarbonCSVBasedSeqGenStep extends BaseStep {
 
             ValueMetaInterface[] out = null;
             out = new ValueMetaInterface[meta.normLength + meta.msrMapping.length];
-            this.outSize = out.length;
             int outCounter = 0;
             for (int i = 0; i < meta.actualDimArray.length; i++) {
               if (meta.dimPresent[i]) {

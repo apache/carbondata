@@ -20,9 +20,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.Iterator;
 
-import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.unsafe.CarbonUnsafe;
@@ -71,10 +69,6 @@ public class UnsafeCarbonRowPage {
     int size = addRow(row, dataBlock.getBaseOffset() + lastSize);
     buffer.set(lastSize);
     lastSize = lastSize + size;
-  }
-
-  public Iterator<Object[]> getIterator() {
-    return new UnsafeIterator();
   }
 
   private int addRow(Object[] row, long address) {
@@ -308,30 +302,6 @@ public class UnsafeCarbonRowPage {
 
   public MemoryBlock getDataBlock() {
     return dataBlock;
-  }
-
-  class UnsafeIterator extends CarbonIterator<Object[]> {
-
-    private int counter;
-
-    private int actualSize;
-
-    public UnsafeIterator() {
-      this.actualSize = buffer.getActualSize();
-    }
-
-    @Override public boolean hasNext() {
-      if (counter < actualSize) {
-        return true;
-      }
-      return false;
-    }
-
-    @Override public Object[] next() {
-      long address = buffer.get(counter);
-      counter++;
-      return getRow(address + dataBlock.getBaseOffset());
-    }
   }
 
   public static void set(long[] words, int index) {

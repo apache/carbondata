@@ -244,34 +244,6 @@ public class NodeHolder {
   }
 
   /**
-   * @return the dataAfterCompression
-   */
-  public short[][] getDataAfterCompression() {
-    return dataAfterCompression;
-  }
-
-  /**
-   * @param dataAfterCompression the dataAfterCompression to set
-   */
-  public void setDataAfterCompression(short[][] dataAfterCompression) {
-    this.dataAfterCompression = dataAfterCompression;
-  }
-
-  /**
-   * @return the indexMap
-   */
-  public short[][] getIndexMap() {
-    return indexMap;
-  }
-
-  /**
-   * @param indexMap the indexMap to set
-   */
-  public void setIndexMap(short[][] indexMap) {
-    this.indexMap = indexMap;
-  }
-
-  /**
    * @return the keyBlockIndexLength
    */
   public int[] getKeyBlockIndexLength() {
@@ -339,20 +311,6 @@ public class NodeHolder {
   }
 
   /**
-   * @return the dataIndexMapOffsets
-   */
-  public int[] getDataIndexMapOffsets() {
-    return dataIndexMapOffsets;
-  }
-
-  /**
-   * @param dataIndexMapOffsets the dataIndexMapOffsets to set
-   */
-  public void setDataIndexMapOffsets(int[] dataIndexMapOffsets) {
-    this.dataIndexMapOffsets = dataIndexMapOffsets;
-  }
-
-  /**
    * @return the dataIndexMapLength
    */
   public int[] getDataIndexMapLength() {
@@ -406,34 +364,6 @@ public class NodeHolder {
    */
   public void setAggBlocks(boolean[] aggBlocks) {
     this.aggBlocks = aggBlocks;
-  }
-
-  /**
-   * @return the allMaxValue
-   */
-  public byte[][] getAllMaxValue() {
-    return allMaxValue;
-  }
-
-  /**
-   * @param allMaxValue the allMaxValue to set
-   */
-  public void setAllMaxValue(byte[][] allMaxValue) {
-    this.allMaxValue = allMaxValue;
-  }
-
-  /**
-   * @return the allMinValue
-   */
-  public byte[][] getAllMinValue() {
-    return allMinValue;
-  }
-
-  /**
-   * @param allMinValue the allMinValue to set
-   */
-  public void setAllMinValue(byte[][] allMinValue) {
-    this.allMinValue = allMinValue;
   }
 
   /**

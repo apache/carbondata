@@ -110,14 +110,6 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
   }
 
   /*
-   * set column name
-   */
-  @Override
-  public void setName(String name) {
-    this.name = name;
-  }
-
-  /*
    * set parent name
    */
   @Override
