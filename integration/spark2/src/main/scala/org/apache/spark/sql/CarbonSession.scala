@@ -50,10 +50,10 @@ object CarbonSession {
 
       // Get the session from current thread's active session.
       var session: SparkSession = SparkSession.getActiveSession match {
-        case Some(session) =>
-          if ((session ne null) && !session.sparkContext.isStopped) {
-            options.foreach { case (k, v) => session.conf.set(k, v) }
-            session
+        case Some(sparkSession) =>
+          if ((sparkSession ne null) && !sparkSession.sparkContext.isStopped) {
+            options.foreach { case (k, v) => sparkSession.conf.set(k, v) }
+            sparkSession
           } else {
             null
           }
@@ -67,10 +67,10 @@ object CarbonSession {
       SparkSession.synchronized {
         // If the current thread does not have an active session, get it from the global session.
         session = SparkSession.getDefaultSession match {
-          case Some(session) =>
-            if ((session ne null) && !session.sparkContext.isStopped) {
-              options.foreach { case (k, v) => session.conf.set(k, v) }
-              session
+          case Some(sparkSession) =>
+            if ((sparkSession ne null) && !sparkSession.sparkContext.isStopped) {
+              options.foreach { case (k, v) => sparkSession.conf.set(k, v) }
+              sparkSession
             } else {
               null
             }

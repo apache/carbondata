@@ -36,7 +36,7 @@ object CleanFiles {
   def main(args: Array[String]): Unit = {
 
     if (args.length < 2) {
-      System.err.println("Usage: CleanFiles <store path> <table name>");
+      System.err.println("Usage: CleanFiles <store path> <table name>")
       System.exit(1)
     }
 

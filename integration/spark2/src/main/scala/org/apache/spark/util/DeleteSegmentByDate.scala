@@ -35,7 +35,7 @@ object DeleteSegmentByDate {
   def main(args: Array[String]): Unit = {
     if (args.length < 3) {
       System.err.println(
-        "Usage: DeleteSegmentByDate <store path> <table name> <before date value>");
+        "Usage: DeleteSegmentByDate <store path> <table name> <before date value>")
       System.exit(1)
     }
 

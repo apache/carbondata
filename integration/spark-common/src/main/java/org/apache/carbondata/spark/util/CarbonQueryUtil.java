@@ -39,7 +39,7 @@ import org.apache.commons.lang3.StringUtils;
 /**
  * This utilty parses the Carbon query plan to actual query model object.
  */
-public final class CarbonQueryUtil {
+public class CarbonQueryUtil {
 
   private CarbonQueryUtil() {
 

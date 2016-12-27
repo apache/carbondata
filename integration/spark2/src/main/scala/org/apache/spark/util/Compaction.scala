@@ -33,7 +33,7 @@ object Compaction {
 
   def main(args: Array[String]): Unit = {
     if (args.length < 3) {
-      System.err.println("Usage: Compaction <store path> <table name> <major|minor>");
+      System.err.println("Usage: Compaction <store path> <table name> <major|minor>")
       System.exit(1)
     }
 
