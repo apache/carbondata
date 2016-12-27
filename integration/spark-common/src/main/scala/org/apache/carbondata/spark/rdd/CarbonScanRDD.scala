@@ -23,6 +23,7 @@ import java.util.Date
 import java.util.List
 
 import scala.collection.JavaConverters._
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
@@ -30,6 +31,7 @@ import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.hive.DistributionUtil
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
 import org.apache.carbondata.core.carbon.datastore.block.Distributable
@@ -40,6 +42,7 @@ import org.apache.carbondata.hadoop._
 import org.apache.carbondata.scan.expression.Expression
 import org.apache.carbondata.scan.model.QueryModel
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
+
 
 /**
  * This RDD is used to perform query on CarbonData file. Before sending tasks to scan
@@ -255,7 +258,8 @@ class CarbonScanRDD(
     format
   }
 
-  def logStatistics(queryStartTime: Long, recordCount: Int, recorder: QueryStatisticsRecorder): Unit = {
+  def logStatistics(queryStartTime: Long, recordCount: Int,
+                    recorder: QueryStatisticsRecorder): Unit = {
     var queryStatistic = new QueryStatistic()
     queryStatistic.addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
       System.currentTimeMillis - queryStartTime)
