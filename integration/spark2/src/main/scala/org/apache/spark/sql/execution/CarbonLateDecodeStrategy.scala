@@ -92,7 +92,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       rdd: RDD[InternalRow],
       needDecode: ArrayBuffer[AttributeReference]):
   RDD[InternalRow] = {
-    if (needDecode.size > 0) {
+    if (needDecode.nonEmpty) {
       rdd.asInstanceOf[CarbonScanRDD].setVectorReaderSupport(false)
       getDecoderRDD(relation, needDecode, rdd, output)
     } else {
@@ -249,7 +249,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       needDecoder: ArrayBuffer[AttributeReference],
       updateRequestedColumns: Seq[AttributeReference]): DataSourceScanExec = {
     if (supportBatchedDataSource(relation.relation.sqlContext, updateRequestedColumns) &&
-        needDecoder.length == 0) {
+        needDecoder.isEmpty) {
       BatchedDataSourceScanExec(
         output,
         scanBuilder(updateRequestedColumns, candidatePredicates, pushedFilters, needDecoder),
@@ -362,13 +362,13 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       case EqualTo(Literal(v, t), Cast(a: Attribute, _)) =>
         Some(sources.EqualTo(a.name, v))
 
-      case Not(EqualTo(a: Attribute, Literal(v, t))) => new
+      case Not(EqualTo(a: Attribute, Literal(v, t))) =>
           Some(sources.Not(sources.EqualTo(a.name, v)))
-      case Not(EqualTo(Literal(v, t), a: Attribute)) => new
+      case Not(EqualTo(Literal(v, t), a: Attribute)) =>
           Some(sources.Not(sources.EqualTo(a.name, v)))
-      case Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) => new
+      case Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) =>
           Some(sources.Not(sources.EqualTo(a.name, v)))
-      case Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) => new
+      case Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) =>
           Some(sources.Not(sources.EqualTo(a.name, v)))
       case IsNotNull(a: Attribute) => Some(sources.IsNotNull(a.name))
       case IsNull(a: Attribute) => Some(sources.IsNull(a.name))

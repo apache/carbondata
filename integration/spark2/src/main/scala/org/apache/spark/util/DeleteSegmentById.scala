@@ -40,7 +40,7 @@ object DeleteSegmentById {
 
     if (args.length < 3) {
       System.err.println(
-        "Usage: DeleteSegmentByID <store path> <table name> <segment id list>");
+        "Usage: DeleteSegmentByID <store path> <table name> <segment id list>")
       System.exit(1)
     }
 

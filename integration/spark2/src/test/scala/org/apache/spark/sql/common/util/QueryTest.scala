@@ -79,7 +79,7 @@ class QueryTest extends PlanTest {
 
   def sql(sqlText: String): DataFrame  = spark.sql(sqlText)
 
-  def clean: Unit = {
+  def clean(): Unit = {
     val clean = (path: String) => FileUtils.deleteDirectory(new File(path))
     clean(storeLocation)
   }
@@ -249,7 +249,7 @@ object QueryTest {
       return Some(errorMessage)
     }
 
-    return None
+    None
   }
 
 }
