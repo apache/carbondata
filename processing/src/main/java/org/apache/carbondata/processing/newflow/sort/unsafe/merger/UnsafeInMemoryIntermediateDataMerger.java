@@ -73,7 +73,6 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
   @Override public Void call() throws Exception {
     long intermediateMergeStartTime = System.currentTimeMillis();
     int holderCounterConst = holderCounter;
-    boolean isFailed = false;
     try {
       startSorting();
       while (hasNext()) {

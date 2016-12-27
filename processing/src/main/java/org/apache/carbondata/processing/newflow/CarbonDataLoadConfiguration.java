@@ -133,14 +133,6 @@ public class CarbonDataLoadConfiguration {
     dataLoadProperties.put(key, value);
   }
 
-  public Object getDataLoadProperty(String key, Object defaultValue) {
-    Object value = dataLoadProperties.get(key);
-    if (value == null) {
-      value = defaultValue;
-    }
-    return value;
-  }
-
   public Object getDataLoadProperty(String key) {
     return dataLoadProperties.get(key);
   }

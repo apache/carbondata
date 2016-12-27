@@ -347,13 +347,6 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
   }
 
   /**
-   * @return the tableName
-   */
-  public String getTableName() {
-    return tableName;
-  }
-
-  /**
    * @param tableName the tableName to set
    */
   public void setTableName(String tableName) {
@@ -411,35 +404,10 @@ public class SortKeyStepMeta extends BaseStepMeta implements StepMetaInterface {
   }
 
   /**
-   * @return the factDimLensString
-   */
-  public String getFactDimLensString() {
-    return factDimLensString;
-  }
-
-  /**
-   * @param factDimLensString the factDimLensString to set
-   */
-  public void setFactDimLensString(String factDimLensString) {
-    this.factDimLensString = factDimLensString;
-  }
-
-  /**
-   * @return the isUpdateMemberRequest
-   */
-  public boolean isUpdateMemberRequest() {
-    return Boolean.parseBoolean(updateMemberRequest);
-  }
-
-  /**
    * @param isUpdateMemberRequest the isUpdateMemberRequest to set
    */
   public void setIsUpdateMemberRequest(String isUpdateMemberRequest) {
     this.updateMemberRequest = isUpdateMemberRequest;
-  }
-
-  public String getMeasureDataType() {
-    return measureDataType;
   }
 
   public void setMeasureDataType(String measureDataType) {

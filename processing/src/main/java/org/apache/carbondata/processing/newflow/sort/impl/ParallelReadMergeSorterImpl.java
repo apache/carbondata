@@ -64,10 +64,7 @@ public class ParallelReadMergeSorterImpl implements Sorter {
 
   private SingleThreadFinalSortFilesMerger finalMerger;
 
-  private DataField[] inputDataFields;
-
   public ParallelReadMergeSorterImpl(DataField[] inputDataFields) {
-    this.inputDataFields = inputDataFields;
   }
 
   @Override
@@ -187,15 +184,12 @@ public class ParallelReadMergeSorterImpl implements Sorter {
 
     private SortDataRows sortDataRows;
 
-    private SortParameters parameters;
-
     private Object[][] buffer;
 
     public SortIteratorThread(Iterator<CarbonRowBatch> iterator, SortDataRows sortDataRows,
         SortParameters parameters, int batchSize) {
       this.iterator = iterator;
       this.sortDataRows = sortDataRows;
-      this.parameters = parameters;
       this.buffer = new Object[batchSize][];
     }
 

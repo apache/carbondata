@@ -10,8 +10,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
@@ -26,9 +24,6 @@ import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
  * It reads data from record reader and sends data to next step.
  */
 public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
-
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(InputProcessorStepImpl.class.getName());
 
   private RowParser rowParser;
 
