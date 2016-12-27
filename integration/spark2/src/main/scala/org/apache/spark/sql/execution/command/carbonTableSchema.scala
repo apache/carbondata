@@ -168,7 +168,7 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
             s"""CREATE TABLE $dbName.$tbName
                 |(${(cm.dimCols ++ cm.msrCols).map(f => f.rawSchema).mkString(",")})
                 |USING org.apache.spark.sql.CarbonSource""".stripMargin +
-            s""" OPTIONS (tableName "$tbName", dbName "${dbName}", tablePath "$tablePath") """)
+            s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath "$tablePath") """)
         } catch {
           case e: Exception =>
             val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
@@ -214,14 +214,6 @@ case class DeleteLoadsById(
 
   }
 
-  // validates load ids
-  private def validateLoadIds: Unit = {
-    if (loadids.isEmpty) {
-      val errorMessage = "Error: Segment id(s) should not be empty."
-      throw new MalformedCarbonCommandException(errorMessage)
-
-    }
-  }
 }
 
 case class DeleteLoadsByLoadDate(
@@ -293,8 +285,8 @@ case class LoadTableByInsert(relation: CarbonDatasourceHadoopRelation, child: Lo
       relation.carbonRelation.tableName,
       null,
       Seq(),
-      scala.collection.immutable.Map(("fileheader" -> header)),
-      false,
+      scala.collection.immutable.Map("fileheader" -> header),
+      isOverwriteExist = false,
       null,
       Some(df)).run(sparkSession)
     // updating relation metadata. This is in case of auto detect high cardinality
@@ -326,7 +318,6 @@ case class LoadTable(
     }
 
     val dbName = databaseNameOp.getOrElse(sparkSession.catalog.currentDatabase)
-    val identifier = TableIdentifier(tableName, Option(dbName))
     if (isOverwriteExist) {
       sys.error(s"Overwrite is not supported for carbon table with $dbName.$tableName")
     }
@@ -378,9 +369,9 @@ case class LoadTable(
       // Need to fill dimension relation
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
 
-      var partitionLocation = relation.tableMeta.storePath + "/partition/" +
-                              relation.tableMeta.carbonTableIdentifier.getDatabaseName + "/" +
-                              relation.tableMeta.carbonTableIdentifier.getTableName + "/"
+      val partitionLocation = relation.tableMeta.storePath + "/partition/" +
+          relation.tableMeta.carbonTableIdentifier.getDatabaseName + "/" +
+          relation.tableMeta.carbonTableIdentifier.getTableName + "/"
 
 
       val columnar = sparkSession.conf.get("carbon.is.columnar.storage", "true").toBoolean
@@ -412,15 +403,6 @@ case class LoadTable(
       val complex_delimiter_level_2 = options.getOrElse("complex_delimiter_level_2", "\\:")
       val dateFormat = options.getOrElse("dateformat", null)
       validateDateFormat(dateFormat, table)
-      val multiLine = options.getOrElse("multiline", "false").trim.toLowerCase match {
-        case "true" => true
-        case "false" => false
-        case illegal =>
-          val errorMessage = "Illegal syntax found: [" + illegal + "] .The value multiline in " +
-                             "load DDL which you set can only be 'true' or 'false', please check " +
-                             "your input DDL."
-          throw new MalformedCarbonCommandException(errorMessage)
-      }
       val maxColumns = options.getOrElse("maxcolumns", null)
       carbonLoadModel.setMaxColumns(maxColumns)
       carbonLoadModel.setEscapeChar(escapeChar)
@@ -451,7 +433,7 @@ case class LoadTable(
       // set local dictionary path, and dictionary file extension
       carbonLoadModel.setAllDictPath(allDictionaryPath)
 
-      var partitionStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
+      val partitionStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
       try {
         // First system has to partition the data first and then call the load data
         LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
@@ -521,7 +503,7 @@ case class LoadTable(
         throw new MalformedCarbonCommandException("Error: Option DateFormat is set an empty " +
                                                   "string.")
       } else {
-        var dateFormats: Array[String] = dateFormat.split(CarbonCommonConstants.COMMA)
+        val dateFormats: Array[String] = dateFormat.split(CarbonCommonConstants.COMMA)
         for (singleDateFormat <- dateFormats) {
           val dateFormatSplits: Array[String] = singleDateFormat.split(":", 2)
           val columnName = dateFormatSplits(0).trim.toLowerCase
@@ -667,7 +649,6 @@ private[sql] case class DescribeCommandFormatted(
           relation.tableMeta.carbonTableIdentifier.getTableName,
           field.name)
         if (null != dimension.getColumnProperties && dimension.getColumnProperties.size() > 0) {
-          val colprop = mapper.writeValueAsString(dimension.getColumnProperties)
           colProps.append(field.name).append(".")
             .append(mapper.writeValueAsString(dimension.getColumnProperties))
             .append(",")
@@ -679,7 +660,7 @@ private[sql] case class DescribeCommandFormatted(
           "KEY COLUMN"
         }
       } else {
-        ("MEASURE")
+        "MEASURE"
       }
       (field.name, field.dataType.simpleString, comment)
     }

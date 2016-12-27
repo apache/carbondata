@@ -557,24 +557,6 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     }
   }
 
-  private def updateRelation(relation: CarbonDatasourceHadoopRelation):
-  CarbonDatasourceHadoopRelation = {
-    val fields = relation.schema.fields
-    val numberOfFields = relation.schema.fields.length
-    val newFields = new Array[StructField](numberOfFields)
-    val dictionaryMap = relation.carbonRelation.metaData.dictionaryMap
-    for (i <- 0 until numberOfFields ) {
-      dictionaryMap.get(fields(i).name) match {
-        case Some(true) =>
-          val field = fields(i)
-          newFields(i) = StructField(field.name, IntegerType, field.nullable, field.metadata)
-        case _ => newFields(i) = fields(i)
-      }
-    }
-    CarbonDatasourceHadoopRelation(relation.sparkSession,
-      relation.paths, relation.parameters, Option(StructType(newFields)))
-  }
-
   private def updateProjection(plan: LogicalPlan): LogicalPlan = {
     val transFormedPlan = plan transform {
       case p@Project(projectList: Seq[NamedExpression], cd: CarbonDictionaryCatalystDecoder) =>

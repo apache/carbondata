@@ -117,9 +117,9 @@ object TableCreator {
         }
         dimFields += field
       } else if (dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
-        dimFields += (field)
+        dimFields += field
       } else if (isDetectAsDimentionDatatype(field.dataType.get)) {
-        dimFields += (field)
+        dimFields += field
       }
     }
     )
@@ -372,7 +372,7 @@ object TableCreator {
       // checking if the nested data type contains the child type as decimal(10,0),
       // if it is present then extracting the precision and scale. resetting the data type
       // with Decimal.
-      case _ if (dataType.startsWith("decimal")) =>
+      case _ if dataType.startsWith("decimal") =>
         val (precision, scale) = getScaleAndPrecision(dataType)
         Field(field.column,
           Some("Decimal"),

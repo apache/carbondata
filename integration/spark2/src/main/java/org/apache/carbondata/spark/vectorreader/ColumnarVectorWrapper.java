@@ -21,7 +21,7 @@ import org.apache.carbondata.scan.result.vector.CarbonColumnVector;
 import org.apache.spark.sql.execution.vectorized.ColumnVector;
 import org.apache.spark.sql.types.Decimal;
 
-public class ColumnarVectorWrapper implements CarbonColumnVector {
+class ColumnarVectorWrapper implements CarbonColumnVector {
 
   private ColumnVector columnVector;
 

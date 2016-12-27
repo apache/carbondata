@@ -78,7 +78,6 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       if (ctx.bucketSpec != null) {
         operationNotAllowed("CREATE TABLE ... CLUSTERED BY", ctx)
       }
-      val comment = Option(ctx.STRING).map(string)
       val partitionCols = Option(ctx.partitionColumns).toSeq.flatMap(visitCatalogColumns)
       val cols = Option(ctx.columns).toSeq.flatMap(visitCatalogColumns)
       val properties = Option(ctx.tablePropertyList).map(visitPropertyKeyValues)
