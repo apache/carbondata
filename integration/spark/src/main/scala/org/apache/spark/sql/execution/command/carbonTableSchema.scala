@@ -139,7 +139,7 @@ case class CreateTable(cm: TableModel) extends RunnableCommand {
     val dbName = cm.databaseName
     LOGGER.audit(s"Creating Table with Database name [$dbName] and Table name [$tbName]")
 
-    val tableInfo: TableInfo = TableNewProcessor(cm, sqlContext)
+    val tableInfo: TableInfo = TableNewProcessor(cm)
 
     if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
       sys.error("No Dimensions found. Table should have at least one dimesnion !")

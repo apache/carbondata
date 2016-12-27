@@ -26,7 +26,7 @@ import org.apache.spark.util.{CleanFiles, ShowSegments}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-object CarbonExample {
+object SparkSessionExample {
 
   def main(args: Array[String]): Unit = {
     val rootPath = new File(this.getClass.getResource("/").getPath

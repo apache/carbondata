@@ -56,7 +56,7 @@ case class Field(column: String, var dataType: Option[String], name: Option[Stri
     children: Option[List[Field]], parent: String = null,
     storeType: Option[String] = Some("columnar"),
     var schemaOrdinal: Int = -1,
-    var precision: Int = 0, var scale: Int = 0)
+    var precision: Int = 0, var scale: Int = 0, var rawSchema: String = "")
 
 case class ColumnProperty(key: String, value: String)
 
@@ -108,12 +108,12 @@ case class CompactionCallableModel(storePath: String,
     compactionType: CompactionType)
 
 object TableNewProcessor {
-  def apply(cm: TableModel, sqlContext: SQLContext): TableInfo = {
-    new TableNewProcessor(cm, sqlContext).process
+  def apply(cm: TableModel): TableInfo = {
+    new TableNewProcessor(cm).process
   }
 }
 
-class TableNewProcessor(cm: TableModel, sqlContext: SQLContext) {
+class TableNewProcessor(cm: TableModel) {
 
   var index = 0
   var rowGroup = 0
