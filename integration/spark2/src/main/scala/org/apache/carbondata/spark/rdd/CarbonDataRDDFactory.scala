@@ -56,9 +56,9 @@ import org.apache.carbondata.spark.util.{CarbonQueryUtil, CommonUtil}
 
 
 /**
-  * This is the factory class which can create different RDD depends on user needs.
-  *
-  */
+ * This is the factory class which can create different RDD depends on user needs.
+ *
+ */
 object CarbonDataRDDFactory {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
