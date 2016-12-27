@@ -117,7 +117,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
   private val nextId = new AtomicLong(0)
 
   def nextQueryId: String = {
-    System.nanoTime()+""
+    System.nanoTime() + ""
   }
 
   val metadata = loadMetadata(storePath, nextQueryId)

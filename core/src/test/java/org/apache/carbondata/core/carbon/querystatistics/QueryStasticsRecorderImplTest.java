@@ -39,9 +39,8 @@ public class QueryStasticsRecorderImplTest {
 
   @BeforeClass public static void setUp() {
     queryStatisticWithLOAD_BLOCKS_EXECUTOR = new QueryStatistic();
-    queryStasticsRecorderImpl = new QueryStatisticsRecorderImpl("query1");
+    queryStasticsRecorderImpl = new QueryStatisticsRecorderImpl(System.nanoTime() + "");
     queryStasticsRecorderImpl.logStatisticsAsTableDriver();
-    queryStasticsRecorderImpl.logStatisticsAsTableExecutor();
     queryStatisticWithLOAD_BLOCKS_EXECUTOR
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, 5L);
     queryStatisticWithLOAD_BLOCKS_EXECUTOR
@@ -101,6 +100,7 @@ public class QueryStasticsRecorderImplTest {
         .addStatistics(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM, 5L);
     queryStasticsRecorderImpl.logStatistics();
     queryStasticsRecorderImpl.recordStatistics(queryStatisticWithVALID_SCAN_BLOCKLET_NUM);
+    queryStasticsRecorderImpl.logStatisticsAsTableExecutor();
   }
 
   @Test public void testcollectExecutorStatistics() {
