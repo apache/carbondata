@@ -151,13 +151,13 @@ object CarbonFilters {
         case EqualTo(Literal(v, t), Cast(a: Attribute, _)) =>
           Some(sources.EqualTo(a.name, v))
 
-        case Not(EqualTo(a: Attribute, Literal(v, t))) => new
+        case Not(EqualTo(a: Attribute, Literal(v, t))) =>
             Some(sources.Not(sources.EqualTo(a.name, v)))
-        case Not(EqualTo(Literal(v, t), a: Attribute)) => new
+        case Not(EqualTo(Literal(v, t), a: Attribute)) =>
             Some(sources.Not(sources.EqualTo(a.name, v)))
-        case Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) => new
+        case Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) =>
             Some(sources.Not(sources.EqualTo(a.name, v)))
-        case Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) => new
+        case Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) =>
             Some(sources.Not(sources.EqualTo(a.name, v)))
         case IsNotNull(a: Attribute) => Some(sources.IsNotNull(a.name))
         case IsNull(a: Attribute) => Some(sources.IsNull(a.name))
@@ -247,22 +247,22 @@ object CarbonFilters {
           (transformExpression(left) ++ transformExpression(right)).reduceOption(new
               AndExpression(_, _))
 
-        case EqualTo(a: Attribute, l@Literal(v, t)) => new
+        case EqualTo(a: Attribute, l@Literal(v, t)) =>
             Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-        case EqualTo(l@Literal(v, t), a: Attribute) => new
+        case EqualTo(l@Literal(v, t), a: Attribute) =>
             Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-        case EqualTo(Cast(a: Attribute, _), l@Literal(v, t)) => new
+        case EqualTo(Cast(a: Attribute, _), l@Literal(v, t)) =>
             Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
-        case EqualTo(l@Literal(v, t), Cast(a: Attribute, _)) => new
+        case EqualTo(l@Literal(v, t), Cast(a: Attribute, _)) =>
             Some(new EqualToExpression(transformExpression(a).get, transformExpression(l).get))
 
-        case Not(EqualTo(a: Attribute, l@Literal(v, t))) => new
+        case Not(EqualTo(a: Attribute, l@Literal(v, t))) =>
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case Not(EqualTo(l@Literal(v, t), a: Attribute)) => new
+        case Not(EqualTo(l@Literal(v, t), a: Attribute)) =>
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case Not(EqualTo(Cast(a: Attribute, _), l@Literal(v, t))) => new
+        case Not(EqualTo(Cast(a: Attribute, _), l@Literal(v, t))) =>
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
-        case Not(EqualTo(l@Literal(v, t), Cast(a: Attribute, _))) => new
+        case Not(EqualTo(l@Literal(v, t), Cast(a: Attribute, _))) =>
             Some(new NotEqualsExpression(transformExpression(a).get, transformExpression(l).get))
         case IsNotNull(child: Attribute) =>
             Some(new NotEqualsExpression(transformExpression(child).get,

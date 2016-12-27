@@ -130,7 +130,7 @@ class CarbonSource extends CreatableRelationProvider
           }
           f
         }
-        val map = scala.collection.mutable.Map[String, String]();
+        val map = scala.collection.mutable.Map[String, String]()
         parameters.foreach { x => map.put(x._1, x._2) }
         val cm = TableCreator.prepareTableModel(false, Option(dbName), tableName, fields, Nil, map)
         CreateTable(cm, false).run(sparkSession)

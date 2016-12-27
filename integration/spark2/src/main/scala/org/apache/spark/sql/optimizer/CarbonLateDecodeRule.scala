@@ -163,7 +163,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
             Sort(sort.order, sort.global, child)
           }
         case union: Union
-          if !(union.children(0).isInstanceOf[CarbonDictionaryTempDecoder] ||
+          if !(union.children.head.isInstanceOf[CarbonDictionaryTempDecoder] ||
             union.children(1).isInstanceOf[CarbonDictionaryTempDecoder]) =>
           val children = union.children.map { child =>
             val condAttrs = new util.HashSet[AttributeReferenceWrapper]
@@ -173,7 +173,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
               !child.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
               CarbonDictionaryTempDecoder(condAttrs,
                 new util.HashSet[AttributeReferenceWrapper](),
-                union.children(0))
+                union.children.head)
             } else {
               child
             }
@@ -587,7 +587,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
       case a@Alias(exp, name) =>
         exp match {
           case attr: Attribute => aliasMap.put(a.toAttribute, attr)
-          case _ => aliasMap.put(a.toAttribute, new AttributeReference("", StringType)())
+          case _ => aliasMap.put(a.toAttribute, AttributeReference("", StringType)())
         }
         a
     }

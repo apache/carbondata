@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.spark.rdd
 
-import java.util
 import java.util.concurrent._
 
 import scala.collection.JavaConverters._
@@ -631,9 +630,9 @@ object CarbonDataRDDFactory {
       def loadDataFrame(): Unit = {
         try {
           val rdd = dataFrame.get.rdd
-          val nodeNumOfData = rdd.partitions.flatMap[String, Array[String]]{ p =>
+          val nodeNumOfData = rdd.partitions.flatMap[String, Array[String]] { p =>
             DataLoadPartitionCoalescer.getPreferredLocs(rdd, p).map(_.host)
-          }.distinct.size
+          }.distinct.length
           val nodes = DistributionUtil.ensureExecutorsByNumberAndGetNodeList(nodeNumOfData,
             sqlContext.sparkContext)
           val newRdd = new DataLoadCoalescedRDD[Row](rdd, nodes.toArray.distinct)

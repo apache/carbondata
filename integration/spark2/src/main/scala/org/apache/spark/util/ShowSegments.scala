@@ -62,7 +62,7 @@ object ShowSegments {
   def main(args: Array[String]): Unit = {
 
     if (args.length < 2) {
-      System.err.println("Usage: ShowSegments <store path> <table name> [limit]");
+      System.err.println("Usage: ShowSegments <store path> <table name> [limit]")
       System.exit(1)
     }
 

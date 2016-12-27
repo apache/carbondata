@@ -62,9 +62,9 @@ object TableCreator {
     // All excluded cols should be there in create table cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).isDefined) {
       dictExcludeCols =
-        tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).get.split(',').map(_.trim)
+        tableProperties(CarbonCommonConstants.DICTIONARY_EXCLUDE).split(',').map(_.trim)
       dictExcludeCols
-        .map { dictExcludeCol =>
+        .foreach { dictExcludeCol =>
           if (!fields.exists(x => x.column.equalsIgnoreCase(dictExcludeCol))) {
             val errormsg = "DICTIONARY_EXCLUDE column: " + dictExcludeCol +
               " does not exist in table. Please check create table statement."
@@ -87,8 +87,8 @@ object TableCreator {
     // All included cols should be there in create table cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
       dictIncludeCols =
-        tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).get.split(",").map(_.trim)
-      dictIncludeCols.map { distIncludeCol =>
+        tableProperties(CarbonCommonConstants.DICTIONARY_INCLUDE).split(",").map(_.trim)
+      dictIncludeCols.foreach { distIncludeCol =>
         if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol.trim))) {
           val errormsg = "DICTIONARY_INCLUDE column: " + distIncludeCol.trim +
             " does not exist in table. Please check create table statement."
@@ -143,13 +143,13 @@ object TableCreator {
     // get all included cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
       dictIncludedCols =
-        tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).get.split(',').map(_.trim)
+        tableProperties(CarbonCommonConstants.DICTIONARY_INCLUDE).split(',').map(_.trim)
     }
 
     // get all excluded cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).isDefined) {
       dictExcludedCols =
-        tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).get.split(',').map(_.trim)
+        tableProperties(CarbonCommonConstants.DICTIONARY_EXCLUDE).split(',').map(_.trim)
     }
 
     // by default consider all non string cols as msrs. consider all include/ exclude cols as dims
@@ -264,7 +264,7 @@ object TableCreator {
     if (tableProperties.get(CarbonCommonConstants.COLUMN_GROUPS).isDefined) {
 
       var splittedColGrps: Seq[String] = Seq[String]()
-      val nonSplitCols: String = tableProperties.get(CarbonCommonConstants.COLUMN_GROUPS).get
+      val nonSplitCols: String = tableProperties(CarbonCommonConstants.COLUMN_GROUPS)
 
       // row groups will be specified in table properties like -> "(col1,col2),(col3,col4)"
       // here first splitting the value by () . so that the above will be splitted into 2 strings.
@@ -313,9 +313,8 @@ object TableCreator {
 
     if (tableProperties.get("NO_INVERTED_INDEX").isDefined) {
       noInvertedIdxColsProps =
-        tableProperties.get("NO_INVERTED_INDEX").get.split(',').map(_.trim)
-      noInvertedIdxColsProps
-        .map { noInvertedIdxColProp =>
+        tableProperties("NO_INVERTED_INDEX").split(',').map(_.trim)
+      noInvertedIdxColsProps.foreach { noInvertedIdxColProp =>
           if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
             val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
               " does not exist in table. Please check create table statement."
@@ -357,11 +356,11 @@ object TableCreator {
         field.storeType
       )
       case "array" => Field(field.column, Some("Array"), field.name,
-        field.children.map(f => f.map(normalizeType(_))),
+        field.children.map(f => f.map(normalizeType)),
         field.parent, field.storeType
       )
       case "struct" => Field(field.column, Some("Struct"), field.name,
-        field.children.map(f => f.map(normalizeType(_))),
+        field.children.map(f => f.map(normalizeType)),
         field.parent, field.storeType
       )
       case "bigint" => Field(field.column, Some("BigInt"), field.name, Some(null), field.parent,
