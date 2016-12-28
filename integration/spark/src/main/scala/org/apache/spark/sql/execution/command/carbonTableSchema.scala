@@ -27,7 +27,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Attribute, Cast, Literal}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
-import org.apache.spark.sql.hive.CarbonMetastore
+import org.apache.spark.sql.hive.{CarbonHiveMetadataUtil, CarbonMetastore}
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.util.FileUtils
 import org.codehaus.jackson.map.ObjectMapper
@@ -514,6 +514,29 @@ case class LoadTable(
       }
     }
   }
+}
+
+private[sql] case class CreateLikeTableCommand(likeTableName: String,
+                                               createHiveLikeTableSql: String)
+  extends RunnableCommand {
+
+  def run(sqlContext: SQLContext): Seq[Row] = {
+    if (isCarbonTable(likeTableName)) {
+      throw new MalformedCarbonCommandException("Carbon does not support CREATE TABLE LIKE syntax")
+    } else {
+      CarbonHiveMetadataUtil.createHiveLikeTable(sqlContext, createHiveLikeTableSql)
+    }
+
+    def isCarbonTable(tableName: String): Boolean = {
+      val databaseName = getDB.getDatabaseName(None, sqlContext)
+      val tableExists = CarbonEnv.get.carbonMetastore
+        .tableExists(TableIdentifier(tableName, None))(sqlContext)
+      tableExists
+    }
+
+    Seq.empty
+  }
+
 }
 
 private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: Option[String],
