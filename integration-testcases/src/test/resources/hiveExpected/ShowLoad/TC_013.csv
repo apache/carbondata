@@ -1,2 +1,0 @@
-LoadSequenceId StringType,Status StringType,Load Start Time TimestampType,Load End Time TimestampType
-0,Success,2015-11-05 18:09:40.0, 2015-11-05 18:09:41.0

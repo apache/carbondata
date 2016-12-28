@@ -1,8 +1,0 @@
-Activecity StringType,ActiveCountry StringType,ActiveDistrict StringType,Min_gamepointid DoubleType
-changsha,Chinese,yuhua,151.0
-guangzhou,Chinese,longhua,79.0
-shenzhen,Chinese,longgang,256.0
-wuhan,Chinese,hongshan,505.0
-xiangtan,Chinese,xiangtan,202.0
-yichang,Chinese,yichang,29.0
-zhuzhou,Chinese,tianyuan,613.0
