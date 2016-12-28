@@ -110,7 +110,8 @@ public final class CarbonLoaderUtil {
     model.setMaxColumns(loadModel.getMaxColumns());
     model.setDateFormat(loadModel.getDateFormat());
     GraphGenerator generator = new GraphGenerator(model, loadModel.getPartitionId(),
-        loadModel.getStorePath(), loadModel.getCarbonDataLoadSchema(), loadModel.getSegmentId(), outputLocation);
+        loadModel.getStorePath(), loadModel.getCarbonDataLoadSchema(), loadModel.getSegmentId(),
+        outputLocation);
     generator.generateGraph();
   }
 
@@ -128,7 +129,6 @@ public final class CarbonLoaderUtil {
     CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation);
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, storePath);
-    // CarbonProperties.getInstance().addProperty("store_output_location", outPutLoc);
     CarbonProperties.getInstance().addProperty("send.signal.load", "false");
 
     String fileNamePrefix = "";
