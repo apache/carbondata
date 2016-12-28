@@ -296,7 +296,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
 
   //TC_1086
   test("TC_1086") {
-      sql("drop table table44")
+    sql("drop table table44")
   }
 
   //TC_1087
@@ -321,7 +321,7 @@ class AllDataTypesTestCase4 extends QueryTest with BeforeAndAfterAll {
 
   //TC_1091
   test("TC_1091") {
-      sql("drop table table49")
+    sql("drop table table49")
   }
 
   //TC_1092

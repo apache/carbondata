@@ -19,7 +19,7 @@
 
 package org.apache.carbondata.spark.testsuite.allqueries
 
-import java.io.File
+import java.io.{File, FileInputStream, InputStream}
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.CarbonHiveContext._
@@ -36,6 +36,11 @@ import org.apache.carbondata.core.util.CarbonProperties
 class AllDataTypesTestCase5 extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+
+    val filesystem: InputStream = new FileInputStream(new File("target/classes/app.properties"))
+    val properties = new java.util.Properties()
+    properties.load(filesystem)
+    val path: String = properties.getProperty("file-source")
 
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
@@ -67,8 +72,12 @@ class AllDataTypesTestCase5 extends QueryTest with BeforeAndAfterAll {
         "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
         "Latest_operatorId string, gamePointDescription string,gamePointId decimal,contractNumber" +
         " decimal) stored by 'org.apache.carbondata.format'")
-      sql("LOAD DATA LOCAL INPATH '" + currentDirectory +
-          "/src/test/resources/Vmall_100_olap.csv' INTO table " +
+    } catch {
+      case e: Exception => print("ERROR : " + e.getMessage)
+    }
+    try {
+      sql("LOAD DATA LOCAL INPATH \"" + path +
+          "Vmall_100_olap.csv\" INTO table " +
           "Carbon_automation_vmall_test1 OPTIONS('DELIMITER'= ',' ,'QUOTECHAR'= '\"', " +
           "'FILEHEADER'= 'imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId," +
           "marketName,AMSize,ROMSize,CUPAudit,CPIClocked,series,productionDate,bomCode," +
@@ -84,6 +93,11 @@ class AllDataTypesTestCase5 extends QueryTest with BeforeAndAfterAll {
           "Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer," +
           "Latest_webTypeDataVerNumber,Latest_operatorsVersion," +
           "Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription')")
+    } catch {
+      case e: Exception => print("ERROR : " + e.getMessage)
+    }
+
+    try {
       sql(
         "create table Carbon_automation_test5 (imei string,deviceInformationId int,MAC string," +
         "deviceColor string,device_backColor string,modelId string,marketName string,AMSize " +
@@ -106,12 +120,16 @@ class AllDataTypesTestCase5 extends QueryTest with BeforeAndAfterAll {
         "Latest_phonePADPartitionedVersions string, Latest_operatorId string, " +
         " gamePointId int,contractNumber int,gamePointDescription string) stored by 'org.apache" +
         ".carbondata.format'")
-      CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
-        )
-      sql("LOAD DATA LOCAL INPATH '" + currentDirectory +
-          "/src/test/resources/100_olap.csv' INTO table Carbon_automation_test5 OPTIONS" +
+    } catch {
+      case e: Exception => print("ERROR : " + e.getMessage)
+    }
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
+      )
+    try {
+      sql("LOAD DATA LOCAL INPATH \"" + path +
+          "100_olap.csv\" INTO table Carbon_automation_test5 OPTIONS" +
           "('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,MAC," +
           "deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked," +
           "series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName," +
@@ -128,7 +146,11 @@ class AllDataTypesTestCase5 extends QueryTest with BeforeAndAfterAll {
           "Latest_webTypeDataVerNumber,Latest_operatorsVersion," +
           "Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId," +
           "contractNumber,gamePointDescription')")
+    } catch {
+      case e: Exception => print("ERROR : " + e.getMessage)
+    }
 
+    try {
 
       sql(
         "create table Carbon_automation_test5_hive (imei string,deviceInformationId int,MAC " +
@@ -153,7 +175,10 @@ class AllDataTypesTestCase5 extends QueryTest with BeforeAndAfterAll {
         "Latest_phonePADPartitionedVersions string, Latest_operatorId string, " +
         " gamePointId int,contractNumber int,gamePointDescription string) row format delimited " +
         "fields terminated by ','")
-
+    } catch {
+      case e: Exception => print("ERROR : " + e.getMessage)
+    }
+    try {
       sql("LOAD DATA LOCAL INPATH '" + currentDirectory +
           "/src/test/resources/100_olap.csv' INTO table Carbon_automation_test5_hive")
     } catch {

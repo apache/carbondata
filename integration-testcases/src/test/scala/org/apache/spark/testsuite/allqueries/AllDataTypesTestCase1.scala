@@ -20,21 +20,26 @@
 
 package org.apache.carbondata.spark.testsuite.allqueries
 
-import java.io.File
+import java.io.{File, FileInputStream, InputStream}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 /**
-  * Test Class for all queries on multiple datatypes
-  * Manohar
-  */
+ * Test Class for all queries on multiple datatypes
+ * Manohar
+ */
 class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    val filesystem: InputStream = new FileInputStream(new File("target/classes/app.properties"))
+    val properties = new java.util.Properties()
+    properties.load(filesystem)
+    val path: String = properties.getProperty("file-source")
 
     val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
       .getCanonicalPath
@@ -43,26 +48,26 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "create table Carbon_automation_test (imei string,deviceInformationId int,MAC string," +
-          "deviceColor string,device_backColor string,modelId string,marketName string,AMSize " +
-          "string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate " +
-          "string,bomCode string,internalModels string, deliveryTime string, channelsId string, " +
-          "channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince " +
-          "string, deliveryCity string,deliveryDistrict string, deliveryStreet string, " +
-          "oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry " +
-          "string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet " +
-          "string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, " +
-          "Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, " +
-          "Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber " +
-          "string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, " +
-          "Latest_YEAR int, Latest_MONTH int, Latest_DAY int, Latest_HOUR string, Latest_areaId " +
-          "string, Latest_country string, Latest_province string, Latest_city string, " +
-          "Latest_district string, Latest_street string, Latest_releaseId string, " +
-          "Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, " +
-          "Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, " +
-          "Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, " +
-          "Latest_phonePADPartitionedVersions string, Latest_operatorId string, " +
-          "gamePointDescription string, gamePointId int,contractNumber int) stored by 'org.apache" +
-          ".carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='Latest_webTypeDataVerNumber')")
+        "deviceColor string,device_backColor string,modelId string,marketName string,AMSize " +
+        "string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate " +
+        "string,bomCode string,internalModels string, deliveryTime string, channelsId string, " +
+        "channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince " +
+        "string, deliveryCity string,deliveryDistrict string, deliveryStreet string, " +
+        "oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry " +
+        "string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet " +
+        "string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, " +
+        "Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, " +
+        "Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber " +
+        "string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, " +
+        "Latest_YEAR int, Latest_MONTH int, Latest_DAY int, Latest_HOUR string, Latest_areaId " +
+        "string, Latest_country string, Latest_province string, Latest_city string, " +
+        "Latest_district string, Latest_street string, Latest_releaseId string, " +
+        "Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, " +
+        "Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, " +
+        "Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, " +
+        "Latest_phonePADPartitionedVersions string, Latest_operatorId string, " +
+        "gamePointDescription string, gamePointId int,contractNumber int) stored by 'org.apache" +
+        ".carbondata.format' TBLPROPERTIES('DICTIONARY_INCLUDE'='Latest_webTypeDataVerNumber')")
 
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
@@ -72,23 +77,23 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
       case e: Exception => print("ERROR : " + e.getMessage)
     }
     try {
-      sql("LOAD DATA LOCAL INPATH '" + currentDirectory +
-        "/src/test/resources/100_olap.csv' INTO table Carbon_automation_test OPTIONS" +
-        "('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,MAC," +
-        "deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked," +
-        "series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName," +
-        "deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict," +
-        "deliveryStreet,oxSingleNumber,contractNumber,ActiveCheckTime,ActiveAreaId," +
-        "ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId," +
-        "Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber," +
-        "Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer," +
-        "Active_webTypeDataVerNumber,Active_operatorsVersion," +
-        "Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR," +
-        "Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district," +
-        "Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion," +
-        "Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer," +
-        "Latest_webTypeDataVerNumber,Latest_operatorsVersion," +
-        "Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription')")
+      sql("LOAD DATA LOCAL INPATH \"" + path +
+          "100_olap.csv\" INTO table Carbon_automation_test OPTIONS" +
+          "('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'imei,deviceInformationId,MAC," +
+          "deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked," +
+          "series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName," +
+          "deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict," +
+          "deliveryStreet,oxSingleNumber,contractNumber,ActiveCheckTime,ActiveAreaId," +
+          "ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId," +
+          "Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber," +
+          "Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer," +
+          "Active_webTypeDataVerNumber,Active_operatorsVersion," +
+          "Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR," +
+          "Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district," +
+          "Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion," +
+          "Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer," +
+          "Latest_webTypeDataVerNumber,Latest_operatorsVersion," +
+          "Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription')")
     }
     catch {
       case e: Exception => print("ERROR : " + e.getMessage)
@@ -96,33 +101,35 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "create table if not exists Carbon_automation_hive(imei string,deviceInformationId int," +
-          "MAC string,deviceColor string,device_backColor string,modelId string,marketName " +
-          "string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string," +
-          "productionDate timestamp,bomCode string,internalModels string, deliveryTime string, " +
-          "channelsId string, channelsName string , deliveryAreaId string, deliveryCountry " +
-          "string, deliveryProvince string, deliveryCity string,deliveryDistrict string, " +
-          "deliveryStreet string, oxSingleNumber string,contractNumber int, ActiveCheckTime string, ActiveAreaId " +
-          "string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict" +
-          " string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, " +
-          "Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, " +
-          "Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string," +
-          "Active_webTypeDataVerNumber string, Active_operatorsVersion string, " +
-          "Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, " +
-          "Latest_DAY int, Latest_HOUR string, Latest_areaId string, Latest_country string, " +
-          "Latest_province string, Latest_city string, Latest_district string, Latest_street " +
-          "string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion " +
-          "string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion " +
-          "string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, " +
-          "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
-          "Latest_operatorId string, gamePointId int,gamePointDescription string" +
-          ") row format delimited fields terminated by ','"
+        "MAC string,deviceColor string,device_backColor string,modelId string,marketName " +
+        "string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string," +
+        "productionDate timestamp,bomCode string,internalModels string, deliveryTime string, " +
+        "channelsId string, channelsName string , deliveryAreaId string, deliveryCountry " +
+        "string, deliveryProvince string, deliveryCity string,deliveryDistrict string, " +
+        "deliveryStreet string, oxSingleNumber string,contractNumber int, ActiveCheckTime string," +
+        " ActiveAreaId " +
+        "string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict" +
+        " string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, " +
+        "Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, " +
+        "Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string," +
+        "Active_webTypeDataVerNumber string, Active_operatorsVersion string, " +
+        "Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, " +
+        "Latest_DAY int, Latest_HOUR string, Latest_areaId string, Latest_country string, " +
+        "Latest_province string, Latest_city string, Latest_district string, Latest_street " +
+        "string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion " +
+        "string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion " +
+        "string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, " +
+        "Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, " +
+        "Latest_operatorId string, gamePointId int,gamePointDescription string" +
+        ") row format delimited fields terminated by ','"
       )
     }
     catch {
       case e: Exception => print("ERROR : " + e.getMessage)
     }
     try {
-      sql("LOAD DATA LOCAL INPATH '" + currentDirectory + "/src/test/resources/100_olap.csv' INTO " +
+      sql(
+        "LOAD DATA LOCAL INPATH '" + currentDirectory + "/src/test/resources/100_olap.csv' INTO " +
         "table Carbon_automation_hive")
 
     }
@@ -147,11 +154,11 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql(
         "select channelsId, sum(Latest_MONTH+ 10) as a from Carbon_automation_test group by  " +
-          "channelsId"
+        "channelsId"
       ),
       sql(
         "select channelsId, sum(Latest_MONTH+ 10) as a from Carbon_automation_hive group by  " +
-          "channelsId"
+        "channelsId"
       )
 
     )
@@ -162,16 +169,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //Test-24
   test(
     "select channelsId, sum(channelsId+ 10)  Total from Carbon_automation_test group by  " +
-      "channelsId order by Total"
+    "channelsId order by Total"
   ) {
     checkAnswer(
       sql(
         "select channelsId, sum(channelsId+ 10)  Total from Carbon_automation_test group by  " +
-          "channelsId order by Total"
+        "channelsId order by Total"
       ),
       sql(
         "select channelsId, sum(channelsId+ 10)  Total from Carbon_automation_hive group by  " +
-          "channelsId order by Total"
+        "channelsId order by Total"
       )
 
     )
@@ -184,11 +191,11 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql(
         "select channelsId, avg(Latest_MONTH+ 10) as a from Carbon_automation_test group by  " +
-          "channelsId"
+        "channelsId"
       ),
       sql(
         "select channelsId, avg(Latest_MONTH+ 10) as a from Carbon_automation_hive group by  " +
-          "channelsId"
+        "channelsId"
       )
     )
 
@@ -199,16 +206,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   test(
 
     "select channelsId, count(Latest_DAY+ 10) as a  from Carbon_automation_test group by  " +
-      "channelsId"
+    "channelsId"
   ) {
     checkAnswer(
       sql(
         "select channelsId, count(Latest_DAY+ 10) as a  from Carbon_automation_test group by  " +
-          "channelsId"
+        "channelsId"
       ),
       sql(
         "select channelsId, count(Latest_DAY+ 10) as a  from Carbon_automation_hive group by  " +
-          "channelsId"
+        "channelsId"
       )
     )
   }
@@ -217,16 +224,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //Test-33
   test(
     "select channelsId, count(channelsId+ 10) Total from Carbon_automation_test group by  " +
-      "channelsId order by channelsId"
+    "channelsId order by channelsId"
   ) {
     checkAnswer(
       sql(
         "select channelsId, count(channelsId+ 10) Total from Carbon_automation_test group by  " +
-          "channelsId order by channelsId"
+        "channelsId order by channelsId"
       ),
       sql(
         "select channelsId, count(channelsId+ 10) Total from Carbon_automation_hive group by  " +
-          "channelsId order by channelsId"
+        "channelsId order by channelsId"
       )
     )
 
@@ -241,11 +248,11 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql(
         "select channelsId, min(Latest_DAY+ 10) as a  from Carbon_automation_test group by  " +
-          "channelsId"
+        "channelsId"
       ),
       sql(
         "select channelsId, min(Latest_DAY+ 10) as a  from Carbon_automation_hive group by  " +
-          "channelsId"
+        "channelsId"
       )
     )
 
@@ -255,16 +262,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //Test-37
   test(
     "select channelsId, min(channelsId+ 10) Total from Carbon_automation_test group by  " +
-      "channelsId order by Total"
+    "channelsId order by Total"
   ) {
     checkAnswer(
       sql(
         "select channelsId, min(channelsId+ 10) Total from Carbon_automation_test group by  " +
-          "channelsId order by Total"
+        "channelsId order by Total"
       ),
       sql(
         "select channelsId, min(channelsId+ 10) Total from Carbon_automation_hive group by  " +
-          "channelsId order by Total"
+        "channelsId order by Total"
       )
     )
 
@@ -277,11 +284,11 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql(
         "select channelsId, max(Latest_DAY+ 10) as a  from Carbon_automation_test group by  " +
-          "channelsId"
+        "channelsId"
       ),
       sql(
         "select channelsId, max(Latest_DAY+ 10) as a  from Carbon_automation_hive group by  " +
-          "channelsId"
+        "channelsId"
       )
     )
 
@@ -292,16 +299,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //Test-43
   test(
     "select Latest_YEAR ,sum(distinct Latest_YEAR)+10 from Carbon_automation_test group by " +
-      "Latest_YEAR"
+    "Latest_YEAR"
   )({
 
     checkAnswer(
       sql(
         "select Latest_YEAR ,sum(distinct Latest_YEAR)+10 from Carbon_automation_test group by " +
-          "Latest_YEAR"
+        "Latest_YEAR"
       ), sql(
         "select Latest_YEAR ,sum(distinct Latest_YEAR)+10 from Carbon_automation_hive group by " +
-          "Latest_YEAR"
+        "Latest_YEAR"
       )
     )
   }
@@ -324,34 +331,34 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(
       sql("select sum(gamepointid) +10.36 as a ,series  from Carbon_automation_test group by " +
-        "series"),
+          "series"),
       sql("select sum(gamepointid) +10.36 as a ,series  from Carbon_automation_hive group by " +
-        "series")
+          "series")
     )
   }
   )
 
   //TC_057
   test("select count(latest_year)+10.364 as a,series  from Carbon_automation_test group by series")(
-    {
-      checkAnswer(
-        sql(
-          "select count(latest_year)+10.364 as a,series  from Carbon_automation_test group by series"
-        ),
-        sql(
-          "select count(latest_year)+10.364 as a,series  from Carbon_automation_hive group by series"
-        )
+  {
+    checkAnswer(
+      sql(
+        "select count(latest_year)+10.364 as a,series  from Carbon_automation_test group by series"
+      ),
+      sql(
+        "select count(latest_year)+10.364 as a,series  from Carbon_automation_hive group by series"
       )
-    }
+    )
+  }
   )
 
   //TC_058
   test("select count(distinct series)+10 as a,series from Carbon_automation_test group by series")({
     checkAnswer(
       sql("select count(distinct series)+10 as a,series from Carbon_automation_test group by " +
-        "series"),
+          "series"),
       sql("select count(distinct series)+10 as a,series from Carbon_automation_hive group by " +
-        "series")
+          "series")
     )
   }
   )
@@ -388,16 +395,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_067
   test(
     "select count (if(deviceInformationId>100,NULL,deviceInformationId))  a from " +
-      "Carbon_automation_test"
+    "Carbon_automation_test"
   )({
     checkAnswer(
       sql(
         "select count (if(deviceInformationId>100,NULL,deviceInformationId))  a from " +
-          "Carbon_automation_test"
+        "Carbon_automation_test"
       ),
       sql(
         "select count (if(deviceInformationId>100,NULL,deviceInformationId))  a from " +
-          "Carbon_automation_hive"
+        "Carbon_automation_hive"
       )
     )
   }
@@ -422,16 +429,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_080
   test(
     "select sum (if(deviceInformationId>100,NULL,deviceInformationId))  a from " +
-      "Carbon_automation_test"
+    "Carbon_automation_test"
   )({
     checkAnswer(
       sql(
         "select sum (if(deviceInformationId>100,NULL,deviceInformationId))  a from " +
-          "Carbon_automation_test"
+        "Carbon_automation_test"
       ),
       sql(
         "select sum (if(deviceInformationId>100,NULL,deviceInformationId))  a from " +
-          "Carbon_automation_hive"
+        "Carbon_automation_hive"
       ))
   }
   )
@@ -449,16 +456,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_088
   test(
     "select avg (if(deviceInformationId>100,NULL,deviceInformationId))  a from " +
-      "Carbon_automation_test"
+    "Carbon_automation_test"
   )({
     checkAnswer(
       sql(
         "select avg (if(deviceInformationId>100,NULL,deviceInformationId))  a from " +
-          "Carbon_automation_test"
+        "Carbon_automation_test"
       ),
       sql(
         "select avg (if(deviceInformationId>100,NULL,deviceInformationId))  a from " +
-          "Carbon_automation_hive"
+        "Carbon_automation_hive"
       )
     )
   }
@@ -477,16 +484,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_095
   test(
     "select min (if(deviceInformationId>100,NULL,deviceInformationId))  a from " +
-      "Carbon_automation_test"
+    "Carbon_automation_test"
   )({
     checkAnswer(
       sql(
         "select min (if(deviceInformationId>100,NULL,deviceInformationId))  a from " +
-          "Carbon_automation_test"
+        "Carbon_automation_test"
       ),
       sql(
         "select min (if(deviceInformationId>100,NULL,deviceInformationId))  a from " +
-          "Carbon_automation_hive"
+        "Carbon_automation_hive"
       )
     )
   }
@@ -504,16 +511,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_102
   test(
     "select max (if(deviceInformationId>100,NULL,deviceInformationId))  a from " +
-      "Carbon_automation_test"
+    "Carbon_automation_test"
   )({
     checkAnswer(
       sql(
         "select max (if(deviceInformationId>100,NULL,deviceInformationId))  a from " +
-          "Carbon_automation_test"
+        "Carbon_automation_test"
       ),
       sql(
         "select max (if(deviceInformationId>100,NULL,deviceInformationId))  a from " +
-          "Carbon_automation_hive"
+        "Carbon_automation_hive"
       )
     )
   }
@@ -556,19 +563,19 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
 
   //TC_108
   test("select covar_pop(deviceInformationId,deviceInformationId) as a  from " +
-    "Carbon_automation_test")(
-    {
-      checkAnswer(
-        sql(
-          "select covar_pop(deviceInformationId,deviceInformationId) as a  from " +
-            "Carbon_automation_test"
-        ),
-        sql(
-          "select covar_pop(deviceInformationId,deviceInformationId) as a  from " +
-            "Carbon_automation_hive"
-        )
+       "Carbon_automation_test")(
+  {
+    checkAnswer(
+      sql(
+        "select covar_pop(deviceInformationId,deviceInformationId) as a  from " +
+        "Carbon_automation_test"
+      ),
+      sql(
+        "select covar_pop(deviceInformationId,deviceInformationId) as a  from " +
+        "Carbon_automation_hive"
       )
-    }
+    )
+  }
   )
 
   //TC_109
@@ -578,11 +585,11 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql(
         "select covar_samp(deviceInformationId,deviceInformationId) as a  from " +
-          "Carbon_automation_test"
+        "Carbon_automation_test"
       ),
       sql(
         "select covar_samp(deviceInformationId,deviceInformationId) as a  from " +
-          "Carbon_automation_hive"
+        "Carbon_automation_hive"
       )
     )
   }
@@ -627,9 +634,9 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   test("select series,count(imei) a from Carbon_automation_test group by series order by series")({
     checkAnswer(
       sql("select series,count(imei) a from Carbon_automation_test group by series order by " +
-        "series"),
+          "series"),
       sql("select series,count(imei) a from Carbon_automation_hive group by series order by " +
-        "series")
+          "series")
     )
   }
   )
@@ -637,16 +644,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_138
   test(
     "select series,ActiveProvince,count(imei)  a from Carbon_automation_test group by " +
-      "ActiveProvince,series order by series,ActiveProvince"
+    "ActiveProvince,series order by series,ActiveProvince"
   )({
     checkAnswer(
       sql(
         "select series,ActiveProvince,count(imei)  a from Carbon_automation_test group by " +
-          "ActiveProvince,series order by series,ActiveProvince"
+        "ActiveProvince,series order by series,ActiveProvince"
       ),
       sql(
         "select series,ActiveProvince,count(imei)  a from Carbon_automation_hive group by " +
-          "ActiveProvince,series order by series,ActiveProvince"
+        "ActiveProvince,series order by series,ActiveProvince"
       )
     )
   }
@@ -655,16 +662,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_162
   test(
     "select imei,series from Carbon_automation_test where Carbon_automation_test.series IN " +
-      "('1Series','7Series')"
+    "('1Series','7Series')"
   )({
     checkAnswer(
       sql(
         "select imei,series from Carbon_automation_test where Carbon_automation_test.series IN " +
-          "('1Series','7Series')"
+        "('1Series','7Series')"
       ),
       sql(
         "select imei,series from Carbon_automation_hive where Carbon_automation_hive.series IN " +
-          "('1Series','7Series')"
+        "('1Series','7Series')"
       )
     )
   }
@@ -673,16 +680,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_163
   test(
     "select imei,series from Carbon_automation_test where Carbon_automation_test.series  NOT IN " +
-      "('1Series','7Series')"
+    "('1Series','7Series')"
   )({
     checkAnswer(
       sql(
         "select imei,series from Carbon_automation_test where Carbon_automation_test.series  NOT " +
-          "IN ('1Series','7Series')"
+        "IN ('1Series','7Series')"
       ),
       sql(
         "select imei,series from Carbon_automation_hive where Carbon_automation_hive.series  NOT " +
-          "IN ('1Series','7Series')"
+        "IN ('1Series','7Series')"
       )
     )
   }
@@ -746,16 +753,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_180
   test(
     "select series,sum(gamePointId) a from Carbon_automation_test group by series order by series" +
-      " desc"
+    " desc"
   )({
     checkAnswer(
       sql(
         "select series,sum(gamePointId) a from Carbon_automation_test group by series order by " +
-          "series desc"
+        "series desc"
       ),
       sql(
         "select series,sum(gamePointId) a from Carbon_automation_hive group by series order by " +
-          "series desc"
+        "series desc"
       )
     )
   }
@@ -765,16 +772,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_182
   test(
     "select series,sum(gamePointId) a from Carbon_automation_test group by series order by series" +
-      " desc ,a desc"
+    " desc ,a desc"
   )({
     checkAnswer(
       sql(
         "select series,sum(gamePointId) a from Carbon_automation_test group by series order by " +
-          "series desc ,a desc"
+        "series desc ,a desc"
       ),
       sql(
         "select series,sum(gamePointId) a from Carbon_automation_hive group by series order by " +
-          "series desc ,a desc"
+        "series desc ,a desc"
       ))
   }
   )
@@ -782,16 +789,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_183
   test(
     "select series,sum(gamePointId) a from Carbon_automation_test group by series order by series" +
-      " asc"
+    " asc"
   )({
     checkAnswer(
       sql(
         "select series,sum(gamePointId) a from Carbon_automation_test group by series order by " +
-          "series asc"
+        "series asc"
       ),
       sql(
         "select series,sum(gamePointId) a from Carbon_automation_hive group by series order by " +
-          "series asc"
+        "series asc"
       )
     )
   }
@@ -800,16 +807,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
 
   test(
     "select series,sum(gamePointId) a from Carbon_automation_test group by series order by series" +
-      " asc ,a asc"
+    " asc ,a asc"
   )({
     checkAnswer(
       sql(
         "select series,sum(gamePointId) a from Carbon_automation_test group by series order by " +
-          "series asc ,a asc"
+        "series asc ,a asc"
       ),
       sql(
         "select series,sum(gamePointId) a from Carbon_automation_hive group by series order by " +
-          "series asc ,a asc"
+        "series asc ,a asc"
       )
     )
   }
@@ -872,16 +879,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_216
   test(
     "select imei, Latest_DAY from Carbon_automation_test where Latest_DAY NOT BETWEEN " +
-      "Latest_areaId AND  Latest_HOUR"
+    "Latest_areaId AND  Latest_HOUR"
   )({
     checkAnswer(
       sql(
         "select imei, Latest_DAY from Carbon_automation_test where Latest_DAY NOT BETWEEN " +
-          "Latest_areaId AND  Latest_HOUR"
+        "Latest_areaId AND  Latest_HOUR"
       ),
       sql(
         "select imei, Latest_DAY from Carbon_automation_hive where Latest_DAY NOT BETWEEN " +
-          "Latest_areaId AND  Latest_HOUR"
+        "Latest_areaId AND  Latest_HOUR"
       )
     )
   }
@@ -899,16 +906,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_223
   test(
     "select * from (select if( Latest_areaId=7,7,NULL) as babu,Latest_MONTH from " +
-      "Carbon_automation_test) qq where babu LIKE   Latest_MONTH"
+    "Carbon_automation_test) qq where babu LIKE   Latest_MONTH"
   )({
     checkAnswer(
       sql(
         "select * from (select if( Latest_areaId=7,7,NULL) as babu,Latest_MONTH from " +
-          "Carbon_automation_test) qq where babu LIKE   Latest_MONTH"
+        "Carbon_automation_test) qq where babu LIKE   Latest_MONTH"
       ),
       sql(
         "select * from (select if( Latest_areaId=7,7,NULL) as babu,Latest_MONTH from " +
-          "Carbon_automation_hive) qq where babu LIKE   Latest_MONTH"
+        "Carbon_automation_hive) qq where babu LIKE   Latest_MONTH"
       )
     )
   }
@@ -917,19 +924,19 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_263
   test(
     "SELECT AMSize, ActiveAreaId, SUM(gamePointId) AS Sum_gamePointId FROM (select * from " +
-      "Carbon_automation_test) SUB_QRY GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, " +
-      "ActiveAreaId ASC"
+    "Carbon_automation_test) SUB_QRY GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, " +
+    "ActiveAreaId ASC"
   )({
     checkAnswer(
       sql(
         "SELECT AMSize, ActiveAreaId, SUM(gamePointId) AS Sum_gamePointId FROM (select * from " +
-          "Carbon_automation_test) SUB_QRY GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, " +
-          "ActiveAreaId ASC"
+        "Carbon_automation_test) SUB_QRY GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, " +
+        "ActiveAreaId ASC"
       ),
       sql(
         "SELECT AMSize, ActiveAreaId, SUM(gamePointId) AS Sum_gamePointId FROM (select * from " +
-          "Carbon_automation_hive) SUB_QRY GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, " +
-          "ActiveAreaId ASC"
+        "Carbon_automation_hive) SUB_QRY GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, " +
+        "ActiveAreaId ASC"
       )
     )
   }
@@ -938,19 +945,19 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_265
   test(
     "SELECT AMSize, ActiveAreaId, SUM(gamePointId) AS Sum_gamePointId FROM (select * from " +
-      "Carbon_automation_test) SUB_QRY WHERE NOT(AMSize = \"\") GROUP BY AMSize, ActiveAreaId " +
-      "ORDER BY AMSize ASC, ActiveAreaId ASC"
+    "Carbon_automation_test) SUB_QRY WHERE NOT(AMSize = \"\") GROUP BY AMSize, ActiveAreaId " +
+    "ORDER BY AMSize ASC, ActiveAreaId ASC"
   )({
     checkAnswer(
       sql(
         "SELECT AMSize, ActiveAreaId, SUM(gamePointId) AS Sum_gamePointId FROM (select * from " +
-          "Carbon_automation_test) SUB_QRY WHERE NOT(AMSize = \"\") GROUP BY AMSize, ActiveAreaId" +
-          " ORDER BY AMSize ASC, ActiveAreaId ASC"
+        "Carbon_automation_test) SUB_QRY WHERE NOT(AMSize = \"\") GROUP BY AMSize, ActiveAreaId" +
+        " ORDER BY AMSize ASC, ActiveAreaId ASC"
       ),
       sql(
         "SELECT AMSize, ActiveAreaId, SUM(gamePointId) AS Sum_gamePointId FROM (select * from " +
-          "Carbon_automation_hive) SUB_QRY WHERE NOT(AMSize = \"\") GROUP BY AMSize, ActiveAreaId" +
-          " ORDER BY AMSize ASC, ActiveAreaId ASC"
+        "Carbon_automation_hive) SUB_QRY WHERE NOT(AMSize = \"\") GROUP BY AMSize, ActiveAreaId" +
+        " ORDER BY AMSize ASC, ActiveAreaId ASC"
       )
     )
   }
@@ -959,16 +966,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_274
   test(
     "SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamepointid) AS Sum_gamepointid FROM  " +
-      "Carbon_automation_test group by ActiveCountry,ActiveDistrict,Activecity"
+    "Carbon_automation_test group by ActiveCountry,ActiveDistrict,Activecity"
   )({
     checkAnswer(
       sql(
         "SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamepointid) AS Sum_gamepointid " +
-          "FROM  Carbon_automation_test group by ActiveCountry,ActiveDistrict,Activecity"
+        "FROM  Carbon_automation_test group by ActiveCountry,ActiveDistrict,Activecity"
       ),
       sql(
         "SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamepointid) AS Sum_gamepointid " +
-          "FROM  Carbon_automation_hive group by ActiveCountry,ActiveDistrict,Activecity"
+        "FROM  Carbon_automation_hive group by ActiveCountry,ActiveDistrict,Activecity"
       )
     )
   }
@@ -977,21 +984,21 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_275
   test(
     "SELECT Latest_country, Latest_city, Latest_district, SUM(gamepointid) AS Sum_gamepointid " +
-      "FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY Latest_country, Latest_city, " +
-      "Latest_district ORDER BY Latest_country ASC, Latest_city ASC, Latest_district ASC"
+    "FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY Latest_country, Latest_city, " +
+    "Latest_district ORDER BY Latest_country ASC, Latest_city ASC, Latest_district ASC"
   )({
     checkAnswer(
       sql(
         "SELECT Latest_country, Latest_city, Latest_district, SUM(gamepointid) AS Sum_gamepointid" +
-          " FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY Latest_country, " +
-          "Latest_city, Latest_district ORDER BY Latest_country ASC, Latest_city ASC, " +
-          "Latest_district ASC"
+        " FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY Latest_country, " +
+        "Latest_city, Latest_district ORDER BY Latest_country ASC, Latest_city ASC, " +
+        "Latest_district ASC"
       ),
       sql(
         "SELECT Latest_country, Latest_city, Latest_district, SUM(gamepointid) AS Sum_gamepointid" +
-          " FROM (select * from Carbon_automation_hive) SUB_QRY GROUP BY Latest_country, " +
-          "Latest_city, Latest_district ORDER BY Latest_country ASC, Latest_city ASC, " +
-          "Latest_district ASC"
+        " FROM (select * from Carbon_automation_hive) SUB_QRY GROUP BY Latest_country, " +
+        "Latest_city, Latest_district ORDER BY Latest_country ASC, Latest_city ASC, " +
+        "Latest_district ASC"
       )
     )
   }
@@ -1000,19 +1007,19 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_276
   test(
     "SELECT Activecity, ActiveCountry, ActiveDistrict, COUNT(imei) AS Count_imei FROM (select * " +
-      "from Carbon_automation_test) SUB_QRY GROUP BY Activecity, ActiveCountry, ActiveDistrict " +
-      "ORDER BY Activecity ASC, ActiveCountry ASC, ActiveDistrict ASC"
+    "from Carbon_automation_test) SUB_QRY GROUP BY Activecity, ActiveCountry, ActiveDistrict " +
+    "ORDER BY Activecity ASC, ActiveCountry ASC, ActiveDistrict ASC"
   )({
     checkAnswer(
       sql(
         "SELECT Activecity, ActiveCountry, ActiveDistrict, COUNT(imei) AS Count_imei FROM (select" +
-          " * from Carbon_automation_test) SUB_QRY GROUP BY Activecity, ActiveCountry, " +
-          "ActiveDistrict ORDER BY Activecity ASC, ActiveCountry ASC, ActiveDistrict ASC"
+        " * from Carbon_automation_test) SUB_QRY GROUP BY Activecity, ActiveCountry, " +
+        "ActiveDistrict ORDER BY Activecity ASC, ActiveCountry ASC, ActiveDistrict ASC"
       ),
       sql(
         "SELECT Activecity, ActiveCountry, ActiveDistrict, COUNT(imei) AS Count_imei FROM (select" +
-          " * from Carbon_automation_hive) SUB_QRY GROUP BY Activecity, ActiveCountry, " +
-          "ActiveDistrict ORDER BY Activecity ASC, ActiveCountry ASC, ActiveDistrict ASC"
+        " * from Carbon_automation_hive) SUB_QRY GROUP BY Activecity, ActiveCountry, " +
+        "ActiveDistrict ORDER BY Activecity ASC, ActiveCountry ASC, ActiveDistrict ASC"
       )
     )
   }
@@ -1021,16 +1028,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_279
   test(
     "SELECT ActiveCountry, COUNT(DISTINCT imei) AS DistinctCount_imei FROM (select * from " +
-      "Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry ORDER BY ActiveCountry ASC"
+    "Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry ORDER BY ActiveCountry ASC"
   )({
     checkAnswer(
       sql(
         "SELECT ActiveCountry, COUNT(DISTINCT imei) AS DistinctCount_imei FROM (select * from " +
-          "Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry ORDER BY ActiveCountry ASC"
+        "Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry ORDER BY ActiveCountry ASC"
       ),
       sql(
         "SELECT ActiveCountry, COUNT(DISTINCT imei) AS DistinctCount_imei FROM (select * from " +
-          "Carbon_automation_hive) SUB_QRY GROUP BY ActiveCountry ORDER BY ActiveCountry ASC"
+        "Carbon_automation_hive) SUB_QRY GROUP BY ActiveCountry ORDER BY ActiveCountry ASC"
       )
     )
   }
@@ -1039,21 +1046,21 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_282
   test(
     "SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamepointid) AS Sum_gamepointid FROM " +
-      "(select * from Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry, ActiveDistrict, " +
-      "Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity ASC"
+    "(select * from Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry, ActiveDistrict, " +
+    "Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity ASC"
   )({
     checkAnswer(
       sql(
         "SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamepointid) AS Sum_gamepointid " +
-          "FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry, " +
-          "ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity " +
-          "ASC"
+        "FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry, " +
+        "ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity " +
+        "ASC"
       ),
       sql(
         "SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamepointid) AS Sum_gamepointid " +
-          "FROM (select * from Carbon_automation_hive) SUB_QRY GROUP BY ActiveCountry, " +
-          "ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity " +
-          "ASC"
+        "FROM (select * from Carbon_automation_hive) SUB_QRY GROUP BY ActiveCountry, " +
+        "ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity " +
+        "ASC"
       )
     )
   }
@@ -1071,16 +1078,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_318
   test(
     "select count(series),series from Carbon_automation_test group by series having " +
-      "series='6Series'"
+    "series='6Series'"
   )({
     checkAnswer(
       sql(
         "select count(series),series from Carbon_automation_test group by series having " +
-          "series='6Series'"
+        "series='6Series'"
       ),
       sql(
         "select count(series),series from Carbon_automation_hive group by series having " +
-          "series='6Series'"
+        "series='6Series'"
       )
     )
   }
@@ -1089,21 +1096,21 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_319
   test(
     "SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamePointId) AS Sum_gamePointId FROM " +
-      "(select * from Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry, ActiveDistrict, " +
-      "Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity ASC"
+    "(select * from Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry, ActiveDistrict, " +
+    "Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity ASC"
   )({
     checkAnswer(
       sql(
         "SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamePointId) AS Sum_gamePointId " +
-          "FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry, " +
-          "ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity " +
-          "ASC"
+        "FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY ActiveCountry, " +
+        "ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity " +
+        "ASC"
       ),
       sql(
         "SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamePointId) AS Sum_gamePointId " +
-          "FROM (select * from Carbon_automation_hive) SUB_QRY GROUP BY ActiveCountry, " +
-          "ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity " +
-          "ASC"
+        "FROM (select * from Carbon_automation_hive) SUB_QRY GROUP BY ActiveCountry, " +
+        "ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, Activecity " +
+        "ASC"
       )
     )
   }
@@ -1112,22 +1119,22 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_321
   test(
     "SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamePointId) AS Sum_gamePointId FROM " +
-      "(select * from Carbon_automation_test) SUB_QRY WHERE imei = \"1AA100000\" GROUP BY " +
-      "ActiveCountry, ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, " +
-      "Activecity ASC"
+    "(select * from Carbon_automation_test) SUB_QRY WHERE imei = \"1AA100000\" GROUP BY " +
+    "ActiveCountry, ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, ActiveDistrict ASC, " +
+    "Activecity ASC"
   )({
     checkAnswer(
       sql(
         "SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamePointId) AS Sum_gamePointId " +
-          "FROM (select * from Carbon_automation_test) SUB_QRY WHERE imei = \"1AA100000\" GROUP " +
-          "BY ActiveCountry, ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, " +
-          "ActiveDistrict ASC, Activecity ASC"
+        "FROM (select * from Carbon_automation_test) SUB_QRY WHERE imei = \"1AA100000\" GROUP " +
+        "BY ActiveCountry, ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, " +
+        "ActiveDistrict ASC, Activecity ASC"
       ),
       sql(
         "SELECT ActiveCountry, ActiveDistrict, Activecity, SUM(gamePointId) AS Sum_gamePointId " +
-          "FROM (select * from Carbon_automation_hive) SUB_QRY WHERE imei = \"1AA100000\" GROUP " +
-          "BY ActiveCountry, ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, " +
-          "ActiveDistrict ASC, Activecity ASC"
+        "FROM (select * from Carbon_automation_hive) SUB_QRY WHERE imei = \"1AA100000\" GROUP " +
+        "BY ActiveCountry, ActiveDistrict, Activecity ORDER BY ActiveCountry ASC, " +
+        "ActiveDistrict ASC, Activecity ASC"
       )
     )
   }
@@ -1136,16 +1143,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_384
   test(
     "SELECT series, SUM(gamePointId) AS Sum_gamePointId FROM (select * from " +
-      "Carbon_automation_test) SUB_QRY GROUP BY series ORDER BY series ASC"
+    "Carbon_automation_test) SUB_QRY GROUP BY series ORDER BY series ASC"
   )({
     checkAnswer(
       sql(
         "SELECT series, SUM(gamePointId) AS Sum_gamePointId FROM (select * from " +
-          "Carbon_automation_test) SUB_QRY GROUP BY series ORDER BY series ASC"
+        "Carbon_automation_test) SUB_QRY GROUP BY series ORDER BY series ASC"
       ),
       sql(
         "SELECT series, SUM(gamePointId) AS Sum_gamePointId FROM (select * from " +
-          "Carbon_automation_hive) SUB_QRY GROUP BY series ORDER BY series ASC"
+        "Carbon_automation_hive) SUB_QRY GROUP BY series ORDER BY series ASC"
       )
     )
   }
@@ -1154,16 +1161,16 @@ class AllDataTypesTestCase1 extends QueryTest with BeforeAndAfterAll {
   //TC_386
   test(
     "SELECT channelsId, deliveryCity FROM (select * from Carbon_automation_test) SUB_QRY GROUP BY" +
-      " channelsId, deliveryCity ORDER BY channelsId ASC, deliveryCity ASC"
+    " channelsId, deliveryCity ORDER BY channelsId ASC, deliveryCity ASC"
   )({
     checkAnswer(
       sql(
         "SELECT channelsId, deliveryCity FROM (select * from Carbon_automation_test) SUB_QRY " +
-          "GROUP BY channelsId, deliveryCity ORDER BY channelsId ASC, deliveryCity ASC"
+        "GROUP BY channelsId, deliveryCity ORDER BY channelsId ASC, deliveryCity ASC"
       ),
       sql(
         "SELECT channelsId, deliveryCity FROM (select * from Carbon_automation_hive) SUB_QRY " +
-          "GROUP BY channelsId, deliveryCity ORDER BY channelsId ASC, deliveryCity ASC"
+        "GROUP BY channelsId, deliveryCity ORDER BY channelsId ASC, deliveryCity ASC"
       )
     )
   }
