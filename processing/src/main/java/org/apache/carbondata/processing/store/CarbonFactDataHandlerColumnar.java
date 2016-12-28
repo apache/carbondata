@@ -760,7 +760,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
           bigDvalue[0] = Long.parseLong(bigdVals[0]);
           BigDecimal bd = new BigDecimal(CarbonCommonConstants.POINT+bigdVals[1]);
           bigDvalue[1] = (long)(bd.doubleValue()*Math.pow(10, value.scale()));
-          //bigDvalue[1] = Long.parseLong(bigdVals[1]);
         } else {
           bigDvalue[0] = Long.parseLong(bigdVals[0]);
         }

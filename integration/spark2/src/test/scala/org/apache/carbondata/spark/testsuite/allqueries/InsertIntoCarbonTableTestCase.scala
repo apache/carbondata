@@ -19,7 +19,6 @@
 package org.apache.carbondata.spark.testsuite.allqueries
 
 import org.apache.spark.sql.AnalysisException
-import org.apache.spark.sql.common.util.CarbonSessionTest._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
