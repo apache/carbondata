@@ -275,8 +275,8 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
             tableName,
             fields,
             partitionCols,
-            bucketFields,
-            tableProperties)
+            tableProperties,
+            bucketFields)
 
           // get logical plan.
           CreateTable(tableModel)
