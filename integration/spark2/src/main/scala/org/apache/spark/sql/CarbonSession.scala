@@ -16,24 +16,64 @@
  */
 package org.apache.spark.sql
 
+import scala.reflect.ClassTag
+import scala.util.control.NonFatal
+
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
 import org.apache.spark.sql.hive.CarbonSessionState
-import org.apache.spark.sql.internal.SessionState
+import org.apache.spark.sql.internal.{SessionState, SharedState}
+import org.apache.spark.util.Utils
 
 /**
  * Session implementation for {org.apache.spark.sql.SparkSession}
  * Implemented this class only to use our own SQL DDL commands.
  * User needs to use {CarbonSession.getOrCreateCarbon} to create Carbon session.
- * @param sc
  */
-class CarbonSession(sc: SparkContext) extends SparkSession(sc) {
+class CarbonSession(@transient val sc: SparkContext,
+    @transient private val existingSharedState: Option[SharedState]) extends SparkSession(sc) {
+
+  def this(sc: SparkContext) {
+    this(sc, None)
+  }
 
   CarbonEnv.init(this)
 
   @transient
   override private[sql] lazy val sessionState: SessionState = new CarbonSessionState(this)
+
+  /**
+   * State shared across sessions, including the [[SparkContext]], cached data, listener,
+   * and a catalog that interacts with external systems.
+   */
+  @transient
+  override private[sql] lazy val sharedState: SharedState = {
+    existingSharedState.getOrElse(reflect[SharedState, SparkContext](
+      "org.apache.spark.sql.hive.HiveSharedState",
+      sparkContext))
+  }
+
+  override def newSession(): SparkSession = {
+    new CarbonSession(sparkContext, Some(sharedState))
+  }
+
+  /**
+   * Helper method to create an instance of [[T]] using a single-arg constructor that
+   * accepts an [[Arg]].
+   */
+  private def reflect[T, Arg <: AnyRef](
+      className: String,
+      ctorArg: Arg)(implicit ctorArgTag: ClassTag[Arg]): T = {
+    try {
+      val clazz = Utils.classForName(className)
+      val ctor = clazz.getDeclaredConstructor(ctorArgTag.runtimeClass)
+      ctor.newInstance(ctorArg).asInstanceOf[T]
+    } catch {
+      case NonFatal(e) =>
+        throw new IllegalArgumentException(s"Error while instantiating '$className':", e)
+    }
+  }
 }
 
 object CarbonSession {
