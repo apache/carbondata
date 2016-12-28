@@ -34,7 +34,7 @@ object CarbonThriftServer {
     val builder = SparkSession
       .builder()
       .config(sparkConf)
-      .appName("Carbon Thrift Server")
+      .appName("Carbon Thrift Server(uses CarbonSession)")
       .enableHiveSupport()
 
     val sparkHome = System.getenv.get("SPARK_HOME")
@@ -55,7 +55,7 @@ object CarbonThriftServer {
         val LOG = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
         LOG.error(s"Wrong value for carbon.spark.warmUpTime $warmUpTime " +
                   "Using default Value and proceeding")
-        Thread.sleep(30000)
+        Thread.sleep(5000)
     }
 
     HiveThriftServer2.startWithContext(spark.sqlContext)
