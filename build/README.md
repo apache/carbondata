@@ -33,7 +33,7 @@ mvn clean -DskipTests -Pbuild-with-format install
 ```
 
 ## Build dev version(snapshot version,clone from github)
-Note:Already uploaded format.jar to snapshot repo for facilitating dev users
+Note:Already uploaded format.jar to snapshot repo for facilitating dev users,
 so the compilation command works without "-Pbuild-with-format"
 
 Build without test,by default carbondata takes Spark 1.5.2 to build the project
