@@ -24,10 +24,11 @@ import org.apache.spark.sql.catalyst.parser.ParserUtils._
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{ColTypeListContext, CreateTableContext, TablePropertyListContext}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
-import org.apache.spark.sql.execution.command.{CreateTable, Field, TableModel}
+import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field, TableModel}
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
 import org.apache.spark.sql.types.DataType
 
+import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -132,13 +133,22 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       if (!CommonUtil.validateTblProperties(properties.asJava.asScala, fields)) {
         throw new MalformedCarbonCommandException("Invalid table properties")
       }
+      val options = new CarbonOption(properties)
+      val bucketFields = {
+        if (options.isBucketingEnabled) {
+          Some(BucketFields(options.bucketColumns.split(","), options.bucketNumber))
+        } else {
+          None
+        }
+      }
       // prepare table model of the collected tokens
       val tableModel: TableModel = parser.prepareTableModel(ifNotExists,
         name.database,
         name.table,
         fields,
         Seq(),
-        properties.asJava.asScala)
+        properties.asJava.asScala,
+        bucketFields)
 
       CreateTable(tableModel)
     } else {

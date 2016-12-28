@@ -22,18 +22,17 @@ package org.apache.spark.carbondata.bucketing
 import java.io.File
 
 import org.apache.commons.io.FileUtils
-import org.apache.spark.carbondata.util.QueryTest._
+import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.execution.command.LoadTable
 import org.apache.spark.sql.execution.exchange.ShuffleExchange
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.scalatest.{BeforeAndAfterAll, FunSuite}
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class TableBucketingTestCase extends FunSuite with BeforeAndAfterAll {
+class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
 
@@ -42,19 +41,13 @@ class TableBucketingTestCase extends FunSuite with BeforeAndAfterAll {
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    spark.conf.set("spark.sql.autoBroadcastJoinThreshold", "-1")
     spark.sql("DROP TABLE IF EXISTS t3")
     spark.sql("DROP TABLE IF EXISTS t4")
     spark.sql("DROP TABLE IF EXISTS t5")
     spark.sql("DROP TABLE IF EXISTS t6")
     spark.sql("DROP TABLE IF EXISTS t7")
     spark.sql("DROP TABLE IF EXISTS t8")
-  }
-
-  def clean: Unit = {
-    val clean = (path: String) => FileUtils.deleteDirectory(new File(path))
-    clean(storeLocation)
-    clean(warehouse)
-    clean(metastoredb)
   }
 
   test("test create table with buckets") {
