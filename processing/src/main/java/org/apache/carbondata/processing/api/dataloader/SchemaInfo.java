@@ -27,26 +27,6 @@ public class SchemaInfo {
   private String databaseName;
 
   /**
-   * srcDriverName
-   */
-  private String srcDriverName;
-
-  /**
-   * srcConUrl
-   */
-  private String srcConUrl;
-
-  /**
-   * srcUserName
-   */
-  private String srcUserName;
-
-  /**
-   * srcPwd
-   */
-  private String srcPwd;
-
-  /**
    * tableName
    */
   private String tableName;
@@ -88,34 +68,6 @@ public class SchemaInfo {
 
   public void setComplexDelimiterLevel2(String complexDelimiterLevel2) {
     this.complexDelimiterLevel2 = complexDelimiterLevel2;
-  }
-
-  /**
-   * @return Returns the srcDriverName.
-   */
-  public String getSrcDriverName() {
-    return srcDriverName;
-  }
-
-  /**
-   * @return Returns the srcConUrl.
-   */
-  public String getSrcConUrl() {
-    return srcConUrl;
-  }
-
-  /**
-   * @return Returns the srcUserName.
-   */
-  public String getSrcUserName() {
-    return srcUserName;
-  }
-
-  /**
-   * @return Returns the srcPwd.
-   */
-  public String getSrcPwd() {
-    return srcPwd;
   }
 
   public String getTableName() {

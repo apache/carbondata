@@ -305,30 +305,6 @@ public class UnsafeCarbonRowPage {
     return dataBlock;
   }
 
-  class UnsafeIterator extends CarbonIterator<Object[]> {
-
-    private int counter;
-
-    private int actualSize;
-
-    public UnsafeIterator() {
-      this.actualSize = buffer.getActualSize();
-    }
-
-    @Override public boolean hasNext() {
-      if (counter < actualSize) {
-        return true;
-      }
-      return false;
-    }
-
-    @Override public Object[] next() {
-      long address = buffer.get(counter);
-      counter++;
-      return getRow(address + dataBlock.getBaseOffset());
-    }
-  }
-
   public static void set(long[] words, int index) {
     int wordOffset = (index >> 6);
     words[wordOffset] |= (1L << index);

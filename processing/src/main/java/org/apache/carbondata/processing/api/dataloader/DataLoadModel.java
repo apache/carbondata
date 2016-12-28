@@ -35,20 +35,6 @@ public class DataLoadModel {
    */
   private boolean isCsvLoad;
 
-  /**
-   * Modified Dimension
-   */
-  private String[] modifiedDimesion;
-
-  /**
-   * loadNames separated by HASH_SPC_CHARACTER
-   */
-  private String loadNames;
-  /**
-   * modificationOrDeletionTime separated by HASH_SPC_CHARACTER
-   */
-  private String modificationOrDeletionTime;
-
   private String blocksID;
   /**
    * task id, each spark task has a unique id
@@ -110,27 +96,6 @@ public class DataLoadModel {
    */
   public void setCsvLoad(boolean isCsvLoad) {
     this.isCsvLoad = isCsvLoad;
-  }
-
-  /**
-   * @return Returns the modifiedDimesion.
-   */
-  public String[] getModifiedDimesion() {
-    return modifiedDimesion;
-  }
-
-  /**
-   * set modificationOrDeletionTime separated by HASH_SPC_CHARACTER
-   */
-  public void setModificationOrDeletionTime(String modificationOrDeletionTime) {
-    this.modificationOrDeletionTime = modificationOrDeletionTime;
-  }
-
-  /**
-   * set loadNames separated by HASH_SPC_CHARACTER
-   */
-  public void setLoadNames(String loadNames) {
-    this.loadNames = loadNames;
   }
 
   /**

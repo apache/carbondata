@@ -237,9 +237,6 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     dimCardWithComplex.add(dictionaryGenerator.size());
   }
 
-  /*
-       * parse bytearray and bit pack
-       */
   @Override
   public void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
       KeyGenerator[] generator) throws IOException, KeyGenException {

@@ -207,16 +207,13 @@ public class GraphGenerator {
 
   private String rddIteratorKey;
 
-  public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
-      String factStoreLocation, int allocate,
+  public GraphGenerator(DataLoadModel dataLoadModel, String partitionID, String factStoreLocation,
       CarbonDataLoadSchema carbonDataLoadSchema, String segmentId) {
     CarbonMetadata.getInstance().addCarbonTable(carbonDataLoadSchema.getCarbonTable());
     this.schemaInfo = dataLoadModel.getSchemaInfo();
     this.tableName = dataLoadModel.getTableName();
     this.isCSVLoad = dataLoadModel.isCsvLoad();
-    this.modifiedDimension = dataLoadModel.getModifiedDimesion();
     this.isAutoAggRequest = schemaInfo.isAutoAggregateRequest();
-    //this.schema = schema;
     this.carbonDataLoadSchema = carbonDataLoadSchema;
     this.databaseName = carbonDataLoadSchema.getCarbonTable().getDatabaseName();
     this.partitionID = partitionID;
@@ -235,11 +232,9 @@ public class GraphGenerator {
     LOGGER.info("************* Is Columnar Storage" + isColumnar);
   }
 
-  public GraphGenerator(DataLoadModel dataLoadModel, boolean isHDFSReadMode, String partitionID,
-      String factStoreLocation, int allocate, CarbonDataLoadSchema carbonDataLoadSchema,
-      String segmentId, String outputLocation) {
-    this(dataLoadModel, isHDFSReadMode, partitionID, factStoreLocation, allocate,
-        carbonDataLoadSchema, segmentId);
+  public GraphGenerator(DataLoadModel dataLoadModel, String partitionID, String factStoreLocation,
+      CarbonDataLoadSchema carbonDataLoadSchema, String segmentId, String outputLocation) {
+    this(dataLoadModel, partitionID, factStoreLocation, carbonDataLoadSchema, segmentId);
     this.outputLocation = outputLocation;
     this.rddIteratorKey = dataLoadModel.getRddIteratorKey();
   }
@@ -888,9 +883,6 @@ public class GraphGenerator {
     // check quotes required in query or Not
     boolean isQuotesRequired = true;
     String quote = CarbonSchemaParser.QUOTES;
-    if (null != schemaInfo.getSrcDriverName()) {
-      quote = getQuoteType(schemaInfo);
-    }
     graphConfiguration.setTableInputSqlQuery(CarbonSchemaParser
         .getTableInputSQLQuery(dimensions, measures,
             carbonDataLoadSchema.getCarbonTable().getFactTableName(), isQuotesRequired,
@@ -907,10 +899,6 @@ public class GraphGenerator {
 
     graphConfiguration.setMeasures(CarbonSchemaParser.getMeasures(measures));
     graphConfiguration.setAGG(false);
-    graphConfiguration.setUsername(schemaInfo.getSrcUserName());
-    graphConfiguration.setPassword(schemaInfo.getSrcPwd());
-    graphConfiguration.setDriverclass(schemaInfo.getSrcDriverName());
-    graphConfiguration.setConnectionUrl(schemaInfo.getSrcConUrl());
     return graphConfiguration;
   }
 
@@ -925,25 +913,6 @@ public class GraphGenerator {
     tableOptionWrapper.setTableOption(schemaInfo.getBadRecordsLoggerEnable());
     tableOptionWrapper.setTableOption(schemaInfo.getBadRecordsLoggerAction());
     return tableOptionWrapper;
-  }
-
-  private String getQuoteType(SchemaInfo schemaInfo) throws GraphGeneratorException {
-    String driverClass = schemaInfo.getSrcDriverName();
-    String type = DRIVERS.get(driverClass);
-
-    if (null == type) {
-      LOGGER.error("Driver : \"" + driverClass + " \"Not Supported.");
-      throw new GraphGeneratorException("Driver : \"" + driverClass + " \"Not Supported.");
-    }
-
-    if (type.equals(CarbonCommonConstants.TYPE_ORACLE) || type
-        .equals(CarbonCommonConstants.TYPE_MSSQL)) {
-      return CarbonSchemaParser.QUOTES;
-    } else if (type.equals(CarbonCommonConstants.TYPE_MYSQL)) {
-      return CarbonSchemaParser.QUOTES;
-    }
-
-    return CarbonSchemaParser.QUOTES;
   }
 
   public CarbonTable getTable() {

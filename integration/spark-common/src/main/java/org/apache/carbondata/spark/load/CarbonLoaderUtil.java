@@ -77,7 +77,6 @@ import org.apache.carbondata.processing.dataprocessor.IDataProcessStatus;
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator;
 import org.apache.carbondata.processing.graphgenerator.GraphGeneratorException;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.apache.carbondata.spark.merger.NodeBlockRelation;
 import org.apache.carbondata.spark.merger.NodeMultiBlockRelation;
 
@@ -89,25 +88,8 @@ public final class CarbonLoaderUtil {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());
-  /**
-   * minimum no of blocklet required for distribution
-   */
-  private static int minBlockLetsReqForDistribution = 0;
-
-  static {
-    String property = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE);
-    try {
-      minBlockLetsReqForDistribution = Integer.parseInt(property);
-    } catch (NumberFormatException ne) {
-      LOGGER.info("Invalid configuration. Consisering the defaul");
-      minBlockLetsReqForDistribution =
-          CarbonCommonConstants.DEFAULT_CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE;
-    }
-  }
 
   private CarbonLoaderUtil() {
-
   }
 
   private static void generateGraph(IDataProcessStatus dataProcessTaskStatus, SchemaInfo info,
@@ -118,13 +100,6 @@ public final class CarbonLoaderUtil {
             || null != dataProcessTaskStatus.getFilesToProcess());
     model.setSchemaInfo(info);
     model.setTableName(dataProcessTaskStatus.getTableName());
-    List<LoadMetadataDetails> loadMetadataDetails = loadModel.getLoadMetadataDetails();
-    if (null != loadMetadataDetails && !loadMetadataDetails.isEmpty()) {
-      model.setLoadNames(
-          CarbonDataProcessorUtil.getLoadNameFromLoadMetaDataDetails(loadMetadataDetails));
-      model.setModificationOrDeletionTime(CarbonDataProcessorUtil
-          .getModificationOrDeletionTimesFromLoadMetadataDetails(loadMetadataDetails));
-    }
     model.setBlocksID(dataProcessTaskStatus.getBlocksID());
     model.setEscapeCharacter(dataProcessTaskStatus.getEscapeCharacter());
     model.setQuoteCharacter(dataProcessTaskStatus.getQuoteCharacter());
@@ -134,15 +109,8 @@ public final class CarbonLoaderUtil {
     model.setFactTimeStamp(loadModel.getFactTimeStamp());
     model.setMaxColumns(loadModel.getMaxColumns());
     model.setDateFormat(loadModel.getDateFormat());
-    boolean hdfsReadMode =
-        dataProcessTaskStatus.getCsvFilePath() != null
-                && dataProcessTaskStatus.getCsvFilePath().startsWith("hdfs:");
-    int allocate =
-            null != dataProcessTaskStatus.getCsvFilePath()
-                    ? 1 : dataProcessTaskStatus.getFilesToProcess().size();
-    GraphGenerator generator = new GraphGenerator(model, hdfsReadMode, loadModel.getPartitionId(),
-        loadModel.getStorePath(), allocate,
-        loadModel.getCarbonDataLoadSchema(), loadModel.getSegmentId(), outputLocation);
+    GraphGenerator generator = new GraphGenerator(model, loadModel.getPartitionId(),
+        loadModel.getStorePath(), loadModel.getCarbonDataLoadSchema(), loadModel.getSegmentId(), outputLocation);
     generator.generateGraph();
   }
 
@@ -541,17 +509,6 @@ public final class CarbonLoaderUtil {
   public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos,
       int noOfNodesInput) {
     return nodeBlockMapping(blockInfos, noOfNodesInput, null);
-  }
-
-  /**
-   * This method will divide the blocks among the nodes as per the data locality
-   *
-   * @param blockInfos
-   * @return
-   */
-  public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos) {
-    // -1 if number of nodes has to be decided based on block location information
-    return nodeBlockMapping(blockInfos, -1);
   }
 
   /**
