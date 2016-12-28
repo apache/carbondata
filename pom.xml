@@ -348,12 +348,6 @@
       </modules>
     </profile>
     <profile>
-      <id>integration-test</id>
-      <modules>
-        <module>integration-testcases</module>
-      </modules>
-    </profile>
-    <profile>
       <id>findbugs</id>
       <build>
         <plugins>

@@ -1,8 +1,0 @@
-ActiveCountry StringType,ActiveDistrict StringType,Activecity StringType,Sum_gamepointid DoubleType
-Chinese,hongshan,wuhan,28312.635000000002
-Chinese,longgang,shenzhen,17562.0
-Chinese,longhua,guangzhou,14357.562
-Chinese,tianyuan,zhuzhou,17660.0
-Chinese,xiangtan,xiangtan,34033.0
-Chinese,yichang,yichang,14539.0
-Chinese,yuhua,changsha,30421.0
