@@ -1,8 +1,0 @@
-Activecity StringType,ActiveProvince StringType,AMSize_number LongType,total DoubleType
-xiangtan,Hunan Province,7,1.02219772E8
-yichang,Hubei Province,6,6.7214095E7
-shenzhen,Guangdong Province,7,4.8863556E7
-zhuzhou,Hunan Province,6,3.8359697E7
-changsha,Hunan Province,8,1.00876754E8
-guangzhou,Guangdong Province,7,4.1185336562E7
-wuhan,Hubei Province,8,7.662756463499999E7

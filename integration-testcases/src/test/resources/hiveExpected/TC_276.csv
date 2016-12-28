@@ -1,8 +1,0 @@
-Activecity StringType,ActiveCountry StringType,ActiveDistrict StringType,Count_imei LongType
-changsha,Chinese,yuhua,19
-guangzhou,Chinese,longhua,8
-shenzhen,Chinese,longgang,12
-wuhan,Chinese,hongshan,16
-xiangtan,Chinese,xiangtan,22
-yichang,Chinese,yichang,12
-zhuzhou,Chinese,tianyuan,10

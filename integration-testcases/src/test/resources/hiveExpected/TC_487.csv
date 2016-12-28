@@ -1,2 +1,0 @@
-_c0 ArrayType(StructType(StructField(x,DoubleType,true), StructField(y,DoubleType,true)),true)
-WrappedArray([1.0,99.0])

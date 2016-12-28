@@ -1,8 +1,0 @@
-Activecity StringType,ActiveCountry StringType,ActiveDistrict StringType,Max_gmaepointid DoubleType
-changsha,Chinese,yuhua,2863.0
-guangzhou,Chinese,longhua,2738.562
-shenzhen,Chinese,longgang,2849.0
-wuhan,Chinese,hongshan,2970.0
-xiangtan,Chinese,xiangtan,2890.0
-yichang,Chinese,yichang,2972.0
-zhuzhou,Chinese,tianyuan,2952.0
