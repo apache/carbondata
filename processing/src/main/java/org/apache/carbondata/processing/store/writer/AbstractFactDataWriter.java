@@ -271,6 +271,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     initFileCount();
     String carbonDataFileName = carbonTablePath
         .getCarbonDataFileName(fileCount, dataWriterVo.getCarbonDataFileAttributes().getTaskId(),
+            dataWriterVo.getBucketNumber(),
             dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
     String actualFileNameVal = carbonDataFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     FileData fileData = new FileData(actualFileNameVal, dataWriterVo.getStoreLocation());
@@ -423,12 +424,13 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   private void writeIndexFile() throws IOException, CarbonDataWriterException {
     // get the header
-    IndexHeader indexHeader =
-        CarbonMetadataUtil.getIndexHeader(localCardinality, thriftColumnSchemaList);
+    IndexHeader indexHeader = CarbonMetadataUtil
+        .getIndexHeader(localCardinality, thriftColumnSchemaList, dataWriterVo.getBucketNumber());
     // get the block index info thrift
     List<BlockIndex> blockIndexThrift = CarbonMetadataUtil.getBlockIndexInfo(blockIndexInfoList);
     String fileName = dataWriterVo.getStoreLocation() + File.separator + carbonTablePath
         .getCarbonIndexFileName(dataWriterVo.getCarbonDataFileAttributes().getTaskId(),
+            dataWriterVo.getBucketNumber(),
             dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
     CarbonIndexFileWriter writer = new CarbonIndexFileWriter();
     // open file
