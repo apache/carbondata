@@ -56,7 +56,7 @@ class TestEmptyRows extends QueryTest with BeforeAndAfterAll {
     sql(
       "LOAD DATA LOCAL INPATH '" + csvFilePath + "' into table " +
         "emptyRowHiveTable"
-    );
+    )
   }
 
   test("select eid from table") {

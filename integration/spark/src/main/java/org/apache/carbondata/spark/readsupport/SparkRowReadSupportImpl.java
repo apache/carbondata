@@ -71,7 +71,7 @@ public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSuppor
       else if (carbonColumns[i].hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         //convert the long to timestamp in case of direct dictionary column
         if (DataType.TIMESTAMP == carbonColumns[i].getDataType()) {
-          data[i] = new Timestamp((long) data[i]);
+          data[i] = new Timestamp((long) data[i] / 1000L);
         } else if (DataType.DATE == carbonColumns[i].getDataType()) {
           data[i] = new Date((long) data[i]);
         }
