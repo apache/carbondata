@@ -46,7 +46,6 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
 
   def buildCarbonLoadModel(relation: CarbonRelation,
                            filePath: String,
-                           dimensionFilePath: String,
                            header: String): CarbonLoadModel = {
     val carbonLoadModel = new CarbonLoadModel
     carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
@@ -58,7 +57,6 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     carbonLoadModel.setTableName(table.getFactTableName)
     carbonLoadModel.setCarbonDataLoadSchema(carbonSchema)
     carbonLoadModel.setFactFilePath(filePath)
-    carbonLoadModel.setDimFolderPath(dimensionFilePath)
     carbonLoadModel.setCsvHeader(header)
     carbonLoadModel.setCsvDelimiter(",")
     carbonLoadModel.setComplexDelimiterLevel1("\\$")
@@ -113,7 +111,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     for (i <- 0 until noOfFiles) {
       val filePath: String = workDirectory + s"/src/test/resources/singlecolumn_${10 * (i + 1)}.csv"
       files += filePath
-      loadModels += buildCarbonLoadModel(sampleRelation, filePath, null, "empid")
+      loadModels += buildCarbonLoadModel(sampleRelation, filePath, "empid")
       writedummydata(filePath, 10 * (i + 1))
     }
     try {
