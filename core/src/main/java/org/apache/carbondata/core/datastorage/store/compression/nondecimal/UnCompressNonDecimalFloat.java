@@ -54,8 +54,7 @@ public class UnCompressNonDecimalFloat implements ValueCompressonHolder.UnCompre
     try {
       return (ValueCompressonHolder.UnCompressValue) clone();
     } catch (CloneNotSupportedException cnsexception) {
-      LOGGER
-          .error(cnsexception, cnsexception.getMessage());
+      LOGGER.error(cnsexception, cnsexception.getMessage());
     }
     return null;
   }

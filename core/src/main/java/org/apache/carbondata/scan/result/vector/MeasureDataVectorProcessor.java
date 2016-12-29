@@ -50,7 +50,7 @@ public class MeasureDataVectorProcessor {
           vector.putNull(vectorOffset);
         } else {
           vector.putInt(vectorOffset,
-              (int)dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(i));
+              (int) dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(i));
         }
         vectorOffset++;
       }
@@ -70,7 +70,7 @@ public class MeasureDataVectorProcessor {
           vector.putNull(vectorOffset);
         } else {
           vector.putInt(vectorOffset,
-              (int)dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(currentRow));
+              (int) dataChunk.getMeasureDataHolder().getReadableLongValueByIndex(currentRow));
         }
         vectorOffset++;
       }

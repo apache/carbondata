@@ -75,6 +75,6 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   }
 
   @Override public void reset() {
-//    columnVector.reset();
+    //    columnVector.reset();
   }
 }
