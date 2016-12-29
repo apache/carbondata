@@ -96,8 +96,6 @@ public class UnCompressMaxMinLong implements ValueCompressonHolder.UnCompressVal
     switch (actualDataType) {
       case DATA_BIGINT:
         return unCompressLong(maxValueObject);
-      case DATA_FLOAT:
-        return unCompressFloat(maxValueObject);
       default:
         return unCompressDouble(maxValueObject);
     }
@@ -111,17 +109,6 @@ public class UnCompressMaxMinLong implements ValueCompressonHolder.UnCompressVal
       vals[i] = maxValue - value[i];
     }
     data.setReadableDoubleValues(vals);
-    return data;
-  }
-
-  private CarbonReadDataHolder unCompressFloat(Object maxValueObject) {
-    float maxValue = (float) maxValueObject;
-    float[] vals = new float[value.length];
-    CarbonReadDataHolder data = new CarbonReadDataHolder();
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = maxValue - value[i];
-    }
-    data.setReadableFloatValues(vals);
     return data;
   }
 
