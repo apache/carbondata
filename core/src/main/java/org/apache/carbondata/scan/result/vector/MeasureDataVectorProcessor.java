@@ -247,47 +247,6 @@ public class MeasureDataVectorProcessor {
     }
   }
 
-  public static class FloatMeasureVectorFiller implements MeasureVectorFiller {
-
-    @Override
-    public void fillMeasureVector(MeasureColumnDataChunk dataChunk, ColumnVectorInfo info) {
-      int offset = info.offset;
-      int len = offset + info.size;
-      int vectorOffset = info.vectorOffset;
-      CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
-      for (int i = offset; i < len; i++) {
-        if (nullBitSet.get(i)) {
-          vector.putNull(vectorOffset);
-        } else {
-          vector.putFloat(vectorOffset,
-              dataChunk.getMeasureDataHolder().getReadableFloatValueByIndex(i));
-        }
-        vectorOffset++;
-      }
-    }
-
-    @Override
-    public void fillMeasureVectorForFilter(int[] rowMapping, MeasureColumnDataChunk dataChunk,
-        ColumnVectorInfo info) {
-      int offset = info.offset;
-      int len = offset + info.size;
-      int vectorOffset = info.vectorOffset;
-      CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
-      for (int i = offset; i < len; i++) {
-        int currentRow = rowMapping[i];
-        if (nullBitSet.get(currentRow)) {
-          vector.putNull(vectorOffset);
-        } else {
-          vector.putFloat(vectorOffset,
-              dataChunk.getMeasureDataHolder().getReadableFloatValueByIndex(currentRow));
-        }
-        vectorOffset++;
-      }
-    }
-  }
-
   public static class MeasureVectorFillerFactory {
 
     public static MeasureVectorFiller getMeasureVectorFiller(DataType dataType) {
@@ -300,8 +259,6 @@ public class MeasureDataVectorProcessor {
           return new LongMeasureVectorFiller();
         case DECIMAL:
           return new DecimalMeasureVectorFiller();
-        case FLOAT:
-          return new FloatMeasureVectorFiller();
         default:
           return new DefaultMeasureVectorFiller();
       }

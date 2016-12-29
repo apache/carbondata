@@ -93,10 +93,6 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
     doubles[rowId] = value;
   }
 
-  @Override public void putFloat(int rowId, float value) {
-    floats[rowId] = value;
-  }
-
   @Override public void putBytes(int rowId, byte[] value) {
     bytes[rowId] = value;
   }

@@ -30,8 +30,6 @@ import org.apache.carbondata.core.datastorage.store.compression.ValueCompressonH
 import org.apache.carbondata.core.datastorage.store.dataholder.CarbonReadDataHolder;
 import org.apache.carbondata.core.util.ValueCompressionUtil;
 
-import com.sun.tools.javac.util.Convert;
-
 public class UnCompressNonDecimalMaxMinFloat
     implements ValueCompressonHolder.UnCompressValue<float[]> {
   /**
@@ -95,13 +93,13 @@ public class UnCompressNonDecimalMaxMinFloat
     double[] vals = new double[value.length];
     CarbonReadDataHolder holder = new CarbonReadDataHolder();
     for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i] / Float.parseFloat(Math.pow(10, decimal)+"");
+      vals[i] = value[i] / Math.pow(10, decimal);
       if (value[i] == 0) {
         vals[i] = maxValue;
       } else {
         BigDecimal diff = BigDecimal.valueOf(value[i] / Math.pow(10, decimal));
         BigDecimal max = BigDecimal.valueOf(maxValue);
-        vals[i] = max.subtract(diff).floatValue();
+        vals[i] = max.subtract(diff).doubleValue();
       }
     }
     holder.setReadableDoubleValues(vals);
