@@ -316,6 +316,11 @@ case class LoadTable(
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
+  private def checkDefaultValue(value: String, default: String) = if (StringUtils.isEmpty(value)) {
+    default
+  } else {
+    value
+  }
 
   def run(sqlContext: SQLContext): Seq[Row] = {
     if (dataFrame.isDefined && !updateModel.isDefined) {
@@ -422,10 +427,11 @@ case class LoadTable(
           throw new MalformedCarbonCommandException(errorMessage)
       }
       val maxColumns = options.getOrElse("maxcolumns", null)
-      carbonLoadModel.setMaxColumns(maxColumns)
-      carbonLoadModel.setEscapeChar(escapeChar)
-      carbonLoadModel.setQuoteChar(quoteChar)
-      carbonLoadModel.setCommentChar(commentchar)
+
+      carbonLoadModel.setMaxColumns(checkDefaultValue(maxColumns, null))
+      carbonLoadModel.setEscapeChar(checkDefaultValue(escapeChar, "\\"))
+      carbonLoadModel.setQuoteChar(checkDefaultValue(quoteChar, "\""))
+      carbonLoadModel.setCommentChar(checkDefaultValue(commentchar, "#"))
       carbonLoadModel.setDateFormat(dateFormat)
       carbonLoadModel
         .setSerializationNullFormat(

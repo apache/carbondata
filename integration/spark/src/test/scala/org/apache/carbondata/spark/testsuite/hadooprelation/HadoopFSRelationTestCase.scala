@@ -19,8 +19,7 @@
 
 package org.apache.carbondata.spark.testsuite.hadooprelation
 
-import org.apache.spark.sql.{DataFrame, Row}
-import org.apache.spark.sql.common.util.CarbonHiveContext._
+import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -31,6 +30,8 @@ import org.scalatest.BeforeAndAfterAll
 class HadoopFSRelationTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
+    sql("drop table if exists hadoopfsrelation")
+    sql("drop table if exists hadoopfsrelation_hive")
     sql(
       "CREATE TABLE hadoopfsrelation (empno int, empname String, designation " +
       "String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno " +
@@ -38,23 +39,23 @@ class HadoopFSRelationTestCase extends QueryTest with BeforeAndAfterAll {
       "Timestamp,attendance int,utilization int,salary int)" +
       "STORED BY 'org.apache.carbondata.format'")
     sql(
-      "LOAD DATA local inpath './src/test/resources/data.csv' INTO TABLE hadoopfsrelation " +
+      s"LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE hadoopfsrelation " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
     
     sql("CREATE TABLE hadoopfsrelation_hive (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int)row format delimited fields terminated by ','")
     
     sql(
-      "LOAD DATA local inpath './src/test/resources/datawithoutheader.csv' INTO TABLE hadoopfsrelation_hive ");
+      s"LOAD DATA local inpath '$resourcesPath/datawithoutheader.csv' INTO TABLE hadoopfsrelation_hive ");
   }
 
   test("hadoopfsrelation select all test") {
-    val rdd = read.format("org.apache.spark.sql.CarbonSource")
+    val rdd = sqlContext.read.format("org.apache.spark.sql.CarbonSource")
       .option("tableName", "hadoopfsrelation").load()
     assert(rdd.collect().length > 0)
   }
 
   test("hadoopfsrelation filters test") {
-    val rdd: DataFrame = read.format("org.apache.spark.sql.CarbonSource")
+    val rdd: DataFrame = sqlContext.read.format("org.apache.spark.sql.CarbonSource")
       .option("tableName", "hadoopfsrelation").load()
       .select("empno", "empname", "utilization").where("empname in ('arvind','ayushi')")
     checkAnswer(

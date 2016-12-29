@@ -19,30 +19,25 @@
 package org.apache.carbondata.spark.util
 
 import java.io.File
-
-import java.util.concurrent.Executors
-import java.util.concurrent.Callable
+import java.util.concurrent.{Callable, Executors}
 
 import scala.collection.mutable.ListBuffer
 
-import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
-import org.apache.spark.sql.common.util.CarbonHiveContext
-import org.apache.spark.sql.common.util.CarbonHiveContext.sql
 import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.ext.PathFactory
 import org.apache.carbondata.core.carbon.CarbonDataLoadSchema
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.model.CarbonLoadModel
 
 class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAfterAll {
 
   var sampleRelation: CarbonRelation = _
-  var workDirectory: String = _
 
   def buildCarbonLoadModel(relation: CarbonRelation,
                            filePath: String,
@@ -69,15 +64,11 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
   }
 
   override def beforeAll {
-    buildTestData
     // second time comment this line
     buildTable
     buildRelation
   }
 
-  def buildTestData() = {
-    workDirectory = new File(this.getClass.getResource("/").getPath + "/../../").getCanonicalPath.replace("\\", "/")
-  }
   def buildTable() = {
     try {
       sql(
@@ -90,7 +81,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
   def buildRelation() = {
     val catalog = CarbonEnv.get.carbonMetastore
     sampleRelation = catalog.lookupRelation1(Option(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
-      "employee")(CarbonHiveContext)
+      "employee")(sqlContext)
       .asInstanceOf[CarbonRelation]
   }
   def writedummydata(filePath: String, recCount: Int) = {
@@ -109,7 +100,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     val files = new ListBuffer[String]()
     val loadModels = new ListBuffer[CarbonLoadModel]()
     for (i <- 0 until noOfFiles) {
-      val filePath: String = workDirectory + s"/src/test/resources/singlecolumn_${10 * (i + 1)}.csv"
+      val filePath: String = s"${integrationPath}/spark/target/singlecolumn_${10 * (i + 1)}.csv"
       files += filePath
       loadModels += buildCarbonLoadModel(sampleRelation, filePath, "empid")
       writedummydata(filePath, 10 * (i + 1))
@@ -161,7 +152,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
      var result = "Pass"
       try {
         GlobalDictionaryUtil
-          .generateGlobalDictionary(CarbonHiveContext,
+          .generateGlobalDictionary(sqlContext,
             loadModel,
             sampleRelation.tableMeta.storePath)
       } catch {

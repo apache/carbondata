@@ -19,7 +19,6 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
-import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -42,8 +41,8 @@ class TestLoadDataWithSinglePass extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     sql(
-      """
-        |LOAD DATA local inpath './src/test/resources/dataDiff.csv' INTO TABLE table_two_pass
+      s"""
+        |LOAD DATA local inpath '$resourcesPath/dataDiff.csv' INTO TABLE table_two_pass
         |OPTIONS('DELIMITER'= ',', 'USE_KETTLE'='false', 'SINGLE_PASS'='false')
       """.stripMargin)
 
@@ -55,8 +54,8 @@ class TestLoadDataWithSinglePass extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     sql(
-      """
-        |LOAD DATA local inpath './src/test/resources/dataDiff.csv' INTO TABLE table_one_pass
+      s"""
+        |LOAD DATA local inpath '$resourcesPath/dataDiff.csv' INTO TABLE table_one_pass
         |OPTIONS('DELIMITER'= ',', 'USE_KETTLE'='false', 'SINGLE_PASS'='true')
       """.stripMargin)
   }
@@ -76,10 +75,10 @@ class TestLoadDataWithSinglePass extends QueryTest with BeforeAndAfterAll {
         |STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
     sql(
-      """
-        |LOAD DATA local inpath './src/test/resources/dataDiff.csv' INTO TABLE table_one_pass_2
+      s"""
+        |LOAD DATA local inpath '$resourcesPath/dataDiff.csv' INTO TABLE table_one_pass_2
         |OPTIONS('DELIMITER'= ',', 'USE_KETTLE'='false', 'SINGLE_PASS'='true', 'COLUMNDICT'=
-        |'country:./src/test/resources/columndictionary/country.csv, name:./src/test/resources/columndictionary/name.csv')
+        |'country:$resourcesPath/columndictionary/country.csv, name:$resourcesPath/columndictionary/name.csv')
       """.stripMargin)
 
     checkAnswer(
@@ -90,13 +89,13 @@ class TestLoadDataWithSinglePass extends QueryTest with BeforeAndAfterAll {
 
   test("test data loading use one pass when do incremental load") {
     sql(
-      """
-        |LOAD DATA local inpath './src/test/resources/dataIncrement.csv' INTO TABLE table_two_pass
+      s"""
+        |LOAD DATA local inpath '$resourcesPath/dataIncrement.csv' INTO TABLE table_two_pass
         |OPTIONS('DELIMITER'= ',', 'USE_KETTLE'='false', 'SINGLE_PASS'='false')
       """.stripMargin)
     sql(
-      """
-        |LOAD DATA local inpath './src/test/resources/dataIncrement.csv' INTO TABLE table_one_pass
+      s"""
+        |LOAD DATA local inpath '$resourcesPath/dataIncrement.csv' INTO TABLE table_one_pass
         |OPTIONS('DELIMITER'= ',', 'USE_KETTLE'='false', 'SINGLE_PASS'='true')
       """.stripMargin)
 

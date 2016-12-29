@@ -22,6 +22,7 @@ import java.sql.Timestamp
 import java.util.Date
 
 import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.api.CarbonStore
@@ -30,10 +31,8 @@ import org.apache.carbondata.core.util.CarbonUtil
 class CarbonCommandSuite extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
-    val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../../spark2")
-        .getCanonicalPath
     dropTable("csv_table")
-    createAndLoadInputTable("csv_table", s"$currentDirectory/src/test/resources/data_alltypes.csv")
+    createAndLoadInputTable("csv_table", s"$resourcesPath/data_alltypes.csv")
     createAndLoadTestTable("carbon_table", "csv_table")
   }
 

@@ -41,7 +41,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
             x
           case logicalPlan => logicalPlan
         }
-        case failureOrError => sys.error(failureOrError.toString)
+        case failureOrError =>
+          sys.error(failureOrError.toString)
       }
     }
   }

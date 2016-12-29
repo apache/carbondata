@@ -33,15 +33,16 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
     plan match {
       case LoadDataCommand(identifier, path, isLocal, isOverwrite, partition)
         if CarbonEnv.get.carbonMetastore.tableExists(identifier)(sparkSession) =>
-        ExecutedCommandExec(LoadTable(identifier.database, identifier.table, path, Seq(),
-          Map(), isOverwrite)) :: Nil
+        ExecutedCommandExec(LoadTable(identifier.database, identifier.table.toLowerCase, path,
+          Seq(), Map(), isOverwrite)) :: Nil
       case DropTableCommand(identifier, ifNotExists, isView, _)
         if CarbonEnv.get.carbonMetastore
           .isTablePathExists(identifier)(sparkSession) =>
         ExecutedCommandExec(
-          CarbonDropTableCommand(ifNotExists, identifier.database, identifier.table)) :: Nil
+          CarbonDropTableCommand(ifNotExists, identifier.database,
+            identifier.table.toLowerCase)) :: Nil
       case ShowLoadsCommand(databaseName, table, limit) =>
-        ExecutedCommandExec(ShowLoads(databaseName, table, limit, plan.output)) :: Nil
+        ExecutedCommandExec(ShowLoads(databaseName, table.toLowerCase, limit, plan.output)) :: Nil
       case createDb@CreateDatabaseCommand(dbName, ifNotExists, _, _, _) =>
         CarbonEnv.get.carbonMetastore.createDatabaseDirectory(dbName)
         ExecutedCommandExec(createDb) :: Nil

@@ -18,30 +18,20 @@
  */
 package org.apache.carbondata.spark.testsuite.datacompaction
 
-import java.io.File
-
-import org.apache.carbondata.core.updatestatus.SegmentStatusManager
-
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * FT for data compaction Minor threshold verification.
  */
 class DataCompactionMinorThresholdTest extends QueryTest with BeforeAndAfterAll {
-  val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
-    .getCanonicalPath
-  val resource = currentDirectory + "/src/test/resources/"
-
-  val storeLocation = new File(this.getClass.getResource("/").getPath + "/../test").getCanonicalPath
   val carbonTableIdentifier: CarbonTableIdentifier =
     new CarbonTableIdentifier("default", "minorthreshold".toLowerCase(), "1")
 
@@ -61,12 +51,9 @@ class DataCompactionMinorThresholdTest extends QueryTest with BeforeAndAfterAll 
       ".format'"
     )
 
-    val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
-      .getCanonicalPath
-    var csvFilePath1 = currentDirectory + "/src/test/resources/compaction/compaction1.csv"
-
-    var csvFilePath2 = currentDirectory + "/src/test/resources/compaction/compaction2.csv"
-    var csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
+    val csvFilePath1 = s"$resourcesPath/compaction/compaction1.csv"
+    val csvFilePath2 = s"$resourcesPath/compaction/compaction2.csv"
+    val csvFilePath3 = s"$resourcesPath/compaction/compaction3.csv"
 
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE minorthreshold " +
         "OPTIONS" +
@@ -106,8 +93,8 @@ class DataCompactionMinorThresholdTest extends QueryTest with BeforeAndAfterAll 
     assert(!segments.contains("3"))
   }
 
-
   override def afterAll {
+    sql("drop table if exists  minorthreshold")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance()
