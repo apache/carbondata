@@ -582,10 +582,6 @@ public class SegmentStatusManager {
       return validSegments;
     }
 
-    public List<String> getUpadtedSegments() {
-      return validUpdatedSegments;
-    }
-
     public List<String> getInvalidSegments() {
       return invalidSegments;
     }

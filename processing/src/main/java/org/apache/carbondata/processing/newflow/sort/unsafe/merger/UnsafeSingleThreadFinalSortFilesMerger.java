@@ -45,11 +45,6 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
       LogServiceFactory.getLogService(UnsafeSingleThreadFinalSortFilesMerger.class.getName());
 
   /**
-   * lockObject
-   */
-  private static final Object LOCKOBJECT = new Object();
-
-  /**
    * fileCounter
    */
   private int fileCounter;

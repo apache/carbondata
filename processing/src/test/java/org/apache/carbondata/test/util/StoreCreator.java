@@ -479,20 +479,10 @@ public class StoreCreator {
     model.setQuoteCharacter(dataProcessTaskStatus.getQuoteCharacter());
     model.setCommentCharacter(dataProcessTaskStatus.getCommentCharacter());
     model.setDateFormat(dataProcessTaskStatus.getDateFormat());
-    if (null != loadMetadataDetails && !loadMetadataDetails.isEmpty()) {
-      model.setLoadNames(
-          CarbonDataProcessorUtil.getLoadNameFromLoadMetaDataDetails(loadMetadataDetails));
-      model.setModificationOrDeletionTime(CarbonDataProcessorUtil
-          .getModificationOrDeletionTimesFromLoadMetadataDetails(loadMetadataDetails));
-    }
-    boolean hdfsReadMode =
-        dataProcessTaskStatus.getCsvFilePath() != null && dataProcessTaskStatus.getCsvFilePath().startsWith("hdfs:");
-    int allocate = null != dataProcessTaskStatus.getCsvFilePath() ? 1 : dataProcessTaskStatus.getFilesToProcess().size();
     String outputLocation = CarbonProperties.getInstance()
         .getProperty("store_output_location", "../carbon-store/system/carbon/etl");
     GraphGenerator generator =
-        new GraphGenerator(model, hdfsReadMode, partitionID, factStoreLocation,
-            allocate, schema, "0", outputLocation);
+        new GraphGenerator(model, partitionID, factStoreLocation, schema, "0", outputLocation);
     generator.generateGraph();
   }
 

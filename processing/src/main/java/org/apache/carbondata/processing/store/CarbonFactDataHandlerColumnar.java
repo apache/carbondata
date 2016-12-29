@@ -161,29 +161,12 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private boolean[] aggKeyBlock;
   private boolean[] isNoDictionary;
   private boolean isAggKeyBlock;
-  private boolean enableInvertedIndex;
   private long processedDataCount;
   /**
    * thread pool size to be used for block sort
    */
   private int thread_pool_size;
-  /**
-   * factLevels
-   */
-  private int[] surrogateIndex;
-  /**
-   * factKeyGenerator
-   */
-  private KeyGenerator factKeyGenerator;
-  /**
-   * aggKeyGenerator
-   */
-  private KeyGenerator keyGenerator;
   private KeyGenerator[] complexKeyGenerator;
-  /**
-   * maskedByteRanges
-   */
-  private int[] maskedByte;
   /**
    * isDataWritingRequest
    */
@@ -1139,22 +1122,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         LOGGER.error(e, e.getMessage());
         throw new CarbonDataWriterException(e.getMessage(), e);
       }
-    }
-  }
-
-  private byte[] getAggregateTableMdkey(byte[] maksedKey) throws CarbonDataWriterException {
-    long[] keyArray = this.factKeyGenerator.getKeyArray(maksedKey, maskedByte);
-
-    int[] aggSurrogateKey = new int[surrogateIndex.length];
-
-    for (int j = 0; j < aggSurrogateKey.length; j++) {
-      aggSurrogateKey[j] = (int) keyArray[surrogateIndex[j]];
-    }
-
-    try {
-      return keyGenerator.generateKey(aggSurrogateKey);
-    } catch (KeyGenException e) {
-      throw new CarbonDataWriterException("Problem while generating the mdkeyfor aggregate ", e);
     }
   }
 

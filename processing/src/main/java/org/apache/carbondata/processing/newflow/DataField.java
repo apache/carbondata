@@ -21,7 +21,6 @@ package org.apache.carbondata.processing.newflow;
 
 import java.io.Serializable;
 
-import org.apache.carbondata.core.carbon.metadata.blocklet.compressor.CompressionCodec;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColumn;
 
@@ -36,8 +35,6 @@ public class DataField implements Serializable {
 
   private CarbonColumn column;
 
-  private CompressionCodec compressionCodec;
-
   private String dateFormat;
 
   public boolean hasDictionaryEncoding() {
@@ -46,14 +43,6 @@ public class DataField implements Serializable {
 
   public CarbonColumn getColumn() {
     return column;
-  }
-
-  public CompressionCodec getCompressionCodec() {
-    return compressionCodec;
-  }
-
-  public void setCompressionCodec(CompressionCodec compressionCodec) {
-    this.compressionCodec = compressionCodec;
   }
 
   public String getDateFormat() {

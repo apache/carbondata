@@ -298,18 +298,6 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
     }
   }
 
-  @Override protected byte[] getHierFromStore(int[] val, String hier, int primaryKey)
-      throws KettleException {
-    byte[] bytes;
-    try {
-      bytes = columnsInfo.getKeyGenerators().get(hier).generateKey(val);
-      hierValueWriter.get(hier).getByteArrayList().add(new ByteArrayHolder(bytes, primaryKey));
-    } catch (KeyGenException e) {
-      throw new KettleException(e);
-    }
-    return bytes;
-  }
-
   @Override protected int getSurrogateFromStore(String value, int index, Object[] properties)
       throws KettleException {
     max[index]++;
@@ -373,30 +361,6 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
     Dictionary dicCache = dictionaryCaches.get(columnName);
     measureSurrogate = dicCache.getSurrogateKey(tuple);
     return measureSurrogate;
-  }
-
-  @Override public void writeDataToFileAndCloseStreams() throws KettleException, KeyGenException {
-
-    // For closing stream inside hierarchy writer
-
-    for (Entry<String, String> entry : hierInsertFileNames.entrySet()) {
-
-      String hierFileName = hierValueWriter.get(entry.getKey()).getHierarchyName();
-
-      int size = fileManager.size();
-      for (int j = 0; j < size; j++) {
-        FileData fileData = (FileData) fileManager.get(j);
-        String fileName = fileData.getFileName();
-        if (hierFileName.equals(fileName)) {
-          HierarchyValueWriterForCSV hierarchyValueWriter = fileData.getHierarchyValueWriter();
-          hierarchyValueWriter.performRequiredOperation();
-
-          break;
-        }
-
-      }
-    }
-
   }
 
 }

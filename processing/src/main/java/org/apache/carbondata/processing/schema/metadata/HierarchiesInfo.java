@@ -29,47 +29,9 @@ public class HierarchiesInfo {
   private String hierarichieName;
 
   /**
-   * columnIndex
-   */
-  private int[] columnIndex;
-
-  /**
-   * columnNames
-   */
-  private String[] columnNames;
-
-  /**
    * columnPropMap
    */
   private Map<String, String[]> columnPropMap;
-
-  /**
-   * loadToHierarichiTable
-   */
-  private boolean loadToHierarichiTable;
-
-  /**
-   * query
-   */
-  private String query;
-
-  /**
-   * Is Time Dimension
-   */
-  private boolean isTimeDimension;
-
-  /**
-   * levelTypeColumnMap
-   */
-  private Map<String, String> levelTypeColumnMap;
-
-  public boolean isLoadToHierarichiTable() {
-    return loadToHierarichiTable;
-  }
-
-  public void setLoadToHierarichiTable(boolean loadToHierarichiTable) {
-    this.loadToHierarichiTable = loadToHierarichiTable;
-  }
 
   public String getHierarichieName() {
     return hierarichieName;
@@ -77,22 +39,6 @@ public class HierarchiesInfo {
 
   public void setHierarichieName(String hierarichieName) {
     this.hierarichieName = hierarichieName;
-  }
-
-  public int[] getColumnIndex() {
-    return columnIndex;
-  }
-
-  public void setColumnIndex(int[] columnIndex) {
-    this.columnIndex = columnIndex;
-  }
-
-  public String[] getColumnNames() {
-    return columnNames;
-  }
-
-  public void setColumnNames(String[] columnNames) {
-    this.columnNames = columnNames;
   }
 
   public Map<String, String[]> getColumnPropMap() {
@@ -103,28 +49,5 @@ public class HierarchiesInfo {
     this.columnPropMap = columnPropMap;
   }
 
-  public String getQuery() {
-    return query;
-  }
-
-  public void setQuery(String query) {
-    this.query = query;
-  }
-
-  public boolean isTimeDimension() {
-    return isTimeDimension;
-  }
-
-  public void setTimeDimension(boolean isTimeDimension) {
-    this.isTimeDimension = isTimeDimension;
-  }
-
-  public Map<String, String> getLevelTypeColumnMap() {
-    return levelTypeColumnMap;
-  }
-
-  public void setLevelTypeColumnMap(Map<String, String> levelTypeColumnMap) {
-    this.levelTypeColumnMap = levelTypeColumnMap;
-  }
 
 }
