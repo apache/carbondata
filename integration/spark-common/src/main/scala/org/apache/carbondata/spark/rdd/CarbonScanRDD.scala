@@ -36,12 +36,13 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
 import org.apache.carbondata.core.carbon.datastore.block.Distributable
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants}
+import org.apache.carbondata.core.carbon.querystatistics.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
 import org.apache.carbondata.hadoop._
 import org.apache.carbondata.scan.expression.Expression
 import org.apache.carbondata.scan.model.QueryModel
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
+
 
 /**
  * This RDD is used to perform query on CarbonData file. Before sending tasks to scan
@@ -147,7 +148,6 @@ class CarbonScanRDD(
       noOfBlocks = splits.size
       noOfTasks = result.size()
 
-      statistic = new QueryStatistic()
       statistic.addStatistics(QueryStatisticsConstants.BLOCK_IDENTIFICATION,
         System.currentTimeMillis)
       statisticRecorder.recordStatisticsForDriver(statistic, queryId)
@@ -199,10 +199,10 @@ class CarbonScanRDD(
         private var finished = false
         private var count = 0
 
-        context.addTaskCompletionListener { context =>
-          logStatistics(queryStartTime, count)
-          reader.close()
-        }
+      context.addTaskCompletionListener { context =>
+        logStatistics(queryStartTime, count, model.getStatisticsRecorder)
+        reader.close()
+      }
 
         override def hasNext: Boolean = {
           if (context.isInterrupted) {
@@ -258,18 +258,18 @@ class CarbonScanRDD(
     format
   }
 
-  def logStatistics(queryStartTime: Long, recordCount: Int): Unit = {
+  def logStatistics(queryStartTime: Long, recordCount: Int,
+                    recorder: QueryStatisticsRecorder): Unit = {
     var queryStatistic = new QueryStatistic()
     queryStatistic.addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
       System.currentTimeMillis - queryStartTime)
-    val statisticRecorder = CarbonTimeStatisticsFactory.createExecutorRecorder(queryId)
-    statisticRecorder.recordStatistics(queryStatistic)
+    recorder.recordStatistics(queryStatistic)
     // result size
     queryStatistic = new QueryStatistic()
     queryStatistic.addCountStatistic(QueryStatisticsConstants.RESULT_SIZE, recordCount)
-    statisticRecorder.recordStatistics(queryStatistic)
+    recorder.recordStatistics(queryStatistic)
     // print executor query statistics for each task_id
-    statisticRecorder.logStatisticsAsTableExecutor()
+    recorder.logStatisticsAsTableExecutor()
   }
 
   /**
