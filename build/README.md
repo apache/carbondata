@@ -43,18 +43,16 @@ mvn -DskipTests clean package
 
 Build with different supported versions of Spark.
 ```
-mvn -DskipTests -Pspark-1.5 -Dspark.version=1.5.0 clean package
 mvn -DskipTests -Pspark-1.5 -Dspark.version=1.5.1 clean package
 mvn -DskipTests -Pspark-1.5 -Dspark.version=1.5.2 clean package
  
-mvn -DskipTests -Pspark-1.6 -Dspark.version=1.6.0 clean package
 mvn -DskipTests -Pspark-1.6 -Dspark.version=1.6.1 clean package
 mvn -DskipTests -Pspark-1.6 -Dspark.version=1.6.2 clean package
+
+mvn -DskipTests -Pspark-2.0 -Dspark.version=2.0.2 clean package
 ```
 
 Build with test
 ```
 mvn clean package
 ```
-
-
