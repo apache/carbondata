@@ -90,13 +90,13 @@ public class UnCompressMaxMinFloat implements UnCompressValue<float[]> {
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    float maxValue = (float) maxValueObject;
-    float[] vals = new float[value.length];
+    double maxValue = (double) maxValueObject;
+    double[] vals = new double[value.length];
     CarbonReadDataHolder dataHolderVal = new CarbonReadDataHolder();
     for (int i = 0; i < vals.length; i++) {
       vals[i] = maxValue - value[i];
     }
-    dataHolderVal.setReadableFloatValues(vals);
+    dataHolderVal.setReadableDoubleValues(vals);
     return dataHolderVal;
   }
 }

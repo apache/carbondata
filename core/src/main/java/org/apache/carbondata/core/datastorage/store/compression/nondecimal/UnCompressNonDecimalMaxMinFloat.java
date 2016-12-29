@@ -91,8 +91,8 @@ public class UnCompressNonDecimalMaxMinFloat
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    float maxValue = (float) maxValueObject;
-    float[] vals = new float[value.length];
+    double maxValue = (double) maxValueObject;
+    double[] vals = new double[value.length];
     CarbonReadDataHolder holder = new CarbonReadDataHolder();
     for (int i = 0; i < vals.length; i++) {
       vals[i] = value[i] / Float.parseFloat(Math.pow(10, decimal)+"");
@@ -104,7 +104,7 @@ public class UnCompressNonDecimalMaxMinFloat
         vals[i] = max.subtract(diff).floatValue();
       }
     }
-    holder.setReadableFloatValues(vals);
+    holder.setReadableDoubleValues(vals);
     return holder;
   }
 
