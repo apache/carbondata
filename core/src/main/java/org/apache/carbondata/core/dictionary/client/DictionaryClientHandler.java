@@ -26,6 +26,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.KryoRegister;
 
 import org.jboss.netty.channel.*;
 
@@ -52,7 +53,8 @@ public class DictionaryClientHandler extends SimpleChannelHandler {
 
   @Override
   public void messageReceived(ChannelHandlerContext ctx, MessageEvent e) throws Exception {
-    DictionaryKey key = (DictionaryKey) e.getMessage();
+    byte[] response = (byte[]) e.getMessage();
+    DictionaryKey key = KryoRegister.deserialize(response);
     BlockingQueue<DictionaryKey> dictKeyQueue = dictKeyQueueMap.get(key.getThreadNo());
     dictKeyQueue.offer(key);
     super.messageReceived(ctx, e);
@@ -82,7 +84,8 @@ public class DictionaryClientHandler extends SimpleChannelHandler {
           dictKeyQueueMap.put(key.getThreadNo(), dictKeyQueue);
         }
       }
-      ctx.getChannel().write(key);
+      byte[] serialize = KryoRegister.serialize(key);
+      ctx.getChannel().write(serialize);
     } catch (Exception e) {
       LOGGER.error("Error while send request to server " + e.getMessage());
       ctx.getChannel().close();

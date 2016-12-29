@@ -38,7 +38,6 @@ import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
-import org.apache.carbondata.core.dictionary.generator.key.MESSAGETYPE;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -154,11 +153,12 @@ public class PrimitiveDataType implements GenericDataType<Object> {
           dictionaryKey.setTableUniqueName(carbonTableIdentifier.getTableUniqueName());
           dictionaryKey.setThreadNo(threadNo);
           // for table initialization
-          dictionaryKey.setType(MESSAGETYPE.TABLE_INTIALIZATION);
+          dictionaryKey.setType("TABLE_INTIALIZATION");
+          dictionaryKey.setData("0");
           client.getDictionary(dictionaryKey);
           Map<Object, Integer> localCache = new HashMap<>();
           // for generate dictionary
-          dictionaryKey.setType(MESSAGETYPE.DICTIONARY_GENERATION);
+          dictionaryKey.setType("DICTIONARY_GENERATION");
           dictionaryGenerator = new DictionaryServerClientDictionary(dictionary, client,
                   dictionaryKey, localCache);
         } else {

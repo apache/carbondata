@@ -43,7 +43,7 @@ public class DictionaryKey implements Serializable {
   /**
    * message type
    */
-  private MESSAGETYPE type;
+  private String type;
 
   /**
    * dictionary client thread no
@@ -74,11 +74,11 @@ public class DictionaryKey implements Serializable {
     return this.threadNo;
   }
 
-  public MESSAGETYPE getType() {
+  public String getType() {
     return type;
   }
 
-  public void setType(MESSAGETYPE type) {
+  public void setType(String type) {
     this.type = type;
   }
 

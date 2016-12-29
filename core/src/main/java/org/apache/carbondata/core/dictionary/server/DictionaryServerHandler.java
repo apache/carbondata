@@ -22,6 +22,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.ServerDictionaryGenerator;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
+import org.apache.carbondata.core.dictionary.generator.key.KryoRegister;
 
 import org.jboss.netty.channel.*;
 
@@ -58,11 +59,13 @@ public class DictionaryServerHandler extends SimpleChannelHandler {
    */
   @Override public void messageReceived(ChannelHandlerContext ctx, MessageEvent e)
       throws Exception {
-    DictionaryKey key = (DictionaryKey) e.getMessage();
+    byte[] request = (byte[]) e.getMessage();
+    DictionaryKey key = KryoRegister.deserialize(request);
     int outPut = processMessage(key);
     key.setData(outPut);
     // Send back the response
-    ctx.getChannel().write(key);
+    byte[] response = KryoRegister.serialize(key);
+    ctx.getChannel().write(response);
     super.messageReceived(ctx, e);
   }
 
@@ -87,14 +90,14 @@ public class DictionaryServerHandler extends SimpleChannelHandler {
    */
   public Integer processMessage(DictionaryKey key) throws Exception {
     switch (key.getType()) {
-      case DICTIONARY_GENERATION:
+      case "DICTIONARY_GENERATION":
         return generatorForServer.generateKey(key);
-      case TABLE_INTIALIZATION:
+      case "TABLE_INTIALIZATION":
         generatorForServer.initializeGeneratorForTable(key);
         return 0;
-      case SIZE:
+      case "SIZE":
         return generatorForServer.size(key);
-      case WRITE_DICTIONARY:
+      case "WRITE_DICTIONARY":
         generatorForServer.writeDictionaryData();
         return 0;
       default:

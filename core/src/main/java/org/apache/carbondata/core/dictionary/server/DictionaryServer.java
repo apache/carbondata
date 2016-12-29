@@ -25,7 +25,6 @@ import java.util.concurrent.Executors;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryKey;
-import org.apache.carbondata.core.dictionary.generator.key.MESSAGETYPE;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.ChannelPipeline;
@@ -86,7 +85,7 @@ public class DictionaryServer {
    */
   public void shutdown() throws Exception {
     DictionaryKey key = new DictionaryKey();
-    key.setType(MESSAGETYPE.WRITE_DICTIONARY);
+    key.setType("WRITE_DICTIONARY");
     dictionaryServerHandler.processMessage(key);
     bootstrap.releaseExternalResources();
     bootstrap.shutdown();
