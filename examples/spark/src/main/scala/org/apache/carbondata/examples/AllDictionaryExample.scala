@@ -24,9 +24,9 @@ object AllDictionaryExample {
 
   def main(args: Array[String]) {
     val cc = ExampleUtils.createCarbonContext("AllDictionaryExample")
-    val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
-    val csvHeader = "ID,date,country,name,phonetype,serialname,salary"
-    val dictCol = "|date|country|name|phonetype|serialname|"
+    val testData = ExampleUtils.currentPath + "/src/main/resources/test.csv"
+    val csvHeader = "ID,name,salary"
+    val dictCol = "|name|"
     val allDictFile = ExampleUtils.currentPath + "/src/main/resources/data.dictionary"
     // extract all dictionary files from source data
     AllDictionaryUtil.extractDictionary(cc.sparkContext,
@@ -39,8 +39,7 @@ object AllDictionaryExample {
 
     cc.sql("""
            CREATE TABLE IF NOT EXISTS t3
-           (ID Int, date Timestamp, country String,
-           name String, phonetype String, serialname String, salary Int)
+           (ID Int, name String, salary Float)
            STORED BY 'carbondata'
            """)
 

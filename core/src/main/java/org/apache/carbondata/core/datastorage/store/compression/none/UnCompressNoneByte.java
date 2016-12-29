@@ -99,10 +99,22 @@ public class UnCompressNoneByte implements UnCompressValue<byte[]> {
     switch (actualDataType) {
       case DATA_BIGINT:
         return unCompressLong();
+      case DATA_FLOAT:
+        return unCompressFloat();
       default:
         return unCompressDouble();
     }
 
+  }
+
+  private CarbonReadDataHolder unCompressFloat() {
+    CarbonReadDataHolder dataHldr = new CarbonReadDataHolder();
+    float[] vals = new float[value.length];
+    for (int i = 0; i < vals.length; i++) {
+      vals[i] = value[i];
+    }
+    dataHldr.setReadableFloatValues(vals);
+    return dataHldr;
   }
 
   private CarbonReadDataHolder unCompressDouble() {

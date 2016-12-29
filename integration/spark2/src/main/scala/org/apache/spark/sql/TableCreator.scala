@@ -349,6 +349,9 @@ object TableCreator {
       case "double" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
         field.storeType
       )
+      case "float" => Field(field.column, Some("Float"), field.name, Some(null), field.parent,
+        field.storeType
+      )
       case "timestamp" => Field(field.column, Some("Timestamp"), field.name, Some(null),
         field.parent, field.storeType
       )
@@ -395,6 +398,8 @@ object TableCreator {
       case "Long" => Field(parentName + "." + field.column, Some("Long"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
       case "Double" => Field(parentName + "." + field.column, Some("Double"),
+        Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
+      case "Float" => Field(parentName + "." + field.column, Some("Float"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)
       case "Timestamp" => Field(parentName + "." + field.column, Some("Timestamp"),
         Some(parentName + "." + field.name.getOrElse(None)), Some(null), parentName)

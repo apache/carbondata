@@ -40,6 +40,7 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
   private byte[][] bytes;
 
   private double[] doubles;
+  private float[] floats;
 
   private BitSet nullBytes;
 
@@ -57,6 +58,9 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
         break;
       case DOUBLE:
         doubles = new double[batchSize];
+        break;
+      case FLOAT:
+        floats = new float[batchSize];
         break;
       case STRING:
         bytes = new byte[batchSize][];
@@ -87,6 +91,10 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   @Override public void putDouble(int rowId, double value) {
     doubles[rowId] = value;
+  }
+
+  @Override public void putFloat(int rowId, float value) {
+    floats[rowId] = value;
   }
 
   @Override public void putBytes(int rowId, byte[] value) {

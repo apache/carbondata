@@ -96,9 +96,23 @@ public class UnCompressNoneShort implements ValueCompressonHolder.UnCompressValu
     switch (actualDataType) {
       case DATA_BIGINT:
         return unCompressLong();
+      case DATA_FLOAT:
+        return unCompressFloat();
       default:
         return unCompressDouble();
     }
+  }
+
+  private CarbonReadDataHolder unCompressFloat() {
+    CarbonReadDataHolder dataHldr = new CarbonReadDataHolder();
+
+    float[] vals = new float[shortValue.length];
+
+    for (int i = 0; i < vals.length; i++) {
+      vals[i] = shortValue[i];
+    }
+    dataHldr.setReadableFloatValues(vals);
+    return dataHldr;
   }
 
   private CarbonReadDataHolder unCompressDouble() {

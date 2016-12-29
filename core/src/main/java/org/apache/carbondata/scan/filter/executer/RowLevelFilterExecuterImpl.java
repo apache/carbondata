@@ -260,6 +260,10 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
                 blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
                     .getMeasureDataHolder().getReadableBigDecimalValueByIndex(index);
             break;
+          case FLOAT:
+            msrValue =
+                blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]
+                    .getMeasureDataHolder().getReadableFloatValueByIndex(index);
           default:
             msrValue =
                 blockChunkHolder.getMeasureDataChunk()[msrColumnEvalutorInfo.getColumnIndex()]

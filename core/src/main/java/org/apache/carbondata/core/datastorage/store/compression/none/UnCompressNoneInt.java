@@ -99,6 +99,8 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
       case DATA_LONG:
       case DATA_BIGINT:
         return unCompressLong();
+      case DATA_FLOAT:
+        return unCompressFloat();
       default:
         return unCompressDouble();
     }
@@ -127,6 +129,16 @@ public class UnCompressNoneInt implements ValueCompressonHolder.UnCompressValue<
       vals[i] = value[i];
     }
     dataHolderInfoObj.setReadableDoubleValues(vals);
+    return dataHolderInfoObj;
+  }
+
+  private CarbonReadDataHolder unCompressFloat() {
+    CarbonReadDataHolder dataHolderInfoObj = new CarbonReadDataHolder();
+    float[] vals = new float[value.length];
+    for (int i = 0; i < vals.length; i++) {
+      vals[i] = value[i];
+    }
+    dataHolderInfoObj.setReadableFloatValues(vals);
     return dataHolderInfoObj;
   }
 

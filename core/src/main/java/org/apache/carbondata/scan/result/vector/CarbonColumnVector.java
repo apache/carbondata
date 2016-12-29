@@ -29,6 +29,7 @@ public interface CarbonColumnVector {
   public void putDecimal(int rowId, Decimal value, int precision);
 
   public void putDouble(int rowId, double value);
+  public void putFloat(int rowId, float value);
 
   public void putBytes(int rowId, byte[] value);
 

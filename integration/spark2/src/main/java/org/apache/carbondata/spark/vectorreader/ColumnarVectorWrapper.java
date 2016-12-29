@@ -49,6 +49,10 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     columnVector.putDouble(rowId, value);
   }
 
+  @Override public void putFloat(int rowId, float value) {
+    columnVector.putDouble(rowId, value);
+  }
+
   @Override public void putBytes(int rowId, byte[] value) {
     columnVector.putByteArray(rowId, value);
   }

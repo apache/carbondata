@@ -108,6 +108,8 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
         case DECIMAL:
           return  org.apache.spark.sql.types.Decimal.apply(
                   dataChunk.getMeasureDataHolder().getReadableBigDecimalValueByIndex(index));
+        case FLOAT:
+          return  dataChunk.getMeasureDataHolder().getReadableFloatValueByIndex(index);
         default:
           return  dataChunk.getMeasureDataHolder().getReadableDoubleValueByIndex(index);
       }

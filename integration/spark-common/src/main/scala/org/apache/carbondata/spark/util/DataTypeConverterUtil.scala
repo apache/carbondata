@@ -31,6 +31,7 @@ object DataTypeConverterUtil {
       case "bigint" => DataType.LONG
       case "numeric" => DataType.DOUBLE
       case "double" => DataType.DOUBLE
+      case "float" => DataType.FLOAT
       case "decimal" => DataType.DECIMAL
       case "timestamp" => DataType.TIMESTAMP
       case "date" => DataType.DATE
@@ -51,6 +52,7 @@ object DataTypeConverterUtil {
       case "biginttype" => DataType.LONG
       case "numerictype" => DataType.DOUBLE
       case "doubletype" => DataType.DOUBLE
+      case "floattype" => DataType.FLOAT
       case "decimaltype" => DataType.DECIMAL
       case "timestamptype" => DataType.TIMESTAMP
       case "datetype" => DataType.DATE

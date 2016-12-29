@@ -35,6 +35,7 @@ public class CarbonReadDataHolder {
   private BigDecimal[] bigDecimalValues;
 
   private double[] doubleValues;
+  private float[] floatValues;
 
   public void setReadableByteValues(byte[][] byteValues) {
     this.byteValues = byteValues;
@@ -59,6 +60,9 @@ public class CarbonReadDataHolder {
   public void setReadableDoubleValues(double[] doubleValues) {
     this.doubleValues = doubleValues;
   }
+  public void setReadableFloatValues(float[] floatValues) {
+    this.floatValues = floatValues;
+  }
 
   public byte[] getReadableByteArrayValueByIndex(int index) {
     return this.byteValues[index];
@@ -82,7 +86,9 @@ public class CarbonReadDataHolder {
   public BigDecimal getReadableBigDecimalValueByIndex(int index) {
     return this.bigDecimalValues[index];
   }
-
+  public float getReadableFloatValueByIndex(int index) {
+    return this.floatValues[index];
+  }
   public double getReadableDoubleValueByIndex(int index) {
     return this.doubleValues[index];
   }
