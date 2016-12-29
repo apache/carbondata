@@ -42,9 +42,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import org.apache.carbondata.common.factory.CarbonCommonFactory;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.chunk.impl.FixedLengthDimensionDataChunk;
@@ -67,6 +69,7 @@ import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.reader.ThriftReader.TBaseCreator;
+import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.scan.model.QueryDimension;
 
@@ -1354,6 +1357,30 @@ public final class CarbonUtil {
       }
     }
     return outputArray;
+  }
+
+
+  /**
+   * This method will check if dictionary and its metadata file exists for a given column
+   *
+   * @param dictionaryColumnUniqueIdentifier unique identifier which contains dbName,
+   *                                         tableName and columnIdentifier
+   * @return
+   */
+  public static boolean isFileExistsForGivenColumn(String carbonStorePath,
+          DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+    PathService pathService = CarbonCommonFactory.getPathService();
+    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(carbonStorePath,
+            dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
+
+    String dictionaryFilePath =
+            carbonTablePath.getDictionaryFilePath(dictionaryColumnUniqueIdentifier
+                    .getColumnIdentifier().getColumnId());
+    String dictionaryMetadataFilePath =
+            carbonTablePath.getDictionaryMetaFilePath(dictionaryColumnUniqueIdentifier
+                    .getColumnIdentifier().getColumnId());
+    // check if both dictionary and its metadata file exists for a given column
+    return isFileExists(dictionaryFilePath) && isFileExists(dictionaryMetadataFilePath);
   }
 }
 

@@ -981,6 +981,16 @@ public final class CarbonCommonConstants {
 
   public static final String ENABLE_VECTOR_READER_DEFAULT = "false";
 
+  /*
+   * carbon dictionary server port
+   */
+  public static final String DICTIONARY_SERVER_PORT = "carbon.dictionary.server.port";
+
+  /**
+   * Default carbon dictionary server port
+   */
+  public static final String DICTIONARY_SERVER_PORT_DEFAULT = "2030";
+
   private CarbonCommonConstants() {
   }
 }
