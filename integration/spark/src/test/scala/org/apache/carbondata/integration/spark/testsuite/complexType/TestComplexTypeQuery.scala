@@ -19,13 +19,8 @@
 
 package org.apache.carbondata.integration.spark.testsuite.complexType
 
-import java.io.File
-
-import org.apache.spark.sql.common.util.CarbonHiveContext._
-import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.Row
-import org.apache.carbondata.core.carbon.CarbonTableIdentifier
-import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
+import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**
@@ -43,29 +38,29 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
      sql("drop table if exists structusingarraycarbon").show
      sql("drop table if exists structusingarrayhive").show
      sql("create table complexcarbontable(deviceInformationId int, channelsId string, ROMSize string, ROMName String, purchasedate string, mobile struct<imei:string, imsi:string>, MAC array<string>, locationinfo array<struct<ActiveAreaId:int, ActiveCountry:string, ActiveProvince:string, Activecity:string, ActiveDistrict:string, ActiveStreet:string>>, proddate struct<productionDate:string,activeDeactivedate:array<string>>, gamePointId double,contractNumber double)  STORED BY 'org.apache.carbondata.format'  TBLPROPERTIES ('DICTIONARY_INCLUDE'='deviceInformationId', 'DICTIONARY_EXCLUDE'='channelsId','COLUMN_GROUP'='(ROMSize,ROMName)')");
-     sql("LOAD DATA local inpath './src/test/resources/complextypesample.csv' INTO table complexcarbontable  OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,channelsId,ROMSize,ROMName,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber', 'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')");
+     sql("LOAD DATA local inpath '" + resourcesPath + "/complextypesample.csv' INTO table complexcarbontable  OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,channelsId,ROMSize,ROMName,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber', 'COMPLEX_DELIMITER_LEVEL_1'='$', 'COMPLEX_DELIMITER_LEVEL_2'=':')");
      sql("create table complexhivetable(deviceInformationId int, channelsId string, ROMSize string, ROMName String, purchasedate string, mobile struct<imei:string, imsi:string>, MAC array<string>, locationinfo array<struct<ActiveAreaId:int, ActiveCountry:string, ActiveProvince:string, Activecity:string, ActiveDistrict:string, ActiveStreet:string>>, proddate struct<productionDate:string,activeDeactivedate:array<string>>, gamePointId double,contractNumber double)row format delimited fields terminated by ',' collection items terminated by '$' map keys terminated by ':'")
-     sql("LOAD DATA local inpath './src/test/resources/complextypesample.csv' INTO table complexhivetable");
+     sql(s"LOAD DATA local inpath '$resourcesPath/complextypesample.csv' INTO table complexhivetable");
      sql("create table complex_filter(test1 int, test2 array<String>,test3 array<bigint>,test4 array<int>,test5 array<decimal>,test6 array<timestamp>,test7 array<double>) STORED BY 'org.apache.carbondata.format'")
-     sql("LOAD DATA INPATH './src/test/resources/array1.csv'  INTO TABLE complex_filter options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$', 'FILEHEADER'= 'test1,test2,test3,test4,test5,test6,test7')").show()
+     sql("LOAD DATA INPATH '" + resourcesPath + "/array1.csv'  INTO TABLE complex_filter options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$', 'FILEHEADER'= 'test1,test2,test3,test4,test5,test6,test7')").show()
      
      sql("create table structusingarraycarbon (MAC struct<MAC1:array<string>,ActiveCountry:array<string>>) STORED BY 'org.apache.carbondata.format'");
-     sql("LOAD DATA local INPATH './src/test/resources/struct_all.csv' INTO table structusingarraycarbon options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='MAC','COMPLEX_DELIMITER_LEVEL_1'='$','COMPLEX_DELIMITER_LEVEL_2'='&')")
+     sql("LOAD DATA local INPATH '" + resourcesPath + "/struct_all.csv' INTO table structusingarraycarbon options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='MAC','COMPLEX_DELIMITER_LEVEL_1'='$','COMPLEX_DELIMITER_LEVEL_2'='&')")
      sql("create table structusingarrayhive (MAC struct<MAC1:array<string>,ActiveCountry:array<string>>)row format delimited fields terminated by ',' collection items terminated by '$' map keys terminated by '&'");
-     sql("LOAD DATA local INPATH './src/test/resources/struct_all.csv' INTO table structusingarrayhive") 
+     sql("LOAD DATA local INPATH '" + resourcesPath + "/struct_all.csv' INTO table structusingarrayhive")
      
      sql("create table structusingstructCarbon(name struct<middlename:string, othernames:struct<firstname:string,lastname:string>,age:int> ) STORED BY 'org.apache.carbondata.format'")
-     sql("LOAD DATA local INPATH './src/test/resources/structusingstruct.csv' INTO table structusingstructCarbon options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='name','COMPLEX_DELIMITER_LEVEL_1'='$','COMPLEX_DELIMITER_LEVEL_2'='&')")
+     sql("LOAD DATA local INPATH '" + resourcesPath + "/structusingstruct.csv' INTO table structusingstructCarbon options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='name','COMPLEX_DELIMITER_LEVEL_1'='$','COMPLEX_DELIMITER_LEVEL_2'='&')")
       sql("create table structusingstructhive(name struct<middlename:string, othernames:struct<firstname:string,lastname:string>,age:int> )row format delimited fields terminated by ',' collection items terminated by '$' map keys terminated by '&'")
-     sql("LOAD DATA local INPATH './src/test/resources/structusingstruct.csv' INTO table structusingstructhive")
+     sql("LOAD DATA local INPATH '" + resourcesPath + "/structusingstruct.csv' INTO table structusingstructhive")
      
   }
   
   test("Test ^ * special character data loading for complex types") {
     sql("create table complexcarbonwithspecialchardelimeter(deviceInformationId int, channelsId string, ROMSize string, ROMName String, purchasedate string, mobile struct<imei:string, imsi:string>, MAC array<string>, locationinfo array<struct<ActiveAreaId:int, ActiveCountry:string, ActiveProvince:string, Activecity:string, ActiveDistrict:string, ActiveStreet:string>>, proddate struct<productionDate:string,activeDeactivedate:array<string>>, gamePointId double,contractNumber double)  STORED BY 'org.apache.carbondata.format'  TBLPROPERTIES ('DICTIONARY_INCLUDE'='deviceInformationId', 'DICTIONARY_EXCLUDE'='channelsId','COLUMN_GROUP'='(ROMSize,ROMName)')");
-    sql("LOAD DATA local inpath './src/test/resources/complextypespecialchardelimiter.csv' INTO table complexcarbonwithspecialchardelimeter  OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,channelsId,ROMSize,ROMName,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber', 'COMPLEX_DELIMITER_LEVEL_1'='^', 'COMPLEX_DELIMITER_LEVEL_2'='*')");
+    sql("LOAD DATA local inpath '" + resourcesPath + "/complextypespecialchardelimiter.csv' INTO table complexcarbonwithspecialchardelimeter  OPTIONS('DELIMITER'=',', 'QUOTECHAR'='\"', 'FILEHEADER'='deviceInformationId,channelsId,ROMSize,ROMName,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber', 'COMPLEX_DELIMITER_LEVEL_1'='^', 'COMPLEX_DELIMITER_LEVEL_2'='*')");
     sql("create table complexhivewithspecialchardelimeter(deviceInformationId int, channelsId string, ROMSize string, ROMName String, purchasedate string, mobile struct<imei:string, imsi:string>, MAC array<string>, locationinfo array<struct<ActiveAreaId:int, ActiveCountry:string, ActiveProvince:string, Activecity:string, ActiveDistrict:string, ActiveStreet:string>>, proddate struct<productionDate:string,activeDeactivedate:array<string>>, gamePointId double,contractNumber double)row format delimited fields terminated by ',' collection items terminated by '^' map keys terminated by '*'")
-    sql("LOAD DATA local inpath './src/test/resources/complextypespecialchardelimiter.csv' INTO table complexhivewithspecialchardelimeter");
+    sql("LOAD DATA local inpath '" + resourcesPath + "/complextypespecialchardelimiter.csv' INTO table complexhivewithspecialchardelimeter");
     checkAnswer(sql("select * from complexcarbonwithspecialchardelimeter"), sql("select * from complexhivewithspecialchardelimeter"))
     sql("drop table if exists complexcarbonwithspecialchardelimeter")
     sql("drop table if exists complexhivewithspecialchardelimeter")

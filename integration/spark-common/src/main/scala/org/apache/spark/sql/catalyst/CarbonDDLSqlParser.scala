@@ -789,7 +789,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case _ => ("", "")
     }
 
-
   protected lazy val dimCol: Parser[Field] = anyFieldDef
 
   protected lazy val primitiveTypes =
@@ -919,10 +918,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     field.dataType.getOrElse("NIL") match {
       case "Array" => Field(field.column, Some("Array"), field.name,
         field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent,
-        field.storeType, field.schemaOrdinal)
+        field.storeType, field.schemaOrdinal, rawSchema = field.rawSchema)
       case "Struct" => Field(field.column, Some("Struct"), field.name,
         field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent,
-        field.storeType, field.schemaOrdinal)
+        field.storeType, field.schemaOrdinal, rawSchema = field.rawSchema)
       case _ => field
     }
   }

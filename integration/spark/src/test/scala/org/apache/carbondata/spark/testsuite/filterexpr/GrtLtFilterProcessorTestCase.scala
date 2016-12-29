@@ -19,14 +19,12 @@
 
 package org.apache.carbondata.spark.testsuite.filterexpr
 
-import java.io.File
-
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.scalatest.BeforeAndAfterAll
 
 /**
   * Test Class for filter expression query on String datatypes
@@ -35,158 +33,33 @@ import org.scalatest.BeforeAndAfterAll
 class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
-    sql("drop table if exists a12")
     sql("drop table if exists a12_allnull")
-    sql("drop table if exists a12_no_null")
-     sql("drop table if exists Test_Boundary1")
 
-    sql(
-      "create table a12(empid String,ename String,sal double,deptno int,mgr string,gender string," +
-        "dob timestamp,comm decimal(4,2),desc string) stored by 'org.apache.carbondata.format'"
-    )
     sql(
       "create table a12_allnull(empid String,ename String,sal double,deptno int,mgr string,gender" +
         " string," +
         "dob timestamp,comm decimal(4,2),desc string) stored by 'org.apache.carbondata.format'"
     )
-    sql(
-      "create table a12_no_null(empid String,ename String,sal double,deptno int,mgr string,gender" +
-        " string," +
-        "dob timestamp,comm decimal(4,2),desc string) stored by 'org.apache.carbondata.format'"
-    )
-    sql("create table Test_Boundary1 (c1_int int,c2_Bigint Bigint,c3_Decimal Decimal(38,38),c4_double double,c5_string string,c6_Timestamp Timestamp,c7_Datatype_Desc string) STORED BY 'org.apache.carbondata.format'")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
-    val basePath = new File(this.getClass.getResource("/").getPath + "/../../")
-      .getCanonicalPath
-    var testData = basePath + "/src/test/resources/filter/emp2.csv"
-    sql(
-      s"""LOAD DATA LOCAL INPATH '$testData' into table a12 OPTIONS('DELIMITER'=',',
-         'QUOTECHAR'='"','FILEHEADER'='empid,ename,sal,deptno,mgr,gender,dob,comm,desc')"""
-        .stripMargin
-    )
-    testData = basePath + "/src/test/resources/filter/emp2allnull.csv"
+    val testData = s"$resourcesPath/filter/emp2allnull.csv"
 
     sql(
       s"""LOAD DATA LOCAL INPATH '$testData' into table a12_allnull OPTIONS('DELIMITER'=',',
          'QUOTECHAR'='"','FILEHEADER'='empid,ename,sal,deptno,mgr,gender,dob,comm,desc')"""
         .stripMargin
     )
-    testData = basePath + "/src/test/resources/filter/emp2nonull.csv"
-
-    sql(
-      s"""LOAD DATA LOCAL INPATH '$testData' into table a12_no_null OPTIONS('DELIMITER'=',',
-         'QUOTECHAR'='"')"""
-        .stripMargin
-    )
-    
-    sql(
-      s"LOAD DATA INPATH './src/test/resources/Test_Data1_Logrithmic.csv' INTO table Test_Boundary1 OPTIONS('DELIMITER'=',','QUOTECHAR'='','FILEHEADER'='')")
-  }
-  //mixed value test
-  test("Less Than Filter") {
-    checkAnswer(
-      sql("select count(empid) from a12 where dob < '2014-07-01 12:07:28'"),
-      Seq(Row(0))
-    )
   }
 
-  test("Les Than equal Filter") {
-    checkAnswer(
-      sql("select count (empid) from a12 where dob <= '2014-07-01 12:07:28'"),
-      Seq(Row(2))
-    )
-  }
-
-  test("Greater Than Filter") {
-    checkAnswer(
-      sql("select count (empid) from a12 where dob > '2014-07-01 12:07:28'"),
-      Seq(Row(3))
-    )
-  }
-  test("0.0 and -0.0 equality check for double data type applying log function") {
-    checkAnswer(
-      sql("select log(c4_double,1) from Test_Boundary1 where log(c4_double,1)= -0.0"),
-      Seq(Row(0.0),Row(0.0))
-    )
-  }
-
-  test("Greater Than equal to Filter") {
-    sql("select count (empid) from a12 where dob >= '2014-07-01 12:07:28'").show()
-    checkAnswer(
-      sql("select count (empid) from a12 where dob >= '2014-07-01 12:07:28'"),
-      Seq(Row(5))
-    )
-  }
-  //all null test cases
-
-  test("Less Than Filter all null") {
-    checkAnswer(
-      sql("select count(empid) from a12_allnull where dob < '2014-07-01 12:07:28'"),
-      Seq(Row(0))
-    )
-  }
-
-  test("Les Than equal Filter all null") {
-    checkAnswer(
-      sql("select count (empid) from a12_allnull where dob <= '2014-07-01 12:07:28'"),
-      Seq(Row(0))
-    )
-  }
-
-  test("Greater Than Filter all null") {
-    checkAnswer(
-      sql("select count (empid) from a12_allnull where dob > '2014-07-01 12:07:28'"),
-      Seq(Row(0))
-    )
-  }
-
-  test("Greater Than equal to Filter all null") {
-    checkAnswer(
-      sql("select count (empid) from a12_allnull where dob >= '2014-07-01 12:07:28'"),
-      Seq(Row(0))
-    )
-  }
-      test("In condition With improper format query regarding Null filter") {
+  test("In condition With improper format query regarding Null filter") {
     checkAnswer(
       sql("select empid from a12_allnull " + "where empid not in ('china',NULL)"),
       Seq()
     )
-      }
-
-  //no null test cases
-
-  test("Less Than Filter no null") {
-    checkAnswer(
-      sql("select count(empid) from a12_no_null where dob < '2014-07-01 12:07:28'"),
-      Seq(Row(0))
-    )
-  }
-
-  test("Les Than equal Filter no null") {
-    sql("select empid from a12_no_null where dob <= '2014-07-01 12:07:28'").show()
-    checkAnswer(
-      sql("select count(empid) from a12_no_null where dob <= '2014-07-01 12:07:28'"),
-      Seq(Row(4))
-    )
-  }
-
-  test("Greater Than Filter no null") {
-    checkAnswer(
-      sql("select count (empid) from a12_no_null where dob > '2014-07-01 12:07:28'"),
-      Seq(Row(3))
-    )
-  }
-
-  test("Greater Than equal to Filter no null") {
-    checkAnswer(
-      sql("select count (empid) from a12_no_null where dob >= '2014-07-01 12:07:28'"),
-      Seq(Row(7))
-    )
   }
 
   override def afterAll {
-    sql("drop table a12")
+    sql("drop table if exists a12_allnull")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }

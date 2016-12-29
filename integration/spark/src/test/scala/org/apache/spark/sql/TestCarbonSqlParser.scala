@@ -22,6 +22,7 @@ import scala.collection.mutable.Map
 
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.execution.command.Field
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 /**

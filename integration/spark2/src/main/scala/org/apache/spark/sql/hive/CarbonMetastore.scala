@@ -399,7 +399,7 @@ class CarbonMetastore(conf: RuntimeConfig, val storePath: String) {
 
   def isTablePathExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
     val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
-    val tableName = tableIdentifier.table
+    val tableName = tableIdentifier.table.toLowerCase
 
     val tablePath = CarbonStorePath.getCarbonTablePath(this.storePath,
       new CarbonTableIdentifier(dbName, tableName, "")).getPath

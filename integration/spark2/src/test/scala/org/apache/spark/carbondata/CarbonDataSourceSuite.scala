@@ -22,13 +22,12 @@ import org.scalatest.BeforeAndAfterAll
 
 class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
-    clean
     // Drop table
-    spark.sql("DROP TABLE IF EXISTS carbon_testtable")
-    spark.sql("DROP TABLE IF EXISTS csv_table")
+    sql("DROP TABLE IF EXISTS carbon_testtable")
+    sql("DROP TABLE IF EXISTS csv_table")
 
     // Create table
-    spark.sql(
+    sql(
       s"""
          | CREATE TABLE carbon_testtable(
          |    shortField short,
@@ -41,7 +40,7 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
          | USING org.apache.spark.sql.CarbonSource
        """.stripMargin)
 
-    spark.sql(
+    sql(
       s"""
          | CREATE TABLE csv_table
          | (  shortField short,
@@ -56,19 +55,19 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll(): Unit = {
-    spark.sql("drop table carbon_testtable")
-    spark.sql("DROP TABLE IF EXISTS csv_table")
+    sql("drop table carbon_testtable")
+    sql("DROP TABLE IF EXISTS csv_table")
   }
 
   test("project") {
-    spark.sql("select * from carbon_testtable").collect()
+    sql("select * from carbon_testtable").collect()
   }
 
   test("agg") {
-    spark.sql("select stringField, sum(intField) , sum(decimalField) " +
+    sql("select stringField, sum(intField) , sum(decimalField) " +
       "from carbon_testtable group by stringField").collect()
 
-    spark.sql(
+    sql(
       s"""
          | INSERT INTO TABLE carbon_testtable
          | SELECT shortField, intField, bigintField, doubleField, stringField,

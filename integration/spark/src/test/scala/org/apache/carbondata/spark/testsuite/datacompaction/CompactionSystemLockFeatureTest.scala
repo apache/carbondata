@@ -18,7 +18,10 @@
  */
 package org.apache.carbondata.spark.testsuite.datacompaction
 
-import java.io.File
+import scala.collection.JavaConverters._
+
+import org.apache.spark.sql.common.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
@@ -26,12 +29,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.updatestatus.SegmentStatusManager
-import org.apache.spark.sql.common.util.CarbonHiveContext._
-import org.apache.spark.sql.common.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
-
-import scala.collection.JavaConverters._
 
 /**
   * FT for compaction scenario where major segment should not be included in minor.
@@ -60,12 +57,10 @@ class CompactionSystemLockFeatureTest extends QueryTest with BeforeAndAfterAll {
     )
 
 
-    val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")
-      .getCanonicalPath
-    val csvFilePath1 = currentDirectory + "/src/test/resources/compaction/compaction1.csv"
+    val csvFilePath1 = s"$resourcesPath/compaction/compaction1.csv"
 
-    val csvFilePath2 = currentDirectory + "/src/test/resources/compaction/compaction2.csv"
-    val csvFilePath3 = currentDirectory + "/src/test/resources/compaction/compaction3.csv"
+    val csvFilePath2 = s"$resourcesPath/compaction/compaction2.csv"
+    val csvFilePath3 = s"$resourcesPath/compaction/compaction3.csv"
 
     // load table1
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE table1 OPTIONS" +

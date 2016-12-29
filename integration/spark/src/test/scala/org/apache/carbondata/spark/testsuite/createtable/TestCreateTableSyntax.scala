@@ -19,12 +19,11 @@
 
 package org.apache.carbondata.spark.testsuite.createtable
 
-import org.apache.spark.sql.common.util.CarbonHiveContext._
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
-import org.apache.spark.sql.{CarbonContext, Row}
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 /**
  * Test Class for validating create table syntax for carbontable
@@ -33,18 +32,21 @@ import org.scalatest.BeforeAndAfterAll
 class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
   
   override def beforeAll {
-    sql("drop table if exists carbontable")
   }
 
   test("Struct field with underscore and struct<struct> syntax check") {
+    sql("drop table if exists carbontable")
     sql("create table carbontable(id int, username struct<sur_name:string," +
         "actual_name:struct<first_name:string,last_name:string>>, country string, salary double)" +
         "STORED BY 'org.apache.carbondata.format'")
     sql("describe carbontable").show
-    sql("drop table if exists carbontable")
   }
   
   test("Test table rename operation on carbon table and on hive table") {
+    sql("drop table if exists hivetable")
+    sql("drop table if exists carbontable")
+    sql("drop table if exists hiveRenamedTable")
+    sql("drop table if exists carbonRenamedTable")
     sql("create table hivetable(test1 int, test2 array<String>,test3 array<bigint>,"+
         "test4 array<int>,test5 array<decimal>,test6 array<timestamp>,test7 array<double>)"+
         "row format delimited fields terminated by ',' collection items terminated by '$' map keys terminated by ':'")
@@ -61,13 +63,12 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
         assert(e.getMessage.equals("Unsupported alter operation on carbon table"))
       }
     }
-    sql("drop table if exists hiveRenamedTable")
-    sql("drop table if exists carbontable")
   }
 
   
   test("test carbon table create with complex datatype as dictionary exclude") {
     try {
+      sql("drop table if exists carbontable")
       sql("create table carbontable(id int, name string, dept string, mobile array<string>, "+
           "country string, salary double) STORED BY 'org.apache.carbondata.format' " +
           "TBLPROPERTIES('DICTIONARY_EXCLUDE'='dept,mobile')")
@@ -77,11 +78,11 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
         assert(e.getMessage.equals("DICTIONARY_EXCLUDE is unsupported for complex datatype column: mobile"))
       }
     }
-    sql("drop table if exists carbontable")
   }
 
   test("test carbon table create with double datatype as dictionary exclude") {
     try {
+      sql("drop table if exists carbontable")
       sql("create table carbontable(id int, name string, dept string, mobile array<string>, "+
         "country string, salary double) STORED BY 'org.apache.carbondata.format' " +
         "TBLPROPERTIES('DICTIONARY_EXCLUDE'='salary')")
@@ -92,10 +93,10 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
           "data type column: salary"))
       }
     }
-    sql("drop table if exists carbontable")
   }
     test("test carbon table create with int datatype as dictionary exclude") {
     try {
+      sql("drop table if exists carbontable")
       sql("create table carbontable(id int, name string, dept string, mobile array<string>, "+
         "country string, salary double) STORED BY 'org.apache.carbondata.format' " +
         "TBLPROPERTIES('DICTIONARY_EXCLUDE'='id')")
@@ -106,11 +107,11 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
           "data type column: id"))
       }
     }
-    sql("drop table if exists carbontable")
   }
 
   test("test carbon table create with decimal datatype as dictionary exclude") {
     try {
+      sql("drop table if exists carbontable")
       sql("create table carbontable(id int, name string, dept string, mobile array<string>, "+
         "country string, salary decimal) STORED BY 'org.apache.carbondata.format' " +
         "TBLPROPERTIES('DICTIONARY_EXCLUDE'='salary')")
@@ -124,19 +125,20 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
   }
   
   test("describe formatted on hive table and carbon table") {
+    sql("drop table if exists hivetable")
+    sql("drop table if exists carbontable")
     sql("create table carbontable(id int, username struct<sur_name:string," +
         "actual_name:struct<first_name:string,last_name:string>>, country string, salary double)" +
         "STORED BY 'org.apache.carbondata.format'")
     sql("describe formatted carbontable").show(50)
-    sql("drop table if exists carbontable")
     sql("create table hivetable(id int, username struct<sur_name:string," +
         "actual_name:struct<first_name:string,last_name:string>>, country string, salary double)")
     sql("describe formatted hivetable").show(50)
-    sql("drop table if exists hivetable")
   }
 
-    test("describe command carbon table for decimal scale and precision test") {
-            sql("create table carbontablePrecision(id int, name string, dept string, mobile array<string>, "+
+  test("describe command carbon table for decimal scale and precision test") {
+    sql("drop table if exists carbontablePrecision")
+    sql("create table carbontablePrecision(id int, name string, dept string, mobile array<string>, "+
         "country string, salary decimal(10,6)) STORED BY 'org.apache.carbondata.format' " +
         "TBLPROPERTIES('DICTIONARY_INCLUDE'='salary,id')")
     checkAnswer(
@@ -146,11 +148,11 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
         Row("salary","decimal(10,6)","")
       )
     )
-     sql("drop table if exists carbontablePrecision")
   }
   
   test("create carbon table without dimensions") {
     try {
+      sql("drop table if exists carbontable")
       sql("create table carbontable(msr1 int, msr2 double, msr3 bigint, msr4 decimal)" +
         " stored by 'org.apache.carbondata.format'")
       assert(false)
@@ -165,6 +167,7 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
 
   test("create carbon table with repeated table properties") {
     try {
+      sql("drop table if exists carbontable")
       sql(
         """
           CREATE TABLE IF NOT EXISTS carbontable
@@ -183,6 +186,10 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
+    sql("drop table if exists hivetable")
     sql("drop table if exists carbontable")
+    sql("drop table if exists hiveRenamedTable")
+    sql("drop table if exists carbonRenamedTable")
+    sql("drop table if exists carbontablePrecision")
   }
 }
