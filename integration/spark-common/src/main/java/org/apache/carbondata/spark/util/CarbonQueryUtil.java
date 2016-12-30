@@ -19,7 +19,6 @@
 
 package org.apache.carbondata.spark.util;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -79,7 +78,7 @@ public class CarbonQueryUtil {
   /**
    * It creates the one split for each region server.
    */
-  public static TableSplit[] getTableSplitsForDirectLoad(String sourcePath) throws Exception {
+  public static TableSplit[] getTableSplitsForDirectLoad(String sourcePath) {
 
     //Just create splits depends on locations of region servers
     DefaultLoadBalancer loadBalancer = null;

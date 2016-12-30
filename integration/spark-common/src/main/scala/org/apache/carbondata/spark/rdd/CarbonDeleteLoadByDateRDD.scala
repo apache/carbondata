@@ -67,7 +67,7 @@ class CarbonDeleteLoadByDateRDD[K, V](
         case e: Exception => logInfo("Unable to parse with default time format " + dateValue)
       }
       // TODO: Implement it
-      var finished = false
+      val finished = false
 
       override def hasNext: Boolean = {
         finished

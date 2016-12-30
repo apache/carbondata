@@ -21,12 +21,8 @@ package org.apache.carbondata.spark.partition.api.impl;
 
 import java.util.List;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.spark.partition.api.DataPartitioner;
 import org.apache.carbondata.spark.partition.api.Partition;
-
-import org.apache.spark.sql.execution.command.Partitioner;
 
 /**
  * Sample partition.

@@ -34,6 +34,7 @@ import org.apache.spark.sql.Row
 
 import org.apache.carbondata.common.factory.CarbonCommonFactory
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.cache.dictionary.Dictionary
 import org.apache.carbondata.core.carbon.{CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -297,12 +298,11 @@ class CarbonGlobalDictionaryGenerateRDD(
 
   override def compute(split: Partition, context: TaskContext): Iterator[(Int, String, Boolean)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    var status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
+    val status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
     var isHighCardinalityColumn = false
     val iter = new Iterator[(Int, String, Boolean)] {
-      var dictionaryForDistinctValueLookUp:
-      org.apache.carbondata.core.cache.dictionary.Dictionary = _
-      var dictionaryForSortIndexWriting: org.apache.carbondata.core.cache.dictionary.Dictionary = _
+      var dictionaryForDistinctValueLookUp: Dictionary
+      val dictionaryForSortIndexWriting: Dictionary
       var dictionaryForDistinctValueLookUpCleared: Boolean = false
       val pathService = CarbonCommonFactory.getPathService
       val carbonTablePath = pathService.getCarbonTablePath(model.hdfsLocation, model.table)

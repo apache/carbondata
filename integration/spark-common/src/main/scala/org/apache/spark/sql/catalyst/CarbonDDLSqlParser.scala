@@ -20,6 +20,7 @@ package org.apache.spark.sql.catalyst
 import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.collection.mutable.{LinkedHashSet, Map}
 import scala.language.implicitConversions
 import scala.util.matching.Regex
@@ -223,7 +224,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   def prepareTableModel(ifNotExistPresent: Boolean, dbName: Option[String]
       , tableName: String, fields: Seq[Field],
       partitionCols: Seq[PartitionerField],
-      tableProperties: Map[String, String],
+      tableProperties: mutable.Map[String, String],
       bucketFields: Option[BucketFields]): TableModel = {
 
     fields.zipWithIndex.foreach { x =>
@@ -279,7 +280,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * @param tableProperties
    * @return
    */
-  protected def updateColumnGroupsInField(tableProperties: Map[String, String],
+  protected def updateColumnGroupsInField(tableProperties: mutable.Map[String, String],
       noDictionaryDims: Seq[String],
       msrs: Seq[Field],
       dims: Seq[Field]): Seq[String] = {
@@ -540,9 +541,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         }
         dimFields += field
       } else if (dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
-        dimFields += (field)
+        dimFields += field
       } else if (isDetectAsDimentionDatatype(field.dataType.get)) {
-        dimFields += (field)
+        dimFields += field
       }
     }
     )
@@ -700,7 +701,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case Token("TOK_TABLEPROPLIST", list) =>
         list.map {
           case Token("TOK_TABLEPROPERTY", Token(key, Nil) :: Token(value, Nil) :: Nil) =>
-            (unquoteString(key) -> unquoteString(value))
+            unquoteString(key) -> unquoteString(value)
         }
     }
   }
@@ -747,7 +748,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     }
 
     if (options.exists(_._1.equalsIgnoreCase("MAXCOLUMNS"))) {
-      val maxColumns: String = options.get("maxcolumns").get(0)._2
+      val maxColumns: String = options.get("maxcolumns").get.head._2
       try {
         maxColumns.toInt
       } catch {
@@ -773,7 +774,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   protected lazy val dbTableIdentifier: Parser[Seq[String]] =
-    (ident <~ ".").? ~ (ident) ^^ {
+    (ident <~ ".").? ~ ident ^^ {
       case databaseName ~ tableName =>
         if (databaseName.isDefined) {
           Seq(databaseName.get, tableName)
@@ -819,13 +820,13 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
                                                  primitiveFieldType
 
   lazy val anyFieldDef: Parser[Field] =
-    (ident | stringLit) ~ ((":").? ~> nestedType) ~ (IN ~> (ident | stringLit)).? ^^ {
+    (ident | stringLit) ~ (":".? ~> nestedType) ~ (IN ~> (ident | stringLit)).? ^^ {
       case e1 ~ e2 ~ e3 =>
         Field(e1, e2.dataType, Some(e1), e2.children, null, e3)
     }
 
   protected lazy val primitiveFieldType: Parser[Field] =
-    (primitiveTypes) ^^ {
+    primitiveTypes ^^ {
       case e1 =>
         Field("unknown", Some(e1), Some("unknown"), Some(null))
     }
@@ -898,7 +899,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       // checking if the nested data type contains the child type as decimal(10,0),
       // if it is present then extracting the precision and scale. resetting the data type
       // with Decimal.
-      case _ if (dataType.startsWith("decimal")) =>
+      case _ if dataType.startsWith("decimal") =>
         val (precision, scale) = getScaleAndPrecision(dataType)
         Field(field.column,
           Some("Decimal"),
