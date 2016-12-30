@@ -68,10 +68,11 @@ public class ColumnIdentifier implements Serializable {
    * @return
    */
   public String getColumnProperty(String columnProperty) {
+    String property = null;
     if (null != columnProperties) {
-      return columnProperties.get(columnProperty);
+      property = columnProperties.get(columnProperty);
     }
-    return null;
+    return property;
   }
 
   public DataType getDataType() {
