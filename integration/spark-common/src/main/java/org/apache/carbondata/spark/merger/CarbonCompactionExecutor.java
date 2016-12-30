@@ -70,13 +70,9 @@ public class CarbonCompactionExecutor {
   public CarbonCompactionExecutor(Map<String, TaskBlockInfo> segmentMapping,
       SegmentProperties segmentProperties, CarbonTable carbonTable,
       Map<String, List<DataFileFooter>> dataFileMetadataSegMapping) {
-
     this.segmentMapping = segmentMapping;
-
     this.destinationSegProperties = segmentProperties;
-
     this.carbonTable = carbonTable;
-
     this.dataFileMetadataSegMapping = dataFileMetadataSegMapping;
   }
 
@@ -129,18 +125,9 @@ public class CarbonCompactionExecutor {
    */
   private CarbonIterator<BatchResult> executeBlockList(List<TableBlockInfo> blockList)
       throws QueryExecutionException {
-
     queryModel.setTableBlockInfos(blockList);
     this.queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
-    CarbonIterator<BatchResult> iter = null;
-    try {
-      iter = queryExecutor.execute(queryModel);
-    } catch (QueryExecutionException e) {
-      LOGGER.error(e.getMessage());
-      throw e;
-    }
-
-    return iter;
+    return queryExecutor.execute(queryModel);
   }
 
   /**

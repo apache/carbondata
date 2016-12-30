@@ -328,7 +328,7 @@ object GlobalDictionaryUtil {
     if (null == carbonLoadModel.getLoadMetadataDetails) {
       CommonUtil.readLoadMetadataDetails(carbonLoadModel, hdfsLocation)
     }
-    new DictionaryLoadModel(table,
+    DictionaryLoadModel(table,
       dimensions,
       hdfsLocation,
       dictfolderPath,
@@ -345,7 +345,8 @@ object GlobalDictionaryUtil {
       hdfsTempLocation,
       lockType,
       zookeeperUrl,
-      serializationNullFormat)
+      serializationNullFormat
+    )
   }
 
   /**

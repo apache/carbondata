@@ -268,7 +268,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) {
       prevPartIndexs(i % numOfParts) += prevPartitions(i).index
     }
     prevPartIndexs.filter(_.nonEmpty).zipWithIndex.map { x =>
-      new CoalescedRDDPartition(x._2, prev, x._1.toArray, getLocation(x._2))
+      CoalescedRDDPartition(x._2, prev, x._1.toArray, getLocation(x._2))
     }
   }
 
@@ -313,7 +313,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) {
         Some(emptyHosts(index - localityResult.length))
       }
       LOGGER.info(s"CoalescedRDDPartition $index, ${ids.length}, $loc ")
-      new CoalescedRDDPartition(index, prev, ids, loc)
+      CoalescedRDDPartition(index, prev, ids, loc)
     }.filter(_.parentsIndices.nonEmpty).toArray
 
   }

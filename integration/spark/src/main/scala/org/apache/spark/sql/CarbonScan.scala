@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql
 
+import java.util
 import java.util.ArrayList
 
 import scala.collection.JavaConverters._
@@ -51,7 +52,7 @@ case class CarbonScan(
   val buildCarbonPlan: CarbonQueryPlan = {
     val plan: CarbonQueryPlan = new CarbonQueryPlan(relationRaw.databaseName, relationRaw.tableName)
 
-    plan.setSortedDimemsions(new ArrayList[QueryDimension])
+    plan.setSortedDimemsions(new util.ArrayList[QueryDimension])
 
     plan.setOutLocationPath(
       CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION_HDFS))

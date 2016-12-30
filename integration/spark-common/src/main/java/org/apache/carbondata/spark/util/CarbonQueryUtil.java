@@ -119,7 +119,7 @@ public class CarbonQueryUtil {
     partitionList.add(new PartitionMultiFileImpl(0 + "", partitionFiles.get(0)));
 
     for (int i = 0; i < files.size(); i++) {
-      partitionFiles.get(i % 1).add(files.get(i));
+      partitionFiles.get(0).add(files.get(i));
     }
     return partitionList;
   }

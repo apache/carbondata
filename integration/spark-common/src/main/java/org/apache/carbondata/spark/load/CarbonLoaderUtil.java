@@ -311,7 +311,7 @@ public final class CarbonLoaderUtil {
     String localStoreLocation = CarbonProperties.getInstance()
         .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
     try {
-      CarbonUtil.deleteFoldersAndFiles(new File[] { new File(localStoreLocation).getParentFile() });
+      CarbonUtil.deleteFoldersAndFiles(new File(localStoreLocation).getParentFile());
       LOGGER.info("Deleted the local store location" + localStoreLocation);
     } catch (CarbonUtilException e) {
       LOGGER.error(e, "Failed to delete local data load folder location");
@@ -457,11 +457,11 @@ public final class CarbonLoaderUtil {
     return carbonTable.getMetaDataFilepath();
   }
 
-  private static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier,
+  public static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier,
       String carbonStorePath) throws CarbonUtilException {
-    Cache dictCache =
+    Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache =
         CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath);
-    return (Dictionary) dictCache.get(columnIdentifier);
+    return dictCache.get(columnIdentifier);
   }
 
   public static Dictionary getDictionary(CarbonTableIdentifier tableIdentifier,

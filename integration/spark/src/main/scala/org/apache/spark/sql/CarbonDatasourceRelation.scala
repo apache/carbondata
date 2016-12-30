@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql
 
+import java.util
 import java.util.LinkedHashSet
 
 import scala.collection.JavaConverters._
@@ -205,7 +206,7 @@ case class CarbonRelation(
   }
 
   val dimensionsAttr = {
-    val sett = new LinkedHashSet(
+    val sett = new util.LinkedHashSet(
       tableMeta.carbonTable.getDimensionByTableName(tableMeta.carbonTableIdentifier.getTableName)
           .asScala.asJava)
     sett.asScala.toSeq.filter(!_.getColumnSchema.isInvisible).map(dim => {
@@ -231,7 +232,7 @@ case class CarbonRelation(
 
   val measureAttr = {
     val factTable = tableMeta.carbonTable.getFactTableName
-    new LinkedHashSet(
+    new util.LinkedHashSet(
       tableMeta.carbonTable.
           getMeasureByTableName(tableMeta.carbonTable.getFactTableName).
           asScala.asJava).asScala.toSeq.filter(!_.getColumnSchema.isInvisible)

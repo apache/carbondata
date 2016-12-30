@@ -238,7 +238,7 @@ private[sql] case class LoadTableByInsert(relation: CarbonDatasourceRelation,
       relation.carbonRelation.tableName,
       null,
       Seq(),
-      scala.collection.immutable.Map(("fileheader" -> header)),
+      scala.collection.immutable.Map("fileheader" -> header),
       false,
       null,
       Some(df)).run(sqlContext)
@@ -680,7 +680,7 @@ private[sql] case class DescribeCommandFormatted(
           "KEY COLUMN"
         }
       } else {
-        ("MEASURE")
+        "MEASURE"
       }
       (field.name, field.dataType.simpleString, comment)
     }
@@ -722,7 +722,7 @@ private[sql] case class DescribeCommandFormatted(
       colGroups._2.map(dim => dim.getColName).mkString(", ")
     })
     var index = 1
-    groups.map { x =>
+    groups.foreach { x =>
       results = results :+ (s"Column Group $index", x, "")
       index = index + 1
     }

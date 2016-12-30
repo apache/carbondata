@@ -33,7 +33,7 @@ import org.apache.carbondata.scan.result.BatchResult;
  * executing that query are returning a iterator over block and every time next
  * call will come it will execute the block and return the result
  */
-public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator {
+public class DetailQueryResultIterator extends AbstractDetailQueryResultIterator<BatchResult> {
 
   private final Object lock = new Object();
   private Future<BatchResult> future;

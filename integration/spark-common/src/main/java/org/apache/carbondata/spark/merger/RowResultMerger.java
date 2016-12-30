@@ -63,7 +63,6 @@ public class RowResultMerger {
   private final String databaseName;
   private final String tableName;
   private final String tempStoreLocation;
-  private final int measureCount;
   private final String factStoreLocation;
   private CarbonFactHandler dataHandler;
   private List<RawResultIterator> rawResultIteratorList =
@@ -101,7 +100,7 @@ public class RowResultMerger {
     this.databaseName = databaseName;
     this.tableName = tableName;
 
-    this.measureCount = segprop.getMeasures().size();
+    int measureCount = segprop.getMeasures().size();
     CarbonTable carbonTable = CarbonMetadata.getInstance()
             .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     CarbonFactDataHandlerModel carbonFactDataHandlerModel =

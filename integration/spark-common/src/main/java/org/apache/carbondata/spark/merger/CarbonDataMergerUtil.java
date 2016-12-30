@@ -158,7 +158,7 @@ public final class CarbonDataMergerUtil {
                 .equalsIgnoreCase(CarbonCommonConstants.MARKED_FOR_DELETE)) {
               LOGGER.error("Compaction is aborted as the segment " + loadDetail.getLoadName()
                   + " is deleted after the compaction is started.");
-              return tableStatusUpdationStatus;
+              return false;
             }
             loadDetail.setLoadStatus(CarbonCommonConstants.SEGMENT_COMPACTED);
             loadDetail.setModificationOrdeletionTimesStamp(modificationOrDeletionTimeStamp);
@@ -630,9 +630,9 @@ public final class CarbonDataMergerUtil {
     for (LoadMetadataDetails segment : loadMetadataDetails) {
       //check if this load is an already merged load.
       if (null != segment.getMergedLoadName()) {
-        builder.append(segment.getMergedLoadName() + ",");
+        builder.append(segment.getMergedLoadName()).append(",");
       } else {
-        builder.append(segment.getLoadName() + ",");
+        builder.append(segment.getLoadName()).append(",");
       }
     }
     builder.deleteCharAt(builder.length() - 1);

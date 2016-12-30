@@ -447,7 +447,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     if (tableProperties.get("NO_INVERTED_INDEX").isDefined) {
       noInvertedIdxColsProps =
         tableProperties.get("NO_INVERTED_INDEX").get.split(',').map(_.trim)
-      noInvertedIdxColsProps.map { noInvertedIdxColProp =>
+      noInvertedIdxColsProps.foreach { noInvertedIdxColProp =>
           if (!fields.exists(x => x.column.equalsIgnoreCase(noInvertedIdxColProp))) {
             val errormsg = "NO_INVERTED_INDEX column: " + noInvertedIdxColProp +
                            " does not exist in table. Please check create table statement."
@@ -488,7 +488,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       dictExcludeCols =
         tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).get.split(',').map(_.trim)
       dictExcludeCols
-        .map { dictExcludeCol =>
+        .foreach { dictExcludeCol =>
           if (!fields.exists(x => x.column.equalsIgnoreCase(dictExcludeCol))) {
             val errormsg = "DICTIONARY_EXCLUDE column: " + dictExcludeCol +
                            " does not exist in table. Please check create table statement."
@@ -511,8 +511,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     // All included cols should be there in create table cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).isDefined) {
       dictIncludeCols =
-        tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE).get.split(",").map(_.trim)
-      dictIncludeCols.map { distIncludeCol =>
+        tableProperties(CarbonCommonConstants.DICTIONARY_INCLUDE).split(",").map(_.trim)
+      dictIncludeCols.foreach { distIncludeCol =>
         if (!fields.exists(x => x.column.equalsIgnoreCase(distIncludeCol.trim))) {
           val errormsg = "DICTIONARY_INCLUDE column: " + distIncludeCol.trim +
                          " does not exist in table. Please check create table statement."
@@ -532,11 +532,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     // by default consider all String cols as dims and if any dictionary exclude is present then
     // add it to noDictionaryDims list. consider all dictionary excludes/include cols as dims
-    fields.foreach(field => {
-
+    fields.foreach { field =>
       if (dictExcludeCols.toSeq.exists(x => x.equalsIgnoreCase(field.column))) {
         val dataType = DataTypeUtil.getDataType(field.dataType.get.toUpperCase())
-        if (dataType != DataType.TIMESTAMP && dataType != DataType.DATE ) {
+        if (dataType != DataType.TIMESTAMP && dataType != DataType.DATE) {
           noDictionaryDims :+= field.column
         }
         dimFields += field
@@ -546,7 +545,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         dimFields += field
       }
     }
-    )
 
     (dimFields.toSeq, noDictionaryDims)
   }
