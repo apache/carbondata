@@ -86,8 +86,13 @@ import org.pentaho.di.core.exception.KettleException;
 public final class CarbonUtil {
 
   public static final String HDFS_PREFIX = "hdfs://";
+
   public static final String VIEWFS_PREFIX = "viewfs://";
+
   public static final String ALLUXIO_PREFIX = "alluxio://";
+
+  public static final String LOCAL_PREFIX = "file://";
+
   private static final String FS_DEFAULT_FS = "fs.defaultFS";
 
   /**
@@ -157,6 +162,29 @@ public final class CarbonUtil {
     int firstFolderIndex = str.lastIndexOf("/");
     String folderName = str.substring(firstFolderIndex);
     return folderName;
+  }
+
+  /**
+   * remove prefix 'file://' for local path
+   * @param path
+   * @return
+   */
+  public static String removePrefixForLocal(String path) {
+    String fixedPath = path;
+    if (path.startsWith(LOCAL_PREFIX)) {
+      fixedPath = path.substring(LOCAL_PREFIX.length());
+    }
+    return fixedPath;
+  }
+
+  /**
+   * add prefix 'file://' for local path
+   * @param path
+   * @return
+   */
+  public static String addPrefixForLocal(String path) {
+    String fixedPath = LOCAL_PREFIX + path;
+    return fixedPath;
   }
 
   /**

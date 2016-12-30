@@ -332,10 +332,10 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
   }
 
   protected lazy val loadDataNew: Parser[LogicalPlan] =
-    LOAD ~> DATA ~> opt(LOCAL) ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
+    (LOAD ~> DATA ~> opt(LOCAL) <~ INPATH) ~ stringLit ~ opt(OVERWRITE) ~
     (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
     (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
-      case filePath ~ isOverwrite ~ table ~ optionsList =>
+      case isLocal ~ filePath ~ isOverwrite ~ table ~ optionsList =>
         val (databaseNameOp, tableName) = table match {
           case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
         }
@@ -344,7 +344,7 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
         }
         val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
         LoadTable(databaseNameOp, tableName, filePath, Seq(), optionsMap,
-          isOverwrite.isDefined)
+          isOverwrite.isDefined, isLocal.isDefined)
     }
 
   protected lazy val describeTable: Parser[LogicalPlan] =
