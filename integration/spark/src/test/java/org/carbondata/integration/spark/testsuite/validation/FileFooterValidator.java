@@ -91,7 +91,7 @@ public class FileFooterValidator {
   }
 
   @AfterClass public static void tearDownAfterClass() {
-    CarbonHiveContext.sql("drop CUBE validatefooter");
+    CarbonHiveContext.sql("DROP TABLE validatefooter");
   }
 
   @Test public void testFileFooterExist() {
