@@ -24,7 +24,7 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColu
 import org.apache.carbondata.hadoop.readsupport.impl.AbstractDictionaryDecodedReadSupport;
 
 import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.catalyst.expressions.GenericMutableRow;
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 
 public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSupport<InternalRow> {
 
@@ -47,6 +47,6 @@ public class SparkRowReadSupportImpl extends AbstractDictionaryDecodedReadSuppor
         }
       }
     }
-    return new GenericMutableRow(data);
+    return new GenericInternalRow(data);
   }
 }
