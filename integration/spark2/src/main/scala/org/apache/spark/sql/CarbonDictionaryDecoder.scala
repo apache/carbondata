@@ -22,6 +22,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.errors.attachTree
 import org.apache.spark.sql.catalyst.expressions._
+import org.apache.spark.sql.catalyst.plans.physical.Partitioning
 import org.apache.spark.sql.execution.{SparkPlan, UnaryExecNode}
 import org.apache.spark.sql.hive.{CarbonMetastoreTypes, CarbonRelation}
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
@@ -73,6 +74,10 @@ case class CarbonDictionaryDecoder(
     }
   }
 
+
+  override def outputPartitioning: Partitioning = {
+    child.outputPartitioning
+  }
 
   def canBeDecoded(attr: Attribute): Boolean = {
     profile match {
@@ -336,7 +341,7 @@ class CarbonDecoderRDD(
               getDictionaryColumnIds(index)._3)
           }
         }
-        new GenericMutableRow(data)
+        new GenericInternalRow(data)
       }
     }
   }

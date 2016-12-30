@@ -261,14 +261,14 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         relation.relation,
         getPartitioning(table.carbonTable, updateRequestedColumns),
         metadata,
-        relation.metastoreTableIdentifier)
+        relation.catalogTable.map(_.identifier))
     } else {
       RowDataSourceScanExec(output,
         scanBuilder(updateRequestedColumns, candidatePredicates, pushedFilters, needDecoder),
         relation.relation,
         getPartitioning(table.carbonTable, updateRequestedColumns),
         metadata,
-        relation.metastoreTableIdentifier)
+        relation.catalogTable.map(_.identifier))
     }
   }
 

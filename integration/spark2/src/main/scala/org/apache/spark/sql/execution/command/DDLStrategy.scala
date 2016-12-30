@@ -35,7 +35,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if CarbonEnv.get.carbonMetastore.tableExists(identifier)(sparkSession) =>
         ExecutedCommandExec(LoadTable(identifier.database, identifier.table, path, Seq(),
           Map(), isOverwrite)) :: Nil
-      case DropTableCommand(identifier, ifNotExists, isView)
+      case DropTableCommand(identifier, ifNotExists, isView, _)
         if CarbonEnv.get.carbonMetastore
           .isTablePathExists(identifier)(sparkSession) =>
         ExecutedCommandExec(
