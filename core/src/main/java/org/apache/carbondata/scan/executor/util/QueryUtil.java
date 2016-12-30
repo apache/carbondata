@@ -955,9 +955,10 @@ public class QueryUtil {
         filterMeasure.add((CarbonMeasure) ((ColumnExpression) expression).getCarbonColumn());
       }
       return;
-    }
-    for (Expression child : expression.getChildren()) {
-      addColumnDimensions(child, filterDimensions, filterMeasure);
+    } else if (null != expression) {
+      for (Expression child : expression.getChildren()) {
+        addColumnDimensions(child, filterDimensions, filterMeasure);
+      }
     }
   }
 
