@@ -174,8 +174,11 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           if (columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
             try {
               filterInfo.setFilterList(getDirectSurrogateValues(columnExpression));
-            } catch (FilterUnsupportedException e) {
-              FilterUtil.logFilterError(e, false);
+            }
+            catch (FilterUnsupportedException e)
+            {
+              FilterUtil.logFilterError(e,false);
+              throw e;
             }
           } else {
             filterInfo.setFilterListForNoDictionaryCols(getNoDictionaryRangeValues());
@@ -197,8 +200,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
     }
   }
 
-  private List<Integer> getDirectSurrogateValues(ColumnExpression columnExpression)
-      throws FilterUnsupportedException {
+  private List<Integer> getDirectSurrogateValues(ColumnExpression columnExpression) throws FilterUnsupportedException {
     List<ExpressionResult> listOfExpressionResults = new ArrayList<ExpressionResult>(20);
     DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
         .getDirectDictionaryGenerator(columnExpression.getDimension().getDataType());
@@ -217,7 +219,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
                 CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
       }
     } catch (FilterIllegalMemberException e) {
-      throw new FilterUnsupportedException(e);
+        throw new FilterUnsupportedException(e);
     }
     return filterValuesList;
   }
