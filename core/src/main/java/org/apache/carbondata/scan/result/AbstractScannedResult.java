@@ -29,6 +29,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.executor.infos.KeyStructureInfo;
@@ -97,6 +98,13 @@ public abstract class AbstractScannedResult {
   private Map<Integer, GenericQueryType> complexParentIndexToQueryMap;
 
   private int totalDimensionsSize;
+
+  /**
+   * blockedId which will be blockId + blocklet number in the block
+   */
+  private String blockletId;
+
+  private long rowId;
 
   /**
    * parent block indexes
@@ -299,6 +307,35 @@ public abstract class AbstractScannedResult {
     }
     return noDictionaryColumnsKeys;
   }
+
+  /**
+   * @return blockletId
+   */
+  public String getBlockletId() {
+    return blockletId;
+  }
+
+  /**
+   * @param blockletId
+   */
+  public void setBlockletId(String blockletId) {
+    this.blockletId = CarbonTablePath.getShortBlockId(blockletId);
+  }
+
+  /**
+   * @return blockletId
+   */
+  public long getRowId() {
+    return rowId;
+  }
+
+  /**
+   * @param blockletId
+   */
+  public void setRowId(long rowId) {
+    this.rowId = rowId;
+  }
+
 
   /**
    * Below method will be used to get the complex type keys array based

@@ -441,3 +441,74 @@ public class CarbonTablePath extends Path {
     return carbonDataFileName;
   }
 }
+  /**
+   * This method will remove strings in path and return short block id
+   *
+   * @param blockId
+   * @return shortBlockId
+   */
+  public static String getShortBlockId(String blockId) {
+    return blockId.replace(PARTITION_PREFIX, "")
+            .replace(SEGMENT_PREFIX, "")
+            .replace(DATA_PART_PREFIX, "")
+            .replace(CARBON_DATA_EXT, "");
+  }
+
+  /**
+   * This method will append strings in path and return block id
+   *
+   * @param shortBlockId
+   * @return blockId
+   */
+  public static String getBlockId(String shortBlockId) {
+    String[] splitRecords = shortBlockId.split(CarbonCommonConstants.FILE_SEPARATOR);
+    StringBuffer sb = new StringBuffer();
+    for (int i = 0; i < splitRecords.length; i++) {
+      if (i == 0) {
+        sb.append(PARTITION_PREFIX);
+        sb.append(splitRecords[i]);
+      } else if (i == 1) {
+        sb.append(CarbonCommonConstants.FILE_SEPARATOR);
+        sb.append(SEGMENT_PREFIX);
+        sb.append(splitRecords[i]);
+      } else if (i == 2) {
+        sb.append(CarbonCommonConstants.FILE_SEPARATOR);
+        sb.append(DATA_PART_PREFIX);
+        sb.append(splitRecords[i]);
+      } else if (i == 3) {
+        sb.append(CarbonCommonConstants.FILE_SEPARATOR);
+        sb.append(splitRecords[i]);
+        sb.append(CARBON_DATA_EXT);
+      } else {
+        sb.append(CarbonCommonConstants.FILE_SEPARATOR);
+        sb.append(splitRecords[i]);
+      }
+    }
+    return sb.toString();
+  }
+
+
+  /**
+   * adds data part prefix to given value
+   * @return partition prefix
+   */
+  public static String addDataPartPrefix(String value) {
+    return DATA_PART_PREFIX + value;
+  }
+
+  /**
+   * adds part prefix to given value
+   * @return partition prefix
+   */
+  public static String addPartPrefix(String value) {
+    return PARTITION_PREFIX + value;
+  }
+
+  /**
+   * adds part prefix to given value
+   * @return partition prefix
+   */
+  public static String addSegmentPrefix(String value) {
+    return SEGMENT_PREFIX + value;
+  }
+}

@@ -831,6 +831,15 @@ public final class CarbonUtil {
     return dictionaryEncodingArray;
   }
 
+  public static boolean[] getImplicitColumnArray(QueryDimension[] queryDimensions) {
+    boolean[] implicitColumnArray = new boolean[queryDimensions.length];
+    for (int i = 0; i < queryDimensions.length; i++) {
+      implicitColumnArray[i] = queryDimensions[i]
+          .getDimension().hasEncoding(Encoding.IMPLICIT);
+    }
+    return implicitColumnArray;
+  }
+
   public static boolean[] getComplexDataTypeArray(QueryDimension[] queryDimensions) {
     boolean[] dictionaryEncodingArray = new boolean[queryDimensions.length];
     for (int i = 0; i < queryDimensions.length; i++) {

@@ -556,10 +556,21 @@ public final class CarbonCommonConstants {
    */
   public static final String SCHEMAS_MODIFIED_TIME_FILE = "modifiedTime.mdt";
   public static final String DEFAULT_INVISIBLE_DUMMY_MEASURE = "default_dummy_measure";
+  public static final String CARBON_IMPLICIT_COLUMN_POSITIONID = "positionId";
+  public static final String CARBON_IMPLICIT_COLUMN_TUPLEID = "tupleId";
   /**
    * max driver lru cache size upto which lru cache will be loaded in memory
    */
   public static final String CARBON_MAX_DRIVER_LRU_CACHE_SIZE = "carbon.max.driver.lru.cache.size";
+  public static final String POSITION_REFERENCE = "positionReference";
+  /**
+   * implicit column which will be added to each carbon table
+   */
+  public static final String POSITION_ID = "positionId";
+  /**
+   * max driver lru cache size upto which lru cache will be loaded in memory
+   */
+  public static final String CARBON_MAX_LEVEL_CACHE_SIZE = "carbon.max.level.cache.size";
   /**
    * max executor lru cache size upto which lru cache will be loaded in memory
    */

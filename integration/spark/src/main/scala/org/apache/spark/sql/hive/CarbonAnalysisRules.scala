@@ -78,7 +78,7 @@ object CarbonIUDAnalysisRule extends Rule[LogicalPlan] {
       val tupleId = UnresolvedAlias(Alias(UnresolvedFunction("getTupleId",
         Seq.empty, isDistinct = false), "tupleId")())
       val projList = Seq(
-        UnresolvedAlias(UnresolvedStar(table.alias))/*, tupleId*/)
+        UnresolvedAlias(UnresolvedStar(table.alias)), tupleId)
       // include tuple id and rest of the required columns in subqury
       Subquery(table.alias.getOrElse(""), Project(projList, relation))
     }
