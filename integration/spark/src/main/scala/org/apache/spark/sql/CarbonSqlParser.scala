@@ -17,9 +17,13 @@
 
 package org.apache.spark.sql
 
+import java.util.regex.{Matcher, Pattern}
+
 import scala.collection.JavaConverters._
+import scala.collection.mutable.LinkedHashSet
 import scala.collection.mutable.Map
 import scala.language.implicitConversions
+import scala.util.matching.Regex
 
 import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
@@ -27,11 +31,16 @@ import org.apache.spark.sql.catalyst._
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.analysis._
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.catalyst.trees.CurrentOrigin
 import org.apache.spark.sql.execution.ExplainCommand
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.DescribeCommand
 import org.apache.spark.sql.hive.HiveQlWrapper
 
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.carbon.metadata.datatype.DataType
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.{CarbonProperties, DataTypeUtil}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -59,8 +68,8 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
   override protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
 
   protected lazy val startCommand: Parser[LogicalPlan] =
-    createDatabase | dropDatabase | loadManagement | describeTable |
-    showLoads | alterTable | createTable
+    createDatabase | dropDatabase | loadManagement | describeTable | showLoads | alterTable |
+    updateTable | deleteRecords |  createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew

@@ -19,6 +19,8 @@ package org.apache.spark.sql.optimizer
 
 import java.util
 
+import org.apache.spark.sql.execution.command.ProjectForUpdateCommand
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
@@ -72,8 +74,9 @@ object CarbonOptimizer {
 class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
   extends Rule[LogicalPlan] with PredicateHelper {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-  def apply(plan: LogicalPlan): LogicalPlan = {
-    if (relations.nonEmpty && !isOptimized(plan)) {
+  def apply(logicalPlan: LogicalPlan): LogicalPlan = {
+    if (relations.nonEmpty && !isOptimized(logicalPlan)) {
+      val plan = processPlan(logicalPlan)
       LOGGER.info("Starting to optimize plan")
       val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("")
       val queryStatistic = new QueryStatistic()
@@ -85,7 +88,26 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
       result
     } else {
       LOGGER.info("Skip CarbonOptimizer")
-      plan
+      logicalPlan
+    }
+  }
+
+  private def processPlan(plan: LogicalPlan): LogicalPlan = {
+    plan transform {
+      case ProjectForUpdate(table, cols, Seq(updatePlan)) =>
+        var isTransformed = false
+        val newPlan = updatePlan transform {
+          case Project(pList, child) if (!isTransformed) =>
+            val (dest: Seq[NamedExpression], source: Seq[NamedExpression]) = pList
+              .splitAt(pList.size - cols.size)
+            val diff = cols.diff(dest.map(_.name))
+            if (diff.size > 0) {
+              sys.error(s"Unknown column(s) ${diff.mkString(",")} in table ${table.tableName}")
+            }
+            isTransformed = true
+            Project(dest.filter(a => !cols.contains(a.name)) ++ source, child)
+        }
+        ProjectForUpdateCommand(newPlan, table.tableIdentifier)
     }
   }
 
