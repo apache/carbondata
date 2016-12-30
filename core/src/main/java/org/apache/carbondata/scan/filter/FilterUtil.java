@@ -951,12 +951,12 @@ public final class FilterUtil {
         new DictionaryColumnUniqueIdentifier(tableIdentifier.getCarbonTableIdentifier(),
             carbonDimension.getColumnIdentifier(), carbonDimension.getDataType());
     CacheProvider cacheProvider = CacheProvider.getInstance();
-    Cache forwardDictionaryCache =
+    Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache =
         cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, tableIdentifier.getStorePath());
     // get the forward dictionary object
-    Dictionary forwardDictionary = null;
+    Dictionary forwardDictionary;
     try {
-      forwardDictionary = (Dictionary) forwardDictionaryCache.get(dictionaryColumnUniqueIdentifier);
+      forwardDictionary = forwardDictionaryCache.get(dictionaryColumnUniqueIdentifier);
     } catch (CarbonUtilException e) {
       throw new QueryExecutionException(e);
     }

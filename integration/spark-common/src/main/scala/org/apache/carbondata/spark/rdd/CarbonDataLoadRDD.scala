@@ -231,8 +231,8 @@ class DataFileLoaderRDD[K, V](
       var partitionID = "0"
       val loadMetadataDetails = new LoadMetadataDetails()
       var model: CarbonLoadModel = _
-      var uniqueLoadStatusId = carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE +
-                               theSplit.index
+      val uniqueLoadStatusId = carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE +
+          theSplit.index
       try {
         loadMetadataDetails.setPartitionCount(partitionID)
         carbonLoadModel.setSegmentId(String.valueOf(loadCount))
@@ -500,10 +500,10 @@ class DataFrameLoaderRDD[K, V](
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val resultIter = new Iterator[(K, V)] {
-      var partitionID = "0"
+      val partitionID = "0"
       val loadMetadataDetails = new LoadMetadataDetails()
-      var uniqueLoadStatusId = carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE +
-                               theSplit.index
+      val uniqueLoadStatusId = carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE +
+          theSplit.index
       try {
         loadMetadataDetails.setPartitionCount(partitionID)
         carbonLoadModel.setPartitionId(partitionID)
