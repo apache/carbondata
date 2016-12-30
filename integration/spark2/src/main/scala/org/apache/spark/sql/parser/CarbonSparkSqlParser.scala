@@ -18,15 +18,13 @@ package org.apache.spark.sql.parser
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.catalyst.catalog.CatalogColumn
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, ParseException, SqlBaseParser}
 import org.apache.spark.sql.catalyst.parser.ParserUtils._
-import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{ColTypeListContext, CreateTableContext, TablePropertyListContext}
+import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{CreateTableContext, TablePropertyListContext}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
 import org.apache.spark.sql.execution.command.{BucketFields, CreateTable, Field, TableModel}
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
-import org.apache.spark.sql.types.DataType
 
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -79,8 +77,8 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       if (ctx.bucketSpec != null) {
         operationNotAllowed("CREATE TABLE ... CLUSTERED BY", ctx)
       }
-      val partitionCols = Option(ctx.partitionColumns).toSeq.flatMap(visitCatalogColumns)
-      val cols = Option(ctx.columns).toSeq.flatMap(visitCatalogColumns)
+      val partitionCols = Option(ctx.partitionColumns).toSeq.flatMap(visitColTypeList)
+      val cols = Option(ctx.columns).toSeq.flatMap(visitColTypeList)
       val properties = Option(ctx.tablePropertyList).map(visitPropertyKeyValues)
         .getOrElse(Map.empty)
 
@@ -106,7 +104,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       val schema = cols ++ partitionCols
 
       val fields = schema.map { col =>
-        val x = col.name + ' ' + col.dataType
+        val x = col.name + ' ' + col.dataType.catalogString
         val f: Field = parser.anyFieldDef(new parser.lexical.Scanner(x))
         match {
           case parser.Success(field, _) => field.asInstanceOf[Field]
@@ -117,7 +115,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         // so checking the start of the string and taking the precision and scale.
         // resetting the data type with decimal
         if (f.dataType.getOrElse("").startsWith("decimal")) {
-          val (precision, scale) = parser.getScaleAndPrecision(col.dataType)
+          val (precision, scale) = parser.getScaleAndPrecision(col.dataType.catalogString)
           f.precision = precision
           f.scale = scale
           f.dataType = Some("decimal")
@@ -169,19 +167,4 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
     props
   }
 
-  private def visitCatalogColumns(ctx: ColTypeListContext): Seq[CatalogColumn] = {
-    withOrigin(ctx) {
-      ctx.colType.asScala.map { col =>
-        CatalogColumn(
-          col.identifier.getText.toLowerCase,
-          // Note: for types like "STRUCT<myFirstName: STRING, myLastName: STRING>" we can't
-          // just convert the whole type string to lower case, otherwise the struct field names
-          // will no longer be case sensitive. Instead, we rely on our parser to get the proper
-          // case before passing it to Hive.
-          typedVisit[DataType](col.dataType).catalogString,
-          nullable = true,
-          Option(col.STRING).map(string))
-      }
-    }
-  }
 }

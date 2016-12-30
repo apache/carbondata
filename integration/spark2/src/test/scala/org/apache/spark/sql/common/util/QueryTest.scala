@@ -41,18 +41,11 @@ class QueryTest extends PlanTest {
 
 
   val rootPath = new File(this.getClass.getResource("/").getPath + "../../../..").getCanonicalPath
-  val storeLocation = s"$rootPath/examples/spark2/target/store"
-  val warehouse = s"$rootPath/examples/spark2/target/warehouse"
-  val metastoredb = s"$rootPath/examples/spark2/target/metastore_db"
+  val storeLocation = s"$rootPath/integration/spark2/target/store"
+  val warehouse = s"$rootPath/integration/spark2/target/warehouse"
+  val metastoredb = s"$rootPath/integration/spark2/target/metastore_db"
 
   val spark = {
-    // clean data folder
-    if (true) {
-      val clean = (path: String) => FileUtils.deleteDirectory(new File(path))
-      clean(storeLocation)
-      clean(warehouse)
-      clean(metastoredb)
-    }
 
     CarbonProperties.getInstance()
       .addProperty("carbon.kettle.home", s"$rootPath/processing/carbonplugins")

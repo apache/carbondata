@@ -23,7 +23,7 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColu
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 import org.apache.spark.sql.catalyst.InternalRow;
-import org.apache.spark.sql.catalyst.expressions.GenericMutableRow;
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 
 public class RawDataReadSupport implements CarbonReadSupport<InternalRow> {
 
@@ -40,7 +40,7 @@ public class RawDataReadSupport implements CarbonReadSupport<InternalRow> {
    */
   @Override
   public InternalRow readRow(Object[] data) {
-    return new GenericMutableRow(data);
+    return new GenericInternalRow(data);
   }
 
   /**
