@@ -87,8 +87,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
     } else if (null != dimColEvaluatorInfoList.get(0).getFilterValues() && dimColEvaluatorInfoList
         .get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
       return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(),
-          this.dimColEvaluatorInfoList.get(0).getDimension(),
-          segmentProperties);
+          this.dimColEvaluatorInfoList.get(0).getDimension(), segmentProperties);
     }
     return null;
 
@@ -99,8 +98,8 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
    *
    * @return start IndexKey
    */
-  public void getStartKey(long[] startKey,
-      SortedMap<Integer, byte[]> noDictStartKeys, List<long[]> startKeyList) {
+  public void getStartKey(long[] startKey, SortedMap<Integer, byte[]> noDictStartKeys,
+      List<long[]> startKeyList) {
     if (null == dimColEvaluatorInfoList.get(0).getStarIndexKey()) {
       try {
         FilterUtil.getStartKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
@@ -125,8 +124,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
       try {
         FilterUtil.getEndKey(dimColEvaluatorInfoList.get(0).getDimensionResolvedFilterInstance(),
             absoluteTableIdentifier, endKeys, segmentProperties, endKeyList);
-        FilterUtil
-            .getEndKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), noDicEndKeys);
+        FilterUtil.getEndKeyForNoDictionaryDimension(dimColEvaluatorInfoList.get(0), noDicEndKeys);
       } catch (QueryExecutionException e) {
         // TODO Auto-generated catch block
         LOGGER.error("Can not get the end key during block prune");
@@ -189,10 +187,8 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           if (columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
             try {
               filterInfo.setFilterList(getDirectSurrogateValues(columnExpression));
-            }
-            catch (FilterUnsupportedException e)
-            {
-              FilterUtil.logFilterError(e,false);
+            } catch (FilterUnsupportedException e) {
+              FilterUtil.logFilterError(e, false);
             }
           } else {
             filterInfo.setFilterListForNoDictionaryCols(getNoDictionaryRangeValues());
@@ -217,7 +213,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
   }
 
   private List<Integer> getDirectSurrogateValues(ColumnExpression columnExpression)
-          throws FilterUnsupportedException {
+      throws FilterUnsupportedException {
     List<ExpressionResult> listOfExpressionResults = new ArrayList<ExpressionResult>(20);
     DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
         .getDirectDictionaryGenerator(columnExpression.getDimension().getDataType());
@@ -235,9 +231,8 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
             .generateDirectSurrogateKey(result.getString(),
                 CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
       }
-    }
-    catch (FilterIllegalMemberException e) {
-        throw new FilterUnsupportedException(e);
+    } catch (FilterIllegalMemberException e) {
+      throw new FilterUnsupportedException(e);
     }
     return filterValuesList;
   }
