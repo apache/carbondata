@@ -216,7 +216,8 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
     }
   }
 
-  private List<Integer> getDirectSurrogateValues(ColumnExpression columnExpression) throws FilterUnsupportedException {
+  private List<Integer> getDirectSurrogateValues(ColumnExpression columnExpression)
+          throws FilterUnsupportedException {
     List<ExpressionResult> listOfExpressionResults = new ArrayList<ExpressionResult>(20);
     DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
         .getDirectDictionaryGenerator(columnExpression.getDimension().getDataType());
@@ -234,7 +235,8 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
             .generateDirectSurrogateKey(result.getString(),
                 CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
       }
-    } catch (FilterIllegalMemberException e) {
+    }
+    catch (FilterIllegalMemberException e) {
         throw new FilterUnsupportedException(e);
     }
     return filterValuesList;

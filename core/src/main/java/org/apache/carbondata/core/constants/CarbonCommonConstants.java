@@ -809,8 +809,8 @@ public final class CarbonCommonConstants {
   /**
    * Invalid filter expression log string
    */
-  public static final String FILTER_INVALID_FILTER_EXPRESSION = " Invalid filter expression are present "
-          + "while filter evaluation. ";
+  public static final String FILTER_INVALID_FILTER_EXPRESSION = " Invalid filter expression "
+          + "are present while filter evaluation. ";
 
   /**
    * Number of unmerged segments to be merged.
