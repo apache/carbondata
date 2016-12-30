@@ -16,17 +16,28 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.core.carbon.metadata.encoder;
+
+package org.apache.carbondata.scan.filter.executer;
+
+import java.util.BitSet;
+
+import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 
 /**
- * Encoding type supported in carbon
+ * Implementation of this interface will involve block
+ * and blocklet pruning based on block/blocklet id where
+ * the filter values are present.
  */
-public enum Encoding {
-  DICTIONARY,
-  DELTA,
-  RLE,
-  INVERTED_INDEX,
-  BIT_PACKED,
-  DIRECT_DICTIONARY,
-  IMPLICIT;
+public interface ImplicitColumnFilterExecutor extends FilterExecuter {
+
+  /**
+   * This method will validate the block or blocklet id with the implicit
+   * column filter value list and decide whether the required block or
+   * blocklet has to be scanned for the data or not
+   *
+   * @param dataRefNode
+   * @param uniqueBlockPath
+   * @return
+   */
+  BitSet isFilterValuesPresentInBlockOrBlocklet(DataRefNode dataRefNode, String uniqueBlockPath);
 }

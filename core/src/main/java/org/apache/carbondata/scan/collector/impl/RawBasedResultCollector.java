@@ -18,9 +18,11 @@
  */
 package org.apache.carbondata.scan.collector.impl;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.scan.model.QueryMeasure;
 import org.apache.carbondata.scan.result.AbstractScannedResult;
@@ -51,6 +53,8 @@ public class RawBasedResultCollector extends AbstractScannedResultCollector {
       wrapper.setDictionaryKey(scannedResult.getDictionaryKeyArray());
       wrapper.setNoDictionaryKeys(scannedResult.getNoDictionaryKeyArray());
       wrapper.setComplexTypesKeys(scannedResult.getComplexTypeKeyArray());
+      wrapper.setImplicitColumnByteArray(scannedResult.getBlockletId()
+          .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       row[0] = wrapper;
       fillMeasureData(row, 1, scannedResult);
       listBasedResult.add(row);

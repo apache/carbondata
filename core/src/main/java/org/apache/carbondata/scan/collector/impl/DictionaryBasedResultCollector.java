@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
+import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -81,6 +83,7 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     boolean[] dictionaryEncodingArray = CarbonUtil.getDictionaryEncodingArray(queryDimensions);
     boolean[] directDictionaryEncodingArray =
         CarbonUtil.getDirectDictionaryEncodingArray(queryDimensions);
+    boolean[] implictColumnArray = CarbonUtil.getImplicitColumnArray(queryDimensions);
     boolean[] complexDataTypeArray = CarbonUtil.getComplexDataTypeArray(queryDimensions);
     int dimSize = queryDimensions.length;
     boolean isDimensionsExist = dimSize > 0;
@@ -110,9 +113,21 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
         complexTypeColumnIndex = 0;
         for (int i = 0; i < dimSize; i++) {
           if (!dictionaryEncodingArray[i]) {
-            row[order[i]] = DataTypeUtil
-                .getDataBasedOnDataType(noDictionaryKeys[noDictionaryColumnIndex++],
-                    queryDimensions[i].getDimension().getDataType());
+            if (implictColumnArray[i]) {
+              if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
+                  .equals(queryDimensions[i].getDimension().getColName())) {
+                row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
+                    scannedResult.getBlockletId() + CarbonCommonConstants.FILE_SEPARATOR
+                        + scannedResult.getCurrenrRowId(), DataType.STRING);
+              } else {
+                row[order[i]] = DataTypeUtil
+                    .getDataBasedOnDataType(scannedResult.getBlockletId(), DataType.STRING);
+              }
+            } else {
+              row[order[i]] = DataTypeUtil
+                  .getDataBasedOnDataType(noDictionaryKeys[noDictionaryColumnIndex++],
+                      queryDimensions[i].getDimension().getDataType());
+            }
           } else if (directDictionaryEncodingArray[i]) {
             DirectDictionaryGenerator directDictionaryGenerator =
                 DirectDictionaryKeyGeneratorFactory

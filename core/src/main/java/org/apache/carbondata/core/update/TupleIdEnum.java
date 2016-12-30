@@ -16,17 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.core.carbon.metadata.encoder;
+package com.huawei.carbondata.core.update;
 
 /**
- * Encoding type supported in carbon
+ * Enum class for tupleID.
  */
-public enum Encoding {
-  DICTIONARY,
-  DELTA,
-  RLE,
-  INVERTED_INDEX,
-  BIT_PACKED,
-  DIRECT_DICTIONARY,
-  IMPLICIT;
+public enum TupleIdEnum {
+  PART_ID(0),
+  SEGMENT_ID(1),
+  BLOCK_ID(2),
+  BLOCKLET_ID(3),
+  OFFSET(4);
+
+  private int index;
+
+  TupleIdEnum(int index) {
+    this.index = index;
+  }
+
+  public int getTupleIdIndex(){
+    return this.index;
+  }
+
 }

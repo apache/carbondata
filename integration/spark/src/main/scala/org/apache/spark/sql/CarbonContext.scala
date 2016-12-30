@@ -56,6 +56,7 @@ class CarbonContext(
 
   CarbonContext.addInstance(sc, this)
   CodeGenerateFactory.init(sc.version)
+  udf.register("getTupleId", () => "")
   CarbonEnv.init(this)
 
   var lastSchemaUpdatedTime = System.currentTimeMillis()

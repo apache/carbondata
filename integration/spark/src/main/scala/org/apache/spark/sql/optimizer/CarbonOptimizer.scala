@@ -19,6 +19,7 @@ package org.apache.spark.sql.optimizer
 
 import java.util
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.spark.sql.execution.command.ProjectForUpdateCommand
 
 import scala.collection.JavaConverters._
@@ -77,10 +78,11 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
   def apply(logicalPlan: LogicalPlan): LogicalPlan = {
     if (relations.nonEmpty && !isOptimized(logicalPlan)) {
       val plan = processPlan(logicalPlan)
+      val udfTransformedPlan = pushDownUDFToJoinLeftRelation(plan)
       LOGGER.info("Starting to optimize plan")
       val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("")
       val queryStatistic = new QueryStatistic()
-      val result = transformCarbonPlan(plan, relations)
+      val result = transformCarbonPlan(udfTransformedPlan, relations)
       queryStatistic.addStatistics("Time taken for Carbon Optimizer to optimize: ",
         System.currentTimeMillis)
       recorder.recordStatistics(queryStatistic)
@@ -110,7 +112,34 @@ class ResolveCarbonFunctions(relations: Seq[CarbonDecoderRelation])
         ProjectForUpdateCommand(newPlan, table.tableIdentifier)
     }
   }
-
+  private def pushDownUDFToJoinLeftRelation(plan: LogicalPlan): LogicalPlan = {
+    val output = plan match {
+      case proj@Project(cols, Join(
+      left, right, jointype: org.apache.spark.sql.catalyst.plans.JoinType, condition)) =>
+        var projectionToBeAdded: Seq[org.apache.spark.sql.catalyst.expressions.Alias] = Seq.empty
+        val newCols = cols.map { col =>
+          col match {
+            case a@Alias(s: ScalaUDF, name)
+              if (name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
+                name.equalsIgnoreCase(
+                  CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)) =>
+              projectionToBeAdded :+= a
+              AttributeReference(name, StringType, true)().withExprId(a.exprId)
+            case other => other
+          }
+        }
+        val newLeft = left match {
+          case Project(columns, logicalPlan) =>
+            Project(columns ++ projectionToBeAdded, logicalPlan)
+          case filter: Filter =>
+            Project(filter.output ++ projectionToBeAdded, filter)
+          case other => other
+        }
+        Project(newCols, Join(newLeft, right, jointype, condition))
+      case other => other
+    }
+    output
+  }
   def isOptimized(plan: LogicalPlan): Boolean = {
     plan find {
       case cd: CarbonDictionaryCatalystDecoder => true

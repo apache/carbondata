@@ -21,6 +21,7 @@ package org.apache.carbondata.scan.executor.util;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -48,10 +49,14 @@ public class RestructureUtil {
     List<QueryDimension> presentDimension =
         new ArrayList<QueryDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     // selecting only those dimension which is present in the query
-    for (QueryDimension queryDimimension : queryDimensions) {
-      for (CarbonDimension tableDimension : tableBlockDimensions) {
-        if (tableDimension.equals(queryDimimension.getDimension())) {
-          presentDimension.add(queryDimimension);
+    for (QueryDimension queryDimension : queryDimensions) {
+      if (queryDimension.getDimension().hasEncoding(Encoding.IMPLICIT)) {
+        presentDimension.add(queryDimension);
+      } else {
+        for (CarbonDimension tableDimension : tableBlockDimensions) {
+          if (tableDimension.equals(queryDimension.getDimension())) {
+            presentDimension.add(queryDimension);
+          }
         }
       }
     }
