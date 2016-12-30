@@ -25,7 +25,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.LoadMetadataDetails
 import org.apache.carbondata.spark.DeletedLoadResult
-import org.apache.carbondata.spark.load.DeletedLoadMetadata
 import org.apache.carbondata.spark.util.CarbonQueryUtil
 
 class CarbonDeleteLoadByDateRDD[K, V](
@@ -53,7 +52,6 @@ class CarbonDeleteLoadByDateRDD[K, V](
 
   override def compute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     new Iterator[(K, V)] {
-      val deletedMetaData = new DeletedLoadMetadata()
       val split = theSplit.asInstanceOf[CarbonLoadPartition]
       logInfo("Input split: " + split.serializableHadoopSplit.value)
 

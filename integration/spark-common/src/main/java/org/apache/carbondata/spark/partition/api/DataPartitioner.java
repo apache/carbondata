@@ -21,15 +21,7 @@ package org.apache.carbondata.spark.partition.api;
 
 import java.util.List;
 
-import org.apache.carbondata.scan.model.CarbonQueryPlan;
-
-import org.apache.spark.sql.execution.command.Partitioner;
-
 public interface DataPartitioner {
-  /**
-   * Initialise the partitioner based on the given columns
-   */
-  void initialize(String basePath, String[] columns, Partitioner partitioner);
 
   /**
    * All the partitions built by the Partitioner
@@ -37,18 +29,9 @@ public interface DataPartitioner {
   List<Partition> getAllPartitions();
 
   /**
-   * Partition where the tuple should be present. (API used for data loading purpose)
-   */
-  Partition getPartionForTuple(Object[] tuple, long rowCounter);
-
-  /**
    * Identifies the partitions applicable for the given filter (API used for For query)
    */
-  List<Partition> getPartitions(CarbonQueryPlan queryPlan);
-
-  String[] getPartitionedColumns();
-
-  Partitioner getPartitioner();
+  List<Partition> getPartitions();
 
 }
 

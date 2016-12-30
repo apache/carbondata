@@ -174,7 +174,7 @@ case class CarbonDictionaryDecoder(
           dictionaryTaskCleaner.addTaskCompletionListener(context =>
             dicts.foreach { dictionary =>
               if (null != dictionary) {
-                dictionary.clear
+                dictionary.clear()
               }
             }
           )

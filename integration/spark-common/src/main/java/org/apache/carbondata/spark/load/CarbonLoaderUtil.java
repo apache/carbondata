@@ -241,7 +241,7 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  public static void deleteStorePath(String path) {
+  private static void deleteStorePath(String path) {
     try {
       FileType fileType = FileFactory.getFileType(path);
       if (FileFactory.isFileExist(path, fileType)) {
@@ -325,15 +325,13 @@ public final class CarbonLoaderUtil {
    * @param storePath
    * @param carbonTableIdentifier
    * @param segmentId
-   * @param partitionId
    * @return
    */
   public static String getStoreLocation(String storePath,
-      CarbonTableIdentifier carbonTableIdentifier, String segmentId, String partitionId) {
+      CarbonTableIdentifier carbonTableIdentifier, String segmentId) {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier);
-    String carbonDataFilePath = carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
-    return carbonDataFilePath;
+    return carbonTablePath.getCarbonDataDirectoryPath("0", segmentId);
   }
 
   /**
@@ -385,9 +383,7 @@ public final class CarbonLoaderUtil {
             new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
         if (null != listOfLoadFolderDetailsArray) {
-          for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
-            listOfLoadFolderDetails.add(loadMetadata);
-          }
+          Collections.addAll(listOfLoadFolderDetails, listOfLoadFolderDetailsArray);
         }
         listOfLoadFolderDetails.add(loadMetadataDetails);
 
@@ -461,7 +457,7 @@ public final class CarbonLoaderUtil {
     return carbonTable.getMetaDataFilepath();
   }
 
-  public static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier,
+  private static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier,
       String carbonStorePath) throws CarbonUtilException {
     Cache dictCache =
         CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath);

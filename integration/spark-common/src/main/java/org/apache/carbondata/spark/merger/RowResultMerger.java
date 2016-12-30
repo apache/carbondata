@@ -195,7 +195,7 @@ public class RowResultMerger {
    *
    * @throws SliceMergerException
    */
-  protected void addRow(Object[] carbonTuple) throws SliceMergerException {
+  private void addRow(Object[] carbonTuple) throws SliceMergerException {
     Object[] rowInWritableFormat;
 
     rowInWritableFormat = tupleConvertor.getObjectArray(carbonTuple);
@@ -270,12 +270,11 @@ public class RowResultMerger {
    */
   private String checkAndCreateCarbonStoreLocation(String factStoreLocation, String databaseName,
       String tableName, String partitionId, String segmentId) {
-    String carbonStorePath = factStoreLocation;
     CarbonTable carbonTable = CarbonMetadata.getInstance()
         .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+        CarbonStorePath.getCarbonTablePath(factStoreLocation, carbonTableIdentifier);
     String carbonDataDirectoryPath =
         carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
     CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);

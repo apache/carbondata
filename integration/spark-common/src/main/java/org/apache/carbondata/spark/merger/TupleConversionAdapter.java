@@ -29,11 +29,9 @@ import org.apache.carbondata.scan.wrappers.ByteArrayWrapper;
 /**
  * This class will be used to convert the Result into the format used in data writer.
  */
-public class TupleConversionAdapter {
+class TupleConversionAdapter {
 
   private final SegmentProperties segmentproperties;
-
-  private final List<CarbonMeasure> measureList;
 
   private int noDictionaryPresentIndex;
 
@@ -48,7 +46,6 @@ public class TupleConversionAdapter {
       noDictionaryPresentIndex++;
     }
     this.segmentproperties = segmentProperties;
-    measureList = segmentProperties.getMeasures();
   }
 
   /**

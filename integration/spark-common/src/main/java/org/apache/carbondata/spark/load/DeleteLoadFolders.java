@@ -26,6 +26,7 @@
  * Description   : for physical deletion of load folders.
  * Class Version  : 1.0
  */
+
 package org.apache.carbondata.spark.load;
 
 import java.io.IOException;
@@ -60,11 +61,11 @@ public final class DeleteLoadFolders {
    * returns segment path
    */
   private static String getSegmentPath(String dbName, String tableName, String storeLocation,
-      int partitionId, LoadMetadataDetails oneLoad) {
+      LoadMetadataDetails oneLoad) {
     CarbonTablePath carbon = new CarbonStorePath(storeLocation).getCarbonTablePath(
         new CarbonTableIdentifier(dbName, tableName, ""));
     String segmentId = oneLoad.getLoadName();
-    return carbon.getCarbonDataDirectoryPath("" + partitionId, segmentId);
+    return carbon.getCarbonDataDirectoryPath("" + 0, segmentId);
   }
 
   private static boolean physicalFactAndMeasureMetadataDeletion(String path) {
@@ -158,59 +159,6 @@ public final class DeleteLoadFolders {
     return false;
   }
 
-  private static void factFileRenaming(String loadFolderPath) {
-
-    FileFactory.FileType fileType = FileFactory.getFileType(loadFolderPath);
-    try {
-      if (FileFactory.isFileExist(loadFolderPath, fileType)) {
-        CarbonFile loadFolder = FileFactory.getCarbonFile(loadFolderPath, fileType);
-
-        CarbonFile[] listFiles = loadFolder.listFiles(new CarbonFileFilter() {
-
-          @Override public boolean accept(CarbonFile file) {
-            return (file.getName().endsWith('_' + CarbonCommonConstants.FACT_FILE_UPDATED));
-          }
-        });
-
-        for (CarbonFile file : listFiles) {
-          if (!file.renameTo(file.getName().substring(0,
-              file.getName().length() - CarbonCommonConstants.FACT_FILE_UPDATED.length()))) {
-            LOGGER.warn("could not rename the updated fact file.");
-          }
-        }
-
-      }
-    } catch (IOException e) {
-      LOGGER.error("exception" + e.getMessage());
-    }
-
-  }
-
-  private static void cleanDeletedFactFile(String loadFolderPath) {
-    FileFactory.FileType fileType = FileFactory.getFileType(loadFolderPath);
-    try {
-      if (FileFactory.isFileExist(loadFolderPath, fileType)) {
-        CarbonFile loadFolder = FileFactory.getCarbonFile(loadFolderPath, fileType);
-
-        CarbonFile[] listFiles = loadFolder.listFiles(new CarbonFileFilter() {
-
-          @Override public boolean accept(CarbonFile file) {
-            return (file.getName().endsWith(CarbonCommonConstants.FACT_DELETE_EXTENSION));
-          }
-        });
-
-        for (CarbonFile file : listFiles) {
-          if (!file.delete()) {
-            LOGGER.warn("could not delete the marked fact file.");
-          }
-        }
-
-      }
-    } catch (IOException e) {
-      LOGGER.error("exception" + e.getMessage());
-    }
-  }
-
   public static boolean deleteLoadFoldersFromFileSystem(String dbName, String tableName,
       String storeLocation, boolean isForceDelete, LoadMetadataDetails[] details) {
     List<LoadMetadataDetails> deletedLoads =
@@ -219,7 +167,7 @@ public final class DeleteLoadFolders {
     if (details != null && details.length != 0) {
       for (LoadMetadataDetails oneLoad : details) {
         if (checkIfLoadCanBeDeleted(oneLoad, isForceDelete)) {
-          String path = getSegmentPath(dbName, tableName, storeLocation, 0, oneLoad);
+          String path = getSegmentPath(dbName, tableName, storeLocation, oneLoad);
           boolean deletionStatus = physicalFactAndMeasureMetadataDeletion(path);
           if (deletionStatus) {
             isDeleted = true;

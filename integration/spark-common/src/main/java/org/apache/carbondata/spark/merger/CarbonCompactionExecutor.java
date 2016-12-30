@@ -56,38 +56,24 @@ public class CarbonCompactionExecutor {
       LogServiceFactory.getLogService(CarbonCompactionExecutor.class.getName());
   private final Map<String, List<DataFileFooter>> dataFileMetadataSegMapping;
   private final SegmentProperties destinationSegProperties;
-  private final String databaseName;
-  private final String factTableName;
   private final Map<String, TaskBlockInfo> segmentMapping;
-  private final String storePath;
   private QueryExecutor queryExecutor;
   private CarbonTable carbonTable;
   private QueryModel queryModel;
 
   /**
    * Constructor
-   *
-   * @param segmentMapping
+   *  @param segmentMapping
    * @param segmentProperties
-   * @param databaseName
-   * @param factTableName
-   * @param storePath
    * @param carbonTable
    */
   public CarbonCompactionExecutor(Map<String, TaskBlockInfo> segmentMapping,
-      SegmentProperties segmentProperties, String databaseName, String factTableName,
-      String storePath, CarbonTable carbonTable,
+      SegmentProperties segmentProperties, CarbonTable carbonTable,
       Map<String, List<DataFileFooter>> dataFileMetadataSegMapping) {
 
     this.segmentMapping = segmentMapping;
 
     this.destinationSegProperties = segmentProperties;
-
-    this.databaseName = databaseName;
-
-    this.factTableName = factTableName;
-
-    this.storePath = storePath;
 
     this.carbonTable = carbonTable;
 
@@ -191,7 +177,7 @@ public class CarbonCompactionExecutor {
    * @param blockList
    * @return
    */
-  public QueryModel prepareQueryModel(List<TableBlockInfo> blockList) {
+  private QueryModel prepareQueryModel(List<TableBlockInfo> blockList) {
 
     QueryModel model = new QueryModel();
 

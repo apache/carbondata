@@ -28,15 +28,12 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
-import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.path.CarbonStorePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -225,7 +222,7 @@ public final class CarbonDataMergerUtil {
       CarbonLoadModel carbonLoadModel, long compactionSize,
       List<LoadMetadataDetails> segments, CompactionType compactionType) {
 
-    List sortedSegments = new ArrayList(segments);
+    List<LoadMetadataDetails> sortedSegments = new ArrayList<LoadMetadataDetails>(segments);
 
     sortSegments(sortedSegments);
 
@@ -466,7 +463,7 @@ public final class CarbonDataMergerUtil {
   private static long getSizeOfSegment(String storeLocation,
       CarbonTableIdentifier tableIdentifier, String segId) {
     String loadPath = CarbonLoaderUtil
-        .getStoreLocation(storeLocation, tableIdentifier, segId, "0");
+        .getStoreLocation(storeLocation, tableIdentifier, segId);
     CarbonFile segmentFolder =
         FileFactory.getCarbonFile(loadPath, FileFactory.getFileType(loadPath));
     return getSizeOfFactFileInLoad(segmentFolder);
@@ -557,11 +554,9 @@ public final class CarbonDataMergerUtil {
    */
   private static List<LoadMetadataDetails> checkPreserveSegmentsPropertyReturnRemaining(
       List<LoadMetadataDetails> segments) {
-
-    int numberOfSegmentsToBePreserved = 0;
     // check whether the preserving of the segments from merging is enabled or not.
     // get the number of loads to be preserved.
-    numberOfSegmentsToBePreserved =
+    int numberOfSegmentsToBePreserved =
         CarbonProperties.getInstance().getNumberOfSegmentsToBePreserved();
     // get the number of valid segments and retain the latest loads from merging.
     return CarbonDataMergerUtil
@@ -642,37 +637,6 @@ public final class CarbonDataMergerUtil {
     }
     builder.deleteCharAt(builder.length() - 1);
     return builder.toString();
-  }
-
-  /**
-   * Combining the list of maps to one map.
-   *
-   * @param mapsOfNodeBlockMapping
-   * @return
-   */
-  public static Map<String, List<TableBlockInfo>> combineNodeBlockMaps(
-      List<Map<String, List<TableBlockInfo>>> mapsOfNodeBlockMapping) {
-
-    Map<String, List<TableBlockInfo>> combinedMap =
-        new HashMap<String, List<TableBlockInfo>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    // traverse list of maps.
-    for (Map<String, List<TableBlockInfo>> eachMap : mapsOfNodeBlockMapping) {
-      // traverse inside each map.
-      for (Map.Entry<String, List<TableBlockInfo>> eachEntry : eachMap.entrySet()) {
-
-        String node = eachEntry.getKey();
-        List<TableBlockInfo> blocks = eachEntry.getValue();
-
-        // if already that node detail exist in the combined map.
-        if (null != combinedMap.get(node)) {
-          List<TableBlockInfo> blocksAlreadyPresent = combinedMap.get(node);
-          blocksAlreadyPresent.addAll(blocks);
-        } else { // if its not present in map then put to map.
-          combinedMap.put(node, blocks);
-        }
-      }
-    }
-    return combinedMap;
   }
 
   /**
