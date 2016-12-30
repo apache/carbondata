@@ -85,12 +85,15 @@ public class UnCompressNonDecimalByte implements ValueCompressonHolder.UnCompres
   }
 
   @Override public CarbonReadDataHolder getValues(int decimal, Object maxValueObject) {
-    float[] vals = new float[value.length];
+    float[] valFloat = new float[value.length];
+    double[] valDouble = new double[value.length];
     CarbonReadDataHolder dataHolder = new CarbonReadDataHolder();
-    for (int i = 0; i < vals.length; i++) {
-      vals[i] = value[i] / Float.parseFloat(Math.pow(10, decimal)+"");
+    for (int i = 0; i < valFloat.length; i++) {
+      valFloat[i] = value[i] / Float.parseFloat(Math.pow(10, decimal)+"");
+      valDouble[i] = value[i] / Math.pow(10, decimal);
     }
-    dataHolder.setReadableFloatValues(vals);
+    dataHolder.setReadableFloatValues(valFloat);
+    dataHolder.setReadableDoubleValues(valDouble);
     return dataHolder;
   }
 }
