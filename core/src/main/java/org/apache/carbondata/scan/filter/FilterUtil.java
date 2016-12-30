@@ -433,6 +433,9 @@ public final class FilterUtil {
           row.setValues(new Object[] { DataTypeUtil.getDataBasedOnDataType(stringValue,
               columnExpression.getCarbonColumn().getDataType()) });
           Boolean rslt = expression.evaluate(row).getBoolean();
+          if (null == rslt && !isIncludeFilter) {
+            evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
+          }
           if (null != rslt && !(rslt ^ isIncludeFilter)) {
             if (null == stringValue) {
               evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
