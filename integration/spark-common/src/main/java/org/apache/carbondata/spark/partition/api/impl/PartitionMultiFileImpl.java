@@ -38,11 +38,6 @@ public class PartitionMultiFileImpl implements Partition {
     return uniqueID;
   }
 
-  @Override public String getFilePath() {
-    // TODO Auto-generated method stub
-    return null;
-  }
-
   @Override public List<String> getFilesPath() {
     // TODO Auto-generated method stub
     return folderPath;

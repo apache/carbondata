@@ -44,8 +44,7 @@ object DictionaryTestCaseUtil {
       dimension.getColumnIdentifier, dimension.getDataType
     )
     val dict = CarbonLoaderUtil.getDictionary(columnIdentifier,
-      CarbonHiveContext.hdfsCarbonBasePath
-    )
+      CarbonHiveContext.hdfsCarbonBasePath)
     assert(dict.getSurrogateKey(value) != CarbonCommonConstants.INVALID_SURROGATE_KEY)
   }
 }

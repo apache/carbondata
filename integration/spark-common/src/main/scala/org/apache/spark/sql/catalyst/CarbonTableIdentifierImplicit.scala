@@ -21,7 +21,7 @@ package org.apache.spark.sql.catalyst
  * Implicit functions for [TableIdentifier]
  */
 object CarbonTableIdentifierImplicit {
-  def apply(tableName: String): TableIdentifier = new TableIdentifier(tableName)
+  def apply(tableName: String): TableIdentifier = TableIdentifier(tableName)
 
   implicit def toTableIdentifier(tableIdentifier: Seq[String]): TableIdentifier = {
     tableIdentifier match {

@@ -97,7 +97,8 @@ class DataCompactionBlockletBoundryTest extends QueryTest with BeforeAndAfterAll
   )
 
   override def afterAll {
-    /* sql("drop table blocklettest") */
+    sql("drop table if exists  blocklettest")
+    sql("drop table if exists  Carbon_automation_hive")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance()

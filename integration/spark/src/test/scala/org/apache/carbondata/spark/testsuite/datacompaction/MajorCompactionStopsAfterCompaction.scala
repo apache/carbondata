@@ -135,6 +135,7 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
   }
 
   override def afterAll {
+    sql("drop table if exists  stopmajor")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }

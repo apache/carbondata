@@ -52,8 +52,7 @@ public final class QueryPartitionHelper {
 
     DataPartitioner dataPartitioner = partitionerMap.get(tableUniqueName);
 
-    List<Partition> queryPartitions = dataPartitioner.getPartitions(queryPlan);
-    return queryPartitions;
+    return dataPartitioner.getPartitions();
   }
 
   public List<Partition> getAllPartitions(String databaseName, String tableName) {

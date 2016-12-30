@@ -123,10 +123,8 @@ class CarbonMergerRDD[K, V](
 
         carbonLoadModel.setStorePath(storePath)
 
-        exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties, databaseName,
-          factTableName, storePath, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
-          dataFileMetadataSegMapping
-        )
+        exec = new CarbonCompactionExecutor(segmentMapping, segmentProperties,
+          carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable, dataFileMetadataSegMapping)
 
         // fire a query and get the results.
         var result2: util.List[RawResultIterator] = null

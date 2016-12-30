@@ -71,7 +71,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   val prevPartitions = prev.partitions
-  var numOfParts = Math.max(1, Math.min(nodeList.length, prevPartitions.length))
+  val numOfParts = Math.max(1, Math.min(nodeList.length, prevPartitions.length))
   // host => partition id list
   val hostMapPartitionIds = new HashMap[String, LinkedHashSet[Int]]
   // partition id => host list
@@ -268,7 +268,7 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) {
       prevPartIndexs(i % numOfParts) += prevPartitions(i).index
     }
     prevPartIndexs.filter(_.nonEmpty).zipWithIndex.map { x =>
-      new CoalescedRDDPartition(x._2, prev, x._1.toArray, getLocation(x._2))
+      CoalescedRDDPartition(x._2, prev, x._1.toArray, getLocation(x._2))
     }
   }
 
@@ -312,8 +312,8 @@ class DataLoadPartitionCoalescer(prev: RDD[_], nodeList: Array[String]) {
       } else {
         Some(emptyHosts(index - localityResult.length))
       }
-      LOGGER.info(s"CoalescedRDDPartition ${index}, ${ids.length}, ${loc} ")
-      new CoalescedRDDPartition(index, prev, ids, loc)
+      LOGGER.info(s"CoalescedRDDPartition $index, ${ids.length}, $loc ")
+      CoalescedRDDPartition(index, prev, ids, loc)
     }.filter(_.parentsIndices.nonEmpty).toArray
 
   }
