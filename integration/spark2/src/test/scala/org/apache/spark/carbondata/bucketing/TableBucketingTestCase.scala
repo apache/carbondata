@@ -42,6 +42,8 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t6")
     sql("DROP TABLE IF EXISTS t7")
     sql("DROP TABLE IF EXISTS t8")
+    sql("DROP TABLE IF EXISTS t1")
+
   }
 
   test("test create table with buckets") {
@@ -60,6 +62,23 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
       assert(true)
     } else {
       assert(false, "Bucketing info does not exist")
+    }
+  }
+
+  test("must not be able to create create table if number of bucket specified is negative") {
+    try {
+      spark.sql(
+        """
+           CREATE TABLE t4
+           (ID Int, date Timestamp, country String,
+           name String, phonetype String, serialname String, salary Int)
+           USING org.apache.spark.sql.CarbonSource
+           OPTIONS("bucketnumber"="-1", "bucketcolumns"="name", "tableName"="t4")
+        """)
+          assert(false)
+    }
+    catch {
+      case malformedCarbonCommandException: MalformedCarbonCommandException => assert(true)
     }
   }
 
