@@ -96,4 +96,16 @@ public interface DictionaryInfo extends Cacheable, Dictionary {
    * @return
    */
   long getDictionaryMetaFileLength();
+
+  /**
+   * It return the last updation time of dictionary cache
+   * @return
+   */
+  long getLastUpdatedTime();
+
+  /**
+   * It sets last updation time
+   * @param lastUpdatedTime
+   */
+  void setLastUpdatedTime(long lastUpdatedTime);
 }

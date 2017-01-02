@@ -501,7 +501,11 @@ case class LoadTable(
                          "Problem deleting the partition folder")
             throw ex
         }
-
+        // update carbonTableIdentifier with latest updated time
+        val absTableIdentifier = table.getAbsoluteTableIdentifier
+        val currentUpdateTime =
+          SegmentStatusManager.getTableStatusLastModifiedTime(table.getAbsoluteTableIdentifier)
+        absTableIdentifier.getCarbonTableIdentifier.setLastUpdatedTime(currentUpdateTime)
       }
     } catch {
       case dle: DataLoadingException =>

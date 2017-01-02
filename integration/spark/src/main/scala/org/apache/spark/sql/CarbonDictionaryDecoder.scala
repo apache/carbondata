@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
@@ -225,19 +227,18 @@ case class CarbonDictionaryDecoder(
 
   private def getDictionary(atiMap: Map[String, AbsoluteTableIdentifier],
       cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary]) = {
-    val dicts: Seq[Dictionary] = getDictionaryColumnIds.map { f =>
+    val dictColumnUniqueIdentifiers: java.util.List[DictionaryColumnUniqueIdentifier] =
+      new java.util.ArrayList[DictionaryColumnUniqueIdentifier]()
+    getDictionaryColumnIds.foreach{f =>
       if (f._2 != null) {
-        try {
-          cache.get(new DictionaryColumnUniqueIdentifier(
+          dictColumnUniqueIdentifiers.add(new DictionaryColumnUniqueIdentifier(
             atiMap(f._1).getCarbonTableIdentifier,
             f._2, f._3))
-        } catch {
-          case _: Throwable => null
-        }
       } else {
-        null
+        dictColumnUniqueIdentifiers.add(null)
       }
     }
+    val dicts = cache.getAll(dictColumnUniqueIdentifiers).asScala.toSeq
     dicts
   }
 

@@ -68,6 +68,11 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
   private final int dictionaryOneChunkSize = CarbonUtil.getDictionaryChunkSize();
 
   /**
+   * last cache updation time. it depends on new segment being loaded to table
+   */
+  private long lastUpdatedTime;
+
+  /**
    * This method will return the timestamp of file based on which decision
    * the decision will be taken whether to read that file or not
    *
@@ -287,6 +292,20 @@ public abstract class AbstractColumnDictionaryInfo implements DictionaryInfo {
   @Override public int getSurrogateKey(String value) {
     byte[] keyData = value.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     return getSurrogateKey(keyData);
+  }
+
+  /**
+   * get lastUpdatedTime
+   */
+  public long getLastUpdatedTime() {
+    return this.lastUpdatedTime;
+  }
+
+  /**
+   * set lastUpdatedTime
+   */
+  public void setLastUpdatedTime(long lastUpdatedTime) {
+    this.lastUpdatedTime = lastUpdatedTime;
   }
 }
 
