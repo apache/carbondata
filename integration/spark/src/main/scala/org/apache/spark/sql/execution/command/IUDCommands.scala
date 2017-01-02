@@ -359,47 +359,29 @@ object IUDCommon {
     LOG.info(s"Horizontal Update Compaction operation started for [${db}.${table}].")
     LOG.audit(s"Horizontal Update Compaction operation started for [${db}.${table}].")
 
+    try {
+      // Update Compaction.
+      val altertablemodel = AlterTableModel(Option(carbonTable.getDatabaseName),
+        carbonTable.getFactTableName,
+        Some(segmentUpdateStatusManager),
+        CompactionType.IUD_UPDDEL_DELTA_COMPACTION.toString,
+        Some(factTimeStamp),
+        "")
 
-    if (compactionTypeIUD == CompactionType.IUD_FACTFILE_COMPACTION ||
-        compactionTypeIUD == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
-
-      try {
-        // Update Compaction.
-        if (compactionTypeIUD == CompactionType.IUD_FACTFILE_COMPACTION) {
-          val altertablemodel = AlterTableModel(Option(carbonTable.getDatabaseName),
-            carbonTable.getFactTableName,
-            Some(segmentUpdateStatusManager),
-            CompactionType.IUD_FACTFILE_COMPACTION.toString,
-            Some(factTimeStamp),
-            "")
-
-          AlterTableCompaction(altertablemodel).run(sqlContext)
-          return
-        }
-        else {
-          val altertablemodel = AlterTableModel(Option(carbonTable.getDatabaseName),
-            carbonTable.getFactTableName,
-            Some(segmentUpdateStatusManager),
-            CompactionType.IUD_UPDDEL_DELTA_COMPACTION.toString,
-            Some(factTimeStamp),
-            "")
-
-          AlterTableCompaction(altertablemodel).run(sqlContext)
-        }
-      }
-      catch {
-        case e: Exception =>
-          val msg = if (null != e.getMessage) {
-            e.getMessage
-          } else {
-            "Please check logs for more info"
-          }
-          throw new HorizontalCompactionException(
-            s"Horizontal Update Compaction Failed for [${ db }.${ table }]. " + msg, factTimeStamp)
-      }
+      AlterTableCompaction(altertablemodel).run(sqlContext)
     }
-    LOG.info(s"Horizontal Update Compaction operation completed for [${db}.${table}].")
-    LOG.audit(s"Horizontal Update Compaction operation completed for [${db}.${table}].")
+    catch {
+      case e: Exception =>
+        val msg = if (null != e.getMessage) {
+          e.getMessage
+        } else {
+          "Please check logs for more info"
+        }
+        throw new HorizontalCompactionException(
+          s"Horizontal Update Compaction Failed for [${ db }.${ table }]. " + msg, factTimeStamp)
+    }
+    LOG.info(s"Horizontal Update Compaction operation completed for [${ db }.${ table }].")
+    LOG.audit(s"Horizontal Update Compaction operation completed for [${ db }.${ table }].")
   }
 
   /**

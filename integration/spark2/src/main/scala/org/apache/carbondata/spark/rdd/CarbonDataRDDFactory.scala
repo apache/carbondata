@@ -73,7 +73,22 @@ object CarbonDataRDDFactory {
     if (alterTableModel.compactionType.equalsIgnoreCase("major")) {
       compactionSize = CarbonDataMergerUtil.getCompactionSize(CompactionType.MAJOR_COMPACTION)
       compactionType = CompactionType.MAJOR_COMPACTION
-    } else {
+    } else if (alterTableModel.compactionType.equalsIgnoreCase("IUD_UPDDEL_DELTA_COMPACTION")) {
+      compactionType = CompactionType.IUD_UPDDEL_DELTA_COMPACTION
+      if (alterTableModel.segmentUpdateStatusManager.get != None) {
+        carbonLoadModel
+          .setSegmentUpdateStatusManager(alterTableModel.segmentUpdateStatusManager.get)
+
+        carbonLoadModel
+          .setSegmentUpdateDetails(alterTableModel.segmentUpdateStatusManager.get
+            .getUpdateStatusDetails.toList.asJava)
+
+        carbonLoadModel
+          .setLoadMetadataDetails(alterTableModel.segmentUpdateStatusManager.get
+            .getLoadMetadataDetails.toList.asJava)
+      }
+    }
+    else {
       compactionType = CompactionType.MINOR_COMPACTION
     }
 
@@ -87,7 +102,12 @@ object CarbonDataRDDFactory {
       CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
     }
     // reading the start time of data load.
-    val loadStartTime = CarbonLoaderUtil.readCurrentTime()
+    val loadStartTime : Long =
+    if (alterTableModel.factTimeStamp.isEmpty) {
+      CarbonUpdateUtil.readCurrentTime
+    } else {
+      alterTableModel.factTimeStamp.get
+    }
     carbonLoadModel.setFactTimeStamp(loadStartTime)
 
     val isCompactionTriggerByDDl = true
@@ -214,7 +234,11 @@ object CarbonDataRDDFactory {
       compactionLock: ICarbonLock): Unit = {
     val executor: ExecutorService = Executors.newFixedThreadPool(1)
     // update the updated table status.
-    CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
+    if (compactionModel.compactionType != CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
+      // update the updated table status. For the case of Update Delta Compaction the Metadata
+      // is filled in LoadModel, no need to refresh.
+      CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
+    }
 
     // clean up of the stale segments.
     try {

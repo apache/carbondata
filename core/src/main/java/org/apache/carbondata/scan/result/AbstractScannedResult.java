@@ -25,6 +25,7 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
+import org.apache.carbondata.common.iudprocessor.cache.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
@@ -110,6 +111,8 @@ public abstract class AbstractScannedResult {
    * parent block indexes
    */
   private int[] complexParentBlockIndexes;
+
+  protected BlockletLevelDeleteDeltaDataCache blockletDeleteDeltaCache;
 
   public AbstractScannedResult(BlockExecutionInfo blockExecutionInfo) {
     this.fixedLengthKeySize = blockExecutionInfo.getFixedLengthKeySize();
@@ -544,4 +547,20 @@ public abstract class AbstractScannedResult {
    * @return measure value
    */
   public abstract BigDecimal getBigDecimalMeasureValue(int ordinal);
+
+  /**
+   *
+   * @return BlockletLevelDeleteDeltaDataCache.
+   */
+  public BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache() {
+    return blockletDeleteDeltaCache;
+  }
+
+  /**
+   * @param blockletDeleteDeltaCache
+   */
+  public void setBlockletDeleteDeltaCache(
+      BlockletLevelDeleteDeltaDataCache blockletDeleteDeltaCache) {
+    this.blockletDeleteDeltaCache = blockletDeleteDeltaCache;
+  }
 }

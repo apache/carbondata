@@ -81,9 +81,9 @@ case class DataLoadTableFileMapping(table: String, loadPath: String)
 case class ExecutionErrors(var failureCauses: FailureCauses, var errorMsg: String )
 
 case class CarbonMergerMapping(storeLocation: String,
-    storePath: String,
+    hdfsStoreLocation: String,
     metadataFilePath: String,
-    mergedLoadName: String,
+    var mergedLoadName: String,
     kettleHomePath: String,
     tableCreationTime: Long,
     databaseName: String,

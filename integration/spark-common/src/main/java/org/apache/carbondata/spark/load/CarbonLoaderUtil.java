@@ -51,6 +51,7 @@ import org.apache.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.ColumnIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.Distributable;
+import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.metadata.CarbonMetadata;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable;
@@ -63,7 +64,9 @@ import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.apache.carbondata.core.load.LoadMetadataDetails;
 import org.apache.carbondata.core.update.CarbonUpdateUtil;
+import org.apache.carbondata.core.update.UpdateVO;
 import org.apache.carbondata.core.updatestatus.SegmentStatusManager;
+import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.fileoperations.AtomicFileOperations;
@@ -934,6 +937,34 @@ public final class CarbonLoaderUtil {
     String carbonDataDirectoryPath =
         carbonTablePath.getCarbonDataDirectoryPath("0", segmentId);
     CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
+  }
+
+  /**
+   * @param tableInfo
+   * @param invalidBlockVOForSegmentId
+   */
+  public static boolean isInvalidTableBlock(TableBlockInfo tableInfo,
+      UpdateVO invalidBlockVOForSegmentId,
+      SegmentUpdateStatusManager updateStatusMngr) {
+
+    if (!updateStatusMngr.isBlockValid(tableInfo.getSegmentId(),
+            CarbonTablePath.getCarbonDataFileName(tableInfo.getFilePath()) + CarbonTablePath
+                    .getCarbonDataExtension())) {
+      return true;
+    }
+
+    UpdateVO updatedVODetails = invalidBlockVOForSegmentId;
+    if (null != updatedVODetails) {
+      Long blockTimeStamp = Long.parseLong(tableInfo.getFilePath()
+              .substring(tableInfo.getFilePath().lastIndexOf('-') + 1,
+                      tableInfo.getFilePath().lastIndexOf('.')));
+      if ((blockTimeStamp > updatedVODetails.getFactTimestamp() && (
+              updatedVODetails.getUpdateDeltaStartTimestamp() != null
+                      && blockTimeStamp < updatedVODetails.getUpdateDeltaStartTimestamp()))) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
