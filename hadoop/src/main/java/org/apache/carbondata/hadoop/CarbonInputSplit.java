@@ -33,6 +33,7 @@ import org.apache.carbondata.core.carbon.datastore.block.Distributable;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.update.UpdateVO;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.hadoop.internal.index.Block;
 
@@ -69,6 +70,8 @@ public class CarbonInputSplit extends FileSplit
    */
   private Map<String, String> blockStorageIdMap =
           new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+
+  private List<UpdateVO> invalidTimestampsList;
 
   public CarbonInputSplit() {
     segmentId = null;
@@ -180,6 +183,14 @@ public class CarbonInputSplit extends FileSplit
 
   public void setInvalidSegments(List<String> invalidSegments) {
     this.invalidSegments = invalidSegments;
+  }
+
+  public void setInvalidTimestampRange(List<UpdateVO> invalidTimestamps) {
+    invalidTimestampsList = invalidTimestamps;
+  }
+
+  public List<UpdateVO> getInvalidTimestampRange() {
+    return invalidTimestampsList;
   }
 
   /**

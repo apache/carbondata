@@ -30,6 +30,8 @@ public class UpdateVO implements Serializable {
 
   private Long updateDeltaStartTimestamp;
 
+  private String segmentId;
+
   public Long getLatestUpdateTimestamp() {
     return latestUpdateTimestamp;
   }
@@ -94,5 +96,13 @@ public class UpdateVO implements Serializable {
       return factTimestamp;
     }
     return latestUpdateTimestamp;
+  }
+
+  public String getSegmentId() {
+    return segmentId;
+  }
+
+  public void setSegmentId(String segmentId) {
+    this.segmentId = segmentId;
   }
 }
