@@ -20,6 +20,9 @@ package org.apache.spark.sql.execution.command
 import java.util
 import java.util.UUID
 
+import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager
+import org.apache.carbondata.spark.load.FailureCauses
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
 
@@ -75,6 +78,8 @@ case class BucketFields(bucketColumns: Seq[String], numberOfBuckets: Int)
 
 case class DataLoadTableFileMapping(table: String, loadPath: String)
 
+case class ExecutionErrors(var failureCauses: FailureCauses, var errorMsg: String )
+
 case class CarbonMergerMapping(storeLocation: String,
     storePath: String,
     metadataFilePath: String,
@@ -85,6 +90,7 @@ case class CarbonMergerMapping(storeLocation: String,
     factTableName: String,
     validSegments: Array[String],
     tableId: String,
+    campactionType: CompactionType,
     // maxSegmentColCardinality is Cardinality of last segment of compaction
     var maxSegmentColCardinality: Array[Int],
     // maxSegmentColumnSchemaList is list of column schema of last segment of compaction
@@ -92,8 +98,16 @@ case class CarbonMergerMapping(storeLocation: String,
 
 case class NodeInfo(TaskId: String, noOfBlocks: Int)
 
-case class AlterTableModel(dbName: Option[String], tableName: String,
-    compactionType: String, alterSql: String)
+case class AlterTableModel(dbName: Option[String],
+                           tableName: String,
+                           segmentUpdateStatusManager: Option[SegmentUpdateStatusManager],
+                           compactionType: String,
+                           factTimeStamp: Option[Long],
+                           alterSql: String)
+
+case class UpdateTableModel(isUpdate: Boolean,
+                            updatedTimeStamp: Long,
+                            var executorErrors: ExecutionErrors)
 
 case class CompactionModel(compactionSize: Long,
     compactionType: CompactionType,
