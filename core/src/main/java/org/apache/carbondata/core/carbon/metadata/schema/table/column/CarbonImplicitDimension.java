@@ -133,7 +133,7 @@ public class CarbonImplicitDimension extends CarbonDimension {
   /**
    * To specify the visibily of the column by default its false
    */
-    public boolean isInvisible() {
+  public boolean isInvisible() {
     return true;
   }
 

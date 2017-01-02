@@ -20,10 +20,6 @@ package org.apache.carbondata.spark.rdd
 import java.util
 import java.util.concurrent._
 
-import org.apache.carbondata.core.update.CarbonUpdateUtil
-import org.apache.carbondata.core.updatestatus.SegmentStatusManager
-import org.apache.carbondata.locks.{LockUsage, CarbonLockFactory, ICarbonLock}
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
@@ -48,7 +44,10 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
+import org.apache.carbondata.core.update.CarbonUpdateUtil
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException

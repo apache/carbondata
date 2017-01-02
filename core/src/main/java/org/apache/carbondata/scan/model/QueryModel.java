@@ -105,7 +105,8 @@ public class QueryModel implements Serializable {
    * or compacted
    */
   private List<String> invalidSegmentIds;
-  private Map<String, UpdateVO> invalidSegmentBlockIdMap = new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+  private Map<String, UpdateVO> invalidSegmentBlockIdMap =
+      new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   public QueryModel() {
     tableBlockInfos = new ArrayList<TableBlockInfo>();

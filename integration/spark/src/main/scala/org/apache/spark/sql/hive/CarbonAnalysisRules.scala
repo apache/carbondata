@@ -16,7 +16,6 @@
  */
 package org.apache.spark.sql.hive
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedFunction, UnresolvedRelation, UnresolvedStar}
@@ -26,6 +25,8 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules._
 import org.apache.spark.sql.execution.command.ProjectForDeleteCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 /**
  * Insert into carbon table from other source

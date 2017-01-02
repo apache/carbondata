@@ -1,6 +1,11 @@
 
 package org.apache.carbondata.core.update;
 
+import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
 import org.apache.carbondata.common.iudprocessor.iuddata.BlockMappingVO;
 import org.apache.carbondata.common.iudprocessor.iuddata.RowCountDetailsVO;
 import org.apache.carbondata.common.logging.LogService;
@@ -21,10 +26,6 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.CarbonUtilException;
 import org.apache.carbondata.locks.ICarbonLock;
 
-import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
 
 /**
  *
@@ -52,7 +53,7 @@ public class CarbonUpdateUtil {
    */
   public static String getSegmentWithBlockFromTID(String Tid) {
     return getRequiredFieldFromTID(Tid, TupleIdEnum.SEGMENT_ID)
-            + CarbonCommonConstants.FILE_SEPARATOR + getRequiredFieldFromTID(Tid, TupleIdEnum.BLOCK_ID);
+        + CarbonCommonConstants.FILE_SEPARATOR + getRequiredFieldFromTID(Tid, TupleIdEnum.BLOCK_ID);
   }
 
   /**
@@ -83,7 +84,7 @@ public class CarbonUpdateUtil {
   public static String getDeleteDeltaFilePath(String blockPath, String blockName,
                                               String timestamp) {
     return blockPath + CarbonCommonConstants.FILE_SEPARATOR + blockName
-            + CarbonCommonConstants.HYPHEN + timestamp + CarbonCommonConstants.DELETE_DELTA_FILE_EXT;
+        + CarbonCommonConstants.HYPHEN + timestamp + CarbonCommonConstants.DELETE_DELTA_FILE_EXT;
 
   }
 
@@ -94,7 +95,7 @@ public class CarbonUpdateUtil {
    * @return
    */
   public static boolean updateSegmentStatus(List<SegmentUpdateDetails> updateDetailsList,
-                                            CarbonTable table, String updateStatusFileIdentifier, boolean isCompaction) {
+      CarbonTable table, String updateStatusFileIdentifier, boolean isCompaction) {
     boolean status = false;
     SegmentUpdateStatusManager segmentUpdateStatusManager =
             new SegmentUpdateStatusManager(table.getAbsoluteTableIdentifier());
@@ -241,7 +242,7 @@ public class CarbonUpdateUtil {
       if (lockStatus) {
         if (carbonLock.unlock()) {
           LOGGER.info(
-                  "Table unlocked successfully after table status updation" + table.getDatabaseName()
+                 "Table unlocked successfully after table status updation" + table.getDatabaseName()
                           + "." + table.getFactTableName());
         } else {
           LOGGER.error(
@@ -347,7 +348,7 @@ public class CarbonUpdateUtil {
    */
   public static String getBlockName(String completeBlockName) {
     String blockName =
-            completeBlockName.substring(0, completeBlockName.lastIndexOf(CarbonCommonConstants.HYPHEN));
+        completeBlockName.substring(0, completeBlockName.lastIndexOf(CarbonCommonConstants.HYPHEN));
     return blockName;
   }
 
@@ -453,7 +454,7 @@ public class CarbonUpdateUtil {
         return dateToStr.getTime();
       } catch (ParseException e1) {
         LOGGER
-                .error("Cannot convert" + factTimeStamp + " to Time/Long type value" + e1.getMessage());
+            .error("Cannot convert" + factTimeStamp + " to Time/Long type value" + e1.getMessage());
         return 0;
       }
     }

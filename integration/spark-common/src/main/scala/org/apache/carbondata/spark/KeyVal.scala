@@ -25,9 +25,11 @@
 
 package org.apache.carbondata.spark
 
+import org.apache.spark.sql.execution.command.ExecutionErrors
+
 import org.apache.carbondata.core.load.LoadMetadataDetails
 import org.apache.carbondata.core.update.SegmentUpdateDetails
-import org.apache.spark.sql.execution.command.ExecutionErrors
+
 
 trait Value[V] extends Serializable {
   def getValue(value: Array[Object]): V
@@ -78,7 +80,7 @@ trait DeleteDelataResult[K, V] extends Serializable {
 class DeleteDelataResultImpl
   extends DeleteDelataResult[String, (SegmentUpdateDetails, ExecutionErrors)] {
   override def getKey(key: String,
-                      value: (SegmentUpdateDetails, ExecutionErrors)): (String, (SegmentUpdateDetails,
+      value: (SegmentUpdateDetails, ExecutionErrors)): (String, (SegmentUpdateDetails,
     ExecutionErrors)) = {
     (key, value)
   }

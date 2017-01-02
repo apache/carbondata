@@ -18,16 +18,18 @@
  */
 package org.apache.carbondata.core.carbon.path;
 
+import java.io.File;
+
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.INVALID_SEGMENT_ID;
+
 import org.apache.hadoop.fs.Path;
 
-import java.io.File;
 
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.INVALID_SEGMENT_ID;
 
 /**
  * Helps to get Table content paths.

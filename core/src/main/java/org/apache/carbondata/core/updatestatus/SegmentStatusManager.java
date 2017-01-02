@@ -18,7 +18,12 @@
  */
 package org.apache.carbondata.core.updatestatus;
 
-import com.google.gson.Gson;
+import java.io.*;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
@@ -37,13 +42,9 @@ import org.apache.carbondata.locks.CarbonLockFactory;
 import org.apache.carbondata.locks.CarbonLockUtil;
 import org.apache.carbondata.locks.ICarbonLock;
 import org.apache.carbondata.locks.LockUsage;
-import org.apache.hadoop.security.AccessControlException;
 
-import java.io.*;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import com.google.gson.Gson;
+
 /**
  * Manages Load/Segment status
  */
@@ -84,7 +85,7 @@ public class SegmentStatusManager {
   }
 
   public List<Long> getUpdateDeltaStartEndTimeStamp(final String loadIds,
-                                                    LoadMetadataDetails[] listOfLoadFolderDetailsArray) {
+      LoadMetadataDetails[] listOfLoadFolderDetailsArray) {
     List<Long> updateDeltaStartEndTimestamp = new ArrayList<>();
     for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
       if (loadIds.equalsIgnoreCase(loadMetadata.getLoadName())) {
@@ -452,7 +453,7 @@ public class SegmentStatusManager {
    * @return invalidLoadIds
    */
   private static List<String> updateDeletionStatus(List<String> loadIds,
-                                            LoadMetadataDetails[] listOfLoadFolderDetailsArray, List<String> invalidLoadIds) {
+      LoadMetadataDetails[] listOfLoadFolderDetailsArray, List<String> invalidLoadIds) {
     for (String loadId : loadIds) {
       boolean loadFound = false;
       // For each load id loop through data and if the
@@ -628,7 +629,7 @@ public class SegmentStatusManager {
     private final List<String> listOfInvalidSegments;
 
     private ValidAndInvalidSegmentsInfo(List<String> listOfValidSegments,
-                                        List<String> listOfValidUpdatedSegments, List<String> listOfInvalidUpdatedSegments) {
+        List<String> listOfValidUpdatedSegments, List<String> listOfInvalidUpdatedSegments) {
       this.listOfValidSegments = listOfValidSegments;
       this.listOfValidUpdatedSegments = listOfValidUpdatedSegments;
       this.listOfInvalidSegments = listOfInvalidUpdatedSegments;

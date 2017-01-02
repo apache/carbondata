@@ -20,8 +20,6 @@ package org.apache.spark.sql.hive
 import java.io._
 import java.util.UUID
 
-import org.apache.carbondata.locks.ZookeeperInit
-
 import scala.Array.canBuildFrom
 import scala.collection.mutable.ArrayBuffer
 import scala.language.implicitConversions
@@ -49,6 +47,7 @@ import org.apache.carbondata.core.reader.ThriftReader
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
 import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
+import org.apache.carbondata.locks.ZookeeperInit
 import org.apache.carbondata.spark.merger.TableMeta
 
 case class MetaData(var tablesMeta: ArrayBuffer[TableMeta])

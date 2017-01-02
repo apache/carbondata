@@ -60,8 +60,9 @@ public class ImplicitIncludeFilterExecutorImpl implements ImplicitColumnFilterEx
   public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
     return null;
   }
-   public BitSet isFilterValuesPresentInBlockOrBlocklet(DataRefNode dataRefNode,
-      String uniqueBlockPath) {
+
+  public BitSet isFilterValuesPresentInBlockOrBlocklet(DataRefNode dataRefNode,
+                                                       String uniqueBlockPath) {
     BitSet bitSet = new BitSet(1);
     boolean isScanRequired = false;
     if (uniqueBlockPath.endsWith(".carbondata")) {

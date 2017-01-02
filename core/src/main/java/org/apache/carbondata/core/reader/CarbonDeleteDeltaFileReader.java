@@ -19,9 +19,10 @@
 
 package org.apache.carbondata.core.reader;
 
+import java.io.IOException;
+
 import org.apache.carbondata.core.update.DeleteDeltaBlockDetails;
 
-import java.io.IOException;
 
 /**
  * CarbonDeleteDeltaFileReader contains all methods to read delete delta file data

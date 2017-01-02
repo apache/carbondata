@@ -19,7 +19,8 @@
 
 package org.apache.carbondata.core.reader;
 
-import com.google.gson.Gson;
+import java.io.*;
+
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -29,7 +30,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.fileoperations.AtomicFileOperationsImpl;
 
-import java.io.*;
+import com.google.gson.Gson;
 
 /**
  * This class perform the functionality of reading the delete delta file

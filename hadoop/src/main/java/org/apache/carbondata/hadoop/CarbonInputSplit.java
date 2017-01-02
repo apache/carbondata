@@ -110,7 +110,7 @@ public class CarbonInputSplit extends FileSplit
    * @param blockStorageIdMap
    */
   public CarbonInputSplit(String segmentId, Path path, long start, long length, String[] locations,
-                          int numberOfBlocklets, ColumnarFormatVersion version, Map<String, String> blockStorageIdMap) {
+      int numberOfBlocklets, ColumnarFormatVersion version, Map<String, String> blockStorageIdMap) {
     this(segmentId, path, start, length, locations, numberOfBlocklets, version);
     this.blockStorageIdMap = blockStorageIdMap;
   }

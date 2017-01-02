@@ -17,17 +17,16 @@
 
 package org.apache.carbondata.spark.rdd
 
-import org.apache.carbondata.core.update.CarbonUpdateUtil
-import org.apache.carbondata.core.updatestatus.SegmentStatusManager
-
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.update.CarbonUpdateUtil
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.spark.MergeResultImpl
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
-import org.apache.carbondata.spark.merger.{CompactionType, CarbonDataMergerUtil}
+import org.apache.carbondata.spark.merger.{CarbonDataMergerUtil, CompactionType}
 
 /**
  * Compactor class which handled the compaction cases.

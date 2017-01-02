@@ -15,7 +15,7 @@ public class BlockletDeleteDeltaCacheLoader implements DeleteDeltaCacheLoaderInt
       LogServiceFactory.getLogService(BlockletDeleteDeltaCacheLoader.class.getName());
 
   public BlockletDeleteDeltaCacheLoader(String blockletID,
-                                        DataRefNode blockletNode, AbsoluteTableIdentifier absoluteIdentifier) {
+       DataRefNode blockletNode, AbsoluteTableIdentifier absoluteIdentifier) {
     this.blockletID = blockletID;
     this.blockletNode = blockletNode;
     this.absoluteIdentifier= absoluteIdentifier;

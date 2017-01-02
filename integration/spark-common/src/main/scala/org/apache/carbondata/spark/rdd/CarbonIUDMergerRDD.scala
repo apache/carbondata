@@ -29,8 +29,8 @@ import org.apache.spark.sql.execution.command.CarbonMergerMapping
 
 import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.carbon.datastore.block.{Distributable, TableBlockInfo}
+import org.apache.carbondata.hadoop.{CarbonInputFormat, CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
-import org.apache.carbondata.hadoop.{CarbonMultiBlockSplit, CarbonInputFormat, CarbonInputSplit}
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.MergeResult
 import org.apache.carbondata.spark.merger.CarbonDataMergerUtil

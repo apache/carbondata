@@ -19,12 +19,12 @@
 
 package org.apache.carbondata.core.update;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 
 /**
  * This class stores the block details of delete delta file

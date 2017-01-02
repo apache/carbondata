@@ -19,7 +19,11 @@
 
 package org.apache.carbondata.core.writer;
 
-import com.google.gson.Gson;
+import java.io.BufferedWriter;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -27,10 +31,7 @@ import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.update.DeleteDeltaBlockDetails;
 import org.apache.carbondata.core.util.CarbonUtil;
 
-import java.io.BufferedWriter;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStreamWriter;
+import com.google.gson.Gson;
 
 /**
  * This class is responsible for writing the delete delta file
