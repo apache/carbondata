@@ -18,6 +18,9 @@
  */
 package org.apache.carbondata.spark.merger;
 
+import java.io.File;
+import java.util.*;
+
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
@@ -45,9 +48,6 @@ import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.writer.exception.CarbonDataWriterException;
 import org.apache.carbondata.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.scan.wrappers.ByteArrayWrapper;
-
-import java.io.File;
-import java.util.*;
 
 /**
  * This is the Merger class responsible for the merging of the segments.

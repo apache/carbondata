@@ -18,9 +18,9 @@
  */
 package org.apache.carbondata.core.writer;
 
-import org.apache.carbondata.core.update.DeleteDeltaBlockDetails;
-
 import java.io.IOException;
+
+import org.apache.carbondata.core.update.DeleteDeltaBlockDetails;
 
 /**
  * Delete delta file writer interface

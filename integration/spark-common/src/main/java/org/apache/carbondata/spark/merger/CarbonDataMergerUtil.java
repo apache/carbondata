@@ -19,16 +19,11 @@
 
 package org.apache.carbondata.spark.merger;
 
+import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -55,12 +50,6 @@ import org.apache.carbondata.locks.ICarbonLock;
 import org.apache.carbondata.locks.LockUsage;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.spark.load.CarbonLoaderUtil;
-
-import java.io.File;
-import java.io.IOException;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.*;
 
 /**
  * utility class for load merging.
@@ -1277,7 +1266,7 @@ public final class CarbonDataMergerUtil {
         tempSegmentUpdateDetails.setDeleteDeltaStartTimestamp(
                 carbonDataMergerUtilResult.getDeleteDeltaStartTimestamp());
         tempSegmentUpdateDetails
-                .setDeleteDeltaEndTimestamp(carbonDataMergerUtilResult.getDeleteDeltaEndTimestamp());
+              .setDeleteDeltaEndTimestamp(carbonDataMergerUtilResult.getDeleteDeltaEndTimestamp());
 
         segmentUpdateDetails.add(tempSegmentUpdateDetails);
       } else return false;
@@ -1331,7 +1320,7 @@ public final class CarbonDataMergerUtil {
       if (lockStatus) {
         if (carbonLock.unlock()) {
           LOGGER.info(
-                  "Table unlocked successfully after table status updation" + table.getDatabaseName()
+                 "Table unlocked successfully after table status updation" + table.getDatabaseName()
                           + "." + table.getFactTableName());
         } else {
           LOGGER.error(
@@ -1349,8 +1338,8 @@ public final class CarbonDataMergerUtil {
    * @param changedSegDetails
    */
   public static void updateMajorCompactionPropertyInSegment(CarbonLoadModel model,
-                                                            List<LoadMetadataDetails> changedSegDetails,
-                                                            List<LoadMetadataDetails> preservedSegment) throws Exception {
+      List<LoadMetadataDetails> changedSegDetails,
+      List<LoadMetadataDetails> preservedSegment) throws Exception {
 
     String metadataPath = model.getCarbonDataLoadSchema().getCarbonTable().getMetaDataFilepath();
     AbsoluteTableIdentifier absoluteTableIdentifier =
@@ -1374,7 +1363,7 @@ public final class CarbonDataMergerUtil {
     try {
       if (carbonTableStatusLock.lockWithRetries()) {
         LOGGER.info(
-                "Acquired lock for the table " + model.getDatabaseName() + "." + model.getTableName()
+            "Acquired lock for the table " + model.getDatabaseName() + "." + model.getTableName()
                         + " for table status updation ");
         CarbonTablePath carbonTablePath = CarbonStorePath
                 .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),

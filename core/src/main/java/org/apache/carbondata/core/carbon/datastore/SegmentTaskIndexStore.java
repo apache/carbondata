@@ -85,15 +85,40 @@ public class SegmentTaskIndexStore
 
   @Override
   public SegmentTaskIndexWrapper get(TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier)
-      throws IOException {
-    SegmentTaskIndexWrapper segmentTaskIndexWrapper =
-        loadAndGetTaskIdToSegmentsMap(tableSegmentUniqueIdentifier.getSegmentToTableBlocksInfos(),
-            tableSegmentUniqueIdentifier.getAbsoluteTableIdentifier(),
-            tableSegmentUniqueIdentifier);
+      throws CarbonUtilException {
+    SegmentTaskIndexWrapper segmentTaskIndexWrapper = null;
+    try {
+      segmentTaskIndexWrapper =
+          loadAndGetTaskIdToSegmentsMap(tableSegmentUniqueIdentifier.getSegmentToTableBlocksInfos(),
+              tableSegmentUniqueIdentifier.getAbsoluteTableIdentifier(),
+              tableSegmentUniqueIdentifier);
+    } catch (IndexBuilderException e) {
+      throw new CarbonUtilException(e.getMessage(), e);
+    } catch (Throwable e) {
+      throw new CarbonUtilException("Problem in loading segment block.", e);
+    }
+	
     if (null != segmentTaskIndexWrapper) {
       segmentTaskIndexWrapper.incrementAccessCount();
     }
     return segmentTaskIndexWrapper;
+  }
+
+  @Override public List<SegmentTaskIndexWrapper> getAll(
+      List<TableSegmentUniqueIdentifier> tableSegmentUniqueIdentifiers) throws CarbonUtilException {
+    List<SegmentTaskIndexWrapper> segmentTaskIndexWrappers =
+        new ArrayList<>(tableSegmentUniqueIdentifiers.size());
+    try {
+      for (TableSegmentUniqueIdentifier segmentUniqueIdentifier : tableSegmentUniqueIdentifiers) {
+        segmentTaskIndexWrappers.add(get(segmentUniqueIdentifier));
+      }
+    } catch (Throwable e) {
+      for (SegmentTaskIndexWrapper segmentTaskIndexWrapper : segmentTaskIndexWrappers) {
+        segmentTaskIndexWrapper.clear();
+      }
+      throw new CarbonUtilException("Problem in loading segment blocks.", e);
+    }
+    return segmentTaskIndexWrappers;
   }
 
   /**
@@ -174,6 +199,7 @@ public class SegmentTaskIndexStore
         Map<TaskBucketHolder, List<TableBlockInfo>> taskIdToTableBlockInfoMap =
             mappedAndGetTaskIdToTableBlockInfo(segmentToTableBlocksInfos);
         // get the existing map of task id to table segment map
+        UpdateVO updateVO = updateStatusManager.getInvalidTimestampRange(segmentId);
         // check if segment is already loaded, if segment is already loaded
         //no need to load the segment block
         String lruCacheKey = tableSegmentUniqueIdentifier.getUniqueTableSegmentIdentifier();

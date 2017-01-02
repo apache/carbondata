@@ -947,7 +947,7 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_DATA_FILE_VERSION = "carbon.data.file.version";
 
- /**
+  /**
    * property to set is IS_DRIVER_INSTANCE
    */
   public static final String UPDATE_INDEX_FILE_EXT = ".carbonindex";

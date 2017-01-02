@@ -28,7 +28,7 @@ public class DeleteDeltaDataUtil {
    * @return boolean
    */
   public static boolean isSegmentStatusUpdated(SegmentStatusManager segmentStatusManager,
-                                               AbsoluteTableIdentifier tableIdentifier, String segmentID) {
+      AbsoluteTableIdentifier tableIdentifier, String segmentID) {
     CarbonTable table = CarbonMetadata.getInstance()
         .getCarbonTable(tableIdentifier.getCarbonTableIdentifier().getTableUniqueName());
     LoadMetadataDetails[] loadMetadataDetails =

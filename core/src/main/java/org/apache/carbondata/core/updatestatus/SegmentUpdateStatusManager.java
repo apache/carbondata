@@ -1,6 +1,11 @@
 package org.apache.carbondata.core.updatestatus;
 
-import com.google.gson.Gson;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
@@ -24,11 +29,7 @@ import org.apache.carbondata.locks.CarbonLockFactory;
 import org.apache.carbondata.locks.ICarbonLock;
 import org.apache.carbondata.locks.LockUsage;
 
-import java.io.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.google.gson.Gson;
 
 /**
  * Manages Segment & block status of carbon table
@@ -324,8 +325,9 @@ public class SegmentUpdateStatusManager {
    * @return
    */
   public List<String> getDeltaFiles(CarbonFile blockDir, final String blockNameFromTuple,
-                                    SegmentUpdateDetails[] listOfSegmentUpdateDetailsArray, final String extension,
-                                    String segment) {
+      SegmentUpdateDetails[] listOfSegmentUpdateDetailsArray,
+      final String extension,
+      String segment) {
     List<String> deleteFileList = null;
     for (SegmentUpdateDetails block : listOfSegmentUpdateDetailsArray) {
       if (block.getBlockName().equalsIgnoreCase(blockNameFromTuple) && block.getSegmentName()
@@ -347,8 +349,8 @@ public class SegmentUpdateStatusManager {
   }
 
   private List<String> getFilePaths(CarbonFile blockDir, final String blockNameFromTuple,
-                                    final String extension, List<String> deleteFileList, final long deltaStartTimestamp,
-                                    final long deltaEndTimeStamp) {
+      final String extension, List<String> deleteFileList, final long deltaStartTimestamp,
+      final long deltaEndTimeStamp) {
     CarbonFile[] files = blockDir.getParentFile().listFiles(new CarbonFileFilter() {
 
       @Override public boolean accept(CarbonFile pathName) {
@@ -436,8 +438,8 @@ public class SegmentUpdateStatusManager {
    * @return
    */
   public CarbonFile[] getUpdateDeltaFilesList(String segmentId, final boolean validUpdateFiles,
-                                              final String fileExtension, final boolean excludeOriginalFact,
-                                              CarbonFile[] allFilesOfSegment) {
+      final String fileExtension, final boolean excludeOriginalFact,
+      CarbonFile[] allFilesOfSegment) {
 
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
@@ -517,8 +519,8 @@ public class SegmentUpdateStatusManager {
    * @return
    */
   public CarbonFile[] getUpdateDeltaFilesForSegment(String segmentId,
-                                                    final boolean validUpdateFiles, final String fileExtension, final boolean excludeOriginalFact,
-                                                    CarbonFile[] allFilesOfSegment) {
+      final boolean validUpdateFiles, final String fileExtension, final boolean excludeOriginalFact,
+      CarbonFile[] allFilesOfSegment) {
 
     String endTimeStamp = "";
     String startTimeStamp = "";
@@ -904,8 +906,8 @@ public class SegmentUpdateStatusManager {
    * @return
    */
   public CarbonFile[] getDeleteDeltaInvalidFilesList(final String segmentId,
-                                                     final SegmentUpdateDetails block, final boolean needCompleteList,
-                                                     CarbonFile[] allSegmentFiles) {
+      final SegmentUpdateDetails block, final boolean needCompleteList,
+      CarbonFile[] allSegmentFiles) {
 
     final long deltaStartTimestamp =
         getStartTimeOfDeltaFile(CarbonCommonConstants.DELETE_DELTA_FILE_EXT, block);

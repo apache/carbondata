@@ -20,9 +20,6 @@ package org.apache.spark.sql.execution.command
 import java.util
 import java.util.UUID
 
-import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager
-import org.apache.carbondata.spark.load.FailureCauses
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
 
@@ -37,8 +34,10 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.{CarbonTable, Tab
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.load.LoadMetadataDetails
+import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.CarbonSparkFactory
+import org.apache.carbondata.spark.load.FailureCauses
 import org.apache.carbondata.spark.merger.CompactionType
 import org.apache.carbondata.spark.util.DataTypeConverterUtil
 

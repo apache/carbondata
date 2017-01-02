@@ -112,8 +112,8 @@ public class TableBlockInfo implements Distributable, Serializable {
    * @param blockStorageIdMap
    */
   public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
-                        long blockLength, BlockletInfos blockletInfos, ColumnarFormatVersion version,
-                        Map<String, String> blockStorageIdMap) {
+      long blockLength, BlockletInfos blockletInfos, ColumnarFormatVersion version,
+      Map<String, String> blockStorageIdMap) {
     this(filePath, blockOffset, segmentId, locations, blockLength, blockletInfos, version);
     this.blockStorageIdMap = blockStorageIdMap;
   }

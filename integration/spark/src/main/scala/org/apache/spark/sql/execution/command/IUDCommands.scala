@@ -21,37 +21,36 @@ import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util
 
-import org.apache.carbondata.common.iudprocessor.iuddata.RowCountDetailsVO
-import org.apache.carbondata.core.datastorage.store.impl.FileFactory
-import org.apache.carbondata.core.update.{CarbonUpdateUtil, DeleteDeltaBlockDetails, SegmentUpdateDetails, TupleIdEnum}
-import org.apache.carbondata.core.updatestatus.{SegmentStatusManager, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl
-import org.apache.carbondata.processing.exception.MultipleMatchingException
-import org.apache.carbondata.spark.util.QueryPlanUtil
-import org.apache.spark.sql.catalyst.TableIdentifier
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.plans.logical.{Project, LogicalPlan}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.RunnableCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.util.FileUtils
 
+import org.apache.carbondata.common.iudprocessor.iuddata.RowCountDetailsVO
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier
 import org.apache.carbondata.core.carbon.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.carbon.path.{CarbonTablePath, CarbonStorePath}
+import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import org.apache.carbondata.core.update.{CarbonUpdateUtil, DeleteDeltaBlockDetails, SegmentUpdateDetails, TupleIdEnum}
+import org.apache.carbondata.core.updatestatus.{SegmentStatusManager, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl
 import org.apache.carbondata.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
+import org.apache.carbondata.processing.exception.MultipleMatchingException
 import org.apache.carbondata.spark.load.{CarbonLoaderUtil, FailureCauses}
+import org.apache.carbondata.spark.merger.{CarbonDataMergerUtil, CarbonDataMergerUtilResult, CompactionType}
 import org.apache.carbondata.spark.merger.CarbonDataMergerUtil._
-import org.apache.carbondata.spark.merger.{CarbonDataMergerUtil, CompactionType, CarbonDataMergerUtilResult}
 import org.apache.carbondata.spark.DeleteDelataResultImpl
+import org.apache.carbondata.spark.util.QueryPlanUtil
 
 
 /**
@@ -517,7 +516,8 @@ object deleteExecution {
       .getCarbonTablePath(storeLocation,
         absoluteTableIdentifier.getCarbonTableIdentifier())
     var tableUpdateStatusPath = tablePath.getTableUpdateStatusFilePath
-    val totalSegments = SegmentStatusManager.readLoadMetadata(tablePath.getMetadataDirectoryPath).length
+    val totalSegments =
+      SegmentStatusManager.readLoadMetadata(tablePath.getMetadataDirectoryPath).length
     var factPath = tablePath.getFactDir
 
     var carbonTable = relation.tableMeta.carbonTable
@@ -765,8 +765,13 @@ object deleteExecution {
 
 object UpdateExecution {
 
-  def performUpdate(dataFrame: DataFrame, tableIdentifier: Seq[String], plan: LogicalPlan,
-                    sqlContext: SQLContext, currentTime: Long, executorErrors: ExecutionErrors): Unit = {
+  def performUpdate(
+         dataFrame: DataFrame,
+         tableIdentifier: Seq[String],
+         plan: LogicalPlan,
+         sqlContext: SQLContext,
+         currentTime: Long,
+         executorErrors: ExecutionErrors): Unit = {
 
     def isDestinationRelation(relation: CarbonDatasourceRelation): Boolean = {
 

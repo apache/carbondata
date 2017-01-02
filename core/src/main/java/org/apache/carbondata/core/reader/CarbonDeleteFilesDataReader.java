@@ -19,6 +19,13 @@
 
 package org.apache.carbondata.core.reader;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.*;
+
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -26,14 +33,9 @@ import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.update.DeleteDeltaBlockDetails;
 import org.apache.carbondata.core.update.DeleteDeltaBlockletDetails;
 import org.apache.carbondata.core.util.CarbonProperties;
+
 import org.apache.commons.lang.ArrayUtils;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
-import java.util.concurrent.*;
 
 /**
  * This class perform the functionality of reading multiple delete delta files
@@ -117,7 +119,7 @@ public class CarbonDeleteFilesDataReader {
   }
 
   public DeleteDeltaBlockDetails getCompactedDeleteDeltaFileFromBlock(List<String> deltaFiles,
-                                                                      String blockName) throws Exception {
+      String blockName) throws Exception {
     // get the data.
     List<Future<DeleteDeltaBlockDetails>> taskSubmitList = new ArrayList<>(deltaFiles.size());
     ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);

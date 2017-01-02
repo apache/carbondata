@@ -17,8 +17,6 @@
 
 package org.apache.spark.sql
 
-import org.apache.carbondata.core.updatestatus.SegmentStatusManager
-
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
@@ -34,6 +32,7 @@ import org.apache.spark.sql.types.{DataType, StructType}
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.spark.{CarbonOption, _}
 import org.apache.carbondata.spark.merger.TableMeta
 
