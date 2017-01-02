@@ -26,6 +26,8 @@
 package org.apache.carbondata.spark
 
 import org.apache.carbondata.core.load.LoadMetadataDetails
+import org.apache.carbondata.core.update.SegmentUpdateDetails
+import org.apache.spark.sql.execution.command.ExecutionErrors
 
 trait Value[V] extends Serializable {
   def getValue(value: Array[Object]): V
@@ -49,6 +51,35 @@ trait DataLoadResult[K, V] extends Serializable {
 
 class DataLoadResultImpl extends DataLoadResult[String, LoadMetadataDetails] {
   override def getKey(key: String, value: LoadMetadataDetails): (String, LoadMetadataDetails) = {
+    (key, value)
+  }
+}
+
+trait updateResult[K, V] extends Serializable {
+  def getKey(key: String,
+             value: (LoadMetadataDetails, ExecutionErrors)):
+  (K, V)
+}
+
+class updateResultImpl
+  extends updateResult[String, (LoadMetadataDetails, ExecutionErrors)] {
+  override def getKey(key: String,
+                      value: (LoadMetadataDetails, ExecutionErrors)):
+  (String,
+    (LoadMetadataDetails, ExecutionErrors)) = {
+    (key, value)
+  }
+}
+
+trait DeleteDelataResult[K, V] extends Serializable {
+  def getKey(key: String, value: (SegmentUpdateDetails, ExecutionErrors)): (K, V)
+}
+
+class DeleteDelataResultImpl
+  extends DeleteDelataResult[String, (SegmentUpdateDetails, ExecutionErrors)] {
+  override def getKey(key: String,
+                      value: (SegmentUpdateDetails, ExecutionErrors)): (String, (SegmentUpdateDetails,
+    ExecutionErrors)) = {
     (key, value)
   }
 }

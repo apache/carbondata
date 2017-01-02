@@ -47,6 +47,7 @@ import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.carbon.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.carbon.CarbonDataLoadSchema;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.carbon.ColumnIdentifier;
 import org.apache.carbondata.core.carbon.datastore.block.Distributable;
@@ -61,13 +62,14 @@ import org.apache.carbondata.core.datastorage.store.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory;
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory.FileType;
 import org.apache.carbondata.core.load.LoadMetadataDetails;
+import org.apache.carbondata.core.update.CarbonUpdateUtil;
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.lcm.fileoperations.AtomicFileOperations;
-import org.apache.carbondata.lcm.fileoperations.AtomicFileOperationsImpl;
-import org.apache.carbondata.lcm.fileoperations.FileWriteOperation;
-import org.apache.carbondata.lcm.locks.ICarbonLock;
-import org.apache.carbondata.lcm.status.SegmentStatusManager;
+import org.apache.carbondata.fileoperations.AtomicFileOperations;
+import org.apache.carbondata.fileoperations.AtomicFileOperationsImpl;
+import org.apache.carbondata.fileoperations.FileWriteOperation;
+import org.apache.carbondata.locks.ICarbonLock;
 import org.apache.carbondata.processing.api.dataloader.DataLoadModel;
 import org.apache.carbondata.processing.api.dataloader.SchemaInfo;
 import org.apache.carbondata.processing.csvload.DataGraphExecuter;
@@ -76,6 +78,7 @@ import org.apache.carbondata.processing.dataprocessor.IDataProcessStatus;
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator;
 import org.apache.carbondata.processing.graphgenerator.GraphGeneratorException;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 import org.apache.carbondata.spark.merger.NodeBlockRelation;
 import org.apache.carbondata.spark.merger.NodeMultiBlockRelation;
 
@@ -83,12 +86,37 @@ import com.google.gson.Gson;
 import org.apache.spark.SparkConf;
 import org.apache.spark.util.Utils;
 
+import java.io.*;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.nio.charset.Charset;
+import java.text.SimpleDateFormat;
+import java.util.*;
+
+
 public final class CarbonLoaderUtil {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonLoaderUtil.class.getName());
+  /**
+   * minimum no of blocklet required for distribution
+   */
+  private static int minBlockLetsReqForDistribution = 0;
+
+  static {
+    String property = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE);
+    try {
+      minBlockLetsReqForDistribution = Integer.parseInt(property);
+    } catch (NumberFormatException ne) {
+      LOGGER.info("Invalid configuration. Consisering the defaul");
+      minBlockLetsReqForDistribution =
+          CarbonCommonConstants.DEFAULT_CARBON_BLOCKLETDISTRIBUTION_MIN_REQUIRED_SIZE;
+    }
+  }
 
   private CarbonLoaderUtil() {
+
   }
 
   private static void generateGraph(IDataProcessStatus dataProcessTaskStatus, SchemaInfo info,
@@ -99,6 +127,13 @@ public final class CarbonLoaderUtil {
             || null != dataProcessTaskStatus.getFilesToProcess());
     model.setSchemaInfo(info);
     model.setTableName(dataProcessTaskStatus.getTableName());
+    List<LoadMetadataDetails> loadMetadataDetails = loadModel.getLoadMetadataDetails();
+    if (null != loadMetadataDetails && !loadMetadataDetails.isEmpty()) {
+      model.setLoadNames(
+          CarbonDataProcessorUtil.getLoadNameFromLoadMetaDataDetails(loadMetadataDetails));
+      model.setModificationOrDeletionTime(CarbonDataProcessorUtil
+          .getModificationOrDeletionTimesFromLoadMetadataDetails(loadMetadataDetails));
+    }
     model.setBlocksID(dataProcessTaskStatus.getBlocksID());
     model.setEscapeCharacter(dataProcessTaskStatus.getEscapeCharacter());
     model.setQuoteCharacter(dataProcessTaskStatus.getQuoteCharacter());
@@ -128,6 +163,7 @@ public final class CarbonLoaderUtil {
     CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation);
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, storePath);
+    // CarbonProperties.getInstance().addProperty("store_output_location", outPutLoc);
     CarbonProperties.getInstance().addProperty("send.signal.load", "false");
 
     String fileNamePrefix = "";
@@ -146,6 +182,7 @@ public final class CarbonLoaderUtil {
     DataProcessTaskStatus dataProcessTaskStatus
             = new DataProcessTaskStatus(databaseName, tableName);
     dataProcessTaskStatus.setCsvFilePath(loadModel.getFactFilePath());
+    dataProcessTaskStatus.setDimCSVDirLoc(loadModel.getDimFolderPath());
     if (loadModel.isDirectLoad()) {
       dataProcessTaskStatus.setFilesToProcess(loadModel.getFactFilesToProcess());
       dataProcessTaskStatus.setDirectLoad(true);
@@ -160,6 +197,7 @@ public final class CarbonLoaderUtil {
     dataProcessTaskStatus.setRddIteratorKey(loadModel.getRddIteratorKey());
     dataProcessTaskStatus.setDateFormat(loadModel.getDateFormat());
     SchemaInfo info = new SchemaInfo();
+
     info.setDatabaseName(databaseName);
     info.setTableName(tableName);
     info.setAutoAggregateRequest(loadModel.isAggLoadRequest());
@@ -343,7 +381,7 @@ public final class CarbonLoaderUtil {
    * @throws IOException
    */
   public static boolean recordLoadMetadata(int loadCount, LoadMetadataDetails loadMetadataDetails,
-      CarbonLoadModel loadModel, String loadStatus, String startLoadTime) throws IOException {
+      CarbonLoadModel loadModel, String loadStatus, long startLoadTime) throws IOException {
 
     boolean status = false;
 
@@ -358,7 +396,9 @@ public final class CarbonLoaderUtil {
             absoluteTableIdentifier.getCarbonTableIdentifier());
 
     String tableStatusPath = carbonTablePath.getTableStatusFilePath();
-    ICarbonLock carbonLock = SegmentStatusManager.getTableStatusLock(absoluteTableIdentifier);
+    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
+
+    ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
 
     try {
       if (carbonLock.lockWithRetries()) {
@@ -369,8 +409,8 @@ public final class CarbonLoaderUtil {
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
             SegmentStatusManager.readLoadMetadata(metaDataFilepath);
 
-        String loadEnddate = readCurrentTime();
-        loadMetadataDetails.setTimestamp(loadEnddate);
+        long loadEnddate = CarbonUpdateUtil.readCurrentTime();
+        loadMetadataDetails.setLoadEndTime(loadEnddate);
         loadMetadataDetails.setLoadStatus(loadStatus);
         loadMetadataDetails.setLoadName(String.valueOf(loadCount));
         loadMetadataDetails.setLoadStartTime(startLoadTime);
@@ -419,9 +459,11 @@ public final class CarbonLoaderUtil {
         new AtomicFileOperationsImpl(dataLoadLocation, FileFactory.getFileType(dataLoadLocation));
 
     try {
+
       dataOutputStream = writeOperation.openForWrite(FileWriteOperation.OVERWRITE);
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
               Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
+
       String metadataInstance = gsonObjectToWrite.toJson(listOfLoadFolderDetails.toArray());
       brWriter.write(metadataInstance);
     } finally {
@@ -431,10 +473,12 @@ public final class CarbonLoaderUtil {
         }
       } catch (Exception e) {
         LOGGER.error("error in  flushing ");
+
       }
       CarbonUtil.closeStreams(brWriter);
       writeOperation.close();
     }
+
   }
 
   public static String readCurrentTime() {
@@ -499,6 +543,17 @@ public final class CarbonLoaderUtil {
   public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos,
       int noOfNodesInput) {
     return nodeBlockMapping(blockInfos, noOfNodesInput, null);
+  }
+
+  /**
+   * This method will divide the blocks among the nodes as per the data locality
+   *
+   * @param blockInfos
+   * @return
+   */
+  public static Map<String, List<Distributable>> nodeBlockMapping(List<Distributable> blockInfos) {
+    // -1 if number of nodes has to be decided based on block location information
+    return nodeBlockMapping(blockInfos, -1);
   }
 
   /**

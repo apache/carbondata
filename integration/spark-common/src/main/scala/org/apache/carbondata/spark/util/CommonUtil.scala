@@ -19,6 +19,8 @@ package org.apache.carbondata.spark.util
 
 import java.util
 
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
 

@@ -20,12 +20,12 @@ package org.apache.carbondata.spark.testsuite.datacompaction
 
 import java.io.File
 
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.spark.sql.common.util.CarbonHiveContext._
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.scalatest.BeforeAndAfterAll
 
 import scala.collection.JavaConverters._
@@ -92,8 +92,10 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
             new CarbonTableIdentifier(
               CarbonCommonConstants.DATABASE_DEFAULT_NAME, "stopmajor", noOfRetries + "")
           )
-      val segments = SegmentStatusManager.getSegmentStatus(identifier)
-          .getValidSegments.asScala.toList
+
+      val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
+
+      val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
       segments.foreach(seg =>
         System.out.println( "valid segment is =" + seg)
       )
@@ -122,9 +124,11 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
           new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "stopmajor", "rrr")
         )
+
+    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
+
     // merged segment should not be there
-    val segments = SegmentStatusManager.getSegmentStatus(identifier)
-        .getValidSegments.asScala.toList
+    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
     assert(segments.contains("0.1"))
     assert(!segments.contains("0.2"))
     assert(!segments.contains("0"))

@@ -19,16 +19,16 @@
 
 package org.apache.carbondata.core.util;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Properties;
-
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.carbon.ColumnarFormatVersion;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 public final class CarbonProperties {
   /**
@@ -545,6 +545,57 @@ public final class CarbonProperties {
     carbonProperties.setProperty(CarbonCommonConstants.CARBON_EXECUTOR_STARTUP_TIMEOUT,
         String.valueOf(executorStartUpTimeOut));
     LOGGER.info("Executor start up wait time: " + executorStartUpTimeOut);
+  }
+  public int getNoUpdateDeltaFilesThresholdForIUDCompaction() {
+    int numberOfDeltaFilesThreshold;
+    try {
+      numberOfDeltaFilesThreshold = Integer.parseInt(
+          getProperty(CarbonCommonConstants.UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION,
+              CarbonCommonConstants.DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION));
+
+      if (numberOfDeltaFilesThreshold < 0 || numberOfDeltaFilesThreshold > 10000) {
+        LOGGER.error("The specified value for property "
+            + CarbonCommonConstants.UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION
+            + "is incorrect."
+            + " Correct value should be in range of 0 -10000. Taking the default value.");
+        numberOfDeltaFilesThreshold = Integer.parseInt(
+            CarbonCommonConstants.DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.error("The specified value for property "
+          + CarbonCommonConstants.UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION
+          + "is incorrect."
+          + " Correct value should be in range of 0 -10000. Taking the default value.");
+      numberOfDeltaFilesThreshold = Integer
+          .parseInt(CarbonCommonConstants.DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION);
+    }
+    return numberOfDeltaFilesThreshold;
+  }
+
+  public int getNoDeleteDeltaFilesThresholdForIUDCompaction() {
+    int numberOfDeltaFilesThreshold;
+    try {
+      numberOfDeltaFilesThreshold = Integer.parseInt(
+          getProperty(CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION,
+              CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION));
+
+      if (numberOfDeltaFilesThreshold < 0 || numberOfDeltaFilesThreshold > 10000) {
+        LOGGER.error("The specified value for property "
+            + CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION
+            + "is incorrect."
+            + " Correct value should be in range of 0 -10000. Taking the default value.");
+        numberOfDeltaFilesThreshold = Integer.parseInt(
+            CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.error("The specified value for property "
+          + CarbonCommonConstants.DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION
+          + "is incorrect."
+          + " Correct value should be in range of 0 -10000. Taking the default value.");
+      numberOfDeltaFilesThreshold = Integer
+          .parseInt(CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION);
+    }
+    return numberOfDeltaFilesThreshold;
   }
 
 }

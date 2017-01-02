@@ -16,26 +16,37 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.core.update;
 
-/**
- * Enum class for tupleID.
- */
-public enum TupleIdEnum {
-  PART_ID(0),
-  SEGMENT_ID(1),
-  BLOCK_ID(2),
-  BLOCKLET_ID(3),
-  OFFSET(4);
+package org.apache.carbondata.processing.exception;
 
-  private int index;
+public class MultipleMatchingException extends Exception {
+  private static final long serialVersionUID = 1L;
 
-  TupleIdEnum(int index) {
-    this.index = index;
+  private long errorCode = -1;
+
+  public MultipleMatchingException() {
+    super();
   }
 
-  public int getTupleIdIndex(){
-    return this.index;
+  public MultipleMatchingException(long errorCode, String message) {
+    super(message);
+    this.errorCode = errorCode;
+  }
+
+  public MultipleMatchingException(String message) {
+    super(message);
+  }
+
+  public MultipleMatchingException(Throwable cause) {
+    super(cause);
+  }
+
+  public MultipleMatchingException(String message, Throwable cause) {
+    super(message, cause);
+  }
+
+  public long getErrorCode() {
+    return errorCode;
   }
 
 }
