@@ -257,11 +257,14 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
             Token("TOK_TABCOLNAME", list)::numberOfBuckets) =>
               val cols = list.map(_.getText)
               if (cols != null) {
-                val totalNumberOfBuckets = numberOfBuckets.headOption.fold(throw new Exception("ParsingException")) {
+                val totalNumberOfBuckets = numberOfBuckets.headOption.fold(
+                  throw new Exception("ParsingException")) {
                   totalNumberOfBuckets => totalNumberOfBuckets
                 }
                 if (totalNumberOfBuckets.getText.contains("-")) {
-                  throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED IT CAN NOT BE A NEGATIVE NUMBER " + numberOfBuckets.head.getText)
+                  throw new MalformedCarbonCommandException(
+                    "INVALID NUMBER OF BUCKETS SPECIFIED IT CAN NOT BE A NEGATIVE NUMBER "
+                      + numberOfBuckets.head.getText)
                 }
                 else {
                   bucketFields =  Some(BucketFields(cols,
