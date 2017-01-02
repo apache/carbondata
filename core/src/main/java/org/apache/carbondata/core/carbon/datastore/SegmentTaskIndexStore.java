@@ -39,8 +39,12 @@ import org.apache.carbondata.core.carbon.datastore.block.SegmentTaskIndexWrapper
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.carbon.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.carbon.path.CarbonTablePath;
 import org.apache.carbondata.core.carbon.path.CarbonTablePath.DataFileUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.scan.model.QueryModel;
+
+
 
 /**
  * Class to handle loading, unloading,clearing,storing of the table

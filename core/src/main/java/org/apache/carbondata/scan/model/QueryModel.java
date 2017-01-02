@@ -21,6 +21,7 @@ package org.apache.carbondata.scan.model;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +33,8 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonColu
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsRecorder;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.update.UpdateVO;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.scan.expression.ColumnExpression;
 import org.apache.carbondata.scan.expression.Expression;
@@ -102,6 +105,7 @@ public class QueryModel implements Serializable {
    * or compacted
    */
   private List<String> invalidSegmentIds;
+  private Map<String, UpdateVO> invalidSegmentBlockIdMap = new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   public QueryModel() {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
@@ -347,5 +351,14 @@ public class QueryModel implements Serializable {
 
   public void setVectorReader(boolean vectorReader) {
     this.vectorReader = vectorReader;
+  }
+public void setInvalidBlockForSegmentId(List<UpdateVO> invalidSegmentTimestampList) {
+    for (UpdateVO anUpdateVO : invalidSegmentTimestampList) {
+      this.invalidSegmentBlockIdMap.put(anUpdateVO.getSegmentId(), anUpdateVO);
+    }
+  }
+
+  public Map<String,UpdateVO>  getInvalidBlockVOForSegmentId() {
+    return  invalidSegmentBlockIdMap;
   }
 }

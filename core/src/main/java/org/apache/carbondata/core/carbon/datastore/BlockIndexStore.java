@@ -22,7 +22,9 @@ package org.apache.carbondata.core.carbon.datastore;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -43,7 +45,11 @@ import org.apache.carbondata.core.carbon.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.carbon.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.carbon.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.update.CarbonUpdateUtil;
+import org.apache.carbondata.core.update.UpdateVO;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.scan.model.QueryModel;
+
 
 /**
  * This class is used to load the B-Tree in Executor LRU Cache
@@ -255,7 +261,7 @@ public class BlockIndexStore<K, V> extends AbstractBlockIndexStoreCache<K, V> {
       }
     }
     if (exceptionOccurred) {
-      LOGGER.error("Block B-Tree loading failed. Clearing the access count of the loaded blocks.");
+      LOGGER.error("Block B-tree loading failed. Clearing the access count of the loaded blocks.");
       // in case of any failure clear the access count for the valid loaded blocks
       clearAccessCountForLoadedBlocks(loadedBlockArray);
       throw new IndexBuilderException("Block B-tree loading failed", exceptionRef);
@@ -327,6 +333,47 @@ public class BlockIndexStore<K, V> extends AbstractBlockIndexStoreCache<K, V> {
         for (BlockInfo blockInfo : blockInfos) {
           String lruCacheKey = getLruCacheKey(absoluteTableIdentifier, blockInfo);
           lruCache.remove(lruCacheKey);
+        }
+      }
+    }
+  }
+
+  /**
+   * remove TableBlocks executer level If Horizontal Compaction Done
+   * @param queryModel
+   */
+  public void removeTableBlocksIfHorizontalCompactionDone(QueryModel queryModel) {
+    // get the invalid segments blocks details
+    Map<String, UpdateVO> invalidBlocksVO = queryModel.getInvalidBlockVOForSegmentId();
+    if (!invalidBlocksVO.isEmpty()) {
+      UpdateVO updateMetadata;
+      Iterator<Map.Entry<String, UpdateVO>> itr = invalidBlocksVO.entrySet().iterator();
+      String blockTimestamp = null;
+      while (itr.hasNext()) {
+        Map.Entry<String, UpdateVO> entry = itr.next();
+        TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier =
+            new TableSegmentUniqueIdentifier(queryModel.getAbsoluteTableIdentifier(),
+                entry.getKey());
+        List<BlockInfo> blockInfos = segmentIdToBlockListMap
+            .get(tableSegmentUniqueIdentifier.getUniqueTableSegmentIdentifier());
+        if (null != blockInfos) {
+          for (BlockInfo blockInfo : blockInfos) {
+            // reading the updated block names from status manager instance
+            blockTimestamp = blockInfo.getBlockUniqueName()
+                .substring(blockInfo.getBlockUniqueName().lastIndexOf('-') + 1,
+                    blockInfo.getBlockUniqueName().length());
+            updateMetadata = entry.getValue();
+            if (CarbonUpdateUtil.isMaxQueryTimeoutExceeded(Long.parseLong(blockTimestamp))) {
+              Long blockTimeStamp = Long.parseLong(blockTimestamp);
+              if (blockTimeStamp > updateMetadata.getFactTimestamp() && (
+                  updateMetadata.getUpdateDeltaStartTimestamp() != null
+                      && blockTimeStamp < updateMetadata.getUpdateDeltaStartTimestamp())) {
+                String lruCacheKey =
+                    getLruCacheKey(queryModel.getAbsoluteTableIdentifier(), blockInfo);
+                lruCache.remove(lruCacheKey);
+              }
+            }
+          }
         }
       }
     }

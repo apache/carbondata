@@ -883,6 +883,7 @@ public class SegmentUpdateStatusManager {
     UpdateVO range = new UpdateVO();
     for (LoadMetadataDetails segment : segmentDetails) {
       if (segment.getLoadName().equalsIgnoreCase(segmentId)) {
+        range.setSegmentId(segmentId);
         range.setFactTimestamp(segment.getLoadStartTime());
         if (!segment.getUpdateDeltaStartTimestamp().isEmpty() && !segment
             .getUpdateDeltaEndTimestamp().isEmpty()) {
