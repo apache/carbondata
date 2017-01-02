@@ -162,7 +162,8 @@ class CarbonMergerRDD[K, V](
             segmentProperties,
             tempStoreLoc,
             carbonLoadModel,
-            carbonMergerMapping.maxSegmentColCardinality
+            carbonMergerMapping.maxSegmentColCardinality,
+            carbonMergerMapping.campactionType
           )
         mergeStatus = merger.mergerSlice()
 

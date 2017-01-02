@@ -17,12 +17,14 @@
 
 package org.apache.carbondata.spark.rdd
 
+import org.apache.carbondata.core.update.CarbonUpdateUtil
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
+
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.spark.MergeResultImpl
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.merger.CarbonDataMergerUtil
@@ -53,7 +55,7 @@ object Compactor {
     val factTableName = carbonLoadModel.getTableName
     val validSegments: Array[String] = CarbonDataMergerUtil
       .getValidSegments(loadsToMerge).split(',')
-    val mergeLoadStartTime = CarbonLoaderUtil.readCurrentTime()
+    val mergeLoadStartTime = CarbonUpdateUtil.readCurrentTime();
     val carbonMergerMapping = CarbonMergerMapping(storeLocation,
       storePath,
       carbonTable.getMetaDataFilepath,
@@ -64,6 +66,7 @@ object Compactor {
       factTableName,
       validSegments,
       carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
+      compactionType,
       maxSegmentColCardinality = null,
       maxSegmentColumnSchemaList = null
     )

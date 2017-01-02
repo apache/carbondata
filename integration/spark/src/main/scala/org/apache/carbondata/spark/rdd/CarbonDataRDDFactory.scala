@@ -20,6 +20,10 @@ package org.apache.carbondata.spark.rdd
 import java.util
 import java.util.concurrent._
 
+import org.apache.carbondata.core.update.CarbonUpdateUtil
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
+import org.apache.carbondata.locks.{LockUsage, CarbonLockFactory, ICarbonLock}
+
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
@@ -45,8 +49,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.load.{BlockDetails, LoadMetadataDetails}
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.lcm.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
-import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
@@ -90,7 +92,7 @@ object CarbonDataRDDFactory {
       CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
     }
     // reading the start time of data load.
-    val loadStartTime = CarbonLoaderUtil.readCurrentTime()
+    val loadStartTime = CarbonUpdateUtil.readCurrentTime();
     carbonLoadModel.setFactTimeStamp(loadStartTime)
 
     val isCompactionTriggerByDDl = true
@@ -472,7 +474,7 @@ object CarbonDataRDDFactory {
       }
 
       // reading the start time of data load.
-      val loadStartTime = CarbonLoaderUtil.readCurrentTime()
+      val loadStartTime = CarbonUpdateUtil.readCurrentTime();
       carbonLoadModel.setFactTimeStamp(loadStartTime)
       val tableCreationTime = CarbonEnv.get.carbonMetastore
           .getTableCreationTime(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
