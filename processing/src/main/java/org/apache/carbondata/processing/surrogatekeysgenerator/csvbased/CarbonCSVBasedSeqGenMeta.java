@@ -1369,8 +1369,8 @@ public class CarbonCSVBasedSeqGenMeta extends BaseStepMeta implements StepMetaIn
    *
    * @return
    */
-  public int getSegmentId() {
-    return Integer.parseInt(segmentId);
+  public String getSegmentId() {
+    return segmentId;
   }
 
   /**

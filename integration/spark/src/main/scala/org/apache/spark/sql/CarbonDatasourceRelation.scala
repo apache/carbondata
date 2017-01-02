@@ -30,6 +30,7 @@ import org.apache.spark.sql.sources._
 import org.apache.spark.sql.types.{DataType, StructType}
 
 import org.apache.carbondata.core.carbon.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
+import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonImplicitDimension
 import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
 import org.apache.carbondata.core.updatestatus.SegmentStatusManager
@@ -138,6 +139,10 @@ private[sql] case class CarbonDatasourceRelation(
         .asInstanceOf[CarbonRelation]
   }
 
+  def getDatabaseName(): String = tableIdentifier.database.getOrElse("default")
+
+  def getTable(): String = tableIdentifier.table
+
   def schema: StructType = carbonRelation.schema
 
   def sqlContext: SQLContext = context
@@ -201,10 +206,11 @@ case class CarbonRelation(
   }
 
   val dimensionsAttr = {
-    val sett = new java.util.LinkedHashSet(
-      tableMeta.carbonTable.getDimensionByTableName(tableMeta.carbonTableIdentifier.getTableName)
-          .asScala.asJava)
-    sett.asScala.toSeq.filter(!_.getColumnSchema.isInvisible).map(dim => {
+    val sett = new LinkedHashSet(tableMeta.carbonTable
+      .getDimensionByTableName(tableMeta.carbonTableIdentifier.getTableName).asScala.asJava)
+    sett.asScala.toSeq.filter(dim => !dim.isInvisible ||
+                                     (dim.isInvisible && dim.isInstanceOf[CarbonImplicitDimension]))
+      .map(dim => {
       val dimval = metaData.carbonTable
           .getDimensionByName(metaData.carbonTable.getFactTableName, dim.getColName)
       val output: DataType = dimval.getDataType
@@ -245,7 +251,7 @@ case class CarbonRelation(
   override val output = {
     val columns = tableMeta.carbonTable.getCreateOrderColumn(tableMeta.carbonTable.getFactTableName)
         .asScala
-    columns.filter(!_.getColumnSchema.isInvisible).map { column =>
+    columns.filter(!_.isInvisible).map { column =>
       if (column.isDimesion()) {
         val output: DataType = column.getDataType.toString.toLowerCase match {
           case "array" =>

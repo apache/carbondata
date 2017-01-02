@@ -68,6 +68,8 @@ private[sql] case class ProjectForDeleteCommand(
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
 
+   // DataFrame(sqlContext, plan).show(truncate= false)
+   // return Seq.empty
     val dataFrame = DataFrame(sqlContext, plan)
     val dataRdd = dataFrame.rdd
 
@@ -136,6 +138,13 @@ private[sql] case class ProjectForUpdateCommand(
   val LOGGER = LogServiceFactory.getLogService(ProjectForUpdateCommand.getClass.getName)
 
   override def run(sqlContext: SQLContext): Seq[Row] = {
+
+
+   //  sqlContext.sparkContext.setLocalProperty(org.apache.spark.sql.execution.SQLExecution
+    //  .EXECUTION_ID_KEY, null)
+    // DataFrame(sqlContext, plan).show(truncate = false)
+    // return Seq.empty
+
 
     val res = plan find {
       case relation: LogicalRelation if (relation.relation
@@ -775,9 +784,8 @@ object UpdateExecution {
 
     def isDestinationRelation(relation: CarbonDatasourceRelation): Boolean = {
 
-      // Raghu Huawei IUD
-      val tableName = ""// relation.getTableName()
-      val dbName = ""// relation.getDatabaseName()
+      val tableName = relation.getTable()
+      val dbName = relation.getDatabaseName()
       (tableIdentifier.size > 1 &&
         tableIdentifier(0) == dbName &&
         tableIdentifier(1) == tableName) ||
@@ -821,18 +829,19 @@ object UpdateExecution {
 
     val header = getHeader(carbonRelation, plan)
 
-    // Raghu Huawei IUD
-//    LoadTable(
-//      Some(carbonRelation.getDatabaseName()),
-//      carbonRelation.getTableName(),
-//      null,
-//      Seq(),
-//      Map(("fileheader" -> header)),
-//      false,
-//      null,
-//      Some(dataFrame),
-//      Some(updateTableModel)).run(sqlContext)
-    // Raghu Huawei IUD end
+
+
+    LoadTable(
+      Some(carbonRelation.getDatabaseName()),
+      carbonRelation.getTable(),
+      null,
+      Seq(),
+      Map(("fileheader" -> header)),
+      false,
+      null,
+      Some(dataFrame),
+      Some(updateTableModel)).run(sqlContext)
+
 
     executorErrors.errorMsg = updateTableModel.executorErrors.errorMsg
     executorErrors.failureCauses = updateTableModel.executorErrors.failureCauses

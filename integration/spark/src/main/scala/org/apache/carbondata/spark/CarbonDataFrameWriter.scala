@@ -153,7 +153,8 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
       Map("fileheader" -> header) ++ options.toMap,
       isOverwriteExist = false,
       null,
-      Some(dataFrame)).run(cc)
+      Some(dataFrame),
+      None).run(cc)
   }
 
   private def convertToCarbonType(sparkType: DataType): String = {

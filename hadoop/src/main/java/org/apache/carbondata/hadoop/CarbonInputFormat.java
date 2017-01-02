@@ -331,7 +331,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       if (segmentId.equals(CarbonCommonConstants.INVALID_SEGMENT_ID)) {
         continue;
       }
-	  // Huawei IUD confirm from vishal 
+      // Huawei IUD confirm from vishal
       carbonSplits.add(CarbonInputSplit.from(segmentId, fileSplit,
               ColumnarFormatVersion.valueOf(
                   CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION)));
