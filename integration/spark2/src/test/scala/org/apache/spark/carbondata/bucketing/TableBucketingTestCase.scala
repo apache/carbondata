@@ -36,9 +36,6 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
 
-    // clean data folder
-    clean
-
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     spark.conf.set("spark.sql.autoBroadcastJoinThreshold", "-1")
@@ -187,7 +184,5 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     spark.sql("DROP TABLE IF EXISTS t6")
     spark.sql("DROP TABLE IF EXISTS t7")
     spark.sql("DROP TABLE IF EXISTS t8")
-    // clean data folder
-    clean
   }
 }

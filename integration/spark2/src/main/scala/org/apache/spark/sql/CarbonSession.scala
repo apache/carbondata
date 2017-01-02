@@ -44,36 +44,18 @@ class CarbonSession(@transient val sc: SparkContext,
   override private[sql] lazy val sessionState: SessionState = new CarbonSessionState(this)
 
   /**
-   * State shared across sessions, including the [[SparkContext]], cached data, listener,
+   * State shared across sessions, including the `SparkContext`, cached data, listener,
    * and a catalog that interacts with external systems.
    */
   @transient
-  override private[sql] lazy val sharedState: SharedState = {
-    existingSharedState.getOrElse(reflect[SharedState, SparkContext](
-      "org.apache.spark.sql.hive.HiveSharedState",
-      sparkContext))
+ override private[sql] lazy val sharedState: SharedState = {
+    existingSharedState.getOrElse(new SharedState(sparkContext))
   }
 
   override def newSession(): SparkSession = {
     new CarbonSession(sparkContext, Some(sharedState))
   }
 
-  /**
-   * Helper method to create an instance of [[T]] using a single-arg constructor that
-   * accepts an [[Arg]].
-   */
-  private def reflect[T, Arg <: AnyRef](
-      className: String,
-      ctorArg: Arg)(implicit ctorArgTag: ClassTag[Arg]): T = {
-    try {
-      val clazz = Utils.classForName(className)
-      val ctor = clazz.getDeclaredConstructor(ctorArgTag.runtimeClass)
-      ctor.newInstance(ctorArg).asInstanceOf[T]
-    } catch {
-      case NonFatal(e) =>
-        throw new IllegalArgumentException(s"Error while instantiating '$className':", e)
-    }
-  }
 }
 
 object CarbonSession {
@@ -92,7 +74,7 @@ object CarbonSession {
       var session: SparkSession = SparkSession.getActiveSession match {
         case Some(sparkSession: CarbonSession) =>
           if ((sparkSession ne null) && !sparkSession.sparkContext.isStopped) {
-            options.foreach { case (k, v) => sparkSession.conf.set(k, v) }
+            options.foreach { case (k, v) => sparkSession.sessionState.conf.setConfString(k, v) }
             sparkSession
           } else {
             null
@@ -109,7 +91,7 @@ object CarbonSession {
         session = SparkSession.getDefaultSession match {
           case Some(sparkSession: CarbonSession) =>
             if ((sparkSession ne null) && !sparkSession.sparkContext.isStopped) {
-              options.foreach { case (k, v) => sparkSession.conf.set(k, v) }
+              options.foreach { case (k, v) => sparkSession.sessionState.conf.setConfString(k, v) }
               sparkSession
             } else {
               null
@@ -139,7 +121,7 @@ object CarbonSession {
           sc
         }
         session = new CarbonSession(sparkContext)
-        options.foreach { case (k, v) => session.conf.set(k, v) }
+        options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
         SparkSession.setDefaultSession(session)
 
         // Register a successfully instantiated context to the singleton. This should be at the

@@ -496,7 +496,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   test("select percentile_approx(deviceInformationId,0.2) as a  from Carbon_automation_test")({
     checkAnswer(
       sql("select percentile_approx(deviceInformationId,0.2) as a  from Carbon_automation_test"),
-      Seq(Row(100005.8)))
+      Seq(Row(100006.0)))
   })
   //TC_127
   test("select percentile(deviceInformationId,0.2) as  a  from Carbon_automation_test1")({

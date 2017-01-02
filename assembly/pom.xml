@@ -147,7 +147,7 @@
       </dependencies>
     </profile>
     <profile>
-      <id>spark-2.0</id>
+      <id>spark-2.1</id>
       <dependencies>
         <dependency>
           <groupId>org.apache.carbondata</groupId>
