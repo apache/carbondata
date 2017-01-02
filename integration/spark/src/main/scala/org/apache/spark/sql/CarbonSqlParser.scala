@@ -335,7 +335,12 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
           case _ => // Unsupport features
         }
 
-        val altertablemodel = AlterTableModel(dbName, tableName, compactionType, alterSql)
+        val altertablemodel = AlterTableModel(dbName,
+          tableName,
+          None,
+          compactionType,
+          Some(System.currentTimeMillis()),
+          alterSql)
         AlterTableCompaction(altertablemodel)
     }
   }

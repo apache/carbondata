@@ -21,9 +21,11 @@ package org.apache.carbondata.core.carbon.datastore.block;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.carbon.datastore.SegmentTaskIndexStore;
+import org.apache.carbondata.core.update.UpdateVO;
 
 /**
  * SegmentTaskIndexWrapper class holds the  taskIdToTableSegmentMap
@@ -42,8 +44,10 @@ public class SegmentTaskIndexWrapper implements Cacheable {
   /**
    * Table block meta size.
    */
-  protected long memorySize;
+  protected AtomicLong memorySize = new AtomicLong();
 
+  private Long refreshedTimeStamp;
+  private UpdateVO invalidTaskKey;
   public SegmentTaskIndexWrapper(
       Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> taskIdToTableSegmentMap) {
     this.taskIdToTableSegmentMap = taskIdToTableSegmentMap;
@@ -64,7 +68,7 @@ public class SegmentTaskIndexWrapper implements Cacheable {
    * @param memorySize
    */
   public void setMemorySize(long memorySize) {
-    this.memorySize = memorySize;
+    this.memorySize.set(memorySize);
   }
 
   /**
@@ -91,7 +95,7 @@ public class SegmentTaskIndexWrapper implements Cacheable {
    * @return
    */
   @Override public long getMemorySize() {
-    return memorySize;
+    return memorySize.get();
   }
 
   /**
@@ -116,6 +120,29 @@ public class SegmentTaskIndexWrapper implements Cacheable {
     if (accessCount.get() > 0) {
       accessCount.decrementAndGet();
     }
+  }
+
+  public Long getRefreshedTimeStamp() {
+    return refreshedTimeStamp;
+  }
+
+  public void setRefreshedTimeStamp(Long refreshedTimeStamp) {
+    this.refreshedTimeStamp = refreshedTimeStamp;
+  }
+
+  public void removeEntryFromCacheAndRefresh(String taskId) {
+    AbstractIndex blockEntry = this.getTaskIdToTableSegmentMap().remove(taskId);
+    if (null != blockEntry) {
+      memorySize.set(memorySize.get() - blockEntry.getMemorySize());
+    }
+  }
+
+  public void setLastUpdateVO(UpdateVO invalidTaskKey) {
+    this.invalidTaskKey = invalidTaskKey;
+  }
+
+  public UpdateVO getInvalidTaskKey() {
+    return invalidTaskKey;
   }
 
 }
