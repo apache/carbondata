@@ -16,26 +16,15 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.core.update;
+package org.apache.carbondata.spark.load;
 
 /**
- * Enum class for tupleID.
+ * This Enum is used to determine the Reasons of Failure.
  */
-public enum TupleIdEnum {
-  PART_ID(0),
-  SEGMENT_ID(1),
-  BLOCK_ID(2),
-  BLOCKLET_ID(3),
-  OFFSET(4);
-
-  private int index;
-
-  TupleIdEnum(int index) {
-    this.index = index;
-  }
-
-  public int getTupleIdIndex(){
-    return this.index;
-  }
-
+public enum FailureCauses {
+  NONE,
+  BAD_RECORDS,
+  EXECUTOR_FAILURE,
+  STATUS_FILE_UPDATION_FAILURE,
+  MULTIPLE_INPUT_ROWS_MATCHING
 }

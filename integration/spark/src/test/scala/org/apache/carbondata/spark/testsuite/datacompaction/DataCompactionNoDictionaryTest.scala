@@ -20,6 +20,8 @@ package org.apache.carbondata.spark.testsuite.datacompaction
 
 import java.io.File
 
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
+
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.Row
@@ -28,7 +30,6 @@ import org.apache.spark.sql.common.util.QueryTest
 import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.lcm.status.SegmentStatusManager
 import org.scalatest.BeforeAndAfterAll
 
 /**
@@ -41,7 +42,9 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
     val identifier = new AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
           new CarbonTableIdentifier(databaseName, tableName.toLowerCase , tableId))
-    SegmentStatusManager.getSegmentStatus(identifier).getValidSegments.asScala.toList
+
+    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
+    segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
   }
 
   val currentDirectory = new File(this.getClass.getResource("/").getPath + "/../../")

@@ -20,6 +20,9 @@ package org.apache.carbondata.spark.testsuite.datacompaction
 
 import java.io.File
 
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
+import org.apache.carbondata.locks.{LockUsage, CarbonLockFactory, ICarbonLock}
+
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.common.util.CarbonHiveContext._
@@ -30,8 +33,6 @@ import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.lcm.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
-import org.apache.carbondata.lcm.status.SegmentStatusManager
 
 /**
   * FT for data compaction Locking scenario.
@@ -104,13 +105,18 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
     * Compaction should fail as lock is being held purposefully
     */
   test("check if compaction is failed or not.") {
-      val segments = SegmentStatusManager.getSegmentStatus(absoluteTableIdentifier)
-          .getValidSegments.asScala.toList
-      if (!segments.contains("0.1")) {
-        assert(true)
-      } else {
-        assert(false)
-      }
+
+    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
+      absoluteTableIdentifier
+    )
+    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
+
+    if (!segments.contains("0.1")) {
+      assert(true)
+    }
+    else {
+      assert(false)
+    }
   }
 
 

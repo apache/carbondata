@@ -20,6 +20,8 @@ package org.apache.carbondata.spark.testsuite.datacompaction
 
 import java.io.File
 
+import org.apache.carbondata.core.updatestatus.SegmentStatusManager
+
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.common.util.CarbonHiveContext._
@@ -30,8 +32,6 @@ import org.apache.carbondata.core.carbon.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.carbon.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.lcm.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
-import org.apache.carbondata.lcm.status.SegmentStatusManager
 
 /**
  * FT for data compaction Minor threshold verification.
@@ -95,8 +95,8 @@ class DataCompactionMinorThresholdTest extends QueryTest with BeforeAndAfterAll 
 
     sql("clean files for table minorthreshold")
 
-    val segments = SegmentStatusManager.getSegmentStatus(identifier)
-        .getValidSegments.asScala.toList
+    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
+    val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
 
     assert(segments.contains("0.2"))
     assert(!segments.contains("0.1"))

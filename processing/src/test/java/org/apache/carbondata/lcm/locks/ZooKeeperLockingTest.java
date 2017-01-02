@@ -18,16 +18,12 @@
  */
 package org.apache.carbondata.lcm.locks;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.ServerSocket;
-import java.util.Properties;
-
+import mockit.NonStrictExpectations;
 import org.apache.carbondata.core.carbon.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
-
-import mockit.NonStrictExpectations;
-
+import org.apache.carbondata.locks.LockUsage;
+import org.apache.carbondata.locks.ZooKeeperLocking;
+import org.apache.carbondata.locks.ZookeeperInit;
 import org.apache.zookeeper.server.ServerConfig;
 import org.apache.zookeeper.server.ZooKeeperServerMain;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
@@ -35,6 +31,11 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.ServerSocket;
+import java.util.Properties;
 
 /**
  * @author Administrator

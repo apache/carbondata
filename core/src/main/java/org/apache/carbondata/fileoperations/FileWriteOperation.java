@@ -16,26 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.carbondata.core.update;
 
-/**
- * Enum class for tupleID.
- */
-public enum TupleIdEnum {
-  PART_ID(0),
-  SEGMENT_ID(1),
-  BLOCK_ID(2),
-  BLOCKLET_ID(3),
-  OFFSET(4);
+package org.apache.carbondata.fileoperations;
 
-  private int index;
+public enum FileWriteOperation {
 
-  TupleIdEnum(int index) {
-    this.index = index;
-  }
-
-  public int getTupleIdIndex(){
-    return this.index;
-  }
-
+  APPEND, OVERWRITE
 }
