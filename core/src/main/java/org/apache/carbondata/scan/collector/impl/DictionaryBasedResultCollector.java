@@ -24,6 +24,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.iudprocessor.cache.BlockletLevelDeleteDeltaDataCache;
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.carbon.metadata.encoder.Encoding;
 import org.apache.carbondata.core.carbon.metadata.datatype.DataType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -78,6 +81,8 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     }
 
     QueryMeasure[] queryMeasures = tableBlockExecutionInfos.getQueryMeasures();
+    BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache =
+        scannedResult.getDeleteDeltaDataCache();
     Map<Integer, GenericQueryType> comlexDimensionInfoMap =
         tableBlockExecutionInfos.getComlexDimensionInfoMap();
     boolean[] dictionaryEncodingArray = CarbonUtil.getDictionaryEncodingArray(queryDimensions);
@@ -148,6 +153,10 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
 
       } else {
         scannedResult.incrementCounter();
+      }
+      if (null != deleteDeltaDataCache && deleteDeltaDataCache
+          .contains(scannedResult.getCurrenrRowId())) {
+        continue;
       }
       if (isMsrsPresent) {
         Object[] msrValues = new Object[measureDatatypes.length];
