@@ -37,28 +37,69 @@ import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.reader.CarbonFooterReader;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
-
-import junit.framework.TestCase;
 import org.apache.carbondata.format.ColumnSchema;
-import org.junit.After;
-import org.junit.Before;
+
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * This class will test the functionality writing and
  * reading a dictionary and its corresponding metadata file
  */
-public class CarbonFooterWriterTest extends TestCase{
+public class CarbonFooterWriterTest {
 
-  private String filePath;
+  private static String filePath;
+  private static CarbonFooterWriter writer;
+  private static List<BlockletInfoColumnar> infoColumnars;
 
-  @Before public void setUp() throws Exception {
+  public static ColumnSchema getDimensionColumn(String columnName) {
+    ColumnSchema dimColumn = new ColumnSchema();
+    dimColumn.setColumnar(true);
+    dimColumn.setColumn_name(columnName);
+    dimColumn.setColumn_id(UUID.randomUUID().toString());
+    dimColumn.setData_type(org.apache.carbondata.format.DataType.STRING);
+    dimColumn.setDimension(true);
+    List<org.apache.carbondata.format.Encoding> encodeList =
+        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    encodeList.add(org.apache.carbondata.format.Encoding.DICTIONARY);
+    dimColumn.setEncoders(encodeList);
+    dimColumn.setNum_child(0);
+    return dimColumn;
+  }
+
+  @BeforeClass public static void setUp() throws Exception {
     filePath = "testMeta.fact";
     deleteFile();
     createFile();
+    writer = new CarbonFooterWriter(filePath);
+
+    infoColumnars = getBlockletInfoColumnars();
+
+    int[] cardinalities = new int[] { 2, 4, 5, 7, 9, 10 };
+    List<ColumnSchema> columnSchema = Arrays.asList(
+        new ColumnSchema[] { getDimensionColumn("IMEI1"), getDimensionColumn("IMEI2"),
+            getDimensionColumn("IMEI3"), getDimensionColumn("IMEI4"), getDimensionColumn("IMEI5"),
+            getDimensionColumn("IMEI6") });
+    List<org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema>
+        wrapperColumnSchema = Arrays.asList(
+        new org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema[] {
+            getWrapperDimensionColumn("IMEI1"), getWrapperDimensionColumn("IMEI2"),
+            getWrapperDimensionColumn("IMEI3"), getWrapperDimensionColumn("IMEI4"),
+            getWrapperDimensionColumn("IMEI5"), getWrapperDimensionColumn("IMEI6") });
+    int[] colCardinality = CarbonUtil.getFormattedCardinality(cardinalities, wrapperColumnSchema);
+    SegmentProperties segmentProperties =
+        new SegmentProperties(wrapperColumnSchema, colCardinality);
+    writer.writeFooter(CarbonMetadataUtil
+        .convertFileFooter(infoColumnars, 6, cardinalities, columnSchema, segmentProperties), 0);
+
   }
 
-  @After public void tearDown() throws Exception {
+  @AfterClass public static void tearDown() throws Exception {
     deleteFile();
   }
 
@@ -66,101 +107,42 @@ public class CarbonFooterWriterTest extends TestCase{
    * test writing fact metadata.
    */
   @Test public void testWriteFactMetadata() throws IOException {
-    deleteFile();
-    createFile();
-    CarbonFooterWriter writer = new CarbonFooterWriter(filePath);
-
-    List<BlockletInfoColumnar> infoColumnars = getBlockletInfoColumnars();
-
-    int[] cardinalities = new int[] { 2, 4, 5, 7, 9, 10 };
-    List<ColumnSchema> columnSchema = Arrays.asList(new ColumnSchema[]{getDimensionColumn("IMEI1"),
-						getDimensionColumn("IMEI2"),
-						getDimensionColumn("IMEI3"),
-						getDimensionColumn("IMEI4"),
-						getDimensionColumn("IMEI5"),
-						getDimensionColumn("IMEI6")});
-    List<org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema> wrapperColumnSchema = Arrays.asList(new org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema[]{getWrapperDimensionColumn("IMEI1"),
-    	getWrapperDimensionColumn("IMEI2"),
-    	getWrapperDimensionColumn("IMEI3"),
-    	getWrapperDimensionColumn("IMEI4"),
-    	getWrapperDimensionColumn("IMEI5"),
-    	getWrapperDimensionColumn("IMEI6")});
-    int[] colCardinality = CarbonUtil.getFormattedCardinality(cardinalities, wrapperColumnSchema);
-    SegmentProperties segmentProperties = new SegmentProperties(wrapperColumnSchema, colCardinality);
-		writer.writeFooter(CarbonMetadataUtil.convertFileFooter(
-				infoColumnars,
-				6,
-				cardinalities,columnSchema, segmentProperties
-				), 0);
 
     CarbonFooterReader metaDataReader = new CarbonFooterReader(filePath, 0);
-    assertTrue(metaDataReader.readFooter() != null);
+    assertNotNull(metaDataReader.readFooter());
   }
-  
-  public static ColumnSchema getDimensionColumn(String columnName) {
-	    ColumnSchema dimColumn = new ColumnSchema();
-	    dimColumn.setColumnar(true);
-	    dimColumn.setColumn_name(columnName);
-	    dimColumn.setColumn_id(UUID.randomUUID().toString());
-	    dimColumn.setData_type(org.apache.carbondata.format.DataType.STRING);
-	    dimColumn.setDimension(true);
-	    List<org.apache.carbondata.format.Encoding> encodeList =
-		        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-	    encodeList.add(org.apache.carbondata.format.Encoding.DICTIONARY);
-	    dimColumn.setEncoders(encodeList);
-	    dimColumn.setNum_child(0);
-	    return dimColumn;
-	  }
-  public static org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema getWrapperDimensionColumn(String columnName) {
-   org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema dimColumn = new org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema();
-   dimColumn.setColumnar(true);
-   dimColumn.setColumnName(columnName);
-   dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-   dimColumn.setDataType(DataType.STRING);
-   dimColumn.setDimensionColumn(true);
-   List<Encoding> encodeList =
-        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-   encodeList.add(Encoding.DICTIONARY);
-   dimColumn.setEncodingList(encodeList);
-   dimColumn.setNumberOfChild(0);;
-   return dimColumn;
- }
+
+  private static org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema getWrapperDimensionColumn(
+      String columnName) {
+    org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema dimColumn =
+        new org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema();
+    dimColumn.setColumnar(true);
+    dimColumn.setColumnName(columnName);
+    dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
+    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDimensionColumn(true);
+    List<Encoding> encodeList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    encodeList.add(Encoding.DICTIONARY);
+    dimColumn.setEncodingList(encodeList);
+    dimColumn.setNumberOfChild(0);
+    ;
+    return dimColumn;
+  }
 
   /**
    * test writing fact metadata.
    */
   @Test public void testReadFactMetadata() throws IOException {
-    deleteFile();
-    createFile();
-    CarbonFooterWriter writer = new CarbonFooterWriter(filePath);
-    List<BlockletInfoColumnar> infoColumnars = getBlockletInfoColumnars();
-    int[] cardinalities = new int[] { 2, 4, 5, 7, 9, 10};
-    List<ColumnSchema> columnSchema = Arrays.asList(new ColumnSchema[]{getDimensionColumn("IMEI1"),
-						getDimensionColumn("IMEI2"),
-						getDimensionColumn("IMEI3"),
-						getDimensionColumn("IMEI4"),
-						getDimensionColumn("IMEI5"),
-						getDimensionColumn("IMEI6")});
-    List<org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema> wrapperColumnSchema = Arrays.asList(new org.apache.carbondata.core.carbon.metadata.schema.table.column.ColumnSchema[]{getWrapperDimensionColumn("IMEI1"),
-    	getWrapperDimensionColumn("IMEI2"),
-    	getWrapperDimensionColumn("IMEI3"),
-    	getWrapperDimensionColumn("IMEI4"),
-    	getWrapperDimensionColumn("IMEI5"),
-    	getWrapperDimensionColumn("IMEI6")});
-    int[] colCardinality = CarbonUtil.getFormattedCardinality(cardinalities, wrapperColumnSchema);
-    SegmentProperties segmentProperties = new SegmentProperties(wrapperColumnSchema, cardinalities);
-    writer.writeFooter(CarbonMetadataUtil
-        .convertFileFooter(infoColumnars, 6, colCardinality,
-        		columnSchema,segmentProperties), 0);
-
     CarbonFooterReader metaDataReader = new CarbonFooterReader(filePath, 0);
     List<BlockletInfoColumnar> nodeInfoColumnars =
         CarbonMetadataUtil.convertBlockletInfo(metaDataReader.readFooter());
+    int expectedSize = nodeInfoColumnars.size();
+    int actualSize = infoColumnars.size();
 
-    assertTrue(nodeInfoColumnars.size() == infoColumnars.size());
+    assertEquals(expectedSize, actualSize);
   }
 
-  private List<BlockletInfoColumnar> getBlockletInfoColumnars() {
+  private static List<BlockletInfoColumnar> getBlockletInfoColumnars() {
     BlockletInfoColumnar infoColumnar = new BlockletInfoColumnar();
     infoColumnar.setStartKey(new byte[] { 1, 2, 3 });
     infoColumnar.setEndKey(new byte[] { 8, 9, 10 });
@@ -181,7 +163,7 @@ public class CarbonFooterWriterTest extends TestCase{
     infoColumnar.setMeasureOffset(new long[] { 33, 99 });
     infoColumnar.setAggKeyBlock(new boolean[] { true, true, true, true });
     infoColumnar.setColGrpBlocks(new boolean[] { false, false, false, false });
-    infoColumnar.setMeasureNullValueIndex(new BitSet[] {new BitSet(),new BitSet()});
+    infoColumnar.setMeasureNullValueIndex(new BitSet[] { new BitSet(), new BitSet() });
     WriterCompressModel compressionModel = new WriterCompressModel();
     compressionModel.setMaxValue(new Object[] { 44d, 55d });
     compressionModel.setMinValue(new Object[] { 0d, 0d });
@@ -198,15 +180,15 @@ public class CarbonFooterWriterTest extends TestCase{
   /**
    * this method will delete file
    */
-  private void deleteFile() {
-    FileFactory.FileType fileType = FileFactory.getFileType(this.filePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(this.filePath, fileType);
+  private static void deleteFile() {
+    FileFactory.FileType fileType = FileFactory.getFileType(filePath);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(filePath, fileType);
     carbonFile.delete();
   }
 
-  private void createFile() {
-    FileFactory.FileType fileType = FileFactory.getFileType(this.filePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(this.filePath, fileType);
+  private static void createFile() {
+    FileFactory.FileType fileType = FileFactory.getFileType(filePath);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(filePath, fileType);
     carbonFile.createNewFile();
   }
 

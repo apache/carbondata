@@ -45,14 +45,15 @@ import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
 import org.apache.carbondata.core.reader.CarbonDictionaryReaderImpl;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.format.ColumnDictionaryChunkMeta;
 
 import mockit.Mock;
 import mockit.MockUp;
-import org.apache.carbondata.format.ColumnDictionaryChunkMeta;
-import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -63,46 +64,47 @@ public class CarbonDictionaryWriterImplTest {
 
   private static final String PROPERTY_FILE_NAME = "carbonTest.properties";
 
-  private CarbonTableIdentifier carbonTableIdentifier;
+  private static CarbonTableIdentifier carbonTableIdentifier;
 
-  private String databaseName;
+  private static String databaseName;
 
-  private String tableName;
+  private static String tableName;
 
-  private String carbonStorePath;
+  private static String carbonStorePath;
 
-  private ColumnIdentifier columnIdentifier;
+  private static ColumnIdentifier columnIdentifier;
 
-  private Properties props;
+  private static Properties props;
 
   /**
    * dictionary file path
    */
-  private String dictionaryFilePath;
+  private static String dictionaryFilePath;
 
   /**
    * dictionary metadata file path
    */
-  private String dictionaryMetaFilePath;
+  private static String dictionaryMetaFilePath;
 
-  private List<String> dataSet1;
+  private static List<String> dataSet1;
 
-  private List<String> dataSet2;
+  private static List<String> dataSet2;
 
-  private List<String> dataSet3;
+  private static List<String> dataSet3;
 
-  @Before public void setUp() throws Exception {
+  @BeforeClass public static void setUp() throws Exception {
     init();
-    this.databaseName = props.getProperty("database", "testSchema");
-    this.tableName = props.getProperty("tableName", "carbon");
-    this.carbonStorePath = props.getProperty("storePath", "carbonStore");
-    this.columnIdentifier = new ColumnIdentifier("Name", null, null);
-    carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());
+    databaseName = props.getProperty("database", "testSchema");
+    tableName = props.getProperty("tableName", "carbon");
+    carbonStorePath = props.getProperty("storePath", "carbonStore");
+    columnIdentifier = new ColumnIdentifier("Name", null, null);
+    carbonTableIdentifier =
+        new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());
     deleteStorePath();
     prepareDataSet();
   }
 
-  @After public void tearDown() throws Exception {
+  @AfterClass public static void tearDown() throws Exception {
     carbonTableIdentifier = null;
     deleteStorePath();
   }
@@ -110,7 +112,7 @@ public class CarbonDictionaryWriterImplTest {
   /**
    * prepare the dataset required for running test cases
    */
-  private void prepareDataSet() {
+  private static void prepareDataSet() {
     dataSet1 = Arrays.asList(new String[] { "a", "b" });
     dataSet2 = Arrays.asList(new String[] { "c", "d" });
     dataSet3 = Arrays.asList(new String[] { "e", "f" });
@@ -119,6 +121,8 @@ public class CarbonDictionaryWriterImplTest {
   /**
    * test writers write functionality for a column specific
    * to a table in a database
+   *
+   * @throws IOException
    */
   @Test public void testWriteForNormalColumn() throws IOException {
     // second parameter is chunk count which is for the number of
@@ -129,6 +133,8 @@ public class CarbonDictionaryWriterImplTest {
   /**
    * test writers write functionality for a column shared across tables
    * in a database
+   *
+   * @throws IOException
    */
   @Test public void testWriteForSharedColumn() throws IOException {
     // second parameter is chunk count which is for the number of
@@ -138,6 +144,8 @@ public class CarbonDictionaryWriterImplTest {
 
   /**
    * test writing multiple dictionary chunks for a single segment
+   *
+   * @throws IOException
    */
   @Test public void testWriteMultipleChunksForOneSegment() throws IOException {
     deleteStorePath();
@@ -151,7 +159,9 @@ public class CarbonDictionaryWriterImplTest {
     // read metadata chunks from file
     List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
         readDictionaryMetadataFile();
-    assertTrue(1 == carbonDictionaryColumnMetaChunks.size());
+    int expectedResult = 1;
+    int actualResult = carbonDictionaryColumnMetaChunks.size();
+    assertEquals(expectedResult, actualResult);
     // prepare retrieved chunk metadata
     long start_offset = 0L;
     CarbonDictionaryColumnMetaChunk expected =
@@ -165,7 +175,9 @@ public class CarbonDictionaryWriterImplTest {
     List<byte[]> dictionaryValues = readDictionaryFile(0L, 0L);
     // prepare expected dictionary chunk list
     List<String> actual = convertByteArrayListToStringValueList(dictionaryValues);
-    assertTrue(dataSet1.size() == actual.size());
+    int expectedDataSetSize = dataSet1.size();
+    int actualDataSetSize = actual.size();
+    assertEquals(expectedDataSetSize, actualDataSetSize);
     // validate the dictionary data
     compareDictionaryData(actual, dataSet1);
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE,
@@ -174,6 +186,9 @@ public class CarbonDictionaryWriterImplTest {
 
   /**
    * prepare the dictionary writer object
+   *
+   * @return
+   * @throws IOException
    */
   private CarbonDictionaryWriterImpl prepareWriter() throws IOException {
     initDictionaryDirPaths();
@@ -183,6 +198,8 @@ public class CarbonDictionaryWriterImplTest {
 
   /**
    * this method will test the write method in case of any exception
+   *
+   * @throws IOException
    */
   @Test public void testWriteThrowException() throws IOException {
     final String failureMessage = "write operation failed";
@@ -208,6 +225,8 @@ public class CarbonDictionaryWriterImplTest {
 
   /**
    * This method will test the truncate functionality
+   *
+   * @throws IOException
    */
   @Test public void testTruncateOperation() throws IOException {
     // delete store path
@@ -240,6 +259,10 @@ public class CarbonDictionaryWriterImplTest {
 
   /**
    * This method will overwrite a given file with data provided
+   *
+   * @param firstDictionaryChunkMeta
+   * @param dictionaryFile
+   * @throws IOException
    */
   private void overwriteDictionaryMetaFile(ColumnDictionaryChunkMeta firstDictionaryChunkMeta,
       String dictionaryFile) throws IOException {
@@ -257,10 +280,13 @@ public class CarbonDictionaryWriterImplTest {
 
   /**
    * this method will test the reading of dictionary file from a given offset
+   *
+   * @throws Exception
    */
   @Test public void testReadingOfDictionaryChunkFromAnOffset() throws Exception {
     // delete store path
     deleteStorePath();
+    int expectedResult = 3;
     // prepare the writer to write dataset1
     CarbonDictionaryWriterImpl writer = prepareWriter();
     // write dataset1 data
@@ -284,12 +310,15 @@ public class CarbonDictionaryWriterImplTest {
     // read chunk metadata file
     List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
         readDictionaryMetadataFile();
+    int actualResult = carbonDictionaryColumnMetaChunks.size();
     // assert for metadata chunk size
-    assertTrue(3 == carbonDictionaryColumnMetaChunks.size());
+    assertEquals(expectedResult, actualResult);
   }
 
   /**
    * this method will test the reading of dictionary file between start and end offset
+   *
+   * @throws Exception
    */
   @Test public void testReadingOfDictionaryChunkBetweenStartAndEndOffset() throws Exception {
     // delete store path
@@ -321,7 +350,7 @@ public class CarbonDictionaryWriterImplTest {
     List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
         readDictionaryMetadataFile();
     // assert for metadata chunk size
-    assertTrue(3 == carbonDictionaryColumnMetaChunks.size());
+    assertEquals(3, carbonDictionaryColumnMetaChunks.size());
     CarbonDictionaryColumnMetaChunk expected =
         new CarbonDictionaryColumnMetaChunk(3, 4, dictionaryStartOffset, dictionaryFileEndOffset,
             1);
@@ -330,6 +359,9 @@ public class CarbonDictionaryWriterImplTest {
 
   /**
    * This method will convert list of byte array to list of string
+   *
+   * @param dictionaryByteArrayList
+   * @return
    */
   private List<String> convertByteArrayListToStringValueList(List<byte[]> dictionaryByteArrayList) {
     List<String> valueList = new ArrayList<>(dictionaryByteArrayList.size());
@@ -341,6 +373,10 @@ public class CarbonDictionaryWriterImplTest {
 
   /**
    * this method will write the data into a file
+   *
+   * @param writer
+   * @param list
+   * @throws IOException
    */
   private void writeDictionaryFile(CarbonDictionaryWriterImpl writer, List<String> list)
       throws IOException {
@@ -356,6 +392,9 @@ public class CarbonDictionaryWriterImplTest {
 
   /**
    * this method will test the functionality of writing and reading one dictionary chunk
+   *
+   * @param chunkCountForSegment
+   * @throws IOException
    */
   private void processColumnValuesForOneChunk(int chunkCountForSegment) throws IOException {
     // delete store path
@@ -380,8 +419,10 @@ public class CarbonDictionaryWriterImplTest {
     // read dictionary metadata chunks
     List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
         readDictionaryMetadataFile();
+    int expectedResult = 1;
+    int actualResult = carbonDictionaryColumnMetaChunks.size();
     // assert
-    assertTrue(1 == carbonDictionaryColumnMetaChunks.size());
+    assertEquals(expectedResult, actualResult);
     long start_offset = 0L;
     // validate actual chunk metadata with expected
     CarbonDictionaryColumnMetaChunk expected =
@@ -393,6 +434,9 @@ public class CarbonDictionaryWriterImplTest {
 
   /**
    * this method will convert list of string to list of byte array
+   *
+   * @param valueList
+   * @return
    */
   private List<byte[]> convertStringListToByteArray(List<String> valueList) {
     List<byte[]> byteArrayList = new ArrayList<>(valueList.size());
@@ -404,23 +448,29 @@ public class CarbonDictionaryWriterImplTest {
 
   /**
    * this method will validate the dictionary chunk metadata
+   *
+   * @param actual
+   * @param expected
    */
   private void validateDictionaryMetadata(CarbonDictionaryColumnMetaChunk actual,
       CarbonDictionaryColumnMetaChunk expected) {
-    assertTrue(expected.getMin_surrogate_key() == actual.getMin_surrogate_key());
-    assertTrue(expected.getMax_surrogate_key() == actual.getMax_surrogate_key());
-    assertTrue(expected.getStart_offset() == actual.getStart_offset());
-    assertTrue(expected.getEnd_offset() == actual.getEnd_offset());
-    assertTrue(expected.getChunk_count() == actual.getChunk_count());
+    assertEquals(expected.getMin_surrogate_key(), actual.getMin_surrogate_key());
+    assertEquals(expected.getMax_surrogate_key(), actual.getMax_surrogate_key());
+    assertEquals(expected.getStart_offset(), actual.getStart_offset());
+    assertEquals(expected.getEnd_offset(), actual.getEnd_offset());
+    assertEquals(expected.getChunk_count(), actual.getChunk_count());
   }
 
   /**
    * this method will validate the dictionary data
+   *
+   * @param actual
+   * @param expected
    */
   private void compareDictionaryData(List<String> actual, List<String> expected) {
-    assertTrue(expected.size() == actual.size());
+    assertEquals(expected.size(), actual.size());
     for (int i = 0; i < actual.size(); i++) {
-      assertTrue(actual.get(i).equals(expected.get(i)));
+      assertEquals(actual.get(i), expected.get(i));
     }
   }
 
@@ -447,6 +497,11 @@ public class CarbonDictionaryWriterImplTest {
 
   /**
    * This method will be used to read the dictionary file from a given offset
+   *
+   * @param dictionaryStartOffset
+   * @param dictionaryEndOffset
+   * @return
+   * @throws IOException
    */
   private List<byte[]> readDictionaryFile(long dictionaryStartOffset, long dictionaryEndOffset)
       throws IOException {
@@ -472,24 +527,26 @@ public class CarbonDictionaryWriterImplTest {
   /**
    * this method will delete the store path
    */
-  private void deleteStorePath() {
-    FileFactory.FileType fileType = FileFactory.getFileType(this.carbonStorePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(this.carbonStorePath, fileType);
+  private static void deleteStorePath() {
+    FileFactory.FileType fileType = FileFactory.getFileType(carbonStorePath);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(carbonStorePath, fileType);
     deleteRecursiveSilent(carbonFile);
   }
 
   /**
    * this method will delete the folders recursively
+   *
+   * @param file
    */
-  private static void deleteRecursiveSilent(CarbonFile f) {
-    if (f.isDirectory()) {
-      if (f.listFiles() != null) {
-        for (CarbonFile c : f.listFiles()) {
+  private static void deleteRecursiveSilent(CarbonFile file) {
+    if (file.isDirectory()) {
+      if (file.listFiles() != null) {
+        for (CarbonFile c : file.listFiles()) {
           deleteRecursiveSilent(c);
         }
       }
     }
-    if (f.exists() && !f.delete()) {
+    if (file.exists() && !file.delete()) {
       return;
     }
   }
@@ -498,11 +555,13 @@ public class CarbonDictionaryWriterImplTest {
    * this method will read the property file for required details
    * like dbName, tableName, etc
    */
-  private void init() {
+  private static void init() {
     InputStream in = null;
     props = new Properties();
     try {
-      URI uri = getClass().getClassLoader().getResource(PROPERTY_FILE_NAME).toURI();
+      URI uri =
+          CarbonDictionaryWriterImplTest.class.getClassLoader().getResource(PROPERTY_FILE_NAME)
+              .toURI();
       File file = new File(uri);
       in = new FileInputStream(file);
       props.load(in);
@@ -517,16 +576,19 @@ public class CarbonDictionaryWriterImplTest {
 
   /**
    * this method will form the dictionary directory paths
+   *
+   * @throws IOException
    */
   private void initDictionaryDirPaths() throws IOException {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(this.carbonStorePath, carbonTableIdentifier);
     String dictionaryLocation = carbonTablePath.getMetadataDirectoryPath();
     FileFactory.FileType fileType = FileFactory.getFileType(dictionaryLocation);
-    if(!FileFactory.isFileExist(dictionaryLocation, fileType)) {
+    if (!FileFactory.isFileExist(dictionaryLocation, fileType)) {
       FileFactory.mkdirs(dictionaryLocation, fileType);
     }
     this.dictionaryFilePath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId());
-    this.dictionaryMetaFilePath = carbonTablePath.getDictionaryMetaFilePath(columnIdentifier.getColumnId());
+    this.dictionaryMetaFilePath =
+        carbonTablePath.getDictionaryMetaFilePath(columnIdentifier.getColumnId());
   }
 }
