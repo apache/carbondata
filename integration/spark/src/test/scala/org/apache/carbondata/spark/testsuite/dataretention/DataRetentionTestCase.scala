@@ -114,7 +114,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   private def getSegmentStartTime(segments: Array[LoadMetadataDetails],
       segmentId: Integer): String = {
     val segmentLoadTimeString = segments(segmentId).getLoadStartTime()
-    var loadTime = carbonDateFormat.parse(String.valueOf(segmentLoadTimeString))
+    var loadTime = carbonDateFormat.parse(carbonDateFormat.format(segmentLoadTimeString))
     // add one min to execute delete before load start time command
     loadTime = DateUtils.addMinutes(loadTime, 1)
     defaultDateFormat.format(loadTime)

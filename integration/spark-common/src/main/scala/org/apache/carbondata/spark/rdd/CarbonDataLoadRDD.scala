@@ -26,10 +26,11 @@ import java.util.UUID
 import scala.collection.JavaConverters._
 import scala.util.Random
 
-import org.apache.spark.{Partition, SerializableWritable, SparkContext, SparkEnv, TaskContext}
+import org.apache.spark.{Logging, Partition, SerializableWritable, SparkContext, SparkEnv, TaskContext}
 import org.apache.spark.annotation.DeveloperApi
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionWrap, RDD}
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -43,7 +44,7 @@ import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.graphgenerator.GraphGenerator
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.DataLoadResult
-import org.apache.carbondata.spark.load._
+import org.apache.carbondata.spark.load.{_}
 import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.CarbonQueryUtil
 import org.apache.carbondata.spark.util.CarbonScalaUtil
@@ -608,3 +609,139 @@ class RddIterator(rddIter: Iterator[Row],
   }
 
 }
+
+class RddIteratorForUpdate(rddIter: Iterator[Row],
+    carbonLoadModel: CarbonLoadModel) extends java.util.Iterator[Array[String]] {
+  val formatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+    .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+  val format = new SimpleDateFormat(formatString)
+  val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
+  val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
+  val serializationNullFormat =
+    carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
+
+  def hasNext: Boolean = rddIter.hasNext
+
+  def next: Array[String] = {
+    val row = rddIter.next()
+    val columns = new Array[String](row.length)
+    for (i <- 0 until row.length) {
+      // columns(i) = CarbonScalaUtil.getStringForUpdate(row(i), delimiterLevel1, delimiterLevel2)
+      columns(i) = CarbonScalaUtil.getString(row.get(i), serializationNullFormat,
+        delimiterLevel1, delimiterLevel2, format)
+      if (columns(i).length() > CarbonCommonConstants.DEFAULT_COLUMN_LENGTH) {
+        sys.error(s" Error processing input: Length of parsed input (${
+          CarbonCommonConstants
+            .DEFAULT_COLUMN_LENGTH
+        }) exceeds the maximum number of characters defined"
+        )
+      }
+    }
+    columns
+  }
+
+  def remove(): Unit = {
+  }
+}
+
+object CarbonDataLoadForUpdate extends Logging{
+  def initialize(model: CarbonLoadModel,
+      splitIndex: Int): String = {
+    val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
+    if (null == carbonPropertiesFilePath) {
+      System.setProperty("carbon.properties.filepath",
+        System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties")
+    }
+    CarbonTimeStatisticsFactory.getLoadStatisticsInstance.initPartitonInfo(model.getPartitionId)
+    CarbonProperties.getInstance().addProperty("carbon.is.columnar.storage", "true")
+    CarbonProperties.getInstance().addProperty("carbon.dimension.split.value.in.columnar", "1")
+    CarbonProperties.getInstance().addProperty("carbon.is.fullyfilled.bits", "true")
+    CarbonProperties.getInstance().addProperty("is.int.based.indexer", "true")
+    CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock", "true")
+    CarbonProperties.getInstance().addProperty("high.cardinality.value", "100000")
+    CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false")
+    CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000")
+
+    // this property is used to determine whether temp location for carbon is inside
+    // container temp dir or is yarn application directory.
+    val carbonUseLocalDir = CarbonProperties.getInstance()
+      .getProperty("carbon.use.local.dir", "false")
+    var storeLocation = ""
+    if(carbonUseLocalDir.equalsIgnoreCase("true")) {
+      val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+      if (null != storeLocations && storeLocations.nonEmpty) {
+        storeLocation = storeLocations(Random.nextInt(storeLocations.length))
+      }
+      if (storeLocation == null) {
+        storeLocation = System.getProperty("java.io.tmpdir")
+      }
+    }
+    else {
+      storeLocation = System.getProperty("java.io.tmpdir")
+    }
+    storeLocation = storeLocation + '/' + System.nanoTime() + '/' + splitIndex
+    storeLocation
+  }
+
+  def run(model: CarbonLoadModel,
+      index: Int,
+      hdfsStoreLocation: String,
+      kettleHomePath: String,
+      loadCount: String,
+      loadMetadataDetails: LoadMetadataDetails,
+      executorErrors: ExecutionErrors): Unit = {
+    try {
+      var storeLocation = ""
+      val carbonUseLocalDir = CarbonProperties.getInstance()
+        .getProperty("carbon.use.local.dir", "false")
+      if(carbonUseLocalDir.equalsIgnoreCase("true")) {
+        val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+        if (null != storeLocations && storeLocations.nonEmpty) {
+          storeLocation = storeLocations(Random.nextInt(storeLocations.length))
+        }
+        if (storeLocation == null) {
+          storeLocation = System.getProperty("java.io.tmpdir")
+        }
+      }
+      else {
+        storeLocation = System.getProperty("java.io.tmpdir")
+      }
+      storeLocation = storeLocation + '/' + System.nanoTime() + '/' + index
+
+      CarbonLoaderUtil.executeGraph(model, storeLocation, hdfsStoreLocation,
+        kettleHomePath)
+      loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
+    } catch {
+      case e: DataLoadingException => if (e.getErrorCode ==
+                                          DataProcessorConstants.BAD_REC_FOUND) {
+        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+        logInfo("Bad Record Found")
+      } else if (e.getErrorCode == DataProcessorConstants.BAD_REC_FAILURE_ERROR_CODE) {
+        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
+        executorErrors.failureCauses = FailureCauses.BAD_RECORDS
+        executorErrors.errorMsg = e.getMessage
+      } else {
+        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
+        throw e
+      }
+      case e: Exception =>
+        // this will be in case of any other exception where the executor has to rethrow and retry.
+        throw e
+    } finally {
+      // delete temp location data
+      try {
+        val isCompaction = false
+        CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, isCompaction)
+      } catch {
+        case e: Exception =>
+          logError("Failed to delete local data", e)
+      }
+      if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(
+        loadMetadataDetails.getLoadStatus)) {
+        CarbonTimeStatisticsFactory.getLoadStatisticsInstance.printStatisticsInfo(
+          model.getPartitionId)
+      }
+    }
+  }
+}
+

@@ -286,7 +286,7 @@ class CarbonMergerRDD[K, V](
           inputSplit.getLocations, inputSplit.getLength, inputSplit.getVersion
         )
       )
-        .filter(blockInfo => !CarbonLoaderUtil
+        .filter(blockInfo => !CarbonUtil
           .isInvalidTableBlock(blockInfo, updateDetails, updateStatusManger))
 
       // keep on assigning till last one is reached.
@@ -367,10 +367,10 @@ class CarbonMergerRDD[K, V](
       nodeTaskBlocksMap.put(nodeName, taskBlockList)
       var blockletCount = 0
       blockList.asScala.foreach { taskInfo =>
-        val blocksPerNode = taskInfo.asInstanceOf[CarbonInputSplit]
-        blockletCount = blockletCount + blocksPerNode.getNumberOfBlocklets
+        val blocksPerNode = taskInfo.asInstanceOf[TableTaskInfo]
+        blockletCount = blockletCount + blocksPerNode.getTableBlockInfoList.size()
         taskBlockList.add(
-          NodeInfo(blocksPerNode.taskId, blocksPerNode.getNumberOfBlocklets))
+          NodeInfo(blocksPerNode.getTaskId, blocksPerNode.getTableBlockInfoList.size()))
       }
       if (blockletCount != 0) {
         val multiBlockSplit = new CarbonMultiBlockSplit(absoluteTableIdentifier,

@@ -22,6 +22,7 @@ package org.apache.carbondata.processing.csvreaderstep;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
@@ -181,7 +182,10 @@ public class CsvInput extends BaseStep implements StepInterface {
       LOGGER.info("*****************Completed all csv reading***********");
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordCsvInputStepTime(
               meta.getPartitionID(), System.currentTimeMillis());
-    } else {
+    } else if(rddIteratorKey.startsWith(CarbonCommonConstants.RDDUTIL_UPDATE_KEY)) {
+      scanRddIteratorForUpdate();
+    }
+    else {
       scanRddIterator(numberOfNodes);
     }
     setOutputDone();
@@ -220,7 +224,7 @@ public class CsvInput extends BaseStep implements StepInterface {
       }
       return null;
     }
-  }
+  };
 
   private void scanRddIterator(int numberOfNodes) throws RuntimeException {
     JavaRddIterator<JavaRddIterator<String[]>> iter = RddInputUtils.getAndRemove(rddIteratorKey);
@@ -251,6 +255,22 @@ public class CsvInput extends BaseStep implements StepInterface {
         throw new RuntimeException("Thread InterruptedException", e);
       } finally {
         exec.shutdownNow();
+      }
+    }
+  }
+
+  private void scanRddIteratorForUpdate() throws RuntimeException {
+    Iterator<String[]> iterator = RddInpututilsForUpdate.getAndRemove(rddIteratorKey);
+    if (iterator != null) {
+      try{
+        while(iterator.hasNext()){
+          putRow(data.outputRowMeta, iterator.next());
+        }
+      } catch (KettleException e) {
+        throw new RuntimeException(e);
+      } catch (Exception e) {
+        LOGGER.error(e, "Scan rdd during data load is terminated due to error.");
+        throw e;
       }
     }
   }

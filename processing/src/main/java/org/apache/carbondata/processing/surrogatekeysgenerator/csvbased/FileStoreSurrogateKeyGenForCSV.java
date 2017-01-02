@@ -83,7 +83,7 @@ public class FileStoreSurrogateKeyGenForCSV extends CarbonCSVBasedDimSurrogateKe
   /**
    * load Id
    */
-  private int segmentId;
+  private String segmentId;
   /**
    * task id, each spark task has a unique id
    */

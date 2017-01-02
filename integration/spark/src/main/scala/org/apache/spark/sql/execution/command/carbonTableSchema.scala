@@ -34,6 +34,7 @@ import scala.language.implicitConversions
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Cast, Literal}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{RunnableCommand, SparkPlan}
@@ -52,6 +53,8 @@ import org.apache.carbondata.core.carbon.metadata.schema.table.column.CarbonDime
 import org.apache.carbondata.core.carbon.path.CarbonStorePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastorage.store.impl.FileFactory
+import org.apache.carbondata.core.update.CarbonUpdateUtil
+import org.apache.carbondata.core.update.TupleIdEnum
 import org.apache.carbondata.core.updatestatus.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.locks.{CarbonLockFactory, LockUsage}
@@ -314,13 +317,14 @@ case class LoadTable(
     options: scala.collection.immutable.Map[String, String],
     isOverwriteExist: Boolean = false,
     var inputSqlString: String = null,
-    dataFrame: Option[DataFrame] = None) extends RunnableCommand {
+    dataFrame: Option[DataFrame] = None,
+    updateModel: Option[UpdateTableModel] = None) extends RunnableCommand {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
 
   def run(sqlContext: SQLContext): Seq[Row] = {
-    if (dataFrame.isDefined) {
+    if (dataFrame.isDefined && !updateModel.isDefined) {
       val rdd = dataFrame.get.rdd
       if (rdd.partitions == null || rdd.partitions.length == 0) {
         LOGGER.warn("DataLoading finished. No data was loaded.")
@@ -352,10 +356,13 @@ case class LoadTable(
         LockUsage.METADATA_LOCK
       )
     try {
-      if (carbonLock.lockWithRetries()) {
-        logInfo("Successfully able to get the table metadata file lock")
-      } else {
-        sys.error("Table is locked for updation. Please try after some time")
+      // take lock only in case of normal data load.
+      if (!updateModel.isDefined) {
+        if (carbonLock.lockWithRetries()) {
+          logInfo("Successfully able to get the table metadata file lock")
+        } else {
+          sys.error("Table is locked for updation. Please try after some time")
+        }
       }
 
       val factPath = if (dataFrame.isDefined) {
@@ -526,6 +533,39 @@ case class LoadTable(
             }
           })
         } else {
+          val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
+          val fields = dataFrame.get.schema.fields
+          import org.apache.spark.sql.functions.udf
+          // extracting only segment from tupleId
+          val getSegIdUDF = udf((tupleId: String) =>
+            CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID))
+          // getting all fields except tupleId field as it is not required in the value
+          var otherFields = fields.toSeq
+            .filter(field => !field.name
+              .equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))
+            .map(field => {
+              if (field.name.endsWith(CarbonCommonConstants.UPDATED_COL_EXTENSION) && false) {
+                new Column(field.name
+                  .substring(0,
+                    field.name.lastIndexOf(CarbonCommonConstants.UPDATED_COL_EXTENSION)))
+              } else {
+
+                new Column(field.name)
+              }
+            })
+
+          // extract tupleId field which will be used as a key
+          val segIdColumn = getSegIdUDF(new Column(UnresolvedAttribute
+            .quotedString(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))).as("segId")
+          // use dataFrameWithoutTupleId as dictionaryDataFrame
+          val dataFrameWithoutTupleId = dataFrame.get.select(otherFields: _*)
+          otherFields = otherFields :+ segIdColumn
+          // use dataFrameWithTupleId as loadDataFrame
+          val dataFrameWithTupleId = dataFrame.get.select(otherFields: _*)
+          (Some(dataFrameWithoutTupleId), Some(dataFrameWithTupleId))
+        } else {
+          (dataFrame, dataFrame)
+        }
           GlobalDictionaryUtil
             .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.tableMeta.storePath,
               dataFrame)
@@ -539,7 +579,8 @@ case class LoadTable(
             partitionStatus,
             useKettle,
             result,
-            dataFrame)
+            loadDataFrame,
+            updateModel)
       } catch {
         case ex: Exception =>
           LOGGER.error(ex)

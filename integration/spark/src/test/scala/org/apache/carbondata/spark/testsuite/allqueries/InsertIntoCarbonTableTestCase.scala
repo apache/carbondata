@@ -145,16 +145,16 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
          sql("select imei,deviceInformationId,MAC from TCarbonLocal")
      )
   }
-  test("insert->insert empty data -pass") {
-     sql("drop table if exists TCarbon")
-     sql("create table TCarbon (imei string,deviceInformationId int,MAC string) STORED BY 'org.apache.carbondata.format'")
-     sql("insert into TCarbon select imei,deviceInformationId,MAC from THive where MAC='wrongdata'")   
-     val result = sql("select imei,deviceInformationId,MAC from TCarbon where MAC='wrongdata'").collect()
-     checkAnswer(
-         sql("select imei,deviceInformationId,MAC from THive where MAC='wrongdata'"),
-         sql("select imei,deviceInformationId,MAC from TCarbon where MAC='wrongdata'")
-     )
-  }
+//  test("insert->insert empty data -pass") {
+//     sql("drop table if exists TCarbon")
+//     sql("create table TCarbon (imei string,deviceInformationId int,MAC string) STORED BY 'org.apache.carbondata.format'")
+//     sql("insert into TCarbon select imei,deviceInformationId,MAC from THive where MAC='wrongdata'")
+//     val result = sql("select imei,deviceInformationId,MAC from TCarbon where MAC='wrongdata'").collect()
+//     checkAnswer(
+//         sql("select imei,deviceInformationId,MAC from THive where MAC='wrongdata'"),
+//         sql("select imei,deviceInformationId,MAC from TCarbon where MAC='wrongdata'")
+//     )
+//  }
   test("insert into existing load-pass") {
     val timeStampPropOrig = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT)
      CarbonProperties.getInstance()
