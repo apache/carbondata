@@ -27,7 +27,6 @@ package org.apache.carbondata.spark.merger;
 public enum CompactionType {
     MINOR_COMPACTION,
     MAJOR_COMPACTION,
-    IUD_FACTFILE_COMPACTION,
     IUD_UPDDEL_DELTA_COMPACTION,
     IUD_DELETE_DELTA_COMPACTION,
     NONE

@@ -20,6 +20,8 @@ package org.apache.carbondata.scan.scanner;
 
 import java.io.IOException;
 
+import org.apache.carbondata.common.iudprocessor.iuddata.BlockletDeleteDeltaCacheLoader;
+import org.apache.carbondata.common.iudprocessor.iuddata.DeleteDeltaCacheLoaderIntf;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsConstants;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatisticsModel;
@@ -81,5 +83,12 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     scannedResult.setMeasureChunks(blocksChunkHolder.getDataBlock()
             .getMeasureChunks(blocksChunkHolder.getFileReader(),
                 blockExecutionInfo.getAllSelectedMeasureBlocksIndexes()));
+    // loading delete data cache in blockexecutioninfo instance
+    DeleteDeltaCacheLoaderIntf deleteCacheLoader =
+        new BlockletDeleteDeltaCacheLoader(scannedResult.getBlockletId(),
+            blocksChunkHolder.getDataBlock(), blockExecutionInfo.getAbsoluteTableIdentifier());
+    deleteCacheLoader.loadDeleteDeltaFileDataToCache();
+    scannedResult
+        .setBlockletDeleteDeltaCache(blocksChunkHolder.getDataBlock().getDeleteDeltaDataCache());
   }
 }

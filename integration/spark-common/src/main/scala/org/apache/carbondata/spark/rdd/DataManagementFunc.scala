@@ -22,8 +22,7 @@ import java.util.concurrent._
 
 import org.apache.carbondata.core.update.CarbonUpdateUtil
 import org.apache.carbondata.core.updatestatus.SegmentStatusManager
-import org.apache.carbondata.locks.{LockUsage, CarbonLockUtil, CarbonLockFactory}
-
+import org.apache.carbondata.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
@@ -171,7 +170,9 @@ object DataManagementFunc {
       segList,
       compactionModel.compactionType
     )
-    while (loadsToMerge.size() > 1) {
+    while (loadsToMerge.size() > 1 ||
+           (compactionModel.compactionType.name().equals("IUD_UPDDEL_DELTA_COMPACTION") &&
+            loadsToMerge.size() > 0)) {
       val lastSegment = sortedSegments.get(sortedSegments.size() - 1)
       deletePartialLoadsInCompaction(carbonLoadModel)
       val futureList: util.List[Future[Void]] = new util.ArrayList[Future[Void]](
@@ -202,7 +203,6 @@ object DataManagementFunc {
           throw e
       }
 
-
       // scan again and determine if anything is there to merge again.
       CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
       segList = carbonLoadModel.getLoadMetadataDetails
@@ -212,15 +212,23 @@ object DataManagementFunc {
       if (compactionModel.compactionType == CompactionType.MAJOR_COMPACTION) {
 
         segList = CarbonDataMergerUtil
-            .filterOutNewlyAddedSegments(carbonLoadModel.getLoadMetadataDetails, lastSegment)
+          .filterOutNewlyAddedSegments(carbonLoadModel.getLoadMetadataDetails, lastSegment)
       }
-      loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
-        storePath,
-        carbonLoadModel,
-        compactionModel.compactionSize,
-        segList,
-        compactionModel.compactionType
-      )
+
+      if (compactionModel.compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
+        loadsToMerge.clear()
+      } else if (segList.size > 0) {
+        loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
+          storePath,
+          carbonLoadModel,
+          compactionModel.compactionSize,
+          segList,
+          compactionModel.compactionType
+        )
+      }
+      else {
+        loadsToMerge.clear()
+      }
     }
   }
 

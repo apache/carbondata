@@ -95,12 +95,12 @@ class PartitionResultImpl extends PartitionResult[Int, Boolean] {
 }
 
 trait MergeResult[K, V] extends Serializable {
-  def getKey(key: Int, value: Boolean): (K, V)
+  def getKey(key: String, value: Boolean): (K, V)
 
 }
 
-class MergeResultImpl extends MergeResult[Int, Boolean] {
-  override def getKey(key: Int, value: Boolean): (Int, Boolean) = (key, value)
+class MergeResultImpl extends MergeResult[String, Boolean] {
+  override def getKey(key: String, value: Boolean): (String, Boolean) = (key, value)
 }
 
 trait DeletedLoadResult[K, V] extends Serializable {

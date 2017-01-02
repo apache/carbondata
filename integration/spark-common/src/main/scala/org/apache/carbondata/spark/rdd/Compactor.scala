@@ -27,7 +27,7 @@ import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCa
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.spark.MergeResultImpl
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
-import org.apache.carbondata.spark.merger.CarbonDataMergerUtil
+import org.apache.carbondata.spark.merger.{CompactionType, CarbonDataMergerUtil}
 
 /**
  * Compactor class which handled the compaction cases.
@@ -55,7 +55,7 @@ object Compactor {
     val factTableName = carbonLoadModel.getTableName
     val validSegments: Array[String] = CarbonDataMergerUtil
       .getValidSegments(loadsToMerge).split(',')
-    val mergeLoadStartTime = CarbonUpdateUtil.readCurrentTime();
+    val mergeLoadStartTime = CarbonUpdateUtil.readCurrentTime()
     val carbonMergerMapping = CarbonMergerMapping(storeLocation,
       storePath,
       carbonTable.getMetaDataFilepath,
@@ -70,7 +70,7 @@ object Compactor {
       maxSegmentColCardinality = null,
       maxSegmentColumnSchemaList = null
     )
-    carbonLoadModel.setStorePath(carbonMergerMapping.storePath)
+    carbonLoadModel.setStorePath(carbonMergerMapping.hdfsStoreLocation)
     carbonLoadModel.setLoadMetadataDetails(
       SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath).toList.asJava)
     var execInstance = "1"
@@ -87,13 +87,24 @@ object Compactor {
       }
     }
 
-    val mergeStatus = new CarbonMergerRDD(
-      sc.sparkContext,
-      new MergeResultImpl(),
-      carbonLoadModel,
-      carbonMergerMapping,
-      execInstance
-    ).collect
+    val mergeStatus =
+    if (compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
+      new CarbonIUDMergerRDD(
+        sc.sparkContext,
+        new MergeResultImpl(),
+        carbonLoadModel,
+        carbonMergerMapping,
+        execInstance
+      ).collect
+    } else {
+      new CarbonMergerRDD(
+        sc.sparkContext,
+        new MergeResultImpl(),
+        carbonLoadModel,
+        carbonMergerMapping,
+        execInstance
+      ).collect
+    }
 
     if (mergeStatus.length == 0) {
       finalMergeStatus = false
@@ -104,10 +115,18 @@ object Compactor {
     if (finalMergeStatus) {
       val endTime = System.nanoTime()
       logger.info(s"time taken to merge $mergedLoadName is ${ endTime - startTime }")
-      if (!CarbonDataMergerUtil
-        .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath,
-          mergedLoadName, carbonLoadModel, mergeLoadStartTime, compactionType
-        )) {
+      val statusFileUpdation =
+        (((compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) &&
+          (CarbonDataMergerUtil
+            .updateLoadMetadataIUDUpdateDeltaMergeStatus(loadsToMerge,
+              carbonTable.getMetaDataFilepath(),
+              carbonLoadModel))) ||
+         (CarbonDataMergerUtil
+           .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath(),
+             mergedLoadName, carbonLoadModel, mergeLoadStartTime, compactionType))
+          )
+
+      if (!statusFileUpdation) {
         logger.audit(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
                      s"${ carbonLoadModel.getTableName }")
         logger.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
