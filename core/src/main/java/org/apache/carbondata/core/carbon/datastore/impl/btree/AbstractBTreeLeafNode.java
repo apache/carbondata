@@ -26,10 +26,19 @@ import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChun
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastorage.store.FileHolder;
 
+import org.apache.carbondata.common.iudprocessor.cache.BlockletLevelDeleteDeltaDataCache;
+
 /**
  * Non leaf node abstract class
  */
 public abstract class AbstractBTreeLeafNode implements BTreeNode {
+
+  /**
+   * Below method will be used to load the data block
+   *
+   * @param blockInfo block detail
+   */
+  protected BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache;
 
   /**
    * number of keys in a btree
@@ -218,5 +227,18 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
     // No required here as leaf which will will be use this class will implement its own get
     // measure chunks
     return null;
+  }
+  /**
+   * @return the segmentProperties
+   */
+  public void setDeleteDeltaDataCache(BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache) {
+
+    this.deleteDeltaDataCache = deleteDeltaDataCache;
+  }
+  /**
+   * @return the segmentProperties
+   */
+  public BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache() {
+    return deleteDeltaDataCache;
   }
 }
