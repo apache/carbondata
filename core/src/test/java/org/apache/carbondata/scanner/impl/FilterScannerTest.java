@@ -24,6 +24,7 @@ import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.carbondata.common.iudprocessor.iuddata.BlockletDeleteDeltaCacheLoader;
 import org.apache.carbondata.core.carbon.datastore.BTreeBuilderInfo;
 import org.apache.carbondata.core.carbon.datastore.DataRefNode;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionChunkAttributes;
@@ -139,6 +140,13 @@ public class FilterScannerTest {
         bitSet.set(1);
         return bitSet;
       }
+    };
+    new MockUp<BlockletDeleteDeltaCacheLoader>() {
+      @SuppressWarnings("unused") @Mock
+      public void loadDeleteDeltaFileDataToCache() {
+        return;
+      }
+
     };
     DataRefNode dataRefNode = new MockUp<DataRefNode>() {
       @Mock @SuppressWarnings("unused") DimensionColumnDataChunk[] getDimensionChunks(

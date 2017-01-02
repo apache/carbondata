@@ -22,6 +22,8 @@ package org.apache.carbondata.scan.scanner.impl;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.carbondata.common.iudprocessor.iuddata.BlockletDeleteDeltaCacheLoader;
+import org.apache.carbondata.common.iudprocessor.iuddata.DeleteDeltaCacheLoaderIntf;
 import org.apache.carbondata.core.carbon.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.carbon.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.carbon.querystatistics.QueryStatistic;
@@ -153,7 +155,13 @@ public class FilterScanner extends AbstractBlockletScanner {
     for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
       indexes[index++] = i;
     }
-
+    // loading delete data cache in blockexecutioninfo instance
+    DeleteDeltaCacheLoaderIntf deleteCacheLoader =
+        new BlockletDeleteDeltaCacheLoader(scannedResult.getBlockletId(), blocksChunkHolder
+            .getDataBlock(), blockExecutionInfo.getAbsoluteTableIdentifier());
+    deleteCacheLoader.loadDeleteDeltaFileDataToCache();
+    scannedResult
+        .setBlockletDeleteDeltaCache(blocksChunkHolder.getDataBlock().getDeleteDeltaDataCache());
     FileHolder fileReader = blocksChunkHolder.getFileReader();
     int[][] allSelectedDimensionBlocksIndexes =
         blockExecutionInfo.getAllSelectedDimensionBlocksIndexes();

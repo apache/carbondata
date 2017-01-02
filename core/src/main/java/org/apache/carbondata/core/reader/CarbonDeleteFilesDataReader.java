@@ -83,7 +83,8 @@ public class CarbonDeleteFilesDataReader {
    */
   public int[] getDeleteDataFromAllFiles(List<String> deltaFiles, String blockletId)
       throws Exception {
-    List<Future<DeleteDeltaBlockDetails>> taskSubmitList = new ArrayList<>(deltaFiles.size());
+
+    List<Future<DeleteDeltaBlockDetails>> taskSubmitList = new ArrayList<>();
     ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
     for (final String deltaFile : deltaFiles) {
       taskSubmitList.add(executorService.submit(new Callable<DeleteDeltaBlockDetails>() {

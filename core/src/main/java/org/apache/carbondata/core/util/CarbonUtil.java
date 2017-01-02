@@ -70,6 +70,8 @@ import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.reader.ThriftReader.TBaseCreator;
 import org.apache.carbondata.core.service.PathService;
+import org.apache.carbondata.core.update.UpdateVO;
+import org.apache.carbondata.core.updatestatus.SegmentUpdateStatusManager;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.scan.model.QueryDimension;
 
@@ -1385,6 +1387,34 @@ public final class CarbonUtil {
                     .getColumnIdentifier().getColumnId());
     // check if both dictionary and its metadata file exists for a given column
     return isFileExists(dictionaryFilePath) && isFileExists(dictionaryMetadataFilePath);
+  }
+
+   /**
+   * @param tableInfo
+   * @param invalidBlockVOForSegmentId
+   */
+  public static boolean isInvalidTableBlock(TableBlockInfo tableInfo,
+      UpdateVO invalidBlockVOForSegmentId,
+      SegmentUpdateStatusManager updateStatusMngr) {
+
+    if (!updateStatusMngr.isBlockValid(tableInfo.getSegmentId(),
+        CarbonTablePath.getCarbonDataFileName(tableInfo.getFilePath()) + CarbonTablePath
+            .getCarbonDataExtension())) {
+      return true;
+    }
+
+    UpdateVO updatedVODetails = invalidBlockVOForSegmentId;
+    if (null != updatedVODetails) {
+      Long blockTimeStamp = Long.parseLong(tableInfo.getFilePath()
+          .substring(tableInfo.getFilePath().lastIndexOf('-') + 1,
+              tableInfo.getFilePath().lastIndexOf('.')));
+      if ((blockTimeStamp > updatedVODetails.getFactTimestamp() && (
+          updatedVODetails.getUpdateDeltaStartTimestamp() != null
+              && blockTimeStamp < updatedVODetails.getUpdateDeltaStartTimestamp()))) {
+        return true;
+      }
+    }
+    return false;
   }
 }
 

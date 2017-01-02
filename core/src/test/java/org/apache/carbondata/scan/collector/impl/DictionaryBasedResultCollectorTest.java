@@ -123,6 +123,10 @@ public class DictionaryBasedResultCollectorTest {
           QueryDimension[] queryDimensions) {
         return new boolean[] { false, false, true, false };
       }
+      @SuppressWarnings("unused") @Mock boolean[] getImplicitColumnArray(
+              QueryDimension[] queryDimensions) {
+        return new boolean[] { false, false, false, false };
+      }
     };
     new MockUp<DataTypeUtil>() {
       @SuppressWarnings("unused") @Mock Object getDataBasedOnDataType(String data,
